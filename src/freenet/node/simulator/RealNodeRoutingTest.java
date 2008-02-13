@@ -75,7 +75,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
         
     }
 
-	static void waitForPingAverage(double accuracy, Node[] nodes, RandomSource random, int maxTests, int sleepTime) {
+	static void waitForPingAverage(double accuracy, Node[] nodes, RandomSource random, int maxTests, int sleepTime) throws InterruptedException {
 		
         int cycleNumber = 0;
         int lastSwaps = 0;
@@ -111,6 +111,8 @@ public class RealNodeRoutingTest extends RealNodeTest {
             System.err.println("Swaps failed:" +LocationManager.noSwaps);
             System.err.println("Swaps succeeded:" +LocationManager.swaps);
 
+            waitForAllConnected(nodes);
+            
             lastSwaps = newSwaps;
             // Do some (routed) test-pings
             for(int i=0;i<10;i++) {
