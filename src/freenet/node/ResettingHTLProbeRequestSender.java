@@ -272,7 +272,7 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
             		// it doesn't make any sense to do so - it's only valid within that pocket.
             		Message sub = msg.getSubMessage(DMT.FNPRHReturnSubMessage);
             		double newBest = sub.getDouble(DMT.BEST_LOCATION);
-            		if(Location.distance(newBest, target, true) < Location.distance(best, target, true))
+            		if(newBest > target && newBest < best)
             			best = newBest;
             		counter += Math.max(0, msg.getShort(DMT.COUNTER));
             		uniqueCounter += Math.max(0, msg.getShort(DMT.UNIQUE_COUNTER));
@@ -290,7 +290,7 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
             		Message sub = msg.getSubMessage(DMT.FNPRHReturnSubMessage);
             		if(sub != null) {
             			double newBest = sub.getDouble(DMT.BEST_LOCATION);
-            			if(Location.distance(newBest, target, true) < Location.distance(best, target, true))
+            			if(newBest > target && newBest < best)
             				best = newBest;
             			counter += Math.max(0, sub.getShort(DMT.COUNTER));
             			uniqueCounter += Math.max(0, sub.getShort(DMT.UNIQUE_COUNTER));
@@ -311,7 +311,7 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
             		if(Location.distance(hisNearest, target, true) < Location.distance(nearestLoc, target, true))
             			nearestLoc = hisNearest;
             		double hisBest = msg.getDouble(DMT.BEST_LOCATION);
-            		if(Location.distance(hisBest, target, true) < Location.distance(best, target, true))
+            		if(hisBest > target && hisBest < best)
             			best = hisBest;
             		counter += (short) Math.max(0, msg.getShort(DMT.COUNTER));
             		uniqueCounter += (short) Math.max(0, msg.getShort(DMT.UNIQUE_COUNTER));
@@ -340,8 +340,12 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
 	private void fireTrace(double nearest, double best, short htl, short counter, 
 			short uniqueCounter, double location, long myUID, ShortBuffer peerLocs, 
 			ShortBuffer peerUIDs, short linearCounter, String reason, long prevUID) {
-		best = best(best, this.best);
-		nearest = best(nearest, this.nearestLoc);
+		if(this.best > target && this.best < best)
+			best = this.best;
+		else
+			best = this.best;
+		if(Location.distance(nearest, target, true) < Location.distance(this.nearestLoc, target, true))
+			nearest = this.nearestLoc;
 		counter = (short) (counter + this.counter);
 		uniqueCounter = (short) (uniqueCounter + this.uniqueCounter);
 		linearCounter = (short) (linearCounter + this.linearCounter);
@@ -357,12 +361,6 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
 				}
 			}
 		}
-	}
-
-	private double best(double loc1, double loc2) {
-		if(Location.distance(loc1, target, true) < Location.distance(loc2, target, true))
-			return loc1;
-		else return loc2;
 	}
 
 	/**
@@ -525,13 +523,12 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
     
 	private void updateBest() {
 		PeerNode[] nodes = node.peers.myPeers;
-		double curDist = Location.distance(best, target, true);
 		for(int i=0;i<nodes.length;i++) {
 			if(!nodes[i].isConnected()) continue;
 			double loc = nodes[i].getLocation();
 			if(loc < target)
 				continue;
-			if(Location.distance(target, loc, true) < curDist)
+			if(loc > target && loc < best)
 				best = loc;
 		}
 	}
