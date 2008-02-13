@@ -117,8 +117,6 @@ public class PproxyToadlet extends Toadlet {
 		}
 		else
 		{
-			final boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-			final boolean logNORMAL = Logger.shouldLog(Logger.NORMAL, this);
 			PageMaker pageMaker = ctx.getPageMaker();
 
 			if (request.isPartSet("submit-official") || request.isPartSet("submit-other")) {

@@ -294,13 +294,7 @@ public class BookmarkManager {
 	}
 
 	private void readBookmarks(BookmarkCategory category, SimpleFieldSet sfs) {
-		try {
-			int bookmarkVersion = sfs.getInt("Version");
-
-			_innerReadBookmarks("", category, sfs);
-		} catch(FSParseException e) {
-			_innerReadTrunkBookmarks("", category, sfs);
-		}
+		_innerReadBookmarks("", category, sfs);
 	}
 	
 	private void subscribeToUSK(BookmarkItem item) {

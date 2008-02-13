@@ -405,7 +405,6 @@ public class Announcer {
 				Logger.error(this, "Announcement to "+seed.userToString()+" got bogus noderef: "+reason, new Exception("debug"));
 			}
 			public void completed() {
-				long now = System.currentTimeMillis();
 				synchronized(Announcer.this) {
 					runningAnnouncements--;
 					Logger.error(this, "Announcement to "+seed.userToString()+" completed, now running "+runningAnnouncements+" announcements");

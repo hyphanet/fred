@@ -177,8 +177,7 @@ public class NodeCryptoConfig {
 	}
 	
 	synchronized void maybeStarted(NodeCrypto crypto2) {
-		if(crypto != null) {
-		}
+
 	}
 	
 	synchronized void stopping(NodeCrypto crypto2) {

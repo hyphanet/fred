@@ -248,7 +248,7 @@ public class USKFetcher implements ClientGetState {
 	private void finishSuccess() {
 		if(backgroundPoll) {
 			long valAtEnd = uskManager.lookup(origUSK);
-			long end, newValAtEnd;
+			long end;
 			long now = System.currentTimeMillis();
 			synchronized(this) {
 				started = false; // don't finish before have rescheduled
@@ -271,7 +271,6 @@ public class USKFetcher implements ClientGetState {
 						newMinFailures = maxMinFailures;
 					minFailures = newMinFailures;
 				}
-				newValAtEnd = valAtEnd;
 			}
 			schedule(end-now);
 		} else {

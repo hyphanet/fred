@@ -403,7 +403,6 @@ public class StatisticsToadlet extends Toadlet {
 		long storeSize = storeKeys * fix32kb;
 		long maxCachedKeys = node.getChkDatacache().getMaxKeys();
 		long maxStoreKeys = node.getChkDatastore().getMaxKeys();
-		long maxOverallKeys = node.getMaxTotalKeys();
 		long cacheHits = node.getChkDatacache().hits();
 		long cacheMisses = node.getChkDatacache().misses();
 		long cacheAccesses = cacheHits + cacheMisses;
