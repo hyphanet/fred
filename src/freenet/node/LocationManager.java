@@ -902,7 +902,7 @@ public class LocationManager {
     			runNow = true;
     		} else {
     			// Locked.
-    			if(node.enableSwapQueueing || 
+    			if((!node.enableSwapQueueing) || 
     					incomingMessageQueue.size() > MAX_INCOMING_QUEUE_LENGTH) {
     				// Reject anyway.
     				reject = true;
