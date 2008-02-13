@@ -320,5 +320,9 @@ public class Message {
 		}
 		return null;
 	}
+	
+	public long age() {
+		return System.currentTimeMillis() - localInstantiationTime;
+	}
 
 }
