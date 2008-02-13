@@ -18,7 +18,7 @@ public class IntOption extends Option {
 	
 	public IntOption(SubConfig conf, String optionName, int defaultValue, String defaultValueString,
 			int sortOrder, boolean expert, boolean forceWrite, String shortDesc, String longDesc, IntCallback cb) {
-		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc);
+		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DATA_TYPE_NUMBER);
 		this.defaultValue = defaultValue;
 		this.cb = cb;
 		this.currentValue = defaultValue;
@@ -27,7 +27,7 @@ public class IntOption extends Option {
 
 	public IntOption(SubConfig conf, String optionName, String defaultValueString,
 			int sortOrder, boolean expert, boolean forceWrite, String shortDesc, String longDesc, IntCallback cb) {
-		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc);
+		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DATA_TYPE_NUMBER);
 		this.defaultValue = Fields.parseInt(defaultValueString);
 		this.cb = cb;
 		this.currentValue = defaultValue;

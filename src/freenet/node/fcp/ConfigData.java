@@ -18,8 +18,9 @@ public class ConfigData extends FCPMessage {
 	final boolean withForceWriteFlag;
 	final boolean withShortDescription;
 	final boolean withLongDescription;
+	final boolean withDataTypes;
 	
-	public ConfigData(Node node, boolean withCurrent, boolean withDefaults, boolean withSortOrder, boolean withExpertFlag, boolean withForceWriteFlag, boolean withShortDescription, boolean withLongDescription) {
+	public ConfigData(Node node, boolean withCurrent, boolean withDefaults, boolean withSortOrder, boolean withExpertFlag, boolean withForceWriteFlag, boolean withShortDescription, boolean withLongDescription, boolean withDataTypes) {
 		this.node = node;
 		this.withCurrent = withCurrent;
 		this.withDefaults = withDefaults;
@@ -28,6 +29,7 @@ public class ConfigData extends FCPMessage {
 		this.withForceWriteFlag = withForceWriteFlag;
 		this.withShortDescription = withShortDescription;
 		this.withLongDescription = withLongDescription;
+		this.withDataTypes = withDataTypes;
 	}
 
 	
@@ -73,6 +75,12 @@ public class ConfigData extends FCPMessage {
 			SimpleFieldSet longDescription = node.config.exportFieldSet(Config.CONFIG_REQUEST_TYPE_LONG_DESCRIPTION, false);
 			if(!longDescription.isEmpty()) {
 				fs.put("longDescription", longDescription);
+			}
+		}
+		if(withDataTypes) {
+			SimpleFieldSet type = node.config.exportFieldSet(Config.CONFIG_REQUEST_TYPE_DATA_TYPE, false);
+			if(!type.isEmpty()) {
+				fs.put("dataType", type);
 			}
 		}
 		return fs;

@@ -241,6 +241,9 @@ public class SubConfig implements Comparable {
 				case Config.CONFIG_REQUEST_TYPE_LONG_DESCRIPTION:
 					fs.putSingle(key, L10n.getString(o.getLongDesc()));
 					break;
+				case Config.CONFIG_REQUEST_TYPE_DATA_TYPE:
+					fs.putSingle(key, o.getDataTypeStr());
+					break;
 				default:
 					Logger.error(this, "Unknown config request type value: "+configRequestType);
 					break;

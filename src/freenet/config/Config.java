@@ -17,6 +17,7 @@ public class Config {
     public static final int CONFIG_REQUEST_TYPE_FORCE_WRITE_FLAG = 5;
     public static final int CONFIG_REQUEST_TYPE_SHORT_DESCRIPTION = 6;
     public static final int CONFIG_REQUEST_TYPE_LONG_DESCRIPTION = 7;
+    public static final int CONFIG_REQUEST_TYPE_DATA_TYPE = 8;
 
 	protected final LinkedHashMap configsByPrefix;
 	
