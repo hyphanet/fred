@@ -340,7 +340,8 @@ public class NodeStarter implements WrapperListener
 			boolean doSwapping, boolean disableProbabilisticHTLs, short maxHTL,
 			int dropProb, RandomSource random, Executor executor, int threadLimit, 
 			long storeSize, boolean ramStore, boolean enableSwapping, boolean enableARKs, 
-			boolean enableULPRs, boolean enablePerNodeFailureTables) throws NodeInitException {
+			boolean enableULPRs, boolean enablePerNodeFailureTables, 
+			boolean enableSwapQueueing) throws NodeInitException {
 		
 		File baseDir = new File(testName);
 		File portDir = new File(baseDir, Integer.toString(port));
@@ -374,6 +375,7 @@ public class NodeStarter implements WrapperListener
 		configFS.put("storeSize", storeSize);
 		configFS.put("node.disableHangCheckers", true);
 		configFS.put("node.enableSwapping", enableSwapping);
+		configFS.put("node.enableSwapQueueing", enableSwapQueueing);
 		configFS.put("node.enableARKs", enableARKs);
 		configFS.put("node.enableULPRDataPropagation", enableULPRs);
 		configFS.put("node.enablePerNodeFailureTables", enablePerNodeFailureTables);
