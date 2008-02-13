@@ -360,7 +360,7 @@ public class NodeStarter implements WrapperListener
 		configFS.put("node.updater.enabled", false);
 		configFS.putSingle("node.tempDir", new File(portDir, "temp").toString());
 		configFS.putSingle("node.storeDir", new File(portDir, "store").toString());
-		configFS.putSingle("node.persistentTempDir", new File(portDir, "persistent").toString());
+		configFS.putSingle("node.persistentDownloadsEnabled", false);
 		configFS.putSingle("node.throttleFile", new File(portDir, "throttle.dat").toString());
 		configFS.putSingle("node.nodeDir", portDir.toString());
 		configFS.put("node.maxHTL", maxHTL);
