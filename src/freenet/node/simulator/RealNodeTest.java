@@ -23,6 +23,9 @@ public class RealNodeTest {
 	static final int EXIT_BASE = NodeInitException.EXIT_NODE_UPPER_LIMIT;
 	static final int EXIT_CANNOT_DELETE_OLD_DATA = EXIT_BASE + 3;
 	static final int EXIT_PING_TARGET_NOT_REACHED = EXIT_BASE + 4;
+	static final int EXIT_INSERT_FAILED = EXIT_BASE + 5;
+	static final int EXIT_REQUEST_FAILED = EXIT_BASE + 6;
+	static final int EXIT_BAD_DATA = EXIT_BASE + 7;
 	
 	/*
 	 Borrowed from mrogers simulation code (February 6, 2008)

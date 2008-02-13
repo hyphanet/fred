@@ -34,14 +34,16 @@ import freenet.support.math.SimpleRunningAverage;
  */
 public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 
-    static final int NUMBER_OF_NODES = 100;
-    static final int DEGREE = 10;
+    static final int NUMBER_OF_NODES = 50;
+    static final int DEGREE = 5;
     static final short MAX_HTL = (short)10;
     static final boolean START_WITH_IDEAL_LOCATIONS = false;
     static final boolean FORCE_NEIGHBOUR_CONNECTIONS = false;
     static final boolean ENABLE_SWAPPING = true;
     static final boolean ENABLE_ULPRS = false;
     static final boolean ENABLE_PER_NODE_FAILURE_TABLES = false;
+    
+    static final int TARGET_SUCCESSES = 20;
     //static final int NUMBER_OF_NODES = 50;
     //static final short MAX_HTL = 10;
     
@@ -55,7 +57,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         wd.mkdir();
         //NOTE: globalTestInit returns in ignored random source
         //NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNode:minor,freenet.node.Insert:MINOR,freenet.node.Request:MINOR,freenet.node.Node:MINOR");
-        NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.Location:MINOR,freenet.io.comm:MINOR,freenet.node.Node:MINOR,freenet.node.FNP:MINOR,freenet.node.PacketSender:MINOR");
+        NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.Location:MINOR,freenet.io.comm:MINOR,freenet.node.NodeDispatcher:MINOR");
         //NodeStarter.globalTestInit(name, false, Logger.ERROR, "");
         System.out.println("Insert/retrieve test");
         System.out.println();
@@ -124,6 +126,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 				} catch (freenet.node.LowLevelPutException putEx) {
 					Logger.error(RealNodeRequestInsertTest.class, "Insert failed: "+ putEx);
 					System.err.println("Insert failed: "+ putEx);
+					System.exit(EXIT_INSERT_FAILED);
 				}
                 // Pick random node to request from
                 int node2;
@@ -136,6 +139,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 					int percentSuccess=100*fetchSuccesses/insertAttempts;
                     Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
                     requestsAvg.report(0.0);
+                    System.exit(EXIT_REQUEST_FAILED);
                 } else {
                     byte[] results = block.memoryDecode();
                     requestsAvg.report(1.0);
@@ -144,9 +148,14 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 						int percentSuccess=100*fetchSuccesses/insertAttempts;
                         Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" succeeded ("+percentSuccess+"%): "+new String(results));
                         System.err.println("Fetch #"+requestNumber+" succeeded ("+percentSuccess+"%): \""+new String(results)+'\"');
+                        if(fetchSuccesses == TARGET_SUCCESSES) {
+                        	System.err.println("Succeeded, "+TARGET_SUCCESSES+" successful fetches");
+                        	System.exit(0);
+                        }
                     } else {
                         Logger.error(RealNodeRequestInsertTest.class, "Returned invalid data!: "+new String(results));
                         System.err.println("Returned invalid data!: "+new String(results));
+                        System.exit(EXIT_BAD_DATA);
                     }
                 }
                 StringBuffer load = new StringBuffer("Running UIDs for nodes: ");
