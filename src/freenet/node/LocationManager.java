@@ -866,6 +866,8 @@ public class LocationManager {
     void lockOrQueue(Message msg, long oldID, long newID, PeerNode pn) {
     	boolean runNow = false;
     	boolean reject = false;
+		if(logMINOR)
+			Logger.minor(this, "Locking on port "+node.getDarknetPortNumber()+" for uid "+oldID+" from "+pn);
     	synchronized(this) {
     		if(!locked) {
     			locked = true;
