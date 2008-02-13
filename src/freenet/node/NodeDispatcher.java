@@ -539,7 +539,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		ctx = (RoutedContext)routedContexts.get(lid);
 		if(ctx != null) {
 			try {
-				source.sendAsync(DMT.createFNPRoutedRejected(id, (short)(htl-1)), null, 0, null);
+				source.sendAsync(DMT.createFNPRoutedRejected(id, (short)htl), null, 0, null);
 			} catch (NotConnectedException e) {
 				if(logMINOR) Logger.minor(this, "Lost connection rejecting "+m);
 			}
