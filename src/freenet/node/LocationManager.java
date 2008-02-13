@@ -6,6 +6,7 @@ package freenet.node;
 import java.security.MessageDigest;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
 
@@ -757,6 +758,33 @@ public class LocationManager {
     private final LinkedList incomingMessageQueue = new LinkedList();
     
     static final int MAX_INCOMING_QUEUE_LENGTH = 10;
+    
+    /** Prevent timeouts and deadlocks due to A waiting for B waiting for A */
+    static final long MAX_TIME_ON_INCOMING_QUEUE = 30*1000;
+    
+    void removeTooOldQueuedItems() {
+    	while(true) {
+    		Message first;
+    		synchronized(this) {
+    			if(incomingMessageQueue.isEmpty()) return;
+    			first = (Message) incomingMessageQueue.getFirst();
+    			if(first.age() < MAX_TIME_ON_INCOMING_QUEUE) return;
+    			incomingMessageQueue.removeFirst();
+    			if(logMINOR) Logger.minor(this, "Cancelling queued item: "+first+" - too long on queue, maybe circular waiting?");
+    			swapsRejectedAlreadyLocked++;
+    		}
+            long oldID = first.getLong(DMT.UID);
+            PeerNode pn = (PeerNode) first.getSource();
+            
+            // Reject
+            Message reject = DMT.createFNPSwapRejected(oldID);
+            try {
+                pn.sendAsync(reject, null, 0, null);
+            } catch (NotConnectedException e1) {
+            	if(logMINOR) Logger.minor(this, "Lost connection rejecting SwapRequest (locked) from "+pn);
+            }
+    	}
+    }
     
     /**
      * Handle an incoming SwapRequest

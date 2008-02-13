@@ -189,6 +189,9 @@ public class PacketSender implements Runnable, Ticker {
 		pm.maybeUpdatePeerNodeRoutableConnectionStats(now);
 		long nextActionTime = Long.MAX_VALUE;
 		long oldTempNow = now;
+		// Needs to be run very frequently. Maybe change to a regular once per second schedule job?
+		// Maybe not worth it as it is fairly lightweight.
+		node.lm.removeTooOldQueuedItems();
 		for(int i = 0; i < nodes.length; i++) {
 			PeerNode pn = nodes[i];
 			lastReceivedPacketFromAnyNode =
