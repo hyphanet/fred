@@ -35,9 +35,6 @@ public class NodeCryptoConfig {
 	/** The NodeCrypto, if there is one */
 	private NodeCrypto crypto;
 	
-	/** Whether the NodeCrypto has finished starting */
-	private boolean started;
-	
 	/** Whether we should prevent multiple connections to the same IP (taking into account other
 	 * NodeCrypto's - this will usually be set for opennet but not for darknet). */
 	private boolean oneConnectionPerAddress;
@@ -173,22 +170,19 @@ public class NodeCryptoConfig {
 	synchronized void starting(NodeCrypto crypto2) {
 		if(crypto != null) throw new IllegalStateException("Replacing existing NodeCrypto "+crypto+" with "+crypto2);
 		crypto = crypto2;
-		started = false;
 	}
 	
 	synchronized void started(NodeCrypto crypto2) {
 		if(crypto != null) throw new IllegalStateException("Replacing existing NodeCrypto "+crypto+" with "+crypto2);
-		started = true;
 	}
 	
 	synchronized void maybeStarted(NodeCrypto crypto2) {
-		if(crypto != null)
-			started = true;
+		if(crypto != null) {
+		}
 	}
 	
 	synchronized void stopping(NodeCrypto crypto2) {
 		crypto = null;
-		started = false;
 	}
 	
 	public synchronized int getPort() {

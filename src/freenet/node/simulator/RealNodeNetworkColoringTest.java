@@ -137,11 +137,7 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
 		
         // Now sit back and watch the fireworks!
         int cycleNumber = 0;
-        int lastSwaps = 0;
-        int lastNoSwaps = 0;
-        int failures = 0;
-        int successes = 0;
-		RunningAverage general = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 2000, null);
+        RunningAverage general = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 2000, null);
         RunningAverage aRate = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 500, null);
 		RunningAverage bRate = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 500, null);
 		RunningAverage bridgeRate = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 500, null);
@@ -149,8 +145,6 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
 		HashSet aIds=new HashSet();
 		HashSet bIds=new HashSet();
 		HashSet bridgeIds=new HashSet();
-        int pings = 0;
-		
         while(true) {
             cycleNumber++;
 			

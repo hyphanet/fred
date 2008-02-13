@@ -53,8 +53,6 @@ public class NodeARKInserter implements ClientCallback {
 	private boolean shouldInsert;
 	private Peer[] lastInsertedPeers;
 	private boolean canStart;
-	private long preInsertARKNumber = -1;
-	
 	void start() {
 		if(!enabled) return;
 		canStart = true;
@@ -151,7 +149,6 @@ public class NodeARKInserter implements ClientCallback {
 		Bucket b = new SimpleReadOnlyArrayBucket(buf);
 		
 		long number = crypto.myARKNumber;
-		preInsertARKNumber = number;
 		InsertableClientSSK ark = crypto.myARK;
 		FreenetURI uri = ark.getInsertURI().setKeyType("USK").setSuggestedEdition(number);
 		

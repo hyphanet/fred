@@ -44,9 +44,6 @@ public class Announcer {
 	/** We want to announce to 3 different seednodes. */
 	final int WANT_ANNOUNCEMENTS = 3;
 	private int sentAnnouncements;
-	/** The time when we last sent an announcement. */
-	private long timeSentAnnouncement;
-	private long timeCompletedAnnouncement;
 	private long startTime;
 	private long timeAddedSeeds;
 	static final long MIN_ADDED_SEEDS_INTERVAL = 60*1000;
@@ -346,7 +343,6 @@ public class Announcer {
 				addAnnouncedIPs(addrs);
 				sentAnnouncements++;
 				runningAnnouncements++;
-				timeSentAnnouncement = now;
 				announcedToIdentities.add(new ByteArrayWrapper(seed.getIdentity()));
 				sendAnnouncement(seed);
 			}
@@ -413,7 +409,6 @@ public class Announcer {
 				synchronized(Announcer.this) {
 					runningAnnouncements--;
 					Logger.error(this, "Announcement to "+seed.userToString()+" completed, now running "+runningAnnouncements+" announcements");
-					timeCompletedAnnouncement = now;
 					if(runningAnnouncements == 0) {
 						startTime = System.currentTimeMillis() + COOLING_OFF_PERIOD;
 						sentAnnouncements = 0;

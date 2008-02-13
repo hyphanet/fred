@@ -15,7 +15,6 @@
  */
 package freenet.support;
 
-import java.net.URI;
 import freenet.utils.UTFUtil;
 import junit.framework.TestCase;
 
@@ -56,8 +55,8 @@ public class URIPreEncoderTest extends TestCase {
 	 * not safe chars into safe chars.
 	 */
 	public void testEncodeURI() {
-		String toEncode = prtblAscii+stressedUTF_8Chars;
-		URI encoded;
+		//String toEncode = prtblAscii+stressedUTF_8Chars;
+		//URI encoded;
 		//try {
 		//	encoded = URIPreEncoder.encodeURI(toEncode);		this method will throw a not expected exception because '%' is included as a valid char
 		//	assertTrue(containsOnlyValidChars(encoded.toString()));

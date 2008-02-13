@@ -7,11 +7,8 @@ import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
 
 public class RevocationKeyFoundUserAlert extends AbstractUserAlert {
-	private final String msg;
-	
 	public RevocationKeyFoundUserAlert(String msg){
 		super(false, L10n.getString("RevocationKeyFoundUserAlert.title"), L10n.getString("RevocationKeyFoundUserAlert.text", "message", msg), new HTMLNode("#", L10n.getString("RevocationKeyFoundUserAlert.text", "message", msg)), UserAlert.CRITICAL_ERROR, true, null, false, null);
-		this.msg=msg;
 	}
 	
 	public void isValid(boolean b){

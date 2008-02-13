@@ -254,7 +254,6 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	private HashMap /*<FredIPDetectorPlugin,DetectorRunner>*/ runners = new HashMap();
 	private boolean lastDetectAttemptFailed;
 	private long lastDetectAttemptEndedTime;
-	private long firstTimeMaybeFakePeers;
 	private long firstTimeUrgent;
 	
 	/**
