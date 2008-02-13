@@ -472,10 +472,11 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	public Toadlet findToadlet(URI uri) {
 		Iterator i = toadlets.iterator();
+		String path = uri.getPath();
 		while(i.hasNext()) {
 			ToadletElement te = (ToadletElement) i.next();
 			
-			if(uri.getPath().startsWith(te.prefix))
+			if(path.startsWith(te.prefix))
 				return te.t;
 		}
 		return null;
