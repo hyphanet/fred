@@ -30,14 +30,6 @@ public class InvalidAddressOverrideUserAlert extends AbstractUserAlert {
 		return L10n.getString("InvalidAddressOverrideUserAlert."+key);
 	}
 
-	private String l10n(String key, String pattern, String value) {
-		return L10n.getString("InvalidAddressOverrideUserAlert."+key, pattern, value);
-	}
-
-	private String l10n(String key, String[] patterns, String[] values) {
-		return L10n.getString("InvalidAddressOverrideUserAlert."+key, patterns, values);
-	}
-
 	public HTMLNode getHTMLText() {
 		SubConfig sc = node.config.get("node");
 		Option o = sc.getOption("ipAddressOverride");

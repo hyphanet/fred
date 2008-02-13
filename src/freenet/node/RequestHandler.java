@@ -333,12 +333,7 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
 		}
 	}
 
-    private PeerNode[] sourceAsArray() {
-    	if(source == null) return null;
-    	else return new PeerNode[] { source };
-	}
-
-	/**
+    /**
      * Return data from the datastore.
      * @param block The block we found in the datastore.
      * @throws NotConnectedException If we lose the connected to the request source.

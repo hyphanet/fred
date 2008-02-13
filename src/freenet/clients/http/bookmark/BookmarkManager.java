@@ -10,8 +10,6 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
-
 import freenet.client.async.USKCallback;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
@@ -216,26 +214,6 @@ public class BookmarkManager {
 			storeBookmarks();
 	}
 
-	private BookmarkCategory makeParents(String path) {
-		boolean isInPath = false;
-		synchronized(bookmarks) {
-			isInPath = bookmarks.containsKey(path);
-		}
-		if(isInPath)
-			return getCategoryByPath(path);
-		else {
-
-			int index = path.substring(0, path.length() - 1).lastIndexOf("/");
-			String name = path.substring(index + 1, path.length() - 1);
-
-			BookmarkCategory cat = new BookmarkCategory(name);
-			makeParents(parentPath(path));
-			addBookmark(parentPath(path), cat);
-
-			return cat;
-		}
-	}
-
 	private void putPaths(String path, Bookmark b) {
 		synchronized(bookmarks) {
 			bookmarks.put(path, b);
@@ -347,42 +325,6 @@ public class BookmarkManager {
 			storeBookmarks();
 	}
 
-	/* FIXME: remove that kludge when 1076 is out */
-	private void _innerReadTrunkBookmarks(String prefix, BookmarkCategory category, SimpleFieldSet sfs) {
-		boolean hasBeenParsedWithoutAnyProblem = true;
-		boolean isRoot = ("".equals(prefix) && MAIN_CATEGORY.equals(category));
-		synchronized(bookmarks) {
-			if(!isRoot)
-				putPaths(prefix + category.name + '/', category);
-
-			String[] categories = sfs.namesOfDirectSubsets();
-			for(int i = 0; i < categories.length; i++) {
-				SimpleFieldSet subset = sfs.subset(categories[i]);
-				BookmarkCategory currentCategory = new BookmarkCategory(categories[i]);
-				String name = prefix + category.name + '/';
-				category.addBookmark(currentCategory);
-				_innerReadTrunkBookmarks((isRoot ? "/" : name), currentCategory, subset);
-			}
-
-			Iterator it = sfs.toplevelKeyIterator();
-			while(it.hasNext()) {
-				String key = (String) it.next();
-				String line = sfs.get(key);
-				try {
-					BookmarkItem item = new BookmarkItem(line, node.alerts);
-					String name = (isRoot ? "" : prefix + category.name) + '/' + item.name;
-					putPaths(name, item);
-					category.addBookmark(item);
-					subscribeToUSK(item);
-				} catch(MalformedURLException e) {
-					Logger.error(this, "Error while adding one of the bookmarks :" + e.getMessage(), e);
-					hasBeenParsedWithoutAnyProblem = false;
-				}
-			}
-		}
-		if(hasBeenParsedWithoutAnyProblem)
-			storeBookmarks();
-	}
 
 	public SimpleFieldSet toSimpleFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
