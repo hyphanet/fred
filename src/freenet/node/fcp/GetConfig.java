@@ -27,7 +27,7 @@ public class GetConfig extends FCPMessage {
 		withForceWriteFlag = Fields.stringToBool(fs.get("WithForceWriteFlag"), false);
 		withShortDescription = Fields.stringToBool(fs.get("WithShortDescription"), false);
 		withLongDescription = Fields.stringToBool(fs.get("WithLongDescription"), false);
-		withDataTypes = Fields.stringToBool(fs.get("withDataTypes"), false);
+		withDataTypes = Fields.stringToBool(fs.get("WithDataTypes"), false);
 	}
 	
 	public SimpleFieldSet getFieldSet() {
