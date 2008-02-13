@@ -849,6 +849,7 @@ public class LocationManager {
                     // receiver thread.
                     randomPeer.sendAsync(m, new MyCallback(DMT.createFNPSwapRejected(oldID), pn, item), 0, null);
                 } catch (NotConnectedException e) {
+                	if(logMINOR) Logger.minor(this, "Not connected");
                     // Try a different node
                     continue;
                 }
@@ -873,7 +874,7 @@ public class LocationManager {
     			// Locked.
     			if(incomingMessageQueue.size() > MAX_INCOMING_QUEUE_LENGTH) {
     				// Reject anyway.
-    				runNow = false;
+    				reject = true;
     				swapsRejectedAlreadyLocked++;
     				if(logMINOR) Logger.minor(this, "Incoming queue length too large: "+incomingMessageQueue.size()+" rejecting "+msg);
     			} else {
