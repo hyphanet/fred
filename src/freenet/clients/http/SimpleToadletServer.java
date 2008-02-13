@@ -478,6 +478,10 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			
 			if(path.startsWith(te.prefix))
 				return te.t;
+			if(te.prefix.length() > 0 && te.prefix.charAt(te.prefix.length()-1) == '/') {
+				if(path.equals(te.prefix.substring(0, te.prefix.length()-1)))
+					return te.t;
+			}
 		}
 		return null;
 	}
