@@ -515,8 +515,21 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			htl = rc.source.decrementHTL(htl);
 		short ohtl = m.getShort(DMT.HTL);
 		if(ohtl < htl) htl = ohtl;
-		// Try routing to the next node
-		forward(rc.msg, id, rc.source, htl, rc.msg.getDouble(DMT.TARGET_LOCATION), rc);
+		if(htl == 0) {
+			// Equivalent to DNF.
+			// Relay.
+			if(rc.source == null) {
+				try {
+					rc.source.sendAsync(DMT.createFNPRoutedRejected(id, (short)0), null, 0, null);
+				} catch (NotConnectedException e) {
+					// Ouch.
+					Logger.error(this, "Unable to relay probe DNF: peer disconnected: "+rc.source);
+				}
+			}
+		} else {
+			// Try routing to the next node
+			forward(rc.msg, id, rc.source, htl, rc.msg.getDouble(DMT.TARGET_LOCATION), rc);
+		}
 		return true;
 	}
 
