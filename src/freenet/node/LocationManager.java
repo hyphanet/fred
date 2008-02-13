@@ -629,6 +629,7 @@ public class LocationManager {
         // Otherwise, stay locked, and start the next one from the queue.
         
         nextMessage = (Message) incomingMessageQueue.removeFirst();
+        lockedTime = System.currentTimeMillis();
         
     	}
     	
@@ -900,6 +901,7 @@ public class LocationManager {
     		if(!locked) {
     			locked = true;
     			runNow = true;
+    	        lockedTime = System.currentTimeMillis();
     		} else {
     			// Locked.
     			if((!node.enableSwapQueueing) || 
