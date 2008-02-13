@@ -79,12 +79,7 @@ public class RealNodeSecretPingTest {
 		
         // Now sit back and watch the fireworks!
         int cycleNumber = 0;
-        int lastSwaps = 0;
-        int lastNoSwaps = 0;
-        int failures = 0;
-        int successes = 0;
         RunningAverage avg2 = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 100, null);
-        int pings = 0;
         while(true) {
             cycleNumber++;
 			

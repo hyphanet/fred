@@ -134,7 +134,6 @@ public class PNGFilter implements ContentDataFilter {
 			boolean finished = false;
 			boolean hasSeenIHDR = false;
 			boolean hasSeenIEND = false;
-			boolean hasSeenPLTE = false;
 			boolean hasSeenIDAT = false;
 			String lastChunkType = "";
 			
@@ -225,7 +224,6 @@ public class PNGFilter implements ContentDataFilter {
 					if(hasSeenIDAT)
 						throw new IOException("PLTE must be before IDAT");
 					validChunkType = true;
-					hasSeenPLTE = true;
 				}
 				
 				if(!skip && "IDAT".equalsIgnoreCase(chunkTypeString)) {
