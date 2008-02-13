@@ -42,7 +42,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     static final boolean ENABLE_SWAPPING = true;
     static final boolean ENABLE_ULPRS = false;
     static final boolean ENABLE_PER_NODE_FAILURE_TABLES = false;
-    static final boolean ENABLE_SWAP_QUEUEING = false;
+    static final boolean ENABLE_SWAP_QUEUEING = true;
     
     static final int TARGET_SUCCESSES = 20;
     //static final int NUMBER_OF_NODES = 50;
