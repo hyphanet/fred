@@ -641,18 +641,18 @@ public class NetworkIDManager implements Runnable, Comparator {
 		}
 		
 		synchronized (transitionLock) {
-		PeerNetworkGroup ourgroup=(PeerNetworkGroup)newNetworkGroups.get(0);
-		ourgroup.ourGroup=true;
-		ourNetworkId=ourgroup.networkid;
-		
-		Logger.error(this, "I am in network: "+ourNetworkId+", and have divided my "+all.size()+" peers into "+newNetworkGroups.size()+" network groups");
-		Logger.error(this, "largestGroup="+ourgroup.members.size());
-		Logger.error(this, "bestFirst="+cheat_stats_general_bestOther.currentValue());
-		Logger.error(this, "bestGeneralFactor="+cheat_stats_findBestSetwisePingAverage_best_general.currentValue());
-		
-		networkGroups=newNetworkGroups;
-		
-		inTransition=false;
+			PeerNetworkGroup ourgroup=(PeerNetworkGroup)newNetworkGroups.get(0);
+			ourgroup.ourGroup=true;
+			ourNetworkId=ourgroup.networkid;
+			
+			Logger.error(this, "I am in network: "+ourNetworkId+", and have divided my "+all.size()+" peers into "+newNetworkGroups.size()+" network groups");
+			Logger.error(this, "largestGroup="+ourgroup.members.size());
+			Logger.error(this, "bestFirst="+cheat_stats_general_bestOther.currentValue());
+			Logger.error(this, "bestGeneralFactor="+cheat_stats_findBestSetwisePingAverage_best_general.currentValue());
+			
+			networkGroups=newNetworkGroups;
+			
+			inTransition=false;
 		}
 	}
 	
