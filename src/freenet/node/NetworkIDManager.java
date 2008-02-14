@@ -632,7 +632,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 			PeerNetworkGroup newGroup=(PeerNetworkGroup)i.next();
 			newGroup.setForbiddenIds(takenNetworkIds);
 			
-			int id=newGroup.getConsensus();
+			int id=newGroup.getConsensus(true);
 			if (id==NO_NETWORKID)
 				id=node.random.nextInt();
 			newGroup.assignNetworkId(id);
@@ -821,12 +821,15 @@ public class NetworkIDManager implements Runnable, Comparator {
 					haveFoundIt=true;
 					//should be the same: png.setForbiddenIds(nowTakenIds);
 					int oldId=png.networkid;
-					int newId=png.getConsensus();
+					int newId=png.getConsensus(true);
+					/*
 					if (png.ourGroup) {
 						//Even if the consensus changes, we'll hold onto our group network id label.
 						//Important for stability and future routing.
 						return;
-					} else if (oldId==newId) {
+					} else
+					 */
+					if (oldId==newId) {
 						//Maybe they agree with us, maybe not; but it doesn't change our view of the group.
 						return;
 					} else {
@@ -847,7 +850,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 					int oldId=png.networkid;
 					int newId=oldId;
 					if (nowTakenIds.contains(new Integer(oldId))) {
-						newId=png.getConsensus();
+						newId=png.getConsensus(true);
 						png.assignNetworkId(newId);
 					}
 					nowTakenIds.add(new Integer(newId));
@@ -862,21 +865,30 @@ public class NetworkIDManager implements Runnable, Comparator {
 	/**
 	 A list of peers that we have assigned a network id to, and some logic as to why.
 	 */
-	public static class PeerNetworkGroup {
+	public class PeerNetworkGroup {
 		List members;
 		int networkid=NO_NETWORKID;
 		boolean ourGroup;
 		HashSet forbiddenIds;
 		long lastAssign;
+		///True if the last call to getConsensus() found only one network id for all members of this group
+		boolean unanimous;
+		
 		/*
 		 Returns the group consensus. If no peer in this group has advertised an id, then the last-assigned id is returned.
+		 As a side effect, unanimous is set if there is only one network id for all peers in this group.
+		 
+		 @param probabilistic if true, may return any id from the set with increased probability towards the greater consensus.
 		 @todo should be explict or weighted towards most-successful (not neccesarily just 'consensus')
 		 */
-		int getConsensus() {
+		int getConsensus(boolean probabilistic) {
 			HashMap h=new HashMap();
 			Integer lastId=new Integer(networkid);
 			synchronized (this) {
 				Iterator i=members.iterator();
+				int totalWitnesses=0;
+				int maxId=networkid;
+				int maxCount=0;
 				while (i.hasNext()) {
 					PeerNode p=(PeerNode)i.next();
 					Integer id=new Integer(p.providedNetworkID);
@@ -885,30 +897,45 @@ public class NetworkIDManager implements Runnable, Comparator {
 						continue;
 					if (id.intValue()==NO_NETWORKID)
 						continue;
-					Integer count=(Integer)h.get(id);
-					if (count==null)
-						count=new Integer(1);
-					else
-						count=new Integer(count.intValue()+1);
-					h.put(id, count);
+					totalWitnesses++;
+					int count=1;
+					Integer prev=(Integer)h.get(id);
+					if (prev!=null)
+						count=prev.intValue()+1;
+					h.put(id, new Integer(count));
+					if (count>maxCount) {
+						maxCount=count;
+						maxId=id.intValue();
+					}
 					lastId=id;
 				}
 				//Should we include ourselves in the count? Probably not, as we generally determine our network id on consensus.
-				//If there is only one option, it is most likely NO_NETWORKID anyway; or everyone agrees?!
+				//If there is only one option everyone agrees (NO_NETWORKID is stripped out)
+				unanimous=(h.size()==1);
 				if (h.size()<=1)
 					return lastId.intValue();
-				int maxId=networkid;
-				int maxCount=0;
+				if (!probabilistic)
+					return maxId;
+				/*
+				 To choose a prob. network id, choose a random number between 0.0-1.0 and pick a network id such that if
+				 lined up they occupy as much of the number space (0.0-1.0) as there are peers in the group to that id.
+				 */
+				double incrementPerWitness=1.0/totalWitnesses;
+				double winningTarget=node.random.nextDouble();
+				if (logMINOR) Logger.minor(this, "winningTarget="+winningTarget+", totalWitnesses="+totalWitnesses+", inc="+incrementPerWitness);
+				double sum=0.0;
 				Iterator entries=h.entrySet().iterator();
 				while (entries.hasNext()) {
 					Map.Entry e=(Map.Entry)entries.next();
 					int id=((Integer)e.getKey()).intValue();
 					int count=((Integer)e.getValue()).intValue();
-					if (count>maxCount) {
-						maxCount=count;
-						maxId=id;
+					sum+=count*incrementPerWitness;
+					if (logMINOR) Logger.minor(this, "network "+id+" "+count+" peers, "+sum);
+					if (sum>=winningTarget) {
+						return id;
 					}
 				}
+				Logger.error(this, "logic error; winningTarget="+winningTarget+", sum@end="+sum+", count="+h.size()); 
 				return maxId;
 			}
 		}
