@@ -979,7 +979,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					break;
 			}
 		}
-		if(x > 1024) {
+		if(x > 1024 || !node.enablePacketCoalescing) {
 			// If there is a packet's worth to send, wake up the packetsender.
 			node.ps.wakeUp();
 		}
