@@ -1636,4 +1636,13 @@ public class PeerManager {
 		}
 		return count;
 	}
+	
+	public PeerNode getByIdentity(byte[] identity) {
+		PeerNode[] peers = myPeers;
+		for(int i=0;i<peers.length;i++) {
+			if(Arrays.equals(peers[i].getIdentity(), identity))
+				return peers[i];
+		}
+		return null;
+	}
 }

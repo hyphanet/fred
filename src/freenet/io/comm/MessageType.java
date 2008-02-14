@@ -22,6 +22,7 @@ package freenet.io.comm;
 import java.util.*;
 
 import freenet.support.Logger;
+import freenet.support.ShortBuffer;
 
 public class MessageType {
 
@@ -73,6 +74,7 @@ public class MessageType {
         addField(DMT.UID, Long.class);
         addField(DMT.TARGET_LOCATION, Double.class);
         addField(DMT.HTL, Short.class);
+        addField(DMT.NODE_IDENTITY, ShortBuffer.class);
 	}
 
 	public boolean checkType(String fieldName, Object fieldValue) {

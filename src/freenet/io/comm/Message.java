@@ -26,6 +26,7 @@ import java.util.*;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.Serializer;
+import freenet.support.ShortBuffer;
 
 /**
  * A Message which can be read from and written to a DatagramPacket
@@ -284,11 +285,13 @@ public class Message {
 
     /**
      * Set fields for a routed-to-a-specific-node message.
+     * @param nodeIdentity 
      */
-    public void setRoutedToNodeFields(long uid, double targetLocation, short htl) {
+    public void setRoutedToNodeFields(long uid, double targetLocation, short htl, byte[] nodeIdentity) {
         set(DMT.UID, uid);
         set(DMT.TARGET_LOCATION, targetLocation);
         set(DMT.HTL, htl);
+        set(DMT.NODE_IDENTITY, new ShortBuffer(nodeIdentity));
     }
 
 	public int receivedByteCount() {

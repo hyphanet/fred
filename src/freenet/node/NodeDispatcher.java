@@ -465,14 +465,16 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		final HashSet notIgnored;
 		Message msg;
 		short lastHtl;
+		final byte[] identity;
 
-		RoutedContext(Message msg, PeerNode source) {
+		RoutedContext(Message msg, PeerNode source, byte[] identity) {
 			createdTime = accessTime = System.currentTimeMillis();
 			this.source = source;
 			routedTo = new HashSet();
 			notIgnored = new HashSet();
 			this.msg = msg;
 			lastHtl = msg.getShort(DMT.HTL);
+			this.identity = identity;
 		}
 
 		void addSent(PeerNode n) {
@@ -527,7 +529,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 		} else {
 			// Try routing to the next node
-			forward(rc.msg, id, rc.source, htl, rc.msg.getDouble(DMT.TARGET_LOCATION), rc);
+			forward(rc.msg, id, rc.source, htl, rc.msg.getDouble(DMT.TARGET_LOCATION), rc, rc.identity);
 		}
 		return true;
 	}
@@ -546,6 +548,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		long id = m.getLong(DMT.UID);
 		Long lid = new Long(id);
 		short htl = m.getShort(DMT.HTL);
+		byte[] identity = ((ShortBuffer) m.getObject(DMT.NODE_IDENTITY)).getData();
 		if(source != null) htl = source.decrementHTL(htl);
 		RoutedContext ctx;
 		ctx = (RoutedContext)routedContexts.get(lid);
@@ -557,7 +560,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			return true;
 		}
-		ctx = new RoutedContext(m, source);
+		ctx = new RoutedContext(m, source, identity);
 		synchronized (routedContexts) {
 			routedContexts.put(lid, ctx);
 		}
@@ -579,7 +582,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			return true;
 		} else {
-			return forward(m, id, source, htl, target, ctx);
+			return forward(m, id, source, htl, target, ctx, identity);
 		}
 	}
 
@@ -602,12 +605,18 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		return true;
 	}
 
-	private boolean forward(Message m, long id, PeerNode pn, short htl, double target, RoutedContext ctx) {
+	private boolean forward(Message m, long id, PeerNode pn, short htl, double target, RoutedContext ctx, byte[] targetIdentity) {
 		if(logMINOR) Logger.minor(this, "Should forward");
 		// Forward
 		m = preForward(m, htl);
 		while(true) {
-			PeerNode next = node.peers.closerPeer(pn, ctx.routedTo, ctx.notIgnored, target, true, node.isAdvancedModeEnabled(), -1, null, null);
+			PeerNode next = node.peers.getByIdentity(targetIdentity);
+			if(next != null && !next.isConnected()) {
+				Logger.error(this, "Found target but disconnected!: "+next);
+				next = null;
+			}
+			if(next == null)
+			next = node.peers.closerPeer(pn, ctx.routedTo, ctx.notIgnored, target, true, node.isAdvancedModeEnabled(), -1, null, null);
 			if(logMINOR) Logger.minor(this, "Next: "+next+" message: "+m);
 			if(next != null) {
 				// next is connected, or at least has been => next.getPeer() CANNOT be null.

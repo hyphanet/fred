@@ -112,6 +112,15 @@ public class RealNodeRoutingTest extends RealNodeTest {
             System.err.println("Swaps failed:" +LocationManager.noSwaps);
             System.err.println("Swaps succeeded:" +LocationManager.swaps);
 
+            double totalSwapInterval = 0.0;
+            double totalSwapTime = 0.0;
+            for(int i=0;i<nodes.length;i++) {
+            	totalSwapInterval += nodes[i].lm.getSendSwapInterval();
+            	totalSwapTime += nodes[i].lm.getAverageSwapTime();
+            }
+            System.err.println("Average swap time: "+(totalSwapTime / nodes.length));
+            System.err.println("Average swap sender interval: "+(totalSwapInterval / nodes.length));
+            
             waitForAllConnected(nodes);
             
             lastSwaps = newSwaps;
@@ -128,7 +137,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
                     randomNode2 = nodes[random.nextInt(nodes.length)];
                 double loc2 = randomNode2.getLocation();
                Logger.normal(RealNodeRoutingTest.class, "Pinging "+randomNode2.getDarknetPortNumber()+" @ "+loc2+" from "+randomNode.getDarknetPortNumber()+" @ "+randomNode.getLocation());
-                int hopsTaken = randomNode.routedPing(loc2);
+                int hopsTaken = randomNode.routedPing(loc2, randomNode2.getDarknetIdentity());
                 pings++;
                 if(hopsTaken < 0) {
                     failures++;

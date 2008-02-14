@@ -355,7 +355,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * topology can be reconstructed. */
 	public long swapIdentifier;
 	private String myName;
-	final LocationManager lm;
+	public final LocationManager lm;
 	/** My peers */
 	public final PeerManager peers;
 	/** Directory to put node, peers, etc into */
@@ -1852,10 +1852,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * @return The number of hops it took to find the node, if it was found.
 	 * Otherwise -1.
 	 */
-	public int routedPing(double loc2) {
+	public int routedPing(double loc2, byte[] nodeIdentity) {
 		long uid = random.nextLong();
 		int initialX = random.nextInt();
-		Message m = DMT.createFNPRoutedPing(uid, loc2, maxHTL, initialX);
+		Message m = DMT.createFNPRoutedPing(uid, loc2, maxHTL, initialX, nodeIdentity);
 		Logger.normal(this, "Message: "+m);
 		
 		dispatcher.handleRouted(m, null);

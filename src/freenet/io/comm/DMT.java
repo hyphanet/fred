@@ -129,6 +129,7 @@ public class DMT {
 	public static final String OFFER_AUTHENTICATOR = "offerAuthenticator";
 	public static final String DAWN_HTL = "dawnHtl";
 	public static final String SECRET = "secret";
+	public static final String NODE_IDENTITY = "nodeIdentity";
 	
 	/** Very urgent */
 	public static final short PRIORITY_NOW=-2;
@@ -1156,11 +1157,12 @@ public class DMT {
 	public static final MessageType FNPRoutedPing = new MessageType("FNPRoutedPing", PRIORITY_LOW) {{
 		addRoutedToNodeMessageFields();
 		addField(COUNTER, Integer.class);
+		
 	}};
 	
-	public static final Message createFNPRoutedPing(long uid, double targetLocation, short htl, int counter) {
+	public static final Message createFNPRoutedPing(long uid, double targetLocation, short htl, int counter, byte[] nodeIdentity) {
 		Message msg = new Message(FNPRoutedPing);
-		msg.setRoutedToNodeFields(uid, targetLocation, htl);
+		msg.setRoutedToNodeFields(uid, targetLocation, htl, nodeIdentity);
 		msg.set(COUNTER, counter);
 		return msg;
 	}
@@ -1184,9 +1186,9 @@ public class DMT {
 	}};
 	
 	
-	public static final Message createFNPSecretPing(long uid, double targetLocation, short htl, short dawnHtl, int counter) {
+	public static final Message createFNPSecretPing(long uid, double targetLocation, short htl, short dawnHtl, int counter, byte[] nodeIdentity) {
 		Message msg = new Message(FNPSecretPing);
-		msg.setRoutedToNodeFields(uid, targetLocation, htl);
+		msg.setRoutedToNodeFields(uid, targetLocation, htl, nodeIdentity);
 		msg.set(COUNTER, counter);
 		msg.set(DAWN_HTL, dawnHtl);
 		return msg;

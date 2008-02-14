@@ -16,6 +16,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 
 import freenet.support.Logger;
+import freenet.support.ShortBuffer;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TrivialRunningAverage;
@@ -131,6 +132,7 @@ public class NetworkIDManager implements Runnable {
 			if (logMINOR) Logger.minor(this, "recently complete/loop: "+uid);
 			source.sendAsync(DMT.createFNPRejectedLoop(uid), null, 0, null);
 		} else {
+			byte[] nodeIdentity = ((ShortBuffer) m.getObject(DMT.NODE_IDENTITY)).getData();
 			StoredSecret match;
 			//Yes, I know... it looks really weird sync.ing on a separate map...
 			synchronized (secretsByPeer) {
@@ -183,7 +185,7 @@ public class NetworkIDManager implements Runnable {
 					counter++;
 					routedTo.add(next);
 					try {
-						next.sendAsync(DMT.createFNPSecretPing(uid, target, htl, dawnHtl, counter), null, 0, null);
+						next.sendAsync(DMT.createFNPSecretPing(uid, target, htl, dawnHtl, counter, nodeIdentity), null, 0, null);
 					} catch (NotConnectedException e) {
 						Logger.normal(this, next+" disconnected before secret-ping-forward");
 						continue;
@@ -510,7 +512,7 @@ public class NetworkIDManager implements Runnable {
 			}
 			
 			//next... send a secretping through next to target
-			next.sendSync(DMT.createFNPSecretPing(uid, target.getLocation(), htl, dawn, 0), null);
+			next.sendSync(DMT.createFNPSecretPing(uid, target.getLocation(), htl, dawn, 0, target.identity), null);
 			
 			//wait for a response; SecretPong, RejectLoop, or timeout
 			MessageFilter mfPong = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(SECRETPONG_TIMEOUT).setType(DMT.FNPSecretPong);

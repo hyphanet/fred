@@ -119,7 +119,7 @@ public class RealNodeSecretPingTest {
 				}
 				
 				//Send the request for the secret through the 'pathway' node.
-				pathway.sendSync(DMT.createFNPSecretPing(uid, verify.getLocation(), PING_HTL, DAWN_HTL, 0), null);
+				pathway.sendSync(DMT.createFNPSecretPing(uid, verify.getLocation(), PING_HTL, DAWN_HTL, 0, verify.getIdentity()), null);
 				
 				long result=getSecretPingResponse(source, pathway, uid);
 				if (result!=secret) {
