@@ -22,8 +22,6 @@ class FailureTableEntry implements TimedOutNodesList {
 	long receivedTime;
 	/** Time we last received a DNF after sending a request for a key */
 	long sentTime;
-	/** Time at which we can send a request again */
-	long timeoutTime;
 	/** WeakReference's to PeerNode's who have requested the key */
 	WeakReference[] requestorNodes;
 	/** Times at which they requested it */
@@ -81,11 +79,6 @@ class FailureTableEntry implements TimedOutNodesList {
 		if(logMINOR)
 			Logger.minor(this, "onFailure("+htl2+",requestors="+StringArray.toString(requestors)+",requestedFrom="+StringArray.toString(requestedFrom)+",timeout="+timeout);
 		synchronized(this) {
-			long newTimeoutTime = now + timeout;
-			if(now > timeoutTime /* has expired */ && newTimeoutTime > timeoutTime) {
-				htl = htl2;
-				timeoutTime = newTimeoutTime;
-			}
 			if(requestors != null) {
 				for(int i=0;i<requestors.length;i++)
 					addRequestor(requestors[i], now);
@@ -418,7 +411,6 @@ class FailureTableEntry implements TimedOutNodesList {
 	}
 
 	public synchronized boolean isEmpty(long now) {
-		if(timeoutTime > now) return false;
 		if(requestedNodes.length > 0) return false;
 		if(requestorNodes.length > 0) return false;
 		return true;
