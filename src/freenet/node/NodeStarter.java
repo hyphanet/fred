@@ -341,7 +341,7 @@ public class NodeStarter implements WrapperListener
 			int dropProb, RandomSource random, Executor executor, int threadLimit, 
 			long storeSize, boolean ramStore, boolean enableSwapping, boolean enableARKs, 
 			boolean enableULPRs, boolean enablePerNodeFailureTables, 
-			boolean enableSwapQueueing) throws NodeInitException {
+			boolean enableSwapQueueing, boolean enablePacketCoalescing) throws NodeInitException {
 		
 		File baseDir = new File(testName);
 		File portDir = new File(baseDir, Integer.toString(port));
@@ -379,6 +379,7 @@ public class NodeStarter implements WrapperListener
 		configFS.put("node.enableARKs", enableARKs);
 		configFS.put("node.enableULPRDataPropagation", enableULPRs);
 		configFS.put("node.enablePerNodeFailureTables", enablePerNodeFailureTables);
+		configFS.put("node.enablePacketCoalescing", enablePacketCoalescing);
 		
 		PersistentConfig config = new PersistentConfig(configFS);
 		

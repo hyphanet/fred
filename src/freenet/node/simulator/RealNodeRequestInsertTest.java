@@ -34,7 +34,7 @@ import freenet.support.math.SimpleRunningAverage;
  */
 public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 
-    static final int NUMBER_OF_NODES = 50;
+    static final int NUMBER_OF_NODES = 25;
     static final int DEGREE = 5;
     static final short MAX_HTL = (short)10;
     static final boolean START_WITH_IDEAL_LOCATIONS = false;
@@ -43,6 +43,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
     static final boolean ENABLE_ULPRS = false;
     static final boolean ENABLE_PER_NODE_FAILURE_TABLES = false;
     static final boolean ENABLE_SWAP_QUEUEING = true;
+    static final boolean ENABLE_PACKET_COALESCING = false;
     
     static final int TARGET_SUCCESSES = 20;
     //static final int NUMBER_OF_NODES = 50;
@@ -58,7 +59,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         wd.mkdir();
         //NOTE: globalTestInit returns in ignored random source
         //NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNode:minor,freenet.node.Insert:MINOR,freenet.node.Request:MINOR,freenet.node.Node:MINOR");
-        NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.Location:MINOR,freenet.io.comm:MINOR,freenet.node.NodeDispatcher:MINOR");
+        NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.Location:MINOR,freenet.io.comm:MINOR,freenet.node.NodeDispatcher:MINOR,freenet.node.simulator:MINOR,freenet.node.PeerManager:MINOR");
         //NodeStarter.globalTestInit(name, false, Logger.ERROR, "");
         System.out.println("Insert/retrieve test");
         System.out.println();
@@ -69,7 +70,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] = 
-            	NodeStarter.createTestNode(5001+i, name, false, true, true, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING);
+            	NodeStarter.createTestNode(5001+i, name, false, true, true, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         
