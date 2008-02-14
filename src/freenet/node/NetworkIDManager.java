@@ -640,6 +640,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 			if (logMINOR) Logger.minor(this, "net "+id+" has "+newGroup.members.size()+" peers");
 		}
 		
+		synchronized (transitionLock) {
 		PeerNetworkGroup ourgroup=(PeerNetworkGroup)newNetworkGroups.get(0);
 		ourgroup.ourGroup=true;
 		ourNetworkId=ourgroup.networkid;
@@ -652,6 +653,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 		networkGroups=newNetworkGroups;
 		
 		inTransition=false;
+		}
 	}
 	
 	// Returns the 'best-connected' peer in the given set, or null if the set is empty.
