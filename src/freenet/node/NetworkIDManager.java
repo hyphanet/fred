@@ -611,11 +611,11 @@ public class NetworkIDManager implements Runnable {
 			if (todo.isEmpty()) {
 				//sad... it looks like this guy gets a group to himself
 				members=new ArrayList();
+				members.add(mostConnected);
 			} else {
 				//NB: as a side effect, this function will automatically remove the members from 'todo'.
 				members=xferConnectedPeerSetFor(mostConnected, todo);
 			}
-			members.add(mostConnected);
 			newGroup.setMembers(members);
 			newGroup.setForbiddenIds(takenNetworkIds);
 			
@@ -677,7 +677,8 @@ public class NetworkIDManager implements Runnable {
 	
 	/*
 	 * Returns the set of peers which appear to be reasonably connected to 'thisPeer' and as a
-	 * side effect removes those peers from the set passed in.
+	 * side effect removes those peers from the set passed in. The set includes at-least the
+	 * given peer (will never return an empty list).
 	 */
 	private List xferConnectedPeerSetFor(PeerNode thisPeer, HashSet fromOthers) {
 		//FIXME: This algorithm needs to be thought about! Maybe some hard thresholds.
