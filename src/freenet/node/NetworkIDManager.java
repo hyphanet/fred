@@ -3,6 +3,8 @@ package freenet.node;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -27,7 +29,7 @@ import freenet.support.math.TrivialRunningAverage;
  * @author robert
  * @created 2008-02-06
  */
-public class NetworkIDManager implements Runnable {
+public class NetworkIDManager implements Runnable, Comparator {
 	public static boolean disableSecretPings=true;
 	public static boolean disableSecretPinger=true;
 	public static boolean disableSwapSegregation=true;
@@ -249,7 +251,7 @@ public class NetworkIDManager implements Runnable {
 		synchronized (secretsByPeer) {
 			StoredSecret prev=(StoredSecret)secretsByPeer.get(s.peer);
 			if (prev!=null) {
-				Logger.normal(this, "Removing on replacement: "+s);
+				if (logMINOR) Logger.minor(this, "Removing on replacement: "+s);
 				removeSecret(prev);
 			}
 			//Need to remember by peer (so we can remove it on disconnect)
@@ -590,11 +592,12 @@ public class NetworkIDManager implements Runnable {
 		List newNetworkGroups=new ArrayList();
 		HashSet all=getAllConnectedPeers();
 		HashSet todo=(HashSet)all.clone();
-		HashSet takenNetworkIds=new HashSet();
 		
 		synchronized (transitionLock) {
 			inTransition=true;
 		}
+		
+		if (logMINOR) Logger.minor(this, "doNetworkIDReckoning for "+all.size()+" peers");
 		
 		if (todo.isEmpty())
 			return;
@@ -617,6 +620,16 @@ public class NetworkIDManager implements Runnable {
 				members=xferConnectedPeerSetFor(mostConnected, todo);
 			}
 			newGroup.setMembers(members);
+		}
+		
+		//The groups are broken up, now sort by priority & assign them a network id.
+		Collections.sort(newNetworkGroups, this);
+		
+		HashSet takenNetworkIds=new HashSet();
+		Iterator i=newNetworkGroups.iterator();
+		
+		while (i.hasNext()) {
+			PeerNetworkGroup newGroup=(PeerNetworkGroup)i.next();
 			newGroup.setForbiddenIds(takenNetworkIds);
 			
 			int id=newGroup.getConsensus();
@@ -624,14 +637,15 @@ public class NetworkIDManager implements Runnable {
 				id=node.random.nextInt();
 			newGroup.assignNetworkId(id);
 			takenNetworkIds.add(new Integer(id));
+			if (logMINOR) Logger.minor(this, "net "+id+" has "+newGroup.members.size()+" peers");
 		}
 		
-		//for now, we'll just say we are in our most-connected group. really it needs to be most-successful, or dungeons may support themselves!
 		PeerNetworkGroup ourgroup=(PeerNetworkGroup)newNetworkGroups.get(0);
 		ourgroup.ourGroup=true;
 		ourNetworkId=ourgroup.networkid;
 		
 		Logger.error(this, "I am in network: "+ourNetworkId+", and have divided my "+all.size()+" peers into "+newNetworkGroups.size()+" network groups");
+		Logger.error(this, "largestGroup="+ourgroup.members.size());
 		Logger.error(this, "bestFirst="+cheat_stats_general_bestOther.currentValue());
 		Logger.error(this, "bestGeneralFactor="+cheat_stats_findBestSetwisePingAverage_best_general.currentValue());
 		
@@ -854,6 +868,7 @@ public class NetworkIDManager implements Runnable {
 		long lastAssign;
 		/*
 		 Returns the group consensus. If no peer in this group has advertised an id, then the last-assigned id is returned.
+		 @todo should be explict or weighted towards most-successful (not neccesarily just 'consensus')
 		 */
 		int getConsensus() {
 			HashMap h=new HashMap();
@@ -955,4 +970,16 @@ public class NetworkIDManager implements Runnable {
 			return !a.networkGroup.equals(b.networkGroup);
 		}
 	}
+	
+	/**
+	 * Orders PeerNetworkGroups by size largest first. Determines the priority-order in the master list.
+	 * Throws on comparison of non-network-groups or those without members assigned.
+	 */
+	public int compare(Object a1, Object b1) {
+		PeerNetworkGroup a=(PeerNetworkGroup)a1;
+		PeerNetworkGroup b=(PeerNetworkGroup)b1;
+		//since we want largest-first, this is backwards of what it would normally be (a-b).
+		return b.members.size()-a.members.size();
+	}
+	
 }
