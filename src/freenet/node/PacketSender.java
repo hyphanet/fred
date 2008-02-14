@@ -282,7 +282,7 @@ public class PacketSender implements Runnable, Ticker {
 							l = messages[j].submitted;
 						sz += 2 + /* FIXME only 2? */ messages[j].getData(pn).length;
 					}
-					if((l + MAX_COALESCING_DELAY > now) &&
+					if(node.enablePacketCoalescing && (l + MAX_COALESCING_DELAY > now) &&
 						(sz < ((PacketSocketHandler) pn.getSocketHandler()).getPacketSendThreshold())) {
 						// Don't send immediately
 						if(nextActionTime > (l + MAX_COALESCING_DELAY))
