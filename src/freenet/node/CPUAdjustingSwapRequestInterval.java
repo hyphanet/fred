@@ -4,6 +4,7 @@
 package freenet.node;
 
 import freenet.support.Logger;
+import freenet.support.io.NativeThread;
 
 /**
  * @author amphibian
@@ -27,9 +28,8 @@ public final class CPUAdjustingSwapRequestInterval implements SwapRequestInterva
     }
 
     public void start() {
-        Thread t = new Thread(this, "CPUAdjustingSwapRequestInterval");
+        NativeThread t = new NativeThread(this, "CPUAdjustingSwapRequestInterval", Thread.MAX_PRIORITY);
         t.setDaemon(true);
-        t.setPriority(Thread.MAX_PRIORITY);
         t.start();
     }
     
