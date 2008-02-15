@@ -62,7 +62,7 @@ public class PacketSender implements Runnable, Ticker {
 		resendPackets = new LinkedList();
 		timedJobsByTime = new TreeMap();
 		this.node = node;
-		myThread = new NativeThread(this, "PacketSender thread for " + node.getDarknetPortNumber(), Thread.MAX_PRIORITY);
+		myThread = new NativeThread(this, "PacketSender thread for " + node.getDarknetPortNumber(), Thread.MAX_PRIORITY, false);
 		myThread.setDaemon(true);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
