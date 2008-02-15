@@ -17,6 +17,7 @@ import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.WouldBlockException;
+import freenet.support.io.NativeThread;
 
 /**
  * @author amphibian
@@ -44,7 +45,7 @@ public class PacketSender implements Runnable, Ticker {
 	final LinkedList resendPackets;
 	/** ~= Ticker :) */
 	private final TreeMap timedJobsByTime;
-	final Thread myThread;
+	final NativeThread myThread;
 	final Node node;
 	NodeStats stats;
 	long lastClearedOldSwapChains;
@@ -60,9 +61,8 @@ public class PacketSender implements Runnable, Ticker {
 		resendPackets = new LinkedList();
 		timedJobsByTime = new TreeMap();
 		this.node = node;
-		myThread = new Thread(this, "PacketSender thread for " + node.getDarknetPortNumber());
+		myThread = new NativeThread(this, "PacketSender thread for " + node.getDarknetPortNumber(), Thread.MAX_PRIORITY);
 		myThread.setDaemon(true);
-		myThread.setPriority(Thread.MAX_PRIORITY);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		rpiTemp = new Vector();
