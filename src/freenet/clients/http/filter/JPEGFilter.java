@@ -268,13 +268,56 @@ public class JPEGFilter implements ContentDataFilter {
 					finished = true;
 					if(logMINOR)
 						Logger.minor(this, "End of image");
-				} else
-					// Essential but unparsed frames
-					if(markerType == 0xDB // quantisation table
-						|| markerType == 0xDD // restart interoperability marker
-						|| markerType == 0xC4 // huffman table
-						|| markerType == 0xC0) { // start of frame
-					// Essential, non-terminal frames.
+				} else {
+					boolean valid = false;
+					// We used to support only DB C4 C0, because some website said they were
+					// sufficient for decoding a JPEG. Unfortunately they are not, JPEG is a 
+					// very complex standard and the full spec is only available for a fee.
+					// FIXME somebody who has access to the spec should have a look at this,
+					// and ideally write some chunk sanitizers.
+					switch(markerType) {
+					// descriptions from http://svn.xiph.org/experimental/giles/jpegdump.c (GPL)
+					case 0xc0: // start of frame
+					case 0xc1: // extended sequential, huffman
+					case 0xc2: // progressive, huffman
+					case 0xc3: // lossless, huffman
+					case 0xc5: // differential sequential, huffman
+					case 0xc6: // differential progressive, huffman
+					case 0xc7: // differential lossless, huffman
+						// DELETE 0xc8 - "reserved for JPEG extension" - likely to be used for Bad Things
+					case 0xc9: // extended sequential, arithmetic
+					case 0xca: // progressive, arithmetic
+					case 0xcb: // lossless, arithmetic
+					case 0xcd: // differential sequential, arithmetic
+					case 0xcf: // differential lossless, arithmetic
+					case 0xc4: // define huffman tables
+					case 0xcc: // define arithmetic-coding conditioning
+						// Restart markers
+					case 0xd0:
+					case 0xd1:
+					case 0xd2:
+					case 0xd3:
+					case 0xd4:
+					case 0xd5:
+					case 0xd6:
+					case 0xd7:
+						// Delimiters:
+					case 0xd8: // start of image
+					case 0xd9: // end of image
+					case 0xda: // start of scan
+					case 0xdb: // define quantization tables
+					case 0xdc: // define number of lines
+					case 0xdd: // define restart interval
+					case 0xde: // define hierarchical progression
+					case 0xdf: // expand reference components
+						// DELETE APP0 - APP15 - application data sections, likely to be troublesome.
+						// DELETE extension data sections JPG0-6,SOF48,LSE,JPG9-JPG13, JCOM (comment!!), TEM ("temporary private use for arithmetic coding")
+						// DELETE 0x02 - 0xbf reserved sections.
+						// Do not support JPEG2000 at the moment. Probably has different headers. FIXME.
+						valid = true;
+					}
+					if(valid) {
+					// Essential, non-terminal, but unparsed frames.
 					if(blockLength < 2)
 						throwError("Invalid frame length", "The file includes an invalid frame (length "+blockLength+").");
 					if(dos != null) {
@@ -296,6 +339,7 @@ public class JPEGFilter implements ContentDataFilter {
 					// Delete frame
 					skipBytes(dis, blockLength - 2);
 					continue;
+				}
 				}
 				
 				if(cis.count() != countAtStart + blockLength)
