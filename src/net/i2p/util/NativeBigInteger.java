@@ -26,6 +26,7 @@ import freenet.support.CPUInformation.CPUID;
 import freenet.support.CPUInformation.CPUInfo;
 import freenet.support.CPUInformation.IntelCPUInfo;
 import freenet.support.CPUInformation.UnknownCPUException;
+import freenet.support.io.Closer;
 
 /**
  * <p>BigInteger that takes advantage of the jbigi library for the modPow operation,
@@ -471,24 +472,26 @@ public class NativeBigInteger extends BigInteger {
 			throw new FileNotFoundException();
 		}
 
+		FileOutputStream fos = null;
 		try {
 			f.deleteOnExit();
-			FileOutputStream fos = new FileOutputStream(f);
+			fos = new FileOutputStream(f);
 			byte[] buf = new byte[4096 * 1024];
 			int read;
 			while((read = is.read(buf)) > 0) {
 				fos.write(buf, 0, read);
 			}
 			fos.close();
+			fos = null;
 			System.load(f.getAbsolutePath());
 			return true;
 		} catch(IOException e) {
 		} catch(UnsatisfiedLinkError ule) {
-			f.delete();
 			// likely to be "noexec" 
 			if(ule.toString().toLowerCase().indexOf("not permitted") == -1)
 				throw ule;
 		} finally {
+			Closer.close(fos);
 			f.delete();
 		}
 
