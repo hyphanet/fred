@@ -81,6 +81,8 @@ public class FProxyToadlet extends Toadlet {
 	}
 
 	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras, String referrer, boolean downloadLink, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		if(Logger.shouldLog(Logger.MINOR, FProxyToadlet.class))
+			Logger.minor(FProxyToadlet.class, "handleDownload(data.size="+data.size()+", mimeType="+mimeType+", requestedMimeType="+requestedMimeType+", forceDownload="+forceDownload+", basePath="+basePath+", key="+key);
 		String extrasNoMime = extras; // extras will not include MIME type to start with - REDFLAG maybe it should be an array
 		if(requestedMimeType != null) {
 			if(mimeType == null || !requestedMimeType.equals(mimeType)) {
