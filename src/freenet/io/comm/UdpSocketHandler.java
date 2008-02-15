@@ -88,6 +88,7 @@ public class UdpSocketHandler extends NativeThread implements PacketSocketHandle
 	}
 	
 	public void run() { // Listen for packets
+		super.run();
 		tracker.startReceive(System.currentTimeMillis());
 		try {
 			runLoop();

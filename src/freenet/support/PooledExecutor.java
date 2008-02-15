@@ -89,7 +89,6 @@ public class PooledExecutor implements Executor {
 	}
 	
 	class MyThread extends NativeThread {
-		
 		final String defaultName;
 		boolean alive = true;
 		Runnable nextJob;
@@ -102,6 +101,7 @@ public class PooledExecutor implements Executor {
 		}
 
 		public void run() {
+			super.run();
 			long ranJobs = 0;
 			int nativePriority = getNativePriority();
 			while(true) {

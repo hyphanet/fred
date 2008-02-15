@@ -54,6 +54,7 @@ public class DiffieHellman {
 		}
 
 		public void run() {
+			super.run();
 			while (true) {
 				while (precalcBuffer.size() < PRECALC_MAX) {
 					precalcBuffer.push(genParams());

@@ -11,6 +11,9 @@ import java.io.InputStream;
 import java.net.URL;
 
 /**
+ * Do *NOT* forget to call super.run() if you extend it!
+ * 
+ * @see http://archives.freenetproject.org/thread/20080214.235159.6deed539.en.html
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
 public class NativeThread extends Thread {
