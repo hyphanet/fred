@@ -56,6 +56,7 @@ public class PacketSender implements Runnable, Ticker {
 	private long timeLastSentOldOpennetConnectAttempt;
 	private Vector rpiTemp;
 	private int[] rpiIntTemp;
+	private boolean started = false;
 
 	PacketSender(Node node) {
 		resendPackets = new LinkedList();
@@ -148,10 +149,12 @@ public class PacketSender implements Runnable, Ticker {
 			t1.setDaemon(true);
 			t1.start();
 		}
+		started = true;
 		myThread.start();
 	}
 
 	public void run() {
+		if(logMINOR) Logger.minor(this, "In PacketSender.run()");
 		freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
 			lastReceivedPacketFromAnyNode = lastReportedNoPackets;
@@ -463,10 +466,13 @@ public class PacketSender implements Runnable, Ticker {
 	}
 
 	public void queueTimedJob(Runnable job, long offset) {
-		if(offset <= 0) {
+		// Run directly *if* that won't cause any priority problems.
+		if(offset <= 0 && started && !NativeThread.usingNativeCode()) {
+			if(logMINOR) Logger.minor(this, "Running directly: "+job);
 			node.executor.execute(job, "Scheduled job: " + job);
 			return;
 		}
+		if(offset < 0) offset = 0;
 		long now = System.currentTimeMillis();
 		Long l = new Long(offset + now);
 		synchronized(timedJobsByTime) {
@@ -482,6 +488,9 @@ public class PacketSender implements Runnable, Ticker {
 				jobs[jobs.length - 1] = job;
 				timedJobsByTime.put(l, jobs);
 			}
+		}
+		if(offset < MAX_COALESCING_DELAY) {
+			wakeUp();
 		}
 	}
 }
