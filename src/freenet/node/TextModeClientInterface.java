@@ -838,6 +838,10 @@ public class TextModeClientInterface implements Runnable {
         } else if(uline.startsWith("PROBE:")) {
         	String s = uline.substring("PROBE:".length()).trim();
         	double d = Double.parseDouble(s);
+        	if(d > 1.0 || d < 0.0) {
+        		System.err.println("Unacceptable target location: "+d);
+        		return false;
+        	}
         	ProbeCallback cb = new ProbeCallback() {
 				public void onCompleted(String reason, double target, double best, double nearest, long id, short counter, short uniqueCounter, short linearCounter) {
 					String msg = "Completed probe request: "+target+" -> "+best+"\r\nNearest actually hit "+nearest+", "+counter+" nodes ("+uniqueCounter+" unique, "+linearCounter+" hops), id "+id+"\r\n";
