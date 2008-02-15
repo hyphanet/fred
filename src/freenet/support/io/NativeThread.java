@@ -137,6 +137,7 @@ public class NativeThread extends Thread {
 			 */
 			_loadNative = false;
 			System.err.println("Freenet has detected it has been reniced : THAT'S BAD, DON'T DO IT!");
+			new NullPointerException().printStackTrace();
 			return false;
 		}
 		final int linuxPriority = NATIVE_PRIORITY_BASE + NATIVE_PRIORITY_RANGE - (NATIVE_PRIORITY_RANGE * (prio - MIN_PRIORITY)) / JAVA_PRIO_RANGE;
