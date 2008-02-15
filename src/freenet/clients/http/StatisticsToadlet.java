@@ -396,8 +396,8 @@ public class StatisticsToadlet extends Toadlet {
 		HTMLNode threadsByPriorityTable = threadsInfoboxContent.addChild("table", "border", "0");
 		HTMLNode row = threadsByPriorityTable.addChild("tr");
 
-		row.addChild("th", l10n("Priority"));
-		row.addChild("th", l10n("Amount"));		
+		row.addChild("th", l10n("priority"));
+		row.addChild("th", l10n("amount"));		
 		
 		for(int i=0; i<activeThreadsByPriority.length; i++) {
 			row = threadsByPriorityTable.addChild("tr");
