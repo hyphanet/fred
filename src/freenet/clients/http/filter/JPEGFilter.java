@@ -268,7 +268,9 @@ public class JPEGFilter implements ContentDataFilter {
 					finished = true;
 					if(logMINOR)
 						Logger.minor(this, "End of image");
-				} else if(markerType == 0xDB // quantisation table
+				} else
+					// Essential but unparsed frames
+					if(markerType == 0xDB // quantisation table
 						|| markerType == 0xDD // restart interoperability marker
 						|| markerType == 0xC4 // huffman table
 						|| markerType == 0xC0) { // start of frame
