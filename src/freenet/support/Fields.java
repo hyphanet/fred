@@ -695,4 +695,33 @@ public abstract class Fields {
 		return bytesToDoubles(data, 0, data.length);
 	}
 
+	/**
+	 * Assumes the array is sorted in ascending order, [begin] is lowest and [end] is highest.
+	 */
+	public static int binarySearch(long[] values, long key, int origBegin, int origEnd) {
+		int begin = origBegin;
+		int end = origEnd;
+		while(true) {
+			int middle = (begin + end) / 2;
+			System.out.println("begin="+begin+" end="+end+" middle="+middle);
+			try {
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+			}
+			if(values[middle] == key)
+				return middle;
+			
+			if(values[middle] > key) {
+				end = middle;
+				if(end - begin <= 1) {
+					return -middle-1;
+				}
+			} else if(values[middle] < key) {
+				begin = middle;
+				if(end - begin <= 1)
+					return -end-1;
+			}
+		}
+	}
+
 }
