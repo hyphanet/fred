@@ -14,11 +14,19 @@ import java.util.ArrayList;
 public class PooledExecutor implements Executor {
 
 	private final ArrayList[] runningThreads /* <MyThread> */ = new ArrayList[NativeThread.JAVA_PRIO_RANGE];
-	private final ArrayList[] waitingThreads /* <MyThread> */ = new ArrayList[NativeThread.JAVA_PRIO_RANGE];
-	long[] threadCounter;
+	private final ArrayList[] waitingThreads /* <MyThread> */ = new ArrayList[runningThreads.length];
+	long[] threadCounter = new long[runningThreads.length];
 	private long jobCount;
 	private long jobMisses;
 	private static boolean logMINOR;
+	
+	public PooledExecutor() {
+		for(int i=0; i<runningThreads.length; i++) {
+			runningThreads[i] = new ArrayList();
+			waitingThreads[i] = new ArrayList();
+			threadCounter[i] = 0;
+		}
+	}
 	
 	/** Maximum time a thread will wait for a job */
 	static final int TIMEOUT = 5*60*1000;

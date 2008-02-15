@@ -4,6 +4,7 @@
 
 package freenet.support.io;
 
+import freenet.node.NodeStarter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -23,7 +24,7 @@ public class NativeThread extends Thread {
 	public static final boolean HAS_ENOUGH_NICE_LEVELS;
 	
 	static {
-		_loadNative = "Linux".equalsIgnoreCase(System.getProperty("os.name"));
+		_loadNative = "Linux".equalsIgnoreCase(System.getProperty("os.name")) && NodeStarter.extBuildNumber > 18;
 		if(_loadNative) {
 			//System.loadLibrary("NativeThread");
 			loadNative();
