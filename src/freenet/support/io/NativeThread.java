@@ -14,9 +14,9 @@ import java.net.URL;
  */
 public class NativeThread extends Thread {
 	private static boolean _loadNative;
-	private static final int JAVA_PRIO_RANGE = MAX_PRIORITY - MIN_PRIORITY;
+	public static final int JAVA_PRIO_RANGE = MAX_PRIORITY - MIN_PRIORITY;
 	private static final int NATIVE_PRIORITY_BASE;
-	private static final int NATIVE_PRIORITY_RANGE;
+	public static final int NATIVE_PRIORITY_RANGE;
 	private int currentPriority = Thread.MAX_PRIORITY;
 
 	public static final boolean HAS_THREE_NICE_LEVELS;
@@ -86,6 +86,11 @@ public class NativeThread extends Thread {
 		}
 	}
 	
+	public NativeThread(String name, int priority) {
+		super(name);
+		this.currentPriority = priority;
+	}
+	
 	public NativeThread(Runnable r, String name, int priority) {
 		super(r, name);
 		this.currentPriority = priority;
@@ -138,5 +143,9 @@ public class NativeThread extends Thread {
 				" and shouldn't ever occur in our code. (asked="+prio+':'+linuxPriority+" currentMax="+
 				+currentPriority+':'+NATIVE_PRIORITY_BASE+") SHOUDLN'T HAPPEN, please report!");
 		return setLinuxPriority(linuxPriority);
+	}
+	
+	public int getNativePriority() {
+		return currentPriority;
 	}
 }

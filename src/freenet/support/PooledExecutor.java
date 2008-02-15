@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
+import freenet.support.io.NativeThread;
 import java.util.ArrayList;
 
 /**
@@ -12,9 +13,9 @@ import java.util.ArrayList;
  */
 public class PooledExecutor implements Executor {
 
-	private final ArrayList runningThreads /* <MyThread> */ = new ArrayList();
-	private final ArrayList waitingThreads /* <MyThread> */ = new ArrayList();
-	long threadCounter = 0;
+	private final ArrayList[] runningThreads /* <MyThread> */ = new ArrayList[NativeThread.JAVA_PRIO_RANGE];
+	private final ArrayList[] waitingThreads /* <MyThread> */ = new ArrayList[NativeThread.JAVA_PRIO_RANGE];
+	long[] threadCounter;
 	private long jobCount;
 	private long jobMisses;
 	private static boolean logMINOR;
@@ -27,17 +28,21 @@ public class PooledExecutor implements Executor {
 	}
 	
 	public void execute(Runnable job, String jobName) {
+		execute(job, jobName, Thread.NORM_PRIORITY);
+	}
+	
+	public void execute(Runnable job, String jobName, int prio) {
 		while(true) {
 			MyThread t;
 			boolean mustStart = false;
 			boolean miss = false;
 			synchronized(this) {
 				jobCount++;
-				if(!waitingThreads.isEmpty()) {
-					t = (MyThread) waitingThreads.remove(waitingThreads.size()-1);
+				if(!waitingThreads[prio].isEmpty()) {
+					t = (MyThread) waitingThreads[prio].remove(waitingThreads[prio].size()-1);
 				} else {
 					// Will be coalesced by thread count listings if we use "@" or "for"
-					t = new MyThread("Pooled thread awaiting work @"+(threadCounter++), threadCounter);
+					t = new MyThread("Pooled thread awaiting work @"+(threadCounter[prio]++), threadCounter[prio], prio);
 					t.setDaemon(true);
 					mustStart = true;
 					miss = true;
@@ -57,7 +62,7 @@ public class PooledExecutor implements Executor {
 			if(mustStart) {
 				t.start();
 				synchronized(this) {
-					runningThreads.add(t);
+					runningThreads[prio].add(t);
 					if(miss)
 						jobMisses++;
 					if(logMINOR)
@@ -68,25 +73,29 @@ public class PooledExecutor implements Executor {
 		}
 	}
 
-	public synchronized int waitingThreads() {
-		return waitingThreads.size();
+	public synchronized int[] waitingThreads() {
+		int[] result = new int[waitingThreads.length];
+		for(int i=0; i<result.length; i++)
+			result[i] = waitingThreads[i].size();
+		return result;
 	}
 	
-	class MyThread extends Thread {
+	class MyThread extends NativeThread {
 		
 		final String defaultName;
 		boolean alive = true;
 		Runnable nextJob;
 		final long threadNo;
 		
-		public MyThread(String defaultName, long threadCounter) {
-			super(defaultName);
+		public MyThread(String defaultName, long threadCounter, int prio) {
+			super(defaultName, prio);
 			this.defaultName = defaultName;
 			threadNo = threadCounter;
 		}
 
 		public void run() {
 			long ranJobs = 0;
+			int nativePriority = getNativePriority();
 			while(true) {
 				Runnable job;
 				
@@ -97,7 +106,7 @@ public class PooledExecutor implements Executor {
 				
 				if(job == null) {
 					synchronized(PooledExecutor.this) {
-						waitingThreads.add(this);
+						waitingThreads[nativePriority].add(this);
 					}
 					synchronized(this) {
 						if(nextJob == null) {
@@ -116,9 +125,9 @@ public class PooledExecutor implements Executor {
 						}
 					}
 					synchronized(PooledExecutor.this) {
-						waitingThreads.remove(this);
+						waitingThreads[nativePriority].remove(this);
 						if(!alive) {
-							runningThreads.remove(this);
+							runningThreads[nativePriority].remove(this);
 							if(logMINOR)
 								Logger.minor(this, "Exiting having executed "+ranJobs+" jobs : "+this);
 							return;

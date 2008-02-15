@@ -76,6 +76,8 @@ public class NodeStarter implements WrapperListener
     		return new Integer(-1);
     	}
     	
+	getExtBuild();
+	
     	File configFilename;
     	if(args.length == 0) {
     		System.out.println("Using default config filename freenet.ini");
@@ -110,8 +112,6 @@ public class NodeStarter implements WrapperListener
     	}
 
     	executor.start();
-    	
-    	getExtBuild();
     	
     	// Setup RNG
     	RandomSource random = new Yarrow();
