@@ -317,29 +317,29 @@ public class JPEGFilter implements ContentDataFilter {
 						valid = true;
 					}
 					if(valid) {
-					// Essential, non-terminal, but unparsed frames.
-					if(blockLength < 2)
-						throwError("Invalid frame length", "The file includes an invalid frame (length "+blockLength+").");
-					if(dos != null) {
-						byte[] buf = new byte[blockLength - 2];
-						dis.readFully(buf);
-						dos.write(buf);
-					} else
-						skipBytes(dis, blockLength - 2);
-					Logger.minor(this, "Essential frame type "+Integer.toHexString(markerType)+" length "+(blockLength-2)+" offset at end "+cis.count());
-				} else {
-					if(markerType >= 0xE0 && markerType <= 0xEF) {
-						// APP marker. Can be safely deleted.
-						if(logMINOR)
-							Logger.minor(this, "Dropping application marker type "+Integer.toHexString(markerType)+" length "+blockLength);
+						// Essential, non-terminal, but unparsed frames.
+						if(blockLength < 2)
+							throwError("Invalid frame length", "The file includes an invalid frame (length "+blockLength+").");
+						if(dos != null) {
+							byte[] buf = new byte[blockLength - 2];
+							dis.readFully(buf);
+							dos.write(buf);
+						} else
+							skipBytes(dis, blockLength - 2);
+						Logger.minor(this, "Essential frame type "+Integer.toHexString(markerType)+" length "+(blockLength-2)+" offset at end "+cis.count());
 					} else {
-						if(logMINOR)
-							Logger.minor(this, "Dropping unknown frame type "+Integer.toHexString(markerType)+" blockLength");
+						if(markerType >= 0xE0 && markerType <= 0xEF) {
+							// APP marker. Can be safely deleted.
+							if(logMINOR)
+								Logger.minor(this, "Dropping application marker type "+Integer.toHexString(markerType)+" length "+blockLength);
+						} else {
+							if(logMINOR)
+								Logger.minor(this, "Dropping unknown frame type "+Integer.toHexString(markerType)+" blockLength");
+						}
+						// Delete frame
+						skipBytes(dis, blockLength - 2);
+						continue;
 					}
-					// Delete frame
-					skipBytes(dis, blockLength - 2);
-					continue;
-				}
 				}
 				
 				if(cis.count() != countAtStart + blockLength)
