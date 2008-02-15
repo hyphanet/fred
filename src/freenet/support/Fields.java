@@ -703,11 +703,6 @@ public abstract class Fields {
 		int end = origEnd;
 		while(true) {
 			int middle = (begin + end) / 2;
-			System.out.println("begin="+begin+" end="+end+" middle="+middle);
-			try {
-				Thread.sleep(1000);
-			} catch (InterruptedException e) {
-			}
 			if(values[middle] == key)
 				return middle;
 			
