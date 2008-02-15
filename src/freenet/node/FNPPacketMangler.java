@@ -2581,7 +2581,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			public void run() {
 				_fillJFKDHFIFO();
 			}
-		}, "DiffieHellman exponential signing", Thread.MIN_PRIORITY);
+		}, "DiffieHellman exponential signing", Thread.NORM_PRIORITY);
 	}
 	
 	private void _fillJFKDHFIFO() {
