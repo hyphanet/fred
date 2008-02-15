@@ -466,8 +466,12 @@ public class PacketSender implements Runnable, Ticker {
 	}
 
 	public void queueTimedJob(Runnable job, long offset) {
+		queueTimedJob(job, offset, false);
+	}
+	
+	public void queueTimedJob(Runnable job, long offset, boolean runOnTickerAnyway) {
 		// Run directly *if* that won't cause any priority problems.
-		if(offset <= 0 && started && !NativeThread.usingNativeCode()) {
+		if(offset <= 0 && !runOnTickerAnyway) {
 			if(logMINOR) Logger.minor(this, "Running directly: "+job);
 			node.executor.execute(job, "Scheduled job: " + job);
 			return;

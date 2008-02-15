@@ -6,5 +6,6 @@ package freenet.node;
 public interface Ticker {
 
 	public abstract void queueTimedJob(Runnable job, long offset);
+	public abstract void queueTimedJob(Runnable job, long offset, boolean runOnTickerAnyway);
 
 }

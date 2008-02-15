@@ -64,7 +64,7 @@ public class PooledExecutor implements Executor {
 					// Must create new thread
 					if((!fromTicker) && NativeThread.usingNativeCode() && prio < Thread.currentThread().getPriority()) {
 						// Run on ticker
-						ticker.queueTimedJob(job, 0);
+						ticker.queueTimedJob(job, 0, true);
 						return;
 					}
 					// Will be coalesced by thread count listings if we use "@" or "for"
