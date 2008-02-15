@@ -11,6 +11,7 @@ import java.util.Random;
 import java.util.Stack;
 
 import freenet.support.Logger;
+import freenet.support.io.NativeThread;
 import net.i2p.util.NativeBigInteger;
 
 public class DiffieHellman {
@@ -36,7 +37,7 @@ public class DiffieHellman {
 	private static Stack precalcBuffer = new Stack();
 	private static Object precalcerWaitObj = new Object();
 
-	private static Thread precalcThread;
+	private static NativeThread precalcThread;
 	
 	public static final BigInteger MIN_EXPONENTIAL_VALUE = new BigInteger("2").pow(24);
 	public static final BigInteger MAX_EXPONENTIAL_VALUE = group.getP().subtract(MIN_EXPONENTIAL_VALUE);
@@ -45,10 +46,10 @@ public class DiffieHellman {
 		precalcThread = new PrecalcBufferFill();
 	}
 
-	private static class PrecalcBufferFill extends Thread {
+	private static class PrecalcBufferFill extends NativeThread {
 
 		public PrecalcBufferFill() {
-			setName("Diffie-Hellman-Precalc");
+			super("Diffie-Hellman-Precalc", Thread.MIN_PRIORITY);
 			setDaemon(true);
 		}
 
