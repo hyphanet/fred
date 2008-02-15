@@ -68,7 +68,8 @@ public class PooledExecutor implements Executor {
 						return;
 					}
 					// Will be coalesced by thread count listings if we use "@" or "for"
-					t = new MyThread("Pooled thread awaiting work @"+(threadCounter[prio]++), threadCounter[prio], prio, !fromTicker);
+					t = new MyThread("Pooled thread awaiting work @"+(threadCounter[prio]), threadCounter[prio], prio, !fromTicker);
+					threadCounter[prio]++;
 					t.setDaemon(true);
 					mustStart = true;
 					miss = true;
