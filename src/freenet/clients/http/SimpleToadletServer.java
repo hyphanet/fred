@@ -541,6 +541,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("SimpleToadletServer request above failed.");
+				Logger.error(this, "OOM in SocketHandler");
 			} catch (Throwable t) {
 				System.err.println("Caught in SimpleToadletServer: "+t);
 				t.printStackTrace();
