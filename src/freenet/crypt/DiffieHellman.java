@@ -63,10 +63,6 @@ public class DiffieHellman {
 					}
 				}
 
-				// Reset the thread priority to normal because it may have been
-				// set to MAX if the buffer was emptied.
-				precalcThread.setPriority(Thread.NORM_PRIORITY);
-
 				synchronized (precalcerWaitObj) {
 					try {
 						// Do not set the thread priority here because the
