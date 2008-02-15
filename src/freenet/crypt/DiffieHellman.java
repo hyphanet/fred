@@ -93,10 +93,6 @@ public class DiffieHellman {
 		// If the buffer size is below the threshold then wake the precalc
 		// thread
 		if (precalcBuffer.size() < PRECALC_RESUME) {
-			if (precalcBuffer.isEmpty()) {
-				// If it is all empty, try to fill it up even faster
-				precalcThread.setPriority(Thread.MAX_PRIORITY);
-			}
 			synchronized (precalcerWaitObj) {
 				precalcerWaitObj.notify();
 			}
