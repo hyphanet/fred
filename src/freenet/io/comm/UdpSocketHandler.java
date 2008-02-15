@@ -45,7 +45,7 @@ public class UdpSocketHandler extends NativeThread implements PacketSocketHandle
 	private boolean _started;
 	
 	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node, long startupTime, String title) throws SocketException {
-		super("UDP packet receiver for "+title, Thread.MAX_PRIORITY);
+		super("UDP packet receiver for "+title, Thread.MAX_PRIORITY, false);
 		this.node = node;
 		this.title = title;
 		_bindTo = bindto;

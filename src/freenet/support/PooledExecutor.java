@@ -47,6 +47,10 @@ public class PooledExecutor implements Executor {
 	}
 	
 	public void execute(Runnable job, String jobName, int prio) {
+		execute(job, jobName, prio, false);
+	}
+	
+	public void execute(Runnable job, String jobName, int prio, boolean fromTicker) {
 		if(logMINOR) Logger.minor(this, "Executing "+job+" as "+jobName+" at prio "+prio);
 		while(true) {
 			MyThread t;
@@ -58,13 +62,13 @@ public class PooledExecutor implements Executor {
 					t = (MyThread) waitingThreads[prio].remove(waitingThreads[prio].size()-1);
 				} else {
 					// Must create new thread
-					if(NativeThread.usingNativeCode() && prio < Thread.currentThread().getPriority()) {
+					if((!fromTicker) && NativeThread.usingNativeCode() && prio < Thread.currentThread().getPriority()) {
 						// Run on ticker
 						ticker.queueTimedJob(job, 0);
 						return;
 					}
 					// Will be coalesced by thread count listings if we use "@" or "for"
-					t = new MyThread("Pooled thread awaiting work @"+(threadCounter[prio]++), threadCounter[prio], prio);
+					t = new MyThread("Pooled thread awaiting work @"+(threadCounter[prio]++), threadCounter[prio], prio, !fromTicker);
 					t.setDaemon(true);
 					mustStart = true;
 					miss = true;
@@ -108,8 +112,8 @@ public class PooledExecutor implements Executor {
 		Runnable nextJob;
 		final long threadNo;
 		
-		public MyThread(String defaultName, long threadCounter, int prio) {
-			super(defaultName, prio);
+		public MyThread(String defaultName, long threadCounter, int prio, boolean dontCheckRenice) {
+			super(defaultName, prio, dontCheckRenice);
 			this.defaultName = defaultName;
 			threadNo = threadCounter;
 		}

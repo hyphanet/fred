@@ -49,7 +49,7 @@ public class DiffieHellman {
 	private static class PrecalcBufferFill extends NativeThread {
 
 		public PrecalcBufferFill() {
-			super("Diffie-Hellman-Precalc", Thread.MIN_PRIORITY);
+			super("Diffie-Hellman-Precalc", Thread.MIN_PRIORITY, false);
 			setDaemon(true);
 		}
 

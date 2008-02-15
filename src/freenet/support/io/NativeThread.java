@@ -25,6 +25,7 @@ public class NativeThread extends Thread {
 	private static int NATIVE_PRIORITY_BASE;
 	public static int NATIVE_PRIORITY_RANGE;
 	private int currentPriority = Thread.MAX_PRIORITY;
+	private boolean dontCheckRenice = false;
 
 	public static boolean HAS_THREE_NICE_LEVELS;
 	public static boolean HAS_ENOUGH_NICE_LEVELS;
@@ -95,9 +96,10 @@ public class NativeThread extends Thread {
 		}
 	}
 	
-	public NativeThread(String name, int priority) {
+	public NativeThread(String name, int priority, boolean dontCheckRenice) {
 		super(name);
 		this.currentPriority = priority;
+		this.dontCheckRenice = dontCheckRenice;
 	}
 	
 	public NativeThread(Runnable r, String name, int priority) {
@@ -143,7 +145,7 @@ public class NativeThread extends Thread {
 			Logger.normal(this, "Not setting native priority as disabled due to renicing");
 			return false;
 		}
-		if(NATIVE_PRIORITY_BASE != realPrio) {
+		if(NATIVE_PRIORITY_BASE != realPrio && !dontCheckRenice) {
 			/* The user has reniced freenet or we didn't use the PacketSender to create the thread
 			 * either ways it's bad for us.
 			 * 
@@ -156,6 +158,7 @@ public class NativeThread extends Thread {
 			return false;
 		}
 		final int linuxPriority = NATIVE_PRIORITY_BASE + NATIVE_PRIORITY_RANGE - (NATIVE_PRIORITY_RANGE * (prio - MIN_PRIORITY)) / JAVA_PRIO_RANGE;
+		if(linuxPriority == realPrio) return true; // Ok
 		// That's an obvious coding mistake
 		if(prio < currentPriority)
 			throw new IllegalStateException("You're trying to set a thread priority" +

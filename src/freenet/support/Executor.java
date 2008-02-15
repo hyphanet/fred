@@ -11,6 +11,7 @@ public interface Executor {
 	/** Execute a job. */
 	public void execute(Runnable job, String jobName);
 	public void execute(Runnable job, String jobName, int priority);
+	public void execute(Runnable job, String jobName, int priority, boolean fromTicker);
 
 	/** Count the number of threads waiting for work */
 	public int[] waitingThreads();
