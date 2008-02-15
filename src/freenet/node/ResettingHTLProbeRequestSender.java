@@ -71,6 +71,8 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
         this.uniqueCounter = 1;
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	updateBest();
+    	if(target < 0.0 || target > 1.0)
+    		throw new IllegalArgumentException();
     }
 
     public void start() {
