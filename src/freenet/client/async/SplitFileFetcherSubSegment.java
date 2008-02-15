@@ -60,7 +60,17 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				Logger.minor(this, "Segment is finishing when getting key "+token+" on "+this);
 			return null;
 		}
-		return segment.getBlockKey(((Integer)token).intValue());
+		ClientKey key = segment.getBlockKey(((Integer)token).intValue());
+		if(key == null) {
+			if(segment.isFinished()) {
+				Logger.error(this, "Segment finished but didn't tell us! "+this);
+			} else if(segment.isFinishing()) {
+				Logger.error(this, "Segment finishing but didn't tell us! "+this);
+			} else {
+				Logger.error(this, "Segment not finishing yet still returns null for getKey()!: "+token+" for "+this);
+			}
+		}
+		return key;
 	}
 	
 	public synchronized Object[] allKeys() {
