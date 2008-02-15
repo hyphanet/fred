@@ -29,6 +29,13 @@ public class CountedInputStream extends FilterInputStream {
         return ret;
     }
     
+    public int read(byte[] buf) throws IOException {
+        int ret = super.read(buf);
+        if (ret != -1)
+            count += ret;
+        return ret;
+    }
+    
     public long skip(long n) throws IOException {
     	long l = in.skip(n);
     	if(l > 0) count += l;
