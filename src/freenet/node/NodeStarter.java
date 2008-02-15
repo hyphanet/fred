@@ -22,6 +22,7 @@ import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.io.NativeThread;
        
 
 /**
@@ -140,7 +141,7 @@ public class NodeStarter implements WrapperListener
 					}
 			}
 		};
-		Thread plug = new Thread(useless, "Plug");
+		NativeThread plug = new NativeThread(useless, "Plug", Thread.MAX_PRIORITY);
 		// Not daemon, but doesn't do anything.
 		// Keeps the JVM alive.
 		// DO NOT do anything in the plug thread, if you do you risk the EvilJVMBug.
