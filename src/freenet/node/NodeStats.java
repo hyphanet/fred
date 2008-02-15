@@ -22,6 +22,7 @@ import freenet.support.TokenBucket;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
+import freenet.support.io.NativeThread;
 import freenet.support.math.DecayingKeyspaceAverage;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
@@ -163,6 +164,7 @@ public class NodeStats implements Persistable {
 	
 	// ThreadCounting stuffs
 	public final ThreadGroup rootThreadGroup;
+	private int[] activeThreadsByPriorities = new int[NativeThread.JAVA_PRIO_RANGE];
 	private int threadLimit;
 	
 	// Free heap memory threshold stuffs
@@ -774,11 +776,15 @@ public class NodeStats implements Persistable {
 
 	public int getActiveThreadCount() {
 		int waitingThreads = 0;
-		int[] toCount = node.executor.waitingThreads();
-		for(int i=0; i<toCount.length; i++)
-			waitingThreads += toCount[i];
+		activeThreadsByPriorities = node.executor.waitingThreads();
+		for(int i=0; i<activeThreadsByPriorities.length; i++)
+			waitingThreads += activeThreadsByPriorities[i];
 		
 		return rootThreadGroup.activeCount() - waitingThreads;
+	}
+	
+	public int[] getActiveThreadsByPriority() {
+		return activeThreadsByPriorities;
 	}
 
 	public int getThreadLimit() {

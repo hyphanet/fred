@@ -290,6 +290,10 @@ public class StatisticsToadlet extends Toadlet {
 			HTMLNode unclaimedFIFOMessageCountsInfobox = nextTableCell.addChild("div", "class", "infobox");
 			drawUnclaimedFIFOMessageCountsBox(unclaimedFIFOMessageCountsInfobox);
 
+						
+			HTMLNode threadsPriorityInfobox = nextTableCell.addChild("div", "class", "infobox");
+			drawThreadPriorityStatsBox(threadsPriorityInfobox);
+			
 			nextTableCell = overviewTableRow.addChild("td");
 
 			// thread usage box
@@ -381,6 +385,25 @@ public class StatisticsToadlet extends Toadlet {
 		jvmStatsList.addChild("li", l10n("osVersion", "version", System.getProperty("os.version")));
 		jvmStatsList.addChild("li", l10n("osArch", "arch", System.getProperty("os.arch")));
 		
+	}
+	
+	private void drawThreadPriorityStatsBox(HTMLNode node) {
+		
+		node.addChild("div", "class", "infobox-header", l10n("threadsByPriority"));
+		HTMLNode threadsInfoboxContent = node.addChild("div", "class", "infobox-content");
+		int[] activeThreadsByPriority = stats.getActiveThreadsByPriority();
+		
+		HTMLNode threadsByPriorityTable = threadsInfoboxContent.addChild("table", "border", "0");
+		HTMLNode row = threadsByPriorityTable.addChild("tr");
+
+		row.addChild("th", l10n("Priority"));
+		row.addChild("th", l10n("Amount"));		
+		
+		for(int i=0; i<activeThreadsByPriority.length; i++) {
+			row = threadsByPriorityTable.addChild("tr");
+			row.addChild("th", String.valueOf(i));
+			row.addChild("th", String.valueOf(activeThreadsByPriority[i]));		
+		}
 	}
 
 	private void drawStoreSizeBox(HTMLNode storeSizeInfobox, long nodeUptimeSeconds) {
