@@ -214,4 +214,10 @@ public class RequestStarter implements Runnable {
 		
 	}
 
+	public void wakeUp() {
+		synchronized(this) {
+			notifyAll();
+		}
+	}
+
 }

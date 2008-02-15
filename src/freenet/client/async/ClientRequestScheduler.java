@@ -257,9 +257,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		}
 		innerRegister(req);
-		synchronized(starter) {
-			starter.notifyAll();
-		}
+		starter.wakeUp();
 	}
 	
 	private void addPendingKey(ClientKey key, SendableGet getter) {
@@ -564,9 +562,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			req.unregister();
 			innerRegister(req);
 		}
-		synchronized(starter) {
-			starter.notifyAll();
-		}
+		starter.wakeUp();
 	}
 
 	public String getChoosenPriorityScheduler() {
@@ -647,9 +643,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(logMINOR)
 			Logger.minor(this, "Priority: "+priority);
 		offeredKeys[priority].queueKey(key);
-		synchronized(starter) {
-			starter.notifyAll();
-		}
+		starter.wakeUp();
 	}
 
 	public void dequeueOfferedKey(Key key) {
