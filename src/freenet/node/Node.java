@@ -104,6 +104,7 @@ import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
+import freenet.support.PooledExecutor;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BooleanCallback;
@@ -850,6 +851,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// Must be created after darknetCrypto
 		dnsr = new DNSRequester(this);
 		ps = new PacketSender(this);
+		if(executor instanceof PooledExecutor)
+			((PooledExecutor)executor).setTicker(ps);
 		
 		Logger.normal(Node.class, "Creating node...");
 

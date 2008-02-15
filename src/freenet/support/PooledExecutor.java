@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
+import freenet.node.Ticker;
 import freenet.support.io.NativeThread;
 import java.util.ArrayList;
 
@@ -19,6 +20,12 @@ public class PooledExecutor implements Executor {
 	private long jobCount;
 	private long jobMisses;
 	private static boolean logMINOR;
+	// Ticker thread that runs at maximum priority.
+	private Ticker ticker;
+	
+	public void setTicker(Ticker ticker) {
+		this.ticker = ticker;
+	}
 	
 	public PooledExecutor() {
 		for(int i=0; i<runningThreads.length; i++) {
@@ -40,6 +47,7 @@ public class PooledExecutor implements Executor {
 	}
 	
 	public void execute(Runnable job, String jobName, int prio) {
+		if(logMINOR) Logger.minor(this, "Executing "+job+" as "+jobName+" at prio "+prio);
 		while(true) {
 			MyThread t;
 			boolean mustStart = false;
@@ -49,6 +57,11 @@ public class PooledExecutor implements Executor {
 				if(!waitingThreads[prio].isEmpty()) {
 					t = (MyThread) waitingThreads[prio].remove(waitingThreads[prio].size()-1);
 				} else {
+					// Must create new thread
+					if(NativeThread.usingNativeCode() && prio < Thread.currentThread().getPriority()) {
+						// Run on ticker
+						ticker.queueTimedJob(job, 0);
+					}
 					// Will be coalesced by thread count listings if we use "@" or "for"
 					t = new MyThread("Pooled thread awaiting work @"+(threadCounter[prio]++), threadCounter[prio], prio);
 					t.setDaemon(true);
