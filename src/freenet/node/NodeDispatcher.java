@@ -298,7 +298,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			try {
 				source.sendAsync(rejected, null, 0, null);
 			} catch (NotConnectedException e) {
-				Logger.normal(this, "Rejecting insert request from "+source.getPeer()+": "+e);
+				Logger.normal(this, "Rejecting request from "+source.getPeer()+": "+e);
 			}
 			node.failureTable.onFinalFailure(key, null, htl, -1, source);
 			return true;
