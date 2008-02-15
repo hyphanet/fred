@@ -17,6 +17,7 @@ import java.util.HashMap;
 
 import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
+import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -31,6 +32,7 @@ import freenet.support.io.CountedInputStream;
  * Also the JFIF spec.
  * Also http://cs.haifa.ac.il/~nimrod/Compression/JPEG/J6sntx2005.pdf
  * http://svn.xiph.org/experimental/giles/jpegdump.c
+ * http://it.jeita.or.jp/document/publica/standard/exif/english/jeida49e.htm
  *
  * L10n: Only the overall explanation message and the "too short" messages are localised.
  * It's probably not worth doing the others, they're way too detailed.
@@ -143,6 +145,7 @@ public class JPEGFilter implements ContentDataFilter {
 					if(dos != null) dos.writeShort(blockLength);
 				}
 				if(markerType == 0xDB // quantisation table
+						|| markerType == 0xDD // restart interoperability marker
 						|| markerType == 0xC4 // huffman table
 						|| markerType == 0xC0) { // start of frame
 					// Essential, non-terminal frames.
