@@ -486,10 +486,12 @@ public class NativeBigInteger extends BigInteger {
 	try {
 	    is=resource.openStream();
 	} catch(IOException e) {
+		f.delete();
 	    throw new FileNotFoundException();
 	}
 	
 	try {
+		f.deleteOnExit();
 	    FileOutputStream fos=new FileOutputStream(f);
 	    byte[] buf=new byte[4096*1024];
 	    int read;
@@ -497,15 +499,15 @@ public class NativeBigInteger extends BigInteger {
 		fos.write(buf,0,read);
 	    fos.close();
 	    System.load(f.getAbsolutePath());
-	    f.deleteOnExit();
 	    return true;
 	} catch(IOException e) {
-	    f.delete();
 	} catch(UnsatisfiedLinkError ule) {
 	    f.delete();
 	    // likely to be "noexec" 
 	    if(ule.toString().toLowerCase().indexOf("not permitted")==-1)
 	    	throw ule;
+	} finally {
+		f.delete();
 	}
 
 	return false;	
