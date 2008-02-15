@@ -144,21 +144,7 @@ public class JPEGFilter implements ContentDataFilter {
 					blockLength = dis.readUnsignedShort();
 					if(dos != null) dos.writeShort(blockLength);
 				}
-				if(markerType == 0xDB // quantisation table
-						|| markerType == 0xDD // restart interoperability marker
-						|| markerType == 0xC4 // huffman table
-						|| markerType == 0xC0) { // start of frame
-					// Essential, non-terminal frames.
-					if(blockLength < 2)
-						throwError("Invalid frame length", "The file includes an invalid frame (length "+blockLength+").");
-					if(dos != null) {
-						byte[] buf = new byte[blockLength - 2];
-						dis.readFully(buf);
-						dos.write(buf);
-					} else
-						skipBytes(dis, blockLength - 2);
-					Logger.minor(this, "Essential frame type "+Integer.toHexString(markerType)+" length "+(blockLength-2)+" offset at end "+cis.count());
-				} else if(markerType == 0xDA) {
+				if(markerType == 0xDA) {
 					// Start of scan marker
 					
 					// Copy marker
@@ -282,6 +268,20 @@ public class JPEGFilter implements ContentDataFilter {
 					finished = true;
 					if(logMINOR)
 						Logger.minor(this, "End of image");
+				} else if(markerType == 0xDB // quantisation table
+						|| markerType == 0xDD // restart interoperability marker
+						|| markerType == 0xC4 // huffman table
+						|| markerType == 0xC0) { // start of frame
+					// Essential, non-terminal frames.
+					if(blockLength < 2)
+						throwError("Invalid frame length", "The file includes an invalid frame (length "+blockLength+").");
+					if(dos != null) {
+						byte[] buf = new byte[blockLength - 2];
+						dis.readFully(buf);
+						dos.write(buf);
+					} else
+						skipBytes(dis, blockLength - 2);
+					Logger.minor(this, "Essential frame type "+Integer.toHexString(markerType)+" length "+(blockLength-2)+" offset at end "+cis.count());
 				} else {
 					if(markerType >= 0xE0 && markerType <= 0xEF) {
 						// APP marker. Can be safely deleted.
