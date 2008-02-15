@@ -124,6 +124,8 @@ public class ContentFilter {
 	 * @throws IOException If an internal error involving buckets occurred.
 	 */
 	public static FilterOutput filter(Bucket data, BucketFactory bf, String typeName, URI baseURI, FoundURICallback cb) throws UnsafeContentTypeException, IOException {
+		if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
+			Logger.minor(ContentFilter.class, "filter(data.size="+data.size()+" typeName="+typeName);
 		String type = typeName;
 		String options = "";
 		String charset = null;
