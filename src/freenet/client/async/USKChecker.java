@@ -8,6 +8,7 @@ import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSKBlock;
 import freenet.node.LowLevelGetException;
+import freenet.node.RequestScheduler;
 import freenet.support.Logger;
 
 /**
@@ -25,12 +26,12 @@ class USKChecker extends BaseSingleFileFetcher {
 		this.cb = cb;
 	}
 	
-	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token) {
+	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched) {
 		unregister();
 		cb.onSuccess((ClientSSKBlock)block);
 	}
 
-	public void onFailure(LowLevelGetException e, Object token) {
+	public void onFailure(LowLevelGetException e, Object token, RequestScheduler sched) {
         if(Logger.shouldLog(Logger.MINOR, this))
         	Logger.minor(this, "onFailure: "+e+" for "+this);
 		// Firstly, can we retry?
@@ -60,7 +61,7 @@ class USKChecker extends BaseSingleFileFetcher {
 			canRetry = true;
 		}
 
-		if(canRetry && retry()) return;
+		if(canRetry && retry(sched)) return;
 		
 		// Ran out of retries.
 		unregister();

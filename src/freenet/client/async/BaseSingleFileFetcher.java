@@ -9,6 +9,7 @@ import freenet.keys.ClientSSK;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.KeyVerifyException;
+import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
 import freenet.support.Logger;
 
@@ -20,6 +21,9 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 	private int retryCount;
 	final FetchContext ctx;
 	static final Object[] keys = new Object[] { new Integer(0) };
+	/** It is essential that we know when the cooldown will end, otherwise we cannot 
+	 * remove the key from the queue if we are killed before that */
+	long cooldownWakeupTime;
 
 	protected BaseSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent) {
 		super(parent);
@@ -27,6 +31,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		this.maxRetries = maxRetries;
 		this.key = key;
 		this.ctx = ctx;
+		cooldownWakeupTime = -1;
 	}
 
 	public Object[] allKeys() {
@@ -49,14 +54,21 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return key instanceof ClientSSK;
 	}
 
-	/** Try again - returns true if we can retry */
-	protected boolean retry() {
+	/** Try again - returns true if we can retry 
+	 * @param sched */
+	protected boolean retry(RequestScheduler sched) {
 		retryCount++;
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+retryCount+ ')');
 		// We want 0, 1, ... maxRetries i.e. maxRetries+1 attempts (maxRetries=0 => try once, no retries, maxRetries=1 = original try + 1 retry)
 		if((retryCount <= maxRetries) || (maxRetries == -1)) {
-			schedule();
+			if(retryCount % ClientRequestScheduler.COOLDOWN_RETRIES == 0) {
+				// Add to cooldown queue. Don't reschedule yet.
+				cooldownWakeupTime = sched.queueCooldown(key);
+				return true; // We will retry, just not yet. See requeueAfterCooldown(Key).
+			} else {
+				schedule();
+			}
 			return true;
 		}
 		return false;
@@ -102,7 +114,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return true;
 	}
 
-	public void onGotKey(Key key, KeyBlock block) {
+	public void onGotKey(Key key, KeyBlock block, RequestScheduler sched) {
 		synchronized(this) {
 			if(isCancelled()) return;
 			if(!key.equals(this.key.getNodeKey())) {
@@ -111,11 +123,28 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 			}
 		}
 		try {
-			onSuccess(Key.createKeyBlock(this.key, block), false, null);
+			onSuccess(Key.createKeyBlock(this.key, block), false, null, sched);
 		} catch (KeyVerifyException e) {
 			Logger.error(this, "onGotKey("+key+","+block+") got "+e+" for "+this, e);
 			// FIXME if we get rid of the direct route this must call onFailure()
 		}
+	}
+	
+
+	public long getCooldownWakeup(Object token) {
+		return cooldownWakeupTime;
+	}
+	
+	public long getCooldownWakeupByKey(Key key) {
+		return cooldownWakeupTime;
+	}
+	
+	public void requeueAfterCooldown(Key key) {
+		if(!(key.equals(this.key.getNodeKey()))) {
+			Logger.error(this, "Got requeueAfterCooldown for wrong key: "+key+" but mine is "+this.key.getNodeKey()+" for "+this.key);
+			return;
+		}
+		schedule();
 	}
 	
 }

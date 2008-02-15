@@ -97,6 +97,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final Node node;
 	public final String name;
 	private final LinkedList /* <WeakReference <RandomGrabArray> > */ recentSuccesses = new LinkedList();
+	private final RequestCooldownQueue cooldownQueue;
+	/** Once a key has been requested a few times, don't request it again for 30 minutes. 
+	 * To do so would be pointless given ULPRs, and just waste bandwidth. */
+	public static final long COOLDOWN_PERIOD = 30*60*1000;
+	/** The number of times a key can be requested before triggering the cooldown period. */
+	public static final int COOLDOWN_RETRIES = 3;
 	
 	/** All pending gets by key. Used to automatically satisfy pending requests when either the key is fetched by
 	 * an overlapping request, or it is fetched by a request from another node. Operations on this are synchronized on
@@ -187,6 +193,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		} else {
 			offeredKeys = null;
 		}
+		cooldownQueue = new RequestCooldownQueue(COOLDOWN_PERIOD);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
@@ -234,12 +241,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 						// verifies at low-level, but not at decode.
 						if(logMINOR)
 							Logger.minor(this, "Decode failed: "+e, e);
-						getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), tok);
+						getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), tok, this);
 						continue; // other keys might be valid
 					}
 					if(block != null) {
 						if(logMINOR) Logger.minor(this, "Can fulfill "+req+" ("+tok+") immediately from store");
-						getter.onSuccess(block, true, tok);
+						getter.onSuccess(block, true, tok, this);
 						// FIXME unfortunately this seems to be necessary on *nix to prevent
 						// critical threads from starving: sadly thread priorities only work on
 						// Windows and as of linux 2.6.23, fair scheduling does not ensure that 
@@ -479,8 +486,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	public void removePendingKey(SendableGet getter, boolean complain, Key key) {
 		boolean dropped = false;
+		Object o;
 		synchronized(pendingKeys) {
-			Object o = pendingKeys.get(key);
+			o = pendingKeys.get(key);
 			if(o == null) {
 				if(complain)
 					Logger.normal(this, "Not found: "+getter+" for "+key+" removing (no such key)");
@@ -526,6 +534,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(dropped && offeredKeys != null) {
 			for(int i=0;i<offeredKeys.length;i++)
 				offeredKeys[i].remove(key);
+		}
+		if(o instanceof SendableGet)
+			cooldownQueue.removeKey(key, ((SendableGet)o).getCooldownWakeupByKey(key));
+		else if(o instanceof SendableGet[]) {
+			SendableGet[] gets = (SendableGet[]) o;
+			for(int i=0;i<gets.length;i++) {
+				cooldownQueue.removeKey(key, gets[i].getCooldownWakeupByKey(key));
+			}
 		}
 	}
 	
@@ -595,14 +611,17 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(o == null) return;
 		if(o instanceof SendableGet) {
 			gets = new SendableGet[] { (SendableGet) o };
+			cooldownQueue.removeKey(key, ((SendableGet)o).getCooldownWakeupByKey(key));
 		} else {
 			gets = (SendableGet[]) o;
+			for(int i=0;i<gets.length;i++)
+				cooldownQueue.removeKey(key, gets[i].getCooldownWakeupByKey(key));
 		}
 		if(gets == null) return;
 		Runnable r = new Runnable() {
 			public void run() {
 				for(int i=0;i<gets.length;i++) {
-					gets[i].onGotKey(key, block);
+					gets[i].onGotKey(key, block, ClientRequestScheduler.this);
 				}
 			}
 		};
@@ -649,6 +668,31 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void dequeueOfferedKey(Key key) {
 		for(int i=0;i<offeredKeys.length;i++) {
 			offeredKeys[i].remove(key);
+		}
+	}
+
+	public long queueCooldown(ClientKey key) {
+		return cooldownQueue.add(key.getNodeKey());
+	}
+
+	public void moveKeysFromCooldownQueue() {
+		long now = System.currentTimeMillis();
+		Key key;
+		while((key = cooldownQueue.removeKeyBefore(now)) != null) {
+			Object o;
+			synchronized(pendingKeys) {
+				o = pendingKeys.get(key);
+			}
+			if(o == null) {
+				continue;
+			} else if(o instanceof SendableGet) {
+				SendableGet get = (SendableGet) o;
+				get.requeueAfterCooldown(key);
+			} else {
+				SendableGet[] gets = (SendableGet[]) o;
+				for(int i=0;i<gets.length;i++)
+					gets[i].requeueAfterCooldown(key);
+			}
 		}
 	}
 }

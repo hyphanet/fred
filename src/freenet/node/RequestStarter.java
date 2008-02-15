@@ -92,6 +92,7 @@ public class RequestStarter implements Runnable {
 		// The last time at which we sent a request or decided not to
 		long cycleTime = sentRequestTime;
 		while(true) {
+			sched.moveKeysFromCooldownQueue();
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(req == null) req = sched.removeFirst();
 			if(req != null) {
@@ -173,7 +174,7 @@ public class RequestStarter implements Runnable {
 			} catch (Throwable t) {
 				if(keyNum != null) {
 					// Re-queue
-					req.internalError(keyNum, t);
+					req.internalError(keyNum, t, sched);
 					Logger.error(this, "Caught "+t+" while trying to start request");
 					return true; // Sort of ... maybe it will clear
 				}

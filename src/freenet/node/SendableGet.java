@@ -30,10 +30,10 @@ public abstract class SendableGet extends SendableRequest {
 	public abstract FetchContext getContext();
 	
 	/** Called when/if the low-level request succeeds. */
-	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore, Object token);
+	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched);
 	
 	/** Called when/if the low-level request fails. */
-	public abstract void onFailure(LowLevelGetException e, Object token);
+	public abstract void onFailure(LowLevelGetException e, Object token, RequestScheduler sched);
 	
 	/** Should the request ignore the datastore? */
 	public abstract boolean ignoreStore();
@@ -59,7 +59,7 @@ public abstract class SendableGet extends SendableRequest {
 			synchronized (this) {
 				if(isCancelled()) {
 					if(logMINOR) Logger.minor(this, "Cancelled: "+this);
-					onFailure(new LowLevelGetException(LowLevelGetException.CANCELLED), null);
+					onFailure(new LowLevelGetException(LowLevelGetException.CANCELLED), null, sched);
 					return false;
 				}	
 			}
@@ -74,18 +74,18 @@ public abstract class SendableGet extends SendableRequest {
 				try {
 					block = core.realGetKey(key, ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
 				} catch (LowLevelGetException e) {
-					onFailure(e, keyNum);
+					onFailure(e, keyNum, sched);
 					return true;
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t, t);
-					onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum);
+					onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, sched);
 					return true;
 				}
-				onSuccess(block, false, keyNum);
+				onSuccess(block, false, keyNum, sched);
 				sched.succeeded(this.getParentGrabArray());
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
-				onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum);
+				onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, sched);
 				return true;
 			}
 			return true;
@@ -104,7 +104,17 @@ public abstract class SendableGet extends SendableRequest {
 			return parent.chkScheduler;
 	}
 
-	public abstract void onGotKey(Key key, KeyBlock block);
+	public abstract void onGotKey(Key key, KeyBlock block, RequestScheduler sched);
+	
+	/**
+	 * Get the time at which the key specified by the given token will wake up from the 
+	 * cooldown queue.
+	 * @param token
+	 * @return
+	 */
+	public abstract long getCooldownWakeup(Object token);
+	
+	public abstract long getCooldownWakeupByKey(Key key);
 	
 	public final void unregister() {
 		getScheduler().removePendingKeys(this, false);
@@ -115,8 +125,14 @@ public abstract class SendableGet extends SendableRequest {
 		getScheduler().removePendingKey(this, false, key);
 	}
 
-	public void internalError(Object keyNum, Throwable t) {
-		onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), keyNum);
+	public void internalError(Object keyNum, Throwable t, RequestScheduler sched) {
+		onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), keyNum, sched);
 	}
-	
+
+	/**
+	 * Requeue a key after it has been on the cooldown queue for a while.
+	 * @param key
+	 */
+	public abstract void requeueAfterCooldown(Key key);
+
 }

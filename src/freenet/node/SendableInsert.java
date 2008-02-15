@@ -17,7 +17,7 @@ public abstract class SendableInsert extends SendableRequest {
 	/** Called when we don't! */
 	public abstract void onFailure(LowLevelPutException e, Object keyNum);
 
-	public void internalError(Object keyNum, Throwable t) {
+	public void internalError(Object keyNum, Throwable t, RequestScheduler sched) {
 		onFailure(new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, t.getMessage(), t), keyNum);
 	}
 

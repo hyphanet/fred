@@ -22,7 +22,9 @@ import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKeyBlock;
+import freenet.keys.Key;
 import freenet.keys.NodeCHK;
+import freenet.node.RequestScheduler;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
@@ -39,6 +41,8 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	final ClientCHK[] checkKeys;
 	final MinimalSplitfileBlock[] dataBuckets;
 	final MinimalSplitfileBlock[] checkBuckets;
+	final long[] dataCooldownTimes;
+	final long[] checkCooldownTimes;
 	final int[] dataRetries;
 	final int[] checkRetries;
 	final Vector subSegments;
@@ -89,6 +93,8 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			checkBuckets[i] = new MinimalSplitfileBlock(i+dataBuckets.length);
 		dataRetries = new int[dataKeys.length];
 		checkRetries = new int[checkKeys.length];
+		dataCooldownTimes = new long[dataKeys.length];
+		checkCooldownTimes = new long[checkKeys.length];
 		subSegments = new Vector();
 		this.fetchContext = fetchContext;
 		maxBlockLength = maxTempLength;
@@ -362,7 +368,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	}
 	
 	/** A request has failed non-fatally, so the block may be retried */
-	public void onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg) {
+	public void onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, RequestScheduler sched) {
 		int tries;
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		boolean failed = false;
@@ -370,10 +376,18 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			if(isFinished()) return;
 			if(blockNo < dataKeys.length) {
 				tries = ++dataRetries[blockNo];
-				if(tries > maxTries && maxTries >= 0) failed = true; 
+				if(tries > maxTries && maxTries >= 0) failed = true;
+				else if(tries % ClientRequestScheduler.COOLDOWN_RETRIES == 0) {
+					dataCooldownTimes[blockNo] = sched.queueCooldown(dataKeys[blockNo]);
+					return; // Don't add to sub-segment yet.
+				}
 			} else {
 				tries = ++checkRetries[blockNo-dataKeys.length];
 				if(tries > maxTries && maxTries >= 0) failed = true;
+				else if(tries % ClientRequestScheduler.COOLDOWN_RETRIES == 0) {
+					checkCooldownTimes[blockNo] = sched.queueCooldown(checkKeys[blockNo]);
+					return; // Don't add to sub-segment yet.
+				}
 			}
 		}
 		if(failed) {
@@ -491,5 +505,59 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			seg.kill();
 		}
 		subSegments.clear();
+	}
+
+	public long getCooldownWakeup(int blockNum) {
+		if(blockNum < dataKeys.length)
+			return dataCooldownTimes[blockNum];
+		else
+			return checkCooldownTimes[blockNum - dataKeys.length];
+	}
+
+	public void requeueAfterCooldown(Key key) {
+		boolean notFound = true;
+		int maxTries = blockFetchContext.maxNonSplitfileRetries;
+		// FIXME synchronization
+		for(int i=0;i<dataKeys.length;i++) {
+			if(dataKeys[i] == null) continue;
+			if(dataKeys[i].getNodeKey().equals(key)) {
+				int tries = dataRetries[i];
+				SplitFileFetcherSubSegment sub = getSubSegment(tries);
+				if(logMINOR)
+					Logger.minor(this, "Retrying after cooldown: data block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
+				sub.add(i, false);
+				notFound = false;
+			}
+		}
+		for(int i=0;i<checkKeys.length;i++) {
+			if(checkKeys[i] == null) continue;
+			if(checkKeys[i].getNodeKey().equals(key)) {
+				int tries = checkRetries[i];
+				SplitFileFetcherSubSegment sub = getSubSegment(tries);
+				if(logMINOR)
+					Logger.minor(this, "Retrying after cooldown: check block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
+				sub.add(i, false);
+				notFound = false;
+			}
+		}
+		if(notFound) {
+			Logger.error(this, "requeueAfterCooldown: Key not found!: "+key+" on "+this);
+		}
+	}
+
+	public long getCooldownWakeupByKey(Key key) {
+		for(int i=0;i<dataKeys.length;i++) {
+			if(dataKeys[i] == null) continue;
+			if(dataKeys[i].getNodeKey().equals(key)) {
+				return dataCooldownTimes[i];
+			}
+		}
+		for(int i=0;i<checkKeys.length;i++) {
+			if(checkKeys[i] == null) continue;
+			if(checkKeys[i].getNodeKey().equals(key)) {
+				return checkCooldownTimes[i];
+			}
+		}
+		return -1;
 	}
 }
