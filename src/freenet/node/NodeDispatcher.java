@@ -316,7 +316,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
 			node.unlockUID(id, isSSK, false, false, false);
-			node.failureTable.onFinalFailure(key, null, htl, -1, source);
+			// Do not tell failure table.
+			// Otherwise an attacker can flood us with requests very cheaply and purge our
+			// failure table even though we didn't accept any of them.
 			return true;
 		}
 		//if(!node.lockUID(id)) return false;
