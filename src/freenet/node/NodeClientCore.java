@@ -57,6 +57,7 @@ import freenet.support.api.StringArrCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
+import freenet.support.io.NativeThread;
 import freenet.support.io.PaddedEphemerallyEncryptedBucketFactory;
 import freenet.support.io.PersistentEncryptedTempBucketFactory;
 import freenet.support.io.PersistentTempBucketFactory;
@@ -115,16 +116,15 @@ public class NodeClientCore implements Persistable {
 	static final int MAX_CACHED_ELEMENTS = 256*1024; // equally arbitrary! FIXME hopefully we can cache many of these though
 	
 	private UserAlert startingUpAlert;
-	private final Thread backgroundBlockEncoderThread;
+	private final NativeThread backgroundBlockEncoderThread;
 
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet oldThrottleFS, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets) throws NodeInitException {
 		this.node = node;
 		this.nodeStats = node.nodeStats;
 		this.random = node.random;
 		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
-		backgroundBlockEncoderThread = new Thread(backgroundBlockEncoder, "Background block encoder");
+		backgroundBlockEncoderThread = new NativeThread(backgroundBlockEncoder, "Background block encoder", Thread.MIN_PRIORITY);
 		backgroundBlockEncoderThread.setDaemon(true);
-		backgroundBlockEncoderThread.setPriority(Thread.MIN_PRIORITY);
 	  	byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
 		this.formPassword = Base64.encode(pwdBuf);
