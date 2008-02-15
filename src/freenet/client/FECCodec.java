@@ -17,6 +17,7 @@ import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
+import freenet.support.io.NativeThread;
 
 /**
  * FEC (forward error correction) handler.
@@ -163,13 +164,6 @@ public abstract class FECCodec {
 						if(writers[i] != null)
 							writers[i].write(realBuffer, i * STRIPE_SIZE,
 								STRIPE_SIZE);
-					
-					// FIXME unfortunately this seems to be necessary on *nix to prevent
-					// critical threads from starving: sadly thread priorities only work on
-					// Windows and as of linux 2.6.23, fair scheduling does not ensure that 
-					// the critical threads (those which set MAX_PRIORITY) get enough CPU time.
-					Thread.yield();
-
 				}
 
 		}
@@ -298,13 +292,6 @@ public abstract class FECCodec {
 						if(writers[i - k] != null)
 							writers[i - k].write(realBuffer, i * STRIPE_SIZE,
 								STRIPE_SIZE);
-					
-					// FIXME unfortunately this seems to be necessary on *nix to prevent
-					// critical threads from starving: sadly thread priorities only work on
-					// Windows and as of linux 2.6.23, fair scheduling does not ensure that 
-					// the critical threads (those which set MAX_PRIORITY) get enough CPU time.
-					Thread.yield();
-
 				}
 
 		}
@@ -337,9 +324,8 @@ public abstract class FECCodec {
 	public static void addToQueue(FECJob job, FECCodec codec) {
 		synchronized(_awaitingJobs) {
 			if(fecRunnerThread == null) {
-				fecRunnerThread = new Thread(fecRunner, "FEC Pool " + (fecPoolCounter++));
+				fecRunnerThread = new NativeThread(fecRunner, "FEC Pool " + (fecPoolCounter++), Thread.MIN_PRIORITY);
 				fecRunnerThread.setDaemon(true);
-				fecRunnerThread.setPriority(Thread.MIN_PRIORITY);
 
 				fecRunnerThread.start();
 			}
