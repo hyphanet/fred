@@ -324,7 +324,7 @@ public abstract class FECCodec {
 	public static void addToQueue(FECJob job, FECCodec codec) {
 		synchronized(_awaitingJobs) {
 			if(fecRunnerThread == null) {
-				fecRunnerThread = new NativeThread(fecRunner, "FEC Pool " + (fecPoolCounter++), Thread.MIN_PRIORITY, true);
+				fecRunnerThread = new NativeThread(fecRunner, "FEC Pool " + (fecPoolCounter++), Thread.MIN_PRIORITY+1, true);
 				fecRunnerThread.setDaemon(true);
 
 				fecRunnerThread.start();
