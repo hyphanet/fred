@@ -301,7 +301,7 @@ public class UdpSocketHandler extends NativeThread implements PacketSocketHandle
 		}
 		super.start();
 		if(!disableHangChecker) {
-			node.executor.execute(new USMChecker(), "MessageCore$USMChecker", Thread.MAX_PRIORITY, false);
+			node.executor.execute(new USMChecker(), "UdpSockerHandler watchdog", Thread.MAX_PRIORITY, false);
 		}
 	}
 	
