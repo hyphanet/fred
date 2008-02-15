@@ -5,6 +5,8 @@
 package freenet.support.io;
 
 import freenet.node.NodeStarter;
+import freenet.support.Logger;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
@@ -17,16 +19,18 @@ import java.net.URL;
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
 public class NativeThread extends Thread {
-	private static boolean _loadNative;
+	public static final boolean _loadNative;
+	private static boolean _disabled;
 	public static final int JAVA_PRIO_RANGE = MAX_PRIORITY - MIN_PRIORITY;
-	private static final int NATIVE_PRIORITY_BASE;
-	public static final int NATIVE_PRIORITY_RANGE;
+	private static int NATIVE_PRIORITY_BASE;
+	public static int NATIVE_PRIORITY_RANGE;
 	private int currentPriority = Thread.MAX_PRIORITY;
 
-	public static final boolean HAS_THREE_NICE_LEVELS;
-	public static final boolean HAS_ENOUGH_NICE_LEVELS;
+	public static boolean HAS_THREE_NICE_LEVELS;
+	public static boolean HAS_ENOUGH_NICE_LEVELS;
 	
 	static {
+		Logger.minor(NativeThread.class, "Running init()");
 		_loadNative = "Linux".equalsIgnoreCase(System.getProperty("os.name")) && NodeStarter.extBuildNumber > 18;
 		if(_loadNative) {
 			//System.loadLibrary("NativeThread");
@@ -46,6 +50,7 @@ public class NativeThread extends Thread {
 			HAS_THREE_NICE_LEVELS = true;
 			HAS_ENOUGH_NICE_LEVELS = true;
 		}
+		Logger.minor(NativeThread.class, "Run init(): _loadNative = "+_loadNative);
 	}
 	
 	private static void loadNative() {
@@ -127,16 +132,26 @@ public class NativeThread extends Thread {
 	 * Rescale java priority and set linux priority.
 	 */
 	private boolean setNativePriority(int prio) {
+		Logger.minor(this, "setNativePriority("+prio+")");
 		setPriority(prio);
-		if(!_loadNative) return true;
-		if(NATIVE_PRIORITY_BASE != getLinuxPriority()) {
+		if(!_loadNative) {
+			Logger.minor(this, "_loadNative is false");
+			return true;
+		}
+		int realPrio = getLinuxPriority();
+		if(_disabled) {
+			Logger.normal(this, "Not setting native priority as disabled due to renicing");
+			return false;
+		}
+		if(NATIVE_PRIORITY_BASE != realPrio) {
 			/* The user has reniced freenet or we didn't use the PacketSender to create the thread
 			 * either ways it's bad for us.
 			 * 
 			 * Let's diable the renicing as we can't rely on it anymore.
 			 */
-			_loadNative = false;
-			System.err.println("Freenet has detected it has been reniced : THAT'S BAD, DON'T DO IT!");
+			_disabled = true;
+			Logger.error(this, "Freenet has detected it has been reniced : THAT'S BAD, DON'T DO IT! Nice level detected statically: "+NATIVE_PRIORITY_BASE+" actual nice level: "+realPrio+" on "+this);
+			System.err.println("Freenet has detected it has been reniced : THAT'S BAD, DON'T DO IT! Nice level detected statically: "+NATIVE_PRIORITY_BASE+" actual nice level: "+realPrio+" on "+this);
 			new NullPointerException().printStackTrace();
 			return false;
 		}
@@ -147,10 +162,15 @@ public class NativeThread extends Thread {
 				" above the current value!! It's not possible if you aren't root" +
 				" and shouldn't ever occur in our code. (asked="+prio+':'+linuxPriority+" currentMax="+
 				+currentPriority+':'+NATIVE_PRIORITY_BASE+") SHOUDLN'T HAPPEN, please report!");
+		Logger.minor(this, "Setting native priority to "+linuxPriority+" (base="+NATIVE_PRIORITY_BASE+") for "+this);
 		return setLinuxPriority(linuxPriority);
 	}
 	
 	public int getNativePriority() {
 		return currentPriority;
+	}
+
+	public static boolean usingNativeCode() {
+		return _loadNative && !_disabled;
 	}
 }
