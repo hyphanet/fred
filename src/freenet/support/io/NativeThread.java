@@ -120,7 +120,6 @@ public class NativeThread extends Thread {
 	private boolean setNativePriority(int prio) {
 		setPriority(prio);
 		if(!_loadNative) return true;
-		System.out.println(getLinuxPriority());
 		if(NATIVE_PRIORITY_BASE != getLinuxPriority()) {
 			/* The user has reniced freenet or we didn't use the PacketSender to create the thread
 			 * either ways it's bad for us.
