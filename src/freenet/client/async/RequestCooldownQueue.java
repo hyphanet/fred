@@ -69,7 +69,7 @@ public class RequestCooldownQueue {
 		int ptr = endPtr;
 		if(endPtr > startPtr) {
 			if(logMINOR) Logger.minor(this, "endPtr > startPtr");
-			if(endPtr == keys.length-1) {
+			if(endPtr >= keys.length-1) {
 				// Last key
 				if(ptr == 0) {
 					// No room
