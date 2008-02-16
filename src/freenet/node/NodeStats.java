@@ -356,7 +356,11 @@ public class NodeStats implements Persistable {
 	}
 
 	public void start() throws NodeInitException {
-		nodePinger.start();
+		node.executor.execute(new Runnable() {
+			public void run() {
+				nodePinger.start();
+			}
+		}, "Starting NodePinger");
 		persister.start();
 		node.getTicker().queueTimedJob(throttledPacketSendAverageIdleUpdater, CHECK_THROTTLE_TIME);
 	}
