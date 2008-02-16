@@ -539,7 +539,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				SplitFileFetcherSubSegment sub = getSubSegment(tries);
 				if(logMINOR)
 					Logger.minor(this, "Retrying after cooldown: check block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
-				sub.add(i, false);
+				sub.add(i+dataKeys.length, false);
 				notFound = false;
 			}
 		}
