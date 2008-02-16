@@ -167,7 +167,7 @@ public class NodeCrypto {
 	
 	private String getTitle(int port) {
 		// FIXME l10n
-		return (isOpennet ? "Opennet " : "Darknet ") + "port " + port;
+		return "UDP " + (isOpennet ? "Opennet " : "Darknet ") + "port " + port;
 	}
 
 	/**
