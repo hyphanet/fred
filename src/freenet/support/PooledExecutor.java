@@ -52,6 +52,8 @@ public class PooledExecutor implements Executor {
 	
 	public void execute(Runnable job, String jobName, int prio, boolean fromTicker) {
 		if(logMINOR) Logger.minor(this, "Executing "+job+" as "+jobName+" at prio "+prio);
+		if(prio < Thread.MIN_PRIORITY || prio > Thread.MAX_PRIORITY)
+			throw new IllegalArgumentException("Unreconized priority level : "+prio+'!');
 		while(true) {
 			MyThread t;
 			boolean mustStart = false;
