@@ -145,7 +145,7 @@ public class PacketSender implements Runnable, Ticker {
 		lastTimeInSeconds = (int) (now / 1000);
 		if(!node.disableHangCheckers) {
 			// Necessary because of sun JVM bugs when NPTL is enabled. Write once, debug everywhere!
-			Thread t1 = new Thread(new Watchdog(), "PacketSender watchdog");
+			Thread t1 = new NativeThread(new Watchdog(), "PacketSender watchdog", NativeThread.MAX_PRIORITY, false);
 			t1.setDaemon(true);
 			t1.start();
 		}
