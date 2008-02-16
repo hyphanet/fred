@@ -90,6 +90,8 @@ public class RequestCooldownQueue {
 			} else {
 				endPtr++;
 			}
+		} else /* endPtr == startPtr at beginning */ {
+			endPtr++;
 		}
 		keys[ptr] = key;
 		times[ptr] = removeTime;
