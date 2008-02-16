@@ -29,7 +29,7 @@ public class RequestCooldownQueue {
 	int endPtr;
 	static boolean logMINOR;
 	
-	static final int MIN_SIZE = 1024;
+	static final int MIN_SIZE = 4;
 	
 	final long cooldownTime;
 
@@ -92,9 +92,10 @@ public class RequestCooldownQueue {
 			} else {
 				endPtr++;
 			}
-		} else /* endPtr == startPtr at beginning */ {
+		} else /* endPtr == startPtr : nothing queued */ {
 			if(logMINOR) Logger.minor(this, "endPtr == startPtr");
 			endPtr++;
+			if(endPtr == keys.length-1) endPtr = 0;
 		}
 		if(logMINOR) Logger.minor(this, "Added at "+ptr+" startPtr="+startPtr+" endPtr="+endPtr);
 		keys[ptr] = key;
