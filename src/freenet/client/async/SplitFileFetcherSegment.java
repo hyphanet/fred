@@ -399,7 +399,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		}
 		// If we are here we are going to retry
 		// Unregister from the old sub-segment before registering on the new.
-		seg.unregisterKey(getBlockKey(blockNo).getNodeKey());
+		seg.unregisterKey(getBlockNodeKey(blockNo));
 		SplitFileFetcherSubSegment sub = getSubSegment(tries);
 		if(logMINOR)
 			Logger.minor(this, "Retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
