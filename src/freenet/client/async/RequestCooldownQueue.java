@@ -128,6 +128,10 @@ public class RequestCooldownQueue {
 				if(startPtr == times.length) startPtr = 0;
 				if(logMINOR) Logger.minor(this, "Skipped hole");
 				continue;
+			} else {
+				times[startPtr] = 0;
+				keys[startPtr] = null;
+				startPtr++;
 			}
 			return key;
 		}
