@@ -65,11 +65,11 @@ public class RequestCooldownQueue {
 	private synchronized void add(Key key, long removeTime) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
-			Logger.minor(this, "Adding key "+key+" remove time "+removeTime+" startPtr="+startPtr+" endPtr="+endPtr);
+			Logger.minor(this, "Adding key "+key+" remove time "+removeTime+" startPtr="+startPtr+" endPtr="+endPtr+" keys.length="+keys.length);
 		int ptr = endPtr;
 		if(endPtr > startPtr) {
 			if(logMINOR) Logger.minor(this, "endPtr > startPtr");
-			if(endPtr >= keys.length-1) {
+			if(endPtr == keys.length-1) {
 				// Last key
 				if(ptr == 0) {
 					// No room
@@ -95,7 +95,7 @@ public class RequestCooldownQueue {
 		} else /* endPtr == startPtr : nothing queued */ {
 			if(logMINOR) Logger.minor(this, "endPtr == startPtr");
 			endPtr++;
-			if(endPtr == keys.length-1) endPtr = 0;
+			if(endPtr == keys.length) endPtr = 0;
 		}
 		if(logMINOR) Logger.minor(this, "Added at "+ptr+" startPtr="+startPtr+" endPtr="+endPtr);
 		keys[ptr] = key;
