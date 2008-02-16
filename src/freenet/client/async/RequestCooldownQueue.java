@@ -67,7 +67,7 @@ public class RequestCooldownQueue {
 		if(logMINOR)
 			Logger.minor(this, "Adding key "+key+" remove time "+removeTime);
 		int ptr = endPtr;
-		if(endPtr > ptr) {
+		if(endPtr > startPtr) {
 			if(endPtr == keys.length-1) {
 				// Last key
 				if(ptr == 0) {
@@ -82,8 +82,8 @@ public class RequestCooldownQueue {
 			} else {
 				endPtr++;
 			}
-		} else if(endPtr < ptr){
-			if(endPtr == ptr - 1) {
+		} else if(endPtr < startPtr){
+			if(endPtr == startPtr - 1) {
 				expandQueue();
 				add(key);
 				return;
