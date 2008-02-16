@@ -66,7 +66,7 @@ public class PooledExecutor implements Executor {
 					t = (MyThread) waitingThreads[prio-1].remove(waitingThreads[prio-1].size()-1);
 				} else {
 					// Must create new thread
-					if((!fromTicker) && NativeThread.usingNativeCode() && prio < Thread.currentThread().getPriority()) {
+					if((!fromTicker) && NativeThread.usingNativeCode() && prio > Thread.currentThread().getPriority()) {
 						// Run on ticker
 						ticker.queueTimedJob(job, 0, true);
 						return;
