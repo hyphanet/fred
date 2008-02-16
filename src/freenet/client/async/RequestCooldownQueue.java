@@ -178,7 +178,7 @@ public class RequestCooldownQueue {
 			}
 			if(nidx == startPtr) break;
 			nidx--;
-			if(nidx == -1) nidx = times.length;
+			if(nidx == -1) nidx = times.length-1;
 		}
 		nidx = idx;
 		// Now try forwards
