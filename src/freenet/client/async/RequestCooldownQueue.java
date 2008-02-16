@@ -134,6 +134,7 @@ public class RequestCooldownQueue {
 				times[startPtr] = 0;
 				keys[startPtr] = null;
 				startPtr++;
+				if(startPtr == times.length) startPtr = 0;
 			}
 			if(logMINOR) Logger.minor(this, "Returning key "+key);
 			return key;
