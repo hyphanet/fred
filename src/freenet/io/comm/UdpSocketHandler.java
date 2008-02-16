@@ -22,7 +22,7 @@ import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.io.NativeThread;
 
-public class UdpSocketHandler extends NativeThread implements PacketSocketHandler, PortForwardSensitiveSocketHandler {
+public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, PortForwardSensitiveSocketHandler {
 
 	private final DatagramSocket _sock;
 	private final InetAddress _bindTo;
@@ -47,7 +47,6 @@ public class UdpSocketHandler extends NativeThread implements PacketSocketHandle
 	private Thread _thread;
 	
 	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node, long startupTime, String title) throws SocketException {
-		super("UDP packet receiver for "+title, NativeThread.MAX_PRIORITY, false);
 		this.node = node;
 		this.title = title;
 		_bindTo = bindto;
@@ -90,7 +89,6 @@ public class UdpSocketHandler extends NativeThread implements PacketSocketHandle
 	}
 	
 	public void run() { // Listen for packets
-		super.run();
 		synchronized(this) {
 			_thread = Thread.currentThread();
 		}
@@ -300,12 +298,11 @@ public class UdpSocketHandler extends NativeThread implements PacketSocketHandle
 	
 	public void start(boolean disableHangChecker) {
 		lastTimeInSeconds = (int) (System.currentTimeMillis() / 1000);
-		setDaemon(true);
 		synchronized(this) {
 			if(!_active) return;
 			_started = true;
 		}
-		super.start();
+		node.executor.execute(this, "UdpSocketHandler for port "+listenPort);
 		if(!disableHangChecker) {
 			node.executor.execute(new USMChecker(), "UdpSockerHandler watchdog", false);
 		}
@@ -445,6 +442,10 @@ public class UdpSocketHandler extends NativeThread implements PacketSocketHandle
 
 	public int getDetectedConnectivityStatus() {
 		return tracker.getPortForwardStatus();
+	}
+
+	public int getPriority() {
+		return NativeThread.MAX_PRIORITY;
 	}
 
 }
