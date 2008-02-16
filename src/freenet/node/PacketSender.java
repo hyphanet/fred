@@ -418,7 +418,7 @@ public class PacketSender implements Runnable, Ticker {
 					}
 				else
 					try {
-						node.executor.execute(r, "Scheduled job: " + r, NativeThread.NORM_PRIORITY, true);
+						node.executor.execute(r, "Scheduled job: " + r, true);
 					} catch(OutOfMemoryError e) {
 						OOMHandler.handleOOM(e);
 						System.err.println("Will retry above failed operation...");
@@ -468,6 +468,8 @@ public class PacketSender implements Runnable, Ticker {
 	public void queueTimedJob(Runnable job, long offset) {
 		queueTimedJob(job, offset, false);
 	}
+	
+	
 	
 	public void queueTimedJob(Runnable job, long offset, boolean runOnTickerAnyway) {
 		// Run directly *if* that won't cause any priority problems.

@@ -23,7 +23,7 @@ import freenet.support.io.NativeThread;
  * ian.
  * @author toad
  */
-public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
+public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter {
 
     // Constants
     static final int ACCEPTED_TIMEOUT = 5000;
@@ -77,7 +77,7 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
     }
 
     public void start() {
-    	node.executor.execute(this, "ResettingHTLProbeRequestSender for UID "+uid, NativeThread.HIGH_PRIORITY);
+    	node.executor.execute(this, "ResettingHTLProbeRequestSender for UID "+uid);
     }
     
     public void run() {
@@ -534,6 +534,10 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
 			if(loc > target && loc < best)
 				best = loc;
 		}
+	}
+
+	public int getPriority() {
+		return NativeThread.HIGH_PRIORITY;
 	}
 
 }

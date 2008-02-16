@@ -22,13 +22,14 @@ import freenet.keys.SSKBlock;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
+import freenet.support.io.NativeThread;
 
 /**
  * Handle an incoming request. Does not do the actual fetching; that
  * is separated off into RequestSender so we get transfer coalescing
  * and both ends for free. 
  */
-public class RequestHandler implements Runnable, ByteCounter, RequestSender.Listener {
+public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.Listener {
 
 	private static boolean logMINOR;
     final Message req;
@@ -598,6 +599,10 @@ public class RequestHandler implements Runnable, ByteCounter, RequestSender.List
 
 	public void sentPayload(int x) {
 		node.sentPayload(x);
+	}
+
+	public int getPriority() {
+		return NativeThread.HIGH_PRIORITY;
 	}
     
 }

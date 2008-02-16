@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
+import freenet.node.PrioRunnable;
 import freenet.node.Ticker;
 import freenet.support.io.NativeThread;
 import java.util.ArrayList;
@@ -43,14 +44,15 @@ public class PooledExecutor implements Executor {
 	}
 	
 	public void execute(Runnable job, String jobName) {
-		execute(job, jobName, NativeThread.NORM_PRIORITY);
+		execute(job, jobName, false);
 	}
 	
-	public void execute(Runnable job, String jobName, int prio) {
-		execute(job, jobName, prio, false);
-	}
-	
-	public void execute(Runnable job, String jobName, int prio, boolean fromTicker) {
+	public void execute(Runnable job, String jobName, boolean fromTicker) {
+		int prio = NativeThread.NORM_PRIORITY;
+		if(job instanceof PrioRunnable) {
+			prio = ((PrioRunnable)job).getPriority();
+		}
+		
 		if(logMINOR) Logger.minor(this, "Executing "+job+" as "+jobName+" at prio "+prio);
 		if(prio < NativeThread.MIN_PRIORITY || prio > NativeThread.MAX_PRIORITY)
 			throw new IllegalArgumentException("Unreconized priority level : "+prio+'!');

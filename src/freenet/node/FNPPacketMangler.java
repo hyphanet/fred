@@ -2579,11 +2579,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	
 	private final void _fillJFKDHFIFOOffThread() {
 		// do it off-thread
-		node.executor.execute(new Runnable() {
+		node.executor.execute(new PrioRunnable() {
 			public void run() {
 				_fillJFKDHFIFO();
 			}
-		}, "DiffieHellman exponential signing", NativeThread.HIGH_PRIORITY);
+			public int getPriority() {
+				return NativeThread.HIGH_PRIORITY;
+			}
+		}, "DiffieHellman exponential signing");
 	}
 	
 	private void _fillJFKDHFIFO() {

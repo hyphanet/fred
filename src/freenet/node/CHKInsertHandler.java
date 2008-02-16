@@ -20,6 +20,7 @@ import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
+import freenet.support.io.NativeThread;
 
 /**
  * @author amphibian
@@ -27,7 +28,7 @@ import freenet.support.ShortBuffer;
  * Handle an incoming insert request.
  * This corresponds to RequestHandler.
  */
-public class CHKInsertHandler implements Runnable, ByteCounter {
+public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 
 
     static final int DATA_INSERT_TIMEOUT = 10000;
@@ -478,5 +479,9 @@ public class CHKInsertHandler implements Runnable, ByteCounter {
 
 	public void sentPayload(int x) {
 		node.sentPayload(x);
+	}
+
+	public int getPriority() {
+		return NativeThread.HIGH_PRIORITY;
 	}
 }

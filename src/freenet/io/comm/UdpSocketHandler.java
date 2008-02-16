@@ -16,6 +16,7 @@ import freenet.io.comm.Peer.LocalAddressException;
 import freenet.node.LoggingConfigHandler;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
+import freenet.node.PrioRunnable;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -301,11 +302,11 @@ public class UdpSocketHandler extends NativeThread implements PacketSocketHandle
 		}
 		super.start();
 		if(!disableHangChecker) {
-			node.executor.execute(new USMChecker(), "UdpSockerHandler watchdog", NativeThread.MAX_PRIORITY, false);
+			node.executor.execute(new USMChecker(), "UdpSockerHandler watchdog", false);
 		}
 	}
 	
-	public class USMChecker implements Runnable {
+	public class USMChecker implements PrioRunnable {
 		public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
 			while(true) {
@@ -363,6 +364,10 @@ public class UdpSocketHandler extends NativeThread implements PacketSocketHandle
 					node.exit(NodeInitException.EXIT_MAIN_LOOP_LOST);
 				}
 			}
+		}
+
+		public int getPriority() {
+			return NativeThread.MAX_PRIORITY;
 		}
 	}
 

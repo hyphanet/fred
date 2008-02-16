@@ -324,7 +324,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
 		//if(!node.lockUID(id)) return false;
 		RequestHandler rh = new RequestHandler(m, source, id, node, htl, key);
-		node.executor.execute(rh, "RequestHandler for UID "+id+" on "+node.getDarknetPortNumber(), NativeThread.HIGH_PRIORITY);
+		node.executor.execute(rh, "RequestHandler for UID "+id+" on "+node.getDarknetPortNumber());
 		return true;
 	}
 
@@ -365,10 +365,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		long now = System.currentTimeMillis();
 		if(m.getSpec().equals(DMT.FNPSSKInsertRequest)) {
 			SSKInsertHandler rh = new SSKInsertHandler(m, source, id, node, now);
-			node.executor.execute(rh, "SSKInsertHandler for "+id+" on "+node.getDarknetPortNumber(), NativeThread.HIGH_PRIORITY);
+			node.executor.execute(rh, "SSKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		} else {
 			CHKInsertHandler rh = new CHKInsertHandler(m, source, id, node, now);
-			node.executor.execute(rh, "CHKInsertHandler for "+id+" on "+node.getDarknetPortNumber(), NativeThread.HIGH_PRIORITY);
+			node.executor.execute(rh, "CHKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		}
 		if(logMINOR) Logger.minor(this, "Started InsertHandler for "+id);
 		return true;
@@ -449,7 +449,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				return true;
 			}
 			AnnounceSender sender = new AnnounceSender(m, uid, source, om, node);
-			node.executor.execute(sender, "Announcement sender for "+uid, NativeThread.HIGH_PRIORITY);
+			node.executor.execute(sender, "Announcement sender for "+uid);
 			success = true;
 			return true;
 		} finally {

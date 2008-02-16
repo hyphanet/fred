@@ -18,12 +18,13 @@ import freenet.store.KeyCollisionException;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
+import freenet.support.io.NativeThread;
 
 /**
  * Handles an incoming SSK insert.
  * SSKs need their own insert/request classes, see comments in SSKInsertSender.
  */
-public class SSKInsertHandler implements Runnable, ByteCounter {
+public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 
 	private static boolean logMINOR;
 	
@@ -353,6 +354,10 @@ public class SSKInsertHandler implements Runnable, ByteCounter {
 
 	public void sentPayload(int x) {
 		node.sentPayload(x);
+	}
+
+	public int getPriority() {
+		return NativeThread.HIGH_PRIORITY;
 	}
     
 }

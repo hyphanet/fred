@@ -15,8 +15,9 @@ import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.NativeThread;
 
-public class AnnounceSender implements Runnable, ByteCounter {
+public class AnnounceSender implements PrioRunnable, ByteCounter {
 
     // Constants
     static final int ACCEPTED_TIMEOUT = 5000;
@@ -527,6 +528,10 @@ public class AnnounceSender implements Runnable, ByteCounter {
 
 	public void sentPayload(int x) {
 		// Doesn't count.
+	}
+
+	public int getPriority() {
+		return NativeThread.HIGH_PRIORITY;
 	}
 	
 }
