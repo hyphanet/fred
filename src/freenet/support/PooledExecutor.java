@@ -58,21 +58,23 @@ public class PooledExecutor implements Executor {
 			boolean miss = false;
 			synchronized(this) {
 				jobCount++;
-				if(!waitingThreads[prio].isEmpty()) {
-					t = (MyThread) waitingThreads[prio].remove(waitingThreads[prio].size()-1);
-				} else {
-					// Must create new thread
-					if((!fromTicker) && NativeThread.usingNativeCode() && prio < Thread.currentThread().getPriority()) {
-						// Run on ticker
-						ticker.queueTimedJob(job, 0, true);
-						return;
+				synchronized(waitingThreads) {
+					if(!waitingThreads[prio].isEmpty())
+						t = (MyThread) waitingThreads[prio].remove(waitingThreads[prio].size() - 1);
+					else {
+						// Must create new thread
+						if((!fromTicker) && NativeThread.usingNativeCode() && prio < Thread.currentThread().getPriority()) {
+							// Run on ticker
+							ticker.queueTimedJob(job, 0, true);
+							return;
+						}
+						// Will be coalesced by thread count listings if we use "@" or "for"
+						t = new MyThread("Pooled thread awaiting work @" + (threadCounter[prio]), threadCounter[prio], prio, !fromTicker);
+						threadCounter[prio]++;
+						t.setDaemon(true);
+						mustStart = true;
+						miss = true;
 					}
-					// Will be coalesced by thread count listings if we use "@" or "for"
-					t = new MyThread("Pooled thread awaiting work @"+(threadCounter[prio]), threadCounter[prio], prio, !fromTicker);
-					threadCounter[prio]++;
-					t.setDaemon(true);
-					mustStart = true;
-					miss = true;
 				}
 			}
 			synchronized(t) {
@@ -100,11 +102,13 @@ public class PooledExecutor implements Executor {
 		}
 	}
 
-	public synchronized int[] waitingThreads() {
-		int[] result = new int[waitingThreads.length];
-		for(int i=0; i<result.length; i++)
-			result[i] = waitingThreads[i].size();
-		return result;
+	public int[] waitingThreads() {
+		synchronized(waitingThreads) {
+			int[] result = new int[waitingThreads.length];
+			for(int i = 0; i < result.length; i++)
+				result[i] = waitingThreads[i].size();
+			return result;
+		}
 	}
 	
 	class MyThread extends NativeThread {
@@ -132,7 +136,7 @@ public class PooledExecutor implements Executor {
 				}
 				
 				if(job == null) {
-					synchronized(PooledExecutor.this) {
+					synchronized(waitingThreads) {
 						waitingThreads[nativePriority].add(this);
 					}
 					synchronized(this) {
@@ -151,7 +155,7 @@ public class PooledExecutor implements Executor {
 							// execute() won't give us another job if alive = false
 						}
 					}
-					synchronized(PooledExecutor.this) {
+					synchronized(waitingThreads) {
 						waitingThreads[nativePriority].remove(this);
 						if(!alive) {
 							runningThreads[nativePriority].remove(this);
