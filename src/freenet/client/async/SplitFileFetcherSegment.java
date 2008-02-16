@@ -382,7 +382,8 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 					return; // Don't add to sub-segment yet.
 				}
 			} else {
-				tries = ++checkRetries[blockNo-dataKeys.length];
+				blockNo -= dataKeys.length;
+				tries = ++checkRetries[blockNo];
 				if(tries > maxTries && maxTries >= 0) failed = true;
 				else if(tries % ClientRequestScheduler.COOLDOWN_RETRIES == 0) {
 					checkCooldownTimes[blockNo] = sched.queueCooldown(checkKeys[blockNo]);
