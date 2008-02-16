@@ -24,8 +24,8 @@ public class RequestCooldownQueue {
 	/** count of keys removed from middle i.e. holes */
 	int holes;
 	/** location of first (chronologically) key */
-	int ptr;
-	/** location of last key (may be < ptr if wrapped around) */
+	int startPtr;
+	/** location of last key (may be < startPtr if wrapped around) */
 	int endPtr;
 	static boolean logMINOR;
 	
@@ -38,7 +38,7 @@ public class RequestCooldownQueue {
 		keys = new Key[MIN_SIZE];
 		times = new long[MIN_SIZE];
 		holes = 0;
-		ptr = 0;
+		startPtr = 0;
 		endPtr = 0;
 		this.cooldownTime = cooldownTime;
 	}
@@ -57,7 +57,7 @@ public class RequestCooldownQueue {
 	}
 	
 	private synchronized long getLastTime() {
-		if(ptr == endPtr) return -1;
+		if(startPtr == endPtr) return -1;
 		if(endPtr > 0) return times[endPtr-1];
 		return times[times.length-1];
 	}
@@ -105,21 +105,21 @@ public class RequestCooldownQueue {
 		if(logMINOR)
 			Logger.minor(this, "Remove key before "+now);
 		while(true) {
-			if(ptr == endPtr) {
+			if(startPtr == endPtr) {
 				if(logMINOR) Logger.minor(this, "No keys queued");
 				return null;
 			}
-			long time = times[ptr];
+			long time = times[startPtr];
 			if(time > now) {
 				if(logMINOR) Logger.minor(this, "First key is later at time "+time);
 				return null;
 			}
-			Key key = keys[ptr];
+			Key key = keys[startPtr];
 			if(key == null) {
-				times[ptr] = 0;
-				ptr++;
+				times[startPtr] = 0;
+				startPtr++;
 				holes--;
-				if(ptr == times.length) ptr = 0;
+				if(startPtr == times.length) startPtr = 0;
 				if(logMINOR) Logger.minor(this, "Skipped hole");
 				continue;
 			}
@@ -134,16 +134,16 @@ public class RequestCooldownQueue {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Remove key "+key+" at time "+time);
 		int idx = -1;
-		if(endPtr > ptr) {
-			idx = Fields.binarySearch(times, time, ptr, endPtr);
-		} else if(endPtr == ptr) {
+		if(endPtr > startPtr) {
+			idx = Fields.binarySearch(times, time, startPtr, endPtr);
+		} else if(endPtr == startPtr) {
 			if(logMINOR) Logger.minor(this, "No keys queued");
 			return false;
-		} else { // endPtr < ptr
+		} else { // endPtr < startPtr
 			// FIXME: ARGH! Java doesn't provide binarySearch with from and to!
-			if(ptr != times.length - 1)
-				idx = Fields.binarySearch(times, time, ptr, times.length - 1);
-			if(idx < 0 && ptr != 0)
+			if(startPtr != times.length - 1)
+				idx = Fields.binarySearch(times, time, startPtr, times.length - 1);
+			if(idx < 0 && startPtr != 0)
 				idx = Fields.binarySearch(times, time, 0, endPtr);
 		}
 		if(idx < 0) return false;
@@ -162,7 +162,7 @@ public class RequestCooldownQueue {
 				if(logMINOR) Logger.minor(this, "Found (backwards)");
 				return true;
 			}
-			if(nidx == ptr) break;
+			if(nidx == startPtr) break;
 			nidx--;
 			if(nidx == -1) nidx = times.length;
 		}
@@ -175,7 +175,7 @@ public class RequestCooldownQueue {
 				if(logMINOR) Logger.minor(this, "Found (forwards)");
 				return true;
 			}
-			if(nidx == ptr) break;
+			if(nidx == startPtr) break;
 			nidx++;
 			if(nidx == times.length) nidx = 0;
 		}
@@ -192,11 +192,11 @@ public class RequestCooldownQueue {
 		// FIXME reuse the old buffers if it fits
 		Key[] newKeys = new Key[newSize];
 		long[] newTimes = new long[newSize];
-		// Reset ptr to 0, and remove holes.
+		// Reset startPtr to 0, and remove holes.
 		int x = 0;
 		long lastTime = -1;
-		if(endPtr > ptr) {
-			for(int i=ptr;i<endPtr;i++) {
+		if(endPtr > startPtr) {
+			for(int i=startPtr;i<endPtr;i++) {
 				if(keys[i] == null) continue;
 				newKeys[x] = keys[i];
 				newTimes[x] = times[i];
@@ -205,8 +205,8 @@ public class RequestCooldownQueue {
 				lastTime = times[i];
 				x++;
 			}
-		} else if(endPtr < ptr) {
-			for(int i=ptr;i<keys.length;i++) {
+		} else if(endPtr < startPtr) {
+			for(int i=startPtr;i<keys.length;i++) {
 				if(keys[i] == null) continue;
 				newKeys[x] = keys[i];
 				newTimes[x] = times[i];
@@ -224,12 +224,12 @@ public class RequestCooldownQueue {
 				lastTime = times[i];
 				x++;
 			}
-		} else /* endPtr == ptr */ {
-			Logger.error(this, "RequestCooldownQueue: expandQueue() called with endPtr == ptr == "+ptr+" !!");
+		} else /* endPtr == startPtr */ {
+			Logger.error(this, "RequestCooldownQueue: expandQueue() called with endPtr == startPtr == "+startPtr+" !!");
 			return;
 		}
 		holes = 0;
-		ptr = 0;
+		startPtr = 0;
 		keys = newKeys;
 		times = newTimes;
 		endPtr = x;
