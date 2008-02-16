@@ -43,7 +43,7 @@ public class PooledExecutor implements Executor {
 	}
 	
 	public void execute(Runnable job, String jobName) {
-		execute(job, jobName, Thread.NORM_PRIORITY);
+		execute(job, jobName, NativeThread.NORM_PRIORITY);
 	}
 	
 	public void execute(Runnable job, String jobName, int prio) {
@@ -52,7 +52,7 @@ public class PooledExecutor implements Executor {
 	
 	public void execute(Runnable job, String jobName, int prio, boolean fromTicker) {
 		if(logMINOR) Logger.minor(this, "Executing "+job+" as "+jobName+" at prio "+prio);
-		if(prio < Thread.MIN_PRIORITY || prio > Thread.MAX_PRIORITY)
+		if(prio < NativeThread.MIN_PRIORITY || prio > NativeThread.MAX_PRIORITY)
 			throw new IllegalArgumentException("Unreconized priority level : "+prio+'!');
 		while(true) {
 			MyThread t;

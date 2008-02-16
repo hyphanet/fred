@@ -46,6 +46,8 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.StringArray;
 import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
+import freenet.support.io.NativeThread;
+
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -2581,7 +2583,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			public void run() {
 				_fillJFKDHFIFO();
 			}
-		}, "DiffieHellman exponential signing", Thread.NORM_PRIORITY);
+		}, "DiffieHellman exponential signing", NativeThread.NORM_PRIORITY);
 	}
 	
 	private void _fillJFKDHFIFO() {

@@ -62,7 +62,7 @@ public class PacketSender implements Runnable, Ticker {
 		resendPackets = new LinkedList();
 		timedJobsByTime = new TreeMap();
 		this.node = node;
-		myThread = new NativeThread(this, "PacketSender thread for " + node.getDarknetPortNumber(), Thread.MAX_PRIORITY, false);
+		myThread = new NativeThread(this, "PacketSender thread for " + node.getDarknetPortNumber(), NativeThread.MAX_PRIORITY, false);
 		myThread.setDaemon(true);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
@@ -418,7 +418,7 @@ public class PacketSender implements Runnable, Ticker {
 					}
 				else
 					try {
-						node.executor.execute(r, "Scheduled job: " + r, Thread.NORM_PRIORITY, true);
+						node.executor.execute(r, "Scheduled job: " + r, NativeThread.NORM_PRIORITY, true);
 					} catch(OutOfMemoryError e) {
 						OOMHandler.handleOOM(e);
 						System.err.println("Will retry above failed operation...");

@@ -141,7 +141,7 @@ public class NodeStarter implements WrapperListener
 					}
 			}
 		};
-		NativeThread plug = new NativeThread(useless, "Plug", Thread.MAX_PRIORITY, false);
+		NativeThread plug = new NativeThread(useless, "Plug", NativeThread.MAX_PRIORITY, false);
 		// Not daemon, but doesn't do anything.
 		// Keeps the JVM alive.
 		// DO NOT do anything in the plug thread, if you do you risk the EvilJVMBug.

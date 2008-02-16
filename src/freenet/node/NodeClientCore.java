@@ -123,7 +123,7 @@ public class NodeClientCore implements Persistable {
 		this.nodeStats = node.nodeStats;
 		this.random = node.random;
 		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
-		backgroundBlockEncoderThread = new NativeThread(backgroundBlockEncoder, "Background block encoder", Thread.MIN_PRIORITY, false);
+		backgroundBlockEncoderThread = new NativeThread(backgroundBlockEncoder, "Background block encoder", NativeThread.MIN_PRIORITY, false);
 		backgroundBlockEncoderThread.setDaemon(true);
 	  	byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);

@@ -28,7 +28,7 @@ public final class CPUAdjustingSwapRequestInterval implements SwapRequestInterva
     }
 
     public void start() {
-        NativeThread t = new NativeThread(this, "CPUAdjustingSwapRequestInterval", Thread.MAX_PRIORITY, false);
+        NativeThread t = new NativeThread(this, "CPUAdjustingSwapRequestInterval", NativeThread.MAX_PRIORITY, false);
         t.setDaemon(true);
         t.start();
     }
