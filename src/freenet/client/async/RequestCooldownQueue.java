@@ -29,7 +29,7 @@ public class RequestCooldownQueue {
 	int endPtr;
 	static boolean logMINOR;
 	
-	static final int MIN_SIZE = 4;
+	static final int MIN_SIZE = 2;
 	
 	final long cooldownTime;
 
@@ -71,7 +71,7 @@ public class RequestCooldownQueue {
 			if(logMINOR) Logger.minor(this, "endPtr > startPtr");
 			if(endPtr == keys.length-1) {
 				// Last key
-				if(ptr == 0) {
+				if(startPtr == 0) {
 					// No room
 					expandQueue();
 					add(key);
