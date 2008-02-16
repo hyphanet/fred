@@ -15,6 +15,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
+import freenet.support.io.NativeThread;
 
 /**
  * Probe request sender.
@@ -76,7 +77,7 @@ public class ResettingHTLProbeRequestSender implements Runnable, ByteCounter {
     }
 
     public void start() {
-    	node.executor.execute(this, "ResettingHTLProbeRequestSender for UID "+uid);
+    	node.executor.execute(this, "ResettingHTLProbeRequestSender for UID "+uid, NativeThread.HIGH_PRIORITY);
     }
     
     public void run() {

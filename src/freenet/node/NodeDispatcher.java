@@ -19,6 +19,7 @@ import freenet.keys.NodeSSK;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
+import freenet.support.io.NativeThread;
 
 /**
  * @author amphibian
@@ -323,7 +324,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
 		//if(!node.lockUID(id)) return false;
 		RequestHandler rh = new RequestHandler(m, source, id, node, htl, key);
-		node.executor.execute(rh, "RequestHandler for UID "+id+" on "+node.getDarknetPortNumber());
+		node.executor.execute(rh, "RequestHandler for UID "+id+" on "+node.getDarknetPortNumber(), NativeThread.HIGH_PRIORITY);
 		return true;
 	}
 
@@ -364,10 +365,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		long now = System.currentTimeMillis();
 		if(m.getSpec().equals(DMT.FNPSSKInsertRequest)) {
 			SSKInsertHandler rh = new SSKInsertHandler(m, source, id, node, now);
-			node.executor.execute(rh, "SSKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
+			node.executor.execute(rh, "SSKInsertHandler for "+id+" on "+node.getDarknetPortNumber(), NativeThread.HIGH_PRIORITY);
 		} else {
 			CHKInsertHandler rh = new CHKInsertHandler(m, source, id, node, now);
-			node.executor.execute(rh, "CHKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
+			node.executor.execute(rh, "CHKInsertHandler for "+id+" on "+node.getDarknetPortNumber(), NativeThread.HIGH_PRIORITY);
 		}
 		if(logMINOR) Logger.minor(this, "Started InsertHandler for "+id);
 		return true;
@@ -448,7 +449,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				return true;
 			}
 			AnnounceSender sender = new AnnounceSender(m, uid, source, om, node);
-			node.executor.execute(sender, "Announcement sender for "+uid);
+			node.executor.execute(sender, "Announcement sender for "+uid, NativeThread.HIGH_PRIORITY);
 			success = true;
 			return true;
 		} finally {
