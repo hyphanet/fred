@@ -164,6 +164,10 @@ public class USKManager {
 	public void subscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch, Object client) {
 		USKFetcher sched = null;
 		long ed = origUSK.suggestedEdition;
+		if(ed < 0) {
+			Logger.error(this, "Subscribing to USK with negative edition number: "+ed);
+			ed = -ed;
+		}
 		long curEd;
 		curEd = lookup(origUSK);
 		synchronized(this) {

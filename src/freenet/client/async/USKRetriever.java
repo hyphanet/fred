@@ -31,6 +31,10 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	public void onFoundEdition(long l, USK key) {
+		if(l < 0) {
+			Logger.error(this, "Found negative edition: "+l+" for "+key+" !!!");
+			return;
+		}
 		// Create a SingleFileFetcher for the key (as an SSK).
 		// Put the edition number into its context object.
 		// Put ourself as callback.
