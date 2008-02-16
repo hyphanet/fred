@@ -14,7 +14,7 @@ import java.util.ArrayList;
  */
 public class PooledExecutor implements Executor {
 
-	private final ArrayList[] runningThreads /* <MyThread> */ = new ArrayList[NativeThread.JAVA_PRIO_RANGE];
+	private final ArrayList[] runningThreads /* <MyThread> */ = new ArrayList[NativeThread.JAVA_PRIO_RANGE + 1];
 	private final ArrayList[] waitingThreads /* <MyThread> */ = new ArrayList[runningThreads.length];
 	long[] threadCounter = new long[runningThreads.length];
 	private long jobCount;
@@ -60,8 +60,8 @@ public class PooledExecutor implements Executor {
 			boolean miss = false;
 			synchronized(this) {
 				jobCount++;
-				if(!waitingThreads[prio].isEmpty()) {
-					t = (MyThread) waitingThreads[prio].remove(waitingThreads[prio].size()-1);
+				if(!waitingThreads[prio-1].isEmpty()) {
+					t = (MyThread) waitingThreads[prio-1].remove(waitingThreads[prio-1].size()-1);
 				} else {
 					// Must create new thread
 					if((!fromTicker) && NativeThread.usingNativeCode() && prio < Thread.currentThread().getPriority()) {
@@ -70,8 +70,8 @@ public class PooledExecutor implements Executor {
 						return;
 					}
 					// Will be coalesced by thread count listings if we use "@" or "for"
-					t = new MyThread("Pooled thread awaiting work @"+(threadCounter[prio]), threadCounter[prio], prio, !fromTicker);
-					threadCounter[prio]++;
+					t = new MyThread("Pooled thread awaiting work @"+(threadCounter[prio-1]), threadCounter[prio-1], prio, !fromTicker);
+					threadCounter[prio-1]++;
 					t.setDaemon(true);
 					mustStart = true;
 					miss = true;
@@ -91,7 +91,7 @@ public class PooledExecutor implements Executor {
 			if(mustStart) {
 				t.start();
 				synchronized(this) {
-					runningThreads[prio].add(t);
+					runningThreads[prio-1].add(t);
 					if(miss)
 						jobMisses++;
 					if(logMINOR)
@@ -135,7 +135,7 @@ public class PooledExecutor implements Executor {
 				
 				if(job == null) {
 					synchronized(PooledExecutor.this) {
-						waitingThreads[nativePriority].add(this);
+						waitingThreads[nativePriority-1].add(this);
 					}
 					synchronized(this) {
 						if(nextJob == null) {
@@ -154,9 +154,9 @@ public class PooledExecutor implements Executor {
 						}
 					}
 					synchronized(PooledExecutor.this) {
-						waitingThreads[nativePriority].remove(this);
+						waitingThreads[nativePriority-1].remove(this);
 						if(!alive) {
-							runningThreads[nativePriority].remove(this);
+							runningThreads[nativePriority-1].remove(this);
 							if(logMINOR)
 								Logger.minor(this, "Exiting having executed "+ranJobs+" jobs : "+this);
 							return;
