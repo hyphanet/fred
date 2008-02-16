@@ -65,7 +65,7 @@ public class RequestCooldownQueue {
 	private synchronized void add(Key key, long removeTime) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
-			Logger.minor(this, "Adding key "+key+" remove time "+removeTime);
+			Logger.minor(this, "Adding key "+key+" remove time "+removeTime+" startPtr="+startPtr+" endPtr="+endPtr);
 		int ptr = endPtr;
 		if(endPtr > startPtr) {
 			if(logMINOR) Logger.minor(this, "endPtr > startPtr");
@@ -96,6 +96,7 @@ public class RequestCooldownQueue {
 			if(logMINOR) Logger.minor(this, "endPtr == startPtr");
 			endPtr++;
 		}
+		if(logMINOR) Logger.minor(this, "Added at "+ptr+" startPtr="+startPtr+" endPtr="+endPtr);
 		keys[ptr] = key;
 		times[ptr] = removeTime;
 		return;
