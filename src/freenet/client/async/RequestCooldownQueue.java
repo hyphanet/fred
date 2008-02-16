@@ -94,8 +94,9 @@ public class RequestCooldownQueue {
 			}
 		} else /* endPtr == startPtr : nothing queued */ {
 			if(logMINOR) Logger.minor(this, "endPtr == startPtr");
-			endPtr++;
-			if(endPtr == keys.length) endPtr = 0;
+			endPtr = 1;
+			startPtr = 0;
+			ptr = 0;
 		}
 		if(logMINOR) Logger.minor(this, "Added at "+ptr+" startPtr="+startPtr+" endPtr="+endPtr);
 		keys[ptr] = key;
