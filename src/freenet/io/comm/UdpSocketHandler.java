@@ -310,7 +310,24 @@ public class UdpSocketHandler extends NativeThread implements PacketSocketHandle
 		public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
 			while(true) {
-				if(_isDone) return; // don't synchronize because don't want to deadlock - this is our recovery mechanism
+				if(_isDone) {
+					boolean active;
+					// Gone now, so we can safely synchronize.
+					synchronized(this) {
+						active = _active;
+					}
+					if(active) {
+						System.err.println("UdpSocketHandler for port "+listenPort+" has died without being told to! Restarting node...");
+						if(node.isUsingWrapper()){
+							WrapperManager.requestThreadDump();
+							WrapperManager.restart();
+						}else{
+							// No wrapper : we don't want to let it harm the network!
+							node.exit("USM deadlock");
+						}
+					}
+					return; // don't synchronize because don't want to deadlock - this is our recovery mechanism
+				}
 				logMINOR = Logger.shouldLog(Logger.MINOR, UdpSocketHandler.this);
 				try {
 					Thread.sleep(10*1000);
