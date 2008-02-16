@@ -109,17 +109,13 @@ public class RequestCooldownQueue {
 	synchronized Key removeKeyBefore(long now) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
-			Logger.minor(this, "Remove key before "+now);
+			Logger.minor(this, "Remove key before "+now+" : startPtr="+startPtr+" endPtr="+endPtr+" holes="+holes);
 		while(true) {
 			if(startPtr == endPtr) {
 				if(logMINOR) Logger.minor(this, "No keys queued");
 				return null;
 			}
 			long time = times[startPtr];
-			if(time > now) {
-				if(logMINOR) Logger.minor(this, "First key is later at time "+time);
-				return null;
-			}
 			Key key = keys[startPtr];
 			if(key == null) {
 				times[startPtr] = 0;
@@ -129,10 +125,15 @@ public class RequestCooldownQueue {
 				if(logMINOR) Logger.minor(this, "Skipped hole");
 				continue;
 			} else {
+				if(time > now) {
+					if(logMINOR) Logger.minor(this, "First key is later at time "+time);
+					return null;
+				}
 				times[startPtr] = 0;
 				keys[startPtr] = null;
 				startPtr++;
 			}
+			if(logMINOR) Logger.minor(this, "Returning key "+key);
 			return key;
 		}
 	}
@@ -142,7 +143,7 @@ public class RequestCooldownQueue {
 	 */
 	synchronized boolean removeKey(Key key, long time) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Remove key "+key+" at time "+time);
+		if(logMINOR) Logger.minor(this, "Remove key "+key+" at time "+time+" startPtr="+startPtr+" endPtr="+endPtr+" holes="+holes);
 		int idx = -1;
 		if(endPtr > startPtr) {
 			idx = Fields.binarySearch(times, time, startPtr, endPtr);
