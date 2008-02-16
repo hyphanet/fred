@@ -25,7 +25,7 @@ public class RequestCooldownQueue {
 	int holes;
 	/** location of first (chronologically) key */
 	int startPtr;
-	/** location of last key (may be < startPtr if wrapped around) */
+	/** location next key will be put in (may be < startPtr if wrapped around) */
 	int endPtr;
 	static boolean logMINOR;
 	
