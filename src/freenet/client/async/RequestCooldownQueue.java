@@ -157,8 +157,8 @@ public class RequestCooldownQueue {
 			if(idx < 0 && startPtr != 0)
 				idx = Fields.binarySearch(times, time, 0, endPtr);
 		}
-		if(idx < 0) return false;
 		if(logMINOR) Logger.minor(this, "idx = "+idx);
+		if(idx < 0) return false;
 		if(keys[idx] == key) {
 			keys[idx] = null;
 			if(logMINOR) Logger.minor(this, "Found (exact)");

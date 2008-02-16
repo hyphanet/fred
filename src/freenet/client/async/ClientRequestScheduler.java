@@ -100,7 +100,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final RequestCooldownQueue cooldownQueue;
 	/** Once a key has been requested a few times, don't request it again for 30 minutes. 
 	 * To do so would be pointless given ULPRs, and just waste bandwidth. */
-	public static final long COOLDOWN_PERIOD = 30*60*1000;
+	public static final long COOLDOWN_PERIOD = 2*60*1000;
 	/** The number of times a key can be requested before triggering the cooldown period. */
 	public static final int COOLDOWN_RETRIES = 3;
 	
@@ -678,7 +678,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void moveKeysFromCooldownQueue() {
 		long now = System.currentTimeMillis();
 		Key key;
-		while((key = cooldownQueue.removeKeyBefore(now)) != null) {
+		while((key = cooldownQueue.removeKeyBefore(now)) != null) { 
+			if(logMINOR) Logger.minor(this, "Restoring key: "+key);
 			Object o;
 			synchronized(pendingKeys) {
 				o = pendingKeys.get(key);
