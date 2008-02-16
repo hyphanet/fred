@@ -340,6 +340,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public void requeueAfterCooldown(Key key) {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Requeueing after cooldown "+key+" for "+this);
 		segment.requeueAfterCooldown(key);
 	}
 

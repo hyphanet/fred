@@ -144,6 +144,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 			Logger.error(this, "Got requeueAfterCooldown for wrong key: "+key+" but mine is "+this.key.getNodeKey()+" for "+this.key);
 			return;
 		}
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Requeueing after cooldown "+key+" for "+this);
 		schedule();
 	}
 	
