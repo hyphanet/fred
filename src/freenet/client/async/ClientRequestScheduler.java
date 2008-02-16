@@ -472,9 +472,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 							allRequestsByClientRequest.remove(cr);
 						if(logMINOR) Logger.minor(this, "Removed from HashSet for "+cr+" which now has "+v.size()+" elements");
 					}
-					if(!isInsertScheduler) {
-						removePendingKeys((SendableGet) req, true);
-					}
+					// Do not remove from the pendingKeys list.
+					// Whether it is running a request, waiting to execute, or waiting on the
+					// cooldown queue, ULPRs and backdoor coalescing should still be active.
 				}
 				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req);
 				return req;
