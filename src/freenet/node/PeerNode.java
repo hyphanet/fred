@@ -667,10 +667,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		try {
 			String arkPubKey = fs.get("ark.pubURI");
 			arkNo = fs.getLong("ark.number", -1);
-			if(arkPubKey == null && arkNo == -1) {
+			if(arkPubKey == null && arkNo <= -1) {
 				// ark.pubURI and ark.number are always optional as a pair
 				return false;
-			} else if(arkPubKey != null && arkNo != -1) {
+			} else if(arkPubKey != null && arkNo > -1) {
 				if(onStartup) arkNo++;
 				// this is the number of the ref we are parsing.
 				// we want the number of the next edition.
@@ -678,11 +678,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				FreenetURI uri = new FreenetURI(arkPubKey);
 				ClientSSK ssk = new ClientSSK(uri);
 				ark = new USK(ssk, arkNo);
-			} else if(forDiffNodeRef && arkPubKey == null && myARK != null && arkNo != -1) {
+			} else if(forDiffNodeRef && arkPubKey == null && myARK != null && arkNo > -1) {
 				// get the ARK URI from the previous ARK and the edition from the SFS
 				ClientSSK ssk = myARK.getSSK(arkNo);
 				ark = new USK(ssk, arkNo);
-			} else if(forDiffNodeRef && arkPubKey != null && myARK != null && arkNo != -1) {
+			} else if(forDiffNodeRef && arkPubKey != null && myARK != null && arkNo <= -1) {
 				// the SFS must contain an edition if it contains a arkPubKey
 				Logger.error(this, "Got a differential node reference from " + this + " with an arkPubKey but no ARK edition");
 				return false;
