@@ -67,7 +67,7 @@ public class UdpSocketHandler extends NativeThread implements PacketSocketHandle
 		}
 //			}
 		// Only used for debugging, no need to seed from Yarrow
-		dropRandom = new Random();
+		dropRandom = node.fastWeakRandom;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.MINOR, this);
 		tracker = AddressTracker.create(node.lastBootID, node.getNodeDir(), listenPort);
