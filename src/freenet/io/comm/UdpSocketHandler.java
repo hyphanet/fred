@@ -44,6 +44,7 @@ public class UdpSocketHandler extends NativeThread implements PacketSocketHandle
 	private final int listenPort;
 	private final String title;
 	private boolean _started;
+	private Thread _thread;
 	
 	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node, long startupTime, String title) throws SocketException {
 		super("UDP packet receiver for "+title, NativeThread.MAX_PRIORITY, false);
@@ -90,6 +91,9 @@ public class UdpSocketHandler extends NativeThread implements PacketSocketHandle
 	
 	public void run() { // Listen for packets
 		super.run();
+		synchronized(this) {
+			_thread = Thread.currentThread();
+		}
 		tracker.startReceive(System.currentTimeMillis());
 		try {
 			runLoop();
@@ -125,6 +129,7 @@ public class UdpSocketHandler extends NativeThread implements PacketSocketHandle
 			Logger.error(this, "run() exiting for UdpSocketHandler on port "+_sock.getLocalPort());
 			synchronized (this) {
 				_isDone = true;
+				_thread = null;
 				notifyAll();
 			}
 		}
@@ -334,7 +339,7 @@ public class UdpSocketHandler extends NativeThread implements PacketSocketHandle
 				} catch (InterruptedException e) {
 					// Ignore
 				}
-				if(UdpSocketHandler.this.isAlive()) {
+				if(_thread == null || _thread.isAlive()) {
 					if(logMINOR) Logger.minor(this, "PING on "+UdpSocketHandler.this);
 					long time = System.currentTimeMillis();
 					int timeSecs = (int) (time / 1000);
