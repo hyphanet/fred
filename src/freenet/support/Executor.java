@@ -12,6 +12,8 @@ public interface Executor {
 	public void execute(Runnable job, String jobName);
 	public void execute(Runnable job, String jobName, boolean fromTicker);
 
-	/** Count the number of threads waiting for work */
+	/** Count the number of threads waiting for work at each priority level */
 	public int[] waitingThreads();
+	/** Count the number of threads running at each priority level */
+	public int[] runningThreads();
 }
