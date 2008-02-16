@@ -27,12 +27,14 @@ public class RequestCooldownQueue {
 	int ptr;
 	/** location of last key (may be < ptr if wrapped around) */
 	int endPtr;
+	static boolean logMINOR;
 	
 	static final int MIN_SIZE = 1024;
 	
 	final long cooldownTime;
 
 	RequestCooldownQueue(long cooldownTime) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		keys = new Key[MIN_SIZE];
 		times = new long[MIN_SIZE];
 		holes = 0;
@@ -61,6 +63,9 @@ public class RequestCooldownQueue {
 	}
 
 	private synchronized void add(Key key, long removeTime) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR)
+			Logger.minor(this, "Adding key "+key+" remove time "+removeTime);
 		int ptr = endPtr;
 		if(endPtr > ptr) {
 			if(endPtr == keys.length-1) {
@@ -96,16 +101,26 @@ public class RequestCooldownQueue {
 	 * @return Either a Key or null if no keys have passed their cooldown time.
 	 */
 	synchronized Key removeKeyBefore(long now) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR)
+			Logger.minor(this, "Remove key before "+now);
 		while(true) {
-			if(ptr == endPtr) return null;
+			if(ptr == endPtr) {
+				if(logMINOR) Logger.minor(this, "No keys queued");
+				return null;
+			}
 			long time = times[ptr];
-			if(time > now) return null;
+			if(time > now) {
+				if(logMINOR) Logger.minor(this, "First key is later at time "+time);
+				return null;
+			}
 			Key key = keys[ptr];
 			if(key == null) {
 				times[ptr] = 0;
 				ptr++;
 				holes--;
 				if(ptr == times.length) ptr = 0;
+				if(logMINOR) Logger.minor(this, "Skipped hole");
 				continue;
 			}
 			return key;
@@ -116,10 +131,13 @@ public class RequestCooldownQueue {
 	 * @return True if the key was found.
 	 */
 	synchronized boolean removeKey(Key key, long time) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Remove key "+key+" at time "+time);
 		int idx = -1;
 		if(endPtr > ptr) {
 			idx = Fields.binarySearch(times, time, ptr, endPtr);
 		} else if(endPtr == ptr) {
+			if(logMINOR) Logger.minor(this, "No keys queued");
 			return false;
 		} else { // endPtr < ptr
 			// FIXME: ARGH! Java doesn't provide binarySearch with from and to!
@@ -129,8 +147,10 @@ public class RequestCooldownQueue {
 				idx = Fields.binarySearch(times, time, 0, endPtr);
 		}
 		if(idx < 0) return false;
+		if(logMINOR) Logger.minor(this, "idx = "+idx);
 		if(keys[idx] == key) {
 			keys[idx] = null;
+			if(logMINOR) Logger.minor(this, "Found (exact)");
 			return true;
 		}
 		// Try backwards first
@@ -139,6 +159,7 @@ public class RequestCooldownQueue {
 			if(times[nidx] != time) break;
 			if(keys[nidx] == key) {
 				keys[nidx] = null;
+				if(logMINOR) Logger.minor(this, "Found (backwards)");
 				return true;
 			}
 			if(nidx == ptr) break;
@@ -151,12 +172,14 @@ public class RequestCooldownQueue {
 			if(times[nidx] != time) break;
 			if(keys[nidx] == key) {
 				keys[nidx] = null;
+				if(logMINOR) Logger.minor(this, "Found (forwards)");
 				return true;
 			}
 			if(nidx == ptr) break;
 			nidx++;
 			if(nidx == times.length) nidx = 0;
 		}
+		if(logMINOR) Logger.minor(this, "Not found");
 		return false;
 	}
 
@@ -164,6 +187,7 @@ public class RequestCooldownQueue {
 	 * Allocate a new queue, and compact while copying.
 	 */
 	private synchronized void expandQueue() {
+		if(logMINOR) Logger.minor(this, "Expanding queue");
 		int newSize = (keys.length - holes) * 2;
 		// FIXME reuse the old buffers if it fits
 		Key[] newKeys = new Key[newSize];
