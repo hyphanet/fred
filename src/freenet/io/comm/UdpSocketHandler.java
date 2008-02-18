@@ -314,10 +314,9 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			while(true) {
 				if(_isDone) {
 					boolean active;
-					// Gone now, so we can safely synchronize.
-					synchronized(UdpSocketHandler.this) {
+					// Gone now, little reason to synchronize; particularly for reading a primitive.
+					// The EvilJVM bug may deadlock on proper synchronization here anyway.
 						active = _active;
-					}
 					if(active) {
 						System.err.println("UdpSocketHandler for port "+listenPort+" has died without being told to! Restarting node...");
 						if(node.isUsingWrapper()){
@@ -374,10 +373,6 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 					}
 				} else {
 					if(_isDone) return;
-					// Final check
-					synchronized(this) {
-						if(_isDone) return;
-					}
 					Logger.error(this, "MAIN LOOP TERMINATED");
 					System.err.println("MAIN LOOP TERMINATED!");
 					node.exit(NodeInitException.EXIT_MAIN_LOOP_LOST);
