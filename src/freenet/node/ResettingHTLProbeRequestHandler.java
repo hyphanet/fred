@@ -53,7 +53,8 @@ public class ResettingHTLProbeRequestHandler implements ResettingHTLProbeRequest
 			source.sendAsync(accepted, null, 0, sender);
 			source.sendAsync(trace, null, 0, sender);
 		} catch (NotConnectedException e) {
-			// Ignore, sender will pick up
+			// We completed(id), rather than locking it, so we don't need to unlock.
+			return; // So all we need to do is not start the sender.
 		}
 		sender.start();
 	}
