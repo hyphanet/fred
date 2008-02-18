@@ -90,7 +90,7 @@ class FailureTableEntry implements TimedOutNodesList {
 		}
 	}
 	
-	public void failedTo(PeerNode routedTo, int timeout, long now, short htl) {
+	public synchronized void failedTo(PeerNode routedTo, int timeout, long now, short htl) {
 		if(logMINOR) {
 			Logger.minor(this, "Failed sending request to "+routedTo.shortToString()+" : timeout "+timeout);
 			int idx = addRequestedFrom(routedTo, now);
