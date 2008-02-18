@@ -311,10 +311,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			for(int i=0;i<blockNums.size();i++) {
 				token = blockNums.get(i);
 				int num = ((Integer)token).intValue();
-				ckey = segment.getBlockKey(num);
-				if(ckey == null) continue; // Already got this key
-				Key k = ckey.getNodeKey();
-				if(k.equals(key)) {
+				Key k = segment.getBlockNodeKey(num);
+				if(k != null && k.equals(key)) {
 					blockNum = num;
 					blockNums.remove(i);
 					break;
