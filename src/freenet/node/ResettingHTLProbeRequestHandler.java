@@ -46,16 +46,16 @@ public class ResettingHTLProbeRequestHandler implements ResettingHTLProbeRequest
 		ResettingHTLProbeRequestHandler handler = 
 			new ResettingHTLProbeRequestHandler(source, uid, sender);
 		sender.addListener(handler);
-		sender.start();
 		PeerNode[] peers = n.peers.connectedPeers;
 		Message accepted = DMT.createFNPAccepted(uid);
-		Message trace = DMT.createFNPRHProbeTrace(uid, nearestLoc, best, htl, (short)1, (short)1, n.getLocation(), n.swapIdentifier, LocationManager.extractLocs(peers, true), LocationManager.extractUIDs(peers), (short)0, (short)1, "", source.swapIdentifier);
+		Message trace = DMT.createFNPRHProbeTrace(uid, sender.getNearestLoc(), sender.getBest(), htl, (short)1, (short)1, n.getLocation(), n.swapIdentifier, LocationManager.extractLocs(peers, true), LocationManager.extractUIDs(peers), (short)0, (short)1, "", source.swapIdentifier);
 		try {
 			source.sendAsync(accepted, null, 0, sender);
 			source.sendAsync(trace, null, 0, sender);
 		} catch (NotConnectedException e) {
 			// Ignore, sender will pick up
 		}
+		sender.start();
 	}
 
 	public void onCompletion(double nearest, double best, short counter, short uniqueCounter, short linearCounter) throws NotConnectedException {

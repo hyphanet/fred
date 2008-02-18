@@ -540,4 +540,12 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
 		return NativeThread.HIGH_PRIORITY;
 	}
 
+	double getBest() {
+		return best;
+	}
+
+	public double getNearestLoc() {
+		return nearestLoc;
+	}
+
 }
