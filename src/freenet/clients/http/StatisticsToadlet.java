@@ -401,8 +401,8 @@ public class StatisticsToadlet extends Toadlet {
 		
 		for(int i=0; i<activeThreadsByPriority.length; i++) {
 			row = threadsByPriorityTable.addChild("tr");
-			row.addChild("th", String.valueOf(i+1));
-			row.addChild("th", String.valueOf(activeThreadsByPriority[i]));		
+			row.addChild("td", String.valueOf(i+1));
+			row.addChild("td", String.valueOf(activeThreadsByPriority[i]));		
 		}
 	}
 
