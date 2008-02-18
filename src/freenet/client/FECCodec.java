@@ -12,6 +12,7 @@ import java.util.NoSuchElementException;
 import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.util.Buffer;
 
+import freenet.node.PrioRunnable;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -354,7 +355,7 @@ public abstract class FECCodec {
 	 *
 	 *	TODO: maybe it ought to start more than one thread on SMP system ? (take care, it's memory consumpsive)
 	 */
-	private static class FECRunner implements Runnable {
+	private static class FECRunner implements PrioRunnable {
 
 		public void run() {
 			freenet.support.Logger.OSThread.logPID(this);
@@ -412,6 +413,10 @@ public abstract class FECCodec {
 					runningFECThreads--;
 				}
 			}
+		}
+
+		public int getPriority() {
+			return NativeThread.LOW_PRIORITY;
 		}
 	}
 
