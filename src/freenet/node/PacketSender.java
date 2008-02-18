@@ -58,6 +58,15 @@ public class PacketSender implements Runnable, Ticker {
 	private int[] rpiIntTemp;
 	private boolean started = false;
 
+	private class Job {
+		final String name;
+		final Runnable job;
+		Job(String name, Runnable job) {
+			this.name = name;
+			this.job = job;
+		}
+	}
+	
 	PacketSender(Node node) {
 		resendPackets = new LinkedList();
 		timedJobsByTime = new TreeMap();
@@ -387,12 +396,12 @@ public class PacketSender implements Runnable, Ticker {
 					if(jobsToRun == null)
 						jobsToRun = new Vector();
 					Object o = timedJobsByTime.remove(tRun);
-					if(o instanceof Runnable[]) {
-						Runnable[] r = (Runnable[]) o;
+					if(o instanceof Job[]) {
+						Job[] r = (Job[]) o;
 						for(int i = 0; i < r.length; i++)
 							jobsToRun.add(r[i]);
 					} else {
-						Runnable r = (Runnable) o;
+						Job r = (Job) o;
 						jobsToRun.add(r);
 					}
 				} else
@@ -405,24 +414,24 @@ public class PacketSender implements Runnable, Ticker {
 
 		if(jobsToRun != null)
 			for(int i = 0; i < jobsToRun.size(); i++) {
-				Runnable r = (Runnable) jobsToRun.get(i);
+				Job r = (Job) jobsToRun.get(i);
 				if(logMINOR)
 					Logger.minor(this, "Running " + r);
-				if(r instanceof FastRunnable)
+				if(r.job instanceof FastRunnable)
 					// Run in-line
 
 					try {
-						r.run();
+						r.job.run();
 					} catch(Throwable t) {
 						Logger.error(this, "Caught " + t + " running " + r, t);
 					}
 				else
 					try {
-						node.executor.execute(r, "Scheduled job: " + r, true);
+						node.executor.execute(r.job, r.name, true);
 					} catch(OutOfMemoryError e) {
 						OOMHandler.handleOOM(e);
 						System.err.println("Will retry above failed operation...");
-						queueTimedJob(r, 200);
+						queueTimedJob(r.job, r.name, 200, true);
 					} catch(Throwable t) {
 						Logger.error(this, "Caught in PacketSender: " + t, t);
 						System.err.println("Caught in PacketSender: " + t);
@@ -471,13 +480,14 @@ public class PacketSender implements Runnable, Ticker {
 	
 	
 	
-	public void queueTimedJob(Runnable job, String name, long offset, boolean runOnTickerAnyway) {
+	public void queueTimedJob(Runnable runner, String name, long offset, boolean runOnTickerAnyway) {
 		// Run directly *if* that won't cause any priority problems.
 		if(offset <= 0 && !runOnTickerAnyway) {
-			if(logMINOR) Logger.minor(this, "Running directly: "+job);
-			node.executor.execute(job, name);
+			if(logMINOR) Logger.minor(this, "Running directly: "+runner);
+			node.executor.execute(runner, name);
 			return;
 		}
+		Job job = new Job(name, runner);
 		if(offset < 0) offset = 0;
 		long now = System.currentTimeMillis();
 		Long l = new Long(offset + now);
@@ -485,11 +495,11 @@ public class PacketSender implements Runnable, Ticker {
 			Object o = timedJobsByTime.get(l);
 			if(o == null)
 				timedJobsByTime.put(l, job);
-			else if(o instanceof Runnable)
-				timedJobsByTime.put(l, new Runnable[]{(Runnable) o, job});
-			else if(o instanceof Runnable[]) {
-				Runnable[] r = (Runnable[]) o;
-				Runnable[] jobs = new Runnable[r.length + 1];
+			else if(o instanceof Job)
+				timedJobsByTime.put(l, new Job[]{(Job) o, job});
+			else if(o instanceof Job[]) {
+				Job[] r = (Job[]) o;
+				Job[] jobs = new Job[r.length + 1];
 				System.arraycopy(r, 0, jobs, 0, r.length);
 				jobs[jobs.length - 1] = job;
 				timedJobsByTime.put(l, jobs);
