@@ -717,7 +717,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	public void startProbe(final double target, final ProbeCallback cb, int probeType) {
 		final long uid = node.random.nextLong();
 		if(probeType == PROBE_TYPE_RESETTING_HTL) {
-			ResettingHTLProbeRequestSender rs = new ResettingHTLProbeRequestSender(target, node.maxHTL(), uid, node, node.getLocation(), true, null, -1.0);
+			ResettingHTLProbeRequestSender rs = new ResettingHTLProbeRequestSender(target, node.maxHTL(), uid, node, node.getLocation(), true, null, 2.0);
 			rs.addListener(new ResettingHTLProbeRequestSender.Listener() {
 
 				public void onCompletion(double nearest, double best, short counter, short uniqueCounter, short linearCounter) throws NotConnectedException {
