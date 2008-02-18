@@ -122,6 +122,10 @@ public class FCPServer implements Runnable {
 		globalClient = new FCPClient("Global Queue", this, null, true);
 		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		
+		if(enabled && enablePersistentDownloads) {
+			loadPersistentRequests();
+		}
 	}
 	
 	private void maybeGetNetworkInterface() {
@@ -146,10 +150,6 @@ public class FCPServer implements Runnable {
 	public void maybeStart() {
 		if (this.enabled) {
 			maybeGetNetworkInterface();
-			
-			if(enablePersistentDownloads) {
-				loadPersistentRequests();
-			}
 			
 			Logger.normal(this, "Starting FCP server on "+bindTo+ ':' +port+ '.');
 			System.out.println("Starting FCP server on "+bindTo+ ':' +port+ '.');
