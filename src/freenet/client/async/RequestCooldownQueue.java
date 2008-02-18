@@ -164,6 +164,7 @@ public class RequestCooldownQueue {
 		if(idx < 0) return false;
 		if(keys[idx] == key) {
 			keys[idx] = null;
+			holes++;
 			if(logMINOR) Logger.minor(this, "Found (exact)");
 			return true;
 		}
@@ -173,6 +174,7 @@ public class RequestCooldownQueue {
 			if(times[nidx] != time) break;
 			if(keys[nidx] == key) {
 				keys[nidx] = null;
+				holes++;
 				if(logMINOR) Logger.minor(this, "Found (backwards)");
 				return true;
 			}
@@ -186,6 +188,7 @@ public class RequestCooldownQueue {
 			if(times[nidx] != time) break;
 			if(keys[nidx] == key) {
 				keys[nidx] = null;
+				holes++;
 				if(logMINOR) Logger.minor(this, "Found (forwards)");
 				return true;
 			}
