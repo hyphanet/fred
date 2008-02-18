@@ -19,7 +19,6 @@ import freenet.keys.NodeSSK;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
-import freenet.support.io.NativeThread;
 
 /**
  * @author amphibian
