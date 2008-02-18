@@ -63,6 +63,7 @@ public class RequestCooldownQueue {
 	}
 
 	private synchronized void add(Key key, long removeTime) {
+		if(holes < 0) Logger.error(this, "holes = "+holes+" !!");
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Adding key "+key+" remove time "+removeTime+" startPtr="+startPtr+" endPtr="+endPtr+" keys.length="+keys.length);
@@ -112,6 +113,7 @@ public class RequestCooldownQueue {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Remove key before "+now+" : startPtr="+startPtr+" endPtr="+endPtr+" holes="+holes);
+		if(holes < 0) Logger.error(this, "holes = "+holes+" !!");
 		while(true) {
 			if(startPtr == endPtr) {
 				if(logMINOR) Logger.minor(this, "No keys queued");
@@ -146,6 +148,7 @@ public class RequestCooldownQueue {
 	 */
 	synchronized boolean removeKey(Key key, long time) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(holes < 0) Logger.error(this, "holes = "+holes+" !!");
 		if(logMINOR) Logger.minor(this, "Remove key "+key+" at time "+time+" startPtr="+startPtr+" endPtr="+endPtr+" holes="+holes);
 		int idx = -1;
 		if(endPtr > startPtr) {
@@ -205,6 +208,7 @@ public class RequestCooldownQueue {
 	 */
 	private synchronized void expandQueue() {
 		if(logMINOR) Logger.minor(this, "Expanding queue");
+		if(holes < 0) Logger.error(this, "holes = "+holes+" !!");
 		int newSize = (keys.length - holes) * 2;
 		// FIXME reuse the old buffers if it fits
 		Key[] newKeys = new Key[newSize];
