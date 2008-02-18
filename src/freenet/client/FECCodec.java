@@ -337,12 +337,10 @@ public abstract class FECCodec {
 				executor.execute(fecRunner, "FEC Pool "+fecPoolCounter++);
 				runningFECThreads++;
 			}
+			_awaitingJobs.notifyAll();
 		}
 		if(logMINOR)
 			Logger.minor(StandardOnionFECCodec.class, "Adding a new job to the queue (" + _awaitingJobs.size() + ").");
-		synchronized(fecRunner) {
-			fecRunner.notifyAll();
-		}
 	}
 	private static final LinkedList _awaitingJobs = new LinkedList();
 	private static final FECRunner fecRunner = new FECRunner();
@@ -363,9 +361,10 @@ public abstract class FECCodec {
 			try {
 				while(true) {
 					FECJob job = null;
-					try {
 						// Get a job
 						synchronized(_awaitingJobs) {
+							while (_awaitingJobs.isEmpty())
+								_awaitingJobs.wait(Integer.MAX_VALUE);
 							job = (FECJob) _awaitingJobs.removeLast();
 						}
 
@@ -397,14 +396,6 @@ public abstract class FECCodec {
 						} catch(Throwable e) {
 							Logger.error(this, "The callback failed!" + e.getMessage(), e);
 						}
-					} catch(NoSuchElementException ne) {
-						try {
-							synchronized(this) {
-								wait(Integer.MAX_VALUE);
-							}
-						} catch(InterruptedException e) {
-						}
-					}
 				}
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t+" in "+this, t);
