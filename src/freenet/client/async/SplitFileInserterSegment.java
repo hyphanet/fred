@@ -221,12 +221,12 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 				checkFS.removeSubset(index);
 			}
 			splitfileAlgo = FECCodec.getCodec(splitfileAlgorithm,
-					dataBlockCount, checkBlocks.length);
+					dataBlockCount, checkBlocks.length, ctx.executor);
 		} else {
 			Logger.normal(this, "Not encoded because no check blocks");
 			encoded = false;
 			splitfileAlgo = FECCodec.getCodec(splitfileAlgorithm,
-					dataBlockCount);
+					dataBlockCount, ctx.executor);
 			int checkBlocksCount = splitfileAlgo.countCheckBlocks();
 			this.checkURIs = new ClientCHK[checkBlocksCount];
 			this.checkBlocks = new Bucket[checkBlocksCount];

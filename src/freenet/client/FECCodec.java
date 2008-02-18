@@ -12,6 +12,7 @@ import java.util.NoSuchElementException;
 import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.util.Buffer;
 
+import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -33,17 +34,24 @@ public abstract class FECCodec {
 	private static int STRIPE_SIZE = 4096;
 	static boolean logMINOR;
 	FECCode fec;
-	int k, n;
+	protected final int k, n;
+	private final Executor executor;
 
+	protected FECCodec(Executor executor, int k, int n) {
+		this.executor = executor;
+		this.k = k;
+		this.n = n;
+	}
+	
 	/**
 	 * Get a codec where we know both the number of data blocks and the number
 	 * of check blocks, and the codec type. Normally for decoding.
 	 */
-	public static FECCodec getCodec(short splitfileType, int dataBlocks, int checkBlocks) {
+	public static FECCodec getCodec(short splitfileType, int dataBlocks, int checkBlocks, Executor executor) {
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
 			return null;
 		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD)
-			return StandardOnionFECCodec.getInstance(dataBlocks, checkBlocks);
+			return StandardOnionFECCodec.getInstance(dataBlocks, checkBlocks, executor);
 		else
 			return null;
 	}
@@ -52,14 +60,14 @@ public abstract class FECCodec {
 	 * Get a codec where we know only the number of data blocks and the codec
 	 * type. Normally for encoding.
 	 */
-	public static FECCodec getCodec(short splitfileType, int dataBlocks) {
+	public static FECCodec getCodec(short splitfileType, int dataBlocks, Executor executor) {
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
 			return null;
 		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
 			int checkBlocks = (dataBlocks >> 1);
 			if((dataBlocks & 1) == 1)
 				checkBlocks++;
-			return StandardOnionFECCodec.getInstance(dataBlocks, checkBlocks);
+			return StandardOnionFECCodec.getInstance(dataBlocks, checkBlocks, executor);
 		}
 		else
 			return null;
@@ -318,18 +326,15 @@ public abstract class FECCodec {
 	 * @param FECJob
 	 */
 	public void addToQueue(FECJob job) {
-		addToQueue(job, this);
+		addToQueue(job, this, executor);
 	}
 
-	public static void addToQueue(FECJob job, FECCodec codec) {
+	public static void addToQueue(FECJob job, FECCodec codec, Executor executor) {
 		synchronized(_awaitingJobs) {
-			if(fecRunnerThread == null) {
-				fecRunnerThread = new NativeThread(fecRunner, "FEC Pool " + (fecPoolCounter++), NativeThread.LOW_PRIORITY, true);
-				fecRunnerThread.setDaemon(true);
-
-				fecRunnerThread.start();
-			}
 			_awaitingJobs.addFirst(job);
+			if(runningFECThreads == 0) {
+				executor.execute(fecRunner, "FEC Pool "+fecPoolCounter++);
+			}
 		}
 		if(logMINOR)
 			Logger.minor(StandardOnionFECCodec.class, "Adding a new job to the queue (" + _awaitingJobs.size() + ").");
@@ -339,7 +344,7 @@ public abstract class FECCodec {
 	}
 	private static final LinkedList _awaitingJobs = new LinkedList();
 	private static final FECRunner fecRunner = new FECRunner();
-	private static Thread fecRunnerThread;
+	private static int runningFECThreads;
 	private static int fecPoolCounter;
 
 	/**
@@ -403,7 +408,9 @@ public abstract class FECCodec {
 				Logger.error(this, "Caught "+t+" in "+this, t);
 			}
 			finally {
-				fecRunnerThread = null;
+				synchronized(FECCodec.class) {
+					runningFECThreads--;
+				}
 			}
 		}
 	}

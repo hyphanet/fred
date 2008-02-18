@@ -199,7 +199,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		// Now decode
 		if(logMINOR) Logger.minor(this, "Decoding "+SplitFileFetcherSegment.this);
 
-		codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length);
+		codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length, blockFetchContext.executor);
 		
 		if(splitfileType != Metadata.SPLITFILE_NONREDUNDANT) {
 			codec.addToQueue(new FECJob(codec, dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, fetchContext.bucketFactory, this, true));

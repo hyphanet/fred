@@ -7,6 +7,7 @@ import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.fec.Native8Code;
 import com.onionnetworks.fec.PureCode;
 
+import freenet.support.Executor;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 
@@ -44,14 +45,14 @@ public class StandardOnionFECCodec extends FECCodec {
 		}
 	}
 
-	public synchronized static FECCodec getInstance(int dataBlocks, int checkBlocks) {
+	public synchronized static FECCodec getInstance(int dataBlocks, int checkBlocks, Executor executor) {
 		MyKey key = new MyKey(dataBlocks, checkBlocks + dataBlocks);
 		StandardOnionFECCodec codec = (StandardOnionFECCodec) recentlyUsedCodecs.get(key);
 		if(codec != null) {
 			recentlyUsedCodecs.push(key, codec);
 			return codec;
 		}
-		codec = new StandardOnionFECCodec(dataBlocks, checkBlocks + dataBlocks);
+		codec = new StandardOnionFECCodec(executor, dataBlocks, checkBlocks + dataBlocks);
 		recentlyUsedCodecs.push(key, codec);
 		while(recentlyUsedCodecs.size() > MAX_CACHED_CODECS) {
 			recentlyUsedCodecs.popKey();
@@ -59,9 +60,8 @@ public class StandardOnionFECCodec extends FECCodec {
 		return codec;
 	}
 
-	public StandardOnionFECCodec(int k, int n) {
-		this.k = k;
-		this.n = n;
+	public StandardOnionFECCodec(Executor executor, int k, int n) {
+		super(executor, k, n);
 		
 		FECCode fec2 = null;
 		if(!noNative) {

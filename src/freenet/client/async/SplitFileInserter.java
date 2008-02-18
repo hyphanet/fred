@@ -203,7 +203,7 @@ public class SplitFileInserter implements ClientPutState {
 		// First split the data up
 		if((dataBlocks < segmentSize) || (segmentSize == -1)) {
 			// Single segment
-			FECCodec codec = FECCodec.getCodec(splitfileAlgorithm, origDataBlocks.length);
+			FECCodec codec = FECCodec.getCodec(splitfileAlgorithm, origDataBlocks.length, ctx.executor);
 			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, codec, origDataBlocks, ctx, getCHKOnly, 0);
 			segs.add(onlySeg);
 		} else {
@@ -216,7 +216,7 @@ public class SplitFileInserter implements ClientPutState {
 				j = i;
 				for(int x=0;x<seg.length;x++)
 					if(seg[x] == null) throw new NullPointerException("In splitIntoSegs: "+x+" is null of "+seg.length+" of "+segNo);
-				FECCodec codec = FECCodec.getCodec(splitfileAlgorithm, seg.length);
+				FECCodec codec = FECCodec.getCodec(splitfileAlgorithm, seg.length, ctx.executor);
 				SplitFileInserterSegment s = new SplitFileInserterSegment(this, codec, seg, ctx, getCHKOnly, segNo);
 				segs.add(s);
 				
