@@ -209,7 +209,10 @@ public class RequestCooldownQueue {
 	 */
 	private synchronized void expandQueue() {
 		if(logMINOR) Logger.minor(this, "Expanding queue");
-		if(holes < 0) Logger.error(this, "holes = "+holes+" !!");
+		if(holes < 0) {
+			Logger.error(this, "holes = "+holes+" !!");
+			holes = 0;
+		}
 		int newSize = (keys.length - holes) * 2;
 		// FIXME reuse the old buffers if it fits
 		Key[] newKeys = new Key[newSize];
