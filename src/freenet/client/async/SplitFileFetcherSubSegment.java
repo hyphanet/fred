@@ -167,6 +167,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 					Integer x = (Integer) blockNums.get(i);
 					if(x == token) {
 						blockNums.remove(i);
+						if(logMINOR) Logger.minor(this, "Removed block "+i+" : "+x);
 						i--;
 					}
 				}
