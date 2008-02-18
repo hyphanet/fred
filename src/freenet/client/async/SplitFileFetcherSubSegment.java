@@ -303,6 +303,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public void onGotKey(Key key, KeyBlock block, RequestScheduler sched) {
+		if(logMINOR) Logger.minor(this, "onGotKey("+key+")");
 		int blockNum = -1;
 		Object token = null;
 		ClientKey ckey = null;
@@ -311,7 +312,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				token = blockNums.get(i);
 				int num = ((Integer)token).intValue();
 				ckey = segment.getBlockKey(num);
-				if(ckey == null) return; // Already got this key
+				if(ckey == null) continue; // Already got this key
 				Key k = ckey.getNodeKey();
 				if(k.equals(key)) {
 					blockNum = num;
