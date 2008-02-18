@@ -335,6 +335,7 @@ public abstract class FECCodec {
 			_awaitingJobs.addFirst(job);
 			if(runningFECThreads == 0) {
 				executor.execute(fecRunner, "FEC Pool "+fecPoolCounter++);
+				runningFECThreads++;
 			}
 		}
 		if(logMINOR)
