@@ -20,6 +20,7 @@ import freenet.keys.SSKVerifyException;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.ShortBuffer;
+import freenet.support.io.NativeThread;
 
 /**
  * SSKs require separate logic for inserts and requests, for various reasons:
@@ -28,7 +29,7 @@ import freenet.support.ShortBuffer;
  *   wait for a long data-transfer timeout.
  * - SSKs have pubkeys, which don't always need to be sent.
  */
-public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
+public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCounter {
 
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
@@ -554,6 +555,10 @@ public class SSKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
 
 	public void sentPayload(int x) {
 		node.sentPayload(x);
+	}
+
+	public int getPriority() {
+		return NativeThread.HIGH_PRIORITY;
 	}
 
 }

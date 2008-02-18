@@ -22,10 +22,11 @@ import freenet.keys.CHKVerifyException;
 import freenet.keys.NodeCHK;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
+import freenet.support.io.NativeThread;
 
-public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCounter {
+public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, ByteCounter {
 	
-	private class BackgroundTransfer implements Runnable, AsyncMessageFilterCallback {
+	private class BackgroundTransfer implements PrioRunnable, AsyncMessageFilterCallback {
 		/** Node we are waiting for response from */
 		final PeerNode pn;
 		/** We may be sending data to that node */
@@ -155,6 +156,10 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 		public void onRestarted(PeerContext ctx) {
 			Logger.error(this, "Restarted "+ctx+" for "+this);
 			receivedNotice(true);
+		}
+
+		public int getPriority() {
+			return NativeThread.HIGH_PRIORITY;
 		}
 	}
 	
@@ -855,5 +860,9 @@ public final class CHKInsertSender implements Runnable, AnyInsertSender, ByteCou
 
 	public synchronized boolean startedSendingData() {
 		return !backgroundTransfers.isEmpty();
+	}
+
+	public int getPriority() {
+		return NativeThread.HIGH_PRIORITY;
 	}
 }
