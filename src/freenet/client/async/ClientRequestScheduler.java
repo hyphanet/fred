@@ -100,7 +100,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final RequestCooldownQueue cooldownQueue;
 	/** Once a key has been requested a few times, don't request it again for 30 minutes. 
 	 * To do so would be pointless given ULPRs, and just waste bandwidth. */
-	public static final long COOLDOWN_PERIOD = 15*1000;
+	public static final long COOLDOWN_PERIOD = 5*60*1000;
 	/** The number of times a key can be requested before triggering the cooldown period. */
 	public static final int COOLDOWN_RETRIES = 3;
 	
