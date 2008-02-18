@@ -31,11 +31,13 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
 import freenet.node.PeerNode;
+import freenet.node.PrioRunnable;
 import freenet.support.BitArray;
 import freenet.support.DoubleTokenBucket;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
+import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.IPUtil;
 
 /**
@@ -81,7 +83,7 @@ public class BlockTransmitter {
 			// Will throw on running
 		}
 		throttle = _destination.getThrottle();
-		_senderThread = new Runnable() {
+		_senderThread = new PrioRunnable() {
 		
 			public void run() {
 				while (!_sendComplete) {
@@ -166,6 +168,10 @@ public class BlockTransmitter {
 					}
 					now = System.currentTimeMillis();
 				}
+			}
+
+			public int getPriority() {
+				return NativeThread.HIGH_PRIORITY;
 			}
 		};
 	}
@@ -306,7 +312,7 @@ public class BlockTransmitter {
 	 * Send the data, off-thread.
 	 */
 	public void sendAsync(final Executor executor) {
-		executor.execute(new Runnable() {
+		executor.execute(new PrioRunnable() {
 			public void run() {
 						 try {
 						    asyncExitStatus=send(executor);
@@ -316,7 +322,11 @@ public class BlockTransmitter {
 						       BlockTransmitter.this.notifyAll();
 						    }
 						 }
-					} },
+					}
+
+			public int getPriority() {
+				return NativeThread.HIGH_PRIORITY;
+			} },
 			"BlockTransmitter:sendAsync() for "+this);
 	}
 
