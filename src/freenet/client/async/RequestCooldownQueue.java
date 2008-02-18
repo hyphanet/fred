@@ -147,6 +147,7 @@ public class RequestCooldownQueue {
 	 * @return True if the key was found.
 	 */
 	synchronized boolean removeKey(Key key, long time) {
+		if(time <= 0) return false; // We won't find it.
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(holes < 0) Logger.error(this, "holes = "+holes+" !!");
 		if(logMINOR) Logger.minor(this, "Remove key "+key+" at time "+time+" startPtr="+startPtr+" endPtr="+endPtr+" holes="+holes+" keys.length="+keys.length);
