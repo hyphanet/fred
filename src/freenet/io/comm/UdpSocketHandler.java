@@ -315,7 +315,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 				if(_isDone) {
 					boolean active;
 					// Gone now, so we can safely synchronize.
-					synchronized(this) {
+					synchronized(UdpSocketHandler.this) {
 						active = _active;
 					}
 					if(active) {
