@@ -267,7 +267,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		starter.wakeUp();
 	}
 	
-	private void addPendingKey(ClientKey key, SendableGet getter) {
+	/**
+	 * Register a pending key to an already-registered request. This is necessary if we've
+	 * already registered a SendableGet, but we later add some more keys to it.
+	 */
+	void addPendingKey(ClientKey key, SendableGet getter) {
 		if(logMINOR)
 			Logger.minor(this, "Adding pending key "+key+" for "+getter);
 		Key nodeKey = key.getNodeKey();
@@ -596,6 +600,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public void tripPendingKey(final KeyBlock block) {
+		if(logMINOR) Logger.minor(this, "tripPendingKey("+block.getKey()+")");
 		if(offeredKeys != null) {
 			for(int i=0;i<offeredKeys.length;i++) {
 				offeredKeys[i].remove(block.getKey());
@@ -620,6 +625,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(gets == null) return;
 		Runnable r = new Runnable() {
 			public void run() {
+				if(logMINOR) Logger.minor(this, "Running callbacks off-thread for "+block.getKey());
 				for(int i=0;i<gets.length;i++) {
 					gets[i].onGotKey(key, block, ClientRequestScheduler.this);
 				}

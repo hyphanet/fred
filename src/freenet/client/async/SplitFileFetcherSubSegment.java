@@ -254,11 +254,13 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		if(logMINOR) Logger.minor(this, "Adding block "+blockNo+" to "+this+" dontSchedule="+dontSchedule);
 		if(blockNo < 0) throw new IllegalArgumentException();
 		Integer i = new Integer(blockNo);
+		
+		boolean schedule = true;
 		synchronized(this) {
 			if(cancelled)
 				throw new IllegalStateException("Adding block "+blockNo+" to already cancelled "+this);
 			blockNums.add(i);
-			if(dontSchedule) return;
+			if(dontSchedule) schedule = false;
 			/**
 			 * Race condition:
 			 * 
@@ -272,12 +274,15 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			 * So what we do here is simply check whether we are registered, instead of 
 			 * checking whether blockNums.size() > 1 as we used to.
 			 */
-			if(getParentGrabArray() != null) {
+			if(schedule && getParentGrabArray() != null) {
 				if(logMINOR) Logger.minor(this, "Already registered, not scheduling: "+blockNums.size()+" : "+blockNums);
-				return;
+				schedule = false;
 			}
 		}
-		if(!dontSchedule) schedule();
+		if(schedule) schedule();
+		else
+			// Already scheduled, however this key may not be registered.
+			getScheduler().addPendingKey(segment.getBlockKey(blockNo), this);
 	}
 
 	public String toString() {
