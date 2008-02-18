@@ -625,10 +625,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(gets == null) return;
 		Runnable r = new Runnable() {
 			public void run() {
-				if(logMINOR) Logger.minor(this, "Running callbacks off-thread for "+block.getKey());
+				if(logMINOR) Logger.minor(this, "Running "+gets.length+" callbacks off-thread for "+block.getKey());
 				for(int i=0;i<gets.length;i++) {
 					gets[i].onGotKey(key, block, ClientRequestScheduler.this);
 				}
+				if(logMINOR) Logger.minor(this, "Finished running callbacks");
 			}
 		};
 		node.getTicker().queueTimedJob(r, 0); // FIXME ideally these would be completed on a single thread; when we have 1.5, use a dedicated non-parallel Executor
