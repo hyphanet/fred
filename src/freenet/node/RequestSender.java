@@ -34,6 +34,7 @@ import freenet.store.KeyCollisionException;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.NativeThread;
 
 /**
  * @author amphibian
@@ -47,7 +48,7 @@ import freenet.support.SimpleFieldSet;
  * transferring senders when starts transferring, and remove from it
  * when finishes transferring.
  */
-public final class RequestSender implements Runnable, ByteCounter {
+public final class RequestSender implements PrioRunnable, ByteCounter {
 
     // Constants
     static final int ACCEPTED_TIMEOUT = 10000;
@@ -1224,5 +1225,9 @@ public final class RequestSender implements Runnable, ByteCounter {
 				}
 			}
 		}
+	}
+
+	public int getPriority() {
+		return NativeThread.HIGH_PRIORITY;
 	}
 }
