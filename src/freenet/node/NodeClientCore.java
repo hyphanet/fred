@@ -453,7 +453,8 @@ public class NodeClientCore implements Persistable {
 			}
 
 			public void onRequestSenderFinished(int status) {
-				node.unlockUID(uid, isSSK, false, false, false);
+				// If transfer coalescing has happened, we may have already unlocked.
+				node.unlockUID(uid, isSSK, false, true, false);
 				if(listener != null)
 					listener.completed(status == RequestSender.SUCCESS);
 			}
