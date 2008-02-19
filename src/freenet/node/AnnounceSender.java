@@ -45,7 +45,6 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		this.node = node;
 		this.onlyNode = null;
 		htl = (short) Math.min(m.getShort(DMT.HTL), node.maxHTL());
-    	htl = node.decrementHTL(source, htl);
 		target = m.getDouble(DMT.TARGET_LOCATION); // FIXME validate
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		cb = null;
@@ -123,8 +122,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
             if(logMINOR) Logger.minor(this, "Routing request to "+next);
             nodesRoutedTo.add(next);
             
-            if(hasForwarded)
-            	htl = node.decrementHTL(source, htl);
+           	htl = node.decrementHTL(source, htl);
             
             long xferUID = sendTo(next);
             if(xferUID == -1) continue;
