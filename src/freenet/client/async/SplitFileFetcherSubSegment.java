@@ -5,6 +5,10 @@ import java.util.Vector;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
+import freenet.keys.CHKBlock;
+import freenet.keys.CHKVerifyException;
+import freenet.keys.ClientCHK;
+import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
@@ -304,29 +308,41 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 
 	public void onGotKey(Key key, KeyBlock block, RequestScheduler sched) {
 		if(logMINOR) Logger.minor(this, "onGotKey("+key+")");
-		int blockNum = -1;
-		Object token = null;
-		ClientKey ckey = null;
+		// Find and remove block if it is on this subsegment. However it may have been
+		// removed already.
 		synchronized(this) {
 			for(int i=0;i<blockNums.size();i++) {
-				token = blockNums.get(i);
+				Integer token = (Integer) blockNums.get(i);
 				int num = ((Integer)token).intValue();
 				Key k = segment.getBlockNodeKey(num);
 				if(k != null && k.equals(key)) {
-					blockNum = num;
-					ckey = segment.getBlockKey(num);
 					blockNums.remove(i);
 					break;
 				}
 			}
 		}
-		if(blockNum == -1) return;
-		try {
-			onSuccess(Key.createKeyBlock(ckey, block), false, token, sched);
-		} catch (KeyVerifyException e) {
-			// FIXME if we ever abolish the direct route, this must be turned into an onFailure().
-			Logger.error(this, "Failed to parse in onGotKey("+key+","+block+") - believed to be "+ckey+" (block #"+blockNum+")");
+		int blockNo = segment.getBlockNumber(key);
+		if(blockNo == -1) {
+			Logger.minor(this, "No block found for key "+key+" on "+this);
+			return;
 		}
+		Integer token = new Integer(blockNo);
+		ClientCHK ckey = (ClientCHK) segment.getBlockKey(blockNo);
+		ClientCHKBlock cb;
+		try {
+			cb = new ClientCHKBlock((CHKBlock)block, ckey);
+		} catch (CHKVerifyException e) {
+			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e), token, sched);
+			return;
+		}
+		Bucket data = extract(cb, token, sched);
+		
+		if(!cb.isMetadata()) {
+			onSuccess(data, false, (Integer)token, ((Integer)token).intValue(), cb, sched);
+		} else {
+			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), token, sched);
+		}
+		
 	}
 	
 	public void kill() {
