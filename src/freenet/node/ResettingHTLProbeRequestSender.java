@@ -274,6 +274,7 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
             		// Don't use the new nearestLoc, since we don't on requests, and anyway
             		// it doesn't make any sense to do so - it's only valid within that pocket.
             		Message sub = msg.getSubMessage(DMT.FNPRHReturnSubMessage);
+            		if(sub != null) {
             		double newBest = sub.getDouble(DMT.BEST_LOCATION);
             		if(newBest > target && newBest < best)
             			best = newBest;
@@ -281,6 +282,11 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
             		uniqueCounter += Math.max(0, msg.getShort(DMT.UNIQUE_COUNTER));
             		// linearCounter is unchanged - it's only valid on a Reply
             		// FIXME ideally we'd return it here if we don't manage to reroute.
+            		} else {
+            			counter++;
+            			uniqueCounter++;
+            			htl--;
+            		}
             		break;
             	}
             	
