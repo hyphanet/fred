@@ -293,11 +293,10 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             nodesRoutedTo.add(next);
             
             Message req;
-            synchronized (this) {
-           		htl = node.decrementHTL(sentRequest ? next : source, htl);
-
-            	req = DMT.createFNPInsertRequest(uid, htl, myKey);
-            }
+            htl = node.decrementHTL(sentRequest ? next : source, htl);
+            
+            req = DMT.createFNPInsertRequest(uid, htl, myKey);
+            
             // Wait for ack or reject... will come before even a locally generated DataReply
             
             MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPAccepted);
