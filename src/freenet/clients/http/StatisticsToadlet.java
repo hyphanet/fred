@@ -392,17 +392,20 @@ public class StatisticsToadlet extends Toadlet {
 		node.addChild("div", "class", "infobox-header", l10n("threadsByPriority"));
 		HTMLNode threadsInfoboxContent = node.addChild("div", "class", "infobox-content");
 		int[] activeThreadsByPriority = stats.getActiveThreadsByPriority();
+		int[] waitingThreadsByPriority = stats.getWaitingThreadsByPriority();
 		
 		HTMLNode threadsByPriorityTable = threadsInfoboxContent.addChild("table", "border", "0");
 		HTMLNode row = threadsByPriorityTable.addChild("tr");
 
 		row.addChild("th", l10n("priority"));
-		row.addChild("th", l10n("amount"));		
+		row.addChild("th", l10n("running"));
+		row.addChild("th", l10n("waiting"));
 		
 		for(int i=0; i<activeThreadsByPriority.length; i++) {
 			row = threadsByPriorityTable.addChild("tr");
 			row.addChild("td", String.valueOf(i+1));
-			row.addChild("td", String.valueOf(activeThreadsByPriority[i]));		
+			row.addChild("td", String.valueOf(activeThreadsByPriority[i]));
+			row.addChild("td", String.valueOf(waitingThreadsByPriority[i]));
 		}
 	}
 

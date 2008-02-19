@@ -165,6 +165,7 @@ public class NodeStats implements Persistable {
 	// ThreadCounting stuffs
 	public final ThreadGroup rootThreadGroup;
 	private int[] activeThreadsByPriorities = new int[NativeThread.JAVA_PRIO_RANGE];
+	private int[] waitingThreadsByPriorities = new int[NativeThread.JAVA_PRIO_RANGE];
 	private int threadLimit;
 	
 	// Free heap memory threshold stuffs
@@ -780,6 +781,7 @@ public class NodeStats implements Persistable {
 
 	public int getActiveThreadCount() {
 		int waitingThreads = 0;
+		waitingThreadsByPriorities = node.executor.waitingThreads();
 		activeThreadsByPriorities = node.executor.runningThreads();
 		for(int i=0; i<activeThreadsByPriorities.length; i++)
 			waitingThreads += activeThreadsByPriorities[i];
@@ -789,6 +791,10 @@ public class NodeStats implements Persistable {
 	
 	public int[] getActiveThreadsByPriority() {
 		return activeThreadsByPriorities;
+	}
+	
+	public int[] getWaitingThreadsByPriority() {
+		return waitingThreadsByPriorities;
 	}
 
 	public int getThreadLimit() {
