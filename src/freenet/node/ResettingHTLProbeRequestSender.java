@@ -17,6 +17,13 @@ import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.io.NativeThread;
 
+/*
+ * FIXME:
+ * Either we need this to have its own decrementHTL probabilities etc, and have a separate
+ * non-resetting-HTL probe request type, OR we need to just rename this and delete the 
+ * resetting-HTL logic.
+ */
+
 /**
  * Probe request sender.
  * Uses the resetting-HTL algorithm used by Freenet 0.7 for a long while invented by me and
