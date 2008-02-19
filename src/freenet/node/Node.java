@@ -248,7 +248,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public static final int PACKETS_IN_BLOCK = 32;
 	public static final int PACKET_SIZE = 1024;
 	public static final double DECREMENT_AT_MIN_PROB = 0.25;
-	public static final double DECREMENT_AT_MAX_PROB = 0.5;
+	public static final double DECREMENT_AT_MAX_PROB = 0.2;
 	// Send keepalives every 14-28 seconds. Comfortably fits within 30 second timeout.
 	// If the packet is dropped, we will send ack requests etc, so this should be fine.
 	public static final int KEEPALIVE_INTERVAL = 14000;
@@ -402,7 +402,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	final boolean enableSwapping;
 	boolean enableSwapQueueing;
 	boolean enablePacketCoalescing;
-	public static final short DEFAULT_MAX_HTL = (short)10;
+	public static final short DEFAULT_MAX_HTL = (short)15;
 	private short maxHTL;
 	/** Type identifier for fproxy node to node messages, as sent on DMT.nodeToNodeMessage's */
 	public static final int N2N_MESSAGE_TYPE_FPROXY = 1;
