@@ -419,12 +419,12 @@ public class DMT {
 		addField(FREENET_ROUTING_KEY, NodeCHK.class);
 	}};
 	
-	public static final Message createFNPCHKDataRequest(long id, short htl, NodeCHK key, double nearestLocation) {
+	public static final Message createFNPCHKDataRequest(long id, short htl, NodeCHK key) {
 		Message msg = new Message(FNPCHKDataRequest);
 		msg.set(UID, id);
 		msg.set(HTL, htl);
 		msg.set(FREENET_ROUTING_KEY, key);
-		msg.set(NEAREST_LOCATION, nearestLocation);
+		msg.set(NEAREST_LOCATION, 0.0);
 		return msg;
 	}
 	
@@ -436,12 +436,12 @@ public class DMT {
 		addField(NEED_PUB_KEY, Boolean.class);
 	}};
 	
-	public static final Message createFNPSSKDataRequest(long id, short htl, NodeSSK key, double nearestLocation, boolean needPubKey) {
+	public static final Message createFNPSSKDataRequest(long id, short htl, NodeSSK key, boolean needPubKey) {
 		Message msg = new Message(FNPSSKDataRequest);
 		msg.set(UID, id);
 		msg.set(HTL, htl);
 		msg.set(FREENET_ROUTING_KEY, key);
-		msg.set(NEAREST_LOCATION, nearestLocation);
+		msg.set(NEAREST_LOCATION, 0.0);
 		msg.set(NEED_PUB_KEY, needPubKey);
 		return msg;
 	}
@@ -534,12 +534,12 @@ public class DMT {
 		addField(FREENET_ROUTING_KEY, Key.class);
 	}};
 	
-	public static final Message createFNPInsertRequest(long id, short htl, Key key, double nearestLoc) {
+	public static final Message createFNPInsertRequest(long id, short htl, Key key) {
 		Message msg = new Message(FNPInsertRequest);
 		msg.set(UID, id);
 		msg.set(HTL, htl);
 		msg.set(FREENET_ROUTING_KEY, key);
-		msg.set(NEAREST_LOCATION, nearestLoc);
+		msg.set(NEAREST_LOCATION, 0.0);
 		return msg;
 	}
 	
@@ -623,12 +623,12 @@ public class DMT {
 		addField(DATA, ShortBuffer.class);
 	}};
 	
-	public static Message createFNPSSKInsertRequest(long uid, short htl, NodeSSK myKey, double closestLocation, byte[] headers, byte[] data, byte[] pubKeyHash) {
+	public static Message createFNPSSKInsertRequest(long uid, short htl, NodeSSK myKey, byte[] headers, byte[] data, byte[] pubKeyHash) {
 		Message msg = new Message(FNPSSKInsertRequest);
 		msg.set(UID, uid);
 		msg.set(HTL, htl);
 		msg.set(FREENET_ROUTING_KEY, myKey);
-		msg.set(NEAREST_LOCATION, closestLocation);
+		msg.set(NEAREST_LOCATION, 0.0);
 		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
 		msg.set(PUBKEY_HASH, new ShortBuffer(pubKeyHash));
 		msg.set(DATA, new ShortBuffer(data));
@@ -750,14 +750,14 @@ public class DMT {
 		addField(TARGET_LOCATION, Double.class);
 	}};
 
-	public static Message createFNPOpennetAnnounceRequest(long uid, long transferUID, int noderefLength, int paddedLength, double target, short htl, double nearestLocSoFar) {
+	public static Message createFNPOpennetAnnounceRequest(long uid, long transferUID, int noderefLength, int paddedLength, double target, short htl) {
 		Message msg = new Message(FNPOpennetAnnounceRequest);
 		msg.set(UID, uid);
 		msg.set(TRANSFER_UID, transferUID);
 		msg.set(NODEREF_LENGTH, noderefLength);
 		msg.set(PADDED_LENGTH, paddedLength);
 		msg.set(HTL, htl);
-		msg.set(NEAREST_LOCATION, nearestLocSoFar);
+		msg.set(NEAREST_LOCATION, 0.0);
 		msg.set(TARGET_LOCATION, target);
 		return msg;
 	}

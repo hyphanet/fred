@@ -51,7 +51,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     /** Headers (we know at start of insert) - can change if we get a collision */
     byte[] headers;
     final boolean fromStore;
-    final double closestLocation;
     final long startTime;
     private boolean sentRequest;
     private boolean hasCollided;
@@ -75,10 +74,9 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     /** Could not get off the node at all! */
     static final int ROUTE_REALLY_NOT_FOUND = 6;
     
-    SSKInsertSender(SSKBlock block, long uid, short htl, PeerNode source, Node node, boolean fromStore, double closestLoc) {
+    SSKInsertSender(SSKBlock block, long uid, short htl, PeerNode source, Node node, boolean fromStore) {
     	logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	this.fromStore = fromStore;
-    	this.closestLocation = closestLoc;
     	this.node = node;
     	this.source = source;
     	this.htl = htl;
@@ -134,14 +132,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             
             // Route it
             PeerNode next;
-            // Can backtrack, so only route to nodes closer than we are to target.
-            double nextValue;
             synchronized(node.peers) {
                 next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null, null);
-                if(next != null)
-                    nextValue = next.getLocation();
-                else
-                    nextValue = -1.0;
             }
             
             if(next == null) {
@@ -152,12 +144,9 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             if(logMINOR) Logger.minor(this, "Routing insert to "+next);
             nodesRoutedTo.add(next);
             
-            if(Location.distance(target, nextValue) > Location.distance(target, closestLocation)) {
-            	if(logMINOR) Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+closestLocation);
-                htl = node.decrementHTL(sentRequest ? next : source, htl);
-            }
+            htl = node.decrementHTL(sentRequest ? next : source, htl);
             
-            Message req = DMT.createFNPSSKInsertRequest(uid, htl, myKey, closestLocation, headers, data, pubKeyHash);
+            Message req = DMT.createFNPSSKInsertRequest(uid, htl, myKey, headers, data, pubKeyHash);
             
             // Wait for ack or reject... will come before even a locally generated DataReply
             

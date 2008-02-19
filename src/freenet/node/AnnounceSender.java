@@ -32,7 +32,6 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	private byte[] noderefBuf;
 	private int noderefLength;
 	private short htl;
-	private double nearestLoc;
 	private double target;
 	private static boolean logMINOR;
 	private final AnnouncementCallback cb;
@@ -46,7 +45,6 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		this.node = node;
 		this.onlyNode = null;
 		htl = (short) Math.min(m.getShort(DMT.HTL), node.maxHTL());
-		nearestLoc = m.getDouble(DMT.NEAREST_LOCATION);
 		target = m.getDouble(DMT.TARGET_LOCATION); // FIXME validate
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		cb = null;
@@ -92,15 +90,6 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 			if(!transferNoderef()) return;
 		}
 		
-        double myLoc = node.lm.getLocation();
-        if(Location.distance(target, myLoc) < Location.distance(target, nearestLoc)) {
-            nearestLoc = myLoc;
-            htl = node.maxHTL();
-        } else {
-        	if(source != null)
-        		htl = node.decrementHTL(source, htl);
-        }
-        
 		// Now route it.
 		
         HashSet nodesRoutedTo = new HashSet();
@@ -391,7 +380,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 	 */
 	private long sendTo(PeerNode next) {
 		try {
-			return om.startSendAnnouncementRequest(uid, next, noderefBuf, this, target, htl, nearestLoc);
+			return om.startSendAnnouncementRequest(uid, next, noderefBuf, this, target, htl);
 		} catch (NotConnectedException e) {
 			if(logMINOR) Logger.minor(this, "Disconnected");
 			return -1;

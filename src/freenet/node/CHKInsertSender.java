@@ -164,7 +164,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 	}
 	
 	CHKInsertSender(NodeCHK myKey, long uid, byte[] headers, short htl, 
-            PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore, double closestLocation) {
+            PeerNode source, Node node, PartiallyReceivedBlock prb, boolean fromStore) {
         this.myKey = myKey;
         this.target = myKey.toNormalizedDouble();
         this.uid = uid;
@@ -174,7 +174,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         this.node = node;
         this.prb = prb;
         this.fromStore = fromStore;
-        this.closestLocation = closestLocation;
         this.startTime = System.currentTimeMillis();
         this.backgroundTransfers = new Vector();
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -202,7 +201,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     final PartiallyReceivedBlock prb;
     final boolean fromStore;
     private boolean receiveFailed;
-    final double closestLocation;
     final long startTime;
     private boolean sentRequest;
     
@@ -283,7 +281,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             // Route it
             PeerNode next;
             // Can backtrack, so only route to nodes closer than we are to target.
-            double nextValue;
             next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null, null);
 			
             if(next == null) {
@@ -292,19 +289,14 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
                 return;
             }
 			
-			nextValue = next.getLocation();
-			
             if(logMINOR) Logger.minor(this, "Routing insert to "+next);
             nodesRoutedTo.add(next);
             
             Message req;
             synchronized (this) {
-            	if(Location.distance(target, nextValue) > Location.distance(target, closestLocation)) {
-            		if(logMINOR) Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+closestLocation);
-            		htl = node.decrementHTL(sentRequest ? next : source, htl);
-            	}
+           		htl = node.decrementHTL(sentRequest ? next : source, htl);
 
-            	req = DMT.createFNPInsertRequest(uid, htl, myKey, closestLocation);
+            	req = DMT.createFNPInsertRequest(uid, htl, myKey);
             }
             // Wait for ack or reject... will come before even a locally generated DataReply
             

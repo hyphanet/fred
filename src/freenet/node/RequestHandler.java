@@ -37,11 +37,9 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
     final long uid;
     private short htl;
     final PeerNode source;
-    private double closestLoc;
     private boolean needsPubKey;
     final Key key;
     private boolean finalTransferFailed = false;
-    final boolean resetClosestLoc;
     /** The RequestSender, if any */
     private RequestSender rs;
     private int status = RequestSender.NOT_FINISHED;
@@ -60,17 +58,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
         node = n;
         uid = id;
         this.source = source;
-        closestLoc = req.getDouble(DMT.NEAREST_LOCATION);
-        double myLoc = n.lm.getLocation();
         this.htl = htl;
         this.key = key;
-        double keyLoc = key.toNormalizedDouble();
-        if(Location.distance(keyLoc, myLoc) < Location.distance(keyLoc, closestLoc)) {
-            closestLoc = myLoc;
-            htl = node.maxHTL();
-            resetClosestLoc = true;
-        } else
-        	resetClosestLoc = false;
         if(key instanceof NodeSSK)
         	needsPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -141,7 +130,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
         Message accepted = DMT.createFNPAccepted(uid);
         source.sendAsync(accepted, null, 0, this);
         
-        Object o = node.makeRequestSender(key, htl, uid, source, closestLoc, resetClosestLoc, false, true, false, false);
+        Object o = node.makeRequestSender(key, htl, uid, source, false, true, false, false);
         if(o instanceof KeyBlock) {
         	returnLocalData((KeyBlock)o);
             return;

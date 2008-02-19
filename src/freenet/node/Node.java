@@ -1888,7 +1888,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * a RequestSender, unless the HTL is 0, in which case NULL.
 	 * RequestSender.
 	 */
-	public Object makeRequestSender(Key key, short htl, long uid, PeerNode source, double closestLocation, boolean resetClosestLocation, boolean localOnly, boolean cache, boolean ignoreStore, boolean offersOnly) {
+	public Object makeRequestSender(Key key, short htl, long uid, PeerNode source, boolean localOnly, boolean cache, boolean ignoreStore, boolean offersOnly) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "makeRequestSender("+key+ ',' +htl+ ',' +uid+ ',' +source+") on "+getDarknetPortNumber());
 		// In store?
@@ -1947,7 +1947,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			// 0 timeout so it doesn't prevent future requests), and send it the data 
 			// through ULPRs if it is found.
 			
-			sender = new RequestSender(key, null, htl, uid, this, closestLocation, resetClosestLocation, source, offersOnly);
+			sender = new RequestSender(key, null, htl, uid, this, source, offersOnly);
 			// RequestSender adds itself to requestSenders
 		}
 		sender.start();
@@ -2292,7 +2292,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * if it originated locally.
 	 */
 	public CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
-			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, double closestLoc, boolean cache) {
+			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean cache) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		KeyHTLPair kh = new KeyHTLPair(key, htl, uid);
@@ -2306,7 +2306,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 		if(fromStore && !cache)
 			throw new IllegalArgumentException("From store = true but cache = false !!!");
-		is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore, closestLoc);
+		is = new CHKInsertSender(key, uid, headers, htl, source, this, prb, fromStore);
 		is.start();
 		if(logMINOR) Logger.minor(this, is.toString()+" for "+kh.toString());
 		// CHKInsertSender adds itself to insertSenders
@@ -2325,7 +2325,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * if it originated locally.
 	 */
 	public SSKInsertSender makeInsertSender(SSKBlock block, short htl, long uid, PeerNode source,
-			boolean fromStore, double closestLoc, boolean resetClosestLoc, boolean cache) {
+			boolean fromStore, boolean cache) {
 		NodeSSK key = (NodeSSK) block.getKey();
 		if(key.getPubKey() == null) {
 			throw new IllegalArgumentException("No pub key when inserting");
@@ -2344,7 +2344,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 		if(fromStore && !cache)
 			throw new IllegalArgumentException("From store = true but cache = false !!!");
-		is = new SSKInsertSender(block, uid, htl, source, this, fromStore, closestLoc);
+		is = new SSKInsertSender(block, uid, htl, source, this, fromStore);
 		is.start();
 		Logger.minor(this, is.toString()+" for "+kh.toString());
 		// SSKInsertSender adds itself to insertSenders

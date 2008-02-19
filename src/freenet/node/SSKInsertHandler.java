@@ -38,8 +38,6 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
     final long startTime;
     private SSKBlock block;
     private DSAPublicKey pubKey;
-    private double closestLoc;
-    private final boolean resetClosestLoc;
     private short htl;
     private SSKInsertSender sender;
     private byte[] data;
@@ -54,14 +52,6 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
         this.startTime = startTime;
         key = (NodeSSK) req.getObject(DMT.FREENET_ROUTING_KEY);
         htl = req.getShort(DMT.HTL);
-        closestLoc = req.getDouble(DMT.NEAREST_LOCATION);
-        double targetLoc = key.toNormalizedDouble();
-        double myLoc = node.lm.getLocation();
-        if(Location.distance(targetLoc, myLoc) < Location.distance(targetLoc, closestLoc)) {
-            closestLoc = myLoc;
-            htl = node.maxHTL();
-            resetClosestLoc = true;
-        } else resetClosestLoc = false;
         byte[] pubKeyHash = ((ShortBuffer)req.getObject(DMT.PUBKEY_HASH)).getData();
         pubKey = node.getKey(pubKeyHash);
         data = ((ShortBuffer) req.getObject(DMT.DATA)).getData();
@@ -181,7 +171,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
         }
         
         if(htl > 0)
-            sender = node.makeInsertSender(block, htl, uid, source, false, closestLoc, resetClosestLoc, true);
+            sender = node.makeInsertSender(block, htl, uid, source, false, true);
         
         boolean receivedRejectedOverload = false;
         

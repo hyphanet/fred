@@ -63,11 +63,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     // Basics
     final Key key;
     final double target;
-    final boolean resetNearestLoc;
     private short htl;
     final long uid;
     final Node node;
-    private double nearestLoc;
     /** The source of this request if any - purely so we can avoid routing to it */
     final PeerNode source;
     private PartiallyReceivedBlock prb;
@@ -146,7 +144,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
      * @param key The key to request. Its public key should have been looked up
      * already; RequestSender will not look it up.
      */
-    public RequestSender(Key key, DSAPublicKey pubKey, short htl, long uid, Node n, double nearestLoc, boolean resetNearestLoc, 
+    public RequestSender(Key key, DSAPublicKey pubKey, short htl, long uid, Node n,
             PeerNode source, boolean offersOnly) {
         this.key = key;
         this.pubKey = pubKey;
@@ -154,8 +152,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         this.uid = uid;
         this.node = n;
         this.source = source;
-        this.nearestLoc = nearestLoc;
-        this.resetNearestLoc = resetNearestLoc;
         this.tryOffersOnly = offersOnly;
         target = key.toNormalizedDouble();
         node.addRequestSender(key, htl, this);
@@ -410,15 +406,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 return;
             }
 			
-            double nextValue=next.getLocation();
-			
             if(logMINOR) Logger.minor(this, "Routing request to "+next);
             nodesRoutedTo.add(next);
             
-            if(Location.distance(target, nextValue) > Location.distance(target, nearestLoc)) {
-                htl = node.decrementHTL((hasForwarded ? next : source), htl);
-                if(logMINOR) Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+nearestLoc+" so htl="+htl);
-            }
+            htl = node.decrementHTL((hasForwarded ? next : source), htl);
             
             Message req = createDataRequest();
             
@@ -841,9 +832,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 
 	private Message createDataRequest() {
     	if(key instanceof NodeCHK)
-    		return DMT.createFNPCHKDataRequest(uid, htl, (NodeCHK)key, nearestLoc);
+    		return DMT.createFNPCHKDataRequest(uid, htl, (NodeCHK)key);
     	else if(key instanceof NodeSSK)
-    		return DMT.createFNPSSKDataRequest(uid, htl, (NodeSSK)key, nearestLoc, pubKey == null);
+    		return DMT.createFNPSSKDataRequest(uid, htl, (NodeSSK)key, pubKey == null);
     	else throw new IllegalStateException("Unknown keytype: "+key);
 	}
 

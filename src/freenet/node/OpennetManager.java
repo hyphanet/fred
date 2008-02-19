@@ -516,10 +516,10 @@ public class OpennetManager {
 	}
 
 	public long startSendAnnouncementRequest(long uid, PeerNode peer, byte[] noderef, ByteCounter ctr, 
-			double target, short htl, double nearestLocSoFar) throws NotConnectedException {
+			double target, short htl) throws NotConnectedException {
 		long xferUID = node.random.nextLong();
 		Message msg = DMT.createFNPOpennetAnnounceRequest(uid, xferUID, noderef.length, 
-				paddedSize(noderef.length), target, htl, nearestLocSoFar);
+				paddedSize(noderef.length), target, htl);
 		peer.sendAsync(msg, null, 0, ctr);
 		return xferUID;
 	}
