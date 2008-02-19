@@ -45,6 +45,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		this.node = node;
 		this.onlyNode = null;
 		htl = (short) Math.min(m.getShort(DMT.HTL), node.maxHTL());
+    	htl = node.decrementHTL(source, htl);
 		target = m.getDouble(DMT.TARGET_LOCATION); // FIXME validate
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		cb = null;
