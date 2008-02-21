@@ -34,7 +34,7 @@ public class URIPreEncoderTest extends TestCase {
 			eachChar = aString.charAt(i);
 			if (URIPreEncoder.allowedChars.indexOf(eachChar) < 0)
 				return false;
-		};
+		}
 		return true;
 	}
 	

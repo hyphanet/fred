@@ -21,7 +21,7 @@ import java.net.URL;
 public class NativeThread extends Thread {
 	public static final boolean _loadNative;
 	private static boolean _disabled;
-	public static final int JAVA_PRIO_RANGE = Thread.MAX_PRIORITY - Thread.MIN_PRIORITY;
+	public static final int JAVA_PRIORITY_RANGE = Thread.MAX_PRIORITY - Thread.MIN_PRIORITY;
 	private static int NATIVE_PRIORITY_BASE;
 	public static int NATIVE_PRIORITY_RANGE;
 	private int currentPriority = Thread.MAX_PRIORITY;
@@ -51,7 +51,7 @@ public class NativeThread extends Thread {
 			// they are 3 main prio levels
 			HAS_THREE_NICE_LEVELS = NATIVE_PRIORITY_RANGE >= 3;
 			HAS_ENOUGH_NICE_LEVELS = NATIVE_PRIORITY_RANGE >= ENOUGH_NICE_LEVELS;
-			HAS_PLENTY_NICE_LEVELS = NATIVE_PRIORITY_RANGE >=JAVA_PRIO_RANGE;
+			HAS_PLENTY_NICE_LEVELS = NATIVE_PRIORITY_RANGE >=JAVA_PRIORITY_RANGE;
 			if(!(HAS_ENOUGH_NICE_LEVELS && HAS_THREE_NICE_LEVELS))
 				System.err.println("WARNING!!! The JVM has been niced down to a level which won't allow it to schedule threads properly! LOWER THE NICE LEVEL!!");
 		} else {
@@ -168,7 +168,7 @@ public class NativeThread extends Thread {
 			new NullPointerException().printStackTrace();
 			return false;
 		}
-		final int linuxPriority = NATIVE_PRIORITY_BASE + NATIVE_PRIORITY_RANGE - (NATIVE_PRIORITY_RANGE * (prio - MIN_PRIORITY)) / JAVA_PRIO_RANGE;
+		final int linuxPriority = NATIVE_PRIORITY_BASE + NATIVE_PRIORITY_RANGE - (NATIVE_PRIORITY_RANGE * (prio - MIN_PRIORITY)) / JAVA_PRIORITY_RANGE;
 		if(linuxPriority == realPrio) return true; // Ok
 		// That's an obvious coding mistake
 		if(prio < currentPriority)
