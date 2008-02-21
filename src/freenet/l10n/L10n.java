@@ -34,7 +34,6 @@ public class L10n {
 	public static final String SUFFIX = ".properties";
 	public static final String OVERRIDE_SUFFIX = ".override" + SUFFIX;
 	
-	// English has to remain the first one!
 	public static final String FALLBACK_DEFAULT = "en";
 	public static final String[] AVAILABLE_LANGUAGES = { "en", "es", "da", "de", "fi", "fr", "it", "no", "pl", "se", "unlisted" };
 	private final String selectedLanguage;
@@ -92,7 +91,7 @@ public class L10n {
 					currentClass = new L10n(selectedLanguage);	
 
 					if(currentTranslation == null) {
-						currentClass = new L10n(AVAILABLE_LANGUAGES[0]);	
+						currentClass = new L10n(FALLBACK_DEFAULT);	
 						throw new MissingResourceException("Unable to load the translation file for "+selectedLanguage, "l10n", selectedLanguage);
 					}
 
@@ -100,7 +99,7 @@ public class L10n {
 				}
 			}
 
-			currentClass = new L10n(AVAILABLE_LANGUAGES[0]);
+			currentClass = new L10n(FALLBACK_DEFAULT);
 			Logger.error(CLASS_NAME, "The requested translation is not available!" + selectedLanguage);
 			throw new MissingResourceException("The requested translation ("+selectedLanguage+") hasn't been found!", CLASS_NAME, selectedLanguage);
 		}
@@ -182,7 +181,7 @@ public class L10n {
 	public static SimpleFieldSet getDefaultLanguageTranslation() {
 		synchronized (sync) {
 			if(fallbackTranslation == null)
-				fallbackTranslation = loadTranslation(AVAILABLE_LANGUAGES[0]);
+				fallbackTranslation = loadTranslation(FALLBACK_DEFAULT);
 				
 			return new SimpleFieldSet(fallbackTranslation);	
 		}
@@ -254,7 +253,7 @@ public class L10n {
 		// We instanciate it only if necessary
 		synchronized (sync) {
 			if(fallbackTranslation == null)
-				fallbackTranslation = loadTranslation(AVAILABLE_LANGUAGES[0]);
+				fallbackTranslation = loadTranslation(FALLBACK_DEFAULT);
 			
 			result = fallbackTranslation.get(key);	
 		}
