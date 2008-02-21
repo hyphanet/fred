@@ -60,6 +60,7 @@ public class NativeThread extends Thread {
 			NATIVE_PRIORITY_RANGE = 19;
 			HAS_THREE_NICE_LEVELS = true;
 			HAS_ENOUGH_NICE_LEVELS = true;
+			HAS_PLENTY_NICE_LEVELS = true;
 		}
 		Logger.minor(NativeThread.class, "Run init(): _loadNative = "+_loadNative);
 	}

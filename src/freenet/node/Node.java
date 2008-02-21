@@ -79,6 +79,7 @@ import freenet.node.useralerts.BuildOldAgeUserAlert;
 import freenet.node.useralerts.ClockProblemDetectedUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
+import freenet.node.useralerts.NotEnoughNiceLevelsUserAlert;
 import freenet.node.useralerts.OpennetUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.TimeSkewDetectedUserAlert;
@@ -115,6 +116,7 @@ import freenet.support.api.StringCallback;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
+import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.HostnameSyntaxException;
 
 /**
@@ -1703,6 +1705,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			clientCore.alerts.register(new ExtOldAgeUserAlert());
 		else if(NodeStarter.extBuildNumber == -1)
 			clientCore.alerts.register(new ExtOldAgeUserAlert());
+		
+		if(!NativeThread.HAS_PLENTY_NICE_LEVELS)
+			clientCore.alerts.register(new NotEnoughNiceLevelsUserAlert());
 		
 		clientCore.alerts.register(new OpennetUserAlert(this));
 		
