@@ -1,7 +1,6 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 
 package freenet.node.useralerts;
 
@@ -10,8 +9,10 @@ import freenet.support.HTMLNode;
 import freenet.support.io.NativeThread;
 
 /**
- *
- * @author nextgens
+ * Tell the user about the lack of room nice-level wise
+ * 
+ * @see{freenet/support/io/NativeThread.java}
+ * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  */
 public class NotEnoughNiceLevelsUserAlert extends AbstractUserAlert {
 	public NotEnoughNiceLevelsUserAlert() {
