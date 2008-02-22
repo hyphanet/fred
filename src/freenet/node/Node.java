@@ -2225,10 +2225,15 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 */
 	public void removeTransferringSender(NodeCHK key, RequestSender sender) {
 		synchronized(transferringRequestSenders) {
-			RequestSender rs = (RequestSender) transferringRequestSenders.remove(key);
-			if(rs != sender) {
-				Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+" in removeTransferringSender");
-			}
+//			RequestSender rs = (RequestSender) transferringRequestSenders.remove(key);
+//			if(rs != sender) {
+//				Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+" in removeTransferringSender");
+//			}
+			
+			// Since there is no request coalescing, we only remove it if it matches,
+			// and don't complain if it doesn't.
+			if(transferringRequestSenders.get(key) == sender)
+				transferringRequestSenders.remove(key);
 		}
 	}
 
@@ -2238,11 +2243,17 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public void removeRequestSender(Key key, short htl, RequestSender sender) {
 		synchronized(requestSenders) {
 			KeyHTLPair kh = new KeyHTLPair(key, htl, sender.uid);
-			RequestSender rs = (RequestSender) requestSenders.remove(kh);
-			if(rs != sender) {
-				Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+ ',' +htl+" in removeRequestSender");
+//			RequestSender rs = (RequestSender) requestSenders.remove(kh);
+//			if(rs != sender) {
+//				Logger.error(this, "Removed "+rs+" should be "+sender+" for "+key+ ',' +htl+" in removeRequestSender");
+//			}
+			
+			// Since there is no request coalescing, we only remove it if it matches,
+			// and don't complain if it doesn't.
+			if(requestSenders.get(kh) == sender) {
+				requestSenders.remove(kh);
+				requestSenders.notifyAll();
 			}
-			requestSenders.notifyAll();
 		}
 	}
 
