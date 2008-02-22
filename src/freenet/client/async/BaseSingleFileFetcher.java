@@ -38,6 +38,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return keys;
 	}
 	
+	public Object[] sendableKeys() {
+		return keys;
+	}
+	
 	public Object chooseKey() {
 		return keys[0];
 	}

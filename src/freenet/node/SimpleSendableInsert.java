@@ -119,6 +119,11 @@ public class SimpleSendableInsert extends SendableInsert {
 		return new Object[] { new Integer(0) };
 	}
 
+	public synchronized Object[] sendableKeys() {
+		if(finished) return new Object[] {};
+		return new Object[] { new Integer(0) };
+	}
+
 	public synchronized Object chooseKey() {
 		if(finished) return null;
 		else return new Integer(0);

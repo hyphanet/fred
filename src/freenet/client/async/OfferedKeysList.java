@@ -65,6 +65,11 @@ public class OfferedKeysList extends SendableRequest {
 		throw new UnsupportedOperationException();
 	}
 
+	public Object[] sendableKeys() {
+		// Not supported.
+		throw new UnsupportedOperationException();
+	}
+
 	public Object chooseKey() {
 		// Pick a random key
 		if(keysList.isEmpty()) return null;

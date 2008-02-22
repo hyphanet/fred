@@ -91,6 +91,13 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return segment.getKeyNumbersAtRetryLevel(retryCount);
 	}
 	
+	/**
+	 * Just those keys which are eligible to be started now.
+	 */
+	public Object[] sendableKeys() {
+		return blockNums.toArray();
+	}
+	
 	private synchronized Object removeRandomBlockNum() {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(blockNums.isEmpty()) {

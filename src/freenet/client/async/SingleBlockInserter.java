@@ -346,11 +346,15 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return true;
 	}
 
-	public synchronized Object[] allKeys() {
+	public synchronized Object[] sendableKeys() {
 		if(finished)
 			return new Object[] {};
 		else
 			return new Object[] { new Integer(0) };
+	}
+
+	public synchronized Object[] allKeys() {
+		return sendableKeys();
 	}
 
 	public synchronized Object chooseKey() {

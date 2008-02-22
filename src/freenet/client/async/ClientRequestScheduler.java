@@ -214,7 +214,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			SendableGet getter = (SendableGet)req;
 			if(!getter.ignoreStore()) {
 				boolean anyValid = false;
-				Object[] keyTokens = getter.allKeys();
+				Object[] keyTokens = getter.sendableKeys();
 				for(int i=0;i<keyTokens.length;i++) {
 					Object tok = keyTokens[i];
 					ClientKeyBlock block = null;
