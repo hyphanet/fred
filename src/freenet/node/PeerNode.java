@@ -1665,7 +1665,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	void receivedPacket(boolean dontLog) {
 		synchronized(this) {
 			if((!isConnected) && (!dontLog)) {
-				if((unverifiedTracker == null) && (currentTracker == null))
+				// Don't log if we are disconnecting, because receiving packets during disconnecting is normal.
+				// That includes receiving packets after we have technically disconnected already.
+				// A race condition involving forceCancelDisconnecting causing a mistaken log message anyway 
+				// is conceivable, but unlikely...
+				if((unverifiedTracker == null) && (currentTracker == null) && !disconnecting)
 					Logger.error(this, "Received packet while disconnected!: " + this, new Exception("error"));
 				else
 					if(logMINOR)
