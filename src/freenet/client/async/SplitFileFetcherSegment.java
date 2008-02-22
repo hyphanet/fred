@@ -491,15 +491,37 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		else return null;
 	}
 
-	public synchronized void removeSeg(SplitFileFetcherSubSegment segment) {
+	/**
+	 * Double-check whether we need to remove a subsegment, and if so, remove it.
+	 * We need to do the check because there is no point removing the subsegment until all
+	 * its running requests have been removed (since request data structures will refer to it
+	 * anyway), and all the requests on the cooldown queue for it have been removed. In either
+	 * case we get duplicated structures in memory.
+	 * @return True if we removed the subsegment.
+	 */
+	public synchronized boolean maybeRemoveSeg(SplitFileFetcherSubSegment segment) {
+		int retryCount = segment.retryCount;
+		boolean dontRemove = true;
+		for(int i=0;i<dataRetries.length;i++)
+			if(dataRetries[i] == retryCount) {
+				dontRemove = false;
+				break;
+			}
+		for(int i=0;i<checkRetries.length;i++)
+			if(checkRetries[i] == retryCount) {
+				dontRemove = false;
+				break;
+			}
+		if(dontRemove) return false;
 		if(logMINOR)
-			Logger.minor(this, "Removing sub segment: "+segment);
+			Logger.minor(this, "Removing sub segment: "+segment+" for retry count "+retryCount);
 		for(int i=0;i<subSegments.size();i++) {
 			if(segment.equals(subSegments.get(i))) {
 				subSegments.remove(i);
 				i--;
 			}
 		}
+		return true;
 	}
 
 	private void removeSubSegments() {

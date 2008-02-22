@@ -308,7 +308,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				Logger.minor(this, "Definitely removing from parent: "+this);
 			cancelled = true;
 		}
-		segment.removeSeg(this);
+		if(!segment.maybeRemoveSeg(this)) return;
 		unregister();
 	}
 
@@ -360,7 +360,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			blockNums.clear();
 			cancelled = true;
 		}
-		segment.removeSeg(this);
+		if(!segment.maybeRemoveSeg(this))
+			Logger.error(this, "Could not remove subsegment: "+this+" from "+segment+" for some reason in kill()!");
 	}
 
 	public long getCooldownWakeup(Object token) {
