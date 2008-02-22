@@ -84,8 +84,12 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return key;
 	}
 	
-	public synchronized Object[] allKeys() {
-		return blockNums.toArray();
+	/**
+	 * Fetch the array from the segment because we need to include *ALL* keys, especially
+	 * those on cooldown queues. This is important when unregistering.
+	 */
+	public Object[] allKeys() {
+		return segment.getKeyNumbersAtRetryLevel(retryCount);
 	}
 	
 	private synchronized Object removeRandomBlockNum() {

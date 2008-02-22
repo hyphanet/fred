@@ -594,4 +594,19 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			if(checkKeys[i] != null && checkKeys[i].getNodeKey().equals(key)) return dataKeys.length+i;
 		return -1;
 	}
+
+	public synchronized Integer[] getKeyNumbersAtRetryLevel(int retryCount) {
+		Vector v = new Vector();
+		for(int i=0;i<dataRetries.length;i++) {
+			if(dataKeys[i] == null) continue;
+			if(dataRetries[i] == retryCount)
+				v.add(new Integer(i));
+		}
+		for(int i=0;i<checkRetries.length;i++) {
+			if(checkKeys[i] == null) continue;
+			if(checkRetries[i] == retryCount)
+				v.add(new Integer(i+dataKeys.length));
+		}
+		return (Integer[]) v.toArray(new Integer[v.size()]);
+	}
 }
