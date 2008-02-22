@@ -400,6 +400,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			SplitFileFetcherSubSegment sub = getSubSegment(tries);
 			sub.getScheduler().addPendingKey(key, sub);
 			seg.unregisterKey(key.getNodeKey());
+			return;
 		}
 		if(failed) {
 			onFatalFailure(e, blockNo, seg);
