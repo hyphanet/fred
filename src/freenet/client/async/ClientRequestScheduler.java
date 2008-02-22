@@ -539,14 +539,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			for(int i=0;i<offeredKeys.length;i++)
 				offeredKeys[i].remove(key);
 		}
-		if(o instanceof SendableGet)
-			cooldownQueue.removeKey(key, ((SendableGet)o).getCooldownWakeupByKey(key));
-		else if(o instanceof SendableGet[]) {
-			SendableGet[] gets = (SendableGet[]) o;
-			for(int i=0;i<gets.length;i++) {
-				cooldownQueue.removeKey(key, gets[i].getCooldownWakeupByKey(key));
-			}
-		}
+		cooldownQueue.removeKey(key, getter.getCooldownWakeupByKey(key));
 	}
 	
 	/**
