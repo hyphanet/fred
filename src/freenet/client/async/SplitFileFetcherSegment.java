@@ -512,6 +512,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				dontRemove = false;
 				break;
 			}
+		if(isFinishing()) dontRemove = false;
 		if(dontRemove) return false;
 		if(logMINOR)
 			Logger.minor(this, "Removing sub segment: "+segment+" for retry count "+retryCount);
