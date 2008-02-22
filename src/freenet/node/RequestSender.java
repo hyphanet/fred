@@ -97,6 +97,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     static final int GET_OFFER_VERIFY_FAILURE = 10;
     static final int GET_OFFER_TRANSFER_FAILED = 11;
     private PeerNode successFrom;
+    private PeerNode lastNode;
     
     static String getStatusString(int status) {
     	switch(status) {
@@ -941,6 +942,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             notifyAll();
             if(status == SUCCESS)
             	successFrom = next;
+            lastNode = next;
         }
 		
         if(status == SUCCESS) {
@@ -1077,6 +1079,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 
     public PeerNode successFrom() {
     	return successFrom;
+    }
+    
+    public PeerNode routedLast() {
+    	return lastNode;
     }
     
 	public byte[] getHeaders() {
