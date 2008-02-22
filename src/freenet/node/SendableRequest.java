@@ -24,7 +24,8 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	 * @return An object identifying a specific key. -1 indicates no keys available. */
 	public abstract Object chooseKey();
 	
-	/** All key identifiers */
+	/** All key identifiers. Including those not currently eligible to be sent because 
+	 * they are on a cooldown queue, requests for them are in progress, etc. */
 	public abstract Object[] allKeys();
 	
 	/** ONLY called by RequestStarter. Start the actual request using the NodeClientCore
