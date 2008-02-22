@@ -32,6 +32,12 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 
 	final int retryCount;
 	final SplitFileFetcherSegment segment;
+	/**
+	 * The block numbers (as Integer's) of the blocks we are currently trying to fetch.
+	 * Does not include blocks on the cooldown queue, this is simply used to make 
+	 * chooseKey() and allKeys() work / work fast. The retries tables in the Segment are
+	 * canonical.
+	 */
 	final Vector blockNums;
 	final FetchContext ctx;
 	private static boolean logMINOR;
