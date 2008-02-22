@@ -14,7 +14,6 @@ import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.KeyDecodeException;
-import freenet.keys.KeyVerifyException;
 import freenet.keys.TooBigException;
 import freenet.node.LowLevelGetException;
 import freenet.node.RequestScheduler;
