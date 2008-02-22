@@ -386,7 +386,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				}
 			} else {
 				int checkNo = blockNo - dataKeys.length;
-				key = checkKeys[blockNo];
+				key = checkKeys[checkNo];
 				tries = ++checkRetries[checkNo];
 				if(tries > maxTries && maxTries >= 0) failed = true;
 				else if(tries % ClientRequestScheduler.COOLDOWN_RETRIES == 0) {
