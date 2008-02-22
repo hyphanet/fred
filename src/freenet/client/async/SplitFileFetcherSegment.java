@@ -550,7 +550,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				int tries = dataRetries[i];
 				SplitFileFetcherSubSegment sub = getSubSegment(tries);
 				if(logMINOR)
-					Logger.minor(this, "Retrying after cooldown: data block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
+					Logger.minor(this, "Retrying after cooldown on "+this+": data block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 				sub.add(i, false);
 				notFound = false;
 			}
@@ -561,7 +561,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				int tries = checkRetries[i];
 				SplitFileFetcherSubSegment sub = getSubSegment(tries);
 				if(logMINOR)
-					Logger.minor(this, "Retrying after cooldown: check block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
+					Logger.minor(this, "Retrying after cooldown on "+this+": check block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 				sub.add(i+dataKeys.length, false);
 				notFound = false;
 			}
