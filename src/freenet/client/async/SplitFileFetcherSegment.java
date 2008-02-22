@@ -372,24 +372,34 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		int tries;
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		boolean failed = false;
+		boolean cooldown = false;
+		ClientCHK key;
 		synchronized(this) {
 			if(isFinished()) return;
 			if(blockNo < dataKeys.length) {
+				key = dataKeys[blockNo];
 				tries = ++dataRetries[blockNo];
 				if(tries > maxTries && maxTries >= 0) failed = true;
 				else if(tries % ClientRequestScheduler.COOLDOWN_RETRIES == 0) {
-					dataCooldownTimes[blockNo] = sched.queueCooldown(dataKeys[blockNo]);
-					return; // Don't add to sub-segment yet.
+					dataCooldownTimes[blockNo] = sched.queueCooldown(key);
+					cooldown = true;
 				}
 			} else {
 				int checkNo = blockNo - dataKeys.length;
+				key = checkKeys[blockNo];
 				tries = ++checkRetries[checkNo];
 				if(tries > maxTries && maxTries >= 0) failed = true;
 				else if(tries % ClientRequestScheduler.COOLDOWN_RETRIES == 0) {
-					checkCooldownTimes[checkNo] = sched.queueCooldown(checkKeys[checkNo]);
-					return; // Don't add to sub-segment yet.
+					checkCooldownTimes[checkNo] = sched.queueCooldown(key);
+					cooldown = true;
 				}
 			}
+		}
+		if(cooldown) {
+			// Register key to next sub-segment and remove from previous one to save memory (avoid duplication).
+			SplitFileFetcherSubSegment sub = getSubSegment(tries);
+			sub.getScheduler().addPendingKey(key, sub);
+			seg.unregisterKey(key.getNodeKey());
 		}
 		if(failed) {
 			onFatalFailure(e, blockNo, seg);
