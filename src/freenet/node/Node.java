@@ -1706,7 +1706,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		else if(NodeStarter.extBuildNumber == -1)
 			clientCore.alerts.register(new ExtOldAgeUserAlert());
 		
-		if(!NativeThread.HAS_PLENTY_NICE_LEVELS)
+		if(!NativeThread.HAS_ENOUGH_NICE_LEVELS)
 			clientCore.alerts.register(new NotEnoughNiceLevelsUserAlert());
 		
 		clientCore.alerts.register(new OpennetUserAlert(this));

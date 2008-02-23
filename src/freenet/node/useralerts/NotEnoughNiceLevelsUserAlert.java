@@ -28,7 +28,7 @@ public class NotEnoughNiceLevelsUserAlert extends AbstractUserAlert {
 			new String[] { "available", "required" },
 			new String[] { 
 				String.valueOf(NativeThread.NATIVE_PRIORITY_RANGE),
-				String.valueOf(NativeThread.JAVA_PRIORITY_RANGE) 
+				String.valueOf(NativeThread.ENOUGH_NICE_LEVELS) 
 			});
 	}
 

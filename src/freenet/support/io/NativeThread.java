@@ -32,7 +32,7 @@ public class NativeThread extends Thread {
 	public static boolean HAS_PLENTY_NICE_LEVELS;
 	
 	// 5 is enough generally for our purposes.
-	static final int ENOUGH_NICE_LEVELS = 5;
+	public static final int ENOUGH_NICE_LEVELS = 5;
 	public static final int MIN_PRIORITY = 1;
 	public static final int LOW_PRIORITY = 3;
 	public static final int NORM_PRIORITY = 5;
