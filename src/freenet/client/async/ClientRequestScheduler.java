@@ -98,14 +98,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public final String name;
 	private final LinkedList /* <WeakReference <RandomGrabArray> > */ recentSuccesses = new LinkedList();
 	private final RequestCooldownQueue cooldownQueue;
-	/** Once a key has been requested a few times, don't request it again for 30 minutes. 
-	 * To do so would be pointless given ULPRs, and just waste bandwidth. */
-	public static final long COOLDOWN_PERIOD = 5*60*1000;
-	/** The number of times a key can be requested before triggering the cooldown period. 
-	 * Note: If you don't want your requests to be subject to cooldown (e.g. in fproxy), make 
-	 * your max retry count less than this (and more than -1). */
-	public static final int COOLDOWN_RETRIES = 3;
-	
 	/** All pending gets by key. Used to automatically satisfy pending requests when either the key is fetched by
 	 * an overlapping request, or it is fetched by a request from another node. Operations on this are synchronized on
 	 * itself. */

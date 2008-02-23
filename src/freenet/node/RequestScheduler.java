@@ -33,4 +33,12 @@ public interface RequestScheduler {
 	 */
 	public void moveKeysFromCooldownQueue();
 	
+	/** Once a key has been requested a few times, don't request it again for 30 minutes. 
+	 * To do so would be pointless given ULPRs, and just waste bandwidth. */
+	public static final long COOLDOWN_PERIOD = 5*60*1000;
+	/** The number of times a key can be requested before triggering the cooldown period. 
+	 * Note: If you don't want your requests to be subject to cooldown (e.g. in fproxy), make 
+	 * your max retry count less than this (and more than -1). */
+	public static final int COOLDOWN_RETRIES = 3;
+	
 }
