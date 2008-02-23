@@ -1224,6 +1224,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				Logger.minor(this, error);
 			else
 				Logger.error(this, error);
+			return false;
 		}
 		BlockCipher c = null;
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
