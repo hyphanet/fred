@@ -40,6 +40,10 @@ import freenet.support.io.FileUtil;
  * Then insert it to one of them.
  * Expected results: fast propagation via ULPRs of the data to every node.
  * 
+ * Note that this relies as much on per-node failure tables causing the request
+ * to go to every node as it does on ULPRs to propagate the data to every node
+ * that it's been requested by.
+ * 
  * This should be transformed into a Heavy Unit Test.
  * @author toad
  */
@@ -74,7 +78,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         DummyRandomSource random = new DummyRandomSource();
         
         //NOTE: globalTestInit returns in ignored random source
-        NodeStarter.globalTestInit(testName, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal" /*"freenet.store:minor,freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
+        NodeStarter.globalTestInit(testName, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal,freenet.node.NodeDispatcher:NORMAL" /*,freenet.node.FailureTable:MINOR,freenet.node.Node:MINOR,freenet.node.Request:MINOR,freenet.io.comm.MessageCore:MINOR" "freenet.store:minor,freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         Executor executor = new PooledExecutor();
@@ -157,6 +161,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         // Fetch the key from each node.
         
         for(int i=0;i<nodes.length;i++) {
+        	System.out.println("Searching from node "+i);
         	try {
         		nodes[i].clientCore.realGetKey(fetchKey, false, true, false);
         		System.err.println("TEST FAILED: KEY ALREADY PRESENT!!!"); // impossible!
