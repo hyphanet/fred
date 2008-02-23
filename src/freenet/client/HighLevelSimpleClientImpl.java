@@ -19,6 +19,7 @@ import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestScheduler;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -51,11 +52,13 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	static final boolean DONT_ENTER_IMPLICIT_ARCHIVES = true;
 	/** Number of threads used by a splitfile fetch */
 	static final int SPLITFILE_THREADS = 20;
+	// COOLDOWN_RETRIES-1 so we don't have to wait on the cooldown queue; HLSC is designed
+	// for interactive requests mostly.
 	/** Number of retries allowed per block in a splitfile. */
-	static final int SPLITFILE_BLOCK_RETRIES = 2;
+	static final int SPLITFILE_BLOCK_RETRIES = RequestScheduler.COOLDOWN_RETRIES-1;
 	/** Number of retries allowed on non-splitfile fetches. Unlike above, we always
 	 * go to network. */
-	static final int NON_SPLITFILE_RETRIES = 2;
+	static final int NON_SPLITFILE_RETRIES = RequestScheduler.COOLDOWN_RETRIES-1;
 	/** Whether to fetch splitfiles. Don't turn this off! */
 	static final boolean FETCH_SPLITFILES = true;
 	/** Whether to follow redirects etc. If false, we only fetch a plain block of data. 
