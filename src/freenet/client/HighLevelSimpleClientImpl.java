@@ -55,10 +55,10 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	// COOLDOWN_RETRIES-1 so we don't have to wait on the cooldown queue; HLSC is designed
 	// for interactive requests mostly.
 	/** Number of retries allowed per block in a splitfile. */
-	static final int SPLITFILE_BLOCK_RETRIES = RequestScheduler.COOLDOWN_RETRIES-1;
+	static final int SPLITFILE_BLOCK_RETRIES = Math.min(3, RequestScheduler.COOLDOWN_RETRIES-1);
 	/** Number of retries allowed on non-splitfile fetches. Unlike above, we always
 	 * go to network. */
-	static final int NON_SPLITFILE_RETRIES = RequestScheduler.COOLDOWN_RETRIES-1;
+	static final int NON_SPLITFILE_RETRIES = Math.min(3, RequestScheduler.COOLDOWN_RETRIES-1);
 	/** Whether to fetch splitfiles. Don't turn this off! */
 	static final boolean FETCH_SPLITFILES = true;
 	/** Whether to follow redirects etc. If false, we only fetch a plain block of data. 
