@@ -316,9 +316,11 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			if(!blockNums.isEmpty()) return;
 			if(logMINOR)
 				Logger.minor(this, "Definitely removing from parent: "+this);
-			cancelled = true;
 		}
 		if(!segment.maybeRemoveSeg(this)) return;
+		synchronized(this) {
+			cancelled = true;
+		}
 		unregister();
 	}
 
