@@ -93,6 +93,7 @@ class FailureTableEntry implements TimedOutNodesList {
 	public synchronized void failedTo(PeerNode routedTo, int timeout, long now, short htl) {
 		if(logMINOR) {
 			Logger.minor(this, "Failed sending request to "+routedTo.shortToString()+" : timeout "+timeout);
+		}
 			int idx = addRequestedFrom(routedTo, now);
 			long curTimeoutTime = requestedTimeouts[idx];
 			long newTimeoutTime = now +  timeout;
@@ -101,7 +102,6 @@ class FailureTableEntry implements TimedOutNodesList {
 				requestedTimeouts[idx] = newTimeoutTime;
 				requestedTimeoutHTLs[idx] = htl;
 			}
-		}
 	}
 
 	// These are rather low level, in an attempt to absolutely minimize memory usage...
