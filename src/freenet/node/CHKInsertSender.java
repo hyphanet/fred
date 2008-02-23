@@ -81,6 +81,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				}
 			} else {
 				this.receivedNotice(false);
+				pn.localRejectedOverload("TransferFailedInsert");
 			}
 		}
 		
@@ -90,10 +91,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				completedTransfer = true;
 				notifyAll();
 			}
-			if(success)
-				pn.successNotOverload();
-			else
-				pn.localRejectedOverload("TransferFailedInsert");
 			synchronized(backgroundTransfers) {
 				backgroundTransfers.notifyAll();
 			}
@@ -121,6 +118,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		}
 		
 		public void onMatched(Message m) {
+			pn.successNotOverload();
 			PeerNode pn = (PeerNode) m.getSource();
 			// pn cannot be null, because the filters will prevent garbage collection of the nodes
 			
@@ -149,6 +147,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			   if this times out, we don't have any time to report to the node of origin the timeout notification (anyTimedOut?).
 			 */
 			Logger.error(this, "Timed out waiting for a final ack from: "+pn+" on "+this);
+			pn.localRejectedOverload("InsertTimeoutNoFinalAck");
 			receivedNotice(false);
 		}
 
