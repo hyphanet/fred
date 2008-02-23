@@ -34,12 +34,12 @@ import freenet.support.math.SimpleRunningAverage;
  */
 public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
 
-    static final int NUMBER_OF_NODES = 50;
-    static final int DEGREE = 5;
+    static final int NUMBER_OF_NODES = 100;
+    static final int DEGREE = 10;
     static final short MAX_HTL = (short)10;
-    static final boolean START_WITH_IDEAL_LOCATIONS = false;
+    static final boolean START_WITH_IDEAL_LOCATIONS = true;
     static final boolean FORCE_NEIGHBOUR_CONNECTIONS = true;
-    static final boolean ENABLE_SWAPPING = true;
+    static final boolean ENABLE_SWAPPING = false;
     static final boolean ENABLE_ULPRS = false;
     static final boolean ENABLE_PER_NODE_FAILURE_TABLES = false;
     static final boolean ENABLE_SWAP_QUEUEING = false;
@@ -70,7 +70,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] = 
-            	NodeStarter.createTestNode(5001+i, name, false, true, true, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING);
+            	NodeStarter.createTestNode(5001+i, name, false, true, false, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         

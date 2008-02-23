@@ -382,7 +382,19 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		int rejectOverloads=0;
         HashSet nodesRoutedTo = new HashSet();
         HashSet nodesNotIgnored = new HashSet();
+        PeerNode next = null;
         while(true) {
+            /*
+             * If we haven't routed to any node yet, decrement according to the source.
+             * If we have, decrement according to the node which just failed.
+             * Because:
+             * 1) If we always decrement according to source then we can be at max or min HTL
+             * for a long time while we visit *every* peer node. This is BAD!
+             * 2) The node which just failed can be seen as the requestor for our purposes.
+             */
+            // Decrement at this point so we can DNF immediately on reaching HTL 0.
+            htl = node.decrementHTL((hasForwarded ? next : source), htl);
+
             if(logMINOR) Logger.minor(this, "htl="+htl);
             if(htl == 0) {
             	// This used to be RNF, I dunno why
@@ -395,7 +407,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			routeAttempts++;
             
             // Route it
-            PeerNode next;
             next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null, key);
             
             if(next == null) {
@@ -409,8 +420,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			
             if(logMINOR) Logger.minor(this, "Routing request to "+next);
             nodesRoutedTo.add(next);
-            
-            htl = node.decrementHTL((hasForwarded ? next : source), htl);
             
             Message req = createDataRequest();
             

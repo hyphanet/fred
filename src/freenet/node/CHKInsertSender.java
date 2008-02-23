@@ -269,11 +269,22 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         HashSet nodesRoutedTo = new HashSet();
         HashSet nodesNotIgnored = new HashSet();
         
+        PeerNode next = null;
         while(true) {
             if(receiveFailed) {
             	return; // don't need to set status as killed by CHKInsertHandler
             }
             
+            /*
+             * If we haven't routed to any node yet, decrement according to the source.
+             * If we have, decrement according to the node which just failed.
+             * Because:
+             * 1) If we always decrement according to source then we can be at max or min HTL
+             * for a long time while we visit *every* peer node. This is BAD!
+             * 2) The node which just failed can be seen as the requestor for our purposes.
+             */
+            // Decrement at this point so we can DNF immediately on reaching HTL 0.
+            htl = node.decrementHTL(sentRequest ? next : source, htl);
             synchronized (this) {
             	if(htl == 0) {
             		// Send an InsertReply back
@@ -282,7 +293,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             	}
             }
             // Route it
-            PeerNode next;
             // Can backtrack, so only route to nodes closer than we are to target.
             next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null, null);
 			
@@ -296,7 +306,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             nodesRoutedTo.add(next);
             
             Message req;
-            htl = node.decrementHTL(sentRequest ? next : source, htl);
             
             req = DMT.createFNPInsertRequest(uid, htl, myKey);
             

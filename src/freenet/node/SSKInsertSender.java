@@ -122,8 +122,18 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         HashSet nodesRoutedTo = new HashSet();
         HashSet nodesNotIgnored = new HashSet();
         
+        PeerNode next = null;
         while(true) {
-        	
+            /*
+             * If we haven't routed to any node yet, decrement according to the source.
+             * If we have, decrement according to the node which just failed.
+             * Because:
+             * 1) If we always decrement according to source then we can be at max or min HTL
+             * for a long time while we visit *every* peer node. This is BAD!
+             * 2) The node which just failed can be seen as the requestor for our purposes.
+             */
+            // Decrement at this point so we can DNF immediately on reaching HTL 0.
+            htl = node.decrementHTL(sentRequest ? next : source, htl);
             if(htl == 0) {
                 // Send an InsertReply back
                 finish(SUCCESS, null);
@@ -131,7 +141,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             }
             
             // Route it
-            PeerNode next;
             next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null, null);
             
             if(next == null) {
@@ -141,8 +150,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             }
             if(logMINOR) Logger.minor(this, "Routing insert to "+next);
             nodesRoutedTo.add(next);
-            
-            htl = node.decrementHTL(sentRequest ? next : source, htl);
             
             Message req = DMT.createFNPSSKInsertRequest(uid, htl, myKey, headers, data, pubKeyHash);
             
