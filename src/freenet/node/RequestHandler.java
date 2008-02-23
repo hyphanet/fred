@@ -59,6 +59,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
         uid = id;
         this.source = source;
         this.htl = htl;
+        if(htl <= 0) htl = 1;
         this.key = key;
         if(key instanceof NodeSSK)
         	needsPubKey = m.getBoolean(DMT.NEED_PUB_KEY);

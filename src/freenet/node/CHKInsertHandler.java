@@ -55,6 +55,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         this.startTime = startTime;
         key = (NodeCHK) req.getObject(DMT.FREENET_ROUTING_KEY);
         htl = req.getShort(DMT.HTL);
+        if(htl <= 0) htl = 1;
         double targetLoc = key.toNormalizedDouble();
         double myLoc = node.lm.getLocation();
         logMINOR = Logger.shouldLog(Logger.MINOR, this);

@@ -52,6 +52,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
         this.startTime = startTime;
         key = (NodeSSK) req.getObject(DMT.FREENET_ROUTING_KEY);
         htl = req.getShort(DMT.HTL);
+        if(htl <= 0) htl = 1;
         byte[] pubKeyHash = ((ShortBuffer)req.getObject(DMT.PUBKEY_HASH)).getData();
         pubKey = node.getKey(pubKeyHash);
         data = ((ShortBuffer) req.getObject(DMT.DATA)).getData();
