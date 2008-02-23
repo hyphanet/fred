@@ -89,7 +89,6 @@ public class FailureTable {
 			if(entry == null) {
 				entry = new FailureTableEntry(key);
 				entriesByKey.push(key, entry);
-				return;
 			} else {
 				entriesByKey.push(key, entry);
 			}
@@ -107,7 +106,6 @@ public class FailureTable {
 			if(entry == null) {
 				entry = new FailureTableEntry(key);
 				entriesByKey.push(key, entry);
-				return;
 			} else {
 				entriesByKey.push(key, entry);
 			}
