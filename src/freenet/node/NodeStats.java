@@ -373,8 +373,13 @@ public class NodeStats implements Persistable {
 	/** Absolute limit of 4MB queued to any given peer. FIXME make this configurable. 
 	 * Note that for many MessageItem's, the actual memory usage will be significantly more than this figure. */
 	private static final long MAX_PEER_QUEUE_BYTES = 4 * 1024 * 1024;
-	/** Don't accept requests if it'll take more than 10 minutes to send the current message queue */
-	private static final double MAX_PEER_QUEUE_TIME = 10 * 60 * 1000.0;
+	/** Don't accept requests if it'll take more than 1 minutes to send the current message queue.
+	 * On the assumption that most of the message queue is block transfer data.
+	 * Note that this only applies to data on the queue before calling shouldRejectRequest(): we 
+	 * do *not* attempt to include any estimate of how much the request will add to it. This is 
+	 * important because if we did, the AIMD may not have reached sufficient speed to transfer it 
+	 * in 60 seconds yet, because it hasn't had enough data in transit to need to increase its speed. */
+	private static final double MAX_PEER_QUEUE_TIME = 1 * 60 * 1000.0;
 	
 	private long lastAcceptedRequest = -1;
 	
