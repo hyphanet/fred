@@ -537,11 +537,14 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	}
 
 	private void removeSubSegments() {
-		for(int i=0;i<subSegments.size();i++) {
-			SplitFileFetcherSubSegment seg = (SplitFileFetcherSubSegment) subSegments.get(i);
-			seg.kill();
+		SplitFileFetcherSubSegment[] deadSegs;
+		synchronized(this) {
+			deadSegs = (SplitFileFetcherSubSegment[]) subSegments.toArray(new SplitFileFetcherSubSegment[subSegments.size()]);
+			subSegments.clear();
 		}
-		subSegments.clear();
+		for(int i=0;i<deadSegs.length;i++) {
+			deadSegs[i].kill();
+		}
 	}
 
 	public long getCooldownWakeup(int blockNum) {
