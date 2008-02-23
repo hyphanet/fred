@@ -1218,6 +1218,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	{
 		final long t1 = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(4) message, processing it - "+pn.getPeer());
+		if(pn.jfkMyRef == null) {
+			String error = "Got a JFK(4) message but no pn.jfkMyRef for "+pn;
+			if(node.getUptime() < 60*1000)
+				Logger.minor(this, error);
+			else
+				Logger.error(this, error);
+		}
 		BlockCipher c = null;
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
 		
