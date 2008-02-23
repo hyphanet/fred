@@ -502,6 +502,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(complain)
 						Logger.normal(this, "Not found: "+getter+" for "+key+" removing (1 getter)");
 				} else {
+					dropped = true;
 					pendingKeys.remove(key);
 				}
 			} else {
