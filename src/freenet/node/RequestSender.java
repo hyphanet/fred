@@ -667,7 +667,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             		}
             		
                 	// Found data
-                	next.successNotOverload();
                 	
                 	// First get headers
                 	
@@ -691,6 +690,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 		try {
                 			if(logMINOR) Logger.minor(this, "Receiving data");
                 			byte[] data = br.receive();
+                        	next.successNotOverload();
                 			if(logMINOR) Logger.minor(this, "Received data");
                 			// Received data
                 			try {
@@ -708,6 +708,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 								Logger.normal(this, "Transfer failed (disconnect): "+e, e);
 							else
 								Logger.error(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
+							next.localRejectedOverload("TransferFailedRequest"+e.getReason());
                 			finish(TRANSFER_FAILED, next, false);
                 			node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
                 			return;

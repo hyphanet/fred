@@ -90,6 +90,10 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				completedTransfer = true;
 				notifyAll();
 			}
+			if(success)
+				pn.successNotOverload();
+			else
+				pn.localRejectedOverload("TransferFailedInsert");
 			synchronized(backgroundTransfers) {
 				backgroundTransfers.notifyAll();
 			}
@@ -549,7 +553,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 					return;
 				} else {
 					// Our task is complete, one node (quite deep), has accepted the insert.
-					next.successNotOverload();
 					// The request will not be routed to any other nodes, this is where the data *should* be.
 					finish(SUCCESS, next);
 					return;
