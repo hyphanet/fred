@@ -536,7 +536,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 			}
 		}
-		if(dropped && offeredKeys != null) {
+		if(dropped && offeredKeys != null && !node.peersWantKey(key)) {
 			for(int i=0;i<offeredKeys.length;i++)
 				offeredKeys[i].remove(key);
 		}

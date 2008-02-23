@@ -3266,4 +3266,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public void setLocation(double loc) {
 		lm.setLocation(loc);
 	}
+
+	public boolean peersWantKey(Key key) {
+		return failureTable.peersWantKey(key);
+	}
 }

@@ -492,4 +492,13 @@ public class FailureTable {
 
 	}
 
+	public boolean peersWantKey(Key key) {
+		FailureTableEntry entry;
+		synchronized(this) {
+			entry = (FailureTableEntry) entriesByKey.get(key);
+			if(entry == null) return false; // Nobody cares
+		}
+		return entry.othersWant(null);
+	}
+
 }
