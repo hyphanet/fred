@@ -94,14 +94,14 @@ class FailureTableEntry implements TimedOutNodesList {
 		if(logMINOR) {
 			Logger.minor(this, "Failed sending request to "+routedTo.shortToString()+" : timeout "+timeout);
 		}
-			int idx = addRequestedFrom(routedTo, now);
-			long curTimeoutTime = requestedTimeouts[idx];
-			long newTimeoutTime = now +  timeout;
-			// FIXME htl???
-			if(newTimeoutTime > curTimeoutTime) {
-				requestedTimeouts[idx] = newTimeoutTime;
-				requestedTimeoutHTLs[idx] = htl;
-			}
+		int idx = addRequestedFrom(routedTo, now);
+		long curTimeoutTime = requestedTimeouts[idx];
+		long newTimeoutTime = now +  timeout;
+		// FIXME htl???
+		if(newTimeoutTime > curTimeoutTime) {
+			requestedTimeouts[idx] = newTimeoutTime;
+			requestedTimeoutHTLs[idx] = htl;
+		}
 	}
 
 	// These are rather low level, in an attempt to absolutely minimize memory usage...
