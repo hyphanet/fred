@@ -362,7 +362,11 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		}
 		
 	}
-	
+
+	/**
+	 * Terminate a subsegment. Called by the segment, which will have already removed the
+	 * subsegment from the list.
+	 */
 	public void kill() {
 		if(logMINOR)
 			Logger.minor(this, "Killing "+this);
@@ -372,8 +376,6 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			blockNums.clear();
 			cancelled = true;
 		}
-		if(!segment.maybeRemoveSeg(this))
-			Logger.error(this, "Could not remove subsegment: "+this+" from "+segment+" for some reason in kill()!");
 	}
 
 	public long getCooldownWakeup(Object token) {
