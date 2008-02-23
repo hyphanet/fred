@@ -1442,7 +1442,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(htl > max)
 			htl = max;
 		if(htl <= 0)
-			htl = 1;
+			return 0;
 		if(htl == max) {
 			if(decrementHTLAtMaximum || node.disableProbabilisticHTLs)
 				htl--;

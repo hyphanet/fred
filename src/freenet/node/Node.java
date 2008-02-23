@@ -2284,7 +2284,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			return source.decrementHTL(htl);
 		// Otherwise...
 		if(htl >= maxHTL) htl = maxHTL;
-		if(htl <= 0) htl = 1;
+		if(htl <= 0) {
+			return 0;
+		}
 		if(htl == maxHTL) {
 			if(decrementAtMax || disableProbabilisticHTLs) htl--;
 			return htl;
