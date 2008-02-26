@@ -79,4 +79,8 @@ public class MessageItem {
 	public short getPriority() {
 		return priority;
 	}
+	
+	public String toString() {
+		return super.toString()+":formatted="+formatted+",msg="+msg;
+	}
 }
