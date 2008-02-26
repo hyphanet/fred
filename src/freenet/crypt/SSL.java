@@ -242,9 +242,13 @@ public class SSL {
 
 	private static void storeKeyStore() throws Exception {
 		if(enable) {
-			FileOutputStream fos = new FileOutputStream(keyStore);
-			keystore.store(fos, keyStorePass.toCharArray());
-			fos.close();
+			FileOutputStream fos = null;
+			try {
+				fos = new FileOutputStream(keyStore);
+				keystore.store(fos, keyStorePass.toCharArray());
+			} finally {
+				Closer.close(fos);
+			}
 		}
 	}
 
