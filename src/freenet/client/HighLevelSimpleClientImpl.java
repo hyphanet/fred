@@ -56,8 +56,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	// for interactive requests mostly.
 	/** Number of retries allowed per block in a splitfile. */
 	static final int SPLITFILE_BLOCK_RETRIES = Math.min(3, RequestScheduler.COOLDOWN_RETRIES-1);
-	/** Number of retries allowed on non-splitfile fetches. Unlike above, we always
-	 * go to network. */
+	/** Number of retries allowed on non-splitfile fetches. */
 	static final int NON_SPLITFILE_RETRIES = Math.min(3, RequestScheduler.COOLDOWN_RETRIES-1);
 	/** Whether to fetch splitfiles. Don't turn this off! */
 	static final boolean FETCH_SPLITFILES = true;
