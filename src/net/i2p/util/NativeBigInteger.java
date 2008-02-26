@@ -525,16 +525,20 @@ public class NativeBigInteger extends BigInteger {
 				System.err.println("NOTICE: Resource name [" + getResourceName(true) + "] was not found");
 			return false;
 		}
-
+		File temp = null;
 		try {
 			try {
-				if(tryLoadResource(File.createTempFile("jbigi", "lib.tmp"), resource))
+				temp = File.createTempFile("jbigi", "lib.tmp");
+				if(tryLoadResource(temp, resource))
 					return true;
 			} catch(IOException e) {
+			} finally {
+				if(temp != null) temp.delete();
 			}
 			Logger.error(NativeBigInteger.class, "Can't load from " + System.getProperty("java.io.tmpdir"));
 			System.err.println("Can't load from " + System.getProperty("java.io.tmpdir"));
-			if(tryLoadResource(new File("jbigi-lib.tmp"), resource))
+			temp = new File("jbigi-lib.tmp");
+			if(tryLoadResource(temp, resource))
 				return true;
 		} catch(Exception fnf) {
 			Logger.error(NativeBigInteger.class, "Error reading jbigi resource");
@@ -542,6 +546,8 @@ public class NativeBigInteger extends BigInteger {
 		} catch(UnsatisfiedLinkError ule) {
 			Logger.error(NativeBigInteger.class, "Library " + resourceName + " is not appropriate for this system.");
 			System.err.println("Library " + resourceName + " is not appropriate for this system.");
+		} finally {
+			if(temp != null) temp.delete();
 		}
 
 		return false;

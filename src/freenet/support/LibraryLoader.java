@@ -13,6 +13,8 @@ import java.net.URL;
  * A simple class to load native libraries from the -ext jarfile
  * 
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
+ * 
+ * TODO: make it more generic so that all libraries can use it (bigint, jcpuid, fec, ...)
  */
 public class LibraryLoader {
 	
