@@ -241,11 +241,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(block != null) {
 						if(logMINOR) Logger.minor(this, "Can fulfill "+req+" ("+tok+") immediately from store");
 						getter.onSuccess(block, true, tok, this);
-						// FIXME unfortunately this seems to be necessary on *nix to prevent
-						// critical threads from starving: sadly thread priorities only work on
-						// Windows and as of linux 2.6.23, fair scheduling does not ensure that 
-						// the critical threads (those which set MAX_PRIORITY) get enough CPU time.
-						Thread.yield();
 					} else {
 						anyValid = true;
 					}
