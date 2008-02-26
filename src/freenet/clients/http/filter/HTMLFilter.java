@@ -368,7 +368,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 		for(int i=0;i<s.length();i++) {
 			char c = s.charAt(i);
-			if((c < 32) && (c != '\n') && (c != '\r') ) {
+			if((c < 32) && (c != '\t') && (c != '\n') && (c != '\r') ) {
 				// Not a real character
 				// STRONGLY suggests somebody is using a bogus charset.
 				// This could be in order to break the filter.
