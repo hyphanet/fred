@@ -42,7 +42,7 @@ public class NativeThread extends Thread {
 			//System.loadLibrary("NativeThread");
 			LibraryLoader.loadNative("/freenet/support/io/", "NativeThread");
 			NATIVE_PRIORITY_BASE = getLinuxPriority();
-			NATIVE_PRIORITY_RANGE = 19 - NATIVE_PRIORITY_BASE;
+			NATIVE_PRIORITY_RANGE = 20 - NATIVE_PRIORITY_BASE;
 			System.out.println("Using the NativeThread implementation (base nice level is "+NATIVE_PRIORITY_BASE+')');
 			// they are 3 main prio levels
 			HAS_THREE_NICE_LEVELS = NATIVE_PRIORITY_RANGE >= 3;
