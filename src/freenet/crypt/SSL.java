@@ -15,6 +15,7 @@
  */
 package freenet.crypt;
 
+import com.sleepycat.je.utilint.NotImplementedYetException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -22,9 +23,7 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.security.Key;
 import java.security.KeyStore;
-import java.security.PrivateKey;
 import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -36,8 +35,6 @@ import freenet.support.api.BooleanCallback;
 import freenet.support.api.StringCallback;
 
 import freenet.support.io.Closer;
-import sun.security.x509.X500Name;
-import sun.security.x509.CertAndKeyGen;
 
 public class SSL {
 
@@ -219,23 +216,24 @@ public class SSL {
 				fis = new FileInputStream(keyStore);
 				keystore.load(fis, keyStorePass.toCharArray());
 			} catch(FileNotFoundException fnfe) {
-				//If keystore not exist, create keystore and server certificat
-				keystore.load(null, keyStorePass.toCharArray());
-				CertAndKeyGen keypair = new CertAndKeyGen("DSA", "SHA1WithDSA");
-				X500Name x500Name = new X500Name(
-					"Freenet",
-					"Freenet",
-					"Freenet",
-					"",
-					"",
-					"");
-				keypair.generate(1024);
-				PrivateKey privKey = keypair.getPrivateKey();
-				X509Certificate[] chain = new X509Certificate[1];
-				chain[0] = keypair.getSelfCertificate(x500Name, 1L * 365 * 24 * 60 * 60);
-				keystore.setKeyEntry("freenet", privKey, keyPass.toCharArray(), chain);
-				storeKeyStore();
-				createSSLContext();
+				throw new NotImplementedYetException();
+//				//If keystore not exist, create keystore and server certificat
+//				keystore.load(null, keyStorePass.toCharArray());
+//				CertAndKeyGen keypair = new CertAndKeyGen("DSA", "SHA1WithDSA");
+//				X500Name x500Name = new X500Name(
+//					"Freenet",
+//					"Freenet",
+//					"Freenet",
+//					"",
+//					"",
+//					"");
+//				keypair.generate(1024);
+//				PrivateKey privKey = keypair.getPrivateKey();
+//				X509Certificate[] chain = new X509Certificate[1];
+//				chain[0] = keypair.getSelfCertificate(x500Name, 1L * 365 * 24 * 60 * 60);
+//				keystore.setKeyEntry("freenet", privKey, keyPass.toCharArray(), chain);
+//				storeKeyStore();
+//				createSSLContext();
 			} finally {
 				Closer.close(fis);
 			}
