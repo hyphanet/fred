@@ -3270,4 +3270,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public boolean peersWantKey(Key key) {
 		return failureTable.peersWantKey(key);
 	}
+
+	private SimpleUserAlert alertMTUTooSmall;
+	
+	public void onTooLowMTU(int minAdvertisedMTU, int minAcceptableMTU) {
+		if(alertMTUTooSmall == null) {
+			alertMTUTooSmall = new SimpleUserAlert(false, l10n("tooSmallMTU"), l10n("tooSmallMTULong", new String[] { "mtu", "minMTU" }, new String[] { Integer.toString(minAdvertisedMTU), Integer.toString(minAcceptableMTU) }), UserAlert.ERROR);
+		} else return;
+		clientCore.alerts.register(alertMTUTooSmall);
+	}
 }
