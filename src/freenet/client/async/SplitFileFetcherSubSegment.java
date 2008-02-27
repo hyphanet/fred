@@ -185,7 +185,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			synchronized(this) {
 				for(int i=0;i<blockNums.size();i++) {
 					Integer x = (Integer) blockNums.get(i);
-					if(x == token) {
+					// Compare by value as sometimes we will do new Integer(num) in requeueing after cooldown code.
+					if(x.equals(token)) {
 						blockNums.remove(i);
 						if(logMINOR) Logger.minor(this, "Removed block "+i+" : "+x);
 						i--;
