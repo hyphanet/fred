@@ -1106,5 +1106,24 @@ public class NodeStats implements Persistable {
 	public long getOfferedKeysTotalBytesSent() {
 		return offeredKeysSenderSentBytes;
 	}
+
+	private long swappingRcvdBytes;
+	private long swappingSentBytes;
+	
+	public synchronized void swappingReceivedBytes(int x) {
+		swappingRcvdBytes += x;
+	}
+	
+	public synchronized void swappingSentBytes(int x) {
+		swappingSentBytes += x;
+	}
+	
+	public long getSwappingTotalBytesReceived() {
+		return swappingRcvdBytes;
+	}
+	
+	public long getSwappingTotalBytesSent() {
+		return swappingSentBytes;
+	}
 	
 }
