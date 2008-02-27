@@ -123,10 +123,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
                 		node.nodeStats.successfulChkFetchBytesReceivedAverage.report(rcvd);
                 	}
             	}
-        } else if(status == RequestSender.SUCCESS && key instanceof NodeSSK) {
-        	// Sent from datastore.
-            node.sentPayload(rs.getSSKData().length); // won't be sentPayload()ed by BlockTransmitter
-            sentPayload(rs.getSSKData().length);
         }
     }
 
@@ -348,6 +344,9 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
             	sendTerminal(df);
             }
             status = RequestSender.SUCCESS; // for byte logging
+        	// Sent from datastore.
+            node.sentPayload(rs.getSSKData().length); // won't be sentPayload()ed by BlockTransmitter
+            sentPayload(rs.getSSKData().length);
         } else if(block instanceof CHKBlock) {
         	PartiallyReceivedBlock prb =
         		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
