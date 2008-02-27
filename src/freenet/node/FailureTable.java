@@ -351,6 +351,7 @@ public class FailureTable {
 				return;
 			}
 			Message df = DMT.createFNPSSKDataFound(uid, block.getRawHeaders(), block.getRawData());
+			node.sentPayload(block.getRawData().length);
 			source.sendAsync(df, null, 0, senderCounter);
 			if(needPubKey) {
 				Message pk = DMT.createFNPSSKPubKey(uid, block.getPubKey());
