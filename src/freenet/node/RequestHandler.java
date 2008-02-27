@@ -379,6 +379,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
      * and the byte counter will still be accurate.
      */
     private void sendTerminal(Message msg) throws NotConnectedException {
+    	if(logMINOR)
+    		Logger.minor(this, "sendTerminal("+msg+")", new Exception("debug"));
         if (sendTerminalCalled)
             throw new IllegalStateException("sendTerminal should only be called once");
         else
