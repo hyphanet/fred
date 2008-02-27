@@ -250,7 +250,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public static final int PACKETS_IN_BLOCK = 32;
 	public static final int PACKET_SIZE = 1024;
 	public static final double DECREMENT_AT_MIN_PROB = 0.25;
-	public static final double DECREMENT_AT_MAX_PROB = 0.2;
+	public static final double DECREMENT_AT_MAX_PROB = 0.1;
 	// Send keepalives every 14-28 seconds. Comfortably fits within 30 second timeout.
 	// If the packet is dropped, we will send ack requests etc, so this should be fine.
 	public static final int KEEPALIVE_INTERVAL = 14000;
