@@ -260,7 +260,7 @@ public class StatisticsToadlet extends Toadlet {
 			// Bandwidth box
 			HTMLNode bandwidthInfobox = nextTableCell.addChild("div", "class", "infobox");
 			
-			drawBandwidthBox(bandwidthInfobox, nodeUptimeSeconds);
+			drawBandwidthBox(bandwidthInfobox, nodeUptimeSeconds, advancedModeEnabled);
 		}
 
 		if(advancedModeEnabled) {
@@ -779,7 +779,7 @@ public class StatisticsToadlet extends Toadlet {
 		
 	}
 	
-	static void drawBandwidth(HTMLNode activityList, Node node, long nodeUptimeSeconds) {
+	static void drawBandwidth(HTMLNode activityList, Node node, long nodeUptimeSeconds, boolean isAdvancedModeEnabled) {
 		long[] total = IOStatisticCollector.getTotalIO();
 		long total_output_rate = (total[0]) / nodeUptimeSeconds;
 		long total_input_rate = (total[1]) / nodeUptimeSeconds;
@@ -882,12 +882,12 @@ public class StatisticsToadlet extends Toadlet {
 		
 	}
 
-	private void drawBandwidthBox(HTMLNode bandwidthInfobox, long nodeUptimeSeconds) {
+	private void drawBandwidthBox(HTMLNode bandwidthInfobox, long nodeUptimeSeconds, boolean isAdvancedModeEnabled) {
 		
 		bandwidthInfobox.addChild("div", "class", "infobox-header", l10n("bandwidthTitle"));
 		HTMLNode bandwidthInfoboxContent = bandwidthInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode bandwidthList = bandwidthInfoboxContent.addChild("ul");
-		drawBandwidth(bandwidthList, node, nodeUptimeSeconds);
+		drawBandwidth(bandwidthList, node, nodeUptimeSeconds, isAdvancedModeEnabled);
 		
 	}
 
