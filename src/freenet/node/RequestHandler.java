@@ -111,6 +111,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
                 		node.nodeStats.successfulSskFetchBytesSentAverage.report(sent);
                 		node.nodeStats.successfulSskFetchBytesReceivedAverage.report(rcvd);
                         node.sentPayload(rs.getSSKData().length); // won't be sentPayload()ed by BlockTransmitter
+                        sentPayload(rs.getSSKData().length);
                 	}
             	} else {
             		if(logMINOR) Logger.minor(this, "Remote CHK fetch cost "+sent+ '/' +rcvd+" bytes ("+status+ ')');
@@ -125,6 +126,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
         } else if(status == RequestSender.SUCCESS && key instanceof NodeSSK) {
         	// Sent from datastore.
             node.sentPayload(rs.getSSKData().length); // won't be sentPayload()ed by BlockTransmitter
+            sentPayload(rs.getSSKData().length);
         }
     }
 
