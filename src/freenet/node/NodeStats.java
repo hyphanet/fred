@@ -1125,5 +1125,15 @@ public class NodeStats implements Persistable {
 	public long getSwappingTotalBytesSent() {
 		return swappingSentBytes;
 	}
+
+	private long totalAuthBytesSent;
+	
+	public synchronized void reportAuthBytes(int x) {
+		totalAuthBytesSent += x;
+	}
+	
+	public long getTotalAuthBytesSent() {
+		return totalAuthBytesSent;
+	}
 	
 }

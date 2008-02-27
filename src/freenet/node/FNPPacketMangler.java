@@ -1632,6 +1632,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] random = new byte[paddingLength];
 		node.fastWeakRandom.nextBytes(random);
 		System.arraycopy(random, 0, data, hash.length+iv.length+2+output.length, random.length);
+		node.nodeStats.reportAuthBytes(data.length + sock.getHeadersLength());
 		try {
 			sendPacket(data, replyTo, pn, 0);
 		} catch (LocalAddressException e) {
