@@ -122,6 +122,9 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
                 		node.nodeStats.successfulChkFetchBytesReceivedAverage.report(rcvd);
                 	}
             	}
+        } else if(status == RequestSender.SUCCESS && key instanceof NodeSSK) {
+        	// Sent from datastore.
+            node.sentPayload(rs.getSSKData().length); // won't be sentPayload()ed by BlockTransmitter
         }
     }
 
