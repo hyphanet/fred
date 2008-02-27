@@ -345,8 +345,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
             }
             status = RequestSender.SUCCESS; // for byte logging
         	// Sent from datastore.
-            node.sentPayload(rs.getSSKData().length); // won't be sentPayload()ed by BlockTransmitter
-            sentPayload(rs.getSSKData().length);
+            node.sentPayload(block.getRawData().length); // won't be sentPayload()ed by BlockTransmitter
+            sentPayload(block.getRawData().length);
         } else if(block instanceof CHKBlock) {
         	PartiallyReceivedBlock prb =
         		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
