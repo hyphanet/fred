@@ -830,6 +830,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		synchronized(totalBytesSync) {
 			totalBytesSent += x;
 		}
+		node.nodeStats.insertSentBytes(false, x);
 	}
 	
 	public int getTotalSentBytes() {
@@ -844,6 +845,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		synchronized(totalBytesSync) {
 			totalBytesReceived += x;
 		}
+		node.nodeStats.insertReceivedBytes(false, x);
 	}
 	
 	public int getTotalReceivedBytes() {
@@ -854,6 +856,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 
 	public void sentPayload(int x) {
 		node.sentPayload(x);
+		node.nodeStats.insertSentBytes(false, -x);
 	}
 
 	public boolean failedReceive() {

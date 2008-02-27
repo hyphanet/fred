@@ -1122,6 +1122,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		synchronized(totalBytesSync) {
 			totalBytesSent += x;
 		}
+		node.nodeStats.requestSentBytes(key instanceof NodeSSK, x);
 	}
 	
 	public int getTotalSentBytes() {
@@ -1136,6 +1137,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		synchronized(totalBytesSync) {
 			totalBytesReceived += x;
 		}
+		node.nodeStats.requestReceivedBytes(key instanceof NodeSSK, x);
 	}
 	
 	public int getTotalReceivedBytes() {
@@ -1150,6 +1152,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 
 	public void sentPayload(int x) {
 		node.sentPayload(x);
+		node.nodeStats.requestSentBytes(key instanceof NodeSSK, -x);
 	}
 	
 	private int recentlyFailedTimeLeft;

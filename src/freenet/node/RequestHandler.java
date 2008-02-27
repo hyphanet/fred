@@ -122,7 +122,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
                 		node.nodeStats.successfulChkFetchBytesReceivedAverage.report(rcvd);
                 	}
             	}
-            }
+        }
     }
 
     private void realRun() throws NotConnectedException {
@@ -580,16 +580,19 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		synchronized(bytesSync) {
 			sentBytes += x;
 		}
+		node.nodeStats.requestSentBytes(key instanceof NodeSSK, x);
 	}
 
 	public void receivedBytes(int x) {
 		synchronized(bytesSync) {
 			receivedBytes += x;
 		}
+		node.nodeStats.requestReceivedBytes(key instanceof NodeSSK, x);
 	}
 
 	public void sentPayload(int x) {
 		node.sentPayload(x);
+		node.nodeStats.requestSentBytes(key instanceof NodeSSK, -x);
 	}
 
 	public int getPriority() {

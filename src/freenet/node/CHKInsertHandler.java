@@ -456,12 +456,14 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		synchronized(totalSync) {
 			totalSentBytes += x;
 		}
+		node.nodeStats.insertSentBytes(false, x);
 	}
 
 	public void receivedBytes(int x) {
 		synchronized(totalSync) {
 			totalReceivedBytes += x;
 		}
+		node.nodeStats.insertReceivedBytes(false, x);
 	}
 
 	public int getTotalSentBytes() {
@@ -474,6 +476,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 
 	public void sentPayload(int x) {
 		node.sentPayload(x);
+		node.nodeStats.insertSentBytes(false, -x);
 	}
 
 	public int getPriority() {

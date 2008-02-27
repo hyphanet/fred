@@ -803,6 +803,10 @@ public class StatisticsToadlet extends Toadlet {
 		activityList.addChild("li", l10n("totalInput", new String[] { "total", "rate" }, new String[] { SizeUtil.formatSize(total[1], true), SizeUtil.formatSize(total_input_rate, true) }));
 		activityList.addChild("li", l10n("totalOutput", new String[] { "total", "rate" }, new String[] { SizeUtil.formatSize(total[0], true), SizeUtil.formatSize(total_output_rate, true) } ));
 		activityList.addChild("li", l10n("payloadOutput", new String[] { "total", "rate", "percent" }, new String[] { SizeUtil.formatSize(totalPayload, true), SizeUtil.formatSize(total_payload_rate, true), Integer.toString(percent) } ));
+		if(isAdvancedModeEnabled) {
+			activityList.addChild("li", l10n("requestOutput", new String[] { "chk", "ssk" }, new String[] { SizeUtil.formatSize(node.nodeStats.getCHKRequestTotalBytesSent(), true), SizeUtil.formatSize(node.nodeStats.getSSKRequestTotalBytesSent(), true) }));
+			activityList.addChild("li", l10n("insertOutput", new String[] { "chk", "ssk" }, new String[] { SizeUtil.formatSize(node.nodeStats.getCHKInsertTotalBytesSent(), true), SizeUtil.formatSize(node.nodeStats.getSSKInsertTotalBytesSent(), true) }));
+		}
 	}
 
 	static HTMLNode drawActivity(HTMLNode activityInfoboxContent, Node node) {

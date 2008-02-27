@@ -327,12 +327,14 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 		synchronized(totalBytesSync) {
 			totalBytesSent += x;
 		}
+		node.nodeStats.insertSentBytes(true, x);
 	}
 
 	public void receivedBytes(int x) {
 		synchronized(totalBytesSync) {
 			totalBytesReceived += x;
 		}
+		node.nodeStats.insertReceivedBytes(true, x);
 	}
 	
 	public int getTotalSentBytes() {
@@ -345,6 +347,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 
 	public void sentPayload(int x) {
 		node.sentPayload(x);
+		node.nodeStats.insertSentBytes(true, -x);
 	}
 
 	public int getPriority() {

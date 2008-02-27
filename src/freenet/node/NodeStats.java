@@ -1031,5 +1031,59 @@ public class NodeStats implements Persistable {
 			}
 		}
 	}
+
+	/* Total bytes sent by requests, excluding payload */
+	private long chkRequestSentBytes;
+	private long chkRequestRcvdBytes;
+	private long sskRequestSentBytes;
+	private long sskRequestRcvdBytes;
+	private long chkInsertSentBytes;
+	private long chkInsertRcvdBytes;
+	private long sskInsertSentBytes;
+	private long sskInsertRcvdBytes;
+	
+	public synchronized void requestSentBytes(boolean ssk, int x) {
+		if(ssk)
+			sskRequestSentBytes += x;
+		else
+			chkRequestSentBytes += x;
+	}
+	
+	public synchronized void requestReceivedBytes(boolean ssk, int x) {
+		if(ssk)
+			sskRequestRcvdBytes += x;
+		else
+			chkRequestRcvdBytes += x;
+	}
+	
+	public synchronized void insertSentBytes(boolean ssk, int x) {
+		if(ssk)
+			sskInsertSentBytes += x;
+		else
+			chkInsertSentBytes += x;
+	}
+	
+	public synchronized void insertReceivedBytes(boolean ssk, int x) {
+		if(ssk)
+			sskInsertRcvdBytes += x;
+		else
+			chkInsertRcvdBytes += x;
+	}
+
+	public long getCHKRequestTotalBytesSent() {
+		return chkRequestSentBytes;
+	}
+
+	public long getSSKRequestTotalBytesSent() {
+		return sskRequestSentBytes;
+	}
+
+	public long getCHKInsertTotalBytesSent() {
+		return chkInsertSentBytes;
+	}
+
+	public long getSSKInsertTotalBytesSent() {
+		return sskInsertSentBytes;
+	}
 	
 }
