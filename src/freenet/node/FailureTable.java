@@ -6,6 +6,7 @@ package freenet.node;
 import java.lang.ref.WeakReference;
 import java.util.Vector;
 
+import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
@@ -346,20 +347,20 @@ public class FailureTable {
 			SSKBlock block = node.fetch((NodeSSK)key, false);
 			if(block == null) {
 				// Don't have the key
-				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, 0, null);
+				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, 0, senderCounter);
 				return;
 			}
 			Message df = DMT.createFNPSSKDataFound(uid, block.getRawHeaders(), block.getRawData());
-			source.sendAsync(df, null, 0, null);
+			source.sendAsync(df, null, 0, senderCounter);
 			if(needPubKey) {
 				Message pk = DMT.createFNPSSKPubKey(uid, block.getPubKey());
-				source.sendAsync(pk, null, 0, null);
+				source.sendAsync(pk, null, 0, senderCounter);
 			}
 		} else {
 			CHKBlock block = node.fetch((NodeCHK)key, false);
 			if(block == null) {
 				// Don't have the key
-				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, 0, null);
+				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, 0, senderCounter);
 				return;
 			}
 			Message df = DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
@@ -367,9 +368,28 @@ public class FailureTable {
         	PartiallyReceivedBlock prb =
         		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
         	BlockTransmitter bt =
-        		new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, null);
+        		new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, senderCounter);
         	bt.sendAsync(node.executor);
 		}
+	}
+	
+	private final OfferedKeysByteCounter senderCounter = new OfferedKeysByteCounter();
+	
+	class OfferedKeysByteCounter implements ByteCounter {
+
+		public void receivedBytes(int x) {
+			node.nodeStats.offeredKeysSenderReceivedBytes(x);
+		}
+
+		public void sentBytes(int x) {
+			node.nodeStats.offeredKeysSenderSentBytes(x);
+		}
+
+		public void sentPayload(int x) {
+			node.sentPayload(x);
+			node.nodeStats.offeredKeysSenderReceivedBytes(-x);
+		}
+		
 	}
 	
 	class OfferList {

@@ -1057,6 +1057,8 @@ public class NodeStats implements Persistable {
 	}
 	
 	public synchronized void insertSentBytes(boolean ssk, int x) {
+		if(Logger.shouldLog(Logger.DEBUG, this)) 
+			Logger.debug(this, "insertSentBytes("+ssk+", "+x+")");
 		if(ssk)
 			sskInsertSentBytes += x;
 		else
@@ -1084,6 +1086,25 @@ public class NodeStats implements Persistable {
 
 	public long getSSKInsertTotalBytesSent() {
 		return sskInsertSentBytes;
+	}
+
+	private long offeredKeysSenderRcvdBytes;
+	private long offeredKeysSenderSentBytes;
+	
+	public synchronized void offeredKeysSenderReceivedBytes(int x) {
+		offeredKeysSenderRcvdBytes += x;
+	}
+	
+	public synchronized void offeredKeysSenderSentBytes(int x) {
+		offeredKeysSenderSentBytes += x;
+	}
+	
+	public long getOfferedKeysTotalBytesReceived() {
+		return offeredKeysSenderRcvdBytes;
+	}
+	
+	public long getOfferedKeysTotalBytesSent() {
+		return offeredKeysSenderSentBytes;
 	}
 	
 }

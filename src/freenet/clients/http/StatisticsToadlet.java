@@ -806,6 +806,7 @@ public class StatisticsToadlet extends Toadlet {
 		if(isAdvancedModeEnabled) {
 			activityList.addChild("li", l10n("requestOutput", new String[] { "chk", "ssk" }, new String[] { SizeUtil.formatSize(node.nodeStats.getCHKRequestTotalBytesSent(), true), SizeUtil.formatSize(node.nodeStats.getSSKRequestTotalBytesSent(), true) }));
 			activityList.addChild("li", l10n("insertOutput", new String[] { "chk", "ssk" }, new String[] { SizeUtil.formatSize(node.nodeStats.getCHKInsertTotalBytesSent(), true), SizeUtil.formatSize(node.nodeStats.getSSKInsertTotalBytesSent(), true) }));
+			activityList.addChild("li", l10n("offeredKeyOutput", "total", SizeUtil.formatSize(node.nodeStats.getOfferedKeysTotalBytesSent(), true)));
 		}
 	}
 
