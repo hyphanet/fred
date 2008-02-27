@@ -555,6 +555,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	}
 
 	public void requeueAfterCooldown(Key key) {
+		if(isFinishing()) return;
 		boolean notFound = true;
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		// FIXME synchronization
