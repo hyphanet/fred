@@ -15,13 +15,11 @@ import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
-import freenet.support.SizeUtil;
 import freenet.support.StringCounter;
 import freenet.support.TimeUtil;
 import freenet.support.TokenBucket;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
-import freenet.support.api.LongCallback;
 import freenet.support.io.NativeThread;
 import freenet.support.math.DecayingKeyspaceAverage;
 import freenet.support.math.RunningAverage;
@@ -168,10 +166,6 @@ public class NodeStats implements Persistable {
 	private int[] waitingThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
 	private int threadLimit;
 	
-	// Free heap memory threshold stuffs
-	private long freeHeapBytesThreshold;
-	private int freeHeapPercentThreshold;
-	
 	final NodePinger nodePinger;
 	
 	final StringCounter preemptiveRejectReasons;
@@ -257,34 +251,6 @@ public class NodeStats implements Persistable {
 		});
 		if(statsConfig.getBoolean("memoryChecker"))
 			myMemoryChecker.start();
-
-		statsConfig.register("freeHeapBytesThreshold", "5M", sortOrder++, true, true, "NodeStat.freeHeapBytesThreshold", "NodeStat.freeHeapBytesThresholdLong",
-				new LongCallback() {
-					public long get() {
-						return freeHeapBytesThreshold;
-					}
-					public void set(long val) throws InvalidConfigValueException {
-						if(val == get()) return;
-						if(val < 0)
-							throw new InvalidConfigValueException(l10n("valueTooLow"));
-						freeHeapBytesThreshold = val;
-					}
-		});
-		freeHeapBytesThreshold = statsConfig.getLong("freeHeapBytesThreshold");
-
-		statsConfig.register("freeHeapPercentThreshold", "5", sortOrder++, true, true, "NodeStat.freeHeapPercentThreshold", "NodeStat.freeHeapPercentThresholdLong",
-				new IntCallback() {
-					public int get() {
-						return freeHeapPercentThreshold;
-					}
-					public void set(int val) throws InvalidConfigValueException {
-						if(val == get()) return;
-						if(val < 0 || val >= 100)
-							throw new InvalidConfigValueException(l10n("mustBePercentValueNotFull"));
-						freeHeapPercentThreshold = val;
-					}
-		});
-		freeHeapPercentThreshold = statsConfig.getInt("freeHeapPercentThreshold");
 
 		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false, 
 				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.ps, nodeDir);
@@ -537,31 +503,6 @@ public class NodeStats implements Persistable {
 			pInstantRejectIncoming.report(1.0);
 			rejected("Insufficient input bandwidth", isLocal);
 			return "Insufficient input bandwidth";
-		}
-
-		Runtime r = Runtime.getRuntime();
-		long maxHeapMemory = r.maxMemory();
-
-		/* There are some JVMs (for example libgcj 4.1.1) whose Runtime.maxMemory() does not work. */
-		if(maxHeapMemory < Long.MAX_VALUE) { // would mean unlimited
-			long totalHeapMemory = r.totalMemory();
-			long freeHeapMemory = r.freeMemory();
-		
-			freeHeapMemory = maxHeapMemory - (totalHeapMemory - freeHeapMemory);
-				
-			if(freeHeapMemory < freeHeapBytesThreshold) {
-				pInstantRejectIncoming.report(1.0);
-				rejected("<freeHeapBytesThreshold", isLocal);
-				return "<freeHeapBytesThreshold ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+')';
-			}
-			double percentFreeHeapMemoryOfMax = ((double) freeHeapMemory) / ((double) maxHeapMemory);
-			double freeHeapPercentThresholdDouble = ((double) freeHeapPercentThreshold) / ((double) 100);
-			if(percentFreeHeapMemoryOfMax < freeHeapPercentThresholdDouble) {
-				pInstantRejectIncoming.report(1.0);
-				DecimalFormat fix3p1pct = new DecimalFormat("##0.0%");
-				rejected("<freeHeapPercentThreshold", isLocal);
-				return "<freeHeapPercentThreshold ("+SizeUtil.formatSize(freeHeapMemory, false)+" of "+SizeUtil.formatSize(maxHeapMemory, false)+" ("+fix3p1pct.format(percentFreeHeapMemoryOfMax)+"))";
-			}
 		}
 
 		if(source != null) {
