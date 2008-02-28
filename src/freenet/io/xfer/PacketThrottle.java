@@ -159,6 +159,7 @@ public class PacketThrottle {
 	}
 	
 	public void sendThrottledMessage(Message msg, PeerContext peer, DoubleTokenBucket overallThrottle, int packetSize, ByteCounter ctr) throws NotConnectedException {
+		long start = System.currentTimeMillis();
 		synchronized(this) {
 			while(true) {
 				int windowSize = (int) getWindowSize();
@@ -180,6 +181,11 @@ public class PacketThrottle {
 				}
 			}
 		}
+		long waitTime = System.currentTimeMillis() - start;
+		if(waitTime > 60*1000)
+			Logger.error(this, "Congestion control wait time: "+waitTime+" for "+this);
+		else if(logMINOR)
+			Logger.minor(this, "Congestion control wait time: "+waitTime+" for "+this);
 		MyCallback callback = new MyCallback();
 		try {
 			if(((PeerNode)peer).isLocalAddress()) {
