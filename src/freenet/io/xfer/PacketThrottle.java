@@ -103,7 +103,7 @@ public class PacketThrottle {
         if(_packetSeqWindowFullChecked + windowSize < _packetSeq) {
         	if(_packetSeqWindowFull < _packetSeqWindowFullChecked) {
         		// We haven't used the full window once since we last checked.
-        		_packetSeqWindowFull *= PACKET_DROP_DECREASE_MULTIPLE;
+        		_simulatedWindowSize *= PACKET_DROP_DECREASE_MULTIPLE;
             	_packetSeqWindowFullChecked += windowSize;
             	if(logMINOR) Logger.minor(this, "Window not used since we last checked: full="+_packetSeqWindowFull+" last checked="+_packetSeqWindowFullChecked+" window = "+_simulatedWindowSize);
         		return;
