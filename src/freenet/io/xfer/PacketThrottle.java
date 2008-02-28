@@ -183,9 +183,9 @@ public class PacketThrottle {
 		MyCallback callback = new MyCallback();
 		try {
 			if(((PeerNode)peer).isLocalAddress()) {
-			long startTime = System.currentTimeMillis();
-			overallThrottle.blockingGrab(packetSize);
-			long delayTime = System.currentTimeMillis() - startTime;
+				long startTime = System.currentTimeMillis();
+				overallThrottle.blockingGrab(packetSize);
+				long delayTime = System.currentTimeMillis() - startTime;
 				((PeerNode)peer).reportThrottledPacketSendTime(delayTime);
 			}
 			peer.sendAsync(msg, callback, packetSize, ctr);
