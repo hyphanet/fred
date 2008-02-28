@@ -37,39 +37,39 @@ public class LibraryLoader {
 		final String libraryNameWithPrefixAndArch = libraryNameWithPrefix + '-' + getSimplifiedArchitecture();
 		final String libraryNameWithPrefixAndArchAndSuffix = libraryNameWithPrefixAndArch + (isWindows ? ".dll" : ".so");
 		String resourceName = path + libraryNameWithPrefixAndArchAndSuffix;
-		
+
 		File nativeLib = new File((System.getProperty("java.library.path")) + "/lib" + libraryName + (isWindows ? ".dll" : ".so"));
 		if (nativeLib.exists()) {
 			System.out.println("Attempting to load the NativeThread library ["+libraryName+']');
 			System.loadLibrary(libraryName);
 		} else {
-		try {
-			// Get the resource
-			URL resource = LibraryLoader.class.getResource(resourceName);
-			
-			// Get input stream from jar resource
-			InputStream inputStream = resource.openStream();
+			try {
+				// Get the resource
+				URL resource = LibraryLoader.class.getResource(resourceName);
 
-			// Copy resource to filesystem in a temp folder with a unique name
-			File temporaryLib = File.createTempFile(libraryNameWithPrefixAndArch, ".tmp");
-			
-			// Delete on exit the dll
-			temporaryLib.deleteOnExit();
-			
-			FileOutputStream outputStream = new FileOutputStream(temporaryLib);
-			byte[] array = new byte[2048];
-			int read = 0;
-			while((read = inputStream.read(array)) > 0) {
-				outputStream.write(array, 0, read);
+				// Get input stream from jar resource
+				InputStream inputStream = resource.openStream();
+
+				// Copy resource to filesystem in a temp folder with a unique name
+				File temporaryLib = File.createTempFile(libraryNameWithPrefixAndArch, ".tmp");
+
+				// Delete on exit the dll
+				temporaryLib.deleteOnExit();
+
+				FileOutputStream outputStream = new FileOutputStream(temporaryLib);
+				byte[] array = new byte[2048];
+				int read = 0;
+				while((read = inputStream.read(array)) > 0) {
+					outputStream.write(array, 0, read);
+				}
+				outputStream.close();
+
+				// Finally, load the dll
+				System.out.println("Attempting to load the "+libraryName+" library ["+resource+']');
+				System.load(temporaryLib.getPath());
+			} catch(Throwable e) {
+				e.printStackTrace();
 			}
-			outputStream.close();
-
-			// Finally, load the dll
-			System.out.println("Attempting to load the "+libraryName+" library ["+resource+']');
-			System.load(temporaryLib.getPath());
-		} catch(Throwable e) {
-			e.printStackTrace();
-		}
 		}
 	}
 }
