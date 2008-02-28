@@ -113,6 +113,8 @@ public class PacketThrottle {
     	} else {
     		_simulatedWindowSize += (PACKET_TRANSMIT_INCREMENT / _simulatedWindowSize);
     	}
+    	if(_simulatedWindowSize > (windowSize + 1))
+    		notifyAll();
     	if(Logger.shouldLog(Logger.MINOR, this))
     		Logger.minor(this, "notifyOfPacketAcked(): "+this);
     }
