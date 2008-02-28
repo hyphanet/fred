@@ -105,7 +105,7 @@ public class PacketThrottle {
         		// We haven't used the full window once since we last checked.
         		_simulatedWindowSize *= PACKET_DROP_DECREASE_MULTIPLE;
             	_packetSeqWindowFullChecked += windowSize;
-            	if(logMINOR) Logger.minor(this, "Window not used since we last checked: full="+_packetSeqWindowFull+" last checked="+_packetSeqWindowFullChecked+" window = "+_simulatedWindowSize);
+            	if(logMINOR) Logger.minor(this, "Window not used since we last checked: full="+_packetSeqWindowFull+" last checked="+_packetSeqWindowFullChecked+" window = "+_simulatedWindowSize+" for "+this);
         		return;
         	}
         	_packetSeqWindowFullChecked += windowSize;
@@ -167,12 +167,12 @@ public class PacketThrottle {
 					_packetSeq++;
 					if(windowSize == _packetsInFlight) {
 						_packetSeqWindowFull = _packetSeq;
-						if(logMINOR) Logger.minor(this, "Window full at "+_packetSeq);
+						if(logMINOR) Logger.minor(this, "Window full at "+_packetSeq+" for "+this);
 					}
-					if(logMINOR) Logger.minor(this, "Sending, window size now "+windowSize+" packets in flight "+_packetsInFlight);
+					if(logMINOR) Logger.minor(this, "Sending, window size now "+windowSize+" packets in flight "+_packetsInFlight+" for "+this);
 					break;
 				}
-				if(logMINOR) Logger.minor(this, "Window size: "+windowSize+" packets in flight "+_packetsInFlight);
+				if(logMINOR) Logger.minor(this, "Window size: "+windowSize+" packets in flight "+_packetsInFlight+" for "+this);
 				try {
 					wait();
 				} catch (InterruptedException e) {
