@@ -21,7 +21,14 @@ package freenet.io.xfer;
 import java.util.HashMap;
 import java.util.Map;
 
+import freenet.io.comm.AsyncMessageCallback;
+import freenet.io.comm.ByteCounter;
+import freenet.io.comm.Message;
+import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
+import freenet.io.comm.PeerContext;
+import freenet.node.PeerNode;
+import freenet.support.DoubleTokenBucket;
 import freenet.support.Logger;
 
 public class PacketThrottle {
@@ -41,6 +48,8 @@ public class PacketThrottle {
 	/** Last return of scheduleDelay(); time before which no packet may be sent */
 	private long lastScheduledDelay;
 	private boolean slowStart = true;
+	/** Total packets in flight, including waiting for bandwidth from the central throttle. */
+	private int _packetsInFlight;
 
 	/**
 	 * Create a PacketThrottle for a given peer.
@@ -133,5 +142,83 @@ public class PacketThrottle {
 		//PACKET_SIZE=1024 [bytes?]
 		//1000 ms/sec
 		return ((PACKET_SIZE * 1000.0 / getDelay()));
+	}
+	
+	public void sendThrottledMessage(Message msg, PeerContext peer, DoubleTokenBucket overallThrottle, int packetSize, ByteCounter ctr) throws NotConnectedException {
+		synchronized(this) {
+			while(true) {
+				int windowSize = (int) getWindowSize();
+				if(_packetsInFlight < windowSize) {
+					_packetsInFlight++;
+					break;
+				}
+				try {
+					wait();
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+			}
+		}
+		MyCallback callback = new MyCallback();
+		try {
+			long startTime = System.currentTimeMillis();
+			overallThrottle.blockingGrab(packetSize);
+			long delayTime = System.currentTimeMillis() - startTime;
+			if(peer instanceof PeerNode) {
+				PeerNode pn = (PeerNode) peer;
+				if(!pn.isLocalAddress())
+					pn.reportThrottledPacketSendTime(delayTime);
+			}
+			peer.sendAsync(msg, callback, packetSize, ctr);
+		} catch (RuntimeException e) {
+			callback.fatalError();
+			throw e;
+		} catch (Error e) {
+			callback.fatalError();
+			throw e;
+		} catch (NotConnectedException e) {
+			synchronized(this) {
+				callback.disconnected();
+				notifyAll();
+			}
+			throw e;
+		}
+	}
+	
+	private class MyCallback implements AsyncMessageCallback {
+
+		private boolean finished = false;
+		
+		public void acknowledged() {
+			synchronized(PacketThrottle.this) {
+				if(finished) return;
+				finished = true;
+				_packetsInFlight--;
+				PacketThrottle.this.notifyAll();
+			}
+		}
+
+		public void disconnected() {
+			synchronized(PacketThrottle.this) {
+				if(finished) return;
+				finished = true;
+				_packetsInFlight--;
+				PacketThrottle.this.notifyAll();
+			}
+		}
+
+		public void fatalError() {
+			synchronized(PacketThrottle.this) {
+				if(finished) return;
+				finished = true;
+				_packetsInFlight--;
+				PacketThrottle.this.notifyAll();
+			}
+		}
+
+		public void sent() {
+			// Ignore
+		}
+		
 	}
 }

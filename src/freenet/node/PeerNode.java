@@ -69,6 +69,7 @@ import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.transport.ip.HostnameSyntaxException;
+import freenet.support.transport.ip.IPUtil;
 
 /**
  * @author amphibian
@@ -3585,5 +3586,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	void sendFNPNetworkID() throws NotConnectedException {
 		if (assignedNetworkID!=0)
 			sendAsync(DMT.createFNPNetworkID(assignedNetworkID), null, 0, null);
+	}
+
+	public boolean isLocalAddress() {
+		Peer peer = getPeer();
+		if(peer == null) return false; // presumably
+		return IPUtil.isValidAddress(getPeer().getAddress(), false);
 	}
 }

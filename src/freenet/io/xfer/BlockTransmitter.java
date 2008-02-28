@@ -30,7 +30,6 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
-import freenet.node.PeerNode;
 import freenet.node.PrioRunnable;
 import freenet.support.BitArray;
 import freenet.support.DoubleTokenBucket;
@@ -38,7 +37,6 @@ import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
 import freenet.support.io.NativeThread;
-import freenet.support.transport.ip.IPUtil;
 
 /**
  * @author ian
@@ -87,7 +85,6 @@ public class BlockTransmitter {
 		
 			public void run() {
 				while (!_sendComplete) {
-					long startCycleTime = System.currentTimeMillis();
 					int packetNo;
 					try {
 						synchronized(_senderThread) {
@@ -103,7 +100,8 @@ public class BlockTransmitter {
 					}
 					int totalPackets;
 					try {
-						_destination.sendAsync(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), null, PACKET_SIZE, _ctr);
+						throttle.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), 
+								_destination, _masterThrottle, PACKET_SIZE, _ctr);
 						if(_ctr != null) _ctr.sentPayload(_prb._packetSize);
 						totalPackets=_prb.getNumPackets();
 					} catch (NotConnectedException e) {
@@ -126,47 +124,6 @@ public class BlockTransmitter {
 							_senderThread.notifyAll();
 						}
 					}
-					delay(startCycleTime);
-				}
-			}
-
-			private void delay(long startCycleTime) {
-				//FIXME: startCycleTime is not used in this function, why is it passed in?
-				long startThrottle = System.currentTimeMillis();
-
-				// Get the current inter-packet delay
-				long end = throttle.scheduleDelay(startThrottle);
-
-				if(IPUtil.isValidAddress(_destination.getPeer().getAddress(), false))
-					_masterThrottle.blockingGrab(PACKET_SIZE);
-				
-				long now = System.currentTimeMillis();
-				
-				long delayTime = now - startThrottle;
-				
-				// Report the delay caused by bandwidth limiting, NOT the delay caused by congestion control.
-				((PeerNode)_destination).reportThrottledPacketSendTime(delayTime);
-				
-				if (end - now > 2*60*1000)
-					Logger.error(this, "per-packet congestion control delay: "+(end-now));
-				
-				if(now > end) return;
-				while(now < end) {
-					long l = end - now;
-					synchronized(_senderThread) {
-						if(_sendComplete) return;
-					}
-					// Check for completion every 2 minutes
-					int x = (int) (Math.min(l, 120*1000));
-					if(x > 0) {
-						try {
-							//FIXME: if the senderThread sleeps here for two minutes, that will timeout the receiver, no? Should this be a wait()?
-							Thread.sleep(x);
-						} catch (InterruptedException e) {
-							// Ignore
-						}
-					}
-					now = System.currentTimeMillis();
 				}
 			}
 

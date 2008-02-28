@@ -13,7 +13,6 @@ import freenet.io.comm.PeerContext;
 import freenet.support.BitArray;
 import freenet.support.DoubleTokenBucket;
 import freenet.support.Logger;
-import freenet.support.transport.ip.IPUtil;
 
 /**
  * Bulk data transfer (not block). Bulk transfer is designed for files which may be much bigger than a 
@@ -244,36 +243,9 @@ public class BulkTransmitter {
 			}
 			
 			// Congestion control and bandwidth limiting
-			long now = System.currentTimeMillis();
-			long waitUntil = peer.getThrottle().scheduleDelay(now);
-			
-			if(IPUtil.isValidAddress(peer.getPeer().getAddress(), false))
-				masterThrottle.blockingGrab(packetSize);
-			
-			while((now = System.currentTimeMillis()) < waitUntil) {
-				long sleepTime = waitUntil - now;
-				try {
-					synchronized(this) {
-						wait(sleepTime);
-						if(finished) {
-							masterThrottle.recycle(packetSize);
-							return true;
-						}
-						if(cancelled) {
-							masterThrottle.recycle(packetSize);
-							if(logMINOR)
-								Logger.minor(this, "Cancelled after sleeping for throttle "+this);
-							return false;
-						}
-					}
-				} catch (InterruptedException e) {
-					// Ignore
-				}
-			}
-			// FIXME should this be reported on bwlimitDelayTime ???
-			
 			try {
-				peer.sendAsync(DMT.createFNPBulkPacketSend(uid, blockNo, buf), null, 0, null);
+				peer.getThrottle().sendThrottledMessage(DMT.createFNPBulkPacketSend(uid, blockNo, buf), peer, 
+						masterThrottle, packetSize, null);
 				synchronized(this) {
 					blocksNotSentButPresent.setBit(blockNo, false);
 				}
