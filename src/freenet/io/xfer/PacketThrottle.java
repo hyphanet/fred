@@ -54,6 +54,7 @@ public class PacketThrottle {
 	private long _packetSeqWindowFull;
 	/** Last time (seqno) we checked whether the window was full, or dropped a packet. */
 	private long _packetSeqWindowFullChecked;
+	private static boolean logMINOR;
 
 	/**
 	 * Create a PacketThrottle for a given peer.
@@ -74,6 +75,7 @@ public class PacketThrottle {
 	private PacketThrottle(Peer peer, int packetSize) {
 		_peer = peer;
 		PACKET_SIZE = packetSize;
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
 	public synchronized void setRoundTripTime(long rtt) {
@@ -81,6 +83,7 @@ public class PacketThrottle {
 	}
 
     public synchronized void notifyOfPacketLost() {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		_droppedPackets++;
 		_totalPackets++;
 		_simulatedWindowSize *= PACKET_DROP_DECREASE_MULTIPLE;
@@ -91,6 +94,7 @@ public class PacketThrottle {
     }
 
     public synchronized void notifyOfPacketAcknowledged() {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
         _totalPackets++;
 		// If we didn't use the whole window, shrink the window a bit.
 		// This is similar but not identical to RFC2861
@@ -163,8 +167,10 @@ public class PacketThrottle {
 					if(windowSize == _packetsInFlight) {
 						_packetSeqWindowFull = _packetSeq;
 					}
+					if(logMINOR) Logger.minor(this, "Sending, window size now "+windowSize+" packets in flight "+_packetsInFlight);
 					break;
 				}
+				if(logMINOR) Logger.minor(this, "Window size: "+windowSize+" packets in flight "+_packetsInFlight);
 				try {
 					wait();
 				} catch (InterruptedException e) {
@@ -209,6 +215,7 @@ public class PacketThrottle {
 				_packetsInFlight--;
 				PacketThrottle.this.notifyAll();
 			}
+			if(logMINOR) Logger.minor(this, "Removed packet: acked");
 		}
 
 		public void disconnected() {
@@ -218,6 +225,7 @@ public class PacketThrottle {
 				_packetsInFlight--;
 				PacketThrottle.this.notifyAll();
 			}
+			if(logMINOR) Logger.minor(this, "Removed packet: disconnected");
 		}
 
 		public void fatalError() {
@@ -227,6 +235,7 @@ public class PacketThrottle {
 				_packetsInFlight--;
 				PacketThrottle.this.notifyAll();
 			}
+			if(logMINOR) Logger.minor(this, "Removed packet: error");
 		}
 
 		public void sent() {
