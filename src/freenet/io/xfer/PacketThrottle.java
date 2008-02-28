@@ -140,7 +140,7 @@ public class PacketThrottle {
 	}
 
 	public double getWindowSize() {
-		return _simulatedWindowSize;
+		return Math.max(1.0, _simulatedWindowSize);
 	}
 
 	/**
