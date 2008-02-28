@@ -75,6 +75,7 @@ public class Announcer {
 	}
 
 	public void start() {
+		if(!node.isOpennetEnabled()) return;
 		registerAlert();
 		if(node.peers.getDarknetPeers().length + node.peers.getOpennetPeers().length + om.countOldOpennetPeers() == 0) {
 			// We know opennet is enabled.
@@ -104,6 +105,7 @@ public class Announcer {
 	}
 
 	private void connectSomeSeednodes() {
+		if(!node.isOpennetEnabled()) return;
 		boolean announceNow = false;
 		if(logMINOR)
 			Logger.minor(this, "Connecting some seednodes...");
@@ -266,6 +268,7 @@ public class Announcer {
 		if(logMINOR)
 			Logger.minor(this, "maybeSendAnnouncement()");
 		long now = System.currentTimeMillis();
+		if(!node.isOpennetEnabled()) return;
 		if(enoughPeers()) {
 			node.getTicker().queueTimedJob(new Runnable() {
 				public void run() {
@@ -386,6 +389,7 @@ public class Announcer {
 	}
 
 	public void sendAnnouncement(final SeedServerPeerNode seed) {
+		if(!node.isOpennetEnabled()) return;
 		System.out.println("Announcement to "+seed.userToString()+" starting...");
 		if(logMINOR)
 			Logger.minor(this, "Announcement to "+seed.userToString()+" starting...");
@@ -527,7 +531,7 @@ public class Announcer {
 		}
 
 		public boolean isValid() {
-			return started && !enoughPeers();
+			return started && !enoughPeers() && node.isOpennetEnabled();
 		}
 
 		public void isValid(boolean validity) {
