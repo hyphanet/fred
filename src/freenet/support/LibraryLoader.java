@@ -38,6 +38,11 @@ public class LibraryLoader {
 		final String libraryNameWithPrefixAndArchAndSuffix = libraryNameWithPrefixAndArch + (isWindows ? ".dll" : ".so");
 		String resourceName = path + libraryNameWithPrefixAndArchAndSuffix;
 		
+		File nativeLib = new File((System.getProperty("java.library.path")) + "/lib" + libraryName + (isWindows ? ".dll" : ".so"));
+		if (nativeLib.exists()) {
+			System.out.println("Attempting to load the NativeThread library ["+libraryName+']');
+			System.loadLibrary(libraryName);
+		} else {
 		try {
 			// Get the resource
 			URL resource = LibraryLoader.class.getResource(resourceName);
@@ -64,6 +69,7 @@ public class LibraryLoader {
 			System.load(temporaryLib.getPath());
 		} catch(Throwable e) {
 			e.printStackTrace();
+		}
 		}
 	}
 }
