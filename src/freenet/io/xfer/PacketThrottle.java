@@ -182,13 +182,11 @@ public class PacketThrottle {
 		}
 		MyCallback callback = new MyCallback();
 		try {
+			if(((PeerNode)peer).isLocalAddress()) {
 			long startTime = System.currentTimeMillis();
 			overallThrottle.blockingGrab(packetSize);
 			long delayTime = System.currentTimeMillis() - startTime;
-			if(peer instanceof PeerNode) {
-				PeerNode pn = (PeerNode) peer;
-				if(!pn.isLocalAddress())
-					pn.reportThrottledPacketSendTime(delayTime);
+				((PeerNode)peer).reportThrottledPacketSendTime(delayTime);
 			}
 			peer.sendAsync(msg, callback, packetSize, ctr);
 		} catch (RuntimeException e) {
