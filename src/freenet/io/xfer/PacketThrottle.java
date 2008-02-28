@@ -45,8 +45,6 @@ public class PacketThrottle {
 	private long _roundTripTime = 500, _totalPackets, _droppedPackets;
 	private float _simulatedWindowSize = 2;
 	private final int PACKET_SIZE;
-	/** Last return of scheduleDelay(); time before which no packet may be sent */
-	private long lastScheduledDelay;
 	private boolean slowStart = true;
 	/** Total packets in flight, including waiting for bandwidth from the central throttle. */
 	private int _packetsInFlight;
@@ -135,18 +133,6 @@ public class PacketThrottle {
 		return Double.toString((((PACKET_SIZE * 1000.0 / getDelay())) / 1024)) + " k/sec, (w: "
 				+ _simulatedWindowSize + ", r:" + _roundTripTime + ", d:"
 				+ (((float) _droppedPackets / (float) _totalPackets)) + ") for "+_peer;
-	}
-
-	/**
-	 * Schedule a delay. This method implements the global congestion window for a given
-	 * peer.
-	 * @param now The current time, in millis.
-	 * @return The time, in millis, after which a packet may be sent.
-	 */
-	public synchronized long scheduleDelay(long now) {
-		if(now > lastScheduledDelay) lastScheduledDelay = now;
-		lastScheduledDelay += getDelay();
-		return lastScheduledDelay;
 	}
 
 	public synchronized long getRoundTripTime() {
