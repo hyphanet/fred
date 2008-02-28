@@ -201,9 +201,15 @@ public class ClientGetter extends BaseClientGetter {
 				e = new FetchException(e, FetchException.ALL_DATA_NOT_FOUND);
 			Logger.minor(this, "onFailure("+e+", "+state+") on "+this+" for "+uri, e);
 			final FetchException e1 = e;
-			ctx.executor.execute(new Runnable() {
+			ctx.executor.execute(new PrioRunnable() {
 				public void run() {
 					clientCallback.onFailure(e1, ClientGetter.this);
+				}
+				public int getPriority() {
+					if(getPriorityClass() <= RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS)
+						return NativeThread.NORM_PRIORITY;
+					else
+						return NativeThread.LOW_PRIORITY;
 				}
 			}, "ClientGetter onFailure callback");
 			
