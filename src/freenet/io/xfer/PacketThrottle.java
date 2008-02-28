@@ -50,6 +50,12 @@ public class PacketThrottle {
 	private boolean slowStart = true;
 	/** Total packets in flight, including waiting for bandwidth from the central throttle. */
 	private int _packetsInFlight;
+	/** Incremented on each send */
+	private long _packetSeq;
+	/** Last time (seqno) the window was full */
+	private long _packetSeqWindowFull;
+	/** Last time (seqno) we checked whether the window was full, or dropped a packet. */
+	private long _packetSeqWindowFullChecked;
 
 	/**
 	 * Create a PacketThrottle for a given peer.
@@ -83,10 +89,25 @@ public class PacketThrottle {
 		slowStart = false;
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "notifyOfPacketLost(): "+this);
+		_packetSeqWindowFullChecked = _packetSeq;
     }
 
     public synchronized void notifyOfPacketAcknowledged() {
         _totalPackets++;
+		// If we didn't use the whole window, shrink the window a bit.
+		// This is similar but not identical to RFC2861
+		// See [freenet-dev] Major weakness in our current link-level congestion control
+        int windowSize = (int)getWindowSize();
+        if(_packetSeqWindowFullChecked + windowSize < _packetSeq) {
+        	if(_packetSeqWindowFull < _packetSeqWindowFullChecked) {
+        		// We haven't used the full window once since we last checked.
+        		_packetSeqWindowFull *= PACKET_DROP_DECREASE_MULTIPLE;
+            	_packetSeqWindowFullChecked += windowSize;
+        		return;
+        	}
+        	_packetSeqWindowFullChecked += windowSize;
+        }
+
     	if(slowStart) {
     		_simulatedWindowSize += _simulatedWindowSize / SLOW_START_DIVISOR;
     	} else {
@@ -150,6 +171,10 @@ public class PacketThrottle {
 				int windowSize = (int) getWindowSize();
 				if(_packetsInFlight < windowSize) {
 					_packetsInFlight++;
+					_packetSeq++;
+					if(windowSize == _packetsInFlight) {
+						_packetSeqWindowFull = _packetSeq;
+					}
 					break;
 				}
 				try {
