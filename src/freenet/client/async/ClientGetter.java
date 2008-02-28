@@ -18,9 +18,12 @@ import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
+import freenet.node.PrioRunnable;
+import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
+import freenet.support.io.NativeThread;
 
 /**
  * A high level data request.
@@ -148,9 +151,16 @@ public class ClientGetter extends BaseClientGetter {
 				Logger.minor(this, "client.async returned data in returnBucket");
 		}
 		final FetchResult res = result;
-		ctx.executor.execute(new Runnable() {
+		ctx.executor.execute(new PrioRunnable() {
 			public void run() {
 				clientCallback.onSuccess(res, ClientGetter.this);
+			}
+
+			public int getPriority() {
+				if(getPriorityClass() <= RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS)
+					return NativeThread.NORM_PRIORITY;
+				else
+					return NativeThread.LOW_PRIORITY;
 			}
 		}, "ClientGetter onSuccess callback for "+this);
 		
