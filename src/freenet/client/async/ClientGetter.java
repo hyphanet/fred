@@ -360,4 +360,8 @@ public class ClientGetter extends BaseClientGetter {
 	public long expectedSize() {
 		return expectedSize;
 	}
+
+	public ClientCallback getClientCallback() {
+		return clientCallback;
+	}
 }
