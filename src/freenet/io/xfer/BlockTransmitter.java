@@ -101,7 +101,7 @@ public class BlockTransmitter {
 					int totalPackets;
 					try {
 						throttle.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), 
-								_destination, _masterThrottle, PACKET_SIZE, _ctr);
+								_destination, _masterThrottle, _prb._packetSize, _ctr);
 						if(_ctr != null) _ctr.sentPayload(_prb._packetSize);
 						totalPackets=_prb.getNumPackets();
 					} catch (NotConnectedException e) {
