@@ -283,7 +283,7 @@ public class NodeCrypto {
 	 */
 	SimpleFieldSet exportPublicFieldSet(boolean forSetup, boolean forAnonInitiator) {
 		SimpleFieldSet fs = exportPublicCryptoFieldSet(forSetup, forAnonInitiator);
-		if(!forAnonInitiator) {
+		if((!forAnonInitiator) && (!forSetup)) {
 			// IP addresses
 			Peer[] ips = detector.detectPrimaryPeers();
 			if(ips != null) {
@@ -337,8 +337,10 @@ public class NodeCrypto {
 		if(!forAnonInitiator) {
 			// Short-lived connections don't need ARK and don't need negTypes either.
 			fs.put("auth.negTypes", negTypes);
-			fs.put("ark.number", myARKNumber); // Can be changed on setup
-			fs.putSingle("ark.pubURI", myARK.getURI().toString(false, false)); // Can be changed on setup
+			if(!forSetup) {
+				fs.put("ark.number", myARKNumber); // Can be changed on setup
+				fs.putSingle("ark.pubURI", myARK.getURI().toString(false, false)); // Can be changed on setup
+			}
 		}
 		return fs;
 	}
