@@ -188,7 +188,7 @@ public class PacketThrottle {
 			Logger.minor(this, "Congestion control wait time: "+waitTime+" for "+this);
 		MyCallback callback = new MyCallback();
 		try {
-			if(((PeerNode)peer).isLocalAddress()) {
+			if(!((PeerNode)peer).isLocalAddress()) {
 				long startTime = System.currentTimeMillis();
 				overallThrottle.blockingGrab(packetSize);
 				long delayTime = System.currentTimeMillis() - startTime;
