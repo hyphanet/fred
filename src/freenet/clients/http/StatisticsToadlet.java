@@ -821,6 +821,8 @@ public class StatisticsToadlet extends Toadlet {
 		int numSSKRequests = node.getNumSSKRequests();
 		int numTransferringRequests = node.getNumTransferringRequestSenders();
 		int numTransferringRequestHandlers = node.getNumTransferringRequestHandlers();
+		int numCHKOfferReplys = node.getNumCHKOfferReplies();
+		int numSSKOfferReplys = node.getNumSSKOfferReplies();
 		if ((numInserts == 0) && (numRequests == 0) && (numTransferringRequests == 0) &&
 				(numCHKRequests == 0) && (numSSKRequests == 0) &&
 				(numCHKInserts == 0) && (numSSKInserts == 0) &&
@@ -842,6 +844,10 @@ public class StatisticsToadlet extends Toadlet {
 			if (numTransferringRequests > 0 || numTransferringRequestHandlers > 0) {
 				activityList.addChild("li", L10n.getString("StatisticsToadlet.transferringRequests", 
 						new String[] { "senders", "receivers" }, new String[] { Integer.toString(numTransferringRequests), Integer.toString(numTransferringRequestHandlers)}));
+			}
+			if (numCHKOfferReplys > 0 || numSSKOfferReplys > 0) {
+				activityList.addChild("li", L10n.getString("StatisticsToadlet.offerReplys", 
+						new String[] { "chk", "ssk" }, new String[] { Integer.toString(numCHKOfferReplys), Integer.toString(numSSKOfferReplys) }));
 			}
 			return activityList;
 		}
