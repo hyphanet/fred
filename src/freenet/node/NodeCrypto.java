@@ -299,7 +299,7 @@ public class NodeCrypto {
 			fs.put("testnet", true);
 			fs.put("testnetPort", node.testnetHandler.getPort()); // Useful, saves a lot of complexity
 		}
-		if(!isOpennet)
+		if((!isOpennet) && (!forSetup))
 			fs.putSingle("myName", node.getMyName()); // FIXME see #942
 		
 		if(!forAnonInitiator) {
