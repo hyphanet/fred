@@ -189,11 +189,13 @@ public class PacketThrottle {
 		MyCallback callback = new MyCallback();
 		try {
 			if(!((PeerNode)peer).isLocalAddress()) {
+				if(logMINOR) Logger.minor(this, "Throttling "+peer.shortToString()+" : "+packetSize);
 				long startTime = System.currentTimeMillis();
 				overallThrottle.blockingGrab(packetSize);
 				long delayTime = System.currentTimeMillis() - startTime;
 				((PeerNode)peer).reportThrottledPacketSendTime(delayTime);
-			}
+			} else if(logMINOR)
+				Logger.minor(this, "Not throttling "+peer.shortToString());
 			peer.sendAsync(msg, callback, packetSize, ctr);
 		} catch (RuntimeException e) {
 			callback.fatalError();
