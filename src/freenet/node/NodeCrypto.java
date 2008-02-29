@@ -382,6 +382,8 @@ public class NodeCrypto {
 		byte[] obuf = new byte[buf.length + 1];
 		obuf[0] = 1;
 		System.arraycopy(buf, 0, obuf, 1, buf.length);
+		if(logMINOR) 
+			Logger.minor(this, "myCompressedRef("+setup+","+heavySetup+") returning "+obuf.length+" bytes");
 		return obuf;
 	}
 	
