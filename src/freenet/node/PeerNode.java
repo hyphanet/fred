@@ -2056,7 +2056,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		DSAGroup group = null;
 		int firstByte = data[offset];
 		if((firstByte & 2) == 2) {
-			int groupIndex = Fields.bytesToInt(data, offset);
+			int groupIndex = Fields.bytesToInt(data, offset + 1);
 			offset += 4;
 			length -= 4;
 			group = Global.getGroup(groupIndex);
@@ -2082,6 +2082,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 						data = output;
 						offset = 0;
 						length = outputPointer + x;
+						Logger.minor(PeerNode.class, "Decompressed data: "+HexUtil.bytesToHex(data, 0, length));
 						break;
 					}
 				} catch(DataFormatException e) {
