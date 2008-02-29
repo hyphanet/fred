@@ -42,6 +42,10 @@ public class DoubleTokenBucket extends TokenBucket {
 	
 	public synchronized void forceGrab(long tokens) {
 		addTokens();
+		if(tokens <= 0) {
+			Logger.error(this, "forceGrab("+tokens+") - negative value!!", new Exception("error"));
+			return;
+		}
 		long thisMax = maxForced - curForced;
 		if(tokens > thisMax) {
 			if(logMINOR) Logger.minor(this, "Limiting force-grab to "+thisMax+" tokens was "+tokens);

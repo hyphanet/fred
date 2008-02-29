@@ -54,6 +54,10 @@ public class TokenBucket {
 	 * @param tokens The number of tokens to remove.
 	 */
 	public synchronized void forceGrab(long tokens) {
+		if(tokens <= 0) {
+			Logger.error(this, "forceGrab("+tokens+") - negative value!!", new Exception("error"));
+			return;
+		}
 		addTokens();
 		current -= tokens;
 		if(current > max) current = max;
