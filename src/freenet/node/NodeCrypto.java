@@ -300,7 +300,7 @@ public class NodeCrypto {
 			fs.put("testnetPort", node.testnetHandler.getPort()); // Useful, saves a lot of complexity
 		}
 		if((!isOpennet) && (!forSetup))
-			fs.putSingle("myName", node.getMyName()); // FIXME see #942
+			fs.putSingle("myName", node.getMyName());
 		
 		if(!forAnonInitiator) {
 			// Anonymous initiator setup type specifies whether the node is opennet or not.
