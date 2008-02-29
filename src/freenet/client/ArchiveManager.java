@@ -308,7 +308,7 @@ outer:		while(true) {
 			String name = (String) i.next();
 			addToDirectory(dir, name, "");
 		}
-		Metadata metadata = new Metadata(dir);
+		Metadata metadata = new Metadata(dir, "");
 		TempStoreElement element = makeTempStoreBucket(-1);
 		int x = 0;
 		while(true) {

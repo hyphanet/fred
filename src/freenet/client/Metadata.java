@@ -450,37 +450,7 @@ public class Metadata implements Cloneable {
 	 * @param dir A map of names (string) to either files (same string) or
 	 * directories (more HashMap's)
 	 */
-	public void addManifest(HashMap dir) {
-		// Simple manifest - contains actual redirects.
-		// Not zip manifest, which is basically a redirect.
-		documentType = SIMPLE_MANIFEST;
-		noMIME = true;
-		//mimeType = null;
-		//clientMetadata = new ClientMetadata(null);
-		manifestEntries = new HashMap();
-		int count = 0;
-		for(Iterator i = dir.keySet().iterator();i.hasNext();) {
-			String key = (String) i.next();
-			count++;
-			Object o = dir.get(key);
-			Metadata target;
-			if(o instanceof String) {
-				// Zip internal redirect
-				target = new Metadata(ZIP_INTERNAL_REDIRECT, key, new ClientMetadata(DefaultMIMETypes.guessMIMEType(key, false)));
-			} else if(o instanceof HashMap) {
-				target = new Metadata((HashMap)o);
-			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
-			manifestEntries.put(key, target);
-		}
-	}
-	
-	/**
-	 * Create a Metadata object for an archive which does not have its own
-	 * metadata.
-	 * @param dir A map of names (string) to either files (same string) or
-	 * directories (more HashMap's)
-	 */
-	Metadata(HashMap dir) {
+	Metadata(HashMap dir, String prefix) {
 		// Simple manifest - contains actual redirects.
 		// Not zip manifest, which is basically a redirect.
 		documentType = SIMPLE_MANIFEST;
@@ -496,9 +466,9 @@ public class Metadata implements Cloneable {
 			Metadata target;
 			if(o instanceof String) {
 				// Zip internal redirect
-				target = new Metadata(ZIP_INTERNAL_REDIRECT, key, new ClientMetadata(DefaultMIMETypes.guessMIMEType(key, false)));
+				target = new Metadata(ZIP_INTERNAL_REDIRECT, prefix+key, new ClientMetadata(DefaultMIMETypes.guessMIMEType(key, false)));
 			} else if(o instanceof HashMap) {
-				target = new Metadata((HashMap)o);
+				target = new Metadata((HashMap)o, prefix+key+"/");
 			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
 			manifestEntries.put(key, target);
 		}
