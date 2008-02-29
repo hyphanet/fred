@@ -2084,7 +2084,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 						data = output;
 						offset = 0;
 						length = outputPointer + x;
-						Logger.minor(PeerNode.class, "Decompressed data: "+HexUtil.bytesToHex(data, 0, length));
 						break;
 					}
 				} catch(DataFormatException e) {
