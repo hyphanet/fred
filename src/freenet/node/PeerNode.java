@@ -3607,6 +3607,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public boolean isLocalAddress() {
 		Peer peer = getPeer();
 		if(peer == null) return false; // presumably
-		return !IPUtil.isValidAddress(getPeer().getAddress(), false);
+		return !IPUtil.isValidAddress(peer.getAddress(), false);
 	}
 }
