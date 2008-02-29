@@ -2050,7 +2050,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	static SimpleFieldSet compressedNoderefToFieldSet(byte[] data, int offset, int length) throws FSParseException {
-		if(length <= 4)
+		if(length <= 5)
 			throw new FSParseException("Too short");
 		// Lookup table for groups.
 		DSAGroup group = null;
