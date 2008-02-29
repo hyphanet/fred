@@ -399,6 +399,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					metadata.setArchiveManifest();
 					// Pick up MIME type from inside archive
 					clientMetadata.clear();
+					if(logMINOR) Logger.minor(this, "Handling implicit container... (redirect)");
 					continue;
 				}
 				
@@ -463,6 +464,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					metadata.setArchiveManifest();
 					// Pick up MIME type from inside archive
 					clientMetadata.clear();
+					if(logMINOR) Logger.minor(this, "Handling implicit container... (splitfile)");
 					continue;
 				}
 				
