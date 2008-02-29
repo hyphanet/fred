@@ -204,8 +204,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// Do we want it? We can RejectOverload if we don't have the bandwidth...
 		boolean isSSK = key instanceof NodeSSK;
 		node.lockUID(uid, isSSK, false, true);
+		boolean needPubKey;
 		try {
-		boolean needPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
+		needPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
 		String reject = 
 			nodeStats.shouldRejectRequest(true, false, isSSK, false, true, source);
 		if(reject != null) {
@@ -219,15 +220,20 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return true;
 		}
 		
+		} catch (Error e) {
+			node.unlockUID(uid, isSSK, false, false, true);
+			throw e;
+		} catch (RuntimeException e) {
+			node.unlockUID(uid, isSSK, false, false, true);
+			throw e;
+		} // Otherwise, sendOfferedKey is responsible for unlocking. 
+		
 		// Accept it.
 		
 		try {
 			node.failureTable.sendOfferedKey(key, isSSK, needPubKey, uid, source);
 		} catch (NotConnectedException e) {
 			// Too bad.
-		}
-		} finally {
-			node.unlockUID(uid, isSSK, false, false, true);
 		}
 		return true;
 	}

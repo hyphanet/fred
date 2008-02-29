@@ -6,6 +6,7 @@ package freenet.node;
 import java.lang.ref.WeakReference;
 import java.util.Vector;
 
+import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
@@ -20,6 +21,7 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
+import freenet.support.io.NativeThread;
 
 // FIXME it is ESSENTIAL that we delete the ULPR data on requestors etc once we have found the key.
 // Otherwise it will be much too easy to trace a request if an attacker busts the node afterwards.
@@ -335,14 +337,15 @@ public class FailureTable {
 
 	/**
 	 * We offered a key, a node has responded to the offer. Note that this runs on the incoming
-	 * packets thread so should allocate a new thread if it does anything heavy.
+	 * packets thread so should allocate a new thread if it does anything heavy. Note also that
+	 * it is responsible for unlocking the UID.
 	 * @param key The key to send.
 	 * @param isSSK Whether it is an SSK.
 	 * @param uid The UID.
 	 * @param source The node that asked for the key.
 	 * @throws NotConnectedException If the sender ceases to be connected.
 	 */
-	public void sendOfferedKey(Key key, boolean isSSK, boolean needPubKey, long uid, PeerNode source) throws NotConnectedException {
+	public void sendOfferedKey(Key key, final boolean isSSK, boolean needPubKey, final long uid, PeerNode source) throws NotConnectedException {
 		if(isSSK) {
 			SSKBlock block = node.fetch((NodeSSK)key, false);
 			if(block == null) {
@@ -352,7 +355,31 @@ public class FailureTable {
 			}
 			Message df = DMT.createFNPSSKDataFound(uid, block.getRawHeaders(), block.getRawData());
 			node.sentPayload(block.getRawData().length);
-			source.sendAsync(df, null, 0, senderCounter);
+			source.sendAsync(df, new AsyncMessageCallback() {
+				boolean finished = false;
+				public synchronized void acknowledged() {
+					if(finished) return;
+					finished = true;
+					node.unlockUID(uid, isSSK, false, false, true);
+				}
+
+				public void disconnected() {
+					if(finished) return;
+					finished = true;
+					node.unlockUID(uid, isSSK, false, false, true);
+				}
+
+				public void fatalError() {
+					if(finished) return;
+					finished = true;
+					node.unlockUID(uid, isSSK, false, false, true);
+				}
+
+				public void sent() {
+					// Ignore
+				}
+				
+			}, 0, senderCounter);
 			if(needPubKey) {
 				Message pk = DMT.createFNPSSKPubKey(uid, block.getPubKey());
 				source.sendAsync(pk, null, 0, senderCounter);
@@ -368,9 +395,25 @@ public class FailureTable {
 			source.sendAsync(df, null, 0, null);
         	PartiallyReceivedBlock prb =
         		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
-        	BlockTransmitter bt =
+        	final BlockTransmitter bt =
         		new BlockTransmitter(node.usm, source, uid, prb, node.outputThrottle, senderCounter);
-        	bt.sendAsync(node.executor);
+        	node.executor.execute(new PrioRunnable() {
+
+				public int getPriority() {
+					return NativeThread.HIGH_PRIORITY;
+				}
+
+				public void run() {
+					try {
+						bt.send(node.executor);
+					} catch (Throwable t) {
+						Logger.error(this, "Sending offered key failed: "+t, t);
+					} finally {
+						node.unlockUID(uid, isSSK, false, false, true);
+					}
+				}
+        		
+        	}, "CHK offer sender");
 		}
 	}
 	
