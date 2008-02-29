@@ -245,7 +245,7 @@ public class BulkTransmitter {
 			// Congestion control and bandwidth limiting
 			try {
 				peer.getThrottle().sendThrottledMessage(DMT.createFNPBulkPacketSend(uid, blockNo, buf), peer, 
-						masterThrottle, packetSize, null);
+						masterThrottle, prb.blockSize, null);
 				synchronized(this) {
 					blocksNotSentButPresent.setBit(blockNo, false);
 				}
