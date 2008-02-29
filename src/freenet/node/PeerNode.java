@@ -30,6 +30,7 @@ import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.DSASignature;
+import freenet.crypt.Global;
 import freenet.crypt.HMAC;
 import freenet.crypt.KeyAgreementSchemeContext;
 import freenet.crypt.SHA256;
@@ -2049,10 +2050,20 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	static SimpleFieldSet compressedNoderefToFieldSet(byte[] data, int offset, int length) throws FSParseException {
-		if(length == 0)
+		if(length <= 4)
 			throw new FSParseException("Too short");
-		// Firstly, is it compressed?
-		if(data[offset] == 1) {
+		// Lookup table for groups.
+		DSAGroup group = null;
+		int firstByte = data[offset];
+		if((firstByte & 2) == 2) {
+			int groupIndex = Fields.bytesToInt(data, offset);
+			offset += 4;
+			length -= 4;
+			group = Global.getGroup(groupIndex);
+			if(group == null) throw new FSParseException("Unknown group number "+groupIndex);
+		}
+		// Is it compressed?
+		if((firstByte & 1) == 1) {
 			// Gzipped
 			Inflater i = new Inflater();
 			i.setInput(data, offset + 1, length - 1);
@@ -2090,7 +2101,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		BufferedReader br = new BufferedReader(isr);
 		try {
-			return new SimpleFieldSet(br, false, true);
+			SimpleFieldSet fs = new SimpleFieldSet(br, false, true);
+			if(group != null)
+				fs.putAllOverwrite(group.asFieldSet());
+			return fs;
 		} catch(IOException e) {
 			FSParseException ex = new FSParseException("Impossible: " + e);
 			ex.initCause(e);
