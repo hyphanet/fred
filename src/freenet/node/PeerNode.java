@@ -2055,8 +2055,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		// Lookup table for groups.
 		DSAGroup group = null;
 		int firstByte = data[offset];
+		offset++;
+		length--;
 		if((firstByte & 2) == 2) {
-			int groupIndex = Fields.bytesToInt(data, offset + 1);
+			int groupIndex = Fields.bytesToInt(data, offset);
 			offset += 4;
 			length -= 4;
 			group = Global.getGroup(groupIndex);
@@ -2066,9 +2068,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if((firstByte & 1) == 1) {
 			// Gzipped
 			Inflater i = new Inflater();
-			i.setInput(data, offset + 1, length - 1);
+			i.setInput(data, offset, length);
 			byte[] output = new byte[4096];
-			int outputPointer = 1;
+			int outputPointer = 0;
 			while(true) {
 				try {
 					int x = i.inflate(output, outputPointer, output.length - outputPointer);
@@ -2093,7 +2095,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(logMINOR)
 			Logger.minor(PeerNode.class, "Reference: " + new String(data, offset, length) + '(' + length + ')');
 		// Now decode it
-		ByteArrayInputStream bais = new ByteArrayInputStream(data, offset + 1, length - 1);
+		ByteArrayInputStream bais = new ByteArrayInputStream(data, offset, length);
 		InputStreamReader isr;
 		try {
 			isr = new InputStreamReader(bais, "UTF-8");
