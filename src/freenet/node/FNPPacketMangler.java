@@ -500,7 +500,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	static final byte SETUP_OPENNET_SEEDNODE = 1;
 
 	private void processDecryptedAuthAnon(byte[] payload, Peer replyTo) {
-		if(logMINOR) Logger.minor(this, "Processing decrypted auth packet from "+replyTo);
+		if(logMINOR) Logger.minor(this, "Processing decrypted auth packet from "+replyTo+" length "+payload.length);
 		
 		/** Protocol version. Should be 1. */
 		int version = payload[0];
@@ -544,7 +544,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	private void processDecryptedAuthAnonReply(byte[] payload, Peer replyTo, PeerNode pn) {
-		if(logMINOR) Logger.minor(this, "Processing decrypted auth packet from "+replyTo+" for "+pn);
+		if(logMINOR) Logger.minor(this, "Processing decrypted auth packet from "+replyTo+" for "+pn+" length "+payload.length);
 		
 		/** Protocol version. Should be 1. */
 		int version = payload[0];
