@@ -675,6 +675,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 				o = pendingKeys.get(key);
 			}
 			if(o == null) {
+				// Not an error as this can happen due to race conditions etc.
+				if(logMINOR) Logger.minor(this, "Restoring key but no keys queued?? for "+key);
 				continue;
 			} else if(o instanceof SendableGet) {
 				SendableGet get = (SendableGet) o;
