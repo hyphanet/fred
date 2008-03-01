@@ -407,7 +407,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		int dataLength = (byte1 << 8) + byte2;
 		if(logMINOR) Logger.minor(this, "Data length: "+dataLength+" (1 = "+byte1+" 2 = "+byte2+ ')');
 		if(dataLength > length - (ivLength+hash.length+2)) {
-			if(logMINOR) Logger.minor(this, "Invalid data length "+dataLength+" ("+(length - (ivLength+hash.length+2))+") in tryProcessAuth");
+			if(logMINOR) Logger.minor(this, "Invalid data length "+dataLength+" ("+(length - (ivLength+hash.length+2))+") in tryProcessAuthAnon");
 			SHA256.returnMessageDigest(md);
 			return false;
 		}
@@ -425,7 +425,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			processDecryptedAuthAnon(payload, peer);
 			return true;
 		} else {
-			if(logMINOR) Logger.minor(this, "Incorrect hash in tryProcessAuth for "+peer+" (length="+dataLength+"): \nreal hash="+HexUtil.bytesToHex(realHash)+"\n bad hash="+HexUtil.bytesToHex(hash));
+			if(logMINOR) Logger.minor(this, "Incorrect hash in tryProcessAuthAnon for "+peer+" (length="+dataLength+"): \nreal hash="+HexUtil.bytesToHex(realHash)+"\n bad hash="+HexUtil.bytesToHex(hash));
 			return false;
 		}
 	}
@@ -581,7 +581,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			processJFKMessage2(payload, 4, pn, replyTo, true, setupType);
 		} else if(packetType == 3) {
 			// Phase 4
-			processJFKMessage4(payload, 4, pn, replyTo, false, true, setupType);
+			if(!processJFKMessage4(payload, 4, pn, replyTo, false, true, setupType, true))
+				processJFKMessage4(payload, 4, pn, replyTo, false, true, setupType, false);
 		} else {
 			Logger.error(this, "Invalid phase "+packetType+" for anonymous-initiator (we are the responder)");
 		}
@@ -683,7 +684,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * using the same keys as in the previous message.
 				 * The signature is non-message recovering
 				 */
-				processJFKMessage4(payload, 3, pn, replyTo, oldOpennetPeer, false, -1);
+				if(!processJFKMessage4(payload, 3, pn, replyTo, oldOpennetPeer, false, -1, true))
+					processJFKMessage4(payload, 3, pn, replyTo, oldOpennetPeer, false, -1, false);
 			}
 		} else {
 			Logger.error(this, "Decrypted auth packet but unknown negotiation type "+negType+" from "+replyTo+" possibly from "+pn);
@@ -1127,8 +1129,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		// Send reply
 		sendJFKMessage4(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential, 
-				c, Ke, Ka, authenticator, hisRef, pn, replyTo, unknownInitiator, setupType, !unknownInitiator);
-		// FIXME change last argument to FALSE when this build is mandatory.
+				c, Ke, Ka, authenticator, hisRef, pn, replyTo, unknownInitiator, setupType);
 		
 		c.initialize(Ks);
 		
@@ -1212,7 +1213,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param pn The PeerNode we are talking to. Cannot be null as we are the initiator.
 	 * @param replyTo The Peer we are replying to.
 	 */
-	private boolean processJFKMessage4(byte[] payload, int inputOffset, PeerNode pn, Peer replyTo, boolean oldOpennetPeer, boolean unknownInitiator, int setupType)
+	private boolean processJFKMessage4(byte[] payload, int inputOffset, PeerNode pn, Peer replyTo, boolean oldOpennetPeer, boolean unknownInitiator, int setupType, boolean bothNoderefs)
 	{
 		final long t1 = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(4) message, processing it - "+pn.getPeer());
@@ -1228,7 +1229,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		final int expectedLength =	HASH_LENGTH + // HMAC of the cyphertext
 									(c.getBlockSize() >> 3) + // IV
-									HASH_LENGTH // the signature
+									HASH_LENGTH + // the signature
+									(bothNoderefs ? pn.jfkMyRef.length : 0) // my reference
 									;
 		if(payload.length < expectedLength + 3) {
 			Logger.error(this, "Packet too short from "+pn.getPeer()+": "+payload.length+" after decryption in JFK(4), should be "+(expectedLength + 3));
@@ -1276,7 +1278,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] data = new byte[decypheredPayload.length - decypheredPayloadOffset];
 		System.arraycopy(decypheredPayload, decypheredPayloadOffset, data, 0, decypheredPayload.length - decypheredPayloadOffset);
 		long bootID = Fields.bytesToLong(data);
-		byte[] hisRef = new byte[data.length - 8];
+		byte[] hisRef = new byte[data.length - (bothNoderefs ? pn.jfkMyRef.length : 0) - 8];
 		System.arraycopy(data, 8, hisRef, 0, hisRef.length);
 		
 		// verify the signature
@@ -1293,7 +1295,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(pn.jfkMyRef, 0, locallyGeneratedText, bufferOffset, pn.jfkMyRef.length);
 		byte[] messageHash = SHA256.digest(locallyGeneratedText);
 		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, messageHash), false)) {
-			Logger.error(this, "The signature verification has failed!! JFK(4) -"+pn.getPeer()+" message hash "+HexUtil.bytesToHex(messageHash));
+			Logger.error(this, "The signature verification has failed!! JFK(4) -"+pn.getPeer()+" message hash "+HexUtil.bytesToHex(messageHash)+" length "+locallyGeneratedText.length+" hisRef "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" myRef "+pn.jfkMyRef.length+" hash "+Fields.hashCode(pn.jfkMyRef)+" boot ID "+bootID);
 			return false;
 		}
 		
@@ -1477,7 +1479,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param pn The PeerNode to encrypt the auth packet to. Cannot be null, because even in anonymous initiator,
 	 * we will have created one before calling this method.
 	 */
-	private void sendJFKMessage4(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] initiatorExponential,byte[] responderExponential, BlockCipher c, byte[] Ke, byte[] Ka, byte[] authenticator, byte[] hisRef, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, boolean bothNoderefs)
+	private void sendJFKMessage4(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] initiatorExponential,byte[] responderExponential, BlockCipher c, byte[] Ke, byte[] Ka, byte[] authenticator, byte[] hisRef, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType)
 	{
 		if(logMINOR)
 			Logger.minor(this, "Sending a JFK(4) message to "+pn.getPeer());
@@ -1491,9 +1493,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(myRef, 0, data, 8, myRef.length);
 		System.arraycopy(hisRef, 0, data, 8 + myRef.length, hisRef.length);
 		
-		byte[] messageHash = SHA256.digest(assembleDHParams(nonceInitiator, nonceResponder, _initiatorExponential, _responderExponential, pn.identity, data));
+		byte[] params = assembleDHParams(nonceInitiator, nonceResponder, _initiatorExponential, _responderExponential, pn.identity, data);
+		byte[] messageHash = SHA256.digest(params);
 		if(logMINOR)
-			Logger.minor(this, "Message hash: "+HexUtil.bytesToHex(messageHash));
+			Logger.minor(this, "Message hash: "+HexUtil.bytesToHex(messageHash)+" length "+params.length+" myRef: "+myRef.length+" hash "+Fields.hashCode(myRef)+" hisRef: "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" boot ID "+node.bootID);
 		DSASignature localSignature = crypto.sign(messageHash);
 		byte[] r = localSignature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = localSignature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
@@ -1503,8 +1506,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] iv=new byte[ivLength];
 		node.random.nextBytes(iv);
 		pk.reset(iv);
-		// If !bothNoderefs, then don't include the last bit
-		int dataLength = data.length - (bothNoderefs ? 0 : hisRef.length);
+		// Don't include the last bit
+		int dataLength = data.length - hisRef.length;
 		byte[] cyphertext = new byte[JFK_PREFIX_RESPONDER.length + ivLength + Node.SIGNATURE_PARAMETER_LENGTH * 2 +
 		                             dataLength];
 		int cleartextOffset = 0;
