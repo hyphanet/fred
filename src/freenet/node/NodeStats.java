@@ -449,7 +449,7 @@ public class NodeStats implements Persistable {
 		int numCHKOfferReplies = node.getNumCHKOfferReplies() + 1;
 		int numSSKOfferReplies = node.getNumSSKOfferReplies() + 1;
 		if(logMINOR)
-			Logger.minor(this, "Running (adjusted): CHK fetch "+numCHKRequests+" SSK fetch "+numSSKRequests+" CHK insert "+numCHKInserts+" SSK insert "+numSSKInserts);
+			Logger.minor(this, "Running (adjusted): CHK fetch "+numCHKRequests+" SSK fetch "+numSSKRequests+" CHK insert "+numCHKInserts+" SSK insert "+numSSKInserts+" CHK offer replies "+numCHKOfferReplies+" SSK offer replies "+numSSKOfferReplies);
 		
 		double bandwidthLiabilityOutput =
 			successfulChkFetchBytesSentAverage.currentValue() * numCHKRequests +
