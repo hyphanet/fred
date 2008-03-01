@@ -217,6 +217,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
+			node.unlockUID(uid, isSSK, false, false, true);
 			return true;
 		}
 		
