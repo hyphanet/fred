@@ -373,8 +373,12 @@ public class PeerManager {
 	
     public void addConnectedPeer(PeerNode pn) {
     	logMINOR = Logger.shouldLog(Logger.MINOR, this);
-    	if(!pn.isRoutable()) {
-    		if(logMINOR) Logger.minor(this, "Not ReallyConnected: "+pn);
+    	if(!pn.isRealConnection()) {
+    		if(logMINOR) Logger.minor(this, "Not a real connection: "+pn);
+    		return;
+    	}
+    	if(!pn.isConnected()) {
+    		if(logMINOR) Logger.minor(this, "Not connected: "+pn);
     		return;
     	}
     	synchronized(this) {
