@@ -132,7 +132,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
         Message accepted = DMT.createFNPAccepted(uid);
         source.sendAsync(accepted, null, 0, this);
         
-        Object o = node.makeRequestSender(key, htl, uid, source, false, true, false, false);
+        Object o = node.makeRequestSender(key, htl, uid, source, false, true, false, false, this);
         if(o instanceof KeyBlock) {
         	returnLocalData((KeyBlock)o);
             return;
@@ -150,8 +150,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
         //If we cannot respond before this time, the 'source' node has already fatally timed out (and we need not return packets which will not be claimed)
 		searchStartTime = System.currentTimeMillis();
 		responseDeadline = searchStartTime + RequestSender.FETCH_TIMEOUT + source.getProbableSendQueueTime();
-        
-        rs.addListener(this);
 	}
 		
 	public void onReceivedRejectOverload() {

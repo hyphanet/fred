@@ -1893,7 +1893,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * a RequestSender, unless the HTL is 0, in which case NULL.
 	 * RequestSender.
 	 */
-	public Object makeRequestSender(Key key, short htl, long uid, PeerNode source, boolean localOnly, boolean cache, boolean ignoreStore, boolean offersOnly) {
+	public Object makeRequestSender(Key key, short htl, long uid, PeerNode source, boolean localOnly, boolean cache, boolean ignoreStore, boolean offersOnly, RequestSender.Listener listener) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "makeRequestSender("+key+ ',' +htl+ ',' +uid+ ',' +source+") on "+getDarknetPortNumber());
 		// In store?
@@ -1933,6 +1933,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 		if(sender != null) {
 			if(logMINOR) Logger.minor(this, "Data already being transferred: "+sender);
+			if(listener != null) sender.addListener(listener);
 			return sender;
 		}
 
@@ -1955,6 +1956,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			sender = new RequestSender(key, null, htl, uid, this, source, offersOnly);
 			// RequestSender adds itself to requestSenders
 		}
+		if(listener != null) sender.addListener(listener);
 		sender.start();
 		if(logMINOR) Logger.minor(this, "Created new sender: "+sender);
 		return sender;

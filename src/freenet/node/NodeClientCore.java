@@ -470,7 +470,7 @@ public class NodeClientCore implements Persistable {
 	 */
 	void asyncGet(Key key, boolean cache, boolean offersOnly, long uid, RequestSender.Listener listener) {
 		try {
-			Object o = node.makeRequestSender(key, node.maxHTL(), uid, null, false, cache, false, offersOnly);
+			Object o = node.makeRequestSender(key, node.maxHTL(), uid, null, false, cache, false, offersOnly, listener);
 			if(o instanceof CHKBlock) {
 				node.unlockUID(uid, false, false, true, false);
 				return; // Already have it.
@@ -509,7 +509,7 @@ public class NodeClientCore implements Persistable {
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
 		try {
-		Object o = node.makeRequestSender(key.getNodeCHK(), node.maxHTL(), uid, null, localOnly, cache, ignoreStore, false);
+		Object o = node.makeRequestSender(key.getNodeCHK(), node.maxHTL(), uid, null, localOnly, cache, ignoreStore, false, null);
 		if(o instanceof CHKBlock) {
 			try {
 				return new ClientCHKBlock((CHKBlock)o, key);
@@ -624,7 +624,7 @@ public class NodeClientCore implements Persistable {
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
 		try {
-		Object o = node.makeRequestSender(key.getNodeKey(), node.maxHTL(), uid, null, localOnly, cache, ignoreStore, false);
+		Object o = node.makeRequestSender(key.getNodeKey(), node.maxHTL(), uid, null, localOnly, cache, ignoreStore, false, null);
 		if(o instanceof SSKBlock) {
 			try {
 				SSKBlock block = (SSKBlock)o;
