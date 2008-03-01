@@ -284,7 +284,7 @@ public class BucketTools {
 				if(bytes <= 0) {
 					if(truncateLength == Long.MAX_VALUE)
 						break;
-					throw new IOException("Could not move required quantity of data: "+bytes+" (moved "+moved+" of "+truncateLength+"): unable to read from "+is);
+					throw new IOException("Could not move required quantity of data in copyTo: "+bytes+" (moved "+moved+" of "+truncateLength+"): unable to read from "+is);
 				}
 				os.write(buf, 0, bytes);
 				moved += bytes;
@@ -310,7 +310,7 @@ public class BucketTools {
 				if(bytes <= 0) {
 					if(truncateLength == Long.MAX_VALUE)
 						break;
-					throw new IOException("Could not move required quantity of data: "+bytes+" (moved "+moved+" of "+truncateLength+"): unable to read from "+is);
+					throw new IOException("Could not move required quantity of data in copyFrom: "+bytes+" (moved "+moved+" of "+truncateLength+"): unable to read from "+is);
 				}
 				os.write(buf, 0, bytes);
 				moved += bytes;
