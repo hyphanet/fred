@@ -220,7 +220,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			// Offer the data if there is any.
 			node.failureTable.onFinalFailure(key, null, htl, -1, source);
 			PeerNode routedLast = rs == null ? null : rs.routedLast();
-			Logger.error(this, "requestsender took too long to respond to requestor ("+TimeUtil.formatTime((now - searchStartTime), 2, true)+"/"+rs.getStatusString()+") routed to "+(routedLast == null ? "null" : routedLast.shortToString())); 
+			Logger.error(this, "requestsender took too long to respond to requestor ("+TimeUtil.formatTime((now - searchStartTime), 2, true)+"/"+(rs == null ? "null" : rs.getStatusString())+") routed to "+(routedLast == null ? "null" : routedLast.shortToString())); 
 			applyByteCounts();
 			unregisterRequestHandlerWithNode();
 			return;
