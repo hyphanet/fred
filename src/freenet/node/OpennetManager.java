@@ -490,7 +490,7 @@ public class OpennetManager {
 		Message msg2 = isReply ? DMT.createFNPOpennetConnectReplyNew(uid, xferUID, noderef.length, padded.length) :
 			DMT.createFNPOpennetConnectDestinationNew(uid, xferUID, noderef.length, padded.length);
 		peer.sendAsync(msg2, null, 0, ctr);
-		innerSendOpennetRef(xferUID, padded, peer);
+		innerSendOpennetRef(xferUID, padded, peer, ctr);
 	}
 
 	/**
@@ -501,14 +501,14 @@ public class OpennetManager {
 	 * @throws NotConnectedException If the peer is not connected, or we lose the connection to the peer,
 	 * or it restarts.
 	 */
-	private void innerSendOpennetRef(long xferUID, byte[] padded, PeerNode peer) throws NotConnectedException {
+	private void innerSendOpennetRef(long xferUID, byte[] padded, PeerNode peer, ByteCounter ctr) throws NotConnectedException {
 		ByteArrayRandomAccessThing raf = new ByteArrayRandomAccessThing(padded);
 		raf.setReadOnly();
 		PartiallyReceivedBulk prb =
 			new PartiallyReceivedBulk(node.usm, padded.length, Node.PACKET_SIZE, raf, true);
 		try {
 			BulkTransmitter bt =
-				new BulkTransmitter(prb, peer, xferUID, node.outputThrottle, true, null);
+				new BulkTransmitter(prb, peer, xferUID, node.outputThrottle, true, ctr);
 			bt.send();
 		} catch (DisconnectedException e) {
 			throw new NotConnectedException(e);
@@ -529,7 +529,7 @@ public class OpennetManager {
 		byte[] padded = new byte[paddedSize(noderef.length)];
 		node.fastWeakRandom.nextBytes(padded); // FIXME implement nextBytes(buf,offset, length)
 		System.arraycopy(noderef, 0, padded, 0, noderef.length);
-		innerSendOpennetRef(xferUID, padded, peer);
+		innerSendOpennetRef(xferUID, padded, peer, ctr);
 	}
 	
 	private int paddedSize(int length) {
@@ -552,7 +552,7 @@ public class OpennetManager {
 		Message msg = DMT.createFNPOpennetAnnounceReply(uid, xferUID, noderef.length, 
 				padded.length);
 		peer.sendAsync(msg, null, 0, ctr);
-		innerSendOpennetRef(xferUID, padded, peer);
+		innerSendOpennetRef(xferUID, padded, peer, ctr);
 	}
 	
 	/**
@@ -611,7 +611,7 @@ public class OpennetManager {
     	byte[] buf = new byte[paddedLength];
     	ByteArrayRandomAccessThing raf = new ByteArrayRandomAccessThing(buf);
     	PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, buf.length, Node.PACKET_SIZE, raf, false);
-    	BulkReceiver br = new BulkReceiver(prb, source, xferUID, null);
+    	BulkReceiver br = new BulkReceiver(prb, source, xferUID, ctr);
     	if(logMINOR)
     		Logger.minor(this, "Receiving noderef (reply="+isReply+") as bulk transfer for request uid "+uid+" with transfer "+xferUID+" from "+source);
     	if(!br.receive()) {
