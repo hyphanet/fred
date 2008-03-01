@@ -1992,7 +1992,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 					int packetNumber = kt.allocateOutgoingPacketNumberNeverBlock();
 					this.processOutgoingPreformatted(buf, 0, buf.length, kt, packetNumber, mi.cb, mi.alreadyReportedBytes, mi.getPriority());
 					//MARK: onSent()
-					mi.onSent(buf.length + fullHeadersLengthOneMessage);
+					mi.onSent(buf.length + fullHeadersLengthMinimum);
 				} catch (NotConnectedException e) {
 					Logger.normal(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString);
 					// Requeue
@@ -2558,7 +2558,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	public void resend(ResendPacketItem item) throws PacketSequenceException, WouldBlockException, KeyChangedException, NotConnectedException {
 		processOutgoingPreformatted(item.buf, 0, item.buf.length, item.kt, item.packetNumber, item.callbacks, 0, item.priority);
-		node.nodeStats.resendByteCounter.sentBytes(item.buf.length + fullHeadersLengthOneMessage);
+		node.nodeStats.resendByteCounter.sentBytes(item.buf.length + fullHeadersLengthMinimum);
 	}
 
 	public int[] supportedNegTypes() {
