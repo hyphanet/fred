@@ -309,7 +309,7 @@ public class PeerManager {
     			// removing from connectedPeers
     			ArrayList a = new ArrayList();
     			for(int i=0;i<myPeers.length;i++) {
-    				if((myPeers[i]!=pn) && myPeers[i].isRoutable())
+    				if((myPeers[i]!=pn) && myPeers[i].isConnected() && myPeers[i].isRealConnection())
     					a.add(myPeers[i]);
     			}
     			
