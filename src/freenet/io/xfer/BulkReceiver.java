@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.xfer;
 
+import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
@@ -29,12 +30,14 @@ public class BulkReceiver {
 	private boolean sentCancel;
 	/** Not persistent over reboots */
 	final long peerBootID;
+	private final ByteCounter ctr;
 
-	public BulkReceiver(PartiallyReceivedBulk prb, PeerContext peer, long uid) {
+	public BulkReceiver(PartiallyReceivedBulk prb, PeerContext peer, long uid, ByteCounter ctr) {
 		this.prb = prb;
 		this.peer = peer;
 		this.uid = uid;
 		this.peerBootID = peer.getBootID();
+		this.ctr = ctr;
 	}
 
 	public void onAborted() {
@@ -43,7 +46,7 @@ public class BulkReceiver {
 			sentCancel = true;
 		}
 		try {
-			peer.sendAsync(DMT.createFNPBulkReceiveAborted(uid), null, 0, null);
+			peer.sendAsync(DMT.createFNPBulkReceiveAborted(uid), null, 0, ctr);
 		} catch (NotConnectedException e) {
 			// Cool
 		}
@@ -59,7 +62,7 @@ public class BulkReceiver {
 			MessageFilter mfPacket = MessageFilter.create().setSource(peer).setType(DMT.FNPBulkPacketSend) .setField(DMT.UID, uid).setTimeout(TIMEOUT);
 			if(prb.hasWholeFile()) {
 				try {
-					peer.sendAsync(DMT.createFNPBulkReceivedAll(uid), null, 0, null);
+					peer.sendAsync(DMT.createFNPBulkReceivedAll(uid), null, 0, ctr);
 				} catch (NotConnectedException e) {
 					// Ignore, we have the data.
 				}
@@ -67,7 +70,7 @@ public class BulkReceiver {
 			}
 			Message m;
 			try {
-				m = prb.usm.waitFor(mfSendKilled.or(mfPacket), null);
+				m = prb.usm.waitFor(mfSendKilled.or(mfPacket), ctr);
 			} catch (DisconnectedException e) {
 				prb.abort(RetrievalException.SENDER_DISCONNECTED, "Sender disconnected");
 				return false;

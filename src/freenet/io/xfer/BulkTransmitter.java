@@ -4,6 +4,7 @@
 package freenet.io.xfer;
 
 import freenet.io.comm.AsyncMessageFilterCallback;
+import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
@@ -47,6 +48,7 @@ public class BulkTransmitter {
 	final boolean noWait;
 	private long finishTime=-1;
 	private String cancelReason;
+	private final ByteCounter ctr;
 	
 	/**
 	 * Create a bulk data transmitter.
@@ -57,12 +59,13 @@ public class BulkTransmitter {
 	 * @param noWait If true, don't wait for an FNPBulkReceivedAll, return as soon as we've sent everything.
 	 * @throws DisconnectedException If the peer we are trying to send to becomes disconnected.
 	 */
-	public BulkTransmitter(PartiallyReceivedBulk prb, PeerContext peer, long uid, DoubleTokenBucket masterThrottle, boolean noWait) throws DisconnectedException {
+	public BulkTransmitter(PartiallyReceivedBulk prb, PeerContext peer, long uid, DoubleTokenBucket masterThrottle, boolean noWait, ByteCounter ctr) throws DisconnectedException {
 		this.prb = prb;
 		this.peer = peer;
 		this.uid = uid;
 		this.masterThrottle = masterThrottle;
 		this.noWait = noWait;
+		this.ctr = ctr;
 		peerBootID = peer.getBootID();
 		// Need to sync on prb while doing both operations, to avoid race condition.
 		// Specifically, we must not get calls to blockReceived() until blocksNotSentButPresent
@@ -153,7 +156,7 @@ public class BulkTransmitter {
 			sentCancel = true;
 		}
 		try {
-			peer.sendAsync(DMT.createFNPBulkSendAborted(uid), null, 0, null);
+			peer.sendAsync(DMT.createFNPBulkSendAborted(uid), null, 0, ctr);
 		} catch (NotConnectedException e) {
 			// Cool
 		}
@@ -245,7 +248,7 @@ public class BulkTransmitter {
 			// Congestion control and bandwidth limiting
 			try {
 				peer.getThrottle().sendThrottledMessage(DMT.createFNPBulkPacketSend(uid, blockNo, buf), peer, 
-						masterThrottle, prb.blockSize, null);
+						masterThrottle, prb.blockSize, ctr);
 				synchronized(this) {
 					blocksNotSentButPresent.setBit(blockNo, false);
 				}

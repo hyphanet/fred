@@ -508,7 +508,7 @@ public class OpennetManager {
 			new PartiallyReceivedBulk(node.usm, padded.length, Node.PACKET_SIZE, raf, true);
 		try {
 			BulkTransmitter bt =
-				new BulkTransmitter(prb, peer, xferUID, node.outputThrottle, true);
+				new BulkTransmitter(prb, peer, xferUID, node.outputThrottle, true, null);
 			bt.send();
 		} catch (DisconnectedException e) {
 			throw new NotConnectedException(e);
@@ -611,7 +611,7 @@ public class OpennetManager {
     	byte[] buf = new byte[paddedLength];
     	ByteArrayRandomAccessThing raf = new ByteArrayRandomAccessThing(buf);
     	PartiallyReceivedBulk prb = new PartiallyReceivedBulk(node.usm, buf.length, Node.PACKET_SIZE, raf, false);
-    	BulkReceiver br = new BulkReceiver(prb, source, xferUID);
+    	BulkReceiver br = new BulkReceiver(prb, source, xferUID, null);
     	if(logMINOR)
     		Logger.minor(this, "Receiving noderef (reply="+isReply+") as bulk transfer for request uid "+uid+" with transfer "+xferUID+" from "+source);
     	if(!br.receive()) {

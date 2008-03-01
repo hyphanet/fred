@@ -842,7 +842,7 @@ public class DarknetPeerNode extends PeerNode {
 				throw new Error("Impossible: FileNotFoundException opening with RAF with rw! "+e, e);
 			}
 			prb = new PartiallyReceivedBulk(node.usm, size, Node.PACKET_SIZE, data, false);
-			receiver = new BulkReceiver(prb, DarknetPeerNode.this, uid);
+			receiver = new BulkReceiver(prb, DarknetPeerNode.this, uid, null);
 			// FIXME make this persistent
 			node.executor.execute(new Runnable() {
 				public void run() {
@@ -881,7 +881,7 @@ public class DarknetPeerNode extends PeerNode {
 
 		public void send() throws DisconnectedException {
 			prb = new PartiallyReceivedBulk(node.usm, size, Node.PACKET_SIZE, data, true);
-			transmitter = new BulkTransmitter(prb, DarknetPeerNode.this, uid, node.outputThrottle, false);
+			transmitter = new BulkTransmitter(prb, DarknetPeerNode.this, uid, node.outputThrottle, false, null);
 			if(logMINOR)
 				Logger.minor(this, "Sending "+uid);
 			node.executor.execute(new Runnable() {
