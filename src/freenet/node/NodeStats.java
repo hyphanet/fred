@@ -1161,4 +1161,13 @@ public class NodeStats implements Persistable {
 		return resendBytesSent;
 	}
 	
+	private long uomBytesSent;
+	
+	public synchronized void reportUOMBytesSent(int x) {
+		uomBytesSent += x;
+	}
+	
+	public long getUOMBytesSent() {
+		return uomBytesSent;
+	}
 }

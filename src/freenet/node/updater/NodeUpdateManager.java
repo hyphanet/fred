@@ -9,6 +9,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
+import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
@@ -189,7 +190,7 @@ public class NodeUpdateManager {
 			if((!hasBeenBlown) && (mainUpdater == null || mainUpdater.getFetchedVersion() <= 0)) return;
 		}
 		try {
-			peer.sendAsync(getUOMAnnouncement(), null, 0, null);
+			peer.sendAsync(getUOMAnnouncement(), null, 0, ctr);
 		} catch (NotConnectedException e) {
 			// Sad, but ignore it
 		}
@@ -887,4 +888,20 @@ public class NodeUpdateManager {
 		return Math.max(0, REVOCATION_FETCH_TIMEOUT - (now - gotJarTime));
 	}
 
+	final ByteCounter ctr = new ByteCounter() {
+
+		public void receivedBytes(int x) {
+			// FIXME
+		}
+
+		public void sentBytes(int x) {
+			node.nodeStats.reportUOMBytesSent(x);
+		}
+
+		public void sentPayload(int x) {
+			node.nodeStats.reportUOMBytesSent(x);
+		}
+		
+	};
+	
 }

@@ -172,7 +172,7 @@ public class UpdateOverMandatoryManager {
 						public void sent() {
 							// Cool
 						}
-					}, 0, null);
+					}, 0, updateManager.ctr);
 					
 					// The reply message will start the transfer. It includes the revocation URI
 					// so we can tell if anything wierd is happening.
@@ -275,7 +275,7 @@ public class UpdateOverMandatoryManager {
 						}
 					}, REQUEST_MAIN_JAR_TIMEOUT);
 				}
-			}, 0, null);
+			}, 0, updateManager.ctr);
 		} catch (NotConnectedException e) {
 			synchronized(this) {
 				nodesAskedSendMainJar.remove(source);
@@ -494,7 +494,7 @@ public class UpdateOverMandatoryManager {
 		
 		final BulkTransmitter bt;
 		try {
-			bt = new BulkTransmitter(prb, source, uid, updateManager.node.outputThrottle, false, null);
+			bt = new BulkTransmitter(prb, source, uid, updateManager.node.outputThrottle, false, updateManager.ctr);
 		} catch (DisconnectedException e) {
 			Logger.error(this, "Peer "+source+" asked us for the blob file for the revocation key, then disconnected: "+e, e);
 			return true;
@@ -540,7 +540,7 @@ public class UpdateOverMandatoryManager {
 					return super.toString() + "("+uid+":"+source.getPeer()+")";
 				}
 				
-			}, 0, null);
+			}, 0, updateManager.ctr);
 		} catch (NotConnectedException e) {
 			Logger.error(this, "Peer "+source+" asked us for the blob file for the revocation key, then disconnected when we tried to send the UOMSendingRevocation: "+e, e);
 			return true;
@@ -624,7 +624,7 @@ public class UpdateOverMandatoryManager {
 		PartiallyReceivedBulk prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length, 
 				Node.PACKET_SIZE, raf, false);
 		
-		final BulkReceiver br = new BulkReceiver(prb, source, uid, null);
+		final BulkReceiver br = new BulkReceiver(prb, source, uid, updateManager.ctr);
 		
 		updateManager.node.executor.execute(new Runnable() {
 
@@ -867,7 +867,7 @@ public class UpdateOverMandatoryManager {
 		
 		final BulkTransmitter bt;
 		try {
-			bt = new BulkTransmitter(prb, source, uid, updateManager.node.outputThrottle, false, null);
+			bt = new BulkTransmitter(prb, source, uid, updateManager.node.outputThrottle, false, updateManager.ctr);
 		} catch (DisconnectedException e) {
 			Logger.error(this, "Peer "+source+" asked us for the blob file for the main jar, then disconnected: "+e, e);
 			return true;
@@ -914,7 +914,7 @@ public class UpdateOverMandatoryManager {
 					return super.toString() + "("+uid+":"+source.getPeer()+")";
 				}
 				
-			}, 0, null);
+			}, 0, updateManager.ctr);
 		} catch (NotConnectedException e) {
 			Logger.error(this, "Peer "+source+" asked us for the blob file for the main jar, then disconnected when we tried to send the UOMSendingMain: "+e, e);
 			return true;
@@ -1006,7 +1006,7 @@ public class UpdateOverMandatoryManager {
 		PartiallyReceivedBulk prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length, 
 				Node.PACKET_SIZE, raf, false);
 		
-		final BulkReceiver br = new BulkReceiver(prb, source, uid, null);
+		final BulkReceiver br = new BulkReceiver(prb, source, uid, updateManager.ctr);
 		
 		updateManager.node.executor.execute(new Runnable() {
 
