@@ -629,7 +629,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(logMINOR)
 			Logger.minor(this, "maybeQueueOfferedKey("+key+","+force);
 		short priority = Short.MAX_VALUE;
-		synchronized(this) {
+		synchronized(pendingKeys) {
 			if(force) {
 				// FIXME what priority???
 				priority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
