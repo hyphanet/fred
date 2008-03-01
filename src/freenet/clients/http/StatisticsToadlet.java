@@ -826,7 +826,8 @@ public class StatisticsToadlet extends Toadlet {
 		if ((numInserts == 0) && (numRequests == 0) && (numTransferringRequests == 0) &&
 				(numCHKRequests == 0) && (numSSKRequests == 0) &&
 				(numCHKInserts == 0) && (numSSKInserts == 0) &&
-				(numTransferringRequestHandlers == 0)) {
+				(numTransferringRequestHandlers == 0) && 
+				(numCHKOfferReplys == 0) && (numSSKOfferReplys == 0)) {
 			activityInfoboxContent.addChild("#", l10n("noRequests"));
 			return null;
 		} else {
