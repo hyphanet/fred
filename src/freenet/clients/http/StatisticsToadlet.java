@@ -806,14 +806,32 @@ public class StatisticsToadlet extends Toadlet {
 		activityList.addChild("li", l10n("totalOutput", new String[] { "total", "rate" }, new String[] { SizeUtil.formatSize(total[0], true), SizeUtil.formatSize(total_output_rate, true) } ));
 		activityList.addChild("li", l10n("payloadOutput", new String[] { "total", "rate", "percent" }, new String[] { SizeUtil.formatSize(totalPayload, true), SizeUtil.formatSize(total_payload_rate, true), Integer.toString(percent) } ));
 		if(isAdvancedModeEnabled) {
-			activityList.addChild("li", l10n("requestOutput", new String[] { "chk", "ssk" }, new String[] { SizeUtil.formatSize(node.nodeStats.getCHKRequestTotalBytesSent(), true), SizeUtil.formatSize(node.nodeStats.getSSKRequestTotalBytesSent(), true) }));
-			activityList.addChild("li", l10n("insertOutput", new String[] { "chk", "ssk" }, new String[] { SizeUtil.formatSize(node.nodeStats.getCHKInsertTotalBytesSent(), true), SizeUtil.formatSize(node.nodeStats.getSSKInsertTotalBytesSent(), true) }));
-			activityList.addChild("li", l10n("offeredKeyOutput", "total", SizeUtil.formatSize(node.nodeStats.getOfferedKeysTotalBytesSent(), true)));
-			activityList.addChild("li", l10n("swapOutput", "total", SizeUtil.formatSize(node.nodeStats.getSwappingTotalBytesSent(), true)));
-			activityList.addChild("li", l10n("authBytes", "total", SizeUtil.formatSize(node.nodeStats.getTotalAuthBytesSent(), true)));
-			activityList.addChild("li", l10n("resendBytes", "total", SizeUtil.formatSize(node.nodeStats.getResendBytesSent(), true)));
-			activityList.addChild("li", l10n("uomBytes", "total",  SizeUtil.formatSize(node.nodeStats.getUOMBytesSent(), true)));
-			activityList.addChild("li", l10n("announceBytes", "total", SizeUtil.formatSize(node.nodeStats.getAnnounceBytesSent(), true)));
+			long totalBytesSentCHKRequests = node.nodeStats.getCHKRequestTotalBytesSent();
+			long totalBytesSentSSKRequests = node.nodeStats.getSSKRequestTotalBytesSent();
+			long totalBytesSentCHKInserts = node.nodeStats.getCHKInsertTotalBytesSent();
+			long totalBytesSentSSKInserts = node.nodeStats.getSSKInsertTotalBytesSent();
+			long totalBytesSentOfferedKeys = node.nodeStats.getOfferedKeysTotalBytesSent();
+			long totalBytesSentSwapOutput = node.nodeStats.getSwappingTotalBytesSent();
+			long totalBytesSentAuth = node.nodeStats.getTotalAuthBytesSent();
+			long totalBytesSentResends = node.nodeStats.getResendBytesSent();
+			long totalBytesSentUOM = node.nodeStats.getUOMBytesSent();
+			long totalBytesSentAnnounce = node.nodeStats.getAnnounceBytesSent();
+			long totalBytesSentRemaining = total[0] - 
+				(totalPayload + totalBytesSentCHKRequests + totalBytesSentSSKRequests +
+				totalBytesSentCHKInserts + totalBytesSentSSKInserts +
+				totalBytesSentOfferedKeys + totalBytesSentSwapOutput + 
+				totalBytesSentAuth + totalBytesSentResends +
+				totalBytesSentUOM + totalBytesSentAnnounce);
+			activityList.addChild("li", l10n("requestOutput", new String[] { "chk", "ssk" }, new String[] { SizeUtil.formatSize(totalBytesSentCHKRequests, true), SizeUtil.formatSize(totalBytesSentSSKRequests, true) }));
+			activityList.addChild("li", l10n("insertOutput", new String[] { "chk", "ssk" }, new String[] { SizeUtil.formatSize(totalBytesSentCHKInserts, true), SizeUtil.formatSize(totalBytesSentSSKInserts, true) }));
+			activityList.addChild("li", l10n("offeredKeyOutput", "total", SizeUtil.formatSize(totalBytesSentOfferedKeys, true)));
+			activityList.addChild("li", l10n("swapOutput", "total", SizeUtil.formatSize(totalBytesSentSwapOutput, true)));
+			activityList.addChild("li", l10n("authBytes", "total", SizeUtil.formatSize(totalBytesSentAuth, true)));
+			activityList.addChild("li", l10n("resendBytes", "total", SizeUtil.formatSize(totalBytesSentResends, true)));
+			activityList.addChild("li", l10n("uomBytes", "total",  SizeUtil.formatSize(totalBytesSentUOM, true)));
+			activityList.addChild("li", l10n("announceBytes", "total", SizeUtil.formatSize(totalBytesSentAnnounce, true)));
+			activityList.addChild("li", l10n("unaccountedBytes", new String[] { "total", "percent" },
+					new String[] { SizeUtil.formatSize(totalBytesSentRemaining, true), Integer.toString((int)(totalBytesSentRemaining*100 / total[0])) }));
 		}
 	}
 
