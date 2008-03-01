@@ -28,7 +28,7 @@ public class IntOption extends Option {
 	public IntOption(SubConfig conf, String optionName, String defaultValueString,
 			int sortOrder, boolean expert, boolean forceWrite, String shortDesc, String longDesc, IntCallback cb) {
 		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DATA_TYPE_NUMBER);
-		this.defaultValue = Fields.parseInt(defaultValueString);
+		this.defaultValue = Fields.parseSIInt(defaultValueString);
 		this.cb = cb;
 		this.currentValue = defaultValue;
 		this.cachedStringValue = defaultValueString;
@@ -50,7 +50,7 @@ public class IntOption extends Option {
 	public void setValue(String val) throws InvalidConfigValueException {
 		int x;
 		try{
-			x = Fields.parseInt(val);
+			x = Fields.parseSIInt(val);
 		} catch (NumberFormatException e) {
 			throw new InvalidConfigValueException(l10n("parseError", "val", val));
 		}
@@ -62,7 +62,7 @@ public class IntOption extends Option {
 	public void setInitialValue(String val) throws InvalidConfigValueException {
 		int x;
 		try{
-			x = Fields.parseInt(val);
+			x = Fields.parseSIInt(val);
 		} catch (NumberFormatException e) {
 			throw new InvalidConfigValueException(l10n("parseError", "val", val));
 		}

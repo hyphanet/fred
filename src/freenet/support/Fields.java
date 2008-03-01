@@ -579,7 +579,7 @@ public abstract class Fields {
 	 * @throws NumberFormatException
 	 *             if the string is not parseable
 	 */
-	public static short parseShort(String s) throws NumberFormatException {
+	public static short parseSIShort(String s) throws NumberFormatException {
 		short res = 1;
 		int x = s.length() - 1;
 		int idx;
@@ -606,7 +606,7 @@ public abstract class Fields {
 	 * @throws NumberFormatException
 	 *             if the string is not parseable
 	 */
-	public static int parseInt(String s) throws NumberFormatException {
+	public static int parseSIInt(String s) throws NumberFormatException {
 		int res = 1;
 		int x = s.length() - 1;
 		int idx;
@@ -637,7 +637,7 @@ public abstract class Fields {
 	 * @throws NumberFormatException
 	 *             if the string is not parseable
 	 */
-	public static long parseLong(String s) throws NumberFormatException {
+	public static long parseSILong(String s) throws NumberFormatException {
 		long res = 1;
 		int x = s.length() - 1;
 		int idx;
