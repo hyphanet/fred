@@ -249,6 +249,7 @@ public class BulkTransmitter {
 			try {
 				peer.getThrottle().sendThrottledMessage(DMT.createFNPBulkPacketSend(uid, blockNo, buf), peer, 
 						masterThrottle, prb.blockSize, ctr);
+				if(ctr != null) ctr.sentPayload(prb.blockSize);
 				synchronized(this) {
 					blocksNotSentButPresent.setBit(blockNo, false);
 				}
