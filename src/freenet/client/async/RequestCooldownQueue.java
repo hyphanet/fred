@@ -29,7 +29,7 @@ public class RequestCooldownQueue {
 	int endPtr;
 	static boolean logMINOR;
 	
-	static final int MIN_SIZE = 2;
+	static final int MIN_SIZE = 128;
 	
 	final long cooldownTime;
 
