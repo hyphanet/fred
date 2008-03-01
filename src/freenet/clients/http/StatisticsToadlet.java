@@ -600,6 +600,7 @@ public class StatisticsToadlet extends Toadlet {
 	private void drawSwapStatsBox(HTMLNode locationSwapInfobox, long nodeUptimeSeconds, double swaps, double noSwaps) {
 		
 		locationSwapInfobox.addChild("div", "class", "infobox-header", "Location swaps");
+		double location = node.getLocation();
 		int startedSwaps = node.getStartedSwaps();
 		int swapsRejectedAlreadyLocked = node.getSwapsRejectedAlreadyLocked();
 		int swapsRejectedNowhereToGo = node.getSwapsRejectedNowhereToGo();
@@ -612,6 +613,7 @@ public class StatisticsToadlet extends Toadlet {
 
 		HTMLNode locationSwapInfoboxContent = locationSwapInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode locationSwapList = locationSwapInfoboxContent.addChild("ul");
+		locationSwapList.addChild("li", "location:\u00a0" + location);
 		if (swaps > 0.0) {
 			locationSwapList.addChild("li", "locChangeSession:\u00a0" + fix1p6sci.format(locChangeSession));
 			locationSwapList.addChild("li", "locChangePerSwap:\u00a0" + fix1p6sci.format(locChangeSession/swaps));
