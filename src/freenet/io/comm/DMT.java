@@ -171,7 +171,7 @@ public class DMT {
 	}
 	
 	public static int bulkPacketTransmitSize(int size) {
-		return size + 8 /* uid */ + 4 /* packet# */ + 4 /* Message hader */;
+		return size + 8 /* uid */ + 4 /* packet# */ + 4 /* Message header */;
 	}
 	
 	//This is of priority BULK_DATA to cut down on suprious resend requests, it will be queued after the packets it represents
