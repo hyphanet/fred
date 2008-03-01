@@ -2617,7 +2617,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	final static int MAX_PINGS = 5;
 	final LRUHashtable pingsSentTimes = new LRUHashtable();
 	long pingNumber;
-	final RunningAverage pingAverage;
+	private final RunningAverage pingAverage;
 
 	/**
 	 * @return The probability of a request sent to this peer being rejected (locally)
@@ -3607,5 +3607,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		Peer peer = getPeer();
 		if(peer == null) return false; // presumably
 		return !IPUtil.isValidAddress(peer.getAddress(), false);
+	}
+
+	public void reportPing(long t) {
+		this.pingAverage.report(t);
 	}
 }

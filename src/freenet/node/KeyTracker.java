@@ -425,8 +425,8 @@ public class KeyTracker {
          */
 		public void onAcked() {
 			long t = Math.max(0, System.currentTimeMillis() - createdTime);
-			pn.pingAverage.report(t);
-			if(logMINOR) Logger.minor(this, "Reported round-trip time of "+TimeUtil.formatTime(t, 2, true)+" on "+pn.getPeer()+" (avg "+TimeUtil.formatTime((long)pn.pingAverage.currentValue(),2,true)+", #"+packetNumber+ ')');
+			pn.reportPing(t);
+			if(logMINOR) Logger.minor(this, "Reported round-trip time of "+TimeUtil.formatTime(t, 2, true)+" on "+pn.getPeer()+" (avg "+TimeUtil.formatTime((long)pn.averagePingTime(),2,true)+", #"+packetNumber+ ')');
 		}
 
 		long urgentDelay() {
@@ -646,7 +646,7 @@ public class KeyTracker {
         QueuedAckRequest qr = (QueuedAckRequest)ackRequestQueue.removeByKey(new Integer(seqNo));
     	if(qr != null) qr.onAcked();
     	else
-    		Logger.normal(this, "Removing ack request twice? Null on "+seqNo+" from "+pn.getPeer()+" ("+TimeUtil.formatTime((int) pn.pingAverage.currentValue(), 2, true)+" ping avg)");
+    		Logger.normal(this, "Removing ack request twice? Null on "+seqNo+" from "+pn.getPeer()+" ("+TimeUtil.formatTime((int) pn.averagePingTime(), 2, true)+" ping avg)");
     }
 
     /**
