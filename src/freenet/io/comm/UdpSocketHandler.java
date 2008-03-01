@@ -247,13 +247,11 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		packet.setAddress(address);
 		packet.setPort(port);
 		
-		// TODO: keep?
-		// packet.length() is simply the size of the buffer, it knows nothing of UDP headers
-		IOStatisticCollector.addInfo(address + ":" + port, 0, blockToSend.length + UDP_HEADERS_LENGTH); 
-		tracker.sentPacketTo(destination);
 		
 		try {
 			_sock.send(packet);
+			tracker.sentPacketTo(destination);
+			IOStatisticCollector.addInfo(address + ":" + port, 0, blockToSend.length + UDP_HEADERS_LENGTH); 
 			if(logMINOR) Logger.minor(this, "Sent packet length "+blockToSend.length+" to "+address);
 		} catch (IOException e) {
 			if(packet.getAddress() instanceof Inet6Address)
