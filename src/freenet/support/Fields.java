@@ -574,6 +574,30 @@ public abstract class Fields {
         return buf;
 	}
 
+	public static long parseLong(String s, long defaultValue) {
+		try {
+			return Long.parseLong(s);
+		} catch (NumberFormatException e) {
+			return defaultValue;
+		}
+	}
+	
+	public static int parseInt(String s, int defaultValue) {
+		try {
+			return Integer.parseInt(s);
+		} catch (NumberFormatException e) {
+			return defaultValue;
+		}
+	}
+	
+	public static long parseShort(String s, short defaultValue) {
+		try {
+			return Short.parseShort(s);
+		} catch (NumberFormatException e) {
+			return defaultValue;
+		}
+	}
+	
     /**
      * Parse a human-readable string possibly including SI units into a short.
 	 * @throws NumberFormatException
