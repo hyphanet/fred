@@ -811,6 +811,7 @@ public class StatisticsToadlet extends Toadlet {
 			activityList.addChild("li", l10n("offeredKeyOutput", "total", SizeUtil.formatSize(node.nodeStats.getOfferedKeysTotalBytesSent(), true)));
 			activityList.addChild("li", l10n("swapOutput", "total", SizeUtil.formatSize(node.nodeStats.getSwappingTotalBytesSent(), true)));
 			activityList.addChild("li", l10n("authBytes", "total", SizeUtil.formatSize(node.nodeStats.getTotalAuthBytesSent(), true)));
+			activityList.addChild("li", l10n("resendBytes", "total", SizeUtil.formatSize(node.nodeStats.getResendBytesSent(), true)));
 		}
 	}
 

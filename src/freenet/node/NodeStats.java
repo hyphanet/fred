@@ -9,6 +9,7 @@ import java.util.Comparator;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
+import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.IOStatisticCollector;
 import freenet.l10n.L10n;
@@ -1134,6 +1135,30 @@ public class NodeStats implements Persistable {
 	
 	public long getTotalAuthBytesSent() {
 		return totalAuthBytesSent;
+	}
+	
+	private long resendBytesSent;
+	
+	public final ByteCounter resendByteCounter = new ByteCounter() {
+
+		public void receivedBytes(int x) {
+			// Ignore
+		}
+
+		public void sentBytes(int x) {
+			synchronized(NodeStats.this) {
+				resendBytesSent += x;
+			}
+		}
+
+		public void sentPayload(int x) {
+			// Ignore
+		}
+		
+	};
+	
+	public long getResendBytesSent() {
+		return resendBytesSent;
 	}
 	
 }

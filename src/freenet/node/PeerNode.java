@@ -2476,7 +2476,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				Logger.error(this, "No tracker to resend packet " + item.packetNumber + " on");
 				continue;
 			}
-			MessageItem mi = new MessageItem(item.buf, item.callbacks, true, 0, null, item.priority);
+			MessageItem mi = new MessageItem(item.buf, item.callbacks, true, 0, node.nodeStats.resendByteCounter, item.priority);
 			requeueMessageItems(new MessageItem[]{mi}, 0, 1, true);
 		}
 	}
