@@ -1229,12 +1229,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		final int expectedLength =	HASH_LENGTH + // HMAC of the cyphertext
 									(c.getBlockSize() >> 3) + // IV
-									HASH_LENGTH + // the signature
+									Node.SIGNATURE_PARAMETER_LENGTH * 2 + // the signature
 									(bothNoderefs ? pn.jfkMyRef.length : 0) + // my reference
 									8 // bootID
 									;
-		if(payload.length < expectedLength + 3) {
-			Logger.error(this, "Packet too short from "+pn.getPeer()+": "+payload.length+" after decryption in JFK(4), should be "+(expectedLength + 3));
+		if(payload.length - inputOffset < expectedLength + 3) {
+			if(!bothNoderefs)
+				Logger.error(this, "Packet too short from "+pn.getPeer()+": "+payload.length+" after decryption in JFK(4), should be "+(expectedLength + 3));
 			return false;
 		}
 		byte[] jfkBuffer = pn.getJFKBuffer();
@@ -1279,6 +1280,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] data = new byte[decypheredPayload.length - decypheredPayloadOffset];
 		System.arraycopy(decypheredPayload, decypheredPayloadOffset, data, 0, decypheredPayload.length - decypheredPayloadOffset);
 		long bootID = Fields.bytesToLong(data);
+		if(data.length - (bothNoderefs ? pn.jfkMyRef.length : 0) - 8 < 0) {
+			Logger.error(this, "No space for hisRef: bothNoderefs="+bothNoderefs+" data.length="+data.length+" myRef.length="+(pn.jfkMyRef==null?0:pn.jfkMyRef.length)+" orig data length "+(payload.length-inputOffset));
+			return false;
+		}
 		byte[] hisRef = new byte[data.length - (bothNoderefs ? pn.jfkMyRef.length : 0) - 8];
 		System.arraycopy(data, 8, hisRef, 0, hisRef.length);
 		
