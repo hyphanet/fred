@@ -188,7 +188,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			offeredKeys = null;
 		}
 		if(!forInserts)
-		cooldownQueue = new RequestCooldownQueue(COOLDOWN_PERIOD);
+			cooldownQueue = new RequestCooldownQueue(COOLDOWN_PERIOD);
 		else
 			cooldownQueue = null;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -533,7 +533,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				offeredKeys[i].remove(key);
 		}
 		if(cooldownQueue != null)
-		cooldownQueue.removeKey(key, getter.getCooldownWakeupByKey(key));
+			cooldownQueue.removeKey(key, getter.getCooldownWakeupByKey(key));
 	}
 	
 	/**
@@ -604,12 +604,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(o instanceof SendableGet) {
 			gets = new SendableGet[] { (SendableGet) o };
 			if(cooldownQueue != null)
-			cooldownQueue.removeKey(key, ((SendableGet)o).getCooldownWakeupByKey(key));
+				cooldownQueue.removeKey(key, ((SendableGet)o).getCooldownWakeupByKey(key));
 		} else {
 			gets = (SendableGet[]) o;
 			if(cooldownQueue != null)
-			for(int i=0;i<gets.length;i++)
-				cooldownQueue.removeKey(key, gets[i].getCooldownWakeupByKey(key));
+				for(int i=0;i<gets.length;i++)
+					cooldownQueue.removeKey(key, gets[i].getCooldownWakeupByKey(key));
 				
 		}
 		if(gets == null) return;
