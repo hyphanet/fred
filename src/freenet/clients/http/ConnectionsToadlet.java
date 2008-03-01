@@ -437,7 +437,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 
 				if(advancedModeEnabled) {
 					peerTableHeaderRow.addChild("th", "%\u00a0Time Routable");
-					peerTableHeaderRow.addChild("th", "Total\u00a0Traffic\u00a0(in/out)");
+					peerTableHeaderRow.addChild("th", "Total\u00a0Traffic\u00a0(in/out/resent)");
 					peerTableHeaderRow.addChild("th", "Congestion\u00a0Control");
 					peerTableHeaderRow.addChild("th", "Time\u00a0Delta");
 				}
@@ -803,7 +803,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			// percent of time connected column
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", fix1.format(peerNodeStatus.getPercentTimeRoutableConnection()));
 			// total traffic column
-			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getTotalInputBytes())+" / "+SizeUtil.formatSize(peerNodeStatus.getTotalOutputBytes()));
+			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getTotalInputBytes())+" / "+SizeUtil.formatSize(peerNodeStatus.getTotalOutputBytes())+"/"+SizeUtil.formatSize(peerNodeStatus.getResendBytesSent()));
 			// congestion control
 			PacketThrottle t = peerNodeStatus.getThrottle();
 			String val;

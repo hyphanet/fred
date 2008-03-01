@@ -2476,7 +2476,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				Logger.error(this, "No tracker to resend packet " + item.packetNumber + " on");
 				continue;
 			}
-			MessageItem mi = new MessageItem(item.buf, item.callbacks, true, 0, node.nodeStats.resendByteCounter, item.priority);
+			MessageItem mi = new MessageItem(item.buf, item.callbacks, true, 0, resendByteCounter, item.priority);
 			requeueMessageItems(new MessageItem[]{mi}, 0, 1, true);
 		}
 	}
@@ -3612,4 +3612,30 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public void reportPing(long t) {
 		this.pingAverage.report(t);
 	}
+	
+	private long resendBytesSent;
+	
+	public final ByteCounter resendByteCounter = new ByteCounter() {
+
+		public void receivedBytes(int x) {
+			// Ignore
+		}
+
+		public void sentBytes(int x) {
+			synchronized(PeerNode.this) {
+				resendBytesSent += x;
+			}
+			node.nodeStats.resendByteCounter.sentBytes(x);
+		}
+
+		public void sentPayload(int x) {
+			// Ignore
+		}
+		
+	};
+	
+	public long getResendBytesSent() {
+		return resendBytesSent;
+	}
+	
 }

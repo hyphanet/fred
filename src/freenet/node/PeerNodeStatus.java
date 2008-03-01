@@ -87,6 +87,8 @@ public class PeerNodeStatus {
 	private final boolean isSeedClient;
 	
 	private final boolean isSearchable;
+	
+	private final long resendBytesSent;
 
 	PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
 		Peer p = peerNode.getPeer();
@@ -135,6 +137,7 @@ public class PeerNodeStatus {
 		this.isSeedClient = peerNode instanceof SeedClientPeerNode;
 		this.isSeedServer = peerNode instanceof SeedServerPeerNode;
 		this.isSearchable = peerNode.isRealConnection();
+		this.resendBytesSent = peerNode.getResendBytesSent();
 	}
 
 	/**
@@ -369,4 +372,9 @@ public class PeerNodeStatus {
 	public boolean isSearchable() {
 		return isSearchable;
 	}
+	
+	public long getResendBytesSent() {
+		return resendBytesSent;
+	}
+	
 }

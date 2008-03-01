@@ -1010,7 +1010,7 @@ public class KeyTracker {
             AsyncMessageCallback[] callbacks = element.callbacks;
             // Ignore packet#
             if(logMINOR) Logger.minor(this, "Queueing resend of what was once "+element.packetNumber);
-            messages[i] = new MessageItem(buf, callbacks, true, 0, pn.node.nodeStats.resendByteCounter, element.priority);
+            messages[i] = new MessageItem(buf, callbacks, true, 0, pn.resendByteCounter, element.priority);
         }
         pn.requeueMessageItems(messages, 0, messages.length, true);
         
