@@ -121,16 +121,16 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			// We claim it in any case
 			return true;
-		}
-
-		if(!source.isRoutable()) return false;
-		if(Logger.shouldLog(Logger.DEBUG, this)) Logger.debug(this, "Not routable");
-
-		if(spec == DMT.FNPLocChangeNotification) {
+		} else if(source.isRealConnection() && spec == DMT.FNPLocChangeNotification) {
 			double newLoc = m.getDouble(DMT.LOCATION);
 			source.updateLocation(newLoc);
 			return true;
-		} else if(spec == DMT.FNPNetworkID) {
+		}
+		
+		if(!source.isRoutable()) return false;
+		if(Logger.shouldLog(Logger.DEBUG, this)) Logger.debug(this, "Not routable");
+
+		if(spec == DMT.FNPNetworkID) {
 			source.handleFNPNetworkID(m);
 			return true;
 		} else if(spec == DMT.FNPSwapRequest) {
