@@ -813,6 +813,7 @@ public class StatisticsToadlet extends Toadlet {
 			activityList.addChild("li", l10n("authBytes", "total", SizeUtil.formatSize(node.nodeStats.getTotalAuthBytesSent(), true)));
 			activityList.addChild("li", l10n("resendBytes", "total", SizeUtil.formatSize(node.nodeStats.getResendBytesSent(), true)));
 			activityList.addChild("li", l10n("uomBytes", "total",  SizeUtil.formatSize(node.nodeStats.getUOMBytesSent(), true)));
+			activityList.addChild("li", l10n("announceBytes", "total", SizeUtil.formatSize(node.nodeStats.getAnnounceBytesSent(), true)));
 		}
 	}
 

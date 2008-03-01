@@ -502,35 +502,14 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		om.sendAnnouncementReply(uid, next, ref, this);
 	}
 
-	private volatile Object totalBytesSync = new Object();
-	private int totalBytesSent;
-	
 	public void sentBytes(int x) {
-		synchronized(totalBytesSync) {
-			totalBytesSent += x;
-		}
+		node.nodeStats.announceByteCounter.sentBytes(x);
 	}
-	
-	public int getTotalSentBytes() {
-		synchronized(totalBytesSync) {
-			return totalBytesSent;
-		}
-	}
-	
-	private int totalBytesReceived;
 	
 	public void receivedBytes(int x) {
-		synchronized(totalBytesSync) {
-			totalBytesReceived += x;
-		}
+		node.nodeStats.announceByteCounter.receivedBytes(x);
 	}
 	
-	public int getTotalReceivedBytes() {
-		synchronized(totalBytesSync) {
-			return totalBytesReceived;
-		}
-	}
-
 	public void sentPayload(int x) {
 		// Doesn't count.
 	}

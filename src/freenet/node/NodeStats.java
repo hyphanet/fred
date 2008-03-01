@@ -1152,7 +1152,10 @@ public class NodeStats implements Persistable {
 		}
 
 		public void sentPayload(int x) {
-			// Ignore
+			Logger.error(this, "Payload sent in resendByteCounter????", new Exception("error"));
+			synchronized(NodeStats.this) {
+				resendBytesSent += x;
+			}
 		}
 		
 	};
@@ -1169,5 +1172,34 @@ public class NodeStats implements Persistable {
 	
 	public long getUOMBytesSent() {
 		return uomBytesSent;
+	}
+	
+	// Opennet-related bytes - *not* including bytes sent on requests, those are accounted towards
+	// the requests' totals.
+	
+	private long announceBytesSent;
+	
+	public final ByteCounter announceByteCounter = new ByteCounter() {
+
+		public void receivedBytes(int x) {
+			// Ignore
+		}
+
+		public void sentBytes(int x) {
+			synchronized(NodeStats.this) {
+				announceBytesSent += x;
+			}
+		}
+
+		public void sentPayload(int x) {
+			synchronized(NodeStats.this) {
+				announceBytesSent += x;
+			}
+		}
+		
+	};
+	
+	public long getAnnounceBytesSent() {
+		return announceBytesSent;
 	}
 }
