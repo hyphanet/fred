@@ -1918,8 +1918,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		Message dRouting = DMT.createRoutingStatus(!disableRoutingHasBeenSetLocally);
 
 		try {
-			//FIXME: Why is location only if routable, and the others not?
-			if(isRoutable())
+			if(isRealConnection())
 				sendAsync(locMsg, null, 0, null);
 			sendAsync(ipMsg, null, 0, null);
 			sendAsync(timeMsg, null, 0, null);
