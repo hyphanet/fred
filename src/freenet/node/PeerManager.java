@@ -23,6 +23,7 @@ import java.util.Vector;
 import java.util.ArrayList;
 
 import freenet.io.comm.AsyncMessageCallback;
+import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Message;
@@ -639,7 +640,7 @@ public class PeerManager {
     /**
      * Asynchronously send this message to every connected peer.
      */
-    public void localBroadcast(Message msg, boolean ignoreRoutability, boolean onlyRealConnections) {
+    public void localBroadcast(Message msg, boolean ignoreRoutability, boolean onlyRealConnections, ByteCounter ctr) {
         PeerNode[] peers;
         synchronized (this) {
         	// myPeers not connectedPeers as connectedPeers only contains
@@ -654,7 +655,7 @@ public class PeerManager {
         	}
         	if(onlyRealConnections && !peers[i].isRealConnection()) continue;
         	try {
-                peers[i].sendAsync(msg, null, 0, null);
+                peers[i].sendAsync(msg, null, 0, ctr);
             } catch (NotConnectedException e) {
                 // Ignore
             }

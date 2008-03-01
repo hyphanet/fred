@@ -574,7 +574,7 @@ public class LocationManager implements ByteCounter {
      */
     private void announceLocChange() {
         Message msg = DMT.createFNPLocChangeNotification(getLocation());
-        node.peers.localBroadcast(msg, false, true);
+        node.peers.localBroadcast(msg, false, true, this);
     }
     
     private boolean locked;
