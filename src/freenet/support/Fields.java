@@ -578,6 +578,7 @@ public abstract class Fields {
 		try {
 			return Long.parseLong(s);
 		} catch (NumberFormatException e) {
+			Logger.error(Fields.class, "Failed to parse value as long: "+s+" : "+e, e);
 			return defaultValue;
 		}
 	}
@@ -586,6 +587,7 @@ public abstract class Fields {
 		try {
 			return Integer.parseInt(s);
 		} catch (NumberFormatException e) {
+			Logger.error(Fields.class, "Failed to parse value as int: "+s+" : "+e, e);
 			return defaultValue;
 		}
 	}
@@ -594,6 +596,7 @@ public abstract class Fields {
 		try {
 			return Short.parseShort(s);
 		} catch (NumberFormatException e) {
+			Logger.error(Fields.class, "Failed to parse value as short: "+s+" : "+e, e);
 			return defaultValue;
 		}
 	}
