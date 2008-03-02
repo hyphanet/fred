@@ -597,17 +597,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				updateShortToString();
 				String tempTimeLastReceivedPacketString = metadata.get("timeLastReceivedPacket");
 				if(tempTimeLastReceivedPacketString != null) {
-					long tempTimeLastReceivedPacket = Long.parseLong(tempTimeLastReceivedPacketString);
+					long tempTimeLastReceivedPacket = Fields.parseLong(tempTimeLastReceivedPacketString, -1);
 					timeLastReceivedPacket = tempTimeLastReceivedPacket;
 				}
 				String tempTimeLastConnectedString = metadata.get("timeLastConnected");
 				if(tempTimeLastConnectedString != null) {
-					long tempTimeLastConnected = Long.parseLong(tempTimeLastConnectedString);
+					long tempTimeLastConnected = Fields.parseLong(tempTimeLastConnectedString, -1);
 					timeLastConnected = tempTimeLastConnected;
 				}
 				String tempTimeLastRoutableString = metadata.get("timeLastRoutable");
 				if(tempTimeLastRoutableString != null) {
-					long tempTimeLastRoutable = Long.parseLong(tempTimeLastRoutableString);
+					long tempTimeLastRoutable = Fields.parseLong(tempTimeLastRoutableString, -1);
 					timeLastRoutable = tempTimeLastRoutable;
 				}
 				if(timeLastConnected < 1 && timeLastReceivedPacket > 1)
@@ -616,7 +616,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					timeLastRoutable = timeLastReceivedPacket;
 				String tempPeerAddedTimeString = metadata.get("peerAddedTime");
 				if(tempPeerAddedTimeString != null) {
-					long tempPeerAddedTime = Long.parseLong(tempPeerAddedTimeString);
+					long tempPeerAddedTime = Fields.parseLong(tempPeerAddedTimeString, 0);
 					peerAddedTime = tempPeerAddedTime;
 				} else
 					peerAddedTime = 0;
@@ -627,13 +627,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					peerAddedTime = 0;
 				String tempHadRoutableConnectionCountString = metadata.get("hadRoutableConnectionCount");
 				if(tempHadRoutableConnectionCountString != null) {
-					long tempHadRoutableConnectionCount = Long.parseLong(tempHadRoutableConnectionCountString);
+					long tempHadRoutableConnectionCount = Fields.parseLong(tempHadRoutableConnectionCountString, 0);
 					hadRoutableConnectionCount = tempHadRoutableConnectionCount;
 				} else
 					hadRoutableConnectionCount = 0;
 				String tempRoutableConnectionCheckCountString = metadata.get("routableConnectionCheckCount");
 				if(tempRoutableConnectionCheckCountString != null) {
-					long tempRoutableConnectionCheckCount = Long.parseLong(tempRoutableConnectionCheckCountString);
+					long tempRoutableConnectionCheckCount = Fields.parseLong(tempRoutableConnectionCheckCountString, 0);
 					routableConnectionCheckCount = tempRoutableConnectionCheckCount;
 				} else
 					routableConnectionCheckCount = 0;

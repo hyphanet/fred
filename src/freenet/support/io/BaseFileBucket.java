@@ -11,6 +11,7 @@ import java.util.Vector;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
+import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.StringArray;
@@ -449,7 +450,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		tmp = fs.get("Length");
 		if(tmp == null) throw new CannotCreateFromFieldSetException("No length");
 		try {
-			long length = Long.parseLong(tmp);
+			long length = Fields.parseLong(tmp, -1);
 			if(length !=  file.length())
 				throw new CannotCreateFromFieldSetException("Invalid length: should be "+length+" actually "+file.length()+" on "+file);
 		} catch (NumberFormatException e) {
