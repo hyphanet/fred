@@ -29,6 +29,10 @@ public class RealNodeTest {
 	
 	/*
 	 Borrowed from mrogers simulation code (February 6, 2008)
+	 --
+	 FIXME: May not generate good networks. Presumably this is because the arrays are always scanned
+	        [0..n], some nodes tend to have *much* higher connections than the degree (the first few),
+	        starving the latter ones.
 	 */
 	static void makeKleinbergNetwork (Node[] nodes, boolean idealLocations, int degree, boolean forceNeighbourConnections)
 	{
