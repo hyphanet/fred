@@ -137,7 +137,9 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
         	returnLocalData((KeyBlock)o);
             return;
         }
-        rs = (RequestSender) o;
+        synchronized(this) {
+        	rs = (RequestSender) o;
+        }
         rs.addListener(this);
         
         if(rs == null) { // ran out of htl?
