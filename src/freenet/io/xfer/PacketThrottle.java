@@ -254,4 +254,8 @@ public class PacketThrottle {
 		}
 		
 	}
+
+	public synchronized void maybeDisconnected() {
+		notifyAll();
+	}
 }

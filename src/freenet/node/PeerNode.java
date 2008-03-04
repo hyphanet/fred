@@ -1611,6 +1611,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			} else
 				return;
 		}
+		getThrottle().maybeDisconnected();
 		sendIPAddressMessage();
 	}
 

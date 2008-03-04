@@ -600,9 +600,20 @@ public class KeyTracker {
     		Logger.minor(this, "Executed "+cbCount+" callbacks");
     }
     
+    private PacketThrottle _lastThrottle;
+    
     PacketThrottle getThrottle() {
     	// pn.getPeer() cannot be null as it has already connected.
-    	return PacketThrottle.getThrottle(pn.getPeer(), Node.PACKET_SIZE);
+    	PacketThrottle newThrottle = PacketThrottle.getThrottle(pn.getPeer(), Node.PACKET_SIZE);
+    	PacketThrottle prevThrottle = null;
+    	synchronized(this) {
+    		if(newThrottle != _lastThrottle) {
+    			prevThrottle = _lastThrottle;
+    			_lastThrottle = newThrottle;
+    		} else return newThrottle;
+    	}
+    	prevThrottle.maybeDisconnected();
+    	return newThrottle;
 	}
 
 	/**
@@ -1000,6 +1011,8 @@ public class KeyTracker {
      * *** Must only be called if the KeyTracker is not to be kept. Otherwise, we may receive some packets twice. ***
      */
     public void completelyDeprecated(KeyTracker newTracker) {
+    	if(_lastThrottle != null)
+    		_lastThrottle.maybeDisconnected();
     	if(logMINOR) Logger.minor(this, "Completely deprecated: "+this+" in favour of "+newTracker);
     	LimitedRangeIntByteArrayMapElement[] elements = clear();
     	if(elements.length == 0) return; // nothing more to do
@@ -1022,6 +1035,8 @@ public class KeyTracker {
      * Dump all sent messages.
      */
     public void disconnected() {
+    	if(_lastThrottle != null)
+    		_lastThrottle.maybeDisconnected();
         // Clear everything, call the callbacks
     	LimitedRangeIntByteArrayMapElement[] elements = clear();
         for(int i=0;i<elements.length;i++) {
