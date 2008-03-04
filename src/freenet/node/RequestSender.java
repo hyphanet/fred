@@ -1094,7 +1094,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     	return successFrom;
     }
     
-    public PeerNode routedLast() {
+    public synchronized PeerNode routedLast() {
     	return lastNode;
     }
     
