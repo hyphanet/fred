@@ -283,7 +283,7 @@ public class NodeCrypto {
 	 */
 	SimpleFieldSet exportPublicFieldSet(boolean forSetup, boolean forAnonInitiator, boolean forARK) {
 		SimpleFieldSet fs = exportPublicCryptoFieldSet(forSetup, forAnonInitiator);
-		if((!forAnonInitiator) && (!forSetup) && !(forARK)) {
+		if((!forAnonInitiator) && (!forSetup)) {
 			// IP addresses
 			Peer[] ips = detector.detectPrimaryPeers();
 			if(ips != null) {
