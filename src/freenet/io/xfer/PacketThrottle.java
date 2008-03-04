@@ -160,6 +160,7 @@ public class PacketThrottle {
 	
 	public void sendThrottledMessage(Message msg, PeerContext peer, DoubleTokenBucket overallThrottle, int packetSize, ByteCounter ctr) throws NotConnectedException {
 		long start = System.currentTimeMillis();
+		long bootID = peer.getBootID();
 		synchronized(this) {
 			while(true) {
 				int windowSize = (int) getWindowSize();
@@ -179,6 +180,8 @@ public class PacketThrottle {
 				} catch (InterruptedException e) {
 					// Ignore
 				}
+				if(!peer.isConnected()) throw new NotConnectedException();
+				if(bootID != peer.getBootID()) throw new NotConnectedException();
 			}
 		}
 		long waitTime = System.currentTimeMillis() - start;
