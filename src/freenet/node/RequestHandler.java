@@ -137,10 +137,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
         	returnLocalData((KeyBlock)o);
             return;
         }
-        synchronized(this) {
-        	rs = (RequestSender) o;
-        }
-        rs.addListener(this);
         
         if(rs == null) { // ran out of htl?
             Message dnf = DMT.createFNPDataNotFound(uid);
@@ -148,11 +144,15 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
             node.failureTable.onFinalFailure(key, null, htl, FailureTable.REJECT_TIME, source);
             sendTerminal(dnf);
             return;
+        } else {
+            synchronized(this) {
+            	rs = (RequestSender) o;
+                //If we cannot respond before this time, the 'source' node has already fatally timed out (and we need not return packets which will not be claimed)
+        		searchStartTime = System.currentTimeMillis();
+        		responseDeadline = searchStartTime + RequestSender.FETCH_TIMEOUT + source.getProbableSendQueueTime();
+            }
+            rs.addListener(this);
         }
-        
-        //If we cannot respond before this time, the 'source' node has already fatally timed out (and we need not return packets which will not be claimed)
-		searchStartTime = System.currentTimeMillis();
-		responseDeadline = searchStartTime + RequestSender.FETCH_TIMEOUT + source.getProbableSendQueueTime();
 	}
 		
 	public void onReceivedRejectOverload() {
