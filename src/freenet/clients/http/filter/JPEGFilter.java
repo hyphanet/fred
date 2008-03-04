@@ -17,7 +17,6 @@ import java.util.HashMap;
 
 import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
-import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;

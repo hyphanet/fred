@@ -162,7 +162,6 @@ public class PacketThrottle {
 	public void sendThrottledMessage(Message msg, PeerContext peer, DoubleTokenBucket overallThrottle, int packetSize, ByteCounter ctr) throws NotConnectedException, ThrottleDeprecatedException {
 		long start = System.currentTimeMillis();
 		long bootID = peer.getBootID();
-		PacketThrottle deprecatedFor = null;
 		synchronized(this) {
 			while(true) {
 				int windowSize = (int) getWindowSize();

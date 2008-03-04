@@ -32,7 +32,6 @@ import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
 import freenet.node.PrioRunnable;
 import freenet.support.BitArray;
-import freenet.support.DoubleTokenBucket;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;

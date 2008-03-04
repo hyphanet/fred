@@ -58,7 +58,6 @@ import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.keys.USK;
 import freenet.support.Base64;
-import freenet.support.DoubleTokenBucket;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;

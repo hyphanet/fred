@@ -12,7 +12,6 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.support.BitArray;
-import freenet.support.DoubleTokenBucket;
 import freenet.support.Logger;
 
 /**
