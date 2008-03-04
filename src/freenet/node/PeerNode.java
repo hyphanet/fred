@@ -3642,7 +3642,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 	
 	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr) throws NotConnectedException {
-		while(true) {
+		for(int i=0;i<100;i++) {
 			try {
 		getThrottle().sendThrottledMessage(msg, this, node.outputThrottle, packetSize, ctr);
 		return;
@@ -3651,5 +3651,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			continue;
 		}
 		}
+		Logger.error(this, "Peer constantly changes its IP address!!: "+shortToString());
+		forceDisconnect(true);
 	}
 }
