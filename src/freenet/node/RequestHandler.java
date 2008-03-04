@@ -132,12 +132,13 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
         Message accepted = DMT.createFNPAccepted(uid);
         source.sendAsync(accepted, null, 0, this);
         
-        Object o = node.makeRequestSender(key, htl, uid, source, false, true, false, false, this);
+        Object o = node.makeRequestSender(key, htl, uid, source, false, true, false, false);
         if(o instanceof KeyBlock) {
         	returnLocalData((KeyBlock)o);
             return;
         }
         rs = (RequestSender) o;
+        rs.addListener(this);
         
         if(rs == null) { // ran out of htl?
             Message dnf = DMT.createFNPDataNotFound(uid);
