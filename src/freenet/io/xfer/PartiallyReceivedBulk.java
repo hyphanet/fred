@@ -94,6 +94,10 @@ public class PartiallyReceivedBulk {
 	 * @param offset The start of the data in the buffer.
 	 */
 	void received(int blockNum, byte[] data, int offset, int length) {
+		if(blockNum > blocks) {
+			Logger.error(this, "Received block "+blockNum+" of "+blocks+" !");
+			return;
+		}
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Received block "+blockNum);
 		BulkTransmitter[] notifyBTs;
