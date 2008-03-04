@@ -6,6 +6,8 @@ package freenet.io.xfer;
  */
 public class ThrottleDeprecatedException extends Exception {
 
+	private static final long serialVersionUID = -4542976419025644806L;
+
 	ThrottleDeprecatedException(PacketThrottle target) {
 		this.target = target;
 	}
