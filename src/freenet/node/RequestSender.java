@@ -417,6 +417,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 node.failureTable.onFinalFailure(key, null, htl, -1, source);
                 return;
             }
+            
+            synchronized(this) {
+            	lastNode = next;
+            }
 			
             if(logMINOR) Logger.minor(this, "Routing request to "+next);
             nodesRoutedTo.add(next);
@@ -952,7 +956,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             notifyAll();
             if(status == SUCCESS)
             	successFrom = next;
-            lastNode = next;
         }
 		
         if(status == SUCCESS) {
