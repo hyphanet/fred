@@ -220,7 +220,12 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		long now = System.currentTimeMillis();
 		this.status=status;
 		
-		if (now > responseDeadline) {
+		boolean tooLate;
+		synchronized(this) {
+			tooLate = now > responseDeadline;
+		}
+		
+		if (tooLate) {
 			// Offer the data if there is any.
 			node.failureTable.onFinalFailure(key, null, htl, -1, source);
 			PeerNode routedLast = rs == null ? null : rs.routedLast();
