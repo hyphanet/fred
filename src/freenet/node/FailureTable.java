@@ -244,10 +244,6 @@ public class FailureTable {
 		if(!node.enableULPRDataPropagation) return;
 		if(logMINOR)
 			Logger.minor(this, "Offered key "+key+" by peer "+peer);
-		if(node.hasKey(key)) {
-			Logger.minor(this, "Already have key");
-			return;
-		}
 		FailureTableEntry entry;
 		long now = System.currentTimeMillis();
 		synchronized(this) {
@@ -257,6 +253,11 @@ public class FailureTable {
 				return; // we haven't asked for it
 			}
 		}
+		//NB: node.hasKey() executes a datastore fetch
+		if(node.hasKey(key)) {
+			Logger.minor(this, "Already have key");
+			return;
+		}		
 		/*
 		 * Accept (subject to later checks) if we asked for it.
 		 * Should we accept it if we were asked for it? This is "bidirectional propagation".
