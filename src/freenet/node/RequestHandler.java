@@ -145,11 +145,12 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
             sendTerminal(dnf);
             return;
         } else {
+        	long queueTime = source.getProbableSendQueueTime();
             synchronized(this) {
             	rs = (RequestSender) o;
                 //If we cannot respond before this time, the 'source' node has already fatally timed out (and we need not return packets which will not be claimed)
         		searchStartTime = System.currentTimeMillis();
-        		responseDeadline = searchStartTime + RequestSender.FETCH_TIMEOUT + source.getProbableSendQueueTime();
+        		responseDeadline = searchStartTime + RequestSender.FETCH_TIMEOUT + queueTime;
             }
             rs.addListener(this);
         }
