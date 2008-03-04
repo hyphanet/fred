@@ -55,6 +55,7 @@ public class PacketThrottle {
 	/** Last time (seqno) we checked whether the window was full, or dropped a packet. */
 	private long _packetSeqWindowFullChecked;
 	private static boolean logMINOR;
+	private PacketThrottle _deprecatedFor;
 
 	/**
 	 * Create a PacketThrottle for a given peer.
@@ -161,6 +162,7 @@ public class PacketThrottle {
 	public void sendThrottledMessage(Message msg, PeerContext peer, DoubleTokenBucket overallThrottle, int packetSize, ByteCounter ctr) throws NotConnectedException {
 		long start = System.currentTimeMillis();
 		long bootID = peer.getBootID();
+		PacketThrottle deprecatedFor = null;
 		synchronized(this) {
 			while(true) {
 				int windowSize = (int) getWindowSize();
@@ -182,7 +184,16 @@ public class PacketThrottle {
 				}
 				if(!peer.isConnected()) throw new NotConnectedException();
 				if(bootID != peer.getBootID()) throw new NotConnectedException();
+				if(_deprecatedFor != null) {
+					deprecatedFor = _deprecatedFor;
+					break;
+				}
 			}
+		}
+		if(deprecatedFor != null) {
+			// FIXME infinite recursion may be possible here??
+			deprecatedFor.sendThrottledMessage(msg, peer, overallThrottle, packetSize, ctr);
+			return;
 		}
 		long waitTime = System.currentTimeMillis() - start;
 		if(waitTime > 60*1000)
@@ -256,6 +267,11 @@ public class PacketThrottle {
 	}
 
 	public synchronized void maybeDisconnected() {
+		notifyAll();
+	}
+
+	public synchronized void changedAddress(PacketThrottle newThrottle) {
+		_deprecatedFor = newThrottle;
 		notifyAll();
 	}
 }
