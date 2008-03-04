@@ -69,10 +69,9 @@ public abstract class SendableGet extends SendableRequest {
 					return false;
 				}
 			}
-			ClientKeyBlock block;
 			try {
 				try {
-					block = core.realGetKey(key, ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
+					core.realGetKey(key, ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
 				} catch (LowLevelGetException e) {
 					onFailure(e, keyNum, sched);
 					return true;
