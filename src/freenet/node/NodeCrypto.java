@@ -258,7 +258,7 @@ public class NodeCrypto {
 	}
 	
 	public SimpleFieldSet exportPrivateFieldSet() {
-		SimpleFieldSet fs = exportPublicFieldSet(false, false);
+		SimpleFieldSet fs = exportPublicFieldSet(false, false, false);
 		addPrivateFields(fs);
 		return fs;
 	}
@@ -269,7 +269,7 @@ public class NodeCrypto {
 	 * @see exportPublicFieldSet(boolean forSetup).
 	 */
 	public SimpleFieldSet exportPublicFieldSet() {
-		return exportPublicFieldSet(false, false);
+		return exportPublicFieldSet(false, false, false);
 	}
 	
 	/**
@@ -281,9 +281,9 @@ public class NodeCrypto {
 	 * exchange. Minimal noderef which we can construct a PeerNode from. Short lived so no ARK etc.
 	 * Already signed so dump the signature.
 	 */
-	SimpleFieldSet exportPublicFieldSet(boolean forSetup, boolean forAnonInitiator) {
+	SimpleFieldSet exportPublicFieldSet(boolean forSetup, boolean forAnonInitiator, boolean forARK) {
 		SimpleFieldSet fs = exportPublicCryptoFieldSet(forSetup, forAnonInitiator);
-		if(!forAnonInitiator) {
+		if((!forAnonInitiator) && (!forSetup) && !(forARK)) {
 			// IP addresses
 			Peer[] ips = detector.detectPrimaryPeers();
 			if(ips != null) {
@@ -366,8 +366,8 @@ public class NodeCrypto {
 		}
 	}
 
-	private byte[] myCompressedRef(boolean setup, boolean heavySetup) {
-		SimpleFieldSet fs = exportPublicFieldSet(setup, heavySetup);
+	private byte[] myCompressedRef(boolean setup, boolean heavySetup, boolean forARK) {
+		SimpleFieldSet fs = exportPublicFieldSet(setup, heavySetup, forARK);
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DeflaterOutputStream gis;
 		gis = new DeflaterOutputStream(baos);
@@ -394,7 +394,7 @@ public class NodeCrypto {
 	 * @see exportSetupFieldSet()
 	 */
 	public byte[] myCompressedSetupRef() {
-		return myCompressedRef(true, false);
+		return myCompressedRef(true, false, false);
 	}
 
 	/**
@@ -403,7 +403,7 @@ public class NodeCrypto {
 	 * @see exportSetupFieldSet()
 	 */
 	public byte[] myCompressedHeavySetupRef() {
-		return myCompressedRef(false, true);
+		return myCompressedRef(false, true, false);
 	}
 
 	/**
@@ -411,7 +411,7 @@ public class NodeCrypto {
 	 * @see exportSetupFieldSet()
 	 */
 	public byte[] myCompressedFullRef() {
-		return myCompressedRef(false, false);
+		return myCompressedRef(false, false, false);
 	}
 	
 	void addPrivateFields(SimpleFieldSet fs) {

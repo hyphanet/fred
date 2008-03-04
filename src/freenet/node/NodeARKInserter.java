@@ -65,7 +65,7 @@ public class NodeARKInserter implements ClientCallback {
 		if(!checkIPUpdated()) return;
 		// We'll broadcast the new physical.udp entry to our connected peers via a differential node reference
 		// We'll err on the side of caution and not update our peer to an empty physical.udp entry using a differential node reference
-		SimpleFieldSet nfs = crypto.exportPublicFieldSet(true, false); // More or less
+		SimpleFieldSet nfs = crypto.exportPublicFieldSet(false, false, true);
 		String[] entries = nfs.getAll("physical.udp");
 		if(entries != null) {
 			SimpleFieldSet fs = new SimpleFieldSet(true);
@@ -127,7 +127,7 @@ public class NodeARKInserter implements ClientCallback {
 		
 		if(logMINOR) Logger.minor(this, "starting " + darknetOpennetString + " ARK inserter");
 		
-		SimpleFieldSet fs = crypto.exportPublicFieldSet(true, false); // More or less
+		SimpleFieldSet fs = crypto.exportPublicFieldSet(false, false, true);
 		
 		// Remove some unnecessary fields that only cause collisions.
 		
