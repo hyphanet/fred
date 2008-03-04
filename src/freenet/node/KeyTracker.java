@@ -612,7 +612,8 @@ public class KeyTracker {
     			_lastThrottle = newThrottle;
     		} else return newThrottle;
     	}
-    	prevThrottle.changedAddress(newThrottle);
+    	if(prevThrottle != null)
+    		prevThrottle.changedAddress(newThrottle);
     	return newThrottle;
 	}
 
