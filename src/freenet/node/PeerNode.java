@@ -1122,6 +1122,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		node.failureTable.onDisconnect(this);
 		node.peers.disconnected(this);
 		boolean ret;
+		KeyTracker cur, prev, unv;
 		synchronized(this) {
 			ret = isConnected;
 			// Force renegotiation.
@@ -1129,12 +1130,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			isRoutable = false;
 			isRekeying = false;
 			// Prevent sending packets to the node until that happens.
-			if(currentTracker != null)
-				currentTracker.disconnected();
-			if(previousTracker != null)
-				previousTracker.disconnected();
-			if(unverifiedTracker != null)
-				unverifiedTracker.disconnected();
+			cur = currentTracker;
+			prev = previousTracker;
+			unv = unverifiedTracker;
 			if(dumpTrackers) {
 				currentTracker = null;
 				previousTracker = null;
@@ -1152,6 +1150,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				}
 			}
 		}
+		if(cur != null) cur.disconnected();
+		if(prev != null) prev.disconnected();
+		if(unv != null) unv.disconnected();
 		node.lm.lostOrRestartedNode(this);
 		setPeerNodeStatus(now);
 		if(!dumpMessageQueue) {
