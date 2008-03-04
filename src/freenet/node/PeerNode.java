@@ -57,6 +57,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.keys.USK;
 import freenet.support.Base64;
+import freenet.support.DoubleTokenBucket;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
@@ -3639,4 +3640,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return resendBytesSent;
 	}
 	
+	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr) throws NotConnectedException {
+		getThrottle().sendThrottledMessage(msg, this, node.outputThrottle, packetSize, ctr);
+	}
 }

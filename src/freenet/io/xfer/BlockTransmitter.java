@@ -59,19 +59,17 @@ public class BlockTransmitter {
 	private BitArray _sentPackets;
 	final PacketThrottle throttle;
 	private long timeAllSent = -1;
-	final DoubleTokenBucket _masterThrottle;
 	final ByteCounter _ctr;
 	final int PACKET_SIZE;
 	private boolean asyncExitStatus;
 	private boolean asyncExitStatusSet;
 	
-	public BlockTransmitter(MessageCore usm, PeerContext destination, long uid, PartiallyReceivedBlock source, DoubleTokenBucket masterThrottle, ByteCounter ctr) {
+	public BlockTransmitter(MessageCore usm, PeerContext destination, long uid, PartiallyReceivedBlock source, ByteCounter ctr) {
 		_usm = usm;
 		_destination = destination;
 		_uid = uid;
 		_prb = source;
 		_ctr = ctr;
-		_masterThrottle = masterThrottle;
 		PACKET_SIZE = DMT.packetTransmitSize(_prb._packetSize, _prb._packets)
 			+ destination.getOutgoingMangler().fullHeadersLengthOneMessage();
 		try {
@@ -100,8 +98,7 @@ public class BlockTransmitter {
 					}
 					int totalPackets;
 					try {
-						throttle.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), 
-								_destination, _masterThrottle, _prb._packetSize, _ctr);
+						_destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr);
 						if(_ctr != null) _ctr.sentPayload(_prb._packetSize);
 						totalPackets=_prb.getNumPackets();
 					} catch (NotConnectedException e) {

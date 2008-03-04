@@ -46,7 +46,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		
 		BackgroundTransfer(PeerNode pn, PartiallyReceivedBlock prb) {
 			this.pn = pn;
-			bt = new BlockTransmitter(node.usm, pn, uid, prb, node.outputThrottle, CHKInsertSender.this);
+			bt = new BlockTransmitter(node.usm, pn, uid, prb, CHKInsertSender.this);
 		}
 		
 		void start() {

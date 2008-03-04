@@ -39,8 +39,6 @@ public class BulkTransmitter {
 	private boolean cancelled;
 	/** Not persistent over reboots */
 	final long peerBootID;
-	/** The overall hard bandwidth limiter */
-	final DoubleTokenBucket masterThrottle;
 	private boolean sentCancel;
 	private boolean finished;
 	final int packetSize;
@@ -59,11 +57,10 @@ public class BulkTransmitter {
 	 * @param noWait If true, don't wait for an FNPBulkReceivedAll, return as soon as we've sent everything.
 	 * @throws DisconnectedException If the peer we are trying to send to becomes disconnected.
 	 */
-	public BulkTransmitter(PartiallyReceivedBulk prb, PeerContext peer, long uid, DoubleTokenBucket masterThrottle, boolean noWait, ByteCounter ctr) throws DisconnectedException {
+	public BulkTransmitter(PartiallyReceivedBulk prb, PeerContext peer, long uid, boolean noWait, ByteCounter ctr) throws DisconnectedException {
 		this.prb = prb;
 		this.peer = peer;
 		this.uid = uid;
-		this.masterThrottle = masterThrottle;
 		this.noWait = noWait;
 		this.ctr = ctr;
 		peerBootID = peer.getBootID();
@@ -247,8 +244,7 @@ public class BulkTransmitter {
 			
 			// Congestion control and bandwidth limiting
 			try {
-				peer.getThrottle().sendThrottledMessage(DMT.createFNPBulkPacketSend(uid, blockNo, buf), peer, 
-						masterThrottle, prb.blockSize, ctr);
+				peer.sendThrottledMessage(DMT.createFNPBulkPacketSend(uid, prb.blockSize, buf), packetSize, ctr);
 				if(ctr != null) ctr.sentPayload(prb.blockSize);
 				synchronized(this) {
 					blocksNotSentButPresent.setBit(blockNo, false);
