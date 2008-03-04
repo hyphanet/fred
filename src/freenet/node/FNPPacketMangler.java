@@ -1301,7 +1301,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(pn.jfkMyRef, 0, locallyGeneratedText, bufferOffset, pn.jfkMyRef.length);
 		byte[] messageHash = SHA256.digest(locallyGeneratedText);
 		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, messageHash), false)) {
-			Logger.error(this, "The signature verification has failed!! JFK(4) -"+pn.getPeer()+" message hash "+HexUtil.bytesToHex(messageHash)+" length "+locallyGeneratedText.length+" hisRef "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" myRef "+pn.jfkMyRef.length+" hash "+Fields.hashCode(pn.jfkMyRef)+" boot ID "+bootID);
+			String error = "The signature verification has failed!! JFK(4) -"+pn.getPeer()+" message hash "+HexUtil.bytesToHex(messageHash)+" length "+locallyGeneratedText.length+" hisRef "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" myRef "+pn.jfkMyRef.length+" hash "+Fields.hashCode(pn.jfkMyRef)+" boot ID "+bootID;
+			if(bothNoderefs)
+				Logger.normal(this, error);
+			else
+				Logger.error(this, error);
 			return false;
 		}
 		
