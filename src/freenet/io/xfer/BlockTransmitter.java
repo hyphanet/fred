@@ -317,6 +317,6 @@ public class BlockTransmitter {
 	}
 	
 	public String toString() {
-		return "BlockTransmitter:"+_uid;
+		return "BlockTransmitter:"+_uid+" to "+_destination.shortToString();
 	}
 }
