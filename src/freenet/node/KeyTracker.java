@@ -1012,8 +1012,11 @@ public class KeyTracker {
      * *** Must only be called if the KeyTracker is not to be kept. Otherwise, we may receive some packets twice. ***
      */
     public void completelyDeprecated(KeyTracker newTracker) {
-    	if(_lastThrottle != null)
-    		_lastThrottle.maybeDisconnected();
+    	PacketThrottle throttle;
+    	synchronized(this) {
+    		throttle = _lastThrottle;
+    	}
+    	if(throttle != null) throttle.maybeDisconnected();
     	if(logMINOR) Logger.minor(this, "Completely deprecated: "+this+" in favour of "+newTracker);
     	LimitedRangeIntByteArrayMapElement[] elements = clear();
     	if(elements.length == 0) return; // nothing more to do
