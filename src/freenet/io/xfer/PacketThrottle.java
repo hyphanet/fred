@@ -159,7 +159,7 @@ public class PacketThrottle {
 		return ((PACKET_SIZE * 1000.0 / getDelay()));
 	}
 	
-	public void sendThrottledMessage(Message msg, PeerContext peer, DoubleTokenBucket overallThrottle, int packetSize, ByteCounter ctr) throws NotConnectedException {
+	public void sendThrottledMessage(Message msg, PeerContext peer, DoubleTokenBucket overallThrottle, int packetSize, ByteCounter ctr) throws NotConnectedException, ThrottleDeprecatedException {
 		long start = System.currentTimeMillis();
 		long bootID = peer.getBootID();
 		PacketThrottle deprecatedFor = null;
@@ -185,15 +185,9 @@ public class PacketThrottle {
 				if(!peer.isConnected()) throw new NotConnectedException();
 				if(bootID != peer.getBootID()) throw new NotConnectedException();
 				if(_deprecatedFor != null) {
-					deprecatedFor = _deprecatedFor;
-					break;
+					throw new ThrottleDeprecatedException(_deprecatedFor);
 				}
 			}
-		}
-		if(deprecatedFor != null) {
-			// FIXME infinite recursion may be possible here??
-			deprecatedFor.sendThrottledMessage(msg, peer, overallThrottle, packetSize, ctr);
-			return;
 		}
 		long waitTime = System.currentTimeMillis() - start;
 		if(waitTime > 60*1000)

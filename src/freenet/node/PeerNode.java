@@ -52,6 +52,7 @@ import freenet.io.comm.PortForwardSensitiveSocketHandler;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
 import freenet.io.xfer.PacketThrottle;
+import freenet.io.xfer.ThrottleDeprecatedException;
 import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
@@ -3641,6 +3642,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 	
 	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr) throws NotConnectedException {
+		while(true) {
+			try {
 		getThrottle().sendThrottledMessage(msg, this, node.outputThrottle, packetSize, ctr);
+		return;
+		} catch (ThrottleDeprecatedException e) {
+			// Try with the new throttle. We don't need it, we'll get it from getThrottle().
+			continue;
+		}
+		}
 	}
 }
