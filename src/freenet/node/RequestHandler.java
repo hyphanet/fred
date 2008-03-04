@@ -222,7 +222,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		
 		boolean tooLate;
 		synchronized(this) {
-			tooLate = now > responseDeadline;
+			tooLate = responseDeadline > 0 && now > responseDeadline;
 		}
 		
 		if (tooLate) {
