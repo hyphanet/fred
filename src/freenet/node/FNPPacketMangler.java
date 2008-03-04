@@ -1659,7 +1659,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		sock.sendPacket(data, replyTo, pn == null ? crypto.config.alwaysAllowLocalAddresses() : pn.allowLocalAddresses());
 		if(pn != null)
 			pn.reportOutgoingPacket(data, 0, data.length, System.currentTimeMillis());
-		node.outputThrottle.forceGrab(data.length - alreadyReportedBytes);
+		int reportableBytes = data.length - alreadyReportedBytes;
+		if(reportableBytes < 0) {
+			Logger.error(this, "alreadyReportedBytes ("+alreadyReportedBytes+")> data.length ("+data.length+")");
+			reportableBytes = 0;
+		}
+		node.outputThrottle.forceGrab(reportableBytes);
 	}
 
 	/**
@@ -2124,6 +2129,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 						try {
 							// FIXME regenerate callbacks and priority!
 							innerProcessOutgoing(messageData, lastIndex, i-lastIndex, length, pn, neverWaitForPacketNumber, callbacks, alreadyReportedBytes, priority);
+							alreadyReportedBytes = 0;
 							for(int j=lastIndex;j<i;j++) {
 								MessageItem mi = newMsgs[j];
 								mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
