@@ -282,7 +282,7 @@ public class NodeCrypto {
 	 * Already signed so dump the signature.
 	 */
 	SimpleFieldSet exportPublicFieldSet(boolean forSetup, boolean forAnonInitiator, boolean forARK) {
-		SimpleFieldSet fs = exportPublicCryptoFieldSet(forSetup, forAnonInitiator);
+		SimpleFieldSet fs = exportPublicCryptoFieldSet(forSetup || forARK, forAnonInitiator);
 		if((!forAnonInitiator) && (!forSetup)) {
 			// IP addresses
 			Peer[] ips = detector.detectPrimaryPeers();
