@@ -475,8 +475,10 @@ public class FCPServer implements Runnable {
 				}
 			} catch (IOException e) {
 				throw new InvalidConfigValueException(l10n("downloadsFileDoesNotExistCannotCreate")+ " : "+e.getLocalizedMessage());
+			} finally {
+				// Must be deleted, otherwise we will read from it and ignore the temp file => lose the queue.
+				f.delete();
 			}
-			f.delete();
 		}
 	}
 
