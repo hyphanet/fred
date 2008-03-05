@@ -92,6 +92,16 @@ public class RequestStarter implements Runnable {
 		// The last time at which we sent a request or decided not to
 		long cycleTime = sentRequestTime;
 		while(true) {
+			// Allow 5 minutes before we start killing requests due to not connecting.
+			if(System.currentTimeMillis() - startupTime < 300*1000 && core.node.peers.countConnectedDarknetPeers() + core.node.peers.countConnectedOpennetPeers() == 0) {
+				try {
+					wait(1000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				continue;
+			}
 			sched.moveKeysFromCooldownQueue();
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(req == null) req = sched.removeFirst();
@@ -182,7 +192,10 @@ public class RequestStarter implements Runnable {
 		}
 	}
 
+	private long startupTime;
+	
 	public void run() {
+		startupTime = System.currentTimeMillis();
 	    freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
 			try {
