@@ -138,7 +138,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
             return;
         }
         
-        if(rs == null) { // ran out of htl?
+        if(o == null) { // ran out of htl?
             Message dnf = DMT.createFNPDataNotFound(uid);
             status = RequestSender.DATA_NOT_FOUND; // for byte logging
             node.failureTable.onFinalFailure(key, null, htl, FailureTable.REJECT_TIME, source);
