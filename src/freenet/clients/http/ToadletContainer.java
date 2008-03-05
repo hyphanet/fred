@@ -44,4 +44,6 @@ public interface ToadletContainer {
 	public boolean doRobots();
 
 	public HTMLNode addFormChild(HTMLNode parentNode, String target, String name);
+
+	public boolean enablePersistentConnections();
 }

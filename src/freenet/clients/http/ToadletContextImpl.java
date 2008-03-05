@@ -272,7 +272,7 @@ public class ToadletContextImpl implements ToadletContext {
 					headers.put(before, after);
 				}
 				
-				boolean disconnect = shouldDisconnectAfterHandled(split[2].equals("HTTP/1.0"), headers);
+				boolean disconnect = shouldDisconnectAfterHandled(split[2].equals("HTTP/1.0"), headers) || !container.enablePersistentConnections();
 
 				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, bf, pageMaker, container);
 				ctx.shouldDisconnect = disconnect;

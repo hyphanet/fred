@@ -73,6 +73,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	private final Executor executor;
 	private boolean doRobots;
 	public BookmarkManager bookmarkManager;
+	private boolean enablePersistentConnections;
 	
 	static boolean isPanicButtonToBeShown;
 	public static final int DEFAULT_FPROXY_PORT = 8888;
@@ -346,6 +347,29 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 					else	SimpleToadletServer.isPanicButtonToBeShown = value;
 				}
 		});
+		
+		// This is OFF BY DEFAULT because for example firefox has a limit of 2 persistent 
+		// connections per server, but 8 non-persistent connections per server. We need 8 conns
+		// more than we need the efficiency gain of reusing connections - especially on first
+		// install.
+		
+		fproxyConfig.register("enablePersistentConnections", false, configItemOrder++, false, false, "SimpleToadletServer.enablePersistentConnections", "SimpleToadletServer.enablePersistentConnectionsLong",
+				new BooleanCallback() {
+
+					public boolean get() {
+						synchronized(SimpleToadletServer.this) {
+							return enablePersistentConnections;
+						}
+					}
+
+					public void set(boolean val) throws InvalidConfigValueException {
+						synchronized(SimpleToadletServer.this) {
+							enablePersistentConnections = val;
+						}
+					}
+		});
+		enablePersistentConnections = fproxyConfig.getBoolean("enablePersistentConnections");
+				
 		fproxyConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "SimpleToadletServer.allowedHosts", "SimpleToadletServer.allowedHostsLong",
 				new FProxyAllowedHostsCallback());
 		fproxyConfig.register("allowedHostsFullAccess", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "SimpleToadletServer.allowedFullAccess", 
@@ -618,6 +642,10 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	public FreenetURI[] getBookmarkURIs() {
 		if(bookmarkManager == null) return new FreenetURI[0];
 		return bookmarkManager.getBookmarkURIs();
+	}
+
+	public boolean enablePersistentConnections() {
+		return enablePersistentConnections;
 	}
 	
 }
