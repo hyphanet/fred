@@ -681,7 +681,10 @@ public class FCPServer implements Runnable {
 			gis = new GZIPInputStream(fis);
 			bis = new BufferedInputStream(gis);
 			Logger.normal(this, "Loading persistent requests from "+file);
-			loadPersistentRequests(bis);
+			if(file.length() > 0)
+				loadPersistentRequests(bis);
+			else
+				throw new IOException("File empty"); // If it's empty, try the temp file.
 		} catch (IOException e) {
 			Logger.error(this, "IOE : " + e.getMessage(), e);
 			File file = new File(persistentDownloadsTempFile+".gz");
