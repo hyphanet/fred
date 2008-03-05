@@ -95,7 +95,9 @@ public class RequestStarter implements Runnable {
 			// Allow 5 minutes before we start killing requests due to not connecting.
 			if(System.currentTimeMillis() - startupTime < 300*1000 && core.node.peers.countConnectedDarknetPeers() + core.node.peers.countConnectedOpennetPeers() == 0) {
 				try {
-					wait(1000);
+					synchronized(this) {
+						wait(1000);
+					}
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
