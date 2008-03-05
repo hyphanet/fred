@@ -178,6 +178,11 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 		queueURI(uri);
 		startSomeRequests();
 	}
+	
+	public void foundURI(FreenetURI uri, boolean inline) {
+		queueURI(uri);
+		startSomeRequests();
+	}
 
 	public void onText(String s, String type, URI baseURI) {
 

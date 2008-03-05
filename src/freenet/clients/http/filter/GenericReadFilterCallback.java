@@ -54,10 +54,10 @@ public class GenericReadFilterCallback implements FilterCallback {
 	}
 
 	public String processURI(String u, String overrideType) throws CommentException {
-		return processURI(u, overrideType, false);
+		return processURI(u, overrideType, false, false);
 	}
 	
-	public String processURI(String u, String overrideType, boolean noRelative) throws CommentException {
+	public String processURI(String u, String overrideType, boolean noRelative, boolean inline) throws CommentException {
 		URI uri;
 		URI resolved;
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -113,7 +113,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 				}
 				FreenetURI furi = new FreenetURI(p);
 				if(logMINOR) Logger.minor(this, "Parsed: "+furi);
-				return processURI(furi, uri, overrideType, noRelative);
+				return processURI(furi, uri, overrideType, noRelative, inline);
 			} catch (MalformedURLException e) {
 				// Not a FreenetURI
 				if(logMINOR) Logger.minor(this, "Malformed URL (a): "+e, e);
@@ -139,7 +139,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 				while(p.startsWith("/")) p = p.substring(1);
 				FreenetURI furi = new FreenetURI(p);
 				if(logMINOR) Logger.minor(this, "Parsed: "+furi);
-				return processURI(furi, uri, overrideType, noRelative);
+				return processURI(furi, uri, overrideType, noRelative, inline);
 			} catch (MalformedURLException e) {
 				if(logMINOR) Logger.minor(this, "Malformed URL (b): "+e, e);
 				if(e.getMessage() != null) {
@@ -201,18 +201,19 @@ public class GenericReadFilterCallback implements FilterCallback {
 		}
 	}
 
-	private String processURI(FreenetURI furi, URI uri, String overrideType, boolean noRelative) {
+	private String processURI(FreenetURI furi, URI uri, String overrideType, boolean noRelative, boolean inline) {
 		// Valid Freenet URI, allow it
 		// Now what about the queries?
 		HTTPRequest req = new HTTPRequestImpl(uri);
 		if(cb != null) cb.foundURI(furi);
+		if(cb != null) cb.foundURI(furi, inline);
 		return finishProcess(req, overrideType, '/' + furi.toString(false, false), uri, noRelative);
 	}
 
 	public String onBaseHref(String baseHref) {
 		String ret;
 		try {
-			ret = processURI(baseHref, null, true);
+			ret = processURI(baseHref, null, true, false);
 		} catch (CommentException e1) {
 			Logger.error(this, "Failed to parse base href: "+baseHref+" -> "+e1.getMessage());
 			ret = null;

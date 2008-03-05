@@ -4,6 +4,7 @@
 package freenet.client;
 
 import java.util.HashMap;
+import java.util.Set;
 
 import freenet.client.events.ClientEventListener;
 import freenet.keys.FreenetURI;
@@ -76,5 +77,13 @@ public interface HighLevelSimpleClient {
 	 * @return An array containing the insert and request URI
 	 */
 	public FreenetURI[] generateKeyPair(String docName);
+
+	/**
+	 * Prefetch a key at a very low priority. If it hasn't been fetched within the timeout, 
+	 * kill the fetch. 
+	 * @param uri
+	 * @param timeout
+	 */
+	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes);
 
 }

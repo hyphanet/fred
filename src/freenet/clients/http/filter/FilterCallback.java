@@ -15,6 +15,14 @@ public interface FilterCallback {
 	public String processURI(String uri, String overrideType) throws CommentException;
 
 	/**
+	 * Process a URI.
+	 * If it cannot be turned into something sufficiently safe, then return null.
+	 * @param overrideType Force the return type.
+	 * @throws CommentException If the URI is nvalid or unacceptable in some way.
+	 */
+	public String processURI(String uri, String overrideType, boolean noRelative, boolean inline) throws CommentException;
+
+	/**
 	 * Process a base URI in the page. Not only is this filtered, it affects all
 	 * relative uri's on the page.
 	 */

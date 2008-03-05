@@ -17,6 +17,13 @@ public interface FoundURICallback {
 	public void foundURI(FreenetURI uri);
 
 	/**
+	 * Called when a Freenet URI is found.
+	 * @param uri The URI.
+	 * FIXME: Indicate the type of the link e.g. inline image, hyperlink, etc??
+	 */
+	public void foundURI(FreenetURI uri, boolean inline);
+
+	/**
 	 * Called when some plain text is processed. This is used typically by
 	 * spiders to index pages by their content.
 	 * @param text The text. Will already have been fed through whatever decoding

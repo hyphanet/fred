@@ -21,4 +21,8 @@ public class NullFilterCallback implements FilterCallback {
 		return null;
 	}
 
+	public String processURI(String uri, String overrideType, boolean noRelative, boolean inline) throws CommentException {
+		return null;
+	}
+
 }

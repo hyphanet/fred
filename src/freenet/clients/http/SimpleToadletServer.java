@@ -74,6 +74,7 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	private boolean doRobots;
 	public BookmarkManager bookmarkManager;
 	private boolean enablePersistentConnections;
+	private boolean enableInlinePrefetch;
 	
 	static boolean isPanicButtonToBeShown;
 	public static final int DEFAULT_FPROXY_PORT = 8888;
@@ -369,7 +370,30 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 					}
 		});
 		enablePersistentConnections = fproxyConfig.getBoolean("enablePersistentConnections");
-				
+		
+		// Off by default.
+		// I had hoped it would yield a significant performance boost to bootstrap performance
+		// on browsers with low numbers of simultaneous connections. Unfortunately the bottleneck
+		// appears to be that the node does very few local requests compared to external requests
+		// (for anonymity's sake).
+		
+		fproxyConfig.register("enableInlinePrefetch", false, configItemOrder++, false, false, "SimpleToadletServer.enableInlinePrefetch", "SimpleToadletServer.enableInlinePrefetchLong",
+				new BooleanCallback() {
+
+					public boolean get() {
+						synchronized(SimpleToadletServer.this) {
+							return enableInlinePrefetch;
+						}
+					}
+
+					public void set(boolean val) throws InvalidConfigValueException {
+						synchronized(SimpleToadletServer.this) {
+							enableInlinePrefetch = val;
+						}
+					}
+		});
+		enableInlinePrefetch = fproxyConfig.getBoolean("enableInlinePrefetch");
+		
 		fproxyConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "SimpleToadletServer.allowedHosts", "SimpleToadletServer.allowedHostsLong",
 				new FProxyAllowedHostsCallback());
 		fproxyConfig.register("allowedHostsFullAccess", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "SimpleToadletServer.allowedFullAccess", 

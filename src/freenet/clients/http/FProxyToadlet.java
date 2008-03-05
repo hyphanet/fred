@@ -7,6 +7,8 @@ import java.net.MalformedURLException;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashSet;
+import java.util.Set;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchException;
@@ -14,6 +16,7 @@ import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.clients.http.filter.ContentFilter;
+import freenet.clients.http.filter.FoundURICallback;
 import freenet.clients.http.filter.UnsafeContentTypeException;
 import freenet.clients.http.filter.ContentFilter.FilterOutput;
 import freenet.config.Config;
@@ -40,6 +43,16 @@ public class FProxyToadlet extends Toadlet {
 	private static byte[] random;
 	final NodeClientCore core;
 	
+	private static FoundURICallback prefetchHook;
+	private static boolean ENABLE_PREFETCH = true;
+	static final Set prefetchAllowedTypes = new HashSet();
+	static {
+		// Only valid inlines
+		prefetchAllowedTypes.add("image/png");
+		prefetchAllowedTypes.add("image/jpeg");
+		prefetchAllowedTypes.add("image/gif");
+	}
+	
 	// ?force= links become invalid after 2 hours.
 	private static final long FORCE_GRAIN_INTERVAL = 60*60*1000;
 	/** Maximum size for transparent pass-through, should be a config option */
@@ -54,11 +67,30 @@ public class FProxyToadlet extends Toadlet {
 		}
 	}
 	
-	public FProxyToadlet(HighLevelSimpleClient client, NodeClientCore core) {
+	public FProxyToadlet(final HighLevelSimpleClient client, NodeClientCore core) {
 		super(client);
 		client.setMaxLength(MAX_LENGTH);
 		client.setMaxIntermediateLength(MAX_LENGTH);
 		this.core = core;
+		if(ENABLE_PREFETCH) {
+			prefetchHook = new FoundURICallback() {
+
+				public void foundURI(FreenetURI uri) {
+					// Ignore
+				}
+				
+				public void foundURI(FreenetURI uri, boolean inline) {
+					if(!inline) return;
+					if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Prefetching "+uri);
+					client.prefetch(uri, 60*1000, 512*1024, prefetchAllowedTypes);
+				}
+
+				public void onText(String text, String type, URI baseURI) {
+					// Ignore
+				}
+				
+			};
+		}
 	}
 	
 	public String supportedMethods() {
@@ -103,7 +135,7 @@ public class FProxyToadlet extends Toadlet {
 
 		try {
 			if((!force) && (!forceDownload)) {
-				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), null);
+				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), prefetchHook);
 				data = fo.data;
 				mimeType = fo.type;
 				

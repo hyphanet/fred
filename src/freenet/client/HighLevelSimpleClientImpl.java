@@ -5,8 +5,11 @@ package freenet.client;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Set;
 
 import freenet.client.async.BackgroundBlockEncoder;
+import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.client.async.HealingQueue;
@@ -20,10 +23,12 @@ import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
+import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
+import freenet.support.io.NullBucket;
 import freenet.support.io.NullPersistentFileTracker;
 import freenet.support.io.PersistentFileTracker;
 
@@ -206,6 +211,56 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	public FreenetURI[] generateKeyPair(String docName) {
 		InsertableClientSSK key = InsertableClientSSK.createRandom(random, docName);
 		return new FreenetURI[] { key.getInsertURI(), key.getURI() };
+	}
+
+	private final ClientCallback nullCallback = new ClientCallback() {
+
+		public void onFailure(FetchException e, ClientGetter state) {
+			// Ignore
+		}
+
+		public void onFailure(InsertException e, BaseClientPutter state) {
+			// Impossible
+		}
+
+		public void onFetchable(BaseClientPutter state) {
+			// Impossible
+		}
+
+		public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
+			// Impossible
+		}
+
+		public void onMajorProgress() {
+			// Ignore
+		}
+
+		public void onSuccess(FetchResult result, ClientGetter state) {
+			result.data.free();
+		}
+
+		public void onSuccess(BaseClientPutter state) {
+			// Impossible
+		}
+		
+	};
+	
+	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes) {
+		FetchContext ctx = getFetchContext(maxSize);
+		ctx.allowedMIMETypes = allowedTypes;
+		final ClientGetter get = new ClientGetter(nullCallback, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, ctx, RequestStarter.PREFETCH_PRIORITY_CLASS, this, new NullBucket(), null);
+		ctx.ticker.queueTimedJob(new Runnable() {
+
+			public void run() {
+				get.cancel();
+			}
+			
+		}, timeout);
+		try {
+			get.start();
+		} catch (FetchException e) {
+			// Ignore
+		}
 	}
 
 }
