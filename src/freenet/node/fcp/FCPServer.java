@@ -125,6 +125,8 @@ public class FCPServer implements Runnable {
 		
 		if(enabled && enablePersistentDownloads) {
 			loadPersistentRequests();
+		} else {
+			Logger.error(this, "Not loading persistent requests: enabled="+enabled+" enable persistent downloads="+enablePersistentDownloads);
 		}
 	}
 	
@@ -667,6 +669,7 @@ public class FCPServer implements Runnable {
 	}
 
 	private void loadPersistentRequests() {
+		Logger.normal(this, "Loading persistent requests...");
 		FileInputStream fis = null;
 		BufferedInputStream bis = null;
 		GZIPInputStream gis = null;
@@ -675,6 +678,7 @@ public class FCPServer implements Runnable {
 			fis = new FileInputStream(file);
 			gis = new GZIPInputStream(fis);
 			bis = new BufferedInputStream(gis);
+			Logger.normal(this, "Loading persistent requests from "+file);
 			loadPersistentRequests(bis);
 		} catch (IOException e) {
 			Logger.error(this, "IOE : " + e.getMessage(), e);
@@ -716,6 +720,7 @@ public class FCPServer implements Runnable {
 					System.out.println("Loading persistent request " + (i + 1) + " of " + count + "..."); // humans count from 1..
 					ClientRequest.readAndRegister(br, this);
 				}
+				Logger.normal(this, "Loaded "+count+" persistent requests");
 			}
 			finally {
 				Closer.close(br);
