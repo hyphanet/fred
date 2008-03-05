@@ -162,7 +162,7 @@ public class FailureTable {
 				if(idx > 0)
 					System.arraycopy(offers, 0, newOffers, 0, idx);
 				if(idx < newOffers.length)
-					System.arraycopy(offers, idx+1, newOffers, idx, offers.length-idx);
+					System.arraycopy(offers, idx+1, newOffers, idx, offers.length-idx-1);
 				offers = newOffers;
 			}
 			if(offers.length == 0) {
