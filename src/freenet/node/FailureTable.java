@@ -432,7 +432,7 @@ public class FailureTable {
 
 		public void sentPayload(int x) {
 			node.sentPayload(x);
-			node.nodeStats.offeredKeysSenderReceivedBytes(-x);
+			node.nodeStats.offeredKeysSenderSentBytes(-x);
 		}
 		
 	}
