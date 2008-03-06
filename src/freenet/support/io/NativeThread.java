@@ -38,7 +38,7 @@ public class NativeThread extends Thread {
 	
 	static {
 		Logger.minor(NativeThread.class, "Running init()");
-		_loadNative = !((File.pathSeparatorChar == '\\') || NodeStarter.extBuildNumber < 18);
+		_loadNative = (!(File.pathSeparatorChar == '\\')) || (NodeStarter.extBuildNumber < 18);
 		Logger.debug(NativeThread.class, "Run init(): should loadNative="+_loadNative);
 		if(_loadNative) {
 			//System.loadLibrary("NativeThread");
