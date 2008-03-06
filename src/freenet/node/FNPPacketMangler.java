@@ -2327,6 +2327,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		1 + // no forgotten packets
 		length; // the payload !
 
+		if(logMINOR) Logger.minor(this, "Pre-padding length: "+packetLength);
+		
 		// Padding
 		// This will do an adequate job of disguising the contents, and a poor (but not totally
 		// worthless) job of disguising the traffic. FIXME!!!!!
