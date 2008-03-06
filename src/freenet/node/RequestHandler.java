@@ -110,6 +110,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
                 		// Can report both parts, because we had both a Handler and a Sender
                 		node.nodeStats.successfulSskFetchBytesSentAverage.report(sent);
                 		node.nodeStats.successfulSskFetchBytesReceivedAverage.report(rcvd);
+                		// If rs == null, returnLocalData() will call sentPayload.
                         node.sentPayload(rs.getSSKData().length); // won't be sentPayload()ed by BlockTransmitter
                         sentPayload(rs.getSSKData().length);
                 	}
@@ -578,8 +579,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		if(block instanceof CHKBlock)
 			return DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
 		else if(block instanceof SSKBlock) {
-            // FIXME called before payload is actually sent
-			node.sentPayload(block.getRawData().length); // won't be sentPayload()ed by BlockTransmitter
 			return DMT.createFNPSSKDataFound(uid, block.getRawHeaders(), block.getRawData());
 		} else
 			throw new IllegalStateException("Unknown key block type: "+block.getClass());
