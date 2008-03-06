@@ -161,7 +161,7 @@ public class BlockTransmitter {
 					}
 				});
 			}
-			executor.execute(_senderThread, "BlockTransmitter sender for "+_uid);
+			executor.execute(_senderThread, toString());
 			
 			while (true) {
 				Message msg;
