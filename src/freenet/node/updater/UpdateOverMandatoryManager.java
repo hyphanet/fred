@@ -822,7 +822,7 @@ public class UpdateOverMandatoryManager {
 	private void cancelSend(PeerNode source, long uid) {
 		Message msg = DMT.createFNPBulkReceiveAborted(uid);
 		try {
-			source.sendAsync(msg, null, 0, null);
+			source.sendAsync(msg, null, 0, updateManager.ctr);
 		} catch (NotConnectedException e1) {
 			// Ignore
 		}

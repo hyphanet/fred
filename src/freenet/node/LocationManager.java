@@ -37,7 +37,7 @@ public class LocationManager implements ByteCounter {
         RecentlyForwardedItem item;
 
         public MyCallback(Message message, PeerNode pn, RecentlyForwardedItem item) {
-            super(message, pn);
+            super(message, pn, LocationManager.this);
             this.item = item;
         }
 
@@ -876,7 +876,7 @@ public class LocationManager implements ByteCounter {
                     // Forward the request.
                     // Note that we MUST NOT send this blocking as we are on the
                     // receiver thread.
-                    randomPeer.sendAsync(m, new MyCallback(DMT.createFNPSwapRejected(oldID), pn, item), 0, null);
+                    randomPeer.sendAsync(m, new MyCallback(DMT.createFNPSwapRejected(oldID), pn, item), 0, LocationManager.this);
                 } catch (NotConnectedException e) {
                 	if(logMINOR) Logger.minor(this, "Not connected");
                     // Try a different node
@@ -1048,7 +1048,7 @@ public class LocationManager implements ByteCounter {
         // Sending onwards - use outgoing ID
         m.set(DMT.UID, item.outgoingID);
         try {
-            item.routedTo.sendAsync(m, new SendMessageOnErrorCallback(DMT.createFNPSwapRejected(item.incomingID), item.requestSender), 0, this);
+            item.routedTo.sendAsync(m, new SendMessageOnErrorCallback(DMT.createFNPSwapRejected(item.incomingID), item.requestSender, this), 0, this);
         } catch (NotConnectedException e) {
         	if(logMINOR) Logger.minor(this, "Lost connection forwarding SwapCommit "+uid+" to "+item.routedTo);
         }
@@ -1192,7 +1192,7 @@ public class LocationManager implements ByteCounter {
             Message msg = DMT.createFNPSwapRejected(item.incomingID);
             if(logMINOR) Logger.minor(this, "Rejecting in lostOrRestartedNode: "+item.incomingID+ " from "+item.requestSender);
             try {
-                item.requestSender.sendAsync(msg, null, 0, null);
+                item.requestSender.sendAsync(msg, null, 0, this);
             } catch (NotConnectedException e1) {
                 Logger.normal(this, "Both sender and receiver disconnected for "+item);
             }

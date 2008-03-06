@@ -962,6 +962,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* throttle it).
 	*/
 	public void sendAsync(Message msg, AsyncMessageCallback cb, int alreadyReportedBytes, ByteCounter ctr) throws NotConnectedException {
+		if(ctr == null)
+			Logger.error(this, "Bytes not logged", new Exception("debug"));
 		if(logMINOR)
 			Logger.minor(this, "Sending async: " + msg + " : " + cb + " on " + this+" for "+node.getDarknetPortNumber());
 		if(!isConnected())
@@ -1922,11 +1924,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		try {
 			if(isRealConnection())
-				sendAsync(locMsg, null, 0, null);
-			sendAsync(ipMsg, null, 0, null);
-			sendAsync(timeMsg, null, 0, null);
-			sendAsync(packetsMsg, null, 0, null);
-			sendAsync(dRouting, null, 0, null);
+				sendAsync(locMsg, null, 0, node.nodeStats.initialMessagesCtr);
+			sendAsync(ipMsg, null, 0, node.nodeStats.initialMessagesCtr);
+			sendAsync(timeMsg, null, 0, node.nodeStats.initialMessagesCtr);
+			sendAsync(packetsMsg, null, 0, node.nodeStats.initialMessagesCtr);
+			sendAsync(dRouting, null, 0, node.nodeStats.initialMessagesCtr);
 		} catch(NotConnectedException e) {
 			Logger.error(this, "Completed handshake with " + getPeer() + " but disconnected (" + isConnected + ':' + currentTracker + "!!!: " + e, e);
 		}
@@ -1965,7 +1967,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private void sendIPAddressMessage() {
 		Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
 		try {
-			sendAsync(ipMsg, null, 0, null);
+			sendAsync(ipMsg, null, 0, node.nodeStats.changedIPCtr);
 		} catch(NotConnectedException e) {
 			Logger.normal(this, "Sending IP change message to " + this + " but disconnected: " + e, e);
 		}
@@ -3111,7 +3113,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		byte[] authenticator = HMAC.macWithSHA256(node.failureTable.offerAuthenticatorKey, keyBytes, 32);
 		Message msg = DMT.createFNPOfferKey(key, authenticator);
 		try {
-			sendAsync(msg, null, 0, null);
+			sendAsync(msg, null, 0, node.nodeStats.sendOffersCtr);
 		} catch(NotConnectedException e) {
 		// Ignore
 		}
@@ -3526,7 +3528,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			n2nm = DMT.createNodeToNodeMessage(
 					n2nType, fs.toString().getBytes("UTF-8"));
 			try {
-				sendAsync(n2nm, null, 0, null);
+				sendAsync(n2nm, null, 0, node.nodeStats.nodeToNodeCounter);
 			} catch (NotConnectedException e) {
 				if(includeSentTime) {
 					fs.removeValue("sentTime");
@@ -3601,9 +3603,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 	}
 	
-	void sendFNPNetworkID() throws NotConnectedException {
+	void sendFNPNetworkID(ByteCounter ctr) throws NotConnectedException {
 		if (assignedNetworkID!=0)
-			sendAsync(DMT.createFNPNetworkID(assignedNetworkID), null, 0, null);
+			sendAsync(DMT.createFNPNetworkID(assignedNetworkID), null, 0, ctr);
 	}
 
 	public boolean isLocalAddress() {

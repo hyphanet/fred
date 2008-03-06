@@ -83,7 +83,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		boolean hasForwarded = false;
 		if(source != null) {
 			try {
-				source.sendAsync(DMT.createFNPAccepted(uid), null, 0, null);
+				source.sendAsync(DMT.createFNPAccepted(uid), null, 0, this);
 			} catch (NotConnectedException e) {
 				return;
 			}

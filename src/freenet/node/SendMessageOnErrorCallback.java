@@ -4,6 +4,7 @@
 package freenet.node;
 
 import freenet.io.comm.AsyncMessageCallback;
+import freenet.io.comm.ByteCounter;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.support.Logger;
@@ -20,10 +21,12 @@ public class SendMessageOnErrorCallback implements AsyncMessageCallback {
     
     Message msg;
     PeerNode dest;
+    ByteCounter ctr;
     
-    public SendMessageOnErrorCallback(Message message, PeerNode pn) {
+    public SendMessageOnErrorCallback(Message message, PeerNode pn, ByteCounter ctr) {
         this.msg = message;
         this.dest = pn;
+        this.ctr = ctr;
         if(Logger.shouldLog(Logger.MINOR, this))
         	Logger.minor(this, "Created "+this);
     }
@@ -40,7 +43,7 @@ public class SendMessageOnErrorCallback implements AsyncMessageCallback {
     	if(Logger.shouldLog(Logger.MINOR, this))
     		Logger.minor(this, "Disconnect trigger: "+this);
         try {
-            dest.sendAsync(msg, null, 0, null);
+            dest.sendAsync(msg, null, 0, ctr);
         } catch (NotConnectedException e) {
         	if(Logger.shouldLog(Logger.MINOR, this))
         		Logger.minor(this, "Both source and destination disconnected: "+msg+" for "+this);

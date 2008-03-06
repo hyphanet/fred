@@ -488,7 +488,7 @@ public class PeerManager {
 				    	if(removePeer(pn))
 				    		writePeers();
 					}
-				}, 0, null);
+				}, 0, ctrDisconn);
 			} catch (NotConnectedException e) {
 		    	if(pn.isDisconnecting() && removePeer(pn))
 		    		writePeers();
@@ -506,6 +506,22 @@ public class PeerManager {
     	}
     }
 
+    private final ByteCounter ctrDisconn = new ByteCounter() {
+
+		public void receivedBytes(int x) {
+			node.nodeStats.disconnBytesReceived(x);
+		}
+
+		public void sentBytes(int x) {
+			node.nodeStats.disconnBytesSent(x);
+		}
+
+		public void sentPayload(int x) {
+			node.nodeStats.disconnBytesSent(x);
+		}
+    	
+    };
+    
     protected static class LocationUIDPair implements Comparable {
     	double location;
     	long uid;

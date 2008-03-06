@@ -393,7 +393,7 @@ public class FailureTable {
 				return;
 			}
 			Message df = DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
-			source.sendAsync(df, null, 0, null);
+			source.sendAsync(df, null, 0, senderCounter);
         	PartiallyReceivedBlock prb =
         		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
         	final BlockTransmitter bt =
@@ -418,7 +418,7 @@ public class FailureTable {
 		}
 	}
 	
-	private final OfferedKeysByteCounter senderCounter = new OfferedKeysByteCounter();
+	public final OfferedKeysByteCounter senderCounter = new OfferedKeysByteCounter();
 	
 	class OfferedKeysByteCounter implements ByteCounter {
 

@@ -8,6 +8,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 
 import freenet.crypt.HMAC;
+import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Dispatcher;
 import freenet.io.comm.Message;
@@ -51,6 +52,22 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		node.getTicker().queueTimedJob(this, STALE_CONTEXT_CHECK);
 	}
 
+	ByteCounter pingCounter = new ByteCounter() {
+
+		public void receivedBytes(int x) {
+			node.nodeStats.pingCounterReceived(x);
+		}
+
+		public void sentBytes(int x) {
+			node.nodeStats.pingCounterSent(x);
+		}
+
+		public void sentPayload(int x) {
+			node.nodeStats.pingCounterSent(x);
+		}
+		
+	};
+	
 	public boolean handleMessage(Message m) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		PeerNode source = (PeerNode)m.getSource();
@@ -64,7 +81,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			// Send an FNPPong
 			Message reply = DMT.createFNPPong(m.getInt(DMT.PING_SEQNO));
 			try {
-				source.sendAsync(reply, null, 0, null); // nothing we can do if can't contact source
+				source.sendAsync(reply, null, 0, pingCounter); // nothing we can do if can't contact source
 			} catch (NotConnectedException e) {
 				if(logMINOR) Logger.minor(this, "Lost connection replying to "+m);
 			}
@@ -73,7 +90,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			long id = m.getLong(DMT.PING_SEQNO);
 			Message msg = DMT.createFNPLinkPong(id);
 			try {
-				source.sendAsync(msg, null, 0, null);
+				source.sendAsync(msg, null, 0, pingCounter);
 			} catch (NotConnectedException e) {
 				// Ignore
 			}
@@ -193,7 +210,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		if(!HMAC.verifyWithSHA256(node.failureTable.offerAuthenticatorKey, key.getFullKey(), authenticator)) {
 			Logger.error(this, "Invalid offer request from "+source+" : authenticator did not verify");
 			try {
-				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_BAD_AUTHENTICATOR), null, 0, null);
+				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_BAD_AUTHENTICATOR), null, 0, node.failureTable.senderCounter);
 			} catch (NotConnectedException e) {
 				// Too bad.
 			}
@@ -213,7 +230,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			Logger.normal(this, "Rejecting FNPGetOfferedKey from "+source+" for "+key+" : "+reject);
 			Message rejected = DMT.createFNPRejectedOverload(uid, true);
 			try {
-				source.sendAsync(rejected, null, 0, null);
+				source.sendAsync(rejected, null, 0, node.failureTable.senderCounter);
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
@@ -288,10 +305,11 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	 */
 	private boolean handleDataRequest(Message m, PeerNode source, boolean isSSK) {
 		long id = m.getLong(DMT.UID);
+		ByteCounter ctr = isSSK ? node.nodeStats.sskRequestCtr : node.nodeStats.chkRequestCtr;
 		if(node.recentlyCompleted(id)) {
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
-				source.sendAsync(rejected, null, 0, null);
+				source.sendAsync(rejected, null, 0, ctr);
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting data request (loop, finished): "+e);
 			}
@@ -303,7 +321,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
-				source.sendAsync(rejected, null, 0, null);
+				source.sendAsync(rejected, null, 0, ctr);
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting request from "+source.getPeer()+": "+e);
 			}
@@ -318,7 +336,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			Logger.normal(this, "Rejecting request from "+source.getPeer()+" preemptively because "+rejectReason);
 			Message rejected = DMT.createFNPRejectedOverload(id, true);
 			try {
-				source.sendAsync(rejected, null, 0, null);
+				source.sendAsync(rejected, null, 0, ctr);
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
@@ -335,11 +353,12 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	}
 
 	private boolean handleInsertRequest(Message m, PeerNode source, boolean isSSK) {
+		ByteCounter ctr = isSSK ? node.nodeStats.sskInsertCtr : node.nodeStats.chkInsertCtr;
 		long id = m.getLong(DMT.UID);
 		if(node.recentlyCompleted(id)) {
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
-				source.sendAsync(rejected, null, 0, null);
+				source.sendAsync(rejected, null, 0, ctr);
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting insert request from "+source.getPeer()+": "+e);
 			}
@@ -349,7 +368,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
-				source.sendAsync(rejected, null, 0, null);
+				source.sendAsync(rejected, null, 0, ctr);
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting insert request from "+source.getPeer()+": "+e);
 			}
@@ -361,7 +380,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			Logger.normal(this, "Rejecting insert from "+source.getPeer()+" preemptively because "+rejectReason);
 			Message rejected = DMT.createFNPRejectedOverload(id, true);
 			try {
-				source.sendAsync(rejected, null, 0, null);
+				source.sendAsync(rejected, null, 0, ctr);
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) insert request from "+source.getPeer()+": "+e);
 			}
@@ -385,7 +404,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		if(node.recentlyCompleted(id)) {
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
-				source.sendAsync(rejected, null, 0, null);
+				source.sendAsync(rejected, null, 0, node.nodeStats.probeRequestCtr);
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting probe request from "+source.getPeer()+": "+e);
 			}
@@ -398,7 +417,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			Logger.normal(this, "Rejecting probe request from "+source.getPeer());
 			Message rejected = DMT.createFNPRejectedOverload(id, true);
 			try {
-				source.sendAsync(rejected, null, 0, null);
+				source.sendAsync(rejected, null, 0, node.nodeStats.probeRequestCtr);
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) insert request from "+source.getPeer()+": "+e);
 			}
@@ -409,7 +428,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			Logger.normal(this, "Rejecting invalid (target="+target+") probe request from "+source.getPeer());
 			Message rejected = DMT.createFNPRejectedOverload(id, true);
 			try {
-				source.sendAsync(rejected, null, 0, null);
+				source.sendAsync(rejected, null, 0, node.nodeStats.probeRequestCtr);
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (invalid) insert request from "+source.getPeer()+": "+e);
 			}
@@ -425,7 +444,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		if(om == null || !source.canAcceptAnnouncements()) {
 			Message msg = DMT.createFNPOpennetDisabled(uid);
 			try {
-				source.sendAsync(msg, null, 0, null);
+				source.sendAsync(msg, null, 0, node.nodeStats.announceByteCounter);
 			} catch (NotConnectedException e) {
 				// Ok
 			}
@@ -434,7 +453,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		if(node.recentlyCompleted(uid)) {
 			Message msg = DMT.createFNPRejectedLoop(uid);
 			try {
-				source.sendAsync(msg, null, 0, null);
+				source.sendAsync(msg, null, 0, node.nodeStats.announceByteCounter);
 			} catch (NotConnectedException e) {
 				// Ok
 			}
@@ -448,7 +467,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			if(!source.shouldAcceptAnnounce(uid)) {
 				Message msg = DMT.createFNPRejectedOverload(uid, true);
 				try {
-					source.sendAsync(msg, null, 0, null);
+					source.sendAsync(msg, null, 0, node.nodeStats.announceByteCounter);
 				} catch (NotConnectedException e) {
 					// Ok
 				}
@@ -530,7 +549,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			// Relay.
 			if(rc.source == null) {
 				try {
-					rc.source.sendAsync(DMT.createFNPRoutedRejected(id, (short)0), null, 0, null);
+					rc.source.sendAsync(DMT.createFNPRoutedRejected(id, (short)0), null, 0, nodeStats.routedMessageCtr);
 				} catch (NotConnectedException e) {
 					// Ouch.
 					Logger.error(this, "Unable to relay probe DNF: peer disconnected: "+rc.source);
@@ -563,7 +582,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		ctx = (RoutedContext)routedContexts.get(lid);
 		if(ctx != null) {
 			try {
-				source.sendAsync(DMT.createFNPRoutedRejected(id, (short)htl), null, 0, null);
+				source.sendAsync(DMT.createFNPRoutedRejected(id, (short)htl), null, 0, nodeStats.routedMessageCtr);
 			} catch (NotConnectedException e) {
 				if(logMINOR) Logger.minor(this, "Lost connection rejecting "+m);
 			}
@@ -585,7 +604,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		} else if(htl == 0) {
 			Message reject = DMT.createFNPRoutedRejected(id, (short)0);
 			if(source != null) try {
-				source.sendAsync(reject, null, 0, null);
+				source.sendAsync(reject, null, 0, nodeStats.routedMessageCtr);
 			} catch (NotConnectedException e) {
 				if(logMINOR) Logger.minor(this, "Lost connection rejecting "+m);
 			}
@@ -607,7 +626,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		PeerNode pn = ctx.source;
 		if(pn == null) return false;
 		try {
-			pn.sendAsync(m, null, 0, null);
+			pn.sendAsync(m, null, 0, nodeStats.routedMessageCtr);
 		} catch (NotConnectedException e) {
 			if(logMINOR) Logger.minor(this, "Lost connection forwarding "+m+" to "+pn);
 		}
@@ -632,7 +651,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				if(logMINOR) Logger.minor(this, "Forwarding "+m.getSpec()+" to "+next.getPeer().getPort());
 				ctx.addSent(next);
 				try {
-					next.sendAsync(m, null, 0, null);
+					next.sendAsync(m, null, 0, nodeStats.routedMessageCtr);
 				} catch (NotConnectedException e) {
 					continue;
 				}
@@ -641,7 +660,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				// Reached a dead end...
 				Message reject = DMT.createFNPRoutedRejected(id, htl);
 				if(pn != null) try {
-					pn.sendAsync(reject, null, 0, null);
+					pn.sendAsync(reject, null, 0, nodeStats.routedMessageCtr);
 				} catch (NotConnectedException e) {
 					Logger.error(this, "Cannot send reject message back to source "+pn);
 					return true;
@@ -677,7 +696,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			Message reply = DMT.createFNPRoutedPong(id, x);
 			if(logMINOR) Logger.minor(this, "Replying - counter = "+x+" for "+id);
 			try {
-				src.sendAsync(reply, null, 0, null);
+				src.sendAsync(reply, null, 0, nodeStats.routedMessageCtr);
 			} catch (NotConnectedException e) {
 				if(logMINOR) Logger.minor(this, "Lost connection replying to "+m+" in dispatchRoutedMessage");
 			}

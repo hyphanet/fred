@@ -276,14 +276,13 @@ public class DarknetPeerNode extends PeerNode {
 			ignoreSourcePort = setting;
 		}
 	}
-	
+
 	/**
 	 * Change the routing status of a peer
 	 * 
 	 * @param shouldRoute
 	 * @param localRequest (true everywhere but in NodeDispatcher)
 	 */
-	
 	public void setRoutingStatus(boolean shouldRoute, boolean localRequest) {
 		synchronized(this) {
 			if(localRequest)
@@ -297,7 +296,7 @@ public class DarknetPeerNode extends PeerNode {
 		if(localRequest) {
 			Message msg = DMT.createRoutingStatus(shouldRoute);
 			try {
-				sendAsync(msg, null, 0, null);
+				sendAsync(msg, null, 0, node.nodeStats.setRoutingStatusCtr);
 			} catch(NotConnectedException e) {
 			// ok
 			}
@@ -1277,7 +1276,7 @@ public class DarknetPeerNode extends PeerNode {
 					Node.N2N_MESSAGE_TYPE_FPROXY, fs
 							.toString().getBytes("UTF-8"));
 			try {
-				sendAsync(n2ntm, null, 0, null);
+				sendAsync(n2ntm, null, 0, node.nodeStats.nodeToNodeCounter);
 			} catch (NotConnectedException e) {
 				fs.removeValue("sentTime");
 				queueN2NM(fs);
@@ -1311,7 +1310,7 @@ public class DarknetPeerNode extends PeerNode {
 					Node.N2N_MESSAGE_TYPE_FPROXY, fs
 							.toString().getBytes("UTF-8"));
 			try {
-				sendAsync(n2ntm, null, 0, null);
+				sendAsync(n2ntm, null, 0, node.nodeStats.nodeToNodeCounter);
 			} catch (NotConnectedException e) {
 				fs.removeValue("sentTime");
 				queueN2NM(fs);
@@ -1354,7 +1353,7 @@ public class DarknetPeerNode extends PeerNode {
 					Node.N2N_MESSAGE_TYPE_FPROXY, fs
 							.toString().getBytes("UTF-8"));
 			try {
-				sendAsync(n2ntm, null, 0, null);
+				sendAsync(n2ntm, null, 0, node.nodeStats.nodeToNodeCounter);
 			} catch (NotConnectedException e) {
 				fs.removeValue("sentTime");
 				queueN2NM(fs);
@@ -1450,7 +1449,7 @@ public class DarknetPeerNode extends PeerNode {
 		if(fo == null) {
 			Logger.error(this, "No such offer: "+uid);
 			try {
-				sendAsync(DMT.createFNPBulkSendAborted(uid), null, fileNumber, null);
+				sendAsync(DMT.createFNPBulkSendAborted(uid), null, fileNumber, node.nodeStats.nodeToNodeCounter);
 			} catch (NotConnectedException e) {
 				// Fine by me!
 			}

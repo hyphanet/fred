@@ -1108,6 +1108,35 @@ public class NodeStats implements Persistable {
 		return offeredKeysSenderSentBytes;
 	}
 
+	private long offerKeysRcvdBytes;
+	private long offerKeysSentBytes;
+	
+	ByteCounter sendOffersCtr = new ByteCounter() {
+
+		public void receivedBytes(int x) {
+			synchronized(NodeStats.this) {
+				offerKeysRcvdBytes += x;
+			}
+		}
+
+		public void sentBytes(int x) {
+			synchronized(NodeStats.this) {
+				offerKeysSentBytes += x;
+			}
+		}
+
+		public void sentPayload(int x) {
+			synchronized(NodeStats.this) {
+				offerKeysSentBytes += x;
+			}
+		}
+		
+	};
+	
+	public synchronized long getOffersSentBytesSent() {
+		return offerKeysSentBytes;
+	}
+	
 	private long swappingRcvdBytes;
 	private long swappingSentBytes;
 	
@@ -1202,4 +1231,310 @@ public class NodeStats implements Persistable {
 	public long getAnnounceBytesSent() {
 		return announceBytesSent;
 	}
+	
+	private long routingStatusBytesSent;
+	
+	ByteCounter setRoutingStatusCtr = new ByteCounter() {
+
+		public void receivedBytes(int x) {
+			// Impossible?
+			Logger.error(this, "Routing status sender received bytes: "+x+" - isn't that impossible?");
+		}
+
+		public void sentBytes(int x) {
+			synchronized(NodeStats.this) {
+				routingStatusBytesSent += x;
+			}
+		}
+
+		public void sentPayload(int x) {
+			synchronized(NodeStats.this) {
+				routingStatusBytesSent += x;
+			}
+		}
+		
+	};
+	
+	public synchronized long getRoutingStatusBytes() {
+		return routingStatusBytesSent;
+	}
+
+	private long networkColoringReceivedBytesCounter;
+	private long networkColoringSentBytesCounter;
+	
+	public synchronized void networkColoringReceivedBytes(int x) {
+		networkColoringReceivedBytesCounter += x;
+	}
+
+	public synchronized void networkColoringSentBytes(int x) {
+		networkColoringSentBytesCounter += x;
+	}
+
+	public synchronized long getNetworkColoringSentBytes() {
+		return networkColoringSentBytesCounter;
+	}
+	
+	private long pingBytesReceived;
+	private long pingBytesSent;
+	
+	public synchronized void pingCounterReceived(int x) {
+		pingBytesReceived += x;
+	}
+
+	public synchronized void pingCounterSent(int x) {
+		pingBytesSent += x;
+	}
+	
+	public synchronized long getPingSentBytes() {
+		return pingBytesSent;
+	}
+
+	public ByteCounter sskRequestCtr = new ByteCounter() {
+
+		public void receivedBytes(int x) {
+			synchronized(NodeStats.this) {
+				sskRequestRcvdBytes += x;
+			}
+		}
+
+		public void sentBytes(int x) {
+			synchronized(NodeStats.this) {
+				sskRequestSentBytes += x;
+			}
+		}
+
+		public void sentPayload(int x) {
+			synchronized(NodeStats.this) {
+				sskRequestSentBytes += x;
+			}
+		}
+		
+	};
+	
+	public ByteCounter chkRequestCtr = new ByteCounter() {
+
+		public void receivedBytes(int x) {
+			synchronized(NodeStats.this) {
+				chkRequestRcvdBytes += x;
+			}
+		}
+
+		public void sentBytes(int x) {
+			synchronized(NodeStats.this) {
+				chkRequestSentBytes += x;
+			}
+		}
+
+		public void sentPayload(int x) {
+			synchronized(NodeStats.this) {
+				chkRequestSentBytes += x;
+			}
+		}
+		
+	};
+	
+	public ByteCounter sskInsertCtr = new ByteCounter() {
+
+		public void receivedBytes(int x) {
+			synchronized(NodeStats.this) {
+				sskInsertRcvdBytes += x;
+			}
+		}
+
+		public void sentBytes(int x) {
+			synchronized(NodeStats.this) {
+				sskInsertSentBytes += x;
+			}
+		}
+
+		public void sentPayload(int x) {
+			synchronized(NodeStats.this) {
+				sskInsertSentBytes += x;
+			}
+		}
+		
+	};
+	
+	public ByteCounter chkInsertCtr = new ByteCounter() {
+
+		public void receivedBytes(int x) {
+			synchronized(NodeStats.this) {
+				chkInsertRcvdBytes += x;
+			}
+		}
+
+		public void sentBytes(int x) {
+			synchronized(NodeStats.this) {
+				chkInsertSentBytes += x;
+			}
+		}
+
+		public void sentPayload(int x) {
+			synchronized(NodeStats.this) {
+				chkInsertSentBytes += x;
+			}
+		}
+		
+	};
+	
+	private long probeRequestSentBytes;
+	private long probeRequestRcvdBytes;
+	
+	public ByteCounter probeRequestCtr = new ByteCounter() {
+
+		public void receivedBytes(int x) {
+			synchronized(NodeStats.this) {
+				probeRequestRcvdBytes += x;
+			}
+		}
+
+		public void sentBytes(int x) {
+			synchronized(NodeStats.this) {
+				probeRequestSentBytes += x;
+			}
+		}
+
+		public void sentPayload(int x) {
+			synchronized(NodeStats.this) {
+				probeRequestSentBytes += x;
+			}
+		}
+		
+	};
+
+	public synchronized long getProbeRequestSentBytes() {
+		return probeRequestSentBytes;
+	}
+	
+	private long routedMessageBytesRcvd;
+	private long routedMessageBytesSent;
+	
+	public ByteCounter routedMessageCtr = new ByteCounter() {
+
+		public void receivedBytes(int x) {
+			synchronized(NodeStats.this) {
+				routedMessageBytesRcvd += x;
+			}
+		}
+
+		public void sentBytes(int x) {
+			synchronized(NodeStats.this) {
+				routedMessageBytesSent += x;
+			}
+		}
+
+		public void sentPayload(int x) {
+			synchronized(NodeStats.this) {
+				routedMessageBytesSent += x;
+			}
+		}
+		
+	};
+	
+	public synchronized long getRoutedMessageSentBytes() {
+		return routedMessageBytesSent;
+	}
+	
+	private long disconnBytesReceived;
+	private long disconnBytesSent;
+
+	void disconnBytesReceived(int x) {
+		this.disconnBytesReceived += x;
+	}
+
+	void disconnBytesSent(int x) {
+		this.disconnBytesSent += x;
+	}
+	
+	public long getDisconnBytesSent() {
+		return disconnBytesSent;
+	}
+	
+	private long initialMessagesBytesReceived;
+	private long initialMessagesBytesSent;
+	
+	ByteCounter initialMessagesCtr = new ByteCounter() {
+
+		public void receivedBytes(int x) {
+			synchronized(NodeStats.this) {
+				initialMessagesBytesReceived += x;
+			}
+		}
+
+		public void sentBytes(int x) {
+			synchronized(NodeStats.this) {
+				initialMessagesBytesSent += x;
+			}
+		}
+
+		public void sentPayload(int x) {
+			synchronized(NodeStats.this) {
+				initialMessagesBytesSent += x;
+			}
+		}
+		
+	};
+	
+	public synchronized long getInitialMessagesBytesSent() {
+		return initialMessagesBytesSent;
+	}
+	
+	private long changedIPBytesReceived;
+	private long changedIPBytesSent;
+	
+	ByteCounter changedIPCtr = new ByteCounter() {
+
+		public void receivedBytes(int x) {
+			synchronized(NodeStats.this) {
+				changedIPBytesReceived += x;
+			}
+		}
+
+		public void sentBytes(int x) {
+			synchronized(NodeStats.this) {
+				changedIPBytesSent += x;
+			}
+		}
+
+		public void sentPayload(int x) {
+			synchronized(NodeStats.this) {
+				changedIPBytesSent += x;
+			}
+		}
+		
+	};
+
+	public long getChangedIPBytesSent() {
+		return changedIPBytesSent;
+	}
+	
+	private long nodeToNodeRcvdBytes;
+	private long nodeToNodeSentBytes;
+	
+	final ByteCounter nodeToNodeCounter = new ByteCounter() {
+
+		public void receivedBytes(int x) {
+			synchronized(NodeStats.this) {
+				nodeToNodeRcvdBytes += x;
+			}
+		}
+
+		public void sentBytes(int x) {
+			synchronized(NodeStats.this) {
+				nodeToNodeSentBytes += x;
+			}
+		}
+
+		public void sentPayload(int x) {
+			synchronized(NodeStats.this) {
+				nodeToNodeSentBytes += x;
+			}
+		}
+		
+	};
+	
+	public long getNodeToNodeBytesSent() {
+		return nodeToNodeSentBytes;
+	}
+	
 }

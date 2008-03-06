@@ -11,6 +11,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
@@ -100,7 +101,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 		if (logMINOR) Logger.minor(this, "Storing secret: "+s);
 		addOrReplaceSecret(s);
 		try {
-			pn.sendAsync(DMT.createFNPAccepted(uid), null, 0, null);
+			pn.sendAsync(DMT.createFNPAccepted(uid), null, 0, ctr);
 		} catch (NotConnectedException e) {
 			Logger.error(this, "peer disconnected before storeSecret ack?", e);
 		}
@@ -132,7 +133,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 		
 		if (disableSecretPings || node.recentlyCompleted(uid)) {
 			if (logMINOR) Logger.minor(this, "recently complete/loop: "+uid);
-			source.sendAsync(DMT.createFNPRejectedLoop(uid), null, 0, null);
+			source.sendAsync(DMT.createFNPRejectedLoop(uid), null, 0, ctr);
 		} else {
 			byte[] nodeIdentity = ((ShortBuffer) m.getObject(DMT.NODE_IDENTITY)).getData();
 			StoredSecret match;
@@ -144,10 +145,10 @@ public class NetworkIDManager implements Runnable, Comparator {
 				//This is the node that the ping intends to reach, we will *not* forward it; but we might not respond positively either.
 				//don't set the completed flag, we might reject it from one peer (too short a path) and accept it from another.
 				if (htl > dawnHtl) {
-					source.sendAsync(DMT.createFNPRejectedLoop(uid), null, 0, null);
+					source.sendAsync(DMT.createFNPRejectedLoop(uid), null, 0, ctr);
 				} else {
 					if (logMINOR) Logger.minor(this, "Responding to "+source+" with "+match+" from "+match.peer);
-					source.sendAsync(match.getSecretPong(counter+1), null, 0, null);
+					source.sendAsync(match.getSecretPong(counter+1), null, 0, ctr);
 				}
 			} else {
 				//Set the completed flag immediately for determining reject loops rather than locking the uid.
@@ -168,7 +169,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 					
 					if (next==null) {
 						//would be rnf... but this is a more exhaustive and lightweight search I suppose.
-						source.sendAsync(DMT.createFNPRejectedLoop(uid), null, 0, null);
+						source.sendAsync(DMT.createFNPRejectedLoop(uid), null, 0, ctr);
 						break;
 					}
 					
@@ -176,7 +177,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 					
 					if (htl<=0) {
 						//would be dnf if we were looking for data.
-						source.sendAsync(DMT.createFNPRejectedLoop(uid), null, 0, null);
+						source.sendAsync(DMT.createFNPRejectedLoop(uid), null, 0, ctr);
 						break;
 					}
 					
@@ -187,7 +188,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 					counter++;
 					routedTo.add(next);
 					try {
-						next.sendAsync(DMT.createFNPSecretPing(uid, target, htl, dawnHtl, counter, nodeIdentity), null, 0, null);
+						next.sendAsync(DMT.createFNPSecretPing(uid, target, htl, dawnHtl, counter, nodeIdentity), null, 0, ctr);
 					} catch (NotConnectedException e) {
 						Logger.normal(this, next+" disconnected before secret-ping-forward");
 						continue;
@@ -217,7 +218,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 							counter=suppliedCounter;
 						long secret=msg.getLong(DMT.SECRET);
 						if (logMINOR) Logger.minor(this, node+" forwarding apparently-successful secretpong response: "+counter+"/"+secret+" from "+next+" to "+source);
-						source.sendAsync(DMT.createFNPSecretPong(uid, counter, secret), null, 0, null);
+						source.sendAsync(DMT.createFNPSecretPong(uid, counter, secret), null, 0, ctr);
 						break;
 					}
 					
@@ -949,7 +950,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 					p.assignedNetworkID=id;
 					p.networkGroup=this;
 					try {
-						p.sendFNPNetworkID();
+						p.sendFNPNetworkID(ctr);
 					} catch (NotConnectedException e) {
 						Logger.normal(this, "disconnected on network reassignment");
 					}
@@ -1010,5 +1011,21 @@ public class NetworkIDManager implements Runnable, Comparator {
 		//since we want largest-first, this is backwards of what it would normally be (a-b).
 		return b.members.size()-a.members.size();
 	}
+	
+	private final ByteCounter ctr = new ByteCounter() {
+
+		public void receivedBytes(int x) {
+			node.nodeStats.networkColoringReceivedBytes(x);
+		}
+
+		public void sentBytes(int x) {
+			node.nodeStats.networkColoringSentBytes(x);
+		}
+
+		public void sentPayload(int x) {
+			node.nodeStats.networkColoringSentBytes(x);
+		}
+		
+	};
 	
 }
