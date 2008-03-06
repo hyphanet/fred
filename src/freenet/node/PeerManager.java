@@ -506,7 +506,7 @@ public class PeerManager {
     	}
     }
 
-    private final ByteCounter ctrDisconn = new ByteCounter() {
+    final ByteCounter ctrDisconn = new ByteCounter() {
 
 		public void receivedBytes(int x) {
 			node.nodeStats.disconnBytesReceived(x);

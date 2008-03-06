@@ -2705,7 +2705,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		try {
 			Message msg = DMT.createFNPDisconnect(false, false, -1, new ShortBuffer(new byte[0]));
-			peers.localBroadcast(msg, true, false, null);
+			peers.localBroadcast(msg, true, false, peers.ctrDisconn);
 		} catch (Throwable t) {
 			try {
 				// E.g. if we haven't finished startup
