@@ -32,7 +32,7 @@ public class LibraryLoader {
 	}
 	
 	public static void loadNative(String path, String libraryName) {
-		final boolean isWindows = File.pathSeparatorChar == '\\';
+		final boolean isWindows = File.pathSeparatorChar == ';';
 		final String prefix = (isWindows ? ".dll" : ((System.getProperty("os.name")).toLowerCase().startsWith("mac") ? ".jnilib" : ".so"));
 		final String libraryNameWithPrefix = (isWindows ? "" : "lib") + libraryName;
 		final String libraryNameWithPrefixAndArch = libraryNameWithPrefix + '-' + getSimplifiedArchitecture();

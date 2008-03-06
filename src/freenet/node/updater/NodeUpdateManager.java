@@ -464,7 +464,7 @@ public class NodeUpdateManager {
 		boolean writtenNewJar = false;
 		boolean writtenNewExt = false;
 		
-		boolean tryEasyWay = File.pathSeparatorChar == '/' && !hasNewExtJar;
+		boolean tryEasyWay = File.pathSeparatorChar == ':' && !hasNewExtJar;
 
 		File mainJar = ctx.getMainJar();
 		File newMainJar = ctx.getNewMainJar();
