@@ -72,7 +72,7 @@ public class FProxyToadlet extends Toadlet {
 		client.setMaxLength(MAX_LENGTH);
 		client.setMaxIntermediateLength(MAX_LENGTH);
 		this.core = core;
-		if(ENABLE_PREFETCH) {
+		if(this.container.enableInlinePrefetch()) {
 			prefetchHook = new FoundURICallback() {
 
 				public void foundURI(FreenetURI uri) {

@@ -46,4 +46,6 @@ public interface ToadletContainer {
 	public HTMLNode addFormChild(HTMLNode parentNode, String target, String name);
 
 	public boolean enablePersistentConnections();
+
+	public boolean enableInlinePrefetch();
 }

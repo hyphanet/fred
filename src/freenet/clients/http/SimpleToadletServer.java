@@ -671,5 +671,9 @@ public class SimpleToadletServer implements ToadletContainer, Runnable {
 	public boolean enablePersistentConnections() {
 		return enablePersistentConnections;
 	}
+
+	public boolean enableInlinePrefetch() {
+		return enableInlinePrefetch;
+	}
 	
 }
