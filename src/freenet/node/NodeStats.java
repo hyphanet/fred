@@ -1536,5 +1536,15 @@ public class NodeStats implements Persistable {
 	public long getNodeToNodeBytesSent() {
 		return nodeToNodeSentBytes;
 	}
+
+	private long notificationOnlySentBytes;
+	
+	synchronized void reportNotificationOnlyPacketSent(int packetSize) {
+		notificationOnlySentBytes += packetSize;
+	}
+	
+	public long getNotificationOnlyPacketsSentBytes() {
+		return notificationOnlySentBytes;
+	}
 	
 }

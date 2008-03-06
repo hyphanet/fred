@@ -814,6 +814,7 @@ public class StatisticsToadlet extends Toadlet {
 			long totalBytesSendOffers = node.nodeStats.getOffersSentBytesSent();
 			long totalBytesSentSwapOutput = node.nodeStats.getSwappingTotalBytesSent();
 			long totalBytesSentAuth = node.nodeStats.getTotalAuthBytesSent();
+			long totalBytesSentAckOnly = node.nodeStats.getNotificationOnlyPacketsSentBytes();
 			long totalBytesSentResends = node.nodeStats.getResendBytesSent();
 			long totalBytesSentUOM = node.nodeStats.getUOMBytesSent();
 			long totalBytesSentAnnounce = node.nodeStats.getAnnounceBytesSent();
@@ -830,7 +831,7 @@ public class StatisticsToadlet extends Toadlet {
 				(totalPayload + totalBytesSentCHKRequests + totalBytesSentSSKRequests +
 				totalBytesSentCHKInserts + totalBytesSentSSKInserts +
 				totalBytesSentOfferedKeys + totalBytesSendOffers + totalBytesSentSwapOutput + 
-				totalBytesSentAuth + totalBytesSentResends +
+				totalBytesSentAuth + totalBytesSentAckOnly + totalBytesSentResends +
 				totalBytesSentUOM + totalBytesSentAnnounce + 
 				totalBytesSentRoutingStatus + totalBytesSentNetworkColoring + totalBytesSentPing +
 				totalBytesSentProbeRequest + totalBytesSentRouted + totalBytesSentDisconn + 
@@ -840,6 +841,7 @@ public class StatisticsToadlet extends Toadlet {
 			activityList.addChild("li", l10n("offeredKeyOutput", new String[] { "total", "offered" }, new String[] { SizeUtil.formatSize(totalBytesSentOfferedKeys, true), SizeUtil.formatSize(totalBytesSendOffers, true) }));
 			activityList.addChild("li", l10n("swapOutput", "total", SizeUtil.formatSize(totalBytesSentSwapOutput, true)));
 			activityList.addChild("li", l10n("authBytes", "total", SizeUtil.formatSize(totalBytesSentAuth, true)));
+			activityList.addChild("li", l10n("ackOnlyBytes", "total", SizeUtil.formatSize(totalBytesSentAckOnly, true)));
 			activityList.addChild("li", l10n("resendBytes", "total", SizeUtil.formatSize(totalBytesSentResends, true)));
 			activityList.addChild("li", l10n("uomBytes", "total",  SizeUtil.formatSize(totalBytesSentUOM, true)));
 			activityList.addChild("li", l10n("announceBytes", "total", SizeUtil.formatSize(totalBytesSentAnnounce, true)));

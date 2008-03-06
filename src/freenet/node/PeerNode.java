@@ -2282,7 +2282,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			long t = tracker.getNextUrgentTime();
 			if(t < now || forceSendPrimary) {
 				try {
-					outgoingMangler.processOutgoing(null, 0, 0, tracker, 0, DMT.PRIORITY_NOW);
+					int size = outgoingMangler.processOutgoing(null, 0, 0, tracker, 0, DMT.PRIORITY_NOW);
+					node.nodeStats.reportNotificationOnlyPacketSent(size);
 				} catch(NotConnectedException e) {
 				// Ignore
 				} catch(KeyChangedException e) {

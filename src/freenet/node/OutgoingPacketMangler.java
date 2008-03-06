@@ -38,8 +38,9 @@ public interface OutgoingPacketMangler {
 	 * but with no outer formatting.
 	 * @throws PacketSequenceException 
 	 * @throws WouldBlockException 
+	 * @return Total size including UDP headers of the sent packet.
 	 */
-	public void processOutgoing(byte[] buf, int offset, int length,
+	public int processOutgoing(byte[] buf, int offset, int length,
 			KeyTracker tracker, int alreadyReportedBytes, short priority)
 			throws KeyChangedException, NotConnectedException,
 			PacketSequenceException, WouldBlockException;
