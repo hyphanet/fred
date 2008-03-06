@@ -63,7 +63,7 @@ public class WelcomeToadlet extends Toadlet {
     }
     URI manageBookmarksURI;
 
-    private void addCategoryToList(BookmarkCategory cat, HTMLNode list) {
+    private void addCategoryToList(BookmarkCategory cat, HTMLNode list, boolean noActiveLinks) {
         BookmarkItems items = cat.getItems();
         if (items.size() > 0) {
             // FIXME CSS noborder ...
@@ -72,7 +72,7 @@ public class WelcomeToadlet extends Toadlet {
                 BookmarkItem item = items.get(i);
                 HTMLNode row = table.addChild("tr");
                 HTMLNode cell = row.addChild("td", "style", "border: none");
-                if (item.hasAnActivelink()) {
+                if (item.hasAnActivelink() && !noActiveLinks) {
 		    String initialKey = item.getKey();
 		    String key = '/' + initialKey + (initialKey.endsWith("/") ? "" : "/") + "activelink.png";
                     cell.addChild("a", "href", '/' + item.getKey()).addChild("img", new String[]{"src", "height", "width", "alt", "title"},
@@ -88,7 +88,7 @@ public class WelcomeToadlet extends Toadlet {
         BookmarkCategories cats = cat.getSubCategories();
         for (int i = 0; i < cats.size(); i++) {
             list.addChild("li", "class", "cat", cats.get(i).getName());
-            addCategoryToList(cats.get(i), list.addChild("li").addChild("ul"));
+            addCategoryToList(cats.get(i), list.addChild("li").addChild("ul"), noActiveLinks);
         }
     }
 
@@ -554,7 +554,7 @@ public class WelcomeToadlet extends Toadlet {
 
         HTMLNode bookmarkBoxContent = bookmarkBox.addChild("div", "class", "infobox-content");
         HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
-        addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList);
+        addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, useragent.indexOf("Safari") >= 0);
 
         // Fetch-a-key box
         HTMLNode fetchKeyBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", l10n("fetchKeyLabel")));
