@@ -69,6 +69,7 @@ public class LibraryLoader {
 				System.out.println("Attempting to load the "+libraryName+" library ["+resource+']');
 				System.load(temporaryLib.getPath());
 			} catch(Throwable e) {
+				System.err.println("Caught the following exception attempting to load "+resourceName);
 				e.printStackTrace();
 			}
 		}
