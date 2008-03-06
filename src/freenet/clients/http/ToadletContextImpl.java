@@ -459,4 +459,8 @@ public class ToadletContextImpl implements ToadletContext {
 	public void forceDisconnect() {
 		this.shouldDisconnect = true;
 	}
+
+	public ToadletContainer getContainer() {
+		return container;
+	}
 }

@@ -79,5 +79,7 @@ public interface ToadletContext {
 	 * Return a robots.txt excluding all spiders and other non-browser HTTP clients?
 	 */
 	boolean doRobots();
+
+	ToadletContainer getContainer();
 }
 

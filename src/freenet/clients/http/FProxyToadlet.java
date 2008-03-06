@@ -71,8 +71,7 @@ public class FProxyToadlet extends Toadlet {
 		client.setMaxLength(MAX_LENGTH);
 		client.setMaxIntermediateLength(MAX_LENGTH);
 		this.core = core;
-		if(this.container.enableInlinePrefetch()) {
-			prefetchHook = new FoundURICallback() {
+		prefetchHook = new FoundURICallback() {
 
 				public void foundURI(FreenetURI uri) {
 					// Ignore
@@ -89,7 +88,6 @@ public class FProxyToadlet extends Toadlet {
 				}
 				
 			};
-		}
 	}
 	
 	public String supportedMethods() {
@@ -134,7 +132,7 @@ public class FProxyToadlet extends Toadlet {
 
 		try {
 			if((!force) && (!forceDownload)) {
-				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), prefetchHook);
+				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), context.getContainer().enableInlinePrefetch() ? prefetchHook : null);
 				data = fo.data;
 				mimeType = fo.type;
 				
