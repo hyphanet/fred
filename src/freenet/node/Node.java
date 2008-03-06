@@ -404,7 +404,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	final boolean enableSwapping;
 	boolean enableSwapQueueing;
 	boolean enablePacketCoalescing;
-	public static final short DEFAULT_MAX_HTL = (short)15;
+	public static final short DEFAULT_MAX_HTL = (short)10;
 	private short maxHTL;
 	/** Type identifier for fproxy node to node messages, as sent on DMT.nodeToNodeMessage's */
 	public static final int N2N_MESSAGE_TYPE_FPROXY = 1;
