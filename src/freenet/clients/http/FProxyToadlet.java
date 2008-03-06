@@ -44,7 +44,6 @@ public class FProxyToadlet extends Toadlet {
 	final NodeClientCore core;
 	
 	private static FoundURICallback prefetchHook;
-	private static boolean ENABLE_PREFETCH = true;
 	static final Set prefetchAllowedTypes = new HashSet();
 	static {
 		// Only valid inlines
