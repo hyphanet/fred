@@ -35,7 +35,7 @@ public class LibraryLoader {
 		final boolean isWindows = File.pathSeparatorChar == '\\';
 		final String libraryNameWithPrefix = (isWindows ? "" : "lib") + libraryName;
 		final String libraryNameWithPrefixAndArch = libraryNameWithPrefix + '-' + getSimplifiedArchitecture();
-		final String libraryNameWithPrefixAndArchAndSuffix = libraryNameWithPrefixAndArch + (isWindows ? ".dll" : ".so");
+		final String libraryNameWithPrefixAndArchAndSuffix = libraryNameWithPrefixAndArch + (isWindows ? ".dll" : ((System.getProperty("os.name")).toLowerCase().startsWith("mac") ? ".jnilib" : ".so"));
 		String resourceName = path + libraryNameWithPrefixAndArchAndSuffix;
 
 		File nativeLib = new File((System.getProperty("java.library.path")) + "/lib" + libraryName + (isWindows ? ".dll" : ".so"));
