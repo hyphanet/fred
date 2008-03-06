@@ -33,12 +33,13 @@ public class LibraryLoader {
 	
 	public static void loadNative(String path, String libraryName) {
 		final boolean isWindows = File.pathSeparatorChar == '\\';
+		final String prefix = (isWindows ? ".dll" : ((System.getProperty("os.name")).toLowerCase().startsWith("mac") ? ".jnilib" : ".so"));
 		final String libraryNameWithPrefix = (isWindows ? "" : "lib") + libraryName;
 		final String libraryNameWithPrefixAndArch = libraryNameWithPrefix + '-' + getSimplifiedArchitecture();
-		final String libraryNameWithPrefixAndArchAndSuffix = libraryNameWithPrefixAndArch + (isWindows ? ".dll" : ((System.getProperty("os.name")).toLowerCase().startsWith("mac") ? ".jnilib" : ".so"));
+		final String libraryNameWithPrefixAndArchAndSuffix = libraryNameWithPrefixAndArch + prefix;
 		String resourceName = path + libraryNameWithPrefixAndArchAndSuffix;
 
-		File nativeLib = new File((System.getProperty("java.library.path")) + "/lib" + libraryName + (isWindows ? ".dll" : ".so"));
+		File nativeLib = new File((System.getProperty("java.library.path")) + "/lib" + libraryName + prefix);
 		if (nativeLib.exists()) {
 			System.out.println("Attempting to load the NativeThread library ["+libraryName+']');
 			System.loadLibrary(libraryName);
