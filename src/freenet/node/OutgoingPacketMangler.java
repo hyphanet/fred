@@ -59,8 +59,9 @@ public interface OutgoingPacketMangler {
 	 * @throws KeyChangedException If the primary key changes while we are trying to send this packet.
 	 * @throws PacketSequenceException 
 	 * @throws WouldBlockException If we cannot allocate a packet number because it would block.
+	 * @return The size of the sent packet.
 	 */
-	public void processOutgoingPreformatted(byte[] buf, int offset, int length,
+	public int processOutgoingPreformatted(byte[] buf, int offset, int length,
 			KeyTracker tracker, int packetNumber,
 			AsyncMessageCallback[] callbacks, int alreadyReportedBytes, short priority)
 			throws KeyChangedException, NotConnectedException,

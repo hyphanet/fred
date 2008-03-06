@@ -2253,7 +2253,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/* (non-Javadoc)
 	 * @see freenet.node.OutgoingPacketMangler#processOutgoingPreformatted(byte[], int, int, freenet.node.KeyTracker, int, freenet.node.AsyncMessageCallback[], int)
 	 */
-	public void processOutgoingPreformatted(byte[] buf, int offset, int length, KeyTracker tracker, int packetNumber, AsyncMessageCallback[] callbacks, int alreadyReportedBytes, short priority) throws KeyChangedException, NotConnectedException, PacketSequenceException, WouldBlockException {
+	public int processOutgoingPreformatted(byte[] buf, int offset, int length, KeyTracker tracker, int packetNumber, AsyncMessageCallback[] callbacks, int alreadyReportedBytes, short priority) throws KeyChangedException, NotConnectedException, PacketSequenceException, WouldBlockException {
 		if(logMINOR) {
 			String log = "processOutgoingPreformatted("+Fields.hashCode(buf)+", "+offset+ ',' +length+ ',' +tracker+ ',' +packetNumber+ ',';
 			if(callbacks == null) log += "null";
@@ -2463,8 +2463,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		if(logMINOR) Logger.minor(this, "Sending... "+seqNumber);
 
-		processOutgoingFullyFormatted(plaintext, tracker, alreadyReportedBytes);
+		int ret = processOutgoingFullyFormatted(plaintext, tracker, alreadyReportedBytes);
 		if(logMINOR) Logger.minor(this, "Sent packet "+seqNumber);
+		return ret;
 	}
 
 	/**
@@ -2472,12 +2473,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param plaintext The packet's plaintext, including all formatting,
 	 * including acks and resend requests. Is clobbered.
 	 */
-	private void processOutgoingFullyFormatted(byte[] plaintext, KeyTracker kt, int alreadyReportedBytes) {
+	private int processOutgoingFullyFormatted(byte[] plaintext, KeyTracker kt, int alreadyReportedBytes) {
 		BlockCipher sessionCipher = kt.sessionCipher;
 		if(logMINOR) Logger.minor(this, "Encrypting with "+HexUtil.bytesToHex(kt.sessionKey));
 		if(sessionCipher == null) {
 			Logger.error(this, "Dropping packet send - have not handshaked yet");
-			return;
+			return 0;
 		}
 		int blockSize = sessionCipher.getBlockSize() >> 3;
 		if(sessionCipher.getKeySize() != sessionCipher.getBlockSize())
@@ -2532,6 +2533,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "Tried to send data packet to local address: "+kt.pn.getPeer()+" for "+kt.pn.allowLocalAddresses());
 		}
 		kt.pn.sentPacket();
+		return output.length + sock.getHeadersLength();
 	}
 
 	/* (non-Javadoc)
