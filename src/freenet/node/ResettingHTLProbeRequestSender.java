@@ -420,6 +420,7 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
 		synchronized(totalBytesSync) {
 			totalBytesSent += x;
 		}
+		node.nodeStats.probeRequestCtr.sentBytes(x);
 	}
 	
 	public int getTotalSentBytes() {
@@ -434,6 +435,7 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
 		synchronized(totalBytesSync) {
 			totalBytesReceived += x;
 		}
+		node.nodeStats.probeRequestCtr.receivedBytes(x);
 	}
 	
 	public int getTotalReceivedBytes() {
@@ -448,6 +450,7 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
 
 	public void sentPayload(int x) {
 		node.sentPayload(x);
+		node.nodeStats.probeRequestCtr.sentBytes(x);
 	}
 	
 	public boolean isLocalRequestSearch() {
