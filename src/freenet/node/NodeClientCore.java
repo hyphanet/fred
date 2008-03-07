@@ -106,7 +106,7 @@ public class NodeClientCore implements Persistable {
 	/** If true, requests are resumed lazily i.e. startup does not block waiting for them. */
 	private boolean lazyResume;
 	protected final Persister persister;
-	private final SerialExecutor clientSlowSerialExecutor;
+	private final SerialExecutor clientSlowSerialExecutor[];
 	
 	public static int maxBackgroundUSKFetchers;
 	
@@ -125,7 +125,14 @@ public class NodeClientCore implements Persistable {
 		this.nodeStats = node.nodeStats;
 		this.random = node.random;
 		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
-		clientSlowSerialExecutor = new SerialExecutor(NativeThread.LOW_PRIORITY);
+		clientSlowSerialExecutor = new SerialExecutor[RequestStarter.MINIMUM_PRIORITY_CLASS-RequestStarter.MAXIMUM_PRIORITY_CLASS+1];
+		for(int i=0;i<clientSlowSerialExecutor.length;i++) {
+			int prio;
+			if(i <= RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS) prio = NativeThread.NORM_PRIORITY;
+			else if(i <= RequestStarter.UPDATE_PRIORITY_CLASS) prio = NativeThread.LOW_PRIORITY;
+			else prio = NativeThread.MIN_PRIORITY;
+			clientSlowSerialExecutor[i] = new SerialExecutor(prio);
+		}
 		backgroundBlockEncoderThread = new NativeThread(backgroundBlockEncoder, "Background block encoder", NativeThread.MIN_PRIORITY, false);
 		backgroundBlockEncoderThread.setDaemon(true);
 	  	byte[] pwdBuf = new byte[16];
@@ -416,9 +423,10 @@ public class NodeClientCore implements Persistable {
 			fcpServer.maybeStart();
 		if(tmci != null)
 			tmci.start();
-		clientSlowSerialExecutor.start(node.executor, "Heavy client jobs runner");
+		for(int i=0;i<clientSlowSerialExecutor.length;i++)
+			clientSlowSerialExecutor[i].start(node.executor, "Heavy client jobs runner ("+i+")");
 		
-		clientSlowSerialExecutor.execute(new Runnable() {
+		node.executor.execute(new Runnable() {
 			public void run() {
 				System.out.println("Resuming persistent requests");
 				Logger.normal(this, "Resuming persistent requests");

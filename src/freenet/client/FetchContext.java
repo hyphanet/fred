@@ -55,7 +55,7 @@ public class FetchContext implements Cloneable {
 	public Set allowedMIMETypes;
 	public final Ticker ticker;
 	public final Executor executor;
-	public final Executor slowSerialExecutor;
+	public final Executor[] slowSerialExecutor;
 	
 	public FetchContext(long curMaxLength, 
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
@@ -66,7 +66,7 @@ public class FetchContext implements Cloneable {
 			RandomSource random, ArchiveManager archiveManager, BucketFactory bucketFactory,
 			ClientEventProducer producer, boolean cacheLocalRequests, USKManager uskManager, 
 			HealingQueue hq, boolean ignoreTooManyPathComponents, Ticker ticker, Executor executor, 
-			Executor slowSerialExecutor) {
+			Executor[] slowSerialExecutor) {
 		this.ticker = ticker;
 		this.executor = executor;
 		this.slowSerialExecutor = slowSerialExecutor;

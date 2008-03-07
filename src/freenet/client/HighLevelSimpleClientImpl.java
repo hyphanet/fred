@@ -49,7 +49,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	private int curMaxMetadataLength;
 	private final RandomSource random;
 	private final HealingQueue healingQueue;
-	private final Executor slowSerialExecutor;
+	private final Executor slowSerialExecutor[];
 	/** See comments in Node */
 	private final boolean cacheLocalRequests;
 	private final boolean forceDontIgnoreTooManyPathComponents;
@@ -85,7 +85,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 64;
 	
 	
-	public HighLevelSimpleClientImpl(NodeClientCore node, ArchiveManager mgr, BucketFactory bf, RandomSource r, boolean cacheLocalRequests, short priorityClass, boolean forceDontIgnoreTooManyPathComponents, Executor slowSerialExecutor) {
+	public HighLevelSimpleClientImpl(NodeClientCore node, ArchiveManager mgr, BucketFactory bf, RandomSource r, boolean cacheLocalRequests, short priorityClass, boolean forceDontIgnoreTooManyPathComponents, Executor[] slowSerialExecutor) {
 		this.core = node;
 		this.slowSerialExecutor = slowSerialExecutor;
 		archiveManager = mgr;

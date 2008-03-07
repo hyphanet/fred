@@ -284,7 +284,7 @@ public class SplitFileFetcher implements ClientGetState {
 	}
 
 	public void scheduleOffThread() {
-		fetchContext.slowSerialExecutor.execute(new Runnable() {
+		fetchContext.slowSerialExecutor[parent.priorityClass].execute(new Runnable() {
 			public void run() {
 				schedule();
 			}
