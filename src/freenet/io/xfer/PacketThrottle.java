@@ -163,6 +163,7 @@ public class PacketThrottle {
 		long start = System.currentTimeMillis();
 		long bootID = peer.getBootID();
 		synchronized(this) {
+			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			while(true) {
 				int windowSize = (int) getWindowSize();
 				if(_packetsInFlight < windowSize) {
