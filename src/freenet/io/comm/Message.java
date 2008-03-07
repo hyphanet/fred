@@ -111,6 +111,7 @@ public class Message {
 		    Logger.error(Message.class, "Unexpected IOException: "+e+" reading from buffer stream", e);
 		    return null;
 		}
+		if(logMINOR) Logger.minor(Message.class, "Returning message: "+m);
 		return m;
 	}
 	
