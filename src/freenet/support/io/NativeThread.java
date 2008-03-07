@@ -38,7 +38,8 @@ public class NativeThread extends Thread {
 	
 	static {
 		Logger.minor(NativeThread.class, "Running init()");
-		_loadNative = (File.pathSeparatorChar == ':') && (NodeStarter.extBuildNumber < 18);
+		// Loading the NativeThread library isn't useful on macos
+		_loadNative = ("Linux".equalsIgnoreCase(System.getProperty("os.name"))) && (NodeStarter.extBuildNumber > 18);
 		Logger.debug(NativeThread.class, "Run init(): should loadNative="+_loadNative);
 		if(_loadNative) {
 			//System.loadLibrary("NativeThread");
