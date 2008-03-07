@@ -428,13 +428,11 @@ public class NodeClientCore implements Persistable {
 		
 		node.executor.execute(new PrioRunnable() {
 			public void run() {
-				System.out.println("Resuming persistent requests");
 				Logger.normal(this, "Resuming persistent requests");
 				// Call it anyway; if we are not lazy, it won't have to start any requests
 				// But it does other things too
 				fcpServer.finishStart();
 				persistentTempBucketFactory.completedInit();
-				System.out.println("Completed startup: All persistent requests resumed or restarted");
 				Logger.normal(this, "Completed startup: All persistent requests resumed or restarted");
 				alerts.unregister(startingUpAlert);
 			}
