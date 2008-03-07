@@ -57,12 +57,14 @@ public class SerialExecutor implements Executor {
 	public void execute(Runnable job, String jobName) {
 		synchronized(jobs) {
 			jobs.addLast(job);
+			jobs.notifyAll();
 		}
 	}
 
 	public void execute(Runnable job, String jobName, boolean fromTicker) {
 		synchronized(jobs) {
 			jobs.addLast(job);
+			jobs.notifyAll();
 		}
 	}
 
