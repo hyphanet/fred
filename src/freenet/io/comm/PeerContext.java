@@ -6,6 +6,7 @@ package freenet.io.comm;
 import java.lang.ref.WeakReference;
 
 import freenet.io.xfer.PacketThrottle;
+import freenet.io.xfer.WaitedTooLongException;
 import freenet.node.OutgoingPacketMangler;
 
 /**
@@ -35,7 +36,7 @@ public interface PeerContext {
 	public void sendAsync(Message msg, AsyncMessageCallback cb, int alreadyReportedBytes, ByteCounter ctr) throws NotConnectedException;
 	
 	/** Send a throttled message to the node (may block for a long time). */
-	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr) throws NotConnectedException;
+	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout) throws NotConnectedException, WaitedTooLongException;
 	
 	/** Get the current boot ID. This is a random number that changes every time the node starts up. */
 	public long getBootID();

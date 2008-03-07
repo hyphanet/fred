@@ -97,7 +97,7 @@ public class BlockTransmitter {
 					}
 					int totalPackets;
 					try {
-						_destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr);
+						_destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr, SEND_TIMEOUT);
 						if(_ctr != null) _ctr.sentPayload(_prb._packetSize);
 						totalPackets=_prb.getNumPackets();
 					} catch (NotConnectedException e) {
@@ -107,6 +107,12 @@ public class BlockTransmitter {
 					} catch (AbortedException e) {
 						Logger.normal(this, "Terminating send due to abort: "+e);
 						//the send() thread should notice...
+						return;
+					} catch (WaitedTooLongException e) {
+						Logger.normal(this, "Waited too long to send packet, aborting");
+						synchronized(_senderThread) {
+							_sendComplete = true;
+						}
 						return;
 					}
 					synchronized (_senderThread) {
@@ -164,6 +170,9 @@ public class BlockTransmitter {
 			executor.execute(_senderThread, toString());
 			
 			while (true) {
+				synchronized(_senderThread) {
+					if(_sendComplete) return false;
+				}
 				Message msg;
 				boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 				try {

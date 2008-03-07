@@ -53,6 +53,7 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
 import freenet.io.xfer.PacketThrottle;
 import freenet.io.xfer.ThrottleDeprecatedException;
+import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
@@ -3644,10 +3645,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return resendBytesSent;
 	}
 	
-	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr) throws NotConnectedException {
+	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout) throws NotConnectedException, WaitedTooLongException {
+		long deadline = System.currentTimeMillis() + timeout;
 		for(int i=0;i<100;i++) {
 			try {
-				getThrottle().sendThrottledMessage(msg, this, node.outputThrottle, packetSize, ctr);
+				getThrottle().sendThrottledMessage(msg, this, node.outputThrottle, packetSize, ctr, deadline);
 				return;
 			} catch (ThrottleDeprecatedException e) {
 				// Try with the new throttle. We don't need it, we'll get it from getThrottle().

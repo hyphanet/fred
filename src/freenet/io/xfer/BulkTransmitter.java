@@ -243,7 +243,7 @@ public class BulkTransmitter {
 			
 			// Congestion control and bandwidth limiting
 			try {
-				peer.sendThrottledMessage(DMT.createFNPBulkPacketSend(uid, blockNo, buf), prb.blockSize, ctr);
+				peer.sendThrottledMessage(DMT.createFNPBulkPacketSend(uid, blockNo, buf), prb.blockSize, ctr, BulkReceiver.TIMEOUT);
 				if(ctr != null) ctr.sentPayload(prb.blockSize);
 				synchronized(this) {
 					blocksNotSentButPresent.setBit(blockNo, false);
@@ -253,6 +253,9 @@ public class BulkTransmitter {
 				cancel("Disconnected");
 				if(logMINOR)
 					Logger.minor(this, "Canclled: not connected "+this);
+				return false;
+			} catch (WaitedTooLongException e) {
+				Logger.error(this, "Failed to send bulk packet "+blockNo+" for "+this);
 				return false;
 			}
 		}

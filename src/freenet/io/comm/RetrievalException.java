@@ -39,6 +39,7 @@ public class RetrievalException extends Exception {
     public static final int NO_DATAINSERT = 8;
     public static final int CANCELLED_BY_RECEIVER = 9;
 	public static final int RECEIVER_DIED = 11;
+	public static final int UNABLE_TO_SEND_BLOCK_WITHIN_TIMEOUT = 12;
 	
 	int _reason;
 	String _cause;
@@ -83,6 +84,8 @@ public class RetrievalException extends Exception {
 				return "CANCELLED_BY_RECEIVER";
 			case UNKNOWN:
 				return "UNKNOWN";
+			case UNABLE_TO_SEND_BLOCK_WITHIN_TIMEOUT:
+				return "UNABLE_TO_SEND_BLOCK_WITHIN_TIMEOUT";
 			default:
 				return "UNKNOWN ("+reason+")";
 		}

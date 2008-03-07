@@ -159,7 +159,7 @@ public class PacketThrottle {
 		return ((PACKET_SIZE * 1000.0 / getDelay()));
 	}
 	
-	public void sendThrottledMessage(Message msg, PeerContext peer, DoubleTokenBucket overallThrottle, int packetSize, ByteCounter ctr) throws NotConnectedException, ThrottleDeprecatedException {
+	public void sendThrottledMessage(Message msg, PeerContext peer, DoubleTokenBucket overallThrottle, int packetSize, ByteCounter ctr, long deadline) throws NotConnectedException, ThrottleDeprecatedException, WaitedTooLongException {
 		long start = System.currentTimeMillis();
 		long bootID = peer.getBootID();
 		synchronized(this) {
@@ -177,8 +177,22 @@ public class PacketThrottle {
 					break;
 				}
 				if(logMINOR) Logger.minor(this, "Window size: "+windowSize+" packets in flight "+_packetsInFlight+" for "+this);
+				long now = System.currentTimeMillis();
+				int waitFor = (int)Math.min(Integer.MAX_VALUE, deadline - now);
+				if(waitFor <= 0) {
+					// Double-check.
+					if(!peer.isConnected()) {
+						Logger.error(this, "Not notified of disconnection before timeout");
+						throw new NotConnectedException();
+					}
+					if(bootID != peer.getBootID()) {
+						Logger.error(this, "Not notified of reconnection before timeout");
+						throw new NotConnectedException();
+					}
+					Logger.error(this, "Unable to send throttled message, waited "+(now-start)+"ms");
+				}
 				try {
-					wait();
+					wait(waitFor);
 				} catch (InterruptedException e) {
 					// Ignore
 				}
