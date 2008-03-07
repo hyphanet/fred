@@ -24,6 +24,7 @@ import freenet.keys.InsertableClientSSK;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarter;
+import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -48,6 +49,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	private int curMaxMetadataLength;
 	private final RandomSource random;
 	private final HealingQueue healingQueue;
+	private final Executor slowSerialExecutor;
 	/** See comments in Node */
 	private final boolean cacheLocalRequests;
 	private final boolean forceDontIgnoreTooManyPathComponents;
@@ -83,8 +85,9 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 64;
 	
 	
-	public HighLevelSimpleClientImpl(NodeClientCore node, ArchiveManager mgr, BucketFactory bf, RandomSource r, boolean cacheLocalRequests, short priorityClass, boolean forceDontIgnoreTooManyPathComponents) {
+	public HighLevelSimpleClientImpl(NodeClientCore node, ArchiveManager mgr, BucketFactory bf, RandomSource r, boolean cacheLocalRequests, short priorityClass, boolean forceDontIgnoreTooManyPathComponents, Executor slowSerialExecutor) {
 		this.core = node;
+		this.slowSerialExecutor = slowSerialExecutor;
 		archiveManager = mgr;
 		this.priorityClass = priorityClass;
 		bucketFactory = bf;
@@ -197,7 +200,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
 				random, archiveManager, bucketFactory, globalEventProducer, 
 				cacheLocalRequests, core.uskManager, healingQueue, 
-				forceDontIgnoreTooManyPathComponents ? false : core.ignoreTooManyPathComponents, core.getTicker(), core.getExecutor());
+				forceDontIgnoreTooManyPathComponents ? false : core.ignoreTooManyPathComponents, core.getTicker(), core.getExecutor(), slowSerialExecutor);
 	}
 
 	public InsertContext getInsertContext(boolean forceNonPersistent) {

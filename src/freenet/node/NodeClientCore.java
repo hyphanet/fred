@@ -49,6 +49,7 @@ import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.SerialExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
@@ -105,6 +106,7 @@ public class NodeClientCore implements Persistable {
 	/** If true, requests are resumed lazily i.e. startup does not block waiting for them. */
 	private boolean lazyResume;
 	protected final Persister persister;
+	private final SerialExecutor clientSlowSerialExecutor;
 	
 	public static int maxBackgroundUSKFetchers;
 	
@@ -123,6 +125,7 @@ public class NodeClientCore implements Persistable {
 		this.nodeStats = node.nodeStats;
 		this.random = node.random;
 		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
+		clientSlowSerialExecutor = new SerialExecutor(NativeThread.LOW_PRIORITY);
 		backgroundBlockEncoderThread = new NativeThread(backgroundBlockEncoder, "Background block encoder", NativeThread.MIN_PRIORITY, false);
 		backgroundBlockEncoderThread.setDaemon(true);
 	  	byte[] pwdBuf = new byte[16];
@@ -413,8 +416,9 @@ public class NodeClientCore implements Persistable {
 			fcpServer.maybeStart();
 		if(tmci != null)
 			tmci.start();
+		clientSlowSerialExecutor.start(node.executor, "Heavy client jobs runner");
 		
-		node.executor.execute(new Runnable() {
+		clientSlowSerialExecutor.execute(new Runnable() {
 			public void run() {
 				System.out.println("Resuming persistent requests");
 				Logger.normal(this, "Resuming persistent requests");
@@ -990,7 +994,7 @@ public class NodeClientCore implements Persistable {
 	}
 	
 	public HighLevelSimpleClient makeClient(short prioClass, boolean forceDontIgnoreTooManyPathComponents) {
-		return new HighLevelSimpleClientImpl(this, archiveManager, tempBucketFactory, random, !Node.DONT_CACHE_LOCAL_REQUESTS, prioClass, forceDontIgnoreTooManyPathComponents);
+		return new HighLevelSimpleClientImpl(this, archiveManager, tempBucketFactory, random, !Node.DONT_CACHE_LOCAL_REQUESTS, prioClass, forceDontIgnoreTooManyPathComponents, clientSlowSerialExecutor);
 	}
 	
 	public FCPServer getFCPServer() {
