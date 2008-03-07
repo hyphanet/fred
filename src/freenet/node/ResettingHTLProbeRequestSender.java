@@ -285,8 +285,8 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
             		double newBest = sub.getDouble(DMT.BEST_LOCATION);
             		if(newBest > target && newBest < best)
             			best = newBest;
-            		counter += Math.max(0, msg.getShort(DMT.COUNTER));
-            		uniqueCounter += Math.max(0, msg.getShort(DMT.UNIQUE_COUNTER));
+            		counter += Math.max(0, sub.getShort(DMT.COUNTER));
+            		uniqueCounter += Math.max(0, sub.getShort(DMT.UNIQUE_COUNTER));
             		// linearCounter is unchanged - it's only valid on a Reply
             		// FIXME ideally we'd return it here if we don't manage to reroute.
             		} else {
