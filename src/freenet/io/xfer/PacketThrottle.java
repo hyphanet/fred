@@ -190,6 +190,7 @@ public class PacketThrottle {
 						throw new NotConnectedException();
 					}
 					Logger.error(this, "Unable to send throttled message, waited "+(now-start)+"ms");
+					throw new WaitedTooLongException();
 				}
 				try {
 					wait(waitFor);
