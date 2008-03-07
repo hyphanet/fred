@@ -426,7 +426,7 @@ public class NodeClientCore implements Persistable {
 		for(int i=0;i<clientSlowSerialExecutor.length;i++)
 			clientSlowSerialExecutor[i].start(node.executor, "Heavy client jobs runner ("+i+")");
 		
-		node.executor.execute(new Runnable() {
+		node.executor.execute(new PrioRunnable() {
 			public void run() {
 				System.out.println("Resuming persistent requests");
 				Logger.normal(this, "Resuming persistent requests");
@@ -437,6 +437,10 @@ public class NodeClientCore implements Persistable {
 				System.out.println("Completed startup: All persistent requests resumed or restarted");
 				Logger.normal(this, "Completed startup: All persistent requests resumed or restarted");
 				alerts.unregister(startingUpAlert);
+			}
+
+			public int getPriority() {
+				return NativeThread.LOW_PRIORITY;
 			}
 		}, "Startup completion thread");
 	}
