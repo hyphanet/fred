@@ -182,6 +182,7 @@ public class BlockTransmitter {
 					msg = _usm.waitFor(mfMissingPacketNotification.or(mfAllReceived.or(mfSendAborted)), _ctr);
 					if(logMINOR) Logger.minor(this, "Got "+msg);
 				} catch (DisconnectedException e) {
+					throttle.maybeDisconnected();
 					Logger.normal(this, "Terminating send "+_uid+" to "+_destination+" from "+_destination.getSocketHandler()+" because node disconnected while waiting");
 					//They disconnected, can't send an abort to them then can we?
 					return false;
