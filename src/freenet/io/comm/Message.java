@@ -53,6 +53,7 @@ public class Message {
 	}
 	
 	public static Message decodeMessage(DataInputStream dis, PeerContext peer, int recvByteCount, boolean mayHaveSubMessages, boolean inSubMessage) {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, Message.class);
 		MessageType mspec;
         try {
             mspec = MessageType.getSpec(new Integer(dis.readInt()));
@@ -86,11 +87,13 @@ public class Message {
 		    			dis.readFully(buf);
 			    		dis2 = new DataInputStream(new ByteArrayInputStream(buf));
 		    		} catch (EOFException e) {
+		    			if(logMINOR) Logger.minor(Message.class, "No submessages, returning: "+m);
 		    			return m;
 		    		}
 		    		try {
 		    			Message subMessage = decodeMessage(dis2, peer, 0, false, true);
 		    			if(subMessage == null) return m;
+		    			if(logMINOR) Logger.minor(Message.class, "Adding submessage: "+subMessage);
 		    			m.addSubMessage(subMessage);
 		    		} catch (Throwable t) {
 		    			Logger.error(Message.class, "Failed to read sub-message: "+t, t);
