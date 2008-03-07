@@ -1156,6 +1156,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(cur != null) cur.disconnected();
 		if(prev != null) prev.disconnected();
 		if(unv != null) unv.disconnected();
+    	if(_lastThrottle != null)
+    		_lastThrottle.maybeDisconnected();
 		node.lm.lostOrRestartedNode(this);
 		setPeerNodeStatus(now);
 		if(!dumpMessageQueue) {
@@ -1849,6 +1851,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			oldCur.completelyDeprecated(newTracker);
 		if(prev != null)
 			prev.deprecated();
+    	PacketThrottle throttle;
+    	synchronized(this) {
+    		throttle = _lastThrottle;
+    	}
+    	if(throttle != null) throttle.maybeDisconnected();
 		Logger.normal(this, "Completed handshake with " + this + " on " + replyTo + " - current: " + currentTracker +
 			" old: " + previousTracker + " unverified: " + unverifiedTracker + " bootID: " + thisBootID + " for " + shortToString());
 
@@ -3050,14 +3057,21 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return Version.getArbitraryBuildNumber(getVersion(), -1);
 	}
 
-	public PacketThrottle getThrottle() {
-		if(currentTracker != null)
-			return currentTracker.getThrottle();
-		if(unverifiedTracker != null)
-			return unverifiedTracker.getThrottle();
-		if(previousTracker != null)
-			return previousTracker.getThrottle();
-		return null;
+    private PacketThrottle _lastThrottle;
+    
+    public PacketThrottle getThrottle() {
+    	// pn.getPeer() cannot be null as it has already connected.
+    	PacketThrottle newThrottle = PacketThrottle.getThrottle(getPeer(), Node.PACKET_SIZE);
+    	PacketThrottle prevThrottle = null;
+    	synchronized(this) {
+    		if(newThrottle != _lastThrottle) {
+    			prevThrottle = _lastThrottle;
+    			_lastThrottle = newThrottle;
+    		} else return newThrottle;
+    	}
+    	if(prevThrottle != null)
+    		prevThrottle.changedAddress(newThrottle);
+    	return newThrottle;
 	}
 
 	/**
