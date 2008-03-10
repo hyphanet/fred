@@ -244,6 +244,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(block != null) {
 						if(logMINOR) Logger.minor(this, "Can fulfill "+req+" ("+tok+") immediately from store");
 						getter.onSuccess(block, true, tok, this);
+						// Even with working thread priorities, we still get very high latency accessing
+						// the datastore when background threads are doing it in parallel.
+						// So yield() here, unless priority is very high.
+						if(req.getPriorityClass() > RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS)
+							Thread.yield();
 					} else {
 						anyValid = true;
 					}
