@@ -444,7 +444,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					f.addDecompressor(codec);
 				}
 				parent.onTransition(this, f);
-				ctx.executor.execute(new Runnable() {
+				ctx.slowSerialExecutor[parent.priorityClass].execute(new Runnable() {
 					public void run() {
 						f.schedule();
 					}
