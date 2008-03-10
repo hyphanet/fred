@@ -321,6 +321,8 @@ public class FProxyToadlet extends Toadlet {
 		//String ks = uri.toString();
 		String ks = uri.getPath();
 		
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		
 		if (ks.equals("/")) {
 			if (httprequest.isParameterSet("key")) {
 				MultiValueTable headers = new MultiValueTable();
@@ -335,6 +337,7 @@ public class FProxyToadlet extends Toadlet {
 					return;
 				}
 				
+				if(logMINOR) Logger.minor(this, "Redirecting to FreenetURI: "+newURI);
 				headers.put("Location", "/"+newURI);
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
