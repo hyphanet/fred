@@ -212,13 +212,13 @@ public class PacketThrottle {
 		MyCallback callback = new MyCallback();
 		try {
 			if(!((PeerNode)peer).isLocalAddress()) {
-				if(logMINOR) Logger.minor(this, "Throttling "+peer.shortToString()+" : "+packetSize);
+				if(logMINOR) Logger.minor(this, "Throttling "+peer.shortToString()+" : "+packetSize+" for "+this);
 				long startTime = System.currentTimeMillis();
 				overallThrottle.blockingGrab(packetSize);
 				long delayTime = System.currentTimeMillis() - startTime;
 				((PeerNode)peer).reportThrottledPacketSendTime(delayTime);
 			} else if(logMINOR)
-				Logger.minor(this, "Not throttling "+peer.shortToString());
+				Logger.minor(this, "Not throttling "+peer.shortToString()+" for "+this);
 			peer.sendAsync(msg, callback, packetSize, ctr);
 		} catch (RuntimeException e) {
 			callback.fatalError();
@@ -246,7 +246,7 @@ public class PacketThrottle {
 				_packetsInFlight--;
 				PacketThrottle.this.notifyAll();
 			}
-			if(logMINOR) Logger.minor(this, "Removed packet: acked");
+			if(logMINOR) Logger.minor(this, "Removed packet: acked for "+this);
 		}
 
 		public void disconnected() {
@@ -256,7 +256,7 @@ public class PacketThrottle {
 				_packetsInFlight--;
 				PacketThrottle.this.notifyAll();
 			}
-			if(logMINOR) Logger.minor(this, "Removed packet: disconnected");
+			if(logMINOR) Logger.minor(this, "Removed packet: disconnected for "+this);
 		}
 
 		public void fatalError() {
@@ -266,7 +266,7 @@ public class PacketThrottle {
 				_packetsInFlight--;
 				PacketThrottle.this.notifyAll();
 			}
-			if(logMINOR) Logger.minor(this, "Removed packet: error");
+			if(logMINOR) Logger.minor(this, "Removed packet: error for "+this);
 		}
 
 		public void sent() {
