@@ -500,7 +500,7 @@ public class NodeStats implements Persistable {
 		if(logMINOR)
 			Logger.minor(this, "Expected received bytes: "+expectedReceived);
 		if(!requestInputThrottle.instantGrab(expectedReceived)) {
-			requestOutputThrottle.recycle(expectedReceived);
+			requestOutputThrottle.recycle(expectedSent);
 			pInstantRejectIncoming.report(1.0);
 			rejected("Insufficient input bandwidth", isLocal);
 			return "Insufficient input bandwidth";
