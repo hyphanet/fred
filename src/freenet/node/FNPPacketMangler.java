@@ -2046,7 +2046,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				alreadyReported[x] = mi.alreadyReportedBytes;
 				x++;
 				if(mi.cb != null) callbacksCount += mi.cb.length;
-				if(logMINOR) Logger.minor(this, "Sending: "+mi+" length "+data.length+" cb "+ StringArray.toString(mi.cb));
+				if(logMINOR) Logger.minor(this, "Sending: "+mi+" length "+data.length+" cb "+ StringArray.toString(mi.cb)+" reported "+mi.alreadyReportedBytes);
 				length += (data.length + 2);
 			}
 		}
