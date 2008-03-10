@@ -80,6 +80,8 @@ public class FreenetURI implements Cloneable{
 	private final long suggestedEdition; // for USKs
 	private boolean hasHashCode;
 	private int hashCode;
+	static final String[] VALID_KEY_TYPES =
+		new String[] { "CHK", "SSK", "KSK", "USK" };
 	
 	public int hashCode() {
 		if(hasHashCode) return hashCode;
@@ -245,6 +247,12 @@ public class FreenetURI implements Cloneable{
 			keyType = URI.substring(0, atchar).toUpperCase().trim();
 		}
 		URI = URI.substring(atchar + 1);
+		
+		boolean validKeyType = false;
+		for(int i=0;i<VALID_KEY_TYPES.length;i++) {
+			if(keyType.equals(VALID_KEY_TYPES[i])) validKeyType = true;
+		}
+		if(!validKeyType) throw new MalformedURLException("Invalid key type: "+keyType);
 		
 		// decode metaString
 		Vector sv = null;
