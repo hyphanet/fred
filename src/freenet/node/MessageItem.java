@@ -81,6 +81,6 @@ public class MessageItem {
 	}
 	
 	public String toString() {
-		return super.toString()+":formatted="+formatted+",msg="+msg;
+		return super.toString()+":formatted="+formatted+",msg="+msg+",alreadyReported="+alreadyReportedBytes;
 	}
 }
