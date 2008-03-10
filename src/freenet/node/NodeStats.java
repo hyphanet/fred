@@ -498,9 +498,9 @@ public class NodeStats implements Persistable {
 		expected = this.getThrottle(isLocal, isInsert, isSSK, false).currentValue();
 		int expectedReceived = (int)Math.max(expected, 0);
 		if(logMINOR)
-			Logger.minor(this, "Expected received bytes: "+expectedSent);
+			Logger.minor(this, "Expected received bytes: "+expectedReceived);
 		if(!requestInputThrottle.instantGrab(expectedReceived)) {
-			requestOutputThrottle.recycle(expectedSent);
+			requestOutputThrottle.recycle(expectedReceived);
 			pInstantRejectIncoming.report(1.0);
 			rejected("Insufficient input bandwidth", isLocal);
 			return "Insufficient input bandwidth";
