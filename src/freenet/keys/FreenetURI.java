@@ -227,6 +227,9 @@ public class FreenetURI implements Cloneable{
 			URI = URI.substring("freenet:".length());
 		}
 		
+		// Strip any leading /
+		while(URI.startsWith("/")) URI = URI.substring(1);
+		
 		if(URI.indexOf('@') < 0 || URI.indexOf('/') < 0) {
 			// Encoded URL?
 			try {
