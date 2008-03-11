@@ -94,6 +94,7 @@ public class PersistentPutDir extends FCPMessage {
 			}
 			files.put(num, subset);
 		}
+		files.put("Count", elements.length);
 		fs.put("Files", files);
 		if(token != null)
 			fs.putSingle("ClientToken", token);
