@@ -3661,6 +3661,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	
 	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout) throws NotConnectedException, WaitedTooLongException {
 		long deadline = System.currentTimeMillis() + timeout;
+		if(logMINOR) Logger.minor(this, "Sending throttled message with timeout "+timeout+" packet size "+packetSize+" to "+shortToString());
 		for(int i=0;i<100;i++) {
 			try {
 				getThrottle().sendThrottledMessage(msg, this, node.outputThrottle, packetSize, ctr, deadline);
