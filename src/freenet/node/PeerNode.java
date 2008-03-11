@@ -3328,7 +3328,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		baseTime += this.clockDelta;
 		// Should be a reasonable approximation now
 		int[] timeDeltas = Fields.bytesToInts(((ShortBuffer) m.getObject(DMT.TIME_DELTAS)).getData());
-		long[] packetHashes = Fields.bytesToLongs(((ShortBuffer) m.getObject(DMT.TIME_DELTAS)).getData());
+		long[] packetHashes = Fields.bytesToLongs(((ShortBuffer) m.getObject(DMT.HASHES)).getData());
 		long[] times = new long[timeDeltas.length];
 		for(int i = 0; i < times.length; i++)
 			times[i] = baseTime - timeDeltas[i];
