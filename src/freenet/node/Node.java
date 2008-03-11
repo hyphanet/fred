@@ -1286,8 +1286,15 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		envConfig.setLockTimeout(600*1000*1000); // should be long enough even for severely overloaded nodes!
 		// Note that the above is in *MICRO*seconds.
 		envConfig.setConfigParam("je.log.faultReadSize", "6144");
+		// http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#35
 		envConfig.setConfigParam("je.evictor.lruOnly", "false");  //Is not a mutable config option and must be set before opening of environment.
 		envConfig.setConfigParam("je.evictor.nodesPerScan", "100");  //Is not a mutable config option and must be set before opening of environment.
+		// FIXME consider reducing nodesPerScan to reduce maximum latency. It's a tradeoff between eviction scan accuracy and maximum latency cost.
+		
+		// Tune latency
+		envConfig.setConfigParam("je.env.backgroundReadLimit", "65536");
+		envConfig.setConfigParam("je.env.backgroundWriteLimit", "65536");
+		envConfig.setConfigParam("je.env.backgroundSleepInterval", "10000" /* microseconds */); // 10ms
 		
 		File dbDir = new File(storeDir, "database-"+getDarknetPortNumber());
 		dbDir.mkdirs();
