@@ -1288,8 +1288,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		envConfig.setConfigParam("je.log.faultReadSize", "6144");
 		// http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#35
 		envConfig.setConfigParam("je.evictor.lruOnly", "false");  //Is not a mutable config option and must be set before opening of environment.
-		envConfig.setConfigParam("je.evictor.nodesPerScan", "100");  //Is not a mutable config option and must be set before opening of environment.
-		// FIXME consider reducing nodesPerScan to reduce maximum latency. It's a tradeoff between eviction scan accuracy and maximum latency cost.
+		envConfig.setConfigParam("je.evictor.nodesPerScan", "50");  //Is not a mutable config option and must be set before opening of environment.
+		// Recommended is 100, but smaller values reduce latency cost.
 		
 		// Tune latency
 		envConfig.setConfigParam("je.env.backgroundReadLimit", "65536");
