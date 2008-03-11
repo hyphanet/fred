@@ -3344,7 +3344,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			short notFoundCount = 0;
 			short consecutiveNotFound = 0;
 			short longestConsecutiveNotFound = 0;
-			for(short i = (short) (times.length-1); i >= 0; i--) {
+			//The arrays are constructed from received data, don't throw an ArrayIndexOutOfBoundsException if they are different sizes.
+			int shortestArray=times.length;
+			if (shortestArray > packetHashes.length)
+				shortestArray = packetHashes.length;
+			for(short i = (short) (shortestArray-1); i >= 0; i--) {	
 				long time = times[i];
 				if(time > otime) {
 					Logger.error(this, "Inconsistent time order: [" + i + "]=" + time + " but [" + (i + 1) + "] is " + otime);
