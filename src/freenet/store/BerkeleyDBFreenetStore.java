@@ -1214,19 +1214,23 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 	}
 
+	private int runningFetches;
+	
 	/**
 	 * Retrieve a block.
 	 * @param dontPromote If true, don't promote data to the top of the LRU if we fetch it.
 	 * @return null if there is no such block stored, otherwise the block.
 	 */
 	public StorableBlock fetch(byte[] routingkey, byte[] fullKey, boolean dontPromote) throws IOException {
+		DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
+		DatabaseEntry blockDBE = new DatabaseEntry();
+		int running;
 		synchronized(this) {
 			if(closed)
 				return null;
+			running = runningFetches++;
 		}
 		
-		DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
-		DatabaseEntry blockDBE = new DatabaseEntry();
 		Cursor c = null;
 		Transaction t = null;
 		try {
@@ -1241,7 +1245,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			* take the write lock. Neither can relinquish the read in order for the other to
 			* take the write, so we're screwed.
 			*/
-			if(logMINOR) Logger.minor(this, "Fetching "+HexUtil.bytesToHex(routingkey)+" dontPromote="+dontPromote+" for "+callback);
+			if(logMINOR) Logger.minor(this, "Fetching "+HexUtil.bytesToHex(routingkey)+" dontPromote="+dontPromote+" for "+callback+" running fetches: "+running);
 			if(c.getSearchKey(routingkeyDBE,blockDBE,LockMode.RMW)
 					!=OperationStatus.SUCCESS) {
 				c.close();
@@ -1251,6 +1255,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				synchronized(this) {
 					misses++;
 				}
+				if(logMINOR) Logger.minor(this, "Not found");
 				return null;
 			}
 
@@ -1258,6 +1263,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 						
 			StorableBlock block = null;
 			
+			if(logMINOR) Logger.minor(this, "Reading block "+storeBlock.offset+"...");
 			try {
 				byte[] header = new byte[headerBlockSize];
 				byte[] data = new byte[dataBlockSize];
@@ -1338,6 +1344,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			Logger.error(this, "Caught "+ex, ex);
 			ex.printStackTrace();
 			throw new IOException(ex.getMessage());
+		} finally {
+			int x;
+			synchronized(this) {
+				x = runningFetches--;
+			}
+			if(logMINOR) Logger.minor(this, "Running fetches now "+x);
 		}
 	}
 	
