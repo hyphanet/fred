@@ -45,7 +45,7 @@ public class NodeIPPortDetector {
 	FreenetInetAddress[] detectPrimaryIPAddress() {
 		FreenetInetAddress[] addresses = ipDetector.detectPrimaryIPAddress();
 		FreenetInetAddress addr = crypto.bindto;
-		if(addr.isRealInternetAddress(false, true)) {
+		if(addr.isRealInternetAddress(false, true, false)) {
 			for(int i=0;i<addresses.length;i++) {
 				if(addresses[i] == addr) return addresses;
 			}

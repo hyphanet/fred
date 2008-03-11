@@ -220,7 +220,7 @@ public class AddressTracker {
 		for(int i=0;i<items.length;i++) {
 			PeerAddressTrackerItem item = items[i];
 			if(item.packetsReceived() <= 0) continue;
-			if(!item.peer.isRealInternetAddress(false, false)) continue;
+			if(!item.peer.isRealInternetAddress(false, false, false)) continue;
 			longestGap = Math.max(longestGap, item.longestGap(horizon, now));
 		}
 		return longestGap;

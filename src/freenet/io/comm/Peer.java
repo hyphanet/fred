@@ -228,8 +228,8 @@ public class Peer {
 		return addr;
 	}
 
-	public boolean isRealInternetAddress(boolean lookup, boolean defaultVal) {
-		return addr.isRealInternetAddress(lookup, defaultVal);
+	public boolean isRealInternetAddress(boolean lookup, boolean defaultVal, boolean allowLocalAddresses) {
+		return addr.isRealInternetAddress(lookup, defaultVal, allowLocalAddresses);
 	}
 
 	/**

@@ -352,14 +352,14 @@ public class FreenetInetAddress {
 			return addr;
 	}
 
-	public boolean isRealInternetAddress(boolean lookup, boolean defaultVal) {
+	public boolean isRealInternetAddress(boolean lookup, boolean defaultVal, boolean allowLocalAddresses) {
 		if(_address != null) {
-			return IPUtil.isValidAddress(_address, false);
+			return IPUtil.isValidAddress(_address, allowLocalAddresses);
 		} else {
 			if(lookup) {
 				InetAddress a = getAddress();
 				if(a != null)
-					return IPUtil.isValidAddress(a, false);
+					return IPUtil.isValidAddress(a, allowLocalAddresses);
 			}
 			return defaultVal;	
 		}

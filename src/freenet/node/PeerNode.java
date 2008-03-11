@@ -3507,7 +3507,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+getPeer()+" because the DNS lookup failed or it's a currently unsupported IPv6 address");
 				continue;
 			}
-			if((!allowLocalAddresses()) && (!peer.isRealInternetAddress(false, false))) {
+			if(!peer.isRealInternetAddress(false, false, allowLocalAddresses())) {
 				if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
 				continue;
 			}

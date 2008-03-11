@@ -3140,9 +3140,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 */
 	public synchronized boolean dontDetect() {
 		// Only return true if bindTo is set on all ports which are in use
-		if(!darknetCrypto.bindto.isRealInternetAddress(false, true)) return false;
+		if(!darknetCrypto.bindto.isRealInternetAddress(false, true, false)) return false;
 		if(opennet != null) {
-			if(opennet.crypto.bindto.isRealInternetAddress(false, true)) return false;
+			if(opennet.crypto.bindto.isRealInternetAddress(false, true, false)) return false;
 		}
 		return true;
 	}

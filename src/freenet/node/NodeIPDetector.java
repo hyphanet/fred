@@ -103,7 +103,7 @@ public class NodeIPDetector {
 			// If the IP is overridden and the override is valid, the override has to be the first element.
 			// overrideIPAddress will be null if the override is invalid
 			addresses.add(overrideIPAddress);
-			if(overrideIPAddress.isRealInternetAddress(false, true))
+			if(overrideIPAddress.isRealInternetAddress(false, true, false))
 				addedValidIP = true;
 		}
 		
@@ -166,7 +166,7 @@ public class NodeIPDetector {
 			if(!addresses.contains(addr)) {
 				Logger.normal(this, "Detected IP address: "+addr);
 				addresses.add(addr);
-				if(addr.isRealInternetAddress(false, false))
+				if(addr.isRealInternetAddress(false, false, false))
 					addedValidIP = true;
 			}
 		}
@@ -179,7 +179,7 @@ public class NodeIPDetector {
 				if(!addresses.contains(a)) {
 					Logger.normal(this, "Plugin detected IP address: "+a);
 					addresses.add(a);
-					if(a.isRealInternetAddress(false, false))
+					if(a.isRealInternetAddress(false, false, false))
 						addedValidIP = true;
 				}
 			}
@@ -187,7 +187,7 @@ public class NodeIPDetector {
 		
 		if((!addedValidIP) && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress)) {
 			addresses.add(oldIPAddress);
-			if(oldIPAddress.isRealInternetAddress(false, true))
+			if(oldIPAddress.isRealInternetAddress(false, true, false))
 				addedValidIP = true;
 		}
 		
@@ -217,7 +217,7 @@ public class NodeIPDetector {
 				FreenetInetAddress addr = (FreenetInetAddress) (it.next());
 				Logger.minor(this, "Everyone agrees we are "+addr);
 				if(!addresses.contains(addr)) {
-					if(addr.isRealInternetAddress(false, false))
+					if(addr.isRealInternetAddress(false, false, false))
 						addedValidIP = true;
 					addresses.add(addr);
 				}
@@ -244,14 +244,14 @@ public class NodeIPDetector {
  						if(!addresses.contains(best)) {
 							Logger.normal(this, "Adding best peer "+best+" ("+bestPopularity+ ')');
 							addresses.add(best);
-							if(best.isRealInternetAddress(false, false))
+							if(best.isRealInternetAddress(false, false, false))
 								addedValidIP = true;
 						}
 						if((secondBest != null) && (secondBestPopularity > 1)) {
 							if(!addresses.contains(secondBest)) {
 								Logger.normal(this, "Adding second best peer "+secondBest+" ("+secondBest+ ')');
 								addresses.add(secondBest);
-								if(secondBest.isRealInternetAddress(false, false))
+								if(secondBest.isRealInternetAddress(false, false, false))
 									addedValidIP = true;
 							}
 						}

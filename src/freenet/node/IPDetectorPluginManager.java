@@ -382,7 +382,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			if(firstTimeUrgent <= 0)
 				firstTimeUrgent = now;
 			
-			if(detector.oldIPAddress != null && detector.oldIPAddress.isRealInternetAddress(false, false)) {
+			if(detector.oldIPAddress != null && detector.oldIPAddress.isRealInternetAddress(false, false, false)) {
 				if(logDEBUG) Logger.debug(this, "Detecting in 2 minutes as have oldIPAddress");
 				// Allow 2 minutes to get incoming connections and therefore detect from them.
 				// In the meantime, *hopefully* our oldIPAddress is valid.
