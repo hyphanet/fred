@@ -2135,7 +2135,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 							int totalMessageSize = 0;
 							for(int j=lastIndex;j<i;j++) totalMessageSize += messageData[j].length;
 							int overhead = size - totalMessageSize;
-							alreadyReportedBytes = 0;
 							for(int j=lastIndex;j<i;j++) {
 								MessageItem mi = newMsgs[j];
 								mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
@@ -2162,8 +2161,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 						}
 					}
 					lastIndex = i;
-					if(i != messageData.length)
+					if(i != messageData.length) {
 						length = 1 + (messageData[i].length + 2);
+						alreadyReportedBytes = alreadyReported[i];
+					}
 					count = 0;
 				} else {
 					length = newLength;
@@ -2184,7 +2185,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	private int innerProcessOutgoing(byte[][] messageData, int start, int length, int bufferLength, 
 			PeerNode pn, boolean neverWaitForPacketNumber, AsyncMessageCallback[] callbacks, int alreadyReportedBytes, short priority) throws NotConnectedException, WouldBlockException, PacketSequenceException {
-		if(logMINOR) Logger.minor(this, "innerProcessOutgoing(...,"+start+ ',' +length+ ',' +bufferLength+ ','+callbacks.length+')');
+		if(logMINOR) Logger.minor(this, "innerProcessOutgoing(...,"+start+ ',' +length+ ',' +bufferLength+ ','+callbacks.length+','+alreadyReportedBytes+')');
 		byte[] buf = new byte[bufferLength];
 		buf[0] = (byte)length;
 		int loc = 1;
