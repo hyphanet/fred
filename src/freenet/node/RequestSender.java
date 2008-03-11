@@ -1179,27 +1179,37 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	}
 	
 	public void addListener(Listener l) {
+		// Only call here if we've already called for the other listeners.
+		// Therefore the callbacks will only be called once.
 		boolean reject=false;
 		boolean transfer=false;
+		boolean sentFinished;
 		int status;
 		synchronized (this) {
 			synchronized (listeners) {
 				listeners.add(l);
+				reject = sentReceivedRejectOverload;
+				transfer = sentCHKTransferBegins;
+				sentFinished = sentRequestSenderFinished;
 			}
-			reject=hasForwardedRejectedOverload;
-			transfer=transferStarted();
+			reject=reject && hasForwardedRejectedOverload;
+			transfer=transfer && transferStarted();
 			status=this.status;
 		}
 		if (reject)
 			l.onReceivedRejectOverload();
 		if (transfer)
 			l.onCHKTransferBegins();
-		if (status!=NOT_FINISHED)
+		if (status!=NOT_FINISHED && sentFinished)
 			l.onRequestSenderFinished(status);
 	}
 	
+	private boolean sentReceivedRejectOverload;
+	
 	private void fireReceivedRejectOverload() {
 		synchronized (listeners) {
+			if(sentReceivedRejectOverload) return;
+			sentReceivedRejectOverload = true;
 			Iterator i=listeners.iterator();
 			while (i.hasNext()) {
 				Listener l=(Listener)i.next();
@@ -1212,8 +1222,11 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		}
 	}
 	
+	private boolean sentCHKTransferBegins;
+	
 	private void fireCHKTransferBegins() {
 		synchronized (listeners) {
+			sentCHKTransferBegins = true;
 			Iterator i=listeners.iterator();
 			while (i.hasNext()) {
 				Listener l=(Listener)i.next();
@@ -1226,8 +1239,11 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		}
 	}
 	
+	private boolean sentRequestSenderFinished;
+	
 	private void fireRequestSenderFinished(int status) {
 		synchronized (listeners) {
+			sentRequestSenderFinished = true;
 			Iterator i=listeners.iterator();
 			while (i.hasNext()) {
 				Listener l=(Listener)i.next();
