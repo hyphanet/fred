@@ -157,7 +157,8 @@ public class RequestStarter implements Runnable {
 			}
 			if(req == null) continue;
 			if(!startRequest(req, logMINOR)) {
-				Logger.error(this, "No requests to start on "+req);
+				if(!req.isCancelled())
+					Logger.error(this, "No requests to start on "+req);
 			}
 			req = null;
 			cycleTime = sentRequestTime = System.currentTimeMillis();
