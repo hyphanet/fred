@@ -533,6 +533,10 @@ public class KeyTracker {
      */
     private void queueAckRequest(int packetNumber) throws UpdatableSortedLinkedListKilledException {
         synchronized(ackRequestQueue) {
+        	// FIXME should we just remove the existing ack request? If we do, we get a better
+        	// estimate of RTT on lossy links... if we don't, lossy links will include the average
+        	// time to send a packet including all resends. The latter may be useful, and in fact
+        	// the former is unreliable...
             if(queuedAckRequest(packetNumber)) {
             	if(logMINOR) Logger.minor(this, "Not queueing ack request for "+packetNumber+" - already queued");
                 return;
