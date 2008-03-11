@@ -90,7 +90,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 				String url = "/?newbookmark="+bookmark_key+"&desc="+bookmark_desc;
 				if (!bookmark_activelink.equals("")) {
 					bookmark_activelink = HTMLEncoder.encode(bookmark_activelink);
-					url = url+"&hasAnActivelink="+bookmark_activelink;
+					url = url+"&hasAnActivelink=true";
 				}
 				return url;
 			}else if(path.equals("") && uri.toString().matches("^#[a-zA-Z0-9-_]+$")){
