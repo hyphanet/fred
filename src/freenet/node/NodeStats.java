@@ -55,9 +55,6 @@ public class NodeStats implements Persistable {
 	 */
 	public static final int MAX_INTERREQUEST_TIME = 10*1000;
 	
-	/** Fudge factor for high level bandwidth limiting. FIXME should be a long term running average */
-	public static final double FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS = 0.8;
-
 	private final Node node;
 	private MemoryChecker myMemoryChecker;
 	public final PeerManager peers;
@@ -302,9 +299,9 @@ public class NodeStats implements Persistable {
 		remoteFetchPSuccess = new TrivialRunningAverage();
 		
 		requestOutputThrottle = 
-			new TokenBucket(Math.max(obwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (obwLimit * FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS)), 0);
+			new TokenBucket(Math.max(obwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (obwLimit)), 0);
 		requestInputThrottle = 
-			new TokenBucket(Math.max(ibwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (ibwLimit * FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS)), 0);
+			new TokenBucket(Math.max(ibwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (ibwLimit)), 0);
 		
 		estimatedSizeOfOneThrottledPacket = 1024 + DMT.packetTransmitSize(1024, 32) + 
 			node.estimateFullHeadersLengthOneMessage();
@@ -390,8 +387,25 @@ public class NodeStats implements Persistable {
 		
 		double bwlimitDelayTime = throttledPacketSendAverage.currentValue();
 		
-		// If no recent reports, no packets have been sent; correct the average downwards.
+		long[] total = IOStatisticCollector.getTotalIO();
+		long totalSent = total[0];
+		long totalOverhead = getSentOverhead();
+		long uptime = node.getUptime();
+		double sentOverheadPerSecond = ((double)totalOverhead*1000.0) / ((double)uptime);
+		/** The fraction of output bytes which are used for requests */
+		double overheadFraction = ((double)(totalSent - totalOverhead)) / totalSent;
+		long timeFirstAnyConnections = peers.timeFirstAnyConnections;
 		long now = System.currentTimeMillis();
+		if(logMINOR) Logger.minor(this, "Output rate: "+((double)totalSent*1000.0)/uptime+" overhead rate "+sentOverheadPerSecond+" non-overhead fraction "+overheadFraction);
+		if(overheadFraction == 0.0 || (timeFirstAnyConnections == 0 || now - timeFirstAnyConnections < 5*60*1000)) {
+			overheadFraction = 0.7;
+			if(logMINOR) Logger.minor(this, "Adjusted overhead fraction: "+overheadFraction);
+			if(overheadFraction == 0.0) {
+				Logger.error(this, "Overhead fraction is still 100% after 5 minutes uptime??!?");
+			}
+		}
+		
+		// If no recent reports, no packets have been sent; correct the average downwards.
 		double pingTime;
 		pingTime = nodePinger.averagePingTime();
 		synchronized(this) {
@@ -460,8 +474,7 @@ public class NodeStats implements Persistable {
 			successfulChkOfferReplyBytesSentAverage.currentValue() * numCHKOfferReplies +
 			successfulSskOfferReplyBytesSentAverage.currentValue() * numSSKOfferReplies;
 		double bandwidthAvailableOutput =
-			node.getOutputBandwidthLimit() * 90; // 90 seconds at full power; we have to leave some time for the search as well
-		bandwidthAvailableOutput *= NodeStats.FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS;
+			(node.getOutputBandwidthLimit() - sentOverheadPerSecond) * 90; // 90 seconds at full power; we have to leave some time for the search as well
 		if(bandwidthLiabilityOutput > bandwidthAvailableOutput) {
 			pInstantRejectIncoming.report(1.0);
 			rejected("Output bandwidth liability", isLocal);
@@ -477,7 +490,6 @@ public class NodeStats implements Persistable {
 			successfulSskOfferReplyBytesReceivedAverage.currentValue() * numSSKOfferReplies;
 		double bandwidthAvailableInput =
 			node.getInputBandwidthLimit() * 90; // 90 seconds at full power
-		bandwidthAvailableInput *= NodeStats.FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS;
 		if(bandwidthLiabilityInput > bandwidthAvailableInput) {
 			pInstantRejectIncoming.report(1.0);
 			rejected("Input bandwidth liability", isLocal);
@@ -487,7 +499,7 @@ public class NodeStats implements Persistable {
 		
 		// Do we have the bandwidth?
 		double expected = this.getThrottle(isLocal, isInsert, isSSK, true).currentValue();
-		int expectedSent = (int)Math.max(expected, 0);
+		int expectedSent = (int)Math.max(expected / overheadFraction, 0);
 		if(logMINOR)
 			Logger.minor(this, "Expected sent bytes: "+expectedSent);
 		if(!requestOutputThrottle.instantGrab(expectedSent)) {
@@ -961,14 +973,14 @@ public class NodeStats implements Persistable {
 	}
 
 	public void setOutputLimit(int obwLimit) {
-		requestOutputThrottle.changeNanosAndBucketSize((int)((1000L*1000L*1000L) / (obwLimit * FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS)), Math.max(obwLimit*60, 32768*20));
+		requestOutputThrottle.changeNanosAndBucketSize((int)((1000L*1000L*1000L) / (obwLimit)), Math.max(obwLimit*60, 32768*20));
 		if(node.inputLimitDefault) {
 			setInputLimit(obwLimit * 4);
 		}
 	}
 
 	public void setInputLimit(int ibwLimit) {
-		requestInputThrottle.changeNanosAndBucketSize((int)((1000L*1000L*1000L) / (ibwLimit * FRACTION_OF_BANDWIDTH_USED_BY_REQUESTS)), Math.max(ibwLimit*60, 32768*20));
+		requestInputThrottle.changeNanosAndBucketSize((int)((1000L*1000L*1000L) / (ibwLimit)), Math.max(ibwLimit*60, 32768*20));
 	}
 
 	public boolean isTestnetEnabled() {
@@ -1096,6 +1108,9 @@ public class NodeStats implements Persistable {
 		offeredKeysSenderRcvdBytes += x;
 	}
 	
+	/**
+	 * @return The number of bytes sent in replying to FNPGetOfferedKey's.
+	 */
 	public synchronized void offeredKeysSenderSentBytes(int x) {
 		offeredKeysSenderSentBytes += x;
 	}
@@ -1545,6 +1560,34 @@ public class NodeStats implements Persistable {
 	
 	public long getNotificationOnlyPacketsSentBytes() {
 		return notificationOnlySentBytes;
+	}
+
+	public long getSentOverhead() {
+		return offerKeysSentBytes // offers we have sent
+		+ swappingSentBytes // swapping
+		+ totalAuthBytesSent // connection setup
+		+ resendBytesSent // resends - FIXME might be dependant on requests?
+		+ uomBytesSent // update over mandatory
+		+ announceBytesSent // announcements
+		+ routingStatusBytesSent // routing status
+		+ networkColoringSentBytesCounter // network coloring
+		+ pingBytesSent // ping bytes
+		+ probeRequestSentBytes // probe requests
+		+ routedMessageBytesSent // routed test messages
+		+ disconnBytesSent // disconnection related bytes
+		+ initialMessagesBytesSent // initial messages
+		+ changedIPBytesSent // changed IP
+		+ nodeToNodeSentBytes // n2n messages
+		+ notificationOnlySentBytes; // ack-only packets
+	}
+	
+	/**
+	 * The average number of bytes sent per second for things other than requests, inserts,
+	 * and offer replies.
+	 */
+	public double getSentOverheadPerSecond() {
+		long uptime = node.getUptime();
+		return ((double)getSentOverhead() * 1000.0) / ((double) uptime);
 	}
 	
 }
