@@ -82,11 +82,17 @@ public class GenericReadFilterCallback implements FilterCallback {
 				// allow links to the root to add bookmarks
 				String bookmark_key = req.getParam("newbookmark");
 				String bookmark_desc = req.getParam("desc");
+				String bookmark_activelink = req.getParam("hasAnActivelink", "");
 
 				bookmark_key = HTMLEncoder.encode(bookmark_key);
 				bookmark_desc = HTMLEncoder.encode(bookmark_desc);
 
-				return "/?newbookmark="+bookmark_key+"&desc="+bookmark_desc;
+				String url = "/?newbookmark="+bookmark_key+"&desc="+bookmark_desc;
+				if (!bookmark_activelink.equals("")) {
+					bookmark_activelink = HTMLEncoder.encode(bookmark_activelink);
+					url = url+"&hasAnActivelink="+bookmark_activelink;
+				}
+				return url;
 			}else if(path.equals("") && uri.toString().matches("^#[a-zA-Z0-9-_]+$")){
 				// Hack for anchors, see #710
 				return uri.toString();
