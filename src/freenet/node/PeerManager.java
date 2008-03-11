@@ -372,6 +372,12 @@ public class PeerManager {
 		return true;
 	}
 	
+	long timeFirstAnyConnections = 0;
+	
+	public long getTimeFirstAnyConnections() {
+		return timeFirstAnyConnections;
+	}
+	
     public void addConnectedPeer(PeerNode pn) {
     	logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	if(!pn.isRealConnection()) {
@@ -382,7 +388,9 @@ public class PeerManager {
     		if(logMINOR) Logger.minor(this, "Not connected: "+pn);
     		return;
     	}
+    	long now = System.currentTimeMillis();
     	synchronized(this) {
+    	if(timeFirstAnyConnections == 0) timeFirstAnyConnections = now;
         for(int i=0;i<connectedPeers.length;i++) {
             if(connectedPeers[i] == pn) {
             	if(logMINOR) Logger.minor(this, "Already connected: "+pn);
@@ -1666,4 +1674,5 @@ public class PeerManager {
 		}
 		return null;
 	}
+	
 }
