@@ -231,7 +231,9 @@ public class ToadletContextImpl implements ToadletContext {
 					continue;
 				}
 				
-				if(Logger.shouldLog(Logger.MINOR, ToadletContextImpl.class))
+				boolean logMINOR = Logger.shouldLog(Logger.MINOR, ToadletContextImpl.class);
+				
+				if(logMINOR)
 					Logger.minor(ToadletContextImpl.class, "first line: "+firstLine);
 				
 				String[] split = firstLine.split(" ");
@@ -245,6 +247,7 @@ public class ToadletContextImpl implements ToadletContext {
 				URI uri;
 				try {
 					uri = URIPreEncoder.encodeURI(split[1]).normalize();
+					if(logMINOR) Logger.minor(ToadletContextImpl.class, "URI: "+uri+" path "+uri.getPath()+" host "+uri.getHost()+" frag "+uri.getFragment()+" port "+uri.getPort()+" query "+uri.getQuery()+" scheme "+uri.getScheme());
 				} catch (URISyntaxException e) {
 					sendURIParseError(sock.getOutputStream(), true, e);
 					return;
