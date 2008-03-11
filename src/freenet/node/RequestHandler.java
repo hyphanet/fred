@@ -86,6 +86,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	private Exception previousApplyByteCountCall;
 	
     private void applyByteCounts() {
+    	if(disconnected) {
+    		Logger.normal(this, "Not applying byte counts as request source disconnected during receive");
+    		return;
+    	}
 		if (appliedByteCounts) {
 			Logger.error(this, "applyByteCounts already called", new Exception("error"));
 			Logger.error(this, "first called here", previousApplyByteCountCall);
@@ -172,6 +176,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}
 	}
 	
+	private boolean disconnected = false;
+	
 	public void onCHKTransferBegins() {
 		try {
             	// Is a CHK.
@@ -184,6 +190,9 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
             	node.addTransferringRequestHandler(uid);
 			bt.sendAsync(node.executor);
 		} catch (NotConnectedException e) {
+			synchronized(this) {
+				disconnected = true;
+			}
 			Logger.normal(this, "requestor is gone, can't begin CHK transfer");
 		}
 	}
@@ -276,13 +285,13 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
             				sendTerminal(df);
             			}
             		} else {
-            			if(bt == null) {
+            			if(bt == null && !disconnected) {
             				// Bug! This is impossible!
             				Logger.error(this, "Status is SUCCESS but we never started a transfer on "+uid);
             				// Obviously this node is confused, send a terminal reject to make sure the requestor is not waiting forever.
                     	    reject = DMT.createFNPRejectedOverload(uid, true);
                     		sendTerminal(reject);
-            			} else {
+            			} else if(!disconnected) {
             				waitAndFinishCHKTransferOffThread();
             			}
             		}
@@ -290,13 +299,13 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
             	case RequestSender.VERIFY_FAILURE:
             	case RequestSender.GET_OFFER_VERIFY_FAILURE:
             		if(key instanceof NodeCHK) {
-						if(bt == null) {
+						if(bt == null && !disconnected) {
             				// Bug! This is impossible!
             				Logger.error(this, "Status is VERIFY_FAILURE but we never started a transfer on "+uid);
 							// Obviously this node is confused, send a terminal reject to make sure the requestor is not waiting forever.
                     	    reject = DMT.createFNPRejectedOverload(uid, true);
                     		sendTerminal(reject);
-            			} else {
+            			} else if(!disconnected) {
 							//Verify fails after receive() is complete, so we might as well propagate it...
             				waitAndFinishCHKTransferOffThread();
             			}
@@ -308,13 +317,13 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
             	case RequestSender.TRANSFER_FAILED:
             	case RequestSender.GET_OFFER_TRANSFER_FAILED:
             		if(key instanceof NodeCHK) {
-            			if(bt == null) {
+            			if(bt == null && !disconnected) {
             				// Bug! This is impossible!
             				Logger.error(this, "Status is TRANSFER_FAILED but we never started a transfer on "+uid);
 							// Obviously this node is confused, send a terminal reject to make sure the requestor is not waiting forever.
                     	    reject = DMT.createFNPRejectedOverload(uid, true);
                     		sendTerminal(reject);
-            			} else {
+            			} else if(!disconnected) {
             				waitAndFinishCHKTransferOffThread();
             			}
 						return;
