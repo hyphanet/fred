@@ -514,7 +514,7 @@ public class NodeStats implements Persistable {
 		double expected = this.getThrottle(isLocal, isInsert, isSSK, true).currentValue();
 		int expectedSent = (int)Math.max(expected / overheadFraction, 0);
 		if(logMINOR)
-			Logger.minor(this, "Expected sent bytes: "+expectedSent);
+			Logger.minor(this, "Expected sent bytes: "+expected+" -> "+expectedSent);
 		if(!requestOutputThrottle.instantGrab(expectedSent)) {
 			pInstantRejectIncoming.report(1.0);
 			rejected("Insufficient output bandwidth", isLocal);
