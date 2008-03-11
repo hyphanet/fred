@@ -157,7 +157,7 @@ class FailureTableEntry implements TimedOutNodesList {
 			WeakReference ref = requestorNodes[i];
 			PeerNode pn = (PeerNode) (ref == null ? null : ref.get());
 			if(pn == null) continue;
-			if(pn == requestor) ret = i;
+			if(pn == requestor) ret = toIndex;
 			newRequestorNodes[toIndex] = requestorNodes[i];
 			newRequestorTimes[toIndex] = requestorTimes[i];
 			newRequestorBootIDs[toIndex] = requestorBootIDs[i];
@@ -238,7 +238,7 @@ class FailureTableEntry implements TimedOutNodesList {
 			WeakReference ref = requestedNodes[i];
 			PeerNode pn = (PeerNode) (ref == null ? null : ref.get());
 			if(pn == null) continue;
-			if(pn == requestedFrom) ret = i;
+			if(pn == requestedFrom) ret = toIndex;
 			newRequestedNodes[toIndex] = requestedNodes[i];
 			newRequestedTimes[toIndex] = requestedTimes[i];
 			newRequestedBootIDs[toIndex] = requestedBootIDs[i];
