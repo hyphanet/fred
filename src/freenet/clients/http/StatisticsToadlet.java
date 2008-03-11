@@ -850,6 +850,9 @@ public class StatisticsToadlet extends Toadlet {
 			activityList.addChild("li", l10n("nodeToNodeBytes", "total", SizeUtil.formatSize(totalBytesSentNodeToNode, true)));
 			activityList.addChild("li", l10n("unaccountedBytes", new String[] { "total", "percent" },
 					new String[] { SizeUtil.formatSize(totalBytesSentRemaining, true), Integer.toString((int)(totalBytesSentRemaining*100 / total[0])) }));
+			double sentOverheadPerSecond = node.nodeStats.getSentOverheadPerSecond();
+			activityList.addChild("li", l10n("totalOverhead", new String[] { "rate", "percent" }, 
+					new String[] { SizeUtil.formatSize((long)sentOverheadPerSecond), Integer.toString((int)((100 * sentOverheadPerSecond) / total_output_rate)) }));
 		}
 	}
 

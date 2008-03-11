@@ -373,6 +373,11 @@ public class NodeStats implements Persistable {
 			}
 	};
 	
+	static final double DEFAULT_OVERHEAD = 0.7;
+	static final long DEFAULT_ONLY_PERIOD = 60*1000;
+	static final long DEFAULT_TRANSITION_PERIOD = 240*1000;
+	static final double MIN_OVERHEAD = 0.01;
+	
 	/* return reject reason as string if should reject, otherwise return null */
 	public String shouldRejectRequest(boolean canAcceptAnyway, boolean isInsert, boolean isSSK, boolean isLocal, boolean isOfferReply, PeerNode source) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -397,12 +402,20 @@ public class NodeStats implements Persistable {
 		long timeFirstAnyConnections = peers.timeFirstAnyConnections;
 		long now = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Output rate: "+((double)totalSent*1000.0)/uptime+" overhead rate "+sentOverheadPerSecond+" non-overhead fraction "+overheadFraction);
-		if(overheadFraction == 0.0 || (timeFirstAnyConnections == 0 || now - timeFirstAnyConnections < 5*60*1000)) {
-			overheadFraction = 0.7;
-			if(logMINOR) Logger.minor(this, "Adjusted overhead fraction: "+overheadFraction);
-			if(overheadFraction == 0.0) {
-				Logger.error(this, "Overhead fraction is still 100% after 5 minutes uptime??!?");
+		if(timeFirstAnyConnections > 0) {
+			long time = now - timeFirstAnyConnections;
+			if(time < DEFAULT_ONLY_PERIOD) {
+				overheadFraction = DEFAULT_OVERHEAD;
+				if(logMINOR) Logger.minor(this, "Adjusted overhead fraction: "+overheadFraction);
+			} else if(time < DEFAULT_ONLY_PERIOD + DEFAULT_TRANSITION_PERIOD) {
+				time -= DEFAULT_ONLY_PERIOD;
+				overheadFraction = (time * overheadFraction + 
+					(DEFAULT_TRANSITION_PERIOD - time) * DEFAULT_OVERHEAD) / DEFAULT_TRANSITION_PERIOD;
+				if(logMINOR) Logger.minor(this, "Adjusted overhead fraction: "+overheadFraction);
 			}
+		} else if(overheadFraction < MIN_OVERHEAD) {
+			Logger.error(this, "Overhead fraction is "+overheadFraction+" - assuming this is self-inflicted and using default");
+			overheadFraction = DEFAULT_OVERHEAD;
 		}
 		
 		// If no recent reports, no packets have been sent; correct the average downwards.
