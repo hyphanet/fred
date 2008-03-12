@@ -36,7 +36,7 @@ public class NodeStarter implements WrapperListener
 {
     private Node node;
 	private static LoggingConfigHandler logConfigHandler;
-	public static int RECOMMENDED_EXT_BUILD_NUMBER = 19;
+	public static int RECOMMENDED_EXT_BUILD_NUMBER = 20;
 	
 	/*
 		(File.separatorChar == '\\') &&
