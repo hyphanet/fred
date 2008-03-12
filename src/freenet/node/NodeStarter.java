@@ -322,6 +322,8 @@ public class NodeStarter implements WrapperListener
 		plug.setDaemon(false);
 		plug.start();
     	}
+    	
+    	FNPPacketMangler.LOG_UNMATCHABLE_ERROR = true;
 		
 		return random;
 	}
