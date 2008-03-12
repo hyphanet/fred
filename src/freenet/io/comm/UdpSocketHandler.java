@@ -252,7 +252,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			_sock.send(packet);
 			tracker.sentPacketTo(destination);
 			IOStatisticCollector.addInfo(address + ":" + port, 0, blockToSend.length + UDP_HEADERS_LENGTH); 
-			if(logMINOR) Logger.minor(this, "Sent packet length "+blockToSend.length+" to "+address);
+			if(logMINOR) Logger.minor(this, "Sent packet length "+blockToSend.length+" to "+address+':'+port);
 		} catch (IOException e) {
 			if(packet.getAddress() instanceof Inet6Address)
 				Logger.normal(this, "Error while sending packet to IPv6 address: "+destination+": "+e, e);
