@@ -221,10 +221,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(opn != null) {
 			if(logMINOR) Logger.minor(this, "Trying exact match");
 			if(length > HEADERS_LENGTH_MINIMUM) {
+				if(logMINOR) Logger.minor(this, "Trying current key tracker");
 				if(tryProcess(buf, offset, length, opn.getCurrentKeyTracker(), now)) return;
 				// Try with old key
+				if(logMINOR) Logger.minor(this, "Trying previous key tracker");
 				if(tryProcess(buf, offset, length, opn.getPreviousKeyTracker(), now)) return;
 				// Try with unverified key
+				if(logMINOR) Logger.minor(this, "Trying unverified key tracker");
 				if(tryProcess(buf, offset, length, opn.getUnverifiedKeyTracker(), now)) return;
 			}
 			if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2 && !node.isStopping()) {

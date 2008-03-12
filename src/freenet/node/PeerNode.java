@@ -2290,6 +2290,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			long t = tracker.getNextUrgentTime();
 			if(t < now || forceSendPrimary) {
 				try {
+					if(logMINOR) Logger.minor(this, "Sending urgent notifications for current tracker on "+shortToString());
 					int size = outgoingMangler.processOutgoing(null, 0, 0, tracker, 0, DMT.PRIORITY_NOW);
 					node.nodeStats.reportNotificationOnlyPacketSent(size);
 				} catch(NotConnectedException e) {
@@ -2306,6 +2307,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			long t = tracker.getNextUrgentTime();
 			if(t < now)
 				try {
+					if(logMINOR) Logger.minor(this, "Sending urgent notifications for previous tracker on "+shortToString());
 					int size = outgoingMangler.processOutgoing(null, 0, 0, tracker, 0, DMT.PRIORITY_NOW);
 					node.nodeStats.reportNotificationOnlyPacketSent(size);
 				} catch(NotConnectedException e) {
