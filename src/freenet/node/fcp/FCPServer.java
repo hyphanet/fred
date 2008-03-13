@@ -717,7 +717,7 @@ public class FCPServer implements Runnable {
 				try {
 					count = Integer.parseInt(r);
 				} catch(NumberFormatException e) {
-					Logger.error(this, "Corrupt persistent downloads file");
+					Logger.error(this, "Corrupt persistent downloads file: cannot parse "+r+" as integer");
 					throw new IOException(e.toString());
 				}
 				for(int i = 0; i < count; i++) {
