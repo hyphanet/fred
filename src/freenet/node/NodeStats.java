@@ -392,7 +392,7 @@ public class NodeStats implements Persistable {
 		
 		double bwlimitDelayTime = throttledPacketSendAverage.currentValue();
 		
-		long[] total = IOStatisticCollector.getTotalIO();
+		long[] total = node.collector.getTotalIO();
 		long totalSent = total[0];
 		long totalOverhead = getSentOverhead();
 		long uptime = node.getUptime();
@@ -711,7 +711,7 @@ public class NodeStats implements Persistable {
 	 */
 	public void maybeUpdateNodeIOStats(long now) {
 		if(now > nextNodeIOStatsUpdateTime) {
-			long[] io_stats = IOStatisticCollector.getTotalIO();
+			long[] io_stats = node.collector.getTotalIO();
 			long outdiff;
 			long indiff;
 			synchronized(ioStatSync) {
@@ -842,7 +842,7 @@ public class NodeStats implements Persistable {
 		fs.put("numberOfTransferringRequestSenders", node.getNumTransferringRequestSenders());
 		fs.put("numberOfARKFetchers", node.getNumARKFetchers());
 
-		long[] total = IOStatisticCollector.getTotalIO();
+		long[] total = node.collector.getTotalIO();
 		long total_output_rate = (total[0]) / nodeUptimeSeconds;
 		long total_input_rate = (total[1]) / nodeUptimeSeconds;
 		long totalPayloadOutput = node.getTotalPayloadSent();

@@ -15,15 +15,12 @@ public class IOStatisticCollector {
 	public static final int STATISTICS_DURATION = 1000*STATISTICS_DURATION_S;
 	private long lastrotate;
 	
-	private static IOStatisticCollector _currentSC;
 	private static boolean logDEBUG;
 	private long totalbytesin;
 	private long totalbytesout;
 	private final LinkedHashMap targets;
 	
-	private IOStatisticCollector() {
-		// Only I should be able to create myself
-		_currentSC = this;
+	public IOStatisticCollector() {
 		targets = new LinkedHashMap();
 		// TODO: only for testing!!!!
 		// This should only happen once
@@ -32,18 +29,10 @@ public class IOStatisticCollector {
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 	}
 	
-	private static IOStatisticCollector getSC() {
-		if (_currentSC == null) {
-			_currentSC = new IOStatisticCollector();
-		}
-		return _currentSC;
-	}
-	
-	public static void addInfo(String key, int inbytes, int outbytes) {
+	public void addInfo(String key, int inbytes, int outbytes) {
 		try {
-			IOStatisticCollector sc = getSC();
-			synchronized (sc) {
-				sc._addInfo(key, inbytes, outbytes);
+			synchronized (this) {
+				_addInfo(key, inbytes, outbytes);
 			}
 		} catch (Throwable t) {
 			t.printStackTrace();
@@ -66,17 +55,15 @@ public class IOStatisticCollector {
 		}
 	}
 	
-	public static void dumpInfo() {
-		IOStatisticCollector sc = getSC();
-		synchronized (sc) {
-			sc._dumpInfo();
+	public void dumpInfo() {
+		synchronized (this) {
+			_dumpInfo();
 		}
 	}
 
-	public static long[] getTotalIO() {
-		IOStatisticCollector sc = getSC();
-		synchronized (sc) {
-			return sc._getTotalIO();
+	public long[] getTotalIO() {
+		synchronized (this) {
+			return _getTotalIO();
 		}
 	}
 	
@@ -89,10 +76,9 @@ public class IOStatisticCollector {
 		return ret;
 	}
 	
-	public static int[][] getTotalStatistics() {
-		IOStatisticCollector sc = getSC();
-		synchronized (sc) {
-			return sc._getTotalStatistics();
+	public int[][] getTotalStatistics() {
+		synchronized (this) {
+			return _getTotalStatistics();
 		}
 	}
 

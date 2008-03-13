@@ -45,9 +45,11 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	private final String title;
 	private boolean _started;
 	private Thread _thread;
+	private final IOStatisticCollector collector;
 	
-	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node, long startupTime, String title) throws SocketException {
+	public UdpSocketHandler(int listenPort, InetAddress bindto, Node node, long startupTime, String title, IOStatisticCollector collector) throws SocketException {
 		this.node = node;
+		this.collector = collector;
 		this.title = title;
 		_bindTo = bindto;
 		    // Keep the Updater code in, just commented out, for now
@@ -201,7 +203,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		try {
 			_sock.receive(packet);
 			// TODO: keep?
-			IOStatisticCollector.addInfo(packet.getAddress() + ":" + packet.getPort(),
+			collector.addInfo(packet.getAddress() + ":" + packet.getPort(),
 					packet.getLength(), 0);
 		} catch (SocketTimeoutException e1) {
 			return false;
@@ -251,7 +253,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		try {
 			_sock.send(packet);
 			tracker.sentPacketTo(destination);
-			IOStatisticCollector.addInfo(address + ":" + port, 0, blockToSend.length + UDP_HEADERS_LENGTH); 
+			collector.addInfo(address + ":" + port, 0, blockToSend.length + UDP_HEADERS_LENGTH); 
 			if(logMINOR) Logger.minor(this, "Sent packet length "+blockToSend.length+" to "+address+':'+port);
 		} catch (IOException e) {
 			if(packet.getAddress() instanceof Inet6Address)

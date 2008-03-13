@@ -49,6 +49,7 @@ import freenet.crypt.Yarrow;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.FreenetInetAddress;
+import freenet.io.comm.IOStatisticCollector;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageCore;
 import freenet.io.comm.MessageFilter;
@@ -406,6 +407,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	boolean enablePacketCoalescing;
 	public static final short DEFAULT_MAX_HTL = (short)10;
 	private short maxHTL;
+	public final IOStatisticCollector collector;
 	/** Type identifier for fproxy node to node messages, as sent on DMT.nodeToNodeMessage's */
 	public static final int N2N_MESSAGE_TYPE_FPROXY = 1;
 	/** Type identifier for differential node reference messages, as sent on DMT.nodeToNodeMessage's */
@@ -598,6 +600,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		String tmp = "Initializing Node using Freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vm.vendor")+" JVM version "+System.getProperty("java.vm.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
 		Logger.normal(this, tmp);
 		System.out.println(tmp);
+		collector = new IOStatisticCollector();
 		this.executor = executor;
 		nodeStarter=ns;
 		if(logConfigHandler != lc)

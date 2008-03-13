@@ -111,7 +111,7 @@ public class NodeCrypto {
 			for(int i=0;i<200000;i++) {
 				int portNo = 1024 + random.nextInt(65535-1024);
 				try {
-					u = new UdpSocketHandler(portNo, bindto.getAddress(), node, startupTime, getTitle(portNo));
+					u = new UdpSocketHandler(portNo, bindto.getAddress(), node, startupTime, getTitle(portNo), node.collector);
 					port = u.getPortNumber();
 					break;
 				} catch (Exception e) {
@@ -125,7 +125,7 @@ public class NodeCrypto {
 				throw new NodeInitException(NodeInitException.EXIT_NO_AVAILABLE_UDP_PORTS, "Could not find an available UDP port number for FNP (none specified)");
 		} else {
 			try {
-				u = new UdpSocketHandler(port, bindto.getAddress(), node, startupTime, getTitle(port));
+				u = new UdpSocketHandler(port, bindto.getAddress(), node, startupTime, getTitle(port), node.collector);
 			} catch (Exception e) {
 				Logger.error(this, "Caught "+e, e);
 				System.err.println(e);
