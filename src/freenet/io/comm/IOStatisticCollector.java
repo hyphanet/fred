@@ -43,12 +43,12 @@ public class IOStatisticCollector {
 	private void _addInfo(String key, int inbytes, int outbytes) {
 		rotate();
 		if(ENABLE_PER_ADDRESS_TRACKING) {
-		StatisticEntry entry = (StatisticEntry)targets.get(key);
-		if (entry == null) {
-			entry = new StatisticEntry();
-			targets.put(key, entry);
-		}
-		entry.addData((inbytes>0)?inbytes:0, (outbytes>0)?outbytes:0);
+			StatisticEntry entry = (StatisticEntry)targets.get(key);
+			if (entry == null) {
+				entry = new StatisticEntry();
+				targets.put(key, entry);
+			}
+			entry.addData((inbytes>0)?inbytes:0, (outbytes>0)?outbytes:0);
 		}
 		synchronized(this) {
 			totalbytesout += (outbytes>0)?outbytes:0;
