@@ -188,14 +188,14 @@ public class DSAGroupGenerator {
     	return obuf;
 	}
 
-	/**
-	 * WARNING: it won't work reliably for integers below 30
-	 */
 	public static boolean isPrime(BigInteger b) {
-        for (int i = 0; i < smallPrimes.length; i++) {
-            if (b.mod(smallPrimes[i]).equals(BigInteger.ZERO)) return false;
-        }
-        // FIPS 186-2 recommends 2^100:1 confidence
+		if(BigInteger.ONE.compareTo(b) > -1)
+			throw new IllegalArgumentException("Can't be a prime number!");
+		for(int i = 0; i < smallPrimes.length; i++) {
+			if(b.mod(smallPrimes[i]).equals(BigInteger.ZERO))
+				return false;
+		}
+		// FIPS 186-2 recommends 2^100:1 confidence
         return b.isProbablePrime(200);
     }
 

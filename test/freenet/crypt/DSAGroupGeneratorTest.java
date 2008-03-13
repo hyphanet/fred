@@ -18,19 +18,18 @@ package freenet.crypt;
 
 import java.math.BigInteger;
 
-import freenet.crypt.DSAGroupGenerator;
 import junit.framework.TestCase;
 
 /**
  * Test case for the {@link freenet.crypt.DSAGroupGeneratorTest} class.
  * 
- * @author Florent Daignière &lt;nextgens@freenetproject.org&gt;
+ * @author Florent Daigniï¿½re &lt;nextgens@freenetproject.org&gt;
  */
 public class DSAGroupGeneratorTest extends TestCase {
 
 	public void testIsPrime() { // No need to test below 30 as it won't work anyway
-		assertFalse(DSAGroupGenerator.isPrime(BigInteger.ZERO));
-		assertFalse(DSAGroupGenerator.isPrime(BigInteger.ONE));
+		try { DSAGroupGenerator.isPrime(BigInteger.ZERO); fail(); } catch (IllegalArgumentException e) {}
+		try { DSAGroupGenerator.isPrime(BigInteger.ONE); fail(); } catch (IllegalArgumentException e) {}
 		
 		assertTrue(DSAGroupGenerator.isPrime(BigInteger.valueOf(2)));
 		assertTrue(DSAGroupGenerator.isPrime(BigInteger.valueOf(1021)));
