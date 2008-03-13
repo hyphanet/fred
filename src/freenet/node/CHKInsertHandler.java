@@ -397,7 +397,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     private boolean receiveStarted;
     private boolean receiveCompleted;
 
-    public class DataReceiver implements Runnable {
+    public class DataReceiver implements PrioRunnable {
 
         public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
@@ -439,6 +439,10 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         public String toString() {
         	return super.toString()+" for "+uid;
         }
+
+		public int getPriority() {
+			return NativeThread.HIGH_PRIORITY;
+		}
         
     }
 
