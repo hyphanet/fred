@@ -3701,10 +3701,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			sendAsync(DMT.createFNPNetworkID(assignedNetworkID), null, 0, ctr);
 	}
 
-	public boolean isLocalAddress() {
+	public boolean shouldThrottle() {
 		Peer peer = getPeer();
-		if(peer == null) return false; // presumably
-		return !IPUtil.isValidAddress(peer.getAddress(), false);
+		if(node.throttleLocalData) return true;
+		if(peer == null) return true; // presumably
+		return IPUtil.isValidAddress(peer.getAddress(), false);
 	}
 
 	public void reportPing(long t) {

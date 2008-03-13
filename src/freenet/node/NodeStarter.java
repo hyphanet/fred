@@ -343,7 +343,8 @@ public class NodeStarter implements WrapperListener
 			int dropProb, RandomSource random, Executor executor, int threadLimit, 
 			long storeSize, boolean ramStore, boolean enableSwapping, boolean enableARKs, 
 			boolean enableULPRs, boolean enablePerNodeFailureTables, 
-			boolean enableSwapQueueing, boolean enablePacketCoalescing) throws NodeInitException {
+			boolean enableSwapQueueing, boolean enablePacketCoalescing, 
+			int outputBandwidthLimit) throws NodeInitException {
 		
 		File baseDir = new File(testName);
 		File portDir = new File(baseDir, Integer.toString(port));
@@ -354,6 +355,10 @@ public class NodeStarter implements WrapperListener
 		
 		// Set up config for testing
 		SimpleFieldSet configFS = new SimpleFieldSet(false); // only happens once in entire simulation
+		if(outputBandwidthLimit > 0) {
+			configFS.put("node.outputBandwidthLimit", outputBandwidthLimit);
+			configFS.put("node.throttleLocalTraffic", true);
+		}
 		configFS.put("node.listenPort", port);
 		configFS.put("node.disableProbabilisticHTLs", disableProbabilisticHTLs);
 		configFS.put("fproxy.enabled", false);

@@ -396,6 +396,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	final boolean testnetEnabled;
 	final TestnetHandler testnetHandler;
 	public final DoubleTokenBucket outputThrottle;
+	public boolean throttleLocalData;
 	private int outputBandwidthLimit;
 	private int inputBandwidthLimit;
 	boolean inputLimitDefault;
@@ -912,6 +913,20 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			inputLimitDefault = true;
 			ibwLimit = obwLimit * 4;
 		}
+		
+		nodeConfig.register("throttleLocalTraffic", false, sortOrder++, true, false, "Node.throttleLocalTraffic", "Node.throttleLocalTrafficLong", new BooleanCallback() {
+
+			public boolean get() {
+				return throttleLocalData;
+			}
+
+			public void set(boolean val) throws InvalidConfigValueException {
+				throttleLocalData = val;
+			}
+			
+		});
+		
+		throttleLocalData = nodeConfig.getBoolean("throttleLocalTraffic");
 		
 		// Testnet.
 		// Cannot be enabled/disabled on the fly.
