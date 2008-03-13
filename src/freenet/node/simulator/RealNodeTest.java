@@ -113,16 +113,22 @@ public class RealNodeTest {
 			int countReallyConnected = 0;
 			int totalPeers = 0;
 			int totalConnections = 0;
+			int totalPartialConnections = 0;
+			int totalCompatibleConnections = 0;
 			int totalBackedOff = 0;
 			double totalPingTime = 0.0;
 			double maxPingTime = 0.0;
 			double minPingTime = Double.MAX_VALUE;
 			for(int i=0;i<nodes.length;i++) {
 				int countConnected = nodes[i].peers.countConnectedDarknetPeers();
+				int countAlmostConnected = nodes[i].peers.countAlmostConnectedDarknetPeers();
 				int countTotal = nodes[i].peers.countValidPeers();
 				int countBackedOff = nodes[i].peers.countBackedOffPeers();
+				int countCompatible = nodes[i].peers.countCompatibleDarknetPeers();
 				totalPeers += countTotal;
 				totalConnections += countConnected;
+				totalPartialConnections += countAlmostConnected;
+				totalCompatibleConnections += countCompatible;
 				totalBackedOff += countBackedOff;
 				double pingTime = nodes[i].nodeStats.getNodeAveragePingTime();
 				totalPingTime += pingTime;
@@ -133,7 +139,7 @@ public class RealNodeTest {
 					if(countBackedOff == 0) countReallyConnected++;
 				} else {
 					if(Logger.shouldLog(Logger.MINOR, RealNodeTest.class)) 
-						Logger.minor(RealNodeTest.class, "Connection count for "+nodes[i]+" : "+countConnected);
+						Logger.minor(RealNodeTest.class, "Connection count for "+nodes[i]+" : "+countConnected+" partial "+countAlmostConnected);
 				}
 				if(countBackedOff > 0) {
 					if(Logger.shouldLog(Logger.MINOR, RealNodeTest.class))
@@ -149,8 +155,8 @@ public class RealNodeTest {
 				return;
 			} else {
 				long tDelta = (System.currentTimeMillis() - tStart)/1000;
-				System.err.println("Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total) - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)avgPingTime+"/"+(int)maxPingTime+" at "+tDelta+'s');
-				Logger.normal(RealNodeTest.class, "Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total) - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)avgPingTime+"/"+(int)maxPingTime+" at "+tDelta+'s');
+				System.err.println("Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total partial "+totalPartialConnections+" compatible "+totalCompatibleConnections+") - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)avgPingTime+"/"+(int)maxPingTime+" at "+tDelta+'s');
+				Logger.normal(RealNodeTest.class, "Waiting for nodes to be fully connected: "+countFullyConnected+" / "+nodes.length+" ("+totalConnections+" / "+totalPeers+" connections total partial "+totalPartialConnections+" compatible "+totalCompatibleConnections+") - backed off "+totalBackedOff+" ping min/avg/max "+(int)minPingTime+"/"+(int)avgPingTime+"/"+(int)maxPingTime+" at "+tDelta+'s');
 				Thread.sleep(1000);
 			}
 		}
