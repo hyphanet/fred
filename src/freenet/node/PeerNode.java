@@ -1782,6 +1782,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		else
 			older = false;
 		KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
+		if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+shortToString());
 		changedIP(replyTo);
 		boolean bootIDChanged = false;
 		boolean wasARekey = false;
