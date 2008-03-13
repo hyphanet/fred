@@ -40,6 +40,7 @@ import freenet.support.Fields;
 import freenet.io.comm.PacketSocketHandler;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
+import freenet.support.ByteArrayWrapper;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -928,7 +929,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// Now simply transmit the corresponding message3
 		Object message3 = null;
 		synchronized (authenticatorCache) {
-			message3 = authenticatorCache.get(authenticator);
+			message3 = authenticatorCache.get(new ByteArrayWrapper(authenticator));
 		}
 		if(message3 != null) {
 			Logger.normal(this, "We replayed a message from the cache (shouldn't happen often) - "+pn.getPeer());
@@ -1053,7 +1054,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// Now simply transmit the corresponding message4
 		Object message4 = null;
 		synchronized (authenticatorCache) {
-			message4 = authenticatorCache.get(authenticator);
+			message4 = authenticatorCache.get(new ByteArrayWrapper(authenticator));
 		}
 		if(message4 != null) {
 			Logger.normal(this, "We replayed a message from the cache (shouldn't happen often) - "+pn);
@@ -1462,7 +1463,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// cache the message
 		synchronized (authenticatorCache) {
 			if(!maybeResetTransientKey())
-				authenticatorCache.put(authenticator,message3);
+				authenticatorCache.put(new ByteArrayWrapper(authenticator),message3);
 		}
 		if(unknownInitiator)
 			sendAnonAuthPacket(1, 2, 2, setupType, message3, pn, replyTo, pn.anonymousInitiatorSetupCipher);
@@ -1556,7 +1557,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// cache the message
 		synchronized (authenticatorCache) {
 			if(!maybeResetTransientKey())
-				authenticatorCache.put(authenticator, message4);
+				authenticatorCache.put(new ByteArrayWrapper(authenticator), message4);
 		}
 		
 		if(unknownInitiator)
