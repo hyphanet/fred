@@ -1913,8 +1913,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				sentInitialMessages = true;
 			else
 				return;
-			if(unverifiedTracker != null)
-				return;
 		}
 
 		sendInitialMessages();
