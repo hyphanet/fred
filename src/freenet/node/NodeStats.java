@@ -124,6 +124,7 @@ public class NodeStats implements Persistable {
 	final TrivialRunningAverage sskFetchPSuccess;
 	final TrivialRunningAverage localFetchPSuccess;
 	final TrivialRunningAverage remoteFetchPSuccess;
+	final TrivialRunningAverage blockTransferPSuccess;
 	
 	File persistTarget; 
 	File persistTemp;
@@ -297,6 +298,7 @@ public class NodeStats implements Persistable {
 		sskFetchPSuccess = new TrivialRunningAverage();
 		localFetchPSuccess = new TrivialRunningAverage();
 		remoteFetchPSuccess = new TrivialRunningAverage();
+		blockTransferPSuccess = new TrivialRunningAverage();
 		
 		requestOutputThrottle = 
 			new TokenBucket(Math.max(obwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (obwLimit)), 0);
@@ -1030,7 +1032,8 @@ public class NodeStats implements Persistable {
 				chkFetchPSuccess,
 				sskFetchPSuccess,
 				localFetchPSuccess,
-				remoteFetchPSuccess
+				remoteFetchPSuccess,
+				blockTransferPSuccess
 		};
 		final String[] names = new String[] {
 				// FIXME l10n, but atm this only shows up in advanced mode
@@ -1038,7 +1041,8 @@ public class NodeStats implements Persistable {
 				"CHKs",
 				"SSKs",
 				"Local requests",
-				"Remote requests"
+				"Remote requests",
+				"Block transfers"
 		};
 		HTMLNode row = list.addChild("tr");
 		row.addChild("th", "Group"); 
@@ -1603,18 +1607,14 @@ public class NodeStats implements Persistable {
 		return ((double)getSentOverhead() * 1000.0) / ((double) uptime);
 	}
 
-	private long totalReceives;
-	private long successfulReceives;
-	
 	public synchronized void successfulBlockReceive() {
-		totalReceives++;
-		successfulReceives++;
-		if(logMINOR) Logger.minor(this, "Successful receives: "+successfulReceives+"/"+totalReceives+" = "+((double)successfulReceives) / ((double)totalReceives));
+		blockTransferPSuccess.report(1.0);
+		if(logMINOR) Logger.minor(this, "Successful receives: "+blockTransferPSuccess.currentValue()+" count="+blockTransferPSuccess.countReports());
 	}
 
 	public synchronized void failedBlockReceive() {
-		totalReceives++;
-		if(logMINOR) Logger.minor(this, "Successful receives: "+successfulReceives+"/"+totalReceives+" = "+((double)successfulReceives) / ((double)totalReceives));
+		blockTransferPSuccess.report(0.0);
+		if(logMINOR) Logger.minor(this, "Successful receives: "+blockTransferPSuccess.currentValue()+" count="+blockTransferPSuccess.countReports());
 	}
 	
 }
