@@ -1917,6 +1917,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			md.update(TEST_AS_BYTES);
 			md.update(Fields.longToBytes(bootID ^ node.bootID));
 			int prevHash = Fields.hashCode(md.digest());
+			SHA256.returnMessageDigest(md);
 			
 			if(prevHash < curHash) {
 				// Swap over
