@@ -96,6 +96,8 @@ public class KeyTracker {
     /** Counter to generate the next packet number */
     private int nextPacketNumber;
     
+    final long createdTime;
+    
     /** Everything is clear to start with */
     KeyTracker(PeerNode pn, BlockCipher cipher, byte[] sessionKey) {
         this.pn = pn;
@@ -112,6 +114,7 @@ public class KeyTracker {
         packetNumbersReceived = new ReceivedPacketNumbers(512);
         isDeprecated = false;
         nextPacketNumber = pn.node.random.nextInt(100*1000);
+        createdTime = System.currentTimeMillis();
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
 
