@@ -1909,7 +1909,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(this) {
 			if(sentInitialMessages)
 				return;
-			if(currentTracker != null && !currentTracker.isDeprecated())
+			if(currentTracker != null && !currentTracker.isDeprecated()) // FIXME is that possible?
 				sentInitialMessages = true;
 			else
 				return;
