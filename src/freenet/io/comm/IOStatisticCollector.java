@@ -19,6 +19,7 @@ public class IOStatisticCollector {
 	private long totalbytesin;
 	private long totalbytesout;
 	private final LinkedHashMap targets;
+	static boolean ENABLE_PER_ADDRESS_TRACKING = false;
 	
 	public IOStatisticCollector() {
 		targets = new LinkedHashMap();
@@ -41,12 +42,14 @@ public class IOStatisticCollector {
 	
 	private void _addInfo(String key, int inbytes, int outbytes) {
 		rotate();
+		if(ENABLE_PER_ADDRESS_TRACKING) {
 		StatisticEntry entry = (StatisticEntry)targets.get(key);
 		if (entry == null) {
 			entry = new StatisticEntry();
 			targets.put(key, entry);
 		}
 		entry.addData((inbytes>0)?inbytes:0, (outbytes>0)?outbytes:0);
+		}
 		synchronized(this) {
 			totalbytesout += (outbytes>0)?outbytes:0;
 			totalbytesin += (inbytes>0)?inbytes:0;
