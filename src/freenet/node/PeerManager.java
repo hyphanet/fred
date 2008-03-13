@@ -1628,6 +1628,33 @@ public class PeerManager {
 		return count;
 	}
 	
+	public int countAlmostConnectedDarknetPeers() {
+		int count = 0;
+		PeerNode[] peers = myPeers;
+		for(int i=0;i<peers.length;i++) {
+			if(peers[i] == null) continue;
+			if(!(peers[i] instanceof DarknetPeerNode)) continue;
+			if(peers[i].isOpennet()) continue;
+			if(!peers[i].isConnected()) continue;
+			count++;
+		}
+		return count;
+	}
+	
+	public int countCompatibleDarknetPeers() {
+		int count = 0;
+		PeerNode[] peers = myPeers;
+		for(int i=0;i<peers.length;i++) {
+			if(peers[i] == null) continue;
+			if(!(peers[i] instanceof DarknetPeerNode)) continue;
+			if(peers[i].isOpennet()) continue;
+			if(!peers[i].isConnected()) continue;
+			if(!peers[i].isRoutingCompatible()) continue;
+			count++;
+		}
+		return count;
+	}
+	
 	public int countConnectedOpennetPeers() {
 		int count = 0;
 		PeerNode[] peers = connectedPeers;
