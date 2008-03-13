@@ -1064,7 +1064,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		if(message4 != null) {
 			Logger.normal(this, "We replayed a message from the cache (shouldn't happen often) - "+pn);
-			sendAuthPacket(1, 2, 3, (byte[]) message4, pn, replyTo);
+			// We are replaying a JFK(4).
+			// Therefore if it is anon-initiator it is encrypted with our setup key.
+			if(unknownInitiator)
+				sendAnonAuthPacket(1,2,3,setupType, (byte[]) message4, null, replyTo, crypto.anonSetupCipher);
+			else
+				sendAuthPacket(1, 2, 3, (byte[]) message4, pn, replyTo);
 			return;
 		} else {
 			if(logDEBUG) Logger.debug(this, "No message4 found for "+HexUtil.bytesToHex(authenticator)+" responderExponential "+Fields.hashCode(responderExponential)+" initiatorExponential "+Fields.hashCode(initiatorExponential)+" nonceResponder "+Fields.hashCode(nonceResponder)+" nonceInitiator "+Fields.hashCode(nonceInitiator)+" address "+HexUtil.bytesToHex(replyTo.getAddress().getAddress()));
