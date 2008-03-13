@@ -65,6 +65,7 @@ import java.util.HashMap;
 public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFilter {
 
 	private static boolean logMINOR;
+	private static boolean logDEBUG;
 	private final Node node;
 	private final NodeCrypto crypto;
 	private final MessageCore usm;
@@ -166,6 +167,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
 		fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 	}
 	
 	/**
@@ -205,6 +207,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	public void process(byte[] buf, int offset, int length, Peer peer, long now) {
 		node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		if(logMINOR) Logger.minor(this, "Packet length "+length+" from "+peer);
 
 		/**
@@ -223,13 +226,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(opn != null) {
 			if(logMINOR) Logger.minor(this, "Trying exact match");
 			if(length > HEADERS_LENGTH_MINIMUM) {
-				if(logMINOR) Logger.minor(this, "Trying current key tracker");
+				if(logMINOR) Logger.minor(this, "Trying current key tracker for exact match");
 				if(tryProcess(buf, offset, length, opn.getCurrentKeyTracker(), now)) return;
 				// Try with old key
-				if(logMINOR) Logger.minor(this, "Trying previous key tracker");
+				if(logMINOR) Logger.minor(this, "Trying previous key tracker for exact match");
 				if(tryProcess(buf, offset, length, opn.getPreviousKeyTracker(), now)) return;
 				// Try with unverified key
-				if(logMINOR) Logger.minor(this, "Trying unverified key tracker");
+				if(logMINOR) Logger.minor(this, "Trying unverified key tracker for exact match");
 				if(tryProcess(buf, offset, length, opn.getUnverifiedKeyTracker(), now)) return;
 			}
 			if(length > Node.SYMMETRIC_KEY_LENGTH /* iv */ + HASH_LENGTH + 2 && !node.isStopping()) {
@@ -245,16 +248,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			for(int i=0;i<peers.length;i++) {
 				pn = peers[i];
 				if(pn == opn) continue;
+				if(logMINOR) Logger.minor(this, "Trying current key tracker for loop");
 				if(tryProcess(buf, offset, length, pn.getCurrentKeyTracker(), now)) {
 					// IP address change
 					pn.changedIP(peer);
 					return;
 				}
+				if(logMINOR) Logger.minor(this, "Trying previous key tracker for loop");
 				if(tryProcess(buf, offset, length, pn.getPreviousKeyTracker(), now)) {
 					// IP address change
 					pn.changedIP(peer);
 					return;
 				}
+				if(logMINOR) Logger.minor(this, "Trying unverified key tracker for loop");
 				if(tryProcess(buf, offset, length, pn.getUnverifiedKeyTracker(), now)) {
 					// IP address change
 					pn.changedIP(peer);
@@ -1060,6 +1066,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.normal(this, "We replayed a message from the cache (shouldn't happen often) - "+pn);
 			sendAuthPacket(1, 2, 3, (byte[]) message4, pn, replyTo);
 			return;
+		} else {
+			if(logDEBUG) Logger.debug(this, "No message4 found for "+HexUtil.bytesToHex(authenticator)+" responderExponential "+Fields.hashCode(responderExponential)+" initiatorExponential "+Fields.hashCode(initiatorExponential)+" nonceResponder "+Fields.hashCode(nonceResponder)+" nonceInitiator "+Fields.hashCode(nonceInitiator)+" address "+HexUtil.bytesToHex(replyTo.getAddress().getAddress()));
 		}
 		
 		NativeBigInteger _hisExponential = new NativeBigInteger(1, initiatorExponential);
@@ -1558,6 +1566,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		synchronized (authenticatorCache) {
 			if(!maybeResetTransientKey())
 				authenticatorCache.put(new ByteArrayWrapper(authenticator), message4);
+			if(logDEBUG) Logger.debug(this, "Storing JFK(4) for "+HexUtil.bytesToHex(authenticator));
 		}
 		
 		if(unknownInitiator)
