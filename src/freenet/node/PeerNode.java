@@ -10,6 +10,7 @@ import java.lang.ref.WeakReference;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -252,7 +253,18 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private long connectedTime;
 	/** The status of this peer node in terms of Node.PEER_NODE_STATUS_* */
 	public int peerNodeStatus = PeerManager.PEER_NODE_STATUS_DISCONNECTED;
+	
+	static final int CHECK_FOR_SWAPPED_TRACKERS_INTERVAL = FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL / 30;
 
+	static final byte[] TEST_AS_BYTES;
+	static {
+		try {
+			TEST_AS_BYTES = "test".getBytes("UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new Error(e);
+		}
+	}
+	
 	/** Holds a String-Long pair that shows which message types (as name) have been send to this peer. */
 	private final Hashtable localNodeSentMessageTypes = new Hashtable();
 	/** Holds a String-Long pair that shows which message types (as name) have been received by this peer. */
@@ -1832,9 +1844,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				prev = currentTracker;
 				previousTracker = prev;
 				currentTracker = newTracker;
-				unverifiedTracker = null;
+				// Keep the old unverified tracker.
+				// In case of a race condition (two setups between A and B complete at the same time),
+				// we might want to keep the unverified tracker rather than the previous tracker.
 				neverConnected = false;
 				peerAddedTime = 0;  // don't store anymore
+				maybeSwapTrackers();
+				prev = previousTracker;
 			}
 			ctx = null;
 			isRekeying = false;
@@ -1872,6 +1888,48 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		
 		setPeerNodeStatus(now);
 		return true;
+	}
+
+	/**
+	 * Resolve race conditions where two connection setups between two peers complete simultaneously.
+	 * Swap prev and current if:
+	 * - There is a very short period between their respective creations.
+	 * - Current's hashcode (including the key, the word "test", and the xor of the boot IDs) is
+	 * greater than previous's.
+	 */
+	private synchronized void maybeSwapTrackers() {
+		if(previousTracker != null && (!previousTracker.isDeprecated()) &&
+				Math.abs(currentTracker.createdTime - previousTracker.createdTime) < CHECK_FOR_SWAPPED_TRACKERS_INTERVAL) {
+			// Swap prev and current iff H(new key) > H(old key).
+			// To deal with race conditions (node A gets 1 current 2 prev, node B gets 2 current 1 prev; when we rekey we lose data and cause problems).
+			
+			// FIXME since this is a key dependancy, it needs to be looked at.
+			// However, an attacker cannot get this far without knowing the privkey, so it's unlikely to be an issue.
+			
+			MessageDigest md = SHA256.getMessageDigest();
+			md.update(currentTracker.sessionKey);
+			md.update(TEST_AS_BYTES);
+			md.update(Fields.longToBytes(bootID ^ node.bootID));
+			int curHash = Fields.hashCode(md.digest());
+			md.reset();
+			
+			md.update(previousTracker.sessionKey);
+			md.update(TEST_AS_BYTES);
+			md.update(Fields.longToBytes(bootID ^ node.bootID));
+			int prevHash = Fields.hashCode(md.digest());
+			
+			if(prevHash < curHash) {
+				// Swap over
+				KeyTracker temp = previousTracker;
+				previousTracker = currentTracker;
+				currentTracker = temp;
+				if(logMINOR) Logger.minor(this, "Swapped KeyTracker's on "+this+" cur "+currentTracker+" prev "+previousTracker);
+			} else {
+				if(logMINOR) Logger.minor(this, "Not swapping KeyTracker's on "+this+" cur "+currentTracker+" prev "+previousTracker);
+			}
+		} else {
+			if(logMINOR) Logger.minor(this, "Not swapping KeyTracker's, no previousTracker or deprecated or not recent enough");
+		}
 	}
 
 	public long getBootID() {
@@ -1994,14 +2052,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					Logger.minor(this, "Promoting unverified tracker " + tracker + " for " + getPeer());
 				completelyDeprecatedTracker = previousTracker;
 				previousTracker = currentTracker;
-				if(previousTracker != null)
-					previousTracker.deprecated();
 				currentTracker = unverifiedTracker;
 				unverifiedTracker = null;
 				isConnected = true;
 				neverConnected = false;
 				peerAddedTime = 0;  // don't store anymore
 				ctx = null;
+				maybeSwapTrackers();
+				if(previousTracker != null)
+					previousTracker.deprecated();
 			} else
 				return;
 		}
