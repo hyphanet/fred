@@ -1589,10 +1589,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(data, 0, output, 3, data.length);
 		if(logMINOR) {
 			long now = System.currentTimeMillis();
-			long last = pn.lastSentPacketTime();
 			String delta = "never";
-			if (last>0)
+			if(pn != null) {
+				long last = pn.lastSentPacketTime();
 				delta = TimeUtil.formatTime(now-last, 2, true)+" ago";
+			}
 			Logger.minor(this, "Sending auth packet for "+pn.getPeer()+" (phase="+phase+", ver="+version+", nt="+negType+") (last packet sent "+delta+") to "+replyTo+" data.length="+data.length);
 		}
 		sendAuthPacket(output, pn.outgoingSetupCipher, pn, replyTo, false);
