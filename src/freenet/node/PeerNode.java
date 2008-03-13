@@ -1909,7 +1909,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(this) {
 			if(sentInitialMessages)
 				return;
-			if(currentTracker != null)
+			if(currentTracker != null && !currentTracker.isDeprecated())
 				sentInitialMessages = true;
 			else
 				return;
