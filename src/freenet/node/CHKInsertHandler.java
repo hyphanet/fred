@@ -409,6 +409,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             		receiveCompleted = true;
             		CHKInsertHandler.this.notifyAll();
             	}
+            	node.nodeStats.successfulBlockReceive();
             } catch (RetrievalException e) {
             	synchronized(CHKInsertHandler.this) {
             		receiveCompleted = true;
@@ -430,6 +431,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 					Logger.normal(this, "Failed to retrieve (disconnect): "+e, e);
 				else
 					Logger.error(this, "Failed to retrieve ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
+            	node.nodeStats.failedBlockReceive();
                 return;
             } catch (Throwable t) {
                 Logger.error(this, "Caught "+t, t);

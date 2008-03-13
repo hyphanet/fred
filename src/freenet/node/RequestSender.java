@@ -279,14 +279,16 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 				return;
                 			}
                 			finish(SUCCESS, pn, true);
+                			node.nodeStats.successfulBlockReceive();
                 			return;
                 		} catch (RetrievalException e) {
 							if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
 								Logger.normal(this, "Transfer failed (disconnect): "+e, e);
 							else
-								Logger.error(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
+								Logger.error(this, "Transfer for offer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+pn, e);
                 			finish(GET_OFFER_TRANSFER_FAILED, pn, true);
                     		offers.deleteLastOffer();
+                			node.nodeStats.failedBlockReceive();
                 			return;
                 		}
                 	} finally {
@@ -720,7 +722,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 							if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
 								Logger.normal(this, "Transfer failed (disconnect): "+e, e);
 							else
-								Logger.error(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
+								Logger.error(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+next, e);
 							next.localRejectedOverload("TransferFailedRequest"+e.getReason());
                 			finish(TRANSFER_FAILED, next, false);
                 			node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);

@@ -1602,5 +1602,19 @@ public class NodeStats implements Persistable {
 		long uptime = node.getUptime();
 		return ((double)getSentOverhead() * 1000.0) / ((double) uptime);
 	}
+
+	private long totalReceives;
+	private long successfulReceives;
+	
+	public synchronized void successfulBlockReceive() {
+		totalReceives++;
+		successfulReceives++;
+		if(logMINOR) Logger.minor(this, "Successful receives: "+successfulReceives+"/"+totalReceives+" = "+((double)successfulReceives) / ((double)totalReceives));
+	}
+
+	public synchronized void failedBlockReceive() {
+		totalReceives++;
+		if(logMINOR) Logger.minor(this, "Successful receives: "+successfulReceives+"/"+totalReceives+" = "+((double)successfulReceives) / ((double)totalReceives));
+	}
 	
 }
