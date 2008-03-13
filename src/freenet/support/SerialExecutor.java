@@ -11,6 +11,12 @@ public class SerialExecutor implements Executor {
 	private final int priority;
 	private boolean waiting;
 	
+	private String name;
+	private Executor realExecutor;
+	private boolean running;
+	
+	private static final int NEWJOB_TIMEOUT = 5*60*1000;
+	
 	private final Runnable runner = new PrioRunnable() {
 
 		public int getPriority() {
@@ -24,15 +30,18 @@ public class SerialExecutor implements Executor {
 					if(jobs.isEmpty()) {
 						waiting = true;
 						try {
-							jobs.wait();
+							//NB: notify only on adding work or this quits early.
+							jobs.wait(NEWJOB_TIMEOUT);
 						} catch (InterruptedException e) {
 							// Ignore
 						}
-						continue;
-					} else {
-						job = (Runnable) jobs.removeFirst();
-						waiting = false;
+						waiting=false;
+						if (jobs.isEmpty()) {
+							running=false;
+							return;
+						}
 					}
+						job = (Runnable) jobs.removeFirst();
 				}
 				try {
 					job.run();
@@ -51,6 +60,12 @@ public class SerialExecutor implements Executor {
 	}
 	
 	public void start(Executor realExecutor, String name) {
+		this.realExecutor=realExecutor;
+		this.name=name;
+	}
+	
+	private void reallyStart() {
+		running=true;
 		realExecutor.execute(runner, name);
 	}
 	
@@ -58,6 +73,8 @@ public class SerialExecutor implements Executor {
 		synchronized(jobs) {
 			jobs.addLast(job);
 			jobs.notifyAll();
+			if (!running)
+				reallyStart();
 		}
 	}
 
@@ -65,22 +82,25 @@ public class SerialExecutor implements Executor {
 		synchronized(jobs) {
 			jobs.addLast(job);
 			jobs.notifyAll();
+			if (!running)
+				reallyStart();
 		}
 	}
 
 	public int[] runningThreads() {
-		int[] running = new int[NativeThread.JAVA_PRIORITY_RANGE+1];
-		running[priority] = 1;
-		return running;
+		int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE+1];
+		if (running)
+			retval[priority] = 1;
+		return retval;
 	}
 
 	public int[] waitingThreads() {
-		int[] running = new int[NativeThread.JAVA_PRIORITY_RANGE+1];
+		int[] retval = new int[NativeThread.JAVA_PRIORITY_RANGE+1];
 		synchronized(jobs) {
 			if(waiting)
-				running[priority] = 1;
+				retval[priority] = 1;
 		}
-		return running;
+		return retval;
 	}
 
 }
