@@ -223,5 +223,12 @@ public class RequestStarterGroup {
 	public double getRealWindow() {
 		return throttleWindow.realCurrentValue();
 	}
+
+	public long countQueuedRequests() {
+		return chkFetchScheduler.countQueuedRequests() +
+			sskFetchScheduler.countQueuedRequests() +
+			chkPutScheduler.countQueuedRequests() +
+			sskPutScheduler.countQueuedRequests();
+	}
 	
 }

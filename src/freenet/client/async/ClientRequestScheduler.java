@@ -701,4 +701,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		}
 	}
+
+	public long countQueuedRequests() {
+		if(pendingKeys != null)
+			return pendingKeys.size();
+		else return 0;
+	}
 }

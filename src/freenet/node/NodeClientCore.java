@@ -1164,4 +1164,8 @@ public class NodeClientCore implements Persistable {
 	public FreenetURI[] getBookmarkURIs() {
 		return toadletContainer.getBookmarkURIs();
 	}
+
+	public long countQueuedRequests() {
+		return requestStarters.countQueuedRequests();
+	}
 }
