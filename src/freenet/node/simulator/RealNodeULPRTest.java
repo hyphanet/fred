@@ -56,7 +56,9 @@ public class RealNodeULPRTest extends RealNodeTest {
 	static final int EXIT_TEST_FAILED = EXIT_BASE + 4;
 	
     static final int NUMBER_OF_NODES = 10;
-    static final short MAX_HTL = 10; // for now
+    // We don't explicitly subscribe, so each node must be routed through.
+    // However, per-node failure tables should ensure the node doesn't make the same mistake twice so visits every node.
+    static final short MAX_HTL = 10;
     //static final int NUMBER_OF_NODES = 50;
     //static final short MAX_HTL = 10;
     static final int NUMBER_OF_TESTS = 100;
@@ -79,7 +81,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         
         //NOTE: globalTestInit returns in ignored random source
         //NodeStarter.globalTestInit(testName, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal,freenet.node.NodeDispatcher:NORMAL" /*,freenet.node.FailureTable:MINOR,freenet.node.Node:MINOR,freenet.node.Request:MINOR,freenet.io.comm.MessageCore:MINOR" "freenet.store:minor,freenet.node.LocationManager:debug,freenet.node.FNPPacketManager:normal,freenet.io.comm.MessageCore:debug"*/);
-        NodeStarter.globalTestInit(testName, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal,freenet.node.NodeDispatcher:NORMAL,freenet.node.FailureTable:MINOR,freenet.node.Node:MINOR,freenet.node.Request:MINOR,freenet.io.comm.MessageCore:MINOR,freenet.node.PeerNode:MINOR,freenet.io.xfer.PacketThrottle:MINOR");
+        NodeStarter.globalTestInit(testName, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeRoutingTest:normal,freenet.node.NodeDispatcher:NORMAL,freenet.node.FailureTable:MINOR,freenet.node.Node:MINOR,freenet.node.Request:MINOR,freenet.io.comm.MessageCore:MINOR,freenet.node.PeerNode:MINOR,freenet.io.xfer.PacketThrottle:MINOR,freenet.node.PeerManager:MINOR");
         Node[] nodes = new Node[NUMBER_OF_NODES];
         Logger.normal(RealNodeRoutingTest.class, "Creating nodes...");
         Executor executor = new PooledExecutor();

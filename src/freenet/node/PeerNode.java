@@ -1856,6 +1856,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			isRekeying = false;
 			timeLastRekeyed = now;
 			totalBytesExchangedWithCurrentTracker = 0;
+			// This has happened in the past, and caused problems, check for it.
+			if(currentTracker != null && previousTracker != null && 
+					Arrays.equals(currentTracker.sessionKey, previousTracker.sessionKey))
+				Logger.error(this, "currentTracker key equals previousTracker key: cur "+currentTracker+" prev "+previousTracker);
+			if(previousTracker != null && unverifiedTracker != null && 
+					Arrays.equals(previousTracker.sessionKey, unverifiedTracker.sessionKey))
+				Logger.error(this, "previousTracker key equals unverifiedTracker key: prev "+previousTracker+" unv "+unverifiedTracker);
 		}
 
 		if(bootIDChanged) {
