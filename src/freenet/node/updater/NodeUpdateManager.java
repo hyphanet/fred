@@ -153,6 +153,7 @@ public class NodeUpdateManager {
         this.revocationChecker = new RevocationChecker(this, new File(node.clientCore.getPersistentTempDir(), "revocation-key.fblob"));
         
         this.uom = new UpdateOverMandatoryManager(this);
+        this.uom.removeOldTempFiles();
 	}
 
 	public void start() throws InvalidConfigValueException {

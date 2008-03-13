@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashSet;
 import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -35,6 +37,7 @@ import freenet.io.xfer.PartiallyReceivedBulk;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.Node;
+import freenet.node.NodeStarter;
 import freenet.node.PeerNode;
 import freenet.node.RequestStarter;
 import freenet.node.Version;
@@ -1157,5 +1160,76 @@ public class UpdateOverMandatoryManager {
 		}
 		
 	}
-	
+		
+	protected boolean removeOldTempFiles() {
+		File oldTempFilesPeerDir = updateManager.node.clientCore.getPersistentTempDir();
+	 	if(!oldTempFilesPeerDir.exists()) {
+	 		return false;
+	 	}
+	 	if(!oldTempFilesPeerDir.isDirectory()) {
+	   		Logger.error(this, "Persistent temporary files location is not a directory: "+oldTempFilesPeerDir.getPath());
+	 		return false;
+	 	}
+	 	File[] oldTempFiles = oldTempFilesPeerDir.listFiles();
+	 	if(oldTempFiles == null) {
+	 		return false;
+	 	}
+		boolean gotError = false;
+		File oldTempFile;
+		String oldTempFileName;
+		String extBuildNumberRegexStr = "^ext(?:-jar)?-(\\d+)\\.fblob$";
+		String mainBuildNumberRegexStr = "^main(?:-jar)?-(\\d+)\\.fblob$";
+		Pattern extBuildNumberPattern = Pattern.compile(extBuildNumberRegexStr);
+		Pattern mainBuildNumberPattern = Pattern.compile(mainBuildNumberRegexStr);
+		Matcher extBuildNumberMatcher;
+		Matcher mainBuildNumberMatcher;
+		String buildNumberStr;
+		int buildNumber;
+		int lastGoodMainBuildNumber = Version.lastGoodBuild();
+		int recommendedExtBuildNumber = NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER;
+		for (int i = 0; i < oldTempFiles.length; i++) {
+			oldTempFile = oldTempFiles[i];
+			oldTempFileName = oldTempFile.getName();
+			if(oldTempFileName.endsWith(".fblob.tmp")) {
+				if(oldTempFileName.startsWith("ext-jar-") || oldTempFileName.startsWith("main-jar-") || oldTempFileName.startsWith("revocation-") || oldTempFileName.startsWith("main-")) {
+					if(!oldTempFile.delete()) {
+						if(oldTempFile.exists()) {
+							Logger.error(this, "Cannot delete temporary persistent file "+oldTempFileName+" even though it exists: must be TOO persistent :)");
+						} else {
+							Logger.normal(this, "Temporary persistent file does not exist when deleting: "+oldTempFileName);
+						}
+					}
+				}
+			} else if(oldTempFileName.endsWith(".fblob")) {
+				mainBuildNumberMatcher = mainBuildNumberPattern.matcher(oldTempFileName);
+				extBuildNumberMatcher = extBuildNumberPattern.matcher(oldTempFileName);
+				if(mainBuildNumberMatcher.matches()) {
+					buildNumberStr = mainBuildNumberMatcher.group(1);
+					buildNumber = Integer.parseInt(buildNumberStr);
+					if(buildNumber < lastGoodMainBuildNumber) {
+						if(!oldTempFile.delete()) {
+							if(oldTempFile.exists()) {
+								Logger.error(this, "Cannot delete temporary persistent file "+oldTempFileName+" even though it exists: must be TOO persistent :)");
+							} else {
+								Logger.normal(this, "Temporary persistent file does not exist when deleting: "+oldTempFileName);
+							}
+						}
+					}
+				} else if(extBuildNumberMatcher.matches()) {
+					buildNumberStr = extBuildNumberMatcher.group(1);
+					buildNumber = Integer.parseInt(buildNumberStr);
+					if(buildNumber < recommendedExtBuildNumber) {
+						if(!oldTempFile.delete()) {
+							if(oldTempFile.exists()) {
+								Logger.error(this, "Cannot delete temporary persistent file "+oldTempFileName+" even though it exists: must be TOO persistent :)");
+							} else {
+								Logger.normal(this, "Temporary persistent file does not exist when deleting: "+oldTempFileName);
+							}
+						}
+					}
+				}
+			}
+		}
+		return !gotError;
+	}
 }
