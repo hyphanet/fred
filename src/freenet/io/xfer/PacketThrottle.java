@@ -18,9 +18,6 @@
  */
 package freenet.io.xfer;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.Message;
@@ -40,7 +37,6 @@ public class PacketThrottle {
 	protected static final long MIN_DELAY = 25;
 	public static final String VERSION = "$Id: PacketThrottle.java,v 1.3 2005/08/25 17:28:19 amphibian Exp $";
 	public static final long DEFAULT_DELAY = 200;
-	private static Map _throttles = new HashMap();
 	private final Peer _peer;
 	private long _roundTripTime = 500, _totalPackets, _droppedPackets;
 	private float _simulatedWindowSize = 2;
@@ -57,23 +53,7 @@ public class PacketThrottle {
 	private static boolean logMINOR;
 	private PacketThrottle _deprecatedFor;
 
-	/**
-	 * Create a PacketThrottle for a given peer.
-	 * @param receiver The peer we want to send to.
-	 * @param packetSize The packet size for this particular peer. Will be ignored
-	 * if we already have a PacketThrottle for that peer; hopefully we won't need
-	 * to change this. Mostly I just put this in to ensure it got set somewhere.
-	 * @return
-	 */
-	public static PacketThrottle getThrottle(Peer receiver, int packetSize) {
-		if (!_throttles.containsKey(receiver)) {
-			_throttles.put(receiver, new PacketThrottle(receiver, packetSize));
-		}
-		PacketThrottle pt = (PacketThrottle) _throttles.get(receiver);
-		return pt;
-	}
-
-	private PacketThrottle(Peer peer, int packetSize) {
+	public PacketThrottle(Peer peer, int packetSize) {
 		_peer = peer;
 		PACKET_SIZE = packetSize;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -282,5 +262,9 @@ public class PacketThrottle {
 	public synchronized void changedAddress(PacketThrottle newThrottle) {
 		_deprecatedFor = newThrottle;
 		notifyAll();
+	}
+
+	public Peer getPeer() {
+		return _peer;
 	}
 }
