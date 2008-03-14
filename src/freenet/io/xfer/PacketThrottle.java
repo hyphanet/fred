@@ -191,7 +191,7 @@ public class PacketThrottle {
 			Logger.minor(this, "Congestion control wait time: "+waitTime+" for "+this);
 		MyCallback callback = new MyCallback();
 		try {
-			if(!((PeerNode)peer).shouldThrottle()) {
+			if(((PeerNode)peer).shouldThrottle()) {
 				if(logMINOR) Logger.minor(this, "Throttling "+peer.shortToString()+" : "+packetSize+" for "+this);
 				long startTime = System.currentTimeMillis();
 				overallThrottle.blockingGrab(packetSize);
