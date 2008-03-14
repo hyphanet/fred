@@ -62,6 +62,10 @@ public class SerialExecutor implements Executor {
 	public void start(Executor realExecutor, String name) {
 		this.realExecutor=realExecutor;
 		this.name=name;
+		synchronized (jobs) {
+			if (!jobs.isEmpty())
+				reallyStart();
+		}
 	}
 	
 	private void reallyStart() {
@@ -73,7 +77,7 @@ public class SerialExecutor implements Executor {
 		synchronized(jobs) {
 			jobs.addLast(job);
 			jobs.notifyAll();
-			if (!running)
+			if (!running && realExecutor!=null)
 				reallyStart();
 		}
 	}
@@ -82,7 +86,7 @@ public class SerialExecutor implements Executor {
 		synchronized(jobs) {
 			jobs.addLast(job);
 			jobs.notifyAll();
-			if (!running)
+			if (!running && realExecutor!=null)
 				reallyStart();
 		}
 	}
