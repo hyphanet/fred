@@ -324,6 +324,7 @@ public class NodeStarter implements WrapperListener
     	}
     	
     	FNPPacketMangler.LOG_UNMATCHABLE_ERROR = true;
+    	DNSRequester.DISABLE = true;
 		
 		return random;
 	}

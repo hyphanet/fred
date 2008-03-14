@@ -16,6 +16,8 @@ public class DNSRequester implements Runnable {
     final Thread myThread;
     final Node node;
     private long lastLogTime;
+    // Only set when doing simulations.
+    static boolean DISABLE = false;
 
     DNSRequester(Node node) {
         this.node = node;
