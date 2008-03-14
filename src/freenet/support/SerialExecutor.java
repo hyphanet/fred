@@ -41,7 +41,7 @@ public class SerialExecutor implements Executor {
 							return;
 						}
 					}
-						job = (Runnable) jobs.removeFirst();
+					job = (Runnable) jobs.removeFirst();
 				}
 				try {
 					job.run();
