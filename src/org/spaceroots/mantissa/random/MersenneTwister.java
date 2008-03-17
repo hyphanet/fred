@@ -124,6 +124,12 @@ public class MersenneTwister extends Random {
 	 * @param seed the initial seed (32 bits integer)
 	 */
 	public synchronized void setSeed(int seed) {
+		if (mt == null) {
+			// this is probably a spurious call from base class constructor,
+			// we do nothing and wait for the setSeed in our own
+			// constructors after array allocation
+			return;
+		}
 		// we use a long masked by 0xffffffffL as a poor man unsigned int
 		long longMT = seed;
 		mt[0]= (int) longMT;
@@ -139,6 +145,12 @@ public class MersenneTwister extends Random {
 	 * Seed from byte[].
 	 */
 	public synchronized void setSeed(byte[] seed) {
+		if (mt == null) {
+			// this is probably a spurious call from base class constructor,
+			// we do nothing and wait for the setSeed in our own
+			// constructors after array allocation
+			return;
+		}
 		int[] seeds = new int[seed.length/4];
 		for(int i=0;i<seeds.length;i+=4) {
 			seeds[i] = Fields.bytesToInt(seed, i);
