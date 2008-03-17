@@ -64,6 +64,7 @@ public class PooledExecutor implements Executor {
 				jobCount++;
 				if(!waitingThreads[prio-1].isEmpty()) {
 					t = (MyThread) waitingThreads[prio-1].remove(waitingThreads[prio-1].size()-1);
+					if(logMINOR) Logger.minor(this, "Reusing thread "+t);
 				} else {
 					// Must create new thread
 					if((!fromTicker) && NativeThread.usingNativeCode() && prio > Thread.currentThread().getPriority()) {
@@ -99,6 +100,9 @@ public class PooledExecutor implements Executor {
 					if(logMINOR)
 						Logger.minor(this, "Jobs: "+jobMisses+" misses of "+jobCount+" starting urgently "+jobName);
 				}
+			} else {
+				if(logMINOR)
+					Logger.minor(this, "Not starting: Jobs: "+jobMisses+" misses of "+jobCount+" starting urgently "+jobName);
 			}
 			return;
 		}
