@@ -1239,6 +1239,10 @@ public class PeerManager {
 		PeerNodeStatus[] pns = getPeerNodeStatuses(true);
 		
 		for(int i=0; i<pns.length; i++){
+			if(pns[i] == null) {
+				Logger.error(this, "getPeerNodeStatuses(true)["+i+"] == null!");
+				continue;
+			}
 			switch (pns[i].getStatusValue()) {
 			case PEER_NODE_STATUS_CONNECTED:
 				numberOfConnected++;
