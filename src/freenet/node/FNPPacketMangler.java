@@ -2357,9 +2357,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// worthless) job of disguising the traffic. FIXME!!!!!
 		// Ideally we'd mimic the size profile - and the session bytes! - of a common protocol.
 
-		int paddedLen = ((packetLength + 63) / 64) * 64;
+		int REMAINING_OVERHEAD = 32;
+		int paddedLen = ((packetLength + REMAINING_OVERHEAD + 63) / 64) * 64;
 		paddedLen += node.fastWeakRandom.nextInt(64);
 		if(packetLength <= 1280 && paddedLen > 1280) paddedLen = 1280;
+		paddedLen -= REMAINING_OVERHEAD;
 
 		byte[] padding = new byte[paddedLen - packetLength];
 		node.fastWeakRandom.nextBytes(padding);
