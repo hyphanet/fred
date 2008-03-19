@@ -667,7 +667,7 @@ public class DMT {
 	}};
 	
 	public static final Message createFNPSSKInsertRequestData(long uid, byte[] data) {
-		Message msg = new Message(FNPSSKInsertRequestHeaders);
+		Message msg = new Message(FNPSSKInsertRequestData);
 		msg.set(UID, uid);
 		msg.set(DATA, new ShortBuffer(data));
 		return msg;
