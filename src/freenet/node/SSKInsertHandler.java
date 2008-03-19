@@ -50,6 +50,8 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
         this.startTime = startTime;
         this.key = key;
         this.htl = htl;
+        this.data = data;
+        this.headers = headers;
         if(htl <= 0) htl = 1;
         byte[] pubKeyHash = key.getPubKeyHash();
         pubKey = node.getKey(pubKeyHash);
