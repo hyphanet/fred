@@ -30,7 +30,6 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 	
     static final int PUBKEY_TIMEOUT = 10000;
     
-    final Message req;
     final Node node;
     final long uid;
     final PeerNode source;
@@ -44,8 +43,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
     private byte[] headers;
     private boolean canCommit;
     
-    SSKInsertHandler(Message req, NodeSSK key, byte[] data, byte[] headers, short htl, PeerNode source, long id, Node node, long startTime) {
-        this.req = req;
+    SSKInsertHandler(NodeSSK key, byte[] data, byte[] headers, short htl, PeerNode source, long id, Node node, long startTime) {
         this.node = node;
         this.uid = id;
         this.source = source;
@@ -57,7 +55,6 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
         pubKey = node.getKey(pubKeyHash);
         canCommit = false;
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
-        receivedBytes(req.receivedByteCount());
     }
     
     public String toString() {

@@ -393,7 +393,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	        byte[] data = ((ShortBuffer) m.getObject(DMT.DATA)).getData();
 	        byte[] headers = ((ShortBuffer) m.getObject(DMT.BLOCK_HEADERS)).getData();
 	        short htl = m.getShort(DMT.HTL);
-			SSKInsertHandler rh = new SSKInsertHandler(m, key, data, headers, htl, source, id, node, now);
+			SSKInsertHandler rh = new SSKInsertHandler(key, data, headers, htl, source, id, node, now);
+	        rh.receivedBytes(m.receivedByteCount());
 			node.executor.execute(rh, "SSKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		} else {
 			CHKInsertHandler rh = new CHKInsertHandler(m, source, id, node, now);
