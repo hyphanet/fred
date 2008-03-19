@@ -366,6 +366,63 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 		offers.deleteLastOffer();
         				continue;
         			}
+        		} else if(reply.getSpec() == DMT.FNPSSKDataFoundHeaders) {
+        			headers = ((ShortBuffer) reply.getObject(DMT.BLOCK_HEADERS)).getData();
+        			// Wait for the data
+        			MessageFilter mfData = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKDataFoundData);
+        			Message dataMessage;
+        			try {
+						dataMessage = node.usm.waitFor(mfData, this);
+					} catch (DisconnectedException e) {
+						if(logMINOR)
+							Logger.minor(this, "Disconnected: "+pn+" getting data for offer for "+key);
+						offers.deleteLastOffer();
+						continue;
+					}
+					if(dataMessage == null) {
+    					Logger.error(this, "Got headers but not data from "+pn+" for offer for "+key);
+    					offers.deleteLastOffer();
+    					continue;
+					}
+					sskData = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
+    				MessageFilter mfPK = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKPubKey);
+    				Message pk;
+					try {
+						pk = node.usm.waitFor(mfPK, this);
+					} catch (DisconnectedException e) {
+						if(logMINOR)
+							Logger.minor(this, "Disconnected: "+pn+" getting pubkey for offer for "+key);
+						offers.deleteLastOffer();
+						continue;
+					}
+    				if(pk == null) {
+    					Logger.error(this, "Got data but not pubkey from "+pn+" for offer for "+key);
+    					offers.deleteLastOffer();
+    					continue;
+    				}
+    				try {
+						pubKey = DSAPublicKey.create(((ShortBuffer)pk.getObject(DMT.PUBKEY_AS_BYTES)).getData());
+					} catch (CryptFormatException e) {
+						Logger.error(this, "Bogus pubkey from "+pn+" for offer for "+key+" : "+e, e);
+    					offers.deleteLastOffer();
+						continue;
+					}
+					
+        			try {
+						((NodeSSK)key).setPubKey(pubKey);
+					} catch (SSKVerifyException e) {
+						Logger.error(this, "Bogus SSK data from "+pn+" for offer for "+key+" : "+e, e);
+    					offers.deleteLastOffer();
+						continue;
+					}
+        			
+        			if(finishSSKFromGetOffer(pn)) {
+        				if(logMINOR) Logger.minor(this, "Successfully fetched SSK from offer from "+pn+" for "+key);
+        				return;
+        			} else {
+                		offers.deleteLastOffer();
+        				continue;
+        			}
         		}
         	}
         	// RejectedOverload is possible - but we need to include it in the statistics.
