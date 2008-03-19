@@ -335,7 +335,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}
 	}
 
-	static boolean SEND_OLD_FORMAT_SSK = true;
+	public static boolean SEND_OLD_FORMAT_SSK = true;
 	
     private void sendSSK(long uid2, byte[] headers, byte[] data, boolean needsPubKey2, DSAPublicKey pubKey) throws NotConnectedException {
 		// SUCCESS requires that BOTH the pubkey AND the data/headers have been received.
