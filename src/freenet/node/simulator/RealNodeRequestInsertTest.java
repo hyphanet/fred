@@ -59,6 +59,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         	System.exit(EXIT_CANNOT_DELETE_OLD_DATA);
         }
         wd.mkdir();
+    	freenet.node.RequestHandler.SEND_OLD_FORMAT_SSK = false;
         //NOTE: globalTestInit returns in ignored random source
         //NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNode:minor,freenet.node.Insert:MINOR,freenet.node.Request:MINOR,freenet.node.Node:MINOR");
         //NodeStarter.globalTestInit(name, false, Logger.ERROR, "freenet.node.Location:MINOR,freenet.io.comm:MINOR,freenet.node.NodeDispatcher:MINOR,freenet.node.simulator:MINOR,freenet.node.PeerManager:MINOR,freenet.node.RequestSender:MINOR");
@@ -113,7 +114,8 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 Node randomNode = nodes[node1];
                 //Logger.error(RealNodeRequestInsertTest.class,"Inserting: \""+dataString+"\" to "+node1);
                 
-                boolean isSSK = requestNumber % 2 == 1;
+                //boolean isSSK = requestNumber % 2 == 1;
+                boolean isSSK = true;
                 
                 FreenetURI testKey;
                 ClientKey insertKey;
@@ -170,7 +172,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                     if(Arrays.equals(results, data)) {
 						fetchSuccesses++;
 						int percentSuccess=100*fetchSuccesses/insertAttempts;
-                        Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" succeeded ("+percentSuccess+"%): "+new String(results));
+                        Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" from node "+node2+" succeeded ("+percentSuccess+"%): "+new String(results));
                         System.err.println("Fetch #"+requestNumber+" succeeded ("+percentSuccess+"%): \""+new String(results)+'\"');
                         if(fetchSuccesses == TARGET_SUCCESSES) {
                         	System.err.println("Succeeded, "+TARGET_SUCCESSES+" successful fetches");
