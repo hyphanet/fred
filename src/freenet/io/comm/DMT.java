@@ -634,7 +634,45 @@ public class DMT {
 		msg.set(DATA, new ShortBuffer(data));
 		return msg;
 	}
+	
+	public static final MessageType FNPSSKInsertRequestNew = new MessageType("FNPSSKInsertRequestNew", PRIORITY_BULK_DATA) {{
+		addField(UID, Long.class);
+		addField(HTL, Short.class);
+		addField(FREENET_ROUTING_KEY, NodeSSK.class);
+	}};
+	
+	public static Message createFNPSSKInsertRequestNew(long uid, short htl, NodeSSK myKey) {
+		Message msg = new Message(FNPSSKInsertRequestNew);
+		msg.set(UID, uid);
+		msg.set(HTL, htl);
+		msg.set(FREENET_ROUTING_KEY, myKey);
+		return msg;
+	}
 
+	public static final MessageType FNPSSKInsertRequestHeaders = new MessageType("FNPSSKInsertRequestHeaders", PRIORITY_HIGH) {{
+		addField(UID, Long.class);
+		addField(BLOCK_HEADERS, ShortBuffer.class);
+	}};
+	
+	public static final Message createFNPSSKInsertRequestHeaders(long uid, byte[] headers) {
+		Message msg = new Message(FNPSSKInsertRequestHeaders);
+		msg.set(UID, uid);
+		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
+		return msg;
+	}
+	
+	public static final MessageType FNPSSKInsertRequestData = new MessageType("FNPSSKInsertRequestData", PRIORITY_BULK_DATA) {{
+		addField(UID, Long.class);
+		addField(BLOCK_HEADERS, ShortBuffer.class);
+	}};
+	
+	public static final Message createFNPSSKInsertRequestData(long uid, byte[] data) {
+		Message msg = new Message(FNPSSKInsertRequestHeaders);
+		msg.set(UID, uid);
+		msg.set(DATA, new ShortBuffer(data));
+		return msg;
+	}
+	
 	public static final MessageType FNPSSKDataFound = new MessageType("FNPSSKDataFound", PRIORITY_BULK_DATA) {{
 		addField(UID, Long.class);
 		addField(BLOCK_HEADERS, ShortBuffer.class);
