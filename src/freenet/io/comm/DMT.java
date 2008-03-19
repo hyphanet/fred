@@ -663,7 +663,7 @@ public class DMT {
 	
 	public static final MessageType FNPSSKInsertRequestData = new MessageType("FNPSSKInsertRequestData", PRIORITY_BULK_DATA) {{
 		addField(UID, Long.class);
-		addField(BLOCK_HEADERS, ShortBuffer.class);
+		addField(DATA, ShortBuffer.class);
 	}};
 	
 	public static final Message createFNPSSKInsertRequestData(long uid, byte[] data) {
