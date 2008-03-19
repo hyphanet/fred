@@ -635,7 +635,7 @@ public class DMT {
 		return msg;
 	}
 	
-	public static final MessageType FNPSSKInsertRequestNew = new MessageType("FNPSSKInsertRequestNew", PRIORITY_BULK_DATA) {{
+	public static final MessageType FNPSSKInsertRequestNew = new MessageType("FNPSSKInsertRequestNew", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
 		addField(HTL, Short.class);
 		addField(FREENET_ROUTING_KEY, NodeSSK.class);
@@ -673,7 +673,7 @@ public class DMT {
 		return msg;
 	}
 	
-	public static final MessageType FNPSSKDataFound = new MessageType("FNPSSKDataFound", PRIORITY_BULK_DATA) {{
+	public static final MessageType FNPSSKDataFound = new MessageType("FNPSSKDataFound", PRIORITY_LOW) {{
 		addField(UID, Long.class);
 		addField(BLOCK_HEADERS, ShortBuffer.class);
 		addField(DATA, ShortBuffer.class);
@@ -687,7 +687,7 @@ public class DMT {
 		return msg;
 	}
 	
-	public static final MessageType FNPSSKDataFoundHeaders = new MessageType("FNPSSKDataFoundHeaders", PRIORITY_BULK_DATA) {{
+	public static final MessageType FNPSSKDataFoundHeaders = new MessageType("FNPSSKDataFoundHeaders", PRIORITY_LOW) {{
 		addField(UID, Long.class);
 		addField(BLOCK_HEADERS, ShortBuffer.class);
 	}};
