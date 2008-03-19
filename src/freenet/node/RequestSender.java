@@ -948,7 +948,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             if(status != NOT_FINISHED) return;
             try {
             	long now = System.currentTimeMillis();
-            	if(now > deadline) throw new IllegalStateException("Waited more than 5 minutes");
+            	if(now >= deadline) throw new IllegalStateException("Waited more than 5 minutes");
                 wait(deadline - now);
             } catch (InterruptedException e) {
                 // Ignore
