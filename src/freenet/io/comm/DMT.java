@@ -649,6 +649,30 @@ public class DMT {
 		return msg;
 	}
 	
+	public static final MessageType FNPSSKDataFoundHeaders = new MessageType("FNPSSKDataFoundHeaders", PRIORITY_BULK_DATA) {{
+		addField(UID, Long.class);
+		addField(BLOCK_HEADERS, ShortBuffer.class);
+	}};
+	
+	public static Message createFNPSSKDataFoundHeaders(long uid, byte[] headers) {
+		Message msg = new Message(FNPSSKDataFound);
+		msg.set(UID, uid);
+		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
+		return msg;
+	}
+	
+	public static final MessageType FNPSSKDataFoundData = new MessageType("FNPSSKDataFoundData", PRIORITY_BULK_DATA) {{
+		addField(UID, Long.class);
+		addField(DATA, ShortBuffer.class);
+	}};
+	
+	public static Message createFNPSSKDataFoundData(long uid, byte[] data) {
+		Message msg = new Message(FNPSSKDataFoundData);
+		msg.set(UID, uid);
+		msg.set(DATA, new ShortBuffer(data));
+		return msg;
+	}
+	
 	public static MessageType FNPSSKAccepted = new MessageType("FNPSSKAccepted", PRIORITY_HIGH) {{
 		addField(UID, Long.class);
 		addField(NEED_PUB_KEY, Boolean.class);
