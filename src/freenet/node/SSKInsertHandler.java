@@ -30,6 +30,8 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 	
     static final int PUBKEY_TIMEOUT = 10000;
     
+    static final int DATA_INSERT_TIMEOUT = 30000;
+    
     final Node node;
     final long uid;
     final PeerNode source;
@@ -87,7 +89,38 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 			if(logMINOR) Logger.minor(this, "Lost connection to source");
 			return;
 		}
-
+		
+		if(headers == null) {
+			try {
+				MessageFilter mf = MessageFilter.create().setType(DMT.FNPSSKInsertRequestHeaders).setField(DMT.UID, uid).setSource(source).setTimeout(DATA_INSERT_TIMEOUT);
+				Message msg = node.usm.waitFor(mf, this);
+				if(msg == null) {
+					Logger.normal(this, "Failed to receive FNPSSKInsertRequestHeaders for "+uid);
+					return;
+				}
+				headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
+			} catch (DisconnectedException e) {
+				if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
+				return;
+			}	
+		}
+		
+		if(data == null) {
+			try {
+				MessageFilter mf = MessageFilter.create().setType(DMT.FNPSSKInsertRequestData).setField(DMT.UID, uid).setSource(source).setTimeout(DATA_INSERT_TIMEOUT);
+				Message msg = node.usm.waitFor(mf, this);
+				if(msg == null) {
+					Logger.normal(this, "Failed to receive FNPSSKInsertRequestData for "+uid);
+					return;
+				}
+				data = ((ShortBuffer)msg.getObject(DMT.DATA)).getData();
+			} catch (DisconnectedException e) {
+				if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
+				return;
+			}	
+			
+		}
+		
 		if(pubKey == null) {
 			// Wait for pub key
 			if(logMINOR) Logger.minor(this, "Waiting for pubkey on "+uid);
