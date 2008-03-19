@@ -44,19 +44,17 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
     private byte[] headers;
     private boolean canCommit;
     
-    SSKInsertHandler(Message req, PeerNode source, long id, Node node, long startTime) {
+    SSKInsertHandler(Message req, NodeSSK key, byte[] data, byte[] headers, short htl, PeerNode source, long id, Node node, long startTime) {
         this.req = req;
         this.node = node;
         this.uid = id;
         this.source = source;
         this.startTime = startTime;
-        key = (NodeSSK) req.getObject(DMT.FREENET_ROUTING_KEY);
-        htl = req.getShort(DMT.HTL);
+        this.key = key;
+        this.htl = htl;
         if(htl <= 0) htl = 1;
         byte[] pubKeyHash = key.getPubKeyHash();
         pubKey = node.getKey(pubKeyHash);
-        data = ((ShortBuffer) req.getObject(DMT.DATA)).getData();
-        headers = ((ShortBuffer) req.getObject(DMT.BLOCK_HEADERS)).getData();
         canCommit = false;
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
         receivedBytes(req.receivedByteCount());

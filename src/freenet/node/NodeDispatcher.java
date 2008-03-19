@@ -389,7 +389,11 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
 		long now = System.currentTimeMillis();
 		if(m.getSpec().equals(DMT.FNPSSKInsertRequest)) {
-			SSKInsertHandler rh = new SSKInsertHandler(m, source, id, node, now);
+			NodeSSK key = (NodeSSK) m.getObject(DMT.FREENET_ROUTING_KEY);
+	        byte[] data = ((ShortBuffer) m.getObject(DMT.DATA)).getData();
+	        byte[] headers = ((ShortBuffer) m.getObject(DMT.BLOCK_HEADERS)).getData();
+	        short htl = m.getShort(DMT.HTL);
+			SSKInsertHandler rh = new SSKInsertHandler(m, key, data, headers, htl, source, id, node, now);
 			node.executor.execute(rh, "SSKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		} else {
 			CHKInsertHandler rh = new CHKInsertHandler(m, source, id, node, now);
