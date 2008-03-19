@@ -7,6 +7,7 @@ import java.util.Map;
 
 import freenet.io.comm.Peer;
 import freenet.io.xfer.PacketThrottle;
+import freenet.support.Logger;
 
 /**
  * Contains various status information for a {@link PeerNode}. Used e.g. in
@@ -91,6 +92,9 @@ public class PeerNodeStatus {
 	private final long resendBytesSent;
 
 	PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
+		if(Logger.shouldLog(Logger.MINOR, this)) {
+			Logger.minor(this, "Creating peer node status for "+peerNode+" noHeavy="+noHeavy);
+		}
 		Peer p = peerNode.getPeer();
 		if(p == null) {
 			peerAddress = null;
