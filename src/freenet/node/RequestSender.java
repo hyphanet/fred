@@ -1035,6 +1035,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	long now = System.currentTimeMillis();
             	if(now >= deadline) {
             		Logger.error(this, "Waited more than 5 minutes for status change on "+this+" current = "+current);
+            		continue;
             	}
                 wait(deadline - now);
             } catch (InterruptedException e) {
