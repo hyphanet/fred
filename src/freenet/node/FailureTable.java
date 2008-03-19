@@ -6,7 +6,6 @@ package freenet.node;
 import java.lang.ref.WeakReference;
 import java.util.Vector;
 
-import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
