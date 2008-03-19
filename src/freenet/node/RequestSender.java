@@ -1044,23 +1044,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     	}
     }
     
-    /**
-     * Wait until we have a terminal status code.
-     */
-    public synchronized void waitUntilFinished() {
-    	long deadline = System.currentTimeMillis() + 300*1000;
-        while(true) {
-            if(status != NOT_FINISHED) return;
-            try {
-            	long now = System.currentTimeMillis();
-            	if(now >= deadline) throw new IllegalStateException("Waited more than 5 minutes");
-                wait(deadline - now);
-            } catch (InterruptedException e) {
-                // Ignore
-            }
-        }            
-    }
-    
     private void finish(int code, PeerNode next, boolean fromOfferedKey) {
     	if(logMINOR) Logger.minor(this, "finish("+code+ ')');
         
