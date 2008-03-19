@@ -1013,6 +1013,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
      */
     public synchronized short waitUntilStatusChange(short mask) {
     	if(mask == WAIT_ALL) throw new IllegalArgumentException("Cannot ignore all!");
+    	while(true) {
     	long deadline = System.currentTimeMillis() + 300*1000;
         while(true) {
         	short current = mask; // If any bits are set already, we ignore those states.
@@ -1030,12 +1031,15 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			
             try {
             	long now = System.currentTimeMillis();
-            	if(now >= deadline) throw new IllegalStateException("Waited more than 5 minutes");
+            	if(now >= deadline) {
+            		Logger.error(this, "Waited more than 5 minutes for status change on "+this+" current = "+current);
+            	}
                 wait(deadline - now);
             } catch (InterruptedException e) {
                 // Ignore
             }
         }
+    	}
     }
     
     /**
