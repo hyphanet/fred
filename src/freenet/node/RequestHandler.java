@@ -366,11 +366,11 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}, "Send throttled SSK data");
 		
 		if(SEND_OLD_FORMAT_SSK) {
-			Message df = DMT.createFNPSSKDataFound(uid, rs.getHeaders(), rs.getSSKData());
+			Message df = DMT.createFNPSSKDataFound(uid, headers, data);
 			source.sendAsync(df, null, 0, this);
 		}
 		if(needsPubKey) {
-			Message pk = DMT.createFNPSSKPubKey(uid, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey());
+			Message pk = DMT.createFNPSSKPubKey(uid, pubKey);
 			source.sendAsync(pk, null, 0, this);
 		}
 	}
