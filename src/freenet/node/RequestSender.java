@@ -1004,6 +1004,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     /**
      * Wait until either the transfer has started, we receive a 
      * RejectedOverload, or we get a terminal status code.
+     * Must not return until we are finished - cannot timeout, because the caller will unlock
+     * the UID!
      * @param mask Bitmask indicating what NOT to wait for i.e. the situation when this function
      * exited last time (see WAIT_ constants above). Bits can also be set true even though they
      * were not valid, to indicate that the caller doesn't care about that bit.
