@@ -655,7 +655,7 @@ public class DMT {
 	}};
 	
 	public static Message createFNPSSKDataFoundHeaders(long uid, byte[] headers) {
-		Message msg = new Message(FNPSSKDataFound);
+		Message msg = new Message(FNPSSKDataFoundHeaders);
 		msg.set(UID, uid);
 		msg.set(BLOCK_HEADERS, new ShortBuffer(headers));
 		return msg;
