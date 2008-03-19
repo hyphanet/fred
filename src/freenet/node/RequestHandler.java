@@ -335,6 +335,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}
 	}
 
+	static boolean SEND_OLD_FORMAT_SSK = true;
+	
     private void sendSSK(long uid2, byte[] headers, byte[] data, boolean needsPubKey2, DSAPublicKey pubKey) throws NotConnectedException {
 		// SUCCESS requires that BOTH the pubkey AND the data/headers have been received.
 		// The pubKey will have been set on the SSK key, and the SSKBlock will have been constructed.
@@ -363,8 +365,10 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			
 		}, "Send throttled SSK data");
 		
-		Message df = DMT.createFNPSSKDataFound(uid, rs.getHeaders(), rs.getSSKData());
-		source.sendAsync(df, null, 0, this);
+		if(SEND_OLD_FORMAT_SSK) {
+			Message df = DMT.createFNPSSKDataFound(uid, rs.getHeaders(), rs.getSSKData());
+			source.sendAsync(df, null, 0, this);
+		}
 		if(needsPubKey) {
 			Message pk = DMT.createFNPSSKPubKey(uid, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey());
 			source.sendAsync(pk, null, 0, this);
