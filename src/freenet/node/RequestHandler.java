@@ -275,7 +275,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
             		return;
             	case RequestSender.SUCCESS:
             		if(key instanceof NodeSSK) {
-            			sendSSK(uid, rs.getHeaders(), rs.getSSKData(), needsPubKey, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey());
+            			sendSSK(rs.getHeaders(), rs.getSSKData(), needsPubKey, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey());
             		} else {
             			if(bt == null && !disconnected) {
             				// Bug! This is impossible!
@@ -337,7 +337,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 	public static boolean SEND_OLD_FORMAT_SSK = true;
 	
-    private void sendSSK(long uid2, byte[] headers, byte[] data, boolean needsPubKey2, DSAPublicKey pubKey) throws NotConnectedException {
+    private void sendSSK(byte[] headers, byte[] data, boolean needsPubKey2, DSAPublicKey pubKey) throws NotConnectedException {
 		// SUCCESS requires that BOTH the pubkey AND the data/headers have been received.
 		// The pubKey will have been set on the SSK key, and the SSKBlock will have been constructed.
 		Message headersMsg = DMT.createFNPSSKDataFoundHeaders(uid, headers);
@@ -383,7 +383,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
     private void returnLocalData(KeyBlock block) throws NotConnectedException {
         Message df = createDataFound(block);
         if(key instanceof NodeSSK) {
-			sendSSK(uid, block.getRawHeaders(), block.getRawData(), needsPubKey, ((SSKBlock)block).getPubKey());
+			sendSSK(block.getRawHeaders(), block.getRawData(), needsPubKey, ((SSKBlock)block).getPubKey());
             status = RequestSender.SUCCESS; // for byte logging
         } else if(block instanceof CHKBlock) {
         	PartiallyReceivedBlock prb =
