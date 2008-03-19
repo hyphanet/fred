@@ -268,6 +268,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 		try {
                 			if(logMINOR) Logger.minor(this, "Receiving data");
                 			byte[] data = br.receive();
+                			pn.transferSuccess();
                 			if(logMINOR) Logger.minor(this, "Received data");
                 			// Received data
                 			try {
@@ -287,6 +288,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 							else
 								Logger.error(this, "Transfer for offer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+pn, e);
                 			finish(GET_OFFER_TRANSFER_FAILED, pn, true);
+                			pn.transferFailed("RequestSenderGetOfferedTransferFailed");
                     		offers.deleteLastOffer();
                 			node.nodeStats.failedBlockReceive();
                 			return;
@@ -764,6 +766,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 		try {
                 			if(logMINOR) Logger.minor(this, "Receiving data");
                 			byte[] data = br.receive();
+                			next.transferSuccess();
                         	next.successNotOverload();
                 			if(logMINOR) Logger.minor(this, "Received data");
                 			// Received data
@@ -785,6 +788,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 							next.localRejectedOverload("TransferFailedRequest"+e.getReason());
                 			finish(TRANSFER_FAILED, next, false);
                 			node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
+                			next.transferFailed("RequestSenderTransferFailed");
                 			return;
                 		}
                 	} finally {

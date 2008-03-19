@@ -403,6 +403,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 		    freenet.support.Logger.OSThread.logPID(this);
         	if(logMINOR) Logger.minor(this, "Receiving data for "+CHKInsertHandler.this);
             try {
+            	// Don't log whether the transfer succeeded or failed as the transfer was initiated by the source therefore could be unreliable evidence.
                 br.receive();
                 if(logMINOR) Logger.minor(this, "Received data for "+CHKInsertHandler.this);
             	synchronized(CHKInsertHandler.this) {

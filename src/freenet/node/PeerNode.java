@@ -2472,7 +2472,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				fs.putSingle("peerAddedTime", Long.toString(peerAddedTime));
 			fs.putSingle("lastRoutingBackoffReason", lastRoutingBackoffReason);
 			fs.putSingle("routingBackoffPercent", Double.toString(backedOffPercent.currentValue() * 100));
-			fs.putSingle("routingBackoff", Long.toString((Math.max(routingBackedOffUntil - now, 0))));
+			fs.putSingle("routingBackoff", Long.toString((Math.max(Math.max(routingBackedOffUntil, transferBackedOffUntil) - now, 0))));
 			fs.putSingle("routingBackoffLength", Integer.toString(routingBackoffLength));
 			fs.putSingle("overloadProbability", Double.toString(getPRejected() * 100));
 			fs.putSingle("percentTimeRoutableConnection", Double.toString(getPercentTimeRoutableConnection() * 100));
@@ -2581,7 +2581,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public boolean isRoutingBackedOff() {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
-			return now < routingBackedOffUntil;
+			return now < routingBackedOffUntil || now < transferBackedOffUntil;
 		}
 	}
 	long routingBackedOffUntil = -1;
@@ -2593,6 +2593,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** Maximum upper limit to routing backoff slow or fast */
 	static final int MAX_ROUTING_BACKOFF_LENGTH = 3 * 60 * 60 * 1000;  // 3 hours
 	/** Current nominal routing backoff length */
+	
+	// Transfer Backoff
+	
+	long transferBackedOffUntil = -1;
+	static final int INITIAL_TRANSFER_BACKOFF_LENGTH = 30*1000; // 60 seconds, but it starts at twice this.
+	static final int TRANSFER_BACKOFF_MULTIPLIER = 2;
+	static final int MAX_TRANSFER_BACKOFF_LENGTH = 3 * 60 * 60 * 1000; // 3 hours
+	
+	int transferBackoffLength = INITIAL_TRANSFER_BACKOFF_LENGTH;
 
 	int routingBackoffLength = INITIAL_ROUTING_BACKOFF_LENGTH;
 	/** Last backoff reason */
@@ -2603,7 +2612,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public final RunningAverage backedOffPercent;
 	/* time of last sample */
 	private long lastSampleTime = Long.MAX_VALUE;
-
+	
 	/**
 	 * Got a local RejectedOverload.
 	 * Back off this node for a while.
@@ -2693,6 +2702,69 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		setPeerNodeStatus(now);
 	}
+	
+	/**
+	 * Got a local RejectedOverload.
+	 * Back off this node for a while.
+	 */
+	public void transferFailed(String reason) {
+		pRejected.report(1.0);
+		if(logMINOR)
+			Logger.minor(this, "Transfer failed (" + reason + ") on " + this + " : pRejected=" + pRejected.currentValue());
+		long now = System.currentTimeMillis();
+		Peer peer = getPeer();
+		reportBackoffStatus(now);
+		// We need it because of nested locking on getStatus()
+		synchronized(this) {
+			// Don't back off any further if we are already backed off
+			if(now > transferBackedOffUntil) {
+				transferBackoffLength = transferBackoffLength * TRANSFER_BACKOFF_MULTIPLIER;
+				if(transferBackoffLength > MAX_TRANSFER_BACKOFF_LENGTH)
+					transferBackoffLength = MAX_TRANSFER_BACKOFF_LENGTH;
+				int x = node.random.nextInt(transferBackoffLength);
+				transferBackedOffUntil = now + x;
+				String reasonWrapper = "";
+				if(0 <= reason.length())
+					reasonWrapper = " because of '" + reason + '\'';
+				if(logMINOR)
+					Logger.minor(this, "Backing off (transfer)" + reasonWrapper + ": transferBackoffLength=" + transferBackoffLength + ", until " + x + "ms on " + peer);
+			} else {
+				if(logMINOR)
+					Logger.minor(this, "Ignoring transfer failure: " + (transferBackedOffUntil - now) + "ms remaining on transfer backoff on " + peer);
+				return;
+			}
+			setLastBackoffReason(reason);
+		}
+		setPeerNodeStatus(now);
+	}
+
+	/**
+	 * Didn't get RejectedOverload.
+	 * Reset routing backoff.
+	 */
+	public void transferSuccess() {
+		pRejected.report(0.0);
+		if(logMINOR)
+			Logger.minor(this, "Transfer success on " + this + " : pRejected=" + pRejected.currentValue());
+		Peer peer = getPeer();
+		long now = System.currentTimeMillis();
+		reportBackoffStatus(now);
+		synchronized(this) {
+			// Don't un-backoff if still backed off
+			if(now > transferBackedOffUntil) {
+				routingBackoffLength = INITIAL_TRANSFER_BACKOFF_LENGTH;
+				if(logMINOR)
+					Logger.minor(this, "Resetting transfer backoff on " + peer);
+			} else {
+				if(logMINOR)
+					Logger.minor(this, "Ignoring transfer success: " + (transferBackedOffUntil - now) + "ms remaining on transfer backoff on " + peer);
+				return;
+			}
+		}
+		setPeerNodeStatus(now);
+	}
+
+	
 	Object pingSync = new Object();
 	// Relatively few as we only get one every 200ms*#nodes
 	// We want to get reasonably early feedback if it's dropping all of them...
@@ -2733,7 +2805,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public synchronized long getRoutingBackedOffUntil() {
-		return routingBackedOffUntil;
+		return Math.max(routingBackedOffUntil, transferBackedOffUntil);
 	}
 
 	public synchronized String getLastBackoffReason() {
