@@ -13,6 +13,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.PartiallyReceivedBlock;
+import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.CHKBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
@@ -346,7 +347,7 @@ public class FailureTable {
 	 * @param source The node that asked for the key.
 	 * @throws NotConnectedException If the sender ceases to be connected.
 	 */
-	public void sendOfferedKey(Key key, final boolean isSSK, boolean needPubKey, final long uid, PeerNode source) throws NotConnectedException {
+	public void sendOfferedKey(Key key, final boolean isSSK, boolean needPubKey, final long uid, final PeerNode source) throws NotConnectedException {
 		if(isSSK) {
 			SSKBlock block = node.fetch((NodeSSK)key, false);
 			if(block == null) {
@@ -354,33 +355,36 @@ public class FailureTable {
 				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, 0, senderCounter);
 				return;
 			}
-			Message df = DMT.createFNPSSKDataFound(uid, block.getRawHeaders(), block.getRawData());
-			node.sentPayload(block.getRawData().length);
-			source.sendAsync(df, new AsyncMessageCallback() {
-				boolean finished = false;
-				public synchronized void acknowledged() {
-					if(finished) return;
-					finished = true;
-					node.unlockUID(uid, isSSK, false, false, true);
+			
+			final Message data = DMT.createFNPSSKDataFoundData(uid, block.getRawData());
+			Message headers = DMT.createFNPSSKDataFoundHeaders(uid, block.getRawHeaders());
+			final int dataLength = block.getRawData().length;
+			
+			source.sendAsync(headers, null, 0, senderCounter);
+			
+			node.executor.execute(new PrioRunnable() {
+
+				public int getPriority() {
+					return NativeThread.HIGH_PRIORITY;
 				}
 
-				public void disconnected() {
-					if(finished) return;
-					finished = true;
-					node.unlockUID(uid, isSSK, false, false, true);
-				}
-
-				public void fatalError() {
-					if(finished) return;
-					finished = true;
-					node.unlockUID(uid, isSSK, false, false, true);
-				}
-
-				public void sent() {
-					// Ignore
+				public void run() {
+					try {
+						source.sendThrottledMessage(data, dataLength, senderCounter, 60*1000);
+					} catch (NotConnectedException e) {
+						// :(
+					} catch (WaitedTooLongException e) {
+						// :<
+						Logger.error(this, "Waited too long sending SSK data");
+					} finally {
+						node.unlockUID(uid, isSSK, false, false, true);
+					}
 				}
 				
-			}, 0, senderCounter);
+			}, "Send offered SSK");
+			
+			Message df = DMT.createFNPSSKDataFound(uid, block.getRawHeaders(), block.getRawData());
+			source.sendAsync(df, null, 0, senderCounter);
 			if(needPubKey) {
 				Message pk = DMT.createFNPSSKPubKey(uid, block.getPubKey());
 				source.sendAsync(pk, null, 0, senderCounter);
