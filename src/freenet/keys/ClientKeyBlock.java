@@ -25,5 +25,7 @@ public interface ClientKeyBlock extends KeyBlock {
      * @return The ClientKey for this key.
      */
     public ClientKey getClientKey();
+    
+    public byte[] memoryDecode() throws KeyDecodeException;
 
 }

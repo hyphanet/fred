@@ -11,6 +11,8 @@ import freenet.crypt.ciphers.Rijndael;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.io.ArrayBucket;
+import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 
 public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
@@ -106,6 +108,19 @@ public class ClientSSKBlock extends SSKBlock implements ClientKeyBlock {
 
 	public short getCompressionCodec() {
 		return compressionAlgorithm;
+	}
+	
+    /**
+     * Decode into RAM, if short.
+     * @throws KeyDecodeException 
+     */
+	public byte[] memoryDecode() throws KeyDecodeException {
+		try {
+			ArrayBucket a = (ArrayBucket) decode(new ArrayBucketFactory(), 32*1024, false);
+			return BucketTools.toByteArray(a); // FIXME
+		} catch (IOException e) {
+			throw new Error(e);
+		}
 	}
 
 }

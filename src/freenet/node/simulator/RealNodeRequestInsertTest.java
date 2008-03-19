@@ -11,20 +11,22 @@ import freenet.crypt.DummyRandomSource;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.CHKEncodeException;
-import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
+import freenet.keys.ClientKSK;
 import freenet.keys.ClientKey;
+import freenet.keys.ClientKeyBlock;
+import freenet.keys.FreenetURI;
+import freenet.keys.InsertableClientSSK;
 import freenet.node.FSParseException;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.support.Executor;
-import freenet.support.Fields;
-import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
 import freenet.support.StringArray;
 import freenet.support.LoggerHook.InvalidThresholdException;
+import freenet.support.io.ArrayBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
@@ -109,22 +111,41 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 // Pick random node to insert to
                 int node1 = random.nextInt(NUMBER_OF_NODES);
                 Node randomNode = nodes[node1];
-                Logger.error(RealNodeRequestInsertTest.class,"Inserting: \""+dataString+"\" to "+node1);
+                //Logger.error(RealNodeRequestInsertTest.class,"Inserting: \""+dataString+"\" to "+node1);
+                
+                boolean isSSK = requestNumber % 2 == 1;
+                
+                FreenetURI testKey;
+                ClientKey insertKey;
+                ClientKey fetchKey;
+                ClientKeyBlock block;
+                
+            	byte[] buf = dataString.getBytes("UTF-8");
+                if(isSSK) {
+                	testKey = new FreenetURI("KSK", dataString);
+                	
+                	insertKey = InsertableClientSSK.create(testKey);
+                	fetchKey = ClientKSK.create(testKey);
+                	
+                	block = ((InsertableClientSSK)insertKey).encode(new ArrayBucket(buf), false, false, (short)-1, buf.length, random);
+                } else {
+                	block = ClientCHKBlock.encode(buf, false, false, (short)-1, buf.length);
+                	insertKey = fetchKey = block.getClientKey();
+                	testKey = insertKey.getURI();
+                }
+                
+                System.err.println();
+                System.err.println("Created random test key "+testKey+" = "+fetchKey.getNodeKey());
+                System.err.println();
+                
                 byte[] data = dataString.getBytes("UTF-8");
-                ClientCHKBlock block;
-                block = ClientCHKBlock.encode(data, false, false, (short)-1, 0);
-                ClientCHK chk = (ClientCHK) block.getClientKey();
-                byte[] encData = block.getData();
-                byte[] encHeaders = block.getHeaders();
-                ClientCHKBlock newBlock = new ClientCHKBlock(encData, encHeaders, chk, true);
-                Logger.minor(RealNodeRequestInsertTest.class, "Decoded: "+new String(newBlock.memoryDecode()));
-                Logger.normal(RealNodeRequestInsertTest.class,"CHK: "+chk.getURI());
-                Logger.minor(RealNodeRequestInsertTest.class,"Headers: "+HexUtil.bytesToHex(block.getHeaders()));
+                Logger.minor(RealNodeRequestInsertTest.class, "Decoded: "+new String(block.memoryDecode()));
+                Logger.normal(RealNodeRequestInsertTest.class,"Insert Key: "+insertKey.getURI());
+                Logger.normal(RealNodeRequestInsertTest.class,"Fetch Key: "+fetchKey.getURI());
 				try {
 					insertAttempts++;
 					randomNode.clientCore.realPut(block, true);
 					Logger.error(RealNodeRequestInsertTest.class, "Inserted to "+node1);
-					Logger.minor(RealNodeRequestInsertTest.class, "Data: "+Fields.hashCode(encData)+", Headers: "+Fields.hashCode(encHeaders));
 					insertSuccesses++;
 				} catch (freenet.node.LowLevelPutException putEx) {
 					Logger.error(RealNodeRequestInsertTest.class, "Insert failed: "+ putEx);
@@ -137,7 +158,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                     node2 = random.nextInt(NUMBER_OF_NODES);
                 } while(node2 == node1);
                 Node fetchNode = nodes[node2];
-                block = (ClientCHKBlock) fetchNode.clientCore.realGetKey((ClientKey) chk, false, true, false);
+                block = (ClientCHKBlock) fetchNode.clientCore.realGetKey(fetchKey, false, true, false);
                 if(block == null) {
 					int percentSuccess=100*fetchSuccesses/insertAttempts;
                     Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
