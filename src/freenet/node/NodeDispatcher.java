@@ -168,6 +168,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return handleInsertRequest(m, source, false);
 		} else if(spec == DMT.FNPSSKInsertRequest) {
 			return handleInsertRequest(m, source, true);
+		} else if(spec == DMT.FNPSSKInsertRequestNew) {
+			return handleInsertRequest(m, source, true);
 		} else if(spec == DMT.FNPRHProbeRequest) {
 			return handleProbeRequest(m, source);
 		} else if(spec == DMT.FNPRoutedPing) {
@@ -394,6 +396,12 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	        byte[] headers = ((ShortBuffer) m.getObject(DMT.BLOCK_HEADERS)).getData();
 	        short htl = m.getShort(DMT.HTL);
 			SSKInsertHandler rh = new SSKInsertHandler(key, data, headers, htl, source, id, node, now);
+	        rh.receivedBytes(m.receivedByteCount());
+			node.executor.execute(rh, "SSKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
+		} else if(m.getSpec().equals(DMT.FNPSSKInsertRequestNew)) {
+			NodeSSK key = (NodeSSK) m.getObject(DMT.FREENET_ROUTING_KEY);
+			short htl = m.getShort(DMT.HTL);
+			SSKInsertHandler rh = new SSKInsertHandler(key, null, null, htl, source, id, node, now);
 	        rh.receivedBytes(m.receivedByteCount());
 			node.executor.execute(rh, "SSKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		} else {
