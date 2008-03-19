@@ -550,7 +550,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 MessageFilter mfPubKey = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKPubKey);
             	MessageFilter mfRealDFCHK = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPCHKDataFound);
             	MessageFilter mfRealDFSSK = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKDataFound);
-                MessageFilter mf = mfDNF.or(mfRF.or(mfRouteNotFound.or(mfRejectedOverload.or(mfDF.or(mfPubKey.or(mfRealDFCHK.or(mfRealDFSSK)))))));
+            	MessageFilter mfAltDFSSKHeaders = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKDataFoundHeaders);
+            	MessageFilter mfAltDFSSKData = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(FETCH_TIMEOUT).setType(DMT.FNPSSKDataFoundData);
+                MessageFilter mf = mfDNF.or(mfRF.or(mfRouteNotFound.or(mfRejectedOverload.or(mfDF.or(mfPubKey.or(mfRealDFCHK.or(mfRealDFSSK.or(mfAltDFSSKHeaders.or(mfAltDFSSKData)))))))));
 
                 
             	try {
@@ -766,7 +768,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	
             	if(msg.getSpec() == DMT.FNPSSKDataFound) {
 
-            		if(logMINOR) Logger.minor(this, "Got data on "+uid);
+            		if(logMINOR) Logger.minor(this, "Got data and headers on "+uid);
             		
             		if(!(key instanceof NodeSSK)) {
             			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
@@ -783,6 +785,46 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 		return;
                 	}
                 	continue;
+            	}
+            	
+            	if(msg.getSpec() == DMT.FNPSSKDataFoundData) {
+            		
+            		if(logMINOR) Logger.minor(this, "Got data on "+uid);
+            		
+                	sskData = ((ShortBuffer)msg.getObject(DMT.DATA)).getData();
+                	
+            		if(!(key instanceof NodeSSK)) {
+            			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
+                		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+            			break;
+            		}
+            		
+                	if(pubKey != null && headers != null) {
+                		finishSSK(next);
+                		return;
+                	}
+                	continue;
+
+            	}
+            	
+            	if(msg.getSpec() == DMT.FNPSSKDataFoundHeaders) {
+            		
+            		if(logMINOR) Logger.minor(this, "Got headers on "+uid);
+            		
+            		if(!(key instanceof NodeSSK)) {
+            			Logger.error(this, "Got "+msg+" but expected a different key type from "+next);
+                		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
+            			break;
+            		}
+            		
+                	headers = ((ShortBuffer)msg.getObject(DMT.BLOCK_HEADERS)).getData();
+            		
+                	if(pubKey != null && sskData != null) {
+                		finishSSK(next);
+                		return;
+                	}
+                	continue;
+
             	}
             	
            		Logger.error(this, "Unexpected message: "+msg);
