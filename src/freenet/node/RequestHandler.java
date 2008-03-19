@@ -383,7 +383,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
     private void returnLocalData(KeyBlock block) throws NotConnectedException {
         Message df = createDataFound(block);
         if(key instanceof NodeSSK) {
-			sendSSK(uid, rs.getHeaders(), rs.getSSKData(), needsPubKey, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey());
+			sendSSK(uid, block.getRawHeaders(), block.getRawData(), needsPubKey, ((SSKBlock)block).getPubKey());
             status = RequestSender.SUCCESS; // for byte logging
         } else if(block instanceof CHKBlock) {
         	PartiallyReceivedBlock prb =
