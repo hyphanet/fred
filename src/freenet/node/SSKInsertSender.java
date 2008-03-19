@@ -14,6 +14,7 @@ import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
+import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
@@ -153,6 +154,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             
             Message req = DMT.createFNPSSKInsertRequest(uid, htl, myKey, headers, data, pubKeyHash);
             
+            Message request = DMT.createFNPSSKInsertRequestNew(uid, htl, myKey);
+            
             // Wait for ack or reject... will come before even a locally generated DataReply
             
             MessageFilter mfAccepted = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(ACCEPTED_TIMEOUT).setType(DMT.FNPSSKAccepted);
@@ -167,8 +170,11 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             // Send to next node
             
             try {
+				next.sendAsync(request, null, 0, this);
+				if(RequestHandler.SEND_OLD_FORMAT_SSK) {
 				next.sendAsync(req, null, 0, this);
 				node.sentPayload(data.length);
+				}
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected to "+next);
 				continue;
@@ -235,7 +241,23 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             
             if(logMINOR) Logger.minor(this, "Got Accepted on "+this);
             
-            // Firstly, do we need to send them the pubkey?
+            // Send the headers and data
+            
+            Message headersMsg = DMT.createFNPSSKInsertRequestHeaders(uid, headers);
+            Message dataMsg = DMT.createFNPSSKInsertRequestData(uid, data);
+            
+            try {
+				next.sendAsync(headersMsg, null, 0, this);
+				next.sendThrottledMessage(dataMsg, data.length, this, SSKInsertHandler.DATA_INSERT_TIMEOUT);
+			} catch (NotConnectedException e1) {
+				if(logMINOR) Logger.minor(this, "Not connected to "+next);
+				continue;
+			} catch (WaitedTooLongException e) {
+				Logger.error(this, "Waited too long to send "+dataMsg+" to "+next+" on "+this);
+				continue;
+			}
+            
+            // Do we need to send them the pubkey?
             
             if(msg.getBoolean(DMT.NEED_PUB_KEY)) {
             	Message pkMsg = DMT.createFNPSSKPubKey(uid, pubKey);
