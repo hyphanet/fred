@@ -314,7 +314,7 @@ public class BlockTransmitter {
 			while (!asyncExitStatusSet) {
 				try {
 	            	long now = System.currentTimeMillis();
-	            	if(now > deadline) throw new IllegalStateException("Waited more than 1 hour for transfer completion!");
+	            	if(now >= deadline) throw new IllegalStateException("Waited more than 1 hour for transfer completion!");
 	                wait(deadline - now);
 				} catch (InterruptedException e) {
 					//ignore
