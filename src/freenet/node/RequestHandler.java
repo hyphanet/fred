@@ -13,6 +13,7 @@ import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.xfer.BlockTransmitter;
 import freenet.io.xfer.PartiallyReceivedBlock;
+import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.CHKBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
@@ -274,16 +275,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
             		return;
             	case RequestSender.SUCCESS:
             		if(key instanceof NodeSSK) {
-            			// SUCCESS requires that BOTH the pubkey AND the data/headers have been received.
-            			// The pubKey will have been set on the SSK key, and the SSKBlock will have been constructed.
-            			Message df = DMT.createFNPSSKDataFound(uid, rs.getHeaders(), rs.getSSKData());
-            			if(needsPubKey) {
-            				source.sendAsync(df, null, 0, this);
-            				Message pk = DMT.createFNPSSKPubKey(uid, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey());
-            				sendTerminal(pk);
-            			} else {
-            				sendTerminal(df);
-            			}
+            			sendSSK(uid, rs.getHeaders(), rs.getSSKData(), needsPubKey, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey());
             		} else {
             			if(bt == null && !disconnected) {
             				// Bug! This is impossible!
@@ -343,7 +335,43 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}
 	}
 
-    /**
+    private void sendSSK(long uid2, byte[] headers, byte[] data, boolean needsPubKey2, DSAPublicKey pubKey) throws NotConnectedException {
+		// SUCCESS requires that BOTH the pubkey AND the data/headers have been received.
+		// The pubKey will have been set on the SSK key, and the SSKBlock will have been constructed.
+		Message headersMsg = DMT.createFNPSSKDataFoundHeaders(uid, headers);
+		source.sendAsync(headersMsg, null, 0, this);
+		final Message dataMsg = DMT.createFNPSSKDataFoundData(uid, data);
+		node.executor.execute(new PrioRunnable() {
+
+			public int getPriority() {
+				return RequestHandler.this.getPriority();
+			}
+
+			public void run() {
+				try {
+					source.sendThrottledMessage(dataMsg, 1024, RequestHandler.this, 60*1000);
+					applyByteCounts();
+				} catch (NotConnectedException e) {
+					// Okay
+				} catch (WaitedTooLongException e) {
+					// Grrrr
+					Logger.error(this, "Waited too long to send SSK data on "+RequestHandler.this);
+				} finally {
+					unregisterRequestHandlerWithNode();
+				}
+			}
+			
+		}, "Send throttled SSK data");
+		
+		Message df = DMT.createFNPSSKDataFound(uid, rs.getHeaders(), rs.getSSKData());
+		source.sendAsync(df, null, 0, this);
+		if(needsPubKey) {
+			Message pk = DMT.createFNPSSKPubKey(uid, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey());
+			source.sendAsync(pk, null, 0, this);
+		}
+	}
+
+	/**
      * Return data from the datastore.
      * @param block The block we found in the datastore.
      * @throws NotConnectedException If we lose the connected to the request source.
@@ -351,19 +379,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
     private void returnLocalData(KeyBlock block) throws NotConnectedException {
         Message df = createDataFound(block);
         if(key instanceof NodeSSK) {
-            if(needsPubKey) {
-            	source.sendAsync(df, null, 0, this);
-            	DSAPublicKey key = ((NodeSSK)block.getKey()).getPubKey();
-            	Message pk = DMT.createFNPSSKPubKey(uid, key);
-            	if(logMINOR) Logger.minor(this, "Sending PK: "+key+ ' ' +key.toLongString());
-            	sendTerminal(pk);
-            } else {
-            	sendTerminal(df);
-            }
+			sendSSK(uid, rs.getHeaders(), rs.getSSKData(), needsPubKey, ((NodeSSK)rs.getSSKBlock().getKey()).getPubKey());
             status = RequestSender.SUCCESS; // for byte logging
-        	// Sent from datastore.
-            node.sentPayload(block.getRawData().length); // won't be sentPayload()ed by BlockTransmitter
-            sentPayload(block.getRawData().length);
         } else if(block instanceof CHKBlock) {
         	PartiallyReceivedBlock prb =
         		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
