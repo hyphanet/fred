@@ -3129,11 +3129,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
     private PacketThrottle _lastThrottle;
     
     public PacketThrottle getThrottle() {
-    	// pn.getPeer() cannot be null as it has already connected.
     	PacketThrottle newThrottle = null;
     	PacketThrottle prevThrottle = null;
     	synchronized(this) {
     		Peer peer = getPeer();
+    		if(peer == null) {
+    			// We haven't connected, prevent an NPE.
+    			return null;
+    		}
     		if(_lastThrottle != null) {
     			if(_lastThrottle.getPeer().equals(peer))
     				return _lastThrottle;
