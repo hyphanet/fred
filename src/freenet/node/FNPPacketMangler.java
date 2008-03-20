@@ -1681,12 +1681,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		sock.sendPacket(data, replyTo, pn == null ? crypto.config.alwaysAllowLocalAddresses() : pn.allowLocalAddresses());
 		if(pn != null)
 			pn.reportOutgoingPacket(data, 0, data.length, System.currentTimeMillis());
+		if(PeerNode.shouldThrottle(replyTo, node)) {
 		int reportableBytes = data.length - alreadyReportedBytes;
 		if(reportableBytes < 0) {
 			Logger.error(this, "alreadyReportedBytes ("+alreadyReportedBytes+")> data.length ("+data.length+")");
 			reportableBytes = 0;
 		}
 		node.outputThrottle.forceGrab(reportableBytes);
+		}
 	}
 
 	/**

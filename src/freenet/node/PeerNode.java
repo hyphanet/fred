@@ -3777,7 +3777,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public boolean shouldThrottle() {
-		Peer peer = getPeer();
+		return shouldThrottle(getPeer(), node);
+	}
+	
+	public static boolean shouldThrottle(Peer peer, Node node) {
 		if(node.throttleLocalData) return true;
 		if(peer == null) return true; // presumably
 		return IPUtil.isValidAddress(peer.getAddress(), false);
