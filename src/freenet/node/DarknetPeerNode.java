@@ -1449,7 +1449,7 @@ public class DarknetPeerNode extends PeerNode {
 		if(fo == null) {
 			Logger.error(this, "No such offer: "+uid);
 			try {
-				sendAsync(DMT.createFNPBulkSendAborted(uid), null, fileNumber, node.nodeStats.nodeToNodeCounter);
+				sendAsync(DMT.createFNPBulkSendAborted(uid), null, 0, node.nodeStats.nodeToNodeCounter);
 			} catch (NotConnectedException e) {
 				// Fine by me!
 			}
