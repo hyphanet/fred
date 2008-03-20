@@ -369,7 +369,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			source.sendAsync(df, null, 0, this);
 			// Not throttled, so report payload here.
 			sentPayload(data.length);
-			node.sentPayload(data.length);
 		}
 		if(needsPubKey) {
 			Message pk = DMT.createFNPSSKPubKey(uid, pubKey);
