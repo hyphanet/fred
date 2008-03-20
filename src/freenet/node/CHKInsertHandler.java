@@ -431,7 +431,8 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 				if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
 					Logger.normal(this, "Failed to retrieve (disconnect): "+e, e);
 				else
-					Logger.error(this, "Failed to retrieve ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
+					// Annoying, but we have stats for this; no need to call attention to it, it's unlikely to be a bug.
+					Logger.normal(this, "Failed to retrieve ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
             	node.nodeStats.failedBlockReceive();
                 return;
             } catch (Throwable t) {
