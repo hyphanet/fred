@@ -11,6 +11,7 @@ import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
+import freenet.io.xfer.WaitedTooLongException;
 import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
@@ -177,12 +178,13 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 		SSKBlock storedBlock = node.fetch(key, false);
 		
 		if((storedBlock != null) && !storedBlock.equals(block)) {
-			Message msg = DMT.createFNPSSKDataFound(uid, storedBlock.getRawHeaders(), storedBlock.getRawData());
 			try {
-				source.sendSync(msg, this);
-				node.sentPayload(storedBlock.getRawData().length);
-			} catch (NotConnectedException e) {
+				RequestHandler.sendSSK(storedBlock.getRawHeaders(), storedBlock.getRawData(), false, pubKey, source, uid, this);
+			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
+				return;
+			} catch (WaitedTooLongException e1) {
+				Logger.error(this, "Took too long to send ssk datareply to "+uid);
 				return;
 			}
 			block = storedBlock;
@@ -239,14 +241,15 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 					// Is verified elsewhere...
 					throw new Error("Impossible: "+e1);
 				}
-            	Message msg = DMT.createFNPSSKDataFound(uid, headers, data);
-            	try {
-            		source.sendSync(msg, this);
-    				node.sentPayload(data.length);
-            	} catch (NotConnectedException e) {
-            		if(logMINOR) Logger.minor(this, "Lost connection to source");
-            		return;
-            	}
+				try {
+					RequestHandler.sendSSK(headers, data, false, pubKey, source, uid, this);
+				} catch (NotConnectedException e1) {
+					if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
+					return;
+				} catch (WaitedTooLongException e1) {
+					Logger.error(this, "Took too long to send ssk datareply to "+uid);
+					return;
+				}
             }
             
             int status = sender.getStatus();

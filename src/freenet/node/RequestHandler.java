@@ -377,6 +377,26 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}
 	}
 
+    static void sendSSK(byte[] headers, byte[] data, boolean needsPubKey, DSAPublicKey pubKey, final PeerNode source, long uid, ByteCounter ctr) throws NotConnectedException, WaitedTooLongException {
+		// SUCCESS requires that BOTH the pubkey AND the data/headers have been received.
+		// The pubKey will have been set on the SSK key, and the SSKBlock will have been constructed.
+		Message headersMsg = DMT.createFNPSSKDataFoundHeaders(uid, headers);
+		source.sendAsync(headersMsg, null, 0, ctr);
+		final Message dataMsg = DMT.createFNPSSKDataFoundData(uid, data);
+		source.sendThrottledMessage(dataMsg, 1024, ctr, 60*1000);
+		
+		if(SEND_OLD_FORMAT_SSK) {
+			Message df = DMT.createFNPSSKDataFound(uid, headers, data);
+			source.sendAsync(df, null, 0, ctr);
+			// Not throttled, so report payload here.
+			ctr.sentPayload(data.length);
+		}
+		if(needsPubKey) {
+			Message pk = DMT.createFNPSSKPubKey(uid, pubKey);
+			source.sendAsync(pk, null, 0, ctr);
+		}
+    }
+    
 	/**
      * Return data from the datastore.
      * @param block The block we found in the datastore.
