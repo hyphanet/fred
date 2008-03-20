@@ -202,7 +202,6 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
     private boolean getPacket(DatagramPacket packet) {
 		try {
 			_sock.receive(packet);
-			// TODO: keep?
 			collector.addInfo(packet.getAddress() + ":" + packet.getPort(),
 					packet.getLength(), 0);
 		} catch (SocketTimeoutException e1) {
