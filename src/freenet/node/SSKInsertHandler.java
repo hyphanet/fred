@@ -183,6 +183,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 				node.sentPayload(storedBlock.getRawData().length);
 			} catch (NotConnectedException e) {
 				if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
+				return;
 			}
 			block = storedBlock;
 		}
