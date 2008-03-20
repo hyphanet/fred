@@ -1687,7 +1687,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				Logger.error(this, "alreadyReportedBytes ("+alreadyReportedBytes+")> data.length ("+data.length+")");
 				reportableBytes = 0;
 			}
-			node.outputThrottle.forceGrab(reportableBytes);
+			if(reportableBytes > 0)
+				node.outputThrottle.forceGrab(reportableBytes);
 		}
 	}
 
