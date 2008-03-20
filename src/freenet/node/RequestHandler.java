@@ -383,11 +383,11 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
      * @throws NotConnectedException If we lose the connected to the request source.
      */
     private void returnLocalData(KeyBlock block) throws NotConnectedException {
-        Message df = createDataFound(block);
         if(key instanceof NodeSSK) {
 			sendSSK(block.getRawHeaders(), block.getRawData(), needsPubKey, ((SSKBlock)block).getPubKey());
             status = RequestSender.SUCCESS; // for byte logging
         } else if(block instanceof CHKBlock) {
+        	Message df = DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
         	PartiallyReceivedBlock prb =
         		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
         	BlockTransmitter bt =
@@ -605,15 +605,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				return;
 			}
 		}
-	}
-
-	private Message createDataFound(KeyBlock block) {
-		if(block instanceof CHKBlock)
-			return DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
-		else if(block instanceof SSKBlock) {
-			return DMT.createFNPSSKDataFound(uid, block.getRawHeaders(), block.getRawData());
-		} else
-			throw new IllegalStateException("Unknown key block type: "+block.getClass());
 	}
 
 	private int sentBytes;
