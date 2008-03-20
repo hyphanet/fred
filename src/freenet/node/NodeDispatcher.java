@@ -41,6 +41,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	private static boolean logMINOR;
 	final Node node;
 	private NodeStats nodeStats;
+	private NodeDispatcherCallback callback;
 	
 	private static final long STALE_CONTEXT=20000;
 	private static final long STALE_CONTEXT_CHECK=20000;
@@ -68,6 +69,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		
 	};
 	
+	public interface NodeDispatcherCallback {
+		public void snoop(Message m, Node n);
+	}
+	
 	public boolean handleMessage(Message m) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		PeerNode source = (PeerNode)m.getSource();
@@ -76,6 +81,13 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return true;
 		}
 		if(logMINOR) Logger.minor(this, "Dispatching "+m+" from "+source);
+		if(callback != null) {
+			try {
+				callback.snoop(m, node);
+			} catch (Throwable t) {
+				Logger.error(this, "Callback threw "+t, t);
+			}
+		}
 		MessageType spec = m.getSpec();
 		if(spec == DMT.FNPPing) {
 			// Send an FNPPong
@@ -784,5 +796,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		} else {
 			throw new IllegalArgumentException("Unknown probe request type");
 		}
+	}
+
+	public void setHook(NodeDispatcherCallback cb) {
+		this.callback = cb;
 	}
 }

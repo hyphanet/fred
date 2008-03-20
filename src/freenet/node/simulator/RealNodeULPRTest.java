@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.IOException;
 
 import freenet.crypt.DummyRandomSource;
+import freenet.io.comm.DMT;
+import freenet.io.comm.Message;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.CHKEncodeException;
@@ -16,11 +18,13 @@ import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
+import freenet.keys.Key;
 import freenet.keys.SSKEncodeException;
 import freenet.keys.SSKVerifyException;
 import freenet.node.FSParseException;
 import freenet.node.LowLevelGetException;
 import freenet.node.Node;
+import freenet.node.NodeDispatcher.NodeDispatcherCallback;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.store.KeyCollisionException;
@@ -129,7 +133,9 @@ public class RealNodeULPRTest extends RealNodeTest {
         
         for(int totalCount=0;totalCount<NUMBER_OF_TESTS;totalCount++) {
         
-        boolean isSSK = (totalCount & 0x1) == 1;
+        final boolean isSSK;
+        isSSK = (totalCount & 0x1) == 1;
+        //isSSK = true;
         
         // Now create a key.
         
@@ -154,20 +160,46 @@ public class RealNodeULPRTest extends RealNodeTest {
         	insertKey = fetchKey = block.getClientKey();
         	testKey = insertKey.getURI();
         }
+        final Key nodeKey = fetchKey.getNodeKey();
         
         System.err.println();
-        System.err.println("Created random test key "+testKey+" = "+fetchKey.getNodeKey());
+        System.err.println("Created random test key "+testKey+" = "+nodeKey);
         System.err.println();
-        Logger.error(RealNodeULPRTest.class, "Starting ULPR test #"+successfulTests+": "+testKey+" = "+fetchKey+" = "+fetchKey.getNodeKey());
+        Logger.error(RealNodeULPRTest.class, "Starting ULPR test #"+successfulTests+": "+testKey+" = "+fetchKey+" = "+nodeKey);
         
         waitForAllConnected(nodes);
         
         // Fetch the key from each node.
         
+        // Only those nodes which have been asked by another node (not directly here) for the key will want it.
+        // Further, only those nodes on the actual DNF path will learn from their mistakes: a RejectedLoop doesn't tell you much.
+        
+        // Lets track which nodes have been visited.
+        
+        final boolean[] visited = new boolean[nodes.length];
+        
+        NodeDispatcherCallback cb = new NodeDispatcherCallback() {
+
+			public void snoop(Message m, Node n) {
+				if(((!isSSK) && m.getSpec() == DMT.FNPCHKDataRequest) ||
+						(isSSK && m.getSpec() == DMT.FNPSSKDataRequest)) {
+					Key key = (Key) m.getObject(DMT.FREENET_ROUTING_KEY);
+					if(key.equals(nodeKey)) {
+						visited[n.getDarknetPortNumber() - 5000] = true;
+					}
+				}
+			}
+        	
+        };
+        
+        for(int i=0;i<nodes.length;i++) {
+        	nodes[i].setDispatcherHook(cb);
+        }
+        
         for(int i=0;i<nodes.length;i++) {
         	System.out.println("Searching from node "+i);
         	try {
-        		nodes[i].clientCore.realGetKey(fetchKey, false, true, false);
+        		nodes[i%nodes.length].clientCore.realGetKey(fetchKey, false, true, false);
         		System.err.println("TEST FAILED: KEY ALREADY PRESENT!!!"); // impossible!
         		System.exit(EXIT_KEY_EXISTS);
         	} catch (LowLevelGetException e) {
@@ -175,16 +207,28 @@ public class RealNodeULPRTest extends RealNodeTest {
         		case LowLevelGetException.DATA_NOT_FOUND:
         		case LowLevelGetException.ROUTE_NOT_FOUND:
         			// Expected
-        			System.err.println("Node "+i+" : key not found (expected behaviour)");
+        			System.err.println("Node "+i%nodes.length+" : key not found (expected behaviour)");
         			continue;
         		default:
-        			System.err.println("Node "+i+" : UNEXPECTED ERROR: "+e.toString());
+        			System.err.println("Node "+i%nodes.length+" : UNEXPECTED ERROR: "+e.toString());
         			System.exit(EXIT_UNKNOWN_ERROR_CHECKING_KEY_NOT_EXIST);
         		}
         	}
         }
         
         // Now we should have a good web of subscriptions set up.
+        
+        int visitedCount = 0;
+        StringBuffer sb = new StringBuffer(3*nodes.length+1);
+        boolean first = true;
+        for(int i=0;i<visited.length;i++) {
+        	if(!visited[i]) continue;
+        	visitedCount++;
+        	if(!first) sb.append(' ');
+        	first = false;
+        	sb.append(i);
+        }
+        System.err.println("Nodes which were asked for the key by another node: "+visitedCount+" : "+sb.toString());
         
         // Store the key to ONE node.
         

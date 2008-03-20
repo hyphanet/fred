@@ -74,6 +74,7 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.L10n;
+import freenet.node.NodeDispatcher.NodeDispatcherCallback;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
@@ -3303,5 +3304,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			alertMTUTooSmall = new SimpleUserAlert(false, l10n("tooSmallMTU"), l10n("tooSmallMTULong", new String[] { "mtu", "minMTU" }, new String[] { Integer.toString(minAdvertisedMTU), Integer.toString(minAcceptableMTU) }), UserAlert.ERROR);
 		} else return;
 		clientCore.alerts.register(alertMTUTooSmall);
+	}
+
+	public void setDispatcherHook(NodeDispatcherCallback cb) {
+		this.dispatcher.setHook(cb);
 	}
 }
