@@ -115,9 +115,6 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
                 		// Can report both parts, because we had both a Handler and a Sender
                 		node.nodeStats.successfulSskFetchBytesSentAverage.report(sent);
                 		node.nodeStats.successfulSskFetchBytesReceivedAverage.report(rcvd);
-                		// If rs == null, returnLocalData() will call sentPayload.
-                        node.sentPayload(rs.getSSKData().length); // won't be sentPayload()ed by BlockTransmitter
-                        sentPayload(rs.getSSKData().length);
                 	}
             	} else {
             		if(logMINOR) Logger.minor(this, "Remote CHK fetch cost "+sent+ '/' +rcvd+" bytes ("+status+ ')');
@@ -370,6 +367,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		if(SEND_OLD_FORMAT_SSK) {
 			Message df = DMT.createFNPSSKDataFound(uid, headers, data);
 			source.sendAsync(df, null, 0, this);
+			// Not throttled, so report payload here.
 			sentPayload(data.length);
 			node.sentPayload(data.length);
 		}
