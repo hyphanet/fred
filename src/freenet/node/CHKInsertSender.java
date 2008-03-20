@@ -146,7 +146,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			/* FIXME: Cascading timeout...
 			   if this times out, we don't have any time to report to the node of origin the timeout notification (anyTimedOut?).
 			 */
-			Logger.error(this, "Timed out waiting for a final ack from: "+pn+" on "+this);
+			// NORMAL priority because it is normally caused by a transfer taking too long downstream, and that doesn't usually indicate a bug.
+			Logger.normal(this, "Timed out waiting for a final ack from: "+pn+" on "+this);
 			pn.localRejectedOverload("InsertTimeoutNoFinalAck");
 			receivedNotice(false);
 		}
@@ -748,7 +749,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			// MAYBE all done
 			while(true) {
 				if(System.currentTimeMillis() > deadline) {
-					Logger.error(this, "Timed out waiting for background transfers! Probably caused by async filter not getting a timeout notification! DEBUG ME!");
+					// NORMAL priority because it is normally caused by a transfer taking too long downstream, and that doesn't usually indicate a bug.
+					Logger.normal(this, "Timed out waiting for background transfers! Probably caused by async filter not getting a timeout notification! DEBUG ME!");
 					return false;
 				}
 				//If we want to be sure to exit as-soon-as the transfers are done, then we must hold the lock while we check.
