@@ -301,9 +301,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	} else {
         		// Data, possibly followed by pubkey
         		MessageFilter mfDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKDataFound);
+        		MessageFilter mfAltDF = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKDataFoundHeaders);
         		Message reply;
 				try {
-					reply = node.usm.waitFor(mfDF.or(mfRO.or(mfGetInvalid)), this);
+					reply = node.usm.waitFor(mfDF.or(mfRO.or(mfGetInvalid.or(mfAltDF))), this);
 				} catch (DisconnectedException e) {
 					if(logMINOR)
 						Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);
