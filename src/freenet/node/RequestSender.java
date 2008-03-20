@@ -389,6 +389,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     					continue;
 					}
 					sskData = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
+					if(pubKey == null) {
     				MessageFilter mfPK = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKPubKey);
     				Message pk;
 					try {
@@ -418,6 +419,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 						Logger.error(this, "Bogus SSK data from "+pn+" for offer for "+key+" : "+e, e);
     					offers.deleteLastOffer();
 						continue;
+					}
 					}
         			
         			if(finishSSKFromGetOffer(pn)) {
