@@ -382,8 +382,10 @@ public class FailureTable {
 				
 			}, "Send offered SSK");
 			
-			Message df = DMT.createFNPSSKDataFound(uid, block.getRawHeaders(), block.getRawData());
-			source.sendAsync(df, null, 0, senderCounter);
+			if(RequestHandler.SEND_OLD_FORMAT_SSK) {
+				Message df = DMT.createFNPSSKDataFound(uid, block.getRawHeaders(), block.getRawData());
+				source.sendAsync(df, null, 0, senderCounter);
+			}
 			if(needPubKey) {
 				Message pk = DMT.createFNPSSKPubKey(uid, block.getPubKey());
 				source.sendAsync(pk, null, 0, senderCounter);
