@@ -336,7 +336,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 	public static boolean SEND_OLD_FORMAT_SSK = true;
 	
-    private void sendSSK(byte[] headers, byte[] data, boolean needsPubKey2, DSAPublicKey pubKey) throws NotConnectedException {
+    private void sendSSK(byte[] headers, final byte[] data, boolean needsPubKey2, DSAPublicKey pubKey) throws NotConnectedException {
 		// SUCCESS requires that BOTH the pubkey AND the data/headers have been received.
 		// The pubKey will have been set on the SSK key, and the SSKBlock will have been constructed.
 		Message headersMsg = DMT.createFNPSSKDataFoundHeaders(uid, headers);
@@ -350,7 +350,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 			public void run() {
 				try {
-					source.sendThrottledMessage(dataMsg, 1024, RequestHandler.this, 60*1000);
+					source.sendThrottledMessage(dataMsg, data.length, RequestHandler.this, 60*1000);
 					applyByteCounts();
 				} catch (NotConnectedException e) {
 					// Okay
@@ -382,7 +382,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		Message headersMsg = DMT.createFNPSSKDataFoundHeaders(uid, headers);
 		source.sendAsync(headersMsg, null, 0, ctr);
 		final Message dataMsg = DMT.createFNPSSKDataFoundData(uid, data);
-		source.sendThrottledMessage(dataMsg, 1024, ctr, 60*1000);
+		source.sendThrottledMessage(dataMsg, data.length, ctr, 60*1000);
 		
 		if(SEND_OLD_FORMAT_SSK) {
 			Message df = DMT.createFNPSSKDataFound(uid, headers, data);
