@@ -2704,7 +2704,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 	
 	/**
-	 * Got a local RejectedOverload.
+	 * A transfer failed.
 	 * Back off this node for a while.
 	 */
 	public void transferFailed(String reason) {
@@ -2739,8 +2739,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	/**
-	 * Didn't get RejectedOverload.
-	 * Reset routing backoff.
+	 * A transfer succeeded.
+	 * Reset backoff.
 	 */
 	public void transferSuccess() {
 		pRejected.report(0.0);
