@@ -286,7 +286,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 							if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
 								Logger.normal(this, "Transfer failed (disconnect): "+e, e);
 							else
-								Logger.error(this, "Transfer for offer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+pn, e);
+								// A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
+								Logger.normal(this, "Transfer for offer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+pn, e);
                 			finish(GET_OFFER_TRANSFER_FAILED, pn, true);
                 			pn.transferFailed("RequestSenderGetOfferedTransferFailed");
                     		offers.deleteLastOffer();
@@ -784,7 +785,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 							if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
 								Logger.normal(this, "Transfer failed (disconnect): "+e, e);
 							else
-								Logger.error(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+next, e);
+								// A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
+								Logger.normal(this, "Transfer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+next, e);
 							next.localRejectedOverload("TransferFailedRequest"+e.getReason());
                 			finish(TRANSFER_FAILED, next, false);
                 			node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
