@@ -56,6 +56,10 @@ public class MessageItem {
         return buf;
     }
 
+    /**
+     * @param length The actual number of bytes sent to send this message, including our share of the packet overheads,
+     * *and including alreadyReportedBytes*, which is only used when deciding how many bytes to report to the throttle.
+     */
 	public void onSent(int length) {
         //NB: The fact that the bytes are counted before callback notifications is important for load management.
 		if(ctrCallback != null) {
