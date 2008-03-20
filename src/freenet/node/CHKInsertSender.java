@@ -153,12 +153,12 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 		}
 
 		public void onDisconnect(PeerContext ctx) {
-			Logger.error(this, "Disconnected "+ctx+" for "+this);
+			Logger.normal(this, "Disconnected "+ctx+" for "+this);
 			receivedNotice(true); // as far as we know
 		}
 
 		public void onRestarted(PeerContext ctx) {
-			Logger.error(this, "Restarted "+ctx+" for "+this);
+			Logger.normal(this, "Restarted "+ctx+" for "+this);
 			receivedNotice(true);
 		}
 
