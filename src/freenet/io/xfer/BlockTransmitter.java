@@ -69,6 +69,7 @@ public class BlockTransmitter {
 		_uid = uid;
 		_prb = source;
 		_ctr = ctr;
+		if(_ctr == null) throw new NullPointerException();
 		PACKET_SIZE = DMT.packetTransmitSize(_prb._packetSize, _prb._packets)
 			+ destination.getOutgoingMangler().fullHeadersLengthOneMessage();
 		try {

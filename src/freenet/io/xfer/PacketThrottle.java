@@ -221,7 +221,7 @@ public class PacketThrottle {
 			} else if(logMINOR)
 				Logger.minor(this, "Not throttling "+peer.shortToString()+" for "+this);
 			peer.sendAsync(msg, callback, packetSize, ctr);
-			if(ctr != null) ctr.sentPayload(packetSize);
+			ctr.sentPayload(packetSize);
 		} catch (RuntimeException e) {
 			callback.fatalError();
 			throw e;

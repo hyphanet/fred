@@ -62,6 +62,7 @@ public class BulkTransmitter {
 		this.uid = uid;
 		this.noWait = noWait;
 		this.ctr = ctr;
+		if(ctr == null) throw new NullPointerException();
 		peerBootID = peer.getBootID();
 		// Need to sync on prb while doing both operations, to avoid race condition.
 		// Specifically, we must not get calls to blockReceived() until blocksNotSentButPresent
