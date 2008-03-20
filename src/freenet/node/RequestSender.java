@@ -390,36 +390,36 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 					}
 					sskData = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
 					if(pubKey == null) {
-    				MessageFilter mfPK = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKPubKey);
-    				Message pk;
-					try {
-						pk = node.usm.waitFor(mfPK, this);
-					} catch (DisconnectedException e) {
-						if(logMINOR)
-							Logger.minor(this, "Disconnected: "+pn+" getting pubkey for offer for "+key);
-						offers.deleteLastOffer();
-						continue;
-					}
-    				if(pk == null) {
-    					Logger.error(this, "Got data but not pubkey from "+pn+" for offer for "+key);
-    					offers.deleteLastOffer();
-    					continue;
-    				}
-    				try {
-						pubKey = DSAPublicKey.create(((ShortBuffer)pk.getObject(DMT.PUBKEY_AS_BYTES)).getData());
-					} catch (CryptFormatException e) {
-						Logger.error(this, "Bogus pubkey from "+pn+" for offer for "+key+" : "+e, e);
-    					offers.deleteLastOffer();
-						continue;
-					}
-					
-        			try {
-						((NodeSSK)key).setPubKey(pubKey);
-					} catch (SSKVerifyException e) {
-						Logger.error(this, "Bogus SSK data from "+pn+" for offer for "+key+" : "+e, e);
-    					offers.deleteLastOffer();
-						continue;
-					}
+						MessageFilter mfPK = MessageFilter.create().setSource(pn).setField(DMT.UID, uid).setTimeout(GET_OFFER_TIMEOUT).setType(DMT.FNPSSKPubKey);
+						Message pk;
+						try {
+							pk = node.usm.waitFor(mfPK, this);
+						} catch (DisconnectedException e) {
+							if(logMINOR)
+								Logger.minor(this, "Disconnected: "+pn+" getting pubkey for offer for "+key);
+							offers.deleteLastOffer();
+							continue;
+						}
+						if(pk == null) {
+							Logger.error(this, "Got data but not pubkey from "+pn+" for offer for "+key);
+							offers.deleteLastOffer();
+							continue;
+						}
+						try {
+							pubKey = DSAPublicKey.create(((ShortBuffer)pk.getObject(DMT.PUBKEY_AS_BYTES)).getData());
+						} catch (CryptFormatException e) {
+							Logger.error(this, "Bogus pubkey from "+pn+" for offer for "+key+" : "+e, e);
+							offers.deleteLastOffer();
+							continue;
+						}
+						
+						try {
+							((NodeSSK)key).setPubKey(pubKey);
+						} catch (SSKVerifyException e) {
+							Logger.error(this, "Bogus SSK data from "+pn+" for offer for "+key+" : "+e, e);
+							offers.deleteLastOffer();
+							continue;
+						}
 					}
         			
         			if(finishSSKFromGetOffer(pn)) {
