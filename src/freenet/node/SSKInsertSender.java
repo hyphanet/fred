@@ -428,6 +428,54 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 					continue;
 				}
 				
+				if(msg.getSpec() == DMT.FNPSSKDataFoundHeaders) {
+					/**
+					 * Data was already on node, and was NOT equal to what we sent. COLLISION!
+					 * 
+					 * We can either accept the old data or the new data.
+					 * OLD DATA:
+					 * - KSK-based stuff is usable. Well, somewhat; a node could spoof KSKs on
+					 * receiving an insert, (if it knows them in advance), but it cannot just 
+					 * start inserts to overwrite old SSKs.
+					 * - You cannot "update" an SSK.
+					 * NEW DATA:
+					 * - KSK-based stuff not usable. (Some people think this is a good idea!).
+					 * - Illusion of updatability. (VERY BAD IMHO, because it's not really
+					 * updatable... FIXME implement TUKs; would determine latest version based
+					 * on version number, and propagate on request with a certain probability or
+					 * according to time. However there are good arguments to do updating at a
+					 * higher level (e.g. key bottleneck argument), and TUKs should probably be 
+					 * distinct from SSKs.
+					 * 
+					 * For now, accept the "old" i.e. preexisting data.
+					 */
+					Logger.normal(this, "Got collision on "+myKey+" ("+uid+") sending to "+next.getPeer());
+					
+        			headers = ((ShortBuffer) msg.getObject(DMT.BLOCK_HEADERS)).getData();
+        			// Wait for the data
+        			MessageFilter mfData = MessageFilter.create().setSource(next).setField(DMT.UID, uid).setTimeout(RequestSender.FETCH_TIMEOUT).setType(DMT.FNPSSKDataFoundData);
+        			Message dataMessage;
+        			try {
+						dataMessage = node.usm.waitFor(mfData, this);
+					} catch (DisconnectedException e) {
+						if(logMINOR)
+							Logger.minor(this, "Disconnected: "+next+" getting datareply for "+this);
+						break;
+					}
+					if(dataMessage == null) {
+    					Logger.error(this, "Got headers but not data for datareply for insert from "+this);
+    					break;
+					}
+					data = ((ShortBuffer) dataMessage.getObject(DMT.DATA)).getData();
+					
+					synchronized(this) {
+						hasRecentlyCollided = true;
+						hasCollided = true;
+						notifyAll();
+					}
+					continue; // The node will now propagate the new data. There is no need to move to the next node yet.
+        		}
+				
 				if (msg.getSpec() != DMT.FNPInsertReply) {
 					Logger.error(this, "Unknown reply: " + msg);
 					finish(INTERNAL_ERROR, next);
