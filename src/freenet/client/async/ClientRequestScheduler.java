@@ -301,7 +301,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	private synchronized void innerRegister(SendableRequest req) {
-		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+req.getPriorityClass()+" retry "+req.getRetryCount());
+		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+req.getPriorityClass()+" retry "+req.getRetryCount()+" for "+req.getClientRequest());
 		addToGrabArray(req.getPriorityClass(), req.getRetryCount(), req.getClient(), req.getClientRequest(), req);
 		HashSet v = (HashSet) allRequestsByClientRequest.get(req.getClientRequest());
 		if(v == null) {
