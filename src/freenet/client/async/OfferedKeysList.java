@@ -11,7 +11,6 @@ import freenet.keys.Key;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
-import freenet.node.RequestStarter;
 import freenet.node.SendableRequest;
 import freenet.node.NodeClientCore.SimpleRequestSenderCompletionListener;
 import freenet.support.Logger;
