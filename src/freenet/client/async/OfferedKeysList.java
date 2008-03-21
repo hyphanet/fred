@@ -75,6 +75,14 @@ public class OfferedKeysList extends SendableRequest {
 
 	public synchronized Object chooseKey(KeysFetchingLocally fetching) {
 		assert(keysList.size() == keys.size());
+		if(keys.size() == 1) {
+			// Shortcut the common case
+			Key k = (Key) keysList.get(0);
+			if(fetching.hasKey(k)) return null;
+			keys.remove(k);
+			keysList.setSize(0);
+			return k;
+		}
 		for(int i=0;i<10;i++) {
 		// Pick a random key
 		if(keysList.isEmpty()) return null;
@@ -91,8 +99,14 @@ public class OfferedKeysList extends SendableRequest {
 		return null;
 	}
 
-	public synchronized boolean hasValidKeys(RequestStarter starter) {
+	public synchronized boolean hasValidKeys(RequestStarter fetching) {
 		assert(keysList.size() == keys.size());
+		if(keys.size() == 1) {
+			// Shortcut the common case
+			Key k = (Key) keysList.get(0);
+			if(fetching.hasKey(k)) return false;
+			return true;
+		}
 		for(int i=0;i<10;i++) {
 		// Pick a random key
 		if(keysList.isEmpty()) return false;
