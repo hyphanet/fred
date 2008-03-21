@@ -825,7 +825,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 		node.failureTable.onFailed(key, next, htl, (int) (System.currentTimeMillis() - timeSentRequest));
     					break; // try next node
     				}
-    				if(sskData != null) {
+    				if(sskData != null && headers != null) {
     					finishSSK(next);
     					return;
     				}
