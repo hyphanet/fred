@@ -250,7 +250,7 @@ public class PacketThrottle {
 				_packetsInFlight--;
 				PacketThrottle.this.notifyAll();
 			}
-			if(logMINOR) Logger.minor(this, "Removed packet: acked for "+this+" for "+PacketThrottle.this);
+			if(logMINOR) Logger.minor(this, "Removed packet: acked for "+this);
 		}
 
 		public void disconnected() {
@@ -260,7 +260,7 @@ public class PacketThrottle {
 				_packetsInFlight--;
 				PacketThrottle.this.notifyAll();
 			}
-			if(logMINOR) Logger.minor(this, "Removed packet: disconnected for "+this+" for "+PacketThrottle.this);
+			if(logMINOR) Logger.minor(this, "Removed packet: disconnected for "+this);
 		}
 
 		public void fatalError() {
@@ -270,11 +270,15 @@ public class PacketThrottle {
 				_packetsInFlight--;
 				PacketThrottle.this.notifyAll();
 			}
-			if(logMINOR) Logger.minor(this, "Removed packet: error for "+this+" for "+PacketThrottle.this);
+			if(logMINOR) Logger.minor(this, "Removed packet: error for "+this);
 		}
 
 		public void sent() {
 			// Ignore
+		}
+		
+		public String toString() {
+			return super.toString()+":"+PacketThrottle.this.toString();
 		}
 		
 	}
