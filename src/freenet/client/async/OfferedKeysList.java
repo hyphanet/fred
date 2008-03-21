@@ -84,17 +84,17 @@ public class OfferedKeysList extends SendableRequest {
 			return k;
 		}
 		for(int i=0;i<10;i++) {
-		// Pick a random key
-		if(keysList.isEmpty()) return null;
-		int ptr = random.nextInt(keysList.size());
-		// Avoid shuffling penalty by swapping the chosen element with the end.
-		Key k = (Key) keysList.get(ptr);
-		if(fetching.hasKey(k)) continue;
-		keysList.set(ptr, keysList.get(keysList.size()-1));
-		keysList.setSize(keysList.size()-1);
-		keys.remove(k);
-		assert(keysList.size() == keys.size());
-		return k;
+			// Pick a random key
+			if(keysList.isEmpty()) return null;
+			int ptr = random.nextInt(keysList.size());
+			// Avoid shuffling penalty by swapping the chosen element with the end.
+			Key k = (Key) keysList.get(ptr);
+			if(fetching.hasKey(k)) continue;
+			keysList.set(ptr, keysList.get(keysList.size()-1));
+			keysList.setSize(keysList.size()-1);
+			keys.remove(k);
+			assert(keysList.size() == keys.size());
+			return k;
 		}
 		return null;
 	}
@@ -108,12 +108,12 @@ public class OfferedKeysList extends SendableRequest {
 			return true;
 		}
 		for(int i=0;i<10;i++) {
-		// Pick a random key
-		if(keysList.isEmpty()) return false;
-		int ptr = random.nextInt(keysList.size());
-		Key k = (Key) keysList.get(ptr);
-		if(fetching.hasKey(k)) continue;
-		return true;
+			// Pick a random key
+			if(keysList.isEmpty()) return false;
+			int ptr = random.nextInt(keysList.size());
+			Key k = (Key) keysList.get(ptr);
+			if(fetching.hasKey(k)) continue;
+			return true;
 		}
 		return false;
 	}
