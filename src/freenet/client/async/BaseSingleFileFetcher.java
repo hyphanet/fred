@@ -68,6 +68,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		if((retryCount <= maxRetries) || (maxRetries == -1)) {
 			if(retryCount % ClientRequestScheduler.COOLDOWN_RETRIES == 0) {
 				// Add to cooldown queue. Don't reschedule yet.
+				long now = System.currentTimeMillis();
+				if(cooldownWakeupTime > now)
+					Logger.error(this, "Already on the cooldown queue for "+this, new Exception("error"));
+				else
 				cooldownWakeupTime = sched.queueCooldown(key);
 				return true; // We will retry, just not yet. See requeueAfterCooldown(Key).
 			} else {
