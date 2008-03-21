@@ -69,7 +69,7 @@ public class OfferedKeysList extends SendableRequest {
 		throw new UnsupportedOperationException();
 	}
 
-	public Object chooseKey() {
+	public synchronized Object chooseKey() {
 		// Pick a random key
 		if(keysList.isEmpty()) return null;
 		int ptr = random.nextInt(keysList.size());
