@@ -66,6 +66,7 @@ public class PacketThrottle {
 
 	public synchronized void setRoundTripTime(long rtt) {
 		_roundTripTime = Math.max(rtt, 10);
+		if(logMINOR) Logger.minor(this, "Set round trip time to "+rtt+" on "+this);
 	}
 
     public synchronized void notifyOfPacketLost() {
@@ -74,7 +75,7 @@ public class PacketThrottle {
 		_totalPackets++;
 		_simulatedWindowSize *= PACKET_DROP_DECREASE_MULTIPLE;
 		slowStart = false;
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "notifyOfPacketLost(): "+this);
 		_packetSeqWindowFullChecked = _packetSeq;
     }
