@@ -615,7 +615,7 @@ public class OpennetManager {
     	if(logMINOR)
     		Logger.minor(this, "Receiving noderef (reply="+isReply+") as bulk transfer for request uid "+uid+" with transfer "+xferUID+" from "+source);
     	if(!br.receive()) {
-    		String msg = "Failed to receive noderef bulk transfer for "+this+" : "+RetrievalException.getErrString(prb.getAbortReason())+" : "+prb.getAbortDescription();
+    		String msg = "Failed to receive noderef bulk transfer for "+this+" : "+RetrievalException.getErrString(prb.getAbortReason())+" : "+prb.getAbortDescription()+" from "+source;
     		if(prb.getAbortReason() != RetrievalException.SENDER_DISCONNECTED)
     			Logger.error(this, msg);
     		else
