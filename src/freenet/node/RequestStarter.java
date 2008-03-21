@@ -256,8 +256,10 @@ public class RequestStarter implements Runnable, KeysFetchingLocally {
 			if(Logger.shouldLog(Logger.MINOR, this)) 
 				Logger.minor(this, "Finished "+req);
 			} finally {
-				synchronized(keysFetching) {
-					keysFetching.remove(key);
+				if(!isInsert) {
+					synchronized(keysFetching) {
+						keysFetching.remove(key);
+					}
 				}
 			}
 		}
