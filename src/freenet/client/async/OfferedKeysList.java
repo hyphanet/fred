@@ -48,11 +48,13 @@ public class OfferedKeysList extends SendableRequest {
 	
 	/** Called when a key is found, when it no longer belogns to this list etc. */
 	public synchronized void remove(Key key) {
+		assert(keysList.size() == keys.size());
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(keys.remove(key)) {
 			if(logMINOR) Logger.minor(this, "Found "+key+" , removing it");
 			keysList.remove(key);
 		}
+		assert(keysList.size() == keys.size());
 	}
 	
 	public synchronized boolean isEmpty() {
@@ -70,6 +72,7 @@ public class OfferedKeysList extends SendableRequest {
 	}
 
 	public synchronized Object chooseKey() {
+		assert(keysList.size() == keys.size());
 		// Pick a random key
 		if(keysList.isEmpty()) return null;
 		int ptr = random.nextInt(keysList.size());
@@ -78,6 +81,7 @@ public class OfferedKeysList extends SendableRequest {
 		keysList.set(ptr, keysList.get(keysList.size()-1));
 		keysList.setSize(keysList.size()-1);
 		keys.remove(k);
+		assert(keysList.size() == keys.size());
 		return k;
 	}
 
@@ -127,10 +131,12 @@ public class OfferedKeysList extends SendableRequest {
 	}
 
 	public synchronized void queueKey(Key key) {
+		assert(keysList.size() == keys.size());
 		if(keys.add(key)) {
 			keysList.add(key);
 			if(logMINOR) Logger.minor(this, "Queued key "+key+" on "+this);
 		}
+		assert(keysList.size() == keys.size());
 	}
 
 }
