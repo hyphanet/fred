@@ -31,7 +31,7 @@ import freenet.support.Logger;
 public class OfferedKeysList extends SendableRequest {
 
 	private final HashSet keys;
-	private final Vector keysList;
+	private final Vector keysList; // O(1) remove random element the way we use it, see chooseKey().
 	private static boolean logMINOR;
 	private final RandomSource random;
 	private final short priorityClass;
