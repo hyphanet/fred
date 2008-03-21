@@ -102,30 +102,30 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	private Object removeRandomBlockNum(KeysFetchingLocally keys) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(this) {
-		if(blockNums.isEmpty()) {
-			if(logMINOR)
-				Logger.minor(this, "No blocks to remove");
-			return null;
-		}
+			if(blockNums.isEmpty()) {
+				if(logMINOR)
+					Logger.minor(this, "No blocks to remove");
+				return null;
+			}
 		}
 		for(int i=0;i<10;i++) {
-		Object ret;
-		int x;
-		synchronized(this) {
-			x = ctx.random.nextInt(blockNums.size());
-			ret = (Integer) blockNums.remove(x);
-		}
-		// LOCKING: keys is safe to check, but segment isn't.
-		Key key = segment.getBlockNodeKey(((Integer)ret).intValue());
-		if(keys.hasKey(key)) {
+			Object ret;
+			int x;
 			synchronized(this) {
-				blockNums.add(ret);
+				x = ctx.random.nextInt(blockNums.size());
+				ret = (Integer) blockNums.remove(x);
 			}
-			continue;
-		}
-		if(logMINOR)
-			Logger.minor(this, "Removing block "+x+" of "+(blockNums.size()+1)+ " : "+ret+ " on "+this);
-		return ret;
+			// LOCKING: keys is safe to check, but segment isn't.
+			Key key = segment.getBlockNodeKey(((Integer)ret).intValue());
+			if(keys.hasKey(key)) {
+				synchronized(this) {
+					blockNums.add(ret);
+				}
+				continue;
+			}
+			if(logMINOR)
+				Logger.minor(this, "Removing block "+x+" of "+(blockNums.size()+1)+ " : "+ret+ " on "+this);
+			return ret;
 		}
 		return null;
 	}
