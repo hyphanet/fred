@@ -245,7 +245,10 @@ public class PacketThrottle {
 		
 		public void acknowledged() {
 			synchronized(PacketThrottle.this) {
-				if(finished) return;
+				if(finished) {
+					if(logMINOR) Logger.minor(this, "Already acked, ignoring callback: "+this);
+					return;
+				}
 				finished = true;
 				_packetsInFlight--;
 				PacketThrottle.this.notifyAll();
