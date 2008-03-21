@@ -51,7 +51,7 @@ public class OfferedKeysList extends SendableRequest {
 		assert(keysList.size() == keys.size());
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(keys.remove(key)) {
-			if(logMINOR) Logger.minor(this, "Found "+key+" , removing it");
+			if(logMINOR) Logger.minor(this, "Found "+key+" , removing it "+" for "+this);
 			keysList.remove(key);
 		}
 		assert(keysList.size() == keys.size());
