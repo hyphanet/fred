@@ -99,6 +99,7 @@ public class PacketThrottle {
         }
 
     	if(slowStart) {
+    		if(logMINOR) Logger.minor(this, "Still in slow start");
     		_simulatedWindowSize += _simulatedWindowSize / SLOW_START_DIVISOR;
     	} else {
     		_simulatedWindowSize += (PACKET_TRANSMIT_INCREMENT / _simulatedWindowSize);
