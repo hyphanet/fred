@@ -15,7 +15,7 @@ import freenet.support.Logger;
 /**
  * A low-level key fetch which can be sent immediately. @see SendableRequest
  */
-public abstract class SendableGet extends SendableRequest {
+public abstract class SendableGet extends BaseSendableGet {
 
 	/** Is this an SSK? */
 	public abstract boolean isSSK();
@@ -25,6 +25,10 @@ public abstract class SendableGet extends SendableRequest {
 	
 	/** Get a numbered key to fetch. */
 	public abstract ClientKey getKey(Object token);
+	
+	public Key getNodeKey(Object token) {
+		return getKey(token).getNodeKey();
+	}
 	
 	/** Get the fetch context (settings) object. */
 	public abstract FetchContext getContext();

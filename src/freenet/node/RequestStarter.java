@@ -189,7 +189,7 @@ public class RequestStarter implements Runnable, KeysFetchingLocally {
 				keyNum = req.chooseKey(isInsert ? null : this);
 				if(keyNum == null) return false;
 				if(!isInsert) {
-					key = ((SendableGet)req).getKey(keyNum).getNodeKey();
+					key = ((BaseSendableGet)req).getNodeKey(keyNum);
 					if(key == null) return false;
 					synchronized(keysFetching) {
 						keysFetching.add(key);

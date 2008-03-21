@@ -8,10 +8,10 @@ import java.util.Vector;
 
 import freenet.crypt.RandomSource;
 import freenet.keys.Key;
+import freenet.node.BaseSendableGet;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
-import freenet.node.SendableRequest;
 import freenet.node.NodeClientCore.SimpleRequestSenderCompletionListener;
 import freenet.support.Logger;
 
@@ -29,7 +29,7 @@ import freenet.support.Logger;
  * @author toad
  *
  */
-public class OfferedKeysList extends SendableRequest {
+public class OfferedKeysList extends BaseSendableGet {
 
 	private final HashSet keys;
 	private final Vector keysList; // O(1) remove random element the way we use it, see chooseKey().
@@ -169,6 +169,10 @@ public class OfferedKeysList extends SendableRequest {
 			if(logMINOR) Logger.minor(this, "Queued key "+key+" on "+this);
 		}
 		assert(keysList.size() == keys.size());
+	}
+
+	public Key getNodeKey(Object token) {
+		return (Key) token;
 	}
 
 }
