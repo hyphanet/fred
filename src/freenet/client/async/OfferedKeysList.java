@@ -8,8 +8,10 @@ import java.util.Vector;
 
 import freenet.crypt.RandomSource;
 import freenet.keys.Key;
+import freenet.node.KeysFetchingLocally;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
+import freenet.node.RequestStarter;
 import freenet.node.SendableRequest;
 import freenet.node.NodeClientCore.SimpleRequestSenderCompletionListener;
 import freenet.support.Logger;
@@ -71,18 +73,33 @@ public class OfferedKeysList extends SendableRequest {
 		throw new UnsupportedOperationException();
 	}
 
-	public synchronized Object chooseKey() {
+	public synchronized Object chooseKey(KeysFetchingLocally fetching) {
 		assert(keysList.size() == keys.size());
+		for(int i=0;i<10;i++) {
 		// Pick a random key
 		if(keysList.isEmpty()) return null;
 		int ptr = random.nextInt(keysList.size());
 		// Avoid shuffling penalty by swapping the chosen element with the end.
 		Key k = (Key) keysList.get(ptr);
+		if(fetching.hasKey(k)) continue;
 		keysList.set(ptr, keysList.get(keysList.size()-1));
 		keysList.setSize(keysList.size()-1);
 		keys.remove(k);
 		assert(keysList.size() == keys.size());
 		return k;
+		}
+		return null;
+	}
+
+	public synchronized boolean hasValidKeys(RequestStarter starter) {
+		assert(keysList.size() == keys.size());
+		for(int i=0;i<10;i++) {
+		// Pick a random key
+		if(keysList.isEmpty()) return false;
+		int ptr = random.nextInt(keysList.size());
+		return true;
+		}
+		return false;
 	}
 
 	public Object getClient() {

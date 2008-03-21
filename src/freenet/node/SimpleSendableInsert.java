@@ -124,7 +124,7 @@ public class SimpleSendableInsert extends SendableInsert {
 		return new Object[] { new Integer(0) };
 	}
 
-	public synchronized Object chooseKey() {
+	public synchronized Object chooseKey(KeysFetchingLocally keys) {
 		if(finished) return null;
 		else return new Integer(0);
 	}

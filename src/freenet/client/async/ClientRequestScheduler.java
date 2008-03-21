@@ -398,7 +398,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			return null;
 		}
 		if(tryOfferedKeys) {
-			if(!offeredKeys[choosenPriorityClass].isEmpty())
+			if(offeredKeys[choosenPriorityClass].hasValidKeys(starter))
 				return offeredKeys[choosenPriorityClass];
 		}
 		SortedVectorByNumber s = priorities[choosenPriorityClass];

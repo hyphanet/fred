@@ -16,6 +16,7 @@ import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.keys.SSKEncodeException;
+import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelPutException;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
@@ -357,7 +358,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return sendableKeys();
 	}
 
-	public synchronized Object chooseKey() {
+	public synchronized Object chooseKey(KeysFetchingLocally ignored) {
 		if(finished) return null;
 		else return new Integer(0);
 	}

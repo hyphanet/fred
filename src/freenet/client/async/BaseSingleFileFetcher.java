@@ -9,6 +9,7 @@ import freenet.keys.ClientSSK;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.KeyVerifyException;
+import freenet.node.KeysFetchingLocally;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
 import freenet.support.Logger;
@@ -42,7 +43,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return keys;
 	}
 	
-	public Object chooseKey() {
+	public Object chooseKey(KeysFetchingLocally fetching) {
+		if(fetching.hasKey(key.getNodeKey())) return null;
 		return keys[0];
 	}
 	

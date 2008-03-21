@@ -162,7 +162,7 @@ public class RequestStarter implements Runnable, KeysFetchingLocally {
 			if(req == null) continue;
 			if(!startRequest(req, logMINOR)) {
 				if(!req.isCancelled())
-					Logger.error(this, "No requests to start on "+req);
+					Logger.normal(this, "No requests to start on "+req);
 			}
 			req = null;
 			cycleTime = sentRequestTime = System.currentTimeMillis();
@@ -186,7 +186,7 @@ public class RequestStarter implements Runnable, KeysFetchingLocally {
 		Key key = null;
 		while(true) {
 			try {
-				keyNum = req.chooseKey();
+				keyNum = req.chooseKey(isInsert ? null : this);
 				if(keyNum == null) return false;
 				if(!isInsert) {
 					key = ((SendableGet)req).getKey(keyNum).getNodeKey();
@@ -252,7 +252,7 @@ public class RequestStarter implements Runnable, KeysFetchingLocally {
 			try {
 		    freenet.support.Logger.OSThread.logPID(this);
 			if(!req.send(core, sched, keyNum))
-				Logger.normal(this, "run() not able to send a request");
+				Logger.error(this, "run() not able to send a request on "+req);
 			if(Logger.shouldLog(Logger.MINOR, this)) 
 				Logger.minor(this, "Finished "+req);
 			} finally {

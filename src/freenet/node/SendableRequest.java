@@ -22,7 +22,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	 * (but not the key itself, implementors must have a separate queue of block 
 	 * numbers and mapping of block numbers to keys).
 	 * @return An object identifying a specific key. -1 indicates no keys available. */
-	public abstract Object chooseKey();
+	public abstract Object chooseKey(KeysFetchingLocally keys);
 	
 	/** All key identifiers. Including those not currently eligible to be sent because 
 	 * they are on a cooldown queue, requests for them are in progress, etc. */
