@@ -5,7 +5,6 @@ package freenet.node;
 
 import java.util.HashSet;
 
-import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
