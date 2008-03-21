@@ -886,14 +886,8 @@ public class NodeClientCore implements Persistable {
 		}
 		try {
 		long startTime = System.currentTimeMillis();
-		if(cache) {
-			try {
-				if(cache)
-					node.storeInsert(block);
-			} catch (KeyCollisionException e) {
-				throw new LowLevelPutException(LowLevelPutException.COLLISION);
-			}
-		}
+		SSKBlock altBlock = (SSKBlock) node.fetch(block.getKey(), false);
+		if(altBlock != null) throw new LowLevelPutException(LowLevelPutException.COLLISION);
 		is = node.makeInsertSender(block, 
 				node.maxHTL(), uid, null, false, cache);
 		boolean hasReceivedRejectedOverload = false;
@@ -966,7 +960,16 @@ public class NodeClientCore implements Persistable {
 				// Impossible
 			}
 			throw new LowLevelPutException(LowLevelPutException.COLLISION);
+		} else {
+			if(cache) {
+				try {
+						node.storeInsert(block);
+				} catch (KeyCollisionException e) {
+					throw new LowLevelPutException(LowLevelPutException.COLLISION);
+				}
+			}
 		}
+
 		
 		if(status == SSKInsertSender.SUCCESS) {
 			Logger.normal(this, "Succeeded inserting "+block);
