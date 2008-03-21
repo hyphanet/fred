@@ -99,7 +99,7 @@ public class OfferedKeysList extends SendableRequest {
 		return null;
 	}
 
-	public synchronized boolean hasValidKeys(RequestStarter fetching) {
+	public synchronized boolean hasValidKeys(KeysFetchingLocally fetching) {
 		assert(keysList.size() == keys.size());
 		if(keys.size() == 1) {
 			// Shortcut the common case
