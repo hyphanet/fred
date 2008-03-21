@@ -55,6 +55,11 @@ public abstract class SendableGet extends SendableRequest {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Sending get for key "+keyNum+" : "+key);
 		FetchContext ctx = getContext();
+		long now = System.currentTimeMillis();
+		if(getCooldownWakeupByKey(key.getNodeKey()) > now) {
+			Logger.error(this, "Key is still on the cooldown queue in send() for "+this+" - key = "+key, new Exception("error"));
+			return false;
+		}
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			synchronized (this) {
 				if(isCancelled()) {
