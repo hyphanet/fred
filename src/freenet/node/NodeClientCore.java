@@ -963,7 +963,7 @@ public class NodeClientCore implements Persistable {
 		} else {
 			if(cache) {
 				try {
-						node.storeInsert(block);
+					node.storeInsert(block);
 				} catch (KeyCollisionException e) {
 					throw new LowLevelPutException(LowLevelPutException.COLLISION);
 				}
