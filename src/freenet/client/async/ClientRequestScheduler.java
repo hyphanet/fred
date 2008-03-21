@@ -309,7 +309,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			allRequestsByClientRequest.put(req.getClientRequest(), v);
 		}
 		v.add(req);
-		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+req.getPriorityClass()+", retrycount="+req.getRetryCount());
+		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+req.getPriorityClass()+", retrycount="+req.getRetryCount()+" v.size()="+v.size());
 	}
 	
 	private synchronized void addToGrabArray(short priorityClass, int retryCount, Object client, ClientRequester cr, SendableRequest req) {
