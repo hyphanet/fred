@@ -615,12 +615,14 @@ public class OpennetManager {
     	if(logMINOR)
     		Logger.minor(this, "Receiving noderef (reply="+isReply+") as bulk transfer for request uid "+uid+" with transfer "+xferUID+" from "+source);
     	if(!br.receive()) {
-    		String msg = "Failed to receive noderef bulk transfer for "+this+" : "+RetrievalException.getErrString(prb.getAbortReason())+" : "+prb.getAbortDescription()+" from "+source;
-    		if(prb.getAbortReason() != RetrievalException.SENDER_DISCONNECTED)
-    			Logger.error(this, msg);
-    		else
-    			Logger.normal(this, msg);
-    		if(sendReject) rejectRef(uid, source, DMT.NODEREF_REJECTED_TRANSFER_FAILED, ctr);
+    		if(source.isConnected()) {
+    			String msg = "Failed to receive noderef bulk transfer for "+this+" : "+RetrievalException.getErrString(prb.getAbortReason())+" : "+prb.getAbortDescription()+" from "+source;
+    			if(prb.getAbortReason() != RetrievalException.SENDER_DISCONNECTED)
+    				Logger.error(this, msg);
+    			else
+    				Logger.normal(this, msg);
+    			if(sendReject) rejectRef(uid, source, DMT.NODEREF_REJECTED_TRANSFER_FAILED, ctr);
+    		}
    			return null;
     	}
     	byte[] noderef = new byte[realLength];
