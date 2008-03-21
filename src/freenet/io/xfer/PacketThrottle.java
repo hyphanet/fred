@@ -140,7 +140,7 @@ public class PacketThrottle {
 	 * returns the number of bytes-per-second in the transmition link (?).
 	 * Will not return more than 40K/s due to MIN_DELAY in getDelay().
 	 */
-	public double getBandwidth() {
+	public synchronized double getBandwidth() {
 		//PACKET_SIZE=1024 [bytes?]
 		//1000 ms/sec
 		return ((PACKET_SIZE * 1000.0 / getDelay()));
