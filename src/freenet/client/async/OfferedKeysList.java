@@ -31,7 +31,6 @@ import freenet.support.Logger;
 public class OfferedKeysList extends SendableRequest {
 
 	private final HashSet keys;
-	// FIXME is there any way to avoid the O(n) shuffling penalty here?
 	private final Vector keysList;
 	private static boolean logMINOR;
 	private final RandomSource random;
@@ -73,7 +72,11 @@ public class OfferedKeysList extends SendableRequest {
 	public Object chooseKey() {
 		// Pick a random key
 		if(keysList.isEmpty()) return null;
-		Key k = (Key) keysList.remove(random.nextInt(keysList.size()));
+		int ptr = random.nextInt(keysList.size());
+		// Avoid shuffling penalty by swapping the chosen element with the end.
+		Key k = (Key) keysList.get(ptr);
+		keysList.set(ptr, keysList.get(keysList.size()-1));
+		keysList.setSize(keysList.size()-1);
 		keys.remove(k);
 		return k;
 	}
