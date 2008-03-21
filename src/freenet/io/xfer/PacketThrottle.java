@@ -125,7 +125,7 @@ public class PacketThrottle {
 	public synchronized String toString() {
 		return Double.toString((((PACKET_SIZE * 1000.0 / getDelay())) / 1024)) + " k/sec, (w: "
 				+ _simulatedWindowSize + ", r:" + _roundTripTime + ", d:"
-				+ (((float) _droppedPackets / (float) _totalPackets)) + ") for "+_peer+" : "+super.toString();
+				+ (((float) _droppedPackets / (float) _totalPackets)) + ") total="+_totalPackets+" for "+_peer+" : "+super.toString();
 	}
 
 	public synchronized long getRoundTripTime() {
