@@ -132,7 +132,7 @@ public class PacketThrottle {
 		return _roundTripTime;
 	}
 
-	public double getWindowSize() {
+	public synchronized double getWindowSize() {
 		return Math.max(1.0, _simulatedWindowSize);
 	}
 
