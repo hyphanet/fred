@@ -147,7 +147,11 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return cooldownWakeupTime;
 	}
 	
-	public void requeueAfterCooldown(Key key) {
+	public void requeueAfterCooldown(Key key, long time) {
+		if(cooldownWakeupTime > time) {
+			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Not requeueing as deadline has not passed yet");
+			return;
+		}
 		if(!(key.equals(this.key.getNodeKey()))) {
 			Logger.error(this, "Got requeueAfterCooldown for wrong key: "+key+" but mine is "+this.key.getNodeKey()+" for "+this.key);
 			return;

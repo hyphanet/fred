@@ -383,10 +383,10 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return segment.getCooldownWakeup(((Integer)token).intValue());
 	}
 
-	public void requeueAfterCooldown(Key key) {
+	public void requeueAfterCooldown(Key key, long time) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Requeueing after cooldown "+key+" for "+this);
-		segment.requeueAfterCooldown(key);
+		segment.requeueAfterCooldown(key, time);
 	}
 
 	public long getCooldownWakeupByKey(Key key) {

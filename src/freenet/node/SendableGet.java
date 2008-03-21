@@ -135,8 +135,9 @@ public abstract class SendableGet extends SendableRequest {
 
 	/**
 	 * Requeue a key after it has been on the cooldown queue for a while.
+	 * Only requeue if our requeue time is less than or equal to the given time.
 	 * @param key
 	 */
-	public abstract void requeueAfterCooldown(Key key);
+	public abstract void requeueAfterCooldown(Key key, long time);
 
 }

@@ -562,7 +562,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			return checkCooldownTimes[blockNum - dataKeys.length];
 	}
 
-	public void requeueAfterCooldown(Key key) {
+	public void requeueAfterCooldown(Key key, long time) {
 		if(isFinishing()) return;
 		boolean notFound = true;
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
@@ -570,6 +570,11 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		for(int i=0;i<dataKeys.length;i++) {
 			if(dataKeys[i] == null) continue;
 			if(dataKeys[i].getNodeKey().equals(key)) {
+				if(dataCooldownTimes[i] > time) {
+					if(logMINOR)
+						Logger.minor(this, "Not retrying after cooldown for data block "+i+"as deadline has not passed yet on "+this);
+					return;
+				}
 				int tries = dataRetries[i];
 				SplitFileFetcherSubSegment sub = getSubSegment(tries);
 				if(logMINOR)
@@ -581,6 +586,11 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		for(int i=0;i<checkKeys.length;i++) {
 			if(checkKeys[i] == null) continue;
 			if(checkKeys[i].getNodeKey().equals(key)) {
+				if(checkCooldownTimes[i] > time) {
+					if(logMINOR)
+						Logger.minor(this, "Not retrying after cooldown for data block "+i+" as deadline has not passed yet on "+this);
+					return;
+				}
 				int tries = checkRetries[i];
 				SplitFileFetcherSubSegment sub = getSubSegment(tries);
 				if(logMINOR)

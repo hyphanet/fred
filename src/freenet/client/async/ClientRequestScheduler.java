@@ -693,11 +693,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 				continue;
 			} else if(o instanceof SendableGet) {
 				SendableGet get = (SendableGet) o;
-				get.requeueAfterCooldown(key);
+				get.requeueAfterCooldown(key, now);
 			} else {
 				SendableGet[] gets = (SendableGet[]) o;
 				for(int i=0;i<gets.length;i++)
-					gets[i].requeueAfterCooldown(key);
+					gets[i].requeueAfterCooldown(key, now);
 			}
 		}
 	}
