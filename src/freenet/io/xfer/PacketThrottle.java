@@ -206,6 +206,19 @@ public class PacketThrottle {
 					throw new ThrottleDeprecatedException(_deprecatedFor);
 				}
 			}
+			/** Because we send in order, we have to go around all the waiters again after sending.
+			 * Otherwise, we will miss slots:
+			 * Seq = 0
+			 * A: Wait for seq = 1
+			 * B: Wait for seq = 2
+			 * Packet acked
+			 * Packet acked
+			 * B: I'm not next since seq = 0 and I'm waiting for 2. Do nothing.
+			 * A: I'm next because seq = 0 and I'm waiting for 1. Send a packet.
+			 * A sends, B doesn't, even though it ought to: its slot is lost, and this can cause big 
+			 * problems if we are sending more than one packet at a time.
+			 */
+			notifyAll();
 		}
 		long waitTime = System.currentTimeMillis() - start;
 		if(waitTime > 60*1000)
