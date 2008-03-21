@@ -152,6 +152,7 @@ public class PacketThrottle {
 		synchronized(this) {
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			long thisTicket=_packetTicketGenerator++;
+			// FIXME a list, or even a TreeMap by deadline, would use less CPU than waking up every waiter twice whenever a packet is acked.
 			while(true) {
 				int windowSize = (int) getWindowSize();
 				// If we have different timeouts, and we have packets 1 and 2 timeout and 3 and 4 not timeout,
