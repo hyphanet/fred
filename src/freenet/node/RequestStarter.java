@@ -173,7 +173,7 @@ public class RequestStarter implements Runnable {
 				keyNum = req.chooseKey();
 				if(keyNum == null) return false;
 				core.getExecutor().execute(new SenderThread(req, keyNum), "RequestStarter$SenderThread for "+req);
-				if(logMINOR) Logger.minor(this, "Started "+req);
+				if(logMINOR) Logger.minor(this, "Started "+req+" key "+keyNum);
 				return true;
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
