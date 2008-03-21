@@ -395,7 +395,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				if(tries > maxTries && maxTries >= 0) failed = true;
 				else if(tries % ClientRequestScheduler.COOLDOWN_RETRIES == 0) {
 					long now = System.currentTimeMillis();
-					if(checkCooldownTimes[blockNo] > now)
+					if(checkCooldownTimes[checkNo] > now)
 						Logger.error(this, "Already on the cooldown queue! for "+this+" check block no "+blockNo, new Exception("error"));
 					else
 					checkCooldownTimes[checkNo] = sched.queueCooldown(key);
