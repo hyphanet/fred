@@ -111,6 +111,8 @@ public class OfferedKeysList extends SendableRequest {
 		// Pick a random key
 		if(keysList.isEmpty()) return false;
 		int ptr = random.nextInt(keysList.size());
+		Key k = (Key) keysList.get(ptr);
+		if(fetching.hasKey(k)) continue;
 		return true;
 		}
 		return false;
