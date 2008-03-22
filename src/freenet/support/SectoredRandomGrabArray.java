@@ -64,22 +64,25 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 		grabArrays = newArrays;
 	}
 
-	public synchronized RandomGrabArrayItem removeRandom() {
+	public synchronized RandomGrabArrayItem removeRandom(RandomGrabArrayItemExclusionList excluding) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		/** Count of arrays that have items but didn't return anything because of exclusions */
+		int excluded = 0;
+		final int MAX_EXCLUDED = 0;
 		while(true) {
 			if(grabArrays.length == 0) return null;
 			int x = rand.nextInt(grabArrays.length);
 			RemoveRandomWithObject rga = grabArrays[x];
 			if(logMINOR)
 				Logger.minor(this, "Picked "+x+" of "+grabArrays.length+" : "+rga+" : "+rga.getObject()+" on "+this);
-			RandomGrabArrayItem item = rga.removeRandom();
+			RandomGrabArrayItem item = rga.removeRandom(excluding);
 			if(logMINOR)
 				Logger.minor(this, "RGA has picked "+x+"/"+grabArrays.length+": "+item+
 						(item==null ? "" : (" cancelled="+item.isCancelled()+")"))+" rga.isEmpty="+rga.isEmpty());
 			// Just because the item is cancelled does not necessarily mean the whole client is.
 			// E.g. a segment may return cancelled because it is decoding, that doesn't mean
 			// other segments are cancelled. So just go around the loop in that case.
-			if(rga.isEmpty() || (item == null)) {
+			if(rga.isEmpty()) {
 				if(logMINOR)
 					Logger.minor(this, "Removing grab array "+x+" : "+rga+" for "+rga.getObject()+" (is empty)");
 				Object client = rga.getObject();
@@ -91,7 +94,17 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 					System.arraycopy(grabArrays, x+1, newArray, x, grabArrays.length - (x+1));
 				grabArrays = newArray;
 			}
-			if(item == null) continue;
+			if(item == null) {
+				if(!rga.isEmpty()) {
+					// Hmmm...
+					excluded++;
+					if(excluded > MAX_EXCLUDED) {
+						Logger.error(this, "Too many sub-arrays are entirely excluded on "+this, new Exception("error"));
+						return null;
+					}
+				}
+				continue;
+			}
 			if(item.isCancelled()) continue;
 			return item;
 		}

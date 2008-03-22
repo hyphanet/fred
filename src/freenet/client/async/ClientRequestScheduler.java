@@ -411,7 +411,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				if(logMINOR)
 					Logger.minor(this, "Got retry count tracker "+rga);
-				SendableRequest req = (SendableRequest) rga.removeRandom();
+				SendableRequest req = (SendableRequest) rga.removeRandom(starter);
 				if(rga.isEmpty()) {
 					if(logMINOR) Logger.minor(this, "Removing retrycount "+rga.getNumber()+" : "+rga);
 					s.remove(rga.getNumber());
@@ -440,7 +440,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					}
 				}
 				if(altRGA != null) {
-					SendableRequest altReq = (SendableRequest) (altRGA.removeRandom());
+					SendableRequest altReq = (SendableRequest) (altRGA.removeRandom(starter));
 					if(altReq != null && altReq.getPriorityClass() <= choosenPriorityClass && 
 							fixRetryCount(altReq.getRetryCount()) <= rga.getNumber()) {
 						// Use the recent one instead

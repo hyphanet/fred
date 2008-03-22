@@ -48,6 +48,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return keys[0];
 	}
 	
+	public boolean hasValidKeys(KeysFetchingLocally fetching) {
+		return !fetching.hasKey(key.getNodeKey());
+	}
+	
 	public ClientKey getKey(Object token) {
 		return key;
 	}

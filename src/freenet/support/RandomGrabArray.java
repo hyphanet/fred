@@ -52,10 +52,12 @@ public class RandomGrabArray {
 		}
 	}
 	
-	public RandomGrabArrayItem removeRandom() {
+	public RandomGrabArrayItem removeRandom(RandomGrabArrayItemExclusionList excluding) {
 		RandomGrabArrayItem ret, oret;
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(this) {
+			final int MAX_EXCLUDED = 10;
+			int excluded = 0;
 			while(true) {
 				if(index == 0) {
 					if(logMINOR) Logger.minor(this, "All null on "+this);
@@ -67,6 +69,14 @@ public class RandomGrabArray {
 				if(ret.isCancelled()) {
 					if(logMINOR) Logger.minor(this, "Not returning because cancelled: "+ret);
 					ret = null;
+				}
+				if(ret != null && excluding.exclude(ret)) {
+					excluded++;
+					if(excluded > MAX_EXCLUDED) {
+						Logger.error(this, "Remove random returning null because "+excluded+" excluded items", new Exception("error"));
+						return null;
+					}
+					continue;
 				}
 				if(ret != null && !ret.canRemove()) {
 					if(logMINOR) Logger.minor(this, "Returning (cannot remove): "+ret);

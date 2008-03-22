@@ -78,7 +78,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			} else if(segment.isFinishing()) {
 				Logger.error(this, "Segment finishing but didn't tell us! "+this);
 			} else {
-				Logger.error(this, "Segment not finishing yet still returns null for getKey()!: "+token+" for "+this);
+				Logger.error(this, "Segment not finishing yet still returns null for getKey()!: "+token+" for "+this, new Exception("debug"));
 			}
 		}
 		return key;
@@ -117,6 +117,11 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			}
 			// LOCKING: keys is safe to check, but segment isn't.
 			Key key = segment.getBlockNodeKey(((Integer)ret).intValue());
+			if(key == null) {
+				if(segment.isFinishing() || segment.isFinished()) return null;
+				Logger.error(this, "Key is null for block "+ret);
+				continue;
+			}
 			if(keys.hasKey(key)) {
 				synchronized(this) {
 					blockNums.add(ret);
@@ -130,6 +135,30 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return null;
 	}
 
+	public boolean hasValidKeys(KeysFetchingLocally keys) {
+		for(int i=0;i<10;i++) {
+			Object ret;
+			int x;
+			synchronized(this) {
+				if(blockNums.isEmpty()) return false;
+				x = ctx.random.nextInt(blockNums.size());
+				ret = (Integer) blockNums.get(x);
+			}
+			// LOCKING: keys is safe to check, but segment isn't.
+			Key key = segment.getBlockNodeKey(((Integer)ret).intValue());
+			if(keys.hasKey(key)) {
+				synchronized(this) {
+					blockNums.add(ret);
+				}
+				continue;
+			}
+			if(logMINOR)
+				Logger.minor(this, "Removing block "+x+" of "+(blockNums.size()+1)+ " : "+ret+ " on "+this);
+			return true;
+		}
+		return false;
+	}
+	
 	public boolean ignoreStore() {
 		return ctx.ignoreStore;
 	}

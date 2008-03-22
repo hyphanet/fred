@@ -8,6 +8,8 @@ import java.util.HashSet;
 import freenet.keys.Key;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
+import freenet.support.RandomGrabArrayItem;
+import freenet.support.RandomGrabArrayItemExclusionList;
 import freenet.support.TokenBucket;
 import freenet.support.math.RunningAverage;
 
@@ -17,7 +19,7 @@ import freenet.support.math.RunningAverage;
  * And you have to provide a RequestStarterClient. We do round robin between 
  * clients on the same priority level.
  */
-public class RequestStarter implements Runnable, KeysFetchingLocally {
+public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrabArrayItemExclusionList {
 
 	/*
 	 * Priority classes
@@ -211,8 +213,8 @@ public class RequestStarter implements Runnable, KeysFetchingLocally {
 			} catch (Throwable t) {
 				if(keyNum != null) {
 					// Re-queue
-					req.internalError(keyNum, t, sched);
 					Logger.error(this, "Caught "+t+" while trying to start request");
+					req.internalError(keyNum, t, sched);
 					return true; // Sort of ... maybe it will clear
 				}
 				if(key != null) keysFetching.remove(key);
@@ -251,8 +253,12 @@ public class RequestStarter implements Runnable, KeysFetchingLocally {
 		public void run() {
 			try {
 		    freenet.support.Logger.OSThread.logPID(this);
-			if(!req.send(core, sched, keyNum))
-				Logger.error(this, "run() not able to send a request on "+req);
+			if(!req.send(core, sched, keyNum)) {
+				if(!req.isCancelled())
+					Logger.error(this, "run() not able to send a request on "+req);
+				else
+					Logger.normal(this, "run() not able to send a request on "+req+" - request was cancelled");
+			}
 			if(Logger.shouldLog(Logger.MINOR, this)) 
 				Logger.minor(this, "Finished "+req);
 			} finally {
@@ -276,6 +282,15 @@ public class RequestStarter implements Runnable, KeysFetchingLocally {
 		synchronized(keysFetching) {
 			return keysFetching.contains(key);
 		}
+	}
+
+	public boolean exclude(RandomGrabArrayItem item) {
+		if(isInsert) return false;
+		BaseSendableGet get = (BaseSendableGet) item;
+		if(get.hasValidKeys(this))
+			return false;
+		Logger.normal(this, "Excluding (no valid keys): "+get);
+		return true;
 	}
 
 }
