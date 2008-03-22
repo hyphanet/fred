@@ -90,4 +90,16 @@ public class MessageItem {
 	public String toString() {
 		return super.toString()+":formatted="+formatted+",msg="+msg+",alreadyReported="+alreadyReportedBytes;
 	}
+
+	public void onDisconnect() {
+		if(cb != null) {
+			for(int i=0;i<cb.length;i++) {
+				try {
+					cb[i].disconnected();
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t+" calling sent() on "+cb[i]+" for "+this, t);
+				}
+			}
+		}
+	}
 }

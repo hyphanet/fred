@@ -1801,6 +1801,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		KeyTracker oldPrev = null;
 		KeyTracker oldCur = null;
 		KeyTracker prev = null;
+		MessageItem[] messagesTellDisconnected = null;
 		synchronized(this) {
 			handshakeCount = 0;
 			bogusNoderef = false;
@@ -1828,6 +1829,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				// Generally they would be incomprehensible, anything that isn't should be sent as
 				// connection initial messages by maybeOnConnect().
 				synchronized(messagesToSendNow) {
+					messagesTellDisconnected = (MessageItem[]) messagesToSendNow.toArray(new MessageItem[messagesToSendNow.size()]);
 					messagesToSendNow.clear();
 				}
 			} // else it's a rekey
@@ -1863,6 +1865,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(previousTracker != null && unverifiedTracker != null && 
 					Arrays.equals(previousTracker.sessionKey, unverifiedTracker.sessionKey))
 				Logger.error(this, "previousTracker key equals unverifiedTracker key: prev "+previousTracker+" unv "+unverifiedTracker);
+		}
+		if(messagesTellDisconnected != null) {
+			for(int i=0;i<messagesTellDisconnected.length;i++) {
+				messagesTellDisconnected[i].onDisconnect();
+			}
 		}
 
 		if(bootIDChanged) {
