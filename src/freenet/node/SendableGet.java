@@ -27,7 +27,9 @@ public abstract class SendableGet extends BaseSendableGet {
 	public abstract ClientKey getKey(Object token);
 	
 	public Key getNodeKey(Object token) {
-		return getKey(token).getNodeKey();
+		ClientKey key = getKey(token);
+		if(key == null) return null;
+		return key.getNodeKey();
 	}
 	
 	/** Get the fetch context (settings) object. */
