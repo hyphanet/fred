@@ -1905,8 +1905,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * greater than previous's.
 	 */
 	private synchronized void maybeSwapTrackers() {
+		long delta = Math.abs(currentTracker.createdTime - previousTracker.createdTime);
 		if(previousTracker != null && (!previousTracker.isDeprecated()) &&
-				Math.abs(currentTracker.createdTime - previousTracker.createdTime) < CHECK_FOR_SWAPPED_TRACKERS_INTERVAL) {
+				delta < CHECK_FOR_SWAPPED_TRACKERS_INTERVAL) {
 			// Swap prev and current iff H(new key) > H(old key).
 			// To deal with race conditions (node A gets 1 current 2 prev, node B gets 2 current 1 prev; when we rekey we lose data and cause problems).
 			
@@ -1936,7 +1937,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(logMINOR) Logger.minor(this, "Not swapping KeyTracker's on "+this+" cur "+currentTracker+" prev "+previousTracker);
 			}
 		} else {
-			if(logMINOR) Logger.minor(this, "Not swapping KeyTracker's, no previousTracker or deprecated or not recent enough");
+			if(logMINOR) Logger.minor(this, "Not swapping KeyTracker's: previousTracker = "+(previousTracker == null ? "null" : previousTracker.toString()+(previousTracker.isDeprecated()?" (deprecated)":""))+
+					" time delta = "+delta);
 		}
 	}
 
