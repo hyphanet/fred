@@ -1138,6 +1138,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		node.peers.disconnected(this);
 		boolean ret;
 		KeyTracker cur, prev, unv;
+		MessageItem[] messagesTellDisconnected = null;
 		synchronized(this) {
 			ret = isConnected;
 			// Force renegotiation.
@@ -1161,8 +1162,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 			if(dumpMessageQueue) {
 				synchronized(messagesToSendNow) {
+					messagesTellDisconnected = (MessageItem[]) messagesToSendNow.toArray(new MessageItem[messagesToSendNow.size()]);
 					messagesToSendNow.clear();
 				}
+			}
+		}
+		if(messagesTellDisconnected != null) {
+			for(int i=0;i<messagesTellDisconnected.length;i++) {
+				messagesTellDisconnected[i].onDisconnect();
 			}
 		}
 		if(cur != null) cur.disconnected();
@@ -1176,10 +1183,19 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			node.getTicker().queueTimedJob(new Runnable() {
 				public void run() {
 					if((!PeerNode.this.isConnected()) &&
-							timeLastDisconnect == now)
+							timeLastDisconnect == now) {
+						MessageItem[] messagesTellDisconnected = null;
 						synchronized(PeerNode.this.messagesToSendNow) {
+							messagesTellDisconnected = (MessageItem[]) messagesToSendNow.toArray(new MessageItem[messagesToSendNow.size()]);
 							PeerNode.this.messagesToSendNow.clear();
 						}
+						if(messagesTellDisconnected != null) {
+							for(int i=0;i<messagesTellDisconnected.length;i++) {
+								messagesTellDisconnected[i].onDisconnect();
+							}
+						}
+					}
+
 				}
 			}, CLEAR_MESSAGE_QUEUE_AFTER);
 		}
