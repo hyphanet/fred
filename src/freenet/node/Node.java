@@ -907,7 +907,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		});
 		
 		int ibwLimit = nodeConfig.getInt("inputBandwidthLimit");
-		if(obwLimit <= 0)
+		if(ibwLimit <= 0)
 			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, "Invalid inputBandwidthLimit");
 		inputBandwidthLimit = ibwLimit;
 		if(ibwLimit == -1) {
