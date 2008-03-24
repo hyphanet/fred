@@ -153,6 +153,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	public void onSuccess(Bucket data, int blockNo, boolean dontNotify, SplitFileFetcherSubSegment seg, ClientKeyBlock block) {
 		boolean decodeNow = false;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" on "+seg);
 		if(parentFetcher.parent instanceof ClientGetter)
 			((ClientGetter)parentFetcher.parent).addKeyToBinaryBlob(block);
 		// No need to unregister key, because it will be cleared in tripPendingKey().
