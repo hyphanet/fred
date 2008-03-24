@@ -68,7 +68,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		/** Count of arrays that have items but didn't return anything because of exclusions */
 		int excluded = 0;
-		final int MAX_EXCLUDED = 0;
+		final int MAX_EXCLUDED = 10;
 		while(true) {
 			if(grabArrays.length == 0) return null;
 			int x = rand.nextInt(grabArrays.length);
