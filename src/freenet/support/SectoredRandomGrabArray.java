@@ -71,6 +71,19 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 		final int MAX_EXCLUDED = 10;
 		while(true) {
 			if(grabArrays.length == 0) return null;
+			if(grabArrays.length == 1) {
+				// Optimise the common case
+				RemoveRandomWithObject rga = grabArrays[0];
+				RandomGrabArrayItem item = rga.removeRandom(excluding);
+				if(rga.isEmpty()) {
+					if(logMINOR)
+						Logger.minor(this, "Removing only grab array (0) : "+rga+" for "+rga.getObject()+" (is empty)");
+					Object client = rga.getObject();
+					grabArraysByClient.remove(client);
+					grabArrays = new RemoveRandomWithObject[0];
+				}
+				return item;
+			}
 			int x = rand.nextInt(grabArrays.length);
 			RemoveRandomWithObject rga = grabArrays[x];
 			if(logMINOR)
