@@ -1928,6 +1928,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * greater than previous's.
 	 */
 	private synchronized void maybeSwapTrackers() {
+		if(currentTracker == null || previousTracker == null) return;
 		long delta = Math.abs(currentTracker.createdTime - previousTracker.createdTime);
 		if(previousTracker != null && (!previousTracker.isDeprecated()) &&
 				delta < CHECK_FOR_SWAPPED_TRACKERS_INTERVAL) {
