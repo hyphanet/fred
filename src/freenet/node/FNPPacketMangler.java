@@ -1952,10 +1952,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		tracker.pn.receivedPacket(false); // Must keep the connection open, even if it's an ack packet only and on an incompatible connection - we may want to do a UOM transfer e.g.
 
-		if(seqNumber == -1) {
-			if(logMINOR) Logger.minor(this, "Returning because seqno = "+seqNumber);
-			return;
-		}
 		// No sequence number == no messages
 
 		if((seqNumber != -1) && tracker.alreadyReceived(seqNumber)) {
@@ -1966,6 +1962,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		tracker.receivedPacket(seqNumber);
 
+		if(seqNumber == -1) {
+			if(logMINOR) Logger.minor(this, "Returning because seqno = "+seqNumber);
+			return;
+		}
+		
 		int messages = decrypted[ptr++] & 0xff;
 
 		overhead += ptr;

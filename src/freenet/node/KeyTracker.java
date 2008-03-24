@@ -98,6 +98,9 @@ public class KeyTracker {
     
     final long createdTime;
     
+	/** The time at which we last successfully decoded a packet. */
+	private long timeLastDecodedPacket;
+	
     /** Everything is clear to start with */
     KeyTracker(PeerNode pn, BlockCipher cipher, byte[] sessionKey) {
         this.pn = pn;
@@ -444,6 +447,7 @@ public class KeyTracker {
      * the reason for the locking.
      */
     public synchronized void receivedPacket(int seqNumber) {
+    	timeLastDecodedPacket = System.currentTimeMillis();
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	if(logMINOR) Logger.minor(this, "Received packet "+seqNumber+" from "+pn.shortToString());
         if(seqNumber == -1) return;
@@ -1104,4 +1108,8 @@ public class KeyTracker {
 		}
 	}
 
+	public synchronized long timeLastDecodedPacket() {
+		return timeLastDecodedPacket;
+	}
+	
 }
