@@ -133,7 +133,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 					// Hmmm...
 					excluded++;
 					if(excluded > MAX_EXCLUDED) {
-						Logger.error(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArrays.length, new Exception("error"));
+						Logger.normal(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArrays.length, new Exception("error"));
 						return null;
 					}
 				}
