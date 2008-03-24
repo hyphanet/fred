@@ -152,8 +152,6 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				}
 				continue;
 			}
-			if(logMINOR)
-				Logger.minor(this, "Removing block "+x+" of "+(blockNums.size()+1)+ " : "+ret+ " on "+this);
 			return true;
 		}
 		return false;
