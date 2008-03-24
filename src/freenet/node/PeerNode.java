@@ -2409,8 +2409,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				} catch(WouldBlockException e) {
 					Logger.error(this, "Impossible: " + e, e);
 				}
-			if(t > -1 && now - tracker.timeLastDecodedPacket() > 60*1000 && cur != null && 
-					(now - cur.timeLastDecodedPacket() < 30*1000) && 
+			if(t > -1 && tracker.timeLastDecodedPacket() > 0 && (now - tracker.timeLastDecodedPacket()) > 60*1000 && 
+					cur != null && cur.timeLastDecodedPacket() > 0 && (now - cur.timeLastDecodedPacket() < 30*1000) && 
 					(tracker.countAckRequests() > 0 || tracker.countResendRequests() > 0)) {
 				Logger.error(this, "No packets decoded on "+tracker+" for 60 seconds, deprecating in favour of cur: "+cur);
 				prev.completelyDeprecated(cur);
