@@ -69,22 +69,22 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	
 	public ClientKey getKey(Object token) {
 		synchronized(this) {
-		if(cancelled) {
-			if(logMINOR)
-				Logger.minor(this, "Segment is finishing when getting key "+token+" on "+this);
-			return null;
-		}
-		ClientKey key = segment.getBlockKey(((Integer)token).intValue());
-		if(key == null) {
-			if(segment.isFinished()) {
-				Logger.error(this, "Segment finished but didn't tell us! "+this);
-			} else if(segment.isFinishing()) {
-				Logger.error(this, "Segment finishing but didn't tell us! "+this);
-			} else {
-				Logger.error(this, "Segment not finishing yet still returns null for getKey()!: "+token+" for "+this, new Exception("debug"));
+			if(cancelled) {
+				if(logMINOR)
+					Logger.minor(this, "Segment is finishing when getting key "+token+" on "+this);
+				return null;
 			}
-		}
-		return key;
+			ClientKey key = segment.getBlockKey(((Integer)token).intValue());
+			if(key == null) {
+				if(segment.isFinished()) {
+					Logger.error(this, "Segment finished but didn't tell us! "+this);
+				} else if(segment.isFinishing()) {
+					Logger.error(this, "Segment finishing but didn't tell us! "+this);
+				} else {
+					Logger.error(this, "Segment not finishing yet still returns null for getKey()!: "+token+" for "+this, new Exception("debug"));
+				}
+			}
+			return key;
 		}
 	}
 	
@@ -111,57 +111,56 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 					Logger.minor(this, "No blocks to remove");
 				return null;
 			}
-		for(int i=0;i<10;i++) {
-			Object ret;
-			int x;
+			for(int i=0;i<10;i++) {
+				Object ret;
+				int x;
 				x = ctx.random.nextInt(blockNums.size());
 				ret = (Integer) blockNums.remove(x);
-			Key key = segment.getBlockNodeKey(((Integer)ret).intValue());
-			if(key == null) {
-				if(segment.isFinishing() || segment.isFinished()) return null;
-				Logger.error(this, "Key is null for block "+ret+" for "+this);
-				continue;
-			}
-			if(keys.hasKey(key)) {
-				synchronized(segment) {
-					blockNums.add(ret);
-				}
-				// Double check that it hasn't been found.
-				key = segment.getBlockNodeKey(((Integer)ret).intValue());
+				Key key = segment.getBlockNodeKey(((Integer)ret).intValue());
 				if(key == null) {
-						blockNums.add(ret);
+					if(segment.isFinishing() || segment.isFinished()) return null;
+					Logger.error(this, "Key is null for block "+ret+" for "+this);
+					continue;
 				}
-				continue;
+				if(keys.hasKey(key)) {
+					synchronized(segment) {
+						blockNums.add(ret);
+					}
+					// Double check that it hasn't been found.
+					key = segment.getBlockNodeKey(((Integer)ret).intValue());
+					if(key == null) {
+						blockNums.add(ret);
+					}
+					continue;
+				}
+				if(logMINOR)
+					Logger.minor(this, "Removing block "+x+" of "+(blockNums.size()+1)+ " : "+ret+ " on "+this);
+				return ret;
 			}
-			if(logMINOR)
-				Logger.minor(this, "Removing block "+x+" of "+(blockNums.size()+1)+ " : "+ret+ " on "+this);
-			return ret;
-		}
-		return null;
+			return null;
 		}
 	}
 
 	public boolean hasValidKeys(KeysFetchingLocally keys) {
 		synchronized(segment) {
-		for(int i=0;i<10;i++) {
-			Object ret;
-			int x;
+			for(int i=0;i<10;i++) {
+				Object ret;
+				int x;
 				if(blockNums.isEmpty()) return false;
 				x = ctx.random.nextInt(blockNums.size());
 				ret = (Integer) blockNums.get(x);
-			// LOCKING: keys is safe to check, but segment isn't.
-			Key key = segment.getBlockNodeKey(((Integer)ret).intValue());
-			if(key == null) {
-				Logger.error(this, "Key is null for block "+ret+" for "+this+" in hasValidKeys()");
+				Key key = segment.getBlockNodeKey(((Integer)ret).intValue());
+				if(key == null) {
+					Logger.error(this, "Key is null for block "+ret+" for "+this+" in hasValidKeys()");
 					blockNums.remove(x);
-				continue;
+					continue;
+				}
+				if(keys.hasKey(key)) {
+					continue;
+				}
+				return true;
 			}
-			if(keys.hasKey(key)) {
-				continue;
-			}
-			return true;
-		}
-		return false;
+			return false;
 		}
 	}
 	
@@ -306,19 +305,19 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 
 	public boolean canRemove() {
 		synchronized(segment) {
-		if(blockNums.size() < 2) {
-			// Can be removed, if the one key is processed.
-			// Once it has been processed, we may need to be reinstated.
-			if(Logger.shouldLog(Logger.MINOR, this))
-				Logger.minor(this, "Can remove "+this+" in canRemove()");
-			return true;
-		} else return false;
+			if(blockNums.size() < 2) {
+				// Can be removed, if the one key is processed.
+				// Once it has been processed, we may need to be reinstated.
+				if(Logger.shouldLog(Logger.MINOR, this))
+					Logger.minor(this, "Can remove "+this+" in canRemove()");
+				return true;
+			} else return false;
 		}
 	}
 
 	public boolean isCancelled() {
 		synchronized(segment) {
-		return cancelled;
+			return cancelled;
 		}
 	}
 
@@ -374,7 +373,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			if(!blockNums.isEmpty()) return;
 			if(logMINOR)
 				Logger.minor(this, "Definitely removing from parent: "+this);
-		if(!segment.maybeRemoveSeg(this)) return;
+			if(!segment.maybeRemoveSeg(this)) return;
 			cancelled = true;
 		}
 		unregister();
@@ -395,7 +394,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 					break;
 				}
 			}
-		blockNo = segment.getBlockNumber(key);
+			blockNo = segment.getBlockNumber(key);
 		}
 		if(blockNo == -1) {
 			Logger.minor(this, "No block found for key "+key+" on "+this);
