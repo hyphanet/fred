@@ -126,8 +126,10 @@ public class RandomGrabArray {
 									reqs[validIndex] = reqs[index-1];
 								}
 								index--;
+								if(logMINOR) Logger.minor(this, "No valid or excluded items after removing "+ret);
+							} else {
+								if(logMINOR) Logger.minor(this, "No valid or excluded items apart from "+ret);
 							}
-							if(logMINOR) Logger.minor(this, "No valid or excluded items after removing "+ret);
 							return ret;
 						} else {
 							random = rand.nextInt(valid);
