@@ -91,7 +91,8 @@ public class RandomGrabArray {
 								if(valid == random) { // Picked on previous round
 									if(item.canRemove()) {
 										contents.remove(item);
-										reqs[i] = null;
+										target--;
+										reqs[target] = null;
 									}
 									return item;
 								}
