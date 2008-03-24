@@ -258,6 +258,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	}
 
 	public void onEncodedSegment() {
+		synchronized(this) {
 		// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
 		for(int i=0;i<dataBuckets.length;i++) {
 			boolean heal = false;
@@ -291,6 +292,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			}
 			checkBuckets[i] = null;
 			checkKeys[i] = null;
+		}
 		}
 		// Defer the completion until we have generated healing blocks if we are collecting binary blobs.
 		if(isCollectingBinaryBlob())
@@ -496,7 +498,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		// Ignore
 	}
 
-	public ClientCHK getBlockKey(int blockNum) {
+	public synchronized ClientCHK getBlockKey(int blockNum) {
 		if(blockNum < 0) return null;
 		else if(blockNum < dataKeys.length)
 			return dataKeys[blockNum];
@@ -556,18 +558,17 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		}
 	}
 
-	public long getCooldownWakeup(int blockNum) {
+	public synchronized long getCooldownWakeup(int blockNum) {
 		if(blockNum < dataKeys.length)
 			return dataCooldownTimes[blockNum];
 		else
 			return checkCooldownTimes[blockNum - dataKeys.length];
 	}
 
-	public void requeueAfterCooldown(Key key, long time) {
+	public synchronized void requeueAfterCooldown(Key key, long time) {
 		if(isFinishing()) return;
 		boolean notFound = true;
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
-		// FIXME synchronization
 		for(int i=0;i<dataKeys.length;i++) {
 			if(dataKeys[i] == null) continue;
 			if(dataKeys[i].getNodeKey().equals(key)) {
@@ -605,7 +606,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		}
 	}
 
-	public long getCooldownWakeupByKey(Key key) {
+	public synchronized long getCooldownWakeupByKey(Key key) {
 		for(int i=0;i<dataKeys.length;i++) {
 			if(dataKeys[i] == null) continue;
 			if(dataKeys[i].getNodeKey().equals(key)) {
