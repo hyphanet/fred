@@ -126,6 +126,15 @@ public class RandomGrabArray {
 				}
 				int i = rand.nextInt(index);
 				ret = reqs[i];
+				if(ret == null) {
+					Logger.error(this, "reqs["+i+"] = null");
+					if(i == index-1) index--;
+					else {
+						reqs[i] = reqs[index-1];
+						reqs[index] = null;
+					}
+					continue;
+				}
 				oret = ret;
 				if(ret.isCancelled()) {
 					if(logMINOR) Logger.minor(this, "Not returning because cancelled: "+ret);
