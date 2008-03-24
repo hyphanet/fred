@@ -63,6 +63,66 @@ public class RandomGrabArray {
 					if(logMINOR) Logger.minor(this, "All null on "+this);
 					return null;
 				}
+				if(index < MAX_EXCLUDED) {
+					// Optimise the common case of not many items, and avoid some spurious errors.
+					int random = -1;
+					while(true) {
+						int exclude = 0;
+						int valid = 0;
+						int validIndex = -1;
+						int target = 0;
+						for(int i=0;i<index;i++) {
+							RandomGrabArrayItem item = reqs[i];
+							if(item == null) {
+								continue;
+							} else if(item.isCancelled()) {
+								reqs[i] = null;
+								contents.remove(item);
+								continue;
+							}
+							if(i != target) {
+								reqs[i] = null;
+								reqs[target] = item;
+							}
+							target++;
+							if(excluding.exclude(item)) {
+								exclude++;
+							} else {
+								if(valid == random) { // Picked on previous round
+									if(item.canRemove()) {
+										contents.remove(item);
+										reqs[i] = null;
+									}
+									return item;
+								}
+								validIndex = target-1;
+								valid++;
+							}
+						}
+						index = target;
+						// We reach this point if 1) the random number we picked last round is invalid because an item became cancelled or excluded
+						// or 2) we are on the first round anyway.
+						if(valid == 0 && exclude == 0) {
+							index = 0;
+							if(logMINOR) Logger.minor(this, "No valid or excluded items");
+							return null;
+						} else if(valid == 0) {
+							if(logMINOR) Logger.minor(this, "No valid items, "+exclude+" excluded items");
+							return null;
+						} else if(valid == 1) {
+							ret = reqs[validIndex];
+							if(ret.canRemove()) {
+								index = 0;
+								contents.remove(ret);
+								reqs[validIndex] = null;
+							}
+							if(logMINOR) Logger.minor(this, "No valid or excluded items after removing "+ret);
+							return ret;
+						} else {
+							random = rand.nextInt(valid);
+						}
+					}
+				}
 				int i = rand.nextInt(index);
 				ret = reqs[i];
 				oret = ret;
@@ -73,7 +133,7 @@ public class RandomGrabArray {
 				if(ret != null && excluding.exclude(ret)) {
 					excluded++;
 					if(excluded > MAX_EXCLUDED) {
-						Logger.error(this, "Remove random returning null because "+excluded+" excluded items", new Exception("error"));
+						Logger.error(this, "Remove random returning null because "+excluded+" excluded items, length = "+index, new Exception("error"));
 						return null;
 					}
 					continue;
