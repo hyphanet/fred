@@ -162,9 +162,6 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				continue;
 			}
 			if(keys.hasKey(key)) {
-				synchronized(this) {
-					blockNums.add(ret);
-				}
 				continue;
 			}
 			return true;
