@@ -240,6 +240,8 @@ public class PacketSender implements Runnable, Ticker {
 				else
 					nextActionTime = Math.min(nextActionTime, urgentTime);
 
+				pn.checkTrackerTimeout();
+				
 				// Any packets to resend?
 				for(int j = 0; j < 2; j++) {
 					KeyTracker kt;

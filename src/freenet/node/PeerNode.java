@@ -2409,17 +2409,26 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				} catch(WouldBlockException e) {
 					Logger.error(this, "Impossible: " + e, e);
 				}
-			if(t > -1 && tracker.timeLastDecodedPacket() > 0 && (now - tracker.timeLastDecodedPacket()) > 60*1000 && 
-					cur != null && cur.timeLastDecodedPacket() > 0 && (now - cur.timeLastDecodedPacket() < 30*1000) && 
-					(tracker.countAckRequests() > 0 || tracker.countResendRequests() > 0)) {
-				Logger.error(this, "No packets decoded on "+tracker+" for 60 seconds, deprecating in favour of cur: "+cur);
-				prev.completelyDeprecated(cur);
-				synchronized(this) {
-					if(previousTracker == prev)
-						previousTracker = null;
-				}
-			}
 		}
+	}
+	
+	void checkTrackerTimeout() {
+		long now = System.currentTimeMillis();
+		KeyTracker prev = null;
+		KeyTracker cur = null;
+		synchronized(this) {
+			if(previousTracker == null) return;
+			if(currentTracker == null) return;
+			cur = currentTracker;
+			prev = previousTracker;
+		}
+		long t = previousTracker.getNextUrgentTime(); // LOCKING: should be safe, only inner structures
+		if(!(t > -1 && previousTracker.timeLastDecodedPacket() > 0 && (now - previousTracker.timeLastDecodedPacket()) > 60*1000 && 
+				currentTracker.timeLastDecodedPacket() > 0 && (now - currentTracker.timeLastDecodedPacket() < 30*1000) && 
+				(previousTracker.countAckRequests() > 0 || previousTracker.countResendRequests() > 0)))
+			return;
+		Logger.error(this, "No packets decoded on "+prev+" for 60 seconds, deprecating in favour of cur: "+cur);
+		prev.completelyDeprecated(cur);
 	}
 
 	/**
