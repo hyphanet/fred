@@ -146,6 +146,13 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			}
 			// LOCKING: keys is safe to check, but segment isn't.
 			Key key = segment.getBlockNodeKey(((Integer)ret).intValue());
+			if(key == null) {
+				Logger.error(this, "Key is null for block "+ret+" for "+this+" in hasValidKeys()");
+				synchronized(this) {
+					blockNums.remove(x);
+				}
+				continue;
+			}
 			if(keys.hasKey(key)) {
 				synchronized(this) {
 					blockNums.add(ret);
