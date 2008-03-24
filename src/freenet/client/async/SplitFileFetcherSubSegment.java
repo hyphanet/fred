@@ -68,6 +68,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 	
 	public ClientKey getKey(Object token) {
+		synchronized(this) {
 		if(cancelled) {
 			if(logMINOR)
 				Logger.minor(this, "Segment is finishing when getting key "+token+" on "+this);
@@ -84,6 +85,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			}
 		}
 		return key;
+		}
 	}
 	
 	/**
