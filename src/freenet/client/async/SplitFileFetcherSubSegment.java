@@ -126,6 +126,14 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				synchronized(this) {
 					blockNums.add(ret);
 				}
+				// Double check that it hasn't been found.
+				key = segment.getBlockNodeKey(((Integer)ret).intValue());
+				if(key == null) {
+					// A race condition is possible but should only rarely cause a Key is null for block <block>.
+					synchronized(this) {
+						blockNums.add(ret);
+					}
+				}
 				continue;
 			}
 			if(logMINOR)
