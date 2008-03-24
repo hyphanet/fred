@@ -27,6 +27,8 @@ import freenet.support.api.Bucket;
  * Collects together all requests within that segment at a given retry level.
  * Registered on the ClientRequestScheduler instead of SimpleSingleFileFetcher's.
  * When CRS asks it to run a request, returns one, and only unregisters if no more requests in this category.
+ * 
+ * LOCKING: Synchronize on the parent segment. Nothing else makes sense w.r.t. nested locking.
  */
 public class SplitFileFetcherSubSegment extends SendableGet {
 
@@ -101,7 +103,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	
 	private Object removeRandomBlockNum(KeysFetchingLocally keys) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		synchronized(this) {
+		synchronized(segment) {
 			if(blockNums.isEmpty()) {
 				if(logMINOR)
 					Logger.minor(this, "No blocks to remove");
@@ -111,7 +113,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		for(int i=0;i<10;i++) {
 			Object ret;
 			int x;
-			synchronized(this) {
+			synchronized(segment) {
 				x = ctx.random.nextInt(blockNums.size());
 				ret = (Integer) blockNums.remove(x);
 			}
@@ -123,14 +125,14 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				continue;
 			}
 			if(keys.hasKey(key)) {
-				synchronized(this) {
+				synchronized(segment) {
 					blockNums.add(ret);
 				}
 				// Double check that it hasn't been found.
 				key = segment.getBlockNodeKey(((Integer)ret).intValue());
 				if(key == null) {
 					// A race condition is possible but should only rarely cause a Key is null for block <block>.
-					synchronized(this) {
+					synchronized(segment) {
 						blockNums.add(ret);
 					}
 				}
@@ -147,7 +149,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		for(int i=0;i<10;i++) {
 			Object ret;
 			int x;
-			synchronized(this) {
+			synchronized(segment) {
 				if(blockNums.isEmpty()) return false;
 				x = ctx.random.nextInt(blockNums.size());
 				ret = (Integer) blockNums.get(x);
@@ -156,7 +158,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			Key key = segment.getBlockNodeKey(((Integer)ret).intValue());
 			if(key == null) {
 				Logger.error(this, "Key is null for block "+ret+" for "+this+" in hasValidKeys()");
-				synchronized(this) {
+				synchronized(segment) {
 					blockNums.remove(x);
 				}
 				continue;
@@ -239,7 +241,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			// Normally when this method is called the block number has already
 			// been removed. However if fromStore=true, it won't have been, so
 			// we have to do it. (Check the call trace for why)
-			synchronized(this) {
+			synchronized(segment) {
 				for(int i=0;i<blockNums.size();i++) {
 					Integer x = (Integer) blockNums.get(i);
 					// Compare by value as sometimes we will do new Integer(num) in requeueing after cooldown code.
@@ -308,7 +310,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return retryCount;
 	}
 
-	public synchronized boolean canRemove() {
+	public boolean canRemove() {
+		synchronized(segment) {
 		if(blockNums.size() < 2) {
 			// Can be removed, if the one key is processed.
 			// Once it has been processed, we may need to be reinstated.
@@ -316,10 +319,13 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				Logger.minor(this, "Can remove "+this+" in canRemove()");
 			return true;
 		} else return false;
+		}
 	}
 
-	public synchronized boolean isCancelled() {
+	public boolean isCancelled() {
+		synchronized(segment) {
 		return cancelled;
+		}
 	}
 
 	public boolean isSSK() {
@@ -334,7 +340,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		Integer i = new Integer(blockNo);
 		
 		boolean schedule = true;
-		synchronized(this) {
+		synchronized(segment) {
 			if(cancelled)
 				throw new IllegalStateException("Adding block "+blockNo+" to already cancelled "+this);
 			blockNums.add(i);
@@ -370,13 +376,13 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	public void possiblyRemoveFromParent() {
 		if(logMINOR)
 			Logger.minor(this, "Possibly removing from parent: "+this);
-		synchronized(this) {
+		synchronized(segment) {
 			if(!blockNums.isEmpty()) return;
 			if(logMINOR)
 				Logger.minor(this, "Definitely removing from parent: "+this);
 		}
 		if(!segment.maybeRemoveSeg(this)) return;
-		synchronized(this) {
+		synchronized(segment) {
 			cancelled = true;
 		}
 		unregister();
@@ -386,7 +392,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		if(logMINOR) Logger.minor(this, "onGotKey("+key+")");
 		// Find and remove block if it is on this subsegment. However it may have been
 		// removed already.
-		synchronized(this) {
+		synchronized(segment) {
 			for(int i=0;i<blockNums.size();i++) {
 				Integer token = (Integer) blockNums.get(i);
 				int num = ((Integer)token).intValue();
@@ -430,7 +436,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			Logger.minor(this, "Killing "+this);
 		// Do unregister() first so can get and unregister each key and avoid a memory leak
 		unregister();
-		synchronized(this) {
+		synchronized(segment) {
 			blockNums.clear();
 			cancelled = true;
 		}
