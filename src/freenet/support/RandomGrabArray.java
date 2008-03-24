@@ -113,9 +113,11 @@ public class RandomGrabArray {
 						} else if(valid == 1) {
 							ret = reqs[validIndex];
 							if(ret.canRemove()) {
-								index = 0;
 								contents.remove(ret);
-								reqs[validIndex] = null;
+								if(validIndex != index-1) {
+									reqs[validIndex] = reqs[index-1];
+								}
+								index--;
 							}
 							if(logMINOR) Logger.minor(this, "No valid or excluded items after removing "+ret);
 							return ret;
@@ -128,11 +130,11 @@ public class RandomGrabArray {
 				ret = reqs[i];
 				if(ret == null) {
 					Logger.error(this, "reqs["+i+"] = null");
-					if(i == index-1) index--;
-					else {
+					if(i != index-1) {
 						reqs[i] = reqs[index-1];
 						reqs[index] = null;
 					}
+					index--;
 					continue;
 				}
 				oret = ret;
