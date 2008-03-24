@@ -741,6 +741,7 @@ public class LocationManager implements ByteCounter {
         final long addedTime;
         long lastMessageTime; // can delete when no messages for 2*TIMEOUT
         final PeerNode requestSender;
+        final long bootID;
         PeerNode routedTo;
         // Set when a request is accepted. Unset when we send one.
         boolean successfullyForwarded;
@@ -749,6 +750,7 @@ public class LocationManager implements ByteCounter {
             this.incomingID = id;
             this.outgoingID = outgoingID;
             requestSender = from;
+            bootID = requestSender.getBootID();
             routedTo = to;
             addedTime = System.currentTimeMillis();
             lastMessageTime = addedTime;
@@ -981,6 +983,10 @@ public class LocationManager implements ByteCounter {
                     " should be "+item.routedTo+" to "+item.requestSender);
             return true;
         }
+        if(item.bootID != item.routedTo.getBootID()) {
+        	Logger.normal(this, "Dropping SwapReply as boot ID has changed for "+source);
+        	return true; // Valid but not forwarded
+        }
         item.lastMessageTime = System.currentTimeMillis();
         // Returning to source - use incomingID
         m.set(DMT.UID, item.incomingID);
@@ -1014,8 +1020,12 @@ public class LocationManager implements ByteCounter {
             Logger.error(this, "Unmatched swapreply "+uid+" from wrong source: From "+source+
                     " should be "+item.routedTo+" to "+item.requestSender);
             return true;
-        }
+        }        
         removeRecentlyForwardedItem(item);
+        if(item.bootID != item.routedTo.getBootID()) {
+        	Logger.normal(this, "Dropping SwapRejected as boot ID has changed for "+source);
+        	return true; // Valid but not forwarded
+        }
         item.lastMessageTime = System.currentTimeMillis();
         if(logMINOR) Logger.minor(this, "Forwarding SwapRejected "+uid+" from "+source+" to "+item.requestSender);
         // Returning to source - use incomingID
