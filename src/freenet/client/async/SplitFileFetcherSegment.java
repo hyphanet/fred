@@ -259,40 +259,40 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 
 	public void onEncodedSegment() {
 		synchronized(this) {
-		// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
-		for(int i=0;i<dataBuckets.length;i++) {
-			boolean heal = false;
-			Bucket data = dataBuckets[i].getData();
-			if(dataRetries[i] > 0)
-				heal = true;
-			if(heal) {
-				queueHeal(data);
-			} else {
-				dataBuckets[i].data.free();
-				dataBuckets[i].data = null;
+			// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
+			for(int i=0;i<dataBuckets.length;i++) {
+				boolean heal = false;
+				Bucket data = dataBuckets[i].getData();
+				if(dataRetries[i] > 0)
+					heal = true;
+				if(heal) {
+					queueHeal(data);
+				} else {
+					dataBuckets[i].data.free();
+					dataBuckets[i].data = null;
+				}
+				dataBuckets[i] = null;
+				dataKeys[i] = null;
 			}
-			dataBuckets[i] = null;
-			dataKeys[i] = null;
-		}
-		for(int i=0;i<checkBuckets.length;i++) {
-			boolean heal = false;
-			Bucket data = checkBuckets[i].getData();
-			try {
-				maybeAddToBinaryBlob(data, i, true);
-			} catch (FetchException e) {
-				fail(e);
-				return;
+			for(int i=0;i<checkBuckets.length;i++) {
+				boolean heal = false;
+				Bucket data = checkBuckets[i].getData();
+				try {
+					maybeAddToBinaryBlob(data, i, true);
+				} catch (FetchException e) {
+					fail(e);
+					return;
+				}
+				if(checkRetries[i] > 0)
+					heal = true;
+				if(heal) {
+					queueHeal(data);
+				} else {
+					checkBuckets[i].data.free();
+				}
+				checkBuckets[i] = null;
+				checkKeys[i] = null;
 			}
-			if(checkRetries[i] > 0)
-				heal = true;
-			if(heal) {
-				queueHeal(data);
-			} else {
-				checkBuckets[i].data.free();
-			}
-			checkBuckets[i] = null;
-			checkKeys[i] = null;
-		}
 		}
 		// Defer the completion until we have generated healing blocks if we are collecting binary blobs.
 		if(isCollectingBinaryBlob())
