@@ -171,6 +171,7 @@ public class RandomGrabArray {
 			if(!contents.contains(it)) return;
 			contents.remove(it);
 			for(int i=0;i<index;i++) {
+				if(reqs[i] == null) continue;
 				if((reqs[i] == it) || reqs[i].equals(it)) {
 					reqs[i] = reqs[--index];
 					reqs[index] = null;
