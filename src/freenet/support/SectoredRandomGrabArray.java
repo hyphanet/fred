@@ -84,6 +84,27 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 				}
 				return item;
 			}
+			if(grabArrays.length == 2) {
+				// Another simple common case
+				int x = rand.nextBoolean() ? 1 : 0;
+				RemoveRandomWithObject rga = grabArrays[x];
+				RemoveRandomWithObject firstRGA = rga;
+				RandomGrabArrayItem item = rga.removeRandom(excluding);
+				if(item == null) {
+					x = 1-x;
+					rga = grabArrays[x];
+					item = rga.removeRandom(excluding);
+					if(firstRGA.isEmpty() && rga.isEmpty()) {
+						grabArraysByClient.remove(rga.getObject());
+						grabArraysByClient.remove(firstRGA.getObject());
+						grabArrays = new RemoveRandomWithObject[0];
+					} else if(firstRGA.isEmpty()) {
+						grabArraysByClient.remove(firstRGA.getObject());
+						grabArrays = new RemoveRandomWithObject[] { firstRGA };
+					}
+					return item;
+				} else return item;
+			}
 			int x = rand.nextInt(grabArrays.length);
 			RemoveRandomWithObject rga = grabArrays[x];
 			if(logMINOR)
@@ -112,7 +133,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 					// Hmmm...
 					excluded++;
 					if(excluded > MAX_EXCLUDED) {
-						Logger.error(this, "Too many sub-arrays are entirely excluded on "+this, new Exception("error"));
+						Logger.error(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArrays.length, new Exception("error"));
 						return null;
 					}
 				}
