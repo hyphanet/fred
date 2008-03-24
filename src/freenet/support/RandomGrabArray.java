@@ -71,6 +71,7 @@ public class RandomGrabArray {
 						int valid = 0;
 						int validIndex = -1;
 						int target = 0;
+						int chosenIndex = -1;
 						for(int i=0;i<index;i++) {
 							RandomGrabArrayItem item = reqs[i];
 							if(item == null) {
@@ -89,12 +90,7 @@ public class RandomGrabArray {
 								exclude++;
 							} else {
 								if(valid == random) { // Picked on previous round
-									if(item.canRemove()) {
-										contents.remove(item);
-										target--;
-										reqs[target] = null;
-									}
-									return item;
+									chosenIndex = target-1;
 								}
 								validIndex = target-1;
 								valid++;
@@ -103,6 +99,18 @@ public class RandomGrabArray {
 						index = target;
 						// We reach this point if 1) the random number we picked last round is invalid because an item became cancelled or excluded
 						// or 2) we are on the first round anyway.
+						if(chosenIndex >= 0) {
+							ret = reqs[chosenIndex];
+							if(ret.canRemove()) {
+								contents.remove(ret);
+								if(chosenIndex != index-1) {
+									reqs[chosenIndex] = reqs[index-1];
+								}
+								index--;
+							}
+							if(logMINOR) Logger.minor(this, "Chosen random item "+ret+" out of "+valid);
+							return ret;
+						}
 						if(valid == 0 && exclude == 0) {
 							index = 0;
 							if(logMINOR) Logger.minor(this, "No valid or excluded items");
