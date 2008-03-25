@@ -165,6 +165,12 @@ public class MersenneTwister extends Random {
 	 * the seed of the generator will be related to the current time
 	 */
 	public synchronized void setSeed(int[] seed) {
+		if (mt == null) {
+			// this is probably a spurious call from base class constructor,
+			// we do nothing and wait for the setSeed in our own
+			// constructors after array allocation
+			return;
+		}
 		if (seed == null) {
 			setSeed(System.currentTimeMillis());
 			return;
