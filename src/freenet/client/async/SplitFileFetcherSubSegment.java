@@ -125,10 +125,6 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				if(keys.hasKey(key)) {
 					blockNums.add(ret);
 					// Double check that it hasn't been found.
-					key = segment.getBlockNodeKey(((Integer)ret).intValue());
-					if(key == null) {
-						blockNums.add(ret);
-					}
 					continue;
 				}
 				if(logMINOR)
