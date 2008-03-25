@@ -750,7 +750,10 @@ public class LocationManager implements ByteCounter {
             this.incomingID = id;
             this.outgoingID = outgoingID;
             requestSender = from;
-            bootID = requestSender.getBootID();
+            if(from == null)
+            	bootID = -1;
+            else
+            	bootID = requestSender.getBootID();
             routedTo = to;
             addedTime = System.currentTimeMillis();
             lastMessageTime = addedTime;
