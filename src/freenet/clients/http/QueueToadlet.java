@@ -648,9 +648,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode completedDownloadsTempInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", L10n.getString("QueueToadlet.completedDinTempDirectory", new String[]{ "size" }, new String[]{ String.valueOf(completedDownloadToTemp.size()) })));
 			HTMLNode completedDownloadsToTempContent = pageMaker.getContentNode(completedDownloadsTempInfobox);
 			if (advancedModeEnabled) {
-				completedDownloadsToTempContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToTemp, new int[] { LIST_IDENTIFIER, LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled));
+				completedDownloadsToTempContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToTemp, new int[] { LIST_IDENTIFIER, LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false));
 			} else {
-				completedDownloadsToTempContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToTemp, new int[] { LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled));
+				completedDownloadsToTempContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToTemp, new int[] { LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false));
 			}
 		}
 		
@@ -659,9 +659,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode completedToDiskInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", L10n.getString("QueueToadlet.completedDinDownloadDirectory", new String[]{ "size" }, new String[]{ String.valueOf(completedDownloadToDisk.size()) })));
 			HTMLNode completedToDiskInfoboxContent = pageMaker.getContentNode(completedToDiskInfobox);
 			if (advancedModeEnabled) {
-				completedToDiskInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToDisk, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled));
+				completedToDiskInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToDisk, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false));
 			} else {
-				completedToDiskInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToDisk, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled));
+				completedToDiskInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedDownloadToDisk, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_DOWNLOAD, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false));
 			}
 		}
 
@@ -670,9 +670,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode completedUploadInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", L10n.getString("QueueToadlet.completedU", new String[]{ "size" }, new String[]{ String.valueOf(completedUpload.size()) })));
 			HTMLNode completedUploadInfoboxContent = pageMaker.getContentNode(completedUploadInfobox);
 			if (advancedModeEnabled) {
-				completedUploadInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedUpload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled));
+				completedUploadInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedUpload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true));
 			} else  {
-				completedUploadInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedUpload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled));
+				completedUploadInfoboxContent.addChild(createRequestTable(pageMaker, ctx, completedUpload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true));
 			}
 		}
 		
@@ -681,9 +681,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode completedUploadDirInfobox = contentNode.addChild(pageMaker.getInfobox("completed_requests", L10n.getString("QueueToadlet.completedUDirectory", new String[]{ "size" }, new String[]{ String.valueOf(completedDirUpload.size()) })));
 			HTMLNode completedUploadDirContent = pageMaker.getContentNode(completedUploadDirInfobox);
 			if (advancedModeEnabled) {
-				completedUploadDirContent.addChild(createRequestTable(pageMaker, ctx, completedDirUpload, new int[] { LIST_IDENTIFIER, LIST_FILES, LIST_TOTAL_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled));
+				completedUploadDirContent.addChild(createRequestTable(pageMaker, ctx, completedDirUpload, new int[] { LIST_IDENTIFIER, LIST_FILES, LIST_TOTAL_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true));
 			} else {
-				completedUploadDirContent.addChild(createRequestTable(pageMaker, ctx, completedDirUpload, new int[] { LIST_FILES, LIST_TOTAL_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled));
+				completedUploadDirContent.addChild(createRequestTable(pageMaker, ctx, completedDirUpload, new int[] { LIST_FILES, LIST_TOTAL_SIZE, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true));
 			}
 		}
 				
@@ -692,9 +692,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode failedInfobox = contentNode.addChild(pageMaker.getInfobox("failed_requests", L10n.getString("QueueToadlet.failedD", new String[]{ "size" }, new String[]{ String.valueOf(failedDownload.size()) })));
 			HTMLNode failedContent = pageMaker.getContentNode(failedInfobox);
 			if (advancedModeEnabled) {
-				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDownload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled));
+				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDownload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false));
 			} else {
-				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDownload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled));
+				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDownload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false));
 			}
 		}
 		
@@ -703,9 +703,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode failedInfobox = contentNode.addChild(pageMaker.getInfobox("failed_requests", L10n.getString("QueueToadlet.failedU", new String[]{ "size" }, new String[]{ String.valueOf(failedUpload.size()) })));
 			HTMLNode failedContent = pageMaker.getContentNode(failedInfobox);
 			if (advancedModeEnabled) {
-				failedContent.addChild(createRequestTable(pageMaker, ctx, failedUpload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled));
+				failedContent.addChild(createRequestTable(pageMaker, ctx, failedUpload, new int[] { LIST_IDENTIFIER, LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true));
 			} else {
-				failedContent.addChild(createRequestTable(pageMaker, ctx, failedUpload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled));
+				failedContent.addChild(createRequestTable(pageMaker, ctx, failedUpload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true));
 			}
 		}
 		
@@ -714,9 +714,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode failedInfobox = contentNode.addChild(pageMaker.getInfobox("failed_requests", L10n.getString("QueueToadlet.failedU", new String[]{ "size" }, new String[]{ String.valueOf(failedDirUpload.size()) })));
 			HTMLNode failedContent = pageMaker.getContentNode(failedInfobox);
 			if (advancedModeEnabled) {
-				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDirUpload, new int[] { LIST_IDENTIFIER, LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled));
+				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDirUpload, new int[] { LIST_IDENTIFIER, LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true));
 			} else {
-				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDirUpload, new int[] { LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled));
+				failedContent.addChild(createRequestTable(pageMaker, ctx, failedDirUpload, new int[] { LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_REASON, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true));
 			}
 		}
 		
@@ -725,9 +725,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", L10n.getString("QueueToadlet.wipD", new String[]{ "size" }, new String[]{ String.valueOf(uncompletedDownload.size()) })));
 			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
 			if (advancedModeEnabled) {
-				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDownload, new int[] { LIST_IDENTIFIER, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_FILENAME, LIST_KEY }, priorityClasses, advancedModeEnabled));
+				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDownload, new int[] { LIST_IDENTIFIER, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_FILENAME, LIST_KEY }, priorityClasses, advancedModeEnabled, false));
 			} else {
-				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDownload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled));
+				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDownload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false));
 			}
 		}
 		
@@ -736,9 +736,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", L10n.getString("QueueToadlet.wipU", new String[]{ "size" }, new String[]{ String.valueOf(uncompletedUpload.size()) })));
 			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
 			if (advancedModeEnabled) {
-				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedUpload, new int[] { LIST_IDENTIFIER, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_FILENAME, LIST_KEY }, priorityClasses, advancedModeEnabled));
+				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedUpload, new int[] { LIST_IDENTIFIER, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_FILENAME, LIST_KEY }, priorityClasses, advancedModeEnabled, true));
 			} else {
-				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedUpload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled));
+				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedUpload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true));
 			}
 		}
 		
@@ -747,9 +747,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode uncompletedInfobox = contentNode.addChild(pageMaker.getInfobox("requests_in_progress", L10n.getString("QueueToadlet.wipDU", new String[]{ "size" }, new String[]{ String.valueOf(uncompletedDirUpload.size()) })));
 			HTMLNode uncompletedContent = pageMaker.getContentNode(uncompletedInfobox);
 			if (advancedModeEnabled) {
-				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDirUpload, new int[] { LIST_IDENTIFIER, LIST_FILES, LIST_PRIORITY, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled));
+				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDirUpload, new int[] { LIST_IDENTIFIER, LIST_FILES, LIST_PRIORITY, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true));
 			} else {
-				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDirUpload, new int[] { LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled));
+				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDirUpload, new int[] { LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true));
 			}
 		}
 		
@@ -768,7 +768,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		return reasonCell;
 	}
 
-	private HTMLNode createProgressCell(boolean started, int fetched, int failed, int fatallyFailed, int min, int total, boolean finalized) {
+	private HTMLNode createProgressCell(boolean started, int fetched, int failed, int fatallyFailed, int min, int total, boolean finalized, boolean upload) {
 		HTMLNode progressCell = new HTMLNode("td", "class", "request-progress");
 		if (!started) {
 			progressCell.addChild("#", L10n.getString("QueueToadlet.starting"));
@@ -950,7 +950,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		return insertBox;
 	}
 	
-	private HTMLNode createRequestTable(PageMaker pageMaker, ToadletContext ctx, List requests, int[] columns, String[] priorityClasses, boolean advancedModeEnabled) {
+	private HTMLNode createRequestTable(PageMaker pageMaker, ToadletContext ctx, List requests, int[] columns, String[] priorityClasses, boolean advancedModeEnabled, boolean isUpload) {
 		HTMLNode table = new HTMLNode("table", "class", "requests");
 		HTMLNode headerRow = table.addChild("tr", "class", "table-header");
 		headerRow.addChild("th");
@@ -1035,7 +1035,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				} else if (column == LIST_TOTAL_SIZE) {
 					requestRow.addChild(createSizeCell(((ClientPutDir) clientRequest).getTotalDataSize(), true, advancedModeEnabled));
 				} else if (column == LIST_PROGRESS) {
-					requestRow.addChild(createProgressCell(clientRequest.isStarted(), (int) clientRequest.getFetchedBlocks(), (int) clientRequest.getFailedBlocks(), (int) clientRequest.getFatalyFailedBlocks(), (int) clientRequest.getMinBlocks(), (int) clientRequest.getTotalBlocks(), clientRequest.isTotalFinalized()));
+					requestRow.addChild(createProgressCell(clientRequest.isStarted(), (int) clientRequest.getFetchedBlocks(), (int) clientRequest.getFailedBlocks(), (int) clientRequest.getFatalyFailedBlocks(), (int) clientRequest.getMinBlocks(), (int) clientRequest.getTotalBlocks(), clientRequest.isTotalFinalized(), isUpload));
 				} else if (column == LIST_REASON) {
 					requestRow.addChild(createReasonCell(clientRequest.getFailureReason()));
 				}
