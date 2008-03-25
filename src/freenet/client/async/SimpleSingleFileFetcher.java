@@ -33,6 +33,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			parent.addBlock();
 			if(isEssential)
 				parent.addMustSucceedBlocks(1);
+			parent.notifyClients();
 		}
 	}
 
