@@ -2573,7 +2573,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// We have a packet
 		// Send it
 
-		if(logMINOR) Logger.minor(this,"Sending packet of length "+output.length+" (" + Fields.hashCode(output) + " to "+kt.pn);
+		if(logMINOR) Logger.minor(this,"Sending packet of length "+output.length+" (" + Fields.hashCode(output) + ") to "+kt.pn);
 
 		// pn.getPeer() cannot be null
 		try {
