@@ -75,6 +75,7 @@ public abstract class ClientRequester {
 			else
 				Logger.error(this, "addBlock() but set finalized! on "+this, new Exception("error"));
 		totalBlocks++;
+		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "addBlock(): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
 	}
 
 	public synchronized void addBlocks(int num) {
@@ -84,6 +85,7 @@ public abstract class ClientRequester {
 			else
 				Logger.error(this, "addBlocks() but set finalized! on "+this, new Exception("error"));
 		totalBlocks+=num;
+		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "addBlocks("+num+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
 	}
 
 	public void completedBlock(boolean dontNotify) {
