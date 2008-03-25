@@ -1184,15 +1184,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				public void run() {
 					if((!PeerNode.this.isConnected()) &&
 							timeLastDisconnect == now) {
-						MessageItem[] messagesTellDisconnected = null;
+						MessageItem[] messagesTellDisconnected;
 						synchronized(PeerNode.this.messagesToSendNow) {
 							messagesTellDisconnected = (MessageItem[]) messagesToSendNow.toArray(new MessageItem[messagesToSendNow.size()]);
 							PeerNode.this.messagesToSendNow.clear();
 						}
-						if(messagesTellDisconnected != null) {
-							for(int i=0;i<messagesTellDisconnected.length;i++) {
-								messagesTellDisconnected[i].onDisconnect();
-							}
+						for(int i=0;i<messagesTellDisconnected.length;i++) {
+							messagesTellDisconnected[i].onDisconnect();
 						}
 					}
 
