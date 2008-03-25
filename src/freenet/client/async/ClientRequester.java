@@ -114,6 +114,7 @@ public abstract class ClientRequester {
 
 	public synchronized void addMustSucceedBlocks(int blocks) {
 		minSuccessBlocks += blocks;
+		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "addMustSucceedBlocks("+blocks+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
 	}
 
 	public abstract void notifyClients();
