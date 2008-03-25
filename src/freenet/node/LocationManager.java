@@ -741,7 +741,7 @@ public class LocationManager implements ByteCounter {
         final long addedTime;
         long lastMessageTime; // can delete when no messages for 2*TIMEOUT
         final PeerNode requestSender;
-        final long bootID;
+        final long senderBootID;
         PeerNode routedTo;
         // Set when a request is accepted. Unset when we send one.
         boolean successfullyForwarded;
@@ -751,9 +751,9 @@ public class LocationManager implements ByteCounter {
             this.outgoingID = outgoingID;
             requestSender = from;
             if(from == null)
-            	bootID = -1;
+            	senderBootID = -1;
             else
-            	bootID = requestSender.getBootID();
+            	senderBootID = requestSender.getBootID();
             routedTo = to;
             addedTime = System.currentTimeMillis();
             lastMessageTime = addedTime;
@@ -986,7 +986,7 @@ public class LocationManager implements ByteCounter {
                     " should be "+item.routedTo+" to "+item.requestSender);
             return true;
         }
-        if(item.bootID != item.routedTo.getBootID()) {
+        if(item.senderBootID != item.routedTo.getBootID()) {
         	// Race condition, the node rebooted just after sending the reply.
         	Message msg = DMT.createFNPSwapRejected(uid);
             try {
@@ -1032,7 +1032,7 @@ public class LocationManager implements ByteCounter {
             return true;
         }        
         removeRecentlyForwardedItem(item);
-        if(item.bootID != item.routedTo.getBootID()) {
+        if(item.senderBootID != item.routedTo.getBootID()) {
         	Logger.normal(this, "Dropping SwapRejected as boot ID has changed for "+source);
         	return true; // Valid but not forwarded
         }
