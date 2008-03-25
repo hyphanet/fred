@@ -124,7 +124,6 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				}
 				if(keys.hasKey(key)) {
 					blockNums.add(ret);
-					// Double check that it hasn't been found.
 					continue;
 				}
 				if(logMINOR)
