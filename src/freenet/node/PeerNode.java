@@ -2420,10 +2420,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			cur = currentTracker;
 			prev = previousTracker;
 		}
-		long t = previousTracker.getNextUrgentTime(); // LOCKING: should be safe, only inner structures
-		if(!(t > -1 && previousTracker.timeLastDecodedPacket() > 0 && (now - previousTracker.timeLastDecodedPacket()) > 60*1000 && 
-				currentTracker.timeLastDecodedPacket() > 0 && (now - currentTracker.timeLastDecodedPacket() < 30*1000) && 
-				(previousTracker.countAckRequests() > 0 || previousTracker.countResendRequests() > 0)))
+		long t = prev.getNextUrgentTime();
+		if(!(t > -1 && prev.timeLastDecodedPacket() > 0 && (now - prev.timeLastDecodedPacket()) > 60*1000 && 
+				cur.timeLastDecodedPacket() > 0 && (now - cur.timeLastDecodedPacket() < 30*1000) && 
+				(prev.countAckRequests() > 0 || prev.countResendRequests() > 0)))
 			return;
 		Logger.error(this, "No packets decoded on "+prev+" for 60 seconds, deprecating in favour of cur: "+cur);
 		prev.completelyDeprecated(cur);
