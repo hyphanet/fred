@@ -100,7 +100,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 						grabArrays = new RemoveRandomWithObject[0];
 					} else if(firstRGA.isEmpty()) {
 						grabArraysByClient.remove(firstRGA.getObject());
-						grabArrays = new RemoveRandomWithObject[] { firstRGA };
+						grabArrays = new RemoveRandomWithObject[] { rga };
 					}
 					return item;
 				} else return item;
