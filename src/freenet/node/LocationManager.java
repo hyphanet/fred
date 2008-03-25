@@ -741,7 +741,6 @@ public class LocationManager implements ByteCounter {
         final long addedTime;
         long lastMessageTime; // can delete when no messages for 2*TIMEOUT
         final PeerNode requestSender;
-        final long senderBootID;
         PeerNode routedTo;
         // Set when a request is accepted. Unset when we send one.
         boolean successfullyForwarded;
@@ -750,10 +749,6 @@ public class LocationManager implements ByteCounter {
             this.incomingID = id;
             this.outgoingID = outgoingID;
             requestSender = from;
-            if(from == null)
-            	senderBootID = -1;
-            else
-            	senderBootID = requestSender.getBootID();
             routedTo = to;
             addedTime = System.currentTimeMillis();
             lastMessageTime = addedTime;
@@ -1021,10 +1016,6 @@ public class LocationManager implements ByteCounter {
             return true;
         }        
         removeRecentlyForwardedItem(item);
-        if(item.senderBootID != item.routedTo.getBootID()) {
-        	Logger.normal(this, "Dropping SwapRejected as boot ID has changed for "+source);
-        	return true; // Valid but not forwarded
-        }
         item.lastMessageTime = System.currentTimeMillis();
         if(logMINOR) Logger.minor(this, "Forwarding SwapRejected "+uid+" from "+source+" to "+item.requestSender);
         // Returning to source - use incomingID
