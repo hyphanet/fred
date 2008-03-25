@@ -340,6 +340,8 @@ public class OpennetManager {
 						if(!dropList.isEmpty())
 							timeLastDropped = now;
 						timeLastOffered = now;
+						if(logMINOR)
+							Logger.minor(this, "Sending offer");
 					}
 				}
 			}
