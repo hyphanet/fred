@@ -140,11 +140,11 @@ public class RandomGrabArray {
 				ret = reqs[i];
 				if(ret == null) {
 					Logger.error(this, "reqs["+i+"] = null");
-					if(i != index-1) {
-						reqs[i] = reqs[index-1];
+					index--;
+					if(i != index) {
+						reqs[i] = reqs[index];
 						reqs[index] = null;
 					}
-					index--;
 					continue;
 				}
 				oret = ret;
