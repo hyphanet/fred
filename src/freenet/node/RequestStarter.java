@@ -209,7 +209,9 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 				} catch (InterruptedException e1) {
 					// Ignore
 				}
-				if(key != null) keysFetching.remove(key);
+				synchronized(keysFetching) {
+					if(key != null) keysFetching.remove(key);
+				}
 			} catch (Throwable t) {
 				if(keyNum != null) {
 					// Re-queue
@@ -217,7 +219,9 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 					req.internalError(keyNum, t, sched);
 					return true; // Sort of ... maybe it will clear
 				}
-				if(key != null) keysFetching.remove(key);
+				synchronized(keysFetching) {
+					if(key != null) keysFetching.remove(key);
+				}
 			}
 		}
 	}
