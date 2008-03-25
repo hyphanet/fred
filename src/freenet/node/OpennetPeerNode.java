@@ -37,8 +37,9 @@ public class OpennetPeerNode extends PeerNode {
 			return false; // New node
 		if(now - node.usm.getStartedTime() < OpennetManager.DROP_STARTUP_DELAY)
 			return false; // Give them time to connect after we startup
+		int status = getPeerNodeStatus();
 		synchronized(this) {
-			if((!isConnected()) && (!super.neverConnected()) && 
+			if((status == PeerManager.PEER_NODE_STATUS_DISCONNECTED) && (!super.neverConnected()) && 
 					now - timeLastDisconnect < OpennetManager.DROP_DISCONNECT_DELAY &&
 					now - timePrevDisconnect > OpennetManager.DROP_DISCONNECT_DELAY_COOLDOWN) {
 				// Grace period for node restarting
