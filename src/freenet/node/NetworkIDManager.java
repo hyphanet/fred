@@ -1023,7 +1023,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 		}
 
 		public void sentPayload(int x) {
-			node.nodeStats.networkColoringSentBytes(x);
+			// Ignore
 		}
 		
 	};

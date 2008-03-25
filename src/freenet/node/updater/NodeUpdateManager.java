@@ -900,7 +900,7 @@ public class NodeUpdateManager {
 		}
 
 		public void sentPayload(int x) {
-			node.nodeStats.reportUOMBytesSent(x);
+			// Ignore. It will be reported to sentBytes() as well.
 		}
 		
 	};

@@ -525,7 +525,7 @@ public class PeerManager {
 		}
 
 		public void sentPayload(int x) {
-			node.nodeStats.disconnBytesSent(x);
+			// Ignore
 		}
     	
     };

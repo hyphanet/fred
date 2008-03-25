@@ -64,7 +64,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
 
 		public void sentPayload(int x) {
-			node.nodeStats.pingCounterSent(x);
+			// Ignore
 		}
 		
 	};

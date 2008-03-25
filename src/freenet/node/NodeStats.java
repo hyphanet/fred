@@ -1158,9 +1158,7 @@ public class NodeStats implements Persistable {
 		}
 
 		public void sentPayload(int x) {
-			synchronized(NodeStats.this) {
-				offerKeysSentBytes += x;
-			}
+			// Ignore
 		}
 		
 	};
@@ -1214,9 +1212,6 @@ public class NodeStats implements Persistable {
 
 		public void sentPayload(int x) {
 			Logger.error(this, "Payload sent in resendByteCounter????", new Exception("error"));
-			synchronized(NodeStats.this) {
-				resendBytesSent += x;
-			}
 		}
 		
 	};
@@ -1253,9 +1248,7 @@ public class NodeStats implements Persistable {
 		}
 
 		public void sentPayload(int x) {
-			synchronized(NodeStats.this) {
-				announceBytesSent += x;
-			}
+			// Ignore
 		}
 		
 	};
@@ -1280,9 +1273,7 @@ public class NodeStats implements Persistable {
 		}
 
 		public void sentPayload(int x) {
-			synchronized(NodeStats.this) {
-				routingStatusBytesSent += x;
-			}
+			// Ignore
 		}
 		
 	};
@@ -1336,9 +1327,7 @@ public class NodeStats implements Persistable {
 		}
 
 		public void sentPayload(int x) {
-			synchronized(NodeStats.this) {
-				sskRequestSentBytes += x;
-			}
+			// Ignore
 		}
 		
 	};
@@ -1358,9 +1347,7 @@ public class NodeStats implements Persistable {
 		}
 
 		public void sentPayload(int x) {
-			synchronized(NodeStats.this) {
-				chkRequestSentBytes += x;
-			}
+			// Ignore
 		}
 		
 	};
@@ -1380,9 +1367,7 @@ public class NodeStats implements Persistable {
 		}
 
 		public void sentPayload(int x) {
-			synchronized(NodeStats.this) {
-				sskInsertSentBytes += x;
-			}
+			// Ignore
 		}
 		
 	};
@@ -1402,9 +1387,7 @@ public class NodeStats implements Persistable {
 		}
 
 		public void sentPayload(int x) {
-			synchronized(NodeStats.this) {
-				chkInsertSentBytes += x;
-			}
+			// Ignore
 		}
 		
 	};
@@ -1427,9 +1410,7 @@ public class NodeStats implements Persistable {
 		}
 
 		public void sentPayload(int x) {
-			synchronized(NodeStats.this) {
-				probeRequestSentBytes += x;
-			}
+			// Ignore
 		}
 		
 	};
@@ -1456,9 +1437,7 @@ public class NodeStats implements Persistable {
 		}
 
 		public void sentPayload(int x) {
-			synchronized(NodeStats.this) {
-				routedMessageBytesSent += x;
-			}
+			// Ignore
 		}
 		
 	};
@@ -1500,9 +1479,7 @@ public class NodeStats implements Persistable {
 		}
 
 		public void sentPayload(int x) {
-			synchronized(NodeStats.this) {
-				initialMessagesBytesSent += x;
-			}
+			// Ignore
 		}
 		
 	};
@@ -1529,9 +1506,7 @@ public class NodeStats implements Persistable {
 		}
 
 		public void sentPayload(int x) {
-			synchronized(NodeStats.this) {
-				changedIPBytesSent += x;
-			}
+			// Ignore
 		}
 		
 	};
@@ -1558,9 +1533,7 @@ public class NodeStats implements Persistable {
 		}
 
 		public void sentPayload(int x) {
-			synchronized(NodeStats.this) {
-				nodeToNodeSentBytes += x;
-			}
+			// Ignore
 		}
 		
 	};

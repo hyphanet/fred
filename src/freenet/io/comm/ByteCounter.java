@@ -13,7 +13,11 @@ public interface ByteCounter {
 	
 	public void receivedBytes(int x);
 	
-	/** Sent payload - only include the number of bytes of actual payload i.e. data from the user's point of view, as opposed to overhead. */
+	/** Sent payload - only include the number of bytes of actual payload i.e. data from 
+	 * the user's point of view, as opposed to overhead.
+	 *  
+	 * IMPORTANT: This will also be reported to sentBytes()! DO NOT ADD the total from sentBytes() 
+	 * to the total from sentPayloadBytes(), or you will double-count. */
 	public void sentPayload(int x);
 
 }

@@ -449,8 +449,7 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
 	}
 
 	public void sentPayload(int x) {
-		node.sentPayload(x);
-		node.nodeStats.probeRequestCtr.sentBytes(x);
+		Logger.error(this, "sentPayload("+x+") in ResettingHTLProbeRequestSender ?!?!? for "+this, new Exception("error"));
 	}
 	
 	public boolean isLocalRequestSearch() {
