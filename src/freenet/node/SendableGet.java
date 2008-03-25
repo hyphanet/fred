@@ -58,6 +58,10 @@ public abstract class SendableGet extends BaseSendableGet {
 	 * this one from the queue. */
 	public boolean send(NodeClientCore core, RequestScheduler sched, Object keyNum) {
 		ClientKey key = getKey(keyNum);
+		if(key == null) {
+			Logger.error(this, "Key is null in send(): keyNum = "+keyNum+" for "+this);
+			return false;
+		}
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Sending get for key "+keyNum+" : "+key);
 		FetchContext ctx = getContext();
