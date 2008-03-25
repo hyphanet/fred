@@ -803,7 +803,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			if (finalized) {
 				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_finalized", prefix + L10n.getString("QueueToadlet.progressbarAccurate") }, nf.format((int) ((fetched / (double) min) * 1000) / 10.0) + '%');
 			} else {
-				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_not_finalized", prefix + L10n.getString("QueueToadlet.progressbarNotAccurate") }, nf.format((int) ((fetched / (double) min) * 1000) / 10.0)+ '%');
+				progressBar.addChild("div", new String[] { "class", "title" }, new String[] { "progress_fraction_not_finalized", prefix + L10n.getString(upload ? "QueueToadlet.uploadProgressbarNotAccurate" : "QueueToadlet.progressbarNotAccurate") }, nf.format((int) ((fetched / (double) min) * 1000) / 10.0)+ '%');
 			}
 		}
 		return progressCell;
