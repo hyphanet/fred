@@ -986,17 +986,6 @@ public class LocationManager implements ByteCounter {
                     " should be "+item.routedTo+" to "+item.requestSender);
             return true;
         }
-        if(item.senderBootID != item.routedTo.getBootID()) {
-        	// Race condition, the node rebooted just after sending the reply.
-        	Message msg = DMT.createFNPSwapRejected(uid);
-            try {
-                item.requestSender.sendAsync(msg, null, 0, this);
-            } catch (NotConnectedException e) {
-            	if(logMINOR) Logger.minor(this, "Lost connection forwarding SwapReply converted to SwapRejected: "+uid+" to "+item.requestSender);
-            }
-        	Logger.normal(this, "Dropping SwapReply as boot ID has changed for "+source);
-        	return true; // Valid but not forwarded
-        }
         item.lastMessageTime = System.currentTimeMillis();
         // Returning to source - use incomingID
         m.set(DMT.UID, item.incomingID);
