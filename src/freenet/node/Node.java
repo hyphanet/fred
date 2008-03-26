@@ -599,7 +599,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 Node(PersistentConfig config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns, Executor executor) throws NodeInitException {
 		// Easy stuff
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		String tmp = "Initializing Node using Freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vm.vendor")+" JVM version "+System.getProperty("java.vm.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
+		String tmp = "Initializing Node using Freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vendor")+" JVM version "+System.getProperty("java.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
 		Logger.normal(this, tmp);
 		System.out.println(tmp);
 		collector = new IOStatisticCollector();
@@ -1760,8 +1760,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// Now check whether we are likely to get the EvilJVMBug.
 		// If we are running a Sun or Blackdown JVM, on Linux, and LD_ASSUME_KERNEL is not set, then we are.
 		
-		String jvmVendor = System.getProperty("java.vm.vendor");
-		String jvmVersion = System.getProperty("java.vm.version");
+		String jvmVendor = System.getProperty("java.vendor");
+		String jvmVersion = System.getProperty("java.version");
 		String osName = System.getProperty("os.name");
 		String osVersion = System.getProperty("os.version");
 		
@@ -1810,12 +1810,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						L10n.addL10nSubstitution(n, "Node.buggyJVMWithLink", 
 								new String[] { "link", "/link", "version" },
 								new String[] { "<a href=\"/?_CHECKED_HTTP_=http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795\">", 
-								"</a>", HTMLEncoder.encode(System.getProperty("java.vm.version")) });
+								"</a>", HTMLEncoder.encode(System.getProperty("java.version")) });
 						return n;
 					}
 
 					public String getText() {
-						return l10n("buggyJVM", "version", System.getProperty("java.vm.version"));
+						return l10n("buggyJVM", "version", System.getProperty("java.version"));
 					}
 
 					public String getTitle() {
@@ -1834,7 +1834,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		} else {
 			if(jvmVendor.startsWith("Free Software Foundation")) {
 				try {
-					jvmVersion = System.getProperty("java.vm.version").split(" ")[0].replaceAll("[.]","");
+					jvmVersion = System.getProperty("java.version").split(" ")[0].replaceAll("[.]","");
 					int jvmVersionInt = Integer.parseInt(jvmVersion);
 						
 					if(jvmVersionInt <= 422 && jvmVersionInt >= 100) // make sure that no bogus values cause true

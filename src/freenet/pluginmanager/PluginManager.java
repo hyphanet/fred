@@ -163,7 +163,7 @@ public class PluginManager {
 					Logger.error(this, "Could not load plugin " + filename + " : " + e, e);
 					System.err.println("Could not load plugin " + filename + " : " + e);
 					e.printStackTrace();
-					String jvmVersion = System.getProperty("java.vm.version");
+					String jvmVersion = System.getProperty("java.version");
 					if (jvmVersion.startsWith("1.4.") || jvmVersion.equals("1.4")) {
 						System.err.println("Plugin " + filename + " appears to require a later JVM");
 						Logger.error(this, "Plugin " + filename + " appears to require a later JVM");
