@@ -175,7 +175,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		
 		this.name = name;
 		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, false,
-				"RequestStarterGroup.scheduler",
+				"RequestStarterGroup.scheduler"+(forSSKs?"SSK" : "CHK")+(forInserts?"Inserts":"Requests"),
 				"RequestStarterGroup.schedulerLong",
 				new PrioritySchedulerCallback(this));
 		
