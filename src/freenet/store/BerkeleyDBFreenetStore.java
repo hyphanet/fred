@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
@@ -36,7 +37,6 @@ import com.sleepycat.je.util.DbLoad;
 
 import freenet.crypt.RandomSource;
 import freenet.keys.KeyVerifyException;
-import freenet.keys.SSKVerifyException;
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -1311,14 +1311,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					Logger.minor(this, "Data: " + data.length + " bytes, hash " + Fields.hashCode(data) + " fetching " + HexUtil.bytesToHex(routingkey));
 				}
 				
-			} catch(SSKVerifyException ex) {
-				Logger.normal(this, "SSKBlock: Does not verify ("+ex+"), setting accessTime to 0 for : "+HexUtil.bytesToHex(routingkey), ex);
+			} catch(KeyVerifyException ex) {
+				Logger.normal(this, "Does not verify ("+ex+"), setting accessTime to 0 for : "+HexUtil.bytesToHex(routingkey), ex);
 				keysDB.delete(t, routingkeyDBE);
 				c.close();
 				c = null;
 				t.commit();
 				t = null;
-				addFreeBlock(storeBlock.offset, true, "SSK does not verify");
+				addFreeBlock(storeBlock.offset, true, "Key does not verify");
 				synchronized(this) {
 					misses++;
 				}
