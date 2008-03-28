@@ -3,7 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.security.MessageDigest;
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.LinkedList;
@@ -22,6 +27,7 @@ import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.TimeSortedHashtable;
+import freenet.support.io.Closer;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
 
 /**
@@ -575,6 +581,23 @@ public class LocationManager implements ByteCounter {
     private void announceLocChange() {
         Message msg = DMT.createFNPLocChangeNotification(getLocation());
         node.peers.localBroadcast(msg, false, true, this);
+        node.executor.execute(new Runnable() {
+
+			public void run() {
+				File locationLog = new File(node.nodeDir, "location.log.txt");
+				FileWriter fw = null;
+				try {
+					fw = new FileWriter(locationLog, true);
+					fw.write(""+DateFormat.getDateInstance().format(new Date())+" : "+getLocation());
+					fw.close();
+				} catch (IOException e) {
+					Logger.error(this, "Unable to write changed location to "+locationLog+" : "+e, e);
+				} finally {
+					if(fw != null) Closer.close(fw);
+				}
+			}
+        	
+        }, "Record new location");
     }
     
     private boolean locked;
