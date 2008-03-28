@@ -581,6 +581,10 @@ public class LocationManager implements ByteCounter {
     private void announceLocChange() {
         Message msg = DMT.createFNPLocChangeNotification(getLocation());
         node.peers.localBroadcast(msg, false, true, this);
+        recordLocChange();
+    }
+    
+    private void recordLocChange() {
         node.executor.execute(new Runnable() {
 
 			public void run() {
@@ -600,9 +604,9 @@ public class LocationManager implements ByteCounter {
 			}
         	
         }, "Record new location");
-    }
-    
-    private boolean locked;
+	}
+
+	private boolean locked;
 
     public static int swaps;
     public static int noSwaps;
