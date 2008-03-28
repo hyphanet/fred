@@ -585,6 +585,8 @@ public class LocationManager implements ByteCounter {
 
 			public void run() {
 				File locationLog = new File(node.nodeDir, "location.log.txt");
+				if(locationLog.exists() && locationLog.length() > 1024*1024*10)
+					locationLog.delete();
 				FileWriter fw = null;
 				try {
 					fw = new FileWriter(locationLog, true);
