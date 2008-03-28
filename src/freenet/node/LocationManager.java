@@ -594,7 +594,7 @@ public class LocationManager implements ByteCounter {
 				FileWriter fw = null;
 				try {
 					fw = new FileWriter(locationLog, true);
-					fw.write(""+DateFormat.getDateInstance().format(new Date())+" : "+getLocation()+'\n');
+					fw.write(""+DateFormat.getDateTimeInstance().format(new Date())+" : "+getLocation()+'\n');
 					fw.close();
 				} catch (IOException e) {
 					Logger.error(this, "Unable to write changed location to "+locationLog+" : "+e, e);
