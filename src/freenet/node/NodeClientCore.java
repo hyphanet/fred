@@ -488,7 +488,7 @@ public class NodeClientCore implements Persistable {
 	void asyncGet(Key key, boolean cache, boolean offersOnly, long uid, RequestSender.Listener listener) {
 		try {
 			Object o = node.makeRequestSender(key, node.maxHTL(), uid, null, false, cache, false, offersOnly);
-			if(o instanceof CHKBlock) {
+			if(o instanceof KeyBlock) {
 				node.unlockUID(uid, false, false, true, false);
 				return; // Already have it.
 			}
