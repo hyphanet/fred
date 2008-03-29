@@ -255,7 +255,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				if(!anyValid) {
 					if(logMINOR)
-						Logger.minor(this, "No valid keys, returning without registering");
+						Logger.minor(this, "No valid keys, returning without registering for "+req);
 					return;
 				}
 			}
