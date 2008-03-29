@@ -53,6 +53,8 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	}
 
 	public void onSuccess(FetchResult result, ClientGetState state) {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Success on "+this+" from "+state+" : length "+result.size()+" mime type "+result.getMimeType());
 		cb.onFound(state.getToken(), result);
 	}
 
