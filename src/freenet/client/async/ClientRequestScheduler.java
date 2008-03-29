@@ -426,6 +426,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 					// Reinsert it : shouldn't happen if we are calling reregisterAll,
 					// maybe we should ask people to report that error if seen
 					Logger.normal(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass()+" but chosen="+choosenPriorityClass+ ')');
+					// Remove it.
+					SectoredRandomGrabArrayWithObject clientGrabber = (SectoredRandomGrabArrayWithObject) rga.getGrabber(req.getClient());
+					if(clientGrabber != null) {
+						RandomGrabArray baseRGA = (RandomGrabArray) clientGrabber.getGrabber(req.getClientRequest());
+						if(baseRGA != null) {
+							baseRGA.remove(req);
+						} else {
+							Logger.error(this, "Could not find base RGA for requestor "+req.getClientRequest()+" from "+clientGrabber);
+						}
+					} else {
+						Logger.error(this, "Could not find client grabber for client "+req.getClient()+" from "+rga);
+					}
 					innerRegister(req);
 					continue;
 				}
