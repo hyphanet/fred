@@ -524,7 +524,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				boolean found = false;
 				int x = 0;
 				for(int j=0;j<gets.length;j++) {
-					if(j > newGets.length) {
+					if(j >= newGets.length) {
 						if(!found) {
 							if(complain)
 								Logger.normal(this, "Not found: "+getter+" for "+key+" removing ("+gets.length+" getters)");
