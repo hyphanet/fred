@@ -82,6 +82,8 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 					grabArraysByClient.remove(client);
 					grabArrays = new RemoveRandomWithObject[0];
 				}
+				if(logMINOR)
+					Logger.minor(this, "Returning (one item only) "+item+" for "+rga+" for "+rga.getObject());
 				return item;
 			}
 			if(grabArrays.length == 2) {
@@ -102,8 +104,14 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 						grabArraysByClient.remove(firstRGA.getObject());
 						grabArrays = new RemoveRandomWithObject[] { rga };
 					}
+					if(logMINOR)
+						Logger.minor(this, "Returning (two items only) "+item+" for "+rga+" for "+rga.getObject());
 					return item;
-				} else return item;
+				} else {
+					if(logMINOR)
+						Logger.minor(this, "Returning (two items only) "+item+" for "+rga+" for "+rga.getObject());
+					return item;
+				}
 			}
 			int x = rand.nextInt(grabArrays.length);
 			RemoveRandomWithObject rga = grabArrays[x];
