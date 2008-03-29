@@ -478,6 +478,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				seg.add(i, true);
 			
 			seg.schedule();
+			parentFetcher.parent.notifyClients();
 			if(logMINOR)
 				Logger.minor(this, "scheduling "+seg+" : "+seg.blockNums);
 		} catch (Throwable t) {
