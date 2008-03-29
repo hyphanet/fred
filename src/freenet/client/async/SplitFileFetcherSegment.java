@@ -66,6 +66,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	private int fetchedBlocks;
 	final FailureCodeTracker errors;
 	private boolean finishing;
+	private boolean scheduled;
 	
 	private FECCodec codec;
 	
@@ -150,13 +151,14 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		return fatallyFailedBlocks;
 	}
 
-	public void onSuccess(Bucket data, int blockNo, boolean dontNotify, SplitFileFetcherSubSegment seg, ClientKeyBlock block) {
+	public void onSuccess(Bucket data, int blockNo, SplitFileFetcherSubSegment seg, ClientKeyBlock block) {
 		boolean decodeNow = false;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" on "+seg);
 		if(parentFetcher.parent instanceof ClientGetter)
 			((ClientGetter)parentFetcher.parent).addKeyToBinaryBlob(block);
 		// No need to unregister key, because it will be cleared in tripPendingKey().
+		boolean dontNotify;
 		synchronized(this) {
 			if(isFinished()) return;
 			if(blockNo < dataKeys.length) {
@@ -187,6 +189,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 					finishing = true;
 				}
 			}
+			dontNotify = !scheduled;
 		}
 		parentFetcher.parent.completedBlock(dontNotify);
 		seg.possiblyRemoveFromParent();
@@ -478,6 +481,9 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				seg.add(i, true);
 			
 			seg.schedule();
+			synchronized(this) {
+				scheduled = true;
+			}
 			parentFetcher.parent.notifyClients();
 			if(logMINOR)
 				Logger.minor(this, "scheduling "+seg+" : "+seg.blockNums);
