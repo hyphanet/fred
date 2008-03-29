@@ -544,12 +544,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 				} else if(x == 1) {
 					pendingKeys.put(key, newGets[0]);
 				} else {
-				if(x != gets.length-1) {
-					SendableGet[] newNewGets = new SendableGet[x];
-					System.arraycopy(newGets, 0, newNewGets, 0, x);
-					newGets = newNewGets;
-				}
-				pendingKeys.put(key, newGets);
+					if(x != gets.length-1) {
+						SendableGet[] newNewGets = new SendableGet[x];
+						System.arraycopy(newGets, 0, newNewGets, 0, x);
+						newGets = newNewGets;
+					}
+					pendingKeys.put(key, newGets);
 				}
 			}
 		}
