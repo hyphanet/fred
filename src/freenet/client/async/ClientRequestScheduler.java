@@ -403,12 +403,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		SortedVectorByNumber s = priorities[choosenPriorityClass];
 		if(s != null){
-			while(true) {
-				SectoredRandomGrabArrayWithInt rga = (SectoredRandomGrabArrayWithInt) s.getFirst();
+			for(int retryIndex=0;retryIndex<s.count();retryIndex++) {
+				SectoredRandomGrabArrayWithInt rga = (SectoredRandomGrabArrayWithInt) s.getByIndex(retryIndex);
 				if(rga == null) {
 					if(logMINOR) Logger.minor(this, "No retrycount's left");
 					break;
 				}
+			while(true) {
 				if(logMINOR)
 					Logger.minor(this, "Got retry count tracker "+rga);
 				SendableRequest req = (SendableRequest) rga.removeRandom(starter);
@@ -421,7 +422,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				if(req == null) {
 					if(logMINOR) Logger.minor(this, "No requests, adjusted retrycount "+rga.getNumber()+" ("+rga+ ')');
-					break;
+					break; // Try next retry count.
 				} else if(req.getPriorityClass() != choosenPriorityClass) {
 					// Reinsert it : shouldn't happen if we are calling reregisterAll,
 					// maybe we should ask people to report that error if seen
@@ -439,7 +440,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						Logger.error(this, "Could not find client grabber for client "+req.getClient()+" from "+rga);
 					}
 					innerRegister(req);
-					continue;
+					continue; // Try the next one on this retry count.
 				}
 				
 				RandomGrabArray altRGA = null;
@@ -491,6 +492,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req);
 				return req;
+			}
 			}
 		}
 		if(logMINOR) Logger.minor(this, "No requests to run");
