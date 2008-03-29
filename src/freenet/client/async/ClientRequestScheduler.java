@@ -538,18 +538,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(gets[j] == null || gets[j].isCancelled()) continue;
 					newGets[x++] = gets[j];
 				}
+				if(x == 0) {
+					pendingKeys.remove(key);
+					dropped = true;
+				} else if(x == 1) {
+					pendingKeys.put(key, newGets[0]);
+				} else {
 				if(x != gets.length-1) {
 					SendableGet[] newNewGets = new SendableGet[x];
 					System.arraycopy(newGets, 0, newNewGets, 0, x);
 					newGets = newNewGets;
 				}
-				if(newGets.length == 0) {
-					pendingKeys.remove(key);
-					dropped = true;
-				} else if(newGets.length == 1) {
-					pendingKeys.put(key, newGets[0]);
-				} else {
-					pendingKeys.put(key, newGets);
+				pendingKeys.put(key, newGets);
 				}
 			}
 		}
