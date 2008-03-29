@@ -535,7 +535,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						found = true;
 						continue;
 					}
-					if(gets[j] == getter || gets[j] == null || gets[j].isCancelled()) continue;
+					if(gets[j] == null || gets[j].isCancelled()) continue;
 					newGets[x++] = gets[j];
 				}
 				if(x != gets.length-1) {
