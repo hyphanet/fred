@@ -49,9 +49,13 @@ BookmarkCategory1.Content.Bookmark0.hasAnActivelink=true
 BookmarkCategory1.Content.Bookmark0.URI=USK@yGvITGZzrY1vUZK-4AaYLgcjZ7ysRqNTMfdcO8gS-LY,-ab5bJVD3Lp-LXEQqBAhJpMKrKJ19RnNaZMIkusU79s,AQACAAE/toad/12/
 BookmarkCategory2.Name=Freenet related software
 BookmarkCategory2.Content.BookmarkCategory=0
-BookmarkCategory2.Content.Bookmark=1
+BookmarkCategory2.Content.Bookmark=2
 BookmarkCategory2.Content.Bookmark0.Name=Frost
 BookmarkCategory2.Content.Bookmark0.Description=The official freesite of Frost
 BookmarkCategory2.Content.Bookmark0.hasAnActivelink=true
 BookmarkCategory2.Content.Bookmark0.URI=USK@QRZAI1nSm~dAY2hTdzVWXmEhkaI~dso0OadnppBR7kE,wq5rHGBI7kpChBe4yRmgBChIGDug7Xa5SG9vYGXdxR0,AQACAAE/frost/7/
+BookmarkCategory2.Content.Bookmark1.Name=Freenet Message System
+BookmarkCategory2.Content.Bookmark1.Description=The official freesite of FMS, a spam resistant message board system
+BookmarkCategory2.Content.Bookmark1.hasAnActivelink=true
+BookmarkCategory2.Content.Bookmark1.URI=USK@0npnMrqZNKRCRoGojZV93UNHCMN-6UU3rRSAmP6jNLE,~BG-edFtdCC1cSH4O3BWdeIYa8Sw5DfyrSV-TKdO5ec,AQACAAE/fms/38/
 End
