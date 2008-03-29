@@ -397,6 +397,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				Logger.minor(this, "Nothing to do");
 			return null;
 		}
+		for(;choosenPriorityClass <= RequestStarter.MINIMUM_PRIORITY_CLASS;choosenPriorityClass++) {
 		if(tryOfferedKeys) {
 			if(offeredKeys[choosenPriorityClass].hasValidKeys(starter))
 				return offeredKeys[choosenPriorityClass];
@@ -494,6 +495,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					return req;
 				}
 			}
+		}
 		}
 		if(logMINOR) Logger.minor(this, "No requests to run");
 		return null;
