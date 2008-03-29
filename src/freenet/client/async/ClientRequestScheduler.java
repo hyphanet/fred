@@ -530,9 +530,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 								Logger.normal(this, "Not found: "+getter+" for "+key+" removing ("+gets.length+" getters)");
 							return; // not here
 						}
+					}
 						if(gets[j] == getter || gets[j] == null || gets[j].isCancelled()) continue;
 						newGets[x++] = gets[j];
-					}
 				}
 				if(x != gets.length-1) {
 					SendableGet[] newNewGets = new SendableGet[x];
