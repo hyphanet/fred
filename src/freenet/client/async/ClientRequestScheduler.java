@@ -404,31 +404,31 @@ public class ClientRequestScheduler implements RequestScheduler {
 		SortedVectorByNumber s = priorities[choosenPriorityClass];
 		if(s != null){
 			for(int retryIndex=0;retryIndex<s.count();retryIndex++) {
-				SectoredRandomGrabArrayWithInt rga = (SectoredRandomGrabArrayWithInt) s.getByIndex(retryIndex);
-				if(rga == null) {
+				SectoredRandomGrabArrayWithInt retryTracker = (SectoredRandomGrabArrayWithInt) s.getByIndex(retryIndex);
+				if(retryTracker == null) {
 					if(logMINOR) Logger.minor(this, "No retrycount's left");
 					break;
 				}
 			while(true) {
 				if(logMINOR)
-					Logger.minor(this, "Got retry count tracker "+rga);
-				SendableRequest req = (SendableRequest) rga.removeRandom(starter);
-				if(rga.isEmpty()) {
-					if(logMINOR) Logger.minor(this, "Removing retrycount "+rga.getNumber()+" : "+rga);
-					s.remove(rga.getNumber());
+					Logger.minor(this, "Got retry count tracker "+retryTracker);
+				SendableRequest req = (SendableRequest) retryTracker.removeRandom(starter);
+				if(retryTracker.isEmpty()) {
+					if(logMINOR) Logger.minor(this, "Removing retrycount "+retryTracker.getNumber()+" : "+retryTracker);
+					s.remove(retryTracker.getNumber());
 					if(s.isEmpty()) {
 						if(logMINOR) Logger.minor(this, "Should remove priority ");
 					}
 				}
 				if(req == null) {
-					if(logMINOR) Logger.minor(this, "No requests, adjusted retrycount "+rga.getNumber()+" ("+rga+ ')');
+					if(logMINOR) Logger.minor(this, "No requests, adjusted retrycount "+retryTracker.getNumber()+" ("+retryTracker+ ')');
 					break; // Try next retry count.
 				} else if(req.getPriorityClass() != choosenPriorityClass) {
 					// Reinsert it : shouldn't happen if we are calling reregisterAll,
 					// maybe we should ask people to report that error if seen
 					Logger.normal(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass()+" but chosen="+choosenPriorityClass+ ')');
 					// Remove it.
-					SectoredRandomGrabArrayWithObject clientGrabber = (SectoredRandomGrabArrayWithObject) rga.getGrabber(req.getClient());
+					SectoredRandomGrabArrayWithObject clientGrabber = (SectoredRandomGrabArrayWithObject) retryTracker.getGrabber(req.getClient());
 					if(clientGrabber != null) {
 						RandomGrabArray baseRGA = (RandomGrabArray) clientGrabber.getGrabber(req.getClientRequest());
 						if(baseRGA != null) {
@@ -437,7 +437,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 							Logger.error(this, "Could not find base RGA for requestor "+req.getClientRequest()+" from "+clientGrabber);
 						}
 					} else {
-						Logger.error(this, "Could not find client grabber for client "+req.getClient()+" from "+rga);
+						Logger.error(this, "Could not find client grabber for client "+req.getClient()+" from "+retryTracker);
 					}
 					innerRegister(req);
 					continue; // Try the next one on this retry count.
@@ -455,7 +455,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(altRGA != null) {
 					SendableRequest altReq = (SendableRequest) (altRGA.removeRandom(starter));
 					if(altReq != null && altReq.getPriorityClass() <= choosenPriorityClass && 
-							fixRetryCount(altReq.getRetryCount()) <= rga.getNumber()) {
+							fixRetryCount(altReq.getRetryCount()) <= retryTracker.getNumber()) {
 						// Use the recent one instead
 						if(logMINOR)
 							Logger.minor(this, "Recently succeeded req "+altReq+" is better, using that, reregistering chosen "+req);
@@ -473,7 +473,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					}
 				}
 				
-				if(logMINOR) Logger.debug(this, "removeFirst() returning "+req+" ("+rga.getNumber()+", prio "+
+				if(logMINOR) Logger.debug(this, "removeFirst() returning "+req+" ("+retryTracker.getNumber()+", prio "+
 						req.getPriorityClass()+", retries "+req.getRetryCount()+", client "+req.getClient()+", client-req "+req.getClientRequest()+ ')');
 				ClientRequester cr = req.getClientRequest();
 				if(req.canRemove()) {
