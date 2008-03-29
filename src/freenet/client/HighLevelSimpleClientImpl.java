@@ -52,7 +52,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	private final Executor slowSerialExecutor[];
 	/** See comments in Node */
 	private final boolean cacheLocalRequests;
-	private final boolean forceDontIgnoreTooManyPathComponents;
 	static final int MAX_RECURSION = 10;
 	static final int MAX_ARCHIVE_RESTARTS = 2;
 	static final int MAX_ARCHIVE_LEVELS = 4;
@@ -102,7 +101,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		this.persistentBucketFactory = node.persistentEncryptedTempBucketFactory;
 		this.healingQueue = node.getHealingQueue();
 		this.blockEncoder = node.backgroundBlockEncoder;
-		this.forceDontIgnoreTooManyPathComponents = forceDontIgnoreTooManyPathComponents;
 	}
 	
 	public void setMaxLength(long maxLength) {
@@ -200,7 +198,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
 				random, archiveManager, bucketFactory, globalEventProducer, 
 				cacheLocalRequests, core.uskManager, healingQueue, 
-				forceDontIgnoreTooManyPathComponents ? false : core.ignoreTooManyPathComponents, core.getTicker(), core.getExecutor(), slowSerialExecutor);
+				false, core.getTicker(), core.getExecutor(), slowSerialExecutor);
 	}
 
 	public InsertContext getInsertContext(boolean forceNonPersistent) {
