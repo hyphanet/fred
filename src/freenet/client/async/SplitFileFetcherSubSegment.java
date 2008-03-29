@@ -350,7 +350,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			}
 		}
 		if(schedule) schedule();
-		else
+		else if(!dontSchedule)
 			// Already scheduled, however this key may not be registered.
 			getScheduler().addPendingKey(segment.getBlockKey(blockNo), this);
 	}
