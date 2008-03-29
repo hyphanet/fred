@@ -11,7 +11,6 @@ import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
-import freenet.io.comm.IOStatisticCollector;
 import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
