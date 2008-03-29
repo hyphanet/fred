@@ -409,90 +409,90 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(logMINOR) Logger.minor(this, "No retrycount's left");
 					break;
 				}
-			while(true) {
-				if(logMINOR)
-					Logger.minor(this, "Got retry count tracker "+retryTracker);
-				SendableRequest req = (SendableRequest) retryTracker.removeRandom(starter);
-				if(retryTracker.isEmpty()) {
-					if(logMINOR) Logger.minor(this, "Removing retrycount "+retryTracker.getNumber()+" : "+retryTracker);
-					s.remove(retryTracker.getNumber());
-					if(s.isEmpty()) {
-						if(logMINOR) Logger.minor(this, "Should remove priority ");
-					}
-				}
-				if(req == null) {
-					if(logMINOR) Logger.minor(this, "No requests, adjusted retrycount "+retryTracker.getNumber()+" ("+retryTracker+ ')');
-					break; // Try next retry count.
-				} else if(req.getPriorityClass() != choosenPriorityClass) {
-					// Reinsert it : shouldn't happen if we are calling reregisterAll,
-					// maybe we should ask people to report that error if seen
-					Logger.normal(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass()+" but chosen="+choosenPriorityClass+ ')');
-					// Remove it.
-					SectoredRandomGrabArrayWithObject clientGrabber = (SectoredRandomGrabArrayWithObject) retryTracker.getGrabber(req.getClient());
-					if(clientGrabber != null) {
-						RandomGrabArray baseRGA = (RandomGrabArray) clientGrabber.getGrabber(req.getClientRequest());
-						if(baseRGA != null) {
-							baseRGA.remove(req);
-						} else {
-							Logger.error(this, "Could not find base RGA for requestor "+req.getClientRequest()+" from "+clientGrabber);
-						}
-					} else {
-						Logger.error(this, "Could not find client grabber for client "+req.getClient()+" from "+retryTracker);
-					}
-					innerRegister(req);
-					continue; // Try the next one on this retry count.
-				}
-				
-				RandomGrabArray altRGA = null;
-				synchronized(this) {
-					if(!recentSuccesses.isEmpty()) {
-						if(random.nextBoolean()) {
-							WeakReference ref = (WeakReference) (recentSuccesses.removeLast());
-							altRGA = (RandomGrabArray) ref.get();
+				while(true) {
+					if(logMINOR)
+						Logger.minor(this, "Got retry count tracker "+retryTracker);
+					SendableRequest req = (SendableRequest) retryTracker.removeRandom(starter);
+					if(retryTracker.isEmpty()) {
+						if(logMINOR) Logger.minor(this, "Removing retrycount "+retryTracker.getNumber()+" : "+retryTracker);
+						s.remove(retryTracker.getNumber());
+						if(s.isEmpty()) {
+							if(logMINOR) Logger.minor(this, "Should remove priority ");
 						}
 					}
-				}
-				if(altRGA != null) {
-					SendableRequest altReq = (SendableRequest) (altRGA.removeRandom(starter));
-					if(altReq != null && altReq.getPriorityClass() <= choosenPriorityClass && 
-							fixRetryCount(altReq.getRetryCount()) <= retryTracker.getNumber()) {
-						// Use the recent one instead
-						if(logMINOR)
-							Logger.minor(this, "Recently succeeded req "+altReq+" is better, using that, reregistering chosen "+req);
-						innerRegister(req);
-						req = altReq;
-					} else {
-						if(altReq != null) {
-							synchronized(this) {
-								recentSuccesses.addLast(new WeakReference(altRGA));
+					if(req == null) {
+						if(logMINOR) Logger.minor(this, "No requests, adjusted retrycount "+retryTracker.getNumber()+" ("+retryTracker+ ')');
+						break; // Try next retry count.
+					} else if(req.getPriorityClass() != choosenPriorityClass) {
+						// Reinsert it : shouldn't happen if we are calling reregisterAll,
+						// maybe we should ask people to report that error if seen
+						Logger.normal(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass()+" but chosen="+choosenPriorityClass+ ')');
+						// Remove it.
+						SectoredRandomGrabArrayWithObject clientGrabber = (SectoredRandomGrabArrayWithObject) retryTracker.getGrabber(req.getClient());
+						if(clientGrabber != null) {
+							RandomGrabArray baseRGA = (RandomGrabArray) clientGrabber.getGrabber(req.getClientRequest());
+							if(baseRGA != null) {
+								baseRGA.remove(req);
+							} else {
+								Logger.error(this, "Could not find base RGA for requestor "+req.getClientRequest()+" from "+clientGrabber);
 							}
-							if(logMINOR)
-								Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
-							innerRegister(altReq);
+						} else {
+							Logger.error(this, "Could not find client grabber for client "+req.getClient()+" from "+retryTracker);
+						}
+						innerRegister(req);
+						continue; // Try the next one on this retry count.
+					}
+					
+					RandomGrabArray altRGA = null;
+					synchronized(this) {
+						if(!recentSuccesses.isEmpty()) {
+							if(random.nextBoolean()) {
+								WeakReference ref = (WeakReference) (recentSuccesses.removeLast());
+								altRGA = (RandomGrabArray) ref.get();
+							}
 						}
 					}
-				}
-				
-				if(logMINOR) Logger.debug(this, "removeFirst() returning "+req+" ("+retryTracker.getNumber()+", prio "+
-						req.getPriorityClass()+", retries "+req.getRetryCount()+", client "+req.getClient()+", client-req "+req.getClientRequest()+ ')');
-				ClientRequester cr = req.getClientRequest();
-				if(req.canRemove()) {
-					HashSet v = (HashSet) allRequestsByClientRequest.get(cr);
-					if(v == null) {
-						Logger.error(this, "No HashSet registered for "+cr);
-					} else {
-						boolean removed = v.remove(req);
-						if(v.isEmpty())
-							allRequestsByClientRequest.remove(cr);
-						if(logMINOR) Logger.minor(this, (removed ? "" : "Not ") + "Removed from HashSet for "+cr+" which now has "+v.size()+" elements");
+					if(altRGA != null) {
+						SendableRequest altReq = (SendableRequest) (altRGA.removeRandom(starter));
+						if(altReq != null && altReq.getPriorityClass() <= choosenPriorityClass && 
+								fixRetryCount(altReq.getRetryCount()) <= retryTracker.getNumber()) {
+							// Use the recent one instead
+							if(logMINOR)
+								Logger.minor(this, "Recently succeeded req "+altReq+" is better, using that, reregistering chosen "+req);
+							innerRegister(req);
+							req = altReq;
+						} else {
+							if(altReq != null) {
+								synchronized(this) {
+									recentSuccesses.addLast(new WeakReference(altRGA));
+								}
+								if(logMINOR)
+									Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
+								innerRegister(altReq);
+							}
+						}
 					}
-					// Do not remove from the pendingKeys list.
-					// Whether it is running a request, waiting to execute, or waiting on the
-					// cooldown queue, ULPRs and backdoor coalescing should still be active.
+					
+					if(logMINOR) Logger.debug(this, "removeFirst() returning "+req+" ("+retryTracker.getNumber()+", prio "+
+							req.getPriorityClass()+", retries "+req.getRetryCount()+", client "+req.getClient()+", client-req "+req.getClientRequest()+ ')');
+					ClientRequester cr = req.getClientRequest();
+					if(req.canRemove()) {
+						HashSet v = (HashSet) allRequestsByClientRequest.get(cr);
+						if(v == null) {
+							Logger.error(this, "No HashSet registered for "+cr);
+						} else {
+							boolean removed = v.remove(req);
+							if(v.isEmpty())
+								allRequestsByClientRequest.remove(cr);
+							if(logMINOR) Logger.minor(this, (removed ? "" : "Not ") + "Removed from HashSet for "+cr+" which now has "+v.size()+" elements");
+						}
+						// Do not remove from the pendingKeys list.
+						// Whether it is running a request, waiting to execute, or waiting on the
+						// cooldown queue, ULPRs and backdoor coalescing should still be active.
+					}
+					if(logMINOR) Logger.minor(this, "removeFirst() returning "+req);
+					return req;
 				}
-				if(logMINOR) Logger.minor(this, "removeFirst() returning "+req);
-				return req;
-			}
 			}
 		}
 		if(logMINOR) Logger.minor(this, "No requests to run");
