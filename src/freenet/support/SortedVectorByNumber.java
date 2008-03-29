@@ -107,4 +107,13 @@ public class SortedVectorByNumber {
 		verify();
 	}
 
+	public synchronized int count() {
+		return length;
+	}
+
+	public synchronized IntNumberedItem getByIndex(int index) {
+		if(index > length) return null;
+		return data[index];
+	}
+
 }
