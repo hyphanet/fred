@@ -101,8 +101,6 @@ public class NodeClientCore implements Persistable {
 	FProxyToadlet fproxyServlet;
 	final SimpleToadletServer toadletContainer;
 	public final BackgroundBlockEncoder backgroundBlockEncoder;
-	/** If true, allow extra path components at the end of URIs */
-	public boolean ignoreTooManyPathComponents;
 	/** If true, requests are resumed lazily i.e. startup does not block waiting for them. */
 	private boolean lazyResume;
 	protected final Persister persister;
@@ -286,25 +284,6 @@ public class NodeClientCore implements Persistable {
 				new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory, 
 						random, 0, 2, 1, 0, 0, new SimpleEventProducer(), 
 						!Node.DONT_CACHE_LOCAL_REQUESTS, uskManager, backgroundBlockEncoder, node.executor), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
-		
-		// FIXME remove this code, the new behaviour should be handled by all clients
-		
-//		nodeConfig.register("ignoreTooManyPathComponents", false, sortOrder++, true, false, "NodeClientCore.ignoreTooManyPathComponents", 
-//				"NodeClientCore.ignoreTooManyPathComponentsLong", new BooleanCallback() {
-
-//					public boolean get() {
-//						return ignoreTooManyPathComponents;
-//					}
-
-//					public void set(boolean val) throws InvalidConfigValueException {
-//						synchronized(NodeClientCore.this) {
-//							ignoreTooManyPathComponents = val;
-//						}
-//					}
-//			
-//		});
-		
-		ignoreTooManyPathComponents = false;
 		
 		nodeConfig.register("lazyResume", false, sortOrder++, true, false, "NodeClientCore.lazyResume",
 				"NodeClientCore.lazyResumeLong", new BooleanCallback() {
