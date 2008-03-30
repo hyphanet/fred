@@ -374,6 +374,7 @@ public class PproxyToadlet extends Toadlet {
 		availablePlugins.add("KeyExplorer");
 		availablePlugins.add("MDNSDiscovery");
 		availablePlugins.add("SNMP");
+		availablePlugins.add("ThawIndexBrowser");
 		availablePlugins.add("TestGallery");
 		availablePlugins.add("UPnP");
 		availablePlugins.add("XMLLibrarian");
