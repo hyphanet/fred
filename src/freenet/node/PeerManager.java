@@ -1583,6 +1583,7 @@ public class PeerManager {
 			if(peers[i] == pn) continue;
 			if(!peers[i].isConnected()) continue;
 			if(!peers[i].isRealConnection()) continue; // Ignore non-searchable peers i.e. bootstrapping peers
+			// If getPeer() is null then presumably !isConnected().
 			if(peers[i].getPeer().getFreenetAddress().equals(addr)) return true;
 		}
 		return false;
