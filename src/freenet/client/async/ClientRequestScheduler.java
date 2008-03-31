@@ -524,16 +524,16 @@ public class ClientRequestScheduler implements RequestScheduler {
 				boolean found = false;
 				int x = 0;
 				for(int j=0;j<gets.length;j++) {
+					if(gets[j] == getter) {
+						found = true;
+						continue;
+					}
 					if(j == newGets.length) {
 						if(!found) {
 							if(complain)
 								Logger.normal(this, "Not found: "+getter+" for "+key+" removing ("+gets.length+" getters)");
 							return; // not here
 						}
-					}
-					if(gets[j] == getter) {
-						found = true;
-						continue;
 					}
 					if(gets[j] == null || gets[j].isCancelled()) continue;
 					newGets[x++] = gets[j];
