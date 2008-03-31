@@ -642,7 +642,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 			public void run() {
 				if(logMINOR) Logger.minor(this, "Running "+gets.length+" callbacks off-thread for "+block.getKey());
 				for(int i=0;i<gets.length;i++) {
-					gets[i].onGotKey(key, block, ClientRequestScheduler.this);
+					try {
+						gets[i].onGotKey(key, block, ClientRequestScheduler.this);
+					} catch (Throwable t) {
+						Logger.error(this, "Caught "+t+" running callback "+gets[i]+" for "+key);
+					}
 				}
 				if(logMINOR) Logger.minor(this, "Finished running callbacks");
 			}
