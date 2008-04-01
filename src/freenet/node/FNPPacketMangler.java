@@ -2375,6 +2375,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			packetLength += 32;
 			paddedLen = ((packetLength + 63) / 64) * 64;
 			paddedLen += node.fastWeakRandom.nextInt(64);
+			// FIXME get rid of this, we shouldn't be sending packets anywhere near this size unless
+			// we've done PMTU...
 			if(packetLength <= 1280 && paddedLen > 1280) paddedLen = 1280;
 			int maxPacketSize = sock.getMaxPacketSize();
 			if(packetLength <= maxPacketSize && paddedLen > maxPacketSize) paddedLen = maxPacketSize;
