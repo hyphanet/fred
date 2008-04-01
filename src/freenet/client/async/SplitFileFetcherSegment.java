@@ -181,11 +181,11 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				checkBuckets[blockNo].setData(data);
 			} else
 				Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
-			fetchedBlocks++;
-			if(logMINOR) Logger.minor(this, "Fetched "+fetchedBlocks+" blocks in onSuccess("+blockNo+")");
 			if(startedDecode) {
 				return;
 			} else {
+				fetchedBlocks++;
+				if(logMINOR) Logger.minor(this, "Fetched "+fetchedBlocks+" blocks in onSuccess("+blockNo+")");
 				decodeNow = (fetchedBlocks >= minFetched);
 				if(decodeNow) {
 					startedDecode = true;
