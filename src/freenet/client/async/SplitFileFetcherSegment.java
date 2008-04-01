@@ -166,6 +166,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 					data.free();
 					return;
 				}
+				dataRetries[blockNo] = 0; // Prevent healing of successfully fetched block.
 				dataKeys[blockNo] = null;
 				dataBuckets[blockNo].setData(data);
 			} else if(blockNo < checkKeys.length + dataKeys.length) {
@@ -175,6 +176,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 					data.free();
 					return;
 				}
+				checkRetries[blockNo] = 0; // Prevent healing of successfully fetched block.
 				checkKeys[blockNo] = null;
 				checkBuckets[blockNo].setData(data);
 			} else
