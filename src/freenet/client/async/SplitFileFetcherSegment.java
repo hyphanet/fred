@@ -163,6 +163,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			if(blockNo < dataKeys.length) {
 				if(dataKeys[blockNo] == null) {
 					if(!startedDecode) Logger.error(this, "Block already finished: "+blockNo);
+					data.free();
 					return;
 				}
 				dataKeys[blockNo] = null;
@@ -171,6 +172,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				blockNo -= dataKeys.length;
 				if(checkKeys[blockNo] == null) {
 					if(!startedDecode) Logger.error(this, "Check block already finished: "+blockNo);
+					data.free();
 					return;
 				}
 				checkKeys[blockNo] = null;
