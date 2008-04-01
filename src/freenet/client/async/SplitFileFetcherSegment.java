@@ -160,10 +160,9 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		// No need to unregister key, because it will be cleared in tripPendingKey().
 		boolean dontNotify;
 		synchronized(this) {
-			if(isFinished()) return;
 			if(blockNo < dataKeys.length) {
 				if(dataKeys[blockNo] == null) {
-					Logger.error(this, "Block already finished: "+blockNo);
+					if(!startedDecode) Logger.error(this, "Block already finished: "+blockNo);
 					return;
 				}
 				dataKeys[blockNo] = null;
@@ -171,7 +170,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			} else if(blockNo < checkKeys.length + dataKeys.length) {
 				blockNo -= dataKeys.length;
 				if(checkKeys[blockNo] == null) {
-					Logger.error(this, "Check block already finished: "+blockNo);
+					if(!startedDecode) Logger.error(this, "Check block already finished: "+blockNo);
 					return;
 				}
 				checkKeys[blockNo] = null;
