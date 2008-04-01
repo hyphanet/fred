@@ -24,6 +24,8 @@ public class SplitfileProgressEvent implements ClientEvent {
 		this.fatallyFailedBlocks = fatallyFailedBlocks;
 		this.minSuccessfulBlocks = minSuccessfulBlocks;
 		this.finalizedTotal = finalizedTotal;
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Created SplitfileProgressEvent: total="+totalBlocks+" fetched="+fetchedBlocks+" failed="+failedBlocks+" fatally="+fatallyFailedBlocks+" min success="+minSuccessfulBlocks+" finalized="+finalizedTotal);
 	}
 
 	public String getDescription() {
