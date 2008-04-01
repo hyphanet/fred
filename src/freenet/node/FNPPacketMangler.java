@@ -2376,6 +2376,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			paddedLen = ((packetLength + 63) / 64) * 64;
 			paddedLen += node.fastWeakRandom.nextInt(64);
 			if(packetLength <= 1280 && paddedLen > 1280) paddedLen = 1280;
+			int maxPacketSize = sock.getMaxPacketSize();
+			if(packetLength <= maxPacketSize && paddedLen > maxPacketSize) paddedLen = maxPacketSize;
 			packetLength -= 32;
 			paddedLen -= 32;
 		}
