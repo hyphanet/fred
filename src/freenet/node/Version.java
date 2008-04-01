@@ -34,7 +34,7 @@ public class Version {
 	static {
 		final Calendar _cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 		// year, month - 1 (or constant), day, hour, minute, second
-		_cal.set( 2008, Calendar.MARCH, 31, 0, 0, 0 );
+		_cal.set( 2008, Calendar.APRIL, 3, 0, 0, 0 );
 		transitionTime = _cal.getTimeInMillis();
 	}
 	
