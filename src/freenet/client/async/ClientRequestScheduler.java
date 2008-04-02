@@ -379,7 +379,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				return priority;
 			}
 			
-			if(logMINOR) Logger.debug(this, "Priority "+priority+" is null (fuzz = "+fuzz+ ')');
+			if(logMINOR) Logger.minor(this, "Priority "+priority+" is null (fuzz = "+fuzz+ ')');
 			fuzz++;
 		}
 		
