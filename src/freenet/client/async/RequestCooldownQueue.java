@@ -70,7 +70,7 @@ public class RequestCooldownQueue {
 		if(holes < 0) Logger.error(this, "holes = "+holes+" !!");
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
-			Logger.minor(this, "Adding key "+key+" remove time "+removeTime+" startPtr="+startPtr+" endPtr="+endPtr+" keys.length="+keys.length);
+			Logger.minor(this, "Adding key "+key+" client "+client+" remove time "+removeTime+" startPtr="+startPtr+" endPtr="+endPtr+" keys.length="+keys.length);
 		int ptr = endPtr;
 		if(endPtr > startPtr) {
 			if(logMINOR) Logger.minor(this, "endPtr > startPtr");
@@ -157,7 +157,7 @@ public class RequestCooldownQueue {
 		if(time <= 0) return false; // We won't find it.
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(holes < 0) Logger.error(this, "holes = "+holes+" !!");
-		if(logMINOR) Logger.minor(this, "Remove key "+key+" at time "+time+" startPtr="+startPtr+" endPtr="+endPtr+" holes="+holes+" keys.length="+keys.length);
+		if(logMINOR) Logger.minor(this, "Remove key "+key+" client "+client+" at time "+time+" startPtr="+startPtr+" endPtr="+endPtr+" holes="+holes+" keys.length="+keys.length);
 		int idx = -1;
 		if(endPtr > startPtr) {
 			idx = Fields.binarySearch(times, time, startPtr, endPtr);
