@@ -25,7 +25,7 @@ public interface RequestScheduler {
 	 * @param key The key to be added.
 	 * @return The time at which the key will leave the cooldown queue.
 	 */
-	public long queueCooldown(ClientKey key);
+	public long queueCooldown(ClientKey key, SendableGet getter);
 
 	/**
 	 * Remove keys from the cooldown queue who have now served their time and can be requested 

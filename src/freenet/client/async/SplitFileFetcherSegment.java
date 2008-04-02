@@ -394,7 +394,9 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 					if(dataCooldownTimes[blockNo] > now)
 						Logger.error(this, "Already on the cooldown queue! for "+this+" data block no "+blockNo, new Exception("error"));
 					else
-					dataCooldownTimes[blockNo] = sched.queueCooldown(key);
+					// FIXME ideally we'd only register once, with the new segment, but the cost is 
+					// trivial, and it simplifies locking. Reconsider sometime...
+					dataCooldownTimes[blockNo] = sched.queueCooldown(key, seg);
 					cooldown = true;
 				}
 			} else {
@@ -407,7 +409,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 					if(checkCooldownTimes[checkNo] > now)
 						Logger.error(this, "Already on the cooldown queue! for "+this+" check block no "+blockNo, new Exception("error"));
 					else
-					checkCooldownTimes[checkNo] = sched.queueCooldown(key);
+					checkCooldownTimes[checkNo] = sched.queueCooldown(key, seg);
 					cooldown = true;
 				}
 			}

@@ -78,7 +78,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 				if(cooldownWakeupTime > now)
 					Logger.error(this, "Already on the cooldown queue for "+this, new Exception("error"));
 				else
-				cooldownWakeupTime = sched.queueCooldown(key);
+				cooldownWakeupTime = sched.queueCooldown(key, this);
 				return true; // We will retry, just not yet. See requeueAfterCooldown(Key).
 			} else {
 				schedule();

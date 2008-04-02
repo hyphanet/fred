@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import freenet.keys.Key;
+import freenet.node.SendableGet;
 import freenet.support.Fields;
 import freenet.support.Logger;
 
@@ -21,6 +22,8 @@ public class RequestCooldownQueue {
 	private Key[] keys;
 	/** times at which keys will be valid again */
 	private long[] times;
+	/** clients responsible for the keys */
+	private SendableGet[] clients;
 	/** count of keys removed from middle i.e. holes */
 	int holes;
 	/** location of first (chronologically) key */
@@ -37,6 +40,7 @@ public class RequestCooldownQueue {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		keys = new Key[MIN_SIZE];
 		times = new long[MIN_SIZE];
+		clients = new SendableGet[MIN_SIZE];
 		holes = 0;
 		startPtr = 0;
 		endPtr = 0;
@@ -46,13 +50,13 @@ public class RequestCooldownQueue {
 	/**
 	 * Add a key to the end of the queue. Returns the time at which it will be valid again.
 	 */
-	synchronized long add(Key key) {
+	synchronized long add(Key key, SendableGet client) {
 		long removeTime = System.currentTimeMillis() + cooldownTime;
 		if(removeTime < getLastTime()) {
 			removeTime = getLastTime();
 			Logger.error(this, "CLOCK SKEW DETECTED!!! Attempting to compensate, expect things to break!");
 		}
-		add(key, removeTime);
+		add(key, client, removeTime);
 		return removeTime;
 	}
 	
@@ -62,7 +66,7 @@ public class RequestCooldownQueue {
 		return times[times.length-1];
 	}
 
-	private synchronized void add(Key key, long removeTime) {
+	private synchronized void add(Key key, SendableGet client, long removeTime) {
 		if(holes < 0) Logger.error(this, "holes = "+holes+" !!");
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
@@ -75,7 +79,7 @@ public class RequestCooldownQueue {
 				if(startPtr == 0) {
 					// No room
 					expandQueue();
-					add(key);
+					add(key, client);
 					return;
 				} else {
 					// Wrap around
@@ -88,7 +92,7 @@ public class RequestCooldownQueue {
 			if(logMINOR) Logger.minor(this, "endPtr < startPtr");
 			if(endPtr == startPtr - 1) {
 				expandQueue();
-				add(key);
+				add(key, client);
 				return;
 			} else {
 				endPtr++;
@@ -102,6 +106,7 @@ public class RequestCooldownQueue {
 		if(logMINOR) Logger.minor(this, "Added at "+ptr+" startPtr="+startPtr+" endPtr="+endPtr);
 		keys[ptr] = key;
 		times[ptr] = removeTime;
+		clients[ptr] = client;
 		return;
 	}
 
@@ -123,6 +128,7 @@ public class RequestCooldownQueue {
 			Key key = keys[startPtr];
 			if(key == null) {
 				times[startPtr] = 0;
+				clients[startPtr] = null;
 				startPtr++;
 				holes--;
 				if(startPtr == times.length) startPtr = 0;
@@ -135,6 +141,7 @@ public class RequestCooldownQueue {
 				}
 				times[startPtr] = 0;
 				keys[startPtr] = null;
+				clients[startPtr] = null;
 				startPtr++;
 				if(startPtr == times.length) startPtr = 0;
 			}
@@ -146,7 +153,7 @@ public class RequestCooldownQueue {
 	/**
 	 * @return True if the key was found.
 	 */
-	synchronized boolean removeKey(Key key, long time) {
+	synchronized boolean removeKey(Key key, SendableGet client, long time) {
 		if(time <= 0) return false; // We won't find it.
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(holes < 0) Logger.error(this, "holes = "+holes+" !!");
@@ -166,8 +173,9 @@ public class RequestCooldownQueue {
 		}
 		if(logMINOR) Logger.minor(this, "idx = "+idx);
 		if(idx < 0) return false;
-		if(keys[idx] == key) {
+		if(keys[idx] == key && clients[idx] == client) {
 			keys[idx] = null;
+			clients[idx] = null;
 			holes++;
 			if(logMINOR) Logger.minor(this, "Found (exact)");
 			return true;
@@ -176,8 +184,9 @@ public class RequestCooldownQueue {
 		int nidx = idx;
 		while(true) {
 			if(times[nidx] != time) break;
-			if(keys[nidx] == key) {
+			if(keys[nidx] == key && clients[nidx] == client) {
 				keys[nidx] = null;
+				clients[nidx] = null;
 				holes++;
 				if(logMINOR) Logger.minor(this, "Found (backwards)");
 				return true;
@@ -190,8 +199,9 @@ public class RequestCooldownQueue {
 		// Now try forwards
 		while(true) {
 			if(times[nidx] != time) break;
-			if(keys[nidx] == key) {
+			if(keys[nidx] == key && clients[nidx] == client) {
 				keys[nidx] = null;
+				clients[nidx] = null;
 				holes++;
 				if(logMINOR) Logger.minor(this, "Found (forwards)");
 				return true;
@@ -218,6 +228,7 @@ public class RequestCooldownQueue {
 		// FIXME reuse the old buffers if it fits
 		Key[] newKeys = new Key[newSize];
 		long[] newTimes = new long[newSize];
+		SendableGet[] newClients = new SendableGet[newSize];
 		// Reset startPtr to 0, and remove holes.
 		int x = 0;
 		long lastTime = -1;
@@ -226,6 +237,7 @@ public class RequestCooldownQueue {
 				if(keys[i] == null) continue;
 				newKeys[x] = keys[i];
 				newTimes[x] = times[i];
+				newClients[x] = clients[i];
 				if(lastTime > times[i])
 					Logger.error(this, "RequestCooldownQueue INCONSISTENCY: times["+i+"] = times[i] but lastTime="+lastTime);
 				lastTime = times[i];
@@ -236,6 +248,7 @@ public class RequestCooldownQueue {
 				if(keys[i] == null) continue;
 				newKeys[x] = keys[i];
 				newTimes[x] = times[i];
+				newClients[x] = clients[i];
 				if(lastTime > times[i])
 					Logger.error(this, "RequestCooldownQueue INCONSISTENCY: times["+i+"] = times[i] but lastTime="+lastTime);
 				lastTime = times[i];
@@ -245,6 +258,7 @@ public class RequestCooldownQueue {
 				if(keys[i] == null) continue;
 				newKeys[x] = keys[i];
 				newTimes[x] = times[i];
+				newClients[x] = clients[i];
 				if(lastTime > times[i])
 					Logger.error(this, "RequestCooldownQueue INCONSISTENCY: times["+i+"] = times[i] but lastTime="+lastTime);
 				lastTime = times[i];
@@ -258,6 +272,7 @@ public class RequestCooldownQueue {
 		startPtr = 0;
 		keys = newKeys;
 		times = newTimes;
+		clients = newClients;
 		endPtr = x;
 	}
 
