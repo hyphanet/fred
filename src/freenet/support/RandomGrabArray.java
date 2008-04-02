@@ -107,6 +107,7 @@ public class RandomGrabArray {
 									reqs[chosenIndex] = reqs[index-1];
 								}
 								index--;
+								ret.setParentGrabArray(null);
 							}
 							if(logMINOR) Logger.minor(this, "Chosen random item "+ret+" out of "+valid);
 							return ret;
@@ -127,6 +128,7 @@ public class RandomGrabArray {
 								}
 								index--;
 								if(logMINOR) Logger.minor(this, "No valid or excluded items after removing "+ret);
+								ret.setParentGrabArray(null);
 							} else {
 								if(logMINOR) Logger.minor(this, "No valid or excluded items apart from "+ret);
 							}
