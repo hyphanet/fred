@@ -161,7 +161,7 @@ public class RandomGrabArray {
 					continue;
 				}
 				if(ret != null && !ret.canRemove()) {
-					if(logMINOR) Logger.minor(this, "Returning (cannot remove): "+ret);
+					if(logMINOR) Logger.minor(this, "Returning (cannot remove): "+ret+" of "+index);
 					return ret;
 				}
 				do {
