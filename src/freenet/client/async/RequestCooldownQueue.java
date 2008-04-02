@@ -196,7 +196,7 @@ public class RequestCooldownQueue {
 				if(logMINOR) Logger.minor(this, "Found (forwards)");
 				return true;
 			}
-			if(nidx == startPtr) break;
+			if(nidx == endPtr) break;
 			nidx++;
 			if(nidx == times.length) nidx = 0;
 		}
