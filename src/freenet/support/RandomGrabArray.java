@@ -183,7 +183,7 @@ public class RandomGrabArray {
 				if((ret != null) && !ret.isCancelled()) break;
 			}
 		}
-		if(logMINOR) Logger.minor(this, "Returning "+ret);
+		if(logMINOR) Logger.minor(this, "Returning "+ret+" of "+index);
 		ret.setParentGrabArray(null);
 		return ret;
 	}
