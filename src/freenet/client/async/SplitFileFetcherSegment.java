@@ -419,16 +419,16 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				}
 			}
 		}
-		if(cooldown) {
-			// Register key to next sub-segment and remove from previous one to save memory (avoid duplication).
-			sub.getScheduler().addPendingKey(key, sub);
-			seg.unregisterKey(key.getNodeKey());
-			return;
-		}
 		if(failed) {
 			onFatalFailure(e, blockNo, seg);
 			if(logMINOR)
 				Logger.minor(this, "Not retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries);
+			return;
+		}
+		if(cooldown) {
+			// Register key to next sub-segment and remove from previous one to save memory (avoid duplication).
+			sub.getScheduler().addPendingKey(key, sub);
+			seg.unregisterKey(key.getNodeKey());
 			return;
 		}
 		// If we are here we are going to retry
