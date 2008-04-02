@@ -71,13 +71,11 @@ public abstract class SendableGet extends BaseSendableGet {
 			return false;
 		}
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-			synchronized (this) {
 				if(isCancelled()) {
 					if(logMINOR) Logger.minor(this, "Cancelled: "+this);
 					onFailure(new LowLevelGetException(LowLevelGetException.CANCELLED), null, sched);
 					return false;
-				}	
-			}
+				}
 			if(key == null) {
 				if(!isCancelled()) {
 					Logger.error(this, "Not cancelled but key "+keyNum+" is null?! on "+this);
