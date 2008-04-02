@@ -29,6 +29,7 @@ import freenet.support.api.Bucket;
  * When CRS asks it to run a request, returns one, and only unregisters if no more requests in this category.
  * 
  * LOCKING: Synchronize on the parent segment. Nothing else makes sense w.r.t. nested locking.
+ * Note that SendableRequest will occasionally lock on (this). That lock is always taken last.
  */
 public class SplitFileFetcherSubSegment extends SendableGet {
 
