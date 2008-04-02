@@ -91,6 +91,10 @@ public class SimpleSendableInsert extends SendableInsert {
 	public boolean isCancelled() {
 		return finished;
 	}
+	
+	public boolean isEmpty() {
+		return finished;
+	}
 
 	public boolean canRemove() {
 		return true;

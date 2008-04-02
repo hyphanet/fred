@@ -31,7 +31,7 @@ public class RandomGrabArray {
 	
 	public void add(RandomGrabArrayItem req) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(req.isCancelled()) {
+		if(req.isEmpty()) {
 			if(logMINOR) Logger.minor(this, "Is finished already: "+req);
 			return;
 		}
@@ -76,7 +76,7 @@ public class RandomGrabArray {
 							RandomGrabArrayItem item = reqs[i];
 							if(item == null) {
 								continue;
-							} else if(item.isCancelled()) {
+							} else if(item.isEmpty()) {
 								reqs[i] = null;
 								contents.remove(item);
 								continue;
@@ -148,7 +148,7 @@ public class RandomGrabArray {
 					continue;
 				}
 				oret = ret;
-				if(ret.isCancelled()) {
+				if(ret.isEmpty()) {
 					if(logMINOR) Logger.minor(this, "Not returning because cancelled: "+ret);
 					ret = null;
 				}
@@ -171,7 +171,7 @@ public class RandomGrabArray {
 						contents.remove(oret);
 					oret = reqs[i];
 					// May as well check whether that is cancelled too.
-				} while (index > i && (oret == null || oret.isCancelled()));
+				} while (index > i && (oret == null || oret.isEmpty()));
 				// Shrink array
 				if((index < reqs.length / 4) && (reqs.length > MIN_SIZE)) {
 					// Shrink array
@@ -180,7 +180,7 @@ public class RandomGrabArray {
 					System.arraycopy(reqs, 0, r, 0, r.length);
 					reqs = r;
 				}
-				if((ret != null) && !ret.isCancelled()) break;
+				if((ret != null) && !ret.isEmpty()) break;
 			}
 		}
 		if(logMINOR) Logger.minor(this, "Returning "+ret+" of "+index);

@@ -314,6 +314,12 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			return cancelled;
 		}
 	}
+	
+	public boolean isEmpty() {
+		synchronized(segment) {
+			return cancelled || blockNums.isEmpty();
+		}
+	}
 
 	public boolean isSSK() {
 		// Not allowed in splitfiles

@@ -115,6 +115,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return cancelled;
 	}
 	
+	public synchronized boolean isEmpty() {
+		return cancelled;
+	}
+	
 	public Object getClient() {
 		return parent.getClient();
 	}

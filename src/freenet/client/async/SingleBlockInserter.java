@@ -280,10 +280,14 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this);
 	}
 
+	public synchronized boolean isEmpty() {
+		return finished;
+	}
+	
 	public synchronized boolean isCancelled() {
 		return finished;
 	}
-
+	
 	public boolean send(NodeClientCore core, RequestScheduler sched, Object keyNum) {
 		// Ignore keyNum, key, since we're only sending one block.
 		try {
