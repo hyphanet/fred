@@ -329,6 +329,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 			prio.add(clientGrabber);
 			if(logMINOR) Logger.minor(this, "Registering retry count "+rc+" with prioclass "+priorityClass+" on "+clientGrabber+" for "+prio);
 		}
+		// SectoredRandomGrabArrayWithInt and lower down have hierarchical locking and auto-remove.
+		// To avoid a race condition it is essential to mirror that here.
+		synchronized(clientGrabber) {
 		// Request
 		SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
 		if(requestGrabber == null) {
@@ -338,6 +341,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			clientGrabber.addGrabber(client, requestGrabber);
 		}
 		requestGrabber.add(cr, req);
+		}
 	}
 
 	/**
@@ -492,7 +496,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						// Whether it is running a request, waiting to execute, or waiting on the
 						// cooldown queue, ULPRs and backdoor coalescing should still be active.
 					}
-					if(logMINOR) Logger.minor(this, "removeFirst() returning "+req);
+					if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" of "+req.getClientRequest());
 					return req;
 				}
 			}
