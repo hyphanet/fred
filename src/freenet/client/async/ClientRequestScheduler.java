@@ -398,6 +398,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			return null;
 		}
 		for(;choosenPriorityClass <= RequestStarter.MINIMUM_PRIORITY_CLASS;choosenPriorityClass++) {
+			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
 		if(tryOfferedKeys) {
 			if(offeredKeys[choosenPriorityClass].hasValidKeys(starter))
 				return offeredKeys[choosenPriorityClass];
