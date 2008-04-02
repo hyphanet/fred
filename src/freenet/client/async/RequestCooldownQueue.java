@@ -214,6 +214,7 @@ public class RequestCooldownQueue {
 			holes = 0;
 		}
 		int newSize = (keys.length - holes) * 2;
+		if(newSize < MIN_SIZE) newSize = MIN_SIZE;
 		// FIXME reuse the old buffers if it fits
 		Key[] newKeys = new Key[newSize];
 		long[] newTimes = new long[newSize];
