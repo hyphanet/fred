@@ -71,36 +71,36 @@ public abstract class SendableGet extends BaseSendableGet {
 			return false;
 		}
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				if(isCancelled()) {
-					if(logMINOR) Logger.minor(this, "Cancelled: "+this);
-					onFailure(new LowLevelGetException(LowLevelGetException.CANCELLED), null, sched);
-					return false;
-				}
-			if(key == null) {
-				if(!isCancelled()) {
-					Logger.error(this, "Not cancelled but key "+keyNum+" is null?! on "+this);
-					return false;
-				}
+		if(isCancelled()) {
+			if(logMINOR) Logger.minor(this, "Cancelled: "+this);
+			onFailure(new LowLevelGetException(LowLevelGetException.CANCELLED), null, sched);
+			return false;
+		}
+		if(key == null) {
+			if(!isCancelled()) {
+				Logger.error(this, "Not cancelled but key "+keyNum+" is null?! on "+this);
+				return false;
 			}
+		}
+		try {
 			try {
-				try {
-					core.realGetKey(key, ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
-				} catch (LowLevelGetException e) {
-					onFailure(e, keyNum, sched);
-					return true;
-				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t, t);
-					onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, sched);
-					return true;
-				}
-				// Don't call onSuccess(), it will be called for us by backdoor coalescing.
-				sched.succeeded(this.getParentGrabArray());
+				core.realGetKey(key, ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
+			} catch (LowLevelGetException e) {
+				onFailure(e, keyNum, sched);
+				return true;
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
 				onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, sched);
 				return true;
 			}
+			// Don't call onSuccess(), it will be called for us by backdoor coalescing.
+			sched.succeeded(this.getParentGrabArray());
+		} catch (Throwable t) {
+			Logger.error(this, "Caught "+t, t);
+			onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, sched);
 			return true;
+		}
+		return true;
 	}
 
 	public void schedule() {
