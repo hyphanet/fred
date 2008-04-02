@@ -393,12 +393,12 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				else {
 					sub = getSubSegment(tries);
 					if(tries % ClientRequestScheduler.COOLDOWN_RETRIES == 0) {
-					long now = System.currentTimeMillis();
-					if(dataCooldownTimes[blockNo] > now)
-						Logger.error(this, "Already on the cooldown queue! for "+this+" data block no "+blockNo, new Exception("error"));
-					else
-					dataCooldownTimes[blockNo] = sched.queueCooldown(key, sub);
-					cooldown = true;
+						long now = System.currentTimeMillis();
+						if(dataCooldownTimes[blockNo] > now)
+							Logger.error(this, "Already on the cooldown queue! for "+this+" data block no "+blockNo, new Exception("error"));
+						else
+							dataCooldownTimes[blockNo] = sched.queueCooldown(key, sub);
+						cooldown = true;
 					}
 				}
 			} else {
@@ -409,12 +409,12 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				else {
 					sub = getSubSegment(tries);
 					if(tries % ClientRequestScheduler.COOLDOWN_RETRIES == 0) {
-					long now = System.currentTimeMillis();
-					if(checkCooldownTimes[checkNo] > now)
-						Logger.error(this, "Already on the cooldown queue! for "+this+" check block no "+blockNo, new Exception("error"));
-					else
-					checkCooldownTimes[checkNo] = sched.queueCooldown(key, sub);
-					cooldown = true;
+						long now = System.currentTimeMillis();
+						if(checkCooldownTimes[checkNo] > now)
+							Logger.error(this, "Already on the cooldown queue! for "+this+" check block no "+blockNo, new Exception("error"));
+						else
+							checkCooldownTimes[checkNo] = sched.queueCooldown(key, sub);
+						cooldown = true;
 					}
 				}
 			}
