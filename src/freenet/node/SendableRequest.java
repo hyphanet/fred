@@ -8,6 +8,9 @@ import freenet.support.RandomGrabArrayItem;
 /**
  * A low-level request which can be sent immediately. These are registered
  * on the ClientRequestScheduler.
+ * LOCKING: Because some subclasses may do wierd things like locking on an external object 
+ * (see e.g. SplitFileFetcherSubSegment), if we do take the lock we need to do it last i.e.
+ * not call any subclass methods inside it.
  */
 public abstract class SendableRequest implements RandomGrabArrayItem {
 	
