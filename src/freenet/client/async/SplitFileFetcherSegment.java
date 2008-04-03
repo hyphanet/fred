@@ -659,4 +659,14 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		}
 		return (Integer[]) v.toArray(new Integer[v.size()]);
 	}
+
+	public synchronized void resetCooldownTimes(Integer[] blockNums) {
+		for(int i=0;i<blockNums.length;i++) {
+			int blockNo = blockNums[i].intValue();
+			if(blockNo < dataCooldownTimes.length)
+				dataCooldownTimes[blockNo] = -1;
+			else
+				checkCooldownTimes[blockNo - dataCooldownTimes.length] = -1;
+		}
+	}
 }

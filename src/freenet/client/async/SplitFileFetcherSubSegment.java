@@ -363,7 +363,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public String toString() {
-		return super.toString()+":"+retryCount+"/"+segment+'('+blockNums.size()+')';
+		return super.toString()+":"+retryCount+"/"+segment+'('+blockNums.size()+')'; 
 	}
 
 	public void possiblyRemoveFromParent() {
@@ -446,6 +446,12 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 
 	public long getCooldownWakeupByKey(Key key) {
 		return segment.getCooldownWakeupByKey(key);
+	}
+
+	public void resetCooldownTimes() {
+		synchronized(segment) {
+			segment.resetCooldownTimes((Integer[])blockNums.toArray(new Integer[blockNums.size()]));
+		}
 	}
 
 }

@@ -157,6 +157,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return cooldownWakeupTime;
 	}
 	
+	public synchronized void resetCooldownTimes() {
+		cooldownWakeupTime = -1;
+	}
+	
 	public void requeueAfterCooldown(Key key, long time) {
 		if(cooldownWakeupTime > time) {
 			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Not requeueing as deadline has not passed yet");

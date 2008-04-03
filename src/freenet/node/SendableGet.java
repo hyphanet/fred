@@ -128,6 +128,9 @@ public abstract class SendableGet extends BaseSendableGet {
 	
 	public abstract long getCooldownWakeupByKey(Key key);
 	
+	/** Reset the cooldown times when the request is reregistered. */
+	public abstract void resetCooldownTimes();
+
 	public final void unregister() {
 		getScheduler().removePendingKeys(this, false);
 		super.unregister();
