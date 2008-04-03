@@ -40,6 +40,7 @@ public class IPAddressDetector implements Runnable {
 		return System.currentTimeMillis() + interval; // We are pretty cheap
 	}
 
+	InetAddress lastInetAddress = null;
 	InetAddress[] lastAddressList = null;
 	long lastDetectedTime = -1;
 
@@ -116,6 +117,7 @@ public class IPAddressDetector implements Runnable {
 					"Finished scanning interfaces");
 		}
 
+		// FIXME: what are we doing here? lastInetAddress is always null.
 		InetAddress oldAddress = lastInetAddress;
 		onGetAddresses(addrs);
 		lastDetectedTime = System.currentTimeMillis();
@@ -165,7 +167,6 @@ public class IPAddressDetector implements Runnable {
 
 	/** Do something with the list of detected IP addresses.
 	 * @param v Vector of InetAddresses
-	 * @param preferedInetAddress An address that for some reason is prefered above others. Might be null
 	 */
 	protected void onGetAddresses(Vector v) {
 		Vector output = new Vector();
@@ -177,6 +178,7 @@ public class IPAddressDetector implements Runnable {
 		if (v.size() == 0) {
 			Logger.error(this, "No addresses found!");
 			lastAddressList = null;
+			return;
 		} else {
 //			InetAddress lastNonValidAddress = null;
 			for (int x = 0; x < v.size(); x++) {
