@@ -373,7 +373,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		Bucket[] buckets = new Bucket[bucketCount];
 		File file = getFile();
 		for(int i=0;i<buckets.length;i++) {
-			long startAt = i * splitSize * 1L;
+			long startAt = 1L * i * splitSize;
 			long endAt = Math.min(startAt + splitSize * 1L, length);
 			long len = endAt - startAt;
 			buckets[i] = new ReadOnlyFileSliceBucket(file, startAt, len);
