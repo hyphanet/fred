@@ -360,7 +360,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 			return (short)(htl-diff);
 		}
 		public boolean equals(Object o) {
-			return (p instanceof PeerNode ? via.equals(PeerNode o) : false);
+			return (p instanceof PeerNode ? via.equals((PeerNode) o) : false);
 		}
 		public int hashCode() {
 			return via.hashCode();
