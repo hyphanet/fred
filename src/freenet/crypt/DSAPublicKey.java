@@ -29,8 +29,6 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 		this.group = g;
 		if(y.compareTo(g.getP()) > 0)
 			throw new IllegalArgumentException("y must be < p but y=" + y + " p=" + g.getP());
-		if(g == null)
-			throw new NullPointerException();
 	}
 
 	/**
