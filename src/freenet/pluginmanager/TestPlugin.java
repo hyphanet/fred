@@ -6,7 +6,7 @@ import freenet.client.FetchResult;
 import freenet.keys.FreenetURI;
 
 public class TestPlugin implements FredPlugin {
-	boolean goon = true;
+	private volatile boolean goon = true;
 	Random rnd = new Random();
 	PluginRespirator pr;
 	/*

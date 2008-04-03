@@ -7,7 +7,7 @@ import freenet.support.Logger;
 import freenet.support.SizeUtil;
 
 public class MemoryChecker implements Runnable {
-	private boolean goon = false;
+	private volatile boolean goon = false;
 	private final PacketSender ps;
 	private int aggressiveGCModificator;
 	
