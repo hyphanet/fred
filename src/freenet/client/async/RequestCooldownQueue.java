@@ -117,57 +117,8 @@ public class RequestCooldownQueue {
 	synchronized Key removeKeyBefore(long now) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		boolean foundIT = false;
-		if(logMINOR) {
-			if(clients[startPtr] != null) {
-				ClientRequester cr = clients[startPtr].parent;
-				if(cr instanceof ClientGetter) {
-					String s = ((ClientGetter)cr).getURI().toShortString();
-					if(logMINOR) Logger.minor(this, "client = "+s);
-					if(s.equals("CHK@.../chaosradio_131.mp3")) {
-						foundIT = true;
-					}
-				}
-			}
-			
-			java.util.HashMap countsByShortURI = new java.util.HashMap();
-			int nulls = 0;
-			int nullClients = 0;
-			int notGetter = 0;
-			int valid = 0;
-			for(int i=0;i<keys.length;i++) {
-				if(keys[i] == null) {
-					nulls++;
-					continue;
-				}
-				if(clients[i] == null) {
-					nullClients++; // Odd...
-					continue;
-				}
-				valid++;
-				ClientRequester cr = clients[i].parent;
-				if(cr instanceof ClientGetter) {
-					String shortURI = ((ClientGetter)cr).getURI().toShortString();
-					Integer ctr = (Integer) countsByShortURI.get(shortURI);
-					if(ctr == null) ctr = new Integer(1);
-					else ctr = new Integer(ctr.intValue()+1);
-					countsByShortURI.put(shortURI, ctr);
-				} else {
-					notGetter++;
-				}
-			}
-			System.err.println("COOLDOWN QUEUE DUMP:");
-			System.err.println();
-			System.err.println("BY CLIENTS:");
-			for(java.util.Iterator it = countsByShortURI.keySet().iterator();it.hasNext();) {
-				String shortKey = (String) it.next();
-				System.err.println(shortKey+" : "+countsByShortURI.get(shortKey));
-			}
-			System.err.println();
-			System.err.println("Nulls:"+nulls);
-			System.err.println("Null clients: "+nullClients);
-			System.err.println("Not a getter: "+notGetter);
-			System.err.println("Valid: "+valid);
-			System.err.println();
+		if(Logger.shouldLog(Logger.DEBUG, this)) {
+			foundIT = bigLog();
 		}
 		if(logMINOR)
 			Logger.minor(this, "Remove key before "+now+" : startPtr="+startPtr+" endPtr="+endPtr+" holes="+holes+" keys.length="+keys.length);
@@ -206,6 +157,68 @@ public class RequestCooldownQueue {
 		}
 	}
 	
+	private static String DEBUG_TARGET_URI = "CHK@.../chaosradio_131.mp3";
+	
+	/**
+	 * Heavy logging and debugging point.
+	 * Very useful when debugging certain classes of problems.
+	 * @return
+	 */
+	private boolean bigLog() {
+		boolean foundIT = false;
+		if(clients[startPtr] != null) {
+			ClientRequester cr = clients[startPtr].parent;
+			if(cr instanceof ClientGetter) {
+				String s = ((ClientGetter)cr).getURI().toShortString();
+				if(logMINOR) Logger.minor(this, "client = "+s);
+				if(s.equals(DEBUG_TARGET_URI)) {
+					foundIT = true;
+				}
+			}
+		}
+		
+		java.util.HashMap countsByShortURI = new java.util.HashMap();
+		int nulls = 0;
+		int nullClients = 0;
+		int notGetter = 0;
+		int valid = 0;
+		for(int i=0;i<keys.length;i++) {
+			if(keys[i] == null) {
+				nulls++;
+				continue;
+			}
+			if(clients[i] == null) {
+				nullClients++; // Odd...
+				continue;
+			}
+			valid++;
+			ClientRequester cr = clients[i].parent;
+			if(cr instanceof ClientGetter) {
+				String shortURI = ((ClientGetter)cr).getURI().toShortString();
+				Integer ctr = (Integer) countsByShortURI.get(shortURI);
+				if(ctr == null) ctr = new Integer(1);
+				else ctr = new Integer(ctr.intValue()+1);
+				countsByShortURI.put(shortURI, ctr);
+			} else {
+				notGetter++;
+			}
+		}
+		System.err.println("COOLDOWN QUEUE DUMP:");
+		System.err.println();
+		System.err.println("BY CLIENTS:");
+		for(java.util.Iterator it = countsByShortURI.keySet().iterator();it.hasNext();) {
+			String shortKey = (String) it.next();
+			System.err.println(shortKey+" : "+countsByShortURI.get(shortKey));
+		}
+		System.err.println();
+		System.err.println("Nulls:"+nulls);
+		System.err.println("Null clients: "+nullClients);
+		System.err.println("Not a getter: "+notGetter);
+		System.err.println("Valid: "+valid);
+		System.err.println();
+		return foundIT;
+	}
+
 	/**
 	 * @return True if the key was found.
 	 */
