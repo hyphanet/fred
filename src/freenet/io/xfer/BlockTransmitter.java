@@ -300,7 +300,9 @@ public class BlockTransmitter {
 				try {
 	            	long now = System.currentTimeMillis();
 	            	if(now > deadline) throw new IllegalStateException("Waited more than 1 hour for transfer completion!");
+			synchronized(BlockTransmitter.this) {
 	                wait(deadline - now);
+			}
 				} catch (InterruptedException e) {
 					// Ignore
 				}
