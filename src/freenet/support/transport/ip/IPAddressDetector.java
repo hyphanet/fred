@@ -123,7 +123,7 @@ public class IPAddressDetector implements Runnable {
 		onGetAddresses(addrs);
 		lastDetectedTime = System.currentTimeMillis();
 		if(oldAddressList == lastAddressList || oldAddressList == null && lastAddressList != null ||
-				!Arrays.equals(oldAddressList, lastAddressList)) {
+				oldAddressList != null && lastAddressList != null && !Arrays.equals(oldAddressList, lastAddressList)) {
 			// Something changed.
 			// Yes I know it could just have changed the order, but this is unlikely hopefully. FIXME.
 			detector.redetectAddress();
