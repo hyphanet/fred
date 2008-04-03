@@ -216,7 +216,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     private boolean allTransfersCompleted;
     
     /** Has a transfer timed out, either directly or downstream? */
-    private boolean transferTimedOut;
+    private volatile boolean transferTimedOut;
     
     private int status = -1;
     /** Still running */
