@@ -580,9 +580,11 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			return checkCooldownTimes[blockNum - dataKeys.length];
 	}
 
-	public synchronized void requeueAfterCooldown(Key key, long time) {
-		if(isFinishing()) return;
+	public void requeueAfterCooldown(Key key, long time) {
+		Vector v = null;
 		boolean notFound = true;
+		synchronized(this) {
+		if(isFinishing()) return;
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		for(int i=0;i<dataKeys.length;i++) {
 			if(dataKeys[i] == null) continue;
@@ -596,7 +598,9 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				SplitFileFetcherSubSegment sub = getSubSegment(tries);
 				if(logMINOR)
 					Logger.minor(this, "Retrying after cooldown on "+this+": data block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
-				sub.add(i, false);
+				if(v == null) v = new Vector();
+				sub.add(i, true);
+				if(!v.contains(sub)) v.add(sub);
 				notFound = false;
 			}
 		}
@@ -612,12 +616,20 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				SplitFileFetcherSubSegment sub = getSubSegment(tries);
 				if(logMINOR)
 					Logger.minor(this, "Retrying after cooldown on "+this+": check block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
-				sub.add(i+dataKeys.length, false);
+				if(v == null) v = new Vector();
+				sub.add(i+dataKeys.length, true);
+				if(!v.contains(sub)) v.add(sub);
 				notFound = false;
 			}
 		}
+		}
 		if(notFound) {
 			Logger.error(this, "requeueAfterCooldown: Key not found!: "+key+" on "+this);
+		}
+		if(v != null) {
+			for(int i=0;i<v.size();i++) {
+				((SplitFileFetcherSubSegment) v.get(i)).schedule();
+			}
 		}
 	}
 
