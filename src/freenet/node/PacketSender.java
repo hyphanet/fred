@@ -58,7 +58,7 @@ public class PacketSender implements Runnable, Ticker {
 	private int[] rpiIntTemp;
 	private boolean started = false;
 
-	private class Job {
+	private final static class Job {
 		final String name;
 		final Runnable job;
 		Job(String name, Runnable job) {

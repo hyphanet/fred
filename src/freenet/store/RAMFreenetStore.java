@@ -11,7 +11,7 @@ import freenet.support.LRUHashtable;
 
 public class RAMFreenetStore implements FreenetStore {
 
-	private class Block {
+	private final static class Block {
 		byte[] header;
 		byte[] data;
 		byte[] fullKey;
