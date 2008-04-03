@@ -293,23 +293,6 @@ public class BlockTransmitter {
 			"BlockTransmitter:sendAsync() for "+this);
 	}
 
-	public void waitForComplete() {
-    	long deadline = System.currentTimeMillis() + 60*60*1000;
-		synchronized(_senderThread) {
-			while(!_sendComplete) {
-				try {
-	            	long now = System.currentTimeMillis();
-	            	if(now > deadline) throw new IllegalStateException("Waited more than 1 hour for transfer completion!");
-			synchronized(BlockTransmitter.this) {
-	                wait(deadline - now);
-			}
-				} catch (InterruptedException e) {
-					// Ignore
-				}
-			}
-		}
-	}
-	
 	public boolean getAsyncExitStatus() {
     	long deadline = System.currentTimeMillis() + 60*60*1000;
 		synchronized (this) {
