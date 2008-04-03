@@ -6,6 +6,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Vector;
 
@@ -118,19 +119,14 @@ public class IPAddressDetector implements Runnable {
 		}
 
 		// FIXME: what are we doing here? lastInetAddress is always null.
-		InetAddress oldAddress = lastInetAddress;
+		InetAddress[] oldAddressList = lastAddressList;
 		onGetAddresses(addrs);
 		lastDetectedTime = System.currentTimeMillis();
-		if ((oldAddress != null) && (lastInetAddress != null) && 
-		        !lastInetAddress.equals(oldAddress)) {
-			Logger.minor(
-				this,
-				"Public IP Address changed from "
-					+ oldAddress.getHostAddress()
-					+ " to "
-					+ lastInetAddress.getHostAddress());
+		if(oldAddressList == lastAddressList || oldAddressList == null && lastAddressList != null ||
+				!Arrays.equals(oldAddressList, lastAddressList)) {
+			// Something changed.
+			// Yes I know it could just have changed the order, but this is unlikely hopefully. FIXME.
 			detector.redetectAddress();
-			// We know it changed
 		}
 	}
 
