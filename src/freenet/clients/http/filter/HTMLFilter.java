@@ -546,7 +546,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 		public String toString() {
 			if (element == null)
-				return null;
+				return "";
 			StringBuffer sb = new StringBuffer("<");
 			if (startSlash)
 				sb.append('/');
