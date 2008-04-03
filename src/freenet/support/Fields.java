@@ -729,7 +729,7 @@ public abstract class Fields {
 		int begin = origBegin;
 		int end = origEnd;
 		while(true) {
-			int middle = (low+high) >>> 1;
+			int middle = (begin + end) >>> 1;
 			if(values[middle] == key)
 				return middle;
 			
