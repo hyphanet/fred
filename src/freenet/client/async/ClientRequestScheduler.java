@@ -332,15 +332,15 @@ public class ClientRequestScheduler implements RequestScheduler {
 		// SectoredRandomGrabArrayWithInt and lower down have hierarchical locking and auto-remove.
 		// To avoid a race condition it is essential to mirror that here.
 		synchronized(clientGrabber) {
-		// Request
-		SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
-		if(requestGrabber == null) {
-			requestGrabber = new SectoredRandomGrabArrayWithObject(client, random);
-			if(logMINOR)
-				Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : "+prio+" : prio="+priorityClass+", rc="+rc);
-			clientGrabber.addGrabber(client, requestGrabber);
-		}
-		requestGrabber.add(cr, req);
+			// Request
+			SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
+			if(requestGrabber == null) {
+				requestGrabber = new SectoredRandomGrabArrayWithObject(client, random);
+				if(logMINOR)
+					Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : "+prio+" : prio="+priorityClass+", rc="+rc);
+				clientGrabber.addGrabber(client, requestGrabber);
+			}
+			requestGrabber.add(cr, req);
 		}
 	}
 
