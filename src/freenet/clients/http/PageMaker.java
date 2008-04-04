@@ -22,7 +22,7 @@ import freenet.support.io.FileUtil;
 
 /** Simple class to output standard heads and tail for web interface pages. 
 */
-public class PageMaker {
+public final class PageMaker {
 	
 	public static final String DEFAULT_THEME = "clean";
 	private String theme;

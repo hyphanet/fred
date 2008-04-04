@@ -44,7 +44,7 @@ import freenet.support.api.BucketFactory;
 import freenet.support.api.IntCallback;
 import freenet.support.api.StringCallback;
 
-public class SimpleToadletServer implements ToadletContainer, Runnable {
+public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	private static class ToadletElement {
 		public ToadletElement(Toadlet t2, String urlPrefix) {

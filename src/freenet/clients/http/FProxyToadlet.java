@@ -38,7 +38,7 @@ import freenet.support.api.BucketFactory;
 import freenet.support.api.HTTPRequest;
 import freenet.support.io.Closer;
 
-public class FProxyToadlet extends Toadlet {
+public final class FProxyToadlet extends Toadlet {
 	
 	private static byte[] random;
 	final NodeClientCore core;
