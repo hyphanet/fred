@@ -425,6 +425,7 @@ public class TextModeClientInterface implements Runnable {
 		sb.append("Maximum Java memory:\u00a0" + SizeUtil.formatSize(maxJavaMem, true)+"\r\n");
 		sb.append("Running threads:\u00a0" + thousendPoint.format(threadCount)+"\r\n");
 		sb.append("Available CPUs:\u00a0" + availableCpus+"\r\n");
+		sb.append("Java Version:\u00a0" + System.getProperty("java.version")+"\r\n");
 		sb.append("JVM Vendor:\u00a0" + System.getProperty("java.vendor")+"\r\n");
 		sb.append("JVM Version:\u00a0" + System.getProperty("java.version")+"\r\n");
 		sb.append("OS Name:\u00a0" + System.getProperty("os.name")+"\r\n");

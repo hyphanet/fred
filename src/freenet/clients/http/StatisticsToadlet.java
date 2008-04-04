@@ -379,8 +379,9 @@ public class StatisticsToadlet extends Toadlet {
 		jvmStatsList.addChild("li", l10n("threads", new String[] { "running", "max" },
 				new String[] { thousendPoint.format(threadCount), Integer.toString(stats.getThreadLimit()) }));
 		jvmStatsList.addChild("li", l10n("cpus", "count", Integer.toString(availableCpus)));
+		jvmStatsList.addChild("li", l10n("javaVersion", "version", System.getProperty("java.version")));
 		jvmStatsList.addChild("li", l10n("jvmVendor", "vendor", System.getProperty("java.vendor")));
-		jvmStatsList.addChild("li", l10n("jvmVersion", "version", System.getProperty("java.version")));
+		jvmStatsList.addChild("li", l10n("jvmVersion", "version", System.getProperty("java.vm.version")));
 		jvmStatsList.addChild("li", l10n("osName", "name", System.getProperty("os.name")));
 		jvmStatsList.addChild("li", l10n("osVersion", "version", System.getProperty("os.version")));
 		jvmStatsList.addChild("li", l10n("osArch", "arch", System.getProperty("os.arch")));
