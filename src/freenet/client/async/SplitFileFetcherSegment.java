@@ -52,7 +52,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	final FetchContext fetchContext;
 	final long maxBlockLength;
 	/** Has the segment finished processing? Irreversible. */
-	private boolean finished;
+	private volatile boolean finished;
 	private boolean startedDecode;
 	/** Bucket to store the data retrieved, after it has been decoded */
 	private Bucket decodedData;
@@ -244,8 +244,10 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				parentFetcher.segmentFinished(SplitFileFetcherSegment.this);
 		} catch (IOException e) {
 			Logger.normal(this, "Caught bucket error?: "+e, e);
-			finished = true;
-			failureException = new FetchException(FetchException.BUCKET_ERROR);
+			synchronized(this) {
+				finished = true;
+				failureException = new FetchException(FetchException.BUCKET_ERROR);
+			}
 			parentFetcher.segmentFinished(SplitFileFetcherSegment.this);
 			return;
 		}

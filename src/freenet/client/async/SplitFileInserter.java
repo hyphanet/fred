@@ -22,7 +22,7 @@ import freenet.support.io.BucketTools;
 
 public class SplitFileInserter implements ClientPutState {
 
-	private static boolean logMINOR;
+	private boolean logMINOR;
 	final BaseClientPutter parent;
 	final InsertContext ctx;
 	final PutCompletionCallback cb;
@@ -38,7 +38,7 @@ public class SplitFileInserter implements ClientPutState {
 	private boolean haveSentMetadata;
 	final ClientMetadata cm;
 	final boolean isMetadata;
-	private boolean finished;
+	private volatile boolean finished;
 	private boolean fetchable;
 	public final Object token;
 	final boolean insertAsArchiveManifest;
