@@ -46,13 +46,15 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 
 	final int segNo;
 
-	private boolean encoded;
-
-	private boolean finished;
+	private volatile boolean encoded;
+	
+	private volatile boolean started;
+	
+	private volatile boolean finished;
+	
+	private volatile boolean hasURIs;
 
 	private final boolean getCHKOnly;
-
-	private boolean hasURIs;
 
 	private InsertException toThrow;
 
@@ -61,8 +63,6 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 	private int blocksGotURI;
 
 	private int blocksCompleted;
-
-	private boolean started;
 
 	public SplitFileInserterSegment(SplitFileInserter parent,
 			FECCodec splitfileAlgo, Bucket[] origDataBlocks,
