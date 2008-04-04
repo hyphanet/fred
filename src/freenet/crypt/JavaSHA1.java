@@ -7,7 +7,7 @@ import java.security.*;
   Implements an SHA-1 digest using javax.crypto
 */
 
-class JavaSHA1 implements Digest {
+class JavaSHA1 implements Digest, Cloneable {
     
     MessageDigest digest;
     
