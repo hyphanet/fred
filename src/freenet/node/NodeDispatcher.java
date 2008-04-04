@@ -572,7 +572,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		if(htl == 0) {
 			// Equivalent to DNF.
 			// Relay.
-			if(rc.source == null) {
+			if(rc.source != null) {
 				try {
 					rc.source.sendAsync(DMT.createFNPRoutedRejected(id, (short)0), null, 0, nodeStats.routedMessageCtr);
 				} catch (NotConnectedException e) {
