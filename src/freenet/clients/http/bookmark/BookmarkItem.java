@@ -166,6 +166,15 @@ public class BookmarkItem extends Bookmark {
         return USK.create(key);
     }
 
+	public int hashCode() {
+		int hash = 7;
+		hash = 31 * hash + (this.key != null ? this.key.hashCode() : 0);
+		hash = 31 * hash + (this.hasAnActivelink ? 1 : 0);
+		hash = 31 * hash + (this.alerts != null ? this.alerts.hashCode() : 0);
+		hash = 31 * hash + (this.desc != null ? this.desc.hashCode() : 0);
+		return hash;
+	}
+
     public boolean equals(Object o) {
         if (o == this) {
             return true;
