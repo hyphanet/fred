@@ -359,6 +359,11 @@ public class NodeStarter implements WrapperListener
 		if(outputBandwidthLimit > 0) {
 			configFS.put("node.outputBandwidthLimit", outputBandwidthLimit);
 			configFS.put("node.throttleLocalTraffic", true);
+		} else {
+			// Even with throttleLocalTraffic=false, requests still count in NodeStats.
+			// So set outputBandwidthLimit to something insanely high.
+			configFS.put("node.outputBandwidthLimit", 16*1024*1024);
+			configFS.put("node.throttleLocalTraffic", false);
 		}
 		configFS.put("node.listenPort", port);
 		configFS.put("node.disableProbabilisticHTLs", disableProbabilisticHTLs);
