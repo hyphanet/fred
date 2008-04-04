@@ -5,7 +5,7 @@ package freenet.support.math;
 
 import java.io.Serializable;
 
-public interface RunningAverage extends Serializable {
+public interface RunningAverage extends Serializable, Cloneable {
     
     public Object clone();
     

@@ -33,7 +33,7 @@ import freenet.support.HexUtil;
  * This is a simple port of Steve Reid's SHA-1 code into Java.
  * I've run his test vectors through the code and they all pass.
  */
-public final class SHA1 implements Digest {
+public final class SHA1 implements Digest, Cloneable {
 
     private static boolean alwaysThisOne = false;
     
