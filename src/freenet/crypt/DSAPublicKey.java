@@ -163,6 +163,13 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 		return y.equals(o.y) && group.equals(o.group);
 	}
 
+	public int hashCode() {
+		int hash = 5;
+		hash = 61 * hash + (this.y != null ? this.y.hashCode() : 0);
+		hash = 61 * hash + (this.group != null ? this.group.hashCode() : 0);
+		return hash;
+	}
+
 	public boolean equals(Object o) {
 		if(this == o) // Not necessary, but a very cheap optimization
 			return true;
