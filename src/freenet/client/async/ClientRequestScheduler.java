@@ -387,7 +387,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return -1;
 	}
 	
-	public SendableRequest removeFirst() {
+	// LOCKING: Life is a good deal simpler if we just synchronize on (this). 
+	// We prevent a number of race conditions (e.g. adding a retry count and then another 
+	// thread removes it cos its empty) ... and in addToGrabArray etc we already sync on this.
+	// The worry is ... is there any nested locking outside of the hierarchy?
+	public synchronized SendableRequest removeFirst() {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		boolean tryOfferedKeys = offeredKeys != null && node.random.nextBoolean();
