@@ -128,7 +128,7 @@ public class PooledExecutor implements Executor {
 	class MyThread extends NativeThread {
 
 		final String defaultName;
-		boolean alive = true;
+		volatile boolean alive = true;
 		Runnable nextJob;
 		final long threadNo;
 
