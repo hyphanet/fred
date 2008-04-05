@@ -32,14 +32,7 @@ public class ResettingHTLProbeRequestHandler implements ResettingHTLProbeRequest
 		double best = m.getDouble(DMT.BEST_LOCATION);
 		short htl = m.getShort(DMT.HTL);
 		if(htl > n.maxHTL()) htl = n.maxHTL();
-		double nodeLoc = n.getLocation();
 		boolean resetNearestLoc = false;
-		if(Location.distance(nodeLoc, target, true) <
-				Location.distance(nearestLoc, target, true)) {
-			nearestLoc = nodeLoc;
-			htl = Node.DEFAULT_MAX_HTL;
-			resetNearestLoc = true;
-		}
 		ResettingHTLProbeRequestSender sender =
 			new ResettingHTLProbeRequestSender(target, htl, uid, n, nearestLoc, resetNearestLoc,
 					source, best);

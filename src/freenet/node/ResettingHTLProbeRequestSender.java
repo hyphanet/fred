@@ -38,7 +38,6 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
 
     // Basics
     final double target;
-    final boolean resetNearestLoc;
     private short htl;
     private double best;
     private short counter;
@@ -71,7 +70,6 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
         this.node = n;
         this.source = source;
         this.nearestLoc = nearestLoc;
-        this.resetNearestLoc = resetNearestLoc;
         this.target = target;
         this.best = best;
         this.counter = 1;
