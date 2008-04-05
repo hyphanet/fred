@@ -356,8 +356,6 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
 			ShortBuffer peerUIDs, short linearCounter, String reason, long prevUID) {
 		if(this.best > target && this.best < best)
 			best = this.best;
-		else
-			best = this.best;
 		if(Location.distance(nearest, target, true) < Location.distance(this.nearestLoc, target, true))
 			nearest = this.nearestLoc;
 		counter = (short) (counter + this.counter);
