@@ -90,6 +90,8 @@ public class RAMFreenetStore implements FreenetStore {
 					oldBlock.header = header;
 					if(storeFullKeys)
 						oldBlock.fullKey = fullKey;
+				} else {
+					throw new KeyCollisionException();
 				}
 				return;
 			} else {
