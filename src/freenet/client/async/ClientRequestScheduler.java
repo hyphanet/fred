@@ -602,7 +602,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		
 		for(int i=0;i<reqs.length;i++) {
 			SendableRequest req = reqs[i];
-			req.unregister();
+			req.unregister(true);
 			// If we don't reset the cooldown times, the block will be lost after 1 failed retry.
 			if(req instanceof SendableGet)
 				((SendableGet)req).resetCooldownTimes();

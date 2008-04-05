@@ -376,7 +376,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			if(!segment.maybeRemoveSeg(this)) return;
 			cancelled = true;
 		}
-		unregister();
+		unregister(false);
 	}
 
 	public void onGotKey(Key key, KeyBlock block, RequestScheduler sched) {
@@ -427,7 +427,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		if(logMINOR)
 			Logger.minor(this, "Killing "+this);
 		// Do unregister() first so can get and unregister each key and avoid a memory leak
-		unregister();
+		unregister(false);
 		synchronized(segment) {
 			blockNums.clear();
 			cancelled = true;

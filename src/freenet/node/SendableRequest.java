@@ -68,7 +68,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		parentGrabArray = parent;
 	}
 	
-	public void unregister() {
+	public void unregister(boolean staySubscribed) {
 		RandomGrabArray arr = getParentGrabArray();
 		if(arr != null) {
 			arr.remove(this);

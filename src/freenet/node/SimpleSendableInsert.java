@@ -110,7 +110,7 @@ public class SimpleSendableInsert extends SendableInsert {
 			if(finished) return;
 			finished = true;
 		}
-		super.unregister();
+		super.unregister(false);
 	}
 
 	public boolean shouldCache() {
