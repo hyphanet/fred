@@ -603,9 +603,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 		for(int i=0;i<reqs.length;i++) {
 			SendableRequest req = reqs[i];
 			req.unregister(true); // Keep the subscription.
-			// If we don't reset the cooldown times, the block will be lost after 1 failed retry.
-			if(req instanceof SendableGet)
-				((SendableGet)req).resetCooldownTimes();
+			// Since we keep the subscription, the blocks are not removed from the cooldown queue,
+			// and there is no need to call resetCooldownTimes().
 			innerRegister(req); // innerRegister() doesn't subscribe to keys.
 		}
 		starter.wakeUp();
