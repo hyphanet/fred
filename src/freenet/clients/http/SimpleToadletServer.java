@@ -582,10 +582,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Handling connection");
 			try {
-				NodeClientCore c;
-				synchronized(SimpleToadletServer.this) {
-					c = core;
-				}
 				ToadletContextImpl.handle(sock, SimpleToadletServer.this, pageMaker);
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
