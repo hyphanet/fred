@@ -15,9 +15,12 @@ public class ModifyConfig extends FCPMessage {
 	static final String NAME = "ModifyConfig";
 	
 	final SimpleFieldSet fs;
+	final String identifier;
 	
 	public ModifyConfig(SimpleFieldSet fs) {
 		this.fs = fs;
+		this.identifier = fs.get("Identifier");
+		fs.removeValue("Identifier");
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -30,7 +33,7 @@ public class ModifyConfig extends FCPMessage {
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		if(!handler.hasFullAccess()) {
-			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "ModifyConfig requires full access", fs.get("Identifier"), false);
+			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "ModifyConfig requires full access", identifier, false);
 		}
 		Config config = node.config;
 		SubConfig[] sc = config.getConfigs();
@@ -61,6 +64,6 @@ public class ModifyConfig extends FCPMessage {
 			}
 		}
 		node.clientCore.storeConfig();
-		handler.outputHandler.queue(new ConfigData(node, true, false, false, false, false, false, false, false));
+		handler.outputHandler.queue(new ConfigData(node, true, false, false, false, false, false, false, false, identifier));
 	}
 }

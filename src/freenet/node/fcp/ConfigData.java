@@ -19,8 +19,9 @@ public class ConfigData extends FCPMessage {
 	final boolean withShortDescription;
 	final boolean withLongDescription;
 	final boolean withDataTypes;
+	final String identifier;
 	
-	public ConfigData(Node node, boolean withCurrent, boolean withDefaults, boolean withSortOrder, boolean withExpertFlag, boolean withForceWriteFlag, boolean withShortDescription, boolean withLongDescription, boolean withDataTypes) {
+	public ConfigData(Node node, boolean withCurrent, boolean withDefaults, boolean withSortOrder, boolean withExpertFlag, boolean withForceWriteFlag, boolean withShortDescription, boolean withLongDescription, boolean withDataTypes, String identifier) {
 		this.node = node;
 		this.withCurrent = withCurrent;
 		this.withDefaults = withDefaults;
@@ -30,6 +31,7 @@ public class ConfigData extends FCPMessage {
 		this.withShortDescription = withShortDescription;
 		this.withLongDescription = withLongDescription;
 		this.withDataTypes = withDataTypes;
+		this.identifier = identifier;
 	}
 
 	
@@ -83,6 +85,8 @@ public class ConfigData extends FCPMessage {
 				fs.put("dataType", type);
 			}
 		}
+		if(identifier != null)
+			fs.putSingle("Identifier", identifier);
 		return fs;
 	}
 

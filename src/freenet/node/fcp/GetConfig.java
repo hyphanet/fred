@@ -18,6 +18,7 @@ public class GetConfig extends FCPMessage {
 	final boolean withLongDescription;
 	final boolean withDataTypes;
 	static final String NAME = "GetConfig";
+	final String identifier;
 	
 	public GetConfig(SimpleFieldSet fs) {
 		withCurrent = Fields.stringToBool(fs.get("WithCurrent"), false);
@@ -28,6 +29,8 @@ public class GetConfig extends FCPMessage {
 		withShortDescription = Fields.stringToBool(fs.get("WithShortDescription"), false);
 		withLongDescription = Fields.stringToBool(fs.get("WithLongDescription"), false);
 		withDataTypes = Fields.stringToBool(fs.get("WithDataTypes"), false);
+		this.identifier = fs.get("Identifier");
+		fs.removeValue("Identifier");
 	}
 	
 	public SimpleFieldSet getFieldSet() {
@@ -41,9 +44,9 @@ public class GetConfig extends FCPMessage {
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		if(!handler.hasFullAccess()) {
-			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "GetConfig requires full access", null, false);
+			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "GetConfig requires full access", identifier, false);
 		}
-		handler.outputHandler.queue(new ConfigData(node, withCurrent, withDefaults, withSortOrder, withExpertFlag, withForceWriteFlag, withShortDescription, withLongDescription, withDataTypes));
+		handler.outputHandler.queue(new ConfigData(node, withCurrent, withDefaults, withSortOrder, withExpertFlag, withForceWriteFlag, withShortDescription, withLongDescription, withDataTypes, identifier));
 	}
 	
 }
