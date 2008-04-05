@@ -2448,20 +2448,20 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		synchronized(insertSenders) {
 			senders = (AnyInsertSender[]) insertSenders.values().toArray(new AnyInsertSender[insertSenders.size()]);
 		}
-			int x = senders.length;
-			sb.append(x);
-			if((x < 5) && (x > 0)) {
+		int x = senders.length;
+		sb.append(x);
+		if((x < 5) && (x > 0)) {
+			sb.append('\n');
+			// Dump
+			Iterator i = insertSenders.values().iterator();
+			while(i.hasNext()) {
+				AnyInsertSender s = (AnyInsertSender) i.next();
+				sb.append(s.getUID());
+				sb.append(": ");
+				sb.append(s.getStatusString());
 				sb.append('\n');
-				// Dump
-				Iterator i = insertSenders.values().iterator();
-				while(i.hasNext()) {
-					AnyInsertSender s = (AnyInsertSender) i.next();
-					sb.append(s.getUID());
-					sb.append(": ");
-					sb.append(s.getStatusString());
-					sb.append('\n');
-				}
 			}
+		}
 		sb.append("\nRequests: ");
 		sb.append(getNumRequestSenders());
 		sb.append("\nTransferring requests: ");
