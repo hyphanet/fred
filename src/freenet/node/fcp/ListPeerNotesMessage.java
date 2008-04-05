@@ -12,9 +12,12 @@ public class ListPeerNotesMessage extends FCPMessage {
 
 	static final String NAME = "ListPeerNotes";
 	final SimpleFieldSet fs;
+	final String identifier;
 	
 	public ListPeerNotesMessage(SimpleFieldSet fs) {
 		this.fs = fs;
+		this.identifier = fs.get("Identifier");
+		fs.removeValue("Identifier");
 	}
 	
 	public SimpleFieldSet getFieldSet() {
@@ -28,11 +31,11 @@ public class ListPeerNotesMessage extends FCPMessage {
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		if(!handler.hasFullAccess()) {
-			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "ListPeerNotes requires full access", fs.get("Identifier"), false);
+			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "ListPeerNotes requires full access", identifier, false);
 		}
 		String nodeIdentifier = fs.get("NodeIdentifier");
 		if( nodeIdentifier == null ) {
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Error: NodeIdentifier field missing", null, false);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Error: NodeIdentifier field missing", identifier, false);
 		}
 		PeerNode pn = node.getPeerNode(nodeIdentifier);
 		if(pn == null) {
@@ -41,13 +44,13 @@ public class ListPeerNotesMessage extends FCPMessage {
 			return;
 		}
 		if(!(pn instanceof DarknetPeerNode)) {
-			throw new MessageInvalidException(ProtocolErrorMessage.DARKNET_ONLY, "ModifyPeer only available for darknet peers", fs.get("Identifier"), false);
+			throw new MessageInvalidException(ProtocolErrorMessage.DARKNET_ONLY, "ModifyPeer only available for darknet peers", identifier, false);
 		}
 		DarknetPeerNode dpn = (DarknetPeerNode) pn;
 		// **FIXME** this should be generalized for multiple peer notes per peer, after PeerNode is similarly generalized
 		String noteText = dpn.getPrivateDarknetCommentNote();
-		handler.outputHandler.queue(new PeerNote(nodeIdentifier, noteText, Node.PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT));
-		handler.outputHandler.queue(new EndListPeerNotesMessage(nodeIdentifier));
+		handler.outputHandler.queue(new PeerNote(nodeIdentifier, noteText, Node.PEER_NOTE_TYPE_PRIVATE_DARKNET_COMMENT, identifier));
+		handler.outputHandler.queue(new EndListPeerNotesMessage(nodeIdentifier, identifier));
 	}
 	
 }

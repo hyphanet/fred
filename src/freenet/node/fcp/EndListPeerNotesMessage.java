@@ -10,14 +10,18 @@ public class EndListPeerNotesMessage extends FCPMessage {
 
 	final String nodeIdentifier;
 	static final String name = "EndListPeerNotes";
+	private String identifier;
 	
-	public EndListPeerNotesMessage(String id) {
+	public EndListPeerNotesMessage(String id, String identifier) {
 		this.nodeIdentifier = id;
+		this.identifier = identifier;
 	}
 	
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putSingle("NodeIdentifier", nodeIdentifier);
+		if(identifier != null)
+			sfs.putSingle("Identifier", identifier);
 		return sfs;
 	}
 

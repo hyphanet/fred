@@ -15,11 +15,13 @@ public class PeerNote extends FCPMessage {
 	final String noteText;
 	final int peerNoteType;
 	final String nodeIdentifier;
+	final String identifier;
 	
-	public PeerNote(String nodeIdentifier, String noteText, int peerNoteType) {
+	public PeerNote(String nodeIdentifier, String noteText, int peerNoteType, String identifier) {
 		this.nodeIdentifier = nodeIdentifier;
 		this.noteText = noteText;
 		this.peerNoteType = peerNoteType;
+		this.identifier = identifier;
 	}
 	
 	public SimpleFieldSet getFieldSet() {
@@ -31,6 +33,8 @@ public class PeerNote extends FCPMessage {
 		} catch (UnsupportedEncodingException e) {
 			throw new Error(e);
 		}
+		if(identifier != null)
+			fs.putSingle("Identifier", identifier);
 		return fs;
 	}
 
@@ -40,7 +44,7 @@ public class PeerNote extends FCPMessage {
 
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PeerNote goes from server to client not the other way around", null, false);
+		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PeerNote goes from server to client not the other way around", identifier, false);
 	}
 
 }

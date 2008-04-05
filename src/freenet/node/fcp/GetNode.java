@@ -13,15 +13,21 @@ public class GetNode extends FCPMessage {
 	final boolean withPrivate;
 	final boolean withVolatile;
 	static final String NAME = "GetNode";
+	final String identifier;
 	
 	public GetNode(SimpleFieldSet fs) {
 		giveOpennetRef = Fields.stringToBool(fs.get("GiveOpennetRef"), false);
 		withPrivate = Fields.stringToBool(fs.get("WithPrivate"), false);
 		withVolatile = Fields.stringToBool(fs.get("WithVolatile"), false);
+		identifier = fs.get("Identifier");
+		fs.removeValue("Identifier");
 	}
 	
 	public SimpleFieldSet getFieldSet() {
-		return new SimpleFieldSet(true);
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		if(identifier != null)
+			fs.putSingle("Identifier", identifier);
+		return fs;
 	}
 	
 	public String getName() {
@@ -31,9 +37,9 @@ public class GetNode extends FCPMessage {
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		if(!handler.hasFullAccess()) {
-			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "GetNode requires full access", null, false);
+			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "GetNode requires full access", identifier, false);
 		}
-		handler.outputHandler.queue(new NodeData(node, giveOpennetRef, withPrivate, withVolatile));
+		handler.outputHandler.queue(new NodeData(node, giveOpennetRef, withPrivate, withVolatile, identifier));
 	}
 	
 }
