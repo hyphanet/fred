@@ -602,10 +602,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		
 		for(int i=0;i<reqs.length;i++) {
 			SendableRequest req = reqs[i];
-			req.unregister(true); // Keep the subscription.
-			// Since we keep the subscription, the blocks are not removed from the cooldown queue,
-			// and there is no need to call resetCooldownTimes().
-			innerRegister(req); // innerRegister() doesn't subscribe to keys.
+			// Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.
+			req.unregister(true);
+			// Then can do innerRegister() (not register()).
+			innerRegister(req);
 		}
 		starter.wakeUp();
 	}
