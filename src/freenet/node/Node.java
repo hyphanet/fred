@@ -2444,8 +2444,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		else
 			sb.append("No peers yet");
 		sb.append("\nInserts: ");
+		AnyInsertSender[] senders;
 		synchronized(insertSenders) {
-			int x = getNumInsertSenders();
+			senders = (AnyInsertSender[]) insertSenders.values().toArray(new AnyInsertSender[insertSenders.size()]);
+		}
+			int x = senders.length;
 			sb.append(x);
 			if((x < 5) && (x > 0)) {
 				sb.append('\n');
@@ -2459,7 +2462,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 					sb.append('\n');
 				}
 			}
-		}
 		sb.append("\nRequests: ");
 		sb.append(getNumRequestSenders());
 		sb.append("\nTransferring requests: ");
