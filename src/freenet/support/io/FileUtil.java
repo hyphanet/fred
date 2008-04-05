@@ -92,7 +92,7 @@ final public class FileUtil {
 		
 		try {
 			fis = new FileInputStream(file);
-			fis.skip(offset);
+			skipFully(fis, offset);
 			bis = new BufferedInputStream(fis);
 			isr = new InputStreamReader(bis, "UTF-8");
 
@@ -112,7 +112,19 @@ final public class FileUtil {
 		}
 		return result.toString();
 	}
-	
+
+	/**
+	 * Reliably skip a number of bytes or throw.
+	 */
+	public static void skipFully(InputStream is, long skip) throws IOException {
+		long skipped = 0;
+		while(skipped < skip) {
+			long x = is.skip(skip - skipped);
+			if(x <= 0) throw new IOException("Unable to skip "+(skip - skipped)+" bytes");
+			skipped += x;
+		}
+	}
+
 	public static boolean writeTo(InputStream input, File target) throws FileNotFoundException, IOException {
 		DataInputStream dis = null;
 		FileOutputStream fos = null;
