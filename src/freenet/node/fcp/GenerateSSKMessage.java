@@ -18,7 +18,10 @@ public class GenerateSSKMessage extends FCPMessage {
 	}
 	
 	public SimpleFieldSet getFieldSet() {
-		return new SimpleFieldSet(true);
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		if(identifier != null)
+			fs.putSingle("Identifier", identifier);
+		return fs;
 	}
 
 	public String getName() {
