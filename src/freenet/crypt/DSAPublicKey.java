@@ -173,7 +173,9 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	public boolean equals(Object o) {
 		if(this == o) // Not necessary, but a very cheap optimization
 			return true;
-		return (o instanceof DSAPublicKey) && y.equals(((DSAPublicKey) o).y) && group.equals(((DSAPublicKey) o).group);
+		else if((o == null) || (o.getClass() != this.getClass()))
+			return false;
+		return y.equals(((DSAPublicKey) o).y) && group.equals(((DSAPublicKey) o).group);
 	}
 
 	public int compareTo(Object other) {
