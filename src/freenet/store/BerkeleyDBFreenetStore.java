@@ -1384,6 +1384,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 	}
 	
+	/**
+	 * Overwrite a block with a new block which has the same key.
+	 */
 	private boolean overwriteKeyUnchanged(StorableBlock block, byte[] routingkey, byte[] fullKey, byte[] data, byte[] header) throws IOException {
 		synchronized(this) {
 			if(closed)
