@@ -339,21 +339,18 @@ public class ToadletContextImpl implements ToadletContext {
 					
 					HTTPRequestImpl req = new HTTPRequestImpl(uri, data, ctx);
 					try {
-					if(method.equals("GET")) {
+						if(method.equals("GET")) {
 							t.handleGet(uri, req, ctx);
 							ctx.close();
-						
-					} else if(method.equals("PUT")) {
+						} else if(method.equals("PUT")) {
 							t.handlePut(uri, ctx);
 							ctx.close();
-						
-					} else if(method.equals("POST")) {
+						} else if(method.equals("POST")) {
 							t.handlePost(uri, req, ctx);
-						
-					} else {
-						ctx.sendMethodNotAllowed(method, ctx.shouldDisconnect);
-						ctx.close();
-					}
+						} else {
+							ctx.sendMethodNotAllowed(method, ctx.shouldDisconnect);
+							ctx.close();
+						}
 					} catch (RedirectException re) {
 						uri = re.newuri;
 						redirect = true;
