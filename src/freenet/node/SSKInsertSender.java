@@ -529,7 +529,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         return status;
     }
     
-    public short getHTL() {
+    public synchronized short getHTL() {
         return htl;
     }
 
