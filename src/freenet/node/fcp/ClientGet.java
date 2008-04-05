@@ -691,6 +691,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 
 	public boolean isTotalFinalized() {
+		if(finished && succeeded) return true;
 		if(progressPending == null) return false;
 		else return progressPending.isTotalFinalized();
 	}
