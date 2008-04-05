@@ -871,7 +871,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 	private HTMLNode createIdentifierCell(FreenetURI uri, String identifier, boolean directory) {
 		HTMLNode identifierCell = new HTMLNode("td", "class", "request-identifier");
 		if (uri != null) {
-			identifierCell.addChild("span", "class", "identifier_with_uri").addChild("a", "href", "/" + uri + '/', identifier);
+			identifierCell.addChild("span", "class", "identifier_with_uri").addChild("a", "href", "/" + uri + (directory ? "/" : ""), identifier);
 		} else {
 			identifierCell.addChild("span", "class", "identifier_without_uri", identifier);
 		}
@@ -916,10 +916,10 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		return sizeCell;
 	}
 
-	private HTMLNode createKeyCell(FreenetURI uri) {
+	private HTMLNode createKeyCell(FreenetURI uri, boolean addSlash) {
 		HTMLNode keyCell = new HTMLNode("td", "class", "request-key");
 		if (uri != null) {
-			keyCell.addChild("span", "class", "key_is").addChild("a", "href", '/' + uri.toString(), uri.toShortString());
+			keyCell.addChild("span", "class", "key_is").addChild("a", "href", '/' + uri.toString() + (addSlash ? "/" : ""), uri.toShortString());
 		} else {
 			keyCell.addChild("span", "class", "key_unknown", L10n.getString("QueueToadlet.unknown"));
 		}
@@ -1016,11 +1016,11 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					requestRow.addChild(createPersistenceCell(clientRequest.isPersistent(), clientRequest.isPersistentForever()));
 				} else if (column == LIST_KEY) {
 					if (clientRequest instanceof ClientGet) {
-						requestRow.addChild(createKeyCell(((ClientGet) clientRequest).getURI()));
+						requestRow.addChild(createKeyCell(((ClientGet) clientRequest).getURI(), false));
 					} else if (clientRequest instanceof ClientPut) {
-						requestRow.addChild(createKeyCell(((ClientPut) clientRequest).getFinalURI()));
+						requestRow.addChild(createKeyCell(((ClientPut) clientRequest).getFinalURI(), false));
 					}else {
-						requestRow.addChild(createKeyCell(((ClientPutDir) clientRequest).getFinalURI()));
+						requestRow.addChild(createKeyCell(((ClientPutDir) clientRequest).getFinalURI(), true));
 					}
 				} else if (column == LIST_FILENAME) {
 					if (clientRequest instanceof ClientGet) {
