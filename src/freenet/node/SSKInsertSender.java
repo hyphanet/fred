@@ -525,7 +525,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         // Nothing to wait for, no downstream transfers, just exit.
     }
 
-    public int getStatus() {
+    public synchronized int getStatus() {
         return status;
     }
     
@@ -536,7 +536,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     /**
      * @return The current status as a string
      */
-    public String getStatusString() {
+    public synchronized String getStatusString() {
         if(status == SUCCESS)
             return "SUCCESS";
         if(status == ROUTE_NOT_FOUND)
