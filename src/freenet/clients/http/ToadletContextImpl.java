@@ -305,9 +305,7 @@ public class ToadletContextImpl implements ToadletContext {
 					data = bf.makeBucket(len);
 					BucketTools.copyFrom(data, is, len);
 					} else {
-						// FIXME implement skipFully() on FileUtil.
-						// Be polite: disappear the data
-						FileUtil.copy(is, new NullOutputStream(), len);
+						FileUtil.skipFully(is, len);
 						ctx.sendMethodNotAllowed("POST", true);
 						ctx.close();
 						return;
