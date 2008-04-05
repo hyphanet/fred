@@ -171,7 +171,7 @@ public class BookmarkItem extends Bookmark {
     }
 
 	public int hashCode() {
-		int hash = 7;
+		int hash = super.hashCode();
 		hash = 31 * hash + this.key.setSuggestedEdition(0).hashCode();
 		hash = 31 * hash + (this.hasAnActivelink ? 1 : 0);
 		hash = 31 * hash + (this.desc != null ? this.desc.hashCode() : 0);

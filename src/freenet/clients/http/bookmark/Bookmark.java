@@ -28,5 +28,9 @@ public abstract class Bookmark {
         }
     }
     
+    public int hashCode() {
+    	return name.hashCode();
+    }
+    
     public abstract SimpleFieldSet getSimpleFieldSet();
 }
