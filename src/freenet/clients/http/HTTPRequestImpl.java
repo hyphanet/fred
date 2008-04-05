@@ -125,10 +125,12 @@ public class HTTPRequestImpl implements HTTPRequest {
 		this.data = d;
 		this.parts = new HashMap();
 		this.bucketfactory = ctx.getBucketFactory();
+		if(data != null) {
 		try {
 			this.parseMultiPartData();
 		} catch (IOException ioe) {
 			Logger.error(this, "Temporary files error ? Could not parse: "+ioe, ioe);
+		}
 		}
 	}
 	
