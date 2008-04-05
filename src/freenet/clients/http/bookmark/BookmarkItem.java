@@ -37,6 +37,7 @@ public class BookmarkItem extends Bookmark {
         this.alerts = uam;
         alert = new BookmarkUpdatedUserAlert();
         assert(name != null);
+        assert(key != null);
     }
 
     public BookmarkItem(String line, UserAlertManager uam) throws MalformedURLException {
@@ -47,6 +48,8 @@ public class BookmarkItem extends Bookmark {
         this.key = new FreenetURI(result[3]);
         this.alerts = uam;
         this.alert = new BookmarkUpdatedUserAlert();
+        assert(name != null);
+        assert(key != null);
     }
     
     public BookmarkItem(SimpleFieldSet sfs, UserAlertManager uam) throws FSParseException, MalformedURLException {
