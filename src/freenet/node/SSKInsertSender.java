@@ -506,6 +506,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
     
     private void finish(int code, PeerNode next) {
     	if(logMINOR) Logger.minor(this, "Finished: "+code+" on "+this, new Exception("debug"));
+    	synchronized(this) {
         if(status != NOT_FINISHED)
         	throw new IllegalStateException("finish() called with "+code+" when was already "+status);
         
@@ -514,11 +515,10 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
         
         status = code;
         
-        synchronized(this) {
             notifyAll();
         }
 
-        if(status == SUCCESS && next != null)
+        if(code == SUCCESS && next != null)
         	next.onSuccess(true, true);
         
         if(logMINOR) Logger.minor(this, "Set status code: "+getStatusString());
