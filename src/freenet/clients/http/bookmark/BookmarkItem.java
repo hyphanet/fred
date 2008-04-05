@@ -36,6 +36,7 @@ public class BookmarkItem extends Bookmark {
         this.hasAnActivelink = hasAnActivelink;
         this.alerts = uam;
         alert = new BookmarkUpdatedUserAlert();
+        assert(name != null);
     }
 
     public BookmarkItem(String line, UserAlertManager uam) throws MalformedURLException {
