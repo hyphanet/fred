@@ -43,6 +43,7 @@ import freenet.support.api.BooleanCallback;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.IntCallback;
 import freenet.support.api.StringCallback;
+import freenet.support.io.ArrayBucketFactory;
 
 public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
@@ -585,7 +586,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				synchronized(SimpleToadletServer.this) {
 					c = core;
 				}
-				ToadletContextImpl.handle(sock, SimpleToadletServer.this, bf, pageMaker, c != null);
+				ToadletContextImpl.handle(sock, SimpleToadletServer.this, pageMaker);
 			} catch (OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("SimpleToadletServer request above failed.");
@@ -674,6 +675,14 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	public boolean enableInlinePrefetch() {
 		return enableInlinePrefetch;
+	}
+
+	public synchronized boolean allowPosts() {
+		return !(bf instanceof ArrayBucketFactory);
+	}
+
+	public synchronized BucketFactory getBucketFactory() {
+		return bf;
 	}
 	
 }

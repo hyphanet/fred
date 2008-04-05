@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import freenet.support.HTMLNode;
+import freenet.support.api.BucketFactory;
 
 /** Interface for toadlet containers. Toadlets should register here. */
 public interface ToadletContainer {
@@ -48,4 +49,10 @@ public interface ToadletContainer {
 	public boolean enablePersistentConnections();
 
 	public boolean enableInlinePrefetch();
+
+	/** Get the BucketFactory */
+	public BucketFactory getBucketFactory();
+
+	/** Can we deal with POSTs yet? */
+	public boolean allowPosts();
 }

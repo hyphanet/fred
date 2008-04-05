@@ -215,7 +215,7 @@ public class ToadletContextImpl implements ToadletContext {
 	/**
 	 * Handle an incoming connection. Blocking, obviously.
 	 */
-	public static void handle(Socket sock, ToadletContainer container, BucketFactory bf, PageMaker pageMaker, boolean allowPost) {
+	public static void handle(Socket sock, ToadletContainer container, PageMaker pageMaker) {
 		try {
 			InputStream is = new BufferedInputStream(sock.getInputStream(), 4096);
 			
@@ -277,6 +277,9 @@ public class ToadletContextImpl implements ToadletContext {
 				
 				boolean disconnect = shouldDisconnectAfterHandled(split[2].equals("HTTP/1.0"), headers) || !container.enablePersistentConnections();
 
+				boolean allowPost = container.allowPosts();
+				BucketFactory bf = container.getBucketFactory();
+				
 				ToadletContextImpl ctx = new ToadletContextImpl(sock, headers, bf, pageMaker, container);
 				ctx.shouldDisconnect = disconnect;
 				
