@@ -1377,14 +1377,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				if(!overwrite)
 					throw new KeyCollisionException();
 				else
-					overwrite(block, routingkey, fullKey, data, header);
+					overwriteKeyUnchanged(block, routingkey, fullKey, data, header);
 			} // else return; // already in store
 		} else {
 			innerPut(block, routingkey, fullKey, data, header);
 		}
 	}
 	
-	private boolean overwrite(StorableBlock block, byte[] routingkey, byte[] fullKey, byte[] data, byte[] header) throws IOException {
+	private boolean overwriteKeyUnchanged(StorableBlock block, byte[] routingkey, byte[] fullKey, byte[] data, byte[] header) throws IOException {
 		synchronized(this) {
 			if(closed)
 				return false;
