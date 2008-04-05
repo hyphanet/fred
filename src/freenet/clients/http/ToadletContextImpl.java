@@ -27,7 +27,6 @@ import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileUtil;
 import freenet.support.io.LineReadingInputStream;
-import freenet.support.io.NullOutputStream;
 import freenet.support.io.TooLongException;
 
 /**
