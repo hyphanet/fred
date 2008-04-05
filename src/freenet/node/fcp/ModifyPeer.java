@@ -14,9 +14,12 @@ public class ModifyPeer extends FCPMessage {
 	static final String NAME = "ModifyPeer";
 	
 	final SimpleFieldSet fs;
+	final String identifier;
 	
 	public ModifyPeer(SimpleFieldSet fs) {
 		this.fs = fs;
+		this.identifier = fs.get("Identifier");
+		fs.removeValue("Identifier");
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -29,11 +32,11 @@ public class ModifyPeer extends FCPMessage {
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		if(!handler.hasFullAccess()) {
-			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "ModifyPeer requires full access", fs.get("Identifier"), false);
+			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "ModifyPeer requires full access", identifier, false);
 		}
 		String nodeIdentifier = fs.get("NodeIdentifier");
 		if( nodeIdentifier == null ) {
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Error: NodeIdentifier field missing", null, false);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Error: NodeIdentifier field missing", identifier, false);
 		}
 		PeerNode pn = node.getPeerNode(nodeIdentifier);
 		if(pn == null) {
@@ -42,7 +45,7 @@ public class ModifyPeer extends FCPMessage {
 			return;
 		}
 		if(!(pn instanceof DarknetPeerNode)) {
-			throw new MessageInvalidException(ProtocolErrorMessage.DARKNET_ONLY, "ModifyPeer only available for darknet peers", fs.get("Identifier"), false);
+			throw new MessageInvalidException(ProtocolErrorMessage.DARKNET_ONLY, "ModifyPeer only available for darknet peers", identifier, false);
 		}
 		DarknetPeerNode dpn = (DarknetPeerNode) pn;
 		String isDisabledString = fs.get("IsDisabled");
@@ -79,7 +82,7 @@ public class ModifyPeer extends FCPMessage {
 				dpn.setAllowLocalAddresses(Fields.stringToBool(allowLocalAddressesString, false));
 			}
 		}
-		handler.outputHandler.queue(new PeerMessage(pn, true, true));
+		handler.outputHandler.queue(new PeerMessage(pn, true, true, identifier));
 	}
 
 }

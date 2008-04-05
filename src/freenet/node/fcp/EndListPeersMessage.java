@@ -9,9 +9,17 @@ import freenet.support.SimpleFieldSet;
 public class EndListPeersMessage extends FCPMessage {
 
 	static final String name = "EndListPeers";
+	private final String identifier;
 	
+	public EndListPeersMessage(String identifier) {
+		this.identifier = identifier;
+	}
+
 	public SimpleFieldSet getFieldSet() {
-		return new SimpleFieldSet(true);
+		SimpleFieldSet fs = new SimpleFieldSet(true);
+		if(identifier != null)
+			fs.putSingle("Identifier", identifier);
+		return fs;
 	}
 
 	public String getName() {
