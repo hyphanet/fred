@@ -92,12 +92,12 @@ final public class FileUtil {
 		
 		try {
 			fis = new FileInputStream(file);
+			fis.skip(offset);
 			bis = new BufferedInputStream(fis);
 			isr = new InputStreamReader(bis, "UTF-8");
 
 			char[] buf = new char[4096];
 			int length = 0;
-                        isr.skip(offset);
 
 			while((length = isr.read(buf)) > 0) {
 				result.append(buf, 0, length);
