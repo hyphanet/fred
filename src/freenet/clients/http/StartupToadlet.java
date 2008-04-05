@@ -1,6 +1,3 @@
-/**
- * 
- */
 package freenet.clients.http;
 
 import java.io.IOException;
@@ -9,12 +6,16 @@ import java.net.URI;
 import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
+/**
+ * Toadlet for "Freenet is starting up" page.
+ */
 class StartupToadlet extends Toadlet {
-	
-	private StaticToadlet staticToadlet;
+
+    private StaticToadlet staticToadlet;
 	
 	public StartupToadlet(StaticToadlet staticToadlet) {
 		super(null);
+		this.staticToadlet = staticToadlet;
 	}
 	
     public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
@@ -22,7 +23,7 @@ class StartupToadlet extends Toadlet {
     ctx.forceDisconnect();
 
         String path = uri.getPath();
-        if(path.startsWith(StaticToadlet.ROOT_URL)) {
+        if (path.startsWith(StaticToadlet.ROOT_URL) && staticToadlet != null) {
             staticToadlet.handleGet(uri, req, ctx);
         } else {
             String desc = "Freenet is starting up";
