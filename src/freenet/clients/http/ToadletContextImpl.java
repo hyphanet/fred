@@ -349,7 +349,6 @@ public class ToadletContextImpl implements ToadletContext {
 						
 					} else if(method.equals("POST")) {
 							t.handlePost(uri, req, ctx);
-							req.freeParts();
 						
 					} else {
 						ctx.sendMethodNotAllowed(method, ctx.shouldDisconnect);
@@ -358,6 +357,8 @@ public class ToadletContextImpl implements ToadletContext {
 					} catch (RedirectException re) {
 						uri = re.newuri;
 						redirect = true;
+					} finally {
+						req.freeParts();
 					}
 				}
 				if(ctx.shouldDisconnect) {
