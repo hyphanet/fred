@@ -35,7 +35,7 @@ import freenet.support.io.BucketTools;
  */
 public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCallback {
 
-	private static boolean logMINOR;
+	private static volatile boolean logMINOR;
 	final short splitfileType;
 	final ClientCHK[] dataKeys;
 	final ClientCHK[] checkKeys;

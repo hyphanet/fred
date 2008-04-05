@@ -24,7 +24,7 @@ import freenet.support.io.SerializableToFieldSetBucketUtil;
 
 public class SplitFileInserterSegment implements PutCompletionCallback, StandardOnionFECCodecEncoderCallback {
 
-	private static boolean logMINOR;
+	private static volatile boolean logMINOR;
 
 	final SplitFileInserter parent;
 
