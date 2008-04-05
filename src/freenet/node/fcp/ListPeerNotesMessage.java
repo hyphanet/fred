@@ -39,7 +39,7 @@ public class ListPeerNotesMessage extends FCPMessage {
 		}
 		PeerNode pn = node.getPeerNode(nodeIdentifier);
 		if(pn == null) {
-			FCPMessage msg = new UnknownNodeIdentifierMessage(nodeIdentifier);
+			FCPMessage msg = new UnknownNodeIdentifierMessage(nodeIdentifier, identifier);
 			handler.outputHandler.queue(msg);
 			return;
 		}

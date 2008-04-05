@@ -9,14 +9,18 @@ import freenet.support.SimpleFieldSet;
 public class UnknownNodeIdentifierMessage extends FCPMessage {
 
 	final String nodeIdentifier;
+	final String identifier;
 	
-	public UnknownNodeIdentifierMessage(String id) {
+	public UnknownNodeIdentifierMessage(String id, String identifier) {
 		this.nodeIdentifier = id;
+		this.identifier = identifier;
 	}
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putSingle("NodeIdentifier", nodeIdentifier);
+		if(identifier != null)
+			sfs.putSingle("Identifier", identifier);
 		return sfs;
 	}
 

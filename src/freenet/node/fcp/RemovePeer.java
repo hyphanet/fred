@@ -12,9 +12,12 @@ public class RemovePeer extends FCPMessage {
 	static final String NAME = "RemovePeer";
 	
 	final SimpleFieldSet fs;
+	final String identifier;
 	
 	public RemovePeer(SimpleFieldSet fs) {
 		this.fs = fs;
+		identifier = fs.get("Identifier");
+		fs.removeValue("Identifier");
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -27,21 +30,21 @@ public class RemovePeer extends FCPMessage {
 
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		if(!handler.hasFullAccess()) {
-			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, NAME + " requires full access", null, false);
+			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, NAME + " requires full access", identifier, false);
 		}
 		String nodeIdentifier = fs.get("NodeIdentifier");
 		if( nodeIdentifier == null ) {
-			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Error: NodeIdentifier field missing", null, false);
+			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Error: NodeIdentifier field missing", identifier, false);
 		}
 		PeerNode pn = node.getPeerNode(nodeIdentifier);
 		if(pn == null) {
-			FCPMessage msg = new UnknownNodeIdentifierMessage(nodeIdentifier);
+			FCPMessage msg = new UnknownNodeIdentifierMessage(nodeIdentifier, identifier);
 			handler.outputHandler.queue(msg);
 			return;
 		}
 		String identity = pn.getIdentityString();
 		node.removePeerConnection(pn);
-		handler.outputHandler.queue(new PeerRemoved(identity, nodeIdentifier));
+		handler.outputHandler.queue(new PeerRemoved(identity, nodeIdentifier, identifier));
 	}
 
 }

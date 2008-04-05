@@ -9,6 +9,7 @@ import freenet.support.SimpleFieldSet;
 
 public class ShutdownMessage extends FCPMessage{
 	public final static String NAME = "Shutdown";
+	// No point having an Identifier really...?
 	
 	public ShutdownMessage() throws MessageInvalidException {
 	}
