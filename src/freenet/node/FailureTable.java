@@ -185,7 +185,7 @@ public class FailureTable {
 		}
 	}
 	
-	final class BlockOffer {
+	static final class BlockOffer {
 		final long offeredTime;
 		/** Either offered by or offered to this node */
 		final WeakReference nodeRef;
