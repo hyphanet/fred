@@ -868,10 +868,10 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		return panicBox;
 	}
 	
-	private HTMLNode createIdentifierCell(FreenetURI uri, String identifier) {
+	private HTMLNode createIdentifierCell(FreenetURI uri, String identifier, boolean directory) {
 		HTMLNode identifierCell = new HTMLNode("td", "class", "request-identifier");
 		if (uri != null) {
-			identifierCell.addChild("span", "class", "identifier_with_uri").addChild("a", "href", "/" + uri, identifier);
+			identifierCell.addChild("span", "class", "identifier_with_uri").addChild("a", "href", "/" + uri + '/', identifier);
 		} else {
 			identifierCell.addChild("span", "class", "identifier_without_uri", identifier);
 		}
@@ -992,11 +992,11 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				int column = columns[columnIndex];
 				if (column == LIST_IDENTIFIER) {
 					if (clientRequest instanceof ClientGet) {
-						requestRow.addChild(createIdentifierCell(((ClientGet) clientRequest).getURI(), clientRequest.getIdentifier()));
+						requestRow.addChild(createIdentifierCell(((ClientGet) clientRequest).getURI(), clientRequest.getIdentifier(), false));
 					} else if (clientRequest instanceof ClientPutDir) {
-						requestRow.addChild(createIdentifierCell(((ClientPutDir) clientRequest).getFinalURI(), clientRequest.getIdentifier()));
+						requestRow.addChild(createIdentifierCell(((ClientPutDir) clientRequest).getFinalURI(), clientRequest.getIdentifier(), true));
 					} else if (clientRequest instanceof ClientPut) {
-						requestRow.addChild(createIdentifierCell(((ClientPut) clientRequest).getFinalURI(), clientRequest.getIdentifier()));
+						requestRow.addChild(createIdentifierCell(((ClientPut) clientRequest).getFinalURI(), clientRequest.getIdentifier(), false));
 					}
 				} else if (column == LIST_SIZE) {
 					if (clientRequest instanceof ClientGet) {
