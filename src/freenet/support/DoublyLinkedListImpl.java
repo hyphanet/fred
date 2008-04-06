@@ -10,7 +10,7 @@ import java.util.NoSuchElementException;
  * TODO: there are still some unimplemented methods
  *       -- it remains to be seen if they are needed at all
  */
-public class DoublyLinkedListImpl implements DoublyLinkedList, Cloneable {
+public class DoublyLinkedListImpl implements DoublyLinkedList {
 
     protected int size;
     protected Item _headptr, _tailptr;
