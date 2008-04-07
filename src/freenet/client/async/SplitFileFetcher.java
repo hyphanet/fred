@@ -266,6 +266,7 @@ public class SplitFileFetcher implements ClientGetState {
 	}
 
 	public void schedule() {
+		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Scheduling "+this);
 		for(int i=0;i<segments.length;i++) {
 			segments[i].schedule();
 		}
