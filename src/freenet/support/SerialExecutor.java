@@ -64,12 +64,13 @@ public class SerialExecutor implements Executor {
 		this.name=name;
 		synchronized (jobs) {
 			if (!jobs.isEmpty())
-				reallyStart();
+				reallyStart(Logger.shouldLog(Logger.MINOR, this));
 		}
 	}
 	
-	private void reallyStart() {
+	private void reallyStart(boolean logMINOR) {
 		running=true;
+		if(logMINOR) Logger.minor(this, "Starting thread... "+name+" : "+runner);
 		realExecutor.execute(runner, name);
 	}
 	
@@ -79,17 +80,20 @@ public class SerialExecutor implements Executor {
 			if(logMINOR) Logger.minor(this, "Running "+jobName+" : "+job+" running="+running+" waiting="+waiting);
 			jobs.addLast(job);
 			jobs.notifyAll();
-			if (!running && realExecutor!=null)
-				reallyStart();
+			if (!running && realExecutor!=null) {
+				reallyStart(logMINOR);
+			}
 		}
 	}
 
 	public void execute(Runnable job, String jobName, boolean fromTicker) {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(jobs) {
+			if(logMINOR) Logger.minor(this, "Running "+jobName+" : "+job+" running="+running+" waiting="+waiting);
 			jobs.addLast(job);
 			jobs.notifyAll();
 			if (!running && realExecutor!=null)
-				reallyStart();
+				reallyStart(logMINOR);
 		}
 	}
 
