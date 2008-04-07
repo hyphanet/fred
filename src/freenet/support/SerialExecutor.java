@@ -74,7 +74,9 @@ public class SerialExecutor implements Executor {
 	}
 	
 	public void execute(Runnable job, String jobName) {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(jobs) {
+			if(logMINOR) Logger.minor(this, "Running "+jobName+" : "+job+" running="+running+" waiting="+waiting);
 			jobs.addLast(job);
 			jobs.notifyAll();
 			if (!running && realExecutor!=null)
