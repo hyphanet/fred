@@ -124,8 +124,9 @@ public class LRUQueue {
 	}
 	
 	/**
-	 * Return the objects in the queue as an array. The least recently used object
-	 * is in [0], the most recently used object is in [array.length-1].
+	 * Return the objects in the queue as an array. The <strong>least</strong>
+	 * recently used object is in <tt>[0]</tt>, the <strong>most</strong>
+	 * recently used object is in <tt>[array.length-1]</tt>.
 	 */
 	public synchronized Object[] toArrayOrdered() {
 		Object[] array = new Object[list.size()];
@@ -137,9 +138,13 @@ public class LRUQueue {
 	}
 
 	/**
-	 * Return the objects in the queue as an array. The least recently used object
-	 * is in [0], the most recently used object is in [array.length-1].
-	 * @param array The array to fill in. If it is too small a new array of the same type will be allocated.
+	 * Return the objects in the queue as an array. The <strong>least</strong>
+	 * recently used object is in <tt>[0]</tt>, the <strong>most</strong>
+	 * recently used object is in <tt>[array.length-1]</tt>.
+	 * 
+	 * @param array
+	 *            The array to fill in. If it is too small a new array of the
+	 *            same type will be allocated.
 	 */
 	public synchronized Object[] toArrayOrdered(Object[] array) {
 		array = toArray(array);
