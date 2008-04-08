@@ -1530,12 +1530,16 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private void overwriteLRUBlock(byte[] header, byte[] data, Transaction t, DatabaseEntry routingkeyDBE, byte[] fullKey) throws DatabaseException, IOException {
 		// Overwrite an other block
 		Cursor c = accessTimeDB.openCursor(t,null);
+		StoreBlock oldStoreBlock;
+		try {
 		DatabaseEntry keyDBE = new DatabaseEntry();
 		DatabaseEntry dataDBE = new DatabaseEntry();
 		c.getFirst(keyDBE,dataDBE,LockMode.RMW);
-		StoreBlock oldStoreBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(dataDBE);
+		oldStoreBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(dataDBE);
 		c.delete();
+		} finally {
 		c.close();
+		}
 		// Deleted, so we can now reuse it.
 		// Because we acquired a write lock, nobody else has taken it.
 		StoreBlock storeBlock = new StoreBlock(this, oldStoreBlock.getOffset());
