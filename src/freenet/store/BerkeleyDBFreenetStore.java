@@ -1542,6 +1542,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 		// Deleted, so we can now reuse it.
 		// Because we acquired a write lock, nobody else has taken it.
+		// FIXME if this fails we can leak the block??
 		StoreBlock storeBlock = new StoreBlock(this, oldStoreBlock.getOffset());
 		DatabaseEntry blockDBE = new DatabaseEntry();
 		storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
