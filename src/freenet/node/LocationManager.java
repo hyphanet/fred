@@ -60,8 +60,14 @@ public class LocationManager implements ByteCounter {
     static final int TIMEOUT = 60*1000;
     static final int SWAP_MAX_HTL = 10;
     /** Number of swap evaluations, either incoming or outgoing, between resetting our location. 
-     * There is a 2 in SWAP_RESET chance that a reset will occur on one or other end of a swap request. */
-    static final int SWAP_RESET = 4000;
+     * There is a 2 in SWAP_RESET chance that a reset will occur on one or other end of a swap request. 
+     * 
+     * ALCHEMY: This depends on a number of factors, not least the size of the network. It is hard to
+     * get a good value from simulations. But it can take time to recover after a random reset, so we
+     * have increased it from 4000 to 16000 on 8 april 2008. At the time location churn was significant,
+     * and some of it likely caused by this. OTOH if we get major keyspace fragmentation, we must 
+     * reduce it to 8000 or 4000. */
+    static final int SWAP_RESET = 16000;
 	// FIXME vary automatically
     static final int SEND_SWAP_INTERVAL = 8000;
     /** The average time between sending a swap request, and completion. */
