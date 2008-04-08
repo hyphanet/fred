@@ -75,7 +75,7 @@ public class OpennetManager {
 	/** Don't drop a node until this long after startup */
 	static final int DROP_STARTUP_DELAY = 120*1000;
 	/** Don't drop a node until this long after losing connection to it */
-	static final int DROP_DISCONNECT_DELAY = 300*1000;
+	static final int DROP_DISCONNECT_DELAY = 5*60*1000;
 	/** But if it has disconnected more than once in this period, allow it to be dropped anyway */
 	static final int DROP_DISCONNECT_DELAY_COOLDOWN = 60*60*1000;
 	/** Every DROP_CONNECTED_TIME, we may drop a peer even though it is connected */
