@@ -3883,4 +3883,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		Logger.error(this, "Peer constantly changes its IP address!!: "+shortToString());
 		forceDisconnect(true);
 	}
+
+	/**
+	 * Should this peer be disconnected and removed immediately?
+	 */
+	public boolean shouldDisconnectAndRemoveNow() {
+		return false;
+	}
 }

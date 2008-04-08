@@ -227,6 +227,10 @@ public class PacketSender implements Runnable, Ticker {
 					Logger.normal(this, "shouldDisconnectNow has returned true : marking the peer as incompatible");
 					continue;
 				}
+				
+				if(pn.shouldDisconnectAndRemoveNow() && !pn.isDisconnecting()) {
+					node.peers.disconnect(pn, true, false);
+				}
 
 				boolean mustSend = false;
 

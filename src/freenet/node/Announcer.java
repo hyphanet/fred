@@ -240,6 +240,8 @@ public class Announcer {
 		// Do nothing at present
 	}
 	
+	private long timeGotEnoughPeers = -1;
+	
 	/** @return True if we have enough peers that we don't need to announce. */
 	boolean enoughPeers() {
 		// Do we want to send an announcement to the node?
@@ -249,9 +251,24 @@ public class Announcer {
 		if(opennetCount >= target) {
 			if(logMINOR)
 				Logger.minor(this, "We have enough opennet peers: "+opennetCount+" > "+target);
+			synchronized(this) {
+				if(timeGotEnoughPeers <= 0)
+					timeGotEnoughPeers = System.currentTimeMillis();
+			}
 			return true;
 		}
+		synchronized(this) {
+			timeGotEnoughPeers = -1;
+		}
 		return false;
+	}
+	
+	/**
+	 * Get the earliest time at which we had enough opennet peers. This is reset when we drop
+	 * below the threshold.
+	 */
+	synchronized long timeGotEnoughPeers() {
+		return timeGotEnoughPeers;
 	}
 
 	private boolean ignoreIPUndetected;
