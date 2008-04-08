@@ -1151,7 +1151,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					Logger.normal(this, "Block "+l+" : LRU "+lruVal);
 				}
 				boolean readKey = false;
-				if(callback.storeFullKeys() && keysRAF != null && keysRAFLength > (l+1)*keyLength) {
+				if(keysRAF != null && keysRAFLength > (l+1)*keyLength) {
 					try {
 						keysRAF.readFully(keyBuf);
 						readKey = true;
