@@ -92,6 +92,7 @@ public class LocationManager implements ByteCounter {
         recentlyForwardedIDs = new Hashtable();
         // FIXME persist to disk!
         averageSwapTime = new BootstrappingDecayingRunningAverage(SEND_SWAP_INTERVAL, 0, Integer.MAX_VALUE, 20, null);
+        timeLocSet = System.currentTimeMillis();
         
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
@@ -118,6 +119,7 @@ public class LocationManager implements ByteCounter {
     		return;
     	}
         this.loc = l;
+        timeLocSet = System.currentTimeMillis();
     }
     
     public synchronized void updateLocationChangeSession(double newLoc) {
