@@ -65,6 +65,15 @@ public abstract class FECCodec {
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
 			return null;
 		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
+			/**
+			 * ALCHEMY: What we do know is that redundancy by FEC is much more efficient than 
+			 * redundancy by simply duplicating blocks, for obvious reasons (see e.g. Wuala). But
+			 * we have to have some redundancy at the duplicating blocks level because we do use
+			 * some keys directly etc: we store an insert in 3 nodes. We also cache it on 20 nodes,
+			 * but generally the key will fall out of the caches within days. So long term, it's 3.
+			 * Multiplied by 2 here, makes 6. Used to be 1.5 * 3 = 4.5. Wuala uses 5, but that's 
+			 * all FEC.
+			 */
 			int checkBlocks = dataBlocks;
 			if(dataBlocks == 128) checkBlocks--; // Stay within the 8-bit code range, speeds things up 4x
 			return StandardOnionFECCodec.getInstance(dataBlocks, checkBlocks, executor);
