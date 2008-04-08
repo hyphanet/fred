@@ -169,22 +169,22 @@ public class LocationManager implements ByteCounter {
                                     PeerNode pn = peers[i];
                                     if(pn.isRoutable()) {
                                     	synchronized(pn) {
-                                        double ploc = pn.getLocation();
-                                        if(Math.abs(ploc - myLoc) <= Double.MIN_VALUE) {
-                                        	// Don't reset location unless we're SURE there is a problem.
-                                        	// If the node has had its location equal to ours for at least 2 minutes, and ours has been likewise...
-                                        	long now = System.currentTimeMillis();
-                                        	if(now - pn.getLocSetTime() > 120*1000 && now - timeLocSet > 120*1000) {
-                                            myFlag = true;
-                                            // Log an ERROR
-                                            // As this is an ERROR, it results from either a bug or malicious action.
-                                            // If it happens very frequently, it indicates either an attack or a serious bug.
-                                            Logger.error(this, "Randomizing location: my loc="+myLoc+" but loc="+ploc+" for "+pn);
-                                            break;
-                                        	} else {
-                                        		Logger.normal(this, "Node "+pn+" has identical location to us, waiting until this has persisted for 2 minutes...");
-                                        	}
-                                    	}
+                                    		double ploc = pn.getLocation();
+                                    		if(Math.abs(ploc - myLoc) <= Double.MIN_VALUE) {
+                                    			// Don't reset location unless we're SURE there is a problem.
+                                    			// If the node has had its location equal to ours for at least 2 minutes, and ours has been likewise...
+                                    			long now = System.currentTimeMillis();
+                                    			if(now - pn.getLocSetTime() > 120*1000 && now - timeLocSet > 120*1000) {
+                                    				myFlag = true;
+                                    				// Log an ERROR
+                                    				// As this is an ERROR, it results from either a bug or malicious action.
+                                    				// If it happens very frequently, it indicates either an attack or a serious bug.
+                                    				Logger.error(this, "Randomizing location: my loc="+myLoc+" but loc="+ploc+" for "+pn);
+                                    				break;
+                                    			} else {
+                                    				Logger.normal(this, "Node "+pn+" has identical location to us, waiting until this has persisted for 2 minutes...");
+                                    			}
+                                    		}
                                     	}
                                     }
                                 }
