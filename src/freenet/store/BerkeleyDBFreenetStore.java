@@ -1110,6 +1110,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		System.err.println("Reconstructing store index from store file: callback="+callback);
 		Logger.error(this, "Reconstructing store index from store file: callback="+callback);
 		WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+(storeRAF.length()/(dataBlockSize+headerBlockSize))*100)));
+		byte[] header = new byte[headerBlockSize];
+		byte[] data = new byte[dataBlockSize];
 		byte[] keyBuf = new byte[keyLength];
 		long l = 0;
 		long dupes = 0;
@@ -1127,8 +1129,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			for(l=0;true;l++) {
 				long lruVal = 0;
 				Transaction t = null;
-				byte[] header = new byte[headerBlockSize];
-				byte[] data = new byte[dataBlockSize];
 				if(storeRAF.getFilePointer() != l * (headerBlockSize + dataBlockSize)) {
 					System.err.println("File pointer is "+storeRAF.getFilePointer()+" but should be "+((headerBlockSize + dataBlockSize)));
 					System.exit(NodeInitException.EXIT_STORE_RECONSTRUCT);
