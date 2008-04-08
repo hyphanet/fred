@@ -169,6 +169,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private static final int MAX_HANDSHAKE_COUNT = 2;
 	/** Current location in the keyspace, or -1 if it is unknown */
 	private double currentLocation;
+	/** Time the location was set */
+	private long locSetTime;
 	/** Node identity; for now a block of data, in future a
 	* public key (FIXME). Cannot be changed.
 	*/
@@ -371,6 +373,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		String locationString = fs.get("location");
 		try {
 			currentLocation = Location.getLocation(locationString);
+			locSetTime = System.currentTimeMillis();
 		} catch(FSParseException e) {
 			// Wait for them to send us an FNPLocChangeNotification
 			currentLocation = -1.0;
@@ -902,6 +905,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return currentLocation;
 	}
 
+	public synchronized long getLocSetTime() {
+		return locSetTime;
+	}
+	
 	/**
 	* Returns a unique node identifier (usefull to compare two peernodes).
 	*/
@@ -1575,6 +1582,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		synchronized(this) {
 			currentLocation = newLoc;
+			locSetTime = System.currentTimeMillis();
 		}
 		node.peers.writePeers();
 	}
@@ -2273,6 +2281,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(!Location.equals(newLoc, currentLocation)) {
 					changedAnything = true;
 					currentLocation = newLoc;
+					locSetTime = System.currentTimeMillis();
 				}
 			} catch(FSParseException e) {
 				// Location is optional, we will wait for FNPLocChangeNotification. Until then we will use the last known location (or -1 if we have never known).
