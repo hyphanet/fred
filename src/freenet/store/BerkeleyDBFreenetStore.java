@@ -1532,13 +1532,13 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		Cursor c = accessTimeDB.openCursor(t,null);
 		StoreBlock oldStoreBlock;
 		try {
-		DatabaseEntry keyDBE = new DatabaseEntry();
-		DatabaseEntry dataDBE = new DatabaseEntry();
-		c.getFirst(keyDBE,dataDBE,LockMode.RMW);
-		oldStoreBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(dataDBE);
-		c.delete();
+			DatabaseEntry keyDBE = new DatabaseEntry();
+			DatabaseEntry dataDBE = new DatabaseEntry();
+			c.getFirst(keyDBE,dataDBE,LockMode.RMW);
+			oldStoreBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(dataDBE);
+			c.delete();
 		} finally {
-		c.close();
+			c.close();
 		}
 		// Deleted, so we can now reuse it.
 		// Because we acquired a write lock, nobody else has taken it.
