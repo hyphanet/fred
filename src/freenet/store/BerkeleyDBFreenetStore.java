@@ -37,6 +37,7 @@ import com.sleepycat.je.util.DbLoad;
 
 import freenet.crypt.RandomSource;
 import freenet.keys.KeyVerifyException;
+import freenet.node.NodeInitException;
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -1128,6 +1129,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				Transaction t = null;
 				byte[] header = new byte[headerBlockSize];
 				byte[] data = new byte[dataBlockSize];
+				if(storeRAF.getFilePointer() != l * (headerBlockSize + dataBlockSize)) {
+					System.err.println("File pointer is "+storeRAF.getFilePointer()+" but should be "+((headerBlockSize + dataBlockSize)));
+					System.exit(NodeInitException.EXIT_STORE_RECONSTRUCT);
+				}
 				storeRAF.readFully(header);
 				storeRAF.readFully(data);
 				if(lruRAFLength > (l+1)*8) {
