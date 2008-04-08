@@ -97,4 +97,9 @@ public class OpennetPeerNode extends PeerNode {
 			return super.equals(o);
 		} else return false;
 	}
+	
+	public final boolean shouldDisconnectAndRemoveNow() {
+		return false;
+	}
+
 }
