@@ -224,7 +224,8 @@ public class Announcer {
 			while(true) {
 				try {
 					SimpleFieldSet fs = new SimpleFieldSet(br, false, false);
-					list.add(fs);
+					if(!fs.isEmpty())
+						list.add(fs);
 				} catch (EOFException e) {
 					return list;
 				}
