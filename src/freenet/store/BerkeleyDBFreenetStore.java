@@ -1110,6 +1110,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		System.err.println("Reconstructing store index from store file: callback="+callback);
 		Logger.error(this, "Reconstructing store index from store file: callback="+callback);
 		WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+(storeRAF.length()/(dataBlockSize+headerBlockSize))*100)));
+		// Reusing the buffer is safe, provided we don't do anything with the resulting StoreBlock.
 		byte[] header = new byte[headerBlockSize];
 		byte[] data = new byte[dataBlockSize];
 		byte[] keyBuf = new byte[keyLength];
