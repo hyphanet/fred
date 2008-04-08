@@ -65,9 +65,8 @@ public abstract class FECCodec {
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
 			return null;
 		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
-			int checkBlocks = (dataBlocks >> 1);
-			if((dataBlocks & 1) == 1)
-				checkBlocks++;
+			int checkBlocks = dataBlocks;
+			if(dataBlocks == 128) checkBlocks--; // Stay within the 8-bit code range, speeds things up 4x
 			return StandardOnionFECCodec.getInstance(dataBlocks, checkBlocks, executor);
 		}
 		else
