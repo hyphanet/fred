@@ -1200,6 +1200,8 @@ public class LocationManager implements ByteCounter {
         long now = System.currentTimeMillis();
         synchronized(recentlyForwardedIDs) {
             RecentlyForwardedItem[] items = new RecentlyForwardedItem[recentlyForwardedIDs.size()];
+	    if(items.length < 1)
+		    return;
             items = (RecentlyForwardedItem[]) recentlyForwardedIDs.values().toArray(items);
             for(int i=0;i<items.length;i++) {
                 if(now - items[i].lastMessageTime > (TIMEOUT*2)) {
