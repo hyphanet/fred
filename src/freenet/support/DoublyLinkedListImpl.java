@@ -63,7 +63,7 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     //=== DoublyLinkedList implementation ======================================
 
     /**
-     * Reset the size of the list to zero.
+     * {@inheritDoc}
      */
     public void clear() {
     	// Help to detect removal after clear().
@@ -86,20 +86,21 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     }
 
     /**
-     * @return  the number of items in the list
+     * {@inheritDoc}
      */
     public final int size() {
         return size;
     }
 
     /**
-     * @return true  if there are no items in the list
+     * {@inheritDoc}
      */
     public final boolean isEmpty() {
         return size == 0;
     }
 
     /**
+     * {@inheritDoc}
      * @see #forwardElements()
      */
     public final Enumeration elements() {
@@ -107,14 +108,14 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     }
 
     /**
-     * @return  the item at the head of the list, or null if empty
+     * {@inheritDoc}
      */
     public final DoublyLinkedList.Item head() {
         return size == 0 ? null : _headptr.next;
     }
 
     /**
-     * @return  the item at the tail of the list, or null if empty
+     * {@inheritDoc}
      */
     public final DoublyLinkedList.Item tail() {
         return size == 0 ? null : _tailptr.prev;
@@ -122,20 +123,29 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
 
 
     //=== methods that add/remove items at the head of the list ================
-    
+    /**
+     * {@inheritDoc}
+     */
     public final void unshift(DoublyLinkedList.Item i) {
         insertNext(_headptr, i);
     }
-
-    // FIXME: unimplemented
+    
+    /**
+     * {@inheritDoc}
+     *  FIXME: unimplemented
+     */
     public void unshift(DoublyLinkedList l) {
         throw new RuntimeException("function currently unimplemented because i am a lazy sod");
     }
-
+    /**
+     * {@inheritDoc}
+     */
     public final DoublyLinkedList.Item shift() {
         return size == 0 ? null : remove(_headptr.next);
     }
-
+    /**
+     * {@inheritDoc}
+     */
     public DoublyLinkedList shift(int n) {
 
         if (n > size) n = size;
@@ -165,20 +175,28 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     
     
     //=== methods that add/remove items at the tail of the list ================
-    
+    /**
+     * {@inheritDoc}
+     */
     public final void push(DoublyLinkedList.Item i) {
         insertPrev(_tailptr, i);
     }
-
-    // FIXME: unimplemented
+    /**
+     * {@inheritDoc}
+     * FIXME: unimplemented
+     */
     public void push(DoublyLinkedList l) {
         throw new RuntimeException("function currently unimplemented because i am a lazy sod");
     }
-
+    /**
+     * {@inheritDoc}
+     */
     public final DoublyLinkedList.Item pop() {
         return size == 0 ? null : remove(_tailptr.prev);
     }
-
+    /**
+     * {@inheritDoc}
+     */
     public DoublyLinkedList pop(int n) {
 
         if (n > size) n = size;
@@ -208,22 +226,30 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
 
     
     //=== testing/looking at neighbor items ====================================
-    
+    /**
+     * {@inheritDoc}
+     */
     public final boolean hasNext(DoublyLinkedList.Item i) {
         DoublyLinkedList.Item next = i.getNext();
         return (next != null) && (next != _tailptr);
     }
-
+    /**
+     * {@inheritDoc}
+     */
     public final boolean hasPrev(DoublyLinkedList.Item i) {
         DoublyLinkedList.Item prev = i.getPrev();
         return (prev != null) && (prev != _headptr);
     }
-
+    /**
+     * {@inheritDoc}
+     */
     public final DoublyLinkedList.Item next(DoublyLinkedList.Item i) {
         DoublyLinkedList.Item next = i.getNext();
         return next == _tailptr ? null : next;
     }
-
+    /**
+     * {@inheritDoc}
+     */
     public final DoublyLinkedList.Item prev(DoublyLinkedList.Item i) {
         DoublyLinkedList.Item prev = i.getPrev();
         return prev == _headptr ? null : prev;
@@ -233,8 +259,7 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     //=== insertion and removal of items =======================================
     
     /**
-     * Remove the given item from the list.
-     * @return  this item, or null if the item was not in the list
+     * {@inheritDoc}
      */
     public DoublyLinkedList.Item remove(DoublyLinkedList.Item i) {
     	if (i.getParent() == null) return null; // not in list
@@ -263,7 +288,7 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     }
 
     /**
-     * Inserts item J before item I (going from head to tail).
+     * {@inheritDoc}
      */
     public void insertPrev(DoublyLinkedList.Item i, DoublyLinkedList.Item j) {
     	if (i.getParent() == null)
@@ -285,16 +310,16 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
         ++size;
     }
 
-    // FIXME: unimplemented
     /**
-     * Inserts the entire DoublyLinkedList L before item I.
+     * {@inheritDoc}
+     * FIXME: unimplemented
      */
     public void insertPrev(DoublyLinkedList.Item i, DoublyLinkedList l) {
         throw new RuntimeException("function currently unimplemented because i am a lazy sod");
     }
 
     /**
-     * Inserts item J after item I (going from head to tail).
+     * {@inheritDoc}
      */
     public void insertNext(DoublyLinkedList.Item i, DoublyLinkedList.Item j) {
     	if (i.getParent() != this)
@@ -314,9 +339,9 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
         ++size;
     }
 
-    // FIXME: unimplemented
     /**
-     * Inserts the entire DoublyLinkedList L after item I.
+     * {@inheritDoc}
+     * FIXME: unimplemented
      */
     public void insertNext(DoublyLinkedList.Item i, DoublyLinkedList l) {
         throw new RuntimeException("function currently unimplemented because i am a lazy sod");
@@ -436,7 +461,8 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     //=== list element ====================================================
 
     public static class Item implements DoublyLinkedList.Item {
-        private DoublyLinkedList.Item next, prev;
+        private DoublyLinkedList.Item prev;
+        private DoublyLinkedList.Item next;
         private DoublyLinkedList list;
         public Object clone() {
             if(getClass() != Item.class)

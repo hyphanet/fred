@@ -12,8 +12,8 @@ import freenet.support.SimpleFieldSet;
  * @author amphibian
  * 
  * For the first <tt>maxReports</tt> reports, this is equivalent to a simple running average.
- * After that it is a decaying running average with a <tt>decayFactor</tt> of <tt>1/maxReports</tt>. We
- * accomplish this by having <tt>decayFactor = 1/(Math.min(#reports + 1, maxReports))</tt>. We can
+ * After that it is a decaying running average with a <tt>decayFactor</tt> of <tt>1 / maxReports</tt>. We
+ * accomplish this by having <tt>decayFactor = 1/(Math.min(#reports, maxReports))</tt>. We can
  * therefore:
  * <ul>
  * <li>Specify <tt>maxReports</tt> more easily than an arbitrary decay factor.</li>
@@ -83,9 +83,12 @@ public final class BootstrappingDecayingRunningAverage implements
     }
 			
 	/**
-	 * Not a public method. Changes the internally stored currentValue, returning the old one.
-	 * Used from DecayingKeyspaceAverager to normalize the stored averages. Calling this function
+	 * <strong>Not a public method.</strong> Changes the internally stored <code>currentValue</code> and return the old one.
+	 * 
+	 * Used by {@link DecayingKeyspaceAverage} to normalize the stored averages. Calling this function
 	 * may (purposefully) destroy the utility of the average being kept.
+	 * 
+	 * @see DecayingKeyspaceAverage
 	 */
     protected synchronized double setCurrentValue(double d) {
 		double old=currentValue;
