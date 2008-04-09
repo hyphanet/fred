@@ -1018,13 +1018,38 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 
 	/**
 	* Recreate the index from the data file. Call this when the index has been corrupted.
-	 * @param reconstructFile 
-	* @param the directory where the store is located
-	* @throws DatabaseException If the store cannot be opened because of a database problem.
-	* @throws IOException If the store cannot be opened because of a filesystem problem.
-	* @throws FileNotFoundException if the dir does not exist and could not be created
-	*/
-	private BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File lruFile, File keysFile, File fixSecondaryFile, long maxChkBlocks, boolean noCheck, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile, StoreCallback callback) throws DatabaseException, IOException {
+
+	 * @param env
+	 *            Berkeley DB {@link Environment}.
+	 * @param prefix
+	 *            Database name prefix
+	 * @param storeFile
+	 *            Store file file
+	 * @param lruFile
+	 *            LRU database file
+	 * @param keysFile
+	 *            Keys database
+	 * @param fixSecondaryFile
+	 *            Flag file. Created when secondary database error occur. If
+	 *            this file exist on start, delete it and recreate the secondary
+	 *            database.
+	 * @param maxChkBlocks
+	 *            maximum number of blocks
+	 * @param noCheck
+	 *            If <code>true</code>, don't check for holes etc.
+	 * @param storeShutdownHook
+	 *            {@link SemiOrderedShutdownHook} for hooking database shutdown
+	 *            hook.
+	 * @param reconstructFile
+	 *            Flag file. Created when database crash.
+	 * @param callback
+	 *            {@link StoreCallback} object for this store.
+	 * @throws IOException
+	 * @throws DatabaseException
+	 */
+	private BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File lruFile, File keysFile,
+			File fixSecondaryFile, long maxChkBlocks, boolean noCheck, SemiOrderedShutdownHook storeShutdownHook,
+			File reconstructFile, StoreCallback callback) throws DatabaseException, IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.callback = callback;
 		this.keyLength = callback.fullKeyLength();
@@ -1258,9 +1283,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private int runningFetches;
 	
 	/**
-	 * Retrieve a block.
-	 * @param dontPromote If true, don't promote data to the top of the LRU if we fetch it.
-	 * @return null if there is no such block stored, otherwise the block.
+	 * {@inheritDoc}
 	 */
 	public StorableBlock fetch(byte[] routingkey, byte[] fullKey, boolean dontPromote) throws IOException {
 		DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
@@ -1407,6 +1430,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	public void put(StorableBlock block, byte[] routingkey, byte[] fullKey, byte[] data, byte[] header, 
 			boolean overwrite) throws KeyCollisionException, IOException {
 		if(logMINOR)
@@ -1650,6 +1676,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		return true;
 	}
 
+	/**
+	 * Get prefix name of this database (such as <tt>ssk-cache-</tt>,
+	 * <tt>ssk-store-</tt>, etc).
+	 */
 	public final String getName() {
 		return name;
 	}
@@ -1978,29 +2008,47 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	public void setMaxKeys(long maxStoreKeys, boolean forceBigShrink) throws DatabaseException, IOException {
 		synchronized(this) {
 			maxBlocksInStore = maxStoreKeys;
 		}
 		maybeOnlineShrink(false);
 	}
-	
+
+	/**
+	 * {@inheritDoc}
+	 */
 	public long getMaxKeys() {
 		return maxBlocksInStore;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	public long hits() {
 		return hits;
 	}
-	
+
+	/**
+	 * {@inheritDoc}
+	 */
 	public long misses() {
 		return misses;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	public long writes() {
 		return writes;
 	}
-	
+
+	/**
+	 * {@inheritDoc}
+	 */
 	public long keyCount() {
 		return blocksInStore;
 	}
