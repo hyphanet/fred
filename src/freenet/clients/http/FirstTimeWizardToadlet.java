@@ -3,7 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
@@ -15,7 +17,9 @@ import freenet.node.NodeClientCore;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.SizeUtil;
 import freenet.support.api.HTTPRequest;
+import freenet.support.io.FileUtil;
 
 /**
  * A first time wizard aimed to ease the configuration of the node.
@@ -123,7 +127,55 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "dsForm");
 			HTMLNode result = bandwidthForm.addChild("select", "name", "ds");
 			
-			result.addChild("option", new String[] { "value", "selected" }, new String[] { "1G", "selected" }, "1GiB");
+			// Use JNI to find out the free space on this partition.
+
+			long freeSpace = -1;
+			File dir = FileUtil.getCanonicalFile(core.node.getNodeDir());
+			try {
+				Class c = dir.getClass();
+				Method m = c.getDeclaredMethod("getFreeSpace", new Class[0]);
+				if(m != null) {
+					Long lFreeSpace = (Long) m.invoke(dir, new Object[0]);
+					if(lFreeSpace != null) {
+						freeSpace = lFreeSpace.longValue();
+						System.err.println("Found free space on node's partition: "+freeSpace+" on "+dir+" = "+SizeUtil.formatSize(freeSpace));
+					}
+				}
+			} catch (NoSuchMethodException e) {
+				// Ignore
+				freeSpace = -1;
+			} catch (Throwable t) {
+				System.err.println("Trying to access 1.6 getFreeSpace(), caught "+t);
+				freeSpace = -1;
+			}
+			
+			if(freeSpace <= 0) {
+				result.addChild("option", new String[] { "value", "selected" }, new String[] { "1G", "selected" }, "1GiB");
+			} else {
+				if(freeSpace / 10 > 1024*1024*1024) {
+					// If 10GB+ free, default to 10% of available disk space.
+					String size = SizeUtil.formatSize(freeSpace/10);
+					String shortSize = SizeUtil.stripBytesEtc(size);
+					result.addChild("option", new String[] { "value", "selected" }, new String[] { shortSize, "selected" }, size+" "+l10n("tenPercentDisk"));
+					if(freeSpace / 20 > 1024*1024*1024) {
+						// If 20GB+ free, also offer 5% of available disk space.
+						size = SizeUtil.formatSize(freeSpace/20);
+						shortSize = SizeUtil.stripBytesEtc(size);
+						result.addChild("option", "value", shortSize, size+" "+l10n("fivePercentDisk"));
+					}
+					result.addChild("option", "value", "1G", "1GiB");
+				} else if(freeSpace < 1024*1024*1024) {
+					// If less than 1GB free, default to 256MB and also offer 512MB.
+					result.addChild("option", new String[] { "value", "selected" }, new String[] { "256M", "selected" }, "256MiB");
+					result.addChild("option", "value", "512M", "512MiB");
+				} else if(freeSpace < 5*1024*1024*1024) {
+					// If less than 5GB free, default to 512MB
+					result.addChild("option", new String[] { "value", "selected" }, new String[] { "512M", "selected" }, "512MiB");						
+				} else {
+					// If unknown, or 5-10GB free, default to 1GB.
+					result.addChild("option", new String[] { "value", "selected" }, new String[] { "1G", "selected" }, "1GiB");
+				}
+			}
 			result.addChild("option", "value", "2G", "2GiB");
 			result.addChild("option", "value", "3G", "3GiB");
 			result.addChild("option", "value", "5G", "5GiB");
