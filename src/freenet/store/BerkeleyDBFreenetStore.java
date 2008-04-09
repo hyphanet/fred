@@ -8,8 +8,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Vector;
+import java.util.List;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -585,11 +586,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 	
 	private void maybeSlowShrink(boolean dontCheckForHoles, boolean inStartUp) throws DatabaseException, IOException {
-		Vector wantedKeep = new Vector(); // keep; content is wanted, and is in the right place
-		Vector unwantedIgnore = new Vector(); // ignore; content is not wanted, and is not in the right place
-		Vector wantedMove = new Vector(); // content is wanted, but is in the wrong part of the store
-		Vector unwantedMove = new Vector(); // content is not wanted, but is in the part of the store we will keep
-		Vector alreadyDropped = new Vector(); // any blocks past the end which have already been truncated, but which there are still database blocks pointing to
+		List wantedKeep = new ArrayList(); // keep; content is wanted, and is in the right place
+		List unwantedIgnore = new ArrayList(); // ignore; content is not wanted, and is not in the right place
+		List wantedMove = new ArrayList(); // content is wanted, but is in the wrong part of the store
+		List unwantedMove = new ArrayList(); // content is not wanted, but is in the part of the store we will keep
+		List alreadyDropped = new ArrayList(); // any blocks past the end which have already been truncated, but which there are still database blocks pointing to
 		
 		Cursor c = null;
 		Transaction t = null;
