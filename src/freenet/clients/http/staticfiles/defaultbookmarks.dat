@@ -45,7 +45,7 @@ BookmarkCategory1.Content.Bookmark0.hasAnActivelink=true
 BookmarkCategory1.Content.Bookmark0.URI=USK@yGvITGZzrY1vUZK-4AaYLgcjZ7ysRqNTMfdcO8gS-LY,-ab5bJVD3Lp-LXEQqBAhJpMKrKJ19RnNaZMIkusU79s,AQACAAE/toad/12/
 BookmarkCategory2.Name=Freenet related software and documentation
 BookmarkCategory2.Content.BookmarkCategory=0
-BookmarkCategory2.Content.Bookmark=3
+BookmarkCategory2.Content.Bookmark=4
 BookmarkCategory2.Content.Bookmark0.Name=Frost
 BookmarkCategory2.Content.Bookmark0.Description=The official freesite of Frost, a message board system for Freenet
 BookmarkCategory2.Content.Bookmark0.hasAnActivelink=true
@@ -58,4 +58,8 @@ BookmarkCategory2.Content.Bookmark2.Name=Publish!
 BookmarkCategory2.Content.Bookmark2.Description=Simple guide to publishing web sites to Freenet
 BookmarkCategory2.Content.Bookmark2.hasAnActivelink=true
 BookmarkCategory2.Content.Bookmark2.URI=USK@940RYvj1-aowEHGsb5HeMTigq8gnV14pbKNsIvUO~-0,FdTbR3gIz21QNfDtnK~MiWgAf2kfwHe-cpyJXuLHdOE,AQACAAE/publish/1/
+BookmarkCategory2.Content.Bookmark3.URI=USK@8r-uSRcJPkAr-3v3YJR16OCx~lyV2XOKsiG4MOQQBMM,P42IgNemestUdaI7T6z3Og6P-Hi7g9U~e37R3kWGVj8,AQACAAE/freesite-HOWTO/3/
+BookmarkCategory2.Content.Bookmark3.Name=Freesite HOWTO
+BookmarkCategory2.Content.Bookmark3.Description=A more detailed explanation of publishing freesites
+BookmarkCategory2.Content.Bookmark3.hasAnActivelink=true
 End
