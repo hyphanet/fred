@@ -6,17 +6,19 @@ package freenet.support.math;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
-
 /**
+ * Exponential decay "running average".
+ * 
  * @author amphibian
- *
- * For the first N reports, this is equivalent to a simple running
- * average. After that it is a decaying running average with a
- * decayfactor of 1/N. We accomplish this by having decayFactor =
- * 1/(Math.min(#reports + 1, N)). We can therefore:
- * a) Specify N more easily than an arbitrary decay factor.
- * b) We don't get big problems with influence of the initial value,
- * which is usually not very reliable.
+ * 
+ * For the first <tt>maxReports</tt> reports, this is equivalent to a simple running average.
+ * After that it is a decaying running average with a <tt>decayFactor</tt> of <tt>1/maxReports</tt>. We
+ * accomplish this by having <tt>decayFactor = 1/(Math.min(#reports + 1, maxReports))</tt>. We can
+ * therefore:
+ * <ul>
+ * <li>Specify <tt>maxReports</tt> more easily than an arbitrary decay factor.</li>
+ * <li>We don't get big problems with influence of the initial value, which is usually not very reliable.</li>
+ * </ul>
  */
 public final class BootstrappingDecayingRunningAverage implements
         RunningAverage {
@@ -43,6 +45,20 @@ public final class BootstrappingDecayingRunningAverage implements
         	;
     }
     
+	/**
+	 * Constructor
+	 * 
+	 * @param defaultValue
+	 *                default value
+	 * @param min
+	 *                minimum value of input data
+	 * @param max
+	 *                maxumum value of input data
+	 * @param maxReports
+	 * @param fs
+	 *                {@link SimpleFieldSet} parameter for this object. Will
+	 *                override other parameters.
+	 */
     public BootstrappingDecayingRunningAverage(double defaultValue, double min,
             double max, int maxReports, SimpleFieldSet fs) {
         this.min = min;
@@ -59,6 +75,9 @@ public final class BootstrappingDecayingRunningAverage implements
         }
     }
     
+	/**
+	 * {@inheritDoc}
+	 */
     public synchronized double currentValue() {
         return currentValue;
     }
@@ -74,6 +93,9 @@ public final class BootstrappingDecayingRunningAverage implements
 		return old;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
     public synchronized void report(double d) {
         if(d < min) {
         	if(Logger.shouldLog(Logger.DEBUG, this))
@@ -93,10 +115,16 @@ public final class BootstrappingDecayingRunningAverage implements
         if((d > 0.9) && (d <= 1.0)) ones++;
     }
 
+	/**
+	 * {@inheritDoc}
+	 */
     public void report(long d) {
         report((double)d);
     }
 
+	/**
+	 * {@inheritDoc}
+	 */
     public synchronized double valueIfReported(double d) {
         if(d < min) {
             Logger.error(this, "Too low: "+d, new Exception("debug"));
@@ -110,11 +138,19 @@ public final class BootstrappingDecayingRunningAverage implements
         return (d * decayFactor) + 
     		(currentValue * (1-decayFactor));
     }
-			
+    
+	/**
+	 * Change <code>maxReports</code>.
+	 * 
+	 * @param maxReports
+	 */
 	public synchronized void changeMaxReports(int maxReports) {
 		this.maxReports=maxReports;
 	}
 
+	/**
+	 * Copy constructor.
+	 */
     private BootstrappingDecayingRunningAverage(BootstrappingDecayingRunningAverage a) {
         this.currentValue = a.currentValue;
         this.max = a.max;
@@ -123,11 +159,19 @@ public final class BootstrappingDecayingRunningAverage implements
         this.reports = a.reports;
     }
 
-
+	/**
+	 * {@inheritDoc}
+	 */
     public synchronized  long countReports() {
         return reports;
     }
 
+	/**
+	 * Export this object as {@link SimpleFieldSet}.
+	 * 
+	 * @param shortLived
+	 * 		See {@link SimpleFieldSet#SimpleFieldSet(boolean)}.
+	 */
 	public synchronized SimpleFieldSet exportFieldSet(boolean shortLived) {
 		SimpleFieldSet fs = new SimpleFieldSet(shortLived);
 		fs.putSingle("Type", "BootstrappingDecayingRunningAverage");
