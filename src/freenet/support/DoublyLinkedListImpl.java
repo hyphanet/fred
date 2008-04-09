@@ -353,68 +353,18 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
     /**
      * @return  an Enumeration of list elements from head to tail
      */
-    public Enumeration forwardElements() {
+    private Enumeration forwardElements() {
         return new ForwardWalker();
     }
 
     /**
-     * @throws ClassCastException  if startAt is not a DoublyLinkedList.Item
-     */
-    public Enumeration forwardElements(Object startAt, boolean inclusive) {
-        return forwardElements((DoublyLinkedList.Item) startAt, inclusive);
-    }
-
-    /**
-     * @return  an Enumeration of list elements from head to tail
-     * @param startAt    the item to begin the walk at
-     * @param inclusive  whether to include startAt in the Enumeration
-     * @throws VirginItemException  if startAt is not a member of a DoublyLinkedList
-     *
-     * WARNING:  If startAt is an item of another DoublyLinkedList, it
-     *           will NOT be detected and the results will be unpredictable.
-     */
-    protected Enumeration forwardElements(DoublyLinkedList.Item startAt, boolean inclusive)
-                            throws VirginItemException, NoSuchElementException {
-
-        if ((startAt.getNext() == null) || (startAt.getPrev() == null))
-            throw new VirginItemException(startAt);
-        else
-            return new ForwardWalker(startAt, inclusive);
-    }
-
-    /**
      * @return  an Enumeration of list elements from tail to head
      */
-    public Enumeration reverseElements() {
+    protected Enumeration reverseElements() {
         return new ReverseWalker();
     }
 
-    /**
-     * @throws ClassCastException  if startAt is not a DoublyLinkedList.Item
-     */
-    public Enumeration reverseElements(Object startAt, boolean inclusive) {
-        return reverseElements((DoublyLinkedList.Item) startAt, inclusive);
-    }
-
-    /**
-     * @return  an Enumeration of list elements from tail to head
-     * @param startAt    the item to begin the walk at
-     * @param inclusive  whether to include startAt in the Enumeration
-     * @throws VirginItemException  if startAt is not a member of a DoublyLinkedList
-     *
-     * WARNING:  If startAt is an item of another DoublyLinkedList, it
-     *           will NOT be detected and the results will be unpredictable.
-     */
-    protected Enumeration reverseElements(DoublyLinkedList.Item startAt, boolean inclusive)
-                            throws VirginItemException, NoSuchElementException {
-
-        if ((startAt.getNext() == null) || (startAt.getPrev() == null))
-            throw new VirginItemException(startAt);
-        else
-            return new ReverseWalker(startAt, inclusive);
-    }
-
-    protected class ForwardWalker implements Enumeration {
+    private class ForwardWalker implements Enumeration {
         protected DoublyLinkedList.Item next;
         protected ForwardWalker() {
             next = _headptr.getNext();
@@ -435,7 +385,7 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
         }
     }
 
-    protected class ReverseWalker implements Enumeration {
+    private class ReverseWalker implements Enumeration {
         protected DoublyLinkedList.Item next;
         protected ReverseWalker() {
             next = _tailptr.getPrev();
@@ -495,6 +445,3 @@ public class DoublyLinkedListImpl implements DoublyLinkedList {
 		}
     }
 }
-
-
-
