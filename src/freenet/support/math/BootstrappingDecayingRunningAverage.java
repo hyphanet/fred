@@ -30,14 +30,14 @@ public final class BootstrappingDecayingRunningAverage implements
         return new BootstrappingDecayingRunningAverage(this);
     }
     
-    final double min;
-    final double max;
-    double currentValue;
-    long reports;
-    int maxReports;
+    private final double min;
+    private final double max;
+    private double currentValue;
+    private long reports;
+    private int maxReports;
     // FIXME: debugging!
-    long zeros;
-    long ones;
+    private long zeros;
+    private long ones;
     
     public synchronized String toString() {
         return super.toString() + ": min="+min+", max="+max+", currentValue="+
@@ -72,7 +72,7 @@ public final class BootstrappingDecayingRunningAverage implements
 	 * Used from DecayingKeyspaceAverager to normalize the stored averages. Calling this function
 	 * may (purposefully) destroy the utility of the average being kept.
 	 */
-	synchronized double setCurrentValue(double d) {
+    protected synchronized double setCurrentValue(double d) {
 		double old=currentValue;
 		currentValue=d;
 		return old;
@@ -130,7 +130,7 @@ public final class BootstrappingDecayingRunningAverage implements
         out.writeDouble(currentValue);
     }
 
-    BootstrappingDecayingRunningAverage(DataInputStream dis, double min,
+    protected BootstrappingDecayingRunningAverage(DataInputStream dis, double min,
             double max, int maxReports) throws IOException {
         this.max = max;
         this.min = min;
@@ -153,7 +153,7 @@ public final class BootstrappingDecayingRunningAverage implements
             throw new IOException("Value out of range: "+currentValue);
     }
     
-    public BootstrappingDecayingRunningAverage(BootstrappingDecayingRunningAverage a) {
+    private BootstrappingDecayingRunningAverage(BootstrappingDecayingRunningAverage a) {
         this.currentValue = a.currentValue;
         this.max = a.max;
         this.maxReports = a.maxReports;
@@ -161,7 +161,7 @@ public final class BootstrappingDecayingRunningAverage implements
         this.reports = a.reports;
     }
 
-    public int getDataLength() {
+    protected int getDataLength() {
         return 4 + 4 + 4 + 8 + 8;
     }
 
