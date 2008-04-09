@@ -46,12 +46,13 @@ import freenet.support.Logger;
 import freenet.support.SortedLongSet;
 
 /**
-* Freenet datastore based on BerkelyDB Java Edition by sleepycat software
-* More info at http://www.sleepycat.com/products/bdbje.html
-*
-* @author tubbie
-* @author amphibian
-*/
+ * Freenet datastore based on BerkelyDB Java Edition by Sleepycat Software, Inc.
+ * (now Oracle). More info at <a
+ * href="http://www.oracle.com/database/berkeley-db/je/">http://www.oracle.com/database/berkeley-db/je/</a>.
+ * 
+ * @author tubbie
+ * @author amphibian
+ */
 public class BerkeleyDBFreenetStore implements FreenetStore {
 
 	private static boolean logMINOR;
@@ -228,16 +229,42 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 	
 	/**
-	* Initializes database
-	* @param noCheck If true, don't check for holes etc.
-	* @param wipe If true, wipe the database first.
-	 * @param reconstructFile 
-	* @param the directory where the store is located
-	* @throws IOException
-	* @throws DatabaseException
-	* @throws FileNotFoundException if the dir does not exist and could not be created
-	*/
-	private BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File lruFile, File keysFile, File fixSecondaryFile, long maxChkBlocks, boolean noCheck, boolean wipe, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile, StoreCallback callback) throws IOException, DatabaseException {
+	 * Initializes database
+	 * 
+	 * @param env
+	 *            Berkeley DB {@link Environment}.
+	 * @param prefix
+	 *            Database name prefix
+	 * @param storeFile
+	 *            Store file file
+	 * @param lruFile
+	 *            LRU database file
+	 * @param keysFile
+	 *            Keys database
+	 * @param fixSecondaryFile
+	 *            Flag file. Created when secondary database error occur. If
+	 *            this file exist on start, delete it and recreate the secondary
+	 *            database.
+	 * @param maxChkBlocks
+	 *            maximum number of blocks
+	 * @param noCheck
+	 *            If <code>true</code>, don't check for holes etc.
+	 * @param wipe
+	 *            If <code>true</code>, wipe the database first.
+	 * @param storeShutdownHook
+	 *            {@link SemiOrderedShutdownHook} for hooking database shutdown
+	 *            hook.
+	 * @param reconstructFile
+	 *            Flag file. Created when database crash.
+	 * @param callback
+	 *            {@link StoreCallback} object for this store.
+	 * @throws IOException
+	 * @throws DatabaseException
+	 */
+	private BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File lruFile, File keysFile,
+			File fixSecondaryFile, long maxChkBlocks, boolean noCheck, boolean wipe,
+			SemiOrderedShutdownHook storeShutdownHook,
+			File reconstructFile, StoreCallback callback) throws IOException, DatabaseException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		this.callback = callback;
@@ -278,7 +305,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			// Integer.MAX_VALUE seems to trigger an overflow or whatever ...
 			// Either we find out what the maximum value is and we do a static method somewhere ensuring
 			// it won't overflow ... or we debug the wrapper.
-			// NB: it might be a wrapper-version-missmatch problem (nextgens)
+			// NB: it might be a wrapper-version-mismatch problem (nextgens)
 			try {
 				try {
 					environment.removeDatabase(null, prefix+"CHK_accessTime");
@@ -384,7 +411,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				// Integer.MAX_VALUE seems to trigger an overflow or whatever ...
 				// Either we find out what the maximum value is and we do a static method somewhere ensuring
 				// it won't overflow ... or we debug the wrapper.
-				// NB: it might be a wrapper-version-missmatch problem (nextgens)
+				// NB: it might be a wrapper-version-mismatch problem (nextgens)
 				if(blockNums != null) {
 					Logger.normal(this, "Closing database "+blockDBName);
 					blockNums.close();
@@ -537,28 +564,34 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private boolean shrinking = false;
 	
 	/**
-	* Do an offline shrink, if necessary. Will not return until completed.
-	* @param dontCheckForHoles If true, don't check for holes.
-	* @throws DatabaseException
-	* @throws IOException
-	*/
+	 * Do an offline shrink, if necessary. Will not return until completed.
+	 * 
+	 * @param dontCheckForHoles If <code>true</code>, don't check for holes.
+	 * @throws DatabaseException
+	 * @throws IOException
+	 */
 	private void maybeOfflineShrink(boolean dontCheckForHoles) throws DatabaseException, IOException {
 		if(blocksInStore <= maxBlocksInStore) return;
 		maybeSlowShrink(dontCheckForHoles, true);
 	}
 
 	/**
-	* Do an online shrink, if necessary. Non-blocking i.e. it will do the shrink on another thread.
-	* @param forceBigOnlineShrinks If true, force the node to shrink the store immediately even if
-	* it is a major (more than 10%) shrink. Normally this is not allowed because online shrinks do not
-	* preserve the most recently used data; the best thing to do is to restart the node and let it do
-	* an offline shrink.
-	* @throws DatabaseException If a database error occurs.
-	* @throws IOException If an I/O error occurs.
-	* @return True if the database will be shrunk in the background (or the database is already small
-	* enough), false if it is not possible to shrink it because a large shrink was requested and we
-	* don't want to do a large online shrink.
-	*/
+	 * Do an online shrink, if necessary. This method is non-blocking (i.e. it
+	 * will do the shrink on a new thread).
+	 * 
+	 * @param forceBigOnlineShrinks If true, force the node to shrink the store
+	 *        immediately even if it is a major (more than <tt>10%</tt>)
+	 *        shrink. <br />
+	 *        Normally this flag is should not be set because online shrinks
+	 *        drops the most recently used data; the best thing to do is to
+	 *        restart the node and let it do an offline shrink.
+	 * @throws DatabaseException If a database error occurs.
+	 * @throws IOException If an I/O error occurs.
+	 * @return <code>true</code> if the database will be shrunk in the
+	 *         background (or the database is already small enough),
+	 *         <code>false</code>otherwise (for example: major shrink is
+	 *         needed but <code>forceBigOnlineShrinks</code> was not set).
+	 */
 	private boolean maybeOnlineShrink(boolean forceBigOnlineShrinks) throws DatabaseException, IOException {
 		synchronized(this) {
 			if(blocksInStore <= maxBlocksInStore) return true;
