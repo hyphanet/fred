@@ -58,9 +58,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private static boolean logDEBUG;
 	
 	// If we get a DbChecksumException, create this file.
-	final File reconstructFile;
-	final int dataBlockSize;
-	final int headerBlockSize;
+	private final File reconstructFile;
+	private final int dataBlockSize; 
+	private final int headerBlockSize;
 
 	private final Environment environment;
 	private final TupleBinding storeBlockTupleBinding;
@@ -560,7 +560,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		return bound;
 	}
 
-	private Object shrinkLock = new Object();
+	private final Object shrinkLock = new Object();
 	private boolean shrinking = false;
 	
 	/**
@@ -1821,7 +1821,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	* Used to create the secondary database sorted on accesstime
 	*/
 	private static class AccessTimeKeyCreator implements SecondaryKeyCreator {
-		private TupleBinding theBinding;
+		private final TupleBinding theBinding;
 		
 		public AccessTimeKeyCreator(TupleBinding theBinding1) {
 			theBinding = theBinding1;
@@ -1839,7 +1839,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 
 	private static class BlockNumberKeyCreator implements SecondaryKeyCreator {
-		private TupleBinding theBinding;
+		private final TupleBinding theBinding;
 		
 		public BlockNumberKeyCreator(TupleBinding theBinding1) {
 			theBinding = theBinding1;
@@ -1864,7 +1864,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 	}
 	
-	private Object closeLock = new Object();
+	private final Object closeLock = new Object();
 	
 	private void close(boolean sleep) {
 		try {
