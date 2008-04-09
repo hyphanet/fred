@@ -3,9 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Vector;
 
 import freenet.crypt.BlockCipher;
@@ -14,7 +15,6 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.xfer.PacketThrottle;
 import freenet.support.DoublyLinkedList;
-import freenet.support.DoublyLinkedListImpl;
 import freenet.support.IndexableUpdatableSortedLinkedListItem;
 import freenet.support.LimitedRangeIntByteArrayMap;
 import freenet.support.LimitedRangeIntByteArrayMapElement;
@@ -59,14 +59,14 @@ public class KeyTracker {
      * and when they become urgent. We always add to the end,
      * and we always remove from the beginning, so should always
      * be consistent. */
-    private final DoublyLinkedList ackQueue;
+    private final List ackQueue;
     
     /** Serial numbers of packets that we have forgotten. Usually
      * when we have forgotten a packet it just means that it has 
      * been shifted to another KeyTracker because this one was
      * deprecated; the messages will get through in the end.
      */
-    private final DoublyLinkedList forgottenQueue;
+    private final List forgottenQueue;
     
     /** The highest incoming serial number we have ever seen
      * from the other side. Includes actual packets and resend
@@ -106,8 +106,8 @@ public class KeyTracker {
         this.pn = pn;
         this.sessionCipher = cipher;
         this.sessionKey = sessionKey;
-        ackQueue = new DoublyLinkedListImpl();
-        forgottenQueue = new DoublyLinkedListImpl();
+        ackQueue = new LinkedList();
+        forgottenQueue = new LinkedList();
         highestSeenIncomingSerialNumber = -1;
         // give some leeway
         sentPacketsContents = new LimitedRangeIntByteArrayMap(128);
@@ -162,7 +162,7 @@ public class KeyTracker {
         if(logMINOR) Logger.minor(this, "Queueing ack for "+seqNumber);
         QueuedAck qa = new QueuedAck(seqNumber);
         synchronized(ackQueue) {
-            ackQueue.push(qa);
+            ackQueue.add(qa);
         }
         // Will go urgent in 200ms
     }
@@ -179,11 +179,11 @@ public class KeyTracker {
     	}
     	QueuedForgotten qf = new QueuedForgotten(seqNumber);
     	synchronized(forgottenQueue) {
-    		forgottenQueue.push(qf);
+    		forgottenQueue.add(qf);
     	}
     }
     
-    class PacketActionItem { // anyone got a better name?
+    static class  PacketActionItem { // anyone got a better name?
         /** Packet sequence number */
         int packetNumber;
         /** Time at which this packet's ack or resend request becomes urgent
@@ -195,13 +195,7 @@ public class KeyTracker {
         }
     }
     
-    class QueuedAck extends PacketActionItem implements DoublyLinkedList.Item {
-        void sent() {
-            synchronized(ackQueue) {
-                ackQueue.remove(this);
-            }
-        }
-        
+    private final static class QueuedAck extends PacketActionItem {
         QueuedAck(int packet) {
             long now = System.currentTimeMillis();
             packetNumber = packet;
@@ -210,51 +204,10 @@ public class KeyTracker {
              */
             urgentTime = now + 200;
         }
-
-        Item prev;
-        Item next;
-        
-        public Item getNext() {
-            return next;
-        }
-
-        public Item setNext(Item i) {
-            Item old = next;
-            next = i;
-            return old;
-        }
-
-        public Item getPrev() {
-            return prev;
-        }
-
-        public Item setPrev(Item i) {
-            Item old = prev;
-            prev = i;
-            return old;
-        }
-
-        private DoublyLinkedList parent;
-        
-		public DoublyLinkedList getParent() {
-			return parent;
-		}
-
-		public DoublyLinkedList setParent(DoublyLinkedList l) {
-			DoublyLinkedList old = parent;
-			parent = l;
-			return old;
-		}
     }
 
     // FIXME this is almost identical to QueuedAck, coalesce the classes
-    class QueuedForgotten extends PacketActionItem implements DoublyLinkedList.Item {
-        void sent() {
-            synchronized(forgottenQueue) {
-                forgottenQueue.remove(this);
-            }
-        }
-        
+    private final static class QueuedForgotten extends PacketActionItem {
         QueuedForgotten(int packet) {
             long now = System.currentTimeMillis();
             packetNumber = packet;
@@ -263,41 +216,6 @@ public class KeyTracker {
              */
             urgentTime = now + 500;
         }
-
-        Item prev;
-        Item next;
-        
-        public Item getNext() {
-            return next;
-        }
-
-        public Item setNext(Item i) {
-            Item old = next;
-            next = i;
-            return old;
-        }
-
-        public Item getPrev() {
-            return prev;
-        }
-
-        public Item setPrev(Item i) {
-            Item old = prev;
-            prev = i;
-            return old;
-        }
-
-        private DoublyLinkedList parent;
-        
-		public DoublyLinkedList getParent() {
-			return parent;
-		}
-
-		public DoublyLinkedList setParent(DoublyLinkedList l) {
-			DoublyLinkedList old = parent;
-			parent = l;
-			return old;
-		}
     }
 
     private abstract class BaseQueuedResend extends PacketActionItem implements IndexableUpdatableSortedLinkedListItem {
@@ -718,10 +636,11 @@ public class KeyTracker {
      */
     private boolean queuedAck(int packetNumber) {
         synchronized(ackQueue) {
-            for(Enumeration e=ackQueue.elements();e.hasMoreElements();) {
-                QueuedAck qa = (QueuedAck) e.nextElement();
-                if(qa.packetNumber == packetNumber) return true;
-            }
+        	Iterator it = ackQueue.iterator();
+        	while (it.hasNext()) {
+        		QueuedAck qa = (QueuedAck) it.next();
+        		if(qa.packetNumber == packetNumber) return true;
+        	}
         }
         return false;
     }
@@ -797,11 +716,13 @@ public class KeyTracker {
             int length = forgottenQueue.size();
             acks = new int[length];
             int i=0;
-            for(Enumeration e=forgottenQueue.elements();e.hasMoreElements();) {
-                QueuedForgotten ack = (QueuedForgotten)e.nextElement();
+            
+            Iterator it = forgottenQueue.iterator();
+            while (it.hasNext()) {
+                QueuedForgotten ack = (QueuedForgotten) it.next();
                 acks[i++] = ack.packetNumber;
                 if(logMINOR) Logger.minor(this, "Grabbing ack "+ack.packetNumber+" from "+this);
-                ack.sent();
+                it.remove();	// sent
             }
         }
         return acks;
@@ -828,11 +749,12 @@ public class KeyTracker {
             int length = ackQueue.size();
             acks = new int[length];
             int i=0;
-            for(Enumeration e=ackQueue.elements();e.hasMoreElements();) {
-                QueuedAck ack = (QueuedAck)e.nextElement();
+            Iterator it = ackQueue.iterator();
+            while (it.hasNext()) {
+                QueuedAck ack = (QueuedAck) it.next();
                 acks[i++] = ack.packetNumber;
                 if(logMINOR) Logger.minor(this, "Grabbing ack "+ack.packetNumber+" from "+this);
-                ack.sent();
+                it.remove();	// sent
             }
         }
         return acks;
@@ -928,7 +850,7 @@ public class KeyTracker {
         long earliestTime = Long.MAX_VALUE;
         synchronized(ackQueue) {
             if(!ackQueue.isEmpty()) {
-                QueuedAck qa = (QueuedAck)ackQueue.head();
+                QueuedAck qa = (QueuedAck) ackQueue.get(0);
                 earliestTime = qa.urgentTime;
             }
         }
