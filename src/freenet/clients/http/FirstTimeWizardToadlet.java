@@ -171,6 +171,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				} else if(freeSpace < 5*1024*1024*1024) {
 					// If less than 5GB free, default to 512MB
 					result.addChild("option", new String[] { "value", "selected" }, new String[] { "512M", "selected" }, "512MiB");						
+					result.addChild("option", "value", "1G", "1GiB");
 				} else {
 					// If unknown, or 5-10GB free, default to 1GB.
 					result.addChild("option", new String[] { "value", "selected" }, new String[] { "1G", "selected" }, "1GiB");
