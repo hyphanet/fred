@@ -225,7 +225,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			return "ssk";
 		else if(type == TYPE_PUBKEY)
 			return "pubkey";
-		else throw new Error("No such type "+type);
+		else
+			throw new RuntimeException("No such type: " + type);
 	}
 	
 	/**
