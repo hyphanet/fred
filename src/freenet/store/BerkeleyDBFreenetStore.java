@@ -299,125 +299,15 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			removeSecondaryDatabase();
 		}
 		
-		// Initialize secondary CHK database sorted on accesstime
-		SecondaryDatabase atime = null;
-		SecondaryConfig secDbConfig = new SecondaryConfig();
-		secDbConfig.setAllowCreate(keysDB.count() == 0);
-		secDbConfig.setSortedDuplicates(true);
-		secDbConfig.setTransactional(true);
-		secDbConfig.setAllowPopulate(false);
 		storeBlockTupleBinding = new StoreBlockTupleBinding();
-		AccessTimeKeyCreator accessTimeKeyCreator =
-			new AccessTimeKeyCreator(storeBlockTupleBinding);
-		secDbConfig.setKeyCreator(accessTimeKeyCreator);
-		try {
-			try {
-				System.err.println("Opening access times database for "+prefix);
-				atime = environment.openSecondaryDatabase
-									(null, prefix+"CHK_accessTime", keysDB, secDbConfig);
-				// The below is too slow to be useful, because SecondaryDatabase.count() isn't optimised.
-//				long chkDBCount = keysDB.count();
-//				System.err.println("Counting size of access times database...");
-//				long atimeCount = atime.count();
-//				if(atimeCount < chkDBCount) {
-//					System.err.println("Access times database: "+atimeCount+" but main database: "+chkDBCount);
-//					throw new DatabaseException("Needs repopulation");
-//				}
-			} catch (DatabaseException e) {
-				WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000L+keysDB.count()*100L)));
-				// Of course it's not a solution but a quick fix
-				// Integer.MAX_VALUE seems to trigger an overflow or whatever ...
-				// Either we find out what the maximum value is and we do a static method somewhere ensuring
-				// it won't overflow ... or we debug the wrapper.
-				// NB: it might be a wrapper-version-missmatch problem (nextgens)
-				System.err.println("Reconstructing access times index...");
-				Logger.error(this, "Reconstructing access times index...");
-				if(atime != null) atime.close();
-				try {
-					environment.removeDatabase(null, prefix+"CHK_accessTime");
-				} catch (DatabaseNotFoundException e1) {
-					// Ok
-				}
-				secDbConfig.setAllowCreate(true);
-				secDbConfig.setAllowPopulate(true);
-				atime = environment.openSecondaryDatabase
-									(null, prefix+"CHK_accessTime", keysDB, secDbConfig);
-			}
-		} catch (DatabaseException e1) {
-			// Log this now because close() will probably throw too
-			System.err.println("Error opening access times db: "+e1);
-			e1.printStackTrace();
-			Logger.error(this, "Error opening access times db: "+e1, e1);
-			close(false);
-			throw e1;
-		}
-		accessTimeDB = atime;
-		System.err.println("Opened access times database for "+prefix);
+
+		// Initialize secondary CHK database sorted on accesstime
+	 	accessTimeDB = openSecondaryDataBase(prefix + "CHK_accessTime", keysDB.count() == 0, false, new AccessTimeKeyCreator(
+				storeBlockTupleBinding));
 		
 		// Initialize other secondary database sorted on block number
-//		try {
-//			environment.removeDatabase(null, "CHK_blockNum");
-//		} catch (DatabaseNotFoundException e) { };
-		SecondaryConfig blockNoDbConfig = new SecondaryConfig();
-		blockNoDbConfig.setAllowCreate(keysDB.count() == 0);
-		blockNoDbConfig.setSortedDuplicates(false);
-		blockNoDbConfig.setAllowPopulate(false);
-		blockNoDbConfig.setTransactional(true);
-		
-		BlockNumberKeyCreator bnkc =
-			new BlockNumberKeyCreator(storeBlockTupleBinding);
-		blockNoDbConfig.setKeyCreator(bnkc);
-		SecondaryDatabase blockNums = null;
-		String blockDBName = prefix+"CHK_blockNum";
-		try {
-			try {
-				System.err.println("Opening block db index");
-				blockNums = environment.openSecondaryDatabase
-					(null, blockDBName, keysDB, blockNoDbConfig);
-				// The below is too slow to be useful, because SecondaryDatabase.count() isn't optimised.
-//				long blockNumsCount = blockNums.count();
-//				long chkDBCount = keysDB.count();
-//				if(blockNumsCount < chkDBCount) {
-//					System.err.println("Block nums database: "+blockNumsCount+" but main database: "+chkDBCount);
-//					throw new DatabaseException("Needs repopulation");
-//				}
-			} catch (DatabaseException e) {
-				WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+keysDB.count()*100)));
-				// Of course it's not a solution but a quick fix
-				// Integer.MAX_VALUE seems to trigger an overflow or whatever ...
-				// Either we find out what the maximum value is and we do a static method somewhere ensuring
-				// it won't overflow ... or we debug the wrapper.
-				// NB: it might be a wrapper-version-mismatch problem (nextgens)
-				if(blockNums != null) {
-					Logger.normal(this, "Closing database "+blockDBName);
-					blockNums.close();
-				}
-				try {
-					environment.removeDatabase(null, blockDBName);
-				} catch (DatabaseNotFoundException e1) {
-					// Ignore
-					System.err.println("Database "+blockDBName+" does not exist deleting it");
-				}
-				System.err.println("Reconstructing block numbers index... ("+e+")");
-				Logger.error(this, "Reconstructing block numbers index...", e);
-				System.err.println("Creating new block DB index");
-				blockNoDbConfig.setSortedDuplicates(false);
-				blockNoDbConfig.setAllowCreate(true);
-				blockNoDbConfig.setAllowPopulate(true);
-				blockNums = environment.openSecondaryDatabase
-					(null, blockDBName, keysDB, blockNoDbConfig);
-			}
-		} catch (DatabaseException e1) {
-			// Log this now because close() will probably throw too
-			System.err.println("Error opening block nums db: "+e1);
-			e1.printStackTrace();
-			Logger.error(this, "Error opening block nums db: "+e1, e1);
-			close(false);
-			throw e1;
-		}
-		System.err.println("Opened block number database for "+prefix);
-		
-		blockNumDB = blockNums;
+	 	blockNumDB = openSecondaryDataBase(prefix + "CHK_blockNum", keysDB.count() == 0, false, new BlockNumberKeyCreator(
+				storeBlockTupleBinding));
 		
 		// Initialize the store file
 		try {
@@ -1055,32 +945,15 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		this.fixSecondaryFile = fixSecondaryFile;
 		fixSecondaryFile.delete();
 		
-		// Initialize secondary CHK database sorted on accesstime
-		SecondaryConfig secDbConfig = new SecondaryConfig();
-		secDbConfig.setAllowCreate(true);
-		secDbConfig.setSortedDuplicates(true);
-		secDbConfig.setTransactional(true);
-		secDbConfig.setAllowPopulate(true);
 		storeBlockTupleBinding = new StoreBlockTupleBinding();
-		AccessTimeKeyCreator accessTimeKeyCreator =
-			new AccessTimeKeyCreator(storeBlockTupleBinding);
-		secDbConfig.setKeyCreator(accessTimeKeyCreator);
-		accessTimeDB = environment.openSecondaryDatabase
-							(null, prefix+"CHK_accessTime", keysDB, secDbConfig);
+
+		// Initialize secondary CHK database sorted on accesstime
+	 	accessTimeDB = openSecondaryDataBase(prefix + "CHK_accessTime", true, true, new AccessTimeKeyCreator(
+				storeBlockTupleBinding));
 		
 		// Initialize other secondary database sorted on block number
-		SecondaryConfig blockNoDbConfig = new SecondaryConfig();
-		blockNoDbConfig.setAllowCreate(true);
-		blockNoDbConfig.setSortedDuplicates(false);
-		blockNoDbConfig.setAllowPopulate(true);
-		blockNoDbConfig.setTransactional(true);
-		
-		BlockNumberKeyCreator bnkc =
-			new BlockNumberKeyCreator(storeBlockTupleBinding);
-		blockNoDbConfig.setKeyCreator(bnkc);
-		System.err.println("Creating block db index");
-		blockNumDB = environment.openSecondaryDatabase
-			(null, prefix+"CHK_blockNum", keysDB, blockNoDbConfig);
+	 	blockNumDB = openSecondaryDataBase(prefix + "CHK_blockNum", true, true, new BlockNumberKeyCreator(
+				storeBlockTupleBinding));
 		
 		// Initialize the store file
 		if(!storeFile.exists())
@@ -2028,12 +1901,19 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		return blocksInStore;
 	}
 
-        private void removeSecondaryDatabase() throws DatabaseException {
+	/**
+	 * Remove all secondary database of this datastore.
+	 * 
+	 * @throws DatabaseException
+	 */
+	private void removeSecondaryDatabase() throws DatabaseException {
 		Logger.error(this, "Recreating secondary databases");
 		Logger.error(this, "This may take some time...");
 		System.err.println("Recreating secondary databases");
 		System.err.println("This may take some time...");
+
 		WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+keysDB.count()*100)));
+
 		// Of course it's not a solution but a quick fix
 		// Integer.MAX_VALUE seems to trigger an overflow or whatever ...
 		// Either we find out what the maximum value is and we do a static method somewhere ensuring
@@ -2054,5 +1934,84 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			close(false);
 			throw e;
 		}
-        }
+	}
+
+	/**
+	 * Open a secondary database of this datastore.
+	 * 
+	 * @param dbName
+	 *                Full database name
+	 * @param create
+	 *                <code>true</code> if allowed to create a new
+	 *                secondary database, <code>false</code> otherwise.
+	 * @param populate
+	 *                <code>true</code> if populate this secondary
+	 *                database automatically, <code>false</code>
+	 *                otherwise.
+	 * @param secondaryKeyCreator
+	 *                {@link SecondaryKeyCreator} for this secondary
+	 *                database instance.
+	 * @return
+	 * @throws DatabaseException
+	 */
+	private SecondaryDatabase openSecondaryDataBase(String dbName, boolean create, boolean populate,
+			SecondaryKeyCreator secondaryKeyCreator) throws DatabaseException {
+		SecondaryDatabase db = null;
+		SecondaryConfig secDbConfig = new SecondaryConfig();
+		secDbConfig.setAllowCreate(create);
+		secDbConfig.setSortedDuplicates(true);
+		secDbConfig.setTransactional(true);
+		secDbConfig.setAllowPopulate(populate);
+		secDbConfig.setKeyCreator(secondaryKeyCreator);
+
+		try {
+			try {
+				System.err.println("Opening secondary database: " + dbName );
+				db = environment.openSecondaryDatabase(null, dbName, keysDB, secDbConfig);
+				// The below is too slow to be useful, because SecondaryDatabase.count() isn't optimised.
+				//				long chkDBCount = keysDB.count();
+				//				System.err.println("Counting size of access times database...");
+				//				long dbCount = db.count();
+				//				if(dbCount < chkDBCount) {
+				//					System.err.println("Access times database: "+dbCount+" but main database: "+chkDBCount);
+				//					throw new DatabaseException("Needs repopulation");
+				//				}
+			} catch (DatabaseException e) {
+				// failed, try to create it.
+
+				WrapperManager.signalStarting((int) (Math
+						.min(Integer.MAX_VALUE, 5 * 60 * 1000L + keysDB.count() * 100L)));
+				// Of course it's not a solution but a quick fix
+				// Integer.MAX_VALUE seems to trigger an overflow or whatever ...
+				// Either we find out what the maximum value is and we do a static method somewhere ensuring
+				// it won't overflow ... or we debug the wrapper.
+				// NB: it might be a wrapper-version-missmatch problem (nextgens)
+
+				System.err.println("Reconstructing index for secondary database: " + dbName);
+				Logger.error(this,"Reconstructing index for secondary database: " + dbName);
+				if (db != null)
+					db.close();
+				try {
+					environment.removeDatabase(null, dbName);
+				} catch (DatabaseNotFoundException e1) {
+					// Ok
+				}
+				secDbConfig.setAllowCreate(true);
+				secDbConfig.setAllowPopulate(true);
+				db = environment.openSecondaryDatabase(null, dbName, keysDB, secDbConfig);
+			}
+		} catch (DatabaseException e1) {
+			// Log this now because close() will probably throw too
+			System.err.println("Error opening secondary database: " + dbName);
+			e1.printStackTrace();
+			Logger.error(this,
+					"Error opening secondary database: " + dbName + " (" + e1.getMessage() + ")",
+					e1);
+			close(false);
+			throw e1;
+		}
+		System.err.println("Opened secondary database: " + dbName );
+
+		return db;
+	}
 }
