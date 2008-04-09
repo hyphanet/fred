@@ -151,13 +151,17 @@ public final class BootstrappingDecayingRunningAverage implements
 	/**
 	 * Copy constructor.
 	 */
-    private BootstrappingDecayingRunningAverage(BootstrappingDecayingRunningAverage a) {
-        this.currentValue = a.currentValue;
-        this.max = a.max;
-        this.maxReports = a.maxReports;
-        this.min = a.min;
-        this.reports = a.reports;
-    }
+	private BootstrappingDecayingRunningAverage(BootstrappingDecayingRunningAverage a) {
+		synchronized (a) {
+			this.currentValue = a.currentValue;
+			this.max = a.max;
+			this.maxReports = a.maxReports;
+			this.min = a.min;
+			this.reports = a.reports;
+			this.zeros = a.zeros;
+			this.ones = a.ones;
+		}
+	}
 
 	/**
 	 * {@inheritDoc}
