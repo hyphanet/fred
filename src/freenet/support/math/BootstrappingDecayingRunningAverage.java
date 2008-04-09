@@ -3,10 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.math;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
@@ -119,40 +115,6 @@ public final class BootstrappingDecayingRunningAverage implements
 		this.maxReports=maxReports;
 	}
 
-    int SERIAL_MAGIC = 0xdd60ee7f;
-    
-    // Preferable to call with a buffered stream!
-    public synchronized void writeDataTo(DataOutputStream out) throws IOException {
-        out.writeInt(SERIAL_MAGIC);
-        out.writeInt(1);
-        out.writeInt(maxReports);
-        out.writeLong(reports);
-        out.writeDouble(currentValue);
-    }
-
-    protected BootstrappingDecayingRunningAverage(DataInputStream dis, double min,
-            double max, int maxReports) throws IOException {
-        this.max = max;
-        this.min = min;
-        int magic = dis.readInt();
-        if(magic != SERIAL_MAGIC)
-            throw new IOException("Invalid magic");
-        int ver = dis.readInt();
-        if(ver != 1)
-            throw new IOException("Invalid version "+ver);
-        int mrep = dis.readInt();
-        this.maxReports = maxReports;
-        if(maxReports != mrep)
-            Logger.normal(this, "Changed maxReports: now "+maxReports+
-                    ", was "+mrep);
-        reports = dis.readLong();
-        if(reports < 0)
-            throw new IOException("Negative reports");
-        currentValue = dis.readDouble();
-        if((currentValue < min) || (currentValue > max))
-            throw new IOException("Value out of range: "+currentValue);
-    }
-    
     private BootstrappingDecayingRunningAverage(BootstrappingDecayingRunningAverage a) {
         this.currentValue = a.currentValue;
         this.max = a.max;
@@ -161,9 +123,6 @@ public final class BootstrappingDecayingRunningAverage implements
         this.reports = a.reports;
     }
 
-    protected int getDataLength() {
-        return 4 + 4 + 4 + 8 + 8;
-    }
 
     public synchronized  long countReports() {
         return reports;
