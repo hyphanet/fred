@@ -250,7 +250,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	 * @param noCheck
 	 *            If <code>true</code>, don't check for holes etc.
 	 * @param wipe
-	 *            If <code>true</code>, wipe the database first.
+	 *            If <code>true</code>, wipe and reconstruct the database.
 	 * @param storeShutdownHook
 	 *            {@link SemiOrderedShutdownHook} for hooking database shutdown
 	 *            hook.
@@ -267,116 +267,136 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			File reconstructFile, StoreCallback callback) throws IOException, DatabaseException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		
+		this.environment = env;
+		this.name = prefix;
+		this.fixSecondaryFile = fixSecondaryFile;
+		this.maxBlocksInStore = maxChkBlocks;
+		this.reconstructFile = reconstructFile;
 		this.callback = callback;
 		this.collisionPossible = callback.collisionPossible();
 		this.dataBlockSize = callback.dataLength();
 		this.headerBlockSize = callback.headerLength();
 		this.keyLength = callback.fullKeyLength();
 		callback.setStore(this);
+
 		this.freeBlocks = new SortedLongSet();
-		name = prefix;
-		
-		this.maxBlocksInStore=maxChkBlocks;
-		this.reconstructFile = reconstructFile;
-		
-		environment = env;
-		
+
+		// Delete old database(s).
+		if (wipe) {
+			System.err.println("Wiping old database for " + prefix);
+			wipeOldDatabases(environment, prefix);
+		}
+
 		// Initialize CHK database
 		DatabaseConfig dbConfig = new DatabaseConfig();
 		dbConfig.setAllowCreate(true);
 		dbConfig.setTransactional(true);
-		if(wipe) {
-			System.err.println("Wiping old database for "+prefix);
-			wipeOldDatabases(environment, prefix);
-		}
-		
+
 		keysDB = environment.openDatabase(null,prefix+"CHK",dbConfig);
 		System.err.println("Opened main database for "+prefix);
 
-		this.fixSecondaryFile = fixSecondaryFile;
 		if(fixSecondaryFile.exists()) {
 			fixSecondaryFile.delete();
 			removeSecondaryDatabase();
 		}
-		
+
 		storeBlockTupleBinding = new StoreBlockTupleBinding();
 
 		// Initialize secondary CHK database sorted on accesstime
-	 	accessTimeDB = openSecondaryDataBase(prefix + "CHK_accessTime", keysDB.count() == 0, false, new AccessTimeKeyCreator(
+		accessTimeDB = openSecondaryDataBase(prefix + "CHK_accessTime", keysDB.count() == 0 || wipe, wipe, true, new AccessTimeKeyCreator(
 				storeBlockTupleBinding));
-		
+
 		// Initialize other secondary database sorted on block number
-	 	blockNumDB = openSecondaryDataBase(prefix + "CHK_blockNum", keysDB.count() == 0, false, new BlockNumberKeyCreator(
+		blockNumDB = openSecondaryDataBase(prefix + "CHK_blockNum", keysDB.count() == 0 || wipe, wipe, false, new BlockNumberKeyCreator(
 				storeBlockTupleBinding));
-		
+
 		// Initialize the store file
 		try {
 			if(!storeFile.exists())
 				if(!storeFile.createNewFile())
-					throw new DatabaseException("can't create a new file "+storeFile+" !");
+					throw new IOException("Can't create a new file " + storeFile + " !");
 			storeRAF = new RandomAccessFile(storeFile,"rw");
-			
-			if(!lruFile.exists())
+
+			if(!lruFile.exists()) 
 				if(!lruFile.createNewFile())
-					throw new DatabaseException("can't create a new file "+lruFile+" !");
+					throw new IOException("Can't create a new file " + lruFile + " !");
 			lruRAF = new RandomAccessFile(lruFile,"rw");
-			
+
 			if(keysFile != null) {
 				if(!keysFile.exists())
 					if(!keysFile.createNewFile())
-						throw new DatabaseException("can't create a new file "+keysFile+" !");
+						throw new IOException("Can't create a new file " + keysFile + " !");
 				keysRAF = new RandomAccessFile(keysFile,"rw");
 			} else keysRAF = null;
-			
-			boolean dontCheckForHolesShrinking = false;
-			
-			long chkBlocksInDatabase = highestBlockNumberInDatabase();
-			blocksInStore = chkBlocksInDatabase;
-			long chkBlocksFromFile = countCHKBlocksFromFile();
-			lastRecentlyUsed = getMaxRecentlyUsed();
 
-			System.out.println("Keys in store: db "+chkBlocksInDatabase+" file "+chkBlocksFromFile+" / max "+maxChkBlocks);
-			
-			if(chkBlocksInDatabase > chkBlocksFromFile) {
-				System.out.println("More keys in database than in store!");
-				
-				//throw new DatabaseException("More keys in database than in store!");
-				// FIXME reinstate if handling code doesn't work
-				// FIXME we can do a cleverer recovery: Find all keys whose block number is > chkBlocksFromFile and delete them
-			}
-			
-			if(((blocksInStore == 0) && (chkBlocksFromFile != 0)) ||
-					(((blocksInStore + 10) * 1.1) < chkBlocksFromFile)) {
-				try {
-					close(false);
-				} catch (Throwable t) {
-					Logger.error(this, "Failed to close: "+t, t);
-					System.err.println("Failed to close: "+t);
-					t.printStackTrace();
+			if (wipe) {
+                                // wipe and reconstruct
+				blocksInStore = 0;
+				lastRecentlyUsed = 0;
+
+				reconstruct();
+
+				blocksInStore = countCHKBlocksFromFile();
+				lastRecentlyUsed = getMaxRecentlyUsed();
+
+				if (!noCheck)
+					maybeOfflineShrink(true);
+			} else {
+                                // just open
+                                boolean dontCheckForHolesShrinking = false;
+
+                                long chkBlocksInDatabase = highestBlockNumberInDatabase();
+                                blocksInStore = chkBlocksInDatabase;
+				long chkBlocksFromFile = countCHKBlocksFromFile();
+				lastRecentlyUsed = getMaxRecentlyUsed();
+
+				System.out.println("Keys in store: db "+chkBlocksInDatabase+" file "+chkBlocksFromFile+" / max "+maxChkBlocks);
+
+				if(chkBlocksInDatabase > chkBlocksFromFile) {
+					System.out.println("More keys in database than in store!");
+
+					//throw new DatabaseException("More keys in database than in store!");
+					// FIXME reinstate if handling code doesn't work
+					// FIXME we can do a cleverer recovery: Find all keys whose block number is > chkBlocksFromFile and delete them
 				}
-				throw new DatabaseException("Keys in database: "+blocksInStore+" but keys in file: "+chkBlocksFromFile);
-			}
-			
-			blocksInStore = Math.max(blocksInStore, chkBlocksFromFile);
-			if(logMINOR) Logger.minor(this, "Keys in store: "+blocksInStore);
-			
-			if(!noCheck) {
-				maybeOfflineShrink(dontCheckForHolesShrinking);
-				chkBlocksFromFile = countCHKBlocksFromFile();
+
+				if(((blocksInStore == 0) && (chkBlocksFromFile != 0)) ||
+                                            (((blocksInStore + 10) * 1.1) < chkBlocksFromFile)) {
+					try {
+						close(false);
+					} catch (Throwable t) {
+						Logger.error(this, "Failed to close: "+t, t);
+						System.err.println("Failed to close: "+t);
+						t.printStackTrace();
+					}
+					throw new DatabaseException("Keys in database: "+blocksInStore+" but keys in file: "+chkBlocksFromFile);
+				}
+
 				blocksInStore = Math.max(blocksInStore, chkBlocksFromFile);
+				if(logMINOR) Logger.minor(this, "Keys in store: "+blocksInStore);
+
+				if(!noCheck) {
+					maybeOfflineShrink(dontCheckForHolesShrinking);
+					chkBlocksFromFile = countCHKBlocksFromFile();
+					blocksInStore = Math.max(blocksInStore, chkBlocksFromFile);
+				}
 			}
-			
+
 			// Add shutdownhook
 			storeShutdownHook.addEarlyJob(new ShutdownHook());
 		} catch (DatabaseException t) {
-			System.err.println("Caught exception, closing database: "+t);
+			Logger.error(this, "Caught exception, closing database: " + prefix, t);
+			System.err.println("Caught exception, closing database: " + prefix + " (" + t + ")");
 			t.printStackTrace();
-			Logger.error(this, "Caught "+t, t);
 			close(false);
+			
 			throw t;
 		} catch (IOException t) {
-			Logger.error(this, "Caught "+t, t);
+			System.err.println("Caught exception, closing database: " + prefix + " (" + t + ")");
+			Logger.error(this, "Caught exception, closing database: " + prefix, t);
 			close(false);
+			
 			throw t;
 		}
 	}
@@ -915,80 +935,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File lruFile, File keysFile,
 			File fixSecondaryFile, long maxChkBlocks, boolean noCheck, SemiOrderedShutdownHook storeShutdownHook,
 			File reconstructFile, StoreCallback callback) throws DatabaseException, IOException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		this.callback = callback;
-		this.keyLength = callback.fullKeyLength();
-		this.dataBlockSize = callback.dataLength();
-		this.headerBlockSize = callback.headerLength();
-		this.collisionPossible = callback.collisionPossible();
-		callback.setStore(this);
-		this.freeBlocks = new SortedLongSet();
-		this.maxBlocksInStore=maxChkBlocks;
-		this.environment = env;
-		this.reconstructFile = reconstructFile;
-		name = prefix;
-		
-		wipeOldDatabases(environment, prefix);
-		
-		// Delete old database(s).
-		
-		// Initialize CHK database
-		DatabaseConfig dbConfig = new DatabaseConfig();
-		dbConfig.setAllowCreate(true);
-		dbConfig.setTransactional(true);
-		
-		keysDB = environment.openDatabase(null,prefix+"CHK",dbConfig);
-		
-		if(keysDB.count() > 0)
-			throw new IllegalStateException("Wiped old store but it still contains "+keysDB.count()+" keys!");
-		
-		this.fixSecondaryFile = fixSecondaryFile;
-		fixSecondaryFile.delete();
-		
-		storeBlockTupleBinding = new StoreBlockTupleBinding();
-
-		// Initialize secondary CHK database sorted on accesstime
-	 	accessTimeDB = openSecondaryDataBase(prefix + "CHK_accessTime", true, true, new AccessTimeKeyCreator(
-				storeBlockTupleBinding));
-		
-		// Initialize other secondary database sorted on block number
-	 	blockNumDB = openSecondaryDataBase(prefix + "CHK_blockNum", true, true, new BlockNumberKeyCreator(
-				storeBlockTupleBinding));
-		
-		// Initialize the store file
-		if(!storeFile.exists())
-			if(!storeFile.createNewFile())
-				throw new DatabaseException("can't create a new file "+storeFile+" !");
-		storeRAF = new RandomAccessFile(storeFile,"rw");
-		
-		if(!lruFile.exists())
-			if(!lruFile.createNewFile())
-				throw new DatabaseException("can't create a new file "+lruFile+" !");
-		lruRAF = new RandomAccessFile(lruFile,"rw");
-		
-		if(keysFile != null) {
-			if(!keysFile.exists())
-				if(!keysFile.createNewFile())
-					throw new DatabaseException("can't create a new file "+keysFile+" !");
-			keysRAF = new RandomAccessFile(keysFile,"rw");
-		} else
-			keysRAF = null;
-		
-		blocksInStore = 0;
-		
-		lastRecentlyUsed = 0;
-		
-		reconstruct();
-		
-		blocksInStore = countCHKBlocksFromFile();
-		lastRecentlyUsed = getMaxRecentlyUsed();
-		
-		if(!noCheck) {
-			maybeOfflineShrink(true);
-		}
-		
-		// Add shutdownhook
-		storeShutdownHook.addEarlyJob(new ShutdownHook());
+		this(env, prefix, storeFile, lruFile, keysFile, fixSecondaryFile, maxChkBlocks, noCheck, true,
+				storeShutdownHook, reconstructFile, callback);
 	}
 	
 	private static void wipeOldDatabases(Environment env, String prefix) {
@@ -1955,11 +1903,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	 * @throws DatabaseException
 	 */
 	private SecondaryDatabase openSecondaryDataBase(String dbName, boolean create, boolean populate,
-			SecondaryKeyCreator secondaryKeyCreator) throws DatabaseException {
+			boolean sortedDuplicates, SecondaryKeyCreator secondaryKeyCreator) throws DatabaseException {
 		SecondaryDatabase db = null;
 		SecondaryConfig secDbConfig = new SecondaryConfig();
 		secDbConfig.setAllowCreate(create);
-		secDbConfig.setSortedDuplicates(true);
+		secDbConfig.setSortedDuplicates(sortedDuplicates);
 		secDbConfig.setTransactional(true);
 		secDbConfig.setAllowPopulate(populate);
 		secDbConfig.setKeyCreator(secondaryKeyCreator);
