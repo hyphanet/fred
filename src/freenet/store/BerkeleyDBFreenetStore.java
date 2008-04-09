@@ -296,31 +296,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		this.fixSecondaryFile = fixSecondaryFile;
 		if(fixSecondaryFile.exists()) {
 			fixSecondaryFile.delete();
-			Logger.error(this, "Recreating secondary databases");
-			Logger.error(this, "This may take some time...");
-			System.err.println("Recreating secondary databases");
-			System.err.println("This may take some time...");
-			WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+keysDB.count()*100)));
-			// Of course it's not a solution but a quick fix
-			// Integer.MAX_VALUE seems to trigger an overflow or whatever ...
-			// Either we find out what the maximum value is and we do a static method somewhere ensuring
-			// it won't overflow ... or we debug the wrapper.
-			// NB: it might be a wrapper-version-mismatch problem (nextgens)
-			try {
-				try {
-					environment.removeDatabase(null, prefix+"CHK_accessTime");
-				} catch (DatabaseNotFoundException e) {
-					// Cool!
-				}
-				try {
-					environment.removeDatabase(null, prefix+"CHK_blockNum");
-				} catch (DatabaseNotFoundException e) {
-					// Cool!
-				}
-			} catch (DatabaseException e) {
-				close(false);
-				throw e;
-			}
+			removeSecondaryDatabase();
 		}
 		
 		// Initialize secondary CHK database sorted on accesstime
@@ -2051,4 +2027,32 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	public long keyCount() {
 		return blocksInStore;
 	}
+
+        private void removeSecondaryDatabase() throws DatabaseException {
+		Logger.error(this, "Recreating secondary databases");
+		Logger.error(this, "This may take some time...");
+		System.err.println("Recreating secondary databases");
+		System.err.println("This may take some time...");
+		WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+keysDB.count()*100)));
+		// Of course it's not a solution but a quick fix
+		// Integer.MAX_VALUE seems to trigger an overflow or whatever ...
+		// Either we find out what the maximum value is and we do a static method somewhere ensuring
+		// it won't overflow ... or we debug the wrapper.
+		// NB: it might be a wrapper-version-mismatch problem (nextgens)
+		try {
+			try {
+				environment.removeDatabase(null, name+"CHK_accessTime");
+			} catch (DatabaseNotFoundException e) {
+				// Cool!
+			}
+			try {
+				environment.removeDatabase(null, name+"CHK_blockNum");
+			} catch (DatabaseNotFoundException e) {
+				// Cool!
+			}
+		} catch (DatabaseException e) {
+			close(false);
+			throw e;
+		}
+        }
 }
