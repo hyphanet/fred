@@ -113,6 +113,7 @@ public class SplitFileFetcher implements ClientGetState {
 			// Detect this.
 			if(checkBlocks == 64 && blocksPerSegment == 128 &&
 					splitfileCheckBlocks.length == splitfileDataBlocks.length - (splitfileDataBlocks.length / 128)) {
+				Logger.normal(this, "Activating 1135 wrong check blocks per segment workaround for "+this);
 				checkBlocks = 127;
 			}
 			checkBlocksPerSegment = checkBlocks;
