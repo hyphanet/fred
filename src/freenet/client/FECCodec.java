@@ -74,7 +74,7 @@ public abstract class FECCodec {
 			 * Multiplied by 2 here, makes 6. Used to be 1.5 * 3 = 4.5. Wuala uses 5, but that's 
 			 * all FEC.
 			 */
-			int checkBlocks = dataBlocks;
+			int checkBlocks = dataBlocks * HighLevelSimpleClientImpl.MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT / HighLevelSimpleClientImpl.MAX_SPLITFILE_BLOCKS_PER_SEGMENT;
 			if(dataBlocks >= HighLevelSimpleClientImpl.MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT) 
 				checkBlocks = HighLevelSimpleClientImpl.MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT;
 			return StandardOnionFECCodec.getInstance(dataBlocks, checkBlocks, executor);
