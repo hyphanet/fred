@@ -104,7 +104,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	public static FreenetStore construct(int lastVersion, File baseStoreDir, boolean isStore,
 			String suffix, long maxStoreKeys, 
 			short type, Environment storeEnvironment, RandomSource random, 
-			SemiOrderedShutdownHook storeShutdownHook, boolean tryDbLoad, File reconstructFile, StoreCallback callback) throws DatabaseException, IOException {
+			SemiOrderedShutdownHook storeShutdownHook, File reconstructFile, StoreCallback callback) throws DatabaseException, IOException {
 		// Location of new store file
 		String newStoreFileName = typeName(type) + suffix + '.' + (isStore ? "store" : "cache");
 		File newStoreFile = new File(baseStoreDir, newStoreFileName);
@@ -122,39 +122,13 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		
 		System.err.println("Opening database using "+newStoreFile);
 		return openStore(storeEnvironment, baseStoreDir, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, maxStoreKeys,
-				false, lastVersion, false, storeShutdownHook, tryDbLoad, reconstructFile, callback);
+				false, lastVersion, false, storeShutdownHook, reconstructFile, callback);
 	}
 
 	private static FreenetStore openStore(Environment storeEnvironment, File baseDir, String newDBPrefix, File newStoreFile,
 			File lruFile, File keysFile, File newFixSecondaryFile, long maxStoreKeys, 
 			boolean noCheck, int lastVersion, boolean wipe, SemiOrderedShutdownHook storeShutdownHook, 
-			boolean tryDbLoad, File reconstructFile, StoreCallback callback) throws DatabaseException, IOException {
-		
-		if(tryDbLoad) {
-			String dbName = newDBPrefix+"CHK";
-			File dumpFilename = new File(baseDir, dbName+".dump");
-			System.err.println("Trying to restore from "+dumpFilename);
-			try {
-				FileInputStream fis = new FileInputStream(dumpFilename);
-				// DbDump used the default charset, so will this.
-				BufferedReader br = new BufferedReader(new InputStreamReader(fis));
-				DbLoad loader = new DbLoad();
-				loader.setEnv(storeEnvironment);
-				loader.setDbName(dbName);
-				loader.setInputReader(br);
-				loader.setNoOverwrite(false);
-				loader.setTextFileMode(false);
-				loader.load();
-				fis.close();
-				newFixSecondaryFile.createNewFile(); // force reconstruct of secondary indexes
-			} catch (IOException e) {
-				System.err.println("Failed to reload database "+dbName+": "+e);
-				e.printStackTrace();
-			}
-			
-			// Should just open now, although it will need to reconstruct the secondary indexes.
-		}
-		
+			File reconstructFile, StoreCallback callback) throws DatabaseException, IOException {
 		try {
 			// First try just opening it.
 			return new BerkeleyDBFreenetStore(storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile,
