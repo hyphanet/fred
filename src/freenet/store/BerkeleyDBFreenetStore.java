@@ -1,11 +1,8 @@
 package freenet.store;
 
-import java.io.BufferedReader;
 import java.io.EOFException;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,9 +30,6 @@ import com.sleepycat.je.SecondaryKeyCreator;
 import com.sleepycat.je.Transaction;
 import com.sleepycat.je.log.DbChecksumException;
 import com.sleepycat.je.log.LogFileNotFoundException;
-import com.sleepycat.je.util.DbLoad;
-
-import freenet.crypt.RandomSource;
 import freenet.keys.KeyVerifyException;
 import freenet.node.NodeInitException;
 import freenet.node.SemiOrderedShutdownHook;
@@ -101,10 +95,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		return new File(baseStoreDir, newStoreFileName);
 	}
 	
-	public static FreenetStore construct(int lastVersion, File baseStoreDir, boolean isStore,
-			String suffix, long maxStoreKeys, 
-			short type, Environment storeEnvironment, RandomSource random, 
-			SemiOrderedShutdownHook storeShutdownHook, File reconstructFile, StoreCallback callback) throws DatabaseException, IOException {
+	public static FreenetStore construct(File baseStoreDir, boolean isStore, String suffix,
+			long maxStoreKeys, short type, 
+			Environment storeEnvironment, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile, 
+			StoreCallback callback) throws DatabaseException, IOException {
 		// Location of new store file
 		String newStoreFileName = typeName(type) + suffix + '.' + (isStore ? "store" : "cache");
 		File newStoreFile = new File(baseStoreDir, newStoreFileName);
@@ -121,19 +115,18 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		File newFixSecondaryFile = new File(baseStoreDir, "recreate_secondary_db-"+newStoreFileName);
 		
 		System.err.println("Opening database using "+newStoreFile);
-		return openStore(storeEnvironment, baseStoreDir, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, maxStoreKeys,
-				false, lastVersion, false, storeShutdownHook, reconstructFile, callback);
+		return openStore(storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, maxStoreKeys, storeShutdownHook,
+				reconstructFile, callback);
 	}
 
-	private static FreenetStore openStore(Environment storeEnvironment, File baseDir, String newDBPrefix, File newStoreFile,
-			File lruFile, File keysFile, File newFixSecondaryFile, long maxStoreKeys, 
-			boolean noCheck, int lastVersion, boolean wipe, SemiOrderedShutdownHook storeShutdownHook, 
+	private static FreenetStore openStore(Environment storeEnvironment, String newDBPrefix, File newStoreFile, File lruFile,
+			File keysFile, File newFixSecondaryFile, long maxStoreKeys, SemiOrderedShutdownHook storeShutdownHook, 
 			File reconstructFile, StoreCallback callback) throws DatabaseException, IOException {
 		try {
 			// First try just opening it.
 			return new BerkeleyDBFreenetStore(storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile,
-					maxStoreKeys, noCheck, wipe, storeShutdownHook, 
-					reconstructFile, callback);
+					maxStoreKeys, false, storeShutdownHook, reconstructFile, 
+					callback);
 		} catch (DatabaseException e) {
 			
 			// Try a reconstruct
@@ -147,7 +140,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			// Reconstruct
 			
 			return new BerkeleyDBFreenetStore(storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, 
-					maxStoreKeys, noCheck, storeShutdownHook, reconstructFile, callback);
+					maxStoreKeys, storeShutdownHook, reconstructFile, callback);
 		}
 	}
 
@@ -181,8 +174,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	 *            database.
 	 * @param maxChkBlocks
 	 *            maximum number of blocks
-	 * @param noCheck
-	 *            If <code>true</code>, don't check for holes etc.
 	 * @param wipe
 	 *            If <code>true</code>, wipe and reconstruct the database.
 	 * @param storeShutdownHook
@@ -196,9 +187,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	 * @throws DatabaseException
 	 */
 	private BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File lruFile, File keysFile,
-			File fixSecondaryFile, long maxChkBlocks, boolean noCheck, boolean wipe,
-			SemiOrderedShutdownHook storeShutdownHook,
-			File reconstructFile, StoreCallback callback) throws IOException, DatabaseException {
+			File fixSecondaryFile, long maxChkBlocks, boolean wipe, SemiOrderedShutdownHook storeShutdownHook,
+			File reconstructFile,
+			StoreCallback callback) throws IOException, DatabaseException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		
@@ -274,8 +265,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				blocksInStore = countCHKBlocksFromFile();
 				lastRecentlyUsed = getMaxRecentlyUsed();
 
-				if (!noCheck)
-					maybeOfflineShrink(true);
+				maybeOfflineShrink(true);
 			} else {
                                 // just open
                                 boolean dontCheckForHolesShrinking = false;
@@ -310,12 +300,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				blocksInStore = Math.max(blocksInStore, chkBlocksFromFile);
 				if(logMINOR) Logger.minor(this, "Keys in store: "+blocksInStore);
 
-				if(!noCheck) {
-					maybeOfflineShrink(dontCheckForHolesShrinking);
-					chkBlocksFromFile = countCHKBlocksFromFile();
-					blocksInStore = Math.max(blocksInStore, chkBlocksFromFile);
+				maybeOfflineShrink(dontCheckForHolesShrinking);
+				chkBlocksFromFile = countCHKBlocksFromFile();
+				blocksInStore = Math.max(blocksInStore, chkBlocksFromFile);
 				}
-			}
 
 			// Add shutdownhook
 			storeShutdownHook.addEarlyJob(new ShutdownHook());
@@ -854,8 +842,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	 *            database.
 	 * @param maxChkBlocks
 	 *            maximum number of blocks
-	 * @param noCheck
-	 *            If <code>true</code>, don't check for holes etc.
 	 * @param storeShutdownHook
 	 *            {@link SemiOrderedShutdownHook} for hooking database shutdown
 	 *            hook.
@@ -867,10 +853,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	 * @throws DatabaseException
 	 */
 	private BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File lruFile, File keysFile,
-			File fixSecondaryFile, long maxChkBlocks, boolean noCheck, SemiOrderedShutdownHook storeShutdownHook,
-			File reconstructFile, StoreCallback callback) throws DatabaseException, IOException {
-		this(env, prefix, storeFile, lruFile, keysFile, fixSecondaryFile, maxChkBlocks, noCheck, true,
-				storeShutdownHook, reconstructFile, callback);
+			File fixSecondaryFile, long maxChkBlocks, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile,
+			StoreCallback callback) throws DatabaseException, IOException {
+		this(env, prefix, storeFile, lruFile, keysFile, fixSecondaryFile, maxChkBlocks, true, storeShutdownHook,
+				reconstructFile, callback);
 	}
 	
 	private static void wipeOldDatabases(Environment env, String prefix) {
@@ -1433,8 +1419,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			} else if(ex instanceof DbChecksumException || ex instanceof RunRecoveryException || ex instanceof LogFileNotFoundException ||
 					// UGH! We really shouldn't have to do this ... :(
 					(msg != null && 
-							(msg.indexOf("LogFileNotFoundException") >= 0 || msg.indexOf("DbChecksumException") >= 0)
-							|| msg.indexOf("RunRecoveryException") >= 0)) {
+							(msg.indexOf("LogFileNotFoundException") >= 0 || msg.indexOf("DbChecksumException") >= 0
+							|| msg.indexOf("RunRecoveryException") >= 0))) {
 				System.err.println("Corrupt database! Will be reconstructed on restart");
 				Logger.error(this, "Corrupt database! Will be reconstructed on restart");
 				try {
