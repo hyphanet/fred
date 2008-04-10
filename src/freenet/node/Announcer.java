@@ -259,8 +259,8 @@ public class Announcer {
 			}
 			return true;
 		}
-		if(node.nodeUpdater == null || (!node.nodeUpdater.isEnabled()) || 
-				node.nodeUpdater.canUpdateNow()) {
+		if(node.nodeUpdater == null || (!node.nodeUpdater.isEnabled()) ||
+				(node.nodeUpdater.canUpdateNow() && !node.nodeUpdater.isArmed())) {
 			// If we also have 10 TOO_NEW peers, we should shut down the announcement,
 			// because we're obviously broken and would only be spamming the seednodes.
 			if(node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, true) +
