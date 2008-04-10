@@ -222,6 +222,12 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 			}
 			splitfileAlgo = FECCodec.getCodec(splitfileAlgorithm,
 					dataBlockCount, checkBlocks.length, ctx.executor);
+			
+			if(checkBlocks.length > dataBlocks.length) {
+				// Work around 1135 bug.
+				// FIXME remove
+				throw new ResumeException("Detected 1135 insert bug, you must restart the insert");
+			}
 		} else {
 			Logger.normal(this, "Not encoded because no check blocks");
 			encoded = false;
