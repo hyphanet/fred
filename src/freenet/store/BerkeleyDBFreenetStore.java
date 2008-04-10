@@ -105,24 +105,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			String suffix, long maxStoreKeys, 
 			short type, Environment storeEnvironment, RandomSource random, 
 			SemiOrderedShutdownHook storeShutdownHook, boolean tryDbLoad, File reconstructFile, StoreCallback callback) throws DatabaseException, IOException {
-
-		/**
-		* Migration strategy:
-		*
-		* If nothing exists, create a new database in the storeEnvironment and store files of new names.
-		* Else
-		* If the old store directories exist:
-		*      If the old store file does not exist, delete the old store directories, and create a new database in the storeEnvironment and store files of new names.
-		*      Try to load the old database.
-		*      If successful
-		*             Migrate to the new database.
-		*             Move the files.
-		*      If not successful
-		*             Reconstruct the new database from the old file.
-		*             Move the old file to the new location.
-		*
-		*/
-		
 		// Location of new store file
 		String newStoreFileName = typeName(type) + suffix + '.' + (isStore ? "store" : "cache");
 		File newStoreFile = new File(baseStoreDir, newStoreFileName);
@@ -135,34 +117,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			keysFile = null;
 		}
 		
-		String newDBPrefix = typeName(type)+ '-' +(isStore ? "store" : "cache")+ '-';
-		
+		String newDBPrefix = typeName(type)+ '-' +(isStore ? "store" : "cache")+ '-';		
 		File newFixSecondaryFile = new File(baseStoreDir, "recreate_secondary_db-"+newStoreFileName);
 		
-		FreenetStore tmp;
-		
-		if(newStoreFile.exists()) {
-			
-			System.err.println("Opening database using "+newStoreFile);
-			
-			// Try to load new database, reconstruct it if necessary.
-			// Don't need to create a new Environment, since we can use the old one.
-			
-			tmp = openStore(storeEnvironment, baseStoreDir, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, maxStoreKeys,
-					false, lastVersion, false, storeShutdownHook, tryDbLoad, reconstructFile, callback);
-			
-		} else {
-			
-			// No new store file, no new database.
-			// Start from scratch, with new store.
-			
-			tmp = openStore(storeEnvironment, baseStoreDir, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, 
-					maxStoreKeys, false, lastVersion, 
-					false, storeShutdownHook, tryDbLoad, reconstructFile, callback);
-			
-		}
-
-		return tmp;
+		System.err.println("Opening database using "+newStoreFile);
+		return openStore(storeEnvironment, baseStoreDir, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, maxStoreKeys,
+				false, lastVersion, false, storeShutdownHook, tryDbLoad, reconstructFile, callback);
 	}
 
 	private static FreenetStore openStore(Environment storeEnvironment, File baseDir, String newDBPrefix, File newStoreFile,
