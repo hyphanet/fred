@@ -81,7 +81,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	static final int MAX_SPLITFILE_BLOCKS_PER_SEGMENT = 1024;
 	static final int MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 1536;
 	static final int SPLITFILE_BLOCKS_PER_SEGMENT = 128;
-	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 64;
+	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 127;
 	
 	
 	public HighLevelSimpleClientImpl(NodeClientCore node, ArchiveManager mgr, BucketFactory bf, RandomSource r, boolean cacheLocalRequests, short priorityClass, boolean forceDontIgnoreTooManyPathComponents, Executor[] slowSerialExecutor) {
