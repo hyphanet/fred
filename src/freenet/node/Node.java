@@ -1347,59 +1347,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				}
 			}
 			
-			// Disabled because it never works!
-			final boolean tryDbDumpRecovery = false;
-			
-			if(tryDbDumpRecovery) {
-				// First try DbDump
-				
-				System.err.println("Attempting DbDump-level recovery...");
-				
-				boolean[] isStores = new boolean[] { true, false, true, false, true, false };
-				final short[] types = new short[] { 
-						FreenetStore.TYPE_CHK,
-						FreenetStore.TYPE_CHK,
-						FreenetStore.TYPE_PUBKEY,
-						FreenetStore.TYPE_PUBKEY,
-						FreenetStore.TYPE_SSK,
-						FreenetStore.TYPE_SSK
-				};
-				final int[] lengths = new int[] {
-						CHKBlock.TOTAL_HEADERS_LENGTH + CHKBlock.DATA_LENGTH,
-						CHKBlock.TOTAL_HEADERS_LENGTH + CHKBlock.DATA_LENGTH,
-						DSAPublicKey.PADDED_SIZE,
-						DSAPublicKey.PADDED_SIZE,
-						SSKBlock.TOTAL_HEADERS_LENGTH + SSKBlock.DATA_LENGTH,
-						SSKBlock.TOTAL_HEADERS_LENGTH + SSKBlock.DATA_LENGTH
-				};
-				
-				for(int i=0;i<types.length;i++) {
-					boolean isStore = isStores[i];
-					short type = types[i];
-					String dbName = BerkeleyDBFreenetStore.getName(isStore, type);
-					File dbFile = BerkeleyDBFreenetStore.getFile(isStore, type, storeDir, suffix);
-					long keyCount = dbFile.length() / lengths[i];
-					// This is *slow* :(
-					int millis = (int)Math.min(24*60*60*1000 /* horrible hack, because of the wrapper's braindead timeout additions */, 
-							5*60*1000 + (Math.max(keyCount, 1) * 10000));
-					WrapperManager.signalStarting(millis);
-					try {
-						File target = new File(storeDir, dbName+".dump");
-						System.err.println("Dumping "+dbName+" to "+target+" ("+keyCount+" keys from file, allowing "+millis+"ms)");
-						DbDump.main(new String[] { "-r", "-h", dbDir.toString(), 
-								"-s", dbName, "-f", target.toString() });
-						tryDbLoad = true;
-					} catch (DatabaseException e2) {
-						System.err.println("DbDump recovery failed for "+dbName+" : "+e2);
-						e2.printStackTrace();
-					} catch (IOException e2) {
-						System.err.println("DbDump recovery failed for "+dbName+" : "+e2);
-						e2.printStackTrace();
-					}
-				}
-			
-			}
-			
 			// Delete the database logs
 			
 			System.err.println("Deleting old database log files...");
