@@ -96,4 +96,8 @@ public class StandardOnionFECCodec extends FECCodec {
 	public int countCheckBlocks() {
 		return n-k;
 	}
+	
+	public String toString() {
+		return super.toString()+":n="+n+",k="+k;
+	}
 }
