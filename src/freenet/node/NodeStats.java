@@ -487,8 +487,19 @@ public class NodeStats implements Persistable {
 			successfulSskInsertBytesSentAverage.currentValue() * numSSKInserts +
 			successfulChkOfferReplyBytesSentAverage.currentValue() * numCHKOfferReplies +
 			successfulSskOfferReplyBytesSentAverage.currentValue() * numSSKOfferReplies;
-		double bandwidthAvailableOutput =
-			(node.getOutputBandwidthLimit() - sentOverheadPerSecond) * 90; // 90 seconds at full power; we have to leave some time for the search as well
+		double outputAvailablePerSecond = node.getOutputBandwidthLimit() - sentOverheadPerSecond;
+		// If there's been an auto-update, we may have used a vast amount of bandwidth for it.
+		// Also, if things have broken, our overhead might be above our bandwidth limit,
+		// especially on a slow node.
+		
+		// So impose a minimum of 20% of the bandwidth limit.
+		// This will ensure we don't get stuck in any situation where all our bandwidth is overhead,
+		// and we don't accept any requests because of that, so it remains that way...
+		outputAvailablePerSecond = Math.max(outputAvailablePerSecond, node.getOutputBandwidthLimit() / 5);
+		
+		double bandwidthAvailableOutput = outputAvailablePerSecond * 90;
+		// 90 seconds at full power; we have to leave some time for the search as well
+		
 		if(bandwidthLiabilityOutput > bandwidthAvailableOutput) {
 			pInstantRejectIncoming.report(1.0);
 			rejected("Output bandwidth liability", isLocal);
