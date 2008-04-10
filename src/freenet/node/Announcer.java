@@ -17,6 +17,7 @@ import java.util.Vector;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.l10n.L10n;
+import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.HTMLNode;
@@ -257,6 +258,19 @@ public class Announcer {
 					timeGotEnoughPeers = System.currentTimeMillis();
 			}
 			return true;
+		}
+		if(node.nodeUpdater == null || (!node.nodeUpdater.isEnabled()) || 
+				node.nodeUpdater.canUpdateNow()) {
+			// If we also have 10 TOO_NEW peers, we should shut down the announcement,
+			// because we're obviously broken and would only be spamming the seednodes.
+			if(node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, true) +
+					node.peers.getPeerNodeStatusSize(PeerManager.PEER_NODE_STATUS_TOO_NEW, false) > 10) {
+				Logger.error(this, "Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
+				System.err.println("Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
+				if(node.clientCore != null)
+					node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("announceDisabledTooOldTitle"), l10n("announceDisabledTooOld"), UserAlert.CRITICAL_ERROR));
+			}
+				
 		}
 		synchronized(this) {
 			timeGotEnoughPeers = -1;
