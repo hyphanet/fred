@@ -229,18 +229,18 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 	
 	/**
-	 * Initializes database
+	 * Initializes the datastore
 	 * 
 	 * @param env
 	 *            Berkeley DB {@link Environment}.
 	 * @param prefix
 	 *            Database name prefix
 	 * @param storeFile
-	 *            Store file file
+	 *            Store file, where the actual data are stored
 	 * @param lruFile
-	 *            LRU database file
+	 *            LRU data file, flat file store for recovery
 	 * @param keysFile
-	 *            Keys database
+	 *            Keys data file, flat file store for recvoery
 	 * @param fixSecondaryFile
 	 *            Flag file. Created when secondary database error occur. If
 	 *            this file exist on start, delete it and recreate the secondary
@@ -902,18 +902,18 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 
 	/**
-	* Recreate the index from the data file. Call this when the index has been corrupted.
-
+	 * Recreate the index from the data file. Call this when the index has been corrupted.
+	 *
 	 * @param env
 	 *            Berkeley DB {@link Environment}.
 	 * @param prefix
-	 *            Database name prefix
+	 *            Datastore name prefix
 	 * @param storeFile
-	 *            Store file file
+	 *            Store file, where the actual data are stored
 	 * @param lruFile
-	 *            LRU database file
+	 *            LRU data file, flat file store for recovery
 	 * @param keysFile
-	 *            Keys database
+	 *            Keys data file, flat file store for recvoery
 	 * @param fixSecondaryFile
 	 *            Flag file. Created when secondary database error occur. If
 	 *            this file exist on start, delete it and recreate the secondary
