@@ -160,6 +160,10 @@ public class SplitFileFetcher implements ClientGetState {
 				segments[i] = new SplitFileFetcherSegment(splitfileType, dataBlocks, checkBlocks, this, archiveContext, 
 						fetchContext, maxTempLength, recursionLevel+1);
 			}
+			if(dataBlocksPtr != splitfileDataBlocks.length)
+				throw new FetchException(FetchException.INVALID_METADATA, "Unable to allocate all data blocks to segments - buggy or malicious inserter");
+			if(checkBlocksPtr != splitfileCheckBlocks.length)
+				throw new FetchException(FetchException.INVALID_METADATA, "Unable to allocate all check blocks to segments - buggy or malicious inserter");
 		}
 		this.token = token2;
 		parent.addBlocks(splitfileDataBlocks.length + splitfileCheckBlocks.length);
