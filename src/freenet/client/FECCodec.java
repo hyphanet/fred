@@ -340,9 +340,10 @@ public abstract class FECCodec {
 	}
 
 	public static void addToQueue(FECJob job, FECCodec codec, Executor executor) {
+		int maxThreads = getMaxRunningFECThreads();
 		synchronized(_awaitingJobs) {
 			_awaitingJobs.addFirst(job);
-			if(runningFECThreads == 0) {
+			if(runningFECThreads < maxThreads) {
 				executor.execute(fecRunner, "FEC Pool "+fecPoolCounter++);
 				runningFECThreads++;
 			}
@@ -355,6 +356,37 @@ public abstract class FECCodec {
 	private static final FECRunner fecRunner = new FECRunner();
 	private static int runningFECThreads;
 	private static int fecPoolCounter;
+	
+	private synchronized static int getMaxRunningFECThreads() {
+		long now = System.currentTimeMillis();
+		if(now - lastPolledMaxRunningFECThreads < 5*60*1000) return maxRunningFECThreads;
+		String osName = System.getProperty("os.name");
+		if(osName.indexOf("Windows") != -1 && (osName.toLowerCase().indexOf("mac os x") > 0) || (!NativeThread.usingNativeCode())) {
+			maxRunningFECThreads = 1; // OS/X niceness is really weak, so we don't want any more background CPU load than necessary
+		} else {
+			// Most other OSs will have reasonable niceness, so go by RAM.
+			Runtime r = Runtime.getRuntime();
+			int max = r.availableProcessors(); // FIXME this may change in a VM, poll it
+			long maxMemory = r.maxMemory();
+			if(maxMemory < 128*1024*1024) {
+				max = 1;
+			} else if(maxMemory < 256*1024*1024) {
+				max = Math.min(max, 2);
+			} else {
+				// Measured 11MB decode 8MB encode on amd64.
+				// No more than 10% of available RAM, so 110MB for each extra processor.
+				max = Math.min(max, (int) (Math.min(Integer.MAX_VALUE, maxMemory / (128*1024*1024))));
+			}
+			maxRunningFECThreads = max;
+		}
+		return maxRunningFECThreads;
+	}
+	
+	private static int maxRunningFECThreads;
+	private static int lastPolledMaxRunningFECThreads = -1;
+	static {
+		getMaxRunningFECThreads();
+	}
 
 	/**
 	 * A private Thread started by {@link FECCodec}...
