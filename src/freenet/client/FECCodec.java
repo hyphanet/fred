@@ -75,7 +75,8 @@ public abstract class FECCodec {
 			 * all FEC.
 			 */
 			int checkBlocks = dataBlocks;
-			if(dataBlocks == 128) checkBlocks--; // Stay within the 8-bit code range, speeds things up 4x
+			if(dataBlocks >= HighLevelSimpleClientImpl.MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT) 
+				checkBlocks = HighLevelSimpleClientImpl.MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT;
 			return StandardOnionFECCodec.getInstance(dataBlocks, checkBlocks, executor);
 		}
 		else
