@@ -488,10 +488,7 @@ public class NodeStats implements Persistable {
 			successfulChkOfferReplyBytesSentAverage.currentValue() * numCHKOfferReplies +
 			successfulSskOfferReplyBytesSentAverage.currentValue() * numSSKOfferReplies;
 		double bandwidthAvailableOutput =
-			// It's safer to use the fraction. If for some reason our output has been over the limit
-			// for a while, (which we cannot entirely eliminate with the current code), doing it the
-			// other way could produce a very low or even negative number.
-			(node.getOutputBandwidthLimit() * overheadFraction) * 90; // 90 seconds at full power; we have to leave some time for the search as well
+			(node.getOutputBandwidthLimit() - sentOverheadPerSecond) * 90; // 90 seconds at full power; we have to leave some time for the search as well
 		if(bandwidthLiabilityOutput > bandwidthAvailableOutput) {
 			pInstantRejectIncoming.report(1.0);
 			rejected("Output bandwidth liability", isLocal);
