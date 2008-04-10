@@ -368,10 +368,8 @@ public abstract class FECCodec {
 			Runtime r = Runtime.getRuntime();
 			int max = r.availableProcessors(); // FIXME this may change in a VM, poll it
 			long maxMemory = r.maxMemory();
-			if(maxMemory < 128*1024*1024) {
+			if(maxMemory < 256*1024*1024) {
 				max = 1;
-			} else if(maxMemory < 256*1024*1024) {
-				max = Math.min(max, 2);
 			} else {
 				// Measured 11MB decode 8MB encode on amd64.
 				// No more than 10% of available RAM, so 110MB for each extra processor.
