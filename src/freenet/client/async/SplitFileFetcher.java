@@ -105,7 +105,18 @@ public class SplitFileFetcher implements ClientGetState {
 			if((params == null) || (params.length < 8))
 				throw new MetadataParseException("No splitfile params");
 			blocksPerSegment = Fields.bytesToInt(params, 0);
-			checkBlocksPerSegment = Fields.bytesToInt(params, 4);
+			int checkBlocks = Fields.bytesToInt(params, 4);
+			
+			// FIXME remove this eventually. Will break compat with a few files inserted between 1135 and 1136.
+			// Work around a bug around build 1135.
+			// We were splitting as (128,255), but we were then setting the checkBlocksPerSegment to 64.
+			// Detect this.
+			if(checkBlocks == 64 && blocksPerSegment == 128 &&
+					splitfileCheckBlocks.length == splitfileDataBlocks.length - (splitfileDataBlocks.length / 128)) {
+				checkBlocks = 127;
+			}
+			checkBlocksPerSegment = checkBlocks;
+			
 			if((blocksPerSegment > fetchContext.maxDataBlocksPerSegment)
 					|| (checkBlocksPerSegment > fetchContext.maxCheckBlocksPerSegment))
 				throw new FetchException(FetchException.TOO_MANY_BLOCKS_PER_SEGMENT, "Too many blocks per segment: "+blocksPerSegment+" data, "+checkBlocksPerSegment+" check");
