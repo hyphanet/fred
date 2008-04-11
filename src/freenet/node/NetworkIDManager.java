@@ -31,9 +31,9 @@ import freenet.support.math.TrivialRunningAverage;
  * @created 2008-02-06
  */
 public class NetworkIDManager implements Runnable, Comparator {
-	public static boolean disableSecretPings=true;
-	public static boolean disableSecretPinger=true;
-	public static boolean disableSwapSegregation=true;
+	public static boolean disableSecretPings = true;
+	public static boolean disableSecretPinger = true;
+	public static boolean disableSwapSegregation = true;
 	
 	private static final int ACCEPTED_TIMEOUT   =  5000;
 	private static final int SECRETPONG_TIMEOUT = 20000;

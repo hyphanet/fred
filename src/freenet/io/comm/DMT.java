@@ -711,7 +711,8 @@ public class DMT {
 		return msg;
 	}
 	
-	public static MessageType FNPSSKAccepted = new MessageType("FNPSSKAccepted", PRIORITY_HIGH) {{
+	public final static MessageType FNPSSKAccepted = new MessageType("FNPSSKAccepted", PRIORITY_HIGH) {
+		{
 		addField(UID, Long.class);
 		addField(NEED_PUB_KEY, Boolean.class);
 	}};
@@ -723,7 +724,8 @@ public class DMT {
 		return msg;
 	}
 	
-	public static MessageType FNPSSKPubKey = new MessageType("FNPSSKPubKey", PRIORITY_BULK_DATA) {{
+	public final static MessageType FNPSSKPubKey = new MessageType("FNPSSKPubKey", PRIORITY_BULK_DATA) {
+		{
 		addField(UID, Long.class);
 		addField(PUBKEY_AS_BYTES, ShortBuffer.class);
 	}};
@@ -735,7 +737,8 @@ public class DMT {
 		return msg;
 	}
 	
-	public static MessageType FNPSSKPubKeyAccepted = new MessageType("FNPSSKPubKeyAccepted", PRIORITY_HIGH) {{
+	public final static MessageType FNPSSKPubKeyAccepted = new MessageType("FNPSSKPubKeyAccepted", PRIORITY_HIGH) {
+		{
 		addField(UID, Long.class);
 	}};
 	
@@ -749,7 +752,8 @@ public class DMT {
 	
 	/** Sent when a request to an opennet node is completed, but the data source does not want to 
 	 * path fold. Sent even on pure darknet. A better name might be FNPRequestCompletedAck. */
-	public static MessageType FNPOpennetCompletedAck = new MessageType("FNPOpennetCompletedAck", PRIORITY_LOW) {{
+	public final static MessageType FNPOpennetCompletedAck = new MessageType("FNPOpennetCompletedAck", PRIORITY_LOW) {
+		{
 		addField(UID, Long.class);
 	}};
 	
@@ -762,7 +766,9 @@ public class DMT {
 	/** Sent when a request completes and the data source wants to path fold. Starts a bulk data 
 	 * transfer including the (padded) noderef. 
 	 */
-	public static MessageType FNPOpennetConnectDestinationNew = new MessageType("FNPConnectDestinationNew", PRIORITY_UNSPECIFIED) {{
+	public final static MessageType FNPOpennetConnectDestinationNew = new MessageType("FNPConnectDestinationNew",
+	        PRIORITY_UNSPECIFIED) {
+		{
 		addField(UID, Long.class); // UID of original message chain
 		addField(TRANSFER_UID, Long.class); // UID of data transfer
 		addField(NODEREF_LENGTH, Integer.class); // Size of noderef
@@ -781,7 +787,9 @@ public class DMT {
 	/** Path folding response. Sent when the requestor wants to path fold and has received a noderef 
 	 * from the data source. Starts a bulk data transfer including the (padded) noderef. 
 	 */
-	public static MessageType FNPOpennetConnectReplyNew = new MessageType("FNPConnectReplyNew", PRIORITY_UNSPECIFIED) {{
+	public final static MessageType FNPOpennetConnectReplyNew = new MessageType("FNPConnectReplyNew",
+	        PRIORITY_UNSPECIFIED) {
+		{
 		addField(UID, Long.class); // UID of original message chain
 		addField(TRANSFER_UID, Long.class); // UID of data transfer
 		addField(NODEREF_LENGTH, Integer.class); // Size of noderef
@@ -802,7 +810,9 @@ public class DMT {
 	/**
 	 * Announcement request. Noderef is attached, will be transferred before anything else is done.
 	 */
-	public static MessageType FNPOpennetAnnounceRequest = new MessageType("FNPOpennetAnnounceRequest", PRIORITY_HIGH) {{
+	public final static MessageType FNPOpennetAnnounceRequest = new MessageType("FNPOpennetAnnounceRequest",
+	        PRIORITY_HIGH) {
+		{
 		addField(UID, Long.class);
 		addField(TRANSFER_UID, Long.class);
 		addField(NODEREF_LENGTH, Integer.class);
@@ -829,7 +839,8 @@ public class DMT {
 	 * request will result in many reply's. When the announcement is done, we return a DataNotFound; if
 	 * we run into a dead-end, we return a RejectedLoop; if we can't accept it, RejectedOverload.
 	 */
-	public static MessageType FNPOpennetAnnounceReply = new MessageType("FNPOpennetAnnounceReply", PRIORITY_LOW) {{
+	public final static MessageType FNPOpennetAnnounceReply = new MessageType("FNPOpennetAnnounceReply", PRIORITY_LOW) {
+		{
 		addField(UID, Long.class);
 		addField(TRANSFER_UID, Long.class);
 		addField(NODEREF_LENGTH, Integer.class);
@@ -845,7 +856,9 @@ public class DMT {
 		return msg;
 	}
 	
-	public static MessageType FNPOpennetAnnounceCompleted = new MessageType("FNPOpennetAnnounceCompleted", PRIORITY_LOW) {{
+	public final static MessageType FNPOpennetAnnounceCompleted = new MessageType("FNPOpennetAnnounceCompleted",
+	        PRIORITY_LOW) {
+		{
 		addField(UID, Long.class);
 	}};
 	
@@ -855,7 +868,8 @@ public class DMT {
 		return msg;
 	}
 	
-	public static MessageType FNPOpennetDisabled = new MessageType("FNPOpennetDisabled", PRIORITY_HIGH) {{
+	public final static MessageType FNPOpennetDisabled = new MessageType("FNPOpennetDisabled", PRIORITY_HIGH) {
+		{
 		addField(UID, Long.class);
 	}};
 	
@@ -865,7 +879,9 @@ public class DMT {
 		return msg;
 	}
 	
-	public static MessageType FNPOpennetNoderefRejected = new MessageType("FNPOpennetNoderefRejected", PRIORITY_HIGH) {{
+	public final static MessageType FNPOpennetNoderefRejected = new MessageType("FNPOpennetNoderefRejected",
+	        PRIORITY_HIGH) {
+		{
 		addField(UID, Long.class);
 		addField(REJECT_CODE, Integer.class);
 	}};
@@ -899,7 +915,9 @@ public class DMT {
 	
 	// FIXME get rid???
 	
-	public static MessageType FNPOpennetAnnounceNodeNotWanted = new MessageType("FNPOpennetAnnounceNodeNotWanted", PRIORITY_LOW) {{
+	public final static MessageType FNPOpennetAnnounceNodeNotWanted = new MessageType(
+	        "FNPOpennetAnnounceNodeNotWanted", PRIORITY_LOW) {
+		{
 		addField(UID, Long.class);
 	}};
 	
@@ -911,7 +929,8 @@ public class DMT {
 	
 	// Key offers (ULPRs)
 	
-	public static MessageType FNPOfferKey = new MessageType("FNPOfferKey", PRIORITY_LOW) {{
+	public final static MessageType FNPOfferKey = new MessageType("FNPOfferKey", PRIORITY_LOW) {
+		{
 		addField(KEY, Key.class);
 		addField(OFFER_AUTHENTICATOR, ShortBuffer.class);
 	}};
@@ -924,7 +943,8 @@ public class DMT {
 	}
 	
 	// Short timeout so PRIORITY_HIGH
-	public static MessageType FNPGetOfferedKey = new MessageType("FNPGetOfferedKey", PRIORITY_HIGH) {{
+	public final static MessageType FNPGetOfferedKey = new MessageType("FNPGetOfferedKey", PRIORITY_HIGH) {
+		{
 		addField(KEY, Key.class);
 		addField(OFFER_AUTHENTICATOR, ShortBuffer.class);
 		addField(NEED_PUB_KEY, Boolean.class);
@@ -941,7 +961,8 @@ public class DMT {
 	}
 	
 	// Permanently rejected. RejectedOverload means temporarily rejected.
-	public static MessageType FNPGetOfferedKeyInvalid = new MessageType("FNPGetOfferedKeyInvalid", PRIORITY_HIGH) {{ // short timeout
+	public final static MessageType FNPGetOfferedKeyInvalid = new MessageType("FNPGetOfferedKeyInvalid", PRIORITY_HIGH) {
+		{ // short timeout
 		addField(UID, Long.class);
 		addField(REASON, Short.class);
 	}};
@@ -953,8 +974,8 @@ public class DMT {
 		return msg;
 	}
 	
-	public static short GET_OFFERED_KEY_REJECTED_BAD_AUTHENTICATOR = 1;
-	public static short GET_OFFERED_KEY_REJECTED_NO_KEY = 2;
+	public final static short GET_OFFERED_KEY_REJECTED_BAD_AUTHENTICATOR = 1;
+	public final static short GET_OFFERED_KEY_REJECTED_NO_KEY = 2;
 	
 	public static final MessageType FNPPing = new MessageType("FNPPing", PRIORITY_HIGH) {{
 		addField(PING_SEQNO, Integer.class);

@@ -19,14 +19,14 @@ public class NativeThread extends Thread {
 	public static final boolean _loadNative;
 	private static boolean _disabled;
 	public static final int JAVA_PRIORITY_RANGE = Thread.MAX_PRIORITY - Thread.MIN_PRIORITY;
-	private static int NATIVE_PRIORITY_BASE;
-	public static int NATIVE_PRIORITY_RANGE;
+	private final static int NATIVE_PRIORITY_BASE;
+	public final static int NATIVE_PRIORITY_RANGE;
 	private int currentPriority = Thread.MAX_PRIORITY;
 	private boolean dontCheckRenice = false;
 
-	public static boolean HAS_THREE_NICE_LEVELS;
-	public static boolean HAS_ENOUGH_NICE_LEVELS;
-	public static boolean HAS_PLENTY_NICE_LEVELS;
+	public final static boolean HAS_THREE_NICE_LEVELS;
+	public final static boolean HAS_ENOUGH_NICE_LEVELS;
+	public final static boolean HAS_PLENTY_NICE_LEVELS;
 	
 	// 5 is enough generally for our purposes.
 	public static final int ENOUGH_NICE_LEVELS = 5;

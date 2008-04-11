@@ -22,7 +22,7 @@ public class TempBucketFactory implements BucketFactory {
 	
 	public static long defaultIncrement = 4096;
 	
-	public static float DEFAULT_FACTOR = 1.25F;
+	public final static float DEFAULT_FACTOR = 1.25F;
 
 	// Storage accounting disabled by default.
 	public TempBucketFactory(FilenameGenerator filenameGenerator) {

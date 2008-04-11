@@ -22,9 +22,9 @@ import freenet.support.io.FileUtil;
  *
  */
 public class TestDDACompleteMessage extends FCPMessage {
-	public static String name = "TestDDAComplete";
-	public static String READ_ALLOWED = "ReadDirectoryAllowed";
-	public static String WRITE_ALLOWED = "WriteDirectoryAllowed";
+	public final static String name = "TestDDAComplete";
+	public final static String READ_ALLOWED = "ReadDirectoryAllowed";
+	public final static String WRITE_ALLOWED = "WriteDirectoryAllowed";
 
 	final DDACheckJob checkJob;
 	final String readContentFromClient;
