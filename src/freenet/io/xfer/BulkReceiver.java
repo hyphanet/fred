@@ -38,6 +38,8 @@ public class BulkReceiver {
 		this.uid = uid;
 		this.peerBootID = peer.getBootID();
 		this.ctr = ctr;
+		
+		prb.recv = this;
 	}
 
 	public void onAborted() {

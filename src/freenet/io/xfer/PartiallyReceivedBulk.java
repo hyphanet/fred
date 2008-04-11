@@ -30,6 +30,8 @@ public class PartiallyReceivedBulk {
 	final int blocks;
 	private BulkTransmitter[] transmitters;
 	final MessageCore usm;
+	/** The one and only BulkReceiver */
+	BulkReceiver recv;
 	private int blocksReceivedCount;
 	// Abort status
 	boolean _aborted;
@@ -130,17 +132,21 @@ public class PartiallyReceivedBulk {
 		if(Logger.shouldLog(Logger.NORMAL, this))
 			Logger.normal(this, "Aborting "+this+": "+errCode+" : "+why, new Exception("debug"));
 		BulkTransmitter[] notifyBTs;
+		BulkReceiver notifyBR;
 		synchronized(this) {
 			_aborted = true;
 			_abortReason = errCode;
 			_abortDescription = why;
 			notifyBTs = transmitters;
+			notifyBR = recv;
 		}
 		if(notifyBTs != null) {
 			for(int i=0;i<notifyBTs.length;i++) {
 				notifyBTs[i].onAborted();
 			}
 		}
+		if(notifyBR != null)
+			notifyBR.onAborted();
 		raf.close();
 	}
 
