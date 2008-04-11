@@ -34,16 +34,16 @@ import freenet.support.transport.ip.IPUtil;
  */
 public class Announcer {
 
-	static boolean logMINOR;
-	final Node node;
-	final OpennetManager om;
-	private int status;
-	final int STATUS_LOADING = 0;
-	final int STATUS_CONNECTING_SEEDNODES = 1;
-	final int STATUS_NO_SEEDNODES = -1;
+	private static boolean logMINOR;
+	private final Node node;
+	private final OpennetManager om;
+	private static int status;
+	private static final int STATUS_LOADING = 0;
+	private static final int STATUS_CONNECTING_SEEDNODES = 1;
+	private static final int STATUS_NO_SEEDNODES = -1;
 	private int runningAnnouncements;
 	/** We want to announce to 3 different seednodes. */
-	final int WANT_ANNOUNCEMENTS = 3;
+	private static final int WANT_ANNOUNCEMENTS = 3;
 	private int sentAnnouncements;
 	private long startTime;
 	private long timeAddedSeeds;

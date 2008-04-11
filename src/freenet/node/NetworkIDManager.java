@@ -46,7 +46,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 	private static final long LONG_PERIOD   = 120000;
 	
 	private final short MAX_HTL;
-	private final short MIN_HTL=3;
+	private static final short MIN_HTL = 3;
 	private final boolean logMINOR;
 	
 	private static final int NO_NETWORKID = 0;
