@@ -209,10 +209,8 @@ public class PacketSender implements Runnable, Ticker {
 			lastReceivedPacketFromAnyNode =
 				Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
 			pn.maybeOnConnect();
-			boolean sendEverything = false;
 			if(pn.shouldDisconnectAndRemoveNow() && !pn.isDisconnecting()) {
 				node.peers.disconnect(pn, true, false);
-				sendEverything = true;
 			}
 
 			if(pn.isConnected()) {
@@ -302,7 +300,7 @@ public class PacketSender implements Runnable, Ticker {
 							l = messages[j].submitted;
 						sz += 2 + /* FIXME only 2? */ messages[j].getData(pn).length;
 					}
-					if((!sendEverything) && node.enablePacketCoalescing && (l + MAX_COALESCING_DELAY > now) &&
+					if(node.enablePacketCoalescing && (l + MAX_COALESCING_DELAY > now) &&
 						(sz < ((PacketSocketHandler) pn.getSocketHandler()).getPacketSendThreshold())) {
 						// Don't send immediately
 						if(nextActionTime > (l + MAX_COALESCING_DELAY))
