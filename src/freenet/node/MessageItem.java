@@ -54,7 +54,7 @@ public class MessageItem {
         if(buf == null)
             buf = msg.encodeToPacket(pn);
         if(buf.length < alreadyReportedBytes) {
-        	Logger.error(this, "buf.length = "+buf+" but alreadyReportedBytes = "+alreadyReportedBytes+" on "+this);
+        	Logger.error(this, "buf.length = "+buf.length+" but alreadyReportedBytes = "+alreadyReportedBytes+" on "+this);
         }
         return buf;
     }
