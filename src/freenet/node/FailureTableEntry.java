@@ -14,8 +14,6 @@ class FailureTableEntry implements TimedOutNodesList {
 	
 	/** The key */
 	final Key key; // FIXME should this be stored compressed somehow e.g. just the routing key?
-	/** The HTL at which it was requested last time. Any request of higher HTL will be let through. */
-	short htl;
 	/** Time of creation of this entry */
 	long creationTime;
 	/** Time we last received a request for the key */
