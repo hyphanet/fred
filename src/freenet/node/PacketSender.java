@@ -210,7 +210,8 @@ public class PacketSender implements Runnable, Ticker {
 				Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
 			pn.maybeOnConnect();
 			if(pn.shouldDisconnectAndRemoveNow() && !pn.isDisconnecting()) {
-				node.peers.disconnect(pn, true, false);
+				// Might as well do it properly.
+				node.peers.disconnect(pn, true, true);
 			}
 
 			if(pn.isConnected()) {
