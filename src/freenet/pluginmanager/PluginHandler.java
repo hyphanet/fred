@@ -60,7 +60,6 @@ public class PluginHandler {
 		
 		public void run() {
 			boolean threadless = plugin instanceof FredPluginThreadless;
-			if (plugin instanceof FredPlugin) {
 				try {
 					if(!threadless) // Have to do it now because threaded
 						pm.register(plugin, pi);
@@ -78,11 +77,6 @@ public class PluginHandler {
 					pi.unregister(pm); // If not already unregistered
 					pm.removePlugin(pi);
 				}
-			} else {
-				// If not FredPlugin, then the whole thing is aborted,
-				// and then this method will return, killing the thread
-				return;
-			}
 		}
 		
 	}

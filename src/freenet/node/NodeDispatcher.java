@@ -594,10 +594,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	 */
 	boolean handleRouted(Message m, PeerNode source) {
 		if(logMINOR) Logger.minor(this, "handleRouted("+m+ ')');
-		if((source != null) && (!(source instanceof PeerNode))) {
-			Logger.error(this, "Routed message but source "+source+" not a PeerNode!");
-			return true;
-		}
+
 		long id = m.getLong(DMT.UID);
 		Long lid = new Long(id);
 		short htl = m.getShort(DMT.HTL);
