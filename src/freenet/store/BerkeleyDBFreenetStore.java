@@ -1591,19 +1591,26 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			//			happen is that we miss the last few store()'s and get an exception.
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Closing database "+this);
-			closed = true;
+			
+			synchronized (this) {
+				closed = true;
+			}
+
+			// Give all threads some time to complete
+			if(sleep)
+				Thread.sleep(5000);
+			
 			if(reallyClosed) {
 				Logger.error(this, "Already closed "+this);
 				return;
 			}
+			
 			synchronized(closeLock) {
 				if(reallyClosed) {
 					Logger.error(this, "Already closed "+this);
 					return;
 				}
-				// Give all threads some time to complete
-				if(sleep)
-					Thread.sleep(5000);
+				
 				try {
 					if(storeRAF != null)
 						storeRAF.close();
