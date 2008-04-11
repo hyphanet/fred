@@ -392,6 +392,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public final PacketSender ps;
 	final DNSRequester dnsr;
 	final NodeDispatcher dispatcher;
+	public final UptimeEstimator uptime;
 	static final int MAX_MEMORY_CACHED_PUBKEYS = 1000;
 	final LRUHashtable cachedPubKeys;
 	final boolean testnetEnabled;
@@ -682,7 +683,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			String msg = "Could not find or create datastore directory";
 			throw new NodeInitException(NodeInitException.EXIT_BAD_NODE_DIR, msg);
 		}
-
+		
 		// Boot ID
 		bootID = random.nextLong();
 		// Fixed length file containing boot ID. Accessed with random access file. So hopefully it will always be
@@ -1006,6 +1007,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		peers.writePeers();
 		peers.updatePMUserAlert();
 
+		uptime = new UptimeEstimator(nodeDir, ps, darknetCrypto.identityHash);
+		
 		// ULPRs
 		
 		failureTable = new FailureTable(this);
