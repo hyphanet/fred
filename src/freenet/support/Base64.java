@@ -19,33 +19,6 @@ import java.util.Random;
  */
 public class Base64
 {
-    // Unit test
-  public static void main(String[] args)
-    throws IllegalBase64Exception
-  {
-    int iter;
-    Random r = new Random();
-    for (iter = 0; iter < 1000; iter++) {
-      byte[] b = new byte[r.nextInt(64)];
-      for (int i = 0; i < b.length; i++)
-        b[i] = (byte) (r.nextInt(256));
-      String encoded = encode(b);
-     System.out.println(encoded);
-      byte[] decoded = decode(encoded);
-      if (decoded.length != b.length) {
-        System.out.println("length mismatch");
-        return;
-      }
-      for (int i = 0; i < b.length; i++)
-        if (b[i] != decoded[i]) {
-          System.out.println("data mismatch: index "+i+" of "+b.length+" should be 0x"+Integer.toHexString(b[i] & 0xFF)+
-            " was 0x"+Integer.toHexString(decoded[i] & 0xFF));
-          return;
-        }
-    }
-    System.out.println("passed "+iter+" tests");
-  }
-
   private static char[] base64Alphabet = {
     'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
     'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',

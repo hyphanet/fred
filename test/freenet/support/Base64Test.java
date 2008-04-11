@@ -18,6 +18,7 @@ package freenet.support;
 
 import junit.framework.TestCase;
 import java.util.Arrays;
+import java.util.Random;
 
 /**
  * Test case for {@link freenet.support.Base64} class.
@@ -155,5 +156,28 @@ public class Base64Test extends TestCase {
 			fail("Expected IllegalBase64Exception not thrown"); }
 		catch (IllegalBase64Exception exception) {
 			assertSame("illegal Base64 length",exception.getMessage()); }
+	}
+	
+	/**
+	 * Random test
+	 * 
+	 * @throws IllegalBase64Exception
+	 */
+	public void testRandom() throws IllegalBase64Exception {
+		int iter;
+		Random r = new Random();
+		for (iter = 0; iter < 1000; iter++) {
+			byte[] b = new byte[r.nextInt(64)];
+			for (int i = 0; i < b.length; i++)
+				b[i] = (byte) (r.nextInt(256));
+			String encoded = Base64.encode(b);
+			byte[] decoded = Base64.decode(encoded);
+			assertEquals("length mismatch", decoded.length, b.length);
+
+			for (int i = 0; i < b.length; i++)
+				assertEquals("data mismatch: index " + i + " of " + b.length + " should be 0x"
+				        + Integer.toHexString(b[i] & 0xFF) + " was 0x" + Integer.toHexString(decoded[i] & 0xFF), b[i],
+				        decoded[i]);
+		}
 	}
 }
