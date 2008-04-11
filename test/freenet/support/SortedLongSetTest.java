@@ -88,10 +88,11 @@ public class SortedLongSetTest extends TestCase {
 		SortedLongSet set2 = perpare(testArray);
 		// Remove non exist
 		assertFalse(set2.contains(101L));
-		set.remove(10L);
-		assertFalse(set2.contains(101L));
+		set.remove(101L);
+		
+		// make sure no other element removed
 		for (int i = 0; i < testArray.length; i++)
-			assertTrue(set2.contains(10L)); // make sure no other element removed
+			assertTrue(set2.contains(testArray[i]));
 	}
 
 	/**
