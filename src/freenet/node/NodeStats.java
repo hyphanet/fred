@@ -125,8 +125,6 @@ public class NodeStats implements Persistable {
 	final TrivialRunningAverage remoteFetchPSuccess;
 	final TrivialRunningAverage blockTransferPSuccess;
 	
-	File persistTarget; 
-	File persistTemp;
 	private long previous_input_stat;
 	private long previous_output_stat;
 	private long previous_io_stat_time;
