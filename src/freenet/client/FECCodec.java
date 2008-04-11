@@ -377,6 +377,7 @@ public abstract class FECCodec {
 			}
 			maxRunningFECThreads = max;
 		}
+		Logger.minor(FECCodec.class, "Maximum FEC threads: "+maxRunningFECThreads);
 		return maxRunningFECThreads;
 	}
 	
