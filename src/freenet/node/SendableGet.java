@@ -76,12 +76,6 @@ public abstract class SendableGet extends BaseSendableGet {
 			onFailure(new LowLevelGetException(LowLevelGetException.CANCELLED), null, sched);
 			return false;
 		}
-		if(key == null) {
-			if(!isCancelled()) {
-				Logger.error(this, "Not cancelled but key "+keyNum+" is null?! on "+this);
-				return false;
-			}
-		}
 		try {
 			try {
 				core.realGetKey(key, ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);

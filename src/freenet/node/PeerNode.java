@@ -1967,8 +1967,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(logMINOR) Logger.minor(this, "Not swapping KeyTracker's on "+this+" cur "+currentTracker+" prev "+previousTracker);
 			}
 		} else {
-			if(logMINOR) Logger.minor(this, "Not swapping KeyTracker's: previousTracker = "+(previousTracker == null ? "null" : previousTracker.toString()+(previousTracker.isDeprecated()?" (deprecated)":""))+
-					" time delta = "+delta);
+			if (logMINOR)
+				Logger.minor(this, "Not swapping KeyTracker's: previousTracker = " + previousTracker.toString()
+				        + (previousTracker.isDeprecated() ? " (deprecated)" : "") + " time delta = " + delta);
 		}
 	}
 
