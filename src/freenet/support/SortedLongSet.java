@@ -71,6 +71,7 @@ public class SortedLongSet {
 	 * Add the item, if it (or an item of the same number) is not already present.
 	 * @return True if we added the item.
 	 */
+	// FIXME not accept Long.MAX_VALUE
 	public synchronized boolean push(long num) {
 		int x = Arrays.binarySearch(data, num);
 		if(x >= 0) return false;
@@ -80,6 +81,7 @@ public class SortedLongSet {
 		return true;
 	}
 	
+	// FIXME not accept Long.MAX_VALUE
 	public synchronized void add(long num) {
 		int x = Arrays.binarySearch(data, num);
 		if(x >= 0) throw new IllegalArgumentException(); // already exists
