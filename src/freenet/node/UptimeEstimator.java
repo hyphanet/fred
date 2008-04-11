@@ -29,7 +29,7 @@ public class UptimeEstimator implements Runnable {
 	Ticker ticker;
 	
 	/** For each 5 minute slot in the last 48 hours, were we online? */
-	private boolean[] wasOnline = new boolean[48*24*12];
+	private boolean[] wasOnline = new boolean[48*12];
 	
 	/** Which slot are we up to? We rotate around the array. Slots before us are before us,
 	 * slots after us are also before us (it wraps around). */
