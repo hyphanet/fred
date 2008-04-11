@@ -76,7 +76,9 @@ public class UptimeEstimator implements Runnable {
 					int offset = dis.readInt();
 					if(offset < base) continue;
 					int slotNo = offset - base;
-					if(slotNo > wasOnline.length) {
+					if(slotNo == wasOnline.length)
+						break; // Reached the end, restarted within the same timeslot.
+					if(slotNo > wasOnline.length || slotNo < 0) {
 						Logger.error(this, "Corrupt data read from uptime file "+file+": 5-minutes-from-epoch is now "+(base+wasOnline.length)+" but read "+slotNo);
 						break;
 					}
