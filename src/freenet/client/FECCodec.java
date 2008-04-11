@@ -362,7 +362,9 @@ public abstract class FECCodec {
 		if(now - lastPolledMaxRunningFECThreads < 5*60*1000) return maxRunningFECThreads;
 		String osName = System.getProperty("os.name");
 		if(osName.indexOf("Windows") != -1 && (osName.toLowerCase().indexOf("mac os x") > 0) || (!NativeThread.usingNativeCode())) {
-			maxRunningFECThreads = 1; // OS/X niceness is really weak, so we don't want any more background CPU load than necessary
+			// OS/X niceness is really weak, so we don't want any more background CPU load than necessary
+			// Also, on non-Windows, we need the native threads library to be working.
+			maxRunningFECThreads = 1;
 		} else {
 			// Most other OSs will have reasonable niceness, so go by RAM.
 			Runtime r = Runtime.getRuntime();
