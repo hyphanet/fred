@@ -67,12 +67,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private long misses = 0;
 	private long writes = 0;
 	private final int keyLength;
-	private final Database keysDB;
-	private final SecondaryDatabase accessTimeDB;
-	private final SecondaryDatabase blockNumDB;
-	private final RandomAccessFile storeRAF;
-	private final RandomAccessFile keysRAF;
-	private final RandomAccessFile lruRAF;
+	private Database keysDB;
+	private SecondaryDatabase accessTimeDB;
+	private SecondaryDatabase blockNumDB;
+	private RandomAccessFile storeRAF;
+	private RandomAccessFile keysRAF;
+	private RandomAccessFile lruRAF;
 	private final SortedLongSet freeBlocks;
 	private final String name;
 	/** Callback which translates records to blocks and back, specifies the size of blocks etc. */
@@ -1582,6 +1582,30 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	}
 	
 	private final Object closeLock = new Object();
+
+	private void closeRAF(RandomAccessFile file, boolean logError) {
+			try {
+						if (file != null)
+								file.close();
+				} catch (IOException e) {
+						if (logError) {
+								System.err.println("Caught closing file: " + e);
+								e.printStackTrace();
+						}
+				}
+		}
+
+	private void closeDB(Database db, boolean logError) {
+				try {
+						if (db != null)
+								db.close();
+				} catch (DatabaseException e) {
+						if (logError) {
+								System.err.println("Caught closing database: " + e);
+								e.printStackTrace();
+						}
+				}
+		}
 	
 	private void close(boolean sleep) {
 		try {
@@ -1598,7 +1622,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 
 			// Give all threads some time to complete
 			if(sleep)
+				try {
 				Thread.sleep(5000);
+				} catch (InterruptedException ie) {
+					Logger.error(this, "Thread interrupted.", ie);
+				}
 			
 			if(reallyClosed) {
 				Logger.error(this, "Already closed "+this);
@@ -1611,57 +1639,28 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					return;
 				}
 				
-				try {
-					if(storeRAF != null)
-						storeRAF.close();
-					if(lruRAF != null)
-						lruRAF.close();
-					if(keysRAF != null)
-						keysRAF.close();
-				} catch (Throwable t) {
-					if(!(t instanceof RunRecoveryException || t instanceof OutOfMemoryError)) {
-						System.err.println("Caught closing database: "+t);
-						t.printStackTrace();
-					}
-				}
-				try {
-					if(accessTimeDB != null)
-						accessTimeDB.close();
-				} catch (Throwable t) {
-					if(!(t instanceof RunRecoveryException || t instanceof OutOfMemoryError)) {
-						System.err.println("Caught closing database: "+t);
-						t.printStackTrace();
-					}
-				}
-				try {
-					if(blockNumDB != null)
-						blockNumDB.close();
-				} catch (Throwable t) {
-					if(!(t instanceof RunRecoveryException || t instanceof OutOfMemoryError)) {
-						System.err.println("Caught closing database: "+t);
-						t.printStackTrace();
-					}
-				}
-				try {	
-					if(keysDB != null)
-						keysDB.close();
-				} catch (Throwable t) {
-					if(!(t instanceof RunRecoveryException || t instanceof OutOfMemoryError)) {
-						System.err.println("Caught closing database: "+t);
-						t.printStackTrace();
-					}
-				}
+				closeRAF(storeRAF, true);
+				storeRAF = null;
+				closeRAF(lruRAF, true);
+				lruRAF = null;
+				closeRAF(keysRAF, true);
+				keysRAF = null;
+
+				closeDB(accessTimeDB, true);
+				accessTimeDB = null;
+				closeDB(blockNumDB, true);
+				blockNumDB = null;
+				closeDB(keysDB, true);
+				keysDB = null;
+
 				if(logMINOR) Logger.minor(this, "Closing database finished.");
 				System.err.println("Closed database");
-				reallyClosed = true;
 			}
-		} catch(Throwable ex) {
-			try {
-				Logger.error(this,"Error while closing database.",ex);
-				ex.printStackTrace();
-			} catch (Throwable t) {
-				// Return anyway
-			}
+		} catch (RuntimeException ex) {
+			Logger.error(this, "Error while closing database.", ex);
+			ex.printStackTrace();
+		} finally {
+			reallyClosed = true;
 		}
 	}
 	
