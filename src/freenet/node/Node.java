@@ -1648,8 +1648,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 		Logger.normal(this, "Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
 		System.out.println("Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
-		Logger.normal(this, "FNP port is on "+darknetCrypto.bindto+ ':' +getDarknetPortNumber());
-		System.out.println("FNP port is on "+darknetCrypto.bindto+ ':' +getDarknetPortNumber());
+		Logger.normal(this, "FNP port is on "+darknetCrypto.getBindTo()+ ':' +getDarknetPortNumber());
+		System.out.println("FNP port is on "+darknetCrypto.getBindTo()+ ':' +getDarknetPortNumber());
 		// Start services
 		
 //		SubConfig pluginManagerConfig = new SubConfig("pluginmanager3", config);
@@ -3116,9 +3116,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 */
 	public synchronized boolean dontDetect() {
 		// Only return true if bindTo is set on all ports which are in use
-		if(!darknetCrypto.bindto.isRealInternetAddress(false, true, false)) return false;
+		if(!darknetCrypto.getBindTo().isRealInternetAddress(false, true, false)) return false;
 		if(opennet != null) {
-			if(opennet.crypto.bindto.isRealInternetAddress(false, true, false)) return false;
+			if(opennet.crypto.getBindTo().isRealInternetAddress(false, true, false)) return false;
 		}
 		return true;
 	}
