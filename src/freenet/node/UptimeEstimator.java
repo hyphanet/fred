@@ -24,6 +24,8 @@ import freenet.support.io.Closer;
  */
 public class UptimeEstimator implements Runnable {
 	
+	static final int PERIOD = 5*60*1000;
+	
 	Ticker ticker;
 	
 	/** For each 5 minute slot in the last 48 hours, were we online? */
@@ -55,7 +57,7 @@ public class UptimeEstimator implements Runnable {
 
 	public void start() {
 		long now = System.currentTimeMillis();
-		int fiveMinutesSinceEpoch = (int)(now / 5*60*1000);
+		int fiveMinutesSinceEpoch = (int)(now / PERIOD);
 		int base = fiveMinutesSinceEpoch - wasOnline.length;
 		// Read both files.
 		readData(prevFile, base);
@@ -103,7 +105,7 @@ public class UptimeEstimator implements Runnable {
 		}
 		FileOutputStream fos = null;
 		DataOutputStream dos = null;
-		int fiveMinutesSinceEpoch = (int)(now / 5*60*1000);
+		int fiveMinutesSinceEpoch = (int)(now / PERIOD);
 		try {
 			fos = new FileOutputStream(logFile, true);
 			dos = new DataOutputStream(fos);
@@ -120,8 +122,8 @@ public class UptimeEstimator implements Runnable {
 	}
 
 	private void schedule(long now) {
-		long nextTime = (((now / 5*60*1000)) * (5*60*1000)) + timeOffset;
-		if(nextTime < now) nextTime += 5*60*1000;
+		long nextTime = (((now / PERIOD)) * (PERIOD)) + timeOffset;
+		if(nextTime < now) nextTime += PERIOD;
 		ticker.queueTimedJob(this, System.currentTimeMillis() - nextTime);
 	}
 	
