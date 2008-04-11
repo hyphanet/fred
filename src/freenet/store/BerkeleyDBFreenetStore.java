@@ -964,7 +964,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 						addFreeBlock(l, true, "failure: "+op);
 						failures++;
 					}
-					t.commit();
+					t.commitNoSync();
 					if(l % 1024 == 0)
 						System.out.println("Key "+l+ '/' +expectedLength+" OK ("+dupes+" dupes, "+failures+" failures)");
 					t = null;
