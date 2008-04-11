@@ -43,18 +43,13 @@ public class NodeIPPortDetector {
 	 * (for that port/NodeCrypto) list of IP addresses (still without port numbers).
 	 */
 	FreenetInetAddress[] detectPrimaryIPAddress() {
-		FreenetInetAddress[] addresses = ipDetector.detectPrimaryIPAddress();
 		FreenetInetAddress addr = crypto.getBindTo();
 		if(addr.isRealInternetAddress(false, true, false)) {
-			for(int i=0;i<addresses.length;i++) {
-				if(addresses[i] == addr) return addresses;
-			}
-			FreenetInetAddress[] newAddresses = new FreenetInetAddress[addresses.length+1];
-			System.arraycopy(addresses, 0, newAddresses, 0, addresses.length);
-			newAddresses[addresses.length] = addr;
-			return newAddresses;
+			// Binding to a real internet address => don't want us to use the others, most likely
+			// he is on a multi-homed box where only one IP can be used for Freenet.
+			return new FreenetInetAddress[] { addr };
 		}
-		return addresses;
+		return ipDetector.detectPrimaryIPAddress();
 	}
 
 	/**
