@@ -209,6 +209,10 @@ public class PacketSender implements Runnable, Ticker {
 			lastReceivedPacketFromAnyNode =
 				Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
 			pn.maybeOnConnect();
+			if(pn.shouldDisconnectAndRemoveNow() && !pn.isDisconnecting()) {
+				node.peers.disconnect(pn, true, false);
+			}
+
 			if(pn.isConnected()) {
 				// Is the node dead?
 				if(now - pn.lastReceivedPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
@@ -228,10 +232,6 @@ public class PacketSender implements Runnable, Ticker {
 					continue;
 				}
 				
-				if(pn.shouldDisconnectAndRemoveNow() && !pn.isDisconnecting()) {
-					node.peers.disconnect(pn, true, false);
-				}
-
 				boolean mustSend = false;
 
 				// Any urgent notifications to send?
