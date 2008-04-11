@@ -11,6 +11,9 @@ public class SortedLongSet {
 	private int length;
 	private static final int MIN_SIZE = 32;
 	
+	/**
+	 * Default constructor
+	 */
 	public SortedLongSet() {
 		this.data = new long[MIN_SIZE];
 		for(int i=0;i<data.length;i++)
@@ -18,15 +21,32 @@ public class SortedLongSet {
 		length = 0;
 	}
 	
+	/**
+	 * Get the smallest item on this set
+	 * 
+	 * @return the smallest item
+	 */
 	public synchronized long getFirst() {
 		if(length == 0) return -1;
 		return data[0];
 	}
 
+	/**
+	 * Check if this set is empty.
+	 * 
+	 * @param num
+	 * @return <code>true</code>, if the set is empty.
+	 */
 	public synchronized boolean isEmpty() {
 		return length == 0;
 	}
 
+	/**
+	 * Check if <code>num</code> exist in this set.
+	 * 
+	 * @param num
+	 * @return <code>true</code>, if <code>num</code> exist.
+	 */
 	public synchronized boolean contains(long num) {
 		int x = Arrays.binarySearch(data, num);
 		if(x >= 0)
@@ -35,6 +55,12 @@ public class SortedLongSet {
 			return false;
 	}
 
+	/**
+	 * Remove an item
+	 * 
+	 * @param item
+	 *            the item to be removed
+	 */
 	public synchronized void remove(long item) {
 		int x = Arrays.binarySearch(data, item);
 		if(x >= 0) {
@@ -52,6 +78,9 @@ public class SortedLongSet {
 		verify();
 	}
 
+	/**
+	 * verify internal state. can be removed without ill effect
+	 */
 	private synchronized void verify() {
 		long lastItem = -1;
 		for(int i=0;i<length;i++) {
@@ -68,10 +97,11 @@ public class SortedLongSet {
 	}
 
 	/**
-	 * Add the item, if it (or an item of the same number) is not already present.
-	 * @return True if we added the item.
-	 */
-	// FIXME not accept Long.MAX_VALUE
+	 * Add the item, if it (or an item of the same number) is not already
+	 * present. <strong>This method does not accept <code>Long.MAX_VALUE</code>.</strong>
+	 * 
+	 * @return <code>true</code>, if we added the item.
+	 */ 
 	public synchronized boolean push(long num) {
 		int x = Arrays.binarySearch(data, num);
 		if(x >= 0) return false;
@@ -80,8 +110,16 @@ public class SortedLongSet {
 		push(num, x);
 		return true;
 	}
-	
-	// FIXME not accept Long.MAX_VALUE
+
+	/**
+	 * Add the item.
+	 * 
+	 * <strong>This method does not accept <code>Long.MAX_VALUE</code>.</strong>
+	 * 
+	 * @throws {@link IllegalArgumentException}
+	 *             if the item already exist
+	 * @return <code>true</code>, if we added the item.
+	 */ 
 	public synchronized void add(long num) {
 		int x = Arrays.binarySearch(data, num);
 		if(x >= 0) throw new IllegalArgumentException(); // already exists
@@ -109,12 +147,20 @@ public class SortedLongSet {
 		verify();
 	}
 
+	/**
+	 * Remove and return the smallest item
+	 * 
+	 * @return the smallest item
+	 */
 	public long removeFirst() {
 		long val = getFirst();
 		remove(val);
 		return val;
 	}
 
+	/**
+	 * Clear this set
+	 */
 	public void clear() {
 		data = new long[MIN_SIZE];
 		for(int i=0;i<data.length;i++)
@@ -122,6 +168,11 @@ public class SortedLongSet {
 		length = 0;
 	}
 
+	/**
+	 * Get a sorted array of all items
+	 * 
+	 * @return sorted array of all items
+	 */
 	public long[] toArray() {
 		long[] output = new long[length];
 		System.arraycopy(data, 0, output, 0, length);
