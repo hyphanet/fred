@@ -119,7 +119,7 @@ public class FCPServer implements Runnable {
 		defaultFetchContext = client.getFetchContext();
 		defaultInsertContext = client.getInsertContext(false);
 		
-		globalClient = new FCPClient("Global Queue", this, null, true);
+		globalClient = new FCPClient("Global Queue", this, null, true, null);
 		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
@@ -517,7 +517,7 @@ public class FCPServer implements Runnable {
 			oldClient = (FCPClient) clientsByName.get(name);
 			if(oldClient == null) {
 				// Create new client
-				FCPClient client = new FCPClient(name, this, handler, false);
+				FCPClient client = new FCPClient(name, this, handler, false, null);
 				clientsByName.put(name, client);
 				return client;
 			} else {
@@ -897,6 +897,11 @@ public class FCPServer implements Runnable {
 
 	public boolean hasFinishedStart() {
 		return hasFinishedStart;
+	}
+	
+	public void setCompletionCallback(RequestCompletionCallback cb) {
+		if(globalClient.setRequestCompletionCallback(cb) != null)
+			Logger.error(this, "Replacing request completion callback "+cb, new Exception("error"));
 	}
 	
 }

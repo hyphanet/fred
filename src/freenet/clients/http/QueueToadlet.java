@@ -30,6 +30,10 @@ import freenet.node.fcp.FCPServer;
 import freenet.node.fcp.IdentifierCollisionException;
 import freenet.node.fcp.MessageInvalidException;
 import freenet.node.fcp.NotAllowedException;
+import freenet.node.fcp.RequestCompletionCallback;
+import freenet.node.useralerts.SimpleHTMLUserAlert;
+import freenet.node.useralerts.SimpleUserAlert;
+import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
@@ -40,7 +44,7 @@ import freenet.support.api.HTTPUploadedFile;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 
-public class QueueToadlet extends Toadlet {
+public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 
 	private static final int LIST_IDENTIFIER = 1;
 	private static final int LIST_SIZE = 2;
@@ -70,6 +74,7 @@ public class QueueToadlet extends Toadlet {
 		this.core = core;
 		this.fcp = fcp;
 		if(fcp == null) throw new NullPointerException();
+		fcp.setCompletionCallback(this);
 	}
 	
 	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
@@ -1049,6 +1054,50 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 
 	public String supportedMethods() {
 		return "GET, POST";
+	}
+
+	public void notifyFailure(ClientRequest req) {
+		// FIXME do something???
+	}
+
+	public void notifySuccess(ClientRequest req) {
+		// FIXME persist across restarts.
+		if(req instanceof ClientGet) {
+			FreenetURI uri = ((ClientGet)req).getURI();
+			long size = ((ClientGet)req).getDataSize();
+			String name = uri.getPreferredFilename();
+			String title = l10n("downloadSucceededTitle", "filename", name);
+			HTMLNode text = new HTMLNode("div");
+			L10n.addL10nSubstitution(text, "QueueToadlet.downloadSucceeded",
+					new String[] { "link", "/link", "origlink", "/origlink", "filename", "size" },
+					new String[] { "<a href=\"/queue/"+uri.toACIIString()+"\">", "</a>", "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size) } );
+			core.alerts.register(new SimpleHTMLUserAlert(true, title, text, UserAlert.MINOR));
+		} else if(req instanceof ClientPut) {
+			FreenetURI uri = ((ClientPut)req).getFinalURI();
+			long size = ((ClientPut)req).getDataSize();
+			String name = uri.getPreferredFilename();
+			String title = l10n("uploadSucceededTitle", "filename", name);
+			HTMLNode text = new HTMLNode("div");
+			L10n.addL10nSubstitution(text, "QueueToadlet.uploadSucceeded",
+					new String[] { "link", "/link", "filename", "size" },
+					new String[] { "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size) } );
+			core.alerts.register(new SimpleHTMLUserAlert(true, title, text, UserAlert.MINOR));
+		} else if(req instanceof ClientPutDir) {
+			FreenetURI uri = ((ClientPutDir)req).getFinalURI();
+			long size = ((ClientPutDir)req).getTotalDataSize();
+			int files = ((ClientPutDir)req).getNumberOfFiles();
+			String name = uri.getPreferredFilename();
+			String title = l10n("QueueToadlet.siteUploadSucceededTitle", "filename", name);
+			HTMLNode text = new HTMLNode("div");
+			L10n.addL10nSubstitution(text, "QueueToadlet.siteUploadSucceeded",
+					new String[] { "link", "/link", "origlink", "/origlink", "filename", "size", "files" },
+					new String[] { "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size), Integer.toString(files) } );
+			core.alerts.register(new SimpleHTMLUserAlert(true, title, text, UserAlert.MINOR));
+		}
+	}
+	
+	String l10n(String key, String pattern, String value) {
+		return L10n.getString("QueueToadlet."+key, pattern, value);
 	}
 
 }
