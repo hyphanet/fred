@@ -254,7 +254,7 @@ public class Announcer {
 		int target = Math.min(MIN_OPENNET_CONNECTED_PEERS, om.getNumberOfConnectedPeersToAim() / 2);
 		if(opennetCount >= target) {
 			if(logMINOR)
-				Logger.minor(this, "We have enough opennet peers: "+opennetCount+" > "+target);
+				Logger.minor(this, "We have enough opennet peers: "+opennetCount+" > "+target+" since "+(System.currentTimeMillis()-timeGotEnoughPeers)+" ms");
 			synchronized(this) {
 				if(timeGotEnoughPeers <= 0)
 					timeGotEnoughPeers = System.currentTimeMillis();
