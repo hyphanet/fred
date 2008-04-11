@@ -53,14 +53,63 @@ public class GzipCompressorTest extends TestCase {
 		// check GZIP is the first compressor
 		assertEquals(gzipCompressor, compressorZero);
 
-		// test gzip compression
+		// do gzip compression
 		byte[] compressedData = doCompress(UNCOMPRESSED_DATA_1.getBytes());
 
-		// test gzip uncompression
-		doUncompress(compressedData);
+		// output size same as expected?
+		assertEquals(compressedData.length, COMPRESSED_DATA_1.length);
+
+		// check each byte is exactly as expected
+		for (int i = 0; i < compressedData.length; i++) {
+			assertEquals(COMPRESSED_DATA_1[i], compressedData[i]);
+		}
+
+		// do gzip uncompression
+		byte[] uncompressedData = doUncompress(compressedData);
+		
+		// is the (round-tripped) uncompressed string the same as the original?
+		String uncompressedString = new String(uncompressedData);
+		assertEquals(uncompressedString, UNCOMPRESSED_DATA_1);
 	}
 
-	private void doUncompress(byte[] compressedData) {
+	public void testCompressException() {
+		
+		byte[] uncompressedData = UNCOMPRESSED_DATA_1.getBytes();
+		Bucket inBucket = new ArrayBucket(uncompressedData);
+		BucketFactory factory = new ArrayBucketFactory();
+
+		try {
+			Compressor.GZIP.compress(inBucket, factory, 32);
+		} catch (IOException e) {
+			fail("unexpected exception thrown : " + e.getMessage());
+		} catch (CompressionOutputSizeException e) {
+			// expect this
+		}		
+	}
+
+	public void testDecompressException() {
+		
+		// build 5k array
+		byte[] uncompressedData = new byte[5 * 1024];
+		for(int i = 0; i < uncompressedData.length; i++) {
+			uncompressedData[i] = 1;
+		}
+		
+		byte[] compressedData = doCompress(uncompressedData);
+		
+		Bucket inBucket = new ArrayBucket(compressedData);
+		BucketFactory factory = new ArrayBucketFactory();
+
+		try {
+			Compressor.GZIP.decompress(inBucket, factory, 4096 + 10, 4096 + 20, null);
+		} catch (IOException e) {
+			fail("unexpected exception thrown : " + e.getMessage());
+		} catch (CompressionOutputSizeException e) {
+			// expect this
+		}
+	}
+	
+	private byte[] doUncompress(byte[] compressedData) {
 
 		Bucket inBucket = new ArrayBucket(compressedData);
 		BucketFactory factory = new ArrayBucketFactory();
@@ -90,9 +139,7 @@ public class GzipCompressorTest extends TestCase {
 			fail("unexpected exception thrown : " + e.getMessage());
 		}
 
-		// is the (round-tripped) uncompressed string the same as the original?
-		String uncompressedString = new String(outBuf);
-		assertEquals(uncompressedString, UNCOMPRESSED_DATA_1);
+		return outBuf;		
 	}
 
 	private byte[] doCompress(byte[] uncompressedData) {
@@ -121,14 +168,6 @@ public class GzipCompressorTest extends TestCase {
 			in.read(outBuf);
 		} catch (IOException e) {
 			fail("unexpected exception thrown : " + e.getMessage());
-		}
-
-		// output size same as expected?
-		assertEquals(outBuf.length, COMPRESSED_DATA_1.length);
-
-		// check each byte is exactly as expected
-		for (int i = 0; i < outBuf.length; i++) {
-			assertEquals(COMPRESSED_DATA_1[i], outBuf[i]);
 		}
 
 		return outBuf;
