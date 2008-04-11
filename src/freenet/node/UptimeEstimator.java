@@ -120,7 +120,8 @@ public class UptimeEstimator implements Runnable {
 	}
 
 	private void schedule(long now) {
-		long nextTime = (((now / 5*60*1000) + 1) * (5*60*1000)) + timeOffset;
+		long nextTime = (((now / 5*60*1000)) * (5*60*1000)) + timeOffset;
+		if(nextTime < now) nextTime += 5*60*1000;
 		ticker.queueTimedJob(this, System.currentTimeMillis() - nextTime);
 	}
 	
