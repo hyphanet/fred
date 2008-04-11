@@ -1,5 +1,6 @@
 package freenet.support.compress;
 
+import freenet.client.Metadata;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -107,5 +108,8 @@ public class GzipCompressor extends Compressor {
 		System.arraycopy(buf, 0, output, 0, bytes);
 		return bytes;
 	}
-
+	
+	public short codecNumberForMetadata() {
+		return Metadata.COMPRESS_GZIP;
+	}
 }

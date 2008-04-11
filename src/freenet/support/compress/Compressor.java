@@ -29,9 +29,7 @@ public abstract class Compressor {
 	 */
 	public abstract Bucket decompress(Bucket data, BucketFactory bucketFactory, long maxLength, long maxEstimateSizeLength, Bucket preferred) throws IOException, CompressionOutputSizeException;
 
-	public short codecNumberForMetadata() {
-		return Metadata.COMPRESS_GZIP;
-	}
+	public abstract short codecNumberForMetadata();
 
 	/** Count the number of distinct compression algorithms currently supported. */
 	public static int countCompressAlgorithms() {
