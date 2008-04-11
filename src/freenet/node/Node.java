@@ -469,6 +469,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	// Debugging stuff
 	private static final boolean USE_RAM_PUBKEYS_CACHE = true;
+
+	/**
+	 * Minimum uptime for us to consider a node an acceptable place to store a key. We store a key
+	 * to the datastore only if it's from an insert, and we are a sink, but when calculating whether
+	 * we are a sink we ignore nodes which have less uptime (percentage) than this parameter.
+	 */
+	private static final int MIN_UPTIME_STORE_KEY = 0;
 	
 	/**
 	 * Read all storable settings (identity etc) from the node file.
@@ -2108,7 +2115,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * closest node to the target; see the description of chkDatastore.
 	 */
 	public void store(CHKBlock block, double loc) {
-		boolean deep = !peers.isCloserLocation(loc);
+		boolean deep = !peers.isCloserLocation(loc, MIN_UPTIME_STORE_KEY);
 		store(block, deep);
 	}
 
@@ -2190,7 +2197,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * closest node to the target; see the description of chkDatastore.
 	 */
 	public void store(SSKBlock block, double loc) throws KeyCollisionException {
-		boolean deep = !peers.isCloserLocation(loc);
+		boolean deep = !peers.isCloserLocation(loc, MIN_UPTIME_STORE_KEY);
 		store(block, deep);
 	}
 	
@@ -2323,7 +2330,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			throw new IllegalArgumentException("No pub key when inserting");
 		}
 		if(cache)
-			cacheKey(key.getPubKeyHash(), key.getPubKey(), !peers.isCloserLocation(block.getKey().toNormalizedDouble()));
+			cacheKey(key.getPubKeyHash(), key.getPubKey(), !peers.isCloserLocation(block.getKey().toNormalizedDouble(), Node.MIN_UPTIME_STORE_KEY));
 		Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		KeyHTLPair kh = new KeyHTLPair(key, htl, uid);
 		SSKInsertSender is = null;

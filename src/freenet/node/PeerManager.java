@@ -708,7 +708,7 @@ public class PeerManager {
         return getRandomPeer(null);
     }
 
-    public double closestPeerLocation(double loc, double ignoreLoc) {
+    public double closestPeerLocation(double loc, double ignoreLoc, int minUptimePercent) {
         PeerNode[] peers;
         synchronized (this) {
         	peers = connectedPeers;
@@ -720,6 +720,7 @@ public class PeerManager {
             PeerNode p = peers[i];
             if(!p.isRoutable()) continue;
             if(p.isRoutingBackedOff()) continue;
+            if(p.getUptime() < minUptimePercent) continue;
             double peerloc = p.getLocation();
             if(Math.abs(peerloc - ignoreLoc) < Double.MIN_VALUE*2)
             	continue;
@@ -734,6 +735,7 @@ public class PeerManager {
             for(int i=0;i<peers.length;i++) {
                 PeerNode p = peers[i];
                 if(!p.isRoutable()) continue;
+                if(p.getUptime() < minUptimePercent) continue;
                 // Ignore backoff state
                 double peerloc = p.getLocation();
                 if(Math.abs(peerloc - ignoreLoc) < Double.MIN_VALUE*2)
@@ -749,10 +751,10 @@ public class PeerManager {
         return bestLoc;
     }
 
-    public boolean isCloserLocation(double loc) {
+    public boolean isCloserLocation(double loc, int minUptimePercent) {
     	double nodeLoc = node.lm.getLocation();
     	double nodeDist = Location.distance(nodeLoc, loc);
-    	double closest = closestPeerLocation(loc, nodeLoc);
+    	double closest = closestPeerLocation(loc, nodeLoc, minUptimePercent);
     	if(closest > 1.0) {
     		// No peers found
     		return false;
