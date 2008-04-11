@@ -440,6 +440,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					peerTableHeaderRow.addChild("th", "Total\u00a0Traffic\u00a0(in/out/resent)");
 					peerTableHeaderRow.addChild("th", "Congestion\u00a0Control");
 					peerTableHeaderRow.addChild("th", "Time\u00a0Delta");
+					peerTableHeaderRow.addChild("th", "Reported\u00a0Uptime");
 				}
 				
 				SimpleColumn[] endCols = endColumnHeaders(advancedModeEnabled);
@@ -815,6 +816,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", val);
 			// time delta
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", TimeUtil.formatTime(peerNodeStatus.getClockDelta()));
+			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", peerNodeStatus.getReportedUptimePercentage()+"%");
 		}
 		
 		if(endCols != null) {

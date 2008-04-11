@@ -118,6 +118,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return true;
 		} else if(spec == DMT.FNPTime) {
 			return handleTime(m, source);
+		} else if(spec == DMT.FNPUptime) {
+			return handleUptime(m, source);
 		} else if(spec == DMT.FNPSentPackets) {
 			source.handleSentPackets(m);
 			return true;
@@ -208,6 +210,12 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return handleGetOfferedKey(m, source);
 		}
 		return false;
+	}
+
+	private boolean handleUptime(Message m, PeerNode source) {
+		byte uptime = m.getByte(DMT.UPTIME_PERCENT_48H);
+		source.setUptime(uptime);
+		return true;
 	}
 
 	private boolean handleOfferKey(Message m, PeerNode source) {

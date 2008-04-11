@@ -90,6 +90,8 @@ public class PeerNodeStatus {
 	private final boolean isSearchable;
 	
 	private final long resendBytesSent;
+	
+	private final int reportedUptimePercentage;
 
 	PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
 		if(Logger.shouldLog(Logger.MINOR, this)) {
@@ -142,6 +144,7 @@ public class PeerNodeStatus {
 		this.isSeedServer = peerNode instanceof SeedServerPeerNode;
 		this.isSearchable = peerNode.isRealConnection();
 		this.resendBytesSent = peerNode.getResendBytesSent();
+		this.reportedUptimePercentage = peerNode.getUptime();
 	}
 
 	/**
@@ -379,6 +382,10 @@ public class PeerNodeStatus {
 	
 	public long getResendBytesSent() {
 		return resendBytesSent;
+	}
+	
+	public int getReportedUptimePercentage() {
+		return reportedUptimePercentage;
 	}
 	
 }

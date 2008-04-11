@@ -130,6 +130,7 @@ public class DMT {
 	public static final String DAWN_HTL = "dawnHtl";
 	public static final String SECRET = "secret";
 	public static final String NODE_IDENTITY = "nodeIdentity";
+	public static final String UPTIME_PERCENT_48H = "uptimePercent48H";
 	
 	/** Very urgent */
 	public static final short PRIORITY_NOW=-2;
@@ -1342,6 +1343,16 @@ public class DMT {
 	public static final Message createFNPTime(long time) {
 		Message msg = new Message(FNPTime);
 		msg.set(TIME, time);
+		return msg;
+	}
+	
+	public static final MessageType FNPUptime = new MessageType("FNPUptime", PRIORITY_LOW) {{
+		addField(UPTIME_PERCENT_48H, Byte.class);
+	}};
+	
+	public static final Message createFNPUptime(byte uptimePercent) {
+		Message msg = new Message(FNPUptime);
+		msg.set(UPTIME_PERCENT_48H, uptimePercent);
 		return msg;
 	}
 	

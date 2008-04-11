@@ -292,6 +292,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private long routableConnectionCheckCount;
 	/** Delta between our clock and his clock (positive = his clock is fast, negative = our clock is fast) */
 	private long clockDelta;
+	/** Percentage uptime of this node, 0 if they haven't said */
+	private byte uptime;
 
 	/** If the clock delta is more than this constant, we don't talk to the node. Reason: It may not be up to date,
 	* it will have difficulty resolving date-based content etc. */
@@ -2028,6 +2030,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
 		Message packetsMsg = createSentPacketsMessage();
 		Message dRouting = DMT.createRoutingStatus(!disableRoutingHasBeenSetLocally);
+		Message uptime = DMT.createFNPUptime((byte)(int)(100*node.uptime.getUptime()));
 
 		try {
 			if(isRealConnection())
@@ -2036,6 +2039,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			sendAsync(timeMsg, null, 0, node.nodeStats.initialMessagesCtr);
 			sendAsync(packetsMsg, null, 0, node.nodeStats.initialMessagesCtr);
 			sendAsync(dRouting, null, 0, node.nodeStats.initialMessagesCtr);
+			sendAsync(uptime, null, 0, node.nodeStats.initialMessagesCtr);
 		} catch(NotConnectedException e) {
 			Logger.error(this, "Completed handshake with " + getPeer() + " but disconnected (" + isConnected + ':' + currentTracker + "!!!: " + e, e);
 		}
@@ -3890,5 +3894,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 */
 	public boolean shouldDisconnectAndRemoveNow() {
 		return false;
+	}
+
+	public void setUptime(byte uptime2) {
+		this.uptime = uptime2;
+	}
+	
+	public short getUptime() {
+		return (short)(((int)uptime) & 0xFF);
 	}
 }
