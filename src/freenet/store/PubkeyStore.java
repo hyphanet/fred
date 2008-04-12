@@ -58,4 +58,8 @@ public class PubkeyStore extends StoreCallback {
 		return false;
 	}
 
+	public boolean constructNeedsKey() {
+		return false;
+	}
+
 }

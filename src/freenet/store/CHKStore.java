@@ -56,4 +56,8 @@ public class CHKStore extends StoreCallback {
 		return true;
 	}
 
+	public boolean constructNeedsKey() {
+		return false;
+	}
+
 }

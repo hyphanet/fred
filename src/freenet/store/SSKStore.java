@@ -60,4 +60,8 @@ public class SSKStore extends StoreCallback {
 		return true;
 	}
 
+	public boolean constructNeedsKey() {
+		return true;
+	}
+
 }

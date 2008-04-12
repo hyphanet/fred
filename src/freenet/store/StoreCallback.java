@@ -26,6 +26,9 @@ public abstract class StoreCallback {
 	/** Whether we should create a .keys file to keep full keys in in order to reconstruct. */
 	public abstract boolean storeFullKeys();
 	
+	/** Whether we need the key in order to reconstruct a block. */
+	public abstract boolean constructNeedsKey();
+	
 	/** Length of a full key. Full keys are stored in the .keys file. Also fixed. */
 	public abstract int fullKeyLength();
 	
