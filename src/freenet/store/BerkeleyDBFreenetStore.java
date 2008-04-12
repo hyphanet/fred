@@ -991,6 +991,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 								addFreeBlock(l, true, "Impossible to add (invalid) to LRU: "+op);
 							}
 							t.commitNoSync();
+							t = null;
 							continue;
 						}
 					} 
@@ -1017,6 +1018,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 							addFreeBlock(l, true, "Impossible to add (dupe) to LRU: "+op);
 						}
 						t.commitNoSync();
+						t = null;
 						continue;
 					} else if(op != OperationStatus.SUCCESS) {
 						addFreeBlock(l, true, "failure: "+op);
