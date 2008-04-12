@@ -1005,7 +1005,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 						Logger.error(this, "Duplicate block: "+l);
 						System.err.println("Duplicate block: "+l);
 						dupes++;
-						t = environment.beginTransaction(null,null);
 						storeBlock = new StoreBlock(l, --minLRU);
 						byte[] buf = new byte[32];
 						random.nextBytes(buf);
