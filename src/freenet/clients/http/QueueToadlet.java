@@ -1236,7 +1236,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			String title = l10n("QueueToadlet.siteUploadSucceededTitle", "filename", name);
 			HTMLNode text = new HTMLNode("div");
 			L10n.addL10nSubstitution(text, "QueueToadlet.siteUploadSucceeded",
-					new String[] { "link", "/link", "origlink", "/origlink", "filename", "size", "files" },
+					new String[] { "link", "/link", "filename", "size", "files" },
 					new String[] { "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size), Integer.toString(files) } );
 			core.alerts.register(new SimpleHTMLUserAlert(true, title, text, UserAlert.MINOR) {
 				public void onDismiss() {
