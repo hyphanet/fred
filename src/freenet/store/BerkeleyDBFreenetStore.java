@@ -1067,16 +1067,42 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				block = callback.construct(data, header, routingkey, fullKey);
 				
 				if(!Arrays.equals(block.getRoutingKey(), routingkey)) {
-					Logger.normal(this, "Does not verify (not the unexpected key), setting accessTime to 0 for : "+HexUtil.bytesToHex(routingkey));
+					
+					synchronized(this) {
+						misses++;
+					}
+					
 					keysDB.delete(t, routingkeyDBE);
+					
+					// Insert the block into the index.
+					// Set the LRU to minimum - 1.
+					
+					long lru = getMinRecentlyUsed(t) - 1;
+					
+					Logger.normal(this, "Does not verify (not the expected key), setting accessTime to "+lru+" for : "+HexUtil.bytesToHex(routingkey));
+					
+					storeBlock = new StoreBlock(storeBlock.offset, lru);
+					
+					routingkeyDBE = new DatabaseEntry(block.getRoutingKey());
+					
+					blockDBE = new DatabaseEntry();
+					storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
+					try {
+						keysDB.put(t,routingkeyDBE,blockDBE);
+					} catch (DatabaseException e) {
+						Logger.error(this, "Caught database exception "+e+" while replacing element");
+						addFreeBlock(storeBlock.offset, true, "Bogus key");
+						c.close();
+						c = null;
+						t.commit();
+						t = null;
+						return null;
+					}
+					Logger.normal(this, "Successfully replaced entry at block number "+storeBlock.offset+" lru "+lru);
 					c.close();
 					c = null;
 					t.commit();
 					t = null;
-					addFreeBlock(storeBlock.offset, true, "Key does not verify");
-					synchronized(this) {
-						misses++;
-					}
 					return null;
 				}
 				
@@ -1763,6 +1789,35 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 		
 		return maxRecentlyUsed;
+	}
+	
+	private long getMinRecentlyUsed(Transaction t) {
+		long minRecentlyUsed = 0;
+		
+		Cursor c = null;
+		try {
+			c = accessTimeDB.openCursor(t,null);
+			DatabaseEntry keyDBE = new DatabaseEntry();
+			DatabaseEntry dataDBE = new DatabaseEntry();
+			if(c.getFirst(keyDBE,dataDBE,null)==OperationStatus.SUCCESS) {
+				StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(dataDBE);
+				minRecentlyUsed = storeBlock.getRecentlyUsed();
+			}
+			c.close();
+			c = null;
+		} catch(DatabaseException ex) {
+			ex.printStackTrace();
+		} finally {
+			if(c != null) {
+				try {
+					c.close();
+				} catch (DatabaseException e) {
+					Logger.error(this, "Caught "+e, e);
+				}
+			}
+		}
+		
+		return minRecentlyUsed;
 	}
 	
 	private long getNewRecentlyUsed() {
