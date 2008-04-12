@@ -1066,6 +1066,20 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				
 				block = callback.construct(data, header, routingkey, fullKey);
 				
+				if(!Arrays.equals(block.getRoutingKey(), routingkey)) {
+					Logger.normal(this, "Does not verify (not the unexpected key), setting accessTime to 0 for : "+HexUtil.bytesToHex(routingkey));
+					keysDB.delete(t, routingkeyDBE);
+					c.close();
+					c = null;
+					t.commit();
+					t = null;
+					addFreeBlock(storeBlock.offset, true, "Key does not verify");
+					synchronized(this) {
+						misses++;
+					}
+					return null;
+				}
+				
 				if(!dontPromote) {
 					storeBlock.updateRecentlyUsed();
 					DatabaseEntry updateDBE = new DatabaseEntry();
