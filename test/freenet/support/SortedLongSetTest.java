@@ -8,13 +8,7 @@ import junit.framework.TestCase;
  * @author sdiz
  */
 public class SortedLongSetTest extends TestCase {
-	/*
-	 * FIXME use Long.MAX_VALUE , not MAX_VALUE - 1
-	 */
-	private final static long[] testArray  =  {
-		10, 8, 6, 2, 0, 1, 11,
-	        Long.MAX_VALUE - 1, 4, 7, 5, 3, Long.MIN_VALUE 
-	};
+	private final static long[] testArray = { 10, 8, 6, 2, 0, 1, 11, Long.MAX_VALUE, 4, 7, 5, 3, Long.MIN_VALUE };
 
 	protected SortedLongSet perpare(long[] array) {
 		SortedLongSet set = new SortedLongSet();
@@ -60,7 +54,7 @@ public class SortedLongSetTest extends TestCase {
 		// Contain
 		assertTrue(set.contains(0L));
 		assertTrue(set.contains(3L));
-		assertTrue(set.contains(Long.MAX_VALUE - 1));
+		assertTrue(set.contains(Long.MAX_VALUE));
 		assertTrue(set.contains(Long.MIN_VALUE));
 
 		// Not contain
