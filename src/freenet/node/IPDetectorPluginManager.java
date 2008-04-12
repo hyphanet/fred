@@ -37,10 +37,12 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 
 		final boolean suggestPortForward;
 		private int[] portsNotForwarded;
+		boolean noDismiss;
 		
-		public MyUserAlert(String title, String text, boolean suggestPortForward, short code) {
+		public MyUserAlert(String title, String text, boolean suggestPortForward, short code, boolean noDismiss) {
 			super(false, title, text, null, code, true, L10n.getString("UserAlert.hide"), false, null);
 			this.suggestPortForward = suggestPortForward;
+			this.noDismiss = noDismiss;
 			portsNotForwarded = new int[] { };
 		}
 
@@ -89,6 +91,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		}
 		
 		public boolean userCanDismiss() {
+			if(noDismiss) return true;
 			// If no ports need forwarding, make it dismissable immediately.
 			if(!suggestPortForward) return true;
 			// Prevent NPE.
@@ -123,13 +126,13 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		this.node = node;
 		this.detector = detector;
 		noConnectionAlert = new MyUserAlert( l10n("noConnectivityTitle"), l10n("noConnectivity"), 
-				true, UserAlert.ERROR);
+				true, UserAlert.ERROR, true);
 		symmetricAlert = new MyUserAlert(l10n("symmetricTitle"), l10n("symmetric"), 
-				true, UserAlert.ERROR);				
+				true, UserAlert.ERROR, false);				
 		portRestrictedAlert = new MyUserAlert(l10n("portRestrictedTitle"), l10n("portRestricted"), 
-				true, UserAlert.WARNING);
+				true, UserAlert.WARNING, false);
 		restrictedAlert = new MyUserAlert(l10n("restrictedTitle"), l10n("restricted"), 
-				false, UserAlert.MINOR);
+				false, UserAlert.MINOR, false);
 	}
 
 	public int[] getUDPPortsNotForwarded() {
