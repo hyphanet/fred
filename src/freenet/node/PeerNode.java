@@ -2266,7 +2266,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				try {
 					simpleVersion = Version.getArbitraryBuildNumber(version);
 				} catch (VersionParseException e) {
-					Logger.error(this, "Bad version: "+simpleVersion+" : "+e, e);
+					Logger.error(this, "Bad version: " + version + " : " + e, e);
 				}
 			}
 			Version.seenVersion(newVersion);
