@@ -518,7 +518,7 @@ table.queue span.key_is {
 
 div.progressbar {
 	float: left;
-	margin: none;
+	margin: 0px;
 	margin-right: 3px;
 	background-color: #f6f9ff;
 	border: solid 1px #97beff;
