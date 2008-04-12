@@ -504,6 +504,10 @@ public class NodeCrypto {
 	public boolean definitelyPortForwarded() {
 		return socket.getDetectedConnectivityStatus() == AddressTracker.DEFINITELY_PORT_FORWARDED;
 	}
+	
+	public int getDetectedConnectivityStatus() {
+		return socket.getDetectedConnectivityStatus();
+	}
 
 	public FreenetInetAddress getBindTo() {
 		return config.getBindTo();
