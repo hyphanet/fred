@@ -681,6 +681,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		int totalUnwantedBlocks = unwantedMoveNums.length+freeEarlySlots.length;
 		WrapperManager.signalStarting(Math.min(Integer.MAX_VALUE, 5*60*1000 + (totalUnwantedBlocks-wantedMoveNums.length) * 100));
 		// If there are any slots left over, they must be free.
+		
+		// FIXME put these into the database as we do in reconstruct().
+		// Not doing that now as its not immediately obvious how to deal with it...
+		
 		freeBlocks.clear();
 		t = environment.beginTransaction(null,null);
 		for(int i=wantedMoveNums.length;i<totalUnwantedBlocks;i++) {
