@@ -898,6 +898,19 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		long dupes = 0;
 		long failures = 0;
 		long expectedLength = storeRAF.length()/(dataBlockSize+headerBlockSize);
+		// Find minimum and maximum LRU.
+		long minLRU = Long.MAX_VALUE;
+		long maxLRU = Long.MIN_VALUE;
+		try {
+			lruRAF.seek(0);
+			for(long i=0;i<lruRAF.length()/8;i++) {
+				long lru = lruRAF.readLong();
+				if(lru > maxLRU) maxLRU = lru;
+				if(lru < minLRU) minLRU = lru;
+			}
+		} catch (IOException e) {
+			// We don't want this to be fatal...
+		}
 		try {
 			storeRAF.seek(0);
 			lruRAF.seek(0);
@@ -960,9 +973,20 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 							String err = "Bogus or unreconstructible key at slot "+l+" : "+e+" - lost block "+l;
 							Logger.error(this, err, e);
 							System.err.println(err);
-							addFreeBlock(l, true, "can't reconsturct key ("+callback+ ')');
-							routingkey = null;
 							failures++;
+							t = environment.beginTransaction(null,null);
+							StoreBlock storeBlock = new StoreBlock(l, --minLRU);
+							byte[] buf = new byte[32];
+							random.nextBytes(buf);
+							DatabaseEntry routingkeyDBE = new DatabaseEntry(buf);
+							DatabaseEntry blockDBE = new DatabaseEntry();
+							storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
+							OperationStatus op = keysDB.putNoOverwrite(t,routingkeyDBE,blockDBE);
+							if(op != OperationStatus.SUCCESS) {
+								Logger.error(this, "Impossible operation status inserting bogus key to LRU: "+op);
+								addFreeBlock(l, true, "Impossible to add (invalid) to LRU: "+op);
+							}
+							t.commitNoSync();
 							continue;
 						}
 					} 
@@ -973,8 +997,23 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
 					OperationStatus op = keysDB.putNoOverwrite(t,routingkeyDBE,blockDBE);
 					if(op == OperationStatus.KEYEXIST) {
-						addFreeBlock(l, true, "duplicate");
+						Logger.error(this, "Duplicate block: "+l);
+						System.err.println("Duplicate block: "+l);
 						dupes++;
+						t = environment.beginTransaction(null,null);
+						storeBlock = new StoreBlock(l, --minLRU);
+						byte[] buf = new byte[32];
+						random.nextBytes(buf);
+						routingkeyDBE = new DatabaseEntry(buf);
+						blockDBE = new DatabaseEntry();
+						storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
+						op = keysDB.putNoOverwrite(t,routingkeyDBE,blockDBE);
+						if(op != OperationStatus.SUCCESS) {
+							Logger.error(this, "Impossible operation status inserting bogus key to LRU: "+op);
+							addFreeBlock(l, true, "Impossible to add (dupe) to LRU: "+op);
+						}
+						t.commitNoSync();
+						continue;
 					} else if(op != OperationStatus.SUCCESS) {
 						addFreeBlock(l, true, "failure: "+op);
 						failures++;
