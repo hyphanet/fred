@@ -1089,6 +1089,16 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
 					try {
 						keysDB.put(t,routingkeyDBE,blockDBE);
+						synchronized(storeRAF) {
+							if(keysRAF != null) {
+								keysRAF.seek(storeBlock.offset * keyLength);
+								keysRAF.write(fullKey);
+								if(logDEBUG)
+									Logger.debug(this, "Written full key length "+fullKey.length+" to block "+storeBlock.offset+" at "+(storeBlock.offset * keyLength)+" for "+callback);
+							} else if(logDEBUG) {
+								Logger.debug(this, "Not writing full key length "+fullKey.length+" for block "+storeBlock.offset+" for "+callback);
+							}
+						}
 					} catch (DatabaseException e) {
 						Logger.error(this, "Caught database exception "+e+" while replacing element");
 						addFreeBlock(storeBlock.offset, true, "Bogus key");
