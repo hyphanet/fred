@@ -1120,6 +1120,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				completedRequestIdentifiers.clear();
 				while(true) {
 					String identifier = br.readLine();
+					if(identifier == null) return true;
 					completedRequestIdentifiers.add(identifier);
 				}
 			}
