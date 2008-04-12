@@ -1428,6 +1428,15 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				}
 				Logger.error(this, "Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
 				System.err.println("Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
+				
+				System.err.println("Flusing data store files (" + getName() + ")");
+				flushAndCloseRAF(storeRAF);
+				storeRAF = null;
+				flushAndCloseRAF(lruRAF);
+				lruRAF = null;
+				flushAndCloseRAF(keysRAF);
+				keysRAF = null;
+				
 				WrapperManager.restart();
 				System.exit(freenet.node.NodeInitException.EXIT_DATABASE_REQUIRES_RESTART);
 			} else if(ex instanceof DbChecksumException || ex instanceof RunRecoveryException || ex instanceof LogFileNotFoundException ||
@@ -1444,13 +1453,22 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					System.err.println("Corrupt database ("+getName()+") but could not create flag file "+reconstructFile);
 					return; // Not sure what else we can do
 				}
+				
+				System.err.println("Flusing data store files (" + getName() + ")");
+				flushAndCloseRAF(storeRAF);
+				storeRAF = null;
+				flushAndCloseRAF(lruRAF);
+				lruRAF = null;
+				flushAndCloseRAF(keysRAF);
+				keysRAF = null;
+				
 				System.err.println("Restarting to fix corrupt store database...");
 				Logger.error(this, "Restarting to fix corrupt store database...");
 				WrapperManager.restart();
 			} else {
 				if(ex.getCause() != null)
 					checkSecondaryDatabaseError(ex.getCause());
-			}
+			} 
 		}
 	}
 
@@ -1597,7 +1615,17 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	
 	private final Object closeLock = new Object();
 
-	private void closeRAF(RandomAccessFile file, boolean logError) {
+	private static void flushAndCloseRAF(RandomAccessFile file) {
+		try {
+			if (file != null)
+				file.getFD().sync();
+		} catch (IOException e) {
+			// ignore
+		}
+		closeRAF(file, false);
+	}
+
+	private static void closeRAF(RandomAccessFile file, boolean logError) {
 			try {
 						if (file != null)
 								file.close();
@@ -1609,7 +1637,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				}
 		}
 
-	private void closeDB(Database db, boolean logError) {
+	private static void closeDB(Database db, boolean logError) {
 				try {
 						if (db != null)
 								db.close();
