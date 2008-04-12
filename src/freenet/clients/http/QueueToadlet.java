@@ -3,14 +3,24 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -41,6 +51,7 @@ import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.HTTPUploadedFile;
 import freenet.support.io.BucketTools;
+import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 
 public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
@@ -74,6 +85,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		this.fcp = fcp;
 		if(fcp == null) throw new NullPointerException();
 		fcp.setCompletionCallback(this);
+		loadCompletedIdentifiers();
 	}
 	
 	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
@@ -1055,12 +1067,133 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		return "GET, POST";
 	}
 
+	/**
+	 * List of completed request identifiers which the user hasn't acknowledged yet.
+	 */
+	private final HashSet completedRequestIdentifiers = new HashSet();
+	
 	public void notifyFailure(ClientRequest req) {
 		// FIXME do something???
 	}
 
 	public void notifySuccess(ClientRequest req) {
-		// FIXME persist across restarts.
+		synchronized(completedRequestIdentifiers) {
+			completedRequestIdentifiers.add(req.getIdentifier());
+		}
+		registerAlert(req);
+		saveCompletedIdentifiersOffThread();
+	}
+	
+	private void saveCompletedIdentifiersOffThread() {
+		core.getExecutor().execute(new Runnable() {
+			public void run() {
+				saveCompletedIdentifiers();
+			}
+		}, "Save completed identifiers");
+	}
+
+	private void loadCompletedIdentifiers() {
+		File completedIdentifiersList = new File(core.node.getNodeDir(), "completed.list");
+		File completedIdentifiersListNew = new File(core.node.getNodeDir(), "completed.list.bak");
+		if(!readCompletedIdentifiers(completedIdentifiersList)) {
+			readCompletedIdentifiers(completedIdentifiersListNew);
+		}
+		String[] identifiers;
+		synchronized(completedRequestIdentifiers) {
+			identifiers = (String[]) completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
+		}
+		for(int i=0;i<identifiers.length;i++) {
+			ClientRequest req = fcp.getGlobalClient().getRequest(identifiers[i]);
+			if(req == null) continue;
+			registerAlert(req);
+		}
+	}
+	
+	private boolean readCompletedIdentifiers(File file) {
+		FileInputStream fis = null;
+		try {
+			fis = new FileInputStream(file);
+			BufferedInputStream bis = new BufferedInputStream(fis);
+			InputStreamReader isr = new InputStreamReader(bis, "UTF-8");
+			BufferedReader br = new BufferedReader(isr);
+			synchronized(completedRequestIdentifiers) {
+				completedRequestIdentifiers.clear();
+				while(true) {
+					String identifier = br.readLine();
+					completedRequestIdentifiers.add(identifier);
+				}
+			}
+		} catch (EOFException e) {
+			// Normal
+			return true;
+		} catch (FileNotFoundException e) {
+			// Normal
+			return false;
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
+		} catch (IOException e) {
+			Logger.error(this, "Could not read completed identifiers list from "+file);
+			return false;
+		} finally {
+			Closer.close(fis);
+		}
+	}
+
+	private void saveCompletedIdentifiers() {
+		FileOutputStream fos = null;
+		BufferedWriter bw = null;
+		File completedIdentifiersList = new File(core.node.getNodeDir(), "completed.list");
+		File completedIdentifiersListNew = new File(core.node.getNodeDir(), "completed.list.bak");
+		File temp;
+		try {
+			temp = File.createTempFile("completed.list", ".tmp", core.node.getNodeDir());
+			temp.deleteOnExit();
+			fos = new FileOutputStream(temp);
+			OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF-8");
+			bw = new BufferedWriter(osw);
+			String[] identifiers;
+			synchronized(completedRequestIdentifiers) {
+				identifiers = (String[]) completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
+			}
+			for(int i=0;i<identifiers.length;i++)
+				bw.write(identifiers[i]+'\n');
+		} catch (FileNotFoundException e) {
+			Logger.error(this, "Unable to save completed requests list (can't find node directory?!!?): "+e, e);
+			return;
+		} catch (IOException e) {
+			Logger.error(this, "Unable to save completed requests list: "+e, e);
+			return;
+		} finally {
+			if(bw != null) {
+				try {
+					bw.close();
+				} catch (IOException e) {
+					try {
+						fos.close();
+					} catch (IOException e1) {
+						// Ignore
+					}
+				}
+			} else {
+				try {
+					fos.close();
+				} catch (IOException e1) {
+					// Ignore
+				}
+			}
+		}
+		completedIdentifiersListNew.delete();
+		temp.renameTo(completedIdentifiersListNew);
+		if(!completedIdentifiersListNew.renameTo(completedIdentifiersList)) {
+			completedIdentifiersList.delete();
+			if(!completedIdentifiersListNew.renameTo(completedIdentifiersList)) {
+				Logger.error(this, "Unable to store completed identifiers list because unable to rename "+completedIdentifiersListNew+" to "+completedIdentifiersList);
+			}
+		}
+	}
+
+	private void registerAlert(ClientRequest req) {
+		final String identifier = req.getIdentifier();
 		if(req instanceof ClientGet) {
 			FreenetURI uri = ((ClientGet)req).getURI();
 			long size = ((ClientGet)req).getDataSize();
@@ -1070,7 +1203,14 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			L10n.addL10nSubstitution(text, "QueueToadlet.downloadSucceeded",
 					new String[] { "link", "/link", "origlink", "/origlink", "filename", "size" },
 					new String[] { "<a href=\"/queue/"+uri.toACIIString()+"\">", "</a>", "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size) } );
-			core.alerts.register(new SimpleHTMLUserAlert(true, title, text, UserAlert.MINOR));
+			core.alerts.register(new SimpleHTMLUserAlert(true, title, text, UserAlert.MINOR) {
+				public void onDismiss() {
+					synchronized(completedRequestIdentifiers) {
+						completedRequestIdentifiers.remove(identifier);
+					}
+					saveCompletedIdentifiersOffThread();
+				}
+			});
 		} else if(req instanceof ClientPut) {
 			FreenetURI uri = ((ClientPut)req).getFinalURI();
 			long size = ((ClientPut)req).getDataSize();
@@ -1080,7 +1220,14 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			L10n.addL10nSubstitution(text, "QueueToadlet.uploadSucceeded",
 					new String[] { "link", "/link", "filename", "size" },
 					new String[] { "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size) } );
-			core.alerts.register(new SimpleHTMLUserAlert(true, title, text, UserAlert.MINOR));
+			core.alerts.register(new SimpleHTMLUserAlert(true, title, text, UserAlert.MINOR) {
+				public void onDismiss() {
+					synchronized(completedRequestIdentifiers) {
+						completedRequestIdentifiers.remove(identifier);
+					}
+					saveCompletedIdentifiersOffThread();
+				}
+			});
 		} else if(req instanceof ClientPutDir) {
 			FreenetURI uri = ((ClientPutDir)req).getFinalURI();
 			long size = ((ClientPutDir)req).getTotalDataSize();
@@ -1091,10 +1238,17 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			L10n.addL10nSubstitution(text, "QueueToadlet.siteUploadSucceeded",
 					new String[] { "link", "/link", "origlink", "/origlink", "filename", "size", "files" },
 					new String[] { "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size), Integer.toString(files) } );
-			core.alerts.register(new SimpleHTMLUserAlert(true, title, text, UserAlert.MINOR));
+			core.alerts.register(new SimpleHTMLUserAlert(true, title, text, UserAlert.MINOR) {
+				public void onDismiss() {
+					synchronized(completedRequestIdentifiers) {
+						completedRequestIdentifiers.remove(identifier);
+					}
+					saveCompletedIdentifiersOffThread();
+				}
+			});
 		}
 	}
-	
+
 	String l10n(String key, String pattern, String value) {
 		return L10n.getString("QueueToadlet."+key, pattern, value);
 	}
