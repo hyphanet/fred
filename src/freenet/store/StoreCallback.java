@@ -41,7 +41,9 @@ public abstract class StoreCallback {
 	
 	// Reconstruction
 	
-	/** Construct a StorableBlock from the data, headers, and optionally routing key or full key 
+	/** Construct a StorableBlock from the data, headers, and optionally routing key or full key.
+	 * IMPORTANT: Using the full key or routing key is OPTIONAL, and if we don't use them, WE DON'T
+	 * CHECK THEM EITHER! You MUST check that the key is the one you expected.
 	 * @throws KeyVerifyException */
 	abstract StorableBlock construct(byte[] data, byte[] headers, byte[] routingKey, byte[] fullKey) throws KeyVerifyException;
 	
