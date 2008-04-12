@@ -126,13 +126,13 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	public int[] getUDPPortsNotForwarded() {
 		OpennetManager om = node.getOpennet();
 		if(om == null || om.crypto.definitelyPortForwarded()) {
-			if(node.darknetDefinitelyPortForwarded()) {
+			if(node.darknetCrypto.definitelyPortForwarded()) {
 				return new int[] { };
 			} else {
 				return new int[] { node.getDarknetPortNumber() };
 			}
 		} else {
-			if(node.darknetDefinitelyPortForwarded()) {
+			if(node.darknetCrypto.definitelyPortForwarded()) {
 				return new int[] { om.crypto.portNumber };
 			} else {
 				return new int[] { node.getDarknetPortNumber(), om.crypto.portNumber };
