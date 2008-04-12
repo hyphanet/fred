@@ -219,16 +219,11 @@ ul.config {
 }
 
 ul.config li {
-	margin: 0;
+	margin: 5px;
 	padding: 5px;
 	list-style: none;
 	text-align: left;
-	display: table;
-	position: relative;
-}
-
-ul.config li:hover span.configlongdesc {
-	display: block;
+	background-color: #e5efff;
 }
 
 ul.config span.configprefix {
@@ -241,36 +236,25 @@ ul.config span.configprefix {
 }
 
 ul.config span.configshortdesc {
+	display: block;
 	text-align: left;
 	font-weight: bold;
-        float: left;
 	margin-right: 10px;
-	width: 300px;
-	display: table-cell;
+	width: 30%;
+	float: left;
 }
 
 ul.config span.configlongdesc {
-	display: none;
-	position: absolute;
-	left: 40px;
-	background-color: #e1ecff;
-	border: 1px solid #97beff;
-	padding: 5px;
-	/*
-	 * This should be 'top', but firefox is broken and doesn't
-	 + set the li to be a containing block with 'display: table' on
-	 */
-	margin-top: 20px;
-	z-index: 10;
+	display: block;
+	clear: left;
 }
 
 span.config {
-	display: table-cell;
-	width: 100%;
+	width: 70%;
 }
 
 ul.config input[type=text] {
-	width: 100%;
+	width: 67%;
 }
 
 /* darknet page */
