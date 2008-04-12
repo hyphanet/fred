@@ -106,9 +106,15 @@ public class BufferTest extends TestCase {
 	}
 	
 	public void testCopy() {
-		Buffer b = new Buffer(DATA_STRING_1.getBytes());
+		
+		byte[] oldBuf = DATA_STRING_1.getBytes();
+		Buffer b = new Buffer(oldBuf);
 		
 		byte[] newBuf = new byte[b.getLength()];
 		b.copyTo(newBuf, 0);
+		
+		for(int i = 0; i < oldBuf.length; i++) {
+			assertEquals(newBuf[i], oldBuf[i]);
+		}
 	}
 }
