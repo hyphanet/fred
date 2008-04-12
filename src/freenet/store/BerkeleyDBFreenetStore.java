@@ -943,18 +943,29 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				}
 				try {
 					byte[] routingkey = null;
-					try {
-						StorableBlock block = callback.construct(data, header, null, readKey ? keyBuf : null);
-						routingkey = block.getRoutingKey();
-					} catch (KeyVerifyException e) {
-						String err = "Bogus or unreconstructible key at slot "+l+" : "+e+" - lost block "+l;
-						Logger.error(this, err, e);
-						System.err.println(err);
-						addFreeBlock(l, true, "can't reconsturct key ("+callback+ ')');
-						routingkey = null;
-						failures++;
-						continue;
+					if(keyBuf != null && !isAllNull(keyBuf)) {
+						routingkey = callback.routingKeyFromFullKey(keyBuf);
+						if(routingkey == keyBuf) {
+							// Copy it.
+							byte[] newkey = new byte[routingkey.length];
+							System.arraycopy(routingkey, 0, newkey, 0, routingkey.length);
+							routingkey = newkey;
+						}
 					}
+					if(routingkey == null) {
+						try {
+							StorableBlock block = callback.construct(data, header, null, readKey ? keyBuf : null);
+							routingkey = block.getRoutingKey();
+						} catch (KeyVerifyException e) {
+							String err = "Bogus or unreconstructible key at slot "+l+" : "+e+" - lost block "+l;
+							Logger.error(this, err, e);
+							System.err.println(err);
+							addFreeBlock(l, true, "can't reconsturct key ("+callback+ ')');
+							routingkey = null;
+							failures++;
+							continue;
+						}
+					} 
 					t = environment.beginTransaction(null,null);
 					StoreBlock storeBlock = new StoreBlock(l, lruVal);
 					DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
@@ -998,6 +1009,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				System.err.println("Failed to set size");
 			}
 		}
+	}
+
+	private boolean isAllNull(byte[] buf) {
+		for(int i=0;i<buf.length;i++)
+			if(buf[i] != 0) return false;
+		return true;
 	}
 
 	private int runningFetches;

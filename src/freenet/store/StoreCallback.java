@@ -73,4 +73,7 @@ public abstract class StoreCallback {
 	public long keyCount() {
 		return store.keyCount();
 	}
+
+	/** Generate a routing key from a full key */
+	public abstract byte[] routingKeyFromFullKey(byte[] keyBuf);
 }

@@ -60,4 +60,8 @@ public class CHKStore extends StoreCallback {
 		return false;
 	}
 
+	public byte[] routingKeyFromFullKey(byte[] keyBuf) {
+		return NodeCHK.routingKeyFromFullKey(keyBuf);
+	}
+
 }
