@@ -15,6 +15,9 @@
  */
 package freenet.support;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,15 +32,65 @@ public class BufferTest extends TestCase {
 
 	private static final String DATA_STRING_1 = "asldkjaskjdsakdhasdhaskjdhaskjhbkasbhdjkasbduiwbxgdoudgboewuydxbybuewyxbuewyuwe" + 
 		"dasdkljasndijwnodhnqweoidhnaouidhbnwoduihwnxodiuhnwuioxdhnwqiouhnxwqoiushdnxwqoiudhxnwqoiudhxni";
-
+	
 	public void testByteArrayBuffer() {
-		
 		
 		byte[] data = DATA_STRING_1.getBytes();
 		
 		Buffer buffer = new Buffer(data);
 		
 		assertEquals(data, buffer.getData());
+
+		doTestBuffer(data, buffer);
+	}
+
+	public void testByteArrayIndexBuffer() {
+		
+		// get content
+		byte[] data = DATA_STRING_1.getBytes();
+		
+		byte[] dataSub = new byte[5];
+		
+		// prepare 'substring'
+		System.arraycopy(data, 4, dataSub, 0, 5);
+
+		Buffer buffer = new Buffer(data, 4, 5);
+		
+		assertFalse(dataSub.equals(buffer.getData()));
+
+		doTestBuffer(dataSub, buffer);
+	}
+
+	
+	public void testDataInputStreamBuffer() {
+		
+		byte[] data = DATA_STRING_1.getBytes();   // get some content
+		
+		byte[] data2 = new byte[data.length + 4]; // make room for 4 byte length indicator  
+		
+		int length = DATA_STRING_1.getBytes().length;
+		
+		// populate length as first 4 bytes
+		data2[0] = (byte)((length & 0xff000000) >> 24);
+		data2[1] = (byte)((length & 0xff0000)   >> 16);
+		data2[2] = (byte)((length & 0xff00)     >>  8);
+		data2[3] = (byte)((length & 0xff)            );
+		
+		System.arraycopy(data, 0, data2, 4, data.length); // populate rest of content
+		
+		DataInputStream dis = new DataInputStream(new ByteArrayInputStream(data2));
+		Buffer buffer = null;
+		
+		try {
+			buffer = new Buffer(dis);
+		} catch (IOException e) {
+			fail("unexpected exception: " + e.getMessage());
+		}
+		// perform rest of test with the *original* array because Buffer(DataInputStream) chomps first 4 bytes
+		doTestBuffer(data, buffer);
+	}
+	
+	private void doTestBuffer(byte[] data, Buffer buffer) {
 		assertEquals(data.length, buffer.getLength());
 		
 		for(int i = 0; i < buffer.getLength(); i++) {

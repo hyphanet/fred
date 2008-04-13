@@ -38,7 +38,9 @@ public class Buffer implements WritableToDataOutputStream {
 	private final int _length;
 
 	/**
-	 * Create a Buffer by reading a DataInputStream
+	 * Create a Buffer by reading a DataInputStream. 
+	 * Note that this a) expects that the first 4 bytes to be a length indicator of the rest of the byte stream and 
+	 * b) these first 4 bytes are removed from the byte stream before storing the rest 
 	 *
 	 * @param dis
 	 * @throws IOException
