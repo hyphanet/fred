@@ -10,8 +10,12 @@ import java.security.MessageDigest;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import freenet.crypt.RandomSource;
@@ -1217,10 +1221,14 @@ public class LocationManager implements ByteCounter {
     public void lostOrRestartedNode(PeerNode pn) {
         Vector v = new Vector();
         synchronized(recentlyForwardedIDs) {
-            Enumeration e = recentlyForwardedIDs.keys();
-            while(e.hasMoreElements()) {
-                Long l = (Long)e.nextElement();
-                RecentlyForwardedItem item = (RecentlyForwardedItem)recentlyForwardedIDs.get(l);
+        	Set entrySet = new HashSet(recentlyForwardedIDs.entrySet()); // clone
+
+			Iterator it = entrySet.iterator();
+			while (it.hasNext()) {
+				Map.Entry e = (Map.Entry) it.next();
+				Long l = (Long) e.getKey();
+
+				RecentlyForwardedItem item = (RecentlyForwardedItem) e.getValue();
                 if(item == null) {
                 	Logger.error(this, "Key is "+l+" but no value on recentlyForwardedIDs - shouldn't be possible");
                 	continue;
