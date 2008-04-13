@@ -681,9 +681,10 @@ public class FCPServer implements Runnable {
 			gis = new GZIPInputStream(fis);
 			bis = new BufferedInputStream(gis);
 			Logger.normal(this, "Loading persistent requests from "+file);
-			if(file.length() > 0)
+			if (file.length() > 0) {
 				loadPersistentRequests(bis);
-			else
+				haveLoadedPersistentRequests = true;
+			} else
 				throw new IOException("File empty"); // If it's empty, try the temp file.
 		} catch (IOException e) {
 			Logger.error(this, "IOE : " + e.getMessage(), e);
@@ -696,6 +697,7 @@ public class FCPServer implements Runnable {
 				fis = new FileInputStream(file);
 				bis = new BufferedInputStream(fis);
 				loadPersistentRequests(bis);
+				haveLoadedPersistentRequests = true;
 			} catch (IOException e1) {
 				Logger.normal(this, "It's corrupted too : Not reading any persistent requests from disk: "+e1);
 				return;
