@@ -3,6 +3,7 @@ package freenet.pluginmanager;
 import java.util.Date;
 import java.util.HashSet;
 
+import freenet.l10n.L10n;
 import freenet.support.Logger;
 import freenet.support.StringArray;
 
@@ -21,6 +22,7 @@ public class PluginInfoWrapper {
 	private boolean isPortForwardPlugin;
 	private boolean isMultiplePlugin;
 	private boolean isFCPPlugin;
+	private boolean isVersionedPlugin;
 	private String filename;
 	private HashSet toadletLinks=new HashSet();
 	private boolean stopping = false;
@@ -41,6 +43,7 @@ public class PluginInfoWrapper {
 		isPortForwardPlugin = (plug instanceof FredPluginPortForward);
 		isMultiplePlugin = (plug instanceof FredPluginMultiple);
 		isFCPPlugin = (plug instanceof FredPluginFCP);
+		isVersionedPlugin = (plug instanceof FredPluginVersioned);
 	}
 
 	void setThread(Thread ps) {
@@ -64,6 +67,14 @@ public class PluginInfoWrapper {
 	
 	public String getPluginClassName(){
 		return plug.getClass().getName();
+	}
+	
+	public String getPluginVersion() {
+		if (isVersionedPlugin) {
+			return ((FredPluginVersioned)plug).getVersion();
+		} else {
+			return L10n.getString("PproxyToadlet.noVersion");
+		}
 	}
 	
 	public synchronized String[] getPluginToadletSymlinks(){
