@@ -27,7 +27,6 @@ public class PluginInfoWrapper {
 	private HashSet toadletLinks=new HashSet();
 	private boolean stopping = false;
 	private boolean unregistered = false;
-	//public String 
 	
 	public PluginInfoWrapper(FredPlugin plug, String filename) {
 		this.plug = plug;
