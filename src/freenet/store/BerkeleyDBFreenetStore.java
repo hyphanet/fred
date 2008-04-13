@@ -888,6 +888,44 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 	}
 
+	/**
+	 * Reconstruct the database using flat file stores and other dark magic.
+	 * 
+	 * <strong>You are not expected to understand this.</strong>
+	 * 
+	 * <dl>
+	 * <dt>header + data</dt>
+	 * <dd>read from storeRAF, always available.</dd>
+	 * 
+	 * <dt>fullKey</dt>
+	 * <dd>read from keyRAF, maybe null.</dd>
+	 * 
+	 * <dt>routingkey </dt>
+	 * <dd>
+	 * <ol>
+	 * <li><code>callback.routingKeyFromFullKey(); </code></li>
+	 * <li>if <code>null</code> or <code>KeyVerifyException</code>,<code> callback.construct().getRoutingKey()</code>,
+	 * may throw <code>KeyVerifyException</code></li>
+	 * <ol>
+	 * <code>fullKey</code> (and hence
+	 * <code>callback.routingKeyFromFullKey(); </code>) may be phantom, hence
+	 * we must verify
+	 * <code> callback.construct().getRoutingKey()  == routingkey </code> on
+	 * <code>fetch()</code> </dd>
+	 * </dl>
+	 * 
+	 * On <code>OperationStatus.KEYEXIST</code> or bad
+	 * <code> callback.construct</code>:
+	 * <ol>
+	 * <li>insert a database entry with random key, (minimum lru - 1); </li>
+	 * <li>if <code>op != OperationStatus.SUCCESS</code>,
+	 * <code>addFreeBlock()</code>.</li>
+	 * </ol>
+	 * 
+	 * 
+	 * @throws DatabaseException
+	 * @throws IOException
+	 */
 	private void reconstruct() throws DatabaseException, IOException {
 		if(keysDB.count() != 0)
 			throw new IllegalStateException("Store must be empty before reconstruction!");
