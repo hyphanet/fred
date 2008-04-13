@@ -77,7 +77,8 @@ public class NodeIPPortDetector {
 				if((p == null) || p.isNull()) continue;
 				// DNSRequester doesn't deal with our own node
 				if(!IPUtil.isValidAddress(p.getAddress(true), false)) continue;
-				Logger.normal(this, "Peer "+peerList[i].getPeer()+" thinks we are "+p);
+				if(Logger.shouldLog(Logger.MINOR, this))
+					Logger.minor(this, "Peer "+peerList[i].getPeer()+" thinks we are "+p);
 				if(countsByPeer.containsKey(p)) {
 					Integer count = (Integer) countsByPeer.get(p);
 					Integer newCount = new Integer(count.intValue()+1);
