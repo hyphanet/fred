@@ -81,10 +81,6 @@ public class RAMFreenetStore implements FreenetStore {
 		boolean storeFullKeys = callback.storeFullKeys();
 		if(oldBlock != null) {
 			if(callback.collisionPossible()) {
-				boolean equals = Arrays.equals(oldBlock.data, data) &&
-					Arrays.equals(oldBlock.header, header) &&
-					(storeFullKeys ? Arrays.equals(oldBlock.fullKey, fullKey) : true);
-				if(equals) return;
 				if(overwrite) {
 					oldBlock.data = data;
 					oldBlock.header = header;

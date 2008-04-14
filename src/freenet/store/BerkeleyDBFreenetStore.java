@@ -170,7 +170,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	 * @param lruFile
 	 *            LRU data file, flat file store for recovery
 	 * @param keysFile
-	 *            Keys data file, flat file store for recvoery
+	 *            Keys data file, flat file store for recovery, created only if
+	 *            <code>callback.storeFullKeys()</code> is <code>true</code>
 	 * @param fixSecondaryFile
 	 *            Flag file. Created when secondary database error occur. If
 	 *            this file exist on start, delete it and recreate the secondary

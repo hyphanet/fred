@@ -22,15 +22,16 @@ public interface FreenetStore {
 	 */
 	StorableBlock fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote) throws IOException;
 	
-    /**
-     * Store a block.
-     * 
-     * @throws KeyCollisionException
-     *                 If the key already exists but has different contents.
-     * @param overwrite
-     *                If true, overwrite old content rather than throwing a
-     *                <code>KeyCollisionException</code>.
-     */
+	/**
+	 * Store a block.
+	 * 
+	 * @throws KeyCollisionException
+	 *             If the key already exists and <code>callback.collisionPossible()</code> is
+	 *             <code>true</code>.
+	 * @param overwrite
+	 *            If true, overwrite old content rather than throwing a
+	 *            <code>KeyCollisionException</code>.
+	 */
     public void put(StorableBlock block, byte[] routingkey, byte[] fullKey, byte[] data, byte[] header, 
     		boolean overwrite) throws IOException, KeyCollisionException;
     
