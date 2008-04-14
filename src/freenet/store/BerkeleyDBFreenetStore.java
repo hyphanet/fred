@@ -38,6 +38,7 @@ import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
 import freenet.support.SortedLongSet;
 
@@ -210,6 +211,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 		this.headerBlockSize = callback.headerLength();
 		this.keyLength = callback.fullKeyLength();
 		callback.setStore(this);
+		
+		OOMHandler.addOOMHook(this);
 
 		this.freeBlocks = new SortedLongSet();
 
