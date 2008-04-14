@@ -1124,7 +1124,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] data = new byte[decypheredPayload.length - decypheredPayloadOffset];
 		System.arraycopy(decypheredPayload, decypheredPayloadOffset, data, 0, decypheredPayload.length - decypheredPayloadOffset);
 		long bootID = Fields.bytesToLong(data);
-		byte[] hisRef = new byte[data.length -8];
+		byte[] hisRef = new byte[data.length > 8 ? data.length -8 : 0];
 		System.arraycopy(data, 8, hisRef, 0, hisRef.length);
 		
 		// construct the peernode

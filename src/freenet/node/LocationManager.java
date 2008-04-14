@@ -349,7 +349,7 @@ public class LocationManager implements ByteCounter {
             }
             registerKnownLocation(hisLoc);
             
-            double[] hisFriendLocs = new double[hisBufLong.length-2];
+            double[] hisFriendLocs = new double[hisBufLong.length > 2 ? hisBufLong.length-2 : 0];
             for(int i=0;i<hisFriendLocs.length;i++) {
                 hisFriendLocs[i] = Double.longBitsToDouble(hisBufLong[i+2]);
                 if((hisFriendLocs[i] < 0.0) || (hisFriendLocs[i] > 1.0)) {
@@ -546,7 +546,7 @@ public class LocationManager implements ByteCounter {
                 }
                 registerKnownLocation(hisLoc);
                 
-                double[] hisFriendLocs = new double[hisBufLong.length-2];
+                double[] hisFriendLocs = new double[hisBufLong.length > 2 ? hisBufLong.length-2 : 0];
                 for(int i=0;i<hisFriendLocs.length;i++) {
                     hisFriendLocs[i] = Double.longBitsToDouble(hisBufLong[i+2]);
                     if((hisFriendLocs[i] < 0.0) || (hisFriendLocs[i] > 1.0)) {
