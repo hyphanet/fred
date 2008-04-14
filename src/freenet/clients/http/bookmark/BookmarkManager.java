@@ -23,7 +23,7 @@ import freenet.support.io.FileUtil;
 
 public class BookmarkManager {
 
-	public static final SimpleFieldSet DEFAULT_BOOKMARKS;
+	public static SimpleFieldSet DEFAULT_BOOKMARKS = null;
 	private final NodeClientCore node;
 	private final USKUpdatedCallback uskCB = new USKUpdatedCallback();
 	public static final BookmarkCategory MAIN_CATEGORY = new BookmarkCategory("/");
@@ -33,7 +33,6 @@ public class BookmarkManager {
 	private boolean isSavingBookmarks = false;
 	static {
 		String name = "freenet/clients/http/staticfiles/defaultbookmarks.dat";
-		SimpleFieldSet defaultBookmarks = null;
 		InputStream in = null;
 		try {
 			ClassLoader loader = ClassLoader.getSystemClassLoader();
@@ -41,12 +40,11 @@ public class BookmarkManager {
 			// Returns null on lookup failures:
 			in = loader.getResourceAsStream(name);
 			if(in != null)
-				defaultBookmarks = SimpleFieldSet.readFrom(in, false, false);
+				DEFAULT_BOOKMARKS = SimpleFieldSet.readFrom(in, false, false);
 		} catch(Exception e) {
 			Logger.error("BookmarkManager", "Error while loading the default bookmark file from " + name + " :" + e.getMessage(), e);
 		} finally {
 			Closer.close(in);
-			DEFAULT_BOOKMARKS = defaultBookmarks;
 		}
 	}
 

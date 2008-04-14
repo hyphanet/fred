@@ -9,7 +9,6 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Map;
 
 import freenet.client.async.ManifestElement;
 import freenet.node.Node;
@@ -152,11 +151,10 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 	 * HashMap's containing ManifestElement's.
 	 */
 	private void convertFilesByNameToManifestElements(HashMap filesByName, HashMap manifestElements, Node node) throws MessageInvalidException {
-		Iterator i = filesByName.entrySet().iterator();
+		Iterator i = filesByName.keySet().iterator();
 		while(i.hasNext()) {
-			Map.Entry entry = (Map.Entry) i.next();
-			String tempName = (String) entry.getKey();
-			Object val = entry.getValue();
+			String tempName = (String) (i.next());
+			Object val = filesByName.get(tempName);
 			if(val instanceof HashMap) {
 				HashMap h = (HashMap) val;
 				HashMap manifests = new HashMap();

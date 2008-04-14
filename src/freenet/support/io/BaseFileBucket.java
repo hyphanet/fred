@@ -219,10 +219,13 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	}
 
 	class FileBucketInputStream extends FileInputStream {
+		Exception e;
 		boolean closed;
 
 		public FileBucketInputStream(File f) throws IOException {
 			super(f);
+			if (Logger.shouldLog(Logger.DEBUG, this))
+				e = new Exception("debug");
 		}
 		
 		public void close() throws IOException {
@@ -277,7 +280,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		getFile().delete();
 	}
 
-	protected void finalize() {
+	public void finalize() {
 		if(deleteOnFinalize())
 			free(true);
 	}
@@ -393,27 +396,17 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		
 		if(toClose != null) {
 			Logger.error(this, "Streams open free()ing "+this+" : "+StringArray.toString(toClose), new Exception("debug"));
-			double toCloseLength = toClose.length;
-			while(toCloseLength > 0) {
-				int toCloseThisRound;
-				if(toCloseLength <= Integer.MAX_VALUE) {
-					toCloseThisRound = (int) toCloseLength;
-					toCloseLength = 0;
-				} else 
-					toCloseLength -= (toCloseThisRound = Integer.MAX_VALUE);
-
-				for(int i=0; i<toCloseThisRound; i++) {
-					try {
-						if(toClose[i] instanceof FileBucketOutputStream) {
-							((FileBucketOutputStream) toClose[i]).close();
-						} else {
-							((FileBucketInputStream) toClose[i]).close();
-						}
-					} catch (IOException e) {
-						Logger.error(this, "Caught closing stream in free(): "+e, e);
-					} catch (Throwable t) {
-						Logger.error(this, "Caught closing stream in free(): "+t, t);
+			for(int i=0;i<toClose.length;i++) {
+				try {
+					if(toClose[i] instanceof FileBucketOutputStream) {
+						((FileBucketOutputStream) toClose[i]).close();
+					} else {
+						((FileBucketInputStream) toClose[i]).close();
 					}
+				} catch (IOException e) {
+					Logger.error(this, "Caught closing stream in free(): "+e, e);
+				} catch (Throwable t) {
+					Logger.error(this, "Caught closing stream in free(): "+t, t);
 				}
 			}
 		}

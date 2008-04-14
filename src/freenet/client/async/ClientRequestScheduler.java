@@ -531,11 +531,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 			} else {
 				SendableGet[] gets = (SendableGet[]) o;
-				final int getsLength = gets.length;
-				SendableGet[] newGets = new SendableGet[getsLength > 1 ? getsLength-1 : 0];
+				SendableGet[] newGets = new SendableGet[gets.length-1];
 				boolean found = false;
 				int x = 0;
-				for(int j=0;j<getsLength;j++) {
+				for(int j=0;j<gets.length;j++) {
 					if(gets[j] == getter) {
 						found = true;
 						continue;
@@ -543,7 +542,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(j == newGets.length) {
 						if(!found) {
 							if(complain)
-								Logger.normal(this, "Not found: "+getter+" for "+key+" removing ("+getsLength+" getters)");
+								Logger.normal(this, "Not found: "+getter+" for "+key+" removing ("+gets.length+" getters)");
 							return; // not here
 						}
 					}
@@ -556,7 +555,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				} else if(x == 1) {
 					pendingKeys.put(key, newGets[0]);
 				} else {
-					if(x != getsLength-1) {
+					if(x != gets.length-1) {
 						SendableGet[] newNewGets = new SendableGet[x];
 						System.arraycopy(newGets, 0, newNewGets, 0, x);
 						newGets = newNewGets;

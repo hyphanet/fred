@@ -9,21 +9,21 @@ package freenet.config;
 public abstract class Option {
 
 	/** The parent SubConfig object */
-	protected final SubConfig config;
+	final SubConfig config;
 	/** The option name */
-	protected final String name;
+	final String name;
 	/** The sort order */
-	protected final int sortOrder;
+	final int sortOrder;
 	/** Is this config variable expert-only? */
-	protected final boolean expert;
+	final boolean expert;
 	/** Is this config variable to be written out even if it uses the default value? */
-	protected final boolean forceWrite;
+	final boolean forceWrite;
 	/** Short description of value e.g. "FCP port" */
-	protected final String shortDesc;
+	final String shortDesc;
 	/** Long description of value e.g. "The TCP port to listen for FCP connections on" */
-	protected final String longDesc;
+	final String longDesc;
 	/** The configCallback associated to the Option */
-	protected final ConfigCallback cb;
+	final ConfigCallback cb;
 	
 	public final static int DATA_TYPE_STRING = 0;
 	public final static int DATA_TYPE_NUMBER = 1;

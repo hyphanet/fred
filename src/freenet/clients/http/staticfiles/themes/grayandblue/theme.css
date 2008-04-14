@@ -27,6 +27,22 @@ th, td {
 	border:1px dotted #676767;
 }
 
+.bluebutton {
+	background-image: url(bluebuttonbg_larger1.gif);
+	background-repeat: no-repeat;
+	font-family: verdana;
+	font-size: 8pt;
+	align: center;
+	border: solid 0 #FFFFFF;
+	color: #000000;
+	margin: 0px;
+	width: 140px;
+	height: 21px;
+    	padding-top: 1px;
+    	padding-bottom: 3px;
+    	vertical-align: middle;
+}
+
 pre, textarea {
 	font-family: Courier;
 	font-weight: normal;

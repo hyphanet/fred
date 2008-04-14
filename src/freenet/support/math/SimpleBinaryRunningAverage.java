@@ -160,7 +160,7 @@ public class SimpleBinaryRunningAverage implements RunningAverage {
 		ba = new BitSet(maxSize);
 		maximumSize = maxSize;
 		byte[] b = new byte[HexUtil.countBytesForBits(size)];
-		dis.readFully(b);
+		dis.read(b);
 		HexUtil.bytesToBits(b, ba, size);
 		calculateTotalOnesZeros();
 		defaultValue = 0.5; // not used

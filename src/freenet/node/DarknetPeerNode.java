@@ -546,7 +546,7 @@ public class DarknetPeerNode extends PeerNode {
 	   		Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
 	 		return -1;
 	 	}
-		Integer[] localFileNumbers;
+		Integer[] localFileNumbers = null;
 		int nextFileNumber = 0;
 		synchronized(extraPeerDataFileNumbers) {
 			// Find the first free slot
@@ -635,7 +635,7 @@ public class DarknetPeerNode extends PeerNode {
 	   		Logger.error(this, "Extra peer data directory for peer not a directory: "+extraPeerDataPeerDir.getPath());
 	 		return;
 	 	}
-		Integer[] localFileNumbers;
+		Integer[] localFileNumbers = null;
 		synchronized(extraPeerDataFileNumbers) {
 			localFileNumbers = (Integer[]) extraPeerDataFileNumbers.toArray(new Integer[extraPeerDataFileNumbers.size()]);
 		}
@@ -731,7 +731,7 @@ public class DarknetPeerNode extends PeerNode {
 	public void sendQueuedN2NMs() {
 		if(logMINOR)
 			Logger.minor(this, "Sending queued N2NMs for "+shortToString());
-		Integer[] localFileNumbers;
+		Integer[] localFileNumbers = null;
 		synchronized(queuedToSendN2NMExtraPeerDataFileNumbers) {
 			localFileNumbers = (Integer[]) queuedToSendN2NMExtraPeerDataFileNumbers.toArray(new Integer[queuedToSendN2NMExtraPeerDataFileNumbers.size()]);
 		}

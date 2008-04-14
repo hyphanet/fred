@@ -26,9 +26,6 @@ public abstract class StoreCallback {
 	/** Whether we should create a .keys file to keep full keys in in order to reconstruct. */
 	public abstract boolean storeFullKeys();
 	
-	/** Whether we need the key in order to reconstruct a block. */
-	public abstract boolean constructNeedsKey();
-	
 	/** Length of a full key. Full keys are stored in the .keys file. Also fixed. */
 	public abstract int fullKeyLength();
 	
@@ -44,9 +41,7 @@ public abstract class StoreCallback {
 	
 	// Reconstruction
 	
-	/** Construct a StorableBlock from the data, headers, and optionally routing key or full key.
-	 * IMPORTANT: Using the full key or routing key is OPTIONAL, and if we don't use them, WE DON'T
-	 * CHECK THEM EITHER! You MUST check that the key is the one you expected.
+	/** Construct a StorableBlock from the data, headers, and optionally routing key or full key 
 	 * @throws KeyVerifyException */
 	abstract StorableBlock construct(byte[] data, byte[] headers, byte[] routingKey, byte[] fullKey) throws KeyVerifyException;
 	
@@ -73,7 +68,4 @@ public abstract class StoreCallback {
 	public long keyCount() {
 		return store.keyCount();
 	}
-
-	/** Generate a routing key from a full key */
-	public abstract byte[] routingKeyFromFullKey(byte[] keyBuf);
 }

@@ -385,7 +385,7 @@ public class PacketSender implements Runnable, Ticker {
 			lastClearedOldSwapChains = now;
 		}
 
-		long oldNow = now;
+		long oldNow = System.currentTimeMillis();
 
 		// Send may have taken some time
 		now = System.currentTimeMillis();

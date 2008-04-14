@@ -154,21 +154,18 @@ public class FailureTable {
 			if(logMINOR) Logger.minor(this, "Deleting "+offer+" from "+this);
 			synchronized(this) {
 				int idx = -1;
-				final int offerLength = offers.length;
-				for(int i=0;i<offerLength;i++) {
+				for(int i=0;i<offers.length;i++) {
 					if(offers[i] == offer) idx = i;
 				}
 				if(idx == -1) return;
-				if(offers.length > 1) {
-					BlockOffer[] newOffers = new BlockOffer[offerLength > 1 ? offerLength-1 : 0];
-					if(idx > 0)
-						System.arraycopy(offers, 0, newOffers, 0, idx);
-					if(idx < newOffers.length)
-						System.arraycopy(offers, idx+1, newOffers, idx, offers.length-idx-1);
-					offers = newOffers;
-				}
+				BlockOffer[] newOffers = new BlockOffer[offers.length-1];
+				if(idx > 0)
+					System.arraycopy(offers, 0, newOffers, 0, idx);
+				if(idx < newOffers.length)
+					System.arraycopy(offers, idx+1, newOffers, idx, offers.length-idx-1);
+				offers = newOffers;
 			}
-			if(offers.length < 1) {
+			if(offers.length == 0) {
 				synchronized(FailureTable.this) {
 					blockOfferListByKey.removeKey(entry.key);
 				}

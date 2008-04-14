@@ -434,9 +434,8 @@ public class FreenetURI implements Cloneable{
 	 */
 	public FreenetURI popMetaString() {
 		String[] newMetaStr = null;
-		final int metaStrLength = metaStr.length;
-		if ((metaStr != null) && (metaStrLength > 1)) {
-			newMetaStr = new String[metaStrLength - 1];
+		if ((metaStr != null) && (metaStr.length > 1)) {
+			newMetaStr = new String[metaStr.length - 1];
 			System.arraycopy(metaStr, 1, newMetaStr, 0, newMetaStr.length);
 		}
 		return setMetaString(newMetaStr);
@@ -644,12 +643,12 @@ public class FreenetURI implements Cloneable{
 			dis.readFully(cryptoKey);
 			// Number of bytes of extra depends on key type
 			int extraLen;
-			if((type == CHK) || (type == SSK)) {
+			if(type == CHK)
 				extraLen = ClientCHK.EXTRA_LENGTH;
-				extra = new byte[extraLen];
-				dis.readFully(extra);
-			} else
-				extra = new byte[0];
+			else //if(type == SSK)
+				extraLen = ClientSSK.EXTRA_LENGTH;
+			extra = new byte[extraLen];
+			dis.readFully(extra);
 		}
 		String docName = null;
 		if(type != CHK)

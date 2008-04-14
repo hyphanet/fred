@@ -104,7 +104,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private static void sendHTMLError(OutputStream os, int code, String httpReason, String htmlMessage, boolean disconnect, MultiValueTable mvt) throws IOException {
 		if(mvt == null) mvt = new MultiValueTable();
 		byte[] messageBytes = htmlMessage.getBytes("UTF-8");
-		sendReplyHeaders(os, code, httpReason, mvt, "text/html; charset=UTF-8", messageBytes.length, null, disconnect);
+		sendReplyHeaders(os, code, httpReason, mvt, "text/html; charset=UTF-8", messageBytes.length, disconnect);
 		os.write(messageBytes);
 	}
 	
@@ -123,12 +123,8 @@ public class ToadletContextImpl implements ToadletContext {
 	}
 	
 	public void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable mvt, String mimeType, long contentLength) throws ToadletContextClosedException, IOException {
-		sendReplyHeaders(replyCode, replyDescription, mvt, mimeType, contentLength, null);
-	}
-	
-	public void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable mvt, String mimeType, long contentLength, Date mTime) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
-		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect);
+		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, shouldDisconnect);
 	}
 	
 	public PageMaker getPageMaker() {
@@ -139,7 +135,7 @@ public class ToadletContextImpl implements ToadletContext {
 		return headers;
 	}
 	
-	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable mvt, String mimeType, long contentLength, Date mTime, boolean disconnect) throws IOException {
+	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable mvt, String mimeType, long contentLength, boolean disconnect) throws IOException {
 		// Construct headers
 		if(mvt == null)
 			mvt = new MultiValueTable();
@@ -151,30 +147,17 @@ public class ToadletContextImpl implements ToadletContext {
 			}
 		if(contentLength >= 0)
 			mvt.put("content-length", Long.toString(contentLength));
-		
-		String expiresTime;
-		if (mTime == null) {
-			expiresTime = "Thu, 01 Jan 1970 00:00:00 GMT";
-		} else {
-			// use an expiry time of 1 day, somewhat arbitrarily
-			expiresTime = makeHTTPDate(mTime.getTime() + (24 * 60 * 60 * 1000));
-		}
-		mvt.put("expires", expiresTime);
-		
-		String nowString = makeHTTPDate(System.currentTimeMillis());
-		String lastModString;
-		if (mTime == null) {
-			lastModString = nowString;
-		} else {
-			lastModString = makeHTTPDate(mTime.getTime());
-		}
-		
-		mvt.put("last-modified", lastModString);
-		mvt.put("date", nowString);
-		if (mTime == null) {
-			mvt.put("pragma", "no-cache");
-			mvt.put("cache-control", "max-age=0, must-revalidate, no-cache, no-store, post-check=0, pre-check=0");
-		}
+		// FIXME allow caching on a config option.
+		// For now cater to the paranoid.
+		// Also this may fix a wierd bug...
+		// All keys are lower-case
+		mvt.put("expires", "Thu, 01 Jan 1970 00:00:00 GMT");
+		// Sent now, expires now.
+		String time = makeHTTPDate(System.currentTimeMillis());
+		mvt.put("last-modified", time);
+		mvt.put("date", time);
+		mvt.put("pragma", "no-cache");
+		mvt.put("cache-control", "max-age=0, must-revalidate, no-cache, no-store, post-check=0, pre-check=0");
 		if(disconnect)
 			mvt.put("connection", "close");
 		else

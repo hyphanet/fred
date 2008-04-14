@@ -3,9 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
-import java.util.Iterator;
-import java.util.Set;
-
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.support.Logger;
@@ -14,62 +11,16 @@ import freenet.support.Logger;
  * Do this processing as a standard response to an OutOfMemoryError
  */
 public class OOMHandler {
-	private static volatile boolean isOOM = false;
-	
-	/**
-	 * Emergency memory, freed when OOM occur. Marked <code>volatile</code> to make sure gc thread
-	 * see it's free'd.
-	 */
-	private static volatile byte[] emergencyPool = new byte[8192];
-	
-	/**
-	 * List of {@link OOMHook}s
-	 */
-	private static Set oomHooks = new WeakHashSet();
-	
-	public static void addOOMHook(OOMHook hook) {
-		synchronized (oomHooks) {
-			oomHooks.add(hook);
-		}
-	}
-	
-	public static void handleOOM(OutOfMemoryError e) {
-		if (isOOM) {
-			Logger.error(null, "Double OOM", e);
-			return;
-		}
-		
-		isOOM = true;
-		
+
+	public synchronized static void handleOOM(OutOfMemoryError e) {
 		Runtime r = null;
 		try {
 			r = Runtime.getRuntime();
 			long usedAtStart = r.totalMemory() - r.freeMemory();
-			
-			if (emergencyPool != null)
-				emergencyPool = null;
-			
 			System.gc();
 			System.runFinalization();
-			
-			// iterate all oom hooks
-			Iterator it = oomHooks.iterator();
-			while (it.hasNext()) {
-				OOMHook hook = ((OOMHook) it.next());
-				if (hook != null) {
-					try {
-						hook.handleOOM();
-					} catch (Throwable t) {
-						//ignore
-					}
-				}
-
-				System.gc();
-			}
-			
 			System.gc();
 			System.runFinalization();
-			
 			System.err.println(e.getClass());
 			System.err.println(e.getMessage());
 			e.printStackTrace();
@@ -95,8 +46,6 @@ public class OOMHandler {
 			while(tg.getParent() != null) tg = tg.getParent();
 			System.err.println("Running threads: "+tg.activeCount());
 			WrapperManager.requestThreadDump(); // Will probably crash, but never mind...
-		} finally {
-			isOOM = false;
 		}
 	}
 }

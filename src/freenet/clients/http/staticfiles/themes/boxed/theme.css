@@ -329,7 +329,7 @@ table.requests {
 
 .request-progress {
 	width: 100px;
-	vertical-align: middle;
+	vertical-align: center;
 }
 
 .progressbar {

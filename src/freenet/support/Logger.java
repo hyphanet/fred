@@ -18,12 +18,12 @@ public abstract class Logger {
 
 	public final static class OSThread {
 		
-		private static boolean getPIDEnabled = false;
-		private static boolean getPPIDEnabled = false;
-		private static boolean logToFileEnabled = false;
-		private static int logToFileVerbosity = DEBUG;
-		private static boolean logToStdOutEnabled = false;
-		private static boolean procSelfStatEnabled = false;
+		public static boolean getPIDEnabled = false;
+		public static boolean getPPIDEnabled = false;
+		public static boolean logToFileEnabled = false;
+		public static int logToFileVerbosity = DEBUG;
+		public static boolean logToStdOutEnabled = false;
+		public static boolean procSelfStatEnabled = false;
 	
 		/**
 		 * Get the thread's process ID or return -1 if it's unavailable for some reason

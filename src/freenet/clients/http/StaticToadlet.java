@@ -1,12 +1,9 @@
 package freenet.clients.http;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
-import java.net.URL;
-import java.util.Date;
 
 import freenet.client.DefaultMIMETypes;
 import freenet.l10n.L10n;
@@ -61,30 +58,10 @@ public class StaticToadlet extends Toadlet {
 		strm.close();
 		os.close();
 		
-		URL url = getClass().getResource(ROOT_PATH+path);
-		Date mTime = getUrlMTime(url);
-		
-		ctx.sendReplyHeaders(200, "OK", null, DefaultMIMETypes.guessMIMEType(path, false), data.size(), mTime);
+		ctx.sendReplyHeaders(200, "OK", null, DefaultMIMETypes.guessMIMEType(path, false), data.size());
 
 		ctx.writeData(data);
 		data.free();
-	}
-	
-	/**
-	 * Try to find the modification time for a URL, or return null if not possible
-	 * We usually load our resources from the JAR, or possibly from a file in some setups, so we check the modification time of
-	 * the JAR for resources in a jar and the mtime for files.
-	 */
-	private Date getUrlMTime(URL url) {
-		if (url.getProtocol().equals("jar")) {
-			File f = new File(url.getPath().substring(0, url.getPath().indexOf('!')));
-			return new Date(f.lastModified());
-		} else if (url.getProtocol().equals("file")) {
-			File f = new File(url.getPath());
-			return new Date(f.lastModified());
-		} else {
-			return null;
-		}
 	}
 	
 	private String l10n(String key) {

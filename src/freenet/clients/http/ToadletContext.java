@@ -1,7 +1,6 @@
 package freenet.clients.http;
 
 import java.io.IOException;
-import java.util.Date;
 
 import freenet.support.HTMLNode;
 import freenet.support.MultiValueTable;
@@ -21,10 +20,7 @@ public interface ToadletContext {
 	 * @param mvt Any extra headers.
 	 * @param mimeType The MIME type of the reply.
 	 * @param length The length of the reply.
-	 * @param mTime The modification time of the data being sent or null for 'now' and disabling caching
 	 */
-	void sendReplyHeaders(int code, String desc, MultiValueTable mvt, String mimeType, long length, Date mTime) throws ToadletContextClosedException, IOException;
-	
 	void sendReplyHeaders(int code, String desc, MultiValueTable mvt, String mimeType, long length) throws ToadletContextClosedException, IOException;
 
 	/**

@@ -155,8 +155,6 @@
 					<include name="**/*.class"/>
 				</fileset>
 			</batchtest>
-			<sysproperty key="benchmark" value="${benchmark}" />
-			<sysproperty key="extensiveTesting" value="${extensiveTesting}" />
 		</junit>
 	</target>
 

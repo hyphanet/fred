@@ -415,7 +415,7 @@ public class OpennetManager {
 			successCount++;
 			if(peersLRU.contains(pn)) {
 				peersLRU.push(pn);
-				if(logMINOR) Logger.minor(this, "Opennet peer "+pn+" promoted to top of LRU because of successful request");
+				Logger.normal(this, "Opennet peer "+pn+" promoted to top of LRU because of successful request");
 				return;
 			} else {
 				if(logMINOR) Logger.minor(this, "Success on opennet peer which isn't in the LRU!: "+pn, new Exception("debug"));

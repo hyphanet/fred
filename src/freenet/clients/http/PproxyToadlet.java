@@ -422,7 +422,6 @@ public class PproxyToadlet extends Toadlet {
 			HTMLNode pluginTable = infoboxContent.addChild("table", "class", "plugins");
 			HTMLNode headerRow = pluginTable.addChild("tr");
 			headerRow.addChild("th", l10n("classNameTitle"));
-			headerRow.addChild("th", l10n("versionTitle"));
 			headerRow.addChild("th", l10n("internalIDTitle"));
 			headerRow.addChild("th", l10n("startedAtTitle"));
 			headerRow.addChild("th");
@@ -433,7 +432,6 @@ public class PproxyToadlet extends Toadlet {
 				PluginInfoWrapper pi = (PluginInfoWrapper) it.next();
 				HTMLNode pluginRow = pluginTable.addChild("tr");
 				pluginRow.addChild("td", pi.getPluginClassName());
-				pluginRow.addChild("td", pi.getPluginVersion());
 				pluginRow.addChild("td", pi.getThreadName());
 				pluginRow.addChild("td", new Date(pi.getStarted()).toString());
 				if (pi.isStopping()) {

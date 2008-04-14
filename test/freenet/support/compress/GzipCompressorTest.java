@@ -52,9 +52,6 @@ public class GzipCompressorTest extends TestCase {
 
 		// check GZIP is the first compressor
 		assertEquals(gzipCompressor, compressorZero);
-	}
-
-	public void testCompress() {
 
 		// do gzip compression
 		byte[] compressedData = doCompress(UNCOMPRESSED_DATA_1.getBytes());
@@ -66,46 +63,13 @@ public class GzipCompressorTest extends TestCase {
 		for (int i = 0; i < compressedData.length; i++) {
 			assertEquals(COMPRESSED_DATA_1[i], compressedData[i]);
 		}
-	}
 
-	public void testBucketDecompress() {
-		
-		byte[] compressedData = COMPRESSED_DATA_1;
-		
-		// do gzip decompression with buckets
-		byte[] uncompressedData = doBucketDecompress(compressedData);
+		// do gzip uncompression
+		byte[] uncompressedData = doUncompress(compressedData);
 		
 		// is the (round-tripped) uncompressed string the same as the original?
 		String uncompressedString = new String(uncompressedData);
 		assertEquals(uncompressedString, UNCOMPRESSED_DATA_1);
-	}
-
-	public void testByteArrayDecompress() {
-		
-        // build 5k array 
-		byte[] originalUncompressedData = new byte[5 * 1024];
-		for(int i = 0; i < originalUncompressedData.length; i++) {
-			originalUncompressedData[i] = 1;
-		}
-		
-		byte[] compressedData = doCompress(originalUncompressedData);
-		byte[] outUncompressedData = new byte[5 * 1024];
-		
-		int writtenBytes = 0;
-		
-		try {
-			writtenBytes = Compressor.GZIP.decompress(compressedData, 0, compressedData.length, outUncompressedData);
-		} catch (CompressionOutputSizeException e) {
-			fail("unexpected exception thrown : " + e.getMessage());
-		}
-		
-		assertEquals(writtenBytes, originalUncompressedData.length);
-		assertEquals(originalUncompressedData.length, outUncompressedData.length);
-		
-        // check each byte is exactly as expected
-		for (int i = 0; i < outUncompressedData.length; i++) {
-			assertEquals(originalUncompressedData[i], outUncompressedData[i]);
-		}
 	}
 
 	public void testCompressException() {
@@ -145,7 +109,7 @@ public class GzipCompressorTest extends TestCase {
 		}
 	}
 	
-	private byte[] doBucketDecompress(byte[] compressedData) {
+	private byte[] doUncompress(byte[] compressedData) {
 
 		Bucket inBucket = new ArrayBucket(compressedData);
 		BucketFactory factory = new ArrayBucketFactory();

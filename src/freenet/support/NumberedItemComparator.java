@@ -11,6 +11,12 @@ public class NumberedItemComparator implements Comparator {
 	final boolean wrapAround;
 	
     public int compare(Object o1, Object o2) {
+        int x = ocompare(o1, o2);
+        //Logger.minor(this, "compare("+o1+","+o2+") = "+x);
+        return x;
+    }
+    
+    public int ocompare(Object o1, Object o2) {
         // Nulls at the end of the list
         if((o1 == null) && (o2 == null))
             return 0; // null == null

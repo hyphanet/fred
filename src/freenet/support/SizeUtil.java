@@ -4,7 +4,7 @@ package freenet.support;
  * Size formatting utility.
  */
 public class SizeUtil {
-	public final static String[] suffixes = { "B", "KiB", "MiB", "GiB", "TiB", "PiB", "EiB", "ZiB", "YiB" };
+	public static String[] suffixes = {"B", "KiB","MiB","GiB","TiB","PiB","EiB","ZiB","YiB"};
 
 	public static String formatSize(long sz) {
 		return formatSize(sz, false);

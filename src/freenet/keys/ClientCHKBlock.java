@@ -89,9 +89,8 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
             throw new CHKDecodeException("Crypto key too short");
         cipher.initialize(key.cryptoKey);
         PCFBMode pcfb = PCFBMode.create(cipher);
-	int headersLength = headers.length;
-        byte[] hbuf = new byte[headersLength > 2 ? headersLength-2 : 0];
-        System.arraycopy(headers, 2, hbuf, 0, hbuf.length);
+        byte[] hbuf = new byte[headers.length-2];
+        System.arraycopy(headers, 2, hbuf, 0, headers.length-2);
         byte[] dbuf = new byte[data.length];
         System.arraycopy(data, 0, dbuf, 0, data.length);
         // Decipher header first - functions as IV

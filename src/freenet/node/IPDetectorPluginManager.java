@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
-import freenet.io.AddressTracker;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.l10n.L10n;
@@ -37,12 +36,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 
 		final boolean suggestPortForward;
 		private int[] portsNotForwarded;
-		boolean noDismiss;
 		
-		public MyUserAlert(String title, String text, boolean suggestPortForward, short code, boolean noDismiss) {
+		public MyUserAlert(String title, String text, boolean suggestPortForward, short code) {
 			super(false, title, text, null, code, true, L10n.getString("UserAlert.hide"), false, null);
 			this.suggestPortForward = suggestPortForward;
-			this.noDismiss = noDismiss;
 			portsNotForwarded = new int[] { };
 		}
 
@@ -66,10 +63,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			StringBuffer sb = new StringBuffer();
 			sb.append(super.getText());
 			if(portsNotForwarded.length == 1) {
-				sb.append(l10n("suggestForwardPort", "port", Integer.toString(Math.abs(portsNotForwarded[0]))));
+				sb.append(l10n("suggestForwardPort", "port", Integer.toString(portsNotForwarded[0])));
 			} else if(portsNotForwarded.length >= 2) {
 				sb.append(l10n("suggestForwardTwoPorts", new String[] { "port1", "port2" }, 
-						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), Integer.toString(Math.abs(portsNotForwarded[1])) }));
+						new String[] { Integer.toString(portsNotForwarded[0]), Integer.toString(portsNotForwarded[1]) }));
 				if(portsNotForwarded.length > 2)
 					Logger.error(this, "Not able to tell user about more than 2 ports to forward! ("+portsNotForwarded.length+")");
 			}
@@ -91,16 +88,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		}
 		
 		public boolean userCanDismiss() {
-			if(noDismiss) return true;
-			// If no ports need forwarding, make it dismissable immediately.
-			if(!suggestPortForward) return true;
-			// Prevent NPE.
-			if(portsNotForwarded == null) return false;
-			// If any port definitely does need forwarding, make it non-dismissable.
-			for(int i=0;i<portsNotForwarded.length;i++)
-				if(portsNotForwarded[i] < 0) return false; // Port definitely needs to be forwarded
-			// Otherwise it is dismissable.
-			return true;
+			return !suggestPortForward;
 		}
 
 	}
@@ -126,31 +114,28 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		this.node = node;
 		this.detector = detector;
 		noConnectionAlert = new MyUserAlert( l10n("noConnectivityTitle"), l10n("noConnectivity"), 
-				true, UserAlert.ERROR, true);
+				true, UserAlert.ERROR);
 		symmetricAlert = new MyUserAlert(l10n("symmetricTitle"), l10n("symmetric"), 
-				true, UserAlert.ERROR, false);				
+				true, UserAlert.ERROR);				
 		portRestrictedAlert = new MyUserAlert(l10n("portRestrictedTitle"), l10n("portRestricted"), 
-				true, UserAlert.WARNING, false);
+				true, UserAlert.WARNING);
 		restrictedAlert = new MyUserAlert(l10n("restrictedTitle"), l10n("restricted"), 
-				false, UserAlert.MINOR, false);
+				false, UserAlert.MINOR);
 	}
 
 	public int[] getUDPPortsNotForwarded() {
 		OpennetManager om = node.getOpennet();
-		int darknetStatus = node.darknetCrypto.getDetectedConnectivityStatus();
-		int opennetStatus = om == null ? AddressTracker.DONT_KNOW : om.crypto.getDetectedConnectivityStatus();
-		if(om == null || opennetStatus == AddressTracker.DEFINITELY_PORT_FORWARDED) {
-			if(darknetStatus == AddressTracker.DEFINITELY_PORT_FORWARDED) {
+		if(om == null || om.crypto.definitelyPortForwarded()) {
+			if(node.darknetDefinitelyPortForwarded()) {
 				return new int[] { };
 			} else {
-				return new int[] { (darknetStatus < AddressTracker.DONT_KNOW ? -1 : 1) * node.getDarknetPortNumber() };
+				return new int[] { node.getDarknetPortNumber() };
 			}
 		} else {
-			if(darknetStatus == AddressTracker.DEFINITELY_PORT_FORWARDED) {
-				return new int[] { (opennetStatus < AddressTracker.DONT_KNOW ? -1 : 1 ) * om.crypto.portNumber };
+			if(node.darknetDefinitelyPortForwarded()) {
+				return new int[] { om.crypto.portNumber };
 			} else {
-				return new int[] { (darknetStatus < AddressTracker.DONT_KNOW ? -1 : 1 ) * node.getDarknetPortNumber(), 
-						(opennetStatus < AddressTracker.DONT_KNOW ? -1 : 1 ) * om.crypto.portNumber };
+				return new int[] { node.getDarknetPortNumber(), om.crypto.portNumber };
 			}
 		}
 	}

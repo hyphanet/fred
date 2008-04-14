@@ -18,7 +18,7 @@ import freenet.support.Logger;
  */
 public class FCPClient {
 	
-	public FCPClient(String name2, FCPServer server, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb) {
+	public FCPClient(String name2, FCPServer server, FCPConnectionHandler handler, boolean isGlobalQueue) {
 		this.name = name2;
 		if(name == null) throw new NullPointerException();
 		this.currentConnection = handler;
@@ -35,7 +35,6 @@ public class FCPClient {
 		watchGlobalVerbosityMask = Integer.MAX_VALUE;
 		toStart = new LinkedList();
 		lowLevelClient = this;
-		completionCallback = cb;
 	}
 	
 	/** The client's Name sent in the ClientHello message */
@@ -67,7 +66,6 @@ public class FCPClient {
 	private final LinkedList toStart;
 	/** Low-level client object, for freenet.client.async. Normally == this. */
 	final Object lowLevelClient;
-	private RequestCompletionCallback completionCallback;
 	
 	public synchronized FCPConnectionHandler getConnection() {
 		return currentConnection;
@@ -255,28 +253,5 @@ public class FCPClient {
 	
 	public String toString() {
 		return super.toString()+ ':' +name;
-	}
-
-	/**
-	 * Callback called when a request succeeds.
-	 */
-	public void notifySuccess(ClientRequest req) {
-		if(completionCallback != null)
-			completionCallback.notifySuccess(req);
-	}
-
-	/**
-	 * Callback called when a request fails
-	 * @param get
-	 */
-	public void notifyFailure(ClientRequest req) {
-		if(completionCallback != null)
-			completionCallback.notifyFailure(req);
-	}
-	
-	public synchronized RequestCompletionCallback setRequestCompletionCallback(RequestCompletionCallback cb) {
-		RequestCompletionCallback old = completionCallback;
-		completionCallback = cb;
-		return old;
 	}
 }

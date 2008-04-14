@@ -147,7 +147,7 @@ public class FreenetInetAddress {
             	if(!allowUnknown) throw e;
                 addr = null;
             }
-            if(logDEBUG) Logger.debug(this, "host is '"+host+"' and addr.getHostAddress() is '"+(addr != null ? addr.getHostAddress()+ '\'' : ""));
+            if(logDEBUG) Logger.debug(this, "host is '"+host+"' and addr.getHostAddress() is '"+addr.getHostAddress()+ '\'');
             if(addr != null && addr.getHostAddress().equals(host)) {
             	if(logDEBUG) Logger.debug(this, '\'' +host+"' looks like an IP address");
                 host = null;

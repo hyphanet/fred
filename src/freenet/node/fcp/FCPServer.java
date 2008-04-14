@@ -119,7 +119,7 @@ public class FCPServer implements Runnable {
 		defaultFetchContext = client.getFetchContext();
 		defaultInsertContext = client.getInsertContext(false);
 		
-		globalClient = new FCPClient("Global Queue", this, null, true, null);
+		globalClient = new FCPClient("Global Queue", this, null, true);
 		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
@@ -517,7 +517,7 @@ public class FCPServer implements Runnable {
 			oldClient = (FCPClient) clientsByName.get(name);
 			if(oldClient == null) {
 				// Create new client
-				FCPClient client = new FCPClient(name, this, handler, false, null);
+				FCPClient client = new FCPClient(name, this, handler, false);
 				clientsByName.put(name, client);
 				return client;
 			} else {
@@ -681,10 +681,9 @@ public class FCPServer implements Runnable {
 			gis = new GZIPInputStream(fis);
 			bis = new BufferedInputStream(gis);
 			Logger.normal(this, "Loading persistent requests from "+file);
-			if (file.length() > 0) {
+			if(file.length() > 0)
 				loadPersistentRequests(bis);
-				haveLoadedPersistentRequests = true;
-			} else
+			else
 				throw new IOException("File empty"); // If it's empty, try the temp file.
 		} catch (IOException e) {
 			Logger.error(this, "IOE : " + e.getMessage(), e);
@@ -697,7 +696,6 @@ public class FCPServer implements Runnable {
 				fis = new FileInputStream(file);
 				bis = new BufferedInputStream(fis);
 				loadPersistentRequests(bis);
-				haveLoadedPersistentRequests = true;
 			} catch (IOException e1) {
 				Logger.normal(this, "It's corrupted too : Not reading any persistent requests from disk: "+e1);
 				return;
@@ -899,11 +897,6 @@ public class FCPServer implements Runnable {
 
 	public boolean hasFinishedStart() {
 		return hasFinishedStart;
-	}
-	
-	public void setCompletionCallback(RequestCompletionCallback cb) {
-		if(globalClient.setRequestCompletionCallback(cb) != null)
-			Logger.error(this, "Replacing request completion callback "+cb, new Exception("error"));
 	}
 	
 }

@@ -8,7 +8,6 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import freenet.support.Base64;
-import freenet.support.Logger;
 
 /**
  * @author amphibian
@@ -83,15 +82,5 @@ public class NodeCHK extends Key {
 		buf[1] = (byte) (type & 0xFF);
 		System.arraycopy(routingKey, 0, buf, 2, routingKey.length);
 		return buf;
-	}
-
-	public static byte[] routingKeyFromFullKey(byte[] keyBuf) {
-		if(keyBuf.length == KEY_LENGTH) return keyBuf;
-		if(keyBuf.length != FULL_KEY_LENGTH) {
-			Logger.error(NodeCHK.class, "routingKeyFromFullKey() on "+keyBuf.length+" bytes");
-		}
-		byte[] out = new byte[KEY_LENGTH];
-		System.arraycopy(keyBuf, 2, out, 0, KEY_LENGTH);
-		return out;
 	}
 }

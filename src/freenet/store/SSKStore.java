@@ -60,12 +60,4 @@ public class SSKStore extends StoreCallback {
 		return true;
 	}
 
-	public boolean constructNeedsKey() {
-		return true;
-	}
-
-	public byte[] routingKeyFromFullKey(byte[] keyBuf) {
-		return NodeSSK.routingKeyFromFullKey(keyBuf);
-	}
-
 }

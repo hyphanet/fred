@@ -415,7 +415,6 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(!dontFree)
 			data.free();
 		finish();
-		client.notifySuccess(this);
 	}
 
 	private void trySendDataFoundOrGetFailed(FCPConnectionOutputHandler handler) {
@@ -497,7 +496,6 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			Logger.minor(this, "Caught "+e, e);
 		trySendDataFoundOrGetFailed(null);
 		finish();
-		client.notifyFailure(this);
 		if(persistenceType != PERSIST_CONNECTION)
 			client.server.forceStorePersistentRequests();
 	}

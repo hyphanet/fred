@@ -207,11 +207,6 @@ table.plugins form {
 
 /* configuration page */
 
-table.config_navigation {
-	list-style-type: none;
-	margin-top: 10px;
-}
-
 ul.config {
 	margin: 0 0 5px 0;
 	padding: 0;
@@ -219,11 +214,16 @@ ul.config {
 }
 
 ul.config li {
-	margin: 5px;
+	margin: 0;
 	padding: 5px;
 	list-style: none;
 	text-align: left;
-	background-color: #e5efff;
+	display: table;
+	position: relative;
+}
+
+ul.config li:hover span.configlongdesc {
+	display: block;
 }
 
 ul.config span.configprefix {
@@ -236,25 +236,36 @@ ul.config span.configprefix {
 }
 
 ul.config span.configshortdesc {
-	display: block;
 	text-align: left;
 	font-weight: bold;
+        float: left;
 	margin-right: 10px;
-	width: 30%;
-	float: left;
+	width: 300px;
+	display: table-cell;
 }
 
 ul.config span.configlongdesc {
-	display: block;
-	clear: left;
+	display: none;
+	position: absolute;
+	left: 40px;
+	background-color: #e1ecff;
+	border: 1px solid #97beff;
+	padding: 5px;
+	/*
+	 * This should be 'top', but firefox is broken and doesn't
+	 + set the li to be a containing block with 'display: table' on
+	 */
+	margin-top: 20px;
+	z-index: 10;
 }
 
 span.config {
-	width: 70%;
+	display: table-cell;
+	width: 100%;
 }
 
 ul.config input[type=text] {
-	width: 67%;
+	width: 100%;
 }
 
 /* darknet page */
@@ -502,7 +513,7 @@ table.queue span.key_is {
 
 div.progressbar {
 	float: left;
-	margin: 0px;
+	margin: none;
 	margin-right: 3px;
 	background-color: #f6f9ff;
 	border: solid 1px #97beff;
