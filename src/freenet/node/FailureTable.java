@@ -154,12 +154,13 @@ public class FailureTable {
 			if(logMINOR) Logger.minor(this, "Deleting "+offer+" from "+this);
 			synchronized(this) {
 				int idx = -1;
-				for(int i=0;i<offers.length;i++) {
+				final int offerLength = offers.length;
+				for(int i=0;i<offerLength;i++) {
 					if(offers[i] == offer) idx = i;
 				}
 				if(idx == -1) return;
 				if(offers.length > 1) {
-					BlockOffer[] newOffers = new BlockOffer[offers.length-1];
+					BlockOffer[] newOffers = new BlockOffer[offerLength > 1 ? offerLength-1 : 0];
 					if(idx > 0)
 						System.arraycopy(offers, 0, newOffers, 0, idx);
 					if(idx < newOffers.length)

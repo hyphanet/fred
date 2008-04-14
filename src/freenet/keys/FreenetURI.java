@@ -434,8 +434,9 @@ public class FreenetURI implements Cloneable{
 	 */
 	public FreenetURI popMetaString() {
 		String[] newMetaStr = null;
-		if ((metaStr != null) && (metaStr.length > 1)) {
-			newMetaStr = new String[metaStr.length - 1];
+		final int metaStrLength = metaStr.length;
+		if ((metaStr != null) && (metaStrLength > 1)) {
+			newMetaStr = new String[metaStrLength - 1];
 			System.arraycopy(metaStr, 1, newMetaStr, 0, newMetaStr.length);
 		}
 		return setMetaString(newMetaStr);

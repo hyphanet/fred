@@ -3637,8 +3637,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 	
 	public synchronized boolean completedAnnounce(long uid) {
-		if(runningAnnounceUIDs.length == 0) return false;
-		long[] newList = new long[runningAnnounceUIDs.length - 1];
+		final int runningAnnounceUIDsLength = runningAnnounceUIDs.length;
+		if(runningAnnounceUIDsLength < 1) return false;
+		long[] newList = new long[runningAnnounceUIDsLength - 1];
 		int x = 0;
 		for(int i=0;i<runningAnnounceUIDs.length;i++) {
 			if(i == runningAnnounceUIDs.length) return false;
