@@ -329,7 +329,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 
 	private long checkForHoles(long blocksInFile, boolean dontTruncate) throws DatabaseException {
 		System.err.println("Checking for holes in database... "+blocksInFile+" blocks in file");
-		WrapperManager.signalStarting((int)Math.min(Integer.MAX_VALUE, 5*60*1000 + blocksInFile*100)); // 10/sec
+		WrapperManager.signalStarting((int) Math.min(Integer.MAX_VALUE, 5 * 60 * 1000 + blocksInFile * 100L)); // 10/sec
 		long holes = 0;
 		long maxPresent = 0;
 		freeBlocks.clear();
@@ -448,7 +448,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		if(!dontCheckForHoles)
 			checkForHoles(maxBlocksInStore, true);
 		
-		WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000 + blocksInStore * 100))); // 10 per second
+		WrapperManager.signalStarting((int) (Math.min(Integer.MAX_VALUE, 5 * 60 * 1000 + blocksInStore * 100L))); // 10 per second
 		
 		long realSize = countCHKBlocksFromFile();
 		
@@ -679,7 +679,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		System.out.println("Completing shrink"); // FIXME remove
 		
 		int totalUnwantedBlocks = unwantedMoveNums.length+freeEarlySlots.length;
-		WrapperManager.signalStarting(Math.min(Integer.MAX_VALUE, 5*60*1000 + (totalUnwantedBlocks-wantedMoveNums.length) * 100));
+		WrapperManager.signalStarting((int) Math.min(Integer.MAX_VALUE, 5*60*1000 + (totalUnwantedBlocks-wantedMoveNums.length) * 100L));
 		// If there are any slots left over, they must be free.
 		
 		// FIXME put these into the database as we do in reconstruct().
@@ -768,7 +768,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		try {
 			String msg = "Shrinking store: "+curBlocks+" -> "+maxBlocks+" (from db "+keysDB.count()+", highest "+highestBlockNumberInDatabase()+", from file "+countCHKBlocksFromFile()+ ')';
 			System.err.println(msg); Logger.normal(this, msg);
-			WrapperManager.signalStarting((int)Math.min(Integer.MAX_VALUE, (5*60*1000 + 100 * (Math.max(0, curBlocks-maxBlocks)))));
+			WrapperManager.signalStarting((int)Math.min(Integer.MAX_VALUE, (5*60*1000 + 100L * (Math.max(0, curBlocks-maxBlocks)))));
 			while(true) {
 				t = environment.beginTransaction(null,null);
 				long deleted = 0;
@@ -931,7 +931,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			throw new IllegalStateException("Store must be empty before reconstruction!");
 		System.err.println("Reconstructing store index from store file: callback="+callback);
 		Logger.error(this, "Reconstructing store index from store file: callback="+callback);
-		WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+(storeRAF.length()/(dataBlockSize+headerBlockSize))*1000)));
+		WrapperManager.signalStarting((int) (Math.min(Integer.MAX_VALUE, 5 * 60 * 1000
+		        + (storeRAF.length() / (dataBlockSize + headerBlockSize)) * 1000L)));
 		// Reusing the buffer is safe, provided we don't do anything with the resulting StoreBlock.
 		byte[] header = new byte[headerBlockSize];
 		byte[] data = new byte[dataBlockSize];
@@ -2032,7 +2033,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		System.err.println("Recreating secondary databases");
 		System.err.println("This may take some time...");
 
-		WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+keysDB.count()*100)));
+		WrapperManager.signalStarting((int) (Math.min(Integer.MAX_VALUE, 5 * 60 * 1000 + keysDB.count() * 100L)));
 
 		// Of course it's not a solution but a quick fix
 		// Integer.MAX_VALUE seems to trigger an overflow or whatever ...
