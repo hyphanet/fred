@@ -277,7 +277,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		getFile().delete();
 	}
 
-	public void finalize() {
+	protected void finalize() {
 		if(deleteOnFinalize())
 			free(true);
 	}

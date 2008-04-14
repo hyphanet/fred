@@ -120,7 +120,7 @@ public class MultiReaderBucket {
 			return bucket.size();
 		}
 		
-		public void finalize() {
+		protected void finalize() {
 			free();
 		}
 		
