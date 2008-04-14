@@ -817,7 +817,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		if(logMINOR)
 			Logger.minor(this, "Updating handshake IPs for peer '" + shortToString() + "' (" + ignoreHostnames + ')');
-		Peer[] localHandshakeIPs;
 		Peer[] myNominalPeer;
 
 		// Don't synchronize while doing lookups which may take a long time!
@@ -825,9 +824,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			myNominalPeer = (Peer[]) nominalPeer.toArray(new Peer[nominalPeer.size()]);
 		}
 
+		Peer[] localHandshakeIPs;
 		if(myNominalPeer.length == 0) {
 			if(localDetectedPeer == null) {
-				localHandshakeIPs = null;
 				synchronized(this) {
 					handshakeIPs = null;
 				}

@@ -944,7 +944,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		
 		// sanity check
-		byte[] myNi = null;
+		byte[] myNi;
 		synchronized (pn) {
 			myNi = (byte[]) pn.jfkNoncesSent.get(replyTo);
 		}
