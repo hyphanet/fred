@@ -91,7 +91,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		}
 		
 		public boolean userCanDismiss() {
-			if(noDismiss) return true;
+			if(noDismiss) return false;
 			// If no ports need forwarding, make it dismissable immediately.
 			if(!suggestPortForward) return true;
 			// Prevent NPE.
