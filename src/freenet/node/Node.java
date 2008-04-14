@@ -15,6 +15,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -107,6 +108,7 @@ import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
+import freenet.support.OOMHook;
 import freenet.support.PooledExecutor;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
@@ -124,7 +126,7 @@ import freenet.support.transport.ip.HostnameSyntaxException;
 /**
  * @author amphibian
  */
-public class Node implements TimeSkewDetectorCallback, GetPubkey {
+public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 
 	private static boolean logMINOR;
 	
@@ -3266,4 +3268,23 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public void setDispatcherHook(NodeDispatcherCallback cb) {
 		this.dispatcher.setHook(cb);
 	}
+
+	/**
+	 * Free some memory
+	 */
+	public void handleOOM() throws Exception {
+		if (cachedPubKeys != null) {
+			Object value;
+			do {
+				value = cachedPubKeys.popKey();
+			} while (value != null);
+		}
+		if (recentlyCompletedIDs != null) {
+			synchronized (recentlyCompletedIDs) {
+				// half it size
+				while (recentlyCompletedIDs.size() > MAX_RECENTLY_COMPLETED_IDS / 2)
+					recentlyCompletedIDs.pop();
+			}
+		}
+    }
 }
