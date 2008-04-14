@@ -1622,6 +1622,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 			e.printStackTrace();
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_UPDATER, "Could not create Updater: "+e);
 		}
+
+		OOMHandler.addOOMHook(this);
 		
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
