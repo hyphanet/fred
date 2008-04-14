@@ -477,7 +477,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 	 * to the datastore only if it's from an insert, and we are a sink, but when calculating whether
 	 * we are a sink we ignore nodes which have less uptime (percentage) than this parameter.
 	 */
-	private static final int MIN_UPTIME_STORE_KEY = 0;
+	private static final int MIN_UPTIME_STORE_KEY = 40;
 	
 	/**
 	 * Read all storable settings (identity etc) from the node file.
