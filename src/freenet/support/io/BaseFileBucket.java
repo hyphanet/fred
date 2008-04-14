@@ -219,13 +219,10 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	}
 
 	class FileBucketInputStream extends FileInputStream {
-		Exception e;
 		boolean closed;
 
 		public FileBucketInputStream(File f) throws IOException {
 			super(f);
-			if (Logger.shouldLog(Logger.DEBUG, this))
-				e = new Exception("debug");
 		}
 		
 		public void close() throws IOException {
