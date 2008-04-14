@@ -86,7 +86,7 @@ public class PersistentPutDir extends FCPMessage {
 				} else if(data instanceof FileBucket) {
 					subset.putSingle("UploadFrom", "disk");
 					subset.putSingle("Filename", ((FileBucket)data).getFile().getPath());
-				} else if((data instanceof PaddedEphemerallyEncryptedBucket) || (data == null)) {
+				} else if (data instanceof PaddedEphemerallyEncryptedBucket) {
 					subset.putSingle("UploadFrom", "direct");
 				} else {
 					throw new IllegalStateException("Don't know what to do with bucket: "+data);
