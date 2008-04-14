@@ -1104,7 +1104,12 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		}
 		for(int i=0;i<identifiers.length;i++) {
 			ClientRequest req = fcp.getGlobalClient().getRequest(identifiers[i]);
-			if(req == null) continue;
+			if(req == null) {
+				synchronized(completedRequestIdentifiers) {
+					completedRequestIdentifiers.remove(identifiers[i]);
+				}
+				continue;
+			}
 			registerAlert(req);
 		}
 	}
