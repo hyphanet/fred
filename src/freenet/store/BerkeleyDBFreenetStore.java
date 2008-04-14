@@ -38,6 +38,7 @@ import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.OOMHook;
 import freenet.support.SortedLongSet;
 
 /**
@@ -48,7 +49,7 @@ import freenet.support.SortedLongSet;
  * @author tubbie
  * @author amphibian
  */
-public class BerkeleyDBFreenetStore implements FreenetStore {
+public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 
 	private static boolean logMINOR;
 	private static boolean logDEBUG;
@@ -2135,5 +2136,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		System.err.println("Opened secondary database: " + dbName );
 
 		return db;
+	}
+
+    public void handleOOM() throws Exception {
+		if (storeRAF != null)
+			storeRAF.getFD().sync();
+		if (keysRAF != null)
+			keysRAF.getFD().sync();
+		if (lruRAF != null)
+			lruRAF.getFD().sync();
 	}
 }
