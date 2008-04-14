@@ -263,7 +263,7 @@ public class PluginManager {
 		File pluginDirectory = new File(node.getNodeDir(), "plugins");
 		if (lastSlash == -1) {
 			/* it's an official plugin! */
-			pluginFile = new File(pluginDirectory, pluginSpecification + ".jar.url");
+			pluginFile = new File(pluginDirectory, pluginSpecification + ".jar");
 		} else {
 			pluginFile = new File(pluginDirectory, pluginSpecification.substring(lastSlash + 1));
 		}
@@ -491,6 +491,11 @@ public class PluginManager {
 		/* get plugin filename. */
 		String completeFilename = pluginUrl.getPath();
 		String filename = completeFilename.substring(completeFilename.lastIndexOf('/') + 1);
+		// The URL to the JAR file might end with .url because of the insane download server that redirects to a JAR file
+		// in response to a request for a file ending '.url'. Strip it off if so, since we want our JAR to end with '.jar'.
+		if (filename.endsWith(".url")) {
+			filename = filename.substring(0, filename.length() - 4);
+		}
 		pluginFile = new File(pluginDirectory, filename);
 
 		/* check if file needs to be downloaded. */

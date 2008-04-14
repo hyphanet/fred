@@ -141,6 +141,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		freeData();
 		finish();
 		trySendFinalMessage(null);
+		client.notifySuccess(this);
 		if(persistenceType != PERSIST_CONNECTION)
 			client.server.forceStorePersistentRequests();
 	}
@@ -154,6 +155,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		freeData();
 		finish();
 		trySendFinalMessage(null);
+		client.notifyFailure(this);
 		if(persistenceType != PERSIST_CONNECTION)
 			client.server.forceStorePersistentRequests();
 	}

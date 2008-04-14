@@ -50,7 +50,18 @@ public class CHKStore extends StoreCallback {
 	}
 
 	public boolean storeFullKeys() {
+		// Worth the extra two file descriptors, because if we have the keys we can do lazy 
+		// reconstruction i.e. don't construct each block, just transcode from the .keys file
+		// straight into the database.
+		return true;
+	}
+
+	public boolean constructNeedsKey() {
 		return false;
+	}
+
+	public byte[] routingKeyFromFullKey(byte[] keyBuf) {
+		return NodeCHK.routingKeyFromFullKey(keyBuf);
 	}
 
 }

@@ -193,5 +193,16 @@ public class NodeSSK extends Key {
 		pubKey = pubkeyCache.getKey(pubKeyHash);
 		return pubKey != null;
 	}
+
+	public static byte[] routingKeyFromFullKey(byte[] keyBuf) {
+		if(keyBuf.length != FULL_KEY_LENGTH) {
+			Logger.error(NodeSSK.class, "routingKeyFromFullKey() on buffer length "+keyBuf.length);
+		}
+		byte[] encryptedHashedDocname = new byte[E_H_DOCNAME_SIZE];
+		byte[] pubKeyHash = new byte[PUBKEY_HASH_SIZE];
+		System.arraycopy(keyBuf, 2, encryptedHashedDocname, 0, E_H_DOCNAME_SIZE);
+		System.arraycopy(keyBuf, 2+E_H_DOCNAME_SIZE, pubKeyHash, 0, PUBKEY_HASH_SIZE);
+		return makeRoutingKey(pubKeyHash, encryptedHashedDocname);
+	}
 	
 }

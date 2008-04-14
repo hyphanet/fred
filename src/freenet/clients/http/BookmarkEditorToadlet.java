@@ -16,6 +16,7 @@ import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 import freenet.client.HighLevelSimpleClient;
 import freenet.support.HTMLNode;
+import freenet.support.Logger;
 import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
 import freenet.support.URLEncoder;
@@ -238,8 +239,9 @@ public class BookmarkEditorToadlet extends Toadlet {
 			HTMLNode infoBox = content.addChild(pageMaker.getInfobox("infobox-normal", L10n.getString("BookmarkEditorToadlet.pasteTitle")));
 			HTMLNode infoBoxContent = pageMaker.getContentNode(infoBox);
 			infoBoxContent.addChild("#", L10n.getString("BookmarkEditorToadlet.pasteOrCancel"));
-			HTMLNode cancelForm = ctx.addFormChild(infoBoxContent, "", "cancelCutForm");
+			HTMLNode cancelForm = ctx.addFormChild(infoBoxContent, "/bookmarkEditor/", "cancelCutForm");
 			cancelForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "cancelCut", L10n.getString("BookmarkEditorToadlet.cancelCut")});
+			cancelForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"hidden", "action", "cancelCut"});
 		}
 
 		HTMLNode bookmarksBox = content.addChild(pageMaker.getInfobox("infobox-normal", L10n.getString("BookmarkEditorToadlet.myBookmarksTitle")));
@@ -248,6 +250,9 @@ public class BookmarkEditorToadlet extends Toadlet {
 		HTMLNode addDefaultBookmarksForm = ctx.addFormChild(content, "", "AddDefaultBookmarks");
 		addDefaultBookmarksForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "AddDefaultBookmarks", L10n.getString("BookmarkEditorToadlet.addDefaultBookmarks")});
 
+		if(Logger.shouldLog(Logger.DEBUG, this))
+			Logger.debug(this, "Returning:\n"+pageNode.generate());
+		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
@@ -278,7 +283,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 				bookmark = bookmarkManager.getCategoryByPath(bookmarkPath);
 			else
 				bookmark = bookmarkManager.getItemByPath(bookmarkPath);
-			if(bookmark == null) {
+			if(bookmark == null && !req.isPartSet("cancelCut")) {
 				HTMLNode errorBox = content.addChild(pageMaker.getInfobox("infobox-error", L10n.getString("BookmarkEditorToadlet.error")));
 				pageMaker.getContentNode(errorBox).addChild("#", L10n.getString("BookmarkEditorToadlet.bookmarkDoesNotExist", new String[]{"bookmark"}, new String[]{bookmarkPath}));
 				this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());

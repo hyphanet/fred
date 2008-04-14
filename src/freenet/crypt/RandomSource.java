@@ -13,17 +13,29 @@ import java.util.Random;
 public abstract class RandomSource extends Random {
 
     /**
-     * Returns a 32 bit random floating point number.  With this method,
-     * all possible float values are approximately as likely to occur
-     */
-    public float nextFullFloat() {
+	 * Returns a 32 bit random floating point number. With this method, all possible float values
+	 * are approximately as likely to occur.
+	 * 
+	 * This method may return <tt>NaN</tt>, <tt>+Inf</tt>, <tt>-Inf</tt> or other weird
+	 * stuff. If you don't know what they are, this method is not for you.
+	 * 
+	 * @see RandomSource#nextFloat()
+	 */
+    // FIXME this method is unused, do you *really* want this method?
+	public float nextFullFloat() {
 	return Float.intBitsToFloat(nextInt());
     }
 
     /**
-     * Returns a 64 bit random double.  With this method, all possible
-     * double values are approximately as likely to occur
-     */
+	 * Returns a 64 bit random double. With this method, all possible double values are
+	 * approximately as likely to occur.
+	 * 
+	 * This method may return <tt>NaN</tt>, <tt>+Inf</tt>, <tt>-Inf</tt> or other weird
+	 * stuff. If you don't know what they are, this method is not for you.
+	 * 
+	 * @see RandomSource#nextDouble()
+	 */
+    // FIXME this method is unused, do you *really* want this method?
     public double nextFullDouble() {
 	return Double.longBitsToDouble(nextLong());
     }

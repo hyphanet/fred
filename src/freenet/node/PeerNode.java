@@ -817,7 +817,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		if(logMINOR)
 			Logger.minor(this, "Updating handshake IPs for peer '" + shortToString() + "' (" + ignoreHostnames + ')');
-		Peer[] localHandshakeIPs;
 		Peer[] myNominalPeer;
 
 		// Don't synchronize while doing lookups which may take a long time!
@@ -825,9 +824,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			myNominalPeer = (Peer[]) nominalPeer.toArray(new Peer[nominalPeer.size()]);
 		}
 
+		Peer[] localHandshakeIPs;
 		if(myNominalPeer.length == 0) {
 			if(localDetectedPeer == null) {
-				localHandshakeIPs = null;
 				synchronized(this) {
 					handshakeIPs = null;
 				}
@@ -2266,7 +2265,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				try {
 					simpleVersion = Version.getArbitraryBuildNumber(version);
 				} catch (VersionParseException e) {
-					Logger.error(this, "Bad version: "+simpleVersion+" : "+e, e);
+					Logger.error(this, "Bad version: " + version + " : " + e, e);
 				}
 			}
 			Version.seenVersion(newVersion);
@@ -3638,8 +3637,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 	
 	public synchronized boolean completedAnnounce(long uid) {
-		if(runningAnnounceUIDs.length == 0) return false;
-		long[] newList = new long[runningAnnounceUIDs.length - 1];
+		final int runningAnnounceUIDsLength = runningAnnounceUIDs.length;
+		if(runningAnnounceUIDsLength < 1) return false;
+		long[] newList = new long[runningAnnounceUIDsLength - 1];
 		int x = 0;
 		for(int i=0;i<runningAnnounceUIDs.length;i++) {
 			if(i == runningAnnounceUIDs.length) return false;

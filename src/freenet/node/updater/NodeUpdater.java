@@ -29,7 +29,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private FetchContext ctx;
 	private FetchResult result;
 	private ClientGetter cg;
-	private boolean finalCheck;
 	private FreenetURI URI;
 	private final Ticker ticker;
 	public final NodeClientCore core;
@@ -297,10 +296,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		return URI;
 	}
 	
-	public boolean inFinalCheck() {
-		return finalCheck;
-	}
-
 	public void onMajorProgress() {
 		// Ignore
 	}

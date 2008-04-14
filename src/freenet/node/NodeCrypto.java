@@ -51,7 +51,6 @@ public class NodeCrypto {
 	/** The object which handles our specific UDP port, pulls messages from it, feeds them to the packet mangler for decryption etc */
 	UdpSocketHandler socket;
 	public FNPPacketMangler packetMangler;
-	final FreenetInetAddress bindto;
 	// FIXME: abstract out address stuff? Possibly to something like NodeReference?
 	final int portNumber;
 	byte[] myIdentity; // FIXME: simple identity block; should be unique
@@ -100,7 +99,7 @@ public class NodeCrypto {
 		
 		int port = config.getPort();
 		
-		bindto = config.getBindTo();
+		FreenetInetAddress bindto = config.getBindTo();
 		
 		UdpSocketHandler u = null;
 		
@@ -504,5 +503,13 @@ public class NodeCrypto {
 
 	public boolean definitelyPortForwarded() {
 		return socket.getDetectedConnectivityStatus() == AddressTracker.DEFINITELY_PORT_FORWARDED;
+	}
+	
+	public int getDetectedConnectivityStatus() {
+		return socket.getDetectedConnectivityStatus();
+	}
+
+	public FreenetInetAddress getBindTo() {
+		return config.getBindTo();
 	}
 }

@@ -48,7 +48,7 @@ public class SortedLongSet {
 	 * @return <code>true</code>, if <code>num</code> exist.
 	 */
 	public synchronized boolean contains(long num) {
-		int x = Arrays.binarySearch(data, num);
+		int x = binarySearch(num);
 		if(x >= 0)
 			return true;
 		else
@@ -62,7 +62,7 @@ public class SortedLongSet {
 	 *            the item to be removed
 	 */
 	public synchronized void remove(long item) {
-		int x = Arrays.binarySearch(data, item);
+		int x = binarySearch(item);
 		if(x >= 0) {
 			if(x < length-1)
 				System.arraycopy(data, x+1, data, x, length-x-1);
@@ -98,12 +98,12 @@ public class SortedLongSet {
 
 	/**
 	 * Add the item, if it (or an item of the same number) is not already
-	 * present. <strong>This method does not accept <code>Long.MAX_VALUE</code>.</strong>
+	 * present.
 	 * 
 	 * @return <code>true</code>, if we added the item.
 	 */ 
 	public synchronized boolean push(long num) {
-		int x = Arrays.binarySearch(data, num);
+		int x = binarySearch(num);
 		if(x >= 0) return false;
 		// insertion point
 		x = -x-1;
@@ -114,14 +114,12 @@ public class SortedLongSet {
 	/**
 	 * Add the item.
 	 * 
-	 * <strong>This method does not accept <code>Long.MAX_VALUE</code>.</strong>
-	 * 
 	 * @throws {@link IllegalArgumentException}
 	 *             if the item already exist
 	 * @return <code>true</code>, if we added the item.
 	 */ 
 	public synchronized void add(long num) {
-		int x = Arrays.binarySearch(data, num);
+		int x = binarySearch(num);
 		if(x >= 0) throw new IllegalArgumentException(); // already exists
 		// insertion point
 		x = -x-1;
@@ -179,4 +177,21 @@ public class SortedLongSet {
 		return output;
 	}
 
+	private int binarySearch(long key) {
+		int low = 0;
+		int high = length - 1;
+
+		while (low <= high) {
+			int mid = (low + high) >>> 1;
+			long midVal = data[mid];
+
+			if (midVal < key)
+				low = mid + 1;
+			else if (midVal > key)
+				high = mid - 1;
+			else
+				return mid; // key found
+		}
+		return -(low + 1); // key not found.
+	}
 }

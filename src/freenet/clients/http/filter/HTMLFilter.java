@@ -16,6 +16,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
+import java.nio.charset.MalformedInputException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -95,6 +96,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		HTMLParseContext pc = new HTMLParseContext(r, w, null, new NullFilterCallback(), true);
 		try {
 			pc.run(null);
+		} catch (MalformedInputException e) {
+			// Not this charset
+			return null;
 		} catch (IOException e) {
 			throw e;
 		} catch (Throwable t) {

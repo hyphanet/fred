@@ -108,7 +108,6 @@ public class AddRef {
 
 	protected SimpleFieldSet getMessage(LineReadingInputStream lis){
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
-		sfs=new SimpleFieldSet(true);
 		try {
 			while(lis.available()>0){
 				String line = lis.readLine(128, 128, true);

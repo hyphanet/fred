@@ -30,12 +30,16 @@ import com.sleepycat.je.SecondaryKeyCreator;
 import com.sleepycat.je.Transaction;
 import com.sleepycat.je.log.DbChecksumException;
 import com.sleepycat.je.log.LogFileNotFoundException;
+
+import freenet.crypt.RandomSource;
 import freenet.keys.KeyVerifyException;
 import freenet.node.NodeInitException;
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
+import freenet.support.OOMHook;
 import freenet.support.SortedLongSet;
 
 /**
@@ -46,7 +50,7 @@ import freenet.support.SortedLongSet;
  * @author tubbie
  * @author amphibian
  */
-public class BerkeleyDBFreenetStore implements FreenetStore {
+public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 
 	private static boolean logMINOR;
 	private static boolean logDEBUG;
@@ -55,6 +59,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private final File reconstructFile;
 	private final int dataBlockSize; 
 	private final int headerBlockSize;
+	private final RandomSource random;
 
 	private final Environment environment;
 	private final TupleBinding storeBlockTupleBinding;
@@ -98,7 +103,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	public static FreenetStore construct(File baseStoreDir, boolean isStore, String suffix,
 			long maxStoreKeys, short type, 
 			Environment storeEnvironment, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile, 
-			StoreCallback callback) throws DatabaseException, IOException {
+			StoreCallback callback, RandomSource random) throws DatabaseException, IOException {
 		// Location of new store file
 		String newStoreFileName = typeName(type) + suffix + '.' + (isStore ? "store" : "cache");
 		File newStoreFile = new File(baseStoreDir, newStoreFileName);
@@ -116,17 +121,17 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		
 		System.err.println("Opening database using "+newStoreFile);
 		return openStore(storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, maxStoreKeys, storeShutdownHook,
-				reconstructFile, callback);
+				reconstructFile, callback, random);
 	}
 
 	private static FreenetStore openStore(Environment storeEnvironment, String newDBPrefix, File newStoreFile, File lruFile,
 			File keysFile, File newFixSecondaryFile, long maxStoreKeys, SemiOrderedShutdownHook storeShutdownHook, 
-			File reconstructFile, StoreCallback callback) throws DatabaseException, IOException {
+			File reconstructFile, StoreCallback callback, RandomSource random) throws DatabaseException, IOException {
 		try {
 			// First try just opening it.
 			return new BerkeleyDBFreenetStore(storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile,
 					maxStoreKeys, false, storeShutdownHook, reconstructFile, 
-					callback);
+					callback, random);
 		} catch (DatabaseException e) {
 			
 			// Try a reconstruct
@@ -140,7 +145,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 			// Reconstruct
 			
 			return new BerkeleyDBFreenetStore(storeEnvironment, newDBPrefix, newStoreFile, lruFile, keysFile, newFixSecondaryFile, 
-					maxStoreKeys, storeShutdownHook, reconstructFile, callback);
+					maxStoreKeys, storeShutdownHook, reconstructFile, callback, random);
 		}
 	}
 
@@ -167,7 +172,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	 * @param lruFile
 	 *            LRU data file, flat file store for recovery
 	 * @param keysFile
-	 *            Keys data file, flat file store for recvoery
+	 *            Keys data file, flat file store for recovery, created only if
+	 *            <code>callback.storeFullKeys()</code> is <code>true</code>
 	 * @param fixSecondaryFile
 	 *            Flag file. Created when secondary database error occur. If
 	 *            this file exist on start, delete it and recreate the secondary
@@ -189,10 +195,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	private BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File lruFile, File keysFile,
 			File fixSecondaryFile, long maxChkBlocks, boolean wipe, SemiOrderedShutdownHook storeShutdownHook,
 			File reconstructFile,
-			StoreCallback callback) throws IOException, DatabaseException {
+			StoreCallback callback, RandomSource random) throws IOException, DatabaseException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		
+		this.random = random;
 		this.environment = env;
 		this.name = prefix;
 		this.fixSecondaryFile = fixSecondaryFile;
@@ -204,6 +211,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		this.headerBlockSize = callback.headerLength();
 		this.keyLength = callback.fullKeyLength();
 		callback.setStore(this);
+		
+		OOMHandler.addOOMHook(this);
 
 		this.freeBlocks = new SortedLongSet();
 
@@ -325,7 +334,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 
 	private long checkForHoles(long blocksInFile, boolean dontTruncate) throws DatabaseException {
 		System.err.println("Checking for holes in database... "+blocksInFile+" blocks in file");
-		WrapperManager.signalStarting((int)Math.min(Integer.MAX_VALUE, 5*60*1000 + blocksInFile*100)); // 10/sec
+		WrapperManager.signalStarting((int) Math.min(Integer.MAX_VALUE, 5 * 60 * 1000 + blocksInFile * 100L)); // 10/sec
 		long holes = 0;
 		long maxPresent = 0;
 		freeBlocks.clear();
@@ -444,7 +453,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		if(!dontCheckForHoles)
 			checkForHoles(maxBlocksInStore, true);
 		
-		WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000 + blocksInStore * 100))); // 10 per second
+		WrapperManager.signalStarting((int) (Math.min(Integer.MAX_VALUE, 5 * 60 * 1000 + blocksInStore * 100L))); // 10 per second
 		
 		long realSize = countCHKBlocksFromFile();
 		
@@ -509,7 +518,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					}
 					x++;
 					if(x % 1024 == 0) {
-						System.out.println("Reading store prior to shrink: "+(x*100/realSize)+ "% ( "+x+ '/' +realSize+ ')');
+						System.out.println("Reading store prior to shrink: "+((long)x*100/realSize)+ "% ( "+x+ '/' +realSize+ ')');
 					}
 					if(x == Integer.MAX_VALUE) {
 						System.err.println("Key number "+x+" - ignoring store after "+(x*(dataBlockSize+headerBlockSize)+" bytes"));
@@ -675,8 +684,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		System.out.println("Completing shrink"); // FIXME remove
 		
 		int totalUnwantedBlocks = unwantedMoveNums.length+freeEarlySlots.length;
-		WrapperManager.signalStarting(Math.min(Integer.MAX_VALUE, 5*60*1000 + (totalUnwantedBlocks-wantedMoveNums.length) * 100));
+		WrapperManager.signalStarting((int) Math.min(Integer.MAX_VALUE, 5*60*1000 + (totalUnwantedBlocks-wantedMoveNums.length) * 100L));
 		// If there are any slots left over, they must be free.
+		
+		// FIXME put these into the database as we do in reconstruct().
+		// Not doing that now as its not immediately obvious how to deal with it...
+		
 		freeBlocks.clear();
 		t = environment.beginTransaction(null,null);
 		for(int i=wantedMoveNums.length;i<totalUnwantedBlocks;i++) {
@@ -760,7 +773,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		try {
 			String msg = "Shrinking store: "+curBlocks+" -> "+maxBlocks+" (from db "+keysDB.count()+", highest "+highestBlockNumberInDatabase()+", from file "+countCHKBlocksFromFile()+ ')';
 			System.err.println(msg); Logger.normal(this, msg);
-			WrapperManager.signalStarting((int)Math.min(Integer.MAX_VALUE, (5*60*1000 + 100 * (Math.max(0, curBlocks-maxBlocks)))));
+			WrapperManager.signalStarting((int)Math.min(Integer.MAX_VALUE, (5*60*1000 + 100L * (Math.max(0, curBlocks-maxBlocks)))));
 			while(true) {
 				t = environment.beginTransaction(null,null);
 				long deleted = 0;
@@ -854,9 +867,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	 */
 	private BerkeleyDBFreenetStore(Environment env, String prefix, File storeFile, File lruFile, File keysFile,
 			File fixSecondaryFile, long maxChkBlocks, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile,
-			StoreCallback callback) throws DatabaseException, IOException {
+			StoreCallback callback, RandomSource random) throws DatabaseException, IOException {
 		this(env, prefix, storeFile, lruFile, keysFile, fixSecondaryFile, maxChkBlocks, true, storeShutdownHook,
-				reconstructFile, callback);
+				reconstructFile, callback, random);
 	}
 	
 	private static void wipeOldDatabases(Environment env, String prefix) {
@@ -880,12 +893,51 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		}
 	}
 
+	/**
+	 * Reconstruct the database using flat file stores and other dark magic.
+	 * 
+	 * <strong>You are not expected to understand this.</strong>
+	 * 
+	 * <dl>
+	 * <dt>header + data</dt>
+	 * <dd>read from storeRAF, always available.</dd>
+	 * 
+	 * <dt>fullKey</dt>
+	 * <dd>read from keyRAF, maybe null.</dd>
+	 * 
+	 * <dt>routingkey </dt>
+	 * <dd>
+	 * <ol>
+	 * <li><code>callback.routingKeyFromFullKey(); </code></li>
+	 * <li>if <code>null</code> or <code>KeyVerifyException</code>,<code> callback.construct().getRoutingKey()</code>,
+	 * may throw <code>KeyVerifyException</code></li>
+	 * <ol>
+	 * <code>fullKey</code> (and hence
+	 * <code>callback.routingKeyFromFullKey(); </code>) may be phantom, hence
+	 * we must verify
+	 * <code> callback.construct().getRoutingKey()  == routingkey </code> on
+	 * <code>fetch()</code> </dd>
+	 * </dl>
+	 * 
+	 * On <code>OperationStatus.KEYEXIST</code> or bad
+	 * <code> callback.construct</code>:
+	 * <ol>
+	 * <li>insert a database entry with random key, (minimum lru - 1); </li>
+	 * <li>if <code>op != OperationStatus.SUCCESS</code>,
+	 * <code>addFreeBlock()</code>.</li>
+	 * </ol>
+	 * 
+	 * 
+	 * @throws DatabaseException
+	 * @throws IOException
+	 */
 	private void reconstruct() throws DatabaseException, IOException {
 		if(keysDB.count() != 0)
 			throw new IllegalStateException("Store must be empty before reconstruction!");
 		System.err.println("Reconstructing store index from store file: callback="+callback);
 		Logger.error(this, "Reconstructing store index from store file: callback="+callback);
-		WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+(storeRAF.length()/(dataBlockSize+headerBlockSize))*1000)));
+		WrapperManager.signalStarting((int) (Math.min(Integer.MAX_VALUE, 5 * 60 * 1000
+		        + (storeRAF.length() / (dataBlockSize + headerBlockSize)) * 1000L)));
 		// Reusing the buffer is safe, provided we don't do anything with the resulting StoreBlock.
 		byte[] header = new byte[headerBlockSize];
 		byte[] data = new byte[dataBlockSize];
@@ -894,6 +946,19 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		long dupes = 0;
 		long failures = 0;
 		long expectedLength = storeRAF.length()/(dataBlockSize+headerBlockSize);
+		// Find minimum and maximum LRU.
+		long minLRU = Long.MAX_VALUE;
+		long maxLRU = Long.MIN_VALUE;
+		try {
+			lruRAF.seek(0);
+			for(long i=0;i<lruRAF.length()/8;i++) {
+				long lru = lruRAF.readLong();
+				if(lru > maxLRU) maxLRU = lru;
+				if(lru < minLRU) minLRU = lru;
+			}
+		} catch (IOException e) {
+			// We don't want this to be fatal...
+		}
 		try {
 			storeRAF.seek(0);
 			lruRAF.seek(0);
@@ -939,18 +1004,41 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				}
 				try {
 					byte[] routingkey = null;
-					try {
-						StorableBlock block = callback.construct(data, header, null, readKey ? keyBuf : null);
-						routingkey = block.getRoutingKey();
-					} catch (KeyVerifyException e) {
-						String err = "Bogus or unreconstructible key at slot "+l+" : "+e+" - lost block "+l;
-						Logger.error(this, err, e);
-						System.err.println(err);
-						addFreeBlock(l, true, "can't reconsturct key ("+callback+ ')');
-						routingkey = null;
-						failures++;
-						continue;
+					if(keyBuf != null && !isAllNull(keyBuf)) {
+						routingkey = callback.routingKeyFromFullKey(keyBuf);
+						if(routingkey == keyBuf) {
+							// Copy it.
+							byte[] newkey = new byte[routingkey.length];
+							System.arraycopy(routingkey, 0, newkey, 0, routingkey.length);
+							routingkey = newkey;
+						}
 					}
+					if(routingkey == null) {
+						try {
+							StorableBlock block = callback.construct(data, header, null, readKey ? keyBuf : null);
+							routingkey = block.getRoutingKey();
+						} catch (KeyVerifyException e) {
+							String err = "Bogus or unreconstructible key at slot "+l+" : "+e+" - lost block "+l;
+							Logger.error(this, err, e);
+							System.err.println(err);
+							failures++;
+							t = environment.beginTransaction(null,null);
+							StoreBlock storeBlock = new StoreBlock(l, --minLRU);
+							byte[] buf = new byte[32];
+							random.nextBytes(buf);
+							DatabaseEntry routingkeyDBE = new DatabaseEntry(buf);
+							DatabaseEntry blockDBE = new DatabaseEntry();
+							storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
+							OperationStatus op = keysDB.putNoOverwrite(t,routingkeyDBE,blockDBE);
+							if(op != OperationStatus.SUCCESS) {
+								Logger.error(this, "Impossible operation status inserting bogus key to LRU: "+op);
+								addFreeBlock(l, true, "Impossible to add (invalid) to LRU: "+op);
+							}
+							t.commitNoSync();
+							t = null;
+							continue;
+						}
+					} 
 					t = environment.beginTransaction(null,null);
 					StoreBlock storeBlock = new StoreBlock(l, lruVal);
 					DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
@@ -958,8 +1046,23 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
 					OperationStatus op = keysDB.putNoOverwrite(t,routingkeyDBE,blockDBE);
 					if(op == OperationStatus.KEYEXIST) {
-						addFreeBlock(l, true, "duplicate");
+						Logger.error(this, "Duplicate block: "+l);
+						System.err.println("Duplicate block: "+l);
 						dupes++;
+						storeBlock = new StoreBlock(l, --minLRU);
+						byte[] buf = new byte[32];
+						random.nextBytes(buf);
+						routingkeyDBE = new DatabaseEntry(buf);
+						blockDBE = new DatabaseEntry();
+						storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
+						op = keysDB.putNoOverwrite(t,routingkeyDBE,blockDBE);
+						if(op != OperationStatus.SUCCESS) {
+							Logger.error(this, "Impossible operation status inserting bogus key to LRU: "+op);
+							addFreeBlock(l, true, "Impossible to add (dupe) to LRU: "+op);
+						}
+						t.commitNoSync();
+						t = null;
+						continue;
 					} else if(op != OperationStatus.SUCCESS) {
 						addFreeBlock(l, true, "failure: "+op);
 						failures++;
@@ -994,6 +1097,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				System.err.println("Failed to set size");
 			}
 		}
+	}
+
+	private boolean isAllNull(byte[] buf) {
+		for(int i=0;i<buf.length;i++)
+			if(buf[i] != 0) return false;
+		return true;
 	}
 
 	private int runningFetches;
@@ -1066,6 +1175,56 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				
 				block = callback.construct(data, header, routingkey, fullKey);
 				
+				if(!Arrays.equals(block.getRoutingKey(), routingkey)) {
+					
+					synchronized(this) {
+						misses++;
+					}
+					
+					keysDB.delete(t, routingkeyDBE);
+					
+					// Insert the block into the index.
+					// Set the LRU to minimum - 1.
+					
+					long lru = getMinRecentlyUsed(t) - 1;
+					
+					Logger.normal(this, "Does not verify (not the expected key), setting accessTime to "+lru+" for : "+HexUtil.bytesToHex(routingkey));
+					
+					storeBlock = new StoreBlock(storeBlock.offset, lru);
+					
+					routingkeyDBE = new DatabaseEntry(block.getRoutingKey());
+					
+					blockDBE = new DatabaseEntry();
+					storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
+					try {
+						keysDB.put(t,routingkeyDBE,blockDBE);
+						synchronized(storeRAF) {
+							if(keysRAF != null) {
+								keysRAF.seek(storeBlock.offset * keyLength);
+								keysRAF.write(fullKey);
+								if(logDEBUG)
+									Logger.debug(this, "Written full key length "+fullKey.length+" to block "+storeBlock.offset+" at "+(storeBlock.offset * keyLength)+" for "+callback);
+							} else if(logDEBUG) {
+								Logger.debug(this, "Not writing full key length "+fullKey.length+" for block "+storeBlock.offset+" for "+callback);
+							}
+						}
+					} catch (DatabaseException e) {
+						Logger.error(this, "Caught database exception "+e+" while replacing element");
+						addFreeBlock(storeBlock.offset, true, "Bogus key");
+						c.close();
+						c = null;
+						t.commit();
+						t = null;
+						return null;
+					}
+					Logger.normal(this, "Successfully replaced entry at block number "+storeBlock.offset+" lru "+lru);
+					c.close();
+					c = null;
+					t.commit();
+					t = null;
+					return null;
+				}
+				
 				if(!dontPromote) {
 					storeBlock.updateRecentlyUsed();
 					DatabaseEntry updateDBE = new DatabaseEntry();
@@ -1093,15 +1252,51 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				
 			} catch(KeyVerifyException ex) {
 				Logger.normal(this, "Does not verify ("+ex+"), setting accessTime to 0 for : "+HexUtil.bytesToHex(routingkey), ex);
+				synchronized(this) {
+					misses++;
+				}
+				synchronized(storeRAF) {
+					// Clear the key in the keys file.
+					byte[] buf = new byte[fullKey.length];
+					for(int i=0;i<buf.length;i++) buf[i] = 0; // FIXME unnecessary?
+					if(keysRAF != null) {
+						keysRAF.seek(storeBlock.offset * keyLength);
+						keysRAF.write(buf);
+					}
+				}
+
 				keysDB.delete(t, routingkeyDBE);
+				
+				// Insert the block into the index with a random key, so that it's part of the LRU.
+				// Set the LRU to minimum - 1.
+				
+				long lru = getMinRecentlyUsed(t) - 1;
+				
+				byte[] randomKey = new byte[fullKey.length];
+				random.nextBytes(randomKey);
+				
+				storeBlock = new StoreBlock(storeBlock.offset, lru);
+				
+				routingkeyDBE = new DatabaseEntry(randomKey);
+				
+				blockDBE = new DatabaseEntry();
+				storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
+				try {
+					keysDB.put(t,routingkeyDBE,blockDBE);
+				} catch (DatabaseException e) {
+					Logger.error(this, "Caught database exception "+e+" while adding corrupt element to LRU");
+					addFreeBlock(storeBlock.offset, true, "Bogus key");
+					c.close();
+					c = null;
+					t.commit();
+					t = null;
+					return null;
+				}
+
 				c.close();
 				c = null;
 				t.commit();
 				t = null;
-				addFreeBlock(storeBlock.offset, true, "Key does not verify");
-				synchronized(this) {
-					misses++;
-				}
 				return null;
 			}
 			synchronized(this) {
@@ -1414,6 +1609,15 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				}
 				Logger.error(this, "Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
 				System.err.println("Corrupt secondary database ("+getName()+"). Should be cleaned up on restart.");
+				
+				System.err.println("Flusing data store files (" + getName() + ")");
+				flushAndCloseRAF(storeRAF);
+				storeRAF = null;
+				flushAndCloseRAF(lruRAF);
+				lruRAF = null;
+				flushAndCloseRAF(keysRAF);
+				keysRAF = null;
+				
 				WrapperManager.restart();
 				System.exit(freenet.node.NodeInitException.EXIT_DATABASE_REQUIRES_RESTART);
 			} else if(ex instanceof DbChecksumException || ex instanceof RunRecoveryException || ex instanceof LogFileNotFoundException ||
@@ -1430,13 +1634,22 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 					System.err.println("Corrupt database ("+getName()+") but could not create flag file "+reconstructFile);
 					return; // Not sure what else we can do
 				}
+				
+				System.err.println("Flusing data store files (" + getName() + ")");
+				flushAndCloseRAF(storeRAF);
+				storeRAF = null;
+				flushAndCloseRAF(lruRAF);
+				lruRAF = null;
+				flushAndCloseRAF(keysRAF);
+				keysRAF = null;
+				
 				System.err.println("Restarting to fix corrupt store database...");
 				Logger.error(this, "Restarting to fix corrupt store database...");
 				WrapperManager.restart();
 			} else {
 				if(ex.getCause() != null)
 					checkSecondaryDatabaseError(ex.getCause());
-			}
+			} 
 		}
 	}
 
@@ -1583,7 +1796,17 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 	
 	private final Object closeLock = new Object();
 
-	private void closeRAF(RandomAccessFile file, boolean logError) {
+	private static void flushAndCloseRAF(RandomAccessFile file) {
+		try {
+			if (file != null)
+				file.getFD().sync();
+		} catch (IOException e) {
+			// ignore
+		}
+		closeRAF(file, false);
+	}
+
+	private static void closeRAF(RandomAccessFile file, boolean logError) {
 			try {
 						if (file != null)
 								file.close();
@@ -1595,7 +1818,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 				}
 		}
 
-	private void closeDB(Database db, boolean logError) {
+	private static void closeDB(Database db, boolean logError) {
 				try {
 						if (db != null)
 								db.close();
@@ -1723,6 +1946,35 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		return maxRecentlyUsed;
 	}
 	
+	private long getMinRecentlyUsed(Transaction t) {
+		long minRecentlyUsed = 0;
+		
+		Cursor c = null;
+		try {
+			c = accessTimeDB.openCursor(t,null);
+			DatabaseEntry keyDBE = new DatabaseEntry();
+			DatabaseEntry dataDBE = new DatabaseEntry();
+			if(c.getFirst(keyDBE,dataDBE,null)==OperationStatus.SUCCESS) {
+				StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(dataDBE);
+				minRecentlyUsed = storeBlock.getRecentlyUsed();
+			}
+			c.close();
+			c = null;
+		} catch(DatabaseException ex) {
+			ex.printStackTrace();
+		} finally {
+			if(c != null) {
+				try {
+					c.close();
+				} catch (DatabaseException e) {
+					Logger.error(this, "Caught "+e, e);
+				}
+			}
+		}
+		
+		return minRecentlyUsed;
+	}
+	
 	private long getNewRecentlyUsed() {
 		synchronized(lastRecentlyUsedSync) {
 			lastRecentlyUsed++;
@@ -1786,7 +2038,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		System.err.println("Recreating secondary databases");
 		System.err.println("This may take some time...");
 
-		WrapperManager.signalStarting((int)(Math.min(Integer.MAX_VALUE, 5*60*1000+keysDB.count()*100)));
+		WrapperManager.signalStarting((int) (Math.min(Integer.MAX_VALUE, 5 * 60 * 1000 + keysDB.count() * 100L)));
 
 		// Of course it's not a solution but a quick fix
 		// Integer.MAX_VALUE seems to trigger an overflow or whatever ...
@@ -1887,5 +2139,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore {
 		System.err.println("Opened secondary database: " + dbName );
 
 		return db;
+	}
+
+    public void handleOOM() throws Exception {
+		if (storeRAF != null)
+			storeRAF.getFD().sync();
+		if (keysRAF != null)
+			keysRAF.getFD().sync();
+		if (lruRAF != null)
+			lruRAF.getFD().sync();
 	}
 }

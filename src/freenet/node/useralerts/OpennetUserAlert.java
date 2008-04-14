@@ -9,12 +9,12 @@ public class OpennetUserAlert extends AbstractUserAlert {
 	private final Node node;
 	
 	public OpennetUserAlert(Node node) {
-		super(true, L10n.getString("OpennetUserAlert.warningTitle"), L10n.getString("OpennetUserAlert.warning"), new HTMLNode("#", L10n.getString("OpennetUserAlert.warning")), UserAlert.WARNING, false, L10n.getString("UserAlert.hide"), false, null);
+		super(true, L10n.getString("OpennetUserAlert.warningTitle"), L10n.getString("OpennetUserAlert.warning"), new HTMLNode("#", L10n.getString("OpennetUserAlert.warning")), UserAlert.WARNING, true, L10n.getString("UserAlert.hide"), false, null);
 		this.node = node;
 	}
 	
 	public boolean isValid() {
-		return node.isOpennetEnabled();
+		return node.isOpennetEnabled() && valid;
 	}
 
 }

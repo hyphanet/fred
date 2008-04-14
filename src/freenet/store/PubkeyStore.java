@@ -58,4 +58,12 @@ public class PubkeyStore extends StoreCallback {
 		return false;
 	}
 
+	public boolean constructNeedsKey() {
+		return false;
+	}
+
+	public byte[] routingKeyFromFullKey(byte[] keyBuf) {
+		return keyBuf;
+	}
+
 }

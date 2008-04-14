@@ -10,8 +10,12 @@ import java.security.MessageDigest;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import freenet.crypt.RandomSource;
@@ -345,7 +349,7 @@ public class LocationManager implements ByteCounter {
             }
             registerKnownLocation(hisLoc);
             
-            double[] hisFriendLocs = new double[hisBufLong.length-2];
+            double[] hisFriendLocs = new double[hisBufLong.length > 2 ? hisBufLong.length-2 : 0];
             for(int i=0;i<hisFriendLocs.length;i++) {
                 hisFriendLocs[i] = Double.longBitsToDouble(hisBufLong[i+2]);
                 if((hisFriendLocs[i] < 0.0) || (hisFriendLocs[i] > 1.0)) {
@@ -542,7 +546,7 @@ public class LocationManager implements ByteCounter {
                 }
                 registerKnownLocation(hisLoc);
                 
-                double[] hisFriendLocs = new double[hisBufLong.length-2];
+                double[] hisFriendLocs = new double[hisBufLong.length > 2 ? hisBufLong.length-2 : 0];
                 for(int i=0;i<hisFriendLocs.length;i++) {
                     hisFriendLocs[i] = Double.longBitsToDouble(hisBufLong[i+2]);
                     if((hisFriendLocs[i] < 0.0) || (hisFriendLocs[i] > 1.0)) {
@@ -1217,20 +1221,28 @@ public class LocationManager implements ByteCounter {
     public void lostOrRestartedNode(PeerNode pn) {
         Vector v = new Vector();
         synchronized(recentlyForwardedIDs) {
-            Enumeration e = recentlyForwardedIDs.keys();
-            while(e.hasMoreElements()) {
-                Long l = (Long)e.nextElement();
-                RecentlyForwardedItem item = (RecentlyForwardedItem)recentlyForwardedIDs.get(l);
+        	Set entrySet = recentlyForwardedIDs.entrySet();
+			Iterator it = entrySet.iterator();
+			while (it.hasNext()) {
+				Map.Entry entry = (Map.Entry) it.next();
+				Long l = (Long) entry.getKey();
+
+				RecentlyForwardedItem item = (RecentlyForwardedItem) entry.getValue();
+				
                 if(item == null) {
                 	Logger.error(this, "Key is "+l+" but no value on recentlyForwardedIDs - shouldn't be possible");
                 	continue;
                 }
                 if(item.routedTo != pn) continue;
                 if(item.successfullyForwarded) {
-                    removeRecentlyForwardedItem(item);
                     v.add(item);
                 }
             }
+			
+			// remove them
+			Iterator it2 = v.iterator();
+			while (it2.hasNext())
+				removeRecentlyForwardedItem((RecentlyForwardedItem) it2.next());
         }
 		int dumped=v.size();
 		if (dumped!=0 && logMINOR)

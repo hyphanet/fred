@@ -15,6 +15,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -107,6 +108,7 @@ import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
+import freenet.support.OOMHook;
 import freenet.support.PooledExecutor;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
@@ -124,7 +126,7 @@ import freenet.support.transport.ip.HostnameSyntaxException;
 /**
  * @author amphibian
  */
-public class Node implements TimeSkewDetectorCallback, GetPubkey {
+public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 
 	private static boolean logMINOR;
 	
@@ -475,7 +477,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * to the datastore only if it's from an insert, and we are a sink, but when calculating whether
 	 * we are a sink we ignore nodes which have less uptime (percentage) than this parameter.
 	 */
-	private static final int MIN_UPTIME_STORE_KEY = 40;
+	private static final int MIN_UPTIME_STORE_KEY = 0;
 	
 	/**
 	 * Read all storable settings (identity etc) from the node file.
@@ -1468,33 +1470,33 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			System.out.println("Initializing CHK Datastore ("+maxStoreKeys+" keys)");
 			chkDatastore = new CHKStore();
 			BerkeleyDBFreenetStore.construct(storeDir, true, suffix, maxStoreKeys, FreenetStore.TYPE_CHK, 
-					storeEnvironment, storeShutdownHook, reconstructFile, chkDatastore);
+					storeEnvironment, storeShutdownHook, reconstructFile, chkDatastore, random);
 			Logger.normal(this, "Initializing CHK Datacache");
 			System.out.println("Initializing CHK Datacache ("+maxCacheKeys+ ':' +maxCacheKeys+" keys)");
 			chkDatacache = new CHKStore();
 			BerkeleyDBFreenetStore.construct(storeDir, false, suffix, maxCacheKeys, FreenetStore.TYPE_CHK, 
-					storeEnvironment, storeShutdownHook, reconstructFile, chkDatacache);
+					storeEnvironment, storeShutdownHook, reconstructFile, chkDatacache, random);
 			Logger.normal(this, "Initializing pubKey Datastore");
 			System.out.println("Initializing pubKey Datastore");
 			pubKeyDatastore = new PubkeyStore();
 			BerkeleyDBFreenetStore.construct(storeDir, true, suffix, maxStoreKeys, FreenetStore.TYPE_PUBKEY, 
-					storeEnvironment, storeShutdownHook, reconstructFile, pubKeyDatastore);
+					storeEnvironment, storeShutdownHook, reconstructFile, pubKeyDatastore, random);
 			Logger.normal(this, "Initializing pubKey Datacache");
 			System.out.println("Initializing pubKey Datacache ("+maxCacheKeys+" keys)");
 			pubKeyDatacache = new PubkeyStore();
 			BerkeleyDBFreenetStore.construct(storeDir, false, suffix, maxCacheKeys, FreenetStore.TYPE_PUBKEY, 
-					storeEnvironment, storeShutdownHook, reconstructFile, pubKeyDatacache);
+					storeEnvironment, storeShutdownHook, reconstructFile, pubKeyDatacache, random);
 			// FIXME can't auto-fix SSK stores.
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
 			sskDatastore = new SSKStore(this);
 			BerkeleyDBFreenetStore.construct(storeDir, true, suffix, maxStoreKeys, FreenetStore.TYPE_SSK, 
-					storeEnvironment, storeShutdownHook, reconstructFile, sskDatastore);
+					storeEnvironment, storeShutdownHook, reconstructFile, sskDatastore, random);
 			Logger.normal(this, "Initializing SSK Datacache");
 			System.out.println("Initializing SSK Datacache ("+maxCacheKeys+" keys)");
 			sskDatacache = new SSKStore(this);
 			BerkeleyDBFreenetStore.construct(storeDir, false, suffix, maxStoreKeys, FreenetStore.TYPE_SSK, 
-					storeEnvironment, storeShutdownHook, reconstructFile, sskDatacache);
+					storeEnvironment, storeShutdownHook, reconstructFile, sskDatacache, random);
 		} catch (FileNotFoundException e1) {
 			String msg = "Could not open datastore: "+e1;
 			Logger.error(this, msg, e1);
@@ -1620,6 +1622,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			e.printStackTrace();
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_UPDATER, "Could not create Updater: "+e);
 		}
+
+		OOMHandler.addOOMHook(this);
 		
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
@@ -1648,8 +1652,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 		Logger.normal(this, "Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
 		System.out.println("Freenet 0.7 Build #"+Version.buildNumber()+" r"+Version.cvsRevision);
-		Logger.normal(this, "FNP port is on "+darknetCrypto.bindto+ ':' +getDarknetPortNumber());
-		System.out.println("FNP port is on "+darknetCrypto.bindto+ ':' +getDarknetPortNumber());
+		Logger.normal(this, "FNP port is on "+darknetCrypto.getBindTo()+ ':' +getDarknetPortNumber());
+		System.out.println("FNP port is on "+darknetCrypto.getBindTo()+ ':' +getDarknetPortNumber());
 		// Start services
 		
 //		SubConfig pluginManagerConfig = new SubConfig("pluginmanager3", config);
@@ -3116,9 +3120,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 */
 	public synchronized boolean dontDetect() {
 		// Only return true if bindTo is set on all ports which are in use
-		if(!darknetCrypto.bindto.isRealInternetAddress(false, true, false)) return false;
+		if(!darknetCrypto.getBindTo().isRealInternetAddress(false, true, false)) return false;
 		if(opennet != null) {
-			if(opennet.crypto.bindto.isRealInternetAddress(false, true, false)) return false;
+			if(opennet.crypto.getBindTo().isRealInternetAddress(false, true, false)) return false;
 		}
 		return true;
 	}
@@ -3266,4 +3270,23 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public void setDispatcherHook(NodeDispatcherCallback cb) {
 		this.dispatcher.setHook(cb);
 	}
+
+	/**
+	 * Free some memory
+	 */
+	public void handleOOM() throws Exception {
+		if (cachedPubKeys != null) {
+			Object value;
+			do {
+				value = cachedPubKeys.popKey();
+			} while (value != null);
+		}
+		if (recentlyCompletedIDs != null) {
+			synchronized (recentlyCompletedIDs) {
+				// half it size
+				while (recentlyCompletedIDs.size() > MAX_RECENTLY_COMPLETED_IDS / 2)
+					recentlyCompletedIDs.pop();
+			}
+		}
+    }
 }

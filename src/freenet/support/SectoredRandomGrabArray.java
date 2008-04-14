@@ -124,16 +124,17 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			// Just because the item is cancelled does not necessarily mean the whole client is.
 			// E.g. a segment may return cancelled because it is decoding, that doesn't mean
 			// other segments are cancelled. So just go around the loop in that case.
+			final int grabArraysLength = grabArrays.length;
 			if(rga.isEmpty()) {
 				if(logMINOR)
 					Logger.minor(this, "Removing grab array "+x+" : "+rga+" for "+rga.getObject()+" (is empty)");
 				Object client = rga.getObject();
 				grabArraysByClient.remove(client);
-				RemoveRandomWithObject[] newArray = new RemoveRandomWithObject[grabArrays.length-1];
+				RemoveRandomWithObject[] newArray = new RemoveRandomWithObject[grabArraysLength > 1 ? grabArraysLength-1 : 0];
 				if(x > 0)
 					System.arraycopy(grabArrays, 0, newArray, 0, x);
-				if(x < grabArrays.length-1)
-					System.arraycopy(grabArrays, x+1, newArray, x, grabArrays.length - (x+1));
+				if(x < grabArraysLength-1)
+					System.arraycopy(grabArrays, x+1, newArray, x, grabArraysLength - (x+1));
 				grabArrays = newArray;
 			}
 			if(item == null) {
@@ -141,7 +142,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 					// Hmmm...
 					excluded++;
 					if(excluded > MAX_EXCLUDED) {
-						Logger.normal(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArrays.length, new Exception("error"));
+						Logger.normal(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArraysLength, new Exception("error"));
 						return null;
 					}
 				}

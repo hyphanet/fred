@@ -481,8 +481,14 @@ public class StatisticsToadlet extends Toadlet {
 		
 		row=storeSizeTable.addChild("tr");
 		row.addChild("td", "Success Rate");
-		row.addChild("td", fix1p4.format(100.0*storeHits/storeAccesses)+"%");
-		row.addChild("td", fix1p4.format(100.0*cacheHits/cacheAccesses)+"%");
+		if (storeAccesses > 0)
+			row.addChild("td", fix1p4.format(100.0 * storeHits / storeAccesses) + "%");
+		else
+			row.addChild("td", "N/A");
+		if (cacheAccesses > 0)
+			row.addChild("td", fix1p4.format(100.0 * cacheHits / cacheAccesses) + "%");
+		else
+			row.addChild("td", "N/A");
 		
 		row=storeSizeTable.addChild("tr");
 		row.addChild("td", "Writes");

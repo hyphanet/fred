@@ -1,7 +1,5 @@
 package freenet.support;
 
-import java.util.Random;
-
 /**
  * This class provides encoding of byte arrays into Base64-encoded strings,
  * and decoding the other way.

@@ -43,18 +43,13 @@ public class NodeIPPortDetector {
 	 * (for that port/NodeCrypto) list of IP addresses (still without port numbers).
 	 */
 	FreenetInetAddress[] detectPrimaryIPAddress() {
-		FreenetInetAddress[] addresses = ipDetector.detectPrimaryIPAddress();
-		FreenetInetAddress addr = crypto.bindto;
+		FreenetInetAddress addr = crypto.getBindTo();
 		if(addr.isRealInternetAddress(false, true, false)) {
-			for(int i=0;i<addresses.length;i++) {
-				if(addresses[i] == addr) return addresses;
-			}
-			FreenetInetAddress[] newAddresses = new FreenetInetAddress[addresses.length+1];
-			System.arraycopy(addresses, 0, newAddresses, 0, addresses.length);
-			newAddresses[addresses.length] = addr;
-			return newAddresses;
+			// Binding to a real internet address => don't want us to use the others, most likely
+			// he is on a multi-homed box where only one IP can be used for Freenet.
+			return new FreenetInetAddress[] { addr };
 		}
-		return addresses;
+		return ipDetector.detectPrimaryIPAddress();
 	}
 
 	/**
@@ -82,7 +77,8 @@ public class NodeIPPortDetector {
 				if((p == null) || p.isNull()) continue;
 				// DNSRequester doesn't deal with our own node
 				if(!IPUtil.isValidAddress(p.getAddress(true), false)) continue;
-				Logger.normal(this, "Peer "+peerList[i].getPeer()+" thinks we are "+p);
+				if(Logger.shouldLog(Logger.MINOR, this))
+					Logger.minor(this, "Peer "+peerList[i].getPeer()+" thinks we are "+p);
 				if(countsByPeer.containsKey(p)) {
 					Integer count = (Integer) countsByPeer.get(p);
 					Integer newCount = new Integer(count.intValue()+1);
