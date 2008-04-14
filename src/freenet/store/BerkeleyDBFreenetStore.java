@@ -975,6 +975,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 					System.err.println("File pointer is "+storeRAF.getFilePointer()+" but should be "+((headerBlockSize + dataBlockSize)));
 					System.exit(NodeInitException.EXIT_STORE_RECONSTRUCT);
 				}
+				// FIXME only do the read if we need the data, and if we do, do a seek first.
+				// Post 0.7.0; only a useful optimisation if we have a good .keys file, but should 
+				// save some I/O when we do.
 				storeRAF.readFully(header);
 				storeRAF.readFully(data);
 				if(lruRAFLength > (l+1)*8) {
