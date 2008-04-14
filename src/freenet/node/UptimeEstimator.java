@@ -101,7 +101,7 @@ public class UptimeEstimator implements Runnable {
 			if(slot == wasOnline.length) slot = 0;
 		}
 		long now = System.currentTimeMillis();
-		if(logFile.length() > wasOnline.length*4) {
+		if(logFile.length() > (long) wasOnline.length*4) {
 			prevFile.delete();
 			logFile.renameTo(prevFile);
 		}
