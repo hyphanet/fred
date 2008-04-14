@@ -40,7 +40,9 @@ public class TrivialRunningAverage implements RunningAverage {
 	}
 
     public Object clone() {
-    	return new TrivialRunningAverage(this);
+    	synchronized (this) {
+			return new TrivialRunningAverage(this);
+		}
     }
 
 	
