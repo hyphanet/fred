@@ -1221,25 +1221,28 @@ public class LocationManager implements ByteCounter {
     public void lostOrRestartedNode(PeerNode pn) {
         Vector v = new Vector();
         synchronized(recentlyForwardedIDs) {
-        	Set keySet = new HashSet(recentlyForwardedIDs.keySet()); // clone
-
-			Iterator it = keySet.iterator();
+        	Set entrySet = recentlyForwardedIDs.entrySet();
+			Iterator it = entrySet.iterator();
 			while (it.hasNext()) {
-				Long l = (Long) it.next();
+				Map.Entry entry = (Map.Entry) it.next();
+				Long l = (Long) entry.getKey();
 
-				RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(l);
-				// make sure the item still exist
+				RecentlyForwardedItem item = (RecentlyForwardedItem) entry.getValue();
+				
                 if(item == null) {
-                	// FIXME removeRecentlyForwardedItem may have removed this?
                 	Logger.error(this, "Key is "+l+" but no value on recentlyForwardedIDs - shouldn't be possible");
                 	continue;
                 }
                 if(item.routedTo != pn) continue;
                 if(item.successfullyForwarded) {
-                    removeRecentlyForwardedItem(item);
                     v.add(item);
                 }
             }
+			
+			// remove them
+			Iterator it2 = v.iterator();
+			while (it2.hasNext())
+				removeRecentlyForwardedItem((RecentlyForwardedItem) it2.next());
         }
 		int dumped=v.size();
 		if (dumped!=0 && logMINOR)
