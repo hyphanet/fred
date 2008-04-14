@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
 import java.util.HashMap;
@@ -5,6 +8,10 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 
+/**
+ * Test case for {@link freenet.support.ByteArrayWrapper} class.
+ * @author stuart martin &lt;wavey@freenetproject.org&gt;
+ */
 public class ByteArrayWrapperTest extends TestCase {
 
 	private static final String DATA_STRING_1 = "asldkjaskjdsakdhasdhaskjdhaskjhbkasbhdjkasbduiwbxgdoudgboewuydxbybuewyxbuewyuwe";
