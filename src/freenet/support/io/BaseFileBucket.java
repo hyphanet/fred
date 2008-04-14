@@ -393,17 +393,27 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		
 		if(toClose != null) {
 			Logger.error(this, "Streams open free()ing "+this+" : "+StringArray.toString(toClose), new Exception("debug"));
-			for(int i=0;i<toClose.length;i++) {
-				try {
-					if(toClose[i] instanceof FileBucketOutputStream) {
-						((FileBucketOutputStream) toClose[i]).close();
-					} else {
-						((FileBucketInputStream) toClose[i]).close();
+			double toCloseLength = toClose.length;
+			while(toCloseLength > 0) {
+				int toCloseThisRound;
+				if(toCloseLength <= Integer.MAX_VALUE) {
+					toCloseThisRound = (int) toCloseLength;
+					toCloseLength = 0;
+				} else 
+					toCloseLength -= (toCloseThisRound = Integer.MAX_VALUE);
+
+				for(int i=0; i<toCloseThisRound; i++) {
+					try {
+						if(toClose[i] instanceof FileBucketOutputStream) {
+							((FileBucketOutputStream) toClose[i]).close();
+						} else {
+							((FileBucketInputStream) toClose[i]).close();
+						}
+					} catch (IOException e) {
+						Logger.error(this, "Caught closing stream in free(): "+e, e);
+					} catch (Throwable t) {
+						Logger.error(this, "Caught closing stream in free(): "+t, t);
 					}
-				} catch (IOException e) {
-					Logger.error(this, "Caught closing stream in free(): "+e, e);
-				} catch (Throwable t) {
-					Logger.error(this, "Caught closing stream in free(): "+t, t);
 				}
 			}
 		}
