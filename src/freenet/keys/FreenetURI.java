@@ -643,10 +643,8 @@ public class FreenetURI implements Cloneable{
 			dis.readFully(cryptoKey);
 			// Number of bytes of extra depends on key type
 			int extraLen;
-			if(type == CHK)
+			if((type == CHK) || (type == SSK))
 				extraLen = ClientCHK.EXTRA_LENGTH;
-			else //if(type == SSK)
-				extraLen = ClientSSK.EXTRA_LENGTH;
 			extra = new byte[extraLen];
 			dis.readFully(extra);
 		}
