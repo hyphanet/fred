@@ -88,9 +88,7 @@ public class FCPServer implements Runnable {
 	private boolean hasFinishedStart;
 	
 	private void startPersister() {
-		Thread t = new Thread(persister = new FCPServerPersister(), "FCP request persister");
-		t.setDaemon(true);
-		t.start();
+		node.executor.execute(persister = new FCPServerPersister(), "FCP request persister");
 	}
 
 	private void killPersister() {
