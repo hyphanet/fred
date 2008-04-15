@@ -15,7 +15,9 @@ import java.util.ArrayList;
  */
 public class PooledExecutor implements Executor {
 
+	/** All threads running or waiting */
 	private final ArrayList[] runningThreads /* <MyThread> */ = new ArrayList[NativeThread.JAVA_PRIORITY_RANGE + 1];
+	/** Threads waiting for a job */
 	private final ArrayList[] waitingThreads /* <MyThread> */ = new ArrayList[runningThreads.length];
 	long[] threadCounter = new long[runningThreads.length];
 	private long jobCount;
