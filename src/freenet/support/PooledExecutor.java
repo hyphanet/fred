@@ -116,7 +116,7 @@ public class PooledExecutor implements Executor {
 	public synchronized int[] runningThreads() {
 		int[] result = new int[runningThreads.length];
 		for(int i = 0; i < result.length; i++)
-			result[i] = runningThreads[i].size();
+			result[i] = runningThreads[i].size() - waitingThreads[i].size();
 		return result;
 	}
 
