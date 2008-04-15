@@ -339,6 +339,10 @@ public class LocationManager implements ByteCounter {
             // Now decode it
             
             long[] hisBufLong = Fields.bytesToLongs(hisBuf);
+	    if(hisBufLong.length < 2) {
+		    Logger.error(this, "Bad buffer length (no random, no location)- malicious node? on "+uid);
+		    return;
+	    }
             
             long hisRandom = hisBufLong[0];
             
@@ -349,7 +353,7 @@ public class LocationManager implements ByteCounter {
             }
             registerKnownLocation(hisLoc);
             
-            double[] hisFriendLocs = new double[hisBufLong.length > 2 ? hisBufLong.length-2 : 0];
+            double[] hisFriendLocs = new double[hisBufLong.length-2];
             for(int i=0;i<hisFriendLocs.length;i++) {
                 hisFriendLocs[i] = Double.longBitsToDouble(hisBufLong[i+2]);
                 if((hisFriendLocs[i] < 0.0) || (hisFriendLocs[i] > 1.0)) {
@@ -534,9 +538,13 @@ public class LocationManager implements ByteCounter {
                 }
                 
                 // Now decode it
-                
-                long[] hisBufLong = Fields.bytesToLongs(hisBuf);
-                
+
+		    long[] hisBufLong = Fields.bytesToLongs(hisBuf);
+		    if(hisBufLong.length < 2) {
+			    Logger.error(this, "Bad buffer length (no random, no location)- malicious node? on " + uid);
+			    return;
+		    }
+
                 long hisRandom = hisBufLong[0];
                 
                 double hisLoc = Double.longBitsToDouble(hisBufLong[1]);
@@ -546,7 +554,7 @@ public class LocationManager implements ByteCounter {
                 }
                 registerKnownLocation(hisLoc);
                 
-                double[] hisFriendLocs = new double[hisBufLong.length > 2 ? hisBufLong.length-2 : 0];
+                double[] hisFriendLocs = new double[hisBufLong.length-2];
                 for(int i=0;i<hisFriendLocs.length;i++) {
                     hisFriendLocs[i] = Double.longBitsToDouble(hisBufLong[i+2]);
                     if((hisFriendLocs[i] < 0.0) || (hisFriendLocs[i] > 1.0)) {
