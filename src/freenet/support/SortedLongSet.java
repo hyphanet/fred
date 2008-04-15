@@ -178,20 +178,6 @@ public class SortedLongSet {
 	}
 
 	private int binarySearch(long key) {
-		int low = 0;
-		int high = length - 1;
-
-		while (low <= high) {
-			int mid = (low + high) >>> 1;
-			long midVal = data[mid];
-
-			if (midVal < key)
-				low = mid + 1;
-			else if (midVal > key)
-				high = mid - 1;
-			else
-				return mid; // key found
-		}
-		return -(low + 1); // key not found.
+		return Fields.binarySearch(data, key, 0, length-1);
 	}
 }

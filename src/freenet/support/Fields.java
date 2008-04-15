@@ -729,19 +729,17 @@ public abstract class Fields {
 		int begin = origBegin;
 		int end = origEnd;
 		while(true) {
+			if(end < begin)	// so we can use origEnd=length-1 without worrying length=0
+				return -begin-1;
+
 			int middle = (begin + end) >>> 1;
 			if(values[middle] == key)
 				return middle;
 			
 			if(values[middle] > key) {
-				end = middle;
-				if(end - begin <= 1) {
-					return -middle-1;
-				}
+				end = middle - 1;
 			} else if(values[middle] < key) {
-				begin = middle;
-				if(end - begin <= 1)
-					return -end-1;
+				begin = middle + 1;
 			}
 		}
 	}
