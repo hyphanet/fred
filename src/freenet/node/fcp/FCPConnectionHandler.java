@@ -447,4 +447,17 @@ public class FCPConnectionHandler {
 			}
 		}
 	}
+
+	public ClientRequest removeRequestByIdentifier(String identifier, boolean kill) {
+		ClientRequest req;
+		synchronized(this) {
+			req = (ClientRequest) requestsByIdentifier.remove(identifier);
+		}
+		if(req != null) {
+			req.requestWasRemoved();
+			if(kill)
+				req.cancel();
+		}
+		return req;
+	}
 }

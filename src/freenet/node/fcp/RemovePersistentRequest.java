@@ -38,9 +38,14 @@ public class RemovePersistentRequest extends FCPMessage {
 		FCPClient client = global ? handler.server.globalClient : handler.getClient();
         ClientRequest req = client.getRequest(identifier);
         if(req==null){
-            Logger.error(this, "Huh ? the request is null!");
-            return;
+        	req = handler.removeRequestByIdentifier(identifier, true);
+        	if(req == null) {
+        		Logger.error(this, "Huh ? the request is null!");
+        		return;
+        	}
+        } else {
+        	client.removeByIdentifier(identifier, true);
         }
-		client.removeByIdentifier(identifier, true);
+        
 	}
 }
