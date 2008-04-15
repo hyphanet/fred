@@ -11,7 +11,8 @@ import freenet.support.*;
  */
 public class RemovePersistentRequest extends FCPMessage {
 
-	final static String NAME = "RemovePersistentRequest";
+	final static String NAME = "RemoveRequest";
+	final static String ALT_NAME = "RemovePersistentRequest";
 	
 	final String identifier;
 	final boolean global;

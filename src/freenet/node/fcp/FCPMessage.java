@@ -77,7 +77,8 @@ public abstract class FCPMessage {
 			return new ModifyPersistentRequest(fs);
 		if(name.equals(RemovePeer.NAME))
 			return new RemovePeer(fs);
-		if(name.equals(RemovePersistentRequest.NAME))
+		if(name.equals(RemovePersistentRequest.NAME)
+				|| name.equals(RemovePersistentRequest.ALT_NAME))
 			return new RemovePersistentRequest(fs);
 		if(name.equals(ShutdownMessage.NAME))
 			return new ShutdownMessage();
