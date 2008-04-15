@@ -1258,7 +1258,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			long size = ((ClientPutDir)req).getTotalDataSize();
 			int files = ((ClientPutDir)req).getNumberOfFiles();
 			String name = uri.getPreferredFilename();
-			String title = l10n("QueueToadlet.siteUploadSucceededTitle", "filename", name);
+			String title = l10n("siteUploadSucceededTitle", "filename", name);
 			HTMLNode text = new HTMLNode("div");
 			L10n.addL10nSubstitution(text, "QueueToadlet.siteUploadSucceeded",
 					new String[] { "link", "/link", "filename", "size", "files" },
