@@ -243,7 +243,7 @@ public class FCPConnectionHandler {
 		}
 	}
 
-	public void startClientPutDir(ClientPutDirMessage message, HashMap buckets) {
+	public void startClientPutDir(ClientPutDirMessage message, HashMap buckets, boolean wasDiskPut) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Start ClientPutDir");
 		String id = message.identifier;
@@ -261,7 +261,7 @@ public class FCPConnectionHandler {
 		}
 		if(success) {
 			try {
-				cp = new ClientPutDir(this, message, buckets);
+				cp = new ClientPutDir(this, message, buckets, wasDiskPut);
 			} catch (IdentifierCollisionException e) {
 				success = false;
 			} catch (MalformedURLException e) {
