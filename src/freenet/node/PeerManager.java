@@ -319,8 +319,7 @@ public class PeerManager {
     			connectedPeers = newConnectedPeers;
     			
     			// removing from myPeers
-			int myPeerLength = myPeers.length;
-    			PeerNode[] newMyPeers = new PeerNode[myPeerLength > 1 ? myPeerLength-1 : 0];
+    			PeerNode[] newMyPeers = new PeerNode[myPeers.length-1];
     			int positionInNewArray = 0;
     			for(int i=0;i<myPeers.length;i++) {
     				if(myPeers[i]!=pn){
