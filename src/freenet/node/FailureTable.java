@@ -158,15 +158,13 @@ public class FailureTable {
 				for(int i=0;i<offerLength;i++) {
 					if(offers[i] == offer) idx = i;
 				}
-				if(idx == -1) return;
-				if(offers.length > 1) {
-					BlockOffer[] newOffers = new BlockOffer[offerLength > 1 ? offerLength-1 : 0];
-					if(idx > 0)
-						System.arraycopy(offers, 0, newOffers, 0, idx);
-					if(idx < newOffers.length)
-						System.arraycopy(offers, idx+1, newOffers, idx, offers.length-idx-1);
-					offers = newOffers;
-				}
+				if(idx < 0) return;
+				BlockOffer[] newOffers = new BlockOffer[offerLength - 1];
+				if(idx > 0)
+					System.arraycopy(offers, 0, newOffers, 0, idx);
+				if(idx < newOffers.length)
+					System.arraycopy(offers, idx + 1, newOffers, idx, offers.length - idx - 1);
+				offers = newOffers;
 			}
 			if(offers.length < 1) {
 				synchronized(FailureTable.this) {
