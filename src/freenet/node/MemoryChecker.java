@@ -47,7 +47,7 @@ public class MemoryChecker implements Runnable {
 			ps.queueTimedJob(this, 120 * 250); // 30 sec
 			return;
 		} else
-			ps.queueTimedJob(this, (long) 120 * sleeptime);
+			ps.queueTimedJob(this, 120L * sleeptime);
 		
 		// FIXME
 		// Do not remove until all known memory issues fixed,

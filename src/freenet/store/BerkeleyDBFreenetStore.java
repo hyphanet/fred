@@ -518,7 +518,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 					}
 					x++;
 					if(x % 1024 == 0) {
-						System.out.println("Reading store prior to shrink: "+((long)x*100/realSize)+ "% ( "+x+ '/' +realSize+ ')');
+						System.out.println("Reading store prior to shrink: "+(x*100L/realSize)+ "% ( "+x+ '/' +realSize+ ')');
 					}
 					if(x == Integer.MAX_VALUE) {
 						System.err.println("Key number "+x+" - ignoring store after "+(x*(dataBlockSize+headerBlockSize)+" bytes"));
