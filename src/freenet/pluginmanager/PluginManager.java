@@ -502,7 +502,10 @@ public class PluginManager {
 		if (logMINOR) {
 			Logger.minor(this, "plugin file " + pluginFile.getAbsolutePath() + " exists: " + pluginFile.exists());
 		}
+		int RETRIES = 5;
+		for(int i=0;i<RETRIES;i++) {
 		if (!pluginFile.exists() || pluginFile.length() == 0) {
+			try {
 			File tempPluginFile = null;
 			OutputStream pluginOutputStream = null;
 			URLConnection urlConnection = null;
@@ -520,7 +523,9 @@ public class PluginManager {
 				while ((read = pluginInputStream.read(buffer)) != -1) {
 					pluginOutputStream.write(buffer, 0, read);
 				}
-				pluginOutputStream.close();               
+				pluginOutputStream.close();
+				if(tempPluginFile.length() == 0)
+					throw new PluginNotFoundException("downloaded zero length file");
 				if(!FileUtil.renameTo(tempPluginFile, pluginFile)) {
 					Logger.error(this, "could not rename temp file to plugin file");
 					throw new PluginNotFoundException("could not rename temp file to plugin file");
@@ -535,6 +540,13 @@ public class PluginManager {
 				Closer.close(pluginOutputStream);
 				Closer.close(pluginInputStream);
 			}
+			} catch (PluginNotFoundException e) {
+				if(i < RETRIES-1) {
+					Logger.normal(this, "Failed to load plugin: "+e, e);
+					continue;
+				} else throw e;
+			}
+		}
 		}
 
 		/* now get the manifest file. */
