@@ -241,14 +241,14 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(logMINOR) Logger.minor(this, "Is simple manifest");
 				String name;
 				if(metaStrings.isEmpty())
-					throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS, -1, false, null, thisKey.addMetaStrings(new String[] { "" }));
+					throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS, -1, false, null, uri.addMetaStrings(new String[] { "" }));
 				else name = removeMetaString();
 				// Since metadata is a document, we just replace metadata here
 				if(logMINOR) Logger.minor(this, "Next meta-string: "+name);
 				if(name == null) {
 					metadata = metadata.getDefaultDocument();
 					if(metadata == null)
-						throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS, -1, false, null, thisKey.addMetaStrings(new String[] { "" }));
+						throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS, -1, false, null, uri.addMetaStrings(new String[] { "" }));
 				} else {
 					metadata = metadata.getDocument(name);
 					thisKey = thisKey.pushMetaString(name);
@@ -488,7 +488,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							// It would be useful to be able to fetch the data ...
 							// On the other hand such inserts could cause unpredictable results?
 							// Would be useful to make a redirect to the key we actually fetched.
-							rcb.onFailure(new FetchException(FetchException.INVALID_METADATA, "Invalid metadata: too many path components in redirects", thisKey), this);
+							rcb.onFailure(new FetchException(FetchException.INVALID_METADATA, "Invalid metadata: too many path components in redirects", uri.dropLastMetaStrings(1)), this);
 						} else {
 							// TOO_MANY_PATH_COMPONENTS
 							// report to user

@@ -20,6 +20,7 @@ import java.net.URI;
 import java.text.NumberFormat;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -1072,6 +1073,8 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 	 */
 	private final HashSet completedRequestIdentifiers = new HashSet();
 	
+	private final HashMap alertsByIdentifier = new HashMap();
+	
 	public void notifyFailure(ClientRequest req) {
 		// FIXME do something???
 	}
@@ -1209,14 +1212,22 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			L10n.addL10nSubstitution(text, "QueueToadlet.downloadSucceeded",
 					new String[] { "link", "/link", "origlink", "/origlink", "filename", "size" },
 					new String[] { "<a href=\"/queue/"+uri.toACIIString()+"\">", "</a>", "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size) } );
-			core.alerts.register(new SimpleHTMLUserAlert(true, title, text, UserAlert.MINOR) {
+			UserAlert alert = 
+			new SimpleHTMLUserAlert(true, title, text, UserAlert.MINOR) {
 				public void onDismiss() {
 					synchronized(completedRequestIdentifiers) {
 						completedRequestIdentifiers.remove(identifier);
 					}
+					synchronized(alertsByIdentifier) {
+						alertsByIdentifier.remove(identifier);
+					}
 					saveCompletedIdentifiersOffThread();
 				}
-			});
+			};
+			core.alerts.register(alert);
+			synchronized(alertsByIdentifier) {
+				alertsByIdentifier.put(identifier, alert);
+			}
 		} else if(req instanceof ClientPut) {
 			FreenetURI uri = ((ClientPut)req).getFinalURI();
 			long size = ((ClientPut)req).getDataSize();
@@ -1226,37 +1237,66 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			L10n.addL10nSubstitution(text, "QueueToadlet.uploadSucceeded",
 					new String[] { "link", "/link", "filename", "size" },
 					new String[] { "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size) } );
-			core.alerts.register(new SimpleHTMLUserAlert(true, title, text, UserAlert.MINOR) {
+			UserAlert alert = 
+			new SimpleHTMLUserAlert(true, title, text, UserAlert.MINOR) {
 				public void onDismiss() {
 					synchronized(completedRequestIdentifiers) {
 						completedRequestIdentifiers.remove(identifier);
 					}
+					synchronized(alertsByIdentifier) {
+						alertsByIdentifier.remove(identifier);
+					}
 					saveCompletedIdentifiersOffThread();
 				}
-			});
+			};
+			core.alerts.register(alert);
+			synchronized(alertsByIdentifier) {
+				alertsByIdentifier.put(identifier, alert);
+			}
 		} else if(req instanceof ClientPutDir) {
 			FreenetURI uri = ((ClientPutDir)req).getFinalURI();
 			long size = ((ClientPutDir)req).getTotalDataSize();
 			int files = ((ClientPutDir)req).getNumberOfFiles();
 			String name = uri.getPreferredFilename();
-			String title = l10n("QueueToadlet.siteUploadSucceededTitle", "filename", name);
+			String title = l10n("siteUploadSucceededTitle", "filename", name);
 			HTMLNode text = new HTMLNode("div");
 			L10n.addL10nSubstitution(text, "QueueToadlet.siteUploadSucceeded",
 					new String[] { "link", "/link", "filename", "size", "files" },
 					new String[] { "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size), Integer.toString(files) } );
-			core.alerts.register(new SimpleHTMLUserAlert(true, title, text, UserAlert.MINOR) {
+			UserAlert alert = 
+			new SimpleHTMLUserAlert(true, title, text, UserAlert.MINOR) {
 				public void onDismiss() {
 					synchronized(completedRequestIdentifiers) {
 						completedRequestIdentifiers.remove(identifier);
 					}
+					synchronized(alertsByIdentifier) {
+						alertsByIdentifier.remove(identifier);
+					}
 					saveCompletedIdentifiersOffThread();
 				}
-			});
+			};
+			core.alerts.register(alert);
+			synchronized(alertsByIdentifier) {
+				alertsByIdentifier.put(identifier, alert);
+			}
 		}
 	}
 
 	String l10n(String key, String pattern, String value) {
 		return L10n.getString("QueueToadlet."+key, pattern, value);
+	}
+
+	public void onRemove(ClientRequest req) {
+		String identifier = req.getIdentifier();
+		synchronized(completedRequestIdentifiers) {
+			completedRequestIdentifiers.remove(identifier);
+		}
+		UserAlert alert;
+		synchronized(alertsByIdentifier) {
+			alert = (UserAlert) alertsByIdentifier.remove(identifier);
+		}
+		core.alerts.unregister(alert);
+		saveCompletedIdentifiersOffThread();
 	}
 
 }

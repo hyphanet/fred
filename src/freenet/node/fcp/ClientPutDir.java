@@ -36,13 +36,15 @@ public class ClientPutDir extends ClientPutBase {
 	private final long totalSize;
 	private final int numberOfFiles;
 	private static boolean logMINOR;
+	private final boolean wasDiskPut;
 	
 	public ClientPutDir(FCPConnectionHandler handler, ClientPutDirMessage message, 
-			HashMap manifestElements) throws IdentifierCollisionException, MalformedURLException {
+			HashMap manifestElements, boolean wasDiskPut) throws IdentifierCollisionException, MalformedURLException {
 		super(message.uri, message.identifier, message.verbosity, handler,
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
 				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		this.wasDiskPut = wasDiskPut;
 		this.manifestElements = manifestElements;
 		this.defaultName = message.defaultName;
 		makePutter();
@@ -69,6 +71,7 @@ public class ClientPutDir extends ClientPutBase {
 	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean allowUnreadableFiles, boolean global, boolean earlyEncode) throws FileNotFoundException, IdentifierCollisionException, MalformedURLException {
 		super(uri, identifier, verbosity , null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode);
 
+		wasDiskPut = true;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.manifestElements = makeDiskDirManifest(dir, "", allowUnreadableFiles);
 		this.defaultName = defaultName;
@@ -142,6 +145,11 @@ public class ClientPutDir extends ClientPutBase {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		SimpleFieldSet files = fs.subset("Files");
 		defaultName = fs.get("DefaultName");
+		String type = fs.get("PutDirType");
+		if(type.equals("disk"))
+			wasDiskPut = true;
+		else
+			wasDiskPut = false;
 		// Flattened for disk, sort out afterwards
 		int fileCount = 0;
 		long size = 0;
@@ -268,6 +276,7 @@ public class ClientPutDir extends ClientPutBase {
 		// Storing it directly would be a PITA.
 		ManifestElement[] elements = SimpleManifestPutter.flatten(manifestElements);
 		fs.putSingle("DefaultName", defaultName);
+		fs.putSingle("PutDirType", wasDiskPut ? "disk" : "complex");
 		for(int i=0;i<elements.length;i++) {
 			String num = Integer.toString(i);
 			ManifestElement e = elements[i];
@@ -307,7 +316,7 @@ public class ClientPutDir extends ClientPutBase {
 
 	protected FCPMessage persistentTagMessage() {
 		return new PersistentPutDir(identifier, publicURI, verbosity, priorityClass,
-				persistenceType, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries);
+				persistenceType, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries, wasDiskPut);
 	}
 
 	protected String getTypeName() {

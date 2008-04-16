@@ -13,7 +13,6 @@ import freenet.support.OOMHandler;
  */
 public class DNSRequester implements Runnable {
 
-    final Thread myThread;
     final Node node;
     private long lastLogTime;
     // Only set when doing simulations.
@@ -21,14 +20,12 @@ public class DNSRequester implements Runnable {
 
     DNSRequester(Node node) {
         this.node = node;
-        myThread = new Thread(this, "DNSRequester thread for "+node.getDarknetPortNumber());
-        myThread.setDaemon(true);
     }
 
     void start() {
     	Logger.normal(this, "Starting DNSRequester");
     	System.out.println("Starting DNSRequester");
-        myThread.start();
+    	node.executor.execute(this, "DNSRequester thread for "+node.getDarknetPortNumber());
     }
 
     public void run() {
