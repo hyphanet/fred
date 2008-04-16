@@ -504,49 +504,49 @@ public class PluginManager {
 		}
 		int RETRIES = 5;
 		for(int i=0;i<RETRIES;i++) {
-		if (!pluginFile.exists() || pluginFile.length() == 0) {
-			try {
-			File tempPluginFile = null;
-			OutputStream pluginOutputStream = null;
-			URLConnection urlConnection = null;
-			InputStream pluginInputStream = null;
-			try {
-				tempPluginFile = File.createTempFile("plugin-", ".jar", pluginDirectory);
-				pluginOutputStream = new FileOutputStream(tempPluginFile);
-				urlConnection = pluginUrl.openConnection();
-				urlConnection.setUseCaches(false);
-				urlConnection.setAllowUserInteraction(false);
-				urlConnection.connect();
-				pluginInputStream = urlConnection.getInputStream();
-				byte[] buffer = new byte[1024];
-				int read;
-				while ((read = pluginInputStream.read(buffer)) != -1) {
-					pluginOutputStream.write(buffer, 0, read);
+			if (!pluginFile.exists() || pluginFile.length() == 0) {
+				try {
+					File tempPluginFile = null;
+					OutputStream pluginOutputStream = null;
+					URLConnection urlConnection = null;
+					InputStream pluginInputStream = null;
+					try {
+						tempPluginFile = File.createTempFile("plugin-", ".jar", pluginDirectory);
+						pluginOutputStream = new FileOutputStream(tempPluginFile);
+						urlConnection = pluginUrl.openConnection();
+						urlConnection.setUseCaches(false);
+						urlConnection.setAllowUserInteraction(false);
+						urlConnection.connect();
+						pluginInputStream = urlConnection.getInputStream();
+						byte[] buffer = new byte[1024];
+						int read;
+						while ((read = pluginInputStream.read(buffer)) != -1) {
+							pluginOutputStream.write(buffer, 0, read);
+						}
+						pluginOutputStream.close();
+						if(tempPluginFile.length() == 0)
+							throw new PluginNotFoundException("downloaded zero length file");
+						if(!FileUtil.renameTo(tempPluginFile, pluginFile)) {
+							Logger.error(this, "could not rename temp file to plugin file");
+							throw new PluginNotFoundException("could not rename temp file to plugin file");
+						}
+					} catch (IOException ioe1) {
+						Logger.error(this, "could not load plugin", ioe1);
+						if (tempPluginFile != null) {
+							tempPluginFile.delete();
+						}
+						throw new PluginNotFoundException("could not load plugin: " + ioe1.getMessage(), ioe1);
+					} finally {
+						Closer.close(pluginOutputStream);
+						Closer.close(pluginInputStream);
+					}
+				} catch (PluginNotFoundException e) {
+					if(i < RETRIES-1) {
+						Logger.normal(this, "Failed to load plugin: "+e, e);
+						continue;
+					} else throw e;
 				}
-				pluginOutputStream.close();
-				if(tempPluginFile.length() == 0)
-					throw new PluginNotFoundException("downloaded zero length file");
-				if(!FileUtil.renameTo(tempPluginFile, pluginFile)) {
-					Logger.error(this, "could not rename temp file to plugin file");
-					throw new PluginNotFoundException("could not rename temp file to plugin file");
-				}
-			} catch (IOException ioe1) {
-				Logger.error(this, "could not load plugin", ioe1);
-				if (tempPluginFile != null) {
-					tempPluginFile.delete();
-				}
-				throw new PluginNotFoundException("could not load plugin: " + ioe1.getMessage(), ioe1);
-			} finally {
-				Closer.close(pluginOutputStream);
-				Closer.close(pluginInputStream);
 			}
-			} catch (PluginNotFoundException e) {
-				if(i < RETRIES-1) {
-					Logger.normal(this, "Failed to load plugin: "+e, e);
-					continue;
-				} else throw e;
-			}
-		}
 		}
 
 		/* now get the manifest file. */
