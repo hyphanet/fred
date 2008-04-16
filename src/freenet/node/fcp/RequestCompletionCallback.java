@@ -12,9 +12,4 @@ public interface RequestCompletionCallback {
 	 */
 	public void notifyFailure(ClientRequest req);
 	
-	/**
-	 * Callback when a request is removed
-	 */
-	public void onRemove(ClientRequest req);
-	
 }

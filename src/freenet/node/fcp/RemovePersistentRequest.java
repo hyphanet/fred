@@ -11,8 +11,7 @@ import freenet.support.*;
  */
 public class RemovePersistentRequest extends FCPMessage {
 
-	final static String NAME = "RemoveRequest";
-	final static String ALT_NAME = "RemovePersistentRequest";
+	final static String NAME = "RemovePersistentRequest";
 	
 	final String identifier;
 	final boolean global;
@@ -39,15 +38,9 @@ public class RemovePersistentRequest extends FCPMessage {
 		FCPClient client = global ? handler.server.globalClient : handler.getClient();
         ClientRequest req = client.getRequest(identifier);
         if(req==null){
-        	if(!global)
-        		req = handler.removeRequestByIdentifier(identifier, true);
-        	if(req == null) {
-        		Logger.error(this, "Huh ? the request is null!");
-        		return;
-        	}
-        } else {
-        	client.removeByIdentifier(identifier, true);
+            Logger.error(this, "Huh ? the request is null!");
+            return;
         }
-        
+		client.removeByIdentifier(identifier, true);
 	}
 }

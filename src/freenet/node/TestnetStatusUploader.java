@@ -34,10 +34,13 @@ public class TestnetStatusUploader implements Runnable {
 	}
 
 	void start() {
-		node.executor.execute(this, "TestnetStatusUploader thread");
+		uploaderThread = new Thread(this, "TestnetStatusUploader thread");
+		uploaderThread.setDaemon(true);
+		uploaderThread.start();
 	}
 	
 	private final Node node;
+	private Thread uploaderThread;
 	private final int updateInterval;
 	private Socket client;
 	

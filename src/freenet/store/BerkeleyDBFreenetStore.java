@@ -911,17 +911,20 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	 * <li><code>callback.routingKeyFromFullKey(); </code></li>
 	 * <li>if <code>null</code> or <code>KeyVerifyException</code>,<code> callback.construct().getRoutingKey()</code>,
 	 * may throw <code>KeyVerifyException</code></li>
-	 * </ol>
-	 * <code>fullKey</code> (and hence <code>callback.routingKeyFromFullKey(); </code>) may be
-	 * phantom, hence we must verify
-	 * <code> callback.construct().getRoutingKey()  == routingkey </code> on <code>fetch()</code>
-	 * </dd>
+	 * <ol>
+	 * <code>fullKey</code> (and hence
+	 * <code>callback.routingKeyFromFullKey(); </code>) may be phantom, hence
+	 * we must verify
+	 * <code> callback.construct().getRoutingKey()  == routingkey </code> on
+	 * <code>fetch()</code> </dd>
 	 * </dl>
 	 * 
-	 * On <code>OperationStatus.KEYEXIST</code> or bad <code> callback.construct</code>:
+	 * On <code>OperationStatus.KEYEXIST</code> or bad
+	 * <code> callback.construct</code>:
 	 * <ol>
 	 * <li>insert a database entry with random key, (minimum lru - 1); </li>
-	 * <li>if <code>op != OperationStatus.SUCCESS</code>, <code>addFreeBlock()</code>.</li>
+	 * <li>if <code>op != OperationStatus.SUCCESS</code>,
+	 * <code>addFreeBlock()</code>.</li>
 	 * </ol>
 	 * 
 	 * 

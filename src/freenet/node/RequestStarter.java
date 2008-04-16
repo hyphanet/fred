@@ -81,7 +81,9 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 	}
 	
 	void start() {
-		core.getExecutor().execute(this, name);
+		Thread t = new Thread(this, name);
+		t.setDaemon(true);
+		t.start();
 	}
 	
 	final String name;

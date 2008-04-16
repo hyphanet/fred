@@ -159,8 +159,6 @@ public class FCPClient {
 			if(logMINOR) Logger.minor(this, "Killing request "+req);
 			req.cancel();
 		}
-		if(completionCallback != null)
-			completionCallback.onRemove(req);
 		server.forceStorePersistentRequests();
 	}
 

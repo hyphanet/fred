@@ -144,7 +144,7 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 		// Then simply create the ClientPutDir.
 		HashMap manifestElements = new HashMap();
 		convertFilesByNameToManifestElements(filesByName, manifestElements, node);
-		handler.startClientPutDir(this, manifestElements, false);
+		handler.startClientPutDir(this, manifestElements);
 	}
 
 	/**

@@ -3,15 +3,13 @@ package freenet.client.async;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 
-import freenet.node.PrioRunnable;
 import freenet.support.Logger;
-import freenet.support.io.NativeThread;
 
 /**
  * Keeps a queue of SingleBlockInserter's to encode.
  * Encodes them.
  */
-public class BackgroundBlockEncoder implements PrioRunnable {
+public class BackgroundBlockEncoder implements Runnable {
 
 	// Minimize memory usage at the cost of having to encode from the end
 	private final ArrayList queue;
@@ -69,10 +67,6 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 			if(sbi.resultingURI != null) continue;
 			sbi.tryEncode();
 		}
-	}
-
-	public int getPriority() {
-		return NativeThread.MIN_PRIORITY;
 	}
 
 }

@@ -31,11 +31,10 @@ public class PersistentPutDir extends FCPMessage {
 	final String token;
 	final boolean started;
 	final int maxRetries;
-	final boolean wasDiskPut;
 	
 	public PersistentPutDir(String identifier, FreenetURI uri, int verbosity, 
 			short priorityClass, short persistenceType, boolean global,
-			String defaultName, HashMap manifestElements, String token, boolean started, int maxRetries, boolean wasDiskPut) {
+			String defaultName, HashMap manifestElements, String token, boolean started, int maxRetries) {
 		this.identifier = identifier;
 		this.uri = uri;
 		this.verbosity = verbosity;
@@ -47,7 +46,6 @@ public class PersistentPutDir extends FCPMessage {
 		this.token = token;
 		this.started = started;
 		this.maxRetries = maxRetries;
-		this.wasDiskPut = wasDiskPut;
 	}
 
 	public SimpleFieldSet getFieldSet() {
@@ -58,7 +56,6 @@ public class PersistentPutDir extends FCPMessage {
 		fs.putSingle("Persistence", ClientRequest.persistenceTypeString(persistenceType));
 		fs.put("PriorityClass", priorityClass);
 		fs.putSingle("Global", Boolean.toString(global));
-		fs.putSingle("PutDirType", wasDiskPut ? "disk" : "complex");
 		SimpleFieldSet files = new SimpleFieldSet(false);
 		// Flatten the hierarchy, it can be reconstructed on restarting.
 		// Storing it directly would be a PITA.

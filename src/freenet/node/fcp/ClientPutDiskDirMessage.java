@@ -54,7 +54,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 		// Create a directory listing of Buckets of data, mapped to ManifestElement's.
 		// Directories are sub-HashMap's.
 		HashMap buckets = makeBucketsByName(dirname, "");
-		handler.startClientPutDir(this, buckets, true);
+		handler.startClientPutDir(this, buckets);
 	}
 
     /**
