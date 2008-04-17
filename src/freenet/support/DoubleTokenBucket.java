@@ -41,6 +41,7 @@ public class DoubleTokenBucket extends TokenBucket {
 	// Major changes to forceGrab ! This is where it happens.
 	
 	public synchronized void forceGrab(long tokens) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		addTokens();
 		if(tokens <= 0) {
 			Logger.error(this, "forceGrab("+tokens+") - negative value!!", new Exception("error"));
