@@ -91,7 +91,7 @@ public class UserAlertManager implements Comparator {
 	}
 	
 	/**
-	 * Write the alerts as HTML to a StringBuffer
+	 * Write the alerts as HTML.
 	 */
 	public HTMLNode createAlerts() {
 		HTMLNode alertsNode = new HTMLNode("div");
