@@ -54,6 +54,28 @@ public class TokenBucket {
 	}
 	
 	/**
+	 * Either grab a bunch of tokens, or don't. Never block.
+	 * @param tokens The number of tokens to grab.
+	 * @return True if we could acquire the tokens.
+	 */
+	public synchronized long partialInstantGrab(long tokens) {
+		if(logMINOR)
+			Logger.minor(this, "instant grab: "+tokens+" current="+current+" max="+max);
+		addTokens();
+		if(logMINOR)
+			Logger.minor(this, "instant grab: "+tokens+" current="+current+" max="+max);
+		if(current > tokens) {
+			current -= tokens;
+			if(current > max) current = max;
+			return tokens;
+		} else {
+			tokens = current;
+			current = 0;
+			return tokens;
+		}
+	}
+	
+	/**
 	 * Remove tokens, without blocking, even if it causes the balance to go negative.
 	 * @param tokens The number of tokens to remove.
 	 */

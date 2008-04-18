@@ -885,7 +885,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 						synchronized(Node.this) {
 							outputBandwidthLimit = obwLimit;
 						}
-						outputThrottle.changeNanosAndBucketSizes((1000L * 1000L * 1000L) / obwLimit, obwLimit/2, (obwLimit * 2) / 5);
+						outputThrottle.changeNanosAndBucketSize((1000L * 1000L * 1000L) / obwLimit, obwLimit/2);
 						nodeStats.setOutputLimit(obwLimit);
 					}
 		});
@@ -898,7 +898,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 		// Add them at a rate determined by the obwLimit.
 		// Maximum forced bytes 80%, in other words, 20% of the bandwidth is reserved for 
 		// block transfers, so we will use that 20% for block transfers even if more than 80% of the limit is used for non-limited data (resends etc).
-		outputThrottle = new DoubleTokenBucket(obwLimit/2, (1000L*1000L*1000L) / obwLimit, obwLimit, (obwLimit * 2) / 5);
+		outputThrottle = new DoubleTokenBucket(obwLimit/2, (1000L*1000L*1000L) / obwLimit, obwLimit, 0.8);
 		
 		nodeConfig.register("inputBandwidthLimit", "-1", sortOrder++, false, true, "Node.inBWLimit", "Node.inBWLimitLong",	new IntCallback() {
 					public int get() {

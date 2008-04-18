@@ -1,101 +1,50 @@
 package freenet.support;
 
 /**
- * A TokenBucket variant which provides the following constraint:
- * Forced token grabs may not use more than M tokens out of the total N.
- * 
- * In other words:
- * A classic token bucket keeps a counter, "current", which must not exceed the max, to
- * which we add one token every few millis.
- * 
- * We also keep another counter, unblockableCount, with a separate maximum, 
- * unblockableMax. Whenever a token is added to current by the clock, one is removed 
- * from unblockableCount (but only if it is >0). Whenever an unblockable request to
- * remove tokens comes in, after we update unblockableCount, we calculate how many 
- * tokens we can add to unblockableCount without exceeding the maximum, and only allow
- * that many to be removed from counter.
+ * A TokenBucket where forceGrab() may only use up to some proportion of the total limit. Beyond that,
+ * we ignore it. So the last X% may be used by blocking grabs, even if the forceGrab() traffic is over
+ * the limit. This is implemented by using a secondary TokenBucket to track what is allowed.
  */
 public class DoubleTokenBucket extends TokenBucket {
 	
-	private long maxForced;
-	private long curForced;
 	private static boolean logMINOR;
+	private final TokenBucket grabbedBytesLimiter;
+	private double forceGrabLimit;
 	
-	/**
-	 * Create a DoubleTokenBucket.
-	 * @param max The maximum size of the bucket, in tokens.
-	 * @param nanosPerTick The number of nanoseconds between ticks.
-	 * 
-	 */
-	public DoubleTokenBucket(long max, long nanosPerTick, long initialValue, long maxForced) {
+	public DoubleTokenBucket(long max, long nanosPerTick, long initialValue, double forceGrabLimit) {
 		super(max, nanosPerTick, initialValue);
+		if(forceGrabLimit > 1.0) throw new IllegalArgumentException();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR)
-			Logger.minor(this, "Max: "+max+" nanosPerTick: "+nanosPerTick+" initialValue: "+initialValue+" maxForced: "+maxForced);
-		this.maxForced = maxForced;
-		this.curForced = 0;
+		grabbedBytesLimiter = new TokenBucket((long)(max * forceGrabLimit), (long)(nanosPerTick * forceGrabLimit), (long)(initialValue * forceGrabLimit));
 	}
-	
-	// instantGrab is unchanged.
-	
-	// Major changes to forceGrab ! This is where it happens.
 	
 	public synchronized void forceGrab(long tokens) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		addTokens();
-		if(tokens <= 0) {
-			Logger.error(this, "forceGrab("+tokens+") - negative value!!", new Exception("error"));
-			return;
+		long maxTokens = grabbedBytesLimiter.partialInstantGrab(tokens);
+		if(maxTokens < tokens) {
+			if(logMINOR) Logger.minor(this, "Limiting forceGrab of "+tokens+" to "+maxTokens);
 		}
-		long thisMax = maxForced - curForced;
-		if(tokens > thisMax) {
-			if(logMINOR) Logger.minor(this, "Limiting force-grab to "+thisMax+" tokens was "+tokens);
-			tokens = thisMax;
-		}
-		curForced += tokens;
-		current -= tokens;
-		if(curForced > maxForced) {
-			curForced = maxForced;
-		}
-		if(logMINOR) Logger.minor(this, "Force-Grabbed "+tokens+" current="+current+" forced="+curForced);
-	}
-	
-	// blockingGrab is unchanged
-	
-	public synchronized void changeSizeOfBuckets(long newMax, long newMaxForced) {
-		changeBucketSize(newMax);
-		this.maxForced = newMaxForced;
-		if(curForced > maxForced) curForced = maxForced;
-	}
-	
-	public synchronized void changeNanosAndBucketSizes(long nanos, long newMax, long newMaxForced) {
-		// FIXME maybe should be combined
-		changeSizeOfBuckets(newMax, newMaxForced);
-		changeNanosPerTick(nanos);
-	}
-	
-	public synchronized void addTokensNoClip() {
-		long add = tokensToAdd();
-		current += add;
-		curForced -= add;
-		if(curForced < 0) curForced = 0;
-		timeLastTick += add * nanosPerTick;
-		if(logMINOR) Logger.minor(this, "Added "+add+" tokens current="+current+" forced="+curForced);
+		super.forceGrab(maxTokens);
 	}
 
-	public synchronized void addTokens() {
-		if(logMINOR) Logger.minor(this, "current="+current+" forced="+curForced);
-		addTokensNoClip();
-		if(curForced > maxForced) curForced = maxForced;
-		if(current > max) current = max;
+	/**
+	 * Change the number of nanos per tick.
+	 * @param nanosPerTick The new number of nanos per tick.
+	 */
+	public synchronized void changeNanosPerTick(long nanosPerTick) {
+		super.changeNanosPerTick(nanosPerTick);
+		grabbedBytesLimiter.changeNanosPerTick((long)(nanosPerTick * forceGrabLimit));
 	}
 	
-	public synchronized long getSize() {
-		return max;
+	public synchronized void changeBucketSize(long newMax) {
+		super.changeBucketSize(newMax);
+		grabbedBytesLimiter.changeBucketSize((long)(newMax * forceGrabLimit));
 	}
-
-	protected synchronized long offset() {
-		return curForced;
+	
+	public synchronized void changeNanosAndBucketSize(long nanosPerTick, long newMax) {
+		super.changeNanosAndBucketSize(nanosPerTick, newMax);
+		grabbedBytesLimiter.changeNanosAndBucketSize((long)(nanosPerTick * forceGrabLimit),
+				(long)(newMax * forceGrabLimit));
 	}
 	
 }
