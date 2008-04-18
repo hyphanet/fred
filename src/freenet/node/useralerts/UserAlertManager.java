@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 
 import freenet.support.HTMLNode;
+import freenet.support.Logger;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 
@@ -116,11 +117,19 @@ public class UserAlertManager implements Comparator {
 	 * /alerts/[ anchor pointing to the real alert].
 	 */
 	public HTMLNode createAlertsShort(String title) {
-		HTMLNode boxNode = new HTMLNode("div", "class", "infobox infobox-alert infobox-summary-status-box");
+		UserAlert[] alerts = getAlerts();
+		short maxLevel = Short.MAX_VALUE;
+		for(int i=0;i<alerts.length;i++) {
+			short level = alerts[i].getPriorityClass();
+			if(level < maxLevel) maxLevel = level;
+		}
+		if(maxLevel == Short.MAX_VALUE) {
+			return new HTMLNode("#", "");
+		}
+		HTMLNode boxNode = new HTMLNode("div", "class", "infobox infobox-"+getAlertLevelName(maxLevel)+" infobox-alert infobox-summary-status-box");
 		boxNode.addChild("div", "class", "infobox-header infobox summary-status-header", title);
 		HTMLNode contentNode = boxNode.addChild("div", "class", "infobox-content infobox-summary-status-content");
 		HTMLNode alertsNode = contentNode.addChild("ul");
-		UserAlert[] alerts = getAlerts();
 		int totalNumber = 0;
 		for (int i = 0; i < alerts.length; i++) {
 			UserAlert alert = alerts[i];
@@ -148,17 +157,8 @@ public class UserAlertManager implements Comparator {
 	public HTMLNode renderAlert(UserAlert userAlert) {
 		HTMLNode userAlertNode = null;
 		short level = userAlert.getPriorityClass();
-		if (level <= UserAlert.CRITICAL_ERROR)
-			userAlertNode = new HTMLNode("div", "class", "infobox infobox-error");
-		else if (level <= UserAlert.ERROR)
-			userAlertNode = new HTMLNode("div", "class", "infobox infobox-alert");
-		else if (level <= UserAlert.WARNING)
-			userAlertNode = new HTMLNode("div", "class", "infobox infobox-warning");
-		else if (level <= UserAlert.MINOR)
-			userAlertNode = new HTMLNode("div", "class", "infobox infobox-information");
+		userAlertNode = new HTMLNode("div", "class", "infobox infobox-"+getAlertLevelName(level));
 
-		assert userAlertNode != null: "user alert has invalid priority!";
-		
 		userAlertNode.addChild("div", "class", "infobox-header", userAlert.getTitle());
 		HTMLNode alertContentNode = userAlertNode.addChild("div", "class", "infobox-content");
 		alertContentNode.addChild(userAlert.getHTMLText());
@@ -169,6 +169,21 @@ public class UserAlertManager implements Comparator {
 			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dismiss-user-alert", userAlert.dismissButtonText() });
 		}
 		return userAlertNode;
+	}
+
+	private String getAlertLevelName(short level) {
+		if (level <= UserAlert.CRITICAL_ERROR)
+			return "error";
+		else if (level <= UserAlert.ERROR)
+			return "alert";
+		else if (level <= UserAlert.WARNING)
+			return "warning";
+		else if (level <= UserAlert.MINOR)
+			return "minor";
+		else {
+			Logger.error(this, "Unknown alert level: "+level, new Exception("debug"));
+			return "error";
+		}
 	}
 
 	/**
