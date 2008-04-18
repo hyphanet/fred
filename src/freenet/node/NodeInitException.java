@@ -35,6 +35,7 @@ public class NodeInitException extends Exception {
 	public static final int EXIT_STORE_IOEXCEPTION = 2;
 	public static final int EXIT_STORE_FILE_NOT_FOUND = 1;
 	public static final int EXIT_NODE_UPPER_LIMIT = 1024;
+	public static final int EXIT_BROKE_WRAPPER_CONF = 28;
 	private static final long serialVersionUID = -1;
 	
 	NodeInitException(int exitCode, String msg) {
