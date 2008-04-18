@@ -589,6 +589,10 @@ public class Announcer {
 			return true;
 		}
 
+		public String anchor() {
+			return "announcer:"+hashCode();
+		}
+
 	}
 	
 	private String l10n(String key) {

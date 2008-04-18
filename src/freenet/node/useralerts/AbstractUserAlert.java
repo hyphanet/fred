@@ -139,5 +139,9 @@ public abstract class AbstractUserAlert implements UserAlert {
 	public Object getUserIdentifier() {
 		return userIdentifier;
 	}
+	
+	public String anchor() {
+		return Integer.toString(hashCode());
+	}
 
 }

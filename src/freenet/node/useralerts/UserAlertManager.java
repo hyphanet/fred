@@ -102,6 +102,7 @@ public class UserAlertManager implements Comparator {
 			if (!alert.isValid())
 				continue;
 			totalNumber++;
+			alertsNode.addChild("a", "name", alert.anchor());
 			alertsNode.addChild(renderAlert(alert));
 		}
 		if (totalNumber == 0) {

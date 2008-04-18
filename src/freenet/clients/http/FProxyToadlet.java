@@ -637,6 +637,9 @@ public final class FProxyToadlet extends Toadlet {
 		core.setFProxy(fproxy);
 		server.register(fproxy, "/", false, "FProxyToadlet.welcomeTitle", "FProxyToadlet.welcome", false, null);
 		
+		UserAlertsToadlet alerts = new UserAlertsToadlet(client, node, core);
+		server.register(alerts, "/status/", true, "FProxyToadlet.alertsTitle", "FProxyToadlet.alerts", true, null);
+		
 		PproxyToadlet pproxy = new PproxyToadlet(client, node, core);
 		server.register(pproxy, "/plugins/", true, "FProxyToadlet.pluginsTitle", "FProxyToadlet.plugins", true, null);
 		

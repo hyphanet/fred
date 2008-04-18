@@ -56,6 +56,11 @@ public interface UserAlert {
 	 * @return The user-specified identifier object
 	 */
 	public Object getUserIdentifier();
+
+	/**
+	 * @return A unique, short name for the alert. Can be simply hashCode(), not visible to the user.
+	 */
+	public String anchor();
 	
 	/** An error which prevents normal operation */
 	public final static short CRITICAL_ERROR = 0;
