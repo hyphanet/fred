@@ -112,6 +112,33 @@ public class UserAlertManager implements Comparator {
 	}
 
 	/**
+	 * Write each alert in uber-concise form as HTML, with a link to 
+	 * /alerts/[ anchor pointing to the real alert].
+	 */
+	public HTMLNode createAlertsShort(String title) {
+		HTMLNode boxNode = new HTMLNode("div", "class", "infobox infobox-alert infobox-summary-status-box");
+		boxNode.addChild("div", "class", "infobox-header infobox summary-status-header", title);
+		HTMLNode contentNode = boxNode.addChild("div", "class", "infobox-content infobox-summary-status-content");
+		HTMLNode alertsNode = contentNode.addChild("ul");
+		UserAlert[] alerts = getAlerts();
+		int totalNumber = 0;
+		for (int i = 0; i < alerts.length; i++) {
+			UserAlert alert = alerts[i];
+			if (!alert.isValid())
+				continue;
+			HTMLNode listItem = alertsNode.addChild("li");
+			HTMLNode linkToLongAlert = listItem.addChild("a", "href", "/alerts/#"+alert.anchor(), alert.getTitle());
+			//listItem.addChild("#", ": ");
+			//listItem.addChild(alert.getReallyShortHTMLText());
+			totalNumber++;
+		}
+		if (totalNumber == 0) {
+			return new HTMLNode("#", "");
+		}
+		return boxNode;
+	}
+	
+	/**
 	 * Renders the given alert and returns the rendered HTML node.
 	 * 
 	 * @param userAlert
