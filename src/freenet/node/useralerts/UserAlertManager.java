@@ -116,7 +116,7 @@ public class UserAlertManager implements Comparator {
 	 * Write each alert in uber-concise form as HTML, with a link to 
 	 * /alerts/[ anchor pointing to the real alert].
 	 */
-	public HTMLNode createAlertsShort(String title) {
+	public HTMLNode createAlertsShort(String title, boolean advancedMode) {
 		UserAlert[] alerts = getAlerts();
 		short maxLevel = Short.MAX_VALUE;
 		for(int i=0;i<alerts.length;i++) {
@@ -129,6 +129,8 @@ public class UserAlertManager implements Comparator {
 		HTMLNode boxNode = new HTMLNode("div", "class", "infobox infobox-"+getAlertLevelName(maxLevel)+" infobox-alert infobox-summary-status-box");
 		boxNode.addChild("div", "class", "infobox-header infobox summary-status-header", title);
 		HTMLNode contentNode = boxNode.addChild("div", "class", "infobox-content infobox-summary-status-content");
+		if(!advancedMode)
+			contentNode.addChild("p", "class", "click-for-more", l10n("clickForMore"));
 		HTMLNode alertsNode = contentNode.addChild("ul");
 		int totalNumber = 0;
 		for (int i = 0; i < alerts.length; i++) {
@@ -136,9 +138,7 @@ public class UserAlertManager implements Comparator {
 			if (!alert.isValid())
 				continue;
 			HTMLNode listItem = alertsNode.addChild("li");
-			HTMLNode linkToLongAlert = listItem.addChild("a", "href", "/alerts/#"+alert.anchor(), alert.getTitle());
-			//listItem.addChild("#", ": ");
-			//listItem.addChild(alert.getReallyShortHTMLText());
+			listItem.addChild("a", "href", "/alerts/#"+alert.anchor(), alert.getTitle());
 			totalNumber++;
 		}
 		if (totalNumber == 0) {
