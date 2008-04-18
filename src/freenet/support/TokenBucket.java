@@ -21,6 +21,10 @@ public class TokenBucket {
 	public TokenBucket(long max, long nanosPerTick, long initialValue) {
 		this.max = max;
 		this.current = initialValue;
+		if(current > max) {
+			Logger.error(this, "current ("+current+") > max ("+max+") in "+this);
+			current = max;
+		}
 		this.nanosPerTick = nanosPerTick;
 		long now = System.currentTimeMillis();
 		this.timeLastTick = now * (1000 * 1000);
