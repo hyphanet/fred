@@ -431,13 +431,8 @@ public abstract class Fields {
 	 * Long version of above Not believed to be secure in any sense of the word :)
 	 */
 	public static final long longHashCode(byte[] b) {
-		long h = 0;
-		for (int i = b.length - 1; i >= 0; --i) {
-			int x = b[i] & 0xff;
-			h ^= ((long) x) << ((i & 7) << 3);
-		}
-		return h;
-	}
+		return longHashCode(b, 0, 0);
+	}	
 
 	/**
 	 * Long version of above Not believed to be secure in any sense of the word :)
