@@ -40,7 +40,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		boolean noDismiss;
 		
 		public MyUserAlert(String title, String text, boolean suggestPortForward, short code, boolean noDismiss) {
-			super(false, title, text, null, code, true, L10n.getString("UserAlert.hide"), false, null);
+			super(false, title, text, null, null, code, true, L10n.getString("UserAlert.hide"), false, null);
 			this.suggestPortForward = suggestPortForward;
 			this.noDismiss = noDismiss;
 			portsNotForwarded = new int[] { };

@@ -1007,6 +1007,10 @@ public class DarknetPeerNode extends PeerNode {
 					return true;
 				}
 				
+				public String getShortText() {
+					return l10n("failedReceiveShort", new String[] { "filename", "node" }, new String[] { filename, getName() });
+				}
+				
 			};
 			node.clientCore.alerts.register(alert);
 		}
@@ -1103,6 +1107,9 @@ public class DarknetPeerNode extends PeerNode {
 
 				public boolean userCanDismiss() {
 					return true;
+				}
+				public String getShortText() {
+					return l10n("succeededReceiveShort", new String[] { "filename", "node" }, new String[] { filename, getName() });
 				}
 				
 			};
@@ -1215,6 +1222,9 @@ public class DarknetPeerNode extends PeerNode {
 
 				public boolean userCanDismiss() {
 					return false; // should accept or reject
+				}
+				public String getShortText() {
+					return l10n("offeredFileShort", new String[] { "filename", "node" }, new String[] { filename, getName() });
 				}
 			};
 			

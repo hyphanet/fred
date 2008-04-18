@@ -320,7 +320,7 @@ public class UpdateOverMandatoryManager {
 	class PeersSayKeyBlownAlert extends AbstractUserAlert {
 
 		public PeersSayKeyBlownAlert() {
-			super(false, null, null, null, UserAlert.CRITICAL_ERROR, true, null, false, null);
+			super(false, null, null, null, null, UserAlert.CRITICAL_ERROR, true, null, false, null);
 		}
 		
 		public HTMLNode getHTMLText() {
@@ -423,6 +423,10 @@ public class UpdateOverMandatoryManager {
 
 		public void isValid(boolean validity) {
 			// Do nothing
+		}
+
+		public String getShortText() {
+			return l10n("short");
 		}
 
 	}

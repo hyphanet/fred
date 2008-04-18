@@ -9,7 +9,7 @@ public class ExtOldAgeUserAlert extends AbstractUserAlert {
 	 * Creates a new alert.
 	 */
 	public ExtOldAgeUserAlert() {
-		super(true, null, null, null, UserAlert.ERROR, true, L10n.getString("UserAlert.hide"), true, null);
+		super(true, null, null, null, null, UserAlert.ERROR, true, L10n.getString("UserAlert.hide"), true, null);
 	}
 	
 	public String getTitle() {
@@ -26,6 +26,10 @@ public class ExtOldAgeUserAlert extends AbstractUserAlert {
 
 	public HTMLNode getHTMLText() {
 		return new HTMLNode("div", getText());
+	}
+
+	public String getShortText() {
+		return l10n("extTooOldShort");
 	}
 
 }

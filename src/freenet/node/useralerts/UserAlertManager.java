@@ -138,6 +138,7 @@ public class UserAlertManager implements Comparator {
 			if (!alert.isValid())
 				continue;
 			HTMLNode listItem = alertsNode.addChild("li");
+			//listItem.addChild("a", "href", "/alerts/#"+alert.anchor(), alert.getShortText());
 			listItem.addChild("a", "href", "/alerts/#"+alert.anchor(), alert.getTitle());
 			totalNumber++;
 		}

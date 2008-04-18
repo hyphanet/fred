@@ -21,7 +21,7 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 	private long receivedTime;
 
 	public N2NTMUserAlert(DarknetPeerNode sourcePeerNode, String source, String target, String message, int fileNumber, long composedTime, long  sentTime, long receivedTime) {
-		super(true, null, null, null, UserAlert.MINOR, true, null, true, null);
+		super(true, null, null, null, null, UserAlert.MINOR, true, null, true, null);
 		this.sourcePeerNode = sourcePeerNode;
 		this.sourceNodename = source;
 		this.messageText = message;
@@ -44,6 +44,10 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 			messageText;
 	}
 
+	public String getShortText() {
+		return l10n("headerShort", "from", sourceNodename);
+	}
+	
 	public HTMLNode getHTMLText() {
 		HTMLNode alertNode = new HTMLNode("div");
 		alertNode.addChild("p",
@@ -72,7 +76,12 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 		return L10n.getString("N2NTMUserAlert."+key, patterns, values);
 	}
 
+	private String l10n(String key, String pattern, String value) {
+		return L10n.getString("N2NTMUserAlert."+key, pattern, value);
+	}
+
 	public void onDismiss() {
 		sourcePeerNode.deleteExtraPeerDataFile(fileNumber);
 	}
+
 }

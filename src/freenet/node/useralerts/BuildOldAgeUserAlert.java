@@ -10,7 +10,7 @@ public class BuildOldAgeUserAlert extends AbstractUserAlert {
 	public int lastGoodVersion = 0;
 	
 	public BuildOldAgeUserAlert() {
-		super(false, null, null, null, UserAlert.ERROR, true, L10n.getString("UserAlert.hide"), false, null);
+		super(false, null, null, null, null, UserAlert.ERROR, true, L10n.getString("UserAlert.hide"), false, null);
 	}
 	
 	public String getTitle() {
@@ -40,6 +40,10 @@ public class BuildOldAgeUserAlert extends AbstractUserAlert {
 		if (lastGoodVersion == 0)
 			return false;
 		return super.isValid();
+	}
+	
+	public String getShortText() {
+		return l10n("tooOldShort", "lastgood", Integer.toString(lastGoodVersion));
 	}
 
 }

@@ -12,7 +12,7 @@ import freenet.support.HTMLNode;
 public class IPUndetectedUserAlert extends AbstractUserAlert {
 	
 	public IPUndetectedUserAlert(Node n) {
-		super(true, null, null, null, (short) 0, true, L10n.getString("UserAlert.hide"), false, null);
+		super(true, null, null, null, null, (short) 0, true, L10n.getString("UserAlert.hide"), false, null);
 		this.node = n;
 	}
 	
@@ -90,6 +90,13 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 			return UserAlert.WARNING;
 		else
 			return UserAlert.ERROR;
+	}
+
+	public String getShortText() {
+		if(node.ipDetector.isDetecting())
+			return l10n("detectingShort");
+		else
+			return l10n("unknownAddressShort");
 	}
 
 }

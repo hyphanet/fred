@@ -1767,7 +1767,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 			
 			if(spuriousOOMs) {
 				System.err.println("Please upgrade to at least sun jvm 1.4.2_13, 1.5.0_10 or 1.6 (recommended). This version is buggy and may cause spurious OutOfMemoryErrors.");
-				clientCore.alerts.register(new AbstractUserAlert(false, null, null, null, UserAlert.ERROR, true, null, false, null) {
+				clientCore.alerts.register(new AbstractUserAlert(false, null, null, null, null, UserAlert.ERROR, true, null, false, null) {
 
 					public HTMLNode getHTMLText() {
 						HTMLNode n = new HTMLNode("div");
@@ -1790,6 +1790,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 						// Ignore
 					}
 
+					public String getShortText() {
+						return l10n("buggyJVMShort", "version", System.getProperty("java.version"));
+					}
+
 				});
 			}
 		
@@ -1810,11 +1814,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 				}
 			}
 
-			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingSunVMTitle"), l10n("notUsingSunVM", new String[] { "vendor", "version" }, new String[] { jvmVendor, jvmVersion }), UserAlert.WARNING));
+			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingSunVMTitle"), l10n("notUsingSunVM", new String[] { "vendor", "version" }, new String[] { jvmVendor, jvmVersion }), l10n("notUsingSunVMShort"), UserAlert.WARNING));
 		}
 			
 		if(!isUsingWrapper()) {
-			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingWrapperTitle"), l10n("notUsingWrapper"), UserAlert.WARNING));
+			clientCore.alerts.register(new SimpleUserAlert(true, l10n("notUsingWrapperTitle"), l10n("notUsingWrapper"), l10n("notUsingWrapperShort"), UserAlert.WARNING));
 		}
 		
 	}
@@ -3266,7 +3270,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 	
 	public void onTooLowMTU(int minAdvertisedMTU, int minAcceptableMTU) {
 		if(alertMTUTooSmall == null) {
-			alertMTUTooSmall = new SimpleUserAlert(false, l10n("tooSmallMTU"), l10n("tooSmallMTULong", new String[] { "mtu", "minMTU" }, new String[] { Integer.toString(minAdvertisedMTU), Integer.toString(minAcceptableMTU) }), UserAlert.ERROR);
+			alertMTUTooSmall = new SimpleUserAlert(false, l10n("tooSmallMTU"), l10n("tooSmallMTULong", new String[] { "mtu", "minMTU" }, new String[] { Integer.toString(minAdvertisedMTU), Integer.toString(minAcceptableMTU) }), l10n("tooSmallMTUShort"), UserAlert.ERROR);
 		} else return;
 		clientCore.alerts.register(alertMTUTooSmall);
 	}

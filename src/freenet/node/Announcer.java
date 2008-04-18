@@ -274,7 +274,7 @@ public class Announcer {
 				Logger.error(this, "Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
 				System.err.println("Shutting down announcement as we are older than the current mandatory build and auto-update is disabled or waiting for user input.");
 				if(node.clientCore != null)
-					node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("announceDisabledTooOldTitle"), l10n("announceDisabledTooOld"), UserAlert.CRITICAL_ERROR));
+					node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("announceDisabledTooOldTitle"), l10n("announceDisabledTooOld"), l10n("announceDisabledTooOldShort"), UserAlert.CRITICAL_ERROR));
 				return true;
 			}
 				
@@ -591,6 +591,10 @@ public class Announcer {
 
 		public String anchor() {
 			return "announcer:"+hashCode();
+		}
+
+		public String getShortText() {
+			return l10n("announceAlertShort");
 		}
 
 	}

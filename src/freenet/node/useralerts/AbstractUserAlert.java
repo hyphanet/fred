@@ -31,6 +31,7 @@ public abstract class AbstractUserAlert implements UserAlert {
 	private final boolean userCanDismiss;
 	private final String title;
 	private final String text;
+	private final String shortText;
 	private final HTMLNode htmlText;
 	private final short priorityClass;
 	protected boolean valid;
@@ -48,12 +49,14 @@ public abstract class AbstractUserAlert implements UserAlert {
 		this.dismissButtonText = null;
 		this.shouldUnregisterOnDismiss = false;
 		this.userIdentifier = null;
+		this.shortText = null;
 	}
 
-	protected AbstractUserAlert(boolean userCanDismiss, String title, String text, HTMLNode htmlText, short priorityClass, boolean valid, String dismissButtonText, boolean shouldUnregisterOnDismiss, Object userIdentifier) {
+	protected AbstractUserAlert(boolean userCanDismiss, String title, String text, String shortText, HTMLNode htmlText, short priorityClass, boolean valid, String dismissButtonText, boolean shouldUnregisterOnDismiss, Object userIdentifier) {
 		this.userCanDismiss = userCanDismiss;
 		this.title = title;
 		this.text = text;
+		this.shortText = shortText;
 		this.htmlText = htmlText;
 		this.priorityClass = priorityClass;
 		this.valid = valid;
@@ -81,6 +84,10 @@ public abstract class AbstractUserAlert implements UserAlert {
 	 */
 	public String getText() {
 		return text;
+	}
+	
+	public String getShortText() {
+		return shortText;
 	}
 
 	/**

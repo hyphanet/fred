@@ -66,7 +66,7 @@ public class BookmarkItem extends Bookmark {
     private class BookmarkUpdatedUserAlert extends AbstractUserAlert {
 
         public BookmarkUpdatedUserAlert() {
-            super(true, null, null, null, UserAlert.MINOR, false, null, true, null);
+            super(true, null, null, null, null, UserAlert.MINOR, false, null, true, null);
         }
 
         public String getTitle() {
@@ -105,6 +105,10 @@ public class BookmarkItem extends Bookmark {
         public void onDismiss() {
             disableBookmark();
         }
+
+		public String getShortText() {
+			return l10n("bookmarkUpdatedShort", "name", name);
+		}
     }
 
     private synchronized void disableBookmark() {

@@ -1213,7 +1213,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					new String[] { "link", "/link", "origlink", "/origlink", "filename", "size" },
 					new String[] { "<a href=\"/queue/"+uri.toACIIString()+"\">", "</a>", "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size) } );
 			UserAlert alert = 
-			new SimpleHTMLUserAlert(true, title, text, UserAlert.MINOR) {
+			new SimpleHTMLUserAlert(true, title, title, text, UserAlert.MINOR) {
 				public void onDismiss() {
 					synchronized(completedRequestIdentifiers) {
 						completedRequestIdentifiers.remove(identifier);
@@ -1238,7 +1238,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					new String[] { "link", "/link", "filename", "size" },
 					new String[] { "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size) } );
 			UserAlert alert = 
-			new SimpleHTMLUserAlert(true, title, text, UserAlert.MINOR) {
+			new SimpleHTMLUserAlert(true, title, title, text, UserAlert.MINOR) {
 				public void onDismiss() {
 					synchronized(completedRequestIdentifiers) {
 						completedRequestIdentifiers.remove(identifier);
@@ -1264,7 +1264,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					new String[] { "link", "/link", "filename", "size", "files" },
 					new String[] { "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size), Integer.toString(files) } );
 			UserAlert alert = 
-			new SimpleHTMLUserAlert(true, title, text, UserAlert.MINOR) {
+			new SimpleHTMLUserAlert(true, title, title, text, UserAlert.MINOR) {
 				public void onDismiss() {
 					synchronized(completedRequestIdentifiers) {
 						completedRequestIdentifiers.remove(identifier);

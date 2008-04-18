@@ -506,7 +506,7 @@ public class NodeIPDetector {
 		if(ipDetectorManager != null && ipDetectorManager.isEmpty()) {
 			if(maybeSymmetricAlert == null) {
 				maybeSymmetricAlert = new SimpleUserAlert(true, l10n("maybeSymmetricTitle"), 
-						l10n("maybeSymmetric"), UserAlert.ERROR);
+						l10n("maybeSymmetric"), l10n("maybeSymmetricShort"), UserAlert.ERROR);
 			}
 			if(node.clientCore != null && node.clientCore.alerts != null)
 				node.clientCore.alerts.register(maybeSymmetricAlert);

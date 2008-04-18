@@ -13,7 +13,7 @@ public class MeaningfulNodeNameUserAlert extends AbstractUserAlert {
 	private final Node node;
 
 	public MeaningfulNodeNameUserAlert(Node n) {
-		super(true, null, null, null, UserAlert.WARNING, true, L10n.getString("UserAlert.hide"), false, null);
+		super(true, null, null, null, null, UserAlert.WARNING, true, L10n.getString("UserAlert.hide"), false, null);
 		this.node = n;
 	}
 	
@@ -27,6 +27,10 @@ public class MeaningfulNodeNameUserAlert extends AbstractUserAlert {
 
 	public String getText() {
 		return l10n("noNodeNick");
+	}
+	
+	public String getShortText() {
+		return l10n("noNodeNickShort");
 	}
 
 	public HTMLNode getHTMLText() {

@@ -558,10 +558,10 @@ public class NodeUpdateManager {
 			return false;
 		} catch (UpdateCatastropheException e) {
 			failUpdate(e.getMessage());
-			node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("updateCatastropheTitle"), e.getMessage(), UserAlert.CRITICAL_ERROR));
+			node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("updateCatastropheTitle"), e.getMessage(), l10n("updateCatastropheTitle"), UserAlert.CRITICAL_ERROR));
 			return false;
 		} catch (UpdaterParserException e) {
-			node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("updateFailedTitle"), e.getMessage(), UserAlert.CRITICAL_ERROR));
+			node.clientCore.alerts.register(new SimpleUserAlert(false, l10n("updateFailedTitle"), e.getMessage(), l10n("updateFailedShort", "reason", e.getMessage()), UserAlert.CRITICAL_ERROR));
 			return false;
 		}
 		
@@ -586,7 +586,7 @@ public class NodeUpdateManager {
 		Logger.error(this, "Update failed: "+reason);
 		System.err.println("Update failed: "+reason);
 		this.killUpdateAlerts();
-		node.clientCore.alerts.register(new SimpleUserAlert(true, l10n("updateFailedTitle"), l10n("updateFailed", "reason", reason), UserAlert.ERROR));
+		node.clientCore.alerts.register(new SimpleUserAlert(true, l10n("updateFailedTitle"), l10n("updateFailed", "reason", reason), l10n("updateFailedShort", "reason", reason), UserAlert.ERROR));
 	}
 
 	private String l10n(String key) {

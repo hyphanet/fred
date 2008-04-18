@@ -13,7 +13,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 	private final NodeUpdateManager updater;
 
 	public UpdatedVersionAvailableUserAlert(NodeUpdateManager updater){
-		super(false, null, null, null, (short) 0, false, L10n.getString("UserAlert.hide"), false, null);
+		super(false, null, null, null, null, (short) 0, false, L10n.getString("UserAlert.hide"), false, null);
 		this.updater = updater;
 	}
 	
@@ -48,6 +48,18 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 		}
 		
 		return sb.toString();
+	}
+	
+	public String getShortText() {
+		if(!updater.isArmed()) {
+			if(updater.canUpdateNow()) {
+				return l10n("shortReadyNotArmed");
+			} else {
+				return l10n("shortNotReadyNotArmed");
+			}
+		} else {
+			return l10n("shortArmed");
+		}
 	}
 
 	private static class UpdateThingy {

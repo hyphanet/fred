@@ -19,7 +19,7 @@ public class ClockProblemDetectedUserAlert extends AbstractUserAlert {
 	 * 
 	 */
 	public ClockProblemDetectedUserAlert() {
-		super(false, null, null, null, UserAlert.CRITICAL_ERROR, true, null, false, null);
+		super(false, null, null, null, null, UserAlert.CRITICAL_ERROR, true, null, false, null);
 	}
 
 	public String getTitle() {
@@ -32,6 +32,10 @@ public class ClockProblemDetectedUserAlert extends AbstractUserAlert {
 
 	public String getText() {
 		return l10n("text");
+	}
+	
+	public String getShortText() {
+		return l10n("shortText");
 	}
 
 	public HTMLNode getHTMLText() {

@@ -12,7 +12,7 @@ import freenet.support.HTMLNode;
 public class InvalidAddressOverrideUserAlert extends AbstractUserAlert {
 	
 	public InvalidAddressOverrideUserAlert(Node n) {
-		super(false, null, null, null, (short) 0, true, null, false, null);
+		super(false, null, null, null, null, (short) 0, true, null, false, null);
 		this.node = n;
 	}
 	
@@ -51,6 +51,10 @@ public class InvalidAddressOverrideUserAlert extends AbstractUserAlert {
 
 	public short getPriorityClass() {
 		return UserAlert.ERROR;
+	}
+
+	public String getShortText() {
+		return l10n("unknownAddressShort");
 	}
 
 }

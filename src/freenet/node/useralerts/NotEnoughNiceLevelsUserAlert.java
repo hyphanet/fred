@@ -16,7 +16,7 @@ import freenet.support.io.NativeThread;
  */
 public class NotEnoughNiceLevelsUserAlert extends AbstractUserAlert {
 	public NotEnoughNiceLevelsUserAlert() {
-		super(true, null, null, null, UserAlert.WARNING, true, L10n.getString("UserAlert.hide"), true, null);
+		super(true, null, null, null, null, UserAlert.WARNING, true, L10n.getString("UserAlert.hide"), true, null);
 	}
 	
 	public String getTitle() {
@@ -30,6 +30,10 @@ public class NotEnoughNiceLevelsUserAlert extends AbstractUserAlert {
 				String.valueOf(NativeThread.NATIVE_PRIORITY_RANGE),
 				String.valueOf(NativeThread.ENOUGH_NICE_LEVELS) 
 			});
+	}
+	
+	public String getShortText() {
+		return L10n.getString("NotEnoughNiceLevelsUserAlert.short");
 	}
 
 	public HTMLNode getHTMLText() {

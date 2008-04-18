@@ -52,7 +52,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	public static final long MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD = ((long) 2)*7*24*60*60*1000;  // 2 weeks
 	
 	public PeerManagerUserAlert(NodeStats n) {
-		super(false, null, null, null, (short) 0, true, L10n.getString("UserAlert.hide"), false, null);
+		super(false, null, null, null, null, (short) 0, true, L10n.getString("UserAlert.hide"), false, null);
 		this.n = n;
 	}
 	

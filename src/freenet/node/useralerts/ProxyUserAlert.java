@@ -77,4 +77,8 @@ public class ProxyUserAlert implements UserAlert {
 		return "anchor:"+Integer.toString(hashCode());
 	}
 
+//	public String getShortText() {
+//		return alert.getShortText();
+//	}
+
 }
