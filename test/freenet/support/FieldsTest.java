@@ -4,6 +4,11 @@
 
 package freenet.support;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.omg.CORBA.LongHolder;
+
 import junit.framework.TestCase;
 
 /**
@@ -220,4 +225,19 @@ public class FieldsTest extends TestCase {
 		
 		assertEquals(0, Fields.hashCode(input));
 	}
+	
+	public void testLongHashcode() {
+		
+		byte[] b1 = new byte[] { 1, 1, 2, 2, 3, 3 };
+		byte[] b2 = new byte[] { 2, 2, 3, 3, 4, 4 };
+		byte[] b3 = new byte[] { 1, 1, 2, 2, 3, 3 };
+		
+		Long l1 = new Long(Fields.longHashCode(b1));
+		Long l2 = new Long(Fields.longHashCode(b2));
+		Long l3 = new Long(Fields.longHashCode(b3));
+
+		assertFalse(l1.equals(l2));
+		assertFalse(l2.equals(l3));
+		assertTrue(l3.equals(l1)); // should be same due to Fields.longHashcode
+	}	
 }

@@ -431,7 +431,7 @@ public abstract class Fields {
 	 * Long version of above Not believed to be secure in any sense of the word :)
 	 */
 	public static final long longHashCode(byte[] b) {
-		return longHashCode(b, 0, 0);
+		return longHashCode(b, 0, b.length);
 	}	
 
 	/**
