@@ -894,6 +894,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 		if(obwLimit <= 0)
 			throw new NodeInitException(NodeInitException.EXIT_BAD_BWLIMIT, "Invalid outputBandwidthLimit");
 		outputBandwidthLimit = obwLimit;
+		// Bucket size of 0.5 seconds' worth of bytes.
+		// Add them at a rate determined by the obwLimit.
+		// Maximum forced bytes 80%, in other words, 20% of the bandwidth is reserved for 
+		// block transfers, so we will use that 20% for block transfers even if more than 80% of the limit is used for non-limited data (resends etc).
 		outputThrottle = new DoubleTokenBucket(obwLimit/2, (1000L*1000L*1000L) / obwLimit, obwLimit, (obwLimit * 2) / 5);
 		
 		nodeConfig.register("inputBandwidthLimit", "-1", sortOrder++, false, true, "Node.inBWLimit", "Node.inBWLimitLong",	new IntCallback() {
