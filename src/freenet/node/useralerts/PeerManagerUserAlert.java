@@ -86,6 +86,10 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		else throw new IllegalArgumentException("Not valid");
 	}
 	
+	public String getShortText() {
+		return getTitle();
+	}
+	
 	private String l10n(String key, String pattern, String value) {
 		return L10n.getString("PeerManagerUserAlert."+key, pattern, value);
 	}

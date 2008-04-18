@@ -28,11 +28,11 @@ public interface UserAlert {
 	 */
 	public HTMLNode getHTMLText();
 	
-//	/**
-//	 * *Really* concise text of alert. Should be comfortably under a line even when translated
-//	 * into a verbose language. Will link to the full details.
-//	 */
-//	public String getShortText();
+	/**
+	 * *Really* concise text of alert. Should be comfortably under a line even when translated
+	 * into a verbose language. Will link to the full details.
+	 */
+	public String getShortText();
 	
 	/**
 	 * Priority class
