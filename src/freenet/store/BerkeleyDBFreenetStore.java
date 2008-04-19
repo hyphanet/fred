@@ -1272,7 +1272,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				
 				long lru = getMinRecentlyUsed(t) - 1;
 				
-				byte[] randomKey = new byte[fullKey.length];
+				byte[] randomKey = new byte[keyLength];
 				random.nextBytes(randomKey);
 				
 				storeBlock = new StoreBlock(storeBlock.offset, lru);
