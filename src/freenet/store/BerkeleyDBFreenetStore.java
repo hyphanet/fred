@@ -1198,6 +1198,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 					storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
 					try {
 						keysDB.put(t,routingkeyDBE,blockDBE);
+						if(fullKey == null)
+							fullKey = block.getFullKey();
 						synchronized(storeRAF) {
 							if(keysRAF != null) {
 								keysRAF.seek(storeBlock.offset * keyLength);
