@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
+import freenet.clients.http.filter.GenericReadFilterCallback;
 import freenet.io.AddressTracker;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
@@ -53,7 +54,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 
 		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
-			String url = HTMLEncoder.encode(l10n("portForwardHelpURL"));
+			String url = GenericReadFilterCallback.escapeURL(HTMLEncoder.encode(l10n("portForwardHelpURL")));
 			if(portsNotForwarded.length == 1) {
 				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.forwardPort", 
 						new String[] { "port", "link", "/link" }, 

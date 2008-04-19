@@ -281,5 +281,9 @@ public class GenericReadFilterCallback implements FilterCallback {
 		// Otherwise disallow.
 		return null;
 	}
+
+	public static String escapeURL(String uri) {
+		return "/?" + magicHTTPEscapeString + '=' + uri;
+	}
 	
 }
