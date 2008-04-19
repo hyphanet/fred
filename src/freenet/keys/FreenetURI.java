@@ -200,7 +200,7 @@ public class FreenetURI implements Cloneable {
 		String[] metaStr,
 		byte[] routingKey,
 		byte[] cryptoKey, byte[] extra2) {
-		this.keyType = keyType.trim().toUpperCase();
+		this.keyType = keyType.trim().toUpperCase().intern();
 		this.docName = docName;
 		this.metaStr = metaStr;
 		this.routingKey = routingKey;
@@ -216,7 +216,7 @@ public class FreenetURI implements Cloneable {
 		byte[] routingKey,
 		byte[] cryptoKey, byte[] extra2,
 		long suggestedEdition) {
-		this.keyType = keyType.trim().toUpperCase();
+		this.keyType = keyType.trim().toUpperCase().intern();
 		this.docName = docName;
 		this.metaStr = metaStr;
 		this.routingKey = routingKey;
@@ -255,7 +255,7 @@ public class FreenetURI implements Cloneable {
 		if(atchar == -1)
 			throw new MalformedURLException("There is no @ in that URI! (" + URI + ')');
 		else
-			keyType = URI.substring(0, atchar).toUpperCase().trim();
+			keyType = URI.substring(0, atchar).toUpperCase().trim().intern();
 		URI = URI.substring(atchar + 1);
 
 		boolean validKeyType = false;
@@ -321,7 +321,7 @@ public class FreenetURI implements Cloneable {
 		if(!sv.isEmpty()) {
 			metaStr = new String[sv.size()];
 			for(int i = 0; i < metaStr.length; i++) {
-				metaStr[i] = (String) sv.elementAt(metaStr.length - 1 - i);
+				metaStr[i] = ((String) sv.elementAt(metaStr.length - 1 - i)).intern();
 				if(metaStr[i] == null)
 					throw new NullPointerException();
 			}
@@ -473,7 +473,7 @@ public class FreenetURI implements Cloneable {
 		else {
 			newMetaStr = new String[metaStr.length + 1];
 			System.arraycopy(metaStr, 0, newMetaStr, 0, metaStr.length);
-			newMetaStr[metaStr.length] = name;
+			newMetaStr[metaStr.length] = name.intern();
 		}
 		return setMetaString(newMetaStr);
 	}
