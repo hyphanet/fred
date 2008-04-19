@@ -80,6 +80,12 @@ public class UserAlertManager implements Comparator {
 		short prio0 = a0.getPriorityClass();
 		short prio1 = a1.getPriorityClass();
 		if(prio0 - prio1 == 0) {
+			// First go by class
+			int classHash0 = a0.getClass().hashCode();
+			int classHash1 = a1.getClass().hashCode();
+			if(classHash0 > classHash1) return 1;
+			else if(classHash0 < classHash1) return -1;
+			// Then by object hashCode
 			int hash0 = a0.hashCode();
 			int hash1 = a1.hashCode();
 			if(hash0 > hash1) return 1;
