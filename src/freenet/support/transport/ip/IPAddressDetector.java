@@ -122,8 +122,8 @@ public class IPAddressDetector implements Runnable {
 		InetAddress[] oldAddressList = lastAddressList;
 		onGetAddresses(addrs);
 		lastDetectedTime = System.currentTimeMillis();
-		if(oldAddressList == lastAddressList || oldAddressList == null && lastAddressList != null ||
-				oldAddressList != null && lastAddressList != null && !Arrays.equals(oldAddressList, lastAddressList)) {
+		if(oldAddressList != lastAddressList && (oldAddressList == null && lastAddressList != null ||
+				oldAddressList != null && lastAddressList != null && !Arrays.equals(oldAddressList, lastAddressList))) {
 			// Something changed.
 			// Yes I know it could just have changed the order, but this is unlikely hopefully. FIXME.
 			detector.redetectAddress();
