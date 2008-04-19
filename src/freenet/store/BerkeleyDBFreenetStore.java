@@ -1257,7 +1257,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				}
 				synchronized(storeRAF) {
 					// Clear the key in the keys file.
-					byte[] buf = new byte[fullKey.length];
+					byte[] buf = new byte[keyLength];
 					for(int i=0;i<buf.length;i++) buf[i] = 0; // FIXME unnecessary?
 					if(keysRAF != null) {
 						keysRAF.seek(storeBlock.offset * keyLength);
