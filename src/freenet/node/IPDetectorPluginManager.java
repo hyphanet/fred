@@ -150,12 +150,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 
 		final boolean suggestPortForward;
 		private int[] portsNotForwarded;
-		boolean noDismiss;
 		
-		public MyUserAlert(String title, String text, boolean suggestPortForward, short code, boolean noDismiss) {
+		public MyUserAlert(String title, String text, boolean suggestPortForward, short code) {
 			super(false, title, text, title, null, code, true, L10n.getString("UserAlert.hide"), false, null);
 			this.suggestPortForward = suggestPortForward;
-			this.noDismiss = noDismiss;
 			portsNotForwarded = new int[] { };
 		}
 
@@ -204,16 +202,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		}
 		
 		public boolean userCanDismiss() {
-			if(noDismiss) return false;
-			// If no ports need forwarding, make it dismissable immediately.
-			if(!suggestPortForward) return true;
-			// Prevent NPE.
-			if(portsNotForwarded == null) return false;
-			// If any port definitely does need forwarding, make it non-dismissable.
-			for(int i=0;i<portsNotForwarded.length;i++)
-				if(portsNotForwarded[i] < 0) return false; // Port definitely needs to be forwarded
-			// Otherwise it is dismissable.
-			return true;
+			return false;
 		}
 
 	}
@@ -241,13 +230,13 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		this.node = node;
 		this.detector = detector;
 		noConnectionAlert = new MyUserAlert( l10n("noConnectivityTitle"), l10n("noConnectivity"), 
-				true, UserAlert.ERROR, true);
+				true, UserAlert.ERROR);
 		symmetricAlert = new MyUserAlert(l10n("symmetricTitle"), l10n("symmetric"), 
-				true, UserAlert.ERROR, false);
+				true, UserAlert.ERROR);
 		portRestrictedAlert = new MyUserAlert(l10n("portRestrictedTitle"), l10n("portRestricted"), 
-				true, UserAlert.WARNING, false);
+				true, UserAlert.WARNING);
 		restrictedAlert = new MyUserAlert(l10n("restrictedTitle"), l10n("restricted"), 
-				false, UserAlert.MINOR, false);
+				false, UserAlert.MINOR);
 		portForwardAlert = new PortForwardAlert();
 	}
 
