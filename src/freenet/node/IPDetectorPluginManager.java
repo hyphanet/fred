@@ -136,11 +136,15 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				false, UserAlert.MINOR, false);
 	}
 
+	/**
+	 * Use MAYBE_PORT_FORWARDED as the threshold, because most people either are behind a NAT with
+	 * a low timeout (e.g. a home router), know what they're doing, or can't forward ports anyway.
+	 */
 	public int[] getUDPPortsNotForwarded() {
 		OpennetManager om = node.getOpennet();
 		int darknetStatus = node.darknetCrypto.getDetectedConnectivityStatus();
 		int opennetStatus = om == null ? AddressTracker.DONT_KNOW : om.crypto.getDetectedConnectivityStatus();
-		if(om == null || opennetStatus == AddressTracker.DEFINITELY_PORT_FORWARDED) {
+		if(om == null || opennetStatus > AddressTracker.DONT_KNOW) {
 			if(darknetStatus > AddressTracker.DONT_KNOW) {
 				return new int[] { };
 			} else {
