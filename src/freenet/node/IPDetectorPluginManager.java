@@ -55,15 +55,18 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			HTMLNode div = new HTMLNode("div");
 			String url = HTMLEncoder.encode(l10n("portForwardHelpURL"));
 			if(portsNotForwarded.length == 1) {
-				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.forwardPortShort", 
+				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.forwardPort", 
 						new String[] { "port", "link", "/link" }, 
 						new String[] { Integer.toString(portsNotForwarded[0]), "<a href=\""+url+"\">", "</a>" });
 			} else if(portsNotForwarded.length == 2) {
-				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.forwardTwoPortsShort", 
+				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.forwardTwoPorts", 
 						new String[] { "port1", "port2", "link", "/link" }, 
 						new String[] { Integer.toString(portsNotForwarded[0]), Integer.toString(portsNotForwarded[1]), "<a href=\""+url+"\">", "</a>" });
 			} else {
 				Logger.error(this, "Unknown number of ports to forward: "+portsNotForwarded.length);
+			}
+			if(innerGetPriorityClass() == UserAlert.ERROR) {
+				div.addChild("#", " " + l10n("symmetricPS"));
 			}
 			return div;
 		}
