@@ -58,8 +58,7 @@ public class IPAddressDetector implements Runnable {
 	 * @return Detected ip address
 	 */
 	public InetAddress[] getAddress(long recheckTime) {
-		if(System.currentTimeMillis() > (lastDetectedTime + recheckTime)
-				|| lastAddressList == null)
+		if(System.currentTimeMillis() > (lastDetectedTime + recheckTime))
 			checkpoint();
 		return lastAddressList == null ? new InetAddress[0] : lastAddressList;
 	}
