@@ -12,17 +12,23 @@ public class ProxyUserAlert implements UserAlert {
 
 	private UserAlert alert;
 	private final UserAlertManager uam;
+	private final boolean autoRegister;
 	
-	public ProxyUserAlert(UserAlertManager uam) {
+	public ProxyUserAlert(UserAlertManager uam, boolean autoRegister) {
 		this.uam = uam;
+		this.autoRegister = autoRegister;
 	}
 	
 	public void setAlert(UserAlert a) {
-		if(alert == null && a != null)
-			uam.register(this);
+		if(autoRegister) {
+			if(alert == null && a != null)
+				uam.register(this);
+		}
 		alert = a;
-		if(a == null)
-			uam.unregister(this);
+		if(autoRegister) {
+			if(a == null)
+				uam.unregister(this);
+		}
 	}
 	
 	public boolean userCanDismiss() {
