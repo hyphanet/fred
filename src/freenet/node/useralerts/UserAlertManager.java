@@ -137,7 +137,7 @@ public class UserAlertManager implements Comparator {
 		HTMLNode contentNode = boxNode.addChild("div", "class", "infobox-content infobox-summary-status-content");
 		if(!advancedMode)
 			contentNode.addChild("p", "class", "click-for-more", l10n("clickForMore"));
-		HTMLNode alertsNode = contentNode.addChild("ul");
+		HTMLNode alertsNode = contentNode.addChild("ul", "class", "alert-summary");
 		int totalNumber = 0;
 		for (int i = 0; i < alerts.length; i++) {
 			UserAlert alert = alerts[i];
