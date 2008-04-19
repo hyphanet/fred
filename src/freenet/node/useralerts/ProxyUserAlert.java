@@ -20,13 +20,14 @@ public class ProxyUserAlert implements UserAlert {
 	}
 	
 	public void setAlert(UserAlert a) {
-		if(autoRegister) {
-			if(alert == null && a != null)
-				uam.register(this);
-		}
+		UserAlert old = alert;
 		alert = a;
 		if(autoRegister) {
-			if(a == null)
+			if(old == null && alert != null)
+				uam.register(this);
+		}
+		if(autoRegister) {
+			if(alert == null)
 				uam.unregister(this);
 		}
 	}
