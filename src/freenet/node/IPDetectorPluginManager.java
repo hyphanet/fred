@@ -80,10 +80,13 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		}
 
 		public String getShortText() {
+			String prefix = innerGetPriorityClass() == UserAlert.ERROR ?
+					l10n("seriousConnectionProblems") : l10n("connectionProblems");
+			prefix += " ";
 			if(portsNotForwarded.length == 1) {
-				return l10n("forwardPortShort", "port", Integer.toString(portsNotForwarded[0]));
+				return prefix + l10n("forwardPortShort", "port", Integer.toString(portsNotForwarded[0]));
 			} else if(portsNotForwarded.length == 2) {
-				return l10n("forwardTwoPortsShort", new String[] { "port1", "port2" },
+				return prefix + l10n("forwardTwoPortsShort", new String[] { "port1", "port2" },
 						new String[] { Integer.toString(portsNotForwarded[0]), Integer.toString(portsNotForwarded[1]) });
 			} else {
 				Logger.error(this, "Unknown number of ports to forward: "+portsNotForwarded.length);
