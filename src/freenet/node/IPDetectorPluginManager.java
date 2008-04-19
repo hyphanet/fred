@@ -141,13 +141,13 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		int darknetStatus = node.darknetCrypto.getDetectedConnectivityStatus();
 		int opennetStatus = om == null ? AddressTracker.DONT_KNOW : om.crypto.getDetectedConnectivityStatus();
 		if(om == null || opennetStatus == AddressTracker.DEFINITELY_PORT_FORWARDED) {
-			if(darknetStatus == AddressTracker.DEFINITELY_PORT_FORWARDED) {
+			if(darknetStatus > AddressTracker.DONT_KNOW) {
 				return new int[] { };
 			} else {
 				return new int[] { (darknetStatus < AddressTracker.DONT_KNOW ? -1 : 1) * node.getDarknetPortNumber() };
 			}
 		} else {
-			if(darknetStatus == AddressTracker.DEFINITELY_PORT_FORWARDED) {
+			if(darknetStatus > AddressTracker.DONT_KNOW) {
 				return new int[] { (opennetStatus < AddressTracker.DONT_KNOW ? -1 : 1 ) * om.crypto.portNumber };
 			} else {
 				return new int[] { (darknetStatus < AddressTracker.DONT_KNOW ? -1 : 1 ) * node.getDarknetPortNumber(), 
