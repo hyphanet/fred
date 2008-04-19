@@ -53,7 +53,6 @@ a:hover {
 
 .infobox-success .infobox-header {
 	background-color: #afa;
-	color: #040;
 }
 
 .infobox-success .infobox-content {
@@ -62,15 +61,10 @@ a:hover {
 
 .infobox-error .infobox-header {
 	background-color: #f00;
-	color: #ff0;
 }
 
 .infobox-error .infobox-content, .infobox-alert .infobox-content {
 	background-color: #fcc;
-}
-
-.infobox-alert .infobox-header {
-	color: #f00;
 }
 
 #topbar, #navbar, .infobox-content, ul.config {
