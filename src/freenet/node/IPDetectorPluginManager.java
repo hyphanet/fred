@@ -22,6 +22,7 @@ import freenet.pluginmanager.ForwardPortStatus;
 import freenet.pluginmanager.FredPlugin;
 import freenet.pluginmanager.FredPluginIPDetector;
 import freenet.pluginmanager.FredPluginPortForward;
+import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -32,6 +33,118 @@ import freenet.support.transport.ip.IPUtil;
  * Normally there would only be one, but sometimes there may be more than one.
  */
 public class IPDetectorPluginManager implements ForwardPortCallback {
+	
+	public class PortForwardAlert implements UserAlert {
+
+		private int[] portsNotForwarded;
+		
+		private short maxPriorityShown;
+		private int maxPortsLength;
+		
+		private boolean valid;
+		
+		public String anchor() {
+			return "port-forward:"+super.hashCode();
+		}
+
+		public String dismissButtonText() {
+			return L10n.getString("UserAlert.hide");
+		}
+
+		public HTMLNode getHTMLText() {
+			HTMLNode div = new HTMLNode("div");
+			String url = HTMLEncoder.encode(l10n("portForwardHelpURL"));
+			if(portsNotForwarded.length == 1) {
+				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.forwardPortShort", 
+						new String[] { "port", "link", "/link" }, 
+						new String[] { Integer.toString(portsNotForwarded[0]), "<a href=\""+url+"\">", "</a>" });
+			} else if(portsNotForwarded.length == 2) {
+				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.forwardTwoPortsShort", 
+						new String[] { "port1", "port2", "link", "/link" }, 
+						new String[] { Integer.toString(portsNotForwarded[0]), Integer.toString(portsNotForwarded[1]), "<a href=\""+url+"\">", "</a>" });
+			} else {
+				Logger.error(this, "Unknown number of ports to forward: "+portsNotForwarded.length);
+			}
+			return div;
+		}
+
+		public short getPriorityClass() {
+			return innerGetPriorityClass();
+		}
+		
+		public short innerGetPriorityClass() {
+			if(connectionType == DetectedIP.SYMMETRIC_NAT || connectionType == DetectedIP.SYMMETRIC_UDP_FIREWALL)
+				// Only able to connect to directly connected / full cone nodes.
+				return UserAlert.ERROR;
+			else return UserAlert.MINOR;
+		}
+
+		public String getShortText() {
+			if(portsNotForwarded.length == 1) {
+				return l10n("forwardPortShort", "port", Integer.toString(portsNotForwarded[0]));
+			} else if(portsNotForwarded.length == 2) {
+				return l10n("forwardTwoPortsShort", new String[] { "port1", "port2" },
+						new String[] { Integer.toString(portsNotForwarded[0]), Integer.toString(portsNotForwarded[1]) });
+			} else {
+				Logger.error(this, "Unknown number of ports to forward: "+portsNotForwarded.length);
+				return "";
+			}
+		}
+
+		public String getText() {
+			String url = l10n("portForwardHelpURL");
+			if(portsNotForwarded.length == 1) {
+				return l10n("forwardPort", new String[] { "port", "link", "/link" }, 
+						new String[] { Integer.toString(portsNotForwarded[0]), "", " ("+url+")" });
+			} else if(portsNotForwarded.length == 2) {
+				return l10n("forwardTwoPorts", new String[] { "port1", "port2", "link", "/link" },
+						new String[] { Integer.toString(portsNotForwarded[0]), Integer.toString(portsNotForwarded[1]), "", " ("+url+")" });
+			} else {
+				Logger.error(this, "Unknown number of ports to forward: "+portsNotForwarded.length);
+				return "";
+			}
+		}
+
+		public String getTitle() {
+			return getShortText();
+		}
+
+		public Object getUserIdentifier() {
+			return IPDetectorPluginManager.this;
+		}
+
+		public boolean isValid() {
+			portsNotForwarded = getUDPPortsNotForwarded();
+			if(portsNotForwarded.length > maxPortsLength) {
+				valid = true;
+				maxPortsLength = portsNotForwarded.length;
+			}
+			short prio = innerGetPriorityClass();
+			if(prio < maxPriorityShown) {
+				valid = true;
+				maxPriorityShown = prio;
+			}
+			if(portsNotForwarded.length == 0) return false;
+			return valid;
+		}
+
+		public void isValid(boolean validity) {
+			valid = validity;
+		}
+
+		public void onDismiss() {
+			valid = false;
+		}
+
+		public boolean shouldUnregisterOnDismiss() {
+			return false;
+		}
+
+		public boolean userCanDismiss() {
+			return true;
+		}
+		
+	}
 	
 	public class MyUserAlert extends AbstractUserAlert {
 
@@ -117,6 +230,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	private final MyUserAlert restrictedAlert;
 	private short connectionType;
 	private ProxyUserAlert proxyAlert;
+	private final PortForwardAlert portForwardAlert;
 	private boolean started;
 	
 	IPDetectorPluginManager(Node node, NodeIPDetector detector) {
@@ -134,6 +248,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				true, UserAlert.WARNING, false);
 		restrictedAlert = new MyUserAlert(l10n("restrictedTitle"), l10n("restricted"), 
 				false, UserAlert.MINOR, false);
+		portForwardAlert = new PortForwardAlert();
 	}
 
 	/**
@@ -177,6 +292,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	void start() {
 		// Cannot be initialized until UserAlertManager has been created.
 		proxyAlert = new ProxyUserAlert(node.clientCore.alerts);
+		node.clientCore.alerts.register(portForwardAlert);
 		started = true;
 		tryMaybeRun();
 	}
