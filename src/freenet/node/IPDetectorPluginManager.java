@@ -115,6 +115,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	private final MyUserAlert symmetricAlert;
 	private final MyUserAlert portRestrictedAlert;
 	private final MyUserAlert restrictedAlert;
+	private short connectionType;
 	private ProxyUserAlert proxyAlert;
 	private boolean started;
 	
@@ -647,17 +648,22 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				if(countClosed > 0 && (countOpen + countFullCone + countRestricted + countPortRestricted + countSymmetric) == 0) {
 					proxyAlert.setAlert(noConnectionAlert);
 					proxyAlert.isValid(true);
+					connectionType = DetectedIP.NO_UDP;
 				} else if(countSymmetric > 0 && (countOpen + countFullCone + countRestricted + countPortRestricted == 0)) {
 					proxyAlert.setAlert(symmetricAlert);
 					proxyAlert.isValid(true);
+					connectionType = DetectedIP.SYMMETRIC_NAT;
 				} else if(countPortRestricted > 0 && (countOpen + countFullCone + countRestricted == 0)) {
 					proxyAlert.setAlert(portRestrictedAlert);
 					proxyAlert.isValid(true);
+					connectionType = DetectedIP.PORT_RESTRICTED_NAT;
 				} else if(countRestricted > 0 && (countOpen + countFullCone == 0)) {
 					proxyAlert.setAlert(restrictedAlert);
 					proxyAlert.isValid(true);
+					connectionType = DetectedIP.RESTRICTED_CONE_NAT;
 				} else if(countFullCone > 0 && countOpen == 0) {
 					proxyAlert.isValid(false);
+					connectionType = DetectedIP.FULL_CONE_NAT;
 				} else if(countOpen > 0) {
 					proxyAlert.isValid(false);
 				}
