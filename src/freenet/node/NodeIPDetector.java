@@ -20,6 +20,7 @@ import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.DetectedIP;
 import freenet.pluginmanager.FredPluginIPDetector;
 import freenet.pluginmanager.FredPluginPortForward;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.StringCallback;
@@ -536,5 +537,9 @@ public class NodeIPDetector {
 	
 	private void onNotGetValidAddressOverride() {
 		node.clientCore.alerts.register(invalidAddressOverrideAlert);
+	}
+
+	public void addConnectionTypeBox(HTMLNode contentNode) {
+		ipDetectorManager.addConnectionTypeBox(contentNode);
 	}
 }
