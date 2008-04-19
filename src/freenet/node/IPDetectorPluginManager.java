@@ -283,7 +283,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	 * is one, and if it is necessary to do so. */
 	void start() {
 		// Cannot be initialized until UserAlertManager has been created.
-		proxyAlert = new ProxyUserAlert(node.clientCore.alerts, true);
+		proxyAlert = new ProxyUserAlert(node.clientCore.alerts, false);
 		node.clientCore.alerts.register(portForwardAlert);
 		started = true;
 		tryMaybeRun();
