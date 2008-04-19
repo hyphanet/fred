@@ -24,7 +24,8 @@ public class DoubleTokenBucket extends TokenBucket {
 		if(maxTokens < tokens) {
 			if(logMINOR) Logger.minor(this, "Limiting forceGrab of "+tokens+" to "+maxTokens);
 		}
-		super.forceGrab(maxTokens);
+		if(maxTokens > 0)
+			super.forceGrab(maxTokens);
 	}
 
 	/**
