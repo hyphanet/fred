@@ -53,7 +53,7 @@ public class MessageItem {
     public byte[] getData(PeerNode pn) {
         if(buf == null)
             buf = msg.encodeToPacket(pn);
-        if(buf.length < alreadyReportedBytes) {
+        if(buf.length <= alreadyReportedBytes) {
         	Logger.error(this, "buf.length = "+buf.length+" but alreadyReportedBytes = "+alreadyReportedBytes+" on "+this);
         }
         return buf;
