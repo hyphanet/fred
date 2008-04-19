@@ -15,6 +15,7 @@ import freenet.io.comm.Peer;
 import freenet.l10n.L10n;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.ProxyUserAlert;
+import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.DetectedIP;
 import freenet.pluginmanager.ForwardPort;
@@ -784,6 +785,24 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 					proxyAlert.isValid(false);
 				}
 				detector.processDetectedIPs(list);
+				if(connectionType == DetectedIP.NO_UDP) {
+					SimpleUserAlert toRegister = null;
+					synchronized(this) {
+						if(noConnectivityAlert == null)
+							noConnectivityAlert = toRegister =
+								new SimpleUserAlert(false, l10n("noConnectivityTitle"), l10n("noConnectivity"), l10n("noConnectivityShort"), UserAlert.ERROR);
+					}
+					if(toRegister != null)
+						node.clientCore.alerts.register(toRegister);
+				} else {
+					UserAlert toKill;
+					synchronized(this) {
+						toKill = noConnectivityAlert;
+						noConnectivityAlert = null;
+					}
+					if(toKill != null)
+						node.clientCore.alerts.unregister(toKill);
+				}
 			} finally {
 				synchronized(IPDetectorPluginManager.this) {
 					runners.remove(plugin);
@@ -793,6 +812,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		}
 
 	}
+	
+	private SimpleUserAlert noConnectivityAlert;
 
 	public boolean isEmpty() {
 		return plugins.length == 0;
