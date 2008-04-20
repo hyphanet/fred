@@ -1916,6 +1916,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		// Received a packet
 		receivedPacket(unverified);
 
+		setPeerNodeStatus(now);
+		
 		if(newer || older || !isConnected())
 			node.peers.disconnected(this);
 		else if(!wasARekey) {
@@ -1923,7 +1925,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			onConnect();
 		}
 		
-		setPeerNodeStatus(now);
 		return true;
 	}
 
