@@ -323,7 +323,7 @@ public class Metadata implements Cloneable {
 				short nameLength = dis.readShort();
 				byte[] buf = new byte[nameLength];
 				dis.readFully(buf);
-				String name = new String(buf, "UTF-8");
+				String name = new String(buf, "UTF-8").intern();
 				if(logMINOR) Logger.minor(this, "Entry "+i+" name "+name);
 				short len = dis.readShort();
 				if(len < 0)
@@ -376,7 +376,7 @@ public class Metadata implements Cloneable {
 		manifestEntries = new HashMap();
 		int count = 0;
 		for(Iterator i = dir.keySet().iterator();i.hasNext();) {
-			String key = (String) i.next();
+			String key = ((String) i.next()).intern();
 			count++;
 			Object o = dir.get(key);
 			Metadata target;
@@ -426,7 +426,7 @@ public class Metadata implements Cloneable {
 		manifestEntries = new HashMap();
 		int count = 0;
 		for(Iterator i = dir.keySet().iterator();i.hasNext();) {
-			String key = (String) i.next();
+			String key = ((String) i.next()).intern();
 			if(key.indexOf('/') != -1)
 				throw new IllegalArgumentException("Slashes in simple redirect manifest filenames! (slashes denote sub-manifests): "+key);
 			count++;
@@ -460,7 +460,7 @@ public class Metadata implements Cloneable {
 		manifestEntries = new HashMap();
 		int count = 0;
 		for(Iterator i = dir.keySet().iterator();i.hasNext();) {
-			String key = (String) i.next();
+			String key = ((String) i.next()).intern();
 			count++;
 			Object o = dir.get(key);
 			Metadata target;
