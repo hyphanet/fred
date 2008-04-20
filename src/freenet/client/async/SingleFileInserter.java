@@ -143,7 +143,7 @@ class SingleFileInserter implements ClientPutState {
 		boolean dontCompress = ctx.dontCompress;
 		
 		long origSize = data.size();
-		String type = block.desiredURI.getKeyType().toUpperCase();
+		String type = block.desiredURI.getKeyType();
 		if(type.equals("SSK") || type.equals("KSK") || type.equals("USK")) {
 			blockSize = SSKBlock.DATA_LENGTH;
 			oneBlockCompressedSize = SSKBlock.MAX_COMPRESSED_DATA_LENGTH;

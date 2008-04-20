@@ -77,7 +77,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	protected ClientKeyBlock innerEncode() throws InsertException {
-		String uriType = uri.getKeyType().toUpperCase();
+		String uriType = uri.getKeyType();
 		if(uriType.equals("CHK")) {
 			try {
 				return ClientCHKBlock.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength);
@@ -230,7 +230,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	private ClientRequestScheduler getScheduler() {
-		String uriType = uri.getKeyType().toUpperCase();
+		String uriType = uri.getKeyType();
 		if(uriType.equals("CHK"))
 			return parent.chkScheduler;
 		else if(uriType.equals("SSK") || uriType.equals("KSK"))
