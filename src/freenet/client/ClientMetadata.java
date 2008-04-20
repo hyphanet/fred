@@ -12,7 +12,7 @@ public class ClientMetadata implements Cloneable {
 	private String mimeType;
 
 	public ClientMetadata(String mime) {
-		mimeType = mime.intern();
+		mimeType = (mime == null) ? null : mime.intern();
 	}
 
 	/** Create an empty ClientMetadata instance */
