@@ -14,6 +14,8 @@ import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
@@ -375,10 +377,11 @@ public class Metadata implements Cloneable {
 		//clientMetadata = new ClientMetadata(null);
 		manifestEntries = new HashMap();
 		int count = 0;
-		for(Iterator i = dir.keySet().iterator();i.hasNext();) {
-			String key = ((String) i.next()).intern();
+		for (Iterator i = dir.entrySet().iterator(); i.hasNext();) {
+			Map.Entry entry = (Map.Entry) i.next();
+			String key = ((String) entry.getKey()).intern();
 			count++;
-			Object o = dir.get(key);
+			Object o = entry.getValue();
 			Metadata target;
 			if(o instanceof String) {
 				// External redirect
