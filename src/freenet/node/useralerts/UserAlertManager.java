@@ -270,9 +270,9 @@ public class UserAlertManager implements Comparator {
 			summaryBox = new HTMLNode("div", "class", "infobox infobox-information");
 		summaryBox.addChild("div", "class", "infobox-header", l10n("alertsTitle"));
 		HTMLNode summaryContent = summaryBox.addChild("div", "class", "infobox-content", alertSummaryString.toString());
-		L10n.addL10nSubstitution(summaryContent, "UserAlertManager.alertsOnHomepage",
+		L10n.addL10nSubstitution(summaryContent, "UserAlertManager.alertsOnAlertsPage",
 				new String[] { "link", "/link" },
-				new String[] { "<a href=\"/\">", "</a>" });
+				new String[] { "<a href=\"/alerts/\">", "</a>" });
 		return summaryBox;
 	}
 
