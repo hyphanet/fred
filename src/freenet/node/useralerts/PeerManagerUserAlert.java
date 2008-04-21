@@ -220,8 +220,6 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	public short getPriorityClass() {
 		if((peers == 0 && !isOpennetEnabled) ||
 				(conns == 0 && !isOpennetEnabled) ||
-				(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) ||
-				(disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD && !darknetDefinitelyPortForwarded && !darknetAssumeNAT) ||
 				(conns > MAX_CONN_ALERT_THRESHOLD) ||
 				(peers > MAX_PEER_ALERT_THRESHOLD) ||
 				(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) ||
