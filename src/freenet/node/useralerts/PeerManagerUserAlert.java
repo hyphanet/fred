@@ -218,14 +218,35 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	}
 
 	public short getPriorityClass() {
-		if((peers == 0 && !isOpennetEnabled) ||
-				(conns == 0 && !isOpennetEnabled) ||
-				(conns > MAX_CONN_ALERT_THRESHOLD) ||
-				(peers > MAX_PEER_ALERT_THRESHOLD) ||
-				(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD)) ||
-				(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD)))
+		if(peers == 0 && !isOpennetEnabled)
 			return UserAlert.CRITICAL_ERROR;
-		return UserAlert.ERROR;
+		if(conns == 0 && !isOpennetEnabled)
+			return UserAlert.ERROR;
+		if(conns < 3 && clockProblem > MIN_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD)
+			return ERROR;
+		if(conns < 3 && connError > MIN_CONN_ERROR_ALERT_THRESHOLD)
+			return ERROR;
+		if(conns < 3 && !isOpennetEnabled)
+			return ERROR;
+		if(neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD)
+			return WARNING;
+		if(clockProblem > MIN_CLOCK_PROBLEM_PEER_ALERT_THRESHOLD)
+			return ERROR;
+		if(connError > MIN_CONN_ERROR_ALERT_THRESHOLD)
+			return WARNING;
+		if(disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD && !darknetDefinitelyPortForwarded && !darknetAssumeNAT)
+			return WARNING;
+		if(conns > MAX_CONN_ALERT_THRESHOLD)
+			return WARNING;
+		if(peers > MAX_PEER_ALERT_THRESHOLD)
+			return WARNING;
+		if(n.bwlimitDelayAlertRelevant && (bwlimitDelayTime > NodeStats.MAX_BWLIMIT_DELAY_TIME_ALERT_THRESHOLD))
+			return ERROR;
+		if(n.nodeAveragePingAlertRelevant && (nodeAveragePingTime > NodeStats.MAX_NODE_AVERAGE_PING_TIME_ALERT_THRESHOLD))
+			return ERROR;
+		if(oldestNeverConnectedPeerAge > MAX_OLDEST_NEVER_CONNECTED_PEER_AGE_ALERT_THRESHOLD)
+			return WARNING;
+		return ERROR;
 	}
 
 	public boolean isValid() {
