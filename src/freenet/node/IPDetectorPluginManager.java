@@ -385,7 +385,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	 */ 
 	
 	private HashMap /*<FredIPDetectorPlugin,DetectorRunner>*/ runners = new HashMap();
-	private boolean lastDetectAttemptFailed;
+	private HashSet /*<FredIPDetectorPlugin>*/ failedRunners = new HashSet();
 	private long lastDetectAttemptEndedTime;
 	private long firstTimeUrgent;
 	
@@ -415,7 +415,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			
 			// If detect attempt failed to produce an IP in the last 5 minutes, don't
 			// try again yet.
-			if(lastDetectAttemptFailed) {
+			if(failedRunners.size() == runners.size()) {
 				if(now - lastDetectAttemptEndedTime < 5*60*1000) {
 					if(logMINOR) Logger.minor(this, "Last detect failed less than 5 minutes ago");
 					return;
@@ -630,7 +630,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	private void startDetect() {
 		if(logMINOR) Logger.minor(this, "Detecting...");
 		synchronized(this) {
-			lastDetectAttemptFailed = false;
+			failedRunners.clear();
 			for(int i=0;i<plugins.length;i++) {
 				FredPluginIPDetector plugin = plugins[i];
 				if(runners.containsKey(plugin)) continue;
@@ -697,7 +697,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 					}
 					if(failed) {
 						if(logMINOR) Logger.minor(this, "Failed");
-						lastDetectAttemptFailed = true;
+						failedRunners.add(plugin);
 						return;
 					}
 				}
