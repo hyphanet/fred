@@ -851,13 +851,25 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		}
 	}
 
-	void notifyPortChange(Set newPorts) {
+	void notifyPortChange(final Set newPorts) {
 		FredPluginPortForward[] plugins;
 		synchronized(this) {
 			plugins = portForwardPlugins;
 		}
-		for(int i=0;i<plugins.length;i++)
-			plugins[i].onChangePublicPorts(newPorts, this);
+		for(int i=0;i<plugins.length;i++) {
+			final FredPluginPortForward plugin = plugins[i];
+			node.executor.execute(new Runnable() {
+
+				public void run() {
+					try {
+						plugin.onChangePublicPorts(newPorts, IPDetectorPluginManager.this);
+					} catch (Throwable t) {
+						Logger.error(this, "Changing public ports list on "+plugin+" threw: "+t, t);
+					}
+				}
+				
+			}, "Notify "+plugins[i]+" of ports list change");
+		}
 	}
 
 	public void portForwardStatus(Map statuses) {
