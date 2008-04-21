@@ -9,13 +9,14 @@ public class DoubleTokenBucket extends TokenBucket {
 	
 	private static boolean logMINOR;
 	private final TokenBucket grabbedBytesLimiter;
-	private double forceGrabLimit;
+	private final double forceGrabLimit;
 	
 	public DoubleTokenBucket(long max, long nanosPerTick, long initialValue, double forceGrabLimit) {
 		super(max, nanosPerTick, initialValue);
 		if(forceGrabLimit > 1.0) throw new IllegalArgumentException();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		grabbedBytesLimiter = new TokenBucket((long)(max * forceGrabLimit), (long)(nanosPerTick / forceGrabLimit), (long)(initialValue * forceGrabLimit));
+		this.forceGrabLimit = forceGrabLimit;
 	}
 	
 	public synchronized void forceGrab(long tokens) {
