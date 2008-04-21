@@ -58,4 +58,8 @@ public class DetectedIP {
 	public int hashCode() {
 		return publicAddress.hashCode() ^ natType;
 	}
+	
+	public String toString() {
+		return publicAddress.toString()+":"+natType+":"+mtu;
+	}
 }
