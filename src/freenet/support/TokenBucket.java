@@ -21,7 +21,7 @@ public class TokenBucket {
 		this.max = max;
 		this.current = initialValue;
 		if(current > max) {
-			Logger.error(this, "initial value ("+current+") > max ("+max+") in "+this);
+			Logger.error(this, "initial value ("+current+") > max ("+max+") in "+this, new Exception("error"));
 			current = max;
 		}
 		this.nanosPerTick = nanosPerTick;
