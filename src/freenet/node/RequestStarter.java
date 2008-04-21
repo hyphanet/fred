@@ -97,7 +97,9 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 		long cycleTime = sentRequestTime;
 		while(true) {
 			// Allow 5 minutes before we start killing requests due to not connecting.
-			if(System.currentTimeMillis() - startupTime < 300*1000 && core.node.peers.countConnectedDarknetPeers() + core.node.peers.countConnectedOpennetPeers() == 0) {
+			OpennetManager om;
+			if(core.node.peers.countConnectedPeers() == 0 && (om = core.node.getOpennet()) != null &&
+					System.currentTimeMillis() - om.getCreationTime() > 5*60*1000) {
 				try {
 					synchronized(this) {
 						wait(1000);
@@ -224,10 +226,7 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 		}
 	}
 
-	private long startupTime;
-	
 	public void run() {
-		startupTime = System.currentTimeMillis();
 	    freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
 			try {

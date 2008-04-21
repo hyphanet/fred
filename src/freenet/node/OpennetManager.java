@@ -92,8 +92,11 @@ public class OpennetManager {
 	/** Allow for future expansion. However at any given time all noderefs should be PADDED_NODEREF_SIZE */
 	static final int MAX_OPENNET_NODEREF_LENGTH = 32768;
 	
+	private final long creationTime;
+	
 	public OpennetManager(Node node, NodeCryptoConfig opennetConfig, long startupTime) throws NodeInitException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		this.creationTime = System.currentTimeMillis();
 		this.node = node;
 		crypto =
 			new NodeCrypto(node, true, opennetConfig, startupTime, node.enableARKs);
@@ -669,6 +672,10 @@ public class OpennetManager {
 	public void announce(double target, AnnouncementCallback cb) {
 		AnnounceSender sender = new AnnounceSender(target, this, node, cb, null);
 		node.executor.execute(sender, "Announcement to "+target);
+	}
+
+	public long getCreationTime() {
+		return creationTime;
 	}
 
 }

@@ -1635,6 +1635,17 @@ public class PeerManager {
 		return count;
 	}
 	
+	public int countConnectedPeers() {
+		int count = 0;
+		PeerNode[] peers = myPeers;
+		for(int i=0;i<peers.length;i++) {
+			if(peers[i] == null) continue;
+			if(!peers[i].isRoutable()) continue;
+			count++;
+		}
+		return count;
+	}
+	
 	public int countAlmostConnectedDarknetPeers() {
 		int count = 0;
 		PeerNode[] peers = myPeers;
@@ -1708,5 +1719,5 @@ public class PeerManager {
 		}
 		return null;
 	}
-	
+
 }
