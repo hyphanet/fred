@@ -14,7 +14,6 @@ import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.SubConfig;
-import freenet.io.comm.IOStatisticCollector;
 import freenet.l10n.L10n;
 import freenet.node.Location;
 import freenet.node.Node;
