@@ -72,6 +72,7 @@ public class NodeStats implements Persistable {
 	public boolean nodeAveragePingAlertRelevant;
 	/** Average proportion of requests rejected immediately due to overload */
 	public final TimeDecayingRunningAverage pInstantRejectIncoming;
+	private boolean ignoreLocalVsRemoteBandwidthLiability;
 
 	/** Average delay caused by throttling for sending a packet */
 	final TimeDecayingRunningAverage throttledPacketSendAverage;
@@ -247,6 +248,22 @@ public class NodeStats implements Persistable {
 		});
 		if(statsConfig.getBoolean("memoryChecker"))
 			myMemoryChecker.start();
+		
+		statsConfig.register("ignoreLocalVsRemoteBandwidthLiability", false, sortOrder++, true, false, "NodeStat.ignoreLocalVsRemoteBandwidthLiability", "NodeStat.ignoreLocalVsRemoteBandwidthLiabilityLong", new BooleanCallback() {
+
+			public boolean get() {
+				synchronized(NodeStats.this) {
+					return ignoreLocalVsRemoteBandwidthLiability;
+				}
+			}
+
+			public void set(boolean val) throws InvalidConfigValueException {
+				synchronized(NodeStats.this) {
+					ignoreLocalVsRemoteBandwidthLiability = val;
+				}
+			}
+			
+		});
 
 		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false, 
 				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.ps, nodeDir);
@@ -482,7 +499,15 @@ public class NodeStats implements Persistable {
 		if(logMINOR)
 			Logger.minor(this, "Running (adjusted): CHK fetch local "+numLocalCHKRequests+" remote "+numRemoteCHKRequests+" SSK fetch local "+numLocalSSKRequests+" remote "+numRemoteSSKRequests+" CHK insert local "+numLocalCHKInserts+" remote "+numRemoteCHKInserts+" SSK insert local "+numLocalSSKInserts+" remote "+numRemoteSSKInserts+" CHK offer replies local "+numCHKOfferReplies+" SSK offer replies "+numSSKOfferReplies);
 		
-		double bandwidthLiabilityOutput =
+		double bandwidthLiabilityOutput;
+		if(ignoreLocalVsRemoteBandwidthLiability) {
+			bandwidthLiabilityOutput = 
+				successfulChkFetchBytesSentAverage.currentValue() * (numRemoteCHKRequests + numLocalCHKRequests - 1) +
+				successfulSskFetchBytesSentAverage.currentValue() * (numRemoteSSKRequests + numLocalSSKRequests - 1) +
+				successfulChkInsertBytesSentAverage.currentValue() * (numRemoteCHKInserts + numLocalCHKInserts - 1) +
+				successfulSskInsertBytesSentAverage.currentValue() * (numRemoteSSKInserts + numLocalSSKInserts - 1);
+		} else {
+		bandwidthLiabilityOutput =
 			successfulChkFetchBytesSentAverage.currentValue() * numRemoteCHKRequests +
 			// Local requests don't relay data, so use the local average
 			localChkFetchBytesSentAverage.currentValue() * numLocalCHKRequests +
@@ -497,6 +522,7 @@ public class NodeStats implements Persistable {
 			successfulSskInsertBytesSentAverage.currentValue() * numLocalSSKInserts +
 			successfulChkOfferReplyBytesSentAverage.currentValue() * numCHKOfferReplies +
 			successfulSskOfferReplyBytesSentAverage.currentValue() * numSSKOfferReplies;
+		}
 		double outputAvailablePerSecond = node.getOutputBandwidthLimit() - sentOverheadPerSecond;
 		// If there's been an auto-update, we may have used a vast amount of bandwidth for it.
 		// Also, if things have broken, our overhead might be above our bandwidth limit,
@@ -518,7 +544,15 @@ public class NodeStats implements Persistable {
 			return "Output bandwidth liability ("+bandwidthLiabilityOutput+" > "+bandwidthAvailableOutput+")";
 		}
 		
-		double bandwidthLiabilityInput =
+		double bandwidthLiabilityInput;
+		if(ignoreLocalVsRemoteBandwidthLiability) {
+			bandwidthLiabilityInput =
+				successfulChkFetchBytesReceivedAverage.currentValue() * (numRemoteCHKRequests + numLocalCHKRequests - 1) +
+				successfulSskFetchBytesReceivedAverage.currentValue() * (numRemoteSSKRequests + numLocalSSKRequests - 1) +
+				successfulChkInsertBytesReceivedAverage.currentValue() * (numRemoteCHKInserts + numLocalCHKInserts - 1) +
+				successfulSskInsertBytesReceivedAverage.currentValue() * (numRemoteSSKInserts + numLocalSSKInserts - 1);
+		} else {
+		bandwidthLiabilityInput =
 			// For receiving data, local requests are the same as remote ones
 			successfulChkFetchBytesReceivedAverage.currentValue() * numRemoteCHKRequests +
 			successfulChkFetchBytesReceivedAverage.currentValue() * numLocalCHKRequests +
@@ -531,6 +565,7 @@ public class NodeStats implements Persistable {
 			localSskInsertBytesReceivedAverage.currentValue() * numLocalSSKInserts +
 			successfulChkOfferReplyBytesReceivedAverage.currentValue() * numCHKOfferReplies +
 			successfulSskOfferReplyBytesReceivedAverage.currentValue() * numSSKOfferReplies;
+		}
 		double bandwidthAvailableInput =
 			node.getInputBandwidthLimit() * 90; // 90 seconds at full power
 		if(bandwidthLiabilityInput > bandwidthAvailableInput) {
