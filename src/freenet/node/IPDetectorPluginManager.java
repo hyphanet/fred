@@ -151,6 +151,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		public boolean userCanDismiss() {
 			return true;
 		}
+
+		public boolean isEventNotification() {
+			return false;
+		}
 		
 	}
 	

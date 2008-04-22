@@ -68,6 +68,13 @@ public interface UserAlert {
 	 */
 	public String anchor();
 	
+	/**
+	 * @return True if this is an event notification. Event notifications can be bulk deleted.
+	 * Eventually they will be handled diffferently - logged to a separate event log, and only
+	 * the last few displayed on the homepage.
+	 */
+	public boolean isEventNotification();
+	
 	/** An error which prevents normal operation */
 	public final static short CRITICAL_ERROR = 0;
 	/** An error which prevents normal operation but might be temporary */

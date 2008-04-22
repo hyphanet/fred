@@ -151,4 +151,7 @@ public abstract class AbstractUserAlert implements UserAlert {
 		return Integer.toString(hashCode());
 	}
 
+	public boolean isEventNotification() {
+		return false;
+	}
 }

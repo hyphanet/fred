@@ -88,4 +88,9 @@ public class ProxyUserAlert implements UserAlert {
 		return alert.getShortText();
 	}
 
+	public boolean isEventNotification() {
+		if(alert == null) return false;
+		return alert.isEventNotification();
+	}
+
 }

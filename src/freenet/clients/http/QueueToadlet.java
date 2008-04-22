@@ -1223,6 +1223,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					}
 					saveCompletedIdentifiersOffThread();
 				}
+				public boolean isEventNotification() {
+					return true;
+				}
 			};
 			core.alerts.register(alert);
 			synchronized(alertsByIdentifier) {
@@ -1247,6 +1250,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 						alertsByIdentifier.remove(identifier);
 					}
 					saveCompletedIdentifiersOffThread();
+				}
+				public boolean isEventNotification() {
+					return true;
 				}
 			};
 			core.alerts.register(alert);
@@ -1273,6 +1279,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 						alertsByIdentifier.remove(identifier);
 					}
 					saveCompletedIdentifiersOffThread();
+				}
+				public boolean isEventNotification() {
+					return true;
 				}
 			};
 			core.alerts.register(alert);

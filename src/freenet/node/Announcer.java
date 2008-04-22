@@ -597,6 +597,10 @@ public class Announcer {
 			return l10n("announceAlertShort");
 		}
 
+		public boolean isEventNotification() {
+			return false;
+		}
+
 	}
 	
 	private String l10n(String key) {

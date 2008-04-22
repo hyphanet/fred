@@ -109,6 +109,10 @@ public class BookmarkItem extends Bookmark {
 		public String getShortText() {
 			return l10n("bookmarkUpdatedShort", "name", name);
 		}
+
+		public boolean isEventNotification() {
+			return true;
+		}
     }
 
     private synchronized void disableBookmark() {
