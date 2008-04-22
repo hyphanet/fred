@@ -469,20 +469,32 @@ public class NodeStats implements Persistable {
 		// when one of either type completes, we can accept one of either type again: We never let SSKs drain the 
 		// "bucket" and block CHKs.
 		
-		int numCHKRequests = node.getNumCHKRequests() + 1;
-		int numSSKRequests = node.getNumSSKRequests() + 1;
-		int numCHKInserts = node.getNumCHKInserts() + 1;
-		int numSSKInserts = node.getNumSSKInserts() + 1;
+		int numLocalCHKRequests = node.getNumLocalCHKRequests() + 1;
+		int numLocalSSKRequests = node.getNumLocalSSKRequests() + 1;
+		int numLocalCHKInserts = node.getNumLocalCHKInserts() + 1;
+		int numLocalSSKInserts = node.getNumLocalSSKInserts() + 1;
+		int numRemoteCHKRequests = node.getNumRemoteCHKRequests() + 1;
+		int numRemoteSSKRequests = node.getNumRemoteSSKRequests() + 1;
+		int numRemoteCHKInserts = node.getNumRemoteCHKInserts() + 1;
+		int numRemoteSSKInserts = node.getNumRemoteSSKInserts() + 1;
 		int numCHKOfferReplies = node.getNumCHKOfferReplies() + 1;
 		int numSSKOfferReplies = node.getNumSSKOfferReplies() + 1;
 		if(logMINOR)
-			Logger.minor(this, "Running (adjusted): CHK fetch "+numCHKRequests+" SSK fetch "+numSSKRequests+" CHK insert "+numCHKInserts+" SSK insert "+numSSKInserts+" CHK offer replies "+numCHKOfferReplies+" SSK offer replies "+numSSKOfferReplies);
+			Logger.minor(this, "Running (adjusted): CHK fetch local "+numLocalCHKRequests+" remote "+numRemoteCHKRequests+" SSK fetch local "+numLocalSSKRequests+" remote "+numRemoteSSKRequests+" CHK insert local "+numLocalCHKInserts+" remote "+numRemoteCHKInserts+" SSK insert local "+numLocalSSKInserts+" remote "+numRemoteSSKInserts+" CHK offer replies local "+numCHKOfferReplies+" SSK offer replies "+numSSKOfferReplies);
 		
 		double bandwidthLiabilityOutput =
-			successfulChkFetchBytesSentAverage.currentValue() * numCHKRequests +
-			successfulSskFetchBytesSentAverage.currentValue() * numSSKRequests +
-			successfulChkInsertBytesSentAverage.currentValue() * numCHKInserts +
-			successfulSskInsertBytesSentAverage.currentValue() * numSSKInserts +
+			successfulChkFetchBytesSentAverage.currentValue() * numRemoteCHKRequests +
+			// Local requests don't relay data, so use the local average
+			localChkFetchBytesSentAverage.currentValue() * numLocalCHKRequests +
+			successfulSskFetchBytesSentAverage.currentValue() * numRemoteSSKRequests +
+			// Local requests don't relay data, so use the local average
+			localSskFetchBytesSentAverage.currentValue() * numRemoteSSKRequests +
+			// Inserts are the same for remote as local for sent bytes
+			successfulChkInsertBytesSentAverage.currentValue() * numRemoteCHKInserts +
+			successfulChkInsertBytesSentAverage.currentValue() * numLocalCHKInserts +
+			// Inserts are the same for remote as local for sent bytes
+			successfulSskInsertBytesSentAverage.currentValue() * numRemoteSSKInserts +
+			successfulSskInsertBytesSentAverage.currentValue() * numLocalSSKInserts +
 			successfulChkOfferReplyBytesSentAverage.currentValue() * numCHKOfferReplies +
 			successfulSskOfferReplyBytesSentAverage.currentValue() * numSSKOfferReplies;
 		double outputAvailablePerSecond = node.getOutputBandwidthLimit() - sentOverheadPerSecond;
@@ -507,10 +519,16 @@ public class NodeStats implements Persistable {
 		}
 		
 		double bandwidthLiabilityInput =
-			successfulChkFetchBytesReceivedAverage.currentValue() * numCHKRequests +
-			successfulSskFetchBytesReceivedAverage.currentValue() * numSSKRequests +
-			successfulChkInsertBytesReceivedAverage.currentValue() * numCHKInserts +
-			successfulSskInsertBytesReceivedAverage.currentValue() * numSSKInserts +
+			// For receiving data, local requests are the same as remote ones
+			successfulChkFetchBytesReceivedAverage.currentValue() * numRemoteCHKRequests +
+			successfulChkFetchBytesReceivedAverage.currentValue() * numLocalCHKRequests +
+			successfulSskFetchBytesReceivedAverage.currentValue() * numRemoteSSKRequests +
+			successfulSskFetchBytesReceivedAverage.currentValue() * numLocalSSKRequests +
+			// Local inserts don't receive the data to relay, so use the local variant
+			successfulChkInsertBytesReceivedAverage.currentValue() * numRemoteCHKInserts +
+			localChkInsertBytesReceivedAverage.currentValue() * numLocalCHKInserts +
+			successfulSskInsertBytesReceivedAverage.currentValue() * numRemoteSSKInserts +
+			localSskInsertBytesReceivedAverage.currentValue() * numLocalSSKInserts +
 			successfulChkOfferReplyBytesReceivedAverage.currentValue() * numCHKOfferReplies +
 			successfulSskOfferReplyBytesReceivedAverage.currentValue() * numSSKOfferReplies;
 		double bandwidthAvailableInput =
