@@ -2376,6 +2376,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 				return false;
 			}
 		}
+		// If these are switched around, we must remember to remove from both.
 		HashSet set = getUIDTracker(ssk, insert, offerReply, local);
 		synchronized(set) {
 			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+set.size());
