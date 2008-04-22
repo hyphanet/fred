@@ -2373,14 +2373,21 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 		HashSet set = getUIDTracker(ssk, insert, offerReply, local);
 		synchronized(set) {
 			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+set.size());
+			if(set.contains(l))
+				return false;
 			set.add(l);
 			if(logMINOR) Logger.minor(this, "Locked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+set.size());
 		}
 		synchronized(runningUIDs) {
-			if(runningUIDs.contains(l)) return false;
-			runningUIDs.add(l);
-			return true;
+			if(!runningUIDs.contains(l)) {
+				runningUIDs.add(l);
+				return true;
+			}
 		}
+		synchronized(set) {
+			set.remove(l);
+		}
+		return false;
 	}
 	
 	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local) {
