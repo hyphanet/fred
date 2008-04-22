@@ -350,9 +350,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 	/** HashSet of currently running request UIDs */
 	private final HashSet runningUIDs;
 	private final HashSet runningCHKGetUIDs;
+	private final HashSet runningLocalCHKGetUIDs;
 	private final HashSet runningSSKGetUIDs;
+	private final HashSet runningLocalSSKGetUIDs;
 	private final HashSet runningCHKPutUIDs;
+	private final HashSet runningLocalCHKPutUIDs;
 	private final HashSet runningSSKPutUIDs;
+	private final HashSet runningLocalSSKPutUIDs;
 	private final HashSet runningCHKOfferReplyUIDs;
 	private final HashSet runningSSKOfferReplyUIDs;
 	
@@ -664,9 +668,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 		insertSenders = new HashMap();
 		runningUIDs = new HashSet();
 		runningCHKGetUIDs = new HashSet();
+		runningLocalCHKGetUIDs = new HashSet();
 		runningSSKGetUIDs = new HashSet();
+		runningLocalSSKGetUIDs = new HashSet();
 		runningCHKPutUIDs = new HashSet();
+		runningLocalCHKPutUIDs = new HashSet();
 		runningSSKPutUIDs = new HashSet();
+		runningLocalSSKPutUIDs = new HashSet();
 		runningCHKOfferReplyUIDs = new HashSet();
 		runningSSKOfferReplyUIDs = new HashSet();
 		
@@ -2360,10 +2368,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 		return is;
 	}
 	
-	public boolean lockUID(long uid, boolean ssk, boolean insert, boolean offerReply) {
+	public boolean lockUID(long uid, boolean ssk, boolean insert, boolean offerReply, boolean local) {
 		if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply);
 		Long l = new Long(uid);
-		HashSet set = getUIDTracker(ssk, insert, offerReply);
+		HashSet set = getUIDTracker(ssk, insert, offerReply, local);
 		synchronized(set) {
 			set.add(l);
 		}
@@ -2374,11 +2382,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 		}
 	}
 	
-	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply) {
+	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local) {
 		if(logMINOR) Logger.minor(this, "Unlocking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply);
 		Long l = new Long(uid);
 		completed(uid);
-		HashSet set = getUIDTracker(ssk, insert, offerReply);
+		HashSet set = getUIDTracker(ssk, insert, offerReply, local);
 		synchronized(set) {
 			set.remove(l);
 		}
@@ -2388,15 +2396,21 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 		}
 	}
 
-	HashSet getUIDTracker(boolean ssk, boolean insert, boolean offerReply) {
+	HashSet getUIDTracker(boolean ssk, boolean insert, boolean offerReply, boolean local) {
 		if(ssk) {
 			if(offerReply)
 				return runningSSKOfferReplyUIDs;
-			return insert ? runningSSKPutUIDs : runningSSKGetUIDs;
+			if(!local)
+				return insert ? runningSSKPutUIDs : runningSSKGetUIDs;
+			else
+				return insert ? runningLocalSSKPutUIDs : runningLocalSSKGetUIDs;
 		} else {
 			if(offerReply)
 				return runningCHKOfferReplyUIDs;
-			return insert ? runningCHKPutUIDs : runningCHKGetUIDs;
+			if(!local)
+				return insert ? runningCHKPutUIDs : runningCHKGetUIDs;
+			else
+				return insert ? runningLocalCHKPutUIDs : runningLocalCHKGetUIDs;
 		}
 	}
 	
@@ -2461,19 +2475,19 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 	}
 
 	public int getNumSSKRequests() {
-		return runningSSKGetUIDs.size();
+		return runningSSKGetUIDs.size() + runningLocalSSKGetUIDs.size();
 	}
 	
 	public int getNumCHKRequests() {
-		return runningCHKGetUIDs.size();
+		return runningCHKGetUIDs.size() + runningLocalCHKGetUIDs.size();
 	}
 	
 	public int getNumSSKInserts() {
-		return runningSSKPutUIDs.size();
+		return runningSSKPutUIDs.size() + runningLocalSSKPutUIDs.size();
 	}
 	
 	public int getNumCHKInserts() {
-		return runningCHKPutUIDs.size();
+		return runningCHKPutUIDs.size() + runningLocalCHKPutUIDs.size();
 	}
 	
 	public int getNumSSKOfferReplies() {

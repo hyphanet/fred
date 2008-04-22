@@ -242,7 +242,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		
 		// Do we want it? We can RejectOverload if we don't have the bandwidth...
 		boolean isSSK = key instanceof NodeSSK;
-		node.lockUID(uid, isSSK, false, true);
+		node.lockUID(uid, isSSK, false, true, false);
 		boolean needPubKey;
 		try {
 		needPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
@@ -256,15 +256,15 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
-			node.unlockUID(uid, isSSK, false, false, true);
+			node.unlockUID(uid, isSSK, false, false, true, false);
 			return true;
 		}
 		
 		} catch (Error e) {
-			node.unlockUID(uid, isSSK, false, false, true);
+			node.unlockUID(uid, isSSK, false, false, true, false);
 			throw e;
 		} catch (RuntimeException e) {
-			node.unlockUID(uid, isSSK, false, false, true);
+			node.unlockUID(uid, isSSK, false, false, true, false);
 			throw e;
 		} // Otherwise, sendOfferedKey is responsible for unlocking. 
 		
@@ -339,7 +339,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
         short htl = m.getShort(DMT.HTL);
         Key key = (Key) m.getObject(DMT.FREENET_ROUTING_KEY);
-		if(!node.lockUID(id, isSSK, false, false)) {
+		if(!node.lockUID(id, isSSK, false, false, false)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
@@ -362,7 +362,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
-			node.unlockUID(id, isSSK, false, false, false);
+			node.unlockUID(id, isSSK, false, false, false, false);
 			// Do not tell failure table.
 			// Otherwise an attacker can flood us with requests very cheaply and purge our
 			// failure table even though we didn't accept any of them.
@@ -386,7 +386,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			return true;
 		}
-		if(!node.lockUID(id, isSSK, true, false)) {
+		if(!node.lockUID(id, isSSK, true, false, false)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
@@ -406,7 +406,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) insert request from "+source.getPeer()+": "+e);
 			}
-			node.unlockUID(id, isSSK, true, false, false);
+			node.unlockUID(id, isSSK, true, false, false, false);
 			return true;
 		}
 		long now = System.currentTimeMillis();

@@ -431,7 +431,7 @@ public class NodeClientCore implements Persistable {
 	public void asyncGet(Key key, boolean cache, boolean offersOnly, final SimpleRequestSenderCompletionListener listener) {
 		final long uid = random.nextLong();
 		final boolean isSSK = key instanceof NodeSSK;
-		if(!node.lockUID(uid, isSSK, false, false)) {
+		if(!node.lockUID(uid, isSSK, false, false, true)) {
 			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
 			return;
 		}
@@ -447,7 +447,7 @@ public class NodeClientCore implements Persistable {
 
 			public void onRequestSenderFinished(int status) {
 				// If transfer coalescing has happened, we may have already unlocked.
-				node.unlockUID(uid, isSSK, false, true, false);
+				node.unlockUID(uid, isSSK, false, true, false, true);
 				if(listener != null)
 					listener.completed(status == RequestSender.SUCCESS);
 			}
@@ -465,22 +465,22 @@ public class NodeClientCore implements Persistable {
 		try {
 			Object o = node.makeRequestSender(key, node.maxHTL(), uid, null, false, cache, false, offersOnly);
 			if(o instanceof KeyBlock) {
-				node.unlockUID(uid, false, false, true, false);
+				node.unlockUID(uid, false, false, true, false, true);
 				return; // Already have it.
 			}
 			RequestSender rs = (RequestSender) o;
 			rs.addListener(listener);
 			if(rs.uid != uid)
-				node.unlockUID(uid, false, false, false, false);
+				node.unlockUID(uid, false, false, false, false, true);
 			// Else it has started a request.
 			if(logMINOR)
 				Logger.minor(this, "Started "+o+" for "+uid+" for "+key);
 		} catch (RuntimeException e) {
 			Logger.error(this, "Caught error trying to start request: "+e, e);
-			node.unlockUID(uid, false, false, true, false);
+			node.unlockUID(uid, false, false, true, false, true);
 		} catch (Error e) {
 			Logger.error(this, "Caught error trying to start request: "+e, e);
-			node.unlockUID(uid, false, false, true, false);
+			node.unlockUID(uid, false, false, true, false, true);
 		}
 	}
 	
@@ -497,7 +497,7 @@ public class NodeClientCore implements Persistable {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long startTime = System.currentTimeMillis();
 		long uid = random.nextLong();
-		if(!node.lockUID(uid, false, false, false)) {
+		if(!node.lockUID(uid, false, false, false, true)) {
 			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
@@ -604,7 +604,7 @@ public class NodeClientCore implements Persistable {
 			}
 		}
 		} finally {
-			node.unlockUID(uid, false, false, true, false);
+			node.unlockUID(uid, false, false, true, false, true);
 		}
 	}
 
@@ -612,7 +612,7 @@ public class NodeClientCore implements Persistable {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long startTime = System.currentTimeMillis();
 		long uid = random.nextLong();
-		if(!node.lockUID(uid, true, false, false)) {
+		if(!node.lockUID(uid, true, false, false, true)) {
 			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
@@ -719,7 +719,7 @@ public class NodeClientCore implements Persistable {
 			}
 		}
 		} finally {
-			node.unlockUID(uid, true, false, true, false);
+			node.unlockUID(uid, true, false, true, false, true);
 		}
 	}
 
@@ -739,7 +739,7 @@ public class NodeClientCore implements Persistable {
 		PartiallyReceivedBlock prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, data);
 		CHKInsertSender is;
 		long uid = random.nextLong();
-		if(!node.lockUID(uid, false, true, false)) {
+		if(!node.lockUID(uid, false, true, false, true)) {
 			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
@@ -848,7 +848,7 @@ public class NodeClientCore implements Persistable {
 			}
 		}
 		} finally {
-			node.unlockUID(uid, false, true, true, false);
+			node.unlockUID(uid, false, true, true, false, true);
 		}
 	}
 
@@ -856,7 +856,7 @@ public class NodeClientCore implements Persistable {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		SSKInsertSender is;
 		long uid = random.nextLong();
-		if(!node.lockUID(uid, true, true, false)) {
+		if(!node.lockUID(uid, true, true, false, true)) {
 			Logger.error(this, "Could not lock UID just randomly generated: "+uid+" - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
@@ -977,7 +977,7 @@ public class NodeClientCore implements Persistable {
 			}
 		}
 		} finally {
-			node.unlockUID(uid, true, true, true, false);
+			node.unlockUID(uid, true, true, true, false, true);
 		}
 	}
 

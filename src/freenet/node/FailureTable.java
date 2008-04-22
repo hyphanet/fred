@@ -377,7 +377,7 @@ public class FailureTable {
 						// :<
 						Logger.error(this, "Waited too long sending SSK data");
 					} finally {
-						node.unlockUID(uid, isSSK, false, false, true);
+						node.unlockUID(uid, isSSK, false, false, true, false);
 					}
 				}
 				
@@ -416,7 +416,7 @@ public class FailureTable {
 					} catch (Throwable t) {
 						Logger.error(this, "Sending offered key failed: "+t, t);
 					} finally {
-						node.unlockUID(uid, isSSK, false, false, true);
+						node.unlockUID(uid, isSSK, false, false, true, false);
 					}
 				}
         		
