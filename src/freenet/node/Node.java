@@ -2369,11 +2369,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 	}
 	
 	public boolean lockUID(long uid, boolean ssk, boolean insert, boolean offerReply, boolean local) {
-		if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply);
 		Long l = new Long(uid);
 		HashSet set = getUIDTracker(ssk, insert, offerReply, local);
 		synchronized(set) {
+			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+set.size());
 			set.add(l);
+			if(logMINOR) Logger.minor(this, "Locked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+set.size());
 		}
 		synchronized(runningUIDs) {
 			if(runningUIDs.contains(l)) return false;
@@ -2383,12 +2384,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 	}
 	
 	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local) {
-		if(logMINOR) Logger.minor(this, "Unlocking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply);
 		Long l = new Long(uid);
 		completed(uid);
 		HashSet set = getUIDTracker(ssk, insert, offerReply, local);
 		synchronized(set) {
+			if(logMINOR) Logger.minor(this, "Unlocking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+", local="+local+" size="+set.size());
 			set.remove(l);
+			if(logMINOR) Logger.minor(this, "Unlocked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+", local="+local+" size="+set.size());
 		}
 		synchronized(runningUIDs) {
 			if(!runningUIDs.remove(l) && !canFail)
