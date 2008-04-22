@@ -877,15 +877,23 @@ public class StatisticsToadlet extends Toadlet {
 
 	static HTMLNode drawActivity(HTMLNode activityInfoboxContent, Node node) {
 		int numInserts = node.getNumInsertSenders();
-		int numCHKInserts = node.getNumCHKInserts();
-		int numSSKInserts = node.getNumSSKInserts();
+		int numLocalCHKInserts = node.getNumLocalCHKInserts();
+		int numRemoteCHKInserts = node.getNumRemoteCHKInserts();
+		int numLocalSSKInserts = node.getNumLocalSSKInserts();
+		int numRemoteSSKInserts = node.getNumRemoteSSKInserts();
 		int numRequests = node.getNumRequestSenders();
-		int numCHKRequests = node.getNumCHKRequests();
-		int numSSKRequests = node.getNumSSKRequests();
+		int numLocalCHKRequests = node.getNumLocalCHKRequests();
+		int numRemoteCHKRequests = node.getNumRemoteCHKRequests();
+		int numLocalSSKRequests = node.getNumLocalSSKRequests();
+		int numRemoteSSKRequests = node.getNumRemoteSSKRequests();
 		int numTransferringRequests = node.getNumTransferringRequestSenders();
 		int numTransferringRequestHandlers = node.getNumTransferringRequestHandlers();
 		int numCHKOfferReplys = node.getNumCHKOfferReplies();
 		int numSSKOfferReplys = node.getNumSSKOfferReplies();
+		int numCHKRequests = numLocalCHKRequests + numRemoteCHKRequests;
+		int numSSKRequests = numLocalSSKRequests + numRemoteSSKRequests;
+		int numCHKInserts = numLocalCHKInserts + numRemoteCHKInserts;
+		int numSSKInserts = numLocalSSKInserts + numRemoteSSKInserts;
 		if ((numInserts == 0) && (numRequests == 0) && (numTransferringRequests == 0) &&
 				(numCHKRequests == 0) && (numSSKRequests == 0) &&
 				(numCHKInserts == 0) && (numSSKInserts == 0) &&
@@ -897,13 +905,13 @@ public class StatisticsToadlet extends Toadlet {
 			HTMLNode activityList = activityInfoboxContent.addChild("ul");
 			if (numInserts > 0 || numCHKInserts > 0 || numSSKInserts > 0) {
 				activityList.addChild("li", L10n.getString("StatisticsToadlet.activityInserts", 
-						new String[] { "totalSenders", "CHKhandlers", "SSKhandlers" } , 
-						new String[] { Integer.toString(numInserts), Integer.toString(numCHKInserts), Integer.toString(numSSKInserts)}));
+						new String[] { "totalSenders", "CHKhandlers", "SSKhandlers", "local" } , 
+						new String[] { Integer.toString(numInserts), Integer.toString(numCHKInserts), Integer.toString(numSSKInserts), Integer.toString(numLocalCHKInserts + numLocalSSKInserts)}));
 			}
 			if (numRequests > 0 || numCHKRequests > 0 || numSSKRequests > 0) {
 				activityList.addChild("li", L10n.getString("StatisticsToadlet.activityRequests", 
-						new String[] { "totalSenders", "CHKhandlers", "SSKhandlers" } , 
-						new String[] { Integer.toString(numRequests), Integer.toString(numCHKRequests), Integer.toString(numSSKRequests)}));
+						new String[] { "totalSenders", "CHKhandlers", "SSKhandlers", "local" } , 
+						new String[] { Integer.toString(numRequests), Integer.toString(numCHKRequests), Integer.toString(numSSKRequests), Integer.toString(numLocalCHKRequests + numLocalSSKRequests)}));
 			}
 			if (numTransferringRequests > 0 || numTransferringRequestHandlers > 0) {
 				activityList.addChild("li", L10n.getString("StatisticsToadlet.transferringRequests", 

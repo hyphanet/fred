@@ -2490,6 +2490,38 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 		return runningCHKPutUIDs.size() + runningLocalCHKPutUIDs.size();
 	}
 	
+	public int getNumLocalSSKRequests() {
+		return runningLocalSSKGetUIDs.size();
+	}
+	
+	public int getNumLocalCHKRequests() {
+		return runningLocalCHKGetUIDs.size();
+	}
+	
+	public int getNumRemoteSSKRequests() {
+		return runningSSKGetUIDs.size();
+	}
+	
+	public int getNumRemoteCHKRequests() {
+		return runningCHKGetUIDs.size();
+	}
+	
+	public int getNumLocalSSKInserts() {
+		return runningLocalSSKPutUIDs.size();
+	}
+	
+	public int getNumLocalCHKInserts() {
+		return runningLocalCHKPutUIDs.size();
+	}
+	
+	public int getNumRemoteSSKInserts() {
+		return runningSSKPutUIDs.size();
+	}
+	
+	public int getNumRemoteCHKInserts() {
+		return runningCHKPutUIDs.size();
+	}
+	
 	public int getNumSSKOfferReplies() {
 		return runningSSKOfferReplyUIDs.size();
 	}
