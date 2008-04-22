@@ -2373,16 +2373,17 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 		HashSet set = getUIDTracker(ssk, insert, offerReply, local);
 		synchronized(set) {
 			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+set.size());
-			if(set.contains(l))
+			if(!set.add(l)) {
+				// Already present.
 				return false;
-			set.add(l);
+			}
 			if(logMINOR) Logger.minor(this, "Locked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+set.size());
 		}
 		synchronized(runningUIDs) {
-			if(!runningUIDs.contains(l)) {
-				runningUIDs.add(l);
+			if(runningUIDs.add(l)) {
+				// Not already present, we are okay.
 				return true;
-			}
+			} // Else is already present, we need to return false *and remove it from the other set*
 		}
 		synchronized(set) {
 			set.remove(l);
