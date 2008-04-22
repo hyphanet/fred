@@ -65,6 +65,7 @@ public interface UserAlert {
 
 	/**
 	 * @return A unique, short name for the alert. Can be simply hashCode(), not visible to the user.
+	 * MUST NOT contain spaces or commas.
 	 */
 	public String anchor();
 	

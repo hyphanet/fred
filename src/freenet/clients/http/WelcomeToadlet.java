@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.HashSet;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -384,6 +385,13 @@ public class WelcomeToadlet extends Toadlet {
                         }
                     }, 1);
             return;
+        } else if(request.isPartSet("dismiss-events")) {
+        	String alertsToDump = request.getPartAsString("events", 4096);
+        	String[] alertAnchors = alertsToDump.split(",");
+        	HashSet toDump = new HashSet();
+        	for(int i=0;i<alertAnchors.length;i++) toDump.add(alertAnchors[i]);
+        	core.alerts.dumpEvents(toDump);
+        	redirectToRoot(ctx);
         } else {
             redirectToRoot(ctx);
         }
@@ -539,7 +547,7 @@ public class WelcomeToadlet extends Toadlet {
 
         // Alerts
         if (ctx.isAllowedFullAccess()) {
-            contentNode.addChild(core.alerts.createAlertsShort(l10n("alertsSummary"), advancedModeOutputEnabled));
+            contentNode.addChild(core.alerts.createAlertsShort(l10n("alertsSummary"), advancedModeOutputEnabled, true));
         }
 
         // Bookmarks

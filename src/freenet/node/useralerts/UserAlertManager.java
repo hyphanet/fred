@@ -6,10 +6,13 @@ package freenet.node.useralerts;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 
+import freenet.support.Base64;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.StringArray;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 
@@ -80,6 +83,10 @@ public class UserAlertManager implements Comparator {
 		short prio0 = a0.getPriorityClass();
 		short prio1 = a1.getPriorityClass();
 		if(prio0 - prio1 == 0) {
+			boolean isEvent0 = a0.isEventNotification();
+			boolean isEvent1 = a1.isEventNotification();
+			if(isEvent0 && !isEvent1) return 1;
+			if((!isEvent0) && isEvent1) return -1;
 			// First go by class
 			int classHash0 = a0.getClass().hashCode();
 			int classHash1 = a1.getClass().hashCode();
@@ -122,13 +129,16 @@ public class UserAlertManager implements Comparator {
 	 * Write each alert in uber-concise form as HTML, with a link to 
 	 * /alerts/[ anchor pointing to the real alert].
 	 */
-	public HTMLNode createAlertsShort(String title, boolean advancedMode) {
+	public HTMLNode createAlertsShort(String title, boolean advancedMode, boolean drawDumpEventsForm) {
 		UserAlert[] alerts = getAlerts();
 		short maxLevel = Short.MAX_VALUE;
+		int events = 0;
 		for(int i=0;i<alerts.length;i++) {
 			short level = alerts[i].getPriorityClass();
 			if(level < maxLevel) maxLevel = level;
+			if(alerts[i].isEventNotification()) events++;
 		}
+		if(events < 2) drawDumpEventsForm = false;
 		if(maxLevel == Short.MAX_VALUE) {
 			return new HTMLNode("#", "");
 		}
@@ -149,6 +159,19 @@ public class UserAlertManager implements Comparator {
 		}
 		if (totalNumber == 0) {
 			return new HTMLNode("#", "");
+		}
+		if(drawDumpEventsForm) {
+			HTMLNode dumpFormNode = contentNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("div");
+			dumpFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+			StringBuffer sb = new StringBuffer();
+			for(int i=0;i<alerts.length;i++) {
+				if(!alerts[i].isEventNotification()) continue;
+				if(sb.length() != 0)
+					sb.append(",");
+				sb.append(alerts[i].anchor());
+			}
+			dumpFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "events", sb.toString() });
+			dumpFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dismiss-events", l10n("dumpEventsButton") });
 		}
 		return boxNode;
 	}
@@ -278,6 +301,17 @@ public class UserAlertManager implements Comparator {
 
 	private String l10n(String key) {
 		return L10n.getString("UserAlertManager."+key);
+	}
+
+	public void dumpEvents(HashSet toDump) {
+		// An iterator might be faster, but we don't want to call methods on the alert within the lock.
+		UserAlert[] alerts = getAlerts();
+		for(int i=0;i<alerts.length;i++) {
+			if(!alerts[i].isEventNotification()) continue;
+			if(!toDump.contains(alerts[i].anchor())) continue;
+			unregister(alerts[i]);
+			alerts[i].onDismiss();
+		}
 	}
 
 }
