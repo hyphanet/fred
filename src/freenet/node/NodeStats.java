@@ -513,7 +513,7 @@ public class NodeStats implements Persistable {
 			localChkFetchBytesSentAverage.currentValue() * numLocalCHKRequests +
 			successfulSskFetchBytesSentAverage.currentValue() * numRemoteSSKRequests +
 			// Local requests don't relay data, so use the local average
-			localSskFetchBytesSentAverage.currentValue() * numRemoteSSKRequests +
+			localSskFetchBytesSentAverage.currentValue() * numLocalSSKRequests +
 			// Inserts are the same for remote as local for sent bytes
 			successfulChkInsertBytesSentAverage.currentValue() * numRemoteCHKInserts +
 			successfulChkInsertBytesSentAverage.currentValue() * numLocalCHKInserts +
