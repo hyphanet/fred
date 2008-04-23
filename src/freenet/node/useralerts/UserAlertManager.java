@@ -6,15 +6,12 @@ package freenet.node.useralerts;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 
-import freenet.support.Base64;
-import freenet.support.HTMLNode;
-import freenet.support.Logger;
-import freenet.support.StringArray;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
+import freenet.support.HTMLNode;
+import freenet.support.Logger;
 
 /**
  * Collection of UserAlert's.
