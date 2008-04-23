@@ -14,6 +14,7 @@ import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.Option;
 import freenet.config.SubConfig;
+import freenet.config.WrapperConfig;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -83,6 +84,16 @@ public class ConfigToadlet extends Toadlet {
 					}
 				}
 			}
+			
+			// Wrapper params
+			String wrapperConfigName = "wrapper.java.maxmemory";
+			if(request.isPartSet(wrapperConfigName)) {
+				String value = request.getPartAsString(wrapperConfigName, MAX_PARAM_VALUE_SIZE);
+				if(!WrapperConfig.getWrapperProperty(wrapperConfigName).equals(value)) {
+					if(logMINOR) Logger.minor(this, "Setting "+wrapperConfigName+" to "+value);
+					WrapperConfig.setWrapperProperty(wrapperConfigName, value);
+				}
+			}
 		}
 		core.storeConfig();
 		
@@ -148,6 +159,21 @@ public class ConfigToadlet extends Toadlet {
 		infobox.addChild("div", "class", "infobox-header", l10n("title"));
 		HTMLNode configNode = infobox.addChild("div", "class", "infobox-content");
 		HTMLNode formNode = ctx.addFormChild(configNode, ".", "configForm");
+		
+		if(WrapperConfig.canChangeProperties()) {
+			formNode.addChild("div", "class", "configprefix", l10n("wrapper"));
+			HTMLNode list = formNode.addChild("ul", "class", "config");
+			HTMLNode item = list.addChild("li");
+			String configName = "wrapper.java.maxmemory";
+			// FIXME how to get the real default???
+			String defaultValue = "128";
+			String curValue = WrapperConfig.getWrapperProperty(configName);
+			item.addChild("span", new String[]{ "class", "title", "style" },
+					new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { defaultValue }), 
+					"cursor: help;" }).addChild(L10n.getHTMLNode("WrapperConfig."+configName+".short"));
+			item.addChild("span", "class", "config").addChild("input", new String[] { "type", "class", "name", "value" }, new String[] { "text", "config", configName, curValue });
+			item.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode("WrapperConfig."+configName+".long"));
+		}
 		
 		for(int i=0; i<sc.length;i++){
 			short displayedConfigElements = 0;
