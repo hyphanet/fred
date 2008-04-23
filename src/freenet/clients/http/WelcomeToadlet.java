@@ -197,7 +197,7 @@ public class WelcomeToadlet extends Toadlet {
                     }
                 }
             }
-            writePermanentRedirect(ctx, l10n("disabledAlert"), "/");
+            writePermanentRedirect(ctx, l10n("disabledAlert"), (core.alerts.getAlerts().length > 0 ? "/alerts/" : "/"));
             return;
         } else if (request.isPartSet("boardname") && (request.isPartSet("filename") || request.isPartSet("message"))) {
             // Inserting into a frost board FIN
