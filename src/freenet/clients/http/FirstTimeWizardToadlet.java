@@ -327,6 +327,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				WrapperConfig.setWrapperProperty("wrapper.java.maxmemory", selectedMemorySize);
 			}
 			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step=7");
+			return;
 		}
 		
 		super.writeTemporaryRedirect(ctx, "invalid/unhandled data", TOADLET_URL);
