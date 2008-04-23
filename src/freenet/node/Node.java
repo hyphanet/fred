@@ -3071,6 +3071,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 	}
 
 	public void JEStatsDump() {
+		if (storeEnvironment == null) {
+			System.out.println("database stat not availiable");
+			return;
+		}
 		try { 
 			System.out.println(storeEnvironment.getStats(statsConf));
 		}
