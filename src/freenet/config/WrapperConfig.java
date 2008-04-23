@@ -9,6 +9,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.HashMap;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -23,7 +24,13 @@ import freenet.support.io.FileUtil;
  */
 public class WrapperConfig {
 
+	private static HashMap overrides = new HashMap();
+	
 	public static String getWrapperProperty(String name) {
+		synchronized(WrapperConfig.class) {
+			if(overrides.containsKey(name))
+				return (String) overrides.get(name);
+		}
 		return WrapperManager.getProperties().getProperty(name, null);
 	}
 	
@@ -145,7 +152,8 @@ public class WrapperConfig {
 				}
 			}
 		}
-		WrapperManager.getProperties().setProperty(name, value);
+		// Wrapper properties are read-only, so don't setProperty().
+		overrides.put(name, value);
 		return true;
 	}
 	
