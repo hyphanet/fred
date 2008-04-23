@@ -739,7 +739,7 @@ public class StatisticsToadlet extends Toadlet {
 		}
 		if (numberOfClockProblem > 0) {
 			HTMLNode peerStatsRoutingDisabledListItem = peerStatsList.addChild("li").addChild("span");
-			peerStatsRoutingDisabledListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_routing_disabled", l10nDark("clockProblem"), "border-bottom: 1px dotted; cursor: help;" }, l10nDark("clockProblemShort"));
+			peerStatsRoutingDisabledListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_clock_problem", l10nDark("clockProblem"), "border-bottom: 1px dotted; cursor: help;" }, l10nDark("clockProblemShort"));
 			peerStatsRoutingDisabledListItem.addChild("span", ":\u00a0" + numberOfClockProblem);
 		}
 		if (numberOfConnError > 0) {
