@@ -20,7 +20,7 @@ public class TempBucketFactory implements BucketFactory {
 
 	private final FilenameGenerator filenameGenerator;
 	
-	public static long defaultIncrement = 4096;
+	public final static long defaultIncrement = 4096;
 	
 	public final static float DEFAULT_FACTOR = 1.25F;
 
