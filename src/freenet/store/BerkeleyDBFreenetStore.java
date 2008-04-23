@@ -21,6 +21,7 @@ import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.DatabaseNotFoundException;
 import com.sleepycat.je.Environment;
+import com.sleepycat.je.EnvironmentConfig;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 import com.sleepycat.je.RunRecoveryException;
@@ -2151,4 +2152,36 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 		if (lruRAF != null)
 			lruRAF.getFD().sync();
 	}
+
+	/**
+     * @return
+     */
+    public static EnvironmentConfig getBDBConfig() {
+        // First, global settings
+    	
+    	// Percentage of the database that must contain usefull data
+    	// decrease to increase performance, increase to save disk space
+    	// Let it stay at the default of 50% for best performance.
+    	// We only use it for indexes, so it won't get huge.
+    	//System.setProperty("je.cleaner.minUtilization","90");
+    	// Delete empty log files
+    	System.setProperty("je.cleaner.expunge","true");
+    	EnvironmentConfig envConfig = new EnvironmentConfig();
+    	envConfig.setAllowCreate(true);
+    	envConfig.setTransactional(true);
+    	envConfig.setTxnWriteNoSync(true);
+    	envConfig.setLockTimeout(600*1000*1000); // should be long enough even for severely overloaded nodes!
+    	// Note that the above is in *MICRO*seconds.
+    	envConfig.setConfigParam("je.log.faultReadSize", "6144");
+    	// http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#35
+    	envConfig.setConfigParam("je.evictor.lruOnly", "false");  //Is not a mutable config option and must be set before opening of environment.
+    	envConfig.setConfigParam("je.evictor.nodesPerScan", "50");  //Is not a mutable config option and must be set before opening of environment.
+    	// Recommended is 100, but smaller values reduce latency cost.
+    	
+    	// Tune latency
+    	envConfig.setConfigParam("je.env.backgroundReadLimit", "65536");
+    	envConfig.setConfigParam("je.env.backgroundWriteLimit", "65536");
+    	envConfig.setConfigParam("je.env.backgroundSleepInterval", "10000" /* microseconds */); // 10ms
+        return envConfig;
+    }
 }

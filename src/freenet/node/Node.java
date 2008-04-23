@@ -1326,31 +1326,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 		if(storeType.equals("bdb-index")) {
 		// Setup datastores
 		
-		// First, global settings
-		
-		// Percentage of the database that must contain usefull data
-		// decrease to increase performance, increase to save disk space
-		// Let it stay at the default of 50% for best performance.
-		// We only use it for indexes, so it won't get huge.
-		//System.setProperty("je.cleaner.minUtilization","90");
-		// Delete empty log files
-		System.setProperty("je.cleaner.expunge","true");
-		EnvironmentConfig envConfig = new EnvironmentConfig();
-		envConfig.setAllowCreate(true);
-		envConfig.setTransactional(true);
-		envConfig.setTxnWriteNoSync(true);
-		envConfig.setLockTimeout(600*1000*1000); // should be long enough even for severely overloaded nodes!
-		// Note that the above is in *MICRO*seconds.
-		envConfig.setConfigParam("je.log.faultReadSize", "6144");
-		// http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#35
-		envConfig.setConfigParam("je.evictor.lruOnly", "false");  //Is not a mutable config option and must be set before opening of environment.
-		envConfig.setConfigParam("je.evictor.nodesPerScan", "50");  //Is not a mutable config option and must be set before opening of environment.
-		// Recommended is 100, but smaller values reduce latency cost.
-		
-		// Tune latency
-		envConfig.setConfigParam("je.env.backgroundReadLimit", "65536");
-		envConfig.setConfigParam("je.env.backgroundWriteLimit", "65536");
-		envConfig.setConfigParam("je.env.backgroundSleepInterval", "10000" /* microseconds */); // 10ms
+		EnvironmentConfig envConfig = BerkeleyDBFreenetStore.getBDBConfig();
 		
 		File dbDir = new File(storeDir, "database-"+getDarknetPortNumber());
 		dbDir.mkdirs();
@@ -1638,7 +1614,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
 	}
-	
+
 	public void start(boolean noSwaps) throws NodeInitException {
 		
 		dispatcher.start(nodeStats); // must be before usm
