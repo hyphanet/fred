@@ -307,7 +307,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 	/* These are private because must be protected by synchronized(this) */
 	private final Environment storeEnvironment;
 	private final EnvironmentMutableConfig envMutableConfig;
-	private final SemiOrderedShutdownHook storeShutdownHook;
+	private final SemiOrderedShutdownHook shutdownHook;
 	private long databaseMaxMemory;
 	/** The CHK datastore. Long term storage; data should only be inserted here if
 	 * this node is the closest location on the chain so far, and it is on an 
@@ -879,6 +879,23 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 		
 		Logger.normal(Node.class, "Creating node...");
 
+		// init shutdown hook
+		shutdownHook = new SemiOrderedShutdownHook();
+		Runtime.getRuntime().addShutdownHook(shutdownHook);
+
+		shutdownHook.addEarlyJob(new Thread() {
+			public void run() {
+				if (opennet != null)
+					opennet.stop(false);
+			}
+		});
+
+		shutdownHook.addEarlyJob(new Thread() {
+			public void run() {
+				darknetCrypto.stop();
+			}
+		});
+		
 		// Bandwidth limit
 
 		nodeConfig.register("outputBandwidthLimit", "15K", sortOrder++, false, true, "Node.outBWLimit", "Node.outBWLimitLong", new IntCallback() {
@@ -1307,7 +1324,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 		maxCacheKeys = maxTotalKeys - maxStoreKeys;
 		
 		if(storeType.equals("bdb-index")) {
-		
 		// Setup datastores
 		
 		// First, global settings
@@ -1398,11 +1414,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 		
 		statsConf = new StatsConfig();
 		statsConf.setClear(true);
-
-		storeShutdownHook = new SemiOrderedShutdownHook();
-		Runtime.getRuntime().addShutdownHook(storeShutdownHook);
 		
-		storeShutdownHook.addLateJob(new Thread() {
+		shutdownHook.addLateJob(new Thread() {
 			public void run() {
 				try {
 					storeEnvironment.close();
@@ -1414,18 +1427,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 			}
 		});
 		
-		storeShutdownHook.addEarlyJob(new Thread() {
-			public void run() {
-				if(opennet != null)
-					opennet.stop(false);
-			}
-		});
-		
-		storeShutdownHook.addEarlyJob(new Thread() {
-			public void run() {
-				darknetCrypto.stop();
-			}
-		});
 		
 		nodeConfig.register("databaseMaxMemory", "20M", sortOrder++, true, false, "Node.databaseMemory", "Node.databaseMemoryLong", 
 				new LongCallback() {
@@ -1480,33 +1481,33 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 			System.out.println("Initializing CHK Datastore ("+maxStoreKeys+" keys)");
 			chkDatastore = new CHKStore();
 			BerkeleyDBFreenetStore.construct(storeDir, true, suffix, maxStoreKeys, FreenetStore.TYPE_CHK, 
-					storeEnvironment, storeShutdownHook, reconstructFile, chkDatastore, random);
+					storeEnvironment, shutdownHook, reconstructFile, chkDatastore, random);
 			Logger.normal(this, "Initializing CHK Datacache");
 			System.out.println("Initializing CHK Datacache ("+maxCacheKeys+ ':' +maxCacheKeys+" keys)");
 			chkDatacache = new CHKStore();
 			BerkeleyDBFreenetStore.construct(storeDir, false, suffix, maxCacheKeys, FreenetStore.TYPE_CHK, 
-					storeEnvironment, storeShutdownHook, reconstructFile, chkDatacache, random);
+					storeEnvironment, shutdownHook, reconstructFile, chkDatacache, random);
 			Logger.normal(this, "Initializing pubKey Datastore");
 			System.out.println("Initializing pubKey Datastore");
 			pubKeyDatastore = new PubkeyStore();
 			BerkeleyDBFreenetStore.construct(storeDir, true, suffix, maxStoreKeys, FreenetStore.TYPE_PUBKEY, 
-					storeEnvironment, storeShutdownHook, reconstructFile, pubKeyDatastore, random);
+					storeEnvironment, shutdownHook, reconstructFile, pubKeyDatastore, random);
 			Logger.normal(this, "Initializing pubKey Datacache");
 			System.out.println("Initializing pubKey Datacache ("+maxCacheKeys+" keys)");
 			pubKeyDatacache = new PubkeyStore();
 			BerkeleyDBFreenetStore.construct(storeDir, false, suffix, maxCacheKeys, FreenetStore.TYPE_PUBKEY, 
-					storeEnvironment, storeShutdownHook, reconstructFile, pubKeyDatacache, random);
+					storeEnvironment, shutdownHook, reconstructFile, pubKeyDatacache, random);
 			// FIXME can't auto-fix SSK stores.
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
 			sskDatastore = new SSKStore(this);
 			BerkeleyDBFreenetStore.construct(storeDir, true, suffix, maxStoreKeys, FreenetStore.TYPE_SSK, 
-					storeEnvironment, storeShutdownHook, reconstructFile, sskDatastore, random);
+					storeEnvironment, shutdownHook, reconstructFile, sskDatastore, random);
 			Logger.normal(this, "Initializing SSK Datacache");
 			System.out.println("Initializing SSK Datacache ("+maxCacheKeys+" keys)");
 			sskDatacache = new SSKStore(this);
 			BerkeleyDBFreenetStore.construct(storeDir, false, suffix, maxStoreKeys, FreenetStore.TYPE_SSK, 
-					storeEnvironment, storeShutdownHook, reconstructFile, sskDatacache, random);
+					storeEnvironment, shutdownHook, reconstructFile, sskDatacache, random);
 		} catch (FileNotFoundException e1) {
 			String msg = "Could not open datastore: "+e1;
 			Logger.error(this, msg, e1);
@@ -1545,7 +1546,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 			new RAMFreenetStore(sskDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
 			sskDatacache = new SSKStore(this);
 			new RAMFreenetStore(sskDatacache, (int) Math.min(Integer.MAX_VALUE, maxCacheKeys));
-			storeShutdownHook = null;
 			envMutableConfig = null;
 			this.storeEnvironment = null;
 		}
