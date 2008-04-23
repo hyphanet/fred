@@ -64,7 +64,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		private SingleFileInserter origSFI;
 		private ClientMetadata cm;
 		private Metadata metadata;
-		private boolean finished;
 		private String targetInZip;
 		private final Bucket data;
 		
@@ -79,7 +78,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 
 		public boolean isFinished() {
-			return finished || cancelled || SimpleManifestPutter.this.cancelled;
+			return SimpleManifestPutter.this.finished || cancelled || SimpleManifestPutter.this.cancelled;
 		}
 
 		public void onSuccess(ClientPutState state) {
