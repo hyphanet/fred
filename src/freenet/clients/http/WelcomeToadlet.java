@@ -182,6 +182,7 @@ public class WelcomeToadlet extends Toadlet {
                 redirectToRoot(ctx);
                 return;
             }
+	    int validAlertsRemaining = 0;
             UserAlert[] alerts = core.alerts.getAlerts();
             for (int i = 0; i < alerts.length; i++) {
                 if (request.getIntPart("disable", -1) == alerts[i].hashCode()) {
@@ -195,9 +196,10 @@ public class WelcomeToadlet extends Toadlet {
                         Logger.normal(this, "Disabling the userAlert " + alert.hashCode());
                         alert.isValid(false);
                     }
-                }
+                } else if(alerts[i].isValid())
+			validAlertsRemaining++;
             }
-            writePermanentRedirect(ctx, l10n("disabledAlert"), (core.alerts.getAlerts().length > 0 ? "/alerts/" : "/"));
+            writePermanentRedirect(ctx, l10n("disabledAlert"), (validAlertsRemaining > 0 ? "/alerts/" : "/"));
             return;
         } else if (request.isPartSet("boardname") && (request.isPartSet("filename") || request.isPartSet("message"))) {
             // Inserting into a frost board FIN
