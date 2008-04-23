@@ -103,12 +103,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "bwForm");
 			HTMLNode result = bandwidthForm.addChild("select", "name", "bw");
 			
-			result.addChild("option", "value", "8K", "lower speed");
+			result.addChild("option", "value", "8K", l10n("bwlimitLowerSpeed"));
 			result.addChild("option", new String[] { "value", "selected" }, new String[] { "12K", "selected" }, "512+/128 kbps");
 			result.addChild("option", "value", "24K", "1024+/256 kbps");
 			result.addChild("option", "value", "48K", "1024+/512 kbps");
 			result.addChild("option", "value", "96K", "1024+/1024 kbps");
-			result.addChild("option", "value", "1000K", "higher speed");
+			result.addChild("option", "value", "1000K", l10n("bwlimitHigherSpeed"));
 			
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "bwF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
@@ -203,11 +203,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			
 			HTMLNode bandwidthForm = ctx.addFormChild(memoryInfoboxContent, ".", "memoryForm");
 			HTMLNode result = bandwidthForm.addChild("select", "name", "memory");
-			result.addChild("option", "value", "64", "64MiB - only if desperate");
-			result.addChild("option", "value", "128", "128MiB - bare minimum");
-			result.addChild("option", new String[] { "value", "selected" }, new String[] { "192", "selected" }, "192MiB - reasonable default");
-			result.addChild("option", "value", "256", "256MiB - if you have at least 1GB of RAM");
-			result.addChild("option", "value", "512", "512MiB - if you have lots of RAM");
+			result.addChild("option", "value", "64", l10n("memory.64M"));
+			result.addChild("option", "value", "128", l10n("memory.128M"));
+			result.addChild("option", new String[] { "value", "selected" }, new String[] { "192", "selected" }, l10n("memory.192M"));
+			result.addChild("option", "value", "256", l10n("memory.256M"));
+			result.addChild("option", "value", "512", l10n("memory.512M"));
 
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "memoryF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
