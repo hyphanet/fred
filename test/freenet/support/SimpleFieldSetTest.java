@@ -536,7 +536,7 @@ public class SimpleFieldSetTest extends TestCase {
 		String expectedSubset = SAMPLE_STRING_PAIRS[0][0];	//"foo"
 		Iterator methodIter = methodSFS.directSubsetNameIterator();
 		while (methodIter.hasNext())
-			((String)methodIter.next()).equals(expectedSubset);
+			assertEquals(methodIter.next(), expectedSubset);
 		methodSFS = new SimpleFieldSet(true);
 		methodIter = methodSFS.directSubsetNameIterator();
 		assertNull(methodIter);
