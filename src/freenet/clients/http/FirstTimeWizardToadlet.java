@@ -11,6 +11,7 @@ import java.net.URI;
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
+import freenet.config.WrapperConfig;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -190,6 +191,30 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
+		} else if(currentStep == 6) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step6Title"), false, ctx);
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			
+			HTMLNode memoryInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+			HTMLNode memoryInfoboxHeader = memoryInfobox.addChild("div", "class", "infobox-header");
+			HTMLNode memoryInfoboxContent = memoryInfobox.addChild("div", "class", "infobox-content");
+			
+			memoryInfoboxHeader.addChild("#", l10n("memoryLimit"));
+			memoryInfoboxContent.addChild("#", l10n("memoryLimitLong"));
+			
+			HTMLNode bandwidthForm = ctx.addFormChild(memoryInfoboxContent, ".", "memoryForm");
+			HTMLNode result = bandwidthForm.addChild("select", "name", "memory");
+			result.addChild("option", "value", "64", "64MiB - only if desperate");
+			result.addChild("option", "value", "128", "128MiB - bare minimum");
+			result.addChild("option", new String[] { "value", "selected" }, new String[] { "192", "selected" }, "192MiB - reasonable default");
+			result.addChild("option", "value", "256", "256MiB - if you have at least 1GB of RAM");
+			result.addChild("option", "value", "512", "512MiB - if you have lots of RAM");
+
+			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "memoryF", L10n.getString("FirstTimeWizardToadlet.continue")});
+			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+			return;
+
 		}else if(currentStep == 7) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step7Title"), true, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -292,8 +317,17 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			} catch (InvalidConfigValueException e) {
 				Logger.error(this, "Should not happen, please report!" + e, e);
 			}
-			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step=7");
+			boolean canDoStepSix = WrapperConfig.canChangeProperties();
+			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step="+(canDoStepSix?"6":"7"));
 			return;
+		} else if(request.isPartSet("memoryF")) {
+			String selectedMemorySize = request.getPartAsString("memoryF", 6);
+			
+			int memorySize = Fields.parseInt(selectedMemorySize, -1);
+			if(memorySize >= 0) {
+				WrapperConfig.setWrapperProperty("wrapper.java.maxmemory", selectedMemorySize);
+			}
+			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step=7");
 		}
 		
 		super.writeTemporaryRedirect(ctx, "invalid/unhandled data", TOADLET_URL);
