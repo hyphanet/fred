@@ -190,8 +190,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
-		}else if(currentStep == 6) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step6Title"), true, ctx);
+		}else if(currentStep == 7) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step7Title"), true, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
 			HTMLNode congratzInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -292,7 +292,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			} catch (InvalidConfigValueException e) {
 				Logger.error(this, "Should not happen, please report!" + e, e);
 			}
-			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step=6");
+			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step=7");
 			return;
 		}
 		
