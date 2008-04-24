@@ -265,12 +265,17 @@ public class FailureTable {
 		}
 		offerExecutor.execute(new Runnable() {
 			public void run() {
-				innerOfferKey(key, peer, authenticator);
+				innerOnOffer(key, peer, authenticator);
 			}
 		}, "onOffer()");
 	}
 
-	protected void innerOfferKey(Key key, PeerNode peer, byte[] authenticator) {
+	/**
+	 * This method runs on the SerialExecutor. Therefore, any blocking network I/O needs to be scheduled
+	 * on a separate thread. However, blocking disk I/O *should happen on this thread*. We deliberately
+	 * serialise it, as high latencies can otherwise result.
+	 */
+	protected void innerOnOffer(Key key, PeerNode peer, byte[] authenticator) {
 		//NB: node.hasKey() executes a datastore fetch
 		if(node.hasKey(key)) {
 			Logger.minor(this, "Already have key");
@@ -387,7 +392,12 @@ public class FailureTable {
 			}
 		}, "sendOfferedKey");
 	}
-	
+
+	/**
+	 * This method runs on the SerialExecutor. Therefore, any blocking network I/O needs to be scheduled
+	 * on a separate thread. However, blocking disk I/O *should happen on this thread*. We deliberately
+	 * serialise it, as high latencies can otherwise result.
+	 */
 	protected void innerSendOfferedKey(Key key, final boolean isSSK, boolean needPubKey, final long uid, final PeerNode source) throws NotConnectedException {
 		if(isSSK) {
 			SSKBlock block = node.fetch((NodeSSK)key, false);
