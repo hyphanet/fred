@@ -478,7 +478,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-information", L10n.getString("QueueToadlet.globalQueueIsEmpty")));
 			HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
 			infoboxContent.addChild("#", L10n.getString("QueueToadlet.noTaskOnGlobalQueue"));
-			contentNode.addChild(createInsertBox(pageMaker, ctx));
+			contentNode.addChild(createInsertBox(pageMaker, ctx, core.isAdvancedModeEnabled()));
 			writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		}
@@ -585,7 +585,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
 		/* add file insert box */
-		contentNode.addChild(createInsertBox(pageMaker, ctx));
+		contentNode.addChild(createInsertBox(pageMaker, ctx, core.isAdvancedModeEnabled()));
 
 		/* navigation bar */
 		HTMLNode navigationBar = pageMaker.getInfobox("navbar", L10n.getString("QueueToadlet.requestNavigation"));
@@ -946,7 +946,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		return keyCell;
 	}
 	
-	private HTMLNode createInsertBox(PageMaker pageMaker, ToadletContext ctx) {
+	private HTMLNode createInsertBox(PageMaker pageMaker, ToadletContext ctx, boolean isAdvancedModeEnabled) {
 		/* the insert file box */
 		HTMLNode insertBox = pageMaker.getInfobox(L10n.getString("QueueToadlet.insertFile"));
 		HTMLNode insertContent = pageMaker.getContentNode(insertBox);
@@ -957,15 +957,22 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "keytype", "ksk" });
 		insertForm.addChild("#", " KSK/SSK/USK \u00a0 ");
 		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "key", "KSK@" });
-		insertForm.addChild("#", " \u00a0 " + L10n.getString("QueueToadlet.insertFileLabel") + ": ");
+		if(ctx.isAllowedFullAccess()) {
+			insertForm.addChild("#", " \u00a0 ");
+			insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local", L10n.getString("QueueToadlet.insertFileBrowseLabel") + "..." });
+			insertForm.addChild("br");
+		}
+		insertForm.addChild("#", L10n.getString("QueueToadlet.insertFileLabel") + ": ");
 		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "file", "filename", "" });
 		insertForm.addChild("#", " \u00a0 ");
-		insertForm.addChild("input", new String[] { "type", "name", "checked" }, new String[] { "checkbox", "compress", "checked" });
-		insertForm.addChild("#", " " + L10n.getString("QueueToadlet.insertFileCompressLabel") + " \u00a0 ");
 		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert", L10n.getString("QueueToadlet.insertFileInsertFileLabel") });
 		insertForm.addChild("#", " \u00a0 ");
-		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local", L10n.getString("QueueToadlet.insertFileBrowseLabel") + "..." });
-		insertForm.addChild("#", " \u00a0 ");
+		if(isAdvancedModeEnabled) {
+			insertForm.addChild("input", new String[] { "type", "name", "checked" }, new String[] { "checkbox", "compress", "checked" });
+			insertForm.addChild("#", " " + L10n.getString("QueueToadlet.insertFileCompressLabel") + " \u00a0 ");
+		} else {
+			insertForm.addChild("input", new String[] { "type", "value" }, new String[] { "hidden", "true" });
+		}
 		insertForm.addChild("input", new String[] { "type", "name" }, new String[] { "reset", L10n.getString("QueueToadlet.insertFileResetForm") });
 		return insertBox;
 	}
