@@ -1622,6 +1622,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 		peers.start(); // must be before usm
 		nodeStats.start();
 		uptime.start();
+		failureTable.start();
 		
 		darknetCrypto.start(disableHangCheckers);
 		if(opennet != null)

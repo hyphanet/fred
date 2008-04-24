@@ -21,6 +21,7 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
+import freenet.support.SerialExecutor;
 import freenet.support.io.NativeThread;
 
 // FIXME it is ESSENTIAL that we delete the ULPR data on requestors etc once we have found the key.
@@ -71,7 +72,12 @@ public class FailureTable {
 		node.random.nextBytes(offerAuthenticatorKey);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		offerExecutor = new SerialExecutor(NativeThread.HIGH_PRIORITY);
 		node.ps.queueTimedJob(new FailureTableCleaner(), CLEANUP_PERIOD);
+	}
+	
+	public void start() {
+		offerExecutor.start(node.executor, "FailureTable offers executor");
 	}
 	
 	/**
@@ -234,6 +240,10 @@ public class FailureTable {
 		entry.offer();
 	}
 	
+	/** Run onOffer() on a separate thread since it can block for disk I/O, and we don't want to cause 
+	 * transfer timeouts etc because of slow disk. */
+	private final SerialExecutor offerExecutor;
+	
 	/**
 	 * Called when we get an offer for a key. If this is an SSK, we will only accept it if we have previously asked for it.
 	 * If it is a CHK, we will accept it if we want it.
@@ -241,10 +251,33 @@ public class FailureTable {
 	 * @param peer The node offering it.
 	 * @param authenticator 
 	 */
-	void onOffer(Key key, PeerNode peer, byte[] authenticator) {
+	void onOffer(final Key key, final PeerNode peer, final byte[] authenticator) {
 		if(!node.enableULPRDataPropagation) return;
 		if(logMINOR)
 			Logger.minor(this, "Offered key "+key+" by peer "+peer);
+		FailureTableEntry entry;
+		synchronized(this) {
+			entry = (FailureTableEntry) entriesByKey.get(key);
+			if(entry == null) {
+				if(logMINOR) Logger.minor(this, "We didn't ask for the key");
+				return; // we haven't asked for it
+			}
+		}
+		offerExecutor.execute(new Runnable() {
+			public void run() {
+				innerOfferKey(key, peer, authenticator);
+			}
+		}, "onOffer()");
+	}
+
+	protected void innerOfferKey(Key key, PeerNode peer, byte[] authenticator) {
+		//NB: node.hasKey() executes a datastore fetch
+		if(node.hasKey(key)) {
+			Logger.minor(this, "Already have key");
+			return;
+		}
+		
+		// Re-check after potentially long disk I/O.
 		FailureTableEntry entry;
 		long now = System.currentTimeMillis();
 		synchronized(this) {
@@ -254,11 +287,7 @@ public class FailureTable {
 				return; // we haven't asked for it
 			}
 		}
-		//NB: node.hasKey() executes a datastore fetch
-		if(node.hasKey(key)) {
-			Logger.minor(this, "Already have key");
-			return;
-		}		
+
 		/*
 		 * Accept (subject to later checks) if we asked for it.
 		 * Should we accept it if we were asked for it? This is "bidirectional propagation".
@@ -347,7 +376,19 @@ public class FailureTable {
 	 * @param source The node that asked for the key.
 	 * @throws NotConnectedException If the sender ceases to be connected.
 	 */
-	public void sendOfferedKey(Key key, final boolean isSSK, boolean needPubKey, final long uid, final PeerNode source) throws NotConnectedException {
+	public void sendOfferedKey(final Key key, final boolean isSSK, final boolean needPubKey, final long uid, final PeerNode source) throws NotConnectedException {
+		this.offerExecutor.execute(new Runnable() {
+			public void run() {
+				try {
+					innerSendOfferedKey(key, isSSK, needPubKey, uid, source);
+				} catch (NotConnectedException e) {
+					// Too bad.
+				}
+			}
+		}, "sendOfferedKey");
+	}
+	
+	protected void innerSendOfferedKey(Key key, final boolean isSSK, boolean needPubKey, final long uid, final PeerNode source) throws NotConnectedException {
 		if(isSSK) {
 			SSKBlock block = node.fetch((NodeSSK)key, false);
 			if(block == null) {
@@ -423,7 +464,7 @@ public class FailureTable {
         	}, "CHK offer sender");
 		}
 	}
-	
+
 	public final OfferedKeysByteCounter senderCounter = new OfferedKeysByteCounter();
 	
 	class OfferedKeysByteCounter implements ByteCounter {
