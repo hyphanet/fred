@@ -131,15 +131,15 @@ public class UserAlertManager implements Comparator {
 		short maxLevel = Short.MAX_VALUE;
 		int events = 0;
 		for(int i=0;i<alerts.length;i++) {
+			boolean isValid = alerts[i].isValid();
 			short level = alerts[i].getPriorityClass();
-			if(level < maxLevel) maxLevel = level;
-			if(alerts[i].isEventNotification()) events++;
+			if(isValid) {
+				if(level < maxLevel) maxLevel = level;
+				if(alerts[i].isEventNotification()) events++;
+			}
 		}
 		if(events < 2) drawDumpEventsForm = false;
-		if(maxLevel == Short.MAX_VALUE) {
-			return new HTMLNode("#", "");
-		}
-		HTMLNode boxNode = new HTMLNode("div", "class", "infobox infobox-"+getAlertLevelName(maxLevel)+" infobox-alert infobox-summary-status-box");
+		HTMLNode boxNode = new HTMLNode("div", "class", "infobox infobox-"+getAlertLevelName(maxLevel)+" infobox-summary-status-box");
 		boxNode.addChild("div", "class", "infobox-header infobox summary-status-header", title);
 		HTMLNode contentNode = boxNode.addChild("div", "class", "infobox-content infobox-summary-status-content");
 		if(!advancedMode)
