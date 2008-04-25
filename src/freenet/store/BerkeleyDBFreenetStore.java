@@ -4,8 +4,6 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -81,9 +79,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	private RandomAccessFile storeRAF;
 	private RandomAccessFile keysRAF;
 	private RandomAccessFile lruRAF;
-	private FileChannel storeFC;
-	private FileChannel keysFC;
-	private FileChannel lruFC;
 	private final SortedLongSet freeBlocks;
 	private final String name;
 	/** Callback which translates records to blocks and back, specifies the size of blocks etc. */
@@ -257,20 +252,17 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				if(!storeFile.createNewFile())
 					throw new IOException("Can't create a new file " + storeFile + " !");
 			storeRAF = new RandomAccessFile(storeFile,"rw");
-			storeFC = storeRAF.getChannel();
 
 			if(!lruFile.exists()) 
 				if(!lruFile.createNewFile())
 					throw new IOException("Can't create a new file " + lruFile + " !");
 			lruRAF = new RandomAccessFile(lruFile,"rw");
-			lruFC = lruRAF.getChannel();
 
 			if(keysFile != null) {
 				if(!keysFile.exists())
 					if(!keysFile.createNewFile())
 						throw new IOException("Can't create a new file " + keysFile + " !");
 				keysRAF = new RandomAccessFile(keysFile,"rw");
-				keysFC = keysRAF.getChannel();
 			} else keysRAF = null;
 
 			if (wipe) {
@@ -630,15 +622,18 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				boolean readLRU = false;
 				boolean readKey = false;
 				try {
-					storeFC.read(ByteBuffer.wrap(buf), entry * (headerBlockSize + dataBlockSize));
+					storeRAF.seek(entry * (headerBlockSize + dataBlockSize));
+					storeRAF.readFully(buf);
 					lruValue = 0;
 					if(lruRAF.length() > ((entry + 1) * 8)) {
 						readLRU = true;
-						lruValue = fcReadLRU(entry);
+						lruRAF.seek(entry * 8);
+						lruValue = lruRAF.readLong();
 					}
 					if(keysRAF != null && keysRAF.length() > ((entry + 1) * keyLength)) {
 						readKey = true;
-						fcReadKey(entry, keyBuf);
+						keysRAF.seek(entry * keyLength);
+						keysRAF.readFully(keyBuf);
 					}
 				} catch (EOFException e) {
 					System.err.println("Was reading "+wantedBlock+" to write to "+unwantedBlock);
@@ -647,12 +642,15 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 					throw e;
 				}
 				entry = unwantedBlock.longValue();
-				storeFC.write(ByteBuffer.wrap(buf), entry * (headerBlockSize + dataBlockSize));
+				storeRAF.seek(entry * (headerBlockSize + dataBlockSize));
+				storeRAF.write(buf);
 				if(readLRU) {
-					fcWriteLRU(entry, lruValue);
+					lruRAF.seek(entry * 8);
+					lruRAF.writeLong(lruValue);
 				}
 				if(readKey) {
-					fcWriteKey(entry, keyBuf);
+					keysRAF.seek(entry * keyLength);
+					keysRAF.write(keyBuf);
 				}
 				
 				// Update the database w.r.t. the old block.
@@ -1160,7 +1158,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				byte[] header = new byte[headerBlockSize];
 				byte[] data = new byte[dataBlockSize];
 				try {
-					fcReadStore(storeBlock.offset, header, data);
+					synchronized(storeRAF) {
+						storeRAF.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
+						storeRAF.readFully(header);
+						storeRAF.readFully(data);
+					}
 				} catch (EOFException e) {
 					Logger.error(this, "No block");
 					c.close();
@@ -1199,15 +1201,16 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 						keysDB.put(t,routingkeyDBE,blockDBE);
 						if(fullKey == null)
 							fullKey = block.getFullKey();
-						
+						synchronized(storeRAF) {
 							if(keysRAF != null) {
-								fcWriteKey(storeBlock.offset, fullKey);
+								keysRAF.seek(storeBlock.offset * keyLength);
+								keysRAF.write(fullKey);
 								if(logDEBUG)
 									Logger.debug(this, "Written full key length "+fullKey.length+" to block "+storeBlock.offset+" at "+(storeBlock.offset * keyLength)+" for "+callback);
 							} else if(logDEBUG) {
 								Logger.debug(this, "Not writing full key length "+fullKey.length+" for block "+storeBlock.offset+" for "+callback);
 							}
-						
+						}
 					} catch (DatabaseException e) {
 						Logger.error(this, "Caught database exception "+e+" while replacing element");
 						addFreeBlock(storeBlock.offset, true, "Bogus key");
@@ -1234,7 +1237,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 					c = null;
 					t.commit();
 					t = null;
-					fcWriteLRU(storeBlock.offset, storeBlock.recentlyUsed);
+					synchronized(storeRAF) {
+						lruRAF.seek(storeBlock.offset * 8);
+						lruRAF.writeLong(storeBlock.recentlyUsed);
+					}
 				} else {
 					c.close();
 					c = null;
@@ -1252,14 +1258,16 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				synchronized(this) {
 					misses++;
 				}
-				
+				synchronized(storeRAF) {
 					// Clear the key in the keys file.
 					byte[] buf = new byte[keyLength];
 					for(int i=0;i<buf.length;i++) buf[i] = 0; // FIXME unnecessary?
 					if(keysRAF != null) {
-						fcWriteKey(storeBlock.offset, buf);
+						keysRAF.seek(storeBlock.offset * keyLength);
+						keysRAF.write(buf);
 					}
-				
+				}
+
 				keysDB.delete(t, routingkeyDBE);
 				
 				// Insert the block into the index with a random key, so that it's part of the LRU.
@@ -1386,9 +1394,14 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 
 			StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
 						
-			fcWriteStore(storeBlock.offset, header, data);
-			if (keysRAF != null) {
-				fcWriteKey(storeBlock.offset, fullKey);
+			synchronized(storeRAF) {
+				storeRAF.seek(storeBlock.offset*(long)(dataBlockSize+headerBlockSize));
+				storeRAF.write(header);
+				storeRAF.write(data);
+				if(keysRAF != null) {
+					keysRAF.seek(storeBlock.offset * keyLength);
+					keysRAF.write(fullKey);
+				}
 			}
 			
 			// Unlock record.
@@ -1509,17 +1522,22 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 		DatabaseEntry blockDBE = new DatabaseEntry();
 		storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
 		keysDB.put(t,routingkeyDBE,blockDBE);
-		
-		fcWriteStore(storeBlock.getOffset(), header, data);
-		fcWriteLRU( storeBlock.getOffset(),storeBlock.recentlyUsed);
-		if (keysRAF != null)
-			fcWriteKey(storeBlock.getOffset(), fullKey);
-		synchronized (this) {
+		synchronized(storeRAF) {
+			storeRAF.seek(storeBlock.getOffset()*(long)(dataBlockSize+headerBlockSize));
+			storeRAF.write(header);
+			storeRAF.write(data);
+			lruRAF.seek(storeBlock.getOffset() * 8);
+			lruRAF.writeLong(storeBlock.recentlyUsed);
+			if(keysRAF != null) {
+				keysRAF.seek(storeBlock.getOffset() * keyLength);
+				keysRAF.write(fullKey);
+			}
 			writes++;
 		}
 	}
 
 	private boolean writeNewBlock(long blockNum, byte[] header, byte[] data, Transaction t, DatabaseEntry routingkeyDBE, byte[] fullKey) throws DatabaseException, IOException {
+		long byteOffset = blockNum*(dataBlockSize+headerBlockSize);
 		StoreBlock storeBlock = new StoreBlock(this, blockNum);
 		long lruValue = storeBlock.recentlyUsed;
 		DatabaseEntry blockDBE = new DatabaseEntry();
@@ -1544,20 +1562,31 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				throw e;
 			}
 		}
-		
-			fcWriteStore(blockNum, header, data);
-			fcWriteLRU(blockNum, lruValue);
+		synchronized(storeRAF) {
+			try {
+				storeRAF.seek(byteOffset);
+			} catch (IOException ioe) {
+				if(byteOffset > (2l*1024*1024*1024)) {
+					Logger.error(this, "Environment does not support files bigger than 2 GB?");
+					System.out.println("Environment does not support files bigger than 2 GB? (exception to follow)");
+				}
+				Logger.error(this, "Caught IOException on storeRAF.seek("+byteOffset+ ')');
+				throw ioe;
+			}
+			storeRAF.write(header);
+			storeRAF.write(data);
+			lruRAF.seek(blockNum * 8);
+			lruRAF.writeLong(lruValue);
 			if(keysRAF != null) {
-				fcWriteKey(blockNum, fullKey);
+				keysRAF.seek(blockNum * keyLength);
+				keysRAF.write(fullKey);
 				if(logDEBUG)
 					Logger.debug(this, "Written full key length "+fullKey.length+" to block "+blockNum+" at "+(blockNum * keyLength)+" for "+callback);
 			} else if(logDEBUG) {
 				Logger.debug(this, "Not writing full key length "+fullKey.length+" for block "+blockNum+" for "+callback);
 			}
-			synchronized (this) {
 			writes++;
 		}
-		
 		return true;
 	}
 
@@ -1773,7 +1802,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	private static void flushAndCloseRAF(RandomAccessFile file) {
 		try {
 			if (file != null)
-				file.getChannel().force(true);
+				file.getFD().sync();
 		} catch (IOException e) {
 			// ignore
 		}
@@ -2115,46 +2144,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 		return db;
 	}
 
-	private void fcWriteLRU(long entry, long data) throws IOException {
-		ByteBuffer bf = ByteBuffer.allocateDirect(8);
-		bf.putLong(data);
-		bf.flip();
-		lruFC.write(bf, entry * 8);
-	}
-	private long fcReadLRU(long entry) throws IOException {
-		ByteBuffer bf = ByteBuffer.allocateDirect(8);
-		lruFC.read(bf, entry * 8);
-		bf.flip();
-		if (bf.remaining() < 8)
-			throw new EOFException();
-		return bf.getLong();
-	}
-	private void fcReadKey(long entry, byte[] data) throws IOException {
-		if (keysFC.read(ByteBuffer.wrap(data), entry * keyLength) != data.length)
-			throw new EOFException();
-	}
-	private void fcWriteKey(long entry, byte[] data) throws IOException {
-		keysFC.write(ByteBuffer.wrap(data), entry * keyLength);
-	}
-	private void fcWriteStore(long entry, byte[] header, byte[] data) throws IOException {
-		ByteBuffer bf = ByteBuffer.allocateDirect(headerBlockSize + dataBlockSize);
-		bf.put(header);
-		bf.put(data);
-		bf.flip();
-		storeFC.write(bf, (headerBlockSize + dataBlockSize) * entry);
-	}
-	private void fcReadStore(long entry,byte[] header, byte[] data ) throws IOException {
-		ByteBuffer bf = ByteBuffer.allocateDirect(headerBlockSize + dataBlockSize);
-		int dataRead = storeFC.read(bf, (headerBlockSize + dataBlockSize) * entry);
-		
-		if (dataRead != headerBlockSize + dataBlockSize)
-			throw new EOFException();
-		
-		bf.flip();
-		bf.get(header);
-		bf.get(data);
-	}
-	
     public void handleOOM() throws Exception {
 		if (storeRAF != null)
 			storeRAF.getFD().sync();
