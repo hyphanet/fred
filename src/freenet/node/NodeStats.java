@@ -592,27 +592,27 @@ public class NodeStats implements Persistable {
 			return "Input bandwidth liability ("+bandwidthLiabilityInput+" > "+bandwidthAvailableInput+")";
 		}
 		
-//		// Do we have the bandwidth?
-//		double expected = this.getThrottle(isLocal, isInsert, isSSK, true).currentValue();
-//		int expectedSent = (int)Math.max(expected / overheadFraction, 0);
-//		if(logMINOR)
-//			Logger.minor(this, "Expected sent bytes: "+expected+" -> "+expectedSent);
-//		if(!requestOutputThrottle.instantGrab(expectedSent)) {
-//			pInstantRejectIncoming.report(1.0);
-//			rejected("Insufficient output bandwidth", isLocal);
-//			return "Insufficient output bandwidth";
-//		}
-//		expected = this.getThrottle(isLocal, isInsert, isSSK, false).currentValue();
-//		int expectedReceived = (int)Math.max(expected, 0);
-//		if(logMINOR)
-//			Logger.minor(this, "Expected received bytes: "+expectedReceived);
-//		if(!requestInputThrottle.instantGrab(expectedReceived)) {
-//			requestOutputThrottle.recycle(expectedSent);
-//			pInstantRejectIncoming.report(1.0);
-//			rejected("Insufficient input bandwidth", isLocal);
-//			return "Insufficient input bandwidth";
-//		}
-//
+		// Do we have the bandwidth?
+		double expected = this.getThrottle(isLocal, isInsert, isSSK, true).currentValue();
+		int expectedSent = (int)Math.max(expected / overheadFraction, 0);
+		if(logMINOR)
+			Logger.minor(this, "Expected sent bytes: "+expected+" -> "+expectedSent);
+		if(!requestOutputThrottle.instantGrab(expectedSent)) {
+			pInstantRejectIncoming.report(1.0);
+			rejected("Insufficient output bandwidth", isLocal);
+			return "Insufficient output bandwidth";
+		}
+		expected = this.getThrottle(isLocal, isInsert, isSSK, false).currentValue();
+		int expectedReceived = (int)Math.max(expected, 0);
+		if(logMINOR)
+			Logger.minor(this, "Expected received bytes: "+expectedReceived);
+		if(!requestInputThrottle.instantGrab(expectedReceived)) {
+			requestOutputThrottle.recycle(expectedSent);
+			pInstantRejectIncoming.report(1.0);
+			rejected("Insufficient input bandwidth", isLocal);
+			return "Insufficient input bandwidth";
+		}
+
 		if(source != null) {
 			if(source.getMessageQueueLengthBytes() > MAX_PEER_QUEUE_BYTES) {
 				rejected(">MAX_PEER_QUEUE_BYTES", isLocal);
