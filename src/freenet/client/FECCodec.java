@@ -393,8 +393,6 @@ public abstract class FECCodec {
 	 * A private Thread started by {@link FECCodec}...
 	 * 
 	 * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
-	 *
-	 *	TODO: maybe it ought to start more than one thread on SMP system ? (take care, it's memory consumpsive)
 	 */
 	private static class FECRunner implements PrioRunnable {
 
