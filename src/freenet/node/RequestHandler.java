@@ -645,6 +645,11 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	}
 
 	public void sentPayload(int x) {
+		// Count it towards the cost of this request for purposes of output bandwidth liability.
+		// But DO NOT count it towards the request overhead total.
+		synchronized(bytesSync) {
+			sentBytes += x;
+		}
 		node.sentPayload(x);
 		node.nodeStats.requestSentBytes(key instanceof NodeSSK, -x);
 	}
