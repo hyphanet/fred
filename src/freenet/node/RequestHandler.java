@@ -642,6 +642,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			sentBytes += x;
 		}
 		node.nodeStats.requestSentBytes(key instanceof NodeSSK, x);
+		if(logMINOR) Logger.minor(this, "sentBytes("+x+") on "+this);
 	}
 
 	public void receivedBytes(int x) {
@@ -652,13 +653,14 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	}
 
 	public void sentPayload(int x) {
-		// Count it towards the cost of this request for purposes of output bandwidth liability.
-		// But DO NOT count it towards the request overhead total.
-		synchronized(bytesSync) {
-			sentBytes += x;
-		}
+		/*
+		 * Do not add payload to sentBytes. sentBytes() is called with the actual sent bytes,
+		 * and we do not deduct the alreadyReportedBytes, which are only used for accounting
+		 * for the bandwidth throttle.
+		 */
 		node.sentPayload(x);
 		node.nodeStats.requestSentBytes(key instanceof NodeSSK, -x);
+		if(logMINOR) Logger.minor(this, "sentPayload("+x+") on "+this);
 	}
 
 	public int getPriority() {
