@@ -184,7 +184,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 				if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
 				return;
 			} catch (WaitedTooLongException e1) {
-				Logger.error(this, "Took too long to send ssk datareply to "+uid);
+				Logger.error(this, "Took too long to send ssk datareply to "+uid+" (because of throttling)");
 				return;
 			}
 			block = storedBlock;
@@ -247,7 +247,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 					if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
 					return;
 				} catch (WaitedTooLongException e1) {
-					Logger.error(this, "Took too long to send ssk datareply to "+uid);
+					Logger.error(this, "Took too long to send ssk datareply to "+uid+" because of bwlimiting");
 					return;
 				}
             }

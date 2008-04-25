@@ -350,13 +350,15 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 			public void run() {
 				try {
-					source.sendThrottledMessage(dataMsg, data.length, RequestHandler.this, 60*1000);
+					source.sendThrottledMessage(dataMsg, data.length, RequestHandler.this, 60*1000, true);
 					applyByteCounts();
 				} catch (NotConnectedException e) {
 					// Okay
 				} catch (WaitedTooLongException e) {
 					// Grrrr
-					Logger.error(this, "Waited too long to send SSK data on "+RequestHandler.this);
+					Logger.error(this, "Waited too long to send SSK data on "+RequestHandler.this+" because of bwlimiting");
+				} catch (SyncSendWaitedTooLongException e) {
+					Logger.error(this, "Waited too long to send SSK data on "+RequestHandler.this+" because of peer");
 				} finally {
 					unregisterRequestHandlerWithNode();
 				}
@@ -382,7 +384,12 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		Message headersMsg = DMT.createFNPSSKDataFoundHeaders(uid, headers);
 		source.sendAsync(headersMsg, null, 0, ctr);
 		final Message dataMsg = DMT.createFNPSSKDataFoundData(uid, data);
-		source.sendThrottledMessage(dataMsg, data.length, ctr, 60*1000);
+		try {
+			source.sendThrottledMessage(dataMsg, data.length, ctr, 60*1000, false);
+		} catch (SyncSendWaitedTooLongException e) {
+			// Impossible
+			throw new Error(e);
+		}
 		
 		if(SEND_OLD_FORMAT_SSK) {
 			Message df = DMT.createFNPSSKDataFound(uid, headers, data);

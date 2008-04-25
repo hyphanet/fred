@@ -11,6 +11,7 @@ import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
+import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.BitArray;
 import freenet.support.Logger;
 
@@ -244,7 +245,7 @@ public class BulkTransmitter {
 			
 			// Congestion control and bandwidth limiting
 			try {
-				peer.sendThrottledMessage(DMT.createFNPBulkPacketSend(uid, blockNo, buf), buf.length, ctr, BulkReceiver.TIMEOUT);
+				peer.sendThrottledMessage(DMT.createFNPBulkPacketSend(uid, blockNo, buf), buf.length, ctr, BulkReceiver.TIMEOUT, false);
 				synchronized(this) {
 					blocksNotSentButPresent.setBit(blockNo, false);
 				}
@@ -256,6 +257,10 @@ public class BulkTransmitter {
 				return false;
 			} catch (WaitedTooLongException e) {
 				Logger.error(this, "Failed to send bulk packet "+blockNo+" for "+this);
+				return false;
+			} catch (SyncSendWaitedTooLongException e) {
+				// Impossible
+				Logger.error(this, "Impossible: Caught "+e, e);
 				return false;
 			}
 		}

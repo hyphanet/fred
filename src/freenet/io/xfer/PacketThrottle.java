@@ -25,6 +25,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.node.PeerNode;
+import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.DoubleTokenBucket;
 import freenet.support.Logger;
 
@@ -146,7 +147,7 @@ public class PacketThrottle {
 		return ((PACKET_SIZE * 1000.0 / getDelay()));
 	}
 	
-	public void sendThrottledMessage(Message msg, PeerContext peer, DoubleTokenBucket overallThrottle, int packetSize, ByteCounter ctr, long deadline) throws NotConnectedException, ThrottleDeprecatedException, WaitedTooLongException {
+	public void sendThrottledMessage(Message msg, PeerContext peer, DoubleTokenBucket overallThrottle, int packetSize, ByteCounter ctr, long deadline, boolean blockForSend) throws NotConnectedException, ThrottleDeprecatedException, WaitedTooLongException, SyncSendWaitedTooLongException {
 		long start = System.currentTimeMillis();
 		long bootID = peer.getBootID();
 		synchronized(this) {
@@ -238,6 +239,23 @@ public class PacketThrottle {
 				Logger.minor(this, "Not throttling "+peer.shortToString()+" for "+this);
 			peer.sendAsync(msg, callback, packetSize, ctr);
 			ctr.sentPayload(packetSize);
+			if(blockForSend) {
+				synchronized(callback) {
+					long timeout = System.currentTimeMillis() + 60*1000;
+					long now;
+					while((now = System.currentTimeMillis()) < timeout && !callback.finished) {
+						try {
+							callback.wait((int)(timeout - now));
+						} catch (InterruptedException e) {
+							// Ignore
+						}
+					}
+					if(!callback.finished) {
+						throw new SyncSendWaitedTooLongException();
+					}
+				}
+			}
+			
 		} catch (RuntimeException e) {
 			callback.fatalError();
 			throw e;

@@ -31,6 +31,7 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
 import freenet.node.PrioRunnable;
+import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.BitArray;
 import freenet.support.Executor;
 import freenet.support.Logger;
@@ -98,7 +99,7 @@ public class BlockTransmitter {
 					}
 					int totalPackets;
 					try {
-						_destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr, SEND_TIMEOUT);
+						_destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr, SEND_TIMEOUT, false);
 						totalPackets=_prb.getNumPackets();
 					} catch (NotConnectedException e) {
 						Logger.normal(this, "Terminating send: "+e);
@@ -113,6 +114,10 @@ public class BlockTransmitter {
 						synchronized(_senderThread) {
 							_sendComplete = true;
 						}
+						return;
+					} catch (SyncSendWaitedTooLongException e) {
+						// Impossible
+						Logger.error(this, "Impossible: Caught "+e, e);
 						return;
 					}
 					synchronized (_senderThread) {

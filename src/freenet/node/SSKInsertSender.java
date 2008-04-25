@@ -249,13 +249,15 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             
             try {
 				next.sendAsync(headersMsg, null, 0, this);
-				next.sendThrottledMessage(dataMsg, data.length, this, SSKInsertHandler.DATA_INSERT_TIMEOUT);
+				next.sendThrottledMessage(dataMsg, data.length, this, SSKInsertHandler.DATA_INSERT_TIMEOUT, false);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected to "+next);
 				continue;
 			} catch (WaitedTooLongException e) {
 				Logger.error(this, "Waited too long to send "+dataMsg+" to "+next+" on "+this);
 				continue;
+			} catch (SyncSendWaitedTooLongException e) {
+				// Impossible
 			}
             
             // Do we need to send them the pubkey?

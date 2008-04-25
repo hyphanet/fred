@@ -421,12 +421,14 @@ public class FailureTable {
 
 				public void run() {
 					try {
-						source.sendThrottledMessage(data, dataLength, senderCounter, 60*1000);
+						source.sendThrottledMessage(data, dataLength, senderCounter, 60*1000, false);
 					} catch (NotConnectedException e) {
 						// :(
 					} catch (WaitedTooLongException e) {
 						// :<
 						Logger.error(this, "Waited too long sending SSK data");
+					} catch (SyncSendWaitedTooLongException e) {
+						// Impossible
 					} finally {
 						node.unlockUID(uid, isSSK, false, false, true, false);
 					}
