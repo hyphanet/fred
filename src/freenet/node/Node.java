@@ -303,7 +303,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 	 * preserve the most recently used data so are not recommended. */
 	private boolean storeForceBigShrinks;
 	
-	private StatsConfig statsConf;
 	/* These are private because must be protected by synchronized(this) */
 	private final Environment storeEnvironment;
 	private final EnvironmentMutableConfig envMutableConfig;
@@ -1387,9 +1386,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 		}
 		storeEnvironment = env;
 		envMutableConfig = mutableConfig;
-		
-		statsConf = new StatsConfig();
-		statsConf.setClear(true);
 		
 		shutdownHook.addLateJob(new Thread() {
 			public void run() {
@@ -3077,6 +3073,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 			return;
 		}
 		try { 
+			StatsConfig statsConf = new StatsConfig();
+			statsConf.setClear(true);
 			System.out.println(storeEnvironment.getStats(statsConf));
 		}
 		catch(DatabaseException e) {
