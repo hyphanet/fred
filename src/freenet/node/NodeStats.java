@@ -496,6 +496,24 @@ public class NodeStats implements Persistable {
 		int numRemoteSSKInserts = node.getNumRemoteSSKInserts() + 1;
 		int numCHKOfferReplies = node.getNumCHKOfferReplies() + 1;
 		int numSSKOfferReplies = node.getNumSSKOfferReplies() + 1;
+		
+		if(!isLocal) {
+			// If not local, is already locked.
+			// So we need to decrement the relevant value, to counteract this and restore the SSK:CHK balance.
+			if(isOfferReply) {
+				if(isSSK) numSSKOfferReplies--;
+				else numCHKOfferReplies--;
+			} else {
+				if(isInsert) {
+					if(isSSK) numRemoteSSKInserts--;
+					else numRemoteCHKInserts--;
+				} else {
+					if(isSSK) numRemoteSSKRequests--;
+					else numRemoteCHKRequests--;
+				}
+			}
+		}
+		
 		if(logMINOR)
 			Logger.minor(this, "Running (adjusted): CHK fetch local "+numLocalCHKRequests+" remote "+numRemoteCHKRequests+" SSK fetch local "+numLocalSSKRequests+" remote "+numRemoteSSKRequests+" CHK insert local "+numLocalCHKInserts+" remote "+numRemoteCHKInserts+" SSK insert local "+numLocalSSKInserts+" remote "+numRemoteSSKInserts+" CHK offer replies local "+numCHKOfferReplies+" SSK offer replies "+numSSKOfferReplies);
 		
@@ -574,28 +592,27 @@ public class NodeStats implements Persistable {
 			return "Input bandwidth liability ("+bandwidthLiabilityInput+" > "+bandwidthAvailableInput+")";
 		}
 		
-		
-		// Do we have the bandwidth?
-		double expected = this.getThrottle(isLocal, isInsert, isSSK, true).currentValue();
-		int expectedSent = (int)Math.max(expected / overheadFraction, 0);
-		if(logMINOR)
-			Logger.minor(this, "Expected sent bytes: "+expected+" -> "+expectedSent);
-		if(!requestOutputThrottle.instantGrab(expectedSent)) {
-			pInstantRejectIncoming.report(1.0);
-			rejected("Insufficient output bandwidth", isLocal);
-			return "Insufficient output bandwidth";
-		}
-		expected = this.getThrottle(isLocal, isInsert, isSSK, false).currentValue();
-		int expectedReceived = (int)Math.max(expected, 0);
-		if(logMINOR)
-			Logger.minor(this, "Expected received bytes: "+expectedReceived);
-		if(!requestInputThrottle.instantGrab(expectedReceived)) {
-			requestOutputThrottle.recycle(expectedSent);
-			pInstantRejectIncoming.report(1.0);
-			rejected("Insufficient input bandwidth", isLocal);
-			return "Insufficient input bandwidth";
-		}
-
+//		// Do we have the bandwidth?
+//		double expected = this.getThrottle(isLocal, isInsert, isSSK, true).currentValue();
+//		int expectedSent = (int)Math.max(expected / overheadFraction, 0);
+//		if(logMINOR)
+//			Logger.minor(this, "Expected sent bytes: "+expected+" -> "+expectedSent);
+//		if(!requestOutputThrottle.instantGrab(expectedSent)) {
+//			pInstantRejectIncoming.report(1.0);
+//			rejected("Insufficient output bandwidth", isLocal);
+//			return "Insufficient output bandwidth";
+//		}
+//		expected = this.getThrottle(isLocal, isInsert, isSSK, false).currentValue();
+//		int expectedReceived = (int)Math.max(expected, 0);
+//		if(logMINOR)
+//			Logger.minor(this, "Expected received bytes: "+expectedReceived);
+//		if(!requestInputThrottle.instantGrab(expectedReceived)) {
+//			requestOutputThrottle.recycle(expectedSent);
+//			pInstantRejectIncoming.report(1.0);
+//			rejected("Insufficient input bandwidth", isLocal);
+//			return "Insufficient input bandwidth";
+//		}
+//
 		if(source != null) {
 			if(source.getMessageQueueLengthBytes() > MAX_PEER_QUEUE_BYTES) {
 				rejected(">MAX_PEER_QUEUE_BYTES", isLocal);
@@ -608,7 +625,7 @@ public class NodeStats implements Persistable {
 		}
 		
 		synchronized(this) {
-			if(logMINOR) Logger.minor(this, "Accepting request?");
+			if(logMINOR) Logger.minor(this, "Accepting request? (isSSK="+isSSK+")");
 			lastAcceptedRequest = now;
 		}
 		
