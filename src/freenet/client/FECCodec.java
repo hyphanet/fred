@@ -7,7 +7,6 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.LinkedList;
-import java.util.NoSuchElementException;
 
 import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.util.Buffer;
@@ -375,7 +374,8 @@ public abstract class FECCodec {
 			} else {
 				// Measured 11MB decode 8MB encode on amd64.
 				// No more than 10% of available RAM, so 110MB for each extra processor.
-				max = Math.min(max, (int) (Math.min(Integer.MAX_VALUE, maxMemory / (128*1024*1024))));
+				// No more than 3 so that we don't reach any FileDescriptor related limit
+				max = Math.min(3, Math.min(max, (int) (Math.min(Integer.MAX_VALUE, maxMemory / (128*1024*1024)))));
 			}
 			maxRunningFECThreads = max;
 		}
