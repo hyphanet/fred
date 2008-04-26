@@ -1026,7 +1026,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 							routingkey = newkey;
 						}
 					}
-					if(routingkey == null) {
+					if (routingkey == null && !isAllNull(header) && !isAllNull(data)) {
 						try {
 							StorableBlock block = callback.construct(data, header, null, readKey ? keyBuf : null);
 							routingkey = block.getRoutingKey();
@@ -1035,23 +1035,27 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 							Logger.error(this, err, e);
 							System.err.println(err);
 							failures++;
-							t = environment.beginTransaction(null,null);
-							StoreBlock storeBlock = new StoreBlock(l, --minLRU);
-							byte[] buf = new byte[32];
-							random.nextBytes(buf);
-							DatabaseEntry routingkeyDBE = new DatabaseEntry(buf);
-							DatabaseEntry blockDBE = new DatabaseEntry();
-							storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
-							OperationStatus op = keysDB.putNoOverwrite(t,routingkeyDBE,blockDBE);
-							if(op != OperationStatus.SUCCESS) {
-								Logger.error(this, "Impossible operation status inserting bogus key to LRU: "+op);
-								addFreeBlock(l, true, "Impossible to add (invalid) to LRU: "+op);
-							}
-							t.commitNoSync();
-							t = null;
-							continue;
 						}
-					} 
+					}
+					
+					if (routingkey == null) { // can't recover, mark this as free
+						t = environment.beginTransaction(null, null);
+						StoreBlock storeBlock = new StoreBlock(l, --minLRU);
+						byte[] buf = new byte[32];
+						random.nextBytes(buf);
+						DatabaseEntry routingkeyDBE = new DatabaseEntry(buf);
+						DatabaseEntry blockDBE = new DatabaseEntry();
+						storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
+						OperationStatus op = keysDB.putNoOverwrite(t, routingkeyDBE, blockDBE);
+						if (op != OperationStatus.SUCCESS) {
+							Logger.error(this, "Impossible operation status inserting bogus key to LRU: " + op);
+							addFreeBlock(l, true, "Impossible to add (invalid) to LRU: " + op);
+						}
+						t.commitNoSync();
+						t = null;
+						continue;
+					}
+					
 					t = environment.beginTransaction(null,null);
 					StoreBlock storeBlock = new StoreBlock(l, lruVal);
 					DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
