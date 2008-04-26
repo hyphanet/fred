@@ -2131,7 +2131,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	}
 
 	private void fcWriteLRU(long entry, long data) throws IOException {
-		ByteBuffer bf = ByteBuffer.allocateDirect(8);
+		ByteBuffer bf = ByteBuffer.allocate(8);
 		bf.putLong(data);
 		bf.flip();
 		do {
@@ -2141,7 +2141,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 		} while (bf.hasRemaining());
 	}
 	private long fcReadLRU(long entry) throws IOException {
-		ByteBuffer bf = ByteBuffer.allocateDirect(8);
+		ByteBuffer bf = ByteBuffer.allocate(8);
 		do {
 			int byteRead = lruFC.read(bf, entry * 8 + bf.position());
 			if (byteRead == -1)
@@ -2167,7 +2167,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 		} while (bf.hasRemaining());
 	}
 	private void fcWriteStore(long entry, byte[] header, byte[] data) throws IOException {
-		ByteBuffer bf = ByteBuffer.allocateDirect(headerBlockSize + dataBlockSize);
+		ByteBuffer bf = ByteBuffer.allocate(headerBlockSize + dataBlockSize);
 		bf.put(header);
 		bf.put(data);
 		bf.flip();
@@ -2178,7 +2178,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 		} while (bf.hasRemaining());
 	}
 	private void fcReadStore(long entry,byte[] header, byte[] data ) throws IOException {
-		ByteBuffer bf = ByteBuffer.allocateDirect(headerBlockSize + dataBlockSize);
+		ByteBuffer bf = ByteBuffer.allocate(headerBlockSize + dataBlockSize);
 		
 		do {
 			int dataRead = storeFC.read(bf, (headerBlockSize + dataBlockSize) * entry);
