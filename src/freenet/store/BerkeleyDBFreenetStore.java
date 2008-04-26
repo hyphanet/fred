@@ -979,6 +979,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				keysRAFLength = keysRAF.length();
 			}
 			for(l=0;true;l++) {
+				if(l % 1024 == 0)
+					System.out.println("Key "+l+ '/' +expectedLength+" OK ("+dupes+" dupes, "+failures+" failures)");
+
 				long lruVal = 0;
 				Transaction t = null;
 				if(storeRAF.getFilePointer() != l * (headerBlockSize + dataBlockSize)) {
@@ -1085,8 +1088,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 						failures++;
 					}
 					t.commitNoSync();
-					if(l % 1024 == 0)
-						System.out.println("Key "+l+ '/' +expectedLength+" OK ("+dupes+" dupes, "+failures+" failures)");
 					t = null;
 				} catch (DatabaseException e) {
 					// t.abort() below may also throw.
