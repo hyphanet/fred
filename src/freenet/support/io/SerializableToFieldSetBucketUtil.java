@@ -26,34 +26,6 @@ public class SerializableToFieldSetBucketUtil {
 		if(Logger.shouldLog(Logger.MINOR, SerializableToFieldSetBucketUtil.class))
 			Logger.minor(SerializableToFieldSetBucketUtil.class, "Creating: "+type);
 		if(type == null) {
-			// FIXME remove when not being used any more (after 1008 is mandatory)
-			if(fs.get("DecryptKey") != null && fs.get("Filename") != null) {
-				String filename = fs.get("Filename");
-				byte[] decryptKey = HexUtil.hexToBytes(fs.get("DecryptKey"));
-				long len = -1;
-				if(fs.get("Size") != null) {
-					try {
-						len = Long.parseLong(fs.get("Size"));
-					} catch (NumberFormatException e) {
-						throw new CannotCreateFromFieldSetException("Corrupt dataLength: "+fs.get("Size"), e);
-					}
-				}
-				File fnam = new File(filename);
-				if(!fnam.exists()) {
-					File persistent = new File(f.getDir(), filename);
-					if(persistent.exists()) fnam = persistent;
-				}
-				f.register(fnam);
-				FileBucket fb = new FileBucket(fnam, false, true, false, false, true);
-				try {
-					PaddedEphemerallyEncryptedBucket eb = 
-						new PaddedEphemerallyEncryptedBucket(fb, 1024, len, decryptKey, random);
-					return eb;
-				} catch (IOException e) {
-					throw new CannotCreateFromFieldSetException("Cannot create from old-format fieldset: "+e, e);
-				}
-			}
-			
 			throw new CannotCreateFromFieldSetException("No type");
 		} else if(type.equals("FileBucket")) {
 			return BaseFileBucket.create(fs, f);
