@@ -586,6 +586,9 @@ public class NodeStats implements Persistable {
 		}
 		double bandwidthAvailableInput =
 			node.getInputBandwidthLimit() * 90; // 90 seconds at full power
+		if(bandwidthAvailableInput < 0){
+			Logger.error(this, "Negative available bandwidth: "+bandwidthAvailableInput);
+		}
 		if(bandwidthLiabilityInput > bandwidthAvailableInput) {
 			pInstantRejectIncoming.report(1.0);
 			rejected("Input bandwidth liability", isLocal);
