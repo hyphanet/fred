@@ -104,8 +104,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode result = bandwidthForm.addChild("select", "name", "bw");
 			
 			result.addChild("option", "value", "8K", l10n("bwlimitLowerSpeed"));
-			result.addChild("option", new String[] { "value", "selected" }, new String[] { "12K", "selected" }, "512+/128 kbps");
-			result.addChild("option", "value", "24K", "1024+/256 kbps");
+			result.addChild("option", "value", "12K", "512+/128 kbps");
+			result.addChild("option", new String[] { "value", "selected" }, new String[] { "24K", "selected" }, "1024+/256 kbps");
 			result.addChild("option", "value", "48K", "1024+/512 kbps");
 			result.addChild("option", "value", "96K", "1024+/1024 kbps");
 			result.addChild("option", "value", "1000K", l10n("bwlimitHigherSpeed"));
