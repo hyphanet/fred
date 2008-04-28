@@ -1009,16 +1009,16 @@ public class PeerManager {
 
     private void writePeersInner() {
 	    synchronized(this) {
-    	synchronized(writePeersSync) {
-    		if(darkFilename != null)
-    			writePeersInner(darkFilename, getDarknetPeers());
-    		OpennetManager om = node.getOpennet();
-    		if(om != null) {
-        		if(openFilename != null)
-        			writePeersInner(openFilename, getOpennetPeers());
-    			writePeersInner(om.getOldPeersFilename(), om.getOldPeers());
-    		}
-    	}
+		    synchronized(writePeersSync) {
+			    if(darkFilename != null)
+				    writePeersInner(darkFilename, getDarknetPeers());
+			    OpennetManager om = node.getOpennet();
+			    if(om != null) {
+				    if(openFilename != null)
+					    writePeersInner(openFilename, getOpennetPeers());
+				    writePeersInner(om.getOldPeersFilename(), om.getOldPeers());
+			    }
+		    }
 	    }
     }
     
