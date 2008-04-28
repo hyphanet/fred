@@ -92,6 +92,14 @@ public class OpennetManager {
 	/** Allow for future expansion. However at any given time all noderefs should be PADDED_NODEREF_SIZE */
 	static final int MAX_OPENNET_NODEREF_LENGTH = 32768;
 	
+	/** Enable scaling of peers with bandwidth? */
+	static final boolean ENABLE_PEERS_PER_KB_OUTPUT = false;
+	/** Minimum number of peers */
+	static final int MIN_PEERS_FOR_SCALING = 10;
+	/** Maximum number of peers */
+	static final int MAX_PEERS_FOR_SCALING = 20;
+	
+	
 	private final long creationTime;
 	
 	public OpennetManager(Node node, NodeCryptoConfig opennetConfig, long startupTime) throws NodeInitException {
@@ -474,7 +482,13 @@ public class OpennetManager {
 	}
 
 	protected int getNumberOfConnectedPeersToAim() {
-		return node.getMaxOpennetPeers() - node.peers.countConnectedDarknetPeers();
+		int max = Integer.MAX_VALUE;
+		if(ENABLE_PEERS_PER_KB_OUTPUT) {
+			max = node.getOutputBandwidthLimit() / 1024;
+			if(max < MIN_PEERS_FOR_SCALING) max = MIN_PEERS_FOR_SCALING;
+			if(max > MAX_PEERS_FOR_SCALING) max = MAX_PEERS_FOR_SCALING;
+		}
+		return Math.min(max, node.getMaxOpennetPeers() - node.peers.countConnectedDarknetPeers());
 	}
 
 	/**
