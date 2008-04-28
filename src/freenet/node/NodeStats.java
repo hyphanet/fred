@@ -585,7 +585,7 @@ public class NodeStats implements Persistable {
 			successfulSskOfferReplyBytesReceivedAverage.currentValue() * numSSKOfferReplies;
 		}
 		double bandwidthAvailableInput =
-			node.getInputBandwidthLimit() * 90; // 90 seconds at full power
+			(double)node.getInputBandwidthLimit() * 90; // 90 seconds at full power; avoid integer overflow
 		if(bandwidthAvailableInput < 0){
 			Logger.error(this, "Negative available bandwidth: "+bandwidthAvailableInput+" node.ibwlimit="+node.getInputBandwidthLimit()+" node.obwlimit="+node.getOutputBandwidthLimit()+" node.inputLimitDefault="+node.inputLimitDefault);
 		}
