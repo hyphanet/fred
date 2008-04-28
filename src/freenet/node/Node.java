@@ -928,7 +928,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 						return inputBandwidthLimit;
 					}
 					public void set(int ibwLimit) throws InvalidConfigValueException {
-						synchronized(this) {
+						synchronized(Node.this) {
 							inputBandwidthLimit = ibwLimit;
 							if(ibwLimit == -1) {
 								inputLimitDefault = true;
