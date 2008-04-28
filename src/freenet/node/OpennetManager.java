@@ -95,7 +95,7 @@ public class OpennetManager {
 	/** Enable scaling of peers with bandwidth? */
 	static final boolean ENABLE_PEERS_PER_KB_OUTPUT = false;
 	/** Target bandwidth usage - above this, we use MAX_PEERS_FOR_SCALING */
-	static final int TARGET_BANDWIDTH_USAGE = 16*1024; // Same as the default in the first time wizard.
+	static final int TARGET_BANDWIDTH_USAGE = 20*1024; // 20 peers at 20K/sec.
 	/** Minimum number of peers */
 	static final int MIN_PEERS_FOR_SCALING = 10;
 	/** Maximum number of peers */
