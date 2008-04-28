@@ -94,6 +94,8 @@ public class OpennetManager {
 	
 	/** Enable scaling of peers with bandwidth? */
 	static final boolean ENABLE_PEERS_PER_KB_OUTPUT = false;
+	/** Target bandwidth usage - above this, we use MAX_PEERS_FOR_SCALING */
+	static final int TARGET_BANDWIDTH_USAGE = 16*1024; // Same as the default in the first time wizard.
 	/** Minimum number of peers */
 	static final int MIN_PEERS_FOR_SCALING = 10;
 	/** Maximum number of peers */
@@ -484,9 +486,13 @@ public class OpennetManager {
 	protected int getNumberOfConnectedPeersToAim() {
 		int max = Integer.MAX_VALUE;
 		if(ENABLE_PEERS_PER_KB_OUTPUT) {
-			max = node.getOutputBandwidthLimit() / 1024;
-			if(max < MIN_PEERS_FOR_SCALING) max = MIN_PEERS_FOR_SCALING;
-			if(max > MAX_PEERS_FOR_SCALING) max = MAX_PEERS_FOR_SCALING;
+			int obwLimit = node.getOutputBandwidthLimit();
+			if(obwLimit >= TARGET_BANDWIDTH_USAGE) {
+				max = MAX_PEERS_FOR_SCALING;
+			} else {
+				max = obwLimit * MAX_PEERS_FOR_SCALING / TARGET_BANDWIDTH_USAGE;
+				if(max < MIN_PEERS_FOR_SCALING) max = MIN_PEERS_FOR_SCALING;
+			}
 		}
 		return Math.min(max, node.getMaxOpennetPeers() - node.peers.countConnectedDarknetPeers());
 	}
