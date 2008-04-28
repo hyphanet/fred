@@ -660,7 +660,7 @@ public class SimpleFieldSet {
 	}
 	
 	/** Is this SimpleFieldSet empty? */
-	public boolean isEmpty() {
+	public synchronized boolean isEmpty() {
 		return values.isEmpty() && (subsets == null || subsets.isEmpty());
 	}
 
