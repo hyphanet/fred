@@ -330,7 +330,7 @@ public class NodeIPDetector {
 
 	public int registerConfigs(SubConfig nodeConfig, int sortOrder) {
 		// IP address override
-		nodeConfig.register("ipAddressOverride", "", sortOrder++, false, false, "NodeIPDectector.ipOverride", 
+		nodeConfig.register("ipAddressOverride", "", sortOrder++, true, false, "NodeIPDectector.ipOverride", 
 				"NodeIPDectector.ipOverrideLong", 
 				new StringCallback() {
 
@@ -400,7 +400,7 @@ public class NodeIPDetector {
 		
 		// Temporary IP address hint
 		
-		nodeConfig.register("tempIPAddressHint", "", sortOrder++, false, false, "NodeIPDectector.tempAddressHint", "NodeIPDectector.tempAddressHintLong", new StringCallback() {
+		nodeConfig.register("tempIPAddressHint", "", sortOrder++, true, false, "NodeIPDectector.tempAddressHint", "NodeIPDectector.tempAddressHintLong", new StringCallback() {
 
 			public String get() {
 				return "";

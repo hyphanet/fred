@@ -336,7 +336,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyCSSOverrideCallback());
 		fproxyConfig.register("advancedModeEnabled", false, configItemOrder++, false, false, "SimpleToadletServer.advancedMode", "SimpleToadletServer.advancedModeLong",
 				new FProxyAdvancedModeEnabledCallback(this));
-		fproxyConfig.register("javascriptEnabled", false, configItemOrder++, false, false, "SimpleToadletServer.enableJS", "SimpleToadletServer.enableJSLong",
+		fproxyConfig.register("javascriptEnabled", false, configItemOrder++, true, false, "SimpleToadletServer.enableJS", "SimpleToadletServer.enableJSLong",
 				new FProxyJavascriptEnabledCallback(this));
 		fproxyConfig.register("showPanicButton", false, configItemOrder++, true, true, "SimpleToadletServer.panicButton", "SimpleToadletServer.panicButtonLong",
 				new BooleanCallback(){
@@ -355,7 +355,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		// more than we need the efficiency gain of reusing connections - especially on first
 		// install.
 		
-		fproxyConfig.register("enablePersistentConnections", false, configItemOrder++, false, false, "SimpleToadletServer.enablePersistentConnections", "SimpleToadletServer.enablePersistentConnectionsLong",
+		fproxyConfig.register("enablePersistentConnections", false, configItemOrder++, true, false, "SimpleToadletServer.enablePersistentConnections", "SimpleToadletServer.enablePersistentConnectionsLong",
 				new BooleanCallback() {
 
 					public boolean get() {
@@ -378,7 +378,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		// appears to be that the node does very few local requests compared to external requests
 		// (for anonymity's sake).
 		
-		fproxyConfig.register("enableInlinePrefetch", false, configItemOrder++, false, false, "SimpleToadletServer.enableInlinePrefetch", "SimpleToadletServer.enableInlinePrefetchLong",
+		fproxyConfig.register("enableInlinePrefetch", false, configItemOrder++, true, false, "SimpleToadletServer.enableInlinePrefetch", "SimpleToadletServer.enableInlinePrefetchLong",
 				new BooleanCallback() {
 
 					public boolean get() {
