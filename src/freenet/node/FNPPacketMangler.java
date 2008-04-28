@@ -1134,11 +1134,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// construct the peernode
 		if(unknownInitiator) {
 			pn = getPeerNodeFromUnknownInitiator(hisRef, setupType, pn);
-			if(pn == null) {
+		}
+		if(pn == null) {
+			if(unknownInitiator)
 				// Reject
 				Logger.normal(this, "Rejecting... unable to construct PeerNode");
-				return;
-			}
+			else
+				Logger.error(this, "PeerNode is null and unknownInitiator is false!");
+			return;
 		}
 		
 		// verify the signature
@@ -1593,6 +1596,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Send an auth packet.
 	 */
 	private void sendAuthPacket(int version, int negType, int phase, byte[] data, PeerNode pn, Peer replyTo) {
+		if(pn == null) throw new IllegalArgumentException("pn shouldn't be null here!");
 		byte[] output = new byte[data.length+3];
 		output[0] = (byte) version;
 		output[1] = (byte) negType;
