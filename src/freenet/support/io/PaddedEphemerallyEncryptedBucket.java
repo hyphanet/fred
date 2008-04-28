@@ -102,7 +102,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		if(key.length != 32) throw new IllegalArgumentException("Key wrong length: "+key.length);
 		tmp = fs.get("MinPaddedSize");
 		if(tmp == null)
-			minPaddedSize = 1024; // FIXME throw! back compatibility hack
+			throw new CannotCreateFromFieldSetException("No MinPaddedSize!");
 		else {
 			try {
 				minPaddedSize = Integer.parseInt(tmp);
