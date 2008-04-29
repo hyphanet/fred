@@ -16,6 +16,7 @@ import freenet.keys.USK;
 import freenet.l10n.L10n;
 import freenet.node.FSParseException;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.Closer;
@@ -107,6 +108,14 @@ public class BookmarkManager {
 				}
 			}
 			storeBookmarks();
+		}
+
+		public short getPollingPriorityNormal() {
+			return RequestStarter.PREFETCH_PRIORITY_CLASS;
+		}
+
+		public short getPollingPriorityProgress() {
+			return RequestStarter.UPDATE_PRIORITY_CLASS;
 		}
 	}
 

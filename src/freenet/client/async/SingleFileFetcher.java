@@ -795,6 +795,14 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			cb.onFailure(new FetchException(FetchException.CANCELLED, (String)null), null);
 		}
 
+		public short getPollingPriorityNormal() {
+			return parent.getPriorityClass();
+		}
+
+		public short getPollingPriorityProgress() {
+			return parent.getPriorityClass();
+		}
+
 	}
 
 }

@@ -341,4 +341,12 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	public File getBlobFile() {
 		return getBlobFile(getFetchedVersion());
 	}
+
+	public short getPollingPriorityNormal() {
+		return RequestStarter.UPDATE_PRIORITY_CLASS;
+	}
+
+	public short getPollingPriorityProgress() {
+		return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+	}
 }

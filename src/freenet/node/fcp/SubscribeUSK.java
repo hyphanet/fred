@@ -6,9 +6,11 @@ package freenet.node.fcp;
 import freenet.client.async.USKCallback;
 import freenet.keys.USK;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestStarter;
 
 public class SubscribeUSK implements USKCallback {
 
+	// FIXME allow client to specify priorities
 	final FCPConnectionHandler handler;
 	final String identifier;
 	final NodeClientCore core;
@@ -29,6 +31,14 @@ public class SubscribeUSK implements USKCallback {
 		}
 		FCPMessage msg = new SubscribedUSKUpdate(identifier, l, key);
 		handler.outputHandler.queue(msg);
+	}
+
+	public short getPollingPriorityNormal() {
+		return RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
+	}
+
+	public short getPollingPriorityProgress() {
+		return RequestStarter.UPDATE_PRIORITY_CLASS;
 	}
 
 }

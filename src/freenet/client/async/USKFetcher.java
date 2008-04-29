@@ -165,9 +165,9 @@ public class USKFetcher implements ClientGetState {
 			if(backgroundPoll) {
 				if(minFailures == origMinFailures && minFailures != maxMinFailures) {
 					// Either just started, or just advanced, either way boost the priority.
-					return RequestStarter.UPDATE_PRIORITY_CLASS;
+					return progressPollPriority;
 				} else {
-					return RequestStarter.PREFETCH_PRIORITY_CLASS;
+					return normalPollPriority;
 				}
 			} else
 				return parent.getPriorityClass();
@@ -201,6 +201,11 @@ public class USKFetcher implements ClientGetState {
 	final boolean keepLastData;
 	
 	private boolean started;
+	
+	private static short DEFAULT_NORMAL_POLL_PRIORITY = RequestStarter.PREFETCH_PRIORITY_CLASS;
+	private short normalPollPriority = DEFAULT_NORMAL_POLL_PRIORITY;
+	private static short DEFAULT_PROGRESS_POLL_PRIORITY = RequestStarter.UPDATE_PRIORITY_CLASS;
+	private short progressPollPriority = DEFAULT_PROGRESS_POLL_PRIORITY;
 
 	USKFetcher(USK origUSK, USKManager manager, FetchContext ctx, ClientRequester requester, int minFailures, boolean pollForever, boolean keepLastData) {
 		this(origUSK, manager, ctx, requester, minFailures, pollForever, DEFAULT_MAX_MIN_FAILURES, keepLastData);
@@ -492,8 +497,38 @@ public class USKFetcher implements ClientGetState {
 	 */
 	final HashSet subscribers;
 	
-	public synchronized void addSubscriber(USKCallback cb) {
-		subscribers.add(cb);
+	public void addSubscriber(USKCallback cb) {
+		synchronized(this) {
+			subscribers.add(cb);
+		}
+		updatePriorities();
+	}
+
+	private void updatePriorities() {
+		// FIXME should this be synchronized? IMHO it doesn't matter that much if we get the priority
+		// wrong for a few requests... also, we avoid any possible deadlock this way if the callbacks
+		// take locks...
+		short normalPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
+		short progressPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
+		USKCallback[] callbacks;
+		synchronized(this) {
+			callbacks = (USKCallback[]) subscribers.toArray(new USKCallback[subscribers.size()]);
+		}
+		if(callbacks.length == 0) {
+			normalPollPriority = DEFAULT_NORMAL_POLL_PRIORITY;
+			progressPollPriority = DEFAULT_PROGRESS_POLL_PRIORITY;
+			return;
+		}
+		
+		for(int i=0;i<callbacks.length;i++) {
+			USKCallback cb = callbacks[i];
+			short prio = cb.getPollingPriorityNormal();
+			if(prio < normalPrio) normalPrio = prio;
+			prio = cb.getPollingPriorityProgress();
+			if(prio < progressPrio) progressPrio = prio;
+		}
+		normalPollPriority = normalPrio;
+		progressPollPriority = progressPrio;
 	}
 
 	public synchronized boolean hasSubscribers() {
@@ -501,11 +536,13 @@ public class USKFetcher implements ClientGetState {
 	}
 	
 	public void removeSubscriber(USKCallback cb) {
+		boolean kill = false;
 		synchronized(this) {
 			subscribers.remove(cb);
-			if(!(subscribers.isEmpty() && killOnLoseSubscribers)) return;
+			if(!(subscribers.isEmpty() && killOnLoseSubscribers)) kill = true;
 		}
-		cancel();
+		updatePriorities();
+		if(kill) cancel();
 	}
 
 	public synchronized boolean hasLastData() {

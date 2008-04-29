@@ -94,4 +94,12 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		// Ignore
 	}
 
+	public short getPollingPriorityNormal() {
+		return cb.getPollingPriorityNormal();
+	}
+
+	public short getPollingPriorityProgress() {
+		return cb.getPollingPriorityProgress();
+	}
+
 }

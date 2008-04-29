@@ -16,4 +16,14 @@ public interface USKCallback {
 	 * @param key The key. */
 	void onFoundEdition(long l, USK key);
 	
+	/**
+	 * Priority at which the polling should run normally.
+	 */
+	short getPollingPriorityNormal();
+	
+	/**
+	 * Priority at which the polling should run when starting, or immediately after making some progress.
+	 */
+	short getPollingPriorityProgress();
+	
 }

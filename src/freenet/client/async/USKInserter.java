@@ -242,4 +242,12 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		// Ignore
 	}
 
+	public short getPollingPriorityNormal() {
+		return parent.getPriorityClass();
+	}
+
+	public short getPollingPriorityProgress() {
+		return parent.getPriorityClass();
+	}
+
 }

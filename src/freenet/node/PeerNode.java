@@ -2006,6 +2006,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			arkFetcher = null;
 		}
 	}
+	
+
+	public short getPollingPriorityNormal() {
+		return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+	}
+
+	public short getPollingPriorityProgress() {
+		return RequestStarter.INTERACTIVE_PRIORITY_CLASS;
+	}
+	
 	boolean sentInitialMessages;
 
 	void maybeSendInitialMessages() {

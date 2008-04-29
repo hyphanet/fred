@@ -17,4 +17,14 @@ public interface USKRetrieverCallback {
 	 */
 	void onFound(long edition, FetchResult data);
 
+	/**
+	 * Priority at which the polling should run normally.
+	 */
+	short getPollingPriorityNormal();
+
+	/**
+	 * Priority at which the polling should run when starting, or immediately after making some progress.
+	 */
+	short getPollingPriorityProgress();
+
 }
