@@ -59,11 +59,11 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			if(portsNotForwarded.length == 1) {
 				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.forwardPort", 
 						new String[] { "port", "link", "/link" }, 
-						new String[] { Integer.toString(portsNotForwarded[0]), "<a href=\""+url+"\">", "</a>" });
+						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), "<a href=\""+url+"\">", "</a>" });
 			} else if(portsNotForwarded.length == 2) {
 				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.forwardTwoPorts", 
 						new String[] { "port1", "port2", "link", "/link" }, 
-						new String[] { Integer.toString(portsNotForwarded[0]), Integer.toString(portsNotForwarded[1]), "<a href=\""+url+"\">", "</a>" });
+						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), Integer.toString(Math.abs(portsNotForwarded[1])), "<a href=\""+url+"\">", "</a>" });
 			} else {
 				Logger.error(this, "Unknown number of ports to forward: "+portsNotForwarded.length);
 			}
@@ -89,10 +89,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 					l10n("seriousConnectionProblems") : l10n("connectionProblems");
 			prefix += " ";
 			if(portsNotForwarded.length == 1) {
-				return prefix + l10n("forwardPortShort", "port", Integer.toString(portsNotForwarded[0]));
+				return prefix + l10n("forwardPortShort", "port", Integer.toString(Math.abs(portsNotForwarded[0])));
 			} else if(portsNotForwarded.length == 2) {
 				return prefix + l10n("forwardTwoPortsShort", new String[] { "port1", "port2" },
-						new String[] { Integer.toString(portsNotForwarded[0]), Integer.toString(portsNotForwarded[1]) });
+						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), Integer.toString(Math.abs(portsNotForwarded[1])) });
 			} else {
 				Logger.error(this, "Unknown number of ports to forward: "+portsNotForwarded.length);
 				return "";
@@ -103,10 +103,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			String url = l10n("portForwardHelpURL");
 			if(portsNotForwarded.length == 1) {
 				return l10n("forwardPort", new String[] { "port", "link", "/link" }, 
-						new String[] { Integer.toString(portsNotForwarded[0]), "", " ("+url+")" });
+						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), "", " ("+url+")" });
 			} else if(portsNotForwarded.length == 2) {
 				return l10n("forwardTwoPorts", new String[] { "port1", "port2", "link", "/link" },
-						new String[] { Integer.toString(portsNotForwarded[0]), Integer.toString(portsNotForwarded[1]), "", " ("+url+")" });
+						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), Integer.toString(Math.abs(portsNotForwarded[1])), "", " ("+url+")" });
 			} else {
 				Logger.error(this, "Unknown number of ports to forward: "+portsNotForwarded.length);
 				return "";
