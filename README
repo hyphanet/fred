@@ -12,3 +12,6 @@ code:
   to the FSF, modified BSD is compatible with GPL; we must include both 
   licenses.
 
+The installer creates a firefox profile. If you don't use it, you should have a 
+look at user.js in the firefox_profile directory for some useful settings for 
+browsing Freenet (both for performance and security).
