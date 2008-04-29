@@ -301,7 +301,8 @@ public class NodeIPDetector {
 			if(minimumMTU > mtu && mtu > 0){
 				minimumMTU = mtu;
 				Logger.normal(this, "Reducing the MTU to "+minimumMTU);
-	    		node.onTooLowMTU(minimumMTU, UdpSocketHandler.MIN_MTU);
+				if(mtu < UdpSocketHandler.MIN_MTU)
+					node.onTooLowMTU(minimumMTU, UdpSocketHandler.MIN_MTU);
 			}
 		}
 		redetectAddress();
