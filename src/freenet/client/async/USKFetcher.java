@@ -184,9 +184,9 @@ public class USKFetcher implements ClientGetState {
 	long minFailures;
 	final long origMinFailures;
 	
-	static final long origSleepTime = 30 * 60 * 1000;
-	static final long maxSleepTime = 24 * 60 * 60 * 1000;
-	long sleepTime = origSleepTime;
+	static final int origSleepTime = 30 * 60 * 1000;
+	static final int maxSleepTime = 24 * 60 * 60 * 1000;
+	int sleepTime = origSleepTime;
 
 	/** Maximum number of editions to probe ahead. */
 	private final long maxMinFailures;
@@ -259,10 +259,10 @@ public class USKFetcher implements ClientGetState {
 				started = false; // don't finish before have rescheduled
                 
                 //Find out when we should check next ('end'), in an increasing delay (unless we make progress).
-                long newSleepTime = sleepTime * 2;
+                int newSleepTime = sleepTime * 2;
 				if(newSleepTime > maxSleepTime) newSleepTime = maxSleepTime;
 				sleepTime = newSleepTime;
-				end = now + sleepTime;
+				end = now + ctx.random.nextInt(sleepTime);
                 
 				if(valAtEnd > valueAtSchedule) {
 					// We have advanced; keep trying as if we just started.
