@@ -81,7 +81,11 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			if(connectionType == DetectedIP.SYMMETRIC_NAT || connectionType == DetectedIP.SYMMETRIC_UDP_FIREWALL)
 				// Only able to connect to directly connected / full cone nodes.
 				return UserAlert.ERROR;
-			else return UserAlert.MINOR;
+			if(portsNotForwarded != null) {
+				for(int i=0;i<portsNotForwarded.length;i++)
+					if(portsNotForwarded[i] < 0) return UserAlert.ERROR;
+			}
+			return UserAlert.MINOR;
 		}
 
 		public String getShortText() {
