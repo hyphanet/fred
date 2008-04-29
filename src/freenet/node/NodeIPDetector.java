@@ -48,7 +48,7 @@ public class NodeIPDetector {
 	/** Last detected IP address */
 	FreenetInetAddress[] lastIPAddress;
 	/** The minimum reported MTU on all detected interfaces */
-	private int minimumMTU;
+	private int minimumMTU = Integer.MAX_VALUE;
 	/** IP address detector */
 	private final IPAddressDetector ipDetector;
 	/** Plugin manager for plugin IP address detectors e.g. STUN */
