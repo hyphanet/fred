@@ -2008,12 +2008,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 	
 
+	// Both at IMMEDIATE_SPLITFILE_PRIORITY_CLASS because we want to compete with FMS, not
+	// wipe it out!
+	
 	public short getPollingPriorityNormal() {
 		return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 	}
 
 	public short getPollingPriorityProgress() {
-		return RequestStarter.INTERACTIVE_PRIORITY_CLASS;
+		return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 	}
 	
 	boolean sentInitialMessages;
