@@ -184,7 +184,7 @@ public class USKFetcher implements ClientGetState {
 	long minFailures;
 	final long origMinFailures;
 	
-	static final long origSleepTime = 5 * 60 * 1000;
+	static final long origSleepTime = 30 * 60 * 1000;
 	static final long maxSleepTime = 24 * 60 * 60 * 1000;
 	long sleepTime = origSleepTime;
 
