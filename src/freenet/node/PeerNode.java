@@ -3413,6 +3413,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** Called when the peer is removed from the PeerManager */
 	public void onRemove() {
 		disconnected(true, true);
+		stopARKFetcher();
 	}
 
 	public synchronized boolean isDisconnecting() {
