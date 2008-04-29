@@ -98,6 +98,12 @@ public class USKManager {
 		USKFetcher sched = null;
 		Vector toCancel = null;
 		synchronized(this) {
+//			java.util.Iterator i = backgroundFetchersByClearUSK.keySet().iterator();
+//			int x = 0;
+//			while(i.hasNext()) {
+//				System.err.println("Fetcher "+x+": "+i.next());
+//				x++;
+//			}
 			USKFetcher f = (USKFetcher) backgroundFetchersByClearUSK.get(clear);
 			if(f == null) {
 				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, chkRequestScheduler, sskRequestScheduler, this), 3, true, false);
@@ -111,7 +117,7 @@ public class USKManager {
 				if(!fetcher.hasSubscribers()) {
 					if(toCancel == null) toCancel = new Vector(2);
 					toCancel.add(fetcher);
-					backgroundFetchersByClearUSK.remove(fetcher);
+					backgroundFetchersByClearUSK.remove(del);
 				} else {
 					if(Logger.shouldLog(Logger.MINOR, this))
 						Logger.minor(this, "Allowing temporary background fetcher to continue as it has subscribers... "+fetcher);
