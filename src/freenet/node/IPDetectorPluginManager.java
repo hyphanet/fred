@@ -56,12 +56,17 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
 			String url = GenericReadFilterCallback.escapeURL(HTMLEncoder.encode(l10n("portForwardHelpURL")));
+			boolean maybeForwarded = true;
+			for(int i=0;i<portsNotForwarded.length;i++) {
+				if(portsNotForwarded[i] < 0) maybeForwarded = false;
+			}
+			String keySuffix = maybeForwarded ? "MaybeForwarded" : "NotForwarded";
 			if(portsNotForwarded.length == 1) {
-				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.forwardPort", 
+				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.forwardPort"+keySuffix, 
 						new String[] { "port", "link", "/link" }, 
 						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), "<a href=\""+url+"\">", "</a>" });
 			} else if(portsNotForwarded.length == 2) {
-				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.forwardTwoPorts", 
+				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.forwardTwoPorts"+keySuffix, 
 						new String[] { "port1", "port2", "link", "/link" }, 
 						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), Integer.toString(Math.abs(portsNotForwarded[1])), "<a href=\""+url+"\">", "</a>" });
 			} else {
@@ -92,10 +97,15 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			String prefix = innerGetPriorityClass() == UserAlert.ERROR ?
 					l10n("seriousConnectionProblems") : l10n("connectionProblems");
 			prefix += " ";
+			boolean maybeForwarded = true;
+			for(int i=0;i<portsNotForwarded.length;i++) {
+				if(portsNotForwarded[i] < 0) maybeForwarded = false;
+			}
+			String keySuffix = maybeForwarded ? "MaybeForwarded" : "NotForwarded";
 			if(portsNotForwarded.length == 1) {
-				return prefix + l10n("forwardPortShort", "port", Integer.toString(Math.abs(portsNotForwarded[0])));
+				return prefix + l10n("forwardPortShort"+keySuffix, "port", Integer.toString(Math.abs(portsNotForwarded[0])));
 			} else if(portsNotForwarded.length == 2) {
-				return prefix + l10n("forwardTwoPortsShort", new String[] { "port1", "port2" },
+				return prefix + l10n("forwardTwoPortsShort"+keySuffix, new String[] { "port1", "port2" },
 						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), Integer.toString(Math.abs(portsNotForwarded[1])) });
 			} else {
 				Logger.error(this, "Unknown number of ports to forward: "+portsNotForwarded.length);
@@ -105,11 +115,16 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 
 		public String getText() {
 			String url = l10n("portForwardHelpURL");
+			boolean maybeForwarded = true;
+			for(int i=0;i<portsNotForwarded.length;i++) {
+				if(portsNotForwarded[i] < 0) maybeForwarded = false;
+			}
+			String keySuffix = maybeForwarded ? "MaybeForwarded" : "NotForwarded";
 			if(portsNotForwarded.length == 1) {
-				return l10n("forwardPort", new String[] { "port", "link", "/link" }, 
+				return l10n("forwardPort"+keySuffix, new String[] { "port", "link", "/link" }, 
 						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), "", " ("+url+")" });
 			} else if(portsNotForwarded.length == 2) {
-				return l10n("forwardTwoPorts", new String[] { "port1", "port2", "link", "/link" },
+				return l10n("forwardTwoPorts"+keySuffix, new String[] { "port1", "port2", "link", "/link" },
 						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), Integer.toString(Math.abs(portsNotForwarded[1])), "", " ("+url+")" });
 			} else {
 				Logger.error(this, "Unknown number of ports to forward: "+portsNotForwarded.length);
