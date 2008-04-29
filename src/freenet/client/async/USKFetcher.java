@@ -482,6 +482,7 @@ public class USKFetcher implements ClientGetState {
 		}
 		for(int i=0;i<attempts.length;i++)
 			attempts[i].cancel();
+		uskManager.onCancelled(this);
 	}
 
 	/** Set of interested USKCallbacks. Note that we don't actually

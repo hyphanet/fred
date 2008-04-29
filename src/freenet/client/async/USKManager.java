@@ -297,4 +297,14 @@ public class USKManager {
 	public int getTemporaryBackgroundFetchersLRU(){
 		return temporaryBackgroundFetchersLRU.size();
 	}
+
+	public void onCancelled(USKFetcher fetcher) {
+		USK clear = fetcher.getOriginalUSK().clearCopy();
+		synchronized(this) {
+			if(backgroundFetchersByClearUSK.remove(clear) != null) {
+				// This shouldn't happen, it's a sanity check: the only way we get cancelled is from USKManager, which removes us before calling cancel().
+				Logger.error(this, "onCancelled for "+fetcher+" - was still registered, how did this happen??", new Exception("debug"));
+			}
+		}
+	}
 }
