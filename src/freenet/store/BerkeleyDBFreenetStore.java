@@ -1044,17 +1044,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 					
 					if (routingkey == null) { // can't recover, mark this as free
 						t = environment.beginTransaction(null, null);
-						StoreBlock storeBlock = new StoreBlock(l, --minLRU);
-						byte[] buf = new byte[32];
-						random.nextBytes(buf);
-						DatabaseEntry routingkeyDBE = new DatabaseEntry(buf);
-						DatabaseEntry blockDBE = new DatabaseEntry();
-						storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
-						OperationStatus op = keysDB.putNoOverwrite(t, routingkeyDBE, blockDBE);
-						if (op != OperationStatus.SUCCESS) {
-							Logger.error(this, "Impossible operation status inserting bogus key to LRU: " + op);
-							addFreeBlock(l, true, "Impossible to add (invalid) to LRU: " + op);
-						}
+						reconstructAddFreeBlock(l, t, --minLRU);
 						t.commitNoSync();
 						t = null;
 						continue;
@@ -1115,6 +1105,20 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 			} catch (IOException e1) {
 				System.err.println("Failed to set size");
 			}
+		}
+	}
+
+	private void reconstructAddFreeBlock(long l, Transaction t, long lru) throws DatabaseException {
+		StoreBlock storeBlock = new StoreBlock(l, lru);
+		byte[] buf = new byte[32];
+		random.nextBytes(buf);
+		DatabaseEntry routingkeyDBE = new DatabaseEntry(buf);
+		DatabaseEntry blockDBE = new DatabaseEntry();
+		storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
+		OperationStatus op = keysDB.putNoOverwrite(t, routingkeyDBE, blockDBE);
+		if (op != OperationStatus.SUCCESS) {
+			Logger.error(this, "Impossible operation status inserting bogus key to LRU: " + op);
+			addFreeBlock(l, true, "Impossible to add (invalid) to LRU: " + op);
 		}
 	}
 
