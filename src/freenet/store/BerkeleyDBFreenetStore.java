@@ -2165,6 +2165,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 		} while (bf.hasRemaining());
 	}
 	private void fcWriteKey(long entry, byte[] data) throws IOException {
+		assert(data.length == keyLength);
 		ByteBuffer bf = ByteBuffer.wrap(data);
 		do {
 			int byteWritten = keysFC.write(bf, entry * keyLength + bf.position());
