@@ -1066,8 +1066,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 					storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
 					OperationStatus op = keysDB.putNoOverwrite(t,routingkeyDBE,blockDBE);
 					if(op == OperationStatus.KEYEXIST) {
-						Logger.error(this, "Duplicate block: "+l);
-						System.err.println("Duplicate block: "+l);
+						Logger.error(this, "Duplicate block: "+l+" key null = "+isAllNull(keyBuf)+" routing key null = "+isAllNull(routingkey)+" headers null = "+isAllNull(header)+" data null = "+isAllNull(data));
+						System.err.println("Duplicate block: "+l+" key null = "+isAllNull(keyBuf)+" routing key null = "+isAllNull(routingkey)+" headers null = "+isAllNull(header)+" data null = "+isAllNull(data));
 						dupes++;
 						storeBlock = new StoreBlock(l, --minLRU);
 						byte[] buf = new byte[32];
