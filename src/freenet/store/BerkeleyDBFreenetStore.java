@@ -1009,7 +1009,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 					Logger.normal(this, "Block "+l+" : LRU "+lruVal);
 				}
 				boolean readKey = false;
-				if(keysRAF != null && keysRAFLength > (l+1)*keyLength) {
+				if(keysRAF != null && keyBuf != null && keysRAFLength > (l+1)*keyLength) {
 					try {
 						keysRAF.readFully(keyBuf);
 						readKey = true;
@@ -1018,6 +1018,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 						readKey = false;
 					}
 				}
+				if(!readKey) keyBuf = null;
 				try {
 					byte[] routingkey = null;
 					if(keyBuf != null && !isAllNull(keyBuf)) {
@@ -1031,7 +1032,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 					}
 					if (routingkey == null && !isAllNull(header) && !isAllNull(data)) {
 						try {
-							StorableBlock block = callback.construct(data, header, null, readKey ? keyBuf : null);
+							StorableBlock block = callback.construct(data, header, null, keyBuf);
 							routingkey = block.getRoutingKey();
 						} catch (KeyVerifyException e) {
 							String err = "Bogus or unreconstructible key at slot "+l+" : "+e+" - lost block "+l;
