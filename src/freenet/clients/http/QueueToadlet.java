@@ -307,6 +307,12 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					fcp.forceStorePersistentRequests();
 				} catch (IdentifierCollisionException e) {
 					e.printStackTrace();
+				} catch (MalformedURLException e) {
+					writeError(L10n.getString("QueueToadlet.errorInvalidURI"), L10n.getString("QueueToadlet.errorInvalidURIToU"), ctx);
+					return;
+				} catch (FileNotFoundException e) {
+					this.writeError(L10n.getString("QueueToadlet.errorNoFileOrCannotRead"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ target }), ctx);
+					return;
 				} catch (NotAllowedException e) {
 					this.writeError(L10n.getString("QueueToadlet.errorAccessDenied"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getName() }), ctx);
 					return;
@@ -335,6 +341,12 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					fcp.forceStorePersistentRequests();
 				} catch (IdentifierCollisionException e) {
 					e.printStackTrace();
+				} catch (MalformedURLException e) {
+					writeError(L10n.getString("QueueToadlet.errorInvalidURI"), L10n.getString("QueueToadlet.errorInvalidURIToU"), ctx);
+					return;
+				} catch (FileNotFoundException e) {
+					this.writeError(L10n.getString("QueueToadlet.errorNoFileOrCannotRead"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.toString() }), ctx);
+					return;
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
