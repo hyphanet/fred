@@ -114,6 +114,9 @@ public class NodeStarter implements WrapperListener
 
     	executor.start();
     	
+    	// Prevent timeouts for a while. The DiffieHellman init for example could take some time on a very slow system.
+    	WrapperManager.signalStarting(500000);
+    	
     	// Setup RNG
     	RandomSource random = new Yarrow();
     	
@@ -152,7 +155,6 @@ public class NodeStarter implements WrapperListener
     	SubConfig sslConfig = new SubConfig("ssl", cfg);
     	SSL.init(sslConfig);
 		
-    	WrapperManager.signalStarting(500000);
     	try {
     		node = new Node(cfg, random, logConfigHandler,this, executor);
     		node.start(false);
