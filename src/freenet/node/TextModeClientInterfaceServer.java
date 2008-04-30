@@ -198,10 +198,14 @@ public class TextModeClientInterfaceServer implements Runnable {
 			return NetworkInterface.DEFAULT_BIND_TO;
 		}
 
-		public void set(String val) {
+		public void set(String val) throws InvalidConfigValueException {
 			if (!val.equals(get())) {
-				core.getTextModeClientInterface().networkInterface.setAllowedHosts(val);
-				core.getTextModeClientInterface().allowedHosts = val;
+				TextModeClientInterfaceServer server = core.getTextModeClientInterface();
+				if(server != null) {
+					server.networkInterface.setAllowedHosts(val);
+					server.allowedHosts = val;
+				} else
+					throw new InvalidConfigValueException("Setting allowedHosts for TMCI (console) server when TMCI is disabled");
 			}
 		}
     	
