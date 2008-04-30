@@ -1189,6 +1189,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				
 				block = callback.construct(data, header, routingkey, fullKey);
 				
+				// Write the key.
+				byte[] newFullKey = block.getFullKey();
+				if(keysRAF != null) {
+					fcWriteKey(storeBlock.offset, newFullKey);
+				}
+				
 				if(!Arrays.equals(block.getRoutingKey(), routingkey)) {
 					
 					synchronized(this) {
