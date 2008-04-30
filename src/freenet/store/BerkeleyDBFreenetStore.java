@@ -1019,6 +1019,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 					}
 				}
 				if(!readKey) keyBuf = null;
+				boolean keyFromData = false;
 				try {
 					byte[] routingkey = null;
 					if(keyBuf != null && !isAllNull(keyBuf)) {
@@ -1031,6 +1032,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 						}
 					}
 					if (routingkey == null && !isAllNull(header) && !isAllNull(data)) {
+						keyFromData = true;
 						try {
 							StorableBlock block = callback.construct(data, header, null, keyBuf);
 							routingkey = block.getRoutingKey();
@@ -1057,10 +1059,47 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 					storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
 					OperationStatus op = keysDB.putNoOverwrite(t,routingkeyDBE,blockDBE);
 					if(op == OperationStatus.KEYEXIST) {
-						Logger.error(this, "Duplicate block: "+l+" key null = "+isAllNull(keyBuf)+" routing key null = "+isAllNull(routingkey)+" headers null = "+isAllNull(header)+" data null = "+isAllNull(data));
-						System.err.println("Duplicate block: "+l+" key null = "+isAllNull(keyBuf)+" routing key null = "+isAllNull(routingkey)+" headers null = "+isAllNull(header)+" data null = "+isAllNull(data));
-						dupes++;
-						reconstructAddFreeBlock(l, t, --minLRU);
+						if(!keyFromData) {
+							byte[] oldRoutingkey = routingkey;
+							try {
+								StorableBlock block = callback.construct(data, header, null, keyBuf);
+								routingkey = block.getRoutingKey();
+								if(Arrays.equals(oldRoutingkey, routingkey)) {
+									dupes++;
+									String err = "Really duplicated block: "+l+" key null = "+isAllNull(keyBuf)+" routing key null = "+isAllNull(routingkey)+" headers null = "+isAllNull(header)+" data null = "+isAllNull(data);
+									Logger.error(this, err);
+									System.err.println(err);
+									reconstructAddFreeBlock(l, t, --minLRU);
+								} else {
+									routingkeyDBE = new DatabaseEntry(routingkey);
+									op = keysDB.putNoOverwrite(t,routingkeyDBE,blockDBE);
+									if(op == OperationStatus.KEYEXIST) {
+										dupes++;
+										String err = "Duplicate block, reconstructed the key, different duplicate block!: "+l+" key null = "+isAllNull(keyBuf)+" routing key null = "+isAllNull(routingkey)+" headers null = "+isAllNull(header)+" data null = "+isAllNull(data);
+										Logger.error(this, err);
+										System.err.println(err);
+										reconstructAddFreeBlock(l, t, --minLRU);
+									} else if(op != OperationStatus.SUCCESS) {
+										failures++;
+										String err = "Unknown error: "+op+" for duplicate block "+l+" after reconstructing key";
+										Logger.error(this, err);
+										System.err.println(err);
+										reconstructAddFreeBlock(l, t, --minLRU);
+									} // Else it worked.
+								}
+							} catch (KeyVerifyException e) {
+								String err = "Duplicate slot, bogus or unreconstructible key at "+l+" : "+e+" - lost block "+l;
+								Logger.error(this, err, e);
+								System.err.println(err);
+								failures++;
+								reconstructAddFreeBlock(l, t, --minLRU);
+							}
+						} else {
+							Logger.error(this, "Duplicate block: "+l+" key null = "+isAllNull(keyBuf)+" routing key null = "+isAllNull(routingkey)+" headers null = "+isAllNull(header)+" data null = "+isAllNull(data));
+							System.err.println("Duplicate block: "+l+" key null = "+isAllNull(keyBuf)+" routing key null = "+isAllNull(routingkey)+" headers null = "+isAllNull(header)+" data null = "+isAllNull(data));
+							dupes++;
+							reconstructAddFreeBlock(l, t, --minLRU);
+						}
 						t.commitNoSync();
 						t = null;
 						continue;
