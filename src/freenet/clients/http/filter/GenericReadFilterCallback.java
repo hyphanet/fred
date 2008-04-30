@@ -37,20 +37,37 @@ public class GenericReadFilterCallback implements FilterCallback {
 	}
 
 	private URI baseURI;
+	private URI strippedBaseURI;
 	private final FoundURICallback cb;
 	
 	public GenericReadFilterCallback(URI uri, FoundURICallback cb) {
 		this.baseURI = uri;
 		this.cb = cb;
+		setStrippedURI(uri.toString());
 	}
 	
 	public GenericReadFilterCallback(FreenetURI uri, FoundURICallback cb) {
 		try {
 			this.baseURI = uri.toRelativeURI();
+			setStrippedURI(baseURI.toString());
 			this.cb = cb;
 		} catch (URISyntaxException e) {
 			throw new Error(e);
 		}
+	}
+
+	private void setStrippedURI(String u) {
+		int idx = u.lastIndexOf('/');
+		if(idx > 0) {
+			u = u.substring(0, idx+1);
+			try {
+				strippedBaseURI = new URI(u);
+			} catch (URISyntaxException e) {
+				Logger.error(this, "Can't strip base URI: "+e+" parsing "+u);
+				strippedBaseURI = baseURI;
+			}
+		} else
+			strippedBaseURI = baseURI;
 	}
 
 	public String processURI(String u, String overrideType) throws CommentException {
@@ -184,10 +201,31 @@ public class GenericReadFilterCallback implements FilterCallback {
 		// At the moment, ?type= and ?force= are the only options supported by FProxy anyway.
 		
 		try {
-			URI uri = new URI(null, null, path, typeOverride == null ? null : "type="+typeOverride,
-					u.getFragment());
+			// URI encoding issues: FreenetURI.toString() does URLEncode'ing of critical components.
+			// So if we just pass it in to the component-wise constructor, we end up encoding twice, 
+			// so get %2520 for a space.
+			
+			// However, we want to support encoded slashes or @'s in the path, so we don't want to
+			// just decode before feeding it to the constructor. It looks like the best option is
+			// to construct it ourselves and then re-parse it. This is doing unnecessary work, it
+			// would be much easier if we had a component-wise constructor for URI that didn't 
+			// re-encode, but at least it works...
+			
+			StringBuffer sb = new StringBuffer();
+			sb.append(path);
+			if(typeOverride != null) {
+				sb.append("?type=");
+				sb.append(typeOverride);
+			}
+			if(u.getFragment() != null) {
+				sb.append('#');
+				sb.append(u.getFragment());
+			}
+			
+			URI uri = new URI(sb.toString());
+			
 			if(!noRelative)
-				uri = baseURI.relativize(uri);
+				uri = strippedBaseURI.relativize(uri);
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Returning "+uri.toASCIIString()+" from "+path+" from baseURI="+baseURI);
 			return uri.toASCIIString();
@@ -230,6 +268,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 		} else {
 			try {
 				baseURI = new URI(ret);
+				setStrippedURI(ret);
 			} catch (URISyntaxException e) {
 				throw new Error(e); // Impossible
 			}
