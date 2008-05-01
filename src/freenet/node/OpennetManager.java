@@ -93,7 +93,7 @@ public class OpennetManager {
 	static final int MAX_OPENNET_NODEREF_LENGTH = 32768;
 	
 	/** Enable scaling of peers with bandwidth? */
-	static final boolean ENABLE_PEERS_PER_KB_OUTPUT = true;
+	static final boolean ENABLE_PEERS_PER_KB_OUTPUT = false;
 	/** Target bandwidth usage - above this, we use MAX_PEERS_FOR_SCALING */
 	static final int TARGET_BANDWIDTH_USAGE = 20*1024; // 20 peers at 20K/sec.
 	/** Minimum number of peers */
