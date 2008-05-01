@@ -413,6 +413,12 @@ public final class FProxyToadlet extends Toadlet {
 		}
 		String requestedMimeType = httprequest.getParam("type", null);
 		String override = (requestedMimeType == null) ? "" : "?type="+URLEncoder.encode(requestedMimeType,true);
+		// No point passing ?force= across a redirect, since the key will change.
+		// However, there is every point in passing ?forcedownload.
+		if(httprequest.isParameterSet("forcedownload")) {
+			if(override.length() == 0) override = "?forcedownload";
+			else override = override+"&forcedownload";
+		}
 		try {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "FProxy fetching "+key+" ("+maxSize+ ')');
