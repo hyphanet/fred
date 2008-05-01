@@ -278,6 +278,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				} catch (FileNotFoundException e) {
 					this.writeError(L10n.getString("QueueToadlet.errorNoFileOrCannotRead"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getFilename() }), ctx);
 					return;
+				} catch (MalformedURLException mue1) {
+					writeError(L10n.getString("QueueToadlet.errorInvalidURI"), L10n.getString("QueueToadlet.errorInvalidURIToU"), ctx);
+					return;
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
