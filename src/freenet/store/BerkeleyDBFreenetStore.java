@@ -1004,10 +1004,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 					}
 				}
 				if(lruVal == 0) {
-					Logger.normal(this, "Block "+l+" : resetting LRU");
+					Logger.minor(this, "Block " + l + " : resetting LRU");
 					lruVal = getNewRecentlyUsed();
 				} else {
-					Logger.normal(this, "Block "+l+" : LRU "+lruVal);
+					Logger.minor(this, "Block " + l + " : LRU " + lruVal);
 				}
 				boolean readKey = false;
 				if(keysRAF != null && keyBuf != null && keysRAFLength > (l+1)*keyLength) {
