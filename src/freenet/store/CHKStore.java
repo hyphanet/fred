@@ -27,7 +27,7 @@ public class CHKStore extends StoreCallback {
 	public void put(CHKBlock b) throws IOException {
 		NodeCHK key = (NodeCHK) b.getKey();
 		try {
-			store.put(b, key.getRoutingKey(), key.getRoutingKey(), b.getRawData(), b.getRawHeaders(), false);
+			store.put(b, key.getRoutingKey(), key.getFullKey(), b.getRawData(), b.getRawHeaders(), false);
 		} catch (KeyCollisionException e) {
 			Logger.error(this, "Impossible for CHKStore: "+e, e);
 		}
