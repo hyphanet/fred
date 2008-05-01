@@ -484,17 +484,18 @@ public class OpennetManager {
 	}
 
 	protected int getNumberOfConnectedPeersToAim() {
-		int max = Integer.MAX_VALUE;
+		int max = node.getMaxOpennetPeers();
 		if(ENABLE_PEERS_PER_KB_OUTPUT) {
 			int obwLimit = node.getOutputBandwidthLimit();
 			if(obwLimit >= TARGET_BANDWIDTH_USAGE) {
-				max = MAX_PEERS_FOR_SCALING;
+				max = Math.min(max, MAX_PEERS_FOR_SCALING);
 			} else {
-				max = obwLimit * MAX_PEERS_FOR_SCALING / TARGET_BANDWIDTH_USAGE;
-				if(max < MIN_PEERS_FOR_SCALING) max = MIN_PEERS_FOR_SCALING;
+				int limit = Math.min(max, obwLimit * MAX_PEERS_FOR_SCALING / TARGET_BANDWIDTH_USAGE);
+				if(limit < MIN_PEERS_FOR_SCALING) limit = MIN_PEERS_FOR_SCALING;
+				max = Math.min(max, limit);
 			}
 		}
-		return Math.min(max, node.getMaxOpennetPeers() - node.peers.countConnectedDarknetPeers());
+		return max - node.peers.countConnectedDarknetPeers();
 	}
 
 	/**
