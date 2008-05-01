@@ -468,6 +468,8 @@ public class USKFetcher implements ClientGetState {
 			for(int i=0;i<attempts.length;i++) {
 				// Race conditions happen here and waste a lot more time than this simple check.
 				long lastEd = uskManager.lookup(origUSK);
+				if(keepLastData && lastEd == lookedUp)
+					lastEd--; // If we want the data, then get it for the known edition, so we always get the data, so USKInserter can compare it and return the old edition if it is identical.
 				if(attempts[i].number > lastEd)
 					attempts[i].schedule();
 				else {
