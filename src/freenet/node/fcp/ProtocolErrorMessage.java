@@ -165,7 +165,6 @@ public class ProtocolErrorMessage extends FCPMessage {
 
 	public void run(FCPConnectionHandler handler, Node node) {
 		Logger.error(this, "Client reported protocol error");
-		if(fatal) handler.close();
 	}
 
 	public String getName() {
