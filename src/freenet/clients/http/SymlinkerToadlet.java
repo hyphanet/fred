@@ -40,10 +40,7 @@ public class SymlinkerToadlet extends Toadlet {
 		String fns[] = tslconfig.getStringArr("symlinks");
 		if (fns != null) {
 			for (int i = 0 ; i < fns.length ; i++) {
-				//System.err.println("Load: " + StringArrOption.decode(fns[i]));
 				String tuple[] = fns[i].split("#");
-				if (tuple.length == 2)
-					System.out.println("Adding link: " + tuple[0] + " => " + tuple[1]);
 				if (tuple.length == 2)
 					addLink(tuple[0], tuple[1], false);
 			}
