@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1353,6 +1354,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				hits++;
 			}
 			return block;
+		} catch (ClosedChannelException cce) {
+			// The channel is already close
+			Logger.debug(this, "channel closed" , cce);
+			return null;
 		} catch(Throwable ex) {  // FIXME: ugly
 			if(ex instanceof IOException) {
 				synchronized(this) {
@@ -1526,7 +1531,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				Logger.minor(this, "Headers: "+header.length+" bytes, hash "+Fields.hashCode(header));
 				Logger.minor(this, "Data: "+data.length+" bytes, hash "+Fields.hashCode(data)+" putting "+HexUtil.bytesToHex(routingkey));
 			}
-				
+		} catch (ClosedChannelException cce) {
+			// The channel is already close
+			Logger.debug(this, "channel closed", cce);
 		} catch(Throwable ex) {  // FIXME: ugly
 			if(ex instanceof IOException) {
 				synchronized(this) {
