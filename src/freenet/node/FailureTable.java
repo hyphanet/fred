@@ -21,6 +21,8 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
+import freenet.support.OOMHook;
 import freenet.support.SerialExecutor;
 import freenet.support.io.NativeThread;
 
@@ -38,7 +40,7 @@ import freenet.support.io.NativeThread;
  * in the last hour.
  * @author toad
  */
-public class FailureTable {
+public class FailureTable implements OOMHook {
 	
 	/** FailureTableEntry's by key. Note that we push an entry only when sentTime changes. */
 	private final LRUHashtable entriesByKey;
@@ -78,6 +80,7 @@ public class FailureTable {
 	
 	public void start() {
 		offerExecutor.start(node.executor, "FailureTable offers executor");
+		OOMHandler.addOOMHook(this);
 	}
 	
 	/**
@@ -625,4 +628,15 @@ public class FailureTable {
 		return entry.othersWant(null);
 	}
 
+	public void handleLowMemory() throws Exception {
+		synchronized (this) {
+			entriesByKey.clear();
+		}
+	}
+
+	public void handleOutOfMemory() throws Exception {
+		synchronized (this) {
+			entriesByKey.clear();
+		}
+	}
 }

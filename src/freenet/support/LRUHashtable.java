@@ -162,4 +162,8 @@ public class LRUHashtable {
 			entries[i++] = values.nextElement();
 	}
 
+	public synchronized void clear() {
+		list.clear();
+		hash.clear();
+	}
 }
