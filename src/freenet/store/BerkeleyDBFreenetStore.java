@@ -1509,6 +1509,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				// Key already exists!
 				// But is it valid?
 				t.abort();
+				t = null;
 				if(fetch(routingkey, fullKey, false) != null) return; // old key was valid, we are not overwriting
 				// If we are here, it was corrupt, or it was just deleted, so we can replace it.
 				if(logMINOR) Logger.minor(this, "Old key was invalid, adding anyway");
