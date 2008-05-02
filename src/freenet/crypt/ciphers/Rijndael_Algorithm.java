@@ -30,47 +30,53 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 //	Debugging methods and variables
 //	...........................................................................
 
-	static final String NAME = "Rijndael_Algorithm";
-	static final boolean IN = true, OUT = false;
+	private static final String NAME = "Rijndael_Algorithm";
+	private static final boolean IN = true, OUT = false;
 
-	static final boolean RDEBUG = Rijndael_Properties.GLOBAL_DEBUG;
-	static final int debuglevel = RDEBUG ? Rijndael_Properties.getLevel(NAME) : 0;
-	static final PrintWriter err = RDEBUG ? Rijndael_Properties.getOutput() : null;
+	private static final boolean RDEBUG = Rijndael_Properties.GLOBAL_DEBUG;
+	private static final int debuglevel = RDEBUG ? Rijndael_Properties.getLevel(NAME) : 0;
+	private static final PrintWriter err = RDEBUG ? Rijndael_Properties.getOutput() : null;
 
-	static final boolean TRACE = Rijndael_Properties.isTraceable(NAME);
+	private static final boolean TRACE = Rijndael_Properties.isTraceable(NAME);
 
-	static void debug (String s) { err.println(">>> "+NAME+": "+s); }
-	static void trace (boolean in, String s) {
+	private static void debug(String s) {
+		err.println(">>> " + NAME + ": " + s);
+	}
+
+	private static void trace(boolean in, String s) {
 		if (TRACE) err.println((in?"==> ":"<== ")+NAME+ '.' +s);
 	}
-	static void trace (String s) { if (TRACE) err.println("<=> "+NAME+ '.' +s); }
+	private static void trace(String s) {
+		if (TRACE)
+			err.println("<=> " + NAME + '.' + s);
+	}
 
 
 //	Constants and variables
 //	...........................................................................
 
-	static final int BLOCK_SIZE = 16; // default block size in bytes
+	private static final int BLOCK_SIZE = 16; // default block size in bytes
 
-	static final int[] alog = new int[256];
-	static final int[] log =  new int[256];
+	private static final int[] alog = new int[256];
+	private static final int[] log = new int[256];
 
-	static final byte[] S =  new byte[256];
-	static final byte[] Si = new byte[256];
-	static final int[] T1 = new int[256];
-	static final int[] T2 = new int[256];
-	static final int[] T3 = new int[256];
-	static final int[] T4 = new int[256];
-	static final int[] T5 = new int[256];
-	static final int[] T6 = new int[256];
-	static final int[] T7 = new int[256];
-	static final int[] T8 = new int[256];
-	static final int[] U1 = new int[256];
-	static final int[] U2 = new int[256];
-	static final int[] U3 = new int[256];
-	static final int[] U4 = new int[256];
-	static final byte[] rcon = new byte[30];
+	private static final byte[] S = new byte[256];
+	private static final byte[] Si = new byte[256];
+	private static final int[] T1 = new int[256];
+	private static final int[] T2 = new int[256];
+	private static final int[] T3 = new int[256];
+	private static final int[] T4 = new int[256];
+	private static final int[] T5 = new int[256];
+	private static final int[] T6 = new int[256];
+	private static final int[] T7 = new int[256];
+	private static final int[] T8 = new int[256];
+	private static final int[] U1 = new int[256];
+	private static final int[] U2 = new int[256];
+	private static final int[] U3 = new int[256];
+	private static final int[] U4 = new int[256];
+	private static final byte[] rcon = new byte[30];
 
-	static final int[][][] shifts = new int[][][] {
+	private static final int[][][] shifts = new int[][][] {
 		{ {0, 0}, {1, 3}, {2, 2}, {3, 1} },
 		{ {0, 0}, {1, 5}, {2, 4}, {3, 3} },
 		{ {0, 0}, {1, 7}, {3, 5}, {4, 4} }
@@ -271,14 +277,14 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	}
 
 	// multiply two elements of GF(2^m)
-	static final int mul (int a, int b) {
+	private static final int mul(int a, int b) {
 		return ((a != 0) && (b != 0)) ?
 				alog[(log[a & 0xFF] + log[b & 0xFF]) % 255] :
 					0;
 	}
 
 	// convenience method used in generating Transposition boxes
-	static final int mul4 (int a, byte[] b) {
+	private static final int mul4(int a, byte[] b) {
 		if (a == 0) return 0;
 		a = log[a & 0xFF];
 		int a0 = (b[0] != 0) ? alog[(a + log[b[0] & 0xFF]) % 255] & 0xFF : 0;
@@ -471,14 +477,18 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	}
 
 	/** A basic symmetric encryption/decryption test. */
-	public static boolean self_test() { return self_test(BLOCK_SIZE); }
+	static boolean self_test() {
+		return self_test(BLOCK_SIZE);
+	}
 
 
 //	Rijndael own methods
 //	...........................................................................
 
 	/** @return The default length in bytes of the Algorithm input block. */
-	public static final int blockSize() { return BLOCK_SIZE; }
+	static final int blockSize() {
+		return BLOCK_SIZE;
+	}
 
 	/**
 	 * Expand a user-supplied key material into a session key.
@@ -497,7 +507,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	//a problem the callers should resolve among themselves.
 	//It is a fact that allowing no more than one makeKey on any given
 	//CPU will result in fewer cache misses.  -- ejhuff 2003-10-12
-	public final static synchronized Object makeKey (byte[] k, int blockSize)
+	final static synchronized Object makeKey(byte[] k, int blockSize)
 	throws InvalidKeyException {
 		if (RDEBUG) trace(IN, "makeKey("+k+", "+blockSize+ ')');
 		if (k == null)
@@ -593,7 +603,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 * @param  sessionKey The session key to use for encryption.
 	 * @param  blockSize  The block size in bytes of this Rijndael.
 	 */
-	public static final void
+	static final void
 	blockEncrypt (byte[] in, byte[] result, int inOffset, Object sessionKey, int blockSize) {
 		if (blockSize == BLOCK_SIZE) {
 			blockEncrypt(in, result, inOffset, sessionKey);
@@ -617,7 +627,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 * @param  sessionKey The session key to use for encryption.
 	 * @param  blockSize  The block size in bytes of this Rijndael.
 	 */
-	public static final void
+	static final void
 	blockEncrypt (byte[] in, byte[] result, int inOffset, Object sessionKey, int blockSize, int[] a, int[] t) {
 		if (blockSize == BLOCK_SIZE) {
 			blockEncrypt(in, result, inOffset, sessionKey);
@@ -673,7 +683,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 * @param  sessionKey The session key to use for decryption.
 	 * @param  blockSize  The block size in bytes of this Rijndael.
 	 */
-	public static final void
+	static final void
 	blockDecrypt (byte[] in, byte[] result, int inOffset, Object sessionKey, int blockSize) {
 		if (blockSize == BLOCK_SIZE) {
 			blockDecrypt(in, result, inOffset, sessionKey);
@@ -785,7 +795,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	 * @return The number of rounds for a given Rijndael's key and
 	 *      block sizes.
 	 */
-	public static final int getRounds (int keySize, int blockSize) {
+	private static final int getRounds(int keySize, int blockSize) {
 		switch (keySize) {
 		case 16:
 			return blockSize == 16 ? 10 : (blockSize == 24 ? 12 : 14);

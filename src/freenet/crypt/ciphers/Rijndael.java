@@ -22,11 +22,11 @@ public class Rijndael implements BlockCipher {
 	private final int keysize, blocksize;
 
 	// for Util.getCipherByName..  and yes, screw you too, java
-	public Rijndael(Integer keysize) throws UnsupportedCipherException {
+	private Rijndael(Integer keysize) throws UnsupportedCipherException {
 		this(keysize.intValue());
 	}
 
-	public Rijndael(int keysize) throws UnsupportedCipherException {
+	private Rijndael(int keysize) throws UnsupportedCipherException {
 		this(keysize, 128);
 	}
 
@@ -49,7 +49,7 @@ public class Rijndael implements BlockCipher {
 		this.blocksize=blocksize;
 	}
 
-	public Rijndael() {
+	private Rijndael() {
 		this.keysize   = 128;
 		this.blocksize = 128;
 	}
@@ -83,10 +83,12 @@ public class Rijndael implements BlockCipher {
 	 * @return Size of temporary int[] a, t. If these are passed in, this can speed
 	 * things up by avoiding unnecessary allocations between rounds.
 	 */
+	// only consumer is RijndaelPCFBMode
 	public synchronized final int getTempArraySize() {
 		return blocksize/(8*4);
 	}
 
+	// only consumer is RijndaelPCFBMode
 	public synchronized final void encipher(byte[] block, byte[] result, int[] a, int[] t) {
 		if(block.length != blocksize/8)
 			throw new IllegalArgumentException();
