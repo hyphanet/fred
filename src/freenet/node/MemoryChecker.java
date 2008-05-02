@@ -43,7 +43,7 @@ public class MemoryChecker implements Runnable {
 		
 		Logger.normal(this, "Memory in use: "+SizeUtil.formatSize((r.totalMemory()-r.freeMemory())));
 		
-		if (r.freeMemory() < 4096 * 1024 * 1024) { // free memory < 8 MB
+		if (r.freeMemory() < 8 * 1024 * 1024) { // free memory < 8 MB
 			Logger.error(this, "memory too low, trying to free some");
 			OOMHandler.lowMemory();
 		}
