@@ -2247,6 +2247,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 			keysFC.force(true);
 		if (lruFC != null)
 			lruFC.force(true);
+		
+		environment.evictMemory();
 	}
 
 	public void handleOutOfMemory() throws Exception {
