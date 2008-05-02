@@ -33,6 +33,30 @@ public class OOMHandler {
 		}
 	}
 	
+	/**
+	 * Call this when running low of memory
+	 */
+	public static void lowMemory() {
+		System.gc();
+		System.runFinalization();
+
+		// iterate all oom hooks
+		Iterator it = oomHooks.iterator();
+		while (it.hasNext()) {
+			OOMHook hook = ((OOMHook) it.next());
+			if (hook != null) {
+				try {
+					hook.handleLowMemory();
+				} catch (Throwable t) {
+					//ignore
+				}
+			}
+		}
+
+		System.gc();
+		System.runFinalization();
+	}
+	
 	public static void handleOOM(OutOfMemoryError e) {
 		if (isOOM) {
 			Logger.error(null, "Double OOM", e);
@@ -51,20 +75,18 @@ public class OOMHandler {
 			
 			System.gc();
 			System.runFinalization();
-			
+
 			// iterate all oom hooks
 			Iterator it = oomHooks.iterator();
 			while (it.hasNext()) {
 				OOMHook hook = ((OOMHook) it.next());
 				if (hook != null) {
 					try {
-						hook.handleOOM();
+						hook.handleOutOfMemory();
 					} catch (Throwable t) {
 						//ignore
 					}
 				}
-
-				System.gc();
 			}
 			
 			System.gc();

@@ -44,6 +44,8 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import freenet.node.Node;
 import freenet.node.NodeInitException;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
+import freenet.support.OOMHook;
 import freenet.support.io.Closer;
 
 /**
@@ -105,7 +107,7 @@ public class SHA256 {
 		String algo = md256.getAlgorithm();
 		if(!(algo.equals("SHA-256") || algo.equals("SHA256")))
 			throw new IllegalArgumentException("Should be SHA-256 but is " + algo);
-		if (digests.size() > 16) // don't cache too many of them
+		if (digests.size() > 16 || noCache) // don't cache too many of them
 			return;
 		md256.reset();
 		digests.add(md256);
@@ -120,5 +122,21 @@ public class SHA256 {
 
 	public static int getDigestLength() {
 		return HASH_SIZE;
+	}
+	
+	private static boolean noCache = false;
+	
+	static {
+		OOMHandler.addOOMHook(new OOMHook() {
+			public void handleLowMemory() throws Exception {
+				digests.clear();
+				noCache = true;
+			}
+
+			public void handleOutOfMemory() throws Exception {
+				digests.clear();
+				noCache = true;
+			}
+		});
 	}
 }

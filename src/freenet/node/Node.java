@@ -124,7 +124,7 @@ import freenet.support.transport.ip.HostnameSyntaxException;
 /**
  * @author amphibian
  */
-public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
+public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 	private static boolean logMINOR;
 	
@@ -1604,8 +1604,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 			e.printStackTrace();
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_UPDATER, "Could not create Updater: "+e);
 		}
-
-		OOMHandler.addOOMHook(this);
 		
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
@@ -3306,23 +3304,4 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, OOMHook {
 	public void setDispatcherHook(NodeDispatcherCallback cb) {
 		this.dispatcher.setHook(cb);
 	}
-
-	/**
-	 * Free some memory
-	 */
-	public void handleOOM() throws Exception {
-		if (cachedPubKeys != null) {
-			Object value;
-			do {
-				value = cachedPubKeys.popKey();
-			} while (value != null);
-		}
-		if (recentlyCompletedIDs != null) {
-			synchronized (recentlyCompletedIDs) {
-				// half it size
-				while (recentlyCompletedIDs.size() > MAX_RECENTLY_COMPLETED_IDS / 2)
-					recentlyCompletedIDs.pop();
-			}
-		}
-    }
 }

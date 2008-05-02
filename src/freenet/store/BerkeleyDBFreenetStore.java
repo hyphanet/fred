@@ -2239,15 +2239,30 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 		bf.get(data);
 	}
 	
-    public void handleOOM() throws Exception {
-		if (storeRAF != null)
-			storeRAF.getFD().sync();
-		if (keysRAF != null)
-			keysRAF.getFD().sync();
-		if (lruRAF != null)
-			lruRAF.getFD().sync();
+    public void handleLowMemory() throws Exception {
+    	// Flush all
+		if (storeFC != null)
+			storeFC.force(true);
+		if (keysFC != null)
+			keysFC.force(true);
+		if (lruFC != null)
+			lruFC.force(true);
 	}
 
+	public void handleOutOfMemory() throws Exception {
+		// database likely to be corrupted,
+		// reconstruct it just in case
+		reconstructFile.createNewFile();
+		
+		// Flush all
+		if (storeFC != null)
+			storeFC.force(true);
+		if (keysFC != null)
+			keysFC.force(true);
+		if (lruFC != null)
+			lruFC.force(true);
+	}
+	
 	/**
      * @return
      */

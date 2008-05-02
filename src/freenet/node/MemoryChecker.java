@@ -4,6 +4,7 @@
 package freenet.node;
 
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.SizeUtil;
 
 public class MemoryChecker implements Runnable {
@@ -41,6 +42,11 @@ public class MemoryChecker implements Runnable {
 		Runtime r = Runtime.getRuntime();
 		
 		Logger.normal(this, "Memory in use: "+SizeUtil.formatSize((r.totalMemory()-r.freeMemory())));
+		
+		if (r.freeMemory() < 4096 * 1024 * 1024) { // free memory < 8 MB
+			Logger.error(this, "memory too low, trying to free some");
+			OOMHandler.lowMemory();
+		}
 		
 		int sleeptime = aggressiveGCModificator;
 		if(sleeptime <= 0) { // We are done
