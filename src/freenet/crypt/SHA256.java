@@ -105,6 +105,8 @@ public class SHA256 {
 		String algo = md256.getAlgorithm();
 		if(!(algo.equals("SHA-256") || algo.equals("SHA256")))
 			throw new IllegalArgumentException("Should be SHA-256 but is " + algo);
+		if (digests.size() > 16) // don't cache too many of them
+			return;
 		md256.reset();
 		digests.add(md256);
 	}
