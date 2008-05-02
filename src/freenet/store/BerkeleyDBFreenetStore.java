@@ -25,6 +25,7 @@ import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.DatabaseNotFoundException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
+import com.sleepycat.je.EnvironmentMutableConfig;
 import com.sleepycat.je.LockMode;
 import com.sleepycat.je.OperationStatus;
 import com.sleepycat.je.RunRecoveryException;
@@ -2247,6 +2248,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 			keysFC.force(true);
 		if (lruFC != null)
 			lruFC.force(true);
+		
+		EnvironmentMutableConfig dbmc = environment.getMutableConfig();
+		long cacheSize = (long) (dbmc.getCacheSize() * .9); // we have 6 databases, 0.9^6 = 0.53
+		dbmc.setCacheSize(cacheSize);
+		Logger.normal(this, "low memory, set db cache = " + cacheSize);
 	}
 
 	public void handleOutOfMemory() throws Exception {
