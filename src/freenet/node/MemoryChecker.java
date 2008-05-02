@@ -41,9 +41,14 @@ public class MemoryChecker implements Runnable {
 		
 		Runtime r = Runtime.getRuntime();
 		
-		Logger.normal(this, "Memory in use: "+SizeUtil.formatSize((r.totalMemory()-r.freeMemory())));
+		long totalMemory = r.totalMemory();
+		long freeMemory = r.freeMemory();
+		long maxMemory = r.maxMemory();
 		
-		if (r.freeMemory() < 8 * 1024 * 1024) { // free memory < 8 MB
+		Logger.normal(this, "Memory in use: "+SizeUtil.formatSize((totalMemory-freeMemory)));
+		
+		if (freeMemory < 8 * 1024 * 1024 // free memory < 8 MB
+		        && (totalMemory == maxMemory || maxMemory == Long.MAX_VALUE)) { // we have allocated max memory
 			Logger.error(this, "memory too low, trying to free some");
 			OOMHandler.lowMemory();
 		}
@@ -64,13 +69,13 @@ public class MemoryChecker implements Runnable {
 		// we are getting much easier. 
 		if(aggressiveGCModificator > 0) {
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-			long beforeGCUsedMemory = (r.totalMemory()-r.freeMemory());
+			long beforeGCUsedMemory = (r.totalMemory() - r.freeMemory());
 			if(logMINOR) Logger.minor(this, "Memory in use before GC: "+beforeGCUsedMemory);
 			long beforeGCTime = System.currentTimeMillis();
 			System.gc();
 			System.runFinalization();
 			long afterGCTime = System.currentTimeMillis();
-			long afterGCUsedMemory = (r.totalMemory()-r.freeMemory());
+			long afterGCUsedMemory = (r.totalMemory() - r.freeMemory());
 			if(logMINOR) {
 				Logger.minor(this, "Memory in use after GC: "+afterGCUsedMemory);
 				Logger.minor(this, "GC completed after "+(afterGCTime - beforeGCTime)+"ms and \"recovered\" "+(beforeGCUsedMemory - afterGCUsedMemory)+" bytes, leaving "+afterGCUsedMemory+" bytes used");
