@@ -1541,14 +1541,15 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 					if(closed) return;
 				}
 			}
-			if(t!=null){
-				try{t.abort();}catch(DatabaseException ex2){}
-			}
 			checkSecondaryDatabaseError(ex);
 			Logger.error(this, "Caught "+ex, ex);
 			ex.printStackTrace();
 			if(ex instanceof IOException) throw (IOException) ex;
 			else throw new IOException(ex.getMessage());
+		} finally {
+			if(t!=null){
+				try{t.abort();}catch(DatabaseException ex2){}
+			}
 		}
 	}
 	
