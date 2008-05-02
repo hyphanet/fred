@@ -21,7 +21,6 @@ public class Rijndael implements BlockCipher {
 	private Object sessionKey;
 	private final int keysize, blocksize;
 
-	// for Util.getCipherByName..  and yes, screw you too, java
 	private Rijndael(Integer keysize) throws UnsupportedCipherException {
 		this(keysize.intValue());
 	}
@@ -49,7 +48,8 @@ public class Rijndael implements BlockCipher {
 		this.blocksize=blocksize;
 	}
 
-	private Rijndael() {
+	// for Util.getCipherByName..  and yes, screw you too, java
+	public Rijndael() {
 		this.keysize   = 128;
 		this.blocksize = 128;
 	}
