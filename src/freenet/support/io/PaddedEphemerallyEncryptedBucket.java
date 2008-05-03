@@ -154,6 +154,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			if(closed) throw new IOException("Already closed!");
 			if(streamNumber != lastOutputStream)
 				throw new IllegalStateException("Writing to old stream in "+getName());
+			if(length == 0) return;
 			byte[] enc = new byte[length];
 			System.arraycopy(buf, offset, enc, 0, length);
 			pcfb.blockEncipher(enc, 0, enc.length);
