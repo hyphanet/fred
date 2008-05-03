@@ -194,6 +194,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 				}
 			} finally {
 				closed = true;
+				out.flush();
 				out.close();
 			}
 		}
