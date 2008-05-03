@@ -241,13 +241,13 @@ public class USKManager {
 				if(f == null) {
 					Logger.error(this, "Unsubscribing "+cb+" for "+origUSK+" but not already subscribed", new Exception("error"));
 				} else {
-				f.removeSubscriber(cb);
-				if(!f.hasSubscribers()) {
-					if(!temporaryBackgroundFetchersLRU.contains(clear)) {
-						toCancel = f;
-						backgroundFetchersByClearUSK.remove(clear);
+					f.removeSubscriber(cb);
+					if(!f.hasSubscribers()) {
+						if(!temporaryBackgroundFetchersLRU.contains(clear)) {
+							toCancel = f;
+							backgroundFetchersByClearUSK.remove(clear);
+						}
 					}
-				}
 				}
 			}
 		}
