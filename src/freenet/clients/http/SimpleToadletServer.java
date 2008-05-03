@@ -334,7 +334,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyCSSNameCallback());
 		fproxyConfig.register("CSSOverride", "", configItemOrder++, true, false, "SimpleToadletServer.cssOverride", "SimpleToadletServer.cssOverrideLong",
 				new FProxyCSSOverrideCallback());
-		fproxyConfig.register("advancedModeEnabled", false, configItemOrder++, false, false, "SimpleToadletServer.advancedMode", "SimpleToadletServer.advancedModeLong",
+		fproxyConfig.register("advancedModeEnabled", false, configItemOrder++, true, false, "SimpleToadletServer.advancedMode", "SimpleToadletServer.advancedModeLong",
 				new FProxyAdvancedModeEnabledCallback(this));
 		fproxyConfig.register("javascriptEnabled", false, configItemOrder++, true, false, "SimpleToadletServer.enableJS", "SimpleToadletServer.enableJSLong",
 				new FProxyJavascriptEnabledCallback(this));
