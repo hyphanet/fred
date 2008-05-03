@@ -28,7 +28,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 
 	private final Bucket bucket;
 	private final int minPaddedSize;
-	private final RandomSource origRandom;
+	private final RandomSource randomSource;
 	private SoftReference /* <Rijndael> */ aesRef;
 	/** The decryption key. */
 	private final byte[] key;
@@ -45,7 +45,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	 * @throws UnsupportedCipherException 
 	 */
 	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, RandomSource origRandom) {
-		this.origRandom = origRandom;
+		this.randomSource = origRandom;
 		this.bucket = bucket;
 		if(bucket.size() != 0) throw new IllegalArgumentException("Bucket must be empty");
 		byte[] tempKey = new byte[32];
@@ -72,7 +72,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		if(bucket.size() < knownSize)
 			throw new IOException("Bucket "+bucket+" is too small on disk - knownSize="+knownSize+" but bucket.size="+bucket.size()+" for "+bucket);
 		this.dataLength = knownSize;
-		this.origRandom = origRandom;
+		this.randomSource = origRandom;
 		this.bucket = bucket;
 		if(key.length != 32) throw new IllegalArgumentException("Key wrong length: "+key.length);
 		this.key = key;
@@ -82,7 +82,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	}
 
 	public PaddedEphemerallyEncryptedBucket(SimpleFieldSet fs, RandomSource origRandom, PersistentFileTracker f) throws CannotCreateFromFieldSetException {
-		this.origRandom = origRandom;
+		this.randomSource = origRandom;
 		String tmp = fs.get("DataLength");
 		if(tmp == null)
 			throw new CannotCreateFromFieldSetException("No DataLength");
@@ -180,14 +180,13 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 					return;
 				}
 				synchronized(PaddedEphemerallyEncryptedBucket.this) {
-					MersenneTwister paddingSource = new MersenneTwister(origRandom.nextLong());
 					long finalLength = paddedLength();
 					long padding = finalLength - dataLength;
 					byte[] buf = new byte[4096];
 					long writtenPadding = 0;
 					while(writtenPadding < padding) {
 						int left = (int) Math.min((padding - writtenPadding), (long)buf.length);
-						paddingSource.nextBytes(buf);
+						randomSource.nextBytes(buf);
 						out.write(buf, 0, left);
 						writtenPadding += left;
 					}
