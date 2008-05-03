@@ -1008,7 +1008,6 @@ public class PeerManager {
     }
 
     private void writePeersInner() {
-	    synchronized(this) {
 		    synchronized(writePeersSync) {
 			    if(darkFilename != null)
 				    writePeersInner(darkFilename, getDarknetPeers());
@@ -1019,7 +1018,6 @@ public class PeerManager {
 				    writePeersInner(om.getOldPeersFilename(), om.getOldPeers());
 			    }
 		    }
-	    }
     }
     
     /**

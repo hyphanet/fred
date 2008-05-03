@@ -728,7 +728,7 @@ public class KeyTracker {
         return acks;
     }
 
-	public synchronized void requeueForgot(int[] forgotPackets, int start, int length) {
+	public void requeueForgot(int[] forgotPackets, int start, int length) {
 		synchronized(forgottenQueue) { // It doesn't do anything else does it? REDFLAG
 			for(int i=start;i<start+length;i++) {
 				queueForgotten(i, false);
