@@ -13,6 +13,7 @@ import freenet.crypt.RandomSource;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import java.util.Random;
 
 /**
  * Handles persistent temp files. These are used for e.g. persistent downloads.
@@ -35,12 +36,12 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	private final FilenameGenerator fg;
 	
 	/** Random number generator */
-	private final RandomSource rand;
+	private final Random rand;
 	
 	/** Buckets to free */
 	private final LinkedList bucketsToFree;
 
-	public PersistentTempBucketFactory(File dir, String prefix, RandomSource rand) throws IOException {
+	public PersistentTempBucketFactory(File dir, String prefix, Random rand) throws IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.dir = dir;
 		this.rand = rand;

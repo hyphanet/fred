@@ -8,8 +8,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.SoftReference;
 
-import org.spaceroots.mantissa.random.MersenneTwister;
-
 import freenet.crypt.PCFBMode;
 import freenet.crypt.RandomSource;
 import freenet.crypt.UnsupportedCipherException;
@@ -18,6 +16,7 @@ import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
+import java.util.Random;
 
 /**
  * A proxy Bucket which adds:
@@ -28,7 +27,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 
 	private final Bucket bucket;
 	private final int minPaddedSize;
-	private final RandomSource randomSource;
+	private final Random randomSource;
 	private SoftReference /* <Rijndael> */ aesRef;
 	/** The decryption key. */
 	private final byte[] key;
@@ -41,10 +40,10 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	 * @param bucket The bucket which we are proxying to. Must be empty.
 	 * @param pcfb The encryption mode with which to encipher/decipher the data.
 	 * @param minSize The minimum padded size of the file (after it has been closed).
-	 * @param origRandom Hard random number generator from which to obtain a seed for padding.
+	 * @param origRandom a week prng we will padd from.
 	 * @throws UnsupportedCipherException 
 	 */
-	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, RandomSource origRandom) {
+	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, Random origRandom) {
 		this.randomSource = origRandom;
 		this.bucket = bucket;
 		if(bucket.size() != 0) throw new IllegalArgumentException("Bucket must be empty");

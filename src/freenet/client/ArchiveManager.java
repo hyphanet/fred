@@ -23,6 +23,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.PaddedEphemerallyEncryptedBucket;
 import freenet.support.io.TempFileBucket;
+import java.util.Random;
 
 /**
  * Cache of recently decoded archives:
@@ -39,6 +40,7 @@ public class ArchiveManager {
 	private static boolean logMINOR;
 	
 	final RandomSource random;
+	final Random weakRandom;
 	final long maxArchiveSize;
 	final long maxArchivedFileSize;
 	
@@ -72,7 +74,7 @@ public class ArchiveManager {
 	 * @param cacheDir The directory in which to store cached data.
 	 * @param random A random source for the encryption keys used by stored files.
 	 */
-	public ArchiveManager(int maxHandlers, long maxCachedData, long maxArchiveSize, long maxArchivedFileSize, int maxCachedElements, RandomSource random, FilenameGenerator filenameGenerator) {
+	public ArchiveManager(int maxHandlers, long maxCachedData, long maxArchiveSize, long maxArchivedFileSize, int maxCachedElements, RandomSource random, Random weakRandom, FilenameGenerator filenameGenerator) {
 		maxArchiveHandlers = maxHandlers;
 		archiveHandlers = new LRUHashtable();
 		this.maxCachedElements = maxCachedElements;
@@ -81,6 +83,7 @@ public class ArchiveManager {
 		this.maxArchiveSize = maxArchiveSize;
 		this.maxArchivedFileSize = maxArchivedFileSize;
 		this.random = random;
+		this.weakRandom = weakRandom;
 		this.filenameGenerator = filenameGenerator;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
@@ -473,7 +476,7 @@ outer:		while(true) {
 		
 		byte[] cipherKey = new byte[32];
 		random.nextBytes(cipherKey);
-		PaddedEphemerallyEncryptedBucket encryptedBucket = new PaddedEphemerallyEncryptedBucket(fb, 1024, random);
+		PaddedEphemerallyEncryptedBucket encryptedBucket = new PaddedEphemerallyEncryptedBucket(fb, 1024, weakRandom);
 		return new TempStoreElement(myFile, fb, encryptedBucket);
 	}
 

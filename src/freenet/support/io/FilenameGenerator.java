@@ -5,14 +5,14 @@ import java.io.IOException;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
-import freenet.crypt.RandomSource;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
+import java.util.Random;
 
 public class FilenameGenerator {
 
-    private final RandomSource random;
+    private final Random random;
     private final String prefix;
     private final File tmpDir;
 
@@ -23,7 +23,7 @@ public class FilenameGenerator {
      * @param prefix
      * @throws IOException
      */
-	public FilenameGenerator(RandomSource random, boolean wipeFiles, File dir, String prefix) throws IOException {
+	public FilenameGenerator(Random random, boolean wipeFiles, File dir, String prefix) throws IOException {
 		this.random = random;
 		this.prefix = prefix;
 		if (dir == null)

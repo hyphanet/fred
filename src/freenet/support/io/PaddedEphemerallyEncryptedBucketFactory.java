@@ -2,9 +2,9 @@ package freenet.support.io;
 
 import java.io.IOException;
 
-import freenet.crypt.RandomSource;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import java.util.Random;
 
 /**
  * Factory wrapper for PaddedEphemerallyEncryptedBucket's, which are themselves
@@ -13,10 +13,10 @@ import freenet.support.api.BucketFactory;
 public class PaddedEphemerallyEncryptedBucketFactory implements BucketFactory {
 
 	final BucketFactory baseFactory;
-	final RandomSource random;
+	final Random random;
 	final int minSize;
 	
-	public PaddedEphemerallyEncryptedBucketFactory(BucketFactory factory, RandomSource r, int minSize) {
+	public PaddedEphemerallyEncryptedBucketFactory(BucketFactory factory, Random r, int minSize) {
 		baseFactory = factory;
 		this.minSize = minSize;
 		this.random = r;
