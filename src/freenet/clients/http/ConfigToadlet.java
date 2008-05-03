@@ -139,7 +139,8 @@ public class ConfigToadlet extends Toadlet {
 		HTMLNode pageNode = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
-			contentNode.addChild(core.alerts.createSummary());
+		contentNode.addChild(core.alerts.createSummary());
+		
 		if(advancedModeEnabled){
 			HTMLNode navigationBar = ctx.getPageMaker().getInfobox("navbar", l10n("configNavTitle"));
 			HTMLNode navigationContent = ctx.getPageMaker().getContentNode(navigationBar).addChild("ul");
