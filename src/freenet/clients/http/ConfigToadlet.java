@@ -29,6 +29,8 @@ import freenet.support.api.HTTPRequest;
 public class ConfigToadlet extends Toadlet {
 	// If a setting has to be more than a meg, something is seriously wrong!
 	private static final int MAX_PARAM_VALUE_SIZE = 1024*1024;
+	private static final int MODE_SIMPLE = 1;
+	private static final int MODE_ADVANCED = 2;
 	private final Config config;
 	private final NodeClientCore core;
 	private final Node node;
@@ -134,14 +136,36 @@ public class ConfigToadlet extends Toadlet {
 		
 		SubConfig[] sc = config.getConfigs();
 		Arrays.sort(sc);
-		boolean advancedModeEnabled = core.isAdvancedModeEnabled();
 		
 		HTMLNode pageNode = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		contentNode.addChild(core.alerts.createSummary());
 		
-		if(advancedModeEnabled){
+		// Mode can be changed by a link, not just by the default
+		
+		int mode = core.isAdvancedModeEnabled() ? MODE_ADVANCED : MODE_SIMPLE;
+		
+		if(req.isParameterSet("mode")) {
+			mode = req.getIntParam("mode", mode);
+		}
+		
+		// FIXME style this properly
+		HTMLNode table = contentNode.addChild("table", "border", "1");
+		HTMLNode row = table.addChild("tr");
+		HTMLNode cell = row.addChild("td");
+		
+		if(mode != MODE_SIMPLE)
+			cell.addChild("a", new String[] { "href", "title" }, new String[] { "/config/?mode=1", l10n("modeSimpleTooltip") }, l10n("modeSimple"));
+		else
+			cell.addChild("b", "title", l10n("modeSimpleTooltip"), l10n("modeSimple"));
+		cell = row.addChild("td");
+		if(mode != MODE_ADVANCED)
+			cell.addChild("a", new String[] { "href", "title" }, new String[] { "/config/?mode=2", l10n("modeAdvancedTooltip") }, l10n("modeAdvanced"));
+		else
+			cell.addChild("b", "title", l10n("modeAdvancedTooltip"), l10n("modeAdvanced"));
+		
+		if(mode >= MODE_ADVANCED){
 			HTMLNode navigationBar = ctx.getPageMaker().getInfobox("navbar", l10n("configNavTitle"));
 			HTMLNode navigationContent = ctx.getPageMaker().getContentNode(navigationBar).addChild("ul");
 			navigationContent.addChild("a", "href", TranslationToadlet.TOADLET_URL, l10n("contributeTranslation"));
@@ -182,13 +206,13 @@ public class ConfigToadlet extends Toadlet {
 			HTMLNode configGroupUlNode = new HTMLNode("ul", "class", "config");
 			
 			for(int j=0; j<o.length; j++){
-				if(! (!advancedModeEnabled && o[j].isExpert())){
+				if(! (mode == MODE_SIMPLE && o[j].isExpert())){
 					displayedConfigElements++;
 					String configName = o[j].getName();
 					
 					HTMLNode configItemNode = configGroupUlNode.addChild("li");
 					configItemNode.addChild("span", new String[]{ "class", "title", "style" },
-							new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o[j].getDefault() }) + (advancedModeEnabled ? " ["+sc[i].getPrefix() + '.' + o[j].getName() + ']' : ""), 
+							new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o[j].getDefault() }) + (mode >= MODE_ADVANCED ? " ["+sc[i].getPrefix() + '.' + o[j].getName() + ']' : ""), 
 							"cursor: help;" }).addChild(L10n.getHTMLNode(o[j].getShortDesc()));
 					HTMLNode configItemValueNode = configItemNode.addChild("span", "class", "config");
 					if(o[j].getValueString() == null){
