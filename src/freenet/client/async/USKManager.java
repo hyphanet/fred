@@ -239,7 +239,10 @@ public class USKManager {
 			if(runBackgroundFetch) {
 				USKFetcher f = (USKFetcher) backgroundFetchersByClearUSK.get(clear);
 				if(f == null) {
-					Logger.error(this, "Unsubscribing "+cb+" for "+origUSK+" but not already subscribed", new Exception("error"));
+					if(newCallbacks.length == 0)
+						Logger.minor(this, "Unsubscribing "+cb+" for "+origUSK+" but not already subscribed. No callbacks.", new Exception("debug"));
+					else
+						Logger.error(this, "Unsubscribing "+cb+" for "+origUSK+" but not already subscribed, remaining "+newCallbacks.length+" callbacks", new Exception("error"));
 				} else {
 					f.removeSubscriber(cb);
 					if(!f.hasSubscribers()) {
