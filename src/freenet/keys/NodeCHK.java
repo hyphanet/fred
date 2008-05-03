@@ -90,6 +90,18 @@ public class NodeCHK extends Key {
 		if(keyBuf.length != FULL_KEY_LENGTH) {
 			Logger.error(NodeCHK.class, "routingKeyFromFullKey() on "+keyBuf.length+" bytes");
 		}
+		if(keyBuf[0] != 1 || keyBuf[1] != Key.ALGO_AES_PCFB_256_SHA256) {
+			if(keyBuf[keyBuf.length-1] == 0 && keyBuf[keyBuf.length-2] == 0) {
+				// We are certain it's a routing-key
+				Logger.minor(NodeCHK.class, "Recovering routing-key stored wrong as full-key (two nulls at end)");
+			} else {
+				// It might be a routing-key or it might be random data
+				Logger.error(NodeCHK.class, "Maybe recovering routing-key stored wrong as full-key");
+			}
+			byte[] out = new byte[KEY_LENGTH];
+			System.arraycopy(keyBuf, 0, out, 0, KEY_LENGTH);
+			return out;
+		}
 		byte[] out = new byte[KEY_LENGTH];
 		System.arraycopy(keyBuf, 2, out, 0, KEY_LENGTH);
 		return out;
