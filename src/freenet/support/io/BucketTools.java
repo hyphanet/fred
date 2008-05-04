@@ -244,6 +244,7 @@ public class BucketTools {
 		InputStream is = data.getInputStream();
 		try {
 			MessageDigest md = SHA256.getMessageDigest();
+			try { 
 			long bucketLength = data.size();
 			long bytesRead = 0;
 			byte[] buf = new byte[4096];
@@ -259,8 +260,10 @@ public class BucketTools {
 			if((bytesRead != bucketLength) && (bucketLength > 0))
 				throw new IOException("Read "+bytesRead+" but bucket length "+bucketLength+ '!');
 			byte[] retval = md.digest();
-			SHA256.returnMessageDigest(md);
 			return retval;
+			} finally {
+				SHA256.returnMessageDigest(md);
+			}
 		} finally {
 			if(is != null) is.close();
 		}
