@@ -12,6 +12,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.text.DecimalFormat;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 import freenet.crypt.Digest;
@@ -107,7 +109,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		Entry entry;
 		long offset = getOffsetFromPlainKey(routingKey, probeStoreSize);
 
-		lockEntry(offset);
+		if (!lockEntry(offset)) {
+			Logger.error(this, "can't lock entry: " + offset);
+			return null;
+		}
 		try {
 			entry = readEntry(offset, routingKey);
 		} catch (EOFException e) {
@@ -140,7 +145,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 
 		Entry entry = new Entry(routingKey, header, data);
-		lockEntry(entry.getOffset());
+		if (!lockEntry(entry.getOffset())) {
+			Logger.error(this, "can't lock entry: " + entry.getOffset());
+			incMisses();
+			return;
+		}
 		try {
 			writeEntry(entry);
 			incWrites();
@@ -399,6 +408,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				storeRAF[i].setLength(entryTotalLength * (storeSize / FILE_SPLIT + 1));
 			}
 			storeFC[i] = storeRAF[i].getChannel();
+			storeFC[i].lock();
 		}
 	}
 
@@ -581,6 +591,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	// ------------- Locking
+	private boolean shutdown = false;
+	private boolean lockGlobal = false;
+	private Map lockMap = new HashMap();
+
 	/**
 	 * Lock the entry // TODO locking
 	 * 
@@ -588,6 +602,29 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * then one lock at a time (or deadlock may occur).
 	 */
 	private boolean lockEntry(long offset) {
+		if (logDEBUG)
+			Logger.debug(this, "try locking " + offset, new Exception());
+
+		Long lxr = new Long(offset);
+
+		try {
+			synchronized (lockMap) {
+				while (lockMap.containsKey(lxr) || lockGlobal) { // while someone hold the lock
+					if (shutdown)
+						return false;
+
+					lockMap.wait();
+				}
+
+				lockMap.put(lxr, Thread.currentThread());
+			}
+		} catch (InterruptedException e) {
+			Logger.error(this, "lock interrupted", e);
+			return false;
+		}
+
+		if (logDEBUG)
+			Logger.debug(this, "locked " + offset, new Exception());
 		return true;
 	}
 
@@ -595,6 +632,54 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * Unlock the entry // TODO locking
 	 */
 	private void unlockEntry(long offset) {
+		if (logDEBUG)
+			Logger.debug(this, "unlocking " + offset);
+		Long lxr = new Long(offset);
+
+		synchronized (lockMap) {
+			Object o = lockMap.remove(lxr);
+			assert o == Thread.currentThread();
+
+			lockMap.notifyAll();
+		}
+	}
+
+	/**
+	 * Lock all entries.
+	 * 
+	 * Use this method to stop all read / write before database shutdown.
+	 * 
+	 * @param timeout
+	 *            the maximum time to wait in milliseconds.
+	 */
+	private boolean lockGlobal(long timeout) {
+		synchronized (lockMap) {
+			try {
+				long startTime = System.currentTimeMillis();
+
+				while (!lockMap.isEmpty() || lockGlobal) {
+					lockMap.wait(timeout);
+
+					if (System.currentTimeMillis() - startTime > timeout)
+						return false;
+				}
+
+				lockGlobal = true;
+				return true;
+			} catch (InterruptedException e) {
+				return false;
+			}
+		}
+	}
+
+	/**
+	 * Unlock the global lock
+	 */
+	private void unlockGlobal() {
+		synchronized (lockMap) {
+			lockGlobal = false;
+			lockMap.notifyAll();
+		}
 	}
 
 	// ------------- Hashing
