@@ -245,22 +245,23 @@ public class BucketTools {
 		try {
 			MessageDigest md = SHA256.getMessageDigest();
 			try { 
-			long bucketLength = data.size();
-			long bytesRead = 0;
-			byte[] buf = new byte[4096];
-			while((bytesRead < bucketLength) || (bucketLength == -1)) {
-				int readBytes = is.read(buf);
-				if(readBytes < 0) break;
-				bytesRead += readBytes;
-				if(readBytes > 0)
-					md.update(buf, 0, readBytes);
-			}
-			if((bytesRead < bucketLength) && (bucketLength > 0))
-				throw new EOFException();
-			if((bytesRead != bucketLength) && (bucketLength > 0))
-				throw new IOException("Read "+bytesRead+" but bucket length "+bucketLength+ '!');
-			byte[] retval = md.digest();
-			return retval;
+				long bucketLength = data.size();
+				long bytesRead = 0;
+				byte[] buf = new byte[4096];
+				while ((bytesRead < bucketLength) || (bucketLength == -1)) {
+					int readBytes = is.read(buf);
+					if (readBytes < 0)
+						break;
+					bytesRead += readBytes;
+					if (readBytes > 0)
+						md.update(buf, 0, readBytes);
+				}
+				if ((bytesRead < bucketLength) && (bucketLength > 0))
+					throw new EOFException();
+				if ((bytesRead != bucketLength) && (bucketLength > 0))
+					throw new IOException("Read " + bytesRead + " but bucket length " + bucketLength + '!');
+				byte[] retval = md.digest();
+				return retval;
 			} finally {
 				SHA256.returnMessageDigest(md);
 			}

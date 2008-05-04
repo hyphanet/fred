@@ -52,30 +52,30 @@ public class ClientSSK extends ClientKey {
 			throw new MalformedURLException("Decryption key wrong length: "+cryptoKey.length+" should be "+CRYPTO_KEY_LENGTH);
 		MessageDigest md = SHA256.getMessageDigest();
 		try {
-		if(pubKey != null) {
-			byte[] pubKeyAsBytes = pubKey.asBytes();
-			md.update(pubKeyAsBytes);
-			byte[] otherPubKeyHash = md.digest();
-			if(!Arrays.equals(otherPubKeyHash, pubKeyHash))
-				throw new IllegalArgumentException();
-		}
-		this.cryptoKey = cryptoKey;
-		try {
-			md.update(docName.getBytes("UTF-8"));
-		} catch (UnsupportedEncodingException e) {
-			throw new Error(e);
-		}
-		byte[] buf = md.digest();
-		try {
-			Rijndael aes = new Rijndael(256,256);
-			aes.initialize(cryptoKey);
-			aes.encipher(buf, buf);
-			ehDocname = buf;
-		} catch (UnsupportedCipherException e) {
-			throw new Error(e);
-		}
+			if (pubKey != null) {
+				byte[] pubKeyAsBytes = pubKey.asBytes();
+				md.update(pubKeyAsBytes);
+				byte[] otherPubKeyHash = md.digest();
+				if (!Arrays.equals(otherPubKeyHash, pubKeyHash))
+					throw new IllegalArgumentException();
+			}
+			this.cryptoKey = cryptoKey;
+			try {
+				md.update(docName.getBytes("UTF-8"));
+			} catch (UnsupportedEncodingException e) {
+				throw new Error(e);
+			}
+			byte[] buf = md.digest();
+			try {
+				Rijndael aes = new Rijndael(256, 256);
+				aes.initialize(cryptoKey);
+				aes.encipher(buf, buf);
+				ehDocname = buf;
+			} catch (UnsupportedCipherException e) {
+				throw new Error(e);
+			}
 		} finally {
-		SHA256.returnMessageDigest(md);
+			SHA256.returnMessageDigest(md);
 		}
 	}
 	

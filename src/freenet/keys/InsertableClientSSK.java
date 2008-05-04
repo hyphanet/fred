@@ -84,105 +84,109 @@ public class InsertableClientSSK extends ClientSSK {
 			throw new SSKEncodeException(e.getMessage(), e);
 		}
 		// Pad it
-        MessageDigest md256 = SHA256.getMessageDigest();
-        try {
-        byte[] data;
-        // First pad it
-        if(compressedData.length != SSKBlock.DATA_LENGTH) {
-            // Hash the data
-            if(compressedData.length != 0)
-            	md256.update(compressedData);
-            byte[] digest = md256.digest();
-            MersenneTwister mt = new MersenneTwister(digest);
-            data = new byte[SSKBlock.DATA_LENGTH];
-            if(compressedData.length > data.length) {
-            	throw new RuntimeException("compressedData.length = "+compressedData.length+" but data.length="+data.length);
-            }
-            System.arraycopy(compressedData, 0, data, 0, compressedData.length);
-            byte[] randomBytes = new byte[SSKBlock.DATA_LENGTH-compressedData.length];
-            mt.nextBytes(randomBytes);
-            System.arraycopy(randomBytes, 0, data, compressedData.length, SSKBlock.DATA_LENGTH-compressedData.length);
-        } else {
-        	data = compressedData;
-        }
-        
-        // Implicit hash of data
-        byte[] origDataHash = md256.digest(data);
-
-        Rijndael aes;
-        try {
-			aes = new Rijndael(256, 256);
-		} catch (UnsupportedCipherException e) {
-			throw new Error("256/256 Rijndael not supported!");
-		}
-
-		// Encrypt data. Data encryption key = H(plaintext data).
-		
-		aes.initialize(origDataHash);
-		PCFBMode pcfb = PCFBMode.create(aes);
-		pcfb.reset(origDataHash);
-		
-		pcfb.blockEncipher(data, 0, data.length);
-		
-		byte[] encryptedDataHash = md256.digest(data);
-		
-        // Create headers
-        
-        byte[] headers = new byte[SSKBlock.TOTAL_HEADERS_LENGTH];
-        // First two bytes = hash ID
-        int x = 0;
-        headers[x++] = (byte) (KeyBlock.HASH_SHA256 >> 8);
-        headers[x++] = (byte) (KeyBlock.HASH_SHA256);
-        // Then crypto ID
-        headers[x++] = (byte) (Key.ALGO_AES_PCFB_256_SHA256 >> 8);
-        headers[x++] = Key.ALGO_AES_PCFB_256_SHA256;
-        // Then E(H(docname))
-		// Copy to headers
-		System.arraycopy(ehDocname, 0, headers, x, ehDocname.length);
-		x += ehDocname.length;
-		// Now the encrypted headers
-		byte[] encryptedHeaders = new byte[SSKBlock.ENCRYPTED_HEADERS_LENGTH];
-		System.arraycopy(origDataHash, 0, encryptedHeaders, 0, origDataHash.length);
-		int y = origDataHash.length;
-		short len = (short) compressedData.length;
-		if(asMetadata) len |= 32768;
-		encryptedHeaders[y++] = (byte)(len >> 8);
-		encryptedHeaders[y++] = (byte)len;
-		encryptedHeaders[y++] = (byte)(compressionAlgo >> 8);
-		encryptedHeaders[y++] = (byte)compressionAlgo;
-		if(encryptedHeaders.length != y)
-			throw new IllegalStateException("Have more bytes to generate encoding SSK");
-		aes.initialize(cryptoKey);
-		pcfb.reset(ehDocname);
-		pcfb.blockEncipher(encryptedHeaders, 0, encryptedHeaders.length);
-		System.arraycopy(encryptedHeaders, 0, headers, x, encryptedHeaders.length);
-		x+=encryptedHeaders.length;
-		// Generate implicit overall hash.
-		md256.update(headers, 0, x);
-		md256.update(encryptedDataHash);
-		byte[] overallHash = md256.digest();
-		// Now sign it
-		DSASignature sig = DSA.sign(pubKey.getGroup(), privKey, new NativeBigInteger(1, overallHash), r);
-		// Pack R and S into 32 bytes each, and copy to headers.
-		
-		// Then create and return the ClientSSKBlock.
-		byte[] rBuf = truncate(sig.getR().toByteArray(), SSKBlock.SIG_R_LENGTH);
-		byte[] sBuf = truncate(sig.getS().toByteArray(), SSKBlock.SIG_S_LENGTH);
-		System.arraycopy(rBuf, 0, headers, x, rBuf.length);
-		x+=rBuf.length;
-		System.arraycopy(sBuf, 0, headers, x, sBuf.length);
-		x+=sBuf.length;
-		if(x != SSKBlock.TOTAL_HEADERS_LENGTH)
-			throw new IllegalStateException("Too long");
+		MessageDigest md256 = SHA256.getMessageDigest();
 		try {
-			return new ClientSSKBlock(data, headers, this, false); // FIXME set last arg to true to not verify
-		} catch (SSKVerifyException e) {
-			IllegalStateException exception=new IllegalStateException("Impossible encoding error: "+e.getMessage());
-			exception.initCause(e);
+			byte[] data;
+			// First pad it
+			if (compressedData.length != SSKBlock.DATA_LENGTH) {
+				// Hash the data
+				if (compressedData.length != 0)
+					md256.update(compressedData);
+				byte[] digest = md256.digest();
+				MersenneTwister mt = new MersenneTwister(digest);
+				data = new byte[SSKBlock.DATA_LENGTH];
+				if (compressedData.length > data.length) {
+					throw new RuntimeException("compressedData.length = " + compressedData.length + " but data.length="
+							+ data.length);
+				}
+				System.arraycopy(compressedData, 0, data, 0, compressedData.length);
+				byte[] randomBytes = new byte[SSKBlock.DATA_LENGTH - compressedData.length];
+				mt.nextBytes(randomBytes);
+				System.arraycopy(randomBytes, 0, data, compressedData.length, SSKBlock.DATA_LENGTH
+						- compressedData.length);
+			} else {
+				data = compressedData;
+			}
 
-			throw exception;
-		}
-        } finally {
+			// Implicit hash of data
+			byte[] origDataHash = md256.digest(data);
+
+			Rijndael aes;
+			try {
+				aes = new Rijndael(256, 256);
+			} catch (UnsupportedCipherException e) {
+				throw new Error("256/256 Rijndael not supported!");
+			}
+
+			// Encrypt data. Data encryption key = H(plaintext data).
+
+			aes.initialize(origDataHash);
+			PCFBMode pcfb = PCFBMode.create(aes);
+			pcfb.reset(origDataHash);
+
+			pcfb.blockEncipher(data, 0, data.length);
+
+			byte[] encryptedDataHash = md256.digest(data);
+
+			// Create headers
+
+			byte[] headers = new byte[SSKBlock.TOTAL_HEADERS_LENGTH];
+			// First two bytes = hash ID
+			int x = 0;
+			headers[x++] = (byte) (KeyBlock.HASH_SHA256 >> 8);
+			headers[x++] = (byte) (KeyBlock.HASH_SHA256);
+			// Then crypto ID
+			headers[x++] = (byte) (Key.ALGO_AES_PCFB_256_SHA256 >> 8);
+			headers[x++] = Key.ALGO_AES_PCFB_256_SHA256;
+			// Then E(H(docname))
+			// Copy to headers
+			System.arraycopy(ehDocname, 0, headers, x, ehDocname.length);
+			x += ehDocname.length;
+			// Now the encrypted headers
+			byte[] encryptedHeaders = new byte[SSKBlock.ENCRYPTED_HEADERS_LENGTH];
+			System.arraycopy(origDataHash, 0, encryptedHeaders, 0, origDataHash.length);
+			int y = origDataHash.length;
+			short len = (short) compressedData.length;
+			if (asMetadata)
+				len |= 32768;
+			encryptedHeaders[y++] = (byte) (len >> 8);
+			encryptedHeaders[y++] = (byte) len;
+			encryptedHeaders[y++] = (byte) (compressionAlgo >> 8);
+			encryptedHeaders[y++] = (byte) compressionAlgo;
+			if (encryptedHeaders.length != y)
+				throw new IllegalStateException("Have more bytes to generate encoding SSK");
+			aes.initialize(cryptoKey);
+			pcfb.reset(ehDocname);
+			pcfb.blockEncipher(encryptedHeaders, 0, encryptedHeaders.length);
+			System.arraycopy(encryptedHeaders, 0, headers, x, encryptedHeaders.length);
+			x += encryptedHeaders.length;
+			// Generate implicit overall hash.
+			md256.update(headers, 0, x);
+			md256.update(encryptedDataHash);
+			byte[] overallHash = md256.digest();
+			// Now sign it
+			DSASignature sig = DSA.sign(pubKey.getGroup(), privKey, new NativeBigInteger(1, overallHash), r);
+			// Pack R and S into 32 bytes each, and copy to headers.
+
+			// Then create and return the ClientSSKBlock.
+			byte[] rBuf = truncate(sig.getR().toByteArray(), SSKBlock.SIG_R_LENGTH);
+			byte[] sBuf = truncate(sig.getS().toByteArray(), SSKBlock.SIG_S_LENGTH);
+			System.arraycopy(rBuf, 0, headers, x, rBuf.length);
+			x += rBuf.length;
+			System.arraycopy(sBuf, 0, headers, x, sBuf.length);
+			x += sBuf.length;
+			if (x != SSKBlock.TOTAL_HEADERS_LENGTH)
+				throw new IllegalStateException("Too long");
+			try {
+				return new ClientSSKBlock(data, headers, this, false); // FIXME set last arg to true to not verify
+			} catch (SSKVerifyException e) {
+				IllegalStateException exception = new IllegalStateException("Impossible encoding error: "
+						+ e.getMessage());
+				exception.initCause(e);
+
+				throw exception;
+			}
+		} finally {
 			SHA256.returnMessageDigest(md256);
 		}
 	}
