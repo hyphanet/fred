@@ -7,7 +7,6 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.text.DecimalFormat;
@@ -312,8 +311,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 
 		public long getOffset() {
-			BigInteger bi = new BigInteger(isEncrypted ? routingKey : getDigestedRoutingKey(routingKey));
-			return bi.mod(BigInteger.valueOf(storeSize)).longValue();
+			if (isEncrypted)
+				return getOffsetFromDigestedKey(routingKey, storeSize);
+			else
+				return getOffsetFromPlainKey(routingKey, storeSize);
 		}
 
 		/**
@@ -841,14 +842,31 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	/**
 	 * Get offset in the hash table, given a plain routing key.
 	 * 
-	 * @param routingKey
+	 * @param plainKey
 	 * @param storeSize
 	 * @return
 	 */
-	public long getOffsetFromPlainKey(byte[] routingKey, long storeSize) {
-		// Don't use NativeBigInteger, {@link net.i2p.util.NativeBigInteger#mod()} don't use native routine.
-		BigInteger bi = new BigInteger(getDigestedRoutingKey(routingKey));
-		return bi.mod(BigInteger.valueOf(storeSize)).longValue();
+	public long getOffsetFromPlainKey(byte[] plainKey, long storeSize) {
+		return getOffsetFromPlainKey(getDigestedRoutingKey(plainKey), storeSize);
+	}
+
+	/**
+	 * Get offset in the hash table, given a digested routing key.
+	 * 
+	 * @param digestedKey
+	 * @param storeSize
+	 * @return
+	 */
+	public long getOffsetFromDigestedKey(byte[] digestedKey, long storeSize) {
+		long keyValue = (((long) (digestedKey[0]) << 0) + //
+		        (((long) digestedKey[1]) << 8) + //
+		        (((long) digestedKey[3]) << 16) + //
+		        (((long) digestedKey[4]) << 24) + //
+		        (((long) digestedKey[5]) << 32) + //
+		        (((long) digestedKey[6]) << 40) + //
+		        (((long) digestedKey[7]) << 48))
+		        & Long.MAX_VALUE;
+		return keyValue % storeSize;
 	}
 
 	// ------------- Statistics (a.k.a. lies)
