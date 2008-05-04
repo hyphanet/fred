@@ -231,6 +231,7 @@ public class ClientPut extends ClientPutBase {
 				try {
 					md.update(salt.getBytes("UTF-8"));
 				} catch (UnsupportedEncodingException e) {
+					throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
 				}
 				try {
 					InputStream is = data.getInputStream();

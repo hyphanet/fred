@@ -143,7 +143,7 @@ public class NodeARKInserter implements ClientCallback {
 		try {
 			buf = s.getBytes("UTF-8");
 		} catch (UnsupportedEncodingException e) {
-			throw new Error("UTF-8 not supported");
+			throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
 		
 		Bucket b = new SimpleReadOnlyArrayBucket(buf);

@@ -203,7 +203,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 						name = URLDecoder.decode(name, "UTF-8");
 						value = URLDecoder.decode(value, "UTF-8");
 					} catch (UnsupportedEncodingException e) {
-						throw new Error(e);
+						throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
 					}
 				if(logMINOR) {
 					Logger.minor(this, "Decoded name: "+name);
@@ -217,7 +217,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 				try {
 					buf = value.getBytes("UTF-8");
 				} catch (UnsupportedEncodingException e) {
-					throw new Error(e);
+					throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
 				} // FIXME some other encoding?
 				Bucket b = new SimpleReadOnlyArrayBucket(buf);
 				parts.put(name, b);
@@ -564,9 +564,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 		try {
 			return new String(getPartAsBytes(name, maxlength), "UTF-8");
 		} catch (UnsupportedEncodingException e) {
-			/* UTF-8 is always supported. */
+			throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
-		return null;
 	}
 
 	/* (non-Javadoc)
