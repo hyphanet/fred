@@ -19,6 +19,7 @@ import java.util.Random;
 import freenet.crypt.Digest;
 import freenet.crypt.SHA1;
 import freenet.keys.KeyVerifyException;
+import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 
@@ -42,12 +43,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private long storeSize;
 
 	public static SaltedHashFreenetStore construct(File baseDir, String name, StoreCallback callback, Random random,
-	        long maxKeys) throws IOException {
-		return new SaltedHashFreenetStore(baseDir, name, callback, random, maxKeys);
+	        long maxKeys, SemiOrderedShutdownHook shutdownHook) throws IOException {
+		return new SaltedHashFreenetStore(baseDir, name, callback, random, maxKeys, shutdownHook);
 	}
 
-	SaltedHashFreenetStore(File baseDir, String name, StoreCallback callback, Random random, long maxKeys)
-	        throws IOException {
+	SaltedHashFreenetStore(File baseDir, String name, StoreCallback callback, Random random, long maxKeys,
+	        SemiOrderedShutdownHook shutdownHook) throws IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 
@@ -76,6 +77,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		openStoreFiles(baseDir, name);
 
 		callback.setStore(this);
+		shutdownHook.addEarlyJob(new Thread(new ShutdownDB()));
 	}
 
 	public StorableBlock fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote) throws IOException {
@@ -420,7 +422,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			try {
 				storeFC[i].force(true);
 			} catch (Exception e) {
-				// TODO log this
+				Logger.normal(this, "error flushing store file", e);
 			}
 		}
 	}
@@ -518,6 +520,17 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		} while (bf.hasRemaining());
 
 		return (bf.getLong(0x30) & ENTRY_FLAG_OCCUPIED) == 0;
+	}
+
+	private void flushAndClose() {
+		for (int i = 0; i < FILE_SPLIT; i++) {
+			try {
+				storeFC[i].force(true);
+				storeFC[i].close();
+			} catch (Exception e) {
+				Logger.error(this, "error flusing store", e);
+			}
+		}
 	}
 
 	// ------------- Configuration
@@ -679,6 +692,20 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		synchronized (lockMap) {
 			lockGlobal = false;
 			lockMap.notifyAll();
+		}
+	}
+
+	public class ShutdownDB implements Runnable {
+		public void run() {
+			shutdown = true;
+			lockGlobal(10 * 1000); // 10 seconds
+			flushAndClose();
+
+			try {
+				writeConfigFile();
+			} catch (IOException e) {
+				Logger.error(this, "error writing store config", e);
+			}
 		}
 	}
 
