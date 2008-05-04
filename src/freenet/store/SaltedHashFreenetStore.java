@@ -175,7 +175,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	// split the files for better concurrency
 	// you may even some if you have lots of mount points =)
-	private final static int FILE_SPLIT = 0x20;
+	private final static int FILE_SPLIT = 0x04;
 	private File[] storeFiles;
 	private RandomAccessFile[] storeRAF;
 	private FileChannel[] storeFC;
