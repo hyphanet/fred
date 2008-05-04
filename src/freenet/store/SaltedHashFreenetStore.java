@@ -22,6 +22,7 @@ import freenet.keys.KeyVerifyException;
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.io.FileUtil;
 
 /**
  * Index-less data store based on salted hash
@@ -586,7 +587,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * Write config file
 	 */
 	private void writeConfigFile() throws IOException {
-		RandomAccessFile raf = new RandomAccessFile(configFile, "rw");
+		File tempConfig = new File(configFile.getPath() + ".tmp");
+		RandomAccessFile raf = new RandomAccessFile(tempConfig, "rw");
 		raf.seek(0);
 		raf.write(salt);
 		raf.writeLong(storeSize);
@@ -597,6 +599,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		raf.writeLong(0);
 
 		raf.close();
+
+		FileUtil.renameTo(tempConfig, configFile);
 	}
 
 	// ------------- Store resizing
