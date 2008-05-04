@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.security.MessageDigest;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -17,6 +18,7 @@ import java.util.Random;
 
 import freenet.crypt.Digest;
 import freenet.crypt.SHA1;
+import freenet.crypt.SHA256;
 import freenet.keys.KeyVerifyException;
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.HexUtil;
@@ -824,19 +826,18 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 */
 	// TODO use a little cache?
 	private byte[] getDigestedRoutingKey(byte[] routingKey) {
-		Digest digest = SHA1.getInstance();
-		digest.update(routingKey);
-		digest.update(salt);
+		MessageDigest digest = SHA256.getMessageDigest();
+		try {
+			digest.update(routingKey);
+			digest.update(salt);
 
-		byte[] digestedKey = digest.digest();
-		byte[] hashedRoutingKey = new byte[0x20];
+			byte[] hashedRoutingKey = digest.digest();
+			assert hashedRoutingKey.length == 0x20;
 
-		// SHA-1 is only 160-bits, must fill something on lower order bytes
-		System.arraycopy(digestedKey, 0, //
-		        hashedRoutingKey, hashedRoutingKey.length - digestedKey.length,//
-		        digestedKey.length);
-
-		return hashedRoutingKey;
+			return hashedRoutingKey;
+		} finally {
+			SHA256.returnMessageDigest(digest);
+		}
 	}
 
 	/**
@@ -847,7 +848,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * @return
 	 */
 	public long getOffsetFromPlainKey(byte[] plainKey, long storeSize) {
-		return getOffsetFromPlainKey(getDigestedRoutingKey(plainKey), storeSize);
+		return getOffsetFromDigestedKey(getDigestedRoutingKey(plainKey), storeSize);
 	}
 
 	/**
