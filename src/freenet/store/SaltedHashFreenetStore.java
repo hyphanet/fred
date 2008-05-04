@@ -16,9 +16,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import freenet.crypt.Digest;
-import freenet.crypt.SHA1;
+import freenet.crypt.BlockCipher;
+import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
+import freenet.crypt.UnsupportedCipherException;
+import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.KeyVerifyException;
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.HexUtil;
@@ -196,7 +198,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 *  +----+     Digested Routing Key      |
 	 *  |0010|                               |
 	 *  +----+-------------------------------+
-	 *  |0020|       Data Encrypt Key        |
+	 *  |0020|       Data Encrypt IV         |
 	 *  +----+---------------+---------------+
 	 *  |0030|     Flag      |  Store Size   |
 	 *  +----+---------------+---------------+
@@ -217,7 +219,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 */
 	private class Entry {
 		private byte[] routingKey;
-		private byte[] dataEncryptKey;
+		private byte[] dataEncryptIV;
 		private long flag;
 		private long storeSize;
 		private byte[] header;
@@ -253,8 +255,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			routingKey = new byte[0x20];
 			in.get(routingKey);
 
-			dataEncryptKey = new byte[0x10];
-			in.get(dataEncryptKey);
+			dataEncryptIV = new byte[0x10];
+			in.get(dataEncryptIV);
 
 			flag = in.getLong();
 			storeSize = in.getLong();
@@ -277,7 +279,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			ByteBuffer out = ByteBuffer.allocate((int) entryTotalLength);
 			encrypt();
 			out.put(routingKey);
-			out.put(dataEncryptKey);
+			out.put(dataEncryptIV);
 
 			out.putLong(flag);
 			out.putLong(storeSize);
@@ -339,7 +341,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			if (!Arrays.equals(this.routingKey, getDigestedRoutingKey(routingKey)))
 				return false;
 
-			flip(routingKey);
+			PCFBMode cipher = makeCipher(routingKey);
+			header = cipher.blockDecipher(header, 0, header.length);
+			data = cipher.blockDecipher(data, 0, data.length);
 
 			this.routingKey = routingKey;
 			isEncrypted = false;
@@ -354,49 +358,34 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			if (isEncrypted)
 				return;
 
-			dataEncryptKey = new byte[16];
-			random.nextBytes(dataEncryptKey);
+			dataEncryptIV = new byte[16];
+			random.nextBytes(dataEncryptIV);
 
-			flip(routingKey);
+			PCFBMode cipher = makeCipher(routingKey);
+			header = cipher.blockEncipher(header, 0, header.length);
+			data = cipher.blockEncipher(data, 0, data.length);
 
 			routingKey = getDigestedRoutingKey(routingKey);
 			isEncrypted = true;
 		}
 
 		/**
-		 * Encrypt / Decrypt header and data
-		 * 
-		 * @param routingKey
+		 * Create Cipher
 		 */
-		private void flip(byte[] routingKey) {
-			Digest digest = SHA1.getInstance();
+		private PCFBMode makeCipher(byte[] routingKey) {
+			byte[] iv = new byte[0x20]; // 256 bits
 
-			int pos = 0;
-			for (byte i = 0; true; i++) {
-				digest.update(dataEncryptKey);
-				digest.update(routingKey);
-				digest.update(i);
-				byte[] otp = digest.digest();
+			System.arraycopy(salt, 0, iv, 0, 0x10);
+			System.arraycopy(dataEncryptIV, 0, iv, 0x10, 0x10);
 
-				for (int j = 0; j < otp.length && pos < header.length; j++, pos++)
-					header[pos] ^= otp[j];
+			try {
+				BlockCipher aes = new Rijndael(256, 256);
+				aes.initialize(routingKey);
 
-				if (pos == header.length)
-					break;
-			}
-
-			pos = 0;
-			for (byte i = 0; true; i++) {
-				digest.update(i); // reverse the order for data
-				digest.update(routingKey);
-				digest.update(dataEncryptKey);
-				byte[] otp = digest.digest();
-
-				for (int j = 0; j < otp.length && pos < data.length; j++, pos++)
-					data[pos] ^= otp[j];
-
-				if (pos == data.length)
-					break;
+				return PCFBMode.create(aes, iv);
+			} catch (UnsupportedCipherException e) {
+				Logger.error(this, "Rijndael not supported!", e);
+				throw new RuntimeException(e);
 			}
 		}
 	}
