@@ -286,6 +286,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 
 		public StorableBlock getStorableBlock(byte[] routingKey, byte[] fullKey) throws KeyVerifyException {
+			if ((flag & ENTRY_FLAG_OCCUPIED) == 0)
+				return null; // this is a free block
 			if (!decrypt(routingKey))
 				return null;
 
