@@ -524,7 +524,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		ByteBuffer bf = ByteBuffer.allocate((int) ENTRY_HEADER_LENGTH);
 
 		do {
-			int status = storeFC[split].write(bf, rawOffset + bf.position());
+			int status = storeFC[split].read(bf, rawOffset + bf.position());
 			if (status == -1)
 				throw new EOFException();
 		} while (bf.hasRemaining());
@@ -577,7 +577,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			// try to load
 			RandomAccessFile raf = new RandomAccessFile(configFile, "r");
 			salt = new byte[0x10];
-			raf.read(salt);
+			raf.readFully(salt);
 
 			storeSize = raf.readLong();
 			prevStoreSize = raf.readLong();
