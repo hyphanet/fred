@@ -6,11 +6,14 @@ package freenet.node;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SizeUtil;
+import freenet.support.math.RunningAverage;
+import freenet.support.math.SimpleRunningAverage;
 
 public class MemoryChecker implements Runnable {
 	private volatile boolean goon = false;
 	private final PacketSender ps;
 	private int aggressiveGCModificator;
+	private RunningAverage avgFreeMemory;
 	
 	public MemoryChecker(PacketSender ps, int modificator){
 		this.ps = ps;
@@ -47,18 +50,31 @@ public class MemoryChecker implements Runnable {
 		
 		Logger.normal(this, "Memory in use: "+SizeUtil.formatSize((totalMemory-freeMemory)));
 		
-		if (freeMemory < 4 * 1024 * 1024 // free memory < 4 MB
-		        && (totalMemory == maxMemory || maxMemory == Long.MAX_VALUE)) { // we have allocated max memory
-			Logger.normal(this, "Reached threshold, checking for low memory ...");
-			System.gc();
-			System.runFinalization();
-			totalMemory = r.totalMemory();
-			freeMemory = r.freeMemory();
-			maxMemory = r.maxMemory();
-			if (freeMemory < 4 * 1024 * 1024 // free memory < 4 MB
-			        && (totalMemory == maxMemory || maxMemory == Long.MAX_VALUE)) { // we have allocated max memory
-				Logger.error(this, "memory too low, trying to free some");
-				OOMHandler.lowMemory();
+		if (totalMemory == maxMemory || maxMemory == Long.MAX_VALUE) {
+			// jvm have allocated maximum memory
+			// totalMemory never decrease, so check it only for once
+			if (avgFreeMemory == null)
+				avgFreeMemory = new SimpleRunningAverage(3, freeMemory);
+			else
+				avgFreeMemory.report(freeMemory);
+			
+			if (avgFreeMemory.countReports() >= 3 && avgFreeMemory.currentValue() < 4 * 1024 * 1024) {//  average free memory < 4 MB
+				Logger.normal(this, "Reached threshold, checking for low memory ...");
+				System.gc();
+				System.runFinalization();
+
+				try {
+					Thread.sleep(10); // Force a context switch, finalization need a CS to complete
+				} catch (InterruptedException e) {
+				}
+
+				freeMemory = r.freeMemory();
+				avgFreeMemory.report(freeMemory);
+				
+				if (freeMemory < 4 * 1024 * 1024) { // *current* free memory < 4 MB
+					Logger.error(this, "Memory too low, trying to free some");
+					OOMHandler.lowMemory();
+				} 
 			}
 		}
 		
