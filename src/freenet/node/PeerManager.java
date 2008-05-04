@@ -191,7 +191,7 @@ public class PeerManager {
 		try {
 			ris = new InputStreamReader(fis, "UTF-8");
 		} catch (UnsupportedEncodingException e4) {
-			throw new Error("UTF-8 not supported!: "+e4, e4);
+			throw new Error("Impossible: JVM doesn't support UTF-8: " + e4, e4);
 		}
         BufferedReader br = new BufferedReader(ris);
         try { // FIXME: no better way?
@@ -1040,7 +1040,7 @@ public class PeerManager {
 				w = new OutputStreamWriter(fos, "UTF-8");
 			} catch (UnsupportedEncodingException e2) {
 				Closer.close(w);
-				throw new Error("UTF-8 unsupported!: "+e2, e2);
+				throw new Error("Impossible: JVM doesn't support UTF-8: " + e2, e2);
 			}
             BufferedWriter bw = new BufferedWriter(w);
             try {

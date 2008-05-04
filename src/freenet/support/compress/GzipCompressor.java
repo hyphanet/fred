@@ -102,7 +102,8 @@ public class GzipCompressor extends Compressor {
 		try {
 			bytes = (int)decompress(bais, baos, output.length, -1);
 		} catch (IOException e) {
-			throw new Error("Got IOException: "+e.getMessage());
+			// Impossible
+			throw new Error("Got IOException: " + e.getMessage(), e);
 		}
 		byte[] buf = baos.toByteArray();
 		System.arraycopy(buf, 0, output, 0, bytes);

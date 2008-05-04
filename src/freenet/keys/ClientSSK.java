@@ -63,7 +63,7 @@ public class ClientSSK extends ClientKey {
 			try {
 				md.update(docName.getBytes("UTF-8"));
 			} catch (UnsupportedEncodingException e) {
-				throw new Error(e);
+				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 			}
 			byte[] buf = md.digest();
 			try {

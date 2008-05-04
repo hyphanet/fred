@@ -1161,7 +1161,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			// Normal
 			return false;
 		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException(e);
+			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		} catch (IOException e) {
 			Logger.error(this, "Could not read completed identifiers list from "+file);
 			return false;

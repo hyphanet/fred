@@ -40,7 +40,7 @@ public class ClientKSK extends InsertableClientSSK {
 			try {
 				keywordHash = md256.digest(keyword.getBytes("UTF-8"));
 			} catch (UnsupportedEncodingException e) {
-				throw new Error(e);
+				throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 			}
 			MersenneTwister mt = new MersenneTwister(keywordHash);
 			DSAPrivateKey privKey = new DSAPrivateKey(Global.DSAgroupBigA, mt);

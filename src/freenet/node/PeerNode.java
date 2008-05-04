@@ -263,7 +263,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		try {
 			TEST_AS_BYTES = "test".getBytes("UTF-8");
 		} catch (UnsupportedEncodingException e) {
-			throw new Error(e);
+			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
 	}
 	
@@ -445,11 +445,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					Logger.error(this, "Invalid reference: " + e, e);
 					throw new ReferenceSignatureVerificationException("The node reference you added is invalid: It does not have a valid signature.");
 				} catch(UnsupportedEncodingException e) {
-					//   duh ?
-					Logger.error(this, "Error while signing the node identity!" + e);
-					System.err.println("Error while signing the node identity!" + e);
-					e.printStackTrace();
-					node.exit(NodeInitException.EXIT_CRAPPY_JVM);
+					throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 				}
 			} else {
 				// Local is always good (assumed)
@@ -2228,7 +2224,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		try {
 			isr = new InputStreamReader(bais, "UTF-8");
 		} catch(UnsupportedEncodingException e1) {
-			throw new Error(e1);
+			throw new Error("Impossible: JVM doesn't support UTF-8: " + e1, e1);
 		}
 		BufferedReader br = new BufferedReader(isr);
 		try {
@@ -3200,8 +3196,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		try {
 			ref = new String(data, "UTF-8");
 		} catch(UnsupportedEncodingException e) {
-			// Yeah, right.
-			throw new Error(e);
+			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
 
 		SimpleFieldSet fs;
@@ -3779,7 +3774,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				}
 			}
 		} catch (UnsupportedEncodingException e) {
-			throw new Error("Impossible: "+e, e);
+			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
 	}
 

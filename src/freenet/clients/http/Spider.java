@@ -243,7 +243,7 @@ public class Spider implements HttpPlugin, ClientCallback, FoundURICallback {
 		try {
 			osw = new OutputStreamWriter(fos, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
-			throw new Error(e);
+			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
 		
 		if (urisByWord.isEmpty() || urisWithWords.isEmpty()) {

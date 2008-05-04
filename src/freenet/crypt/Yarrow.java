@@ -739,7 +739,7 @@ public class Yarrow extends RandomSource {
 		try {
 			b = str.getBytes("UTF-8");
 		} catch (UnsupportedEncodingException e) {
-			throw new Error(e);
+			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
 		consumeBytes(b);
 	}
