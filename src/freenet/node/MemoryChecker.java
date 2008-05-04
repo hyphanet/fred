@@ -47,7 +47,7 @@ public class MemoryChecker implements Runnable {
 		
 		Logger.normal(this, "Memory in use: "+SizeUtil.formatSize((totalMemory-freeMemory)));
 		
-		if (freeMemory < 8 * 1024 * 1024 // free memory < 8 MB
+		if (freeMemory < 4 * 1024 * 1024 // free memory < 4 MB
 		        && (totalMemory == maxMemory || maxMemory == Long.MAX_VALUE)) { // we have allocated max memory
 			Logger.normal(this, "Reached threshold, checking for low memory ...");
 			System.gc();
@@ -55,7 +55,7 @@ public class MemoryChecker implements Runnable {
 			totalMemory = r.totalMemory();
 			freeMemory = r.freeMemory();
 			maxMemory = r.maxMemory();
-			if (freeMemory < 8 * 1024 * 1024 // free memory < 8 MB
+			if (freeMemory < 4 * 1024 * 1024 // free memory < 4 MB
 			        && (totalMemory == maxMemory || maxMemory == Long.MAX_VALUE)) { // we have allocated max memory
 				Logger.error(this, "memory too low, trying to free some");
 				OOMHandler.lowMemory();
