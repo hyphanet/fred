@@ -23,6 +23,8 @@ import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.io.FileUtil;
+import freenet.support.math.RunningAverage;
+import freenet.support.math.SimpleRunningAverage;
 
 /**
  * Index-less data store based on salted hash
@@ -34,6 +36,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private static boolean logDEBUG;
 
 	private final File baseDir;
+	private final String name;
 	private final StoreCallback callback;
 	private final boolean collisionPossible;
 	private final int headerBlockLength;
@@ -48,12 +51,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		return new SaltedHashFreenetStore(baseDir, name, callback, random, maxKeys, shutdownHook);
 	}
 
-	SaltedHashFreenetStore(File baseDir, String name, StoreCallback callback, Random random, long maxKeys,
+	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback callback, Random random, long maxKeys,
 	        SemiOrderedShutdownHook shutdownHook) throws IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 
 		this.baseDir = baseDir;
+		this.name = name;
 
 		this.callback = callback;
 		collisionPossible = callback.collisionPossible();
@@ -79,6 +83,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		callback.setStore(this);
 		shutdownHook.addEarlyJob(new Thread(new ShutdownDB()));
+
+		cleanerThread = new Cleaner();
+		cleanerThread.start();
 	}
 
 	public StorableBlock fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote) throws IOException {
@@ -546,9 +553,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 *  +----+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 	 *  |0000|             Salt              |
 	 *  +----+---------------+---------------+
-	 *  |0010|   Store Size  | prevStoreSize1|
+	 *  |0010|   Store Size  | prevStoreSize |
 	 *  +----+---------------+---------------+
-	 *  |0010| prevStoreSize2| prevStoreSize3|
+	 *  |0010| Est Key Count |    reserved   |
 	 *  +----+---------------+---------------+
 	 * </pre>
 	 */
@@ -572,10 +579,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			salt = new byte[0x10];
 			raf.read(salt);
 
-			// TODO store resize
 			storeSize = raf.readLong();
-			raf.readLong();
-			raf.readLong();
+			prevStoreSize = raf.readLong();
+			estimatedCount = new SimpleRunningAverage(3, raf.readLong());
 			raf.readLong();
 
 			raf.close();
@@ -591,11 +597,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		RandomAccessFile raf = new RandomAccessFile(tempConfig, "rw");
 		raf.seek(0);
 		raf.write(salt);
-		raf.writeLong(storeSize);
 
-		// TODO store resize
-		raf.writeLong(0);
-		raf.writeLong(0);
+		raf.writeLong(storeSize);
+		raf.writeLong(prevStoreSize);
+		raf.writeLong(estimatedCount == null ? 0 : (long) estimatedCount.currentValue());
 		raf.writeLong(0);
 
 		raf.close();
@@ -604,6 +609,87 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	// ------------- Store resizing
+	private RunningAverage estimatedCount;
+	private long prevStoreSize = 0;
+	private Object cleanerLock = new Object();
+	private Cleaner cleanerThread;
+
+	private class Cleaner extends Thread {
+		public Cleaner() {
+			setName("Store-" + name + "-Cleaner");
+			setPriority(MIN_PRIORITY);
+			setDaemon(true);
+		}
+
+		public void run() {
+			while (!shutdown) {
+				if (prevStoreSize != 0)
+					moveOldEntries();
+				else
+					estimateStoreSize();
+
+				synchronized (cleanerLock) {
+					try {
+						cleanerLock.wait(10 * 60 * 1000); // 10 minutes
+					} catch (InterruptedException e) {
+						Logger.debug(this, "interrupted", e);
+					}
+				}
+			}
+		}
+
+		/**
+		 * Move old entries to new location
+		 */
+		private void moveOldEntries() {
+			Logger.minor(this, "move old entries");
+			prevStoreSize = 0;
+		}
+
+		/**
+		 * Sample to take at a time
+		 */
+		private static final double SAMPLE_RATE = 0.05; // 5%
+
+		/**
+		 * Last sample position
+		 */
+		private long samplePos = 0;
+
+		/**
+		 * Estimate store utilization
+		 */
+		private void estimateStoreSize() {
+			Logger.minor(this, "start estimating key count");
+			long numSample = (long) (SAMPLE_RATE * storeSize);
+			long sampled = 0;
+			long occupied = 0;
+			while (sampled < numSample) {
+				try {
+					if (!isFree(samplePos)) {
+						occupied++;
+					}
+					sampled++;
+				} catch (IOException e) { // oh, why?
+					Logger.error(this, "estimating store size", e);
+				}
+
+				samplePos = (samplePos + 1) % storeSize;
+
+				if (prevStoreSize != 0 || shutdown)
+					return; // oops! time to stop here
+			}
+
+			double newEstimatedCount = ((double) occupied * storeSize) / sampled;
+			estimatedCount.report(newEstimatedCount);
+
+			if (logMINOR)
+				Logger.minor(this, "finish estimating key count: sampled=" + sampled + ", occupied=" + occupied
+				        + ", newEstimatedCount=" + newEstimatedCount + ", runningAverage="
+				        + estimatedCount.currentValue());
+		}
+	}
+
 	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow) throws IOException {
 		// TODO
 		// NO-OP now
@@ -704,7 +790,15 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	public class ShutdownDB implements Runnable {
 		public void run() {
 			shutdown = true;
+
+			synchronized (cleanerLock) {
+				cleanerLock.notifyAll();
+			}
+
 			lockGlobal(10 * 1000); // 10 seconds
+
+			cleanerThread.interrupt();
+
 			flushAndClose();
 
 			try {
@@ -803,7 +897,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	public long keyCount() {
-		return 0;
+		return (long) estimatedCount.currentValue();
 	}
 
 	public long getMaxKeys() {
