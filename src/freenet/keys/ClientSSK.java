@@ -51,6 +51,7 @@ public class ClientSSK extends ClientKey {
 		if(cryptoKey.length != CRYPTO_KEY_LENGTH)
 			throw new MalformedURLException("Decryption key wrong length: "+cryptoKey.length+" should be "+CRYPTO_KEY_LENGTH);
 		MessageDigest md = SHA256.getMessageDigest();
+		try {
 		if(pubKey != null) {
 			byte[] pubKeyAsBytes = pubKey.asBytes();
 			md.update(pubKeyAsBytes);
@@ -73,7 +74,9 @@ public class ClientSSK extends ClientKey {
 		} catch (UnsupportedCipherException e) {
 			throw new Error(e);
 		}
+		} finally {
 		SHA256.returnMessageDigest(md);
+		}
 	}
 	
 	public ClientSSK(FreenetURI origURI) throws MalformedURLException {

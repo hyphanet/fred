@@ -35,6 +35,7 @@ public class ClientKSK extends InsertableClientSSK {
 	
 	public static ClientKSK create(String keyword) {
 		MessageDigest md256 = SHA256.getMessageDigest();
+		try {
 		byte[] keywordHash;
 		try {
 			keywordHash = md256.digest(keyword.getBytes("UTF-8"));
@@ -46,10 +47,12 @@ public class ClientKSK extends InsertableClientSSK {
 		DSAPublicKey pubKey = new DSAPublicKey(Global.DSAgroupBigA, privKey);
 		byte[] pubKeyHash = md256.digest(pubKey.asBytes());
 		try {
-			SHA256.returnMessageDigest(md256);
 			return new ClientKSK(keyword, pubKeyHash, pubKey, privKey, keywordHash);
 		} catch (MalformedURLException e) {
 			throw new Error(e);
+		}
+		} finally {
+			SHA256.returnMessageDigest(md256);
 		}
 	}
 	

@@ -85,6 +85,7 @@ public class InsertableClientSSK extends ClientSSK {
 		}
 		// Pad it
         MessageDigest md256 = SHA256.getMessageDigest();
+        try {
         byte[] data;
         // First pad it
         if(compressedData.length != SSKBlock.DATA_LENGTH) {
@@ -174,13 +175,15 @@ public class InsertableClientSSK extends ClientSSK {
 		if(x != SSKBlock.TOTAL_HEADERS_LENGTH)
 			throw new IllegalStateException("Too long");
 		try {
-			SHA256.returnMessageDigest(md256);
 			return new ClientSSKBlock(data, headers, this, false); // FIXME set last arg to true to not verify
 		} catch (SSKVerifyException e) {
 			IllegalStateException exception=new IllegalStateException("Impossible encoding error: "+e.getMessage());
 			exception.initCause(e);
 
 			throw exception;
+		}
+        } finally {
+			SHA256.returnMessageDigest(md256);
 		}
 	}
 

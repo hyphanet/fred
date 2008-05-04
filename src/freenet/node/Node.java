@@ -2608,6 +2608,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			DSAPublicKey key2 = (DSAPublicKey) cachedPubKeys.get(w);
 			if((key2 != null) && !key2.equals(key)) {
 				MessageDigest md256 = SHA256.getMessageDigest();
+				try {
 				byte[] hashCheck = md256.digest(key.asBytes());
 				if(Arrays.equals(hashCheck, hash)) {
 					Logger.error(this, "Hash is correct!!!");
@@ -2622,6 +2623,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 					}
 				} else {
 					Logger.error(this, "New hash is wrong");
+				}
+				} finally {
+					SHA256.returnMessageDigest(md256);
 				}
 				throw new IllegalArgumentException("Wrong hash?? Already have different key with same hash!");
 			}

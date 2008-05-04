@@ -228,6 +228,7 @@ public class ClientPut extends ClientPutBase {
 			MessageDigest md = SHA256.getMessageDigest();
 			md.reset();
 			try {
+			try {
 				md.update(salt.getBytes("UTF-8"));
 			} catch (UnsupportedEncodingException e) {}
 			try {
@@ -239,8 +240,10 @@ public class ClientPut extends ClientPutBase {
 				Logger.error(this, "Got IOE: " +e.getMessage(), e);
 				throw new MessageInvalidException(ProtocolErrorMessage.COULD_NOT_READ_FILE, "Unable to access file: "+e, identifier, global);
 			}
-			final byte[] foundHash = md.digest();
-			SHA256.returnMessageDigest(md);
+			foundHash = md.digest();
+			} finally {
+				SHA256.returnMessageDigest(md);
+			}
 			
 			if(logMINOR) Logger.minor(this, "FileHash result : we found " + Base64.encode(foundHash) + " and were given " + Base64.encode(saltedHash) + '.');
 			
