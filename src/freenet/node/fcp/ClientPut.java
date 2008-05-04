@@ -226,7 +226,6 @@ public class ClientPut extends ClientPutBase {
 		// Check the hash : allow it to be null for backward compatibility and if testDDA is allowed
 		if(salt != null) {
 			MessageDigest md = SHA256.getMessageDigest();
-			md.reset();
 			try {
 			try {
 				md.update(salt.getBytes("UTF-8"));
