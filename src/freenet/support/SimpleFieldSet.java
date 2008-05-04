@@ -684,7 +684,7 @@ public class SimpleFieldSet {
 			} catch (UnsupportedEncodingException e) {
 				Logger.error(SimpleFieldSet.class, "Impossible: "+e, e);
 				is.close();
-				throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
+				return null;
 			}
 			br = new BufferedReader(isr);
 			SimpleFieldSet fs = new SimpleFieldSet(br, allowMultiple, shortLived);

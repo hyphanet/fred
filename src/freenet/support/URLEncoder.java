@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
-import java.io.BufferedReader;
 import java.io.UnsupportedEncodingException;
 
 /**
@@ -44,7 +43,7 @@ public class URLEncoder {
 						enc.append(Integer.toHexString(x));
 					}
 				} catch (UnsupportedEncodingException e) {
-					throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
+					throw new Error(e);
 				}
 			}
 		}

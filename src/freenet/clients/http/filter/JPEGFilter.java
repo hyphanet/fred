@@ -370,7 +370,7 @@ public class JPEGFilter implements ContentDataFilter {
 			baos.write(data);
 			baos.write(0);
 		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException("Impossible: JVM doesn't support ISO-8859-1: " + e, e);
+			throw new Error(e);
 		}
 	}
 

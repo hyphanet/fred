@@ -1,6 +1,5 @@
 package freenet.support;
 
-import java.io.BufferedReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -39,7 +38,7 @@ public class URIPreEncoder {
 						output.append(Integer.toHexString(x));
 					}
 				} catch (UnsupportedEncodingException e) {
-					throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
+					throw new Error(e);
 				}
 			}
 		}

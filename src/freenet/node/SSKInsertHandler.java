@@ -239,7 +239,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 					block = new SSKBlock(data, headers, key, true);
 				} catch (SSKVerifyException e1) {
 					// Is verified elsewhere...
-					throw new RuntimeException("Impossible: " + e1, e1);
+					throw new Error("Impossible: "+e1);
 				}
 				try {
 					RequestHandler.sendSSK(headers, data, false, pubKey, source, uid, this);

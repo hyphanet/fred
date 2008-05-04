@@ -283,7 +283,7 @@ public final class FrostMessage {
 		try {
 			data = this.getXml().getBytes("UTF-8");
 		} catch (UnsupportedEncodingException e1) {
-			throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e1, e1);
+			throw new Error(e1);
 		}
     	InsertBlock block = null;
     	

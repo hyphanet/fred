@@ -82,12 +82,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private static final byte[] JFK_PREFIX_INITIATOR, JFK_PREFIX_RESPONDER;
 	static {
 		byte[] I = null,R = null;
-		try {
-			I = "I".getBytes("UTF-8");
-			R = "R".getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
+		try { I = "I".getBytes("UTF-8"); } catch (UnsupportedEncodingException e) {}
+		try { R = "R".getBytes("UTF-8"); } catch (UnsupportedEncodingException e) {}
 		
 		JFK_PREFIX_INITIATOR = I;
 		JFK_PREFIX_RESPONDER = R;
@@ -2792,11 +2788,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private byte[] computeJFKSharedKey(BigInteger exponential, byte[] nI, byte[] nR, String what) {
 		assert("0".equals(what) || "1".equals(what) || "2".equals(what));
 		byte[] number = null;
-		try {
-			number = what.getBytes("UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
-		}
+		try { number = what.getBytes("UTF-8"); } catch (UnsupportedEncodingException e) {}
 		
 		byte[] toHash = new byte[NONCE_SIZE * 2 + number.length];
 		int offset = 0;

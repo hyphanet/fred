@@ -411,7 +411,7 @@ public class DarknetPeerNode extends PeerNode {
 		try {
 			isr = new InputStreamReader(fis, "UTF-8");
 		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
+			throw new Error("Impossible: JVM doesn't support UTF-8: "+e, e);
 		}
 		BufferedReader br = new BufferedReader(isr);
 		SimpleFieldSet fs = null;
@@ -503,7 +503,7 @@ public class DarknetPeerNode extends PeerNode {
 					n2nm = DMT.createNodeToNodeMessage(type, fs.toString().getBytes("UTF-8"));
 				} catch (UnsupportedEncodingException e) {
 					Logger.error(this, "UnsupportedEncodingException processing extraPeerDataType ("+extraPeerDataTypeString+") in file "+extraPeerDataFile.getPath(), e);
-					throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
+					return false;
 				}
 
 				try {
@@ -578,7 +578,7 @@ public class DarknetPeerNode extends PeerNode {
 		try {
 			w = new OutputStreamWriter(fos, "UTF-8");
 		} catch (UnsupportedEncodingException e2) {
-			throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e2, e2);
+			throw new Error("UTF-8 unsupported!: "+e2, e2);
 		}
 		BufferedWriter bw = new BufferedWriter(w);
 		try {
@@ -676,7 +676,7 @@ public class DarknetPeerNode extends PeerNode {
 		try {
 			w = new OutputStreamWriter(fos, "UTF-8");
 		} catch (UnsupportedEncodingException e2) {
-			throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e2, e2);
+			throw new Error("JVM doesn't support UTF-8 charset!: "+e2, e2);
 		}
 		BufferedWriter bw = new BufferedWriter(w);
 		try {
@@ -709,7 +709,7 @@ public class DarknetPeerNode extends PeerNode {
 		try {
 			fs.putSingle("privateDarknetComment", Base64.encode(comment.getBytes("UTF-8")));
 		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
+			throw new Error(e);
 		}
 		if(localFileNumber == -1) {
 			localFileNumber = writeNewExtraPeerDataFile(fs, Node.EXTRA_PEER_DATA_TYPE_PEER_NOTE);
@@ -810,7 +810,7 @@ public class DarknetPeerNode extends PeerNode {
 				try {
 					s = new String(Base64.decode(s), "UTF-8");
 				} catch (UnsupportedEncodingException e) {
-					throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
+					throw new Error(e);
 				} catch (IllegalBase64Exception e) {
 					// Maybe it wasn't encoded? FIXME remove
 				}
@@ -826,7 +826,7 @@ public class DarknetPeerNode extends PeerNode {
 			try {
 				fs.putSingle("comment", Base64.encode(comment.getBytes("UTF-8")));
 			} catch (UnsupportedEncodingException e) {
-				throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
+				throw new Error(e);
 			}
 			fs.put("size", size);
 		}
@@ -1262,7 +1262,7 @@ public class DarknetPeerNode extends PeerNode {
 			this.setPeerNodeStatus(System.currentTimeMillis());
 			return getPeerNodeStatus();
 		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
+			throw new Error("Impossible: "+e, e);
 		}
 	}
 
@@ -1296,7 +1296,7 @@ public class DarknetPeerNode extends PeerNode {
 			this.setPeerNodeStatus(System.currentTimeMillis());
 			return getPeerNodeStatus();
 		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
+			throw new Error("Impossible: "+e, e);
 		}
 	}
 
@@ -1330,7 +1330,7 @@ public class DarknetPeerNode extends PeerNode {
 			this.setPeerNodeStatus(System.currentTimeMillis());
 			return getPeerNodeStatus();
 		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
+			throw new Error("Impossible: "+e, e);
 		}
 	}
 
@@ -1372,7 +1372,7 @@ public class DarknetPeerNode extends PeerNode {
 			}
 			return status;
 		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
+			throw new Error("Impossible: "+e, e);
 		}
 	}
 

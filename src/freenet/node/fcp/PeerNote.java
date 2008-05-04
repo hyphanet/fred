@@ -31,7 +31,7 @@ public class PeerNote extends FCPMessage {
 		try {
 			fs.putSingle("NoteText", Base64.encode(noteText.getBytes("UTF-8"), true));
 		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
+			throw new Error(e);
 		}
 		if(identifier != null)
 			fs.putSingle("Identifier", identifier);

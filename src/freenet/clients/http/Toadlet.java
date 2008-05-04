@@ -186,7 +186,8 @@ public abstract class Toadlet {
 		try {
 			buf = redirDoc.getBytes("UTF-8");
 		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
+			// No way!
+			throw new Error(e);
 		}
 		ctx.sendReplyHeaders(301, "Moved Permanently", mvt, "text/html; charset=UTF-8", buf.length);
 		ctx.writeData(buf, 0, buf.length);
@@ -206,7 +207,8 @@ public abstract class Toadlet {
 		try {
 			buf = redirDoc.getBytes("UTF-8");
 		} catch (UnsupportedEncodingException e) {
-			throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
+			// No way!
+			throw new Error(e);
 		}
 		ctx.sendReplyHeaders(302, "Found", mvt, "text/html; charset=UTF-8", buf.length);
 		ctx.writeData(buf, 0, buf.length);

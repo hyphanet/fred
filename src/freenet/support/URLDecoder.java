@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -71,7 +70,7 @@ public class URLDecoder
 							decodedBytes.write(buf, 0, buf.length);
 							continue;
 						} catch (UnsupportedEncodingException e) {
-							throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
+							throw new Error(e);
 						}
 					}
 					
@@ -82,7 +81,7 @@ public class URLDecoder
 					byte[] encoded = (""+c).getBytes("UTF-8");
 					decodedBytes.write(encoded, 0, encoded.length);
 				} catch (UnsupportedEncodingException e) {
-					throw new RuntimeException("Impossible: JVM doesn't support UTF-8: " + e, e);
+					throw new Error(e);
 				}
 			}
 		}
