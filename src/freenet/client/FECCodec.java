@@ -441,7 +441,7 @@ public abstract class FECCodec {
 				Logger.error(this, "Caught "+t+" in "+this, t);
 			}
 			finally {
-				synchronized(FECCodec.class) {
+				synchronized (_awaitingJobs) {
 					runningFECThreads--;
 				}
 			}
