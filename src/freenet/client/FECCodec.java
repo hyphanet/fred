@@ -14,6 +14,7 @@ import com.onionnetworks.util.Buffer;
 import freenet.node.PrioRunnable;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -42,6 +43,8 @@ public abstract class FECCodec implements OOMHook {
 		this.executor = executor;
 		this.k = k;
 		this.n = n;
+		
+		OOMHandler.addOOMHook(this);
 	}
 	
 	/**

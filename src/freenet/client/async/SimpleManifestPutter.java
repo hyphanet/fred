@@ -698,7 +698,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			HashMap hm = (HashMap) (target.get(before));
 			if(hm == null) {
 				hm = new HashMap();
-				target.put(before, hm);
+				target.put(before.intern(), hm);
 			}
 			add(e, after, hm);
 		}
