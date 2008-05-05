@@ -669,6 +669,9 @@ public class FCPServer implements Runnable {
 						} catch(Throwable t1) { /* ignore */ }
 					}
 				}
+				// Help it to be collected
+				toFree.clear();
+				toFree = null;
 				if(logMINOR)
 					Logger.minor(this, "We have freed "+freedBuckets+" persistent buckets");
 			}
