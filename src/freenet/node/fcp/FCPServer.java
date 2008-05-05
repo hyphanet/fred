@@ -49,6 +49,7 @@ import freenet.support.api.LongCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
+import java.util.LinkedList;
 
 /**
  * FCP server process.
@@ -613,7 +614,7 @@ public class FCPServer implements Runnable {
 		if(logMINOR) Logger.minor(this, "Storing persistent requests");
 		ClientRequest[] persistentRequests = getPersistentRequests();
 		if(logMINOR) Logger.minor(this, "Persistent requests count: "+persistentRequests.length);
-		Bucket[] toFree = null;
+		LinkedList toFree = null;
 		try {
 			synchronized(persistenceSync) {
 				toFree = core.persistentTempBucketFactory.grabBucketsToFree();
@@ -654,17 +655,22 @@ public class FCPServer implements Runnable {
 			if(logMINOR) Logger.minor(this, "Stored persistent requests");
 		} finally {
 			if(toFree != null) {
-				if(logMINOR) Logger.minor(this, "We are about to free "+toFree.length+" persistent buckets");
-				for(int i=0;i<toFree.length;i++) {
+				long freedBuckets = 0;
+				Iterator it = toFree.iterator();
+				while(it.hasNext()) {
+					Bucket current = (Bucket) it.next();
 					try {
-						toFree[i].free();
-					} catch (Throwable t) {
+						current.free();
+						freedBuckets++;
+					} catch(Throwable t) {
 						try {
-							System.err.println("Caught "+t+" trying to free bucket "+toFree[i]);
+							System.err.println("Caught " + t + " trying to free bucket " + current);
 							t.printStackTrace();
-						} catch (Throwable t1) { /* ignore */ }
+						} catch(Throwable t1) { /* ignore */ }
 					}
 				}
+				if(logMINOR)
+					Logger.minor(this, "We have freed "+freedBuckets+" persistent buckets");
 			}
 		}
 	}

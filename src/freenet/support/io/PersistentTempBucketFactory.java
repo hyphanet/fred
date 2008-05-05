@@ -38,7 +38,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	private final Random rand;
 	
 	/** Buckets to free */
-	private final LinkedList bucketsToFree;
+	private LinkedList bucketsToFree;
 
 	public PersistentTempBucketFactory(File dir, String prefix, Random rand) throws IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -119,16 +119,14 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 */
 	public void delayedFreeBucket(Bucket b) {
 		synchronized(this) {
-			if(Logger.shouldLog(Logger.MINOR, this))
-				Logger.minor(this, "Adding "+b+" to the bucketsToFree list ("+bucketsToFree.size()+')');
 			bucketsToFree.add(b);
 		}
 	}
 
-	public Bucket[] grabBucketsToFree() {
+	public LinkedList grabBucketsToFree() {
 		synchronized(this) {
-			Bucket[] toFree = (Bucket[]) bucketsToFree.toArray(new Bucket[bucketsToFree.size()]);
-			bucketsToFree.clear();
+			LinkedList toFree = bucketsToFree;
+			bucketsToFree = new LinkedList();
 			return toFree;
 		}
 	}
