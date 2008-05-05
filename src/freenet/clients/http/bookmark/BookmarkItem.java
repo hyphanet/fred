@@ -210,11 +210,13 @@ public class BookmarkItem extends Bookmark {
             if (b.hasAnActivelink != hasAnActivelink) {
                 return false;
             }
-	    if(!(b.desc == null && desc == null)) {
+            if (b.desc == desc)
+				return true;
+			if (b.desc == null || desc == null)
+				return false;
 		if(!b.desc.equals(desc)) {
 	                return false;
 		}
-            }
             return true;
         } else {
             return false;
