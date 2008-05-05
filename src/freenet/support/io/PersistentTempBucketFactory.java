@@ -119,6 +119,8 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 */
 	public void delayedFreeBucket(Bucket b) {
 		synchronized(this) {
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "Adding "+b+" to the bucketsToFree list ("+bucketsToFree.size());
 			bucketsToFree.add(b);
 		}
 	}
