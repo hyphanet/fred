@@ -399,8 +399,11 @@ public abstract class FECCodec {
 					FECJob job = null;
 					// Get a job
 					synchronized (_awaitingJobs) {
-						while (_awaitingJobs.isEmpty())
+						while (_awaitingJobs.isEmpty()) {
 							_awaitingJobs.wait(Integer.MAX_VALUE);
+							if (runningFECThreads > getMaxRunningFECThreads())
+								return;
+						}
 						job = (FECJob) _awaitingJobs.removeLast();
 					}
 
