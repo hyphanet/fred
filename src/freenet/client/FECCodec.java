@@ -14,6 +14,7 @@ import com.onionnetworks.util.Buffer;
 import freenet.node.PrioRunnable;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.OOMHook;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
@@ -27,7 +28,7 @@ import freenet.support.io.NativeThread;
  * @author root
  *
  */
-public abstract class FECCodec {
+public abstract class FECCodec implements OOMHook {
 
 	// REDFLAG: Optimal stripe size? Smaller => less memory usage, but more JNI overhead
 
@@ -448,6 +449,20 @@ public abstract class FECCodec {
 
 		public int getPriority() {
 			return NativeThread.LOW_PRIORITY;
+		}
+	}
+
+	public void handleLowMemory() throws Exception {
+		synchronized (_awaitingJobs) {
+			maxRunningFECThreads = Math.min(1, maxRunningFECThreads - 1);
+			_awaitingJobs.notify(); // not notifyAll()
+		}
+	}
+
+	public void handleOutOfMemory() throws Exception {
+		synchronized (_awaitingJobs) {
+			maxRunningFECThreads = 1;
+			_awaitingJobs.notifyAll();
 		}
 	}
 
