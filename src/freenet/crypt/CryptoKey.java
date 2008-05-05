@@ -11,6 +11,7 @@ import java.lang.reflect.Method;
 import java.math.BigInteger;
 
 import freenet.support.HexUtil;
+import freenet.support.Logger;
 
 public abstract class CryptoKey implements CryptoElement, Serializable {
 
@@ -33,6 +34,7 @@ public abstract class CryptoKey implements CryptoElement, Serializable {
 				throw (CryptFormatException) e;
 			if (e instanceof IOException)
 				throw (IOException) e;
+			Logger.error(CryptoKey.class, "Unknown exception while reading CryptoKey", e);
 			return null;
 		}
 	}

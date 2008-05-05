@@ -289,6 +289,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			}
 			c.cancel();
 		}catch(Exception e){
+			Logger.minor(this, "Cannot kill NodeUpdater", e);
 		}
 	}
 	
