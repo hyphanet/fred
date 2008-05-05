@@ -397,41 +397,41 @@ public abstract class FECCodec {
 			try {
 				while(true) {
 					FECJob job = null;
-						// Get a job
-						synchronized(_awaitingJobs) {
-							while (_awaitingJobs.isEmpty())
-								_awaitingJobs.wait(Integer.MAX_VALUE);
-							job = (FECJob) _awaitingJobs.removeLast();
-						}
+					// Get a job
+					synchronized (_awaitingJobs) {
+						while (_awaitingJobs.isEmpty())
+							_awaitingJobs.wait(Integer.MAX_VALUE);
+						job = (FECJob) _awaitingJobs.removeLast();
+					}
 
-						// Encode it
-						try {
-							if(job.isADecodingJob)
-								job.codec.realDecode(job.dataBlockStatus, job.checkBlockStatus, job.blockLength, job.bucketFactory);
-							else {
-								job.codec.realEncode(job.dataBlocks, job.checkBlocks, job.blockLength, job.bucketFactory);
-								// Update SplitFileBlocks from buckets if necessary
-								if((job.dataBlockStatus != null) || (job.checkBlockStatus != null)) {
-									for(int i = 0; i < job.dataBlocks.length; i++)
-										job.dataBlockStatus[i].setData(job.dataBlocks[i]);
-									for(int i = 0; i < job.checkBlocks.length; i++)
-										job.checkBlockStatus[i].setData(job.checkBlocks[i]);
-								}
+					// Encode it
+					try {
+						if (job.isADecodingJob)
+							job.codec.realDecode(job.dataBlockStatus, job.checkBlockStatus, job.blockLength,
+							        job.bucketFactory);
+						else {
+							job.codec.realEncode(job.dataBlocks, job.checkBlocks, job.blockLength, job.bucketFactory);
+							// Update SplitFileBlocks from buckets if necessary
+							if ((job.dataBlockStatus != null) || (job.checkBlockStatus != null)) {
+								for (int i = 0; i < job.dataBlocks.length; i++)
+									job.dataBlockStatus[i].setData(job.dataBlocks[i]);
+								for (int i = 0; i < job.checkBlocks.length; i++)
+									job.checkBlockStatus[i].setData(job.checkBlocks[i]);
 							}
-						} catch(IOException e) {
-							Logger.error(this, "BOH! ioe:" + e.getMessage());
 						}
+					} catch (IOException e) {
+						Logger.error(this, "BOH! ioe:" + e.getMessage());
+					}
 
-						// Call the callback
-						try {
-							if(job.isADecodingJob)
-								job.callback.onDecodedSegment();
-							else
-								job.callback.onEncodedSegment();
-
-						} catch(Throwable e) {
-							Logger.error(this, "The callback failed!" + e.getMessage(), e);
-						}
+					// Call the callback
+					try {
+						if (job.isADecodingJob)
+							job.callback.onDecodedSegment();
+						else
+							job.callback.onEncodedSegment();
+					} catch (Throwable e) {
+						Logger.error(this, "The callback failed!" + e.getMessage(), e);
+					}
 				}
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t+" in "+this, t);
