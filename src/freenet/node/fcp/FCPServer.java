@@ -654,6 +654,7 @@ public class FCPServer implements Runnable {
 			if(logMINOR) Logger.minor(this, "Stored persistent requests");
 		} finally {
 			if(toFree != null) {
+				if(logMINOR) Logger.minor(this, "We are about to free "+toFree.length+" persistent buckets");
 				for(int i=0;i<toFree.length;i++) {
 					try {
 						toFree[i].free();
