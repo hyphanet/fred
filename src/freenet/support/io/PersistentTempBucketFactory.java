@@ -9,7 +9,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import freenet.crypt.RandomSource;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -78,6 +77,8 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	
 	public void register(File file) {
 		synchronized(this) {
+			if(originalFiles == null)
+				throw new IllegalStateException("completed Init has already been called!");
 			file = FileUtil.getCanonicalFile(file);
 			if(!originalFiles.remove(file))
 				Logger.error(this, "Preserving "+file+" but it wasn't found!", new Exception("error"));
@@ -96,6 +97,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 				Logger.minor(this, "Deleting old tempfile "+f);
 			f.delete();
 		}
+		originalFiles = null;
 	}
 
 	private Bucket makeRawBucket(long size) throws IOException {
