@@ -357,8 +357,8 @@ public abstract class FECCodec {
 	private static int fecPoolCounter;
 	
 	private synchronized static int getMaxRunningFECThreads() {
-		long now = System.currentTimeMillis();
-		if(now - lastPolledMaxRunningFECThreads < 5*60*1000) return maxRunningFECThreads;
+		if (maxRunningFECThreads != -1)
+			return maxRunningFECThreads;
 		String osName = System.getProperty("os.name");
 		if(osName.indexOf("Windows") == -1 && (osName.toLowerCase().indexOf("mac os x") > 0) || (!NativeThread.usingNativeCode())) {
 			// OS/X niceness is really weak, so we don't want any more background CPU load than necessary
@@ -383,11 +383,7 @@ public abstract class FECCodec {
 		return maxRunningFECThreads;
 	}
 	
-	private static int maxRunningFECThreads;
-	private static int lastPolledMaxRunningFECThreads = -1;
-	static {
-		getMaxRunningFECThreads();
-	}
+	private static int maxRunningFECThreads = -1;
 
 	/**
 	 * A private Thread started by {@link FECCodec}...
