@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import freenet.crypt.RandomSource;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
@@ -35,16 +36,18 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	private final FilenameGenerator fg;
 	
 	/** Random number generator */
-	private final Random rand;
+	private final RandomSource strongPRNG;
+	private final Random weakPRNG;
 	
 	/** Buckets to free */
 	private LinkedList bucketsToFree;
 
-	public PersistentTempBucketFactory(File dir, String prefix, Random rand) throws IOException {
+	public PersistentTempBucketFactory(File dir, String prefix, RandomSource strongPRNG, Random weakPRNG) throws IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.dir = dir;
-		this.rand = rand;
-		this.fg = new FilenameGenerator(rand, false, dir, prefix);
+		this.strongPRNG = strongPRNG;
+		this.weakPRNG = weakPRNG;
+		this.fg = new FilenameGenerator(weakPRNG, false, dir, prefix);
 		if(!dir.exists()) {
 			dir.mkdir();
 			if(!dir.exists()) {
@@ -106,12 +109,12 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 
 	public Bucket makeBucket(long size) throws IOException {
 		Bucket b = makeRawBucket(size);
-		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(b, 1024, rand));
+		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(b, 1024, strongPRNG, weakPRNG));
 	}
 	
 	public Bucket makeEncryptedBucket() throws IOException {
 		Bucket b = makeRawBucket(-1);
-		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(b, 1024, rand));
+		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(b, 1024, strongPRNG, weakPRNG));
 	}
 
 	/**

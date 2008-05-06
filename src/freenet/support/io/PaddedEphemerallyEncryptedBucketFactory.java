@@ -1,5 +1,6 @@
 package freenet.support.io;
 
+import freenet.crypt.RandomSource;
 import java.io.IOException;
 
 import freenet.support.api.Bucket;
@@ -13,16 +14,18 @@ import java.util.Random;
 public class PaddedEphemerallyEncryptedBucketFactory implements BucketFactory {
 
 	final BucketFactory baseFactory;
-	final Random random;
+	final RandomSource strongPRNG;
+	final Random weakPRNG;
 	final int minSize;
 	
-	public PaddedEphemerallyEncryptedBucketFactory(BucketFactory factory, Random r, int minSize) {
+	public PaddedEphemerallyEncryptedBucketFactory(BucketFactory factory, RandomSource strongPRNG, Random weakPRNG, int minSize) {
 		baseFactory = factory;
 		this.minSize = minSize;
-		this.random = r;
+		this.strongPRNG = strongPRNG;
+		this.weakPRNG = weakPRNG;
 	}
 
 	public Bucket makeBucket(long size) throws IOException {
-		return new PaddedEphemerallyEncryptedBucket(baseFactory.makeBucket(size), minSize, random);
+		return new PaddedEphemerallyEncryptedBucket(baseFactory.makeBucket(size), minSize, strongPRNG, weakPRNG);
 	}
 }

@@ -40,15 +40,16 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	 * @param bucket The bucket which we are proxying to. Must be empty.
 	 * @param pcfb The encryption mode with which to encipher/decipher the data.
 	 * @param minSize The minimum padded size of the file (after it has been closed).
-	 * @param origRandom a week prng we will padd from.
+	 * @param strongPRNG a strong prng we will key from.
+	 * @param weakPRNG a week prng we will padd from.
 	 * @throws UnsupportedCipherException 
 	 */
-	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, Random origRandom) {
-		this.randomSource = origRandom;
+	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, RandomSource strongPRNG, Random weakPRNG) {
+		this.randomSource = weakPRNG;
 		this.bucket = bucket;
 		if(bucket.size() != 0) throw new IllegalArgumentException("Bucket must be empty");
 		byte[] tempKey = new byte[32];
-		origRandom.nextBytes(tempKey);
+		strongPRNG.nextBytes(tempKey);
 		this.key = tempKey;
 		this.minPaddedSize = minSize;
 		readOnly = false;
