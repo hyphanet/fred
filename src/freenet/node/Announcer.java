@@ -320,6 +320,12 @@ public class Announcer {
 							SeedServerPeerNode pn = (SeedServerPeerNode) seeds.get(i);
 							node.peers.disconnect(pn, true, true);
 						}
+						// Re-check every minute. Something bad might happen (e.g. cpu starvation), causing us to have to reseed.
+						node.getTicker().queueTimedJob(new Runnable() {
+							public void run() {
+								maybeSendAnnouncement();
+							}
+						}, RETRY_DELAY);
 					} else {
 						node.getTicker().queueTimedJob(new Runnable() {
 							public void run() {
