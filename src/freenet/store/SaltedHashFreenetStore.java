@@ -35,6 +35,8 @@ import freenet.support.math.SimpleRunningAverage;
  * @author sdiz
  */
 public class SaltedHashFreenetStore implements FreenetStore {
+	private static final boolean OPTION_SAVE_PLAINKEY = true;
+	
 	private static boolean logMINOR;
 	private static boolean logDEBUG;
 
@@ -182,6 +184,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	/** Flag for occupied space */
 	private final long ENTRY_FLAG_OCCUPIED = 0x00000001L;
+	/** Flag for plain key available */
+	private final long ENTRY_FLAG_PLAINKEY = 0x00000002L;
 
 	private static final long ENTRY_HEADER_LENGTH = 0x70L;
 	private final long entryPaddingLength;
@@ -202,8 +206,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 *  +----+---------------+---------------+
 	 *  |0030|     Flag      |  Store Size   |
 	 *  +----+---------------+---------------+
-	 *  |0040|            Reserved           |
-	 *  |0050|            Reserved           |
+	 *  |0040|       Plain Routing Key       |
+	 *  |0050| (Only if ENTRY_FLAG_PLAINKEY) |
+	 *  +----+-------------------------------+
 	 *  |0060|            Reserved           |
 	 *  +----+-------------------------------+
 	 *  |0070|       Encrypted Header        |
@@ -218,7 +223,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * written, ignored on read.
 	 */
 	private class Entry {
-		private byte[] routingKey;
+		private byte[] plainRoutingKey;
+		private byte[] encryptedRoutingKey;
 		private byte[] dataEncryptIV;
 		private long flag;
 		private long storeSize;
@@ -230,12 +236,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		/**
 		 * Create a new entry
 		 * 
-		 * @param routingKey
+		 * @param plainRoutingKey
 		 * @param header
 		 * @param data
 		 */
-		public Entry(byte[] routingKey, byte[] header, byte[] data) {
-			this.routingKey = routingKey;
+		public Entry(byte[] plainRoutingKey, byte[] header, byte[] data) {
+			this.plainRoutingKey = plainRoutingKey;
+
 			flag = ENTRY_FLAG_OCCUPIED;
 			storeSize = SaltedHashFreenetStore.this.storeSize;
 
@@ -245,6 +252,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			System.arraycopy(header, 0, this.header, 0, headerBlockLength);
 			this.data = new byte[dataBlockLength];
 			System.arraycopy(data, 0, this.data, 0, dataBlockLength);
+			
+			if (OPTION_SAVE_PLAINKEY) {
+				flag |= ENTRY_FLAG_PLAINKEY;
+			}
 
 			isEncrypted = false;
 		}
@@ -252,8 +263,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		public Entry(ByteBuffer in) {
 			assert in.remaining() == entryTotalLength;
 
-			routingKey = new byte[0x20];
-			in.get(routingKey);
+			encryptedRoutingKey = new byte[0x20];
+			in.get(encryptedRoutingKey);
 
 			dataEncryptIV = new byte[0x10];
 			in.get(dataEncryptIV);
@@ -261,6 +272,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			flag = in.getLong();
 			storeSize = in.getLong();
 
+			if ((flag & ENTRY_FLAG_PLAINKEY) != 0) {
+				plainRoutingKey = new byte[0x20];
+				in.get(plainRoutingKey);
+			}
+			
 			// reserved bytes
 			in.position((int) ENTRY_HEADER_LENGTH);
 
@@ -278,12 +294,16 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		public ByteBuffer toByteBuffer() {
 			ByteBuffer out = ByteBuffer.allocate((int) entryTotalLength);
 			encrypt();
-			out.put(routingKey);
+			out.put(encryptedRoutingKey);
 			out.put(dataEncryptIV);
 
 			out.putLong(flag);
 			out.putLong(storeSize);
 
+			if ((flag & ENTRY_FLAG_PLAINKEY) != 0) {
+				out.put(plainRoutingKey);
+			}
+			
 			// reserved bytes
 			out.position((int) ENTRY_HEADER_LENGTH);
 
@@ -316,9 +336,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		public long getOffset() {
 			if (isEncrypted)
-				return getOffsetFromDigestedKey(routingKey, storeSize);
+				return getOffsetFromDigestedKey(encryptedRoutingKey, storeSize);
 			else
-				return getOffsetFromPlainKey(routingKey, storeSize);
+				return getOffsetFromPlainKey(plainRoutingKey, storeSize);
 		}
 
 		/**
@@ -331,21 +351,22 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		private boolean decrypt(byte[] routingKey) {
 			if (!isEncrypted) {
 				// Already decrypted
-				if (Arrays.equals(this.routingKey, routingKey))
+				if (Arrays.equals(this.plainRoutingKey, routingKey))
 					return true;
 				else
 					return false;
 			}
 
 			// Does the digested routing key match?
-			if (!Arrays.equals(this.routingKey, getDigestedRoutingKey(routingKey)))
+			if (!Arrays.equals(this.encryptedRoutingKey, getDigestedRoutingKey(routingKey)))
 				return false;
 
-			PCFBMode cipher = makeCipher(routingKey);
+			this.plainRoutingKey = routingKey;
+
+			PCFBMode cipher = makeCipher(plainRoutingKey);
 			header = cipher.blockDecipher(header, 0, header.length);
 			data = cipher.blockDecipher(data, 0, data.length);
 
-			this.routingKey = routingKey;
 			isEncrypted = false;
 
 			return true;
@@ -361,11 +382,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			dataEncryptIV = new byte[16];
 			random.nextBytes(dataEncryptIV);
 
-			PCFBMode cipher = makeCipher(routingKey);
+			PCFBMode cipher = makeCipher(plainRoutingKey);
 			header = cipher.blockEncipher(header, 0, header.length);
 			data = cipher.blockEncipher(data, 0, data.length);
 
-			routingKey = getDigestedRoutingKey(routingKey);
+			encryptedRoutingKey = getDigestedRoutingKey(plainRoutingKey);
 			isEncrypted = true;
 		}
 
