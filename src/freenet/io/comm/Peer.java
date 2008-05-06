@@ -53,11 +53,13 @@ public class Peer {
 	public Peer(DataInputStream dis) throws IOException {
 		addr = new FreenetInetAddress(dis);
 		_port = dis.readInt();
+		if(_port > 65535 || _port < 0) throw new IOException("bogus port");
 	}
 
 	public Peer(DataInputStream dis, boolean checkHostnameOrIPSyntax) throws HostnameSyntaxException, IOException {
 		addr = new FreenetInetAddress(dis, checkHostnameOrIPSyntax);
 		_port = dis.readInt();
+		if(_port > 65535 || _port < 0) throw new IOException("bogus port");
 	}
 
 	/**
@@ -68,6 +70,7 @@ public class Peer {
 	public Peer(InetAddress address, int port) {
 		addr = new FreenetInetAddress(address);
 		_port = port;
+		if(_port > 65535 || _port < 0) throw new IllegalArgumentException("bogus port");
 	}
 
 	/**
@@ -91,6 +94,7 @@ public class Peer {
         String strport = physical.substring(offset+1);
         try {
             _port = Integer.parseInt(strport);
+            if(_port < 0 || _port > 65535) throw new PeerParseException("Invalid port "+_port);
         } catch (NumberFormatException e) {
             throw new PeerParseException(e);
         }
@@ -121,6 +125,7 @@ public class Peer {
         String strport = physical.substring(offset+1);
         try {
             _port = Integer.parseInt(strport);
+            if(_port < 0 || _port > 65535) throw new PeerParseException("Invalid port "+_port);
         } catch (NumberFormatException e) {
             throw new PeerParseException(e);
         }
@@ -130,6 +135,7 @@ public class Peer {
     	this.addr = addr;
     	if(addr == null) throw new NullPointerException();
     	this._port = port;
+		if(_port > 65535 || _port < 0) throw new IllegalArgumentException("bogus port");
 	}
 
 	public boolean isNull() {
