@@ -693,7 +693,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private Map lockMap = new HashMap();
 
 	/**
-	 * Lock the entry // TODO locking
+	 * Lock the entry
 	 * 
 	 * This lock is <strong>not</strong> reentrance. No threads except Cleaner should hold more
 	 * then one lock at a time (or deadlock may occur).
@@ -726,7 +726,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	/**
-	 * Unlock the entry // TODO locking
+	 * Unlock the entry
 	 */
 	private void unlockEntry(long offset) {
 		if (logDEBUG)
