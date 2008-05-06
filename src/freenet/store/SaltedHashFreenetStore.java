@@ -573,7 +573,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			storeSize = raf.readLong();
 			prevStoreSize = raf.readLong();
-			estimatedCount = new SimpleRunningAverage(3, raf.readLong());
+			long oldEstimatedCount = raf.readLong();
+			estimatedCount = new SimpleRunningAverage(3, oldEstimatedCount);
+			estimatedCount.report(oldEstimatedCount);
 			raf.readLong();
 
 			raf.close();
@@ -653,7 +655,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		 */
 		private void estimateStoreSize() {
 			Logger.minor(this, "start estimating key count");
-			long numSample = (long) (SAMPLE_RATE * storeSize);
+			long numSample = Math.min((long) (SAMPLE_RATE * storeSize), 10000);
 			long sampled = 0;
 			long occupied = 0;
 			while (sampled < numSample) {
