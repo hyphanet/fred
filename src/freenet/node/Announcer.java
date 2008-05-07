@@ -42,8 +42,8 @@ public class Announcer {
 	private static final int STATUS_CONNECTING_SEEDNODES = 1;
 	private static final int STATUS_NO_SEEDNODES = -1;
 	private int runningAnnouncements;
-	/** We want to announce to 3 different seednodes. */
-	private static final int WANT_ANNOUNCEMENTS = 3;
+	/** We want to announce to 4 different seednodes. */
+	private static final int WANT_ANNOUNCEMENTS = 4;
 	private int sentAnnouncements;
 	private long startTime;
 	private long timeAddedSeeds;
