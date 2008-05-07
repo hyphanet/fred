@@ -51,11 +51,11 @@ public class DNSRequester implements Runnable {
             lastLogTime = now;
         }
         for(int i=0;i<nodes.length;i++) {
-            //Logger.minor(this, "Node: "+pn);
+            //Logger.minor(this, "Node: "+nodes[i]);
             if(!nodes[i].isConnected()) {
                 // Not connected
                 // Try new DNS lookup
-            	//Logger.minor(this, "Doing lookup on "+pn);
+            	//Logger.minor(this, "Doing lookup on "+nodes[i]+" of "+nodes.length);
                 nodes[i].maybeUpdateHandshakeIPs(false);
             }
         }
