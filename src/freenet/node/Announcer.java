@@ -48,8 +48,8 @@ public class Announcer {
 	private long startTime;
 	private long timeAddedSeeds;
 	static final long MIN_ADDED_SEEDS_INTERVAL = 60*1000;
-	/** After we have sent 3 announcements, wait for 1 minute before sending 3 more if we still have no connections. */
-	static final int COOLING_OFF_PERIOD = 60*1000;
+	/** After we have sent 3 announcements, wait for 30 seconds before sending 3 more if we still have no connections. */
+	static final int COOLING_OFF_PERIOD = 30*1000;
 	/** Identities of nodes we have announced to */
 	private final HashSet announcedToIdentities;
 	/** IPs of nodes we have announced to. Maybe this should be first-two-bytes, but I'm not sure how to do that with IPv6. */
