@@ -879,7 +879,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		priorityForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
 		HTMLNode prioritySelect = priorityForm.addChild("select", "name", "priority");
 		for (int p = 0; p < RequestStarter.NUMBER_OF_PRIORITY_CLASSES; p++) {
-			if(p < 1 && !advancedModeEnabled) continue;
+			if(p <= 1 && !advancedModeEnabled) continue;
 			if (p == priorityClass) {
 				prioritySelect.addChild("option", new String[] { "value", "selected" }, new String[] { String.valueOf(p), "selected" }, priorityClasses[p]);
 			} else {
