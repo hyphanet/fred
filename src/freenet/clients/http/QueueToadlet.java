@@ -679,7 +679,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		HTMLNode legendTable = legendContent.addChild("table", "class", "queue");
 		HTMLNode legendRow = legendTable.addChild("tr");
 		for(int i=0; i<7; i++){
-			if(i > 1 || advancedModeEnabled || i <= lowestQueuedPrio)
+			if(i > RequestStarter.INTERACTIVE_PRIORITY_CLASS || advancedModeEnabled || i <= lowestQueuedPrio)
 				legendRow.addChild("td", "class", "priority" + i, priorityClasses[i]);
 		}
 
@@ -879,7 +879,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		priorityForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
 		HTMLNode prioritySelect = priorityForm.addChild("select", "name", "priority");
 		for (int p = 0; p < RequestStarter.NUMBER_OF_PRIORITY_CLASSES; p++) {
-			if(p <= 1 && !advancedModeEnabled) continue;
+			if(p <= RequestStarter.INTERACTIVE_PRIORITY_CLASS && !advancedModeEnabled) continue;
 			if (p == priorityClass) {
 				prioritySelect.addChild("option", new String[] { "value", "selected" }, new String[] { String.valueOf(p), "selected" }, priorityClasses[p]);
 			} else {
