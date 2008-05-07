@@ -438,7 +438,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			
 			// If detect attempt failed to produce an IP in the last 5 minutes, don't
 			// try again yet.
-			if(failedRunners.size() == runners.size()) {
+			if(failedRunners.size() == plugins.length) {
 				if(now - lastDetectAttemptEndedTime < 5*60*1000) {
 					if(logMINOR) Logger.minor(this, "Last detect failed less than 5 minutes ago");
 					return;
