@@ -42,8 +42,8 @@ public class Announcer {
 	private static final int STATUS_CONNECTING_SEEDNODES = 1;
 	private static final int STATUS_NO_SEEDNODES = -1;
 	private int runningAnnouncements;
-	/** We want to announce to 4 different seednodes. */
-	private static final int WANT_ANNOUNCEMENTS = 4;
+	/** We want to announce to 5 different seednodes. */
+	private static final int WANT_ANNOUNCEMENTS = 5;
 	private int sentAnnouncements;
 	private long startTime;
 	private long timeAddedSeeds;
@@ -55,7 +55,7 @@ public class Announcer {
 	/** IPs of nodes we have announced to. Maybe this should be first-two-bytes, but I'm not sure how to do that with IPv6. */
 	private final HashSet announcedToIPs;
 	/** How many nodes to connect to at once? */
-	static final int CONNECT_AT_ONCE = 10;
+	static final int CONNECT_AT_ONCE = 15;
 	/** Do not announce if there are more than this many opennet peers connected */
 	private static final int MIN_OPENNET_CONNECTED_PEERS = 10;
 	private static final long NOT_ALL_CONNECTED_DELAY = 60*1000;
