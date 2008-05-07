@@ -158,6 +158,7 @@ public class Announcer {
 				}
 			}
 		}
+		node.dnsr.forceRun();
 		// If none connect in a minute, try some more.
 		node.getTicker().queueTimedJob(new Runnable() {
 			public void run() {

@@ -67,4 +67,10 @@ public class DNSRequester implements Runnable {
             // Ignore, just wake up. Just sleeping to not busy wait anyway
         }
     }
+
+	public void forceRun() {
+		synchronized(this) {
+			notifyAll();
+		}
+	}
 }
