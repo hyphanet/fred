@@ -3,13 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import freenet.crypt.RandomSource;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import freenet.crypt.RandomSource;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -36,16 +36,18 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	private final FilenameGenerator fg;
 	
 	/** Random number generator */
-	private final Random rand;
+	private final RandomSource strongPRNG;
+	private final Random weakPRNG;
 	
 	/** Buckets to free */
-	private final LinkedList bucketsToFree;
+	private LinkedList bucketsToFree;
 
-	public PersistentTempBucketFactory(File dir, String prefix, Random rand) throws IOException {
+	public PersistentTempBucketFactory(File dir, String prefix, RandomSource strongPRNG, Random weakPRNG) throws IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.dir = dir;
-		this.rand = rand;
-		this.fg = new FilenameGenerator(rand, false, dir, prefix);
+		this.strongPRNG = strongPRNG;
+		this.weakPRNG = weakPRNG;
+		this.fg = new FilenameGenerator(weakPRNG, false, dir, prefix);
 		if(!dir.exists()) {
 			dir.mkdir();
 			if(!dir.exists()) {
@@ -78,6 +80,8 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	
 	public void register(File file) {
 		synchronized(this) {
+			if(originalFiles == null)
+				throw new IllegalStateException("completed Init has already been called!");
 			file = FileUtil.getCanonicalFile(file);
 			if(!originalFiles.remove(file))
 				Logger.error(this, "Preserving "+file+" but it wasn't found!", new Exception("error"));
@@ -96,6 +100,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 				Logger.minor(this, "Deleting old tempfile "+f);
 			f.delete();
 		}
+		originalFiles = null;
 	}
 
 	private Bucket makeRawBucket(long size) throws IOException {
@@ -104,12 +109,12 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 
 	public Bucket makeBucket(long size) throws IOException {
 		Bucket b = makeRawBucket(size);
-		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(b, 1024, rand));
+		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(b, 1024, strongPRNG, weakPRNG));
 	}
 	
 	public Bucket makeEncryptedBucket() throws IOException {
 		Bucket b = makeRawBucket(-1);
-		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(b, 1024, rand));
+		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(b, 1024, strongPRNG, weakPRNG));
 	}
 
 	/**
@@ -121,10 +126,10 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		}
 	}
 
-	public Bucket[] grabBucketsToFree() {
+	public LinkedList grabBucketsToFree() {
 		synchronized(this) {
-			Bucket[] toFree = (Bucket[]) bucketsToFree.toArray(new Bucket[bucketsToFree.size()]);
-			bucketsToFree.clear();
+			LinkedList toFree = bucketsToFree;
+			bucketsToFree = new LinkedList();
 			return toFree;
 		}
 	}

@@ -14,6 +14,8 @@ import com.onionnetworks.util.Buffer;
 import freenet.node.PrioRunnable;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
+import freenet.support.OOMHook;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
@@ -27,7 +29,7 @@ import freenet.support.io.NativeThread;
  * @author root
  *
  */
-public abstract class FECCodec {
+public abstract class FECCodec implements OOMHook {
 
 	// REDFLAG: Optimal stripe size? Smaller => less memory usage, but more JNI overhead
 
@@ -41,6 +43,8 @@ public abstract class FECCodec {
 		this.executor = executor;
 		this.k = k;
 		this.n = n;
+		
+		OOMHandler.addOOMHook(this);
 	}
 	
 	/**
@@ -357,8 +361,8 @@ public abstract class FECCodec {
 	private static int fecPoolCounter;
 	
 	private synchronized static int getMaxRunningFECThreads() {
-		long now = System.currentTimeMillis();
-		if(now - lastPolledMaxRunningFECThreads < 5*60*1000) return maxRunningFECThreads;
+		if (maxRunningFECThreads != -1)
+			return maxRunningFECThreads;
 		String osName = System.getProperty("os.name");
 		if(osName.indexOf("Windows") == -1 && (osName.toLowerCase().indexOf("mac os x") > 0) || (!NativeThread.usingNativeCode())) {
 			// OS/X niceness is really weak, so we don't want any more background CPU load than necessary
@@ -383,11 +387,7 @@ public abstract class FECCodec {
 		return maxRunningFECThreads;
 	}
 	
-	private static int maxRunningFECThreads;
-	private static int lastPolledMaxRunningFECThreads = -1;
-	static {
-		getMaxRunningFECThreads();
-	}
+	private static int maxRunningFECThreads = -1;
 
 	/**
 	 * A private Thread started by {@link FECCodec}...
@@ -401,47 +401,50 @@ public abstract class FECCodec {
 			try {
 				while(true) {
 					FECJob job = null;
-						// Get a job
-						synchronized(_awaitingJobs) {
-							while (_awaitingJobs.isEmpty())
-								_awaitingJobs.wait(Integer.MAX_VALUE);
-							job = (FECJob) _awaitingJobs.removeLast();
+					// Get a job
+					synchronized (_awaitingJobs) {
+						while (_awaitingJobs.isEmpty()) {
+							_awaitingJobs.wait(Integer.MAX_VALUE);
+							if (runningFECThreads > getMaxRunningFECThreads())
+								return;
 						}
+						job = (FECJob) _awaitingJobs.removeLast();
+					}
 
-						// Encode it
-						try {
-							if(job.isADecodingJob)
-								job.codec.realDecode(job.dataBlockStatus, job.checkBlockStatus, job.blockLength, job.bucketFactory);
-							else {
-								job.codec.realEncode(job.dataBlocks, job.checkBlocks, job.blockLength, job.bucketFactory);
-								// Update SplitFileBlocks from buckets if necessary
-								if((job.dataBlockStatus != null) || (job.checkBlockStatus != null)) {
-									for(int i = 0; i < job.dataBlocks.length; i++)
-										job.dataBlockStatus[i].setData(job.dataBlocks[i]);
-									for(int i = 0; i < job.checkBlocks.length; i++)
-										job.checkBlockStatus[i].setData(job.checkBlocks[i]);
-								}
+					// Encode it
+					try {
+						if (job.isADecodingJob)
+							job.codec.realDecode(job.dataBlockStatus, job.checkBlockStatus, job.blockLength,
+							        job.bucketFactory);
+						else {
+							job.codec.realEncode(job.dataBlocks, job.checkBlocks, job.blockLength, job.bucketFactory);
+							// Update SplitFileBlocks from buckets if necessary
+							if ((job.dataBlockStatus != null) || (job.checkBlockStatus != null)) {
+								for (int i = 0; i < job.dataBlocks.length; i++)
+									job.dataBlockStatus[i].setData(job.dataBlocks[i]);
+								for (int i = 0; i < job.checkBlocks.length; i++)
+									job.checkBlockStatus[i].setData(job.checkBlocks[i]);
 							}
-						} catch(IOException e) {
-							Logger.error(this, "BOH! ioe:" + e.getMessage());
 						}
+					} catch (IOException e) {
+						Logger.error(this, "BOH! ioe:" + e.getMessage());
+					}
 
-						// Call the callback
-						try {
-							if(job.isADecodingJob)
-								job.callback.onDecodedSegment();
-							else
-								job.callback.onEncodedSegment();
-
-						} catch(Throwable e) {
-							Logger.error(this, "The callback failed!" + e.getMessage(), e);
-						}
+					// Call the callback
+					try {
+						if (job.isADecodingJob)
+							job.callback.onDecodedSegment();
+						else
+							job.callback.onEncodedSegment();
+					} catch (Throwable e) {
+						Logger.error(this, "The callback failed!" + e.getMessage(), e);
+					}
 				}
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t+" in "+this, t);
 			}
 			finally {
-				synchronized(FECCodec.class) {
+				synchronized (_awaitingJobs) {
 					runningFECThreads--;
 				}
 			}
@@ -449,6 +452,20 @@ public abstract class FECCodec {
 
 		public int getPriority() {
 			return NativeThread.LOW_PRIORITY;
+		}
+	}
+
+	public void handleLowMemory() throws Exception {
+		synchronized (_awaitingJobs) {
+			maxRunningFECThreads = Math.min(1, maxRunningFECThreads - 1);
+			_awaitingJobs.notify(); // not notifyAll()
+		}
+	}
+
+	public void handleOutOfMemory() throws Exception {
+		synchronized (_awaitingJobs) {
+			maxRunningFECThreads = 1;
+			_awaitingJobs.notifyAll();
 		}
 	}
 

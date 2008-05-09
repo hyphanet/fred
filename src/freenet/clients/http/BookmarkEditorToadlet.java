@@ -337,6 +337,9 @@ public class BookmarkEditorToadlet extends Toadlet {
 		}
 		HTMLNode bookmarksBox = content.addChild(pageMaker.getInfobox("infobox-normal", L10n.getString("BookmarkEditorToadlet.myBookmarksTitle")));
 		pageMaker.getContentNode(bookmarksBox).addChild(getBookmarksList());
+		
+		HTMLNode addDefaultBookmarksForm = ctx.addFormChild(content, "", "AddDefaultBookmarks");
+		addDefaultBookmarksForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "AddDefaultBookmarks", L10n.getString("BookmarkEditorToadlet.addDefaultBookmarks")});
 
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}

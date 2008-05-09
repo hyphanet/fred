@@ -709,7 +709,7 @@ public class TextModeClientInterface implements Runnable {
                 if(Logger.shouldLog(Logger.MINOR, this))
                 	Logger.minor(this, "Setting node.name to "+key);
             }catch(Exception e){
-            	Logger.error(this, "Error setting node's name");
+            	Logger.error(this, "Error setting node's name", e);
     		}
             core.storeConfig();
         } else if(uline.startsWith("DISABLEPEER:")) {

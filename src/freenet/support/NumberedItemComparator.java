@@ -42,11 +42,13 @@ public class NumberedItemComparator implements Comparator {
                 secondDistance = i2 - i1; // smaller => i2 > i1
                 firstDistance = i1 + Long.MAX_VALUE - i2; // smaller => i1 > i2
             }
+            // REDFLAG: base must be odd, so we never get ==
+			assert firstDistance != secondDistance && firstDistance != -secondDistance;
+            
             if(Math.abs(firstDistance) < Math.abs(secondDistance)) {
                 return 1; // i1>i2
             } else //if(Math.abs(secondDistance) < Math.abs(firstDistance)) {
                 return -1; // i2>i1
-            // REDFLAG: base must be odd, so we never get ==
         }
     }
     

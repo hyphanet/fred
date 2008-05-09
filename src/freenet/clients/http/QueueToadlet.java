@@ -498,6 +498,8 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			return;
 		}
 
+		short lowestQueuedPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
+		
 		for(int i=0;i<reqs.length;i++) {
 			ClientRequest req = reqs[i];
 			if(req instanceof ClientGet) {
@@ -513,6 +515,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				} else if(cg.hasFinished()) {
 					failedDownload.add(cg);
 				} else {
+					short prio = cg.getPriority();
+					if(prio < lowestQueuedPrio)
+						lowestQueuedPrio = prio;
 					uncompletedDownload.add(cg);
 				}
 			} else if(req instanceof ClientPut) {
@@ -522,6 +527,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				} else if(cp.hasFinished()) {
 					failedUpload.add(cp);
 				} else {
+					short prio = req.getPriority();
+					if(prio < lowestQueuedPrio)
+						lowestQueuedPrio = prio;
 					uncompletedUpload.add(cp);
 				}
 			} else if(req instanceof ClientPutDir) {
@@ -531,6 +539,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				} else if(cp.hasFinished()) {
 					failedDirUpload.add(cp);
 				} else {
+					short prio = req.getPriority();
+					if(prio < lowestQueuedPrio)
+						lowestQueuedPrio = prio;
 					uncompletedDirUpload.add(cp);
 				}
 			}
@@ -661,19 +672,20 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				L10n.getString("QueueToadlet.priority6")
 		};
 
+		boolean advancedModeEnabled = core.isAdvancedModeEnabled();
+
 		HTMLNode legendBox = contentNode.addChild(pageMaker.getInfobox("legend", L10n.getString("QueueToadlet.legend")));
 		HTMLNode legendContent = pageMaker.getContentNode(legendBox);
 		HTMLNode legendTable = legendContent.addChild("table", "class", "queue");
 		HTMLNode legendRow = legendTable.addChild("tr");
 		for(int i=0; i<7; i++){
-			legendRow.addChild("td", "class", "priority" + i, priorityClasses[i]);
+			if(i > RequestStarter.INTERACTIVE_PRIORITY_CLASS || advancedModeEnabled || i <= lowestQueuedPrio)
+				legendRow.addChild("td", "class", "priority" + i, priorityClasses[i]);
 		}
 
 		if (reqs.length > 1 && SimpleToadletServer.isPanicButtonToBeShown) {
 			contentNode.addChild(createPanicBox(pageMaker, ctx));
 		}
-
-		boolean advancedModeEnabled = core.isAdvancedModeEnabled();
 
 		if (!completedDownloadToTemp.isEmpty()) {
 			contentNode.addChild("a", "id", "completedDownloadToTemp");
@@ -759,7 +771,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			if (advancedModeEnabled) {
 				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDownload, new int[] { LIST_IDENTIFIER, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_FILENAME, LIST_KEY }, priorityClasses, advancedModeEnabled, false));
 			} else {
-				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDownload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, false));
+				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDownload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PRIORITY, LIST_KEY, LIST_PERSISTENCE }, priorityClasses, advancedModeEnabled, false));
 			}
 		}
 		
@@ -770,7 +782,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			if (advancedModeEnabled) {
 				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedUpload, new int[] { LIST_IDENTIFIER, LIST_PRIORITY, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_FILENAME, LIST_KEY }, priorityClasses, advancedModeEnabled, true));
 			} else {
-				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedUpload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true));
+				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedUpload, new int[] { LIST_FILENAME, LIST_SIZE, LIST_MIME_TYPE, LIST_PROGRESS, LIST_PRIORITY, LIST_KEY, LIST_PRIORITY, LIST_PERSISTENCE }, priorityClasses, advancedModeEnabled, true));
 			}
 		}
 		
@@ -781,7 +793,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			if (advancedModeEnabled) {
 				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDirUpload, new int[] { LIST_IDENTIFIER, LIST_FILES, LIST_PRIORITY, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true));
 			} else {
-				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDirUpload, new int[] { LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_PERSISTENCE, LIST_KEY }, priorityClasses, advancedModeEnabled, true));
+				uncompletedContent.addChild(createRequestTable(pageMaker, ctx, uncompletedDirUpload, new int[] { LIST_FILES, LIST_TOTAL_SIZE, LIST_PROGRESS, LIST_PRIORITY, LIST_KEY, LIST_PERSISTENCE }, priorityClasses, advancedModeEnabled, true));
 			}
 		}
 		
@@ -860,13 +872,14 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		return filenameCell;
 	}
 
-	private HTMLNode createPriorityCell(PageMaker pageMaker, String identifier, short priorityClass, ToadletContext ctx, String[] priorityClasses) {
+	private HTMLNode createPriorityCell(PageMaker pageMaker, String identifier, short priorityClass, ToadletContext ctx, String[] priorityClasses, boolean advancedModeEnabled) {
 		
 		HTMLNode priorityCell = new HTMLNode("td", "class", "request-priority nowrap");
 		HTMLNode priorityForm = ctx.addFormChild(priorityCell, "/queue/", "queueChangePriorityCell-" + identifier.hashCode());
 		priorityForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
 		HTMLNode prioritySelect = priorityForm.addChild("select", "name", "priority");
 		for (int p = 0; p < RequestStarter.NUMBER_OF_PRIORITY_CLASSES; p++) {
+			if(p <= RequestStarter.INTERACTIVE_PRIORITY_CLASS && !advancedModeEnabled) continue;
 			if (p == priorityClass) {
 				prioritySelect.addChild("option", new String[] { "value", "selected" }, new String[] { String.valueOf(p), "selected" }, priorityClasses[p]);
 			} else {
@@ -1071,7 +1084,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 						requestRow.addChild(createFilenameCell(((ClientPut) clientRequest).getOrigFilename()));
 					}
 				} else if (column == LIST_PRIORITY) {
-					requestRow.addChild(createPriorityCell(pageMaker, clientRequest.getIdentifier(), clientRequest.getPriority(), ctx, priorityClasses));
+					requestRow.addChild(createPriorityCell(pageMaker, clientRequest.getIdentifier(), clientRequest.getPriority(), ctx, priorityClasses, advancedModeEnabled));
 				} else if (column == LIST_FILES) {
 					requestRow.addChild(createNumberCell(((ClientPutDir) clientRequest).getNumberOfFiles()));
 				} else if (column == LIST_TOTAL_SIZE) {

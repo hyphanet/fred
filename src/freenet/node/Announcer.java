@@ -42,20 +42,20 @@ public class Announcer {
 	private static final int STATUS_CONNECTING_SEEDNODES = 1;
 	private static final int STATUS_NO_SEEDNODES = -1;
 	private int runningAnnouncements;
-	/** We want to announce to 3 different seednodes. */
-	private static final int WANT_ANNOUNCEMENTS = 3;
+	/** We want to announce to 5 different seednodes. */
+	private static final int WANT_ANNOUNCEMENTS = 5;
 	private int sentAnnouncements;
 	private long startTime;
 	private long timeAddedSeeds;
 	static final long MIN_ADDED_SEEDS_INTERVAL = 60*1000;
-	/** After we have sent 3 announcements, wait for 1 minute before sending 3 more if we still have no connections. */
-	static final int COOLING_OFF_PERIOD = 60*1000;
+	/** After we have sent 3 announcements, wait for 30 seconds before sending 3 more if we still have no connections. */
+	static final int COOLING_OFF_PERIOD = 30*1000;
 	/** Identities of nodes we have announced to */
 	private final HashSet announcedToIdentities;
 	/** IPs of nodes we have announced to. Maybe this should be first-two-bytes, but I'm not sure how to do that with IPv6. */
 	private final HashSet announcedToIPs;
 	/** How many nodes to connect to at once? */
-	static final int CONNECT_AT_ONCE = 10;
+	static final int CONNECT_AT_ONCE = 15;
 	/** Do not announce if there are more than this many opennet peers connected */
 	private static final int MIN_OPENNET_CONNECTED_PEERS = 10;
 	private static final long NOT_ALL_CONNECTED_DELAY = 60*1000;
@@ -158,6 +158,7 @@ public class Announcer {
 				}
 			}
 		}
+		node.dnsr.forceRun();
 		// If none connect in a minute, try some more.
 		node.getTicker().queueTimedJob(new Runnable() {
 			public void run() {
@@ -320,6 +321,12 @@ public class Announcer {
 							SeedServerPeerNode pn = (SeedServerPeerNode) seeds.get(i);
 							node.peers.disconnect(pn, true, true);
 						}
+						// Re-check every minute. Something bad might happen (e.g. cpu starvation), causing us to have to reseed.
+						node.getTicker().queueTimedJob(new Runnable() {
+							public void run() {
+								maybeSendAnnouncement();
+							}
+						}, RETRY_DELAY);
 					} else {
 						node.getTicker().queueTimedJob(new Runnable() {
 							public void run() {

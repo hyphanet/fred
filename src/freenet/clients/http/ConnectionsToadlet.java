@@ -832,10 +832,6 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		return L10n.getString("DarknetConnectionsToadlet."+string);
 	}
 	
-	private static String l10nStats(String string) {
-		return L10n.getString("StatisticsToadlet."+string);
-	}
-
 	private String sortString(boolean isReversed, String type) {
 		return (isReversed ? ("?sortBy="+type) : ("?sortBy="+type+"&reversed"));
 	}

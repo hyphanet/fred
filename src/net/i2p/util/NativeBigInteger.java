@@ -420,7 +420,7 @@ public class NativeBigInteger extends BigInteger {
 			if(tryLoadResource(temp, resource))
 				return true;
 		} catch(Exception fnf) {
-			Logger.error(NativeBigInteger.class, "Error reading jbigi resource");
+			Logger.error(NativeBigInteger.class, "Error reading jbigi resource", fnf);
 			System.err.println("Error reading jbigi resource");
 		} catch(UnsatisfiedLinkError ule) {
 			Logger.error(NativeBigInteger.class, "Library " + resourceName + " is not appropriate for this system.");

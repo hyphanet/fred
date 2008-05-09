@@ -61,12 +61,22 @@ public class SeedServerPeerNode extends PeerNode {
 
 	protected void sendInitialMessages() {
 		super.sendInitialMessages();
-		OpennetManager om = node.getOpennet();
+		final OpennetManager om = node.getOpennet();
 		if(om == null) {
 			Logger.normal(this, "Opennet turned off while connecting to seednodes");
 			node.peers.disconnect(this, true, true);
 		} else {
-			om.announcer.maybeSendAnnouncement();
+			// Wait 5 seconds. Another node may connect first, we don't want all the
+			// announcements to go to the node which we connect to most quickly.
+			node.getTicker().queueTimedJob(new Runnable() {
+				public void run() {
+					try {
+						om.announcer.maybeSendAnnouncement();
+					} catch (Throwable t) {
+						Logger.error(this, "Caught "+t, t);
+					}
+				}
+			}, 5*1000);
 		}
 	}
 

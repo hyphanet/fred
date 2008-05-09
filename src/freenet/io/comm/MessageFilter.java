@@ -37,7 +37,7 @@ public final class MessageFilter {
     private PeerContext _droppedConnection;
 	private MessageType _type;
     private HashMap _fields = new HashMap();
-    private Vector _fieldList = new Vector(1,1);
+    private List _fieldList = new LinkedList();
     private PeerContext _source;
     private long _timeout;
     /** If true, timeouts are relative to the start of waiting, if false, they are relative to
@@ -177,8 +177,9 @@ public final class MessageFilter {
 			return false;
 		}
 		synchronized (_fields) {
-			for (int i = 0; i < _fieldList.size(); i++) {
-				String fieldName = (String) _fieldList.get(i);
+			ListIterator it = _fieldList.listIterator();
+			while (it.hasNext()) {
+				String fieldName = (String) it.next();
 				if (!m.isSet(fieldName)) {
 					return false;
 				}

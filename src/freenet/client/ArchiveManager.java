@@ -39,8 +39,8 @@ public class ArchiveManager {
 	public static final String METADATA_NAME = ".metadata";
 	private static boolean logMINOR;
 	
-	final RandomSource random;
-	final Random weakRandom;
+	final RandomSource strongPRNG;
+	final Random weakPRNG;
 	final long maxArchiveSize;
 	final long maxArchivedFileSize;
 	
@@ -72,7 +72,8 @@ public class ArchiveManager {
 	 * file extracted from an archive. It is stored, encrypted and padded, in a single
 	 * file.
 	 * @param cacheDir The directory in which to store cached data.
-	 * @param random A random source for the encryption keys used by stored files.
+	 * @param random A cryptographicaly secure random source
+	 * @param weakRandom A weak and cheap random source
 	 */
 	public ArchiveManager(int maxHandlers, long maxCachedData, long maxArchiveSize, long maxArchivedFileSize, int maxCachedElements, RandomSource random, Random weakRandom, FilenameGenerator filenameGenerator) {
 		maxArchiveHandlers = maxHandlers;
@@ -82,8 +83,8 @@ public class ArchiveManager {
 		storedData = new LRUHashtable();
 		this.maxArchiveSize = maxArchiveSize;
 		this.maxArchivedFileSize = maxArchivedFileSize;
-		this.random = random;
-		this.weakRandom = weakRandom;
+		this.strongPRNG = random;
+		this.weakPRNG = weakRandom;
 		this.filenameGenerator = filenameGenerator;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
@@ -475,8 +476,8 @@ outer:		while(true) {
 		TempFileBucket fb = new TempFileBucket(id, filenameGenerator);
 		
 		byte[] cipherKey = new byte[32];
-		random.nextBytes(cipherKey);
-		PaddedEphemerallyEncryptedBucket encryptedBucket = new PaddedEphemerallyEncryptedBucket(fb, 1024, weakRandom);
+		strongPRNG.nextBytes(cipherKey);
+		PaddedEphemerallyEncryptedBucket encryptedBucket = new PaddedEphemerallyEncryptedBucket(fb, 1024, strongPRNG, weakPRNG);
 		return new TempStoreElement(myFile, fb, encryptedBucket);
 	}
 
