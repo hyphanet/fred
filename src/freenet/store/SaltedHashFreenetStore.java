@@ -588,6 +588,21 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 	}
 
+	/**
+	 * Change on disk store file size
+	 * 
+	 * @param storeFileSize
+	 */
+	private void setStoreFileSize(long storeFileSize) {
+		for (int i = 0; i < FILE_SPLIT; i++) {
+			try {
+				storeRAF[i].setLength(entryTotalLength * (storeFileSize / FILE_SPLIT + 1));
+			} catch (IOException e) {
+				Logger.error(this, "error resizing store file", e);
+			}
+		}
+	}
+	
 	// ------------- Configuration
 	/**
 	 * Configuration File
@@ -1204,18 +1219,4 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		return storeSize;
 	}
 
-	/**
-	 * Change on disk store file size
-	 * 
-	 * @param storeFileSize
-	 */
-	private void setStoreFileSize(long storeFileSize) {
-		for (int i = 0; i < FILE_SPLIT; i++) {
-			try {
-				storeRAF[i].setLength(entryTotalLength * (storeFileSize / FILE_SPLIT + 1));
-			} catch (IOException e) {
-				Logger.error(this, "error resizing store file", e);
-			}
-		}
-	}
 }
