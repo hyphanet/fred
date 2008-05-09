@@ -28,9 +28,6 @@ import freenet.support.Logger;
 import freenet.support.io.FileUtil;
 import freenet.support.math.RunningAverage;
 import freenet.support.math.SimpleRunningAverage;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * Index-less data store based on salted hash
@@ -602,7 +599,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			}
 		}
 	}
-	
+
 	// ------------- Configuration
 	/**
 	 * Configuration File
@@ -707,13 +704,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 
 		/**
-		 * Maximum memory to be used on resize
-		 */
-		private static final int RESIZE_MEMORY = 2 * 1024 * 1024; // 2MiB
-		/**
 		 * Phase 1 Rounds
 		 */
-		private static final int RESIZE_PHASE1_ROUND = 12;
+		private static final int RESIZE_PHASE1_ROUND = 8;
 		/**
 		 * Maximum resize round
 		 */
@@ -788,9 +781,17 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			resolvedEntries = 0;
 			droppedEntries = 0;
 
-			List oldItems = null;
+			File oldItemFile = null;
+			RandomAccessFile oldItemsRAF = null;
+			FileChannel oldItemsFC = null;
 			if (queueItem) {
-				oldItems = new ArrayList();
+				try {
+					oldItemFile = new File(baseDir, name + ".oldItems");
+					oldItemsRAF = new RandomAccessFile(oldItemFile, "rw");
+					oldItemsRAF.seek(oldItemsRAF.length());
+					oldItemsFC = oldItemsRAF.getChannel();
+				} catch (IOException e) {
+				}
 			}
 
 			long maxOffset = maxOldItemOffset;
@@ -852,16 +853,18 @@ public class SaltedHashFreenetStore implements FreenetStore {
 								resolvedEntries++;
 							} else if (queueItem) {
 								// break tie by moveing old item to queue
-								if (oldItems.size() * entryTotalLength < RESIZE_MEMORY) {
-									oldItems.add(newOffsetEntry);
-									if (newOffset > offset) {
-										oldEntries++; // newOffset wasn't counted count it
-									}
-
-									writeEntry(entry);
-									freeOffset(offset);
-									resolvedEntries++;
+								if (logDEBUG)
+									Logger.debug(this, "Write item "
+									        + HexUtil.bytesToHex(newOffsetEntry.digestedRoutingKey)
+									        + " to old item file");
+								writeOldItem(oldItemsFC, newOffsetEntry);
+								if (newOffset > offset) {
+									oldEntries++; // newOffset wasn't counted count it
 								}
+
+								writeEntry(entry);
+								freeOffset(offset);
+								resolvedEntries++;
 							}
 						} finally {
 							unlockEntry(newOffset);
@@ -875,25 +878,38 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			}
 
 			if (queueItem) {
-				putBackOldItems(oldItems);
+				try {
+					oldItemsRAF.seek(0);
+					putBackOldItems(oldItemsFC);
+				} catch (IOException e) {
+				} finally {
+					try {
+						oldItemsRAF.close();
+						oldItemFile.delete();
+					} catch (IOException e2) {
+					}
+				}
 			}
 		}
 
 		/**
 		 * Put back oldItems with best effort
+		 * 
+		 * @throws IOException
 		 */
-		private void putBackOldItems(List oldItems) {
-			Iterator it = oldItems.iterator();
-			while (it.hasNext()) {
-				boolean done = false;
+		private void putBackOldItems(FileChannel oldItems) throws IOException {
+			while (true) {
+				Entry entry = readOldItem(oldItems);
+				if (entry == null)
+					break;
 
-				Entry entry = (Entry) it.next();
 				entry.setStoreSize(storeSize);
 
 				long newOffset = entry.getOffset();
 
 				if (!lockEntry(newOffset)) // lock
 					continue;
+				boolean done = false;
 				try {
 					if (isFree(newOffset)) {
 						if (logDEBUG)
@@ -908,7 +924,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					Logger.debug(this, "IOExcception on putBackOldItems", e);
 				} finally {
 					unlockEntry(newOffset);
-					it.remove();
 
 					if (done)
 						resolvedEntries++;
@@ -916,7 +931,21 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						droppedEntries++;
 				}
 			}
-			oldItems.clear();
+		}
+
+		private void writeOldItem(FileChannel fc, Entry e) throws IOException {
+			ByteBuffer bf = e.toByteBuffer();
+			do {
+				fc.write(bf);
+			} while (bf.hasRemaining());
+		}
+
+		private Entry readOldItem(FileChannel fc) throws IOException {
+			ByteBuffer bf = ByteBuffer.allocate((int) entryTotalLength);
+			do {
+				fc.read(bf);
+			} while (bf.hasRemaining());
+			return new Entry(bf);
 		}
 
 		/**
