@@ -566,7 +566,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		int split = (int) (offset % FILE_SPLIT);
 		long rawOffset = (offset / FILE_SPLIT) * entryTotalLength;
 
-		ByteBuffer bf = ByteBuffer.allocate((int) ENTRY_HEADER_LENGTH);
+		ByteBuffer bf = ByteBuffer.allocate(0x30 + 0x08);
 
 		do {
 			int status = storeFC[split].read(bf, rawOffset + bf.position());
