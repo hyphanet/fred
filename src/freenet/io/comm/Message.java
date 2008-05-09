@@ -19,10 +19,18 @@
 
 package freenet.io.comm;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.util.*;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Vector;
 
+import freenet.support.ByteBufferInputStream;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.Serializer;
@@ -46,17 +54,16 @@ public class Message {
 	final int _receivedByteCount;
 
 	public static Message decodeMessageFromPacket(byte[] buf, int offset, int length, PeerContext peer, int overhead) {
-		DataInputStream dis
-	    = new DataInputStream(new ByteArrayInputStream(buf,
-	        offset, length));
-		return decodeMessage(dis, peer, length + overhead, true, false);
+		ByteBufferInputStream bb = new ByteBufferInputStream(buf, offset, length);
+		return decodeMessage(bb, peer, length + overhead, true, false);
 	}
 	
-	public static Message decodeMessage(DataInputStream dis, PeerContext peer, int recvByteCount, boolean mayHaveSubMessages, boolean inSubMessage) {
+	private static Message decodeMessage(ByteBufferInputStream bb, PeerContext peer, int recvByteCount,
+	        boolean mayHaveSubMessages, boolean inSubMessage) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, Message.class);
 		MessageType mspec;
         try {
-            mspec = MessageType.getSpec(new Integer(dis.readInt()));
+            mspec = MessageType.getSpec(new Integer(bb.readInt()));
         } catch (IOException e1) {
         	if(Logger.shouldLog(Logger.DEBUG, Message.class))
         		Logger.minor(Message.class,"Failed to read message type: "+e1, e1);
@@ -73,25 +80,27 @@ public class Message {
 		        String name = (String) i.next();
 		        Class type = (Class) mspec.getFields().get(name);
 		        if (type.equals(LinkedList.class)) { // Special handling for LinkedList to deal with element type
-		            m.set(name, Serializer.readListFromDataInputStream((Class) mspec.getLinkedListTypes().get(name), dis));
+		            m.set(name, Serializer
+					        .readListFromDataInputStream((Class) mspec.getLinkedListTypes().get(name), bb));
 		        } else {
-		            m.set(name, Serializer.readFromDataInputStream(type, dis));
+		            m.set(name, Serializer.readFromDataInputStream(type, bb));
 		        }
-		    }
-		    if(mayHaveSubMessages) {
-		    	while(true) {
-		    		DataInputStream dis2;
+			}
+			if (mayHaveSubMessages) {
+		    	while (bb.remaining() > 2) { // sizeof(unsigned short) == 2
+		    		ByteBufferInputStream bb2;
 		    		try {
-			    		int size = dis.readUnsignedShort();
-			    		byte[] buf = new byte[size];
-		    			dis.readFully(buf);
-			    		dis2 = new DataInputStream(new ByteArrayInputStream(buf));
+		    			int size = bb.readUnsignedShort();
+						if (bb.remaining() < size)
+							return m;
+
+						bb2 = bb.slice(size);
 		    		} catch (EOFException e) {
 		    			if(logMINOR) Logger.minor(Message.class, "No submessages, returning: "+m);
 		    			return m;
 		    		}
 		    		try {
-		    			Message subMessage = decodeMessage(dis2, peer, 0, false, true);
+		    			Message subMessage = decodeMessage(bb2, peer, 0, false, true);
 		    			if(subMessage == null) return m;
 		    			if(logMINOR) Logger.minor(Message.class, "Adding submessage: "+subMessage);
 		    			m.addSubMessage(subMessage);

@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
 package freenet.support;
 
-import java.io.DataInputStream;
+import java.io.DataInput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
@@ -44,7 +44,7 @@ public class Serializer {
     public static final String VERSION = "$Id: Serializer.java,v 1.5 2005/09/15 18:16:04 amphibian Exp $";
 	public static final int MAX_BITARRAY_SIZE = 2048*8;
 
-	public static List readListFromDataInputStream(Class elementType, DataInputStream dis) throws IOException {
+	public static List readListFromDataInputStream(Class elementType, DataInput dis) throws IOException {
 		LinkedList ret = new LinkedList();
 		int length = dis.readInt();
 		for (int x = 0; x < length; x++) {
@@ -53,18 +53,16 @@ public class Serializer {
 		return ret;
 	}
 
-	public static Object readFromDataInputStream(Class type, DataInputStream dis) throws IOException {
+	public static Object readFromDataInputStream(Class type, DataInput dis) throws IOException {
 		if (type.equals(Boolean.class)) {
-			int bool=dis.read();
+			int bool = dis.readByte();
 			if (bool==1)
 				return Boolean.TRUE;
 			if (bool==0)
 				return Boolean.FALSE;
 			throw new IOException("Boolean is non boolean value: "+bool);
 		} else if (type.equals(Byte.class)) {
-			int b=dis.read();
-			if (b<0)
-				throw new IOException();
+			int b = dis.readByte();
 			return new Byte((byte)b);
 		} else if (type.equals(Short.class)) {
 			return new Short(dis.readShort());

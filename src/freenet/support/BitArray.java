@@ -19,7 +19,9 @@
 
 package freenet.support;
 
-import java.io.*;
+import java.io.DataInput;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 import freenet.io.WritableToDataOutputStream;
 
@@ -33,13 +35,13 @@ public class BitArray implements WritableToDataOutputStream {
 	/**
 	 * This constructor does not check for unacceptable sizes, and should only be used on trusted data.
 	 */
-	public BitArray(DataInputStream dis) throws IOException {
+	public BitArray(DataInput dis) throws IOException {
 		_size = dis.readInt();
 		_bits = new byte[(_size / 8) + (_size % 8 == 0 ? 0 : 1)];
 		dis.readFully(_bits);
 	}
 	
-	public BitArray(DataInputStream dis, int maxSize) throws IOException {
+	public BitArray(DataInput dis, int maxSize) throws IOException {
 		_size = dis.readInt();
 		if (_size<=0 || _size>maxSize)
 			throw new IOException("Unacceptable bitarray size: "+_size);
