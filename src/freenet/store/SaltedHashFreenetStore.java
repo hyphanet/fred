@@ -246,7 +246,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			flag = ENTRY_FLAG_OCCUPIED;
 			storeSize = SaltedHashFreenetStore.this.storeSize;
 
-			// header/data will be overwritten in flip(),
+			// header/data will be overwritten in encrypt()/decrypt(),
 			// let's make a copy here
 			this.header = new byte[headerBlockLength];
 			System.arraycopy(header, 0, this.header, 0, headerBlockLength);
