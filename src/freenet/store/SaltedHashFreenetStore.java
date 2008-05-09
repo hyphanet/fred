@@ -224,7 +224,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 */
 	private class Entry {
 		private byte[] plainRoutingKey;
-		private byte[] encryptedRoutingKey;
+		private byte[] digestedRoutingKey;
 		private byte[] dataEncryptIV;
 		private long flag;
 		private long storeSize;
@@ -263,8 +263,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		public Entry(ByteBuffer in) {
 			assert in.remaining() == entryTotalLength;
 
-			encryptedRoutingKey = new byte[0x20];
-			in.get(encryptedRoutingKey);
+			digestedRoutingKey = new byte[0x20];
+			in.get(digestedRoutingKey);
 
 			dataEncryptIV = new byte[0x10];
 			in.get(dataEncryptIV);
@@ -294,13 +294,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		public ByteBuffer toByteBuffer() {
 			ByteBuffer out = ByteBuffer.allocate((int) entryTotalLength);
 			encrypt();
-			out.put(encryptedRoutingKey);
+			out.put(digestedRoutingKey);
 			out.put(dataEncryptIV);
 
 			out.putLong(flag);
 			out.putLong(storeSize);
 
-			if ((flag & ENTRY_FLAG_PLAINKEY) != 0) {
+			if (OPTION_SAVE_PLAINKEY) {
 				out.put(plainRoutingKey);
 			}
 			
@@ -335,8 +335,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 
 		public long getOffset() {
-			if (isEncrypted)
-				return getOffsetFromDigestedKey(encryptedRoutingKey, storeSize);
+			if (digestedRoutingKey != null)
+				return getOffsetFromDigestedKey(digestedRoutingKey, storeSize);
 			else
 				return getOffsetFromPlainKey(plainRoutingKey, storeSize);
 		}
@@ -356,10 +356,17 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				else
 					return false;
 			}
-
-			// Does the digested routing key match?
-			if (!Arrays.equals(this.encryptedRoutingKey, getDigestedRoutingKey(routingKey)))
-				return false;
+			
+			if (plainRoutingKey != null) {
+				// we knew the key
+				if (!Arrays.equals(this.plainRoutingKey, routingKey)) {
+					return false;
+				}
+			} else {
+				// we do not know the plain key, let's check the digest
+				if (!Arrays.equals(this.digestedRoutingKey, getDigestedRoutingKey(routingKey)))
+					return false;
+			}
 
 			this.plainRoutingKey = routingKey;
 
@@ -386,7 +393,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			header = cipher.blockEncipher(header, 0, header.length);
 			data = cipher.blockEncipher(data, 0, data.length);
 
-			encryptedRoutingKey = getDigestedRoutingKey(plainRoutingKey);
+			digestedRoutingKey = getDigestedRoutingKey(plainRoutingKey);
 			isEncrypted = true;
 		}
 
