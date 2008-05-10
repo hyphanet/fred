@@ -945,6 +945,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			do {
 				fc.read(bf);
 			} while (bf.hasRemaining());
+			bf.flip();
 			return new Entry(bf);
 		}
 
