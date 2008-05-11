@@ -343,7 +343,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		public ByteBuffer toByteBuffer() {
 			ByteBuffer out = ByteBuffer.allocate((int) entryTotalLength);
 			encrypt();
-			out.put(digestedRoutingKey);
+			out.put(getDigestedRoutingKey());
 			out.put(dataEncryptIV);
 
 			out.putLong(flag);
@@ -472,10 +472,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 
 		public byte[] getDigestedRoutingKey() {
-			if (digestedRoutingKey != null)
-				return digestedRoutingKey;
-			else
-				return SaltedHashFreenetStore.this.getDigestedRoutingKey(this.plainRoutingKey);
+			if (digestedRoutingKey == null)
+				digestedRoutingKey = SaltedHashFreenetStore.this.getDigestedRoutingKey(this.plainRoutingKey);
+			return digestedRoutingKey;
 		}
 	}
 
