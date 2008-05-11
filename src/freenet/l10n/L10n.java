@@ -36,7 +36,7 @@ public class L10n {
 	
 	public static final String FALLBACK_DEFAULT = "en";
 	public static final String[] AVAILABLE_LANGUAGES = { "en", "es", "da", "de", "fi", "fr", "it", "no", "pl", "se",
-	        "zh", "unlisted" };
+	        "zh-cn", "zh-tw", "unlisted" };
 	private final String selectedLanguage;
 	
 	private static SimpleFieldSet currentTranslation = null;
