@@ -1110,6 +1110,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			prevStoreSize = storeSize;
 			storeSize = newStoreSize;
+			writeConfigFile();
 			cleanerLock.notifyAll();
 
 			if (shrinkNow) {
