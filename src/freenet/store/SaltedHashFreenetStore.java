@@ -126,22 +126,29 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	private Entry probeEntry0(byte[] routingKey, long probeStoreSize) throws IOException {
 		Entry entry;
-		long offset = getOffsetFromPlainKey(routingKey, probeStoreSize);
+		long[] offset = getOffsetFromPlainKey(routingKey, probeStoreSize);
 
-		if (!lockEntry(offset)) {
-			Logger.error(this, "can't lock entry: " + offset);
-			return null;
+		for (int i = 0; i < offset.length; i++) {
+			if (logDEBUG)
+				Logger.debug(this, "probing for i=" + i + ", offset=" + offset[i]);
+			
+			if (!lockEntry(offset[i])) {
+				Logger.error(this, "can't lock entry: " + offset[i]);
+				continue;
+			}
+			try {
+				entry = readEntry(offset[i], routingKey);
+			} catch (EOFException e) {
+				// may occur on resize, silent it a bit
+				Logger.error(this, "EOFException on probeEntry", e);
+				return null;
+			} finally {
+				unlockEntry(offset[i]);
+			}
+			if (entry != null)
+				return entry;
 		}
-		try {
-			entry = readEntry(offset, routingKey);
-		} catch (EOFException e) {
-			// may occur on resize, silent it a bit
-			Logger.error(this, "EOFException on probeEntry", e);
-			return null;
-		} finally {
-			unlockEntry(offset);
-		}
-		return entry;
+		return null;
 	}
 
 	public void put(StorableBlock block, byte[] routingKey, byte[] fullKey, byte[] data, byte[] header,
@@ -163,16 +170,39 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 
 		Entry entry = new Entry(routingKey, header, data);
-		if (!lockEntry(entry.getOffset())) {
+		long[] offset = entry.getOffset();
+
+		for (int i = 0; i < offset.length; i++) {
+			if (!lockEntry(offset[i])) {
+				Logger.error(this, "can't lock entry: " + offset[i]);
+				return;
+			}
+			try {
+				if (isFree(offset[i], entry)) {
+					if (logDEBUG)
+						Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
+					writeEntry(entry, offset[i]);
+					incWrites();
+					return;
+				}
+			} finally {
+				unlockEntry(offset[i]);
+			}
+		}
+
+		// no free blocks?
+		int i = random.nextInt(offset.length);
+		if (!lockEntry(offset[i])) {
 			Logger.error(this, "can't lock entry: " + entry.getOffset());
-			incMisses();
 			return;
 		}
 		try {
-			writeEntry(entry);
+			if (logDEBUG)
+				Logger.debug(this, "collision, write to i=" + i + ", offset=" + offset[i]);
+			writeEntry(entry, offset[i]);
 			incWrites();
 		} finally {
-			unlockEntry(entry.getOffset());
+			unlockEntry(offset[i]);
 		}
 	}
 
@@ -235,6 +265,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		private byte[] data;
 
 		private boolean isEncrypted;
+		public long curOffset;
 
 		/**
 		 * Create a new entry
@@ -352,7 +383,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			return block;
 		}
 
-		public long getOffset() {
+		public long[] getOffset() {
 			if (digestedRoutingKey != null)
 				return getOffsetFromDigestedKey(digestedRoutingKey, storeSize);
 			else
@@ -382,7 +413,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				}
 			} else {
 				// we do not know the plain key, let's check the digest
-				if (!Arrays.equals(this.digestedRoutingKey, getDigestedRoutingKey(routingKey)))
+				if (!Arrays.equals(this.digestedRoutingKey, SaltedHashFreenetStore.this
+				        .getDigestedRoutingKey(routingKey)))
 					return false;
 			}
 
@@ -411,7 +443,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			header = cipher.blockEncipher(header, 0, header.length);
 			data = cipher.blockEncipher(data, 0, data.length);
 
-			digestedRoutingKey = getDigestedRoutingKey(plainRoutingKey);
+			getDigestedRoutingKey();
 			isEncrypted = true;
 		}
 
@@ -437,6 +469,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		public boolean isFree() {
 			return (flag & ENTRY_FLAG_OCCUPIED) == 0;
+		}
+
+		public byte[] getDigestedRoutingKey() {
+			if (digestedRoutingKey != null)
+				return digestedRoutingKey;
+			else
+				return SaltedHashFreenetStore.this.getDigestedRoutingKey(this.plainRoutingKey);
 		}
 	}
 
@@ -504,6 +543,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				return null;
 		}
 
+		entry.curOffset = offset;
 		return entry;
 	}
 
@@ -516,16 +556,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * <li>update the entry with latest store size</li>
 	 * </ul>
 	 */
-	private void writeEntry(Entry entry) throws IOException {
+	private void writeEntry(Entry entry, long offset) throws IOException {
 		entry.encrypt();
 
-		long offset = entry.getOffset();
 		int split = (int) (offset % FILE_SPLIT);
 		long rawOffset = (offset / FILE_SPLIT) * entryTotalLength;
-
-		if (logMINOR && !isFree(offset)) {
-			Logger.minor(this, "collision, overwritting an entry");
-		}
 
 		ByteBuffer bf = entry.toByteBuffer();
 		do {
@@ -554,16 +589,18 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	/**
-	 * Check if a block is free
+	 * Check if a block is free or occupied by a specific routing key
 	 * 
 	 * @param offset
+	 * @param entry
+	 *            entry, maybe <code>null</code>
 	 * @throws IOException
 	 */
-	private boolean isFree(long offset) throws IOException {
+	private boolean isFree(long offset, Entry entry) throws IOException {
 		int split = (int) (offset % FILE_SPLIT);
 		long rawOffset = (offset / FILE_SPLIT) * entryTotalLength;
 
-		ByteBuffer bf = ByteBuffer.allocate(0x30 + 0x08);
+		ByteBuffer bf = ByteBuffer.allocate((int) ENTRY_HEADER_LENGTH);
 
 		do {
 			int status = storeFC[split].read(bf, rawOffset + bf.position());
@@ -571,7 +608,17 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				throw new EOFException();
 		} while (bf.hasRemaining());
 
-		return (bf.getLong(0x30) & ENTRY_FLAG_OCCUPIED) == 0;
+		if ((bf.getLong(0x30) & ENTRY_FLAG_OCCUPIED) == 0) {
+			// free
+			return true;
+		} else if (entry != null) {
+			// check digested key
+			byte[] digestedRoutingKey = new byte[0x20];
+			bf.position(0);
+			bf.get(digestedRoutingKey);
+			return Arrays.equals(digestedRoutingKey, entry.getDigestedRoutingKey());
+		}
+		return false;
 	}
 
 	private void flushAndClose() {
@@ -689,7 +736,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			while (!shutdown) {
 				synchronized (cleanerLock) {
 					if (prevStoreSize != 0)
-						resizeStore();
+						; //resizeStore();
 					else
 						estimateStoreSize();
 
@@ -728,9 +775,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		 */
 		private int resizeRound;
 
-		/**
+		/*-
+		 * 
+		 *
 		 * Move old entries to new location and resize store
-		 */
+		 *
 		private void resizeStore() {
 			++resizeRound;
 			Logger.normal(this, "Starting datastore resize (round " + resizeRound + ")");
@@ -773,7 +822,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		/**
 		 * Scan all entries and try to move them
-		 */
+		 *
 		private void moveOldEntry0(boolean queueItem) {
 			newEntries = 0;
 			oldEntries = 0;
@@ -827,7 +876,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						long newOffset = entry.getOffset();
 
 						if (newOffset == offset) { // lucky! 
-							writeEntry(entry); // write back entry storeSize
+							lockAndWrite(entry); // write back entry storeSize
 							resolvedEntries++;
 							continue;
 						}
@@ -840,7 +889,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 							if (newOffsetEntry.isFree()) {
 								// the new offset is freeeeeeee..
-								writeEntry(entry);
+								lockAndWrite(entry);
 								freeOffset(offset);
 								resolvedEntries++;
 							} else if (newOffsetEntry.getStoreSize() == storeSize) {
@@ -862,7 +911,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 									oldEntries++; // newOffset wasn't counted count it
 								}
 
-								writeEntry(entry);
+								lockAndWrite(entry);
 								freeOffset(offset);
 								resolvedEntries++;
 							}
@@ -896,7 +945,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		 * Put back oldItems with best effort
 		 * 
 		 * @throws IOException
-		 */
+		 *
 		private void putBackOldItems(FileChannel oldItems) throws IOException {
 			while (true) {
 				Entry entry = readOldItem(oldItems);
@@ -914,7 +963,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					if (isFree(newOffset)) {
 						if (logDEBUG)
 							Logger.debug(this, "Put back old item: " + HexUtil.bytesToHex(entry.digestedRoutingKey));
-						writeEntry(entry);
+						lockAndWrite(entry);
 						done = true;
 					} else {
 						if (logDEBUG)
@@ -948,6 +997,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			bf.flip();
 			return new Entry(bf);
 		}
+		*/
 
 		/**
 		 * Samples to take on key count estimation
@@ -972,7 +1022,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			long occupied = 0;
 			while (sampled < numSample) {
 				try {
-					if (!isFree(samplePos)) {
+					if (!isFree(samplePos, null)) {
 						occupied++;
 					}
 					sampled++;
@@ -1173,7 +1223,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * @param storeSize
 	 * @return
 	 */
-	public long getOffsetFromPlainKey(byte[] plainKey, long storeSize) {
+	public long[] getOffsetFromPlainKey(byte[] plainKey, long storeSize) {
 		return getOffsetFromDigestedKey(getDigestedRoutingKey(plainKey), storeSize);
 	}
 
@@ -1184,16 +1234,25 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * @param storeSize
 	 * @return
 	 */
-	public long getOffsetFromDigestedKey(byte[] digestedKey, long storeSize) {
-		long keyValue = (((long) (digestedKey[0]) << 0) + //
-		        (((long) digestedKey[1]) << 8) + //
-		        (((long) digestedKey[3]) << 16) + //
-		        (((long) digestedKey[4]) << 24) + //
-		        (((long) digestedKey[5]) << 32) + //
-		        (((long) digestedKey[6]) << 40) + //
-		        (((long) digestedKey[7]) << 48))
-		        & Long.MAX_VALUE;
-		return keyValue % storeSize;
+	public long[] getOffsetFromDigestedKey(byte[] digestedKey, long storeSize) {
+		long keyValue = keyToLong(digestedKey);
+		// h + 141 i^2 + 13 i
+		return new long[] {//
+		((keyValue + 141 * (0 * 0) + 13 * 0) & Long.MAX_VALUE) % storeSize, // i = 0
+		        ((keyValue + 141 * (1 * 1) + 13 * 1) & Long.MAX_VALUE) % storeSize, // i = 1
+		        ((keyValue + 141 * (2 * 2) + 13 * 2) & Long.MAX_VALUE) % storeSize, // i = 2
+		        ((keyValue + 141 * (3 * 3) + 13 * 3) & Long.MAX_VALUE) % storeSize, // i = 3
+		};
+	}
+
+	private long keyToLong(byte[] key) {
+		return (((long) (key[0]) << 0) + //
+		        (((long) key[1]) << 8) + //
+		        (((long) key[3]) << 16) + //
+		        (((long) key[4]) << 24) + //
+		        (((long) key[5]) << 32) + //
+		        (((long) key[6]) << 40) + //
+		(((long) key[7]) << 48));
 	}
 
 	// ------------- Statistics (a.k.a. lies)
