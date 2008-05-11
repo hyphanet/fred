@@ -156,16 +156,22 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		if (logMINOR)
 			Logger.minor(this, "Putting " + HexUtil.bytesToHex(routingKey) + " for " + callback);
 
-		StorableBlock oldBlock = fetch(routingKey, fullKey, false);
+		// don't use fetch(), as fetch() would do a miss++/hit++
+		Entry oldEntry = probeEntry(routingKey);
 
-		if (oldBlock != null) {
-			if (!collisionPossible)
-				return;
-			if (block.equals(oldBlock)) {
-				return; // already in store
-			} else {
-				if (!overwrite)
-					throw new KeyCollisionException();
+		if (oldEntry != null) {
+			try {
+				StorableBlock oldBlock = oldEntry.getStorableBlock(routingKey, fullKey);
+				if (!collisionPossible)
+					return;
+				if (block.equals(oldBlock)) {
+					return; // already in store
+				} else {
+					if (!overwrite)
+						throw new KeyCollisionException();
+				}
+			} catch (KeyVerifyException e) {
+				// ignore
 			}
 		}
 
