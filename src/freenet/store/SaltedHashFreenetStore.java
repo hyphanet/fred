@@ -37,6 +37,7 @@ import freenet.support.math.SimpleRunningAverage;
 public class SaltedHashFreenetStore implements FreenetStore {
 	private static final boolean OPTION_SAVE_PLAINKEY = true;
 
+	private static final boolean logLOCK = false;
 	private static boolean logMINOR;
 	private static boolean logDEBUG;
 
@@ -1091,7 +1092,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * then one lock at a time (or deadlock may occur).
 	 */
 	private boolean lockEntry(long offset) {
-		if (logDEBUG)
+		if (logDEBUG && logLOCK)
 			Logger.debug(this, "try locking " + offset, new Exception());
 
 		Long lxr = new Long(offset);
@@ -1112,7 +1113,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			return false;
 		}
 
-		if (logDEBUG)
+		if (logDEBUG && logLOCK)
 			Logger.debug(this, "locked " + offset, new Exception());
 		return true;
 	}
@@ -1121,7 +1122,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * Unlock the entry
 	 */
 	private void unlockEntry(long offset) {
-		if (logDEBUG)
+		if (logDEBUG && logLOCK)
 			Logger.debug(this, "unlocking " + offset);
 		Long lxr = new Long(offset);
 
