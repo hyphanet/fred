@@ -1007,9 +1007,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 							writeEntry(entry, newOffset[i]);
 							resolvedEntries++;
 							continue LOOP_ITEMS;
-						} else {
-							if (logDEBUG)
-								Logger.debug(this, "Drop old item: " + HexUtil.bytesToHex(entry.digestedRoutingKey));
 						}
 					} catch (IOException e) {
 						Logger.debug(this, "IOExcception on putBackOldItems", e);
@@ -1017,6 +1014,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						unlockEntry(newOffset[i]);
 					}
 				}
+
+				if (logDEBUG)
+					Logger.debug(this, "Drop old item: " + HexUtil.bytesToHex(entry.digestedRoutingKey));
 
 				droppedEntries++;
 			}
