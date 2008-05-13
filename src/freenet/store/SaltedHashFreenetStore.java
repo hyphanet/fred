@@ -1030,16 +1030,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 
 		private Entry readOldItem(FileChannel fc) throws IOException {
-			try {
-				ByteBuffer bf = ByteBuffer.allocate((int) entryTotalLength);
-				do {
-					fc.read(bf);
-				} while (bf.hasRemaining());
-				bf.flip();
-				return new Entry(bf);
-			} catch (EOFException e) {
-				return null;
-			}
+			ByteBuffer bf = ByteBuffer.allocate((int) entryTotalLength);
+			do {
+				int status = fc.read(bf);
+				if (status == -1)
+					return null;
+			} while (bf.hasRemaining());
+			bf.flip();
+			return new Entry(bf);
 		}
 
 		/**
