@@ -796,7 +796,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				maxOldItemOffset = prevStoreSize - 1;
 			}
 
-			moveOldEntry0(resizeRound > RESIZE_PHASE1_ROUND);
+			boolean needQueue = false;
+			if (resizeRound > RESIZE_PHASE1_ROUND) // too many rounds
+				needQueue = true;
+			if (resizeRound > 1 && droppedEntries == 0 && resolvedEntries == 0) // no progress
+				needQueue = true;
+			moveOldEntry0(needQueue);
 
 			if (logMINOR)
 				Logger.minor(this, "Finished resize round " + resizeRound + ": newEntries=" + newEntries
