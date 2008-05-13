@@ -4,7 +4,6 @@ import java.security.InvalidKeyException;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.UnsupportedCipherException;
-import freenet.support.HexUtil;
 import freenet.support.Logger;
 
 /*
@@ -20,14 +19,6 @@ import freenet.support.Logger;
 public class Rijndael implements BlockCipher {
 	private Object sessionKey;
 	private final int keysize, blocksize;
-
-	private Rijndael(Integer keysize) throws UnsupportedCipherException {
-		this(keysize.intValue());
-	}
-
-	private Rijndael(int keysize) throws UnsupportedCipherException {
-		this(keysize, 128);
-	}
 
 	/**
 	 * Create a Rijndael instance.
@@ -103,11 +94,3 @@ public class Rijndael implements BlockCipher {
 		Rijndael_Algorithm.blockDecrypt(block, result, 0, sessionKey, blocksize/8);
 	}
 }
-
-
-
-
-
-
-
-
