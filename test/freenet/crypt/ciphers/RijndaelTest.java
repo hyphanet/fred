@@ -69,7 +69,7 @@ public class RijndaelTest extends TestCase {
 			int size = SIZE[k];
 			Rijndael aes = new Rijndael(size, size);
 
-			byte[] key = new byte[size];
+			byte[] key = new byte[size / 8];
 			rand.nextBytes(key);
 			aes.initialize(key);
 
