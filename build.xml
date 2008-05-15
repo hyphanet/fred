@@ -113,6 +113,7 @@
 			<manifest>
 				<attribute name="Main-Class" value="freenet/node/Node"/>
 				<attribute name="Built-By" value="${user.name}"/>
+				<attribute name="Class-Path:" value="${freenet-ext.location} freenet-ext.jar"/>
 				<section name="common">
 					<attribute name="Specification-Title" value="Freenet"/>
 					<attribute name="Specification-Version" value="0.7pre"/>
