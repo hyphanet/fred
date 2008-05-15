@@ -1296,11 +1296,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private long keyToLong(byte[] key) {
 		return (((long) (key[0]) << 0) + //
 		        (((long) key[1]) << 8) + //
-		        (((long) key[3]) << 16) + //
-		        (((long) key[4]) << 24) + //
-		        (((long) key[5]) << 32) + //
-		        (((long) key[6]) << 40) + //
-		(((long) key[7]) << 48));
+		        (((long) key[2]) << 16) + //
+		        (((long) key[3]) << 24) + //
+		        (((long) key[4]) << 32) + //
+		        (((long) key[5]) << 40) + //
+				(((long) key[6]) << 48) + //
+				(((long) key[7]) << 56));
 	}
 
 	// ------------- Statistics (a.k.a. lies)
