@@ -295,25 +295,12 @@ public class USKFetcher implements ClientGetState {
 		LinkedList l = null;
 		final long lastEd = uskManager.lookup(origUSK);
 		long curLatest;
+		boolean decode = false;
 		synchronized(this) {
 			runningAttempts.remove(att);
 			curLatest = att.number;
 			if(completed || cancelled) return;
-			if(curLatest >= lastEd && !(dontUpdate && block == null)) {
-				try {
-					Bucket data = lastRequestData = block.decode(ctx.bucketFactory, 1025 /* it's an SSK */, true);
-					lastCompressionCodec = block.getCompressionCodec();
-					lastWasMetadata = block.isMetadata();
-					if(keepLastData)
-						lastRequestData = data;
-					else
-						data.free();
-				} catch (KeyDecodeException e) {
-					lastRequestData = null;
-				} catch (IOException e) {
-					lastRequestData = null;
-				}
-			}
+			decode = curLatest >= lastEd && !(dontUpdate && block == null);
 			curLatest = Math.max(lastEd, curLatest);
 			if(logMINOR) Logger.minor(this, "Latest: "+curLatest);
 			long addTo = curLatest + minFailures;
@@ -327,6 +314,26 @@ public class USKFetcher implements ClientGetState {
 				}
 			}
 			cancelBefore(curLatest);
+		}
+		Bucket data = null;
+		if(decode) {
+			try {
+				data = lastRequestData = block.decode(ctx.bucketFactory, 1025 /* it's an SSK */, true);
+			} catch (KeyDecodeException e) {
+				data = null;
+			} catch (IOException e) {
+				data = null;
+			}
+		}
+		synchronized(this) {
+			if(curLatest >= lastEd && !(dontUpdate && data == null)) {
+					lastCompressionCodec = block.getCompressionCodec();
+					lastWasMetadata = block.isMetadata();
+					if(keepLastData)
+						lastRequestData = data;
+					else
+						data.free();
+			}
 		}
 		if(!dontUpdate)
 			uskManager.update(origUSK, curLatest);
