@@ -45,7 +45,7 @@ BookmarkCategory1.Content.Bookmark0.hasAnActivelink=true
 BookmarkCategory1.Content.Bookmark0.URI=USK@yGvITGZzrY1vUZK-4AaYLgcjZ7ysRqNTMfdcO8gS-LY,-ab5bJVD3Lp-LXEQqBAhJpMKrKJ19RnNaZMIkusU79s,AQACAAE/toad/12/
 BookmarkCategory2.Name=Freenet related software and documentation
 BookmarkCategory2.Content.BookmarkCategory=0
-BookmarkCategory2.Content.Bookmark=5
+BookmarkCategory2.Content.Bookmark=6
 BookmarkCategory2.Content.Bookmark0.Name=Frost
 BookmarkCategory2.Content.Bookmark0.Description=The official freesite of Frost, a message board system for Freenet
 BookmarkCategory2.Content.Bookmark0.hasAnActivelink=true
@@ -66,4 +66,8 @@ BookmarkCategory2.Content.Bookmark4.URI=USK@8r-uSRcJPkAr-3v3YJR16OCx~lyV2XOKsiG4
 BookmarkCategory2.Content.Bookmark4.Name=Freesite HOWTO
 BookmarkCategory2.Content.Bookmark4.Description=A more detailed explanation of publishing freesites
 BookmarkCategory2.Content.Bookmark4.hasAnActivelink=true
+BookmarkCategory2.Content.Bookmark5.URI=USK@F-BKUq9vNTrvp7D90r5edQ4MfZCrx3pP7TofdDlCRoU,YFUeosm79Z3KZxC62qQCteCCUI3D-LYyRk6P9auVpPA,AQACAAE/freenetapps/15/
+BookmarkCategory2.Content.Bookmark5.hasAnActivelink=true
+BookmarkCategory2.Content.Bookmark5.Name=The Freenet Applications Freesite
+BookmarkCategory2.Content.Bookmark5.Description=Various links to Freenet applications, and instructions for using them
 End
