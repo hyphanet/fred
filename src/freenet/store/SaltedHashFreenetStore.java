@@ -681,6 +681,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			salt = new byte[0x10];
 			random.nextBytes(salt);
 
+			estimatedCount = new SimpleRunningAverage(3, 0);
+
 			writeConfigFile();
 		} else {
 			// try to load
