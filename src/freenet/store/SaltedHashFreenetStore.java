@@ -847,7 +847,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				try {
 					oldItemFile = new File(baseDir, name + ".oldItems");
 					oldItemsRAF = new RandomAccessFile(oldItemFile, "rw");
-					oldItemsRAF.seek(oldItemsRAF.length());
+					oldItemsRAF.seek((oldItemsRAF.length() / entryTotalLength) * entryTotalLength);
 					oldItemsFC = oldItemsRAF.getChannel();
 				} catch (IOException e) {
 				}
