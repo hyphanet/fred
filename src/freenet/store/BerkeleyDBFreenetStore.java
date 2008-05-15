@@ -1408,7 +1408,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				if(!overwrite)
 					throw new KeyCollisionException();
 				else
-					overwriteKeyUnchanged(block, routingkey, fullKey, data, header);
+					overwriteKeyUnchanged(routingkey, fullKey, data, header);
 			} // else return; // already in store
 		} else {
 			innerPut(block, routingkey, fullKey, data, header);
@@ -1418,7 +1418,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	/**
 	 * Overwrite a block with a new block which has the same key.
 	 */
-	private boolean overwriteKeyUnchanged(StorableBlock block, byte[] routingkey, byte[] fullKey, byte[] data, byte[] header) throws IOException {
+	private boolean overwriteKeyUnchanged(byte[] routingkey, byte[] fullKey, byte[] data, byte[] header) throws IOException {
 		synchronized(this) {
 			if(closed)
 				return false;
