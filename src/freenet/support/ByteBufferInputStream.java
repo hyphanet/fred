@@ -186,6 +186,9 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 	 */
 	public ByteBufferInputStream slice(int size) throws IOException {
 		try {
+			if (buf.remaining() < size)
+				throw new EOFException();
+
 			ByteBuffer bf2 = buf.slice();
 			bf2.limit(size);
 			
