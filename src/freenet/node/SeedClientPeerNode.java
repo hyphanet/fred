@@ -87,4 +87,14 @@ public class SeedClientPeerNode extends PeerNode {
 	void startARKFetcher() {
 		// Do not start an ARK fetcher.
 	}
+	
+	public boolean shouldDisconnectAndRemoveNow() {
+		if(!isConnected()) {
+			// SeedClientPeerNode's always start off unverified.
+			// If it doesn't manage to connect in 60 seconds, dump it.
+			if(System.currentTimeMillis() - lastReceivedPacketTime() > 60*1000)
+				return true;
+		}
+		return false;
+	}
 }
