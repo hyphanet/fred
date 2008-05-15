@@ -142,7 +142,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			} catch (EOFException e) {
 				// may occur on resize, silent it a bit
 				Logger.error(this, "EOFException on probeEntry", e);
-				return null;
+				continue;
 			} finally {
 				unlockEntry(offset[i]);
 			}
