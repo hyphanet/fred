@@ -987,11 +987,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 					System.err.println("File pointer is "+storeRAF.getFilePointer()+" but should be "+((headerBlockSize + dataBlockSize)));
 					System.exit(NodeInitException.EXIT_STORE_RECONSTRUCT);
 				}
-				// FIXME only do the read if we need the data, and if we do, do a seek first.
-				// Post 0.7.0; only a useful optimisation if we have a good .keys file, but should 
-				// save some I/O when we do.
 				storeRAF.readFully(header);
-				storeRAF.readFully(data);
+				boolean dataRead = false;
+				try {
 				if(lruRAFLength > (l+1)*8) {
 					try {
 						lruVal = lruRAF.readLong();
@@ -1030,6 +1028,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 							routingkey = newkey;
 						}
 					}
+					if (!dataRead) {
+						storeRAF.readFully(data);
+						dataRead = true;
+					}
 					if (routingkey == null && !isAllNull(header) && !isAllNull(data)) {
 						keyFromData = true;
 						try {
@@ -1061,6 +1063,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 						if(!keyFromData) {
 							byte[] oldRoutingkey = routingkey;
 							try {
+					if (!dataRead) {
+						storeRAF.readFully(data);
+						dataRead = true;
+					}
 								StorableBlock block = callback.construct(data, header, null, keyBuf);
 								routingkey = block.getRoutingKey();
 								if(Arrays.equals(oldRoutingkey, routingkey)) {
@@ -1114,6 +1120,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 					e.printStackTrace();
 				} finally {
 					if(t != null) t.abort();
+				}
+				} finally {
+					if (!dataRead) {
+						storeRAF.skipBytes(data.length);
+					}
 				}
 			}
 		} catch (EOFException e) {
