@@ -990,137 +990,137 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				storeRAF.readFully(header);
 				boolean dataRead = false;
 				try {
-				if(lruRAFLength > (l+1)*8) {
-					try {
-						lruVal = lruRAF.readLong();
-					} catch (EOFException e) {
-						System.err.println("EOF reading LRU file at "+lruRAF.getFilePointer()+" of "+lruRAF.length()+" l = "+l+" orig lru length = "+lruRAFLength);
-						lruVal = 0;
-						lruRAFLength = 0;
-					}
-				}
-				if(lruVal == 0) {
-					Logger.minor(this, "Block " + l + " : resetting LRU");
-					lruVal = getNewRecentlyUsed();
-				} else {
-					Logger.minor(this, "Block " + l + " : LRU " + lruVal);
-				}
-				boolean readKey = false;
-				if(keysRAF != null && keyBuf != null && keysRAFLength > (l+1)*keyLength) {
-					try {
-						keysRAF.readFully(keyBuf);
-						readKey = true;
-					} catch (EOFException e) {
-						System.err.println("EOF reading keys file at "+keysRAF.getFilePointer()+" of "+keysRAF.length()+" l = "+l+" orig keys length = "+keysRAFLength);
-						readKey = false;
-					}
-				}
-				if(!readKey) keyBuf = null;
-				boolean keyFromData = false;
-				try {
-					byte[] routingkey = null;
-					if(keyBuf != null && !isAllNull(keyBuf)) {
-						routingkey = callback.routingKeyFromFullKey(keyBuf);
-						if(routingkey == keyBuf) {
-							// Copy it.
-							byte[] newkey = new byte[routingkey.length];
-							System.arraycopy(routingkey, 0, newkey, 0, routingkey.length);
-							routingkey = newkey;
-						}
-					}
-					if (!dataRead) {
-						storeRAF.readFully(data);
-						dataRead = true;
-					}
-					if (routingkey == null && !isAllNull(header) && !isAllNull(data)) {
-						keyFromData = true;
+					if(lruRAFLength > (l+1)*8) {
 						try {
-							StorableBlock block = callback.construct(data, header, null, keyBuf);
-							routingkey = block.getRoutingKey();
-						} catch (KeyVerifyException e) {
-							String err = "Bogus or unreconstructible key at slot "+l+" : "+e+" - lost block "+l;
-							Logger.error(this, err, e);
-							System.err.println(err);
-							failures++;
+							lruVal = lruRAF.readLong();
+						} catch (EOFException e) {
+							System.err.println("EOF reading LRU file at "+lruRAF.getFilePointer()+" of "+lruRAF.length()+" l = "+l+" orig lru length = "+lruRAFLength);
+							lruVal = 0;
+							lruRAFLength = 0;
 						}
 					}
-					
-					if (routingkey == null) { // can't recover, mark this as free
-						t = environment.beginTransaction(null, null);
-						reconstructAddFreeBlock(l, t, --minLRU);
-						t.commitNoSync();
-						t = null;
-						continue;
+					if(lruVal == 0) {
+						Logger.minor(this, "Block " + l + " : resetting LRU");
+						lruVal = getNewRecentlyUsed();
+					} else {
+						Logger.minor(this, "Block " + l + " : LRU " + lruVal);
 					}
-					
-					t = environment.beginTransaction(null,null);
-					StoreBlock storeBlock = new StoreBlock(l, lruVal);
-					DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
-					DatabaseEntry blockDBE = new DatabaseEntry();
-					storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
-					OperationStatus op = keysDB.putNoOverwrite(t,routingkeyDBE,blockDBE);
-					if(op == OperationStatus.KEYEXIST) {
-						if(!keyFromData) {
-							byte[] oldRoutingkey = routingkey;
+					boolean readKey = false;
+					if(keysRAF != null && keyBuf != null && keysRAFLength > (l+1)*keyLength) {
+						try {
+							keysRAF.readFully(keyBuf);
+							readKey = true;
+						} catch (EOFException e) {
+							System.err.println("EOF reading keys file at "+keysRAF.getFilePointer()+" of "+keysRAF.length()+" l = "+l+" orig keys length = "+keysRAFLength);
+							readKey = false;
+						}
+					}
+					if(!readKey) keyBuf = null;
+					boolean keyFromData = false;
+					try {
+						byte[] routingkey = null;
+						if(keyBuf != null && !isAllNull(keyBuf)) {
+							routingkey = callback.routingKeyFromFullKey(keyBuf);
+							if(routingkey == keyBuf) {
+								// Copy it.
+								byte[] newkey = new byte[routingkey.length];
+								System.arraycopy(routingkey, 0, newkey, 0, routingkey.length);
+								routingkey = newkey;
+							}
+						}
+						if (!dataRead) {
+							storeRAF.readFully(data);
+							dataRead = true;
+						}
+						if (routingkey == null && !isAllNull(header) && !isAllNull(data)) {
+							keyFromData = true;
 							try {
-					if (!dataRead) {
-						storeRAF.readFully(data);
-						dataRead = true;
-					}
 								StorableBlock block = callback.construct(data, header, null, keyBuf);
 								routingkey = block.getRoutingKey();
-								if(Arrays.equals(oldRoutingkey, routingkey)) {
-									dupes++;
-									String err = "Really duplicated block: "+l+" key null = "+isAllNull(keyBuf)+" routing key null = "+isAllNull(routingkey)+" headers null = "+isAllNull(header)+" data null = "+isAllNull(data);
-									Logger.error(this, err);
-									System.err.println(err);
-									reconstructAddFreeBlock(l, t, --minLRU);
-								} else {
-									routingkeyDBE = new DatabaseEntry(routingkey);
-									op = keysDB.putNoOverwrite(t,routingkeyDBE,blockDBE);
-									if(op == OperationStatus.KEYEXIST) {
-										dupes++;
-										String err = "Duplicate block, reconstructed the key, different duplicate block!: "+l+" key null = "+isAllNull(keyBuf)+" routing key null = "+isAllNull(routingkey)+" headers null = "+isAllNull(header)+" data null = "+isAllNull(data);
-										Logger.error(this, err);
-										System.err.println(err);
-										reconstructAddFreeBlock(l, t, --minLRU);
-									} else if(op != OperationStatus.SUCCESS) {
-										failures++;
-										String err = "Unknown error: "+op+" for duplicate block "+l+" after reconstructing key";
-										Logger.error(this, err);
-										System.err.println(err);
-										reconstructAddFreeBlock(l, t, --minLRU);
-									} // Else it worked.
-								}
 							} catch (KeyVerifyException e) {
-								String err = "Duplicate slot, bogus or unreconstructible key at "+l+" : "+e+" - lost block "+l;
+								String err = "Bogus or unreconstructible key at slot "+l+" : "+e+" - lost block "+l;
 								Logger.error(this, err, e);
 								System.err.println(err);
 								failures++;
+							}
+						}
+						
+						if (routingkey == null) { // can't recover, mark this as free
+							t = environment.beginTransaction(null, null);
+							reconstructAddFreeBlock(l, t, --minLRU);
+							t.commitNoSync();
+							t = null;
+							continue;
+						}
+						
+						t = environment.beginTransaction(null,null);
+						StoreBlock storeBlock = new StoreBlock(l, lruVal);
+						DatabaseEntry routingkeyDBE = new DatabaseEntry(routingkey);
+						DatabaseEntry blockDBE = new DatabaseEntry();
+						storeBlockTupleBinding.objectToEntry(storeBlock, blockDBE);
+						OperationStatus op = keysDB.putNoOverwrite(t,routingkeyDBE,blockDBE);
+						if(op == OperationStatus.KEYEXIST) {
+							if(!keyFromData) {
+								byte[] oldRoutingkey = routingkey;
+								try {
+									if (!dataRead) {
+										storeRAF.readFully(data);
+										dataRead = true;
+									}
+									StorableBlock block = callback.construct(data, header, null, keyBuf);
+									routingkey = block.getRoutingKey();
+									if(Arrays.equals(oldRoutingkey, routingkey)) {
+										dupes++;
+										String err = "Really duplicated block: "+l+" key null = "+isAllNull(keyBuf)+" routing key null = "+isAllNull(routingkey)+" headers null = "+isAllNull(header)+" data null = "+isAllNull(data);
+										Logger.error(this, err);
+										System.err.println(err);
+										reconstructAddFreeBlock(l, t, --minLRU);
+									} else {
+										routingkeyDBE = new DatabaseEntry(routingkey);
+										op = keysDB.putNoOverwrite(t,routingkeyDBE,blockDBE);
+										if(op == OperationStatus.KEYEXIST) {
+											dupes++;
+											String err = "Duplicate block, reconstructed the key, different duplicate block!: "+l+" key null = "+isAllNull(keyBuf)+" routing key null = "+isAllNull(routingkey)+" headers null = "+isAllNull(header)+" data null = "+isAllNull(data);
+											Logger.error(this, err);
+											System.err.println(err);
+											reconstructAddFreeBlock(l, t, --minLRU);
+										} else if(op != OperationStatus.SUCCESS) {
+											failures++;
+											String err = "Unknown error: "+op+" for duplicate block "+l+" after reconstructing key";
+											Logger.error(this, err);
+											System.err.println(err);
+											reconstructAddFreeBlock(l, t, --minLRU);
+										} // Else it worked.
+									}
+								} catch (KeyVerifyException e) {
+									String err = "Duplicate slot, bogus or unreconstructible key at "+l+" : "+e+" - lost block "+l;
+									Logger.error(this, err, e);
+									System.err.println(err);
+									failures++;
+									reconstructAddFreeBlock(l, t, --minLRU);
+								}
+							} else {
+								Logger.error(this, "Duplicate block: "+l+" key null = "+isAllNull(keyBuf)+" routing key null = "+isAllNull(routingkey)+" headers null = "+isAllNull(header)+" data null = "+isAllNull(data));
+								System.err.println("Duplicate block: "+l+" key null = "+isAllNull(keyBuf)+" routing key null = "+isAllNull(routingkey)+" headers null = "+isAllNull(header)+" data null = "+isAllNull(data));
+								dupes++;
 								reconstructAddFreeBlock(l, t, --minLRU);
 							}
-						} else {
-							Logger.error(this, "Duplicate block: "+l+" key null = "+isAllNull(keyBuf)+" routing key null = "+isAllNull(routingkey)+" headers null = "+isAllNull(header)+" data null = "+isAllNull(data));
-							System.err.println("Duplicate block: "+l+" key null = "+isAllNull(keyBuf)+" routing key null = "+isAllNull(routingkey)+" headers null = "+isAllNull(header)+" data null = "+isAllNull(data));
-							dupes++;
-							reconstructAddFreeBlock(l, t, --minLRU);
+							t.commitNoSync();
+							t = null;
+							continue;
+						} else if(op != OperationStatus.SUCCESS) {
+							addFreeBlock(l, true, "failure: "+op);
+							failures++;
 						}
 						t.commitNoSync();
 						t = null;
-						continue;
-					} else if(op != OperationStatus.SUCCESS) {
-						addFreeBlock(l, true, "failure: "+op);
-						failures++;
+					} catch (DatabaseException e) {
+						// t.abort() below may also throw.
+						System.err.println("Error while reconstructing: "+e);
+						e.printStackTrace();
+					} finally {
+						if(t != null) t.abort();
 					}
-					t.commitNoSync();
-					t = null;
-				} catch (DatabaseException e) {
-					// t.abort() below may also throw.
-					System.err.println("Error while reconstructing: "+e);
-					e.printStackTrace();
-				} finally {
-					if(t != null) t.abort();
-				}
 				} finally {
 					if (!dataRead) {
 						storeRAF.skipBytes(data.length);
