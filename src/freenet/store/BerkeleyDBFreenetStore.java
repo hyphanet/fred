@@ -943,7 +943,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	private void reconstruct() throws DatabaseException, IOException {
 		if(keysDB.count() != 0)
 			throw new IllegalStateException("Store must be empty before reconstruction!");
-		int timeout = (int) (Math.min(Integer.MAX_VALUE, 5 * 60 * 1000
+		// Timeout must be well below Integer.MAX_VALUE. It is added to previous timeouts in an integer value.
+		// If it's too high, we get wraparound and instant timeout.
+		int timeout = (int) (Math.min(7 * 24 * 60 * 60 * 1000, 5 * 60 * 1000
 		        + (storeRAF.length() / (dataBlockSize + headerBlockSize)) * 1000L));
 		System.err.println("Reconstructing store index from store file: callback="+callback+" - allowing "+timeout+"ms");
 		Logger.error(this, "Reconstructing store index from store file: callback="+callback);
