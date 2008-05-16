@@ -943,10 +943,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	private void reconstruct() throws DatabaseException, IOException {
 		if(keysDB.count() != 0)
 			throw new IllegalStateException("Store must be empty before reconstruction!");
-		System.err.println("Reconstructing store index from store file: callback="+callback);
+		int timeout = (int) (Math.min(Integer.MAX_VALUE, 5 * 60 * 1000
+		        + (storeRAF.length() / (dataBlockSize + headerBlockSize)) * 1000L));
+		System.err.println("Reconstructing store index from store file: callback="+callback+" - allowing "+timeout+"ms");
 		Logger.error(this, "Reconstructing store index from store file: callback="+callback);
-		WrapperManager.signalStarting((int) (Math.min(Integer.MAX_VALUE, 5 * 60 * 1000
-		        + (storeRAF.length() / (dataBlockSize + headerBlockSize)) * 1000L)));
+		WrapperManager.signalStarting(timeout);
 		// Reusing the buffer is safe, provided we don't do anything with the resulting StoreBlock.
 		byte[] header = new byte[headerBlockSize];
 		byte[] data = new byte[dataBlockSize];
