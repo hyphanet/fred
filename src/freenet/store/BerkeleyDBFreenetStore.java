@@ -990,9 +990,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 					System.err.println("File pointer is "+storeRAF.getFilePointer()+" but should be "+((headerBlockSize + dataBlockSize)));
 					System.exit(NodeInitException.EXIT_STORE_RECONSTRUCT);
 				}
-				storeRAF.readFully(header);
 				boolean dataRead = false;
-				try {
 					if(lruRAFLength > (l+1)*8) {
 						try {
 							lruVal = lruRAF.readLong();
@@ -1032,6 +1030,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 							}
 						}
 						if (!dataRead) {
+							storeRAF.seek(l * (headerBlockSize + dataBlockSize));
+							storeRAF.readFully(header);
 							storeRAF.readFully(data);
 							dataRead = true;
 						}
@@ -1067,6 +1067,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 								byte[] oldRoutingkey = routingkey;
 								try {
 									if (!dataRead) {
+										storeRAF.seek(l * (headerBlockSize + dataBlockSize));
+										storeRAF.readFully(header);
 										storeRAF.readFully(data);
 										dataRead = true;
 									}
@@ -1124,11 +1126,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 					} finally {
 						if(t != null) t.abort();
 					}
-				} finally {
-					if (!dataRead) {
-						storeRAF.skipBytes(data.length);
-					}
-				}
 			}
 		} catch (EOFException e) {
 			long size = l * (dataBlockSize + headerBlockSize);
