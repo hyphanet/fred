@@ -29,6 +29,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
+import com.db4o.ObjectServer;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
@@ -223,8 +224,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	/** db4o database for node and client layer.
 	 * Other databases can be created for the datastore (since its usage 
 	 * patterns and content are completely different), or for plugins (for 
-	 * security reasons). */
-	final ObjectContainer db;
+	 * security reasons).
+	 * 
+	 * This is an internal server, specific parts of the code can create
+	 * ObjectContainer's from it. Be careful to refresh objects on any 
+	 * long-lived container! */
+	final ObjectServer dbServer;
 	
 	/** Stats */
 	public final NodeStats nodeStats;
@@ -708,12 +713,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		/* FIXME: this may throw if e.g. we ran out of disk space last time. 
 		 * We need to back it up and auto-recover. */
-		/* For now, just a single transaction. 
-		 * Switch to client-server mode later if we need it. 
-		 * Clients have local caching, and need an explicit refresh on local 
-		 * objects to get updates... so if we use client-server mode, we will 
-		 * need to be careful. */
-		db = Db4o.openFile(new File(nodeDir, "node.db4o").toString());
+		/* Client-server mode. Refresh objects if you have a long-lived container! */
+		dbServer = Db4o.openServer(new File(nodeDir, "node.db4o").toString(), 0);
+		
 		System.err.println("Opened database");
 		
 		// Boot ID
@@ -915,7 +917,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		shutdownHook.addLateJob(new Thread() {
 			public void run() {
-				db.close();
+				dbServer.close();
 			}
 		});
 		
