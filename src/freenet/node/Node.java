@@ -1,6 +1,4 @@
-/*
- * Freenet 0.7 node.
- */
+/* Freenet 0.7 node. */
 package freenet.node;
 
 import java.io.BufferedReader;
