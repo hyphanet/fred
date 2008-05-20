@@ -13,9 +13,11 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 	private final HashMap grabArraysByClient;
 	private RemoveRandomWithObject[] grabArrays;
 	private final RandomSource rand;
+	private final boolean persistent;
 	
-	public SectoredRandomGrabArray(RandomSource rand) {
+	public SectoredRandomGrabArray(RandomSource rand, boolean persistent) {
 		this.rand = rand;
+		this.persistent = persistent;
 		this.grabArraysByClient = new HashMap();
 		grabArrays = new RemoveRandomWithObject[0];
 	}
@@ -23,12 +25,13 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 	/**
 	 * Add directly to a RandomGrabArrayWithClient under us. */
 	public synchronized void add(Object client, RandomGrabArrayItem item) {
+		if(item.persistent() != persistent) throw new IllegalArgumentException("item.persistent()="+item.persistent()+" but array.persistent="+persistent+" item="+item+" array="+this);
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		RandomGrabArrayWithClient rga;
 		if(!grabArraysByClient.containsKey(client)) {
 			if(logMINOR)
 				Logger.minor(this, "Adding new RGAWithClient for "+client+" on "+this+" for "+item);
-			rga = new RandomGrabArrayWithClient(client, rand);
+			rga = new RandomGrabArrayWithClient(client, rand, persistent);
 			RemoveRandomWithObject[] newArrays = new RemoveRandomWithObject[grabArrays.length+1];
 			System.arraycopy(grabArrays, 0, newArrays, 0, grabArrays.length);
 			newArrays[grabArrays.length] = rga;
@@ -157,4 +160,8 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 		return grabArrays.length == 0;
 	}
 	
+	public boolean persistent() {
+		return persistent;
+	}
+
 }

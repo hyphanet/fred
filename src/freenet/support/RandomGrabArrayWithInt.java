@@ -6,8 +6,8 @@ public class RandomGrabArrayWithInt extends RandomGrabArray implements IntNumber
 
 	private final int number;
 
-	public RandomGrabArrayWithInt(RandomSource rand, int no) {
-		super(rand);
+	public RandomGrabArrayWithInt(RandomSource rand, int no, boolean persistent) {
+		super(rand, persistent);
 		number = no;
 	}
 	

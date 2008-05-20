@@ -21,15 +21,18 @@ public class RandomGrabArray {
 	 */
 	private HashSet contents;
 	private final static int MIN_SIZE = 32;
+	private final boolean persistent;
 
-	public RandomGrabArray(RandomSource rand) {
+	public RandomGrabArray(RandomSource rand, boolean persistent) {
 		this.reqs = new RandomGrabArrayItem[MIN_SIZE];
+		this.persistent = persistent;
 		index = 0;
 		this.rand = rand;
 		contents = new HashSet();
 	}
 	
 	public void add(RandomGrabArrayItem req) {
+		if(req.persistent() != persistent) throw new IllegalArgumentException("req.persistent()="+req.persistent()+" but array.persistent="+persistent+" item="+req+" array="+this);
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(req.isEmpty()) {
 			if(logMINOR) Logger.minor(this, "Is finished already: "+req);
@@ -209,4 +212,9 @@ public class RandomGrabArray {
 	public synchronized boolean isEmpty() {
 		return index == 0;
 	}
+	
+	public boolean persistent() {
+		return persistent;
+	}
+
 }

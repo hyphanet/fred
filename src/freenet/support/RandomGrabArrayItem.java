@@ -27,4 +27,9 @@ public interface RandomGrabArrayItem {
 	
 	/** If the item remembers its parent RandomGrabArray, return it */
 	public RandomGrabArray getParentGrabArray();
+	
+	/** This must be the same as the value passed into the RGA constructor.
+	 * If the user doesn't implement persistence, simply return false here and 
+	 * pass false into the constructor. */
+	public boolean persistent();
 }

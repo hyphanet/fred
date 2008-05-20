@@ -6,8 +6,8 @@ public class SectoredRandomGrabArrayWithObject extends SectoredRandomGrabArray i
 
 	private final Object object;
 	
-	public SectoredRandomGrabArrayWithObject(Object object, RandomSource rand) {
-		super(rand);
+	public SectoredRandomGrabArrayWithObject(Object object, RandomSource rand, boolean persistent) {
+		super(rand, persistent);
 		this.object = object;
 	}
 
