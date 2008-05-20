@@ -26,11 +26,9 @@ import freenet.support.io.NativeThread;
        
 
 /**
- * 
- * @author nextgens
- *	
- *	A class to tie the wrapper and the node (needed for self-restarting support)
+ *  @author nextgens
  *
+ *  A class to tie the wrapper and the node (needed for self-restarting support)
  */
 public class NodeStarter implements WrapperListener
 {
