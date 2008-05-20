@@ -199,7 +199,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	void addPendingKey(ClientKey key, SendableGet getter) {
-		schedCore.addPendingKey(key, getter);
+		if(getter.persistent())
+			schedCore.addPendingKey(key, getter);
+		else
+			schedTransient.addPendingKey(key, getter);
 	}
 	
 	public synchronized SendableRequest removeFirst() {
@@ -214,7 +217,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	public void removePendingKey(SendableGet getter, boolean complain, Key key) {
-		boolean dropped = schedCore.removePendingKey(getter, complain, key);
+		boolean dropped = 
+			schedCore.removePendingKey(getter, complain, key) ||
+			schedTransient.removePendingKey(getter, complain, key);
 		if(dropped && offeredKeys != null && !node.peersWantKey(key)) {
 			for(int i=0;i<offeredKeys.length;i++)
 				offeredKeys[i].remove(key);
@@ -265,14 +270,26 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		final Key key = block.getKey();
 		final SendableGet[] gets = schedCore.removePendingKey(key);
+		final SendableGet[] transientGets = schedTransient.removePendingKey(key);
 		if(gets == null) return;
-		if(cooldownQueue != null)
+		if(cooldownQueue != null) {
 			for(int i=0;i<gets.length;i++)
 				cooldownQueue.removeKey(key, gets[i], gets[i].getCooldownWakeupByKey(key));
+			for(int i=0;i<gets.length;i++)
+				cooldownQueue.removeKey(key, transientGets[i], transientGets[i].getCooldownWakeupByKey(key));
+		}
 
 		Runnable r = new Runnable() {
 			public void run() {
 				if(logMINOR) Logger.minor(this, "Running "+gets.length+" callbacks off-thread for "+block.getKey());
+				for(int i=0;i<transientGets.length;i++) {
+					try {
+						if(logMINOR) Logger.minor(this, "Calling callback for "+transientGets[i]+" for "+key);
+						transientGets[i].onGotKey(key, block, ClientRequestScheduler.this);
+					} catch (Throwable t) {
+						Logger.error(this, "Caught "+t+" running callback "+transientGets[i]+" for "+key);
+					}
+				}
 				for(int i=0;i<gets.length;i++) {
 					try {
 						if(logMINOR) Logger.minor(this, "Calling callback for "+gets[i]+" for "+key);
@@ -288,7 +305,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public boolean anyWantKey(Key key) {
-		return schedCore.anyWantKey(key);
+		return schedCore.anyWantKey(key) || schedTransient.anyWantKey(key);
 	}
 
 	/** If we want the offered key, or if force is enabled, queue it */
@@ -301,6 +318,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			priority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 		}
 		priority = schedCore.getKeyPrio(key, priority);
+		priority = schedTransient.getKeyPrio(key, priority);
 		if(priority == Short.MAX_VALUE) return;
 		if(logMINOR)
 			Logger.minor(this, "Priority: "+priority);
@@ -325,18 +343,24 @@ public class ClientRequestScheduler implements RequestScheduler {
 		while((key = cooldownQueue.removeKeyBefore(now)) != null) { 
 			if(logMINOR) Logger.minor(this, "Restoring key: "+key);
 			SendableGet[] gets = schedCore.getClientsForPendingKey(key);
-			if(gets == null) {
+			SendableGet[] transientGets = schedTransient.getClientsForPendingKey(key);
+			if(gets == null && transientGets == null) {
 				// Not an error as this can happen due to race conditions etc.
 				if(logMINOR) Logger.minor(this, "Restoring key but no keys queued?? for "+key);
 				continue;
 			} else {
+				if(gets != null)
 				for(int i=0;i<gets.length;i++)
 					gets[i].requeueAfterCooldown(key, now);
+				if(transientGets != null)
+				for(int i=0;i<transientGets.length;i++)
+					transientGets[i].requeueAfterCooldown(key, now);
 			}
 		}
 	}
 
 	public long countQueuedRequests() {
-		return schedCore.countQueuedRequests();
+		// Approximately... there might be some overlap in the two pendingKeys's...
+		return schedCore.countQueuedRequests() + schedTransient.countQueuedRequests();
 	}
 }
