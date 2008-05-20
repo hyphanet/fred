@@ -229,7 +229,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * This is an internal server, specific parts of the code can create
 	 * ObjectContainer's from it. Be careful to refresh objects on any 
 	 * long-lived container! */
-	final ObjectServer dbServer;
+	public final ObjectServer dbServer;
 	
 	/** Stats */
 	public final NodeStats nodeStats;
