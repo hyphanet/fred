@@ -13,7 +13,7 @@ import freenet.support.SortedVectorByNumber;
  * Parallel scheduler structures for non-persistent requests.
  * @author toad
  */
-class ClientRequestSchedulerNonPersistent {
+class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 	
 	// These are package-visible so that ClientRequestSchedulerCore can conveniently access them.
 	// THEY SHOULD NOT BE ACCESSED DIRECTLY BY ANY OTHER CLASS!
@@ -28,19 +28,12 @@ class ClientRequestSchedulerNonPersistent {
 	 * To speed up fetching, a RGA or SVBN must only exist if it is non-empty.
 	 */
 	final SortedVectorByNumber[] priorities;
-	/** All pending gets by key. Used to automatically satisfy pending requests when either the key is fetched by
-	 * an overlapping request, or it is fetched by a request from another node. Operations on this are synchronized on
-	 * itself. */
-	final HashMap /* <Key, SendableGet[]> */ pendingKeys;
 	final LinkedList /* <BaseSendableGet> */ recentSuccesses;
 	
 	ClientRequestSchedulerNonPersistent(ClientRequestScheduler sched) {
+		super(sched.isInsertScheduler ? null : new HashMap());
 		allRequestsByClientRequest = new HashMap();
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
-		if(!sched.isInsertScheduler)
-			pendingKeys = new HashMap();
-		else
-			pendingKeys = null;
 		recentSuccesses = new LinkedList();
 	}
 
