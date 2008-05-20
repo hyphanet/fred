@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 
+import com.db4o.ObjectContainer;
+
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -77,6 +79,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 			throw new NullPointerException("Should not happen!");
 		}
 	}
+	
+	/** Long-lived container for use by the selector thread.
+	 * We commit when we move a request to a lower retry level.
+	 * We need to refresh objects when we activate them.
+	 */
+	final ObjectContainer selectorContainer;
 	
 	/**
 	 * Structure:
@@ -161,6 +169,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	};
 	
 	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, SubConfig sc, String name) {
+		this.selectorContainer = node.dbServer.openClient();
 		this.starter = starter;
 		this.random = random;
 		this.node = node;
