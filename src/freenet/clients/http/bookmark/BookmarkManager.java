@@ -367,4 +367,8 @@ public class BookmarkManager implements RequestClient {
 
 		return sfs;
 	}
+
+	public boolean persistent() {
+		return false;
+	}
 }

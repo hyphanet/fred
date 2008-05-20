@@ -127,7 +127,7 @@ import freenet.support.transport.ip.HostnameSyntaxException;
 /**
  * @author amphibian
  */
-public class Node implements TimeSkewDetectorCallback, GetPubkey, RequestClient {
+public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 	private static boolean logMINOR;
 	
@@ -3334,6 +3334,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey, RequestClient 
 	}
 
 	private SimpleUserAlert alertMTUTooSmall;
+
+	public final RequestClient nonPersistentClient = new RequestClient() {
+		public boolean persistent() {
+			return false;
+		}
+	};
 	
 	public void onTooLowMTU(int minAdvertisedMTU, int minAcceptableMTU) {
 		if(alertMTUTooSmall == null) {

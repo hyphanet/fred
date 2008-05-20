@@ -254,4 +254,8 @@ public class RevocationChecker implements ClientCallback, RequestClient {
 		return null;
 	}
 
+	public boolean persistent() {
+		return false;
+	}
+
 }

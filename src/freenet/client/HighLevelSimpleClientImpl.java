@@ -265,4 +265,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		}
 	}
 
+	public boolean persistent() {
+		return false;
+	}
+
 }

@@ -17,7 +17,7 @@ import freenet.support.Logger;
  * An FCP client.
  * Identified by its Name which is sent on connection.
  */
-public class FCPClient implements RequestClient {
+public class FCPClient {
 	
 	public FCPClient(String name2, FCPServer server, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb) {
 		this.name = name2;
@@ -35,7 +35,16 @@ public class FCPClient implements RequestClient {
 		clientsWatching = new LinkedList();
 		watchGlobalVerbosityMask = Integer.MAX_VALUE;
 		toStart = new LinkedList();
-		lowLevelClient = this;
+		lowLevelClientPersistent = new RequestClient() {
+			public boolean persistent() {
+				return true;
+			}
+		};
+		lowLevelClientTransient = new RequestClient() {
+			public boolean persistent() {
+				return false;
+			}
+		};
 		completionCallback = cb;
 	}
 	
@@ -66,8 +75,8 @@ public class FCPClient implements RequestClient {
 	// We obviously can't synchronize on it when it hasn't been constructed yet...
 	final LinkedList clientsWatching;
 	private final LinkedList toStart;
-	/** Low-level client object, for freenet.client.async. Normally == this. */
-	final RequestClient lowLevelClient;
+	final RequestClient lowLevelClientPersistent;
+	final RequestClient lowLevelClientTransient;
 	private RequestCompletionCallback completionCallback;
 	
 	public synchronized FCPConnectionHandler getConnection() {

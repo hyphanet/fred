@@ -23,7 +23,10 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	final HashMap runningInserters;
 	
 	public SimpleHealingQueue(ClientRequestScheduler scheduler, InsertContext context, short prio, int maxRunning) {
-		super(prio, scheduler, null, new RequestClient() { });
+		super(prio, scheduler, null, new RequestClient() {
+			public boolean persistent() {
+				return false;
+			} });
 		this.ctx = context;
 		this.runningInserters = new HashMap();
 		this.maxRunning = maxRunning;

@@ -10,5 +10,10 @@ package freenet.node;
  * @author toad
  */
 public interface RequestClient {
+	
+	/**
+	 * Is this request persistent? **Must not change!**
+	 */
+	public boolean persistent();
 
 }

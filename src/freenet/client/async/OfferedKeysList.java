@@ -176,4 +176,8 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		return (Key) token;
 	}
 
+	public boolean persistent() {
+		return false;
+	}
+
 }

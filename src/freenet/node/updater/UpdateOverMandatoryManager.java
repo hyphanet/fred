@@ -1237,4 +1237,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		}
 		return !gotError;
 	}
+
+	public boolean persistent() {
+		return false;
+	}
 }

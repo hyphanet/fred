@@ -351,4 +351,8 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 	public short getPollingPriorityProgress() {
 		return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 	}
+
+	public boolean persistent() {
+		return false;
+	}
 }

@@ -261,4 +261,8 @@ public class NodeARKInserter implements ClientCallback, RequestClient {
 		// Ignore, we don't care
 	}
 
+	public boolean persistent() {
+		return false;
+	}
+
 }

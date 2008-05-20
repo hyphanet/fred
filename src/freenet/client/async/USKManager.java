@@ -316,4 +316,8 @@ public class USKManager implements RequestClient {
 			}
 		}
 	}
+
+	public boolean persistent() {
+		return false;
+	}
 }

@@ -67,7 +67,7 @@ import freenet.support.io.TempBucketFactory;
 /**
  * The connection between the node and the client layer.
  */
-public class NodeClientCore implements Persistable, RequestClient {
+public class NodeClientCore implements Persistable {
 
 	private static boolean logMINOR;
 	public final USKManager uskManager;
