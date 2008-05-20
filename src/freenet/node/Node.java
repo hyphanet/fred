@@ -230,6 +230,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * ObjectContainer's from it. Be careful to refresh objects on any 
 	 * long-lived container! */
 	public final ObjectServer dbServer;
+	/** A fixed random number which identifies the top-level objects belonging to
+	 * this node, as opposed to any others that might be stored in the same database
+	 * (e.g. because of many-nodes-in-one-VM). */
+	public final long nodeDBHandle;
 	
 	/** Stats */
 	public final NodeStats nodeStats;
@@ -889,6 +893,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		sortOrder += NodeCryptoConfig.OPTION_COUNT;
 		
 		darknetCrypto = new NodeCrypto(this, false, darknetConfig, startupTime, enableARKs);
+		
+		ObjectContainer setupContainer = dbServer.openClient();
+		
+		nodeDBHandle = darknetCrypto.getNodeHandle(setupContainer);
+		
+		setupContainer.commit();
+		setupContainer = null; // Don't reuse.
 
 		// Must be created after darknetCrypto
 		dnsr = new DNSRequester(this);
