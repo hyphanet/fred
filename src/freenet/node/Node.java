@@ -27,6 +27,8 @@ import java.util.Vector;
 import org.spaceroots.mantissa.random.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
 
+import com.db4o.Db4o;
+import com.db4o.ObjectContainer;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
@@ -217,6 +219,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			return L10n.AVAILABLE_LANGUAGES;
 		}
 	}
+	
+	/** db4o database for node and client layer.
+	 * Other databases can be created for the datastore (since its usage 
+	 * patterns and content are completely different), or for plugins (for 
+	 * security reasons). */
+	final ObjectContainer db;
 	
 	/** Stats */
 	public final NodeStats nodeStats;
@@ -698,6 +706,16 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_NODE_DIR, msg);
 		}
 		
+		/* FIXME: this may throw if e.g. we ran out of disk space last time. 
+		 * We need to back it up and auto-recover. */
+		/* For now, just a single transaction. 
+		 * Switch to client-server mode later if we need it. 
+		 * Clients have local caching, and need an explicit refresh on local 
+		 * objects to get updates... so if we use client-server mode, we will 
+		 * need to be careful. */
+		db = Db4o.openFile(new File(nodeDir, "node.db4o").toString());
+		System.err.println("Opened database");
+		
 		// Boot ID
 		bootID = random.nextLong();
 		// Fixed length file containing boot ID. Accessed with random access file. So hopefully it will always be
@@ -892,6 +910,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		shutdownHook.addEarlyJob(new Thread() {
 			public void run() {
 				darknetCrypto.stop();
+			}
+		});
+		
+		shutdownHook.addLateJob(new Thread() {
+			public void run() {
+				db.close();
 			}
 		});
 		
