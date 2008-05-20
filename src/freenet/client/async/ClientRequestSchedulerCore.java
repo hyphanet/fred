@@ -4,6 +4,8 @@
 package freenet.client.async;
 
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -38,7 +40,7 @@ class ClientRequestSchedulerCore {
 	private final long nodeDBHandle;
 	final boolean isInsertScheduler;
 	final boolean isSSKScheduler;
-	private final Db4oMap allRequestsByClientRequest;
+	private final Map allRequestsByClientRequest;
 	/**
 	 * Structure:
 	 * array (by priority) -> // one element per possible priority
@@ -54,8 +56,8 @@ class ClientRequestSchedulerCore {
 	/** All pending gets by key. Used to automatically satisfy pending requests when either the key is fetched by
 	 * an overlapping request, or it is fetched by a request from another node. Operations on this are synchronized on
 	 * itself. */
-	private final Db4oMap /* <Key, SendableGet[]> */ pendingKeys;
-	private final Db4oList /* <BaseSendableGet> */ recentSuccesses;
+	private final Map /* <Key, SendableGet[]> */ pendingKeys;
+	private final List /* <BaseSendableGet> */ recentSuccesses;
 
 	/**
 	 * Fetch a ClientRequestSchedulerCore from the database, or create a new one.
@@ -100,8 +102,9 @@ class ClientRequestSchedulerCore {
 	}
 
 	private void onStarted() {
-		pendingKeys.activationDepth(1);
-		allRequestsByClientRequest.activationDepth(1);
+		((Db4oMap)pendingKeys).activationDepth(1);
+		((Db4oMap)allRequestsByClientRequest).activationDepth(1);
+		((Db4oList)recentSuccesses).activationDepth(1);
 	}
 	
 	/**
