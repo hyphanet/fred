@@ -88,7 +88,7 @@ public abstract class SendableGet extends BaseSendableGet {
 				return true;
 			}
 			// Don't call onSuccess(), it will be called for us by backdoor coalescing.
-			sched.succeeded(this.getParentGrabArray());
+			sched.succeeded(this);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
 			onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, sched);

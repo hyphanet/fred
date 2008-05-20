@@ -15,7 +15,7 @@ public interface RequestScheduler {
 	 * request from the parentGrabArray in the near future on the theory that if one works,
 	 * another may also work. 
 	 * */
-	public void succeeded(RandomGrabArray parentGrabArray);
+	public void succeeded(BaseSendableGet get);
 
 	/**
 	 * After a key has been requested a few times, it is added to the cooldown queue for
