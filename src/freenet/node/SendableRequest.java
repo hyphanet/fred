@@ -53,6 +53,11 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	/** Get client context object */
 	public abstract RequestClient getClient();
 	
+	/** Is this request persistent? MUST NOT CHANGE. */
+	public boolean persistent() {
+		return getClient().persistent();
+	}
+	
 	/** Get the ClientRequest */
 	public abstract ClientRequester getClientRequest();
 	
