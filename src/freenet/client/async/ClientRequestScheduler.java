@@ -34,6 +34,7 @@ import freenet.support.api.StringCallback;
 public class ClientRequestScheduler implements RequestScheduler {
 	
 	private final ClientRequestSchedulerCore schedCore;
+	private final ClientRequestSchedulerNonPersistent schedTransient;
 	
 	private static boolean logMINOR;
 	
@@ -99,6 +100,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, SubConfig sc, String name) {
 		this.selectorContainer = node.dbServer.openClient();
 		schedCore = ClientRequestSchedulerCore.create(node, forInserts, forSSKs, selectorContainer);
+		schedTransient = new ClientRequestSchedulerNonPersistent(this);
 		this.starter = starter;
 		this.random = random;
 		this.node = node;
