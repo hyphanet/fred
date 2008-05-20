@@ -12,6 +12,7 @@ import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.io.FileBucket;
@@ -21,7 +22,7 @@ import freenet.support.io.FileUtil;
  * Fetches the revocation key. Each time it starts, it will try to fetch it until it has 3 DNFs. If it ever finds it, it will
  * be immediately fed to the NodeUpdateManager.
  */
-public class RevocationChecker implements ClientCallback {
+public class RevocationChecker implements ClientCallback, RequestClient {
 
 	public final static int REVOCATION_DNF_MIN = 3;
 	

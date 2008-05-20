@@ -13,6 +13,7 @@ import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.SSKBlock;
 import freenet.node.LowLevelPutException;
+import freenet.node.RequestClient;
 import freenet.node.SimpleSendableInsert;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -21,7 +22,7 @@ import freenet.support.api.Bucket;
 public class BinaryBlobInserter implements ClientPutState {
 
 	final ClientPutter parent;
-	final Object clientContext;
+	final RequestClient clientContext;
 	final MySendableInsert[] inserters;
 	final FailureCodeTracker errors;
 	final int maxRetries;
@@ -32,7 +33,7 @@ public class BinaryBlobInserter implements ClientPutState {
 	private boolean fatal;
 	final InsertContext ctx;
 	
-	BinaryBlobInserter(Bucket blob, ClientPutter parent, Object clientContext, boolean tolerant, short prioClass, InsertContext ctx) 
+	BinaryBlobInserter(Bucket blob, ClientPutter parent, RequestClient clientContext, boolean tolerant, short prioClass, InsertContext ctx) 
 	throws IOException, BinaryBlobFormatException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.ctx = ctx;
@@ -107,7 +108,7 @@ public class BinaryBlobInserter implements ClientPutState {
 		private int consecutiveRNFs;
 		private int retries;
 		
-		public MySendableInsert(int i, KeyBlock block, short prioClass, ClientRequestScheduler scheduler, Object client) {
+		public MySendableInsert(int i, KeyBlock block, short prioClass, ClientRequestScheduler scheduler, RequestClient client) {
 			super(block, prioClass, client, scheduler);
 			this.blockNum = i;
 		}

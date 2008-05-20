@@ -13,6 +13,7 @@ import freenet.client.Metadata;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -53,7 +54,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 */
 	public ClientPutter(ClientCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
 			ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, short priorityClass, boolean getCHKOnly, 
-			boolean isMetadata, Object clientContext, SimpleFieldSet stored, String targetFilename, boolean binaryBlob) {
+			boolean isMetadata, RequestClient clientContext, SimpleFieldSet stored, String targetFilename, boolean binaryBlob) {
 		super(priorityClass, chkScheduler, sskScheduler, clientContext);
 		this.cm = cm;
 		this.isMetadata = isMetadata;

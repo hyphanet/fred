@@ -51,7 +51,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	public abstract boolean isCancelled();
 	
 	/** Get client context object */
-	public abstract Object getClient();
+	public abstract RequestClient getClient();
 	
 	/** Get the ClientRequest */
 	public abstract ClientRequester getClientRequest();

@@ -8,6 +8,7 @@ import java.util.Set;
 
 import freenet.client.events.ClientEventListener;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 
 public interface HighLevelSimpleClient {
 
@@ -35,7 +36,7 @@ public interface HighLevelSimpleClient {
 	/**
 	 * Blocking fetch of a URI with a configurable max-size and context object.
 	 */
-	public FetchResult fetch(FreenetURI uri, long maxSize, Object context) throws FetchException;
+	public FetchResult fetch(FreenetURI uri, long maxSize, RequestClient context) throws FetchException;
 	
 	/**
 	 * Blocking insert.

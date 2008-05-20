@@ -22,6 +22,7 @@ import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarter;
 import freenet.support.Executor;
@@ -33,7 +34,7 @@ import freenet.support.io.NullBucket;
 import freenet.support.io.NullPersistentFileTracker;
 import freenet.support.io.PersistentFileTracker;
 
-public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
+public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, RequestClient {
 
 	private final ArchiveManager archiveManager;
 	private final short priorityClass;
@@ -127,7 +128,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		return fetch(uri, overrideMaxSize, this);
 	}
 
-	public FetchResult fetch(FreenetURI uri, long overrideMaxSize, Object clientContext) throws FetchException {
+	public FetchResult fetch(FreenetURI uri, long overrideMaxSize, RequestClient clientContext) throws FetchException {
 		if(uri == null) throw new NullPointerException();
 		FetchWaiter fw = new FetchWaiter();
 		FetchContext context = getFetchContext(overrideMaxSize);

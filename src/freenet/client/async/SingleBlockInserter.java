@@ -19,6 +19,7 @@ import freenet.keys.SSKEncodeException;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelPutException;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableInsert;
 import freenet.support.Logger;
@@ -318,7 +319,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return true;
 	}
 
-	public Object getClient() {
+	public RequestClient getClient() {
 		return parent.getClient();
 	}
 

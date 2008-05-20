@@ -20,7 +20,7 @@ public class SimpleSendableInsert extends SendableInsert {
 	public final KeyBlock block;
 	public final short prioClass;
 	private boolean finished;
-	public final Object client;
+	public final RequestClient client;
 	public final ClientRequestScheduler scheduler;
 	
 	public SimpleSendableInsert(NodeClientCore core, KeyBlock block, short prioClass) {
@@ -35,7 +35,7 @@ public class SimpleSendableInsert extends SendableInsert {
 			throw new IllegalArgumentException("Don't know what to do with "+block);
 	}
 	
-	public SimpleSendableInsert(KeyBlock block, short prioClass, Object client, ClientRequestScheduler scheduler) {
+	public SimpleSendableInsert(KeyBlock block, short prioClass, RequestClient client, ClientRequestScheduler scheduler) {
 		this.block = block;
 		this.prioClass = prioClass;
 		this.client = client;
@@ -80,7 +80,7 @@ public class SimpleSendableInsert extends SendableInsert {
 		return true;
 	}
 
-	public Object getClient() {
+	public RequestClient getClient() {
 		return client;
 	}
 

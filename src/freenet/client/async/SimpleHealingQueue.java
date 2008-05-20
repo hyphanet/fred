@@ -11,6 +11,7 @@ import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
@@ -22,7 +23,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	final HashMap runningInserters;
 	
 	public SimpleHealingQueue(ClientRequestScheduler scheduler, InsertContext context, short prio, int maxRunning) {
-		super(prio, scheduler, null, context);
+		super(prio, scheduler, null, new RequestClient() { });
 		this.ctx = context;
 		this.runningInserters = new HashMap();
 		this.maxRunning = maxRunning;

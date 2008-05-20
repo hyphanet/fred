@@ -17,6 +17,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.Ticker;
 import freenet.node.Version;
@@ -24,7 +25,7 @@ import freenet.support.Logger;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 
-public class NodeUpdater implements ClientCallback, USKCallback {
+public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 	static private boolean logMINOR;
 	private FetchContext ctx;
 	private FetchResult result;

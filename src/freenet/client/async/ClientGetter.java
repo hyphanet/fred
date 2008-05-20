@@ -19,6 +19,7 @@ import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.node.PrioRunnable;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -61,7 +62,7 @@ public class ClientGetter extends BaseClientGetter {
 	 * former, obviously!
 	 */
 	public ClientGetter(ClientCallback client, ClientRequestScheduler chkSched, ClientRequestScheduler sskSched,
-			    FreenetURI uri, FetchContext ctx, short priorityClass, Object clientContext, Bucket returnBucket, Bucket binaryBlobBucket) {
+			    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, Bucket binaryBlobBucket) {
 		super(priorityClass, chkSched, sskSched, clientContext);
 		this.clientCallback = client;
 		this.returnBucket = returnBucket;

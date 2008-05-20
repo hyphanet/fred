@@ -39,6 +39,7 @@ import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeStarter;
 import freenet.node.PeerNode;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.Version;
 import freenet.node.useralerts.AbstractUserAlert;
@@ -56,7 +57,7 @@ import freenet.support.io.RandomAccessFileWrapper;
  * do about them.
  * @author toad
  */
-public class UpdateOverMandatoryManager {
+public class UpdateOverMandatoryManager implements RequestClient {
 
 	final NodeUpdateManager updateManager;
 	

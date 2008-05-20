@@ -3,9 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import freenet.node.RequestClient;
+
 public abstract class BaseClientPutter extends ClientRequester {
 
-	protected BaseClientPutter(short priorityClass, ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, Object context) {
+	protected BaseClientPutter(short priorityClass, ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, RequestClient context) {
 		super(priorityClass, chkScheduler, sskScheduler, context);
 	}
 

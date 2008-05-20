@@ -127,7 +127,7 @@ import freenet.support.transport.ip.HostnameSyntaxException;
 /**
  * @author amphibian
  */
-public class Node implements TimeSkewDetectorCallback, GetPubkey {
+public class Node implements TimeSkewDetectorCallback, GetPubkey, RequestClient {
 
 	private static boolean logMINOR;
 	

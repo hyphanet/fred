@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.support.Logger;
 
 /** A high level client request. A request (either fetch or put) started
@@ -20,13 +21,13 @@ public abstract class ClientRequester {
 	protected boolean cancelled;
 	public final ClientRequestScheduler chkScheduler;
 	public final ClientRequestScheduler sskScheduler;
-	protected final Object client;
+	protected final RequestClient client;
 
 	public short getPriorityClass() {
 		return priorityClass;
 	}
 
-	protected ClientRequester(short priorityClass, ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, Object client) {
+	protected ClientRequester(short priorityClass, ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, RequestClient client) {
 		this.priorityClass = priorityClass;
 		this.chkScheduler = chkScheduler;
 		this.sskScheduler = sskScheduler;
@@ -120,7 +121,7 @@ public abstract class ClientRequester {
 	public abstract void notifyClients();
 
 	/** Get client context object */
-	public Object getClient() {
+	public RequestClient getClient() {
 		return client;
 	}
 

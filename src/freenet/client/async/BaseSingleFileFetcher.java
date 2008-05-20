@@ -10,6 +10,7 @@ import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.KeyVerifyException;
 import freenet.node.KeysFetchingLocally;
+import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
 import freenet.support.Logger;
@@ -119,7 +120,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return cancelled;
 	}
 	
-	public Object getClient() {
+	public RequestClient getClient() {
 		return parent.getClient();
 	}
 

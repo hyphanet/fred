@@ -16,13 +16,14 @@ import freenet.keys.USK;
 import freenet.l10n.L10n;
 import freenet.node.FSParseException;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
-public class BookmarkManager {
+public class BookmarkManager implements RequestClient {
 
 	public static final SimpleFieldSet DEFAULT_BOOKMARKS;
 	private final NodeClientCore node;

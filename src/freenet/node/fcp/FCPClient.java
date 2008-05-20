@@ -10,13 +10,14 @@ import freenet.client.FetchContext;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertContext;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestClient;
 import freenet.support.Logger;
 
 /**
  * An FCP client.
  * Identified by its Name which is sent on connection.
  */
-public class FCPClient {
+public class FCPClient implements RequestClient {
 	
 	public FCPClient(String name2, FCPServer server, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb) {
 		this.name = name2;
@@ -66,7 +67,7 @@ public class FCPClient {
 	final LinkedList clientsWatching;
 	private final LinkedList toStart;
 	/** Low-level client object, for freenet.client.async. Normally == this. */
-	final Object lowLevelClient;
+	final RequestClient lowLevelClient;
 	private RequestCompletionCallback completionCallback;
 	
 	public synchronized FCPConnectionHandler getConnection() {

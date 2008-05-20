@@ -17,6 +17,7 @@ import freenet.keys.KeyDecodeException;
 import freenet.keys.TooBigException;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
+import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
 import freenet.support.Logger;
@@ -281,7 +282,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return data;
 	}
 
-	public Object getClient() {
+	public RequestClient getClient() {
 		return segment.parentFetcher.parent.getClient();
 	}
 

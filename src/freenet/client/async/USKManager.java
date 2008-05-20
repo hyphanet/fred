@@ -9,6 +9,7 @@ import java.util.Vector;
 import freenet.client.FetchContext;
 import freenet.keys.USK;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
 import freenet.node.Ticker;
 import freenet.support.LRUQueue;
@@ -18,7 +19,7 @@ import freenet.support.Logger;
  * Tracks the latest version of every known USK.
  * Also does auto-updates.
  */
-public class USKManager {
+public class USKManager implements RequestClient {
 
 	/** Latest version by blanked-edition-number USK */
 	final HashMap latestVersionByClearUSK;
@@ -86,7 +87,7 @@ public class USKManager {
 		return f;
 	}
 
-	public USKFetcher getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, Object client) {
+	public USKFetcher getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, RequestClient client) {
 		USKFetcher f = new USKFetcher(usk, this, backgroundFetchContext, 
 				new USKFetcherWrapper(usk, prioClass, chkRequestScheduler, sskRequestScheduler, client), 3, false, true);
 		f.addCallback(cb);
@@ -167,7 +168,7 @@ public class USKManager {
 	 * updated. Note that this does not imply that the USK will be
 	 * checked on a regular basis, unless runBackgroundFetch=true.
 	 */
-	public void subscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch, Object client) {
+	public void subscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch, RequestClient client) {
 		USKFetcher sched = null;
 		long ed = origUSK.suggestedEdition;
 		if(ed < 0) {
@@ -267,7 +268,7 @@ public class USKManager {
 	 * @param fctx Fetcher context for actually fetching the keys. Not used by the USK polling.
 	 * @return
 	 */
-	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetchContext fctx, short prio, Object client) {
+	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetchContext fctx, short prio, RequestClient client) {
 		USKRetriever ret = new USKRetriever(fctx, prio, chkRequestScheduler, sskRequestScheduler, client, cb);
 		subscribe(origUSK, ret, runBackgroundFetch, client);
 		return ret;

@@ -7,6 +7,7 @@ import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
+import freenet.node.RequestClient;
 
 /**
  * Wrapper for a backgrounded USKFetcher.
@@ -15,7 +16,7 @@ public class USKFetcherWrapper extends BaseClientGetter {
 
 	final USK usk;
 	
-	public USKFetcherWrapper(USK usk, short prio, ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, Object client) {
+	public USKFetcherWrapper(USK usk, short prio, ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, RequestClient client) {
 		super(prio, chkScheduler, sskScheduler, client);
 		this.usk = usk;
 	}

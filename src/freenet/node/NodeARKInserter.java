@@ -23,7 +23,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.api.Bucket;
 
-public class NodeARKInserter implements ClientCallback {
+public class NodeARKInserter implements ClientCallback, RequestClient {
 
 	/**
 	 * 

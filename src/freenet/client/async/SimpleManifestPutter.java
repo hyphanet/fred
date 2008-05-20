@@ -22,6 +22,7 @@ import freenet.client.MetadataUnresolvedException;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
@@ -210,7 +211,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	
 	public SimpleManifestPutter(ClientCallback cb, ClientRequestScheduler chkSched,
 			ClientRequestScheduler sskSched, HashMap manifestElements, short prioClass, FreenetURI target, 
-			String defaultName, InsertContext ctx, boolean getCHKOnly, Object clientContext, boolean earlyEncode) throws InsertException {
+			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode) throws InsertException {
 		super(prioClass, chkSched, sskSched, clientContext);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.defaultName = defaultName;
