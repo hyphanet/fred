@@ -161,16 +161,20 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 				if(random.nextInt(permTrackerSize + transTrackerSize) > permTrackerSize) {
 					chosenTracker = permRetryTracker;
 					trackerParent = perm;
+					permRetryCount++;
 				} else {
 					chosenTracker = transRetryTracker;
 					trackerParent = trans;
+					transRetryCount++;
 				}
 			} else if(permRetryCount < transRetryCount) {
 				chosenTracker = (SectoredRandomGrabArrayWithInt) perm.getByIndex(permRetryIndex);
 				trackerParent = perm;
+				permRetryCount++;
 			} else {
 				chosenTracker = (SectoredRandomGrabArrayWithInt) trans.getByIndex(transRetryIndex);
 				trackerParent = trans;
+				transRetryCount++;
 			}
 			if(logMINOR)
 				Logger.minor(this, "Got retry count tracker "+chosenTracker);
