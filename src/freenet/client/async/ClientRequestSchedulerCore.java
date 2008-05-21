@@ -306,5 +306,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		return true;
 	}
 
+	ObjectContainer container() {
+		return container;
+	}
+
 	
 }

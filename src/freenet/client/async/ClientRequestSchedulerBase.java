@@ -7,6 +7,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import com.db4o.ObjectContainer;
+
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
@@ -57,6 +59,9 @@ abstract class ClientRequestSchedulerBase {
 	protected final List /* <BaseSendableGet> */ recentSuccesses;
 
 	abstract boolean persistent();
+	
+	/** @return The container if this is persistent, otherwise null */
+	abstract ObjectContainer container();
 	
 	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs, Map pendingKeys, Map allRequestsByClientRequest, List recentSuccesses) {
 		this.isInsertScheduler = forInserts;

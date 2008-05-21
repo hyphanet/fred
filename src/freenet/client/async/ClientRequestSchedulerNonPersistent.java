@@ -6,6 +6,8 @@ package freenet.client.async;
 import java.util.HashMap;
 import java.util.LinkedList;
 
+import com.db4o.ObjectContainer;
+
 import freenet.node.RequestStarter;
 import freenet.support.SortedVectorByNumber;
 
@@ -34,6 +36,10 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 
 	boolean persistent() {
 		return true;
+	}
+
+	ObjectContainer container() {
+		return null;
 	}
 
 }
