@@ -105,6 +105,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			return null;
 		}
 
+		unlockEntry(entry.curOffset);
+		
 		try {
 			StorableBlock block = entry.getStorableBlock(routingKey, fullKey);
 			incHits();
@@ -116,6 +118,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 	}
 
+	/**
+	 * Find and lock an entry with a specific routing key. <strong>You have to unlock the entry
+	 * explicitly yourself!</strong>
+	 * 
+	 * @param routingKey
+	 * @return <code>Entry</code> object
+	 * @throws IOException
+	 */
 	private Entry probeEntry(byte[] routingKey) throws IOException {
 		Entry entry = probeEntry0(routingKey, storeSize);
 
@@ -126,7 +136,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	private Entry probeEntry0(byte[] routingKey, long probeStoreSize) throws IOException {
-		Entry entry;
+		Entry entry = null;
 		long[] offset = getOffsetFromPlainKey(routingKey, probeStoreSize);
 
 		for (int i = 0; i < offset.length; i++) {
@@ -139,15 +149,16 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			}
 			try {
 				entry = readEntry(offset[i], routingKey);
+				if (entry != null)
+					return entry;
 			} catch (EOFException e) {
 				// may occur on resize, silent it a bit
 				Logger.error(this, "EOFException on probeEntry", e);
 				continue;
 			} finally {
-				unlockEntry(offset[i]);
+				if (entry == null)
+					unlockEntry(offset[i]);
 			}
-			if (entry != null)
-				return entry;
 		}
 		return null;
 	}
@@ -159,8 +170,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		// don't use fetch(), as fetch() would do a miss++/hit++
 		Entry oldEntry = probeEntry(routingKey);
-
 		if (oldEntry != null) {
+			long oldOffset = oldEntry.curOffset;
+			try {
 			try {
 				StorableBlock oldBlock = oldEntry.getStorableBlock(routingKey, fullKey);
 				if (!collisionPossible)
@@ -174,6 +186,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			} catch (KeyVerifyException e) {
 				// ignore
 			}
+			
+			// Overwrite old offset
+			Entry entry = new Entry(routingKey, header, data);
+			writeEntry(entry, oldOffset);
+			return;
+			} finally {
+				unlockEntry(oldOffset);
+			}
 		}
 
 		Entry entry = new Entry(routingKey, header, data);
@@ -185,7 +205,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				return;
 			}
 			try {
-				if (isFree(offset[i], entry)) {
+				if (isFree(offset[i])) {
 					if (logDEBUG)
 						Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
 					writeEntry(entry, offset[i]);
@@ -197,19 +217,18 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			}
 		}
 
-		// no free blocks?
-		int i = random.nextInt(offset.length);
-		if (!lockEntry(offset[i])) {
-			Logger.error(this, "can't lock entry: " + offset[i]);
+		// no free blocks, overwrite the first one
+			if (!lockEntry(offset[0])) {
+				Logger.error(this, "can't lock entry: " + offset[0]);
 			return;
 		}
 		try {
 			if (logDEBUG)
-				Logger.debug(this, "collision, write to i=" + i + ", offset=" + offset[i]);
-			writeEntry(entry, offset[i]);
+				Logger.debug(this, "collision, write to i=0, offset=" + offset[0]);
+				writeEntry(entry, offset[0]);
 			incWrites();
 		} finally {
-			unlockEntry(offset[i]);
+			unlockEntry(offset[0]);
 		}
 	}
 
@@ -272,7 +291,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		private byte[] data;
 
 		private boolean isEncrypted;
-		public long curOffset;
+		public long curOffset = -1;
 
 		/**
 		 * Create a new entry
@@ -573,6 +592,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			if (status == -1)
 				throw new EOFException();
 		} while (bf.hasRemaining());
+		
+		entry.curOffset = offset;
 	}
 
 	/**
@@ -594,18 +615,16 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	/**
-	 * Check if a block is free or occupied by a specific routing key
+	 * Check if a block is free
 	 * 
 	 * @param offset
-	 * @param entry
-	 * 		entry, maybe <code>null</code>
 	 * @throws IOException
 	 */
-	private boolean isFree(long offset, Entry entry) throws IOException {
+	private boolean isFree(long offset) throws IOException {
 		int split = (int) (offset % FILE_SPLIT);
-		long rawOffset = (offset / FILE_SPLIT) * entryTotalLength;
+		long rawOffset = (offset / FILE_SPLIT) * entryTotalLength + 0x30;
 
-		ByteBuffer bf = ByteBuffer.allocate((int) 0x38);
+		ByteBuffer bf = ByteBuffer.allocate((int) 0x8);
 
 		do {
 			int status = storeFC[split].read(bf, rawOffset + bf.position());
@@ -613,17 +632,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				throw new EOFException();
 		} while (bf.hasRemaining());
 
-		if ((bf.getLong(0x30) & ENTRY_FLAG_OCCUPIED) == 0) {
-			// free
-			return true;
-		} else if (entry != null) {
-			// check digested key
-			byte[] digestedRoutingKey = new byte[0x20];
-			bf.position(0);
-			bf.get(digestedRoutingKey);
-			return Arrays.equals(digestedRoutingKey, entry.getDigestedRoutingKey());
-		}
-		return false;
+		return ((bf.getLong(0) & ENTRY_FLAG_OCCUPIED) == 0);
 	}
 
 	private void flushAndClose() {
@@ -1006,7 +1015,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					if (!lockEntry(newOffset[i])) // lock
 						continue;
 					try {
-						if (isFree(newOffset[i], entry)) {
+						if (isFree(newOffset[i])) {
 							if (logDEBUG)
 								Logger
 								        .debug(this, "Put back old item: "
@@ -1070,7 +1079,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			long occupied = 0;
 			while (sampled < numSample) {
 				try {
-					if (!isFree(samplePos, null)) {
+					if (!isFree(samplePos)) {
 						occupied++;
 					}
 					sampled++;
