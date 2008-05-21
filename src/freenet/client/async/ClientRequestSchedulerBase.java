@@ -221,7 +221,7 @@ public abstract class ClientRequestSchedulerBase {
 		else return 0;
 	}
 	
-	synchronized void innerRegister(SendableRequest req, RandomSource random) {
+	void innerRegister(SendableRequest req, RandomSource random) {
 		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+req.getPriorityClass()+" retry "+req.getRetryCount()+" for "+req.getClientRequest());
 		int retryCount = req.getRetryCount();
 		addToGrabArray(req.getPriorityClass(), retryCount, fixRetryCount(retryCount), req.getClient(), req.getClientRequest(), req, random);
@@ -234,7 +234,7 @@ public abstract class ClientRequestSchedulerBase {
 		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+req.getPriorityClass()+", retrycount="+req.getRetryCount()+" v.size()="+v.size());
 	}
 	
-	synchronized void addToGrabArray(short priorityClass, int retryCount, int rc, Object client, ClientRequester cr, SendableRequest req, RandomSource random) {
+	void addToGrabArray(short priorityClass, int retryCount, int rc, Object client, ClientRequester cr, SendableRequest req, RandomSource random) {
 		if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
 			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
 		// Priority
@@ -277,9 +277,9 @@ public abstract class ClientRequestSchedulerBase {
 		return Math.max(0, retryCount-MIN_RETRY_COUNT);
 	}
 
-	public void reregisterAll(ClientRequester request, RandomSource random) {
+	public void reregisterAll(ClientRequester request, RandomSource random, ClientRequestScheduler lock) {
 		SendableRequest[] reqs;
-		synchronized(this) {
+		synchronized(lock) {
 			HashSet h = (HashSet) allRequestsByClientRequest.get(request);
 			if(h == null) return;
 			reqs = (SendableRequest[]) h.toArray(new SendableRequest[h.size()]);
@@ -296,17 +296,14 @@ public abstract class ClientRequestSchedulerBase {
 
 	public void succeeded(BaseSendableGet succeeded) {
 		if(isInsertScheduler) return;
-		synchronized(this) {
 			if(logMINOR)
 				Logger.minor(this, "Recording successful fetch from "+succeeded);
 			recentSuccesses.add(succeeded);
 			while(recentSuccesses.size() > 8)
 				recentSuccesses.remove(0);
-		}
 	}
 
 	protected void removeFromAllRequestsByClientRequest(SendableRequest req, ClientRequester cr) {
-		synchronized(this) {
 			HashSet v = (HashSet) allRequestsByClientRequest.get(cr);
 			if(v == null) {
 				Logger.error(this, "No HashSet registered for "+cr);
@@ -316,7 +313,6 @@ public abstract class ClientRequestSchedulerBase {
 					allRequestsByClientRequest.remove(cr);
 				if(logMINOR) Logger.minor(this, (removed ? "" : "Not ") + "Removed from HashSet for "+cr+" which now has "+v.size()+" elements");
 			}
-		}
 	}
 
 }

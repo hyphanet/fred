@@ -252,7 +252,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 	public void reregisterAll(ClientRequester request) {
 //		if(request.persistent())
-			schedCore.reregisterAll(request, random);
+			schedCore.reregisterAll(request, random, this);
 //		else
 //			schedTransient.reregisterAll(request, random);
 //		starter.wakeUp();
@@ -262,7 +262,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return choosenPriorityScheduler;
 	}
 
-	public void succeeded(BaseSendableGet succeeded) {
+	public synchronized void succeeded(BaseSendableGet succeeded) {
 		if(succeeded.persistent())
 			schedCore.succeeded(succeeded);
 		else
