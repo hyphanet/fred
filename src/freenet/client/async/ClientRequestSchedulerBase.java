@@ -25,7 +25,7 @@ import freenet.support.SortedVectorByNumber;
  * the methods that deal primarily with pendingKeys.
  * @author toad
  */
-public abstract class ClientRequestSchedulerBase {
+abstract class ClientRequestSchedulerBase {
 	
 	/** Minimum number of retries at which we start to hold it against a request.
 	 * See the comments on fixRetryCount; we don't want many untried requests to prevent
@@ -56,6 +56,8 @@ public abstract class ClientRequestSchedulerBase {
 	protected final Map allRequestsByClientRequest;
 	protected final List /* <BaseSendableGet> */ recentSuccesses;
 
+	abstract boolean persistent();
+	
 	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs, Map pendingKeys, Map allRequestsByClientRequest, List recentSuccesses) {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;

@@ -32,4 +32,8 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 		recentSuccesses = new LinkedList();
 	}
 
+	boolean persistent() {
+		return true;
+	}
+
 }

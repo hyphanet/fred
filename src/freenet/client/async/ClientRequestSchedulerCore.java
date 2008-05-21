@@ -295,5 +295,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		RequestStarter.MINIMUM_PRIORITY_CLASS
 	};
 
+	boolean persistent() {
+		return true;
+	}
+
 	
 }
