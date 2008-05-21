@@ -30,6 +30,7 @@ import freenet.support.SortedVectorByNumber;
  */
 class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	
+	private ObjectContainer container;
 	private static boolean logMINOR;
 	/** Identifier in the database for the node we are attached to */
 	private final long nodeDBHandle;
@@ -62,19 +63,21 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 			core = new ClientRequestSchedulerCore(node, forInserts, forSSKs, selectorContainer);
 		}
 		logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequestSchedulerCore.class);
-		core.onStarted();
+		core.onStarted(selectorContainer);
 		return core;
 	}
 
 	ClientRequestSchedulerCore(Node node, boolean forInserts, boolean forSSKs, ObjectContainer selectorContainer) {
 		super(forInserts, forSSKs, forInserts ? null : selectorContainer.ext().collections().newHashMap(1024), selectorContainer.ext().collections().newHashMap(32), selectorContainer.ext().collections().newLinkedList());
 		this.nodeDBHandle = node.nodeDBHandle;
+		this.container = selectorContainer;
 	}
 
-	private void onStarted() {
+	private void onStarted(ObjectContainer container) {
 		((Db4oMap)pendingKeys).activationDepth(1);
 		((Db4oMap)allRequestsByClientRequest).activationDepth(1);
 		((Db4oList)recentSuccesses).activationDepth(1);
+		this.container = container;
 	}
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
