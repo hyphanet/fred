@@ -986,10 +986,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 
 				long lruVal = 0;
 				Transaction t = null;
-				if(storeRAF.getFilePointer() != l * (headerBlockSize + dataBlockSize)) {
-					System.err.println("File pointer is "+storeRAF.getFilePointer()+" but should be "+((headerBlockSize + dataBlockSize)));
-					System.exit(NodeInitException.EXIT_STORE_RECONSTRUCT);
-				}
 				boolean dataRead = false;
 				if(lruRAFLength > (l+1)*8) {
 					try {
