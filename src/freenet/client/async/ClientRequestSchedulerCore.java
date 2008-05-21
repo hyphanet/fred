@@ -231,23 +231,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		return null;
 	}
 	
-	public void reregisterAll(ClientRequester request, RandomSource random) {
-		SendableRequest[] reqs;
-		synchronized(this) {
-			HashSet h = (HashSet) allRequestsByClientRequest.get(request);
-			if(h == null) return;
-			reqs = (SendableRequest[]) h.toArray(new SendableRequest[h.size()]);
-		}
-		
-		for(int i=0;i<reqs.length;i++) {
-			SendableRequest req = reqs[i];
-			// Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.
-			req.unregister(true);
-			// Then can do innerRegister() (not register()).
-			innerRegister(req, random);
-		}
-	}
-
 	private static final short[] tweakedPrioritySelector = { 
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
 		RequestStarter.MAXIMUM_PRIORITY_CLASS,
