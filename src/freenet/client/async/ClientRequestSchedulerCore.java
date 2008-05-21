@@ -38,15 +38,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	final boolean isInsertScheduler;
 	final boolean isSSKScheduler;
 	private final Map allRequestsByClientRequest;
-	/**
-	 * Structure:
-	 * array (by priority) -> // one element per possible priority
-	 * SortedVectorByNumber (by # retries) -> // contains each current #retries
-	 * RandomGrabArray // contains each element, allows fast fetch-and-drop-a-random-element
-	 * 
-	 * To speed up fetching, a RGA or SVBN must only exist if it is non-empty.
-	 */
-	private final SortedVectorByNumber[] priorities;
 	// FIXME cooldown queue ????
 	// Can we make the cooldown queue non-persistent? It refers to SendableGet's ... so
 	// keeping it in memory may be a problem...
@@ -88,7 +79,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		this.isSSKScheduler = forSSKs;
 		allRequestsByClientRequest = selectorContainer.ext().collections().newHashMap(32);
 		recentSuccesses = selectorContainer.ext().collections().newLinkedList();
-		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 	}
 
 	private void onStarted() {
@@ -110,49 +100,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+req.getPriorityClass()+", retrycount="+req.getRetryCount()+" v.size()="+v.size());
 	}
 	
-	/**
-	 * Mangle the retry count.
-	 * Below a certain number of attempts, we don't prefer one request to another just because
-	 * it's been tried more times. The reason for this is to prevent floods of low-retry-count
-	 * requests from starving other clients' requests which need to be retried. The other
-	 * solution would be to sort by client before retry count, but that would be excessive 
-	 * IMHO; we DO want to avoid rerequesting keys we've tried many times before.
-	 */
-	private int fixRetryCount(int retryCount) {
-		return Math.max(0, retryCount-MIN_RETRY_COUNT);
-	}
-
-	synchronized void addToGrabArray(short priorityClass, int retryCount, int rc, Object client, ClientRequester cr, SendableRequest req, RandomSource random) {
-		if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
-			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
-		// Priority
-		SortedVectorByNumber prio = priorities[priorityClass];
-		if(prio == null) {
-			prio = new SortedVectorByNumber();
-			priorities[priorityClass] = prio;
-		}
-		// Client
-		SectoredRandomGrabArrayWithInt clientGrabber = (SectoredRandomGrabArrayWithInt) prio.get(rc);
-		if(clientGrabber == null) {
-			clientGrabber = new SectoredRandomGrabArrayWithInt(random, rc, true);
-			prio.add(clientGrabber);
-			if(logMINOR) Logger.minor(this, "Registering retry count "+rc+" with prioclass "+priorityClass+" on "+clientGrabber+" for "+prio);
-		}
-		// SectoredRandomGrabArrayWithInt and lower down have hierarchical locking and auto-remove.
-		// To avoid a race condition it is essential to mirror that here.
-		synchronized(clientGrabber) {
-			// Request
-			SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
-			if(requestGrabber == null) {
-				requestGrabber = new SectoredRandomGrabArrayWithObject(client, random, true);
-				if(logMINOR)
-					Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : "+prio+" : prio="+priorityClass+", rc="+rc);
-				clientGrabber.addGrabber(client, requestGrabber);
-			}
-			requestGrabber.add(cr, req);
-		}
-	}
-
 	private int removeFirstAccordingToPriorities(boolean tryOfferedKeys, int fuzz, RandomSource random, OfferedKeysList[] offeredKeys){
 		SortedVectorByNumber result = null;
 		
@@ -361,13 +308,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		RequestStarter.PREFETCH_PRIORITY_CLASS,
 		RequestStarter.MINIMUM_PRIORITY_CLASS
 	};
-
-	/** Minimum number of retries at which we start to hold it against a request.
-	 * See the comments on fixRetryCount; we don't want many untried requests to prevent
-	 * us from trying requests which have only been tried once (e.g. USK checkers), from 
-	 * other clients (and we DO want retries to take precedence over client round robin IF 
-	 * the request has been tried many times already). */
-	private static final int MIN_RETRY_COUNT = 3;
 
 	public void succeeded(BaseSendableGet succeeded) {
 		if(isInsertScheduler) return;
