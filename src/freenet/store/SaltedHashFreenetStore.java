@@ -616,6 +616,24 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	/**
+	 * Get store size
+	 */
+	private long getStoreSize(long offset) throws IOException {
+		int split = (int) (offset % FILE_SPLIT);
+		long rawOffset = (offset / FILE_SPLIT) * entryTotalLength + 0x38;
+
+		ByteBuffer bf = ByteBuffer.allocate((int) 0x8);
+
+		do {
+			int status = storeFC[split].read(bf, rawOffset + bf.position());
+			if (status == -1)
+				throw new EOFException();
+		} while (bf.hasRemaining());
+
+		return bf.getLong(0);
+	}
+
+	/**
 	 * Check if a block is free
 	 * 
 	 * @param offset
@@ -875,14 +893,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				if (!lockEntry(offset)) //lock 
 					continue LOOP_ENTRIES;
 				try {
-					Entry entry = readEntry(offset, null);
-
-					if (entry.isFree()) {
+					if (isFree(offset)) {
 						// free block
 						freeEntries++;
 						continue LOOP_ENTRIES;
 					}
-					if (entry.getStoreSize() == storeSize) {
+
+					if (getStoreSize(offset) == storeSize) {
 						// new store size entries
 						maxOldItemOffset = offset;
 						newEntries++;
@@ -894,6 +911,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					maxOldItemOffset = offset;
 					oldEntries++;
 
+					Entry entry = readEntry(offset, null);
 					entry.setStoreSize(storeSize);
 					long[] newOffset = entry.getOffset();
 
