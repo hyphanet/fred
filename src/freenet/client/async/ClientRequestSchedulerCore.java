@@ -4,7 +4,6 @@
 package freenet.client.async;
 
 import java.util.HashSet;
-import java.util.List;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -34,12 +33,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	private static boolean logMINOR;
 	/** Identifier in the database for the node we are attached to */
 	private final long nodeDBHandle;
-	final boolean isInsertScheduler;
-	final boolean isSSKScheduler;
 	// FIXME cooldown queue ????
 	// Can we make the cooldown queue non-persistent? It refers to SendableGet's ... so
 	// keeping it in memory may be a problem...
-	private final List /* <BaseSendableGet> */ recentSuccesses;
 
 	/**
 	 * Fetch a ClientRequestSchedulerCore from the database, or create a new one.
@@ -71,11 +67,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	}
 
 	ClientRequestSchedulerCore(Node node, boolean forInserts, boolean forSSKs, ObjectContainer selectorContainer) {
-		super(forInserts ? null : selectorContainer.ext().collections().newHashMap(1024), selectorContainer.ext().collections().newHashMap(32));
+		super(forInserts, forSSKs, forInserts ? null : selectorContainer.ext().collections().newHashMap(1024), selectorContainer.ext().collections().newHashMap(32), selectorContainer.ext().collections().newLinkedList());
 		this.nodeDBHandle = node.nodeDBHandle;
-		this.isInsertScheduler = forInserts;
-		this.isSSKScheduler = forSSKs;
-		recentSuccesses = selectorContainer.ext().collections().newLinkedList();
 	}
 
 	private void onStarted() {
@@ -275,17 +268,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		RequestStarter.PREFETCH_PRIORITY_CLASS,
 		RequestStarter.MINIMUM_PRIORITY_CLASS
 	};
-
-	public void succeeded(BaseSendableGet succeeded) {
-		if(isInsertScheduler) return;
-		synchronized(this) {
-			if(logMINOR)
-				Logger.minor(this, "Recording successful fetch from "+succeeded);
-			recentSuccesses.add(succeeded);
-			while(recentSuccesses.size() > 8)
-				recentSuccesses.remove(0);
-		}
-	}
 
 	
 }

@@ -4,11 +4,13 @@
 package freenet.client.async;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
+import freenet.node.BaseSendableGet;
 import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableRequest;
@@ -33,6 +35,10 @@ public abstract class ClientRequestSchedulerBase {
 	private static final int MIN_RETRY_COUNT = 3;
 
 	private static boolean logMINOR;
+	
+	final boolean isInsertScheduler;
+	final boolean isSSKScheduler;
+	
 	/** All pending gets by key. Used to automatically satisfy pending requests when either the key is fetched by
 	 * an overlapping request, or it is fetched by a request from another node. Operations on this are synchronized on
 	 * itself. */
@@ -47,10 +53,14 @@ public abstract class ClientRequestSchedulerBase {
 	 */
 	protected final SortedVectorByNumber[] priorities;
 	protected final Map allRequestsByClientRequest;
+	protected final List /* <BaseSendableGet> */ recentSuccesses;
 
-	protected ClientRequestSchedulerBase(Map pendingKeys, Map allRequestsByClientRequest) {
+	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs, Map pendingKeys, Map allRequestsByClientRequest, List recentSuccesses) {
+		this.isInsertScheduler = forInserts;
+		this.isSSKScheduler = forSSKs;
 		this.pendingKeys = pendingKeys;
 		this.allRequestsByClientRequest = allRequestsByClientRequest;
+		this.recentSuccesses = recentSuccesses;
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequestSchedulerBase.class);
 	}
@@ -283,5 +293,15 @@ public abstract class ClientRequestSchedulerBase {
 		}
 	}
 
+	public void succeeded(BaseSendableGet succeeded) {
+		if(isInsertScheduler) return;
+		synchronized(this) {
+			if(logMINOR)
+				Logger.minor(this, "Recording successful fetch from "+succeeded);
+			recentSuccesses.add(succeeded);
+			while(recentSuccesses.size() > 8)
+				recentSuccesses.remove(0);
+		}
+	}
 
 }

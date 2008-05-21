@@ -265,10 +265,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public void succeeded(BaseSendableGet succeeded) {
-//		if(succeeded.persistent())
+		if(succeeded.persistent())
 			schedCore.succeeded(succeeded);
-//		else
-//			schedTransient.succeeded(succeeded);
+		else
+			schedTransient.succeeded(succeeded);
 	}
 
 	public void tripPendingKey(final KeyBlock block) {

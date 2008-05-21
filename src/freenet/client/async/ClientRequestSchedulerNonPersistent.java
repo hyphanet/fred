@@ -31,7 +31,7 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 	final LinkedList /* <BaseSendableGet> */ recentSuccesses;
 	
 	ClientRequestSchedulerNonPersistent(ClientRequestScheduler sched) {
-		super(sched.isInsertScheduler ? null : new HashMap(), new HashMap());
+		super(sched.isInsertScheduler, sched.isSSKScheduler, sched.isInsertScheduler ? null : new HashMap(), new HashMap(), new LinkedList());
 		allRequestsByClientRequest = new HashMap();
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		recentSuccesses = new LinkedList();
