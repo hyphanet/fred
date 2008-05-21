@@ -36,7 +36,8 @@ import freenet.support.math.SimpleRunningAverage;
  */
 public class SaltedHashFreenetStore implements FreenetStore {
 	private static final boolean OPTION_SAVE_PLAINKEY = true;
-
+	private static final int OPTION_MAX_PROBE = 4;
+	
 	private static final boolean logLOCK = false;
 	private static boolean logMINOR;
 	private static boolean logDEBUG;
@@ -1295,13 +1296,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 */
 	public long[] getOffsetFromDigestedKey(byte[] digestedKey, long storeSize) {
 		long keyValue = keyToLong(digestedKey);
-		// h + 141 i^2 + 13 i
-		return new long[] {//
-		((keyValue + 141 * (0 * 0) + 13 * 0) & Long.MAX_VALUE) % storeSize, // i = 0
-		        ((keyValue + 141 * (1 * 1) + 13 * 1) & Long.MAX_VALUE) % storeSize, // i = 1
-		        ((keyValue + 141 * (2 * 2) + 13 * 2) & Long.MAX_VALUE) % storeSize, // i = 2
-		        ((keyValue + 141 * (3 * 3) + 13 * 3) & Long.MAX_VALUE) % storeSize, // i = 3
-		};
+		long[] offsets = new long[OPTION_MAX_PROBE];
+		
+		for (int i = 0 ; i < OPTION_MAX_PROBE ; i++) {
+			// h + 141 i^2 + 13 i
+			offsets[i] = ((keyValue + 141 * (i * i) + 13 * i) & Long.MAX_VALUE) % storeSize;
+		}
+		
+		return offsets;
 	}
 
 	private long keyToLong(byte[] key) {
