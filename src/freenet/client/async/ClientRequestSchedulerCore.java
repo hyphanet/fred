@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import java.util.HashSet;
+import java.util.List;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -77,7 +78,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		((Db4oList)recentSuccesses).activationDepth(1);
 	}
 	
-	private int removeFirstAccordingToPriorities(boolean tryOfferedKeys, int fuzz, RandomSource random, OfferedKeysList[] offeredKeys){
+	// We pass in the schedTransient to the next two methods so that we can select between either of them.
+	
+	private int removeFirstAccordingToPriorities(boolean tryOfferedKeys, int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, ClientRequestSchedulerNonPersistent schedTransient){
 		SortedVectorByNumber result = null;
 		
 		short iteration = 0, priority;
@@ -88,6 +91,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		while(iteration++ < RequestStarter.NUMBER_OF_PRIORITY_CLASSES + 1){
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
 			result = priorities[priority];
+			if(result == null)
+				result = schedTransient.priorities[priority];
 			if((result != null) && 
 					(!result.isEmpty()) || (tryOfferedKeys && !offeredKeys[priority].isEmpty())) {
 				if(logMINOR) Logger.minor(this, "using priority : "+priority);
@@ -110,10 +115,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		boolean tryOfferedKeys = offeredKeys != null && random.nextBoolean();
-		int choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys, fuzz, random, offeredKeys);
+		int choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys, fuzz, random, offeredKeys, schedTransient);
 		if(choosenPriorityClass == -1 && offeredKeys != null && !tryOfferedKeys) {
 			tryOfferedKeys = true;
-			choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys, fuzz, random, offeredKeys);
+			choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys, fuzz, random, offeredKeys, schedTransient);
 		}
 		if(choosenPriorityClass == -1) {
 			if(logMINOR)
@@ -126,97 +131,119 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 			if(offeredKeys[choosenPriorityClass].hasValidKeys(starter))
 				return offeredKeys[choosenPriorityClass];
 		}
-		SortedVectorByNumber s = priorities[choosenPriorityClass];
-		if(s != null){
-			for(int retryIndex=0;retryIndex<s.count();retryIndex++) {
-				SectoredRandomGrabArrayWithInt retryTracker = (SectoredRandomGrabArrayWithInt) s.getByIndex(retryIndex);
-				if(retryTracker == null) {
-					if(logMINOR) Logger.minor(this, "No retrycount's left");
-					break;
+		SortedVectorByNumber perm = priorities[choosenPriorityClass];
+		SortedVectorByNumber trans = schedTransient.priorities[choosenPriorityClass];
+		if(perm == null && trans == null) {
+			if(logMINOR) Logger.minor(this, "No requests to run: chosen priority empty");
+			return null;
+		}
+		int permRetryIndex = 0;
+		int transRetryIndex = 0;
+		while(true) {
+			int permRetryCount = perm == null ? -1 : perm.getNumberByIndex(permRetryIndex);
+			int transRetryCount = trans == null ? -1 : trans.getNumberByIndex(transRetryIndex);
+			if(permRetryCount == -1 && transRetryCount == -1) {
+				if(logMINOR) Logger.minor(this, "No requests to run: ran out of retrycounts on chosen priority");
+				return null;
+			}
+			SectoredRandomGrabArrayWithInt chosenTracker = null;
+			SortedVectorByNumber trackerParent = null;
+			if(permRetryCount == transRetryCount) {
+				// Choose between them.
+				SectoredRandomGrabArrayWithInt permRetryTracker = (SectoredRandomGrabArrayWithInt) perm.getByIndex(permRetryIndex);
+				SectoredRandomGrabArrayWithInt transRetryTracker = (SectoredRandomGrabArrayWithInt) trans.getByIndex(transRetryIndex);
+				int permTrackerSize = permRetryTracker.size();
+				int transTrackerSize = transRetryTracker.size();
+				if(permTrackerSize + transTrackerSize == 0) {
+					permRetryCount++;
+					transRetryCount++;
+					continue;
 				}
-				while(true) {
-					if(logMINOR)
-						Logger.minor(this, "Got retry count tracker "+retryTracker);
-					SendableRequest req = (SendableRequest) retryTracker.removeRandom(starter);
-					if(retryTracker.isEmpty()) {
-						if(logMINOR) Logger.minor(this, "Removing retrycount "+retryTracker.getNumber()+" : "+retryTracker);
-						s.remove(retryTracker.getNumber());
-						if(s.isEmpty()) {
-							if(logMINOR) Logger.minor(this, "Should remove priority ");
-						}
-					}
-					if(req == null) {
-						if(logMINOR) Logger.minor(this, "No requests, adjusted retrycount "+retryTracker.getNumber()+" ("+retryTracker+ ')');
-						break; // Try next retry count.
-					} else if(req.getPriorityClass() != choosenPriorityClass) {
-						// Reinsert it : shouldn't happen if we are calling reregisterAll,
-						// maybe we should ask people to report that error if seen
-						Logger.normal(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass()+" but chosen="+choosenPriorityClass+ ')');
-						// Remove it.
-						SectoredRandomGrabArrayWithObject clientGrabber = (SectoredRandomGrabArrayWithObject) retryTracker.getGrabber(req.getClient());
-						if(clientGrabber != null) {
-							RandomGrabArray baseRGA = (RandomGrabArray) clientGrabber.getGrabber(req.getClientRequest());
-							if(baseRGA != null) {
-								baseRGA.remove(req);
-							} else {
-								Logger.error(this, "Could not find base RGA for requestor "+req.getClientRequest()+" from "+clientGrabber);
-							}
-						} else {
-							Logger.error(this, "Could not find client grabber for client "+req.getClient()+" from "+retryTracker);
-						}
-						innerRegister(req, random);
-						continue; // Try the next one on this retry count.
-					}
-					
-					SendableRequest altReq = null;
-					synchronized(this) {
-						if(!recentSuccesses.isEmpty()) {
-							if(random.nextBoolean()) {
-								altReq = (BaseSendableGet) recentSuccesses.remove(recentSuccesses.size()-1);
-							}
-						}
-					}
-						if(altReq != null && altReq.getPriorityClass() <= choosenPriorityClass && 
-								fixRetryCount(altReq.getRetryCount()) <= retryTracker.getNumber()) {
-							// Use the recent one instead
-							if(logMINOR)
-								Logger.minor(this, "Recently succeeded req "+altReq+" is better, using that, reregistering chosen "+req);
-							innerRegister(req, random);
-							req = altReq;
-						} else {
-							if(altReq != null) {
-								synchronized(this) {
-									recentSuccesses.add(altReq);
-								}
-								if(logMINOR)
-									Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
-								innerRegister(altReq, random);
-							}
-						}
-					
-					if(logMINOR) Logger.debug(this, "removeFirst() returning "+req+" ("+retryTracker.getNumber()+", prio "+
-							req.getPriorityClass()+", retries "+req.getRetryCount()+", client "+req.getClient()+", client-req "+req.getClientRequest()+ ')');
-					ClientRequester cr = req.getClientRequest();
-					if(req.canRemove()) {
-						synchronized(this) {
-							HashSet v = (HashSet) allRequestsByClientRequest.get(cr);
-							if(v == null) {
-								Logger.error(this, "No HashSet registered for "+cr);
-							} else {
-								boolean removed = v.remove(req);
-								if(v.isEmpty())
-									allRequestsByClientRequest.remove(cr);
-								if(logMINOR) Logger.minor(this, (removed ? "" : "Not ") + "Removed from HashSet for "+cr+" which now has "+v.size()+" elements");
-							}
-						}
-						// Do not remove from the pendingKeys list.
-						// Whether it is running a request, waiting to execute, or waiting on the
-						// cooldown queue, ULPRs and backdoor coalescing should still be active.
-					}
-					if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" of "+req.getClientRequest());
-					return req;
+				if(random.nextInt(permTrackerSize + transTrackerSize) > permTrackerSize) {
+					chosenTracker = permRetryTracker;
+					trackerParent = perm;
+				} else {
+					chosenTracker = transRetryTracker;
+					trackerParent = trans;
+				}
+			} else if(permRetryCount < transRetryCount) {
+				chosenTracker = (SectoredRandomGrabArrayWithInt) perm.getByIndex(permRetryIndex);
+				trackerParent = perm;
+			} else {
+				chosenTracker = (SectoredRandomGrabArrayWithInt) trans.getByIndex(transRetryIndex);
+				trackerParent = trans;
+			}
+			if(logMINOR)
+				Logger.minor(this, "Got retry count tracker "+chosenTracker);
+			SendableRequest req = (SendableRequest) chosenTracker.removeRandom(starter);
+			if(chosenTracker.isEmpty()) {
+				trackerParent.remove(chosenTracker.getNumber());
+				if(trackerParent.isEmpty()) {
+					if(logMINOR) Logger.minor(this, "Should remove priority");
 				}
 			}
+			if(req == null) {
+				if(logMINOR) Logger.minor(this, "No requests, adjusted retrycount "+chosenTracker.getNumber()+" ("+chosenTracker+") of priority "+choosenPriorityClass);
+				continue; // Try next retry count.
+			} else if(req.getPriorityClass() != choosenPriorityClass) {
+				// Reinsert it : shouldn't happen if we are calling reregisterAll,
+				// maybe we should ask people to report that error if seen
+				Logger.normal(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass()+" but chosen="+choosenPriorityClass+ ')');
+				// Remove it.
+				SectoredRandomGrabArrayWithObject clientGrabber = (SectoredRandomGrabArrayWithObject) chosenTracker.getGrabber(req.getClient());
+				if(clientGrabber != null) {
+					RandomGrabArray baseRGA = (RandomGrabArray) clientGrabber.getGrabber(req.getClientRequest());
+					if(baseRGA != null) {
+						baseRGA.remove(req);
+					} else {
+						Logger.error(this, "Could not find base RGA for requestor "+req.getClientRequest()+" from "+clientGrabber);
+					}
+				} else {
+					Logger.error(this, "Could not find client grabber for client "+req.getClient()+" from "+chosenTracker);
+				}
+				innerRegister(req, random);
+				continue; // Try the next one on this retry count.
+			}
+			// Check recentSuccesses
+			List recent = req.persistent() ? recentSuccesses : schedTransient.recentSuccesses;
+			SendableRequest altReq = null;
+			if(recent.isEmpty()) {
+				if(random.nextBoolean()) {
+					altReq = (BaseSendableGet) recentSuccesses.remove(recentSuccesses.size()-1);
+				}
+			}
+			if(altReq != null && altReq.getPriorityClass() <= choosenPriorityClass && 
+					fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber()) {
+				// Use the recent one instead
+				if(logMINOR)
+					Logger.minor(this, "Recently succeeded req "+altReq+" is better, using that, reregistering chosen "+req);
+				if(req.persistent())
+					innerRegister(req, random);
+				else
+					schedTransient.innerRegister(req, random);
+				req = altReq;
+			} else {
+				// Don't use the recent one
+				if(logMINOR)
+					Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
+				recent.add(altReq);
+			}
+			// Now we have chosen a request.
+			if(logMINOR) Logger.debug(this, "removeFirst() returning "+req+" ("+chosenTracker.getNumber()+", prio "+
+					req.getPriorityClass()+", retries "+req.getRetryCount()+", client "+req.getClient()+", client-req "+req.getClientRequest()+ ')');
+			ClientRequester cr = req.getClientRequest();
+			if(req.canRemove()) {
+				if(req.persistent())
+					removeFromAllRequestsByClientRequest(req, cr);
+				else
+					schedTransient.removeFromAllRequestsByClientRequest(req, cr);
+				// Do not remove from the pendingKeys list.
+				// Whether it is running a request, waiting to execute, or waiting on the
+				// cooldown queue, ULPRs and backdoor coalescing should still be active.
+			}
+			if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" of "+req.getClientRequest());
+			return req;
+			
 		}
 		}
 		if(logMINOR) Logger.minor(this, "No requests to run");

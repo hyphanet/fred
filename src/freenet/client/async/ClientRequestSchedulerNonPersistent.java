@@ -15,10 +15,6 @@ import freenet.support.SortedVectorByNumber;
  */
 class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 	
-	// These are package-visible so that ClientRequestSchedulerCore can conveniently access them.
-	// THEY SHOULD NOT BE ACCESSED DIRECTLY BY ANY OTHER CLASS!
-	
-	final HashMap allRequestsByClientRequest;
 	/**
 	 * Structure:
 	 * array (by priority) -> // one element per possible priority
@@ -32,7 +28,6 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 	
 	ClientRequestSchedulerNonPersistent(ClientRequestScheduler sched) {
 		super(sched.isInsertScheduler, sched.isSSKScheduler, sched.isInsertScheduler ? null : new HashMap(), new HashMap(), new LinkedList());
-		allRequestsByClientRequest = new HashMap();
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		recentSuccesses = new LinkedList();
 	}

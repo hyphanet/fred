@@ -43,6 +43,7 @@ public abstract class ClientRequestSchedulerBase {
 	 * an overlapping request, or it is fetched by a request from another node. Operations on this are synchronized on
 	 * itself. */
 	protected final Map /* <Key, SendableGet[]> */ pendingKeys;
+	
 	/**
 	 * Structure:
 	 * array (by priority) -> // one element per possible priority
@@ -301,6 +302,20 @@ public abstract class ClientRequestSchedulerBase {
 			recentSuccesses.add(succeeded);
 			while(recentSuccesses.size() > 8)
 				recentSuccesses.remove(0);
+		}
+	}
+
+	protected void removeFromAllRequestsByClientRequest(SendableRequest req, ClientRequester cr) {
+		synchronized(this) {
+			HashSet v = (HashSet) allRequestsByClientRequest.get(cr);
+			if(v == null) {
+				Logger.error(this, "No HashSet registered for "+cr);
+			} else {
+				boolean removed = v.remove(req);
+				if(v.isEmpty())
+					allRequestsByClientRequest.remove(cr);
+				if(logMINOR) Logger.minor(this, (removed ? "" : "Not ") + "Removed from HashSet for "+cr+" which now has "+v.size()+" elements");
+			}
 		}
 	}
 

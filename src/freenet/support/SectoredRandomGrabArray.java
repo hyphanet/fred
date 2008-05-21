@@ -164,4 +164,8 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 		return persistent;
 	}
 
+	public int size() {
+		return grabArrays.length;
+	}
+
 }

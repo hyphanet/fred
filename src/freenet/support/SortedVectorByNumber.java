@@ -116,4 +116,9 @@ public class SortedVectorByNumber {
 		return data[index];
 	}
 
+	public int getNumberByIndex(int idx) {
+		if(idx >= length) return -1;
+		return data[idx].getNumber();
+	}
+
 }
