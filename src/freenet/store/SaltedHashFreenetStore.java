@@ -825,7 +825,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			// Shrink store file size
 			if (shrinking)
-				setStoreFileSize(Math.max(storeSize, maxOldItemOffset));
+				setStoreFileSize(Math.max(storeSize, maxOldItemOffset + 1));
 
 			// Check finished
 			if (resizeRound >= RESIZE_MAX_ROUND || oldEntries == 0 || resolvedEntries + droppedEntries >= oldEntries) {
