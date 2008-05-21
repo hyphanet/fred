@@ -106,11 +106,11 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		return -1;
 	}
 	
-	// LOCKING: Life is a good deal simpler if we just synchronize on (this). 
+	// LOCKING: ClientRequestScheduler locks on (this) before calling. 
 	// We prevent a number of race conditions (e.g. adding a retry count and then another 
 	// thread removes it cos its empty) ... and in addToGrabArray etc we already sync on this.
 	// The worry is ... is there any nested locking outside of the hierarchy?
-	synchronized SendableRequest removeFirst(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient) {
+	SendableRequest removeFirst(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient) {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		boolean tryOfferedKeys = offeredKeys != null && random.nextBoolean();
