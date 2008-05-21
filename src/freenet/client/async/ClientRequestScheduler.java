@@ -194,7 +194,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 			}
 		}
-		schedCore.innerRegister(req, random);
+		if(req.persistent())
+			schedCore.innerRegister(req, random);
+		else
+			schedTransient.innerRegister(req, random);
 		starter.wakeUp();
 	}
 
@@ -213,7 +216,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 			else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 				fuzz = 0;	
 		}
-		return schedCore.removeFirst(fuzz, random, offeredKeys, starter);
+		// schedCore juggles both
+		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient);
 	}
 	
 	public void removePendingKey(SendableGet getter, boolean complain, Key key) {
@@ -249,8 +253,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public void reregisterAll(ClientRequester request) {
-		schedCore.reregisterAll(request, random);
-		starter.wakeUp();
+//		if(request.persistent())
+			schedCore.reregisterAll(request, random);
+//		else
+//			schedTransient.reregisterAll(request, random);
+//		starter.wakeUp();
 	}
 	
 	public String getChoosenPriorityScheduler() {
@@ -258,7 +265,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public void succeeded(BaseSendableGet succeeded) {
-		schedCore.succeeded(succeeded);
+//		if(succeeded.persistent())
+			schedCore.succeeded(succeeded);
+//		else
+//			schedTransient.succeeded(succeeded);
 	}
 
 	public void tripPendingKey(final KeyBlock block) {
