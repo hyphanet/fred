@@ -251,11 +251,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public void reregisterAll(ClientRequester request) {
-//		if(request.persistent())
+		if(request.persistent())
 			schedCore.reregisterAll(request, random, this);
-//		else
-//			schedTransient.reregisterAll(request, random);
-//		starter.wakeUp();
+		else
+			schedTransient.reregisterAll(request, random, this);
+		starter.wakeUp();
 	}
 	
 	public String getChoosenPriorityScheduler() {

@@ -131,4 +131,8 @@ public abstract class ClientRequester {
 		sskScheduler.reregisterAll(this);
 	}
 
+	public boolean persistent() {
+		return client.persistent();
+	}
+
 }
