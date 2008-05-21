@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.util.HashSet;
 import java.util.Map;
 
 import freenet.crypt.RandomSource;
@@ -45,10 +46,11 @@ public abstract class ClientRequestSchedulerBase {
 	 * To speed up fetching, a RGA or SVBN must only exist if it is non-empty.
 	 */
 	protected final SortedVectorByNumber[] priorities;
+	protected final Map allRequestsByClientRequest;
 
-
-	protected ClientRequestSchedulerBase(Map pendingKeys) {
+	protected ClientRequestSchedulerBase(Map pendingKeys, Map allRequestsByClientRequest) {
 		this.pendingKeys = pendingKeys;
+		this.allRequestsByClientRequest = allRequestsByClientRequest;
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequestSchedulerBase.class);
 	}
@@ -207,7 +209,20 @@ public abstract class ClientRequestSchedulerBase {
 			return pendingKeys.size();
 		else return 0;
 	}
-
+	
+	synchronized void innerRegister(SendableRequest req, RandomSource random) {
+		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+req.getPriorityClass()+" retry "+req.getRetryCount()+" for "+req.getClientRequest());
+		int retryCount = req.getRetryCount();
+		addToGrabArray(req.getPriorityClass(), retryCount, fixRetryCount(retryCount), req.getClient(), req.getClientRequest(), req, random);
+		HashSet v = (HashSet) allRequestsByClientRequest.get(req.getClientRequest());
+		if(v == null) {
+			v = new HashSet();
+			allRequestsByClientRequest.put(req.getClientRequest(), v);
+		}
+		v.add(req);
+		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+req.getPriorityClass()+", retrycount="+req.getRetryCount()+" v.size()="+v.size());
+	}
+	
 	synchronized void addToGrabArray(short priorityClass, int retryCount, int rc, Object client, ClientRequester cr, SendableRequest req, RandomSource random) {
 		if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
 			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");

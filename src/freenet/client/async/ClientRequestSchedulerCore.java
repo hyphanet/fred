@@ -37,7 +37,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	private final long nodeDBHandle;
 	final boolean isInsertScheduler;
 	final boolean isSSKScheduler;
-	private final Map allRequestsByClientRequest;
 	// FIXME cooldown queue ????
 	// Can we make the cooldown queue non-persistent? It refers to SendableGet's ... so
 	// keeping it in memory may be a problem...
@@ -73,11 +72,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	}
 
 	ClientRequestSchedulerCore(Node node, boolean forInserts, boolean forSSKs, ObjectContainer selectorContainer) {
-		super(forInserts ? null : selectorContainer.ext().collections().newHashMap(1024));
+		super(forInserts ? null : selectorContainer.ext().collections().newHashMap(1024), selectorContainer.ext().collections().newHashMap(32));
 		this.nodeDBHandle = node.nodeDBHandle;
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
-		allRequestsByClientRequest = selectorContainer.ext().collections().newHashMap(32);
 		recentSuccesses = selectorContainer.ext().collections().newLinkedList();
 	}
 
@@ -85,19 +83,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		((Db4oMap)pendingKeys).activationDepth(1);
 		((Db4oMap)allRequestsByClientRequest).activationDepth(1);
 		((Db4oList)recentSuccesses).activationDepth(1);
-	}
-	
-	synchronized void innerRegister(SendableRequest req, RandomSource random) {
-		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+req.getPriorityClass()+" retry "+req.getRetryCount()+" for "+req.getClientRequest());
-		int retryCount = req.getRetryCount();
-		addToGrabArray(req.getPriorityClass(), retryCount, fixRetryCount(retryCount), req.getClient(), req.getClientRequest(), req, random);
-		HashSet v = (HashSet) allRequestsByClientRequest.get(req.getClientRequest());
-		if(v == null) {
-			v = new HashSet();
-			allRequestsByClientRequest.put(req.getClientRequest(), v);
-		}
-		v.add(req);
-		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+req.getPriorityClass()+", retrycount="+req.getRetryCount()+" v.size()="+v.size());
 	}
 	
 	private int removeFirstAccordingToPriorities(boolean tryOfferedKeys, int fuzz, RandomSource random, OfferedKeysList[] offeredKeys){
