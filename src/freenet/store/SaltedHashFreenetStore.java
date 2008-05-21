@@ -200,7 +200,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		// no free blocks?
 		int i = random.nextInt(offset.length);
 		if (!lockEntry(offset[i])) {
-			Logger.error(this, "can't lock entry: " + entry.getOffset());
+			Logger.error(this, "can't lock entry: " + offset[i]);
 			return;
 		}
 		try {
