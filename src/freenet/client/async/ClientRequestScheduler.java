@@ -210,12 +210,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	public synchronized SendableRequest removeFirst() {
 		short fuzz = -1;
-		synchronized (this) {
-			if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
-				fuzz = -1;
-			else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
-				fuzz = 0;	
-		}
+		if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
+			fuzz = -1;
+		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
+			fuzz = 0;	
 		// schedCore juggles both
 		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient);
 	}
