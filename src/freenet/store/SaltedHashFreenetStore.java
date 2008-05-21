@@ -823,9 +823,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			if (shutdown)
 				return;
 
-			// report key count
-			estimatedCount.report(newEntries + oldEntries - droppedEntries);
-
 			// Shrink store file size
 			if (shrinking)
 				setStoreFileSize(Math.max(storeSize, maxOldItemOffset));
