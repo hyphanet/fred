@@ -35,7 +35,7 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 	}
 
 	boolean persistent() {
-		return true;
+		return false;
 	}
 
 	ObjectContainer container() {
