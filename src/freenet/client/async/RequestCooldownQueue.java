@@ -158,6 +158,8 @@ public class RequestCooldownQueue implements CooldownQueue {
 			}
 			if(logMINOR) Logger.minor(this, "Returning key "+key);
 			v.add(key);
+			if(v.size() == maxKeys)
+				return (Key[]) v.toArray(new Key[v.size()]);
 		}
 	}
 	
