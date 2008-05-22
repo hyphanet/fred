@@ -432,7 +432,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 		databaseExecutor.execute(new Runnable() {
 			public void run() {
 				try {
-					moveKeysFromCooldownQueue(persistentCooldownQueue, selectorContainer);
+					if(moveKeysFromCooldownQueue(persistentCooldownQueue, selectorContainer))
+						starter.wakeUp();
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t, t);
 				}
@@ -440,13 +441,15 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}, "moveKeysFromCooldownQueue");
 	}
 	
-	private void moveKeysFromCooldownQueue(CooldownQueue queue, ObjectContainer container) {
-		if(queue == null) return;
+	private boolean moveKeysFromCooldownQueue(CooldownQueue queue, ObjectContainer container) {
+		if(queue == null) return false;
 		long now = System.currentTimeMillis();
 		final int MAX_KEYS = 1024;
+		boolean found = false;
 		while(true) {
 		Key[] keys = queue.removeKeyBefore(now, container, MAX_KEYS);
-		if(keys == null) return;
+		if(keys == null) return found;
+		found = true;
 		for(int j=0;j<keys.length;j++) {
 			Key key = keys[j];
 			if(logMINOR) Logger.minor(this, "Restoring key: "+key);
@@ -465,7 +468,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					transientGets[i].requeueAfterCooldown(key, now);
 			}
 		}
-		if(keys.length < MAX_KEYS) return;
+		if(keys.length < MAX_KEYS) return found;
 		}
 	}
 
