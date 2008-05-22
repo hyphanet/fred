@@ -229,9 +229,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 				offeredKeys[i].remove(key);
 		}
 		if(transientCooldownQueue != null)
-			transientCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key));
+			transientCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key), null);
 		if(persistentCooldownQueue != null)
-			persistentCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key));
+			persistentCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key), selectorContainer);
 	}
 	
 	/**
@@ -286,11 +286,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(gets == null) return;
 		if(transientCooldownQueue != null) {
 			for(int i=0;i<gets.length;i++)
-				transientCooldownQueue.removeKey(key, transientGets[i], transientGets[i].getCooldownWakeupByKey(key));
+				transientCooldownQueue.removeKey(key, transientGets[i], transientGets[i].getCooldownWakeupByKey(key), null);
 		}
 		if(persistentCooldownQueue != null) {
 			for(int i=0;i<gets.length;i++)
-				persistentCooldownQueue.removeKey(key, gets[i], gets[i].getCooldownWakeupByKey(key));
+				persistentCooldownQueue.removeKey(key, gets[i], gets[i].getCooldownWakeupByKey(key), selectorContainer);
 		}
 		Runnable r = new Runnable() {
 			public void run() {
@@ -347,21 +347,21 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 	public long queueCooldown(ClientKey key, SendableGet getter) {
 		if(getter.persistent())
-			return persistentCooldownQueue.add(key.getNodeKey(), getter);
+			return persistentCooldownQueue.add(key.getNodeKey(), getter, selectorContainer);
 		else
-			return transientCooldownQueue.add(key.getNodeKey(), getter);
+			return transientCooldownQueue.add(key.getNodeKey(), getter, null);
 	}
 
 	public void moveKeysFromCooldownQueue() {
-		moveKeysFromCooldownQueue(transientCooldownQueue);
-		moveKeysFromCooldownQueue(persistentCooldownQueue);
+		moveKeysFromCooldownQueue(transientCooldownQueue, null);
+		moveKeysFromCooldownQueue(persistentCooldownQueue, selectorContainer);
 	}
 	
-	private void moveKeysFromCooldownQueue(CooldownQueue queue) {
+	private void moveKeysFromCooldownQueue(CooldownQueue queue, ObjectContainer container) {
 		if(queue == null) return;
 		long now = System.currentTimeMillis();
 		Key key;
-		while((key = queue.removeKeyBefore(now)) != null) { 
+		while((key = queue.removeKeyBefore(now, container)) != null) { 
 			if(logMINOR) Logger.minor(this, "Restoring key: "+key);
 			SendableGet[] gets = schedCore.getClientsForPendingKey(key);
 			SendableGet[] transientGets = schedTransient.getClientsForPendingKey(key);

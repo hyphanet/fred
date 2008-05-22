@@ -82,7 +82,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		((Db4oList)recentSuccesses).activationDepth(1);
 		this.container = container;
 		if(!isInsertScheduler) {
-			persistentCooldownQueue.setContainer(container);
 			persistentCooldownQueue.setCooldownTime(cooldownTime);
 		}
 	}

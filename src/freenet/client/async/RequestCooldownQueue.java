@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.Key;
 import freenet.node.SendableGet;
 import freenet.support.Fields;
@@ -50,7 +52,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 	/* (non-Javadoc)
 	 * @see freenet.client.async.CooldownQueue#add(freenet.keys.Key, freenet.node.SendableGet)
 	 */
-	public synchronized long add(Key key, SendableGet client) {
+	public synchronized long add(Key key, SendableGet client, ObjectContainer container) {
 		long removeTime = System.currentTimeMillis() + cooldownTime;
 		if(removeTime < getLastTime()) {
 			removeTime = getLastTime();
@@ -79,7 +81,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 				if(startPtr == 0) {
 					// No room
 					expandQueue();
-					add(key, client);
+					add(key, client, null);
 					return;
 				} else {
 					// Wrap around
@@ -92,7 +94,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 			if(logMINOR) Logger.minor(this, "endPtr < startPtr");
 			if(endPtr == startPtr - 1) {
 				expandQueue();
-				add(key, client);
+				add(key, client, null);
 				return;
 			} else {
 				endPtr++;
@@ -113,7 +115,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 	/* (non-Javadoc)
 	 * @see freenet.client.async.CooldownQueue#removeKeyBefore(long)
 	 */
-	public synchronized Key removeKeyBefore(long now) {
+	public synchronized Key removeKeyBefore(long now, ObjectContainer container) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		boolean foundIT = false;
 		if(Logger.shouldLog(Logger.DEBUG, this)) {
@@ -221,7 +223,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 	/* (non-Javadoc)
 	 * @see freenet.client.async.CooldownQueue#removeKey(freenet.keys.Key, freenet.node.SendableGet, long)
 	 */
-	public synchronized boolean removeKey(Key key, SendableGet client, long time) {
+	public synchronized boolean removeKey(Key key, SendableGet client, long time, ObjectContainer container) {
 		if(time <= 0) return false; // We won't find it.
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(holes < 0) Logger.error(this, "holes = "+holes+" !!");

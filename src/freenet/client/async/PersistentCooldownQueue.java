@@ -20,8 +20,6 @@ import freenet.node.SendableGet;
  */
 public class PersistentCooldownQueue implements CooldownQueue {
 	
-	private ObjectContainer container;
-	
 	private long cooldownTime;
 
 	private static class Item {
@@ -38,15 +36,11 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		}
 	}
 	
-	void setContainer(ObjectContainer container) {
-		this.container = container;
-	}
-	
 	void setCooldownTime(long time) {
 		cooldownTime = time;
 	}
 
-	public long add(Key key, SendableGet client) {
+	public long add(Key key, SendableGet client, ObjectContainer container) {
 		assert(cooldownTime != 0);
 		long removeTime = System.currentTimeMillis() + cooldownTime;
 		Item item = new Item(client, key, removeTime, this);
@@ -54,7 +48,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		return removeTime;
 	}
 
-	public boolean removeKey(final Key key, final SendableGet client, final long time) {
+	public boolean removeKey(final Key key, final SendableGet client, final long time, ObjectContainer container) {
 		boolean found = false;
 		ObjectSet results = container.query(new Predicate() {
 			public boolean match(Item item) {
@@ -73,7 +67,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		return found;
 	}
 
-	public Key removeKeyBefore(final long now) {
+	public Key removeKeyBefore(final long now, ObjectContainer container) {
 		// Will be called repeatedly until no more keys are returned, so it doesn't
 		// matter very much if they're not in order.
 		ObjectSet results = container.query(new Predicate() {

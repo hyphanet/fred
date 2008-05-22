@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.Key;
 import freenet.node.SendableGet;
 
@@ -11,17 +13,17 @@ public interface CooldownQueue {
 	/**
 	 * Add a key to the end of the queue. Returns the time at which it will be valid again.
 	 */
-	public abstract long add(Key key, SendableGet client);
+	public abstract long add(Key key, SendableGet client, ObjectContainer container);
 
 	/**
 	 * Remove a key whose cooldown time has passed.
 	 * @return Either a Key or null if no keys have passed their cooldown time.
 	 */
-	public abstract Key removeKeyBefore(long now);
+	public abstract Key removeKeyBefore(long now, ObjectContainer container);
 
 	/**
 	 * @return True if the key was found.
 	 */
-	public abstract boolean removeKey(Key key, SendableGet client, long time);
+	public abstract boolean removeKey(Key key, SendableGet client, long time, ObjectContainer container);
 
 }
