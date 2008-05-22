@@ -224,11 +224,11 @@ public class RequestStarterGroup {
 		return throttleWindow.realCurrentValue();
 	}
 
-	public long countQueuedRequests() {
-		return chkFetchScheduler.countQueuedRequests() +
-			sskFetchScheduler.countQueuedRequests() +
-			chkPutScheduler.countQueuedRequests() +
-			sskPutScheduler.countQueuedRequests();
+	public long countTransientQueuedRequests() {
+		return chkFetchScheduler.countTransientQueuedRequests() +
+			sskFetchScheduler.countTransientQueuedRequests() +
+			chkPutScheduler.countTransientQueuedRequests() +
+			sskPutScheduler.countTransientQueuedRequests();
 	}
 	
 }

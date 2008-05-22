@@ -105,6 +105,15 @@ public class NodeClientCore implements Persistable {
 	private boolean lazyResume;
 	protected final Persister persister;
 	private final SerialExecutor clientSlowSerialExecutor[];
+	/** All client-layer database access occurs on a SerialExecutor, so that we don't need
+	 * to have multiple parallel transactions. Advantages:
+	 * - We never have two copies of the same object in RAM, and more broadly, we don't
+	 *   need to worry about interactions between objects from different transactions.
+	 * - Only one weak-reference cache for the database.
+	 * - No need to refresh live objects. 
+	 * - Deactivation is simpler.
+	 */
+	public final SerialExecutor clientDatabaseExecutor;
 	
 	public static int maxBackgroundUSKFetchers;
 	
@@ -130,6 +139,7 @@ public class NodeClientCore implements Persistable {
 			else prio = NativeThread.MIN_PRIORITY;
 			clientSlowSerialExecutor[i] = new SerialExecutor(prio);
 		}
+		clientDatabaseExecutor = new SerialExecutor(NativeThread.NORM_PRIORITY);
 	  	byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
 		this.formPassword = Base64.encode(pwdBuf);
@@ -1106,18 +1116,6 @@ public class NodeClientCore implements Persistable {
 		return tempDir;
 	}
 
-	/**
-	 * Has any client registered an interest in this particular key?
-	 */
-	public boolean clientWantKey(Key key) {
-		if(key instanceof NodeCHK)
-			return requestStarters.chkFetchScheduler.anyWantKey(key);
-		else if(key instanceof NodeSSK)
-			return requestStarters.sskFetchScheduler.anyWantKey(key);
-		else
-			throw new IllegalArgumentException("Not a CHK and not an SSK!");
-	}
-
 	public boolean hasLoadedQueue() {
 		return fcpServer.hasFinishedStart();
 	}
@@ -1144,7 +1142,7 @@ public class NodeClientCore implements Persistable {
 		return toadletContainer.getBookmarkURIs();
 	}
 
-	public long countQueuedRequests() {
-		return requestStarters.countQueuedRequests();
+	public long countTransientQueuedRequests() {
+		return requestStarters.countTransientQueuedRequests();
 	}
 }

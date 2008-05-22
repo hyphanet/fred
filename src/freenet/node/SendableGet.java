@@ -110,6 +110,12 @@ public abstract class SendableGet extends BaseSendableGet {
 			return parent.chkScheduler;
 	}
 
+	/**
+	 * Callback for when a block is found. Will be called on the database executor thread.
+	 * @param key
+	 * @param block
+	 * @param sched
+	 */
 	public abstract void onGotKey(Key key, KeyBlock block, RequestScheduler sched);
 	
 	/**

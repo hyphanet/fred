@@ -24,6 +24,7 @@ import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.support.Logger;
+import freenet.support.SerialExecutor;
 import freenet.support.api.StringCallback;
 
 /**
@@ -92,6 +93,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public final String name;
 	private final CooldownQueue transientCooldownQueue;
 	private final CooldownQueue persistentCooldownQueue;
+	private final SerialExecutor databaseExecutor;
 	
 	public static final String PRIORITY_NONE = "NONE";
 	public static final String PRIORITY_SOFT = "SOFT";
@@ -103,6 +105,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		schedCore = ClientRequestSchedulerCore.create(node, forInserts, forSSKs, selectorContainer, COOLDOWN_PERIOD);
 		schedTransient = new ClientRequestSchedulerNonPersistent(this);
 		persistentCooldownQueue = schedCore.persistentCooldownQueue;
+		this.databaseExecutor = core.clientDatabaseExecutor;
 		this.starter = starter;
 		this.random = random;
 		this.node = node;
@@ -138,7 +141,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		choosenPriorityScheduler = val;
 	}
 	
-	public void register(SendableRequest req) {
+	public void register(final SendableRequest req) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Registering "+req, new Exception("debug"));
 		if(isInsertScheduler != (req instanceof SendableInsert))
@@ -196,17 +199,35 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 			}
 		}
-		if(req.persistent())
-			schedCore.innerRegister(req, random);
-		else
+		if(req.persistent()) {
+			databaseExecutor.execute(new Runnable() {
+				public void run() {
+					try {
+						schedCore.innerRegister(req, random);
+						starter.wakeUp();
+					} catch (Throwable t) {
+						Logger.error(this, "Caught "+t, t);
+					}
+				}
+			}, "Register request");
+		} else {
 			schedTransient.innerRegister(req, random);
-		starter.wakeUp();
+			starter.wakeUp();
+		}
 	}
 
-	void addPendingKey(ClientKey key, SendableGet getter) {
-		if(getter.persistent())
-			schedCore.addPendingKey(key, getter);
-		else
+	void addPendingKey(final ClientKey key, final SendableGet getter) {
+		if(getter.persistent()) {
+			databaseExecutor.execute(new Runnable() {
+				public void run() {
+					try {
+						schedCore.addPendingKey(key, getter);
+					} catch (Throwable t) {
+						Logger.error(this, "Caught "+t, t);
+					}
+				}
+			}, "Add pending key");
+		} else
 			schedTransient.addPendingKey(key, getter);
 	}
 	
@@ -220,18 +241,30 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient);
 	}
 	
-	public void removePendingKey(SendableGet getter, boolean complain, Key key) {
-		boolean dropped = 
-			schedCore.removePendingKey(getter, complain, key) |
-			schedTransient.removePendingKey(getter, complain, key);
+	public void removePendingKey(final SendableGet getter, final boolean complain, final Key key) {
+		boolean dropped = schedTransient.removePendingKey(getter, complain, key);
 		if(dropped && offeredKeys != null && !node.peersWantKey(key)) {
 			for(int i=0;i<offeredKeys.length;i++)
 				offeredKeys[i].remove(key);
 		}
 		if(transientCooldownQueue != null)
 			transientCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key), null);
-		if(persistentCooldownQueue != null)
-			persistentCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key), selectorContainer);
+		
+		// Now the persistent clients...
+		
+		databaseExecutor.execute(new Runnable() {
+			public void run() {
+				try {
+					schedCore.removePendingKey(getter, complain, key);
+					if(persistentCooldownQueue != null)
+						persistentCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key), selectorContainer);
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t, t);
+				}
+			}
+			
+		}, "removePendingKey");
+		
 	}
 	
 	/**
@@ -241,6 +274,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * @param complain
 	 */
 	public void removePendingKeys(SendableGet getter, boolean complain) {
+		// FIXME should this be a single databaseExecutor thread??
 		Object[] keyTokens = getter.allKeys();
 		for(int i=0;i<keyTokens.length;i++) {
 			Object tok = keyTokens[i];
@@ -254,47 +288,58 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 
-	public void reregisterAll(ClientRequester request) {
-		if(request.persistent())
-			schedCore.reregisterAll(request, random, this);
-		else
+	public void reregisterAll(final ClientRequester request) {
+		if(request.persistent()) {
+			databaseExecutor.execute(new Runnable() {
+				public void run() {
+					try {
+						schedCore.reregisterAll(request, random, ClientRequestScheduler.this);
+						starter.wakeUp();
+					} catch (Throwable t) {
+						Logger.error(this, "Caught "+t, t);
+					}
+				}
+			}, "Reregister for "+request);
+		} else {
 			schedTransient.reregisterAll(request, random, this);
-		starter.wakeUp();
+			starter.wakeUp();
+		}
 	}
 	
 	public String getChoosenPriorityScheduler() {
 		return choosenPriorityScheduler;
 	}
 
-	public synchronized void succeeded(BaseSendableGet succeeded) {
-		if(succeeded.persistent())
-			schedCore.succeeded(succeeded);
-		else
+	public synchronized void succeeded(final BaseSendableGet succeeded) {
+		if(succeeded.persistent()) {
+			databaseExecutor.execute(new Runnable() {
+				public void run() {
+					try {
+						schedCore.succeeded(succeeded);
+					} catch (Throwable t) {
+						Logger.error(this, "Caught "+t, t);
+					}
+				}
+			}, "Mark success for "+succeeded);
+		} else
 			schedTransient.succeeded(succeeded);
 	}
 
 	public void tripPendingKey(final KeyBlock block) {
 		if(logMINOR) Logger.minor(this, "tripPendingKey("+block.getKey()+")");
+		
+		// First the transient stuff
+		
 		if(offeredKeys != null) {
 			for(int i=0;i<offeredKeys.length;i++) {
 				offeredKeys[i].remove(block.getKey());
 			}
 		}
 		final Key key = block.getKey();
-		final SendableGet[] gets = schedCore.removePendingKey(key);
 		final SendableGet[] transientGets = schedTransient.removePendingKey(key);
-		if(gets == null) return;
-		if(transientCooldownQueue != null) {
-			for(int i=0;i<gets.length;i++)
-				transientCooldownQueue.removeKey(key, transientGets[i], transientGets[i].getCooldownWakeupByKey(key), null);
-		}
-		if(persistentCooldownQueue != null) {
-			for(int i=0;i<gets.length;i++)
-				persistentCooldownQueue.removeKey(key, gets[i], gets[i].getCooldownWakeupByKey(key), selectorContainer);
-		}
-		Runnable r = new Runnable() {
+		node.executor.execute(new Runnable() {
 			public void run() {
-				if(logMINOR) Logger.minor(this, "Running "+gets.length+" callbacks off-thread for "+block.getKey());
+				if(logMINOR) Logger.minor(this, "Running "+transientGets.length+" callbacks off-thread for "+block.getKey());
 				for(int i=0;i<transientGets.length;i++) {
 					try {
 						if(logMINOR) Logger.minor(this, "Calling callback for "+transientGets[i]+" for "+key);
@@ -303,6 +348,27 @@ public class ClientRequestScheduler implements RequestScheduler {
 						Logger.error(this, "Caught "+t+" running callback "+transientGets[i]+" for "+key);
 					}
 				}
+			}
+		}, "Running off-thread callbacks for "+block.getKey());
+		if(transientCooldownQueue != null) {
+			for(int i=0;i<transientGets.length;i++)
+				transientCooldownQueue.removeKey(key, transientGets[i], transientGets[i].getCooldownWakeupByKey(key), null);
+		}
+		
+		// Now the persistent stuff
+		
+		databaseExecutor.execute(new Runnable() {
+
+			public void run() {
+				final SendableGet[] gets = schedCore.removePendingKey(key);
+				if(gets == null) return;
+				if(persistentCooldownQueue != null) {
+					for(int i=0;i<gets.length;i++)
+						persistentCooldownQueue.removeKey(key, gets[i], gets[i].getCooldownWakeupByKey(key), selectorContainer);
+				}
+				// Call the callbacks on the database executor thread, because the first thing
+				// they will need to do is access the database to decide whether they need to
+				// decode, and if so to find the key to decode with.
 				for(int i=0;i<gets.length;i++) {
 					try {
 						if(logMINOR) Logger.minor(this, "Calling callback for "+gets[i]+" for "+key);
@@ -313,16 +379,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				if(logMINOR) Logger.minor(this, "Finished running callbacks");
 			}
-		};
-		node.getTicker().queueTimedJob(r, 0); // FIXME ideally these would be completed on a single thread; when we have 1.5, use a dedicated non-parallel Executor
-	}
-
-	public boolean anyWantKey(Key key) {
-		return schedTransient.anyWantKey(key) || schedCore.anyWantKey(key);
+			
+		}, "tripPendingKey for "+block.getKey());
+		
 	}
 
 	/** If we want the offered key, or if force is enabled, queue it */
-	public void maybeQueueOfferedKey(Key key, boolean force) {
+	public void maybeQueueOfferedKey(final Key key, boolean force) {
 		if(logMINOR)
 			Logger.minor(this, "maybeQueueOfferedKey("+key+","+force);
 		short priority = Short.MAX_VALUE;
@@ -331,12 +394,21 @@ public class ClientRequestScheduler implements RequestScheduler {
 			priority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 		}
 		priority = schedCore.getKeyPrio(key, priority);
-		priority = schedTransient.getKeyPrio(key, priority);
-		if(priority == Short.MAX_VALUE) return;
-		if(logMINOR)
-			Logger.minor(this, "Priority: "+priority);
-		offeredKeys[priority].queueKey(key);
-		starter.wakeUp();
+		if(priority < Short.MAX_VALUE) {
+			offeredKeys[priority].queueKey(key);
+			starter.wakeUp();
+		}
+		
+		final short oldPrio = priority;
+		
+		databaseExecutor.execute(new Runnable() {
+			public void run() {
+				short priority = schedTransient.getKeyPrio(key, oldPrio);
+				if(priority >= oldPrio) return; // already on list at >= priority
+				offeredKeys[priority].queueKey(key);
+				starter.wakeUp();
+			}
+		}, "maybeQueueOfferedKey");
 	}
 
 	public void dequeueOfferedKey(Key key) {
@@ -345,8 +417,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 
+	/**
+	 * MUST be called from database thread!
+	 */
 	public long queueCooldown(ClientKey key, SendableGet getter) {
-		if(getter.persistent())
+		if(!getter.persistent())
 			return persistentCooldownQueue.add(key.getNodeKey(), getter, selectorContainer);
 		else
 			return transientCooldownQueue.add(key.getNodeKey(), getter, null);
@@ -354,7 +429,15 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 	public void moveKeysFromCooldownQueue() {
 		moveKeysFromCooldownQueue(transientCooldownQueue, null);
-		moveKeysFromCooldownQueue(persistentCooldownQueue, selectorContainer);
+		databaseExecutor.execute(new Runnable() {
+			public void run() {
+				try {
+					moveKeysFromCooldownQueue(persistentCooldownQueue, selectorContainer);
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t, t);
+				}
+			}
+		}, "moveKeysFromCooldownQueue");
 	}
 	
 	private void moveKeysFromCooldownQueue(CooldownQueue queue, ObjectContainer container) {
@@ -386,7 +469,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 
-	public long countQueuedRequests() {
+	public long countTransientQueuedRequests() {
 		// Approximately... there might be some overlap in the two pendingKeys's...
 		return schedCore.countQueuedRequests() + schedTransient.countQueuedRequests();
 	}

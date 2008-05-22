@@ -4,7 +4,6 @@
 package freenet.node;
 
 import freenet.keys.ClientKey;
-import freenet.support.RandomGrabArray;
 
 public interface RequestScheduler {
 
@@ -25,7 +24,7 @@ public interface RequestScheduler {
 	 * @param key The key to be added.
 	 * @return The time at which the key will leave the cooldown queue.
 	 */
-	public long queueCooldown(ClientKey key, SendableGet getter);
+	long queueCooldown(ClientKey key, SendableGet getter);
 
 	/**
 	 * Remove keys from the cooldown queue who have now served their time and can be requested 
@@ -40,6 +39,6 @@ public interface RequestScheduler {
 	 * Note: If you don't want your requests to be subject to cooldown (e.g. in fproxy), make 
 	 * your max retry count less than this (and more than -1). */
 	public static final int COOLDOWN_RETRIES = 3;
-	public long countQueuedRequests();
+	public long countTransientQueuedRequests();
 	
 }
