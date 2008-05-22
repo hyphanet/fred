@@ -229,7 +229,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * This is an internal server, specific parts of the code can create
 	 * ObjectContainer's from it. Be careful to refresh objects on any 
 	 * long-lived container! */
-	public final ObjectServer dbServer;
+	public final ObjectContainer db;
 	/** A fixed random number which identifies the top-level objects belonging to
 	 * this node, as opposed to any others that might be stored in the same database
 	 * (e.g. because of many-nodes-in-one-VM). */
@@ -718,7 +718,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		/* FIXME: this may throw if e.g. we ran out of disk space last time. 
 		 * We need to back it up and auto-recover. */
 		/* Client-server mode. Refresh objects if you have a long-lived container! */
-		dbServer = Db4o.openServer(new File(nodeDir, "node.db4o").toString(), 0);
+		db = Db4o.openFile(new File(nodeDir, "node.db4o").toString());
 		
 		System.err.println("Opened database");
 		
@@ -894,12 +894,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		darknetCrypto = new NodeCrypto(this, false, darknetConfig, startupTime, enableARKs);
 		
-		ObjectContainer setupContainer = dbServer.openClient();
+		nodeDBHandle = darknetCrypto.getNodeHandle(db);
 		
-		nodeDBHandle = darknetCrypto.getNodeHandle(setupContainer);
-		
-		setupContainer.commit();
-		setupContainer = null; // Don't reuse.
+		db.commit();
 
 		// Must be created after darknetCrypto
 		dnsr = new DNSRequester(this);
@@ -928,7 +925,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		shutdownHook.addLateJob(new Thread() {
 			public void run() {
-				dbServer.close();
+				db.close();
 			}
 		});
 		

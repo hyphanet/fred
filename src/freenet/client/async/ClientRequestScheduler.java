@@ -101,7 +101,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private String choosenPriorityScheduler; 
 	
 	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, SubConfig sc, String name) {
-		this.selectorContainer = node.dbServer.openClient();
+		this.selectorContainer = node.db;
 		schedCore = ClientRequestSchedulerCore.create(node, forInserts, forSSKs, selectorContainer, COOLDOWN_PERIOD);
 		schedTransient = new ClientRequestSchedulerNonPersistent(this);
 		persistentCooldownQueue = schedCore.persistentCooldownQueue;
