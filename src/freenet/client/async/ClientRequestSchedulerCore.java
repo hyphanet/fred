@@ -61,7 +61,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 			core = new ClientRequestSchedulerCore(node, forInserts, forSSKs, selectorContainer, cooldownTime);
 		}
 		logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequestSchedulerCore.class);
-		core.onStarted(selectorContainer);
+		core.onStarted(selectorContainer, cooldownTime);
 		return core;
 	}
 
@@ -71,18 +71,20 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		this.container = selectorContainer;
 		if(!forInserts) {
 			this.persistentCooldownQueue = new PersistentCooldownQueue();
-			persistentCooldownQueue.setContainer(container);
-			persistentCooldownQueue.setCooldownTime(cooldownTime);
 		} else {
 			this.persistentCooldownQueue = null;
 		}
 	}
 
-	private void onStarted(ObjectContainer container) {
+	private void onStarted(ObjectContainer container, long cooldownTime) {
 		((Db4oMap)pendingKeys).activationDepth(1);
 		((Db4oMap)allRequestsByClientRequest).activationDepth(1);
 		((Db4oList)recentSuccesses).activationDepth(1);
 		this.container = container;
+		if(!isInsertScheduler) {
+			persistentCooldownQueue.setContainer(container);
+			persistentCooldownQueue.setCooldownTime(cooldownTime);
+		}
 	}
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
