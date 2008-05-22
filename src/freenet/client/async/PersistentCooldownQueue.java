@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.util.ArrayList;
+
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Predicate;
@@ -67,7 +69,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		return found;
 	}
 
-	public Key removeKeyBefore(final long now, ObjectContainer container) {
+	public Key[] removeKeyBefore(final long now, ObjectContainer container, int maxCount) {
 		// Will be called repeatedly until no more keys are returned, so it doesn't
 		// matter very much if they're not in order.
 		ObjectSet results = container.query(new Predicate() {
@@ -78,9 +80,12 @@ public class PersistentCooldownQueue implements CooldownQueue {
 			}
 		});
 		if(results.hasNext()) {
-			Item i = (Item) results.next();
-			container.delete(i);
-			return i.key;
+			ArrayList v = new ArrayList(Math.min(maxCount, results.size()));
+			while(results.hasNext() && v.size() < maxCount) {
+				Item i = (Item) results.next();
+				v.add(i.key);
+			}
+			return (Key[]) v.toArray(new Key[v.size()]);
 		} else
 			return null;
 	}

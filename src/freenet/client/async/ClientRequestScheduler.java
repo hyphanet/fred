@@ -360,8 +360,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private void moveKeysFromCooldownQueue(CooldownQueue queue, ObjectContainer container) {
 		if(queue == null) return;
 		long now = System.currentTimeMillis();
-		Key key;
-		while((key = queue.removeKeyBefore(now, container)) != null) { 
+		final int MAX_KEYS = 1024;
+		while(true) {
+		Key[] keys = queue.removeKeyBefore(now, container, MAX_KEYS);
+		if(keys == null) return;
+		for(int j=0;j<keys.length;j++) {
+			Key key = keys[j];
 			if(logMINOR) Logger.minor(this, "Restoring key: "+key);
 			SendableGet[] gets = schedCore.getClientsForPendingKey(key);
 			SendableGet[] transientGets = schedTransient.getClientsForPendingKey(key);
@@ -377,6 +381,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 				for(int i=0;i<transientGets.length;i++)
 					transientGets[i].requeueAfterCooldown(key, now);
 			}
+		}
+		if(keys.length < MAX_KEYS) return;
 		}
 	}
 

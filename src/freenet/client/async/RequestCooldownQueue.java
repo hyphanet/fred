@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.util.ArrayList;
+
 import com.db4o.ObjectContainer;
 
 import freenet.keys.Key;
@@ -115,7 +117,8 @@ public class RequestCooldownQueue implements CooldownQueue {
 	/* (non-Javadoc)
 	 * @see freenet.client.async.CooldownQueue#removeKeyBefore(long)
 	 */
-	public synchronized Key removeKeyBefore(long now, ObjectContainer container) {
+	public synchronized Key[] removeKeyBefore(long now, ObjectContainer container, int maxKeys) {
+		ArrayList v = new ArrayList();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		boolean foundIT = false;
 		if(Logger.shouldLog(Logger.DEBUG, this)) {
@@ -130,7 +133,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 		while(true) {
 			if(startPtr == endPtr) {
 				if(logMINOR) Logger.minor(this, "No keys queued");
-				return null;
+				return (Key[]) v.toArray(new Key[v.size()]);
 			}
 			long time = times[startPtr];
 			Key key = keys[startPtr];
@@ -145,7 +148,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 			} else {
 				if(time > now) {
 					if(logMINOR) Logger.minor(this, "First key is later at time "+time);
-					return null;
+					return (Key[]) v.toArray(new Key[v.size()]);
 				}
 				times[startPtr] = 0;
 				keys[startPtr] = null;
@@ -154,7 +157,7 @@ public class RequestCooldownQueue implements CooldownQueue {
 				if(startPtr == times.length) startPtr = 0;
 			}
 			if(logMINOR) Logger.minor(this, "Returning key "+key);
-			return key;
+			v.add(key);
 		}
 	}
 	
