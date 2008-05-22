@@ -8,6 +8,7 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import freenet.support.Base64;
+import freenet.support.Fields;
 import freenet.support.Logger;
 
 /**
@@ -106,5 +107,11 @@ public class NodeCHK extends Key {
 		byte[] out = new byte[KEY_LENGTH];
 		System.arraycopy(keyBuf, 2, out, 0, KEY_LENGTH);
 		return out;
+	}
+
+	public int compareTo(Object arg0) {
+		if(arg0 instanceof NodeSSK) return 1;
+		NodeCHK key = (NodeCHK) arg0;
+		return Fields.compareBytes(routingKey, key.routingKey);
 	}
 }

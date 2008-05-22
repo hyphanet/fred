@@ -204,5 +204,13 @@ public class NodeSSK extends Key {
 		System.arraycopy(keyBuf, 2+E_H_DOCNAME_SIZE, pubKeyHash, 0, PUBKEY_HASH_SIZE);
 		return makeRoutingKey(pubKeyHash, encryptedHashedDocname);
 	}
+
+	public int compareTo(Object arg0) {
+		if(arg0 instanceof NodeCHK) return -1;
+		NodeSSK key = (NodeSSK) arg0;
+		int result = Fields.compareBytes(encryptedHashedDocname, key.encryptedHashedDocname);
+		if(result != 0) return result;
+		return Fields.compareBytes(pubKeyHash, key.pubKeyHash);
+	}
 	
 }

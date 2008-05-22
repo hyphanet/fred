@@ -29,7 +29,7 @@ import freenet.support.io.BucketTools;
  * 
  * Base class for node keys.
  */
-public abstract class Key implements WritableToDataOutputStream {
+public abstract class Key implements WritableToDataOutputStream, Comparable {
 
     final int hash;
     double cachedNormalizedDouble;
