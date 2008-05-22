@@ -23,6 +23,7 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.KeyVerifyException;
 import freenet.node.SemiOrderedShutdownHook;
+import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.io.FileUtil;
@@ -1310,7 +1311,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * @return
 	 */
 	public long[] getOffsetFromDigestedKey(byte[] digestedKey, long storeSize) {
-		long keyValue = keyToLong(digestedKey);
+		long keyValue = Fields.bytesToLong(digestedKey);
 		long[] offsets = new long[OPTION_MAX_PROBE];
 		
 		for (int i = 0 ; i < OPTION_MAX_PROBE ; i++) {
@@ -1319,17 +1320,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 		
 		return offsets;
-	}
-
-	private long keyToLong(byte[] key) {
-		return (((long) (key[0]) << 0) + //
-		        (((long) key[1]) << 8) + //
-		        (((long) key[2]) << 16) + //
-		        (((long) key[3]) << 24) + //
-		        (((long) key[4]) << 32) + //
-		        (((long) key[5]) << 40) + //
-				(((long) key[6]) << 48) + //
-				(((long) key[7]) << 56));
 	}
 
 	// ------------- Statistics (a.k.a. lies)
