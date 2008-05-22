@@ -90,7 +90,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final RequestStarter starter;
 	private final Node node;
 	public final String name;
-	private final CooldownQueue cooldownQueue;
+	private final CooldownQueue transientCooldownQueue;
+	private final CooldownQueue persistentCooldownQueue;
 	
 	public static final String PRIORITY_NONE = "NONE";
 	public static final String PRIORITY_SOFT = "SOFT";
@@ -99,8 +100,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, SubConfig sc, String name) {
 		this.selectorContainer = node.dbServer.openClient();
-		schedCore = ClientRequestSchedulerCore.create(node, forInserts, forSSKs, selectorContainer);
+		schedCore = ClientRequestSchedulerCore.create(node, forInserts, forSSKs, selectorContainer, COOLDOWN_PERIOD);
 		schedTransient = new ClientRequestSchedulerNonPersistent(this);
+		persistentCooldownQueue = schedCore.persistentCooldownQueue;
 		this.starter = starter;
 		this.random = random;
 		this.node = node;
@@ -122,9 +124,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 			offeredKeys = null;
 		}
 		if(!forInserts)
-			cooldownQueue = new RequestCooldownQueue(COOLDOWN_PERIOD);
+			transientCooldownQueue = new RequestCooldownQueue(COOLDOWN_PERIOD);
 		else
-			cooldownQueue = null;
+			transientCooldownQueue = null;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
@@ -226,8 +228,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 			for(int i=0;i<offeredKeys.length;i++)
 				offeredKeys[i].remove(key);
 		}
-		if(cooldownQueue != null)
-			cooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key));
+		if(transientCooldownQueue != null)
+			transientCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key));
+		if(persistentCooldownQueue != null)
+			persistentCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key));
 	}
 	
 	/**
@@ -280,13 +284,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 		final SendableGet[] gets = schedCore.removePendingKey(key);
 		final SendableGet[] transientGets = schedTransient.removePendingKey(key);
 		if(gets == null) return;
-		if(cooldownQueue != null) {
+		if(transientCooldownQueue != null) {
 			for(int i=0;i<gets.length;i++)
-				cooldownQueue.removeKey(key, gets[i], gets[i].getCooldownWakeupByKey(key));
-			for(int i=0;i<gets.length;i++)
-				cooldownQueue.removeKey(key, transientGets[i], transientGets[i].getCooldownWakeupByKey(key));
+				transientCooldownQueue.removeKey(key, transientGets[i], transientGets[i].getCooldownWakeupByKey(key));
 		}
-
+		if(persistentCooldownQueue != null) {
+			for(int i=0;i<gets.length;i++)
+				persistentCooldownQueue.removeKey(key, gets[i], gets[i].getCooldownWakeupByKey(key));
+		}
 		Runnable r = new Runnable() {
 			public void run() {
 				if(logMINOR) Logger.minor(this, "Running "+gets.length+" callbacks off-thread for "+block.getKey());
@@ -341,14 +346,22 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public long queueCooldown(ClientKey key, SendableGet getter) {
-		return cooldownQueue.add(key.getNodeKey(), getter);
+		if(getter.persistent())
+			return persistentCooldownQueue.add(key.getNodeKey(), getter);
+		else
+			return transientCooldownQueue.add(key.getNodeKey(), getter);
 	}
 
 	public void moveKeysFromCooldownQueue() {
-		if(cooldownQueue == null) return;
+		moveKeysFromCooldownQueue(transientCooldownQueue);
+		moveKeysFromCooldownQueue(persistentCooldownQueue);
+	}
+	
+	private void moveKeysFromCooldownQueue(CooldownQueue queue) {
+		if(queue == null) return;
 		long now = System.currentTimeMillis();
 		Key key;
-		while((key = cooldownQueue.removeKeyBefore(now)) != null) { 
+		while((key = queue.removeKeyBefore(now)) != null) { 
 			if(logMINOR) Logger.minor(this, "Restoring key: "+key);
 			SendableGet[] gets = schedCore.getClientsForPendingKey(key);
 			SendableGet[] transientGets = schedTransient.getClientsForPendingKey(key);

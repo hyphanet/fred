@@ -34,9 +34,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	private static boolean logMINOR;
 	/** Identifier in the database for the node we are attached to */
 	private final long nodeDBHandle;
-	// FIXME cooldown queue ????
-	// Can we make the cooldown queue non-persistent? It refers to SendableGet's ... so
-	// keeping it in memory may be a problem...
+	final PersistentCooldownQueue persistentCooldownQueue;
 
 	/**
 	 * Fetch a ClientRequestSchedulerCore from the database, or create a new one.
@@ -46,7 +44,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	 * @param selectorContainer
 	 * @return
 	 */
-	public static ClientRequestSchedulerCore create(Node node, final boolean forInserts, final boolean forSSKs, ObjectContainer selectorContainer) {
+	public static ClientRequestSchedulerCore create(Node node, final boolean forInserts, final boolean forSSKs, ObjectContainer selectorContainer, long cooldownTime) {
 		final long nodeDBHandle = node.nodeDBHandle;
 		ObjectSet results = selectorContainer.query(new Predicate() {
 			public boolean match(ClientRequestSchedulerCore core) {
@@ -60,17 +58,24 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		if(results.hasNext()) {
 			core = (ClientRequestSchedulerCore) (results.next());
 		} else {
-			core = new ClientRequestSchedulerCore(node, forInserts, forSSKs, selectorContainer);
+			core = new ClientRequestSchedulerCore(node, forInserts, forSSKs, selectorContainer, cooldownTime);
 		}
 		logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequestSchedulerCore.class);
 		core.onStarted(selectorContainer);
 		return core;
 	}
 
-	ClientRequestSchedulerCore(Node node, boolean forInserts, boolean forSSKs, ObjectContainer selectorContainer) {
+	ClientRequestSchedulerCore(Node node, boolean forInserts, boolean forSSKs, ObjectContainer selectorContainer, long cooldownTime) {
 		super(forInserts, forSSKs, forInserts ? null : selectorContainer.ext().collections().newHashMap(1024), selectorContainer.ext().collections().newHashMap(32), selectorContainer.ext().collections().newLinkedList());
 		this.nodeDBHandle = node.nodeDBHandle;
 		this.container = selectorContainer;
+		if(!forInserts) {
+			this.persistentCooldownQueue = new PersistentCooldownQueue();
+			persistentCooldownQueue.setContainer(container);
+			persistentCooldownQueue.setCooldownTime(cooldownTime);
+		} else {
+			this.persistentCooldownQueue = null;
+		}
 	}
 
 	private void onStarted(ObjectContainer container) {
