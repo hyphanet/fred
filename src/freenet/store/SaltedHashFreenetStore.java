@@ -976,7 +976,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 							}
 						}
 
-						if (queueItem) {
+						if (queueItem && oldItemsFC.position() < 0x10000000) { // Limit to 256MiB
 							if (logDEBUG)
 								Logger.debug(this, "old entry " + HexUtil.bytesToHex(entry.getDigestedRoutingKey())
 								        + " queued");
