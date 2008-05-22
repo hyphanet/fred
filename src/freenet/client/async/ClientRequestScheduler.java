@@ -90,7 +90,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final RequestStarter starter;
 	private final Node node;
 	public final String name;
-	private final RequestCooldownQueue cooldownQueue;
+	private final CooldownQueue cooldownQueue;
 	
 	public static final String PRIORITY_NONE = "NONE";
 	public static final String PRIORITY_SOFT = "SOFT";

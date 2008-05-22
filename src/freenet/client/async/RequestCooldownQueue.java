@@ -16,7 +16,7 @@ import freenet.support.Logger;
  * circular buffer, we expand it if necessary.
  * @author toad
  */
-public class RequestCooldownQueue {
+public class RequestCooldownQueue implements CooldownQueue {
 
 	/** keys which have been put onto the cooldown queue */ 
 	private Key[] keys;
@@ -47,10 +47,10 @@ public class RequestCooldownQueue {
 		this.cooldownTime = cooldownTime;
 	}
 	
-	/**
-	 * Add a key to the end of the queue. Returns the time at which it will be valid again.
+	/* (non-Javadoc)
+	 * @see freenet.client.async.CooldownQueue#add(freenet.keys.Key, freenet.node.SendableGet)
 	 */
-	synchronized long add(Key key, SendableGet client) {
+	public synchronized long add(Key key, SendableGet client) {
 		long removeTime = System.currentTimeMillis() + cooldownTime;
 		if(removeTime < getLastTime()) {
 			removeTime = getLastTime();
@@ -110,11 +110,10 @@ public class RequestCooldownQueue {
 		return;
 	}
 
-	/**
-	 * Remove a key whose cooldown time has passed.
-	 * @return Either a Key or null if no keys have passed their cooldown time.
+	/* (non-Javadoc)
+	 * @see freenet.client.async.CooldownQueue#removeKeyBefore(long)
 	 */
-	synchronized Key removeKeyBefore(long now) {
+	public synchronized Key removeKeyBefore(long now) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		boolean foundIT = false;
 		if(Logger.shouldLog(Logger.DEBUG, this)) {
@@ -219,10 +218,10 @@ public class RequestCooldownQueue {
 		return foundIT;
 	}
 
-	/**
-	 * @return True if the key was found.
+	/* (non-Javadoc)
+	 * @see freenet.client.async.CooldownQueue#removeKey(freenet.keys.Key, freenet.node.SendableGet, long)
 	 */
-	synchronized boolean removeKey(Key key, SendableGet client, long time) {
+	public synchronized boolean removeKey(Key key, SendableGet client, long time) {
 		if(time <= 0) return false; // We won't find it.
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(holes < 0) Logger.error(this, "holes = "+holes+" !!");
