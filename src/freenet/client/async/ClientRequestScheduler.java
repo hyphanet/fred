@@ -313,7 +313,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public boolean anyWantKey(Key key) {
-		return schedCore.anyWantKey(key) || schedTransient.anyWantKey(key);
+		return schedTransient.anyWantKey(key) || schedCore.anyWantKey(key);
 	}
 
 	/** If we want the offered key, or if force is enabled, queue it */
