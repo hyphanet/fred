@@ -24,20 +24,6 @@ public class PersistentCooldownQueue implements CooldownQueue {
 	
 	private long cooldownTime;
 
-	private static class Item {
-		final SendableGet client;
-		final Key key;
-		final long time;
-		final PersistentCooldownQueue parent;
-		
-		Item(SendableGet client, Key key, long time, PersistentCooldownQueue parent) {
-			this.client = client;
-			this.key = key;
-			this.time = time;
-			this.parent = parent;
-		}
-	}
-	
 	void setCooldownTime(long time) {
 		cooldownTime = time;
 	}
@@ -45,25 +31,25 @@ public class PersistentCooldownQueue implements CooldownQueue {
 	public long add(Key key, SendableGet client, ObjectContainer container) {
 		assert(cooldownTime != 0);
 		long removeTime = System.currentTimeMillis() + cooldownTime;
-		Item item = new Item(client, key, removeTime, this);
-		container.set(item);
+		PersistentCooldownQueueItem persistentCooldownQueueItem = new PersistentCooldownQueueItem(client, key, removeTime, this);
+		container.set(persistentCooldownQueueItem);
 		return removeTime;
 	}
 
 	public boolean removeKey(final Key key, final SendableGet client, final long time, ObjectContainer container) {
 		boolean found = false;
 		ObjectSet results = container.query(new Predicate() {
-			public boolean match(Item item) {
-				if(item.parent != PersistentCooldownQueue.this) return false;
-				if(item.key != key) return false;
-				if(item.client != client) return false;
+			public boolean match(PersistentCooldownQueueItem persistentCooldownQueueItem) {
+				if(persistentCooldownQueueItem.parent != PersistentCooldownQueue.this) return false;
+				if(persistentCooldownQueueItem.key != key) return false;
+				if(persistentCooldownQueueItem.client != client) return false;
 				return true;
 				// Ignore time
 			}
 		});
 		while(results.hasNext()) {
 			found = true;
-			Item i = (Item) results.next();
+			PersistentCooldownQueueItem i = (PersistentCooldownQueueItem) results.next();
 			container.delete(i);
 		}
 		return found;
@@ -73,16 +59,16 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		// Will be called repeatedly until no more keys are returned, so it doesn't
 		// matter very much if they're not in order.
 		ObjectSet results = container.query(new Predicate() {
-			public boolean match(Item item) {
-				if(item.parent != PersistentCooldownQueue.this) return false;
-				if(item.time > now) return false;
+			public boolean match(PersistentCooldownQueueItem persistentCooldownQueueItem) {
+				if(persistentCooldownQueueItem.parent != PersistentCooldownQueue.this) return false;
+				if(persistentCooldownQueueItem.time > now) return false;
 				return true;
 			}
 		});
 		if(results.hasNext()) {
 			ArrayList v = new ArrayList(Math.min(maxCount, results.size()));
 			while(results.hasNext() && v.size() < maxCount) {
-				Item i = (Item) results.next();
+				PersistentCooldownQueueItem i = (PersistentCooldownQueueItem) results.next();
 				v.add(i.key);
 			}
 			return (Key[]) v.toArray(new Key[v.size()]);
