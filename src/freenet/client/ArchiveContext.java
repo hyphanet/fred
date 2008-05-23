@@ -31,5 +31,4 @@ public class ArchiveContext {
 		if(soFar.size() > maxArchiveLevels)
 			throw new ArchiveFailureException(ArchiveFailureException.TOO_MANY_LEVELS);
 	}
-
 }
