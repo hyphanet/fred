@@ -242,6 +242,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	public void removePendingKey(final SendableGet getter, final boolean complain, final Key key) {
+		if(getter.persistent()) {
 		boolean dropped = schedTransient.removePendingKey(getter, complain, key);
 		if(dropped && offeredKeys != null && !node.peersWantKey(key)) {
 			for(int i=0;i<offeredKeys.length;i++)
@@ -249,7 +250,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		if(transientCooldownQueue != null)
 			transientCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key), null);
-		
+		} else {
 		// Now the persistent clients...
 		
 		databaseExecutor.execute(new Runnable() {
@@ -264,7 +265,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 			
 		}, "removePendingKey");
-		
+		}
 	}
 	
 	/**
