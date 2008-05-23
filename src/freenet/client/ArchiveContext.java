@@ -8,6 +8,7 @@ import freenet.keys.FreenetURI;
 
 /**
  * @author amphibian (Matthew Toseland)
+ *
  * Object passed down a full fetch, including all the recursion.
  * Used, at present, for detecting archive fetch loops, hence the
  * name.
