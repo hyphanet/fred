@@ -24,6 +24,7 @@ public class ArchiveContext {
 	
 	/**
 	 * Check for a loop.
+	 *
 	 * The URI provided is expected to be a reasonably unique identifier for the archive.
 	 */
 	public synchronized void doLoopDetection(FreenetURI key) throws ArchiveFailureException {
