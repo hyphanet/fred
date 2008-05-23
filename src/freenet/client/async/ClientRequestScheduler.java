@@ -538,6 +538,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				for(int j=0;j<getsLength;j++) {
 					if(gets[j] == getter) {
 						found = true;
+						dropped = true;
 						continue;
 					}
 					if(x == newGets.length) {
@@ -552,7 +553,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				if(x == 0) {
 					pendingKeys.remove(key);
-					dropped = true;
 				} else if(x == 1) {
 					pendingKeys.put(key, newGets[0]);
 				} else {
