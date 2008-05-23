@@ -121,7 +121,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			StorableBlock block = entry.getStorableBlock(routingKey, fullKey);
 			incHits();
 			if (updateBloom && !checkBloom)
-				bloomFilter.updateFilter(routingKey);
+				bloomFilter.updateFilter(getDigestedRoutingKey(routingKey));
 			return block;
 		} catch (KeyVerifyException e) {
 			Logger.minor(this, "key verification exception", e);
@@ -140,7 +140,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 */
 	private Entry probeEntry(byte[] routingKey) throws IOException {
 		if (checkBloom)
-			if (!bloomFilter.checkFilter(routingKey))
+			if (!bloomFilter.checkFilter(getDigestedRoutingKey(routingKey)))
 				return null;
 
 		Entry entry = probeEntry0(routingKey, storeSize);
@@ -205,7 +205,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			
 			// Overwrite old offset
 			if (updateBloom)
-				bloomFilter.updateFilter(routingKey);
+				bloomFilter.updateFilter(getDigestedRoutingKey(routingKey));
 			Entry entry = new Entry(routingKey, header, data);
 			writeEntry(entry, oldOffset);
 			incWrites();
@@ -228,7 +228,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					if (logDEBUG)
 						Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
 					if (updateBloom)
-						bloomFilter.updateFilter(routingKey);
+						bloomFilter.updateFilter(getDigestedRoutingKey(routingKey));
 					writeEntry(entry, offset[i]);
 					incWrites();
 					return;
@@ -247,7 +247,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			if (logDEBUG)
 				Logger.debug(this, "collision, write to i=0, offset=" + offset[0]);
 			if (updateBloom)
-				bloomFilter.updateFilter(routingKey);
+				bloomFilter.updateFilter(getDigestedRoutingKey(routingKey));
 			writeEntry(entry, offset[0]);
 			incWrites();
 		} finally {
