@@ -19,8 +19,10 @@
 
 package freenet.support;
 
-import java.io.*;
-import java.util.*;
+import java.io.DataInput;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
 
 import freenet.io.WritableToDataOutputStream;
 
@@ -45,7 +47,7 @@ public class Buffer implements WritableToDataOutputStream {
 	 * @param dis
 	 * @throws IOException
 	 */
-	public Buffer(DataInputStream dis) throws IOException {
+	public Buffer(DataInput dis) throws IOException {
 		_data = new byte[dis.readInt()];
 		_length = _data.length;
 		_start = 0;

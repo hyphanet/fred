@@ -1715,6 +1715,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				else
 					if(logMINOR)
 						Logger.minor(this, "Received packet while disconnected on " + this + " - recently disconnected() ?");
+			} else {
+				if(logMINOR) Logger.minor(this, "Received packet on "+this);
 			}
 		}
 		long now = System.currentTimeMillis();

@@ -806,19 +806,17 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 					if(result.equals(OperationStatus.SUCCESS))
 						deleted++;
 					
-					if((curBlocks-i) % 2048 == 0) {
-						t.commit();
-						t = null;
-					}
+					t.commit();
+					t = null;
 
 					freeBlocks.remove(i);
-					
+
+					long chkBlocksInDatabase = highestBlockNumberInDatabase();
 					synchronized(this) {
 						maxBlocks = maxBlocksInStore;
-						curBlocks = blocksInStore;
+						curBlocks = blocksInStore = chkBlocksInDatabase;
 						if(maxBlocks >= curBlocks) break;
 					}
-					
 				}
 				
 				if(t != null)

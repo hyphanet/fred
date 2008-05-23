@@ -41,7 +41,7 @@ public class ShortBuffer implements WritableToDataOutputStream {
 	 * @param dis
 	 * @throws IOException
 	 */
-	public ShortBuffer(DataInputStream dis) throws IOException {
+	public ShortBuffer(DataInput dis) throws IOException {
 		_data = new byte[dis.readShort()];
 		_length = (short)_data.length;
 		_start = 0;

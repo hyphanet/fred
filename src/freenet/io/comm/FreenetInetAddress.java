@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.comm;
 
-import java.io.DataInputStream;
+import java.io.DataInput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -32,7 +32,7 @@ public class FreenetInetAddress {
 	/**
 	 * Create from serialized form on a DataInputStream.
 	 */
-	public FreenetInetAddress(DataInputStream dis) throws IOException {
+	public FreenetInetAddress(DataInput dis) throws IOException {
 		int firstByte = dis.readUnsignedByte();
 		byte[] ba;
 		if(firstByte == 255) {
@@ -59,7 +59,8 @@ public class FreenetInetAddress {
 	/**
 	 * Create from serialized form on a DataInputStream.
 	 */
-	public FreenetInetAddress(DataInputStream dis, boolean checkHostnameOrIPSyntax) throws HostnameSyntaxException, IOException {
+	public FreenetInetAddress(DataInput dis, boolean checkHostnameOrIPSyntax) throws HostnameSyntaxException,
+	        IOException {
 		int firstByte = dis.readUnsignedByte();
 		byte[] ba;
 		if(firstByte == 255) {

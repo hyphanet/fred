@@ -447,17 +447,17 @@ public class Announcer {
 					announcementAddedNodes++;
 					totalAdded++;
 				}
-				Logger.error(this, "Announcement to "+seed.userToString()+" added node "+pn+" for a total of "+announcementAddedNodes+" ("+totalAdded+" from this announcement)");
+				Logger.normal(this, "Announcement to "+seed.userToString()+" added node "+pn+" for a total of "+announcementAddedNodes+" ("+totalAdded+" from this announcement)");
 				System.out.println("Announcement to "+seed.userToString()+" added node "+pn.userToString()+'.');
 				return;
 			}
 			public void bogusNoderef(String reason) {
-				Logger.error(this, "Announcement to "+seed.userToString()+" got bogus noderef: "+reason, new Exception("debug"));
+				Logger.normal(this, "Announcement to "+seed.userToString()+" got bogus noderef: "+reason, new Exception("debug"));
 			}
 			public void completed() {
 				synchronized(Announcer.this) {
 					runningAnnouncements--;
-					Logger.error(this, "Announcement to "+seed.userToString()+" completed, now running "+runningAnnouncements+" announcements");
+					Logger.normal(this, "Announcement to "+seed.userToString()+" completed, now running "+runningAnnouncements+" announcements");
 					if(runningAnnouncements == 0) {
 						startTime = System.currentTimeMillis() + COOLING_OFF_PERIOD;
 						sentAnnouncements = 0;
@@ -479,20 +479,20 @@ public class Announcer {
 			}
 
 			public void nodeFailed(PeerNode pn, String reason) {
-				Logger.error(this, "Announcement to node "+pn.userToString()+" failed: "+reason);
+				Logger.normal(this, "Announcement to node "+pn.userToString()+" failed: "+reason);
 			}
 			public void noMoreNodes() {
-				Logger.error(this, "Announcement to "+seed.userToString()+" ran out of nodes (route not found)");
+				Logger.normal(this, "Announcement to "+seed.userToString()+" ran out of nodes (route not found)");
 			}
 			public void nodeNotWanted() {
 				synchronized(Announcer.this) {
 					announcementNotWantedNodes++;
 					totalNotWanted++;
 				}
-				Logger.error(this, "Announcement to "+seed.userToString()+" returned node not wanted for a total of "+announcementNotWantedNodes+" ("+totalNotWanted+" from this announcement)");
+				Logger.normal(this, "Announcement to "+seed.userToString()+" returned node not wanted for a total of "+announcementNotWantedNodes+" ("+totalNotWanted+" from this announcement)");
 			}
 			public void nodeNotAdded() {
-				Logger.error(this, "Announcement to "+seed.userToString()+" : node not wanted (maybe already have it, opennet just turned off, etc)");
+				Logger.normal(this, "Announcement to "+seed.userToString()+" : node not wanted (maybe already have it, opennet just turned off, etc)");
 			}
 		}, seed);
 		node.executor.execute(sender, "Announcer to "+seed);

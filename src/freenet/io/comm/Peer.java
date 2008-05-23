@@ -19,6 +19,7 @@
 
 package freenet.io.comm;
 
+import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -50,13 +51,13 @@ public class Peer {
 		this(InetAddress.getLocalHost(), 0);
 	}
 
-	public Peer(DataInputStream dis) throws IOException {
+	public Peer(DataInput dis) throws IOException {
 		addr = new FreenetInetAddress(dis);
 		_port = dis.readInt();
 		if(_port > 65535 || _port < 0) throw new IOException("bogus port");
 	}
 
-	public Peer(DataInputStream dis, boolean checkHostnameOrIPSyntax) throws HostnameSyntaxException, IOException {
+	public Peer(DataInput dis, boolean checkHostnameOrIPSyntax) throws HostnameSyntaxException, IOException {
 		addr = new FreenetInetAddress(dis, checkHostnameOrIPSyntax);
 		_port = dis.readInt();
 		if(_port > 65535 || _port < 0) throw new IOException("bogus port");
