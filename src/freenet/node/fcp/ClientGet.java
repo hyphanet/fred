@@ -198,8 +198,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			}
 			getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, 
 					client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, 
-					client.lowLevelClientPersistent, binaryBlob ? new NullBucket() : returnBucket, 
-							binaryBlob ? returnBucket : null);
+					persistenceType == PERSIST_CONNECTION ? client.lowLevelClientTransient : client.lowLevelClientPersistent, 
+					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? returnBucket : null);
 			if(persistenceType != PERSIST_CONNECTION) {
 				FCPMessage msg = persistentTagMessage();
 				client.queueClientRequestMessage(msg, 0);
