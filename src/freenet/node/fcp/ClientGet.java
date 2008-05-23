@@ -311,7 +311,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 
 		if(finished && succeeded)
-				allDataPending = new AllDataMessage(returnBucket, identifier, global, startupTime, completionTime);
+			allDataPending = new AllDataMessage(returnBucket, identifier, global, startupTime, completionTime);
 	}
 
 	public void start() {
