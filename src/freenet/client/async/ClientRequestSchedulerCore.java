@@ -148,8 +148,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		int permRetryIndex = 0;
 		int transRetryIndex = 0;
 		while(true) {
-			int permRetryCount = perm == null ? -1 : perm.getNumberByIndex(permRetryIndex);
-			int transRetryCount = trans == null ? -1 : trans.getNumberByIndex(transRetryIndex);
+			int permRetryCount = perm == null ? Integer.MAX_VALUE : perm.getNumberByIndex(permRetryIndex);
+			int transRetryCount = trans == null ? Integer.MAX_VALUE : trans.getNumberByIndex(transRetryIndex);
 			if(permRetryCount == -1 && transRetryCount == -1) {
 				if(logMINOR) Logger.minor(this, "No requests to run: ran out of retrycounts on chosen priority");
 				return null;
