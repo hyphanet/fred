@@ -94,6 +94,7 @@ import freenet.store.KeyCollisionException;
 import freenet.store.PubkeyStore;
 import freenet.store.RAMFreenetStore;
 import freenet.store.SSKStore;
+import freenet.store.SaltedHashFreenetStore;
 import freenet.support.DoubleTokenBucket;
 import freenet.support.Executor;
 import freenet.support.Fields;
@@ -184,6 +185,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		public String[] getPossibleValues() {
 			return new String[] {
 					"bdb-index",
+					"salt-hash",
 					"ram"
 			};
 		}
@@ -1322,7 +1324,48 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		maxStoreKeys = maxTotalKeys / 2;
 		maxCacheKeys = maxTotalKeys - maxStoreKeys;
 		
-		if(storeType.equals("bdb-index")) {
+		if (storeType.equals("salt-hash")) {
+			storeEnvironment = null;
+			envMutableConfig = null;
+			try {
+				Logger.normal(this, "Initializing CHK Datastore");
+				System.out.println("Initializing CHK Datastore (" + maxStoreKeys + " keys)");
+				chkDatastore = new CHKStore();
+				SaltedHashFreenetStore.construct(storeDir, "CHK-store", chkDatastore, random, maxStoreKeys,
+				        shutdownHook);
+				Logger.normal(this, "Initializing CHK Datacache");
+				System.out.println("Initializing CHK Datacache (" + maxCacheKeys + ':' + maxCacheKeys + " keys)");
+				chkDatacache = new CHKStore();
+				SaltedHashFreenetStore.construct(storeDir, "CHK-cache", chkDatacache, random, maxCacheKeys,
+				        shutdownHook);
+
+				Logger.normal(this, "Initializing pubKey Datastore");
+				System.out.println("Initializing pubKey Datastore");
+				pubKeyDatastore = new PubkeyStore();
+				SaltedHashFreenetStore.construct(storeDir, "PUBKEY-store", pubKeyDatastore, random, maxStoreKeys,
+				        shutdownHook);
+				Logger.normal(this, "Initializing pubKey Datacache");
+				System.out.println("Initializing pubKey Datacache (" + maxCacheKeys + " keys)");
+				pubKeyDatacache = new PubkeyStore();
+				SaltedHashFreenetStore.construct(storeDir, "PUBKEY-cache", pubKeyDatacache, random, maxCacheKeys,
+				        shutdownHook);
+
+				Logger.normal(this, "Initializing SSK Datastore");
+				System.out.println("Initializing SSK Datastore");
+				sskDatastore = new SSKStore(this);
+				SaltedHashFreenetStore.construct(storeDir, "SSK-store", sskDatastore, random, maxStoreKeys,
+				        shutdownHook);
+				Logger.normal(this, "Initializing SSK Datacache");
+				System.out.println("Initializing SSK Datacache (" + maxCacheKeys + " keys)");
+				sskDatacache = new SSKStore(this);
+				SaltedHashFreenetStore.construct(storeDir, "SSK-cache", sskDatacache, random, maxCacheKeys,
+				        shutdownHook);
+			} catch (IOException e) {
+				System.err.println("Could not open store: " + e);
+				e.printStackTrace();
+				throw new NodeInitException(NodeInitException.EXIT_STORE_OTHER, e.getMessage());
+			}
+		} else if (storeType.equals("bdb-index")) {
 		// Setup datastores
 		
 		EnvironmentConfig envConfig = BerkeleyDBFreenetStore.getBDBConfig();
