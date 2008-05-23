@@ -251,8 +251,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(transientCooldownQueue != null)
 				transientCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key), null);
 		} else {
-			// Now the persistent clients...
-			
 			databaseExecutor.execute(new Runnable() {
 				public void run() {
 					try {
