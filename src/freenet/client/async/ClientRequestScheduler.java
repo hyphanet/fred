@@ -243,28 +243,28 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	public void removePendingKey(final SendableGet getter, final boolean complain, final Key key) {
 		if(getter.persistent()) {
-		boolean dropped = schedTransient.removePendingKey(getter, complain, key);
-		if(dropped && offeredKeys != null && !node.peersWantKey(key)) {
-			for(int i=0;i<offeredKeys.length;i++)
-				offeredKeys[i].remove(key);
-		}
-		if(transientCooldownQueue != null)
-			transientCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key), null);
-		} else {
-		// Now the persistent clients...
-		
-		databaseExecutor.execute(new Runnable() {
-			public void run() {
-				try {
-					schedCore.removePendingKey(getter, complain, key);
-					if(persistentCooldownQueue != null)
-						persistentCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key), selectorContainer);
-				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t, t);
-				}
+			boolean dropped = schedTransient.removePendingKey(getter, complain, key);
+			if(dropped && offeredKeys != null && !node.peersWantKey(key)) {
+				for(int i=0;i<offeredKeys.length;i++)
+					offeredKeys[i].remove(key);
 			}
+			if(transientCooldownQueue != null)
+				transientCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key), null);
+		} else {
+			// Now the persistent clients...
 			
-		}, "removePendingKey");
+			databaseExecutor.execute(new Runnable() {
+				public void run() {
+					try {
+						schedCore.removePendingKey(getter, complain, key);
+						if(persistentCooldownQueue != null)
+							persistentCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key), selectorContainer);
+					} catch (Throwable t) {
+						Logger.error(this, "Caught "+t, t);
+					}
+				}
+				
+			}, "removePendingKey");
 		}
 	}
 	
