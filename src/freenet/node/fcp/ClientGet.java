@@ -117,18 +117,19 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			}
 		}
 		returnBucket = ret;
-		if(persistenceType != PERSIST_CONNECTION)
+		if(persistenceType != PERSIST_CONNECTION) {
 			try {
 				client.register(this, false);
 			} catch (IdentifierCollisionException e) {
 				ret.free();
 				throw e;
 			}
-			getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, client.lowLevelClient, returnBucket, null);
-			if(persistenceType != PERSIST_CONNECTION) {
-				FCPMessage msg = persistentTagMessage();
-				client.queueClientRequestMessage(msg, 0);
-			}
+		}
+		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, client.lowLevelClient, returnBucket, null);
+		if(persistenceType != PERSIST_CONNECTION) {
+			FCPMessage msg = persistentTagMessage();
+			client.queueClientRequestMessage(msg, 0);
+		}
 	}
 
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message) throws IdentifierCollisionException, MessageInvalidException {
