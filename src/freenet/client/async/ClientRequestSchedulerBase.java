@@ -143,7 +143,7 @@ abstract class ClientRequestSchedulerBase {
 						found = true;
 						continue;
 					}
-					if(j == newGets.length) {
+					if(x == newGets.length) {
 						if(!found) {
 							if(complain)
 								Logger.normal(this, "Not found: "+getter+" for "+key+" removing ("+getsLength+" getters)");
