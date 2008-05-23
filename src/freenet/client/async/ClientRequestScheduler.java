@@ -540,11 +540,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 						found = true;
 						continue;
 					}
-					if(j == newGets.length) {
+					if(x == newGets.length) {
 						if(!found) {
 							if(complain)
 								Logger.normal(this, "Not found: "+getter+" for "+key+" removing ("+getsLength+" getters)");
 							return; // not here
+						} else {
+							// Found, but too big, and not able to shrink.
+							return;
 						}
 					}
 					if(gets[j] == null || gets[j].isCancelled()) continue;
