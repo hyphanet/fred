@@ -23,6 +23,7 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.KeyVerifyException;
 import freenet.node.SemiOrderedShutdownHook;
+import freenet.support.BloomFilter;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -39,6 +40,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private static final boolean OPTION_SAVE_PLAINKEY = true;
 	private static final int OPTION_MAX_PROBE = 4;
 	
+	private static final boolean updateBloom = true;
+	private static final boolean checkBloom = true;
+	private BloomFilter bloomFilter;
+		
 	private static final boolean logLOCK = false;
 	private static boolean logMINOR;
 	private static boolean logDEBUG;
@@ -88,6 +93,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		loadConfigFile();
 
 		openStoreFiles(baseDir, name);
+		
+		if (updateBloom || checkBloom)
+			bloomFilter = new BloomFilter(new File(this.baseDir, name + ".bloom"), 0x100000, 5);
 
 		callback.setStore(this);
 		shutdownHook.addEarlyJob(new Thread(new ShutdownDB()));
@@ -99,7 +107,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	public StorableBlock fetch(byte[] routingKey, byte[] fullKey, boolean dontPromote) throws IOException {
 		if (logMINOR)
 			Logger.minor(this, "Fetch " + HexUtil.bytesToHex(routingKey) + " for " + callback);
-
+		
 		Entry entry = probeEntry(routingKey);
 
 		if (entry == null) {
@@ -112,6 +120,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		try {
 			StorableBlock block = entry.getStorableBlock(routingKey, fullKey);
 			incHits();
+			if (updateBloom && !checkBloom)
+				bloomFilter.updateFilter(routingKey);
 			return block;
 		} catch (KeyVerifyException e) {
 			Logger.minor(this, "key verification exception", e);
@@ -129,6 +139,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * @throws IOException
 	 */
 	private Entry probeEntry(byte[] routingKey) throws IOException {
+		if (checkBloom)
+			if (!bloomFilter.checkFilter(routingKey))
+				return null;
+
 		Entry entry = probeEntry0(routingKey, storeSize);
 
 		if (entry == null && prevStoreSize != 0)
@@ -190,8 +204,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			}
 			
 			// Overwrite old offset
+			if (updateBloom)
+				bloomFilter.updateFilter(routingKey);
 			Entry entry = new Entry(routingKey, header, data);
 			writeEntry(entry, oldOffset);
+			incWrites();
 			return;
 			} finally {
 				unlockEntry(oldOffset);
@@ -210,6 +227,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				if (isFree(offset[i])) {
 					if (logDEBUG)
 						Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
+					if (updateBloom)
+						bloomFilter.updateFilter(routingKey);
 					writeEntry(entry, offset[i]);
 					incWrites();
 					return;
@@ -227,7 +246,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		try {
 			if (logDEBUG)
 				Logger.debug(this, "collision, write to i=0, offset=" + offset[0]);
-				writeEntry(entry, offset[0]);
+			if (updateBloom)
+				bloomFilter.updateFilter(routingKey);
+			writeEntry(entry, offset[0]);
 			incWrites();
 		} finally {
 			unlockEntry(offset[0]);
