@@ -545,10 +545,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 							if(complain)
 								Logger.normal(this, "Not found: "+getter+" for "+key+" removing ("+getsLength+" getters)");
 							return; // not here
-						} else {
-							// Found, but too big, and not able to shrink.
-							return;
-						}
+						} // else is a contradiction, let it get an ArrayIndexOutOfBounds.
 					}
 					if(gets[j] == null || gets[j].isCancelled()) continue;
 					newGets[x++] = gets[j];
