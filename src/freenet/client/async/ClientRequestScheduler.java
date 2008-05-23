@@ -420,7 +420,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * MUST be called from database thread!
 	 */
 	public long queueCooldown(ClientKey key, SendableGet getter) {
-		if(!getter.persistent())
+		if(getter.persistent())
 			return persistentCooldownQueue.add(key.getNodeKey(), getter, selectorContainer);
 		else
 			return transientCooldownQueue.add(key.getNodeKey(), getter, null);
