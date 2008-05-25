@@ -79,10 +79,16 @@ public class BloomFilter {
 
 		MessageDigest md = SHA256.getMessageDigest();
 		try {
+			ByteBuffer bf = null;
+			
 			for (int i = 0; i < k; i++) {
-				md.update(key);
-				md.update((byte) i);
-				hashes[i] = (int) ((Fields.bytesToLong(md.digest()) & Long.MAX_VALUE) % length);
+				if (bf == null || bf.remaining() < 8) {
+					md.update(key);
+					md.update((byte) i);
+					bf = ByteBuffer.wrap(md.digest());
+				}
+
+				hashes[i] = (int) ((bf.getLong() & Long.MAX_VALUE) % length);
 			}
 		} finally {
 			SHA256.returnMessageDigest(md);
