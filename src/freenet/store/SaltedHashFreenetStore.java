@@ -773,7 +773,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	// ------------- Store resizing
 	private long prevStoreSize = 0;
-	private Object cleanerLock = new Object();
+	private static Object cleanerLock = new Object();
 	private Cleaner cleanerThread;
 
 	private class Cleaner extends Thread {
