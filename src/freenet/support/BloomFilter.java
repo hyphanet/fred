@@ -98,7 +98,7 @@ public class BloomFilter {
 	}
 
 	protected boolean getBit(int offset) {
-		return (filter.get(offset) & (1 << (offset % 8))) != 0;
+		return (filter.get(offset / 8) & (1 << (offset % 8))) != 0;
 	}
 
 	protected void setBit(int offset) {
