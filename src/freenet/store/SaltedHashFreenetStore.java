@@ -225,12 +225,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			}
 			try {
 				if (isFree(offset[i])) {
+					// write to free block
 					if (logDEBUG)
 						Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
 					if (updateBloom)
 						bloomFilter.updateFilter(getDigestedRoutingKey(routingKey));
 					writeEntry(entry, offset[i]);
 					incWrites();
+					incKeyCount();
 					return;
 				}
 			} finally {
@@ -731,7 +733,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			salt = new byte[0x10];
 			random.nextBytes(salt);
 
-			estimatedCount = new SimpleRunningAverage(3, 0);
+			keyCount = 0;
 
 			writeConfigFile();
 		} else {
@@ -742,9 +744,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			storeSize = raf.readLong();
 			prevStoreSize = raf.readLong();
-			long oldEstimatedCount = raf.readLong();
-			estimatedCount = new SimpleRunningAverage(3, oldEstimatedCount);
-			estimatedCount.report(oldEstimatedCount);
+			keyCount = raf.readLong();
 			raf.readLong();
 
 			raf.close();
@@ -763,7 +763,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		raf.writeLong(storeSize);
 		raf.writeLong(prevStoreSize);
-		raf.writeLong(estimatedCount == null ? 0 : (long) estimatedCount.currentValue());
+		raf.writeLong(keyCount);
 		raf.writeLong(0);
 
 		raf.close();
@@ -772,7 +772,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	// ------------- Store resizing
-	private RunningAverage estimatedCount;
 	private long prevStoreSize = 0;
 	private Object cleanerLock = new Object();
 	private Cleaner cleanerThread;
@@ -794,8 +793,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				synchronized (cleanerLock) {
 					if (prevStoreSize != 0)
 						resizeStore();
-					else
-						estimateStoreSize();
 
 					cleanerLock.notifyAll();
 					try {
@@ -987,6 +984,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 							if (Arrays.equals(digestedRoutingKey, digestedRoutingKey2)) {
 								// assume same routing key, drop this as duplicate
 								freeOffset(offset);
+								decKeyCount();
 								droppedEntries++;
 
 								if (logDEBUG)
@@ -1003,6 +1001,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 								        + " queued");
 							writeOldItem(oldItemsFC, entry);
 							freeOffset(offset);
+							decKeyCount();
 						}
 					} finally {
 						// unlock all entries
@@ -1059,6 +1058,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 								        .debug(this, "Put back old item: "
 								                + HexUtil.bytesToHex(entry.digestedRoutingKey));
 							writeEntry(entry, newOffset[i]);
+							incKeyCount();
 							resolvedEntries++;
 							continue LOOP_ITEMS;
 						}
@@ -1106,39 +1106,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		 * Last sample position
 		 */
 		private long samplePos = 0;
-
-		/**
-		 * Estimate store utilization
-		 */
-		private void estimateStoreSize() {
-			Logger.minor(this, "start estimating key count");
-			long numSample = Math.min((long) (SAMPLE_RATE * storeSize), MIN_SAMPLE);
-			long sampled = 0;
-			long occupied = 0;
-			while (sampled < numSample) {
-				try {
-					if (!isFree(samplePos)) {
-						occupied++;
-					}
-					sampled++;
-				} catch (IOException e) { // oh, why?
-					Logger.error(this, "estimating store size", e);
-				}
-
-				samplePos = (samplePos + 1) % storeSize;
-
-				if (prevStoreSize != 0 || shutdown)
-					return; // oops! time to stop here
-			}
-
-			double newEstimatedCount = ((double) occupied * storeSize) / sampled;
-			estimatedCount.report(newEstimatedCount);
-
-			if (logMINOR)
-				Logger.minor(this, "finish estimating key count: sampled=" + sampled + ", occupied=" + occupied
-				        + ", newEstimatedCount=" + newEstimatedCount + ", runningAverage="
-				        + estimatedCount.currentValue());
-		}
 	}
 
 	public void setMaxKeys(long newStoreSize, boolean shrinkNow) throws IOException {
@@ -1348,6 +1315,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private long hits;
 	private long misses;
 	private long writes;
+	private long keyCount;
 
 	public long hits() {
 		synchronized (statLock) {
@@ -1387,9 +1355,21 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			writes++;
 		}
 	}
+	
+	private void incKeyCount() {
+		synchronized (statLock) {
+			keyCount++;
+		}
+	}
+
+	private void decKeyCount() {
+		synchronized (statLock) {
+			keyCount--;
+		}
+	}
 
 	public long keyCount() {
-		return (long) estimatedCount.currentValue();
+		return keyCount;
 	}
 
 	public long getMaxKeys() {
