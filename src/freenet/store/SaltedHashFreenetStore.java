@@ -189,27 +189,27 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		if (oldEntry != null) {
 			long oldOffset = oldEntry.curOffset;
 			try {
-			try {
-				StorableBlock oldBlock = oldEntry.getStorableBlock(routingKey, fullKey);
-				if (!collisionPossible)
-					return;
-				if (block.equals(oldBlock)) {
-					return; // already in store
-				} else {
-					if (!overwrite)
-						throw new KeyCollisionException();
+				try {
+					StorableBlock oldBlock = oldEntry.getStorableBlock(routingKey, fullKey);
+					if (!collisionPossible)
+						return;
+					if (block.equals(oldBlock)) {
+						return; // already in store
+					} else {
+						if (!overwrite)
+							throw new KeyCollisionException();
+					}
+				} catch (KeyVerifyException e) {
+					// ignore
 				}
-			} catch (KeyVerifyException e) {
-				// ignore
-			}
-			
-			// Overwrite old offset
-			if (updateBloom)
-				bloomFilter.updateFilter(getDigestedRoutingKey(routingKey));
-			Entry entry = new Entry(routingKey, header, data);
-			writeEntry(entry, oldOffset);
-			incWrites();
-			return;
+
+				// Overwrite old offset
+				if (updateBloom)
+					bloomFilter.updateFilter(getDigestedRoutingKey(routingKey));
+				Entry entry = new Entry(routingKey, header, data);
+				writeEntry(entry, oldOffset);
+				incWrites();
+				return;
 			} finally {
 				unlockEntry(oldOffset);
 			}
@@ -241,8 +241,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 
 		// no free blocks, overwrite the first one
-			if (!lockEntry(offset[0])) {
-				Logger.error(this, "can't lock entry: " + offset[0]);
+		if (!lockEntry(offset[0])) {
+			Logger.error(this, "can't lock entry: " + offset[0]);
 			return;
 		}
 		try {
