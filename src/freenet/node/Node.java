@@ -1331,35 +1331,61 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				Logger.normal(this, "Initializing CHK Datastore");
 				System.out.println("Initializing CHK Datastore (" + maxStoreKeys + " keys)");
 				chkDatastore = new CHKStore();
-				SaltedHashFreenetStore.construct(storeDir, "CHK-store", chkDatastore, random, maxStoreKeys,
-				        shutdownHook);
+				SaltedHashFreenetStore chkDataFS = SaltedHashFreenetStore.construct(storeDir, "CHK-store",
+				        chkDatastore, random, maxStoreKeys, shutdownHook);
 				Logger.normal(this, "Initializing CHK Datacache");
 				System.out.println("Initializing CHK Datacache (" + maxCacheKeys + ':' + maxCacheKeys + " keys)");
 				chkDatacache = new CHKStore();
-				SaltedHashFreenetStore.construct(storeDir, "CHK-cache", chkDatacache, random, maxCacheKeys,
-				        shutdownHook);
+				SaltedHashFreenetStore chkCacheFS = SaltedHashFreenetStore.construct(storeDir, "CHK-cache",
+				        chkDatacache, random, maxCacheKeys, shutdownHook);
 
 				Logger.normal(this, "Initializing pubKey Datastore");
 				System.out.println("Initializing pubKey Datastore");
 				pubKeyDatastore = new PubkeyStore();
-				SaltedHashFreenetStore.construct(storeDir, "PUBKEY-store", pubKeyDatastore, random, maxStoreKeys,
-				        shutdownHook);
+				SaltedHashFreenetStore pubkeyDataFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-store",
+				        pubKeyDatastore, random, maxStoreKeys, shutdownHook);
 				Logger.normal(this, "Initializing pubKey Datacache");
 				System.out.println("Initializing pubKey Datacache (" + maxCacheKeys + " keys)");
 				pubKeyDatacache = new PubkeyStore();
-				SaltedHashFreenetStore.construct(storeDir, "PUBKEY-cache", pubKeyDatacache, random, maxCacheKeys,
-				        shutdownHook);
+				SaltedHashFreenetStore pubkeyCacheFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-cache",
+				        pubKeyDatacache, random, maxCacheKeys, shutdownHook);
 
 				Logger.normal(this, "Initializing SSK Datastore");
 				System.out.println("Initializing SSK Datastore");
 				sskDatastore = new SSKStore(this);
-				SaltedHashFreenetStore.construct(storeDir, "SSK-store", sskDatastore, random, maxStoreKeys,
-				        shutdownHook);
+				SaltedHashFreenetStore sskDataFS = SaltedHashFreenetStore.construct(storeDir, "SSK-store",
+				        sskDatastore, random, maxStoreKeys, shutdownHook);
 				Logger.normal(this, "Initializing SSK Datacache");
 				System.out.println("Initializing SSK Datacache (" + maxCacheKeys + " keys)");
 				sskDatacache = new SSKStore(this);
-				SaltedHashFreenetStore.construct(storeDir, "SSK-cache", sskDatacache, random, maxCacheKeys,
+				SaltedHashFreenetStore sskCacheFS = SaltedHashFreenetStore.construct(storeDir, "SSK-cache",
+				        sskDatacache, random, maxCacheKeys,
 				        shutdownHook);
+				
+				File migrationFile = new File(storeDir, "migrated");
+				if (!migrationFile.exists()) {
+					chkDataFS.migrationFrom(//
+					        new File(storeDir, "chk" + suffix + ".store"), // 
+					        new File(storeDir, "chk" + suffix + ".store.keys"));
+					chkCacheFS.migrationFrom(//
+					        new File(storeDir, "chk" + suffix + ".cache"), // 
+					        new File(storeDir, "chk" + suffix + ".cache.keys"));
+
+					pubkeyDataFS.migrationFrom(//
+					        new File(storeDir, "pubkey" + suffix + ".store"), // 
+					        new File(storeDir, "pubkey" + suffix + ".store.keys"));
+					pubkeyCacheFS.migrationFrom(//
+					        new File(storeDir, "pubkey" + suffix + ".cache"), // 
+					        new File(storeDir, "pubkey" + suffix + ".cache.keys"));
+
+					sskDataFS.migrationFrom(//
+					        new File(storeDir, "ssk" + suffix + ".store"), // 
+					        new File(storeDir, "ssk" + suffix + ".store.keys"));
+					sskCacheFS.migrationFrom(//
+					        new File(storeDir, "ssk" + suffix + ".cache"), // 
+					        new File(storeDir, "ssk" + suffix + ".cache.keys"));
+					migrationFile.createNewFile();
+				}
 			} catch (IOException e) {
 				System.err.println("Could not open store: " + e);
 				e.printStackTrace();

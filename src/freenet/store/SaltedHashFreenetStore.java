@@ -1376,4 +1376,47 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		return storeSize;
 	}
 
+	// ------------- Migration
+	public void migrationFrom(File storeFile, File keyFile) {
+		try {
+			System.out.println("Migrating from " + storeFile);
+
+			RandomAccessFile storeRAF = new RandomAccessFile(storeFile, "r");
+			RandomAccessFile keyRAF = keyFile.exists() ? new RandomAccessFile(keyFile, "r") : null;
+			
+			byte[] header = new byte[headerBlockLength];
+			byte[] data = new byte[dataBlockLength];
+			byte[] key = new byte[fullKeyLength];
+
+			long maxKey = storeRAF.length() / (headerBlockLength + dataBlockLength);
+			for (int l = 0; true; l++) {
+				if (l % 1024 == 0)
+					System.out.println(" key " + l + "/" + maxKey);
+				
+				boolean keyRead = false;
+				storeRAF.readFully(header);
+				storeRAF.readFully(data);
+				try {
+					if (keyRAF != null) {
+						keyRAF.readFully(key);
+						keyRead = true;
+					}
+				} catch (IOException e) {
+				}
+				
+				try {
+					StorableBlock b = callback.construct(data, header, null, keyRead ? key : null);
+					put(b, b.getRoutingKey(), b.getFullKey(), data, header, true);
+				} catch (KeyVerifyException e) {
+					System.out.println("kve at block " + l);
+				} catch (KeyCollisionException e) {
+					System.out.println("kce at block " + l);
+				}
+			}
+		} catch (EOFException eof) {
+			// done
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 }
