@@ -59,19 +59,23 @@ public class BloomFilter {
 		this.k = k;
 	}
 
-	public synchronized void updateFilter(byte[] key) {
+	public void updateFilter(byte[] key) {
 		int[] hashes = getHashes(key);
-		for (int i = 0; i < k; i++)
-			setBit(hashes[i]);
+		synchronized (this) {
+			for (int i = 0; i < k; i++)
+				setBit(hashes[i]);
+		}
 		force();
 	}
 
-	public synchronized boolean checkFilter(byte[] key) {
+	public boolean checkFilter(byte[] key) {
 		int[] hashes = getHashes(key);
-		for (int i = 0; i < k; i++)
-			if (!getBit(hashes[i]))
-				return false;
-		return true;
+		synchronized (this) {
+			for (int i = 0; i < k; i++)
+				if (!getBit(hashes[i]))
+					return false;
+			return true;
+		}
 	}
 
 	private int[] getHashes(byte[] key) {
