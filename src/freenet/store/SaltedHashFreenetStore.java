@@ -147,6 +147,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		if (entry == null && prevStoreSize != 0)
 			entry = probeEntry0(routingKey, prevStoreSize);
+		if (checkBloom && entry == null)
+			incBloomFalsePos();
 
 		return entry;
 	}
@@ -1316,6 +1318,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private long misses;
 	private long writes;
 	private long keyCount;
+	private long bloomFalsePos;
 
 	public long hits() {
 		synchronized (statLock) {
@@ -1374,6 +1377,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	public long getMaxKeys() {
 		return storeSize;
+	}
+
+	private void incBloomFalsePos() {
+		synchronized (statLock) {
+			bloomFalsePos++;
+		}
 	}
 
 	// ------------- Migration
