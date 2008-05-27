@@ -749,7 +749,7 @@ public class StatisticsToadlet extends Toadlet {
 		}
 		if (numberOfDisconnecting > 0) {
 			HTMLNode peerStatsListenOnlyListItem = peerStatsList.addChild("li").addChild("span");
-			peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_disconnecting", l10n("disconnecting"), "border-bottom: 1px dotted; cursor: help;" }, l10nDark("disconnectingShort"));
+			peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_disconnecting", l10nDark("disconnecting"), "border-bottom: 1px dotted; cursor: help;" }, l10nDark("disconnectingShort"));
 			peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfDisconnecting);
 		}
 		if (numberOfSeedServers > 0) {
