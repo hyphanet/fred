@@ -2605,6 +2605,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		synchronized(cachedPubKeys) {
 			DSAPublicKey key2 = (DSAPublicKey) cachedPubKeys.get(w);
 			if((key2 != null) && !key2.equals(key)) {
+				// FIXME is this test really needed?
+				// SHA-256 inside synchronized{} is a bad idea
 				MessageDigest md256 = SHA256.getMessageDigest();
 				try {
 				byte[] hashCheck = md256.digest(key.asBytes());
