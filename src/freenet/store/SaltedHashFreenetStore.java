@@ -42,6 +42,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	
 	private static final boolean updateBloom = true;
 	private static final boolean checkBloom = true;
+	private boolean syncBloom = true;
 	private BloomFilter bloomFilter;
 		
 	private static final boolean logLOCK = false;
@@ -121,7 +122,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			StorableBlock block = entry.getStorableBlock(routingKey, fullKey);
 			incHits();
 			if (updateBloom && !checkBloom)
-				bloomFilter.updateFilter(getDigestedRoutingKey(routingKey));
+				bloomFilter.updateFilter(getDigestedRoutingKey(routingKey), false);
 			return block;
 		} catch (KeyVerifyException e) {
 			Logger.minor(this, "key verification exception", e);
@@ -207,7 +208,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 				// Overwrite old offset
 				if (updateBloom)
-					bloomFilter.updateFilter(getDigestedRoutingKey(routingKey));
+					bloomFilter.updateFilter(getDigestedRoutingKey(routingKey), syncBloom);
 				Entry entry = new Entry(routingKey, header, data);
 				writeEntry(entry, oldOffset);
 				incWrites();
@@ -231,7 +232,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					if (logDEBUG)
 						Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
 					if (updateBloom)
-						bloomFilter.updateFilter(getDigestedRoutingKey(routingKey));
+						bloomFilter.updateFilter(getDigestedRoutingKey(routingKey), syncBloom);
 					writeEntry(entry, offset[i]);
 					incWrites();
 					incKeyCount();
@@ -251,7 +252,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			if (logDEBUG)
 				Logger.debug(this, "collision, write to i=0, offset=" + offset[0]);
 			if (updateBloom)
-				bloomFilter.updateFilter(getDigestedRoutingKey(routingKey));
+				bloomFilter.updateFilter(getDigestedRoutingKey(routingKey), syncBloom);
 			writeEntry(entry, offset[0]);
 			incWrites();
 		} finally {
@@ -1140,9 +1141,16 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 	}
 
+	public void setBloomSync(boolean sync) {
+		lockGlobal(30000);
+		this.syncBloom = sync;
+		unlockGlobal();
+	}
+	
 	// ------------- Locking
 	private boolean shutdown = false;
-	private boolean lockGlobal = false;
+	private boolean lockedGlobal = false;
+	private int lockingGlobal = 0;
 	private Map lockMap = new HashMap();
 
 	/**
@@ -1159,7 +1167,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		try {
 			synchronized (lockMap) {
-				while (lockMap.containsKey(lxr) || lockGlobal) { // while someone hold the lock
+				while (lockMap.containsKey(lxr) || lockedGlobal || lockingGlobal != 0) { // while someone hold the lock
 					if (shutdown)
 						return false;
 
@@ -1206,18 +1214,21 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		synchronized (lockMap) {
 			try {
 				long startTime = System.currentTimeMillis();
+				lockingGlobal++;
 
-				while (!lockMap.isEmpty() || lockGlobal) {
+				while (!lockMap.isEmpty() || lockedGlobal) {
 					lockMap.wait(timeout);
 
 					if (System.currentTimeMillis() - startTime > timeout)
 						return false;
 				}
 
-				lockGlobal = true;
+				lockedGlobal = true;
 				return true;
 			} catch (InterruptedException e) {
 				return false;
+			} finally {
+				lockingGlobal--;
 			}
 		}
 	}
@@ -1227,7 +1238,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 */
 	private void unlockGlobal() {
 		synchronized (lockMap) {
-			lockGlobal = false;
+			lockedGlobal = false;
 			lockMap.notifyAll();
 		}
 	}
@@ -1387,6 +1398,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	// ------------- Migration
 	public void migrationFrom(File storeFile, File keyFile) {
+		setBloomSync(false); // don't sync the bloom filter
+
 		try {
 			System.out.println("Migrating from " + storeFile);
 
@@ -1427,5 +1440,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+
+		setBloomSync(true);
 	}
 }
