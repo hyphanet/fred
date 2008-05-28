@@ -140,7 +140,7 @@ public class NodeClientCore implements Persistable {
 			else prio = NativeThread.MIN_PRIORITY;
 			clientSlowSerialExecutor[i] = new SerialExecutor(prio);
 		}
-		clientDatabaseExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, NativeThread.MAX_PRIORITY, NativeThread.NORM_PRIORITY);
+		clientDatabaseExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, NativeThread.MAX_PRIORITY+1, NativeThread.NORM_PRIORITY);
 	  	byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
 		this.formPassword = Base64.encode(pwdBuf);
