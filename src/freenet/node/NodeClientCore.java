@@ -49,6 +49,7 @@ import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.SerialExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BooleanCallback;
@@ -113,7 +114,7 @@ public class NodeClientCore implements Persistable {
 	 * - No need to refresh live objects. 
 	 * - Deactivation is simpler.
 	 */
-	public final SerialExecutor clientDatabaseExecutor;
+	public final PrioritizedSerialExecutor clientDatabaseExecutor;
 	
 	public static int maxBackgroundUSKFetchers;
 	
@@ -139,7 +140,7 @@ public class NodeClientCore implements Persistable {
 			else prio = NativeThread.MIN_PRIORITY;
 			clientSlowSerialExecutor[i] = new SerialExecutor(prio);
 		}
-		clientDatabaseExecutor = new SerialExecutor(NativeThread.NORM_PRIORITY);
+		clientDatabaseExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, NativeThread.MAX_PRIORITY, NativeThread.NORM_PRIORITY);
 	  	byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
 		this.formPassword = Base64.encode(pwdBuf);

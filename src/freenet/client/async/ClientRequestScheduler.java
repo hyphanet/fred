@@ -24,6 +24,7 @@ import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.support.Logger;
+import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.SerialExecutor;
 import freenet.support.api.StringCallback;
 
@@ -93,7 +94,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public final String name;
 	private final CooldownQueue transientCooldownQueue;
 	private final CooldownQueue persistentCooldownQueue;
-	private final SerialExecutor databaseExecutor;
+	private final PrioritizedSerialExecutor databaseExecutor;
 	
 	public static final String PRIORITY_NONE = "NONE";
 	public static final String PRIORITY_SOFT = "SOFT";
