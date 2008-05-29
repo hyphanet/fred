@@ -190,7 +190,7 @@ public class ClientPut extends ClientPutBase {
 		if(mimeType == null && origFilename != null) {
 			mimeType = DefaultMIMETypes.guessMIMEType(origFilename.getName(), true);
 		}
-		if (mimeType == null) {
+		if ((mimeType == null) && (targetFilename != null)) {
 			mimeType = DefaultMIMETypes.guessMIMEType(targetFilename, true);
 		}
 		if(mimeType == null) {
