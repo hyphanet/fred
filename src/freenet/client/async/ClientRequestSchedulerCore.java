@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import java.util.List;
+import java.util.Vector;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -13,6 +14,7 @@ import com.db4o.types.Db4oList;
 import com.db4o.types.Db4oMap;
 
 import freenet.crypt.RandomSource;
+import freenet.keys.ClientKey;
 import freenet.node.BaseSendableGet;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
@@ -366,8 +368,11 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		container.set(reg);
 		databaseExecutor.execute(registerMeRunner, NativeThread.NORM_PRIORITY, "Register request");
 	}
-	
-	
+
+	public void addPendingKeys(Vector keys, SendableGet req) {
+		for(int i=0;i<keys.size();i++)
+			addPendingKey((ClientKey) keys.get(i), req);
+	}
 	
 }
 

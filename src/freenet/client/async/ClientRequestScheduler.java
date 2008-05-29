@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.util.Vector;
+
 import com.db4o.ObjectContainer;
 
 import freenet.config.EnumerableOptionCallback;
@@ -150,6 +152,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void register(final SendableRequest req, boolean onDatabaseThread) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Registering "+req, new Exception("debug"));
+		boolean persistent = req.persistent();
+		Vector pending = null;
 		if(isInsertScheduler != (req instanceof SendableInsert))
 			throw new IllegalArgumentException("Expected a SendableInsert: "+req);
 		if(req instanceof SendableGet) {
@@ -172,7 +176,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 							if(block == null)
 								block = node.fetchKey(key, getter.dontCache());
 							if(block == null) {
-								addPendingKey(key, getter);
+								if(persistent) {
+									if(pending == null)
+										pending = new Vector(keyTokens.length - i);
+									pending.add(key);
+								} else {
+									schedTransient.addPendingKey(key, getter);
+								}
 							} else {
 								if(logMINOR)
 									Logger.minor(this, "Got "+block);
@@ -205,16 +215,23 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 			}
 		}
-		if(req.persistent()) {
+		if(persistent) {
 			// Add to the persistent registration queue
 			if(onDatabaseThread) {
 				if(!databaseExecutor.onThread()) {
 					throw new IllegalStateException("Not on database thread!");
 				}
+				if(pending != null)
+					schedCore.addPendingKeys(pending, (SendableGet) req);
 				schedCore.queueRegister(req, databaseExecutor);
 			} else {
+				final Vector pendingKeys = pending;
+				if(pending != null)
+					pending.setSize(pending.size());
 				databaseExecutor.execute(new Runnable() {
 					public void run() {
+						if(pendingKeys != null)
+							schedCore.addPendingKeys(pendingKeys, (SendableGet) req);
 						schedCore.queueRegister(req, databaseExecutor);
 					}
 				}, NativeThread.NORM_PRIORITY, "Add persistent job to queue");
