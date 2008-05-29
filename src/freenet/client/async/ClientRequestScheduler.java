@@ -27,6 +27,7 @@ import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.SerialExecutor;
 import freenet.support.api.StringCallback;
+import freenet.support.io.NativeThread;
 
 /**
  * Every X seconds, the RequestSender calls the ClientRequestScheduler to
@@ -94,7 +95,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public final String name;
 	private final CooldownQueue transientCooldownQueue;
 	private final CooldownQueue persistentCooldownQueue;
-	private final PrioritizedSerialExecutor databaseExecutor;
+	final PrioritizedSerialExecutor databaseExecutor;
 	
 	public static final String PRIORITY_NONE = "NONE";
 	public static final String PRIORITY_SOFT = "SOFT";
@@ -103,7 +104,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, SubConfig sc, String name) {
 		this.selectorContainer = node.db;
-		schedCore = ClientRequestSchedulerCore.create(node, forInserts, forSSKs, selectorContainer, COOLDOWN_PERIOD);
+		schedCore = ClientRequestSchedulerCore.create(node, forInserts, forSSKs, selectorContainer, COOLDOWN_PERIOD, core.clientDatabaseExecutor);
 		schedTransient = new ClientRequestSchedulerNonPersistent(this);
 		persistentCooldownQueue = schedCore.persistentCooldownQueue;
 		this.databaseExecutor = core.clientDatabaseExecutor;
@@ -143,6 +144,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	public void register(final SendableRequest req) {
+		register(req, databaseExecutor.onThread());
+	}
+	
+	public void register(final SendableRequest req, boolean onDatabaseThread) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Registering "+req, new Exception("debug"));
 		if(isInsertScheduler != (req instanceof SendableInsert))
@@ -201,17 +206,21 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		}
 		if(req.persistent()) {
-			databaseExecutor.execute(new Runnable() {
-				public void run() {
-					try {
-						schedCore.innerRegister(req, random);
-						starter.wakeUp();
-					} catch (Throwable t) {
-						Logger.error(this, "Caught "+t, t);
-					}
+			// Add to the persistent registration queue
+			if(onDatabaseThread) {
+				if(!databaseExecutor.onThread()) {
+					throw new IllegalStateException("Not on database thread!");
 				}
-			}, "Register request");
+				schedCore.queueRegister(req, databaseExecutor);
+			} else {
+				databaseExecutor.execute(new Runnable() {
+					public void run() {
+						schedCore.queueRegister(req, databaseExecutor);
+					}
+				}, NativeThread.NORM_PRIORITY, "Add persistent job to queue");
+			}
 		} else {
+			// Register immediately.
 			schedTransient.innerRegister(req, random);
 			starter.wakeUp();
 		}

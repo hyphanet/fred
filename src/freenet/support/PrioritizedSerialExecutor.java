@@ -17,14 +17,19 @@ public class PrioritizedSerialExecutor implements Executor {
 	private boolean running;
 	
 	private static final int NEWJOB_TIMEOUT = 5*60*1000;
-	
-	private final Runnable runner = new PrioRunnable() {
 
+	private final Runner runner = new Runner();
+	
+	class Runner implements PrioRunnable {
+
+		Thread current;
+		
 		public int getPriority() {
 			return priority;
 		}
 
 		public void run() {
+			current = Thread.currentThread();
 			while(true) {
 				Runnable job = null;
 				synchronized(jobs) {
@@ -134,6 +139,14 @@ public class PrioritizedSerialExecutor implements Executor {
 				retval[priority] = 1;
 		}
 		return retval;
+	}
+
+	public boolean onThread() {
+		Thread running = Thread.currentThread();
+		synchronized(jobs) {
+			if(runner != null) return false;
+			return runner.current == running; 
+		}
 	}
 
 }

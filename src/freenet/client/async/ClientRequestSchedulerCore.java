@@ -8,6 +8,7 @@ import java.util.List;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Predicate;
+import com.db4o.query.Query;
 import com.db4o.types.Db4oList;
 import com.db4o.types.Db4oMap;
 
@@ -15,12 +16,15 @@ import freenet.crypt.RandomSource;
 import freenet.node.BaseSendableGet;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
+import freenet.node.SendableGet;
 import freenet.node.SendableRequest;
 import freenet.support.Logger;
+import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.RandomGrabArray;
 import freenet.support.SectoredRandomGrabArrayWithInt;
 import freenet.support.SectoredRandomGrabArrayWithObject;
 import freenet.support.SortedVectorByNumber;
+import freenet.support.io.NativeThread;
 
 /**
  * @author toad
@@ -35,6 +39,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	/** Identifier in the database for the node we are attached to */
 	private final long nodeDBHandle;
 	final PersistentCooldownQueue persistentCooldownQueue;
+	private transient RandomSource random;
+	private transient PrioritizedSerialExecutor databaseExecutor;
 
 	/**
 	 * Fetch a ClientRequestSchedulerCore from the database, or create a new one.
@@ -42,9 +48,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	 * @param forInserts
 	 * @param forSSKs
 	 * @param selectorContainer
+	 * @param executor 
 	 * @return
 	 */
-	public static ClientRequestSchedulerCore create(Node node, final boolean forInserts, final boolean forSSKs, ObjectContainer selectorContainer, long cooldownTime) {
+	public static ClientRequestSchedulerCore create(Node node, final boolean forInserts, final boolean forSSKs, ObjectContainer selectorContainer, long cooldownTime, PrioritizedSerialExecutor databaseExecutor) {
 		final long nodeDBHandle = node.nodeDBHandle;
 		ObjectSet results = selectorContainer.query(new Predicate() {
 			public boolean match(ClientRequestSchedulerCore core) {
@@ -61,7 +68,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 			core = new ClientRequestSchedulerCore(node, forInserts, forSSKs, selectorContainer, cooldownTime);
 		}
 		logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequestSchedulerCore.class);
-		core.onStarted(selectorContainer, cooldownTime);
+		core.onStarted(selectorContainer, cooldownTime, node.random, databaseExecutor);
 		return core;
 	}
 
@@ -76,7 +83,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		}
 	}
 
-	private void onStarted(ObjectContainer container, long cooldownTime) {
+	private void onStarted(ObjectContainer container, long cooldownTime, RandomSource random, PrioritizedSerialExecutor databaseExecutor) {
 		((Db4oMap)pendingKeys).activationDepth(1);
 		((Db4oMap)allRequestsByClientRequest).activationDepth(1);
 		((Db4oList)recentSuccesses).activationDepth(1);
@@ -84,6 +91,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		if(!isInsertScheduler) {
 			persistentCooldownQueue.setCooldownTime(cooldownTime);
 		}
+		this.random = random;
+		this.databaseExecutor = databaseExecutor;
+		databaseExecutor.execute(registerMeRunner, NativeThread.NORM_PRIORITY, "Register request");
 	}
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
@@ -316,5 +326,53 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		return container;
 	}
 
+	private final RegisterMeRunner registerMeRunner = new RegisterMeRunner();
+	
+	class RegisterMeRunner implements Runnable {
+
+		public void run() {
+			Query query = container.query();
+			query.constrain(RegisterMe.class);
+			query.descend("core").constrain(ClientRequestSchedulerCore.this);
+			query.descend("priority").orderAscending();
+			query.descend("addedTime").orderAscending();
+			ObjectSet result = query.execute();
+			if(result.hasNext()) {
+				RegisterMe reg = (RegisterMe) result.next();
+				if(result.hasNext()) {
+					databaseExecutor.execute(registerMeRunner, NativeThread.NORM_PRIORITY, "Register request");
+				}
+				container.delete(reg);
+				// Don't need to activate, fields should exist? FIXME
+				innerRegister(reg.getter, random);
+			}
+		}
+		
+	}
+	public void queueRegister(SendableRequest req, PrioritizedSerialExecutor databaseExecutor) {
+		if(!databaseExecutor.onThread()) {
+			throw new IllegalStateException("Not on database thread!");
+		}
+		RegisterMe reg = new RegisterMe(req, this);
+		container.set(reg);
+		databaseExecutor.execute(registerMeRunner, NativeThread.NORM_PRIORITY, "Register request");
+	}
+	
+	
 	
 }
+
+class RegisterMe {
+	final SendableRequest getter;
+	final ClientRequestSchedulerCore core;
+	final short priority;
+	final long addedTime;
+	
+	RegisterMe(SendableRequest getter, ClientRequestSchedulerCore core) {
+		this.getter = getter;
+		this.core = core;
+		this.addedTime = System.currentTimeMillis();
+		this.priority = getter.getPriorityClass();
+	}
+}
+
