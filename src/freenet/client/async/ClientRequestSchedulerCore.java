@@ -349,6 +349,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 				container.delete(reg);
 				// Don't need to activate, fields should exist? FIXME
 				try {
+					if(reg.getter instanceof SendableGet)
+						addPendingKeys((SendableGet) reg.getter);
 					innerRegister(reg.getter, random);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t+" running RegisterMeRunner", t);
@@ -369,9 +371,19 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		databaseExecutor.execute(registerMeRunner, NativeThread.NORM_PRIORITY, "Register request");
 	}
 
-	public void addPendingKeys(Vector keys, SendableGet req) {
-		for(int i=0;i<keys.size();i++)
-			addPendingKey((ClientKey) keys.get(i), req);
+	public void addPendingKeys(SendableGet getter) {
+		Object[] keyTokens = getter.sendableKeys();
+		for(int i=0;i<keyTokens.length;i++) {
+			Object tok = keyTokens[i];
+			ClientKey key = getter.getKey(tok);
+			if(key == null) {
+				if(logMINOR)
+					Logger.minor(this, "No key for "+tok+" for "+getter+" - already finished?");
+					continue;
+			} else {
+				addPendingKey(key, getter);
+			}
+		}
 	}
 	
 }

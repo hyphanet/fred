@@ -153,7 +153,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Registering "+req, new Exception("debug"));
 		boolean persistent = req.persistent();
-		Vector pending = null;
 		if(isInsertScheduler != (req instanceof SendableInsert))
 			throw new IllegalArgumentException("Expected a SendableInsert: "+req);
 		if(req instanceof SendableGet) {
@@ -176,13 +175,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 							if(block == null)
 								block = node.fetchKey(key, getter.dontCache());
 							if(block == null) {
-								if(persistent) {
-									if(pending == null)
-										pending = new Vector(keyTokens.length - i);
-									pending.add(key);
-								} else {
+								if(!persistent) {
 									schedTransient.addPendingKey(key, getter);
-								}
+								} // If persistent, when it is registered (in a later job) the keys will be added first.
 							} else {
 								if(logMINOR)
 									Logger.minor(this, "Got "+block);
@@ -221,17 +216,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(!databaseExecutor.onThread()) {
 					throw new IllegalStateException("Not on database thread!");
 				}
-				if(pending != null)
-					schedCore.addPendingKeys(pending, (SendableGet) req);
 				schedCore.queueRegister(req, databaseExecutor);
 			} else {
-				final Vector pendingKeys = pending;
-				if(pending != null)
-					pending.setSize(pending.size());
 				databaseExecutor.execute(new Runnable() {
 					public void run() {
-						if(pendingKeys != null)
-							schedCore.addPendingKeys(pendingKeys, (SendableGet) req);
 						schedCore.queueRegister(req, databaseExecutor);
 					}
 				}, NativeThread.NORM_PRIORITY, "Add persistent job to queue");
