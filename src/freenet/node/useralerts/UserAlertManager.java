@@ -156,9 +156,6 @@ public class UserAlertManager implements Comparator {
 			listItem.addChild("a", "href", "/alerts/#"+alert.anchor(), alert.getShortText());
 			totalNumber++;
 		}
-		if (totalNumber == 0) {
-			return new HTMLNode("#", "");
-		}
 		if(drawDumpEventsForm) {
 			HTMLNode dumpFormNode = contentNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("div");
 			dumpFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
