@@ -41,6 +41,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	final PersistentCooldownQueue persistentCooldownQueue;
 	private transient RandomSource random;
 	private transient PrioritizedSerialExecutor databaseExecutor;
+	private transient ClientRequestScheduler sched;
 
 	/**
 	 * Fetch a ClientRequestSchedulerCore from the database, or create a new one.
@@ -51,7 +52,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	 * @param executor 
 	 * @return
 	 */
-	public static ClientRequestSchedulerCore create(Node node, final boolean forInserts, final boolean forSSKs, ObjectContainer selectorContainer, long cooldownTime, PrioritizedSerialExecutor databaseExecutor) {
+	public static ClientRequestSchedulerCore create(Node node, final boolean forInserts, final boolean forSSKs, ObjectContainer selectorContainer, long cooldownTime, PrioritizedSerialExecutor databaseExecutor, ClientRequestScheduler sched) {
 		final long nodeDBHandle = node.nodeDBHandle;
 		ObjectSet results = selectorContainer.query(new Predicate() {
 			public boolean match(ClientRequestSchedulerCore core) {
@@ -68,7 +69,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 			core = new ClientRequestSchedulerCore(node, forInserts, forSSKs, selectorContainer, cooldownTime);
 		}
 		logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequestSchedulerCore.class);
-		core.onStarted(selectorContainer, cooldownTime, node.random, databaseExecutor);
+		core.onStarted(selectorContainer, cooldownTime, node.random, databaseExecutor, sched);
 		return core;
 	}
 
@@ -83,7 +84,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		}
 	}
 
-	private void onStarted(ObjectContainer container, long cooldownTime, RandomSource random, PrioritizedSerialExecutor databaseExecutor) {
+	private void onStarted(ObjectContainer container, long cooldownTime, RandomSource random, PrioritizedSerialExecutor databaseExecutor, ClientRequestScheduler sched) {
 		((Db4oMap)pendingKeys).activationDepth(1);
 		((Db4oMap)allRequestsByClientRequest).activationDepth(1);
 		((Db4oList)recentSuccesses).activationDepth(1);
@@ -94,6 +95,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		this.random = random;
 		this.databaseExecutor = databaseExecutor;
 		databaseExecutor.execute(registerMeRunner, NativeThread.NORM_PRIORITY, "Register request");
+		this.sched = sched;
 	}
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
@@ -344,7 +346,14 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 				}
 				container.delete(reg);
 				// Don't need to activate, fields should exist? FIXME
-				innerRegister(reg.getter, random);
+				try {
+					innerRegister(reg.getter, random);
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t+" running RegisterMeRunner", t);
+					// Cancel the request, and commit so it isn't tried again.
+					reg.getter.internalError(null, t, sched);
+				}
+				container.commit();
 			}
 		}
 		
