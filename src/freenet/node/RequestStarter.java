@@ -181,8 +181,12 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 	
 	private SendableRequest getRequest() {
 		SendableRequest req;
-		synchronized(queue) {
-			req = (SendableRequest) queue.removeFirst();
+		while(true) {
+			synchronized(queue) {
+				req = (SendableRequest) queue.removeFirst();
+			}
+			if(req.isCancelled()) continue;
+			break;
 		}
 		SendableRequest betterReq = sched.getBetterNonPersistentRequest(req);
 		if(req != null) {
