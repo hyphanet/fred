@@ -221,6 +221,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				databaseExecutor.execute(new Runnable() {
 					public void run() {
 						schedCore.queueRegister(req, databaseExecutor);
+						selectorContainer.commit();
 					}
 				}, NativeThread.NORM_PRIORITY, "Add persistent job to queue");
 			}
