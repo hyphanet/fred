@@ -24,7 +24,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	/** Choose a key to fetch. Removes the block number from any internal queues 
 	 * (but not the key itself, implementors must have a separate queue of block 
 	 * numbers and mapping of block numbers to keys).
-	 * @return An object identifying a specific key. -1 indicates no keys available. */
+	 * @return An object identifying a specific key. null indicates no keys available. */
 	public abstract Object chooseKey(KeysFetchingLocally keys);
 	
 	/** All key identifiers. Including those not currently eligible to be sent because 
