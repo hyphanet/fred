@@ -233,15 +233,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 	void addPendingKey(final ClientKey key, final SendableGet getter) {
 		if(getter.persistent()) {
-			databaseExecutor.execute(new Runnable() {
-				public void run() {
-					try {
-						schedCore.addPendingKey(key, getter);
-					} catch (Throwable t) {
-						Logger.error(this, "Caught "+t, t);
-					}
-				}
-			}, "Add pending key");
+			if(!databaseExecutor.onThread()) {
+				throw new IllegalStateException("Not on database thread!");
+			}
+			schedCore.addPendingKey(key, getter);
 		} else
 			schedTransient.addPendingKey(key, getter);
 	}
