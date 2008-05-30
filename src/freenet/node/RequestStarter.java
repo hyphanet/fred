@@ -178,7 +178,17 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 			cycleTime = sentRequestTime = System.currentTimeMillis();
 		}
 	}
-	
+
+	/**
+	 * Pull a request from the from-the-database-thread queue. Then ask for a higher priority non-persistent request.
+	 * If there isn't one, use the one we just pulled; if there is one, put it back on the queue.
+	 * 
+	 * Obviously, there will be a slightly higher latency for the database queue; for example, when adding a new 
+	 * higher priority persistent request, we have a queue-length penalty before starting to request it. We also
+	 * have a significant penalty from all the database access (even if the request itself is cached, the database
+	 * thread is probably doing other things so we have to wait for that to finish).
+	 * @return
+	 */
 	private SendableRequest getRequest() {
 		SendableRequest req;
 		while(true) {
