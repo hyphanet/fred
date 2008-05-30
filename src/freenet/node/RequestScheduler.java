@@ -3,11 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.LinkedList;
+
 import freenet.keys.ClientKey;
 
 public interface RequestScheduler {
-
-	public SendableRequest removeFirst();
 
 	/** Tell the scheduler that a request from a specific RandomGrabArray succeeded.
 	 * Definition of "succeeded" will vary, but the point is most schedulers will run another
@@ -40,5 +40,11 @@ public interface RequestScheduler {
 	 * your max retry count less than this (and more than -1). */
 	public static final int COOLDOWN_RETRIES = 3;
 	public long countTransientQueuedRequests();
+
+	public void queueFillRequestStarterQueue();
+
+	public LinkedList getRequestStarterQueue();
+
+	public SendableRequest getBetterNonPersistentRequest(SendableRequest req);
 	
 }

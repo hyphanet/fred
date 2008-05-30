@@ -4,6 +4,7 @@
 package freenet.node;
 
 import java.util.HashSet;
+import java.util.LinkedList;
 
 import freenet.keys.Key;
 import freenet.support.Logger;
@@ -49,6 +50,9 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 		return !((prio < MAXIMUM_PRIORITY_CLASS) || (prio > MINIMUM_PRIORITY_CLASS));
 	}
 	
+	/** Queue of requests to run. Added to by jobs on the database thread. */
+	private LinkedList queue;
+	
 	final BaseRequestThrottle throttle;
 	final TokenBucket inputBucket;
 	final TokenBucket outputBucket;
@@ -78,10 +82,12 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 
 	void setScheduler(RequestScheduler sched) {
 		this.sched = sched;
+		queue = sched.getRequestStarterQueue();
 	}
 	
 	void start() {
 		core.getExecutor().execute(this, name);
+		sched.queueFillRequestStarterQueue();
 	}
 	
 	final String name;
@@ -112,7 +118,9 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 			}
 			sched.moveKeysFromCooldownQueue();
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-			if(req == null) req = sched.removeFirst();
+			if(req == null) {
+				req = getRequest();
+			}
 			if(req != null) {
 				if(logMINOR) Logger.minor(this, "Running "+req);
 				// Wait
@@ -151,7 +159,7 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 				// Always take the lock on RequestStarter first. AFAICS we don't synchronize on RequestStarter anywhere else.
 				// Nested locks here prevent extra latency when there is a race, and therefore allow us to sleep indefinitely
 				synchronized(this) {
-					req = sched.removeFirst();
+					req = getRequest();
 					if(req == null) {
 						try {
 							wait(100*1000); // as close to indefinite as I'm comfortable with! Toad
@@ -171,6 +179,26 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 		}
 	}
 	
+	private SendableRequest getRequest() {
+		SendableRequest req;
+		synchronized(queue) {
+			req = (SendableRequest) queue.removeFirst();
+		}
+		SendableRequest betterReq = sched.getBetterNonPersistentRequest(req);
+		if(req != null) {
+			if(betterReq != null) {
+				synchronized(queue) {
+					queue.addFirst(req);
+				}
+				req = null;
+			}
+		}
+		if(req == null) req = betterReq;
+		else
+			sched.queueFillRequestStarterQueue();
+		return req;
+	}
+
 	/**
 	 * All Key's we are currently fetching. 
 	 * Locally originated requests only, avoids some complications with HTL, 

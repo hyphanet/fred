@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.util.LinkedList;
 import java.util.Vector;
 
 import com.db4o.ObjectContainer;
@@ -242,15 +243,61 @@ public class ClientRequestScheduler implements RequestScheduler {
 			schedTransient.addPendingKey(key, getter);
 	}
 	
-	public synchronized SendableRequest removeFirst() {
+	private synchronized SendableRequest removeFirst() {
+		if(!databaseExecutor.onThread()) {
+			throw new IllegalStateException("Not on database thread!");
+		}
 		short fuzz = -1;
 		if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
 			fuzz = -1;
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;	
 		// schedCore juggles both
-		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient);
+		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, false, (short) -1, -1);
 	}
+
+	public SendableRequest getBetterNonPersistentRequest(SendableRequest req) {
+		short fuzz = -1;
+		if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
+			fuzz = -1;
+		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
+			fuzz = 0;	
+		if(req == null)
+			return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, (short) -1, -1);
+		short prio = req.getPriorityClass();
+		int retryCount = req.getRetryCount();
+		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, prio, retryCount);
+	}
+	
+	private static final int MAX_STARTER_QUEUE_SIZE = 10;
+	
+	private LinkedList starterQueue = new LinkedList();
+	
+	public LinkedList getRequestStarterQueue() {
+		return starterQueue;
+	}
+	
+	public void queueFillRequestStarterQueue() {
+		databaseExecutor.executeNoDupes(requestStarterQueueFiller, 
+				NativeThread.MAX_PRIORITY, "Fill request starter queue");
+	}
+	
+	private Runnable requestStarterQueueFiller = new Runnable() {
+		public void run() {
+			SendableRequest req = null;
+			while(true) {
+				synchronized(starterQueue) {
+					if(req != null) {
+						starterQueue.add(req);
+						req = null;
+					}
+					if(starterQueue.size() >= MAX_STARTER_QUEUE_SIZE) return;
+				}
+				req = removeFirst();
+				if(req == null) return;
+			}
+		}
+	};
 	
 	public void removePendingKey(final SendableGet getter, final boolean complain, final Key key) {
 		if(getter.persistent()) {

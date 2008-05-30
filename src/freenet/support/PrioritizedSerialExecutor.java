@@ -121,6 +121,24 @@ public class PrioritizedSerialExecutor implements Executor {
 		}
 	}
 
+	public void executeNoDupes(Runnable job, int prio, String jobName) {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		synchronized(jobs) {
+			if(logMINOR) 
+				Logger.minor(this, "Running "+jobName+" : "+job+" priority "+prio+" running="+running+" waiting="+waiting);
+			if(jobs[prio].contains(job)) {
+				if(logMINOR)
+					Logger.minor(this, "Not adding duplicate job "+job);
+				return;
+			}
+			jobs[prio].addLast(job);
+			jobs.notifyAll();
+			if(!running && realExecutor != null) {
+				reallyStart(logMINOR);
+			}
+		}
+	}
+
 	public void execute(Runnable job, String jobName, boolean fromTicker) {
 		execute(job, jobName);
 	}

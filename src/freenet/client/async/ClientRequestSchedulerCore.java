@@ -102,7 +102,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
 	
-	private int removeFirstAccordingToPriorities(boolean tryOfferedKeys, int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, ClientRequestSchedulerNonPersistent schedTransient){
+	private int removeFirstAccordingToPriorities(boolean tryOfferedKeys, int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio){
 		SortedVectorByNumber result = null;
 		
 		short iteration = 0, priority;
@@ -112,9 +112,16 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		// TWEAKED will do rand%6,0,1,2,3,4,5,6
 		while(iteration++ < RequestStarter.NUMBER_OF_PRIORITY_CLASSES + 1){
 			priority = fuzz<0 ? tweakedPrioritySelector[random.nextInt(tweakedPrioritySelector.length)] : prioritySelector[Math.abs(fuzz % prioritySelector.length)];
-			result = priorities[priority];
+			if(transientOnly)
+				result = null;
+			else
+				result = priorities[priority];
 			if(result == null)
 				result = schedTransient.priorities[priority];
+			if(priority > maxPrio) {
+				fuzz++;
+				continue; // Don't return because first round may be higher with soft scheduling
+			}
 			if((result != null) && 
 					(!result.isEmpty()) || (tryOfferedKeys && !offeredKeys[priority].isEmpty())) {
 				if(logMINOR) Logger.minor(this, "using priority : "+priority);
@@ -133,14 +140,14 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	// We prevent a number of race conditions (e.g. adding a retry count and then another 
 	// thread removes it cos its empty) ... and in addToGrabArray etc we already sync on this.
 	// The worry is ... is there any nested locking outside of the hierarchy?
-	SendableRequest removeFirst(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient) {
+	SendableRequest removeFirst(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, int retryCount) {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		boolean tryOfferedKeys = offeredKeys != null && random.nextBoolean();
-		int choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys, fuzz, random, offeredKeys, schedTransient);
+		int choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys, fuzz, random, offeredKeys, schedTransient, transientOnly, maxPrio);
 		if(choosenPriorityClass == -1 && offeredKeys != null && !tryOfferedKeys) {
 			tryOfferedKeys = true;
-			choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys, fuzz, random, offeredKeys, schedTransient);
+			choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys, fuzz, random, offeredKeys, schedTransient, transientOnly, maxPrio);
 		}
 		if(choosenPriorityClass == -1) {
 			if(logMINOR)
@@ -153,7 +160,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 			if(offeredKeys[choosenPriorityClass].hasValidKeys(starter))
 				return offeredKeys[choosenPriorityClass];
 		}
-		SortedVectorByNumber perm = priorities[choosenPriorityClass];
+		SortedVectorByNumber perm = null;
+		if(!transientOnly)
+			perm = priorities[choosenPriorityClass];
 		SortedVectorByNumber trans = schedTransient.priorities[choosenPriorityClass];
 		if(perm == null && trans == null) {
 			if(logMINOR) Logger.minor(this, "No requests to run: chosen priority empty");
@@ -164,7 +173,15 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		while(true) {
 			int permRetryCount = perm == null ? Integer.MAX_VALUE : perm.getNumberByIndex(permRetryIndex);
 			int transRetryCount = trans == null ? Integer.MAX_VALUE : trans.getNumberByIndex(transRetryIndex);
-			if(permRetryCount == -1 && transRetryCount == -1) {
+			if(choosenPriorityClass == maxPrio) {
+				if(permRetryCount >= retryCount) {
+					permRetryCount = Integer.MAX_VALUE;
+				}
+				if(transRetryCount >= retryCount) {
+					transRetryCount = Integer.MAX_VALUE;
+				}
+			}
+			if(permRetryCount == Integer.MAX_VALUE && transRetryCount == Integer.MAX_VALUE) {
 				if(logMINOR) Logger.minor(this, "No requests to run: ran out of retrycounts on chosen priority");
 				return null;
 			}
@@ -177,27 +194,27 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 				int permTrackerSize = permRetryTracker.size();
 				int transTrackerSize = transRetryTracker.size();
 				if(permTrackerSize + transTrackerSize == 0) {
-					permRetryCount++;
-					transRetryCount++;
+					permRetryIndex++;
+					transRetryIndex++;
 					continue;
 				}
 				if(random.nextInt(permTrackerSize + transTrackerSize) > permTrackerSize) {
 					chosenTracker = permRetryTracker;
 					trackerParent = perm;
-					permRetryCount++;
+					permRetryIndex++;
 				} else {
 					chosenTracker = transRetryTracker;
 					trackerParent = trans;
-					transRetryCount++;
+					transRetryIndex++;
 				}
 			} else if(permRetryCount < transRetryCount) {
 				chosenTracker = (SectoredRandomGrabArrayWithInt) perm.getByIndex(permRetryIndex);
 				trackerParent = perm;
-				permRetryCount++;
+				permRetryIndex++;
 			} else {
 				chosenTracker = (SectoredRandomGrabArrayWithInt) trans.getByIndex(transRetryIndex);
 				trackerParent = trans;
-				transRetryCount++;
+				transRetryIndex++;
 			}
 			if(logMINOR)
 				Logger.minor(this, "Got retry count tracker "+chosenTracker);
