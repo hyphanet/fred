@@ -293,15 +293,17 @@ public class ClientRequestScheduler implements RequestScheduler {
 		public void run() {
 			ChosenRequest req = null;
 			while(true) {
+				req = removeFirst();
+				boolean finished = false;
 				synchronized(starterQueue) {
 					if(req != null) {
 						starterQueue.add(req);
 						req = null;
 					}
-					if(starterQueue.size() >= MAX_STARTER_QUEUE_SIZE) return;
+					if(starterQueue.size() >= MAX_STARTER_QUEUE_SIZE) finished = true;
 				}
-				req = removeFirst();
-				if(req == null) return;
+				selectorContainer.commit();
+				if(req == null || finished) return;
 			}
 		}
 	};
@@ -322,6 +324,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						schedCore.removePendingKey(getter, complain, key);
 						if(persistentCooldownQueue != null)
 							persistentCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key), selectorContainer);
+						selectorContainer.commit();
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t, t);
 					}
@@ -358,6 +361,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				public void run() {
 					try {
 						schedCore.reregisterAll(request, random, ClientRequestScheduler.this);
+						selectorContainer.commit();
 						starter.wakeUp();
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t, t);
@@ -380,6 +384,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				public void run() {
 					try {
 						schedCore.succeeded(succeeded);
+						selectorContainer.commit();
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t, t);
 					}
@@ -442,6 +447,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					}
 				}
 				if(logMINOR) Logger.minor(this, "Finished running callbacks");
+				selectorContainer.commit();
 			}
 			
 		}, "tripPendingKey for "+block.getKey());
@@ -471,6 +477,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(priority >= oldPrio) return; // already on list at >= priority
 				offeredKeys[priority].queueKey(key);
 				starter.wakeUp();
+				// No need to commit
 			}
 		}, "maybeQueueOfferedKey");
 	}
@@ -498,6 +505,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				try {
 					if(moveKeysFromCooldownQueue(persistentCooldownQueue, selectorContainer))
 						starter.wakeUp();
+					selectorContainer.commit();
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t, t);
 				}
