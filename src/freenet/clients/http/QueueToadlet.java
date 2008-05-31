@@ -1268,6 +1268,10 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			}
 		} else if(req instanceof ClientPut) {
 			FreenetURI uri = ((ClientPut)req).getFinalURI();
+			if(uri == null) {
+				Logger.error(this, "No URI for supposedly finished request "+req);
+				return;
+			}
 			long size = ((ClientPut)req).getDataSize();
 			String name = uri.getPreferredFilename();
 			String title = l10n("uploadSucceededTitle", "filename", name);
