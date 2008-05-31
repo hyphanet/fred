@@ -17,6 +17,7 @@ import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.KeyVerifyException;
 import freenet.node.BaseSendableGet;
+import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
@@ -241,7 +242,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			schedTransient.addPendingKey(key, getter);
 	}
 	
-	private synchronized SendableRequest removeFirst() {
+	private synchronized ChosenRequest removeFirst() {
 		if(!databaseExecutor.onThread()) {
 			throw new IllegalStateException("Not on database thread!");
 		}
@@ -254,7 +255,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, false, (short) -1, -1);
 	}
 
-	public SendableRequest getBetterNonPersistentRequest(SendableRequest req) {
+	public ChosenRequest getBetterNonPersistentRequest(ChosenRequest req) {
 		short fuzz = -1;
 		if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
 			fuzz = -1;
@@ -262,8 +263,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 			fuzz = 0;	
 		if(req == null)
 			return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, (short) -1, -1);
-		short prio = req.getPriorityClass();
-		int retryCount = req.getRetryCount();
+		short prio = req.request.getPriorityClass();
+		int retryCount = req.request.getRetryCount();
 		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, prio, retryCount);
 	}
 	
@@ -282,7 +283,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	private Runnable requestStarterQueueFiller = new Runnable() {
 		public void run() {
-			SendableRequest req = null;
+			ChosenRequest req = null;
 			while(true) {
 				synchronized(starterQueue) {
 					if(req != null) {
@@ -530,5 +531,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public long countTransientQueuedRequests() {
 		// Approximately... there might be some overlap in the two pendingKeys's...
 		return schedCore.countQueuedRequests() + schedTransient.countQueuedRequests();
+	}
+
+	public KeysFetchingLocally fetchingKeys() {
+		return schedCore;
+	}
+
+	public void removeFetchingKey(Key key) {
+		schedCore.removeFetchingKey(key);
 	}
 }

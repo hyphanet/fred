@@ -5,7 +5,9 @@ package freenet.node;
 
 import java.util.LinkedList;
 
+import freenet.client.async.ChosenRequest;
 import freenet.keys.ClientKey;
+import freenet.keys.Key;
 
 public interface RequestScheduler {
 
@@ -45,6 +47,10 @@ public interface RequestScheduler {
 
 	public LinkedList getRequestStarterQueue();
 
-	public SendableRequest getBetterNonPersistentRequest(SendableRequest req);
+	public ChosenRequest getBetterNonPersistentRequest(ChosenRequest req);
+
+	public KeysFetchingLocally fetchingKeys();
+
+	public void removeFetchingKey(Key key);
 	
 }

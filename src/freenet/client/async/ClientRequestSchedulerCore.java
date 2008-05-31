@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.util.HashSet;
 import java.util.List;
 
 import com.db4o.ObjectContainer;
@@ -14,7 +15,9 @@ import com.db4o.types.Db4oMap;
 
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientKey;
+import freenet.keys.Key;
 import freenet.node.BaseSendableGet;
+import freenet.node.KeysFetchingLocally;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
@@ -33,7 +36,7 @@ import freenet.support.io.NativeThread;
  * Does not refer to any non-persistable classes as member variables: Node must always 
  * be passed in if we need to use it!
  */
-class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
+class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements KeysFetchingLocally {
 	
 	private ObjectContainer container;
 	private static boolean logMINOR;
@@ -43,7 +46,18 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	private transient RandomSource random;
 	private transient PrioritizedSerialExecutor databaseExecutor;
 	private transient ClientRequestScheduler sched;
-
+	
+	/**
+	 * All Key's we are currently fetching. 
+	 * Locally originated requests only, avoids some complications with HTL, 
+	 * and also has the benefit that we can see stuff that's been scheduled on a SenderThread
+	 * but that thread hasn't started yet. FIXME: Both issues can be avoided: first we'd get 
+	 * rid of the SenderThread and start the requests directly and asynchronously, secondly
+	 * we'd move this to node but only track keys we are fetching at max HTL.
+	 * LOCKING: Always lock this LAST.
+	 */
+	private transient HashSet keysFetching;
+	
 	/**
 	 * Fetch a ClientRequestSchedulerCore from the database, or create a new one.
 	 * @param node
@@ -95,8 +109,12 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		}
 		this.random = random;
 		this.databaseExecutor = databaseExecutor;
-		databaseExecutor.execute(registerMeRunner, NativeThread.NORM_PRIORITY, "Register request");
+		if(!isInsertScheduler)
+			keysFetching = new HashSet();
+		else
+			keysFetching = null;
 		this.sched = sched;
+		databaseExecutor.execute(registerMeRunner, NativeThread.NORM_PRIORITY, "Register request");
 	}
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
@@ -139,7 +157,25 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 	// We prevent a number of race conditions (e.g. adding a retry count and then another 
 	// thread removes it cos its empty) ... and in addToGrabArray etc we already sync on this.
 	// The worry is ... is there any nested locking outside of the hierarchy?
-	SendableRequest removeFirst(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, int retryCount) {
+	ChosenRequest removeFirst(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, int retryCount) {
+		SendableRequest req = removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, transientOnly, maxPrio, retryCount);
+		Object token = req.chooseKey(this);
+		if(token == null) {
+			return null;
+		} else {
+			Key key;
+			if(isInsertScheduler)
+				key = null;
+			else
+				key = ((BaseSendableGet)req).getNodeKey(token);
+			ChosenRequest ret = new ChosenRequest(req, token, key);
+			if(key != null)
+				keysFetching.add(key);
+			return ret;
+		}
+	}
+	
+	SendableRequest removeFirstInner(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, int retryCount) {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		boolean tryOfferedKeys = offeredKeys != null && random.nextBoolean();
@@ -156,7 +192,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 		for(;choosenPriorityClass <= RequestStarter.MINIMUM_PRIORITY_CLASS;choosenPriorityClass++) {
 			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
 		if(tryOfferedKeys) {
-			if(offeredKeys[choosenPriorityClass].hasValidKeys(starter))
+			if(offeredKeys[choosenPriorityClass].hasValidKeys(this))
 				return offeredKeys[choosenPriorityClass];
 		}
 		SortedVectorByNumber perm = null;
@@ -399,6 +435,18 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase {
 			} else {
 				addPendingKey(key, getter);
 			}
+		}
+	}
+
+	public boolean hasKey(Key key) {
+		synchronized(keysFetching) {
+			return keysFetching.contains(key);
+		}
+	}
+
+	public void removeFetchingKey(Key key) {
+		synchronized(keysFetching) {
+			keysFetching.remove(key);
 		}
 	}
 	

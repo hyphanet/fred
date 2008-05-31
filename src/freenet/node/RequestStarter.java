@@ -6,6 +6,7 @@ package freenet.node;
 import java.util.HashSet;
 import java.util.LinkedList;
 
+import freenet.client.async.ChosenRequest;
 import freenet.keys.Key;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -20,7 +21,7 @@ import freenet.support.math.RunningAverage;
  * And you have to provide a RequestStarterClient. We do round robin between 
  * clients on the same priority level.
  */
-public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrabArrayItemExclusionList {
+public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionList {
 
 	/*
 	 * Priority classes
@@ -77,7 +78,6 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 		this.averageInputBytesPerRequest = averageInputBytesPerRequest;
 		this.isInsert = isInsert;
 		this.isSSK = isSSK;
-		if(!isInsert) keysFetching = new HashSet();
 	}
 
 	void setScheduler(RequestScheduler sched) {
@@ -97,7 +97,7 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 	}
 	
 	void realRun() {
-		SendableRequest req = null;
+		ChosenRequest req = null;
 		sentRequestTime = System.currentTimeMillis();
 		// The last time at which we sent a request or decided not to
 		long cycleTime = sentRequestTime;
@@ -171,7 +171,7 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 			}
 			if(req == null) continue;
 			if(!startRequest(req, logMINOR)) {
-				if(!req.isCancelled())
+				if(!req.request.isCancelled())
 					Logger.normal(this, "No requests to start on "+req);
 			}
 			req = null;
@@ -189,16 +189,16 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 	 * thread is probably doing other things so we have to wait for that to finish).
 	 * @return
 	 */
-	private SendableRequest getRequest() {
-		SendableRequest req;
+	private ChosenRequest getRequest() {
+		ChosenRequest req;
 		while(true) {
 			synchronized(queue) {
-				req = (SendableRequest) queue.removeFirst();
+				req = (ChosenRequest) queue.removeFirst();
 			}
-			if(req.isCancelled()) continue;
+			if(req.request.isCancelled()) continue;
 			break;
 		}
-		SendableRequest betterReq = sched.getBetterNonPersistentRequest(req);
+		ChosenRequest betterReq = sched.getBetterNonPersistentRequest(req);
 		if(req != null) {
 			if(betterReq != null) {
 				synchronized(queue) {
@@ -213,59 +213,10 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 		return req;
 	}
 
-	/**
-	 * All Key's we are currently fetching. 
-	 * Locally originated requests only, avoids some complications with HTL, 
-	 * and also has the benefit that we can see stuff that's been scheduled on a SenderThread
-	 * but that thread hasn't started yet. FIXME: Both issues can be avoided: first we'd get 
-	 * rid of the SenderThread and start the requests directly and asynchronously, secondly
-	 * we'd move this to node but only track keys we are fetching at max HTL.
-	 * LOCKING: Always lock this LAST.
-	 */
-	private HashSet keysFetching;
-	
-	private boolean startRequest(SendableRequest req, boolean logMINOR) {
-		// Create a thread to handle starting the request, and the resulting feedback
-		Object keyNum = null;
-		Key key = null;
-		while(true) {
-			try {
-				keyNum = req.chooseKey(isInsert ? null : this);
-				if(keyNum == null) return false;
-				if(!isInsert) {
-					key = ((BaseSendableGet)req).getNodeKey(keyNum);
-					if(key == null) return false;
-					synchronized(keysFetching) {
-						keysFetching.add(key);
-					}
-				}
-				core.getExecutor().execute(new SenderThread(req, keyNum, key), "RequestStarter$SenderThread for "+req);
-				if(logMINOR) Logger.minor(this, "Started "+req+" key "+keyNum);
-				return true;
-			} catch (OutOfMemoryError e) {
-				OOMHandler.handleOOM(e);
-				System.err.println("Will retry above failed operation...");
-				// Possibly out of threads
-				try {
-					Thread.sleep(5000);
-				} catch (InterruptedException e1) {
-					// Ignore
-				}
-				synchronized(keysFetching) {
-					if(key != null) keysFetching.remove(key);
-				}
-			} catch (Throwable t) {
-				if(keyNum != null) {
-					// Re-queue
-					Logger.error(this, "Caught "+t+" while trying to start request");
-					req.internalError(keyNum, t, sched);
-					return true; // Sort of ... maybe it will clear
-				}
-				synchronized(keysFetching) {
-					if(key != null) keysFetching.remove(key);
-				}
-			}
-		}
+	private boolean startRequest(ChosenRequest req, boolean logMINOR) {
+		if(sched.fetchingKeys().hasKey(req.key)) return false;
+		core.getExecutor().execute(new SenderThread(req.request, req.token, req.key), "RequestStarter$SenderThread for "+req);
+		return true;
 	}
 
 	public void run() {
@@ -306,9 +257,7 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 				Logger.minor(this, "Finished "+req);
 			} finally {
 				if(!isInsert) {
-					synchronized(keysFetching) {
-						keysFetching.remove(key);
-					}
+					sched.removeFetchingKey(key);
 				}
 			}
 		}
@@ -321,16 +270,10 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 		}
 	}
 
-	public boolean hasKey(Key key) {
-		synchronized(keysFetching) {
-			return keysFetching.contains(key);
-		}
-	}
-
 	public boolean exclude(RandomGrabArrayItem item) {
 		if(isInsert) return false;
 		BaseSendableGet get = (BaseSendableGet) item;
-		if(get.hasValidKeys(this))
+		if(get.hasValidKeys(sched.fetchingKeys()))
 			return false;
 		Logger.normal(this, "Excluding (no valid keys): "+get);
 		return true;
