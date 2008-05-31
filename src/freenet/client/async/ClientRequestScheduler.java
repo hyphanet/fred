@@ -190,7 +190,17 @@ public class ClientRequestScheduler implements RequestScheduler {
 						// verifies at low-level, but not at decode.
 						if(logMINOR)
 							Logger.minor(this, "Decode failed: "+e, e);
-						getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), tok, this);
+						if(onDatabaseThread)
+							getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), tok, this);
+						else {
+							final SendableGet g = getter;
+							final Object token = tok;
+							databaseExecutor.execute(new Runnable() {
+								public void run() {
+									g.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), token, ClientRequestScheduler.this);
+								}
+							}, NativeThread.NORM_PRIORITY, "Block decode failed");
+						}
 						continue; // other keys might be valid
 					}
 					if(block != null) {
@@ -556,4 +566,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void removeFetchingKey(Key key) {
 		schedCore.removeFetchingKey(key);
 	}
+
+	public PrioritizedSerialExecutor getDatabaseExecutor() {
+		return databaseExecutor;
+	}
+
+	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, String name) {
+		databaseExecutor.execute(new Runnable() {
+			public void run() {
+				get.onFailure(e, keyNum, ClientRequestScheduler.this);
+				selectorContainer.commit();
+			}
+		}, prio, name);
+	}
+
 }

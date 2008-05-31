@@ -483,7 +483,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					container.commit();
 				}
 			}
-		}, NativeThread.HIGH_PRIORITY, "Remove fetching key");
+		}, NativeThread.NORM_PRIORITY, "Remove fetching key");
 	}
 	
 }

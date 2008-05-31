@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import freenet.client.async.ChosenRequest;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
+import freenet.support.PrioritizedSerialExecutor;
 
 public interface RequestScheduler {
 
@@ -52,5 +53,9 @@ public interface RequestScheduler {
 	public KeysFetchingLocally fetchingKeys();
 
 	public void removeFetchingKey(Key key);
+
+	public PrioritizedSerialExecutor getDatabaseExecutor();
+
+	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, String name);
 	
 }
