@@ -4,7 +4,6 @@
 package freenet.client.async;
 
 import java.util.LinkedList;
-import java.util.Vector;
 
 import com.db4o.ObjectContainer;
 
@@ -28,7 +27,6 @@ import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
-import freenet.support.SerialExecutor;
 import freenet.support.api.StringCallback;
 import freenet.support.io.NativeThread;
 
