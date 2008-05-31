@@ -144,12 +144,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	}
 
 	public void internalError(final Object keyNum, final Throwable t, final RequestScheduler sched) {
-		sched.getDatabaseExecutor().execute(new Runnable() {
-			public void run() {
-				onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), keyNum, sched);
-			}
-		}, NativeThread.MAX_PRIORITY, // ensure this is run before the callback to remove the request from the running requests list 
-		"Internal error");
+		sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), keyNum, NativeThread.MAX_PRIORITY, "Internal error");
 	}
 
 	/**
