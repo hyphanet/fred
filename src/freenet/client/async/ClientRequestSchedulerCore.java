@@ -114,7 +114,26 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		else
 			keysFetching = null;
 		this.sched = sched;
+	}
+	
+	void start() {
 		databaseExecutor.execute(registerMeRunner, NativeThread.NORM_PRIORITY, "Register request");
+	}
+	
+	void fillStarterQueue() {
+		ObjectSet results = container.query(new Predicate() {
+			public boolean match(PersistentChosenRequest req) {
+				if(req.core != ClientRequestSchedulerCore.this) return false;
+				return true;
+			}
+		});
+		while(results.hasNext()) {
+			PersistentChosenRequest req = (PersistentChosenRequest) results.next();
+			sched.addToStarterQueue(req);
+			synchronized(keysFetching) {
+				keysFetching.add(req.key);
+			}
+		}
 	}
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
@@ -168,7 +187,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				key = null;
 			else
 				key = ((BaseSendableGet)req).getNodeKey(token);
-			ChosenRequest ret = new ChosenRequest(req, token, key);
+			PersistentChosenRequest ret = new PersistentChosenRequest(this, req, token, key);
+			if(req.persistent())
+				container.set(ret);
 			if(key != null)
 				keysFetching.add(key);
 			return ret;
@@ -444,10 +465,25 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		}
 	}
 
-	public void removeFetchingKey(Key key) {
+	public void removeFetchingKey(final Key key) {
 		synchronized(keysFetching) {
 			keysFetching.remove(key);
 		}
+		sched.databaseExecutor.execute(new Runnable() {
+			public void run() {
+				ObjectSet results = container.query(new Predicate() {
+					public boolean match(PersistentChosenRequest req) {
+						if(req.core != ClientRequestSchedulerCore.this) return false;
+						return req.key.equals(key);
+					}
+				});
+				if(results.hasNext()) {
+					PersistentChosenRequest req = (PersistentChosenRequest) results.next();
+					container.delete(req);
+					container.commit();
+				}
+			}
+		}, NativeThread.HIGH_PRIORITY, "Remove fetching key");
 	}
 	
 }

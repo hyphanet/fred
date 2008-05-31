@@ -108,6 +108,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 		this.selectorContainer = node.db;
 		schedCore = ClientRequestSchedulerCore.create(node, forInserts, forSSKs, selectorContainer, COOLDOWN_PERIOD, core.clientDatabaseExecutor, this);
 		schedTransient = new ClientRequestSchedulerNonPersistent(this);
+		schedCore.fillStarterQueue();
+		schedCore.start();
 		persistentCooldownQueue = schedCore.persistentCooldownQueue;
 		this.databaseExecutor = core.clientDatabaseExecutor;
 		this.starter = starter;
@@ -279,6 +281,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void queueFillRequestStarterQueue() {
 		databaseExecutor.executeNoDupes(requestStarterQueueFiller, 
 				NativeThread.MAX_PRIORITY, "Fill request starter queue");
+	}
+
+	void addToStarterQueue(PersistentChosenRequest req) {
+		synchronized(starterQueue) {
+			starterQueue.add(req);
+		}
 	}
 	
 	private Runnable requestStarterQueueFiller = new Runnable() {
