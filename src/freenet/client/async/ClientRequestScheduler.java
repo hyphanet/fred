@@ -457,7 +457,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			// FIXME what priority???
 			priority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 		}
-		priority = schedCore.getKeyPrio(key, priority);
+		priority = schedTransient.getKeyPrio(key, priority);
 		if(priority < Short.MAX_VALUE) {
 			offeredKeys[priority].queueKey(key);
 			starter.wakeUp();
@@ -467,7 +467,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		
 		databaseExecutor.execute(new Runnable() {
 			public void run() {
-				short priority = schedTransient.getKeyPrio(key, oldPrio);
+				short priority = schedCore.getKeyPrio(key, oldPrio);
 				if(priority >= oldPrio) return; // already on list at >= priority
 				offeredKeys[priority].queueKey(key);
 				starter.wakeUp();
