@@ -115,26 +115,26 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		configLock.readLock().lock();
 		try {
-		Entry entry = probeEntry(routingKey);
+			Entry entry = probeEntry(routingKey);
 
-		if (entry == null) {
-			incMisses();
-			return null;
-		}
+			if (entry == null) {
+				incMisses();
+				return null;
+			}
 
-		unlockEntry(entry.curOffset);
+			unlockEntry(entry.curOffset);
 
-		try {
-			StorableBlock block = entry.getStorableBlock(routingKey, fullKey);
-			incHits();
-			if (updateBloom && !checkBloom)
-				bloomFilter.updateFilter(getDigestedRoutingKey(routingKey), false);
-			return block;
-		} catch (KeyVerifyException e) {
-			Logger.minor(this, "key verification exception", e);
-			incMisses();
-			return null;
-		}
+			try {
+				StorableBlock block = entry.getStorableBlock(routingKey, fullKey);
+				incHits();
+				if (updateBloom && !checkBloom)
+					bloomFilter.updateFilter(getDigestedRoutingKey(routingKey), false);
+				return block;
+			} catch (KeyVerifyException e) {
+				Logger.minor(this, "key verification exception", e);
+				incMisses();
+				return null;
+			}
 		} finally {
 			configLock.readLock().unlock();
 		}
@@ -198,77 +198,77 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		configLock.readLock().lock();
 		try {
-		// don't use fetch(), as fetch() would do a miss++/hit++
-		Entry oldEntry = probeEntry(routingKey);
-		if (oldEntry != null) {
-			long oldOffset = oldEntry.curOffset;
-			try {
+			// don't use fetch(), as fetch() would do a miss++/hit++
+			Entry oldEntry = probeEntry(routingKey);
+			if (oldEntry != null) {
+				long oldOffset = oldEntry.curOffset;
 				try {
-					StorableBlock oldBlock = oldEntry.getStorableBlock(routingKey, fullKey);
-					if (!collisionPossible)
-						return;
-					if (block.equals(oldBlock)) {
-						return; // already in store
-					} else {
-						if (!overwrite)
-							throw new KeyCollisionException();
+					try {
+						StorableBlock oldBlock = oldEntry.getStorableBlock(routingKey, fullKey);
+						if (!collisionPossible)
+							return;
+						if (block.equals(oldBlock)) {
+							return; // already in store
+						} else {
+							if (!overwrite)
+								throw new KeyCollisionException();
+						}
+					} catch (KeyVerifyException e) {
+						// ignore
 					}
-				} catch (KeyVerifyException e) {
-					// ignore
-				}
 
-				// Overwrite old offset
-				if (updateBloom)
-					bloomFilter.updateFilter(getDigestedRoutingKey(routingKey), syncBloom);
-				Entry entry = new Entry(routingKey, header, data);
-				writeEntry(entry, oldOffset);
-				incWrites();
-				return;
-			} finally {
-				unlockEntry(oldOffset);
-			}
-		}
-
-		Entry entry = new Entry(routingKey, header, data);
-		long[] offset = entry.getOffset();
-
-		for (int i = 0; i < offset.length; i++) {
-			if (!lockEntry(offset[i])) {
-				Logger.error(this, "can't lock entry: " + offset[i]);
-				return;
-			}
-			try {
-				if (isFree(offset[i])) {
-					// write to free block
-					if (logDEBUG)
-						Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
+					// Overwrite old offset
 					if (updateBloom)
 						bloomFilter.updateFilter(getDigestedRoutingKey(routingKey), syncBloom);
-					writeEntry(entry, offset[i]);
+					Entry entry = new Entry(routingKey, header, data);
+					writeEntry(entry, oldOffset);
 					incWrites();
-					incKeyCount();
+					return;
+				} finally {
+					unlockEntry(oldOffset);
+				}
+			}
+
+			Entry entry = new Entry(routingKey, header, data);
+			long[] offset = entry.getOffset();
+
+			for (int i = 0; i < offset.length; i++) {
+				if (!lockEntry(offset[i])) {
+					Logger.error(this, "can't lock entry: " + offset[i]);
 					return;
 				}
-			} finally {
-				unlockEntry(offset[i]);
+				try {
+					if (isFree(offset[i])) {
+						// write to free block
+						if (logDEBUG)
+							Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
+						if (updateBloom)
+							bloomFilter.updateFilter(getDigestedRoutingKey(routingKey), syncBloom);
+						writeEntry(entry, offset[i]);
+						incWrites();
+						incKeyCount();
+						return;
+					}
+				} finally {
+					unlockEntry(offset[i]);
+				}
 			}
-		}
 
-		// no free blocks, overwrite the first one
-		if (!lockEntry(offset[0])) {
-			Logger.error(this, "can't lock entry: " + offset[0]);
-			return;
-		}
-		try {
-			if (logDEBUG)
-				Logger.debug(this, "collision, write to i=0, offset=" + offset[0]);
-			if (updateBloom)
-				bloomFilter.updateFilter(getDigestedRoutingKey(routingKey), syncBloom);
-			writeEntry(entry, offset[0]);
-			incWrites();
-		} finally {
-			unlockEntry(offset[0]);
-		}
+			// no free blocks, overwrite the first one
+			if (!lockEntry(offset[0])) {
+				Logger.error(this, "can't lock entry: " + offset[0]);
+				return;
+			}
+			try {
+				if (logDEBUG)
+					Logger.debug(this, "collision, write to i=0, offset=" + offset[0]);
+				if (updateBloom)
+					bloomFilter.updateFilter(getDigestedRoutingKey(routingKey), syncBloom);
+				writeEntry(entry, offset[0]);
+				incWrites();
+			} finally {
+				unlockEntry(offset[0]);
+			}
 		} finally {
 			configLock.readLock().unlock();
 		}
@@ -775,19 +775,19 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private void writeConfigFile() throws IOException {
 		configLock.writeLock().lock();
 		try {
-		File tempConfig = new File(configFile.getPath() + ".tmp");
-		RandomAccessFile raf = new RandomAccessFile(tempConfig, "rw");
-		raf.seek(0);
-		raf.write(salt);
+			File tempConfig = new File(configFile.getPath() + ".tmp");
+			RandomAccessFile raf = new RandomAccessFile(tempConfig, "rw");
+			raf.seek(0);
+			raf.write(salt);
 
-		raf.writeLong(storeSize);
-		raf.writeLong(prevStoreSize);
-		raf.writeLong(keyCount);
-		raf.writeLong(0);
+			raf.writeLong(storeSize);
+			raf.writeLong(prevStoreSize);
+			raf.writeLong(keyCount);
+			raf.writeLong(0);
 
-		raf.close();
+			raf.close();
 
-		FileUtil.renameTo(tempConfig, configFile);
+			FileUtil.renameTo(tempConfig, configFile);
 		} finally {
 			configLock.writeLock().unlock();
 		}
@@ -816,8 +816,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				synchronized (cleanerLock) {
 					configLock.readLock().lock();
 					try {
-					if (prevStoreSize != 0)
-						resizeStore();
+						if (prevStoreSize != 0)
+							resizeStore();
 					} finally {
 						configLock.readLock().unlock();
 					}
@@ -1147,7 +1147,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			storeSize = newStoreSize;
 			writeConfigFile();
 			synchronized (cleanerLock) {
-			cleanerLock.notifyAll();
+				cleanerLock.notifyAll();
 			}
 
 			if (shrinkNow) {
@@ -1160,7 +1160,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	public void setBloomSync(boolean sync) {
 		configLock.writeLock().lock();
-			this.syncBloom = sync;
+		this.syncBloom = sync;
 		configLock.writeLock().unlock();
 	}
 
@@ -1172,7 +1172,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	/**
 	 * Lock the entry
-	 *
+	 * 
 	 * This lock is <strong>not</strong> re-entrance. No threads except Cleaner should hold more
 	 * then one lock at a time (or deadlock may occur).
 	 */
@@ -1215,10 +1215,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			Logger.debug(this, "unlocking " + offset);
 
 		entryLock.lock();
-			try {
+		try {
 			Condition cond = lockMap.remove(offset);
 			cond.signal();
-			} finally {
+		} finally {
 			entryLock.unlock();
 		}
 	}
@@ -1233,15 +1233,15 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			configLock.writeLock().lock();
 			try {
-			cleanerThread.interrupt();
+				cleanerThread.interrupt();
 
-			flushAndClose();
+				flushAndClose();
 
-			try {
-				writeConfigFile();
-			} catch (IOException e) {
-				Logger.error(this, "error writing store config", e);
-			}
+				try {
+					writeConfigFile();
+				} catch (IOException e) {
+					Logger.error(this, "error writing store config", e);
+				}
 			} finally {
 				configLock.writeLock().unlock();
 			}
