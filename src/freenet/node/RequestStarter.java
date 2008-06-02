@@ -98,7 +98,7 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 		while(true) {
 			// Allow 5 minutes before we start killing requests due to not connecting.
 			OpennetManager om;
-			if(core.node.peers.countConnectedPeers() == 0 && (om = core.node.getOpennet()) != null &&
+			if(core.node.peers.countConnectedPeers() < 3 && (om = core.node.getOpennet()) != null &&
 					System.currentTimeMillis() - om.getCreationTime() < 5*60*1000) {
 				try {
 					synchronized(this) {
