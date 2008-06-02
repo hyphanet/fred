@@ -1142,9 +1142,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	public void setBloomSync(boolean sync) {
-		lockGlobal(30000);
-		this.syncBloom = sync;
-		unlockGlobal();
+		if (lockGlobal(Integer.MAX_VALUE)) {
+			this.syncBloom = sync;
+			unlockGlobal();
+		}
 	}
 	
 	// ------------- Locking
