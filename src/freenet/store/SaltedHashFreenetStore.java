@@ -15,6 +15,12 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import freenet.crypt.BlockCipher;
 import freenet.crypt.PCFBMode;
@@ -107,6 +113,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		if (logMINOR)
 			Logger.minor(this, "Fetch " + HexUtil.bytesToHex(routingKey) + " for " + callback);
 
+		configLock.readLock().lock();
+		try {
 		Entry entry = probeEntry(routingKey);
 
 		if (entry == null) {
@@ -126,6 +134,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			Logger.minor(this, "key verification exception", e);
 			incMisses();
 			return null;
+		}
+		} finally {
+			configLock.readLock().unlock();
 		}
 	}
 
@@ -185,6 +196,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		if (logMINOR)
 			Logger.minor(this, "Putting " + HexUtil.bytesToHex(routingKey) + " for " + callback);
 
+		configLock.readLock().lock();
+		try {
 		// don't use fetch(), as fetch() would do a miss++/hit++
 		Entry oldEntry = probeEntry(routingKey);
 		if (oldEntry != null) {
@@ -255,6 +268,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			incWrites();
 		} finally {
 			unlockEntry(offset[0]);
+		}
+		} finally {
+			configLock.readLock().unlock();
 		}
 	}
 
@@ -757,6 +773,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * Write config file
 	 */
 	private void writeConfigFile() throws IOException {
+		configLock.writeLock().lock();
+		try {
 		File tempConfig = new File(configFile.getPath() + ".tmp");
 		RandomAccessFile raf = new RandomAccessFile(tempConfig, "rw");
 		raf.seek(0);
@@ -770,6 +788,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		raf.close();
 
 		FileUtil.renameTo(tempConfig, configFile);
+		} finally {
+			configLock.writeLock().unlock();
+		}
 	}
 
 	// ------------- Store resizing
@@ -789,11 +810,17 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			setDaemon(true);
 		}
 
+        @Override
         public void run() {
 			while (!shutdown) {
 				synchronized (cleanerLock) {
+					configLock.readLock().lock();
+					try {
 					if (prevStoreSize != 0)
 						resizeStore();
+					} finally {
+						configLock.readLock().unlock();
+					}
 
 					cleanerLock.notifyAll();
 					try {
@@ -1094,19 +1121,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			bf.flip();
 			return new Entry(bf);
 		}
-
-		/**
-		 * Samples to take on key count estimation
-		 */
-		private static final double SAMPLE_RATE = 0.05; // 5%
-		/**
-		 * Minimum samples to take on key count estimation
-		 */
-		private static final int MIN_SAMPLE = 10000;
-		/**
-		 * Last sample position
-		 */
-		private long samplePos = 0;
 	}
 
 	public void setMaxKeys(long newStoreSize, boolean shrinkNow) throws IOException {
@@ -1115,7 +1129,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		assert newStoreSize > 0;
 		// TODO assert newStoreSize > (141 * (3 * 3) + 13 * 3) * 2; // store size too small
 
-		synchronized (cleanerLock) {
+		configLock.writeLock().lock();
+		try {
 			if (newStoreSize == this.storeSize)
 				return;
 
@@ -1131,49 +1146,56 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			prevStoreSize = storeSize;
 			storeSize = newStoreSize;
 			writeConfigFile();
+			synchronized (cleanerLock) {
 			cleanerLock.notifyAll();
+			}
 
 			if (shrinkNow) {
 				// TODO shrink now
 			}
+		} finally {
+			configLock.writeLock().unlock();
 		}
 	}
 
 	public void setBloomSync(boolean sync) {
-		if (lockGlobal(Integer.MAX_VALUE)) {
+		configLock.writeLock().lock();
 			this.syncBloom = sync;
-			unlockGlobal();
-		}
+		configLock.writeLock().unlock();
 	}
 
 	// ------------- Locking
 	private boolean shutdown = false;
-	private boolean lockedGlobal = false;
-	private int lockingGlobal = 0;
-	private Map lockMap = new HashMap();
+	private ReadWriteLock configLock = new ReentrantReadWriteLock(); 
+	private Lock entryLock = new ReentrantLock();
+	private Map<Long, Condition> lockMap = new HashMap<Long, Condition> ();
 
 	/**
 	 * Lock the entry
 	 *
-	 * This lock is <strong>not</strong> reentrance. No threads except Cleaner should hold more then
-	 * one lock at a time (or deadlock may occur).
+	 * This lock is <strong>not</strong> re-entrance. No threads except Cleaner should hold more
+	 * then one lock at a time (or deadlock may occur).
 	 */
 	private boolean lockEntry(long offset) {
 		if (logDEBUG && logLOCK)
 			Logger.debug(this, "try locking " + offset, new Exception());
 
-		Long lxr = new Long(offset);
-
 		try {
-			synchronized (lockMap) {
-				while (lockMap.containsKey(lxr) || lockedGlobal || lockingGlobal != 0) { // while someone hold the lock
+			entryLock.lock();
+			try {
+				do {
 					if (shutdown)
 						return false;
 
-					lockMap.wait();
-				}
-
-				lockMap.put(lxr, Thread.currentThread());
+					Condition lockCond = lockMap.get(offset);
+					if (lockCond != null)
+						lockCond.await(10, TimeUnit.SECONDS); // 10s for checking shutdown
+					else
+						break;
+				} while (true);
+				lockMap.put(offset, entryLock.newCondition());
+			} finally {
+				entryLock.unlock();
 			}
 		} catch (InterruptedException e) {
 			Logger.error(this, "lock interrupted", e);
@@ -1191,54 +1213,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private void unlockEntry(long offset) {
 		if (logDEBUG && logLOCK)
 			Logger.debug(this, "unlocking " + offset);
-		Long lxr = new Long(offset);
 
-		synchronized (lockMap) {
-			Object o = lockMap.remove(lxr);
-			assert o == Thread.currentThread();
-
-			lockMap.notifyAll();
-		}
-	}
-
-	/**
-	 * Lock all entries.
-	 *
-	 * Use this method to stop all read / write before database shutdown.
-	 *
-	 * @param timeout
-	 * 		the maximum time to wait in milliseconds.
-	 */
-	private boolean lockGlobal(long timeout) {
-		synchronized (lockMap) {
+		entryLock.lock();
 			try {
-				long startTime = System.currentTimeMillis();
-				lockingGlobal++;
-
-				while (!lockMap.isEmpty() || lockedGlobal) {
-					lockMap.wait(timeout);
-
-					if (System.currentTimeMillis() - startTime > timeout)
-						return false;
-				}
-
-				lockedGlobal = true;
-				return true;
-			} catch (InterruptedException e) {
-				return false;
+			Condition cond = lockMap.remove(offset);
+			cond.signal();
 			} finally {
-				lockingGlobal--;
-			}
-		}
-	}
-
-	/**
-	 * Unlock the global lock
-	 */
-	private void unlockGlobal() {
-		synchronized (lockMap) {
-			lockedGlobal = false;
-			lockMap.notifyAll();
+			entryLock.unlock();
 		}
 	}
 
@@ -1250,8 +1231,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				cleanerLock.notifyAll();
 			}
 
-			lockGlobal(10 * 1000); // 10 seconds
-
+			configLock.writeLock().lock();
+			try {
 			cleanerThread.interrupt();
 
 			flushAndClose();
@@ -1260,6 +1241,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				writeConfigFile();
 			} catch (IOException e) {
 				Logger.error(this, "error writing store config", e);
+			}
+			} finally {
+				configLock.writeLock().unlock();
 			}
 		}
 	}
