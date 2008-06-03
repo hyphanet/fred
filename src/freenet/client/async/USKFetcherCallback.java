@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 /**
  * Callback interface for USK fetches. If you submit a USK fetch via 
  * USKManager.getFetcher, then register yourself on it as a listener, then you
@@ -11,8 +13,8 @@ package freenet.client.async;
 public interface USKFetcherCallback extends USKCallback {
 
 	/** Failed to find any edition at all (later than or equal to the specified hint) */
-	void onFailure();
+	void onFailure(ObjectContainer container);
 
-	void onCancelled();
+	void onCancelled(ObjectContainer container);
 	
 }

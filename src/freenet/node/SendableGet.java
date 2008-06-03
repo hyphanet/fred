@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
@@ -25,10 +27,10 @@ public abstract class SendableGet extends BaseSendableGet {
 	public final ClientRequester parent;
 	
 	/** Get a numbered key to fetch. */
-	public abstract ClientKey getKey(Object token);
+	public abstract ClientKey getKey(Object token, ObjectContainer container);
 	
-	public Key getNodeKey(Object token) {
-		ClientKey key = getKey(token);
+	public Key getNodeKey(Object token, ObjectContainer container) {
+		ClientKey key = getKey(token, container);
 		if(key == null) return null;
 		return key.getNodeKey();
 	}
@@ -37,10 +39,10 @@ public abstract class SendableGet extends BaseSendableGet {
 	public abstract FetchContext getContext();
 	
 	/** Called when/if the low-level request succeeds. */
-	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched);
+	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched, ObjectContainer container);
 	
 	/** Called when/if the low-level request fails. */
-	public abstract void onFailure(LowLevelGetException e, Object token, RequestScheduler sched);
+	public abstract void onFailure(LowLevelGetException e, Object token, RequestScheduler sched, ObjectContainer container);
 	
 	/** Should the request ignore the datastore? */
 	public abstract boolean ignoreStore();
@@ -58,7 +60,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	 * @return True if a request was executed. False if caller should try to find another request, and remove
 	 * this one from the queue. */
 	public boolean send(NodeClientCore core, final RequestScheduler sched, final Object keyNum) {
-		ClientKey key = getKey(keyNum);
+		ClientKey key = getKey(keyNum, container);
 		if(key == null) {
 			Logger.error(this, "Key is null in send(): keyNum = "+keyNum+" for "+this);
 			return false;
@@ -66,11 +68,6 @@ public abstract class SendableGet extends BaseSendableGet {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Sending get for key "+keyNum+" : "+key);
 		FetchContext ctx = getContext();
-		long now = System.currentTimeMillis();
-		if(getCooldownWakeupByKey(key.getNodeKey()) > now) {
-			Logger.error(this, "Key is still on the cooldown queue in send() for "+this+" - key = "+key, new Exception("error"));
-			return false;
-		}
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(isCancelled()) {
 			if(logMINOR) Logger.minor(this, "Cancelled: "+this);
@@ -99,7 +96,7 @@ public abstract class SendableGet extends BaseSendableGet {
 		return true;
 	}
 
-	public void schedule() {
+	public void schedule(ObjectContainer container) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Scheduling "+this);
 		getScheduler().register(this);
@@ -118,7 +115,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	 * @param block
 	 * @param sched
 	 */
-	public abstract void onGotKey(Key key, KeyBlock block, RequestScheduler sched);
+	public abstract void onGotKey(Key key, KeyBlock block, RequestScheduler sched, ObjectContainer container);
 	
 	/**
 	 * Get the time at which the key specified by the given token will wake up from the 
@@ -126,12 +123,12 @@ public abstract class SendableGet extends BaseSendableGet {
 	 * @param token
 	 * @return
 	 */
-	public abstract long getCooldownWakeup(Object token);
+	public abstract long getCooldownWakeup(Object token, ObjectContainer container);
 	
-	public abstract long getCooldownWakeupByKey(Key key);
+	public abstract long getCooldownWakeupByKey(Key key, ObjectContainer container);
 	
 	/** Reset the cooldown times when the request is reregistered. */
-	public abstract void resetCooldownTimes();
+	public abstract void resetCooldownTimes(ObjectContainer container);
 
 	public final void unregister(boolean staySubscribed) {
 		if(!staySubscribed)
@@ -143,7 +140,7 @@ public abstract class SendableGet extends BaseSendableGet {
 		getScheduler().removePendingKey(this, false, key);
 	}
 
-	public void internalError(final Object keyNum, final Throwable t, final RequestScheduler sched) {
+	public void internalError(final Object keyNum, final Throwable t, final RequestScheduler sched, ObjectContainer container) {
 		sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), keyNum, NativeThread.MAX_PRIORITY, "Internal error");
 	}
 
@@ -152,6 +149,6 @@ public abstract class SendableGet extends BaseSendableGet {
 	 * Only requeue if our requeue time is less than or equal to the given time.
 	 * @param key
 	 */
-	public abstract void requeueAfterCooldown(Key key, long time);
+	public abstract void requeueAfterCooldown(Key key, long time, ObjectContainer container);
 
 }

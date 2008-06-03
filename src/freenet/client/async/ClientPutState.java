@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.InsertException;
 import freenet.support.SimpleFieldSet;
 
@@ -17,10 +19,10 @@ public interface ClientPutState {
 	public abstract BaseClientPutter getParent();
 
 	/** Cancel the request. */
-	public abstract void cancel();
+	public abstract void cancel(ObjectContainer container);
 
 	/** Schedule the request. */
-	public abstract void schedule() throws InsertException;
+	public abstract void schedule(ObjectContainer container) throws InsertException;
 	
 	/**
 	 * Get the token, an object which is passed around with the insert and may be

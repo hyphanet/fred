@@ -1,5 +1,7 @@
 package freenet.node;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.async.ClientRequester;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
@@ -25,15 +27,15 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	 * (but not the key itself, implementors must have a separate queue of block 
 	 * numbers and mapping of block numbers to keys).
 	 * @return An object identifying a specific key. null indicates no keys available. */
-	public abstract Object chooseKey(KeysFetchingLocally keys);
+	public abstract Object chooseKey(KeysFetchingLocally keys, ObjectContainer container);
 	
 	/** All key identifiers. Including those not currently eligible to be sent because 
 	 * they are on a cooldown queue, requests for them are in progress, etc. */
-	public abstract Object[] allKeys();
+	public abstract Object[] allKeys(ObjectContainer container);
 
 	/** All key identifiers currently eligible to be sent. Does not include those 
 	 * currently running, on the cooldown queue etc. */
-	public abstract Object[] sendableKeys();
+	public abstract Object[] sendableKeys(ObjectContainer container);
 
 	/** ONLY called by RequestStarter. Start the actual request using the NodeClientCore
 	 * provided, and the key and key number earlier got from chooseKey(). 
@@ -85,6 +87,6 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	}
 
 	/** Requeue after an internal error */
-	public abstract void internalError(Object keyNum, Throwable t, RequestScheduler sched);
+	public abstract void internalError(Object keyNum, Throwable t, RequestScheduler sched, ObjectContainer container);
 
 }

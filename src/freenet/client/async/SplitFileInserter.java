@@ -6,6 +6,8 @@ package freenet.client.async;
 import java.io.IOException;
 import java.util.Vector;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.ClientMetadata;
 import freenet.client.FECCodec;
 import freenet.client.FailureCodeTracker;
@@ -228,9 +230,9 @@ public class SplitFileInserter implements ClientPutState {
 		return (SplitFileInserterSegment[]) segs.toArray(new SplitFileInserterSegment[segs.size()]);
 	}
 	
-	public void start() throws InsertException {
+	public void start(ObjectContainer container) throws InsertException {
 		for(int i=0;i<segments.length;i++)
-			segments[i].start();
+			segments[i].start(container);
 		
 		if(countDataBlocks > 32)
 			parent.onMajorProgress();
@@ -359,7 +361,7 @@ public class SplitFileInserter implements ClientPutState {
 		return parent;
 	}
 
-	public void segmentFinished(SplitFileInserterSegment segment) {
+	public void segmentFinished(SplitFileInserterSegment segment, ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "Segment finished: "+segment, new Exception("debug"));
 		boolean allGone = true;
 		if(countDataBlocks > 32)
@@ -379,7 +381,7 @@ public class SplitFileInserter implements ClientPutState {
 			
 			InsertException e = segment.getException();
 			if((e != null) && e.isFatal()) {
-				cancel();
+				cancel(container);
 			} else {
 				if(!allGone) return;
 			}
@@ -431,7 +433,7 @@ public class SplitFileInserter implements ClientPutState {
 		}
 	}
 
-	public void cancel() {
+	public void cancel(ObjectContainer container) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
@@ -440,8 +442,8 @@ public class SplitFileInserter implements ClientPutState {
 			segments[i].cancel();
 	}
 
-	public void schedule() throws InsertException {
-		start();
+	public void schedule(ObjectContainer container) throws InsertException {
+		start(container);
 	}
 
 	public Object getToken() {

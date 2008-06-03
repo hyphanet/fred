@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchContext;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientSSK;
@@ -36,24 +38,24 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		cooldownWakeupTime = -1;
 	}
 
-	public Object[] allKeys() {
+	public Object[] allKeys(ObjectContainer container) {
 		return keys;
 	}
 	
-	public Object[] sendableKeys() {
+	public Object[] sendableKeys(ObjectContainer container) {
 		return keys;
 	}
 	
-	public Object chooseKey(KeysFetchingLocally fetching) {
+	public Object chooseKey(KeysFetchingLocally fetching, ObjectContainer container) {
 		if(fetching.hasKey(key.getNodeKey())) return null;
 		return keys[0];
 	}
 	
-	public boolean hasValidKeys(KeysFetchingLocally fetching) {
+	public boolean hasValidKeys(KeysFetchingLocally fetching, ObjectContainer container) {
 		return !fetching.hasKey(key.getNodeKey());
 	}
 	
-	public ClientKey getKey(Object token) {
+	public ClientKey getKey(Object token, ObjectContainer container) {
 		return key;
 	}
 	
@@ -67,7 +69,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 
 	/** Try again - returns true if we can retry 
 	 * @param sched */
-	protected boolean retry(RequestScheduler sched) {
+	protected boolean retry(RequestScheduler sched, ObjectContainer container) {
 		retryCount++;
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+retryCount+ ')');
@@ -82,7 +84,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 				cooldownWakeupTime = sched.queueCooldown(key, this);
 				return true; // We will retry, just not yet. See requeueAfterCooldown(Key).
 			} else {
-				schedule();
+				schedule(container);
 			}
 			return true;
 		}
@@ -105,7 +107,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return ctx.ignoreStore;
 	}
 
-	public void cancel() {
+	public void cancel(ObjectContainer container) {
 		synchronized(this) {
 			cancelled = true;
 		}
@@ -133,7 +135,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return true;
 	}
 
-	public void onGotKey(Key key, KeyBlock block, RequestScheduler sched) {
+	public void onGotKey(Key key, KeyBlock block, RequestScheduler sched, ObjectContainer container) {
 		synchronized(this) {
 			if(isCancelled()) return;
 			if(!key.equals(this.key.getNodeKey())) {
@@ -142,7 +144,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 			}
 		}
 		try {
-			onSuccess(Key.createKeyBlock(this.key, block), false, null, sched);
+			onSuccess(Key.createKeyBlock(this.key, block), false, null, sched, container);
 		} catch (KeyVerifyException e) {
 			Logger.error(this, "onGotKey("+key+","+block+") got "+e+" for "+this, e);
 			// FIXME if we get rid of the direct route this must call onFailure()
@@ -150,19 +152,19 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 	}
 	
 
-	public long getCooldownWakeup(Object token) {
+	public long getCooldownWakeup(Object token, ObjectContainer container) {
 		return cooldownWakeupTime;
 	}
 	
-	public long getCooldownWakeupByKey(Key key) {
+	public long getCooldownWakeupByKey(Key key, ObjectContainer container) {
 		return cooldownWakeupTime;
 	}
 	
-	public synchronized void resetCooldownTimes() {
+	public synchronized void resetCooldownTimes(ObjectContainer container) {
 		cooldownWakeupTime = -1;
 	}
 	
-	public void requeueAfterCooldown(Key key, long time) {
+	public void requeueAfterCooldown(Key key, long time, ObjectContainer container) {
 		if(cooldownWakeupTime > time) {
 			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Not requeueing as deadline has not passed yet");
 			return;
@@ -173,7 +175,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Requeueing after cooldown "+key+" for "+this);
-		schedule();
+		schedule(container);
 	}
 	
 }

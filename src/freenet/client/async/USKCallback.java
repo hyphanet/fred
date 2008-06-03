@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.USK;
 
 /**
@@ -14,7 +16,7 @@ public interface USKCallback {
 	/** Found the latest edition.
 	 * @param l The edition number.
 	 * @param key The key. */
-	void onFoundEdition(long l, USK key);
+	void onFoundEdition(long l, USK key, ObjectContainer container);
 	
 	/**
 	 * Priority at which the polling should run normally.

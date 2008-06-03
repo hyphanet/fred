@@ -58,4 +58,8 @@ public interface RequestScheduler {
 
 	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, String name);
 	
+	public void callFailure(final SendableInsert put, final LowLevelPutException e, final Object keyNum, int prio, String name);
+
+	public void callSuccess(final SendableInsert put, final Object keyNum, int prio, String name);
+	
 }

@@ -19,6 +19,7 @@ import freenet.keys.KeyVerifyException;
 import freenet.node.BaseSendableGet;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
+import freenet.node.LowLevelPutException;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
@@ -98,6 +99,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final CooldownQueue transientCooldownQueue;
 	private final CooldownQueue persistentCooldownQueue;
 	final PrioritizedSerialExecutor databaseExecutor;
+	final PrioritizedSerialExecutor datastoreCheckerExecutor;
 	
 	public static final String PRIORITY_NONE = "NONE";
 	public static final String PRIORITY_SOFT = "SOFT";
@@ -112,6 +114,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		schedCore.start();
 		persistentCooldownQueue = schedCore.persistentCooldownQueue;
 		this.databaseExecutor = core.clientDatabaseExecutor;
+		this.datastoreCheckerExecutor = core.datastoreCheckerExecutor;
 		this.starter = starter;
 		this.random = random;
 		this.node = node;
@@ -158,81 +161,159 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(isInsertScheduler != (req instanceof SendableInsert))
 			throw new IllegalArgumentException("Expected a SendableInsert: "+req);
 		if(req instanceof SendableGet) {
-			SendableGet getter = (SendableGet)req;
-			if(!getter.ignoreStore()) {
-				boolean anyValid = false;
-				Object[] keyTokens = getter.sendableKeys();
-				for(int i=0;i<keyTokens.length;i++) {
-					Object tok = keyTokens[i];
-					ClientKeyBlock block = null;
-					try {
-						ClientKey key = getter.getKey(tok);
-						if(key == null) {
-							if(logMINOR)
-								Logger.minor(this, "No key for "+tok+" for "+getter+" - already finished?");
-							continue;
-						} else {
-							if(getter.getContext().blocks != null)
-								block = getter.getContext().blocks.get(key);
-							if(block == null)
-								block = node.fetchKey(key, getter.dontCache());
-							if(block == null) {
-								if(!persistent) {
-									schedTransient.addPendingKey(key, getter);
-								} // If persistent, when it is registered (in a later job) the keys will be added first.
-							} else {
-								if(logMINOR)
-									Logger.minor(this, "Got "+block);
+			final SendableGet getter = (SendableGet)req;
+			
+			if(persistent && onDatabaseThread) {
+				schedCore.addPendingKeys(getter, selectorContainer);
+				schedCore.queueRegister(getter, databaseExecutor);
+				final Object[] keyTokens = getter.sendableKeys(selectorContainer);
+				final ClientKey[] keys = new ClientKey[keyTokens.length];
+				for(int i=0;i<keyTokens.length;i++)
+					keys[i] = getter.getKey(keyTokens[i], selectorContainer);
+				datastoreCheckerExecutor.execute(new Runnable() {
+
+					public void run() {
+						registerCheckStore(getter, true, keyTokens, keys);
+					}
+					
+				}, getter.getPriorityClass(), "Checking datastore");
+			} else if(persistent) {
+				databaseExecutor.execute(new Runnable() {
+
+					public void run() {
+						schedCore.addPendingKeys(getter, selectorContainer);
+						schedCore.queueRegister(getter, databaseExecutor);
+						final Object[] keyTokens = getter.sendableKeys(selectorContainer);
+						final ClientKey[] keys = new ClientKey[keyTokens.length];
+						for(int i=0;i<keyTokens.length;i++)
+							keys[i] = getter.getKey(keyTokens[i], selectorContainer);
+						datastoreCheckerExecutor.execute(new Runnable() {
+
+							public void run() {
+								registerCheckStore(getter, true, keyTokens, keys);
 							}
-						}
-					} catch (KeyVerifyException e) {
-						// Verify exception, probably bogus at source;
-						// verifies at low-level, but not at decode.
-						if(logMINOR)
-							Logger.minor(this, "Decode failed: "+e, e);
-						if(onDatabaseThread)
-							getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), tok, this);
-						else {
-							final SendableGet g = getter;
-							final Object token = tok;
-							databaseExecutor.execute(new Runnable() {
-								public void run() {
-									g.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), token, ClientRequestScheduler.this);
-								}
-							}, NativeThread.NORM_PRIORITY, "Block decode failed");
-						}
-						continue; // other keys might be valid
+							
+						}, getter.getPriorityClass(), "Checking datastore");
 					}
-					if(block != null) {
-						if(logMINOR) Logger.minor(this, "Can fulfill "+req+" ("+tok+") immediately from store");
-						getter.onSuccess(block, true, tok, this);
-						// Even with working thread priorities, we still get very high latency accessing
-						// the datastore when background threads are doing it in parallel.
-						// So yield() here, unless priority is very high.
-						if(req.getPriorityClass() > RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS)
-							Thread.yield();
-					} else {
-						anyValid = true;
+					
+				}, NativeThread.NORM_PRIORITY, "Registering request");
+			} else {
+				// Not persistent
+				schedTransient.addPendingKeys(getter, null);
+				// Check the store off-thread anyway.
+				final Object[] keyTokens = getter.sendableKeys(null);
+				final ClientKey[] keys = new ClientKey[keyTokens.length];
+				for(int i=0;i<keyTokens.length;i++)
+					keys[i] = getter.getKey(keyTokens[i], null);
+				datastoreCheckerExecutor.execute(new Runnable() {
+
+					public void run() {
+						registerCheckStore(getter, false, keyTokens, keys);
 					}
-				}
-				if(!anyValid) {
+					
+				}, getter.getPriorityClass(), "Checking datastore");
+			}
+		} else {
+			finishRegister(req, persistent, onDatabaseThread);
+		}
+	}
+
+	/**
+	 * Check the store for all the keys on the SendableGet. By now the pendingKeys will have
+	 * been set up, and this is run on the datastore checker thread. Once completed, this should
+	 * (for a persistent request) queue a job on the databaseExecutor and (for a transient 
+	 * request) finish registering the request immediately.
+	 * @param getter
+	 */
+	protected void registerCheckStore(SendableGet getter, boolean persistent, Object[] keyTokens, ClientKey[] keys) {
+		boolean anyValid = false;
+		for(int i=0;i<keyTokens.length;i++) {
+			Object tok = keyTokens[i];
+			ClientKeyBlock block = null;
+			try {
+				ClientKey key = keys[i];
+				if(key == null) {
 					if(logMINOR)
-						Logger.minor(this, "No valid keys, returning without registering for "+req);
-					return;
+						Logger.minor(this, "No key for "+tok+" for "+getter+" - already finished?");
+					continue;
+				} else {
+					if(getter.getContext().blocks != null)
+						block = getter.getContext().blocks.get(key);
+					if(block == null)
+						block = node.fetchKey(key, getter.dontCache());
+					if(block == null) {
+						if(!persistent) {
+							schedTransient.addPendingKey(key, getter);
+						} // If persistent, when it is registered (in a later job) the keys will be added first.
+					} else {
+						if(logMINOR)
+							Logger.minor(this, "Got "+block);
+					}
 				}
+			} catch (KeyVerifyException e) {
+				// Verify exception, probably bogus at source;
+				// verifies at low-level, but not at decode.
+				if(logMINOR)
+					Logger.minor(this, "Decode failed: "+e, e);
+				if(!persistent)
+					getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), tok, this, persistent ? selectorContainer : null);
+				else {
+					final SendableGet g = getter;
+					final Object token = tok;
+					databaseExecutor.execute(new Runnable() {
+						public void run() {
+							g.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), token, ClientRequestScheduler.this, selectorContainer);
+							selectorContainer.commit();
+						}
+					}, NativeThread.NORM_PRIORITY, "Block decode failed");
+				}
+				continue; // other keys might be valid
+			}
+			if(block != null) {
+				if(logMINOR) Logger.minor(this, "Can fulfill "+getter+" ("+tok+") immediately from store");
+				if(!persistent)
+					getter.onSuccess(block, true, tok, this, persistent ? selectorContainer : null);
+				else {
+					final ClientKeyBlock b = block;
+					final Object t = tok;
+					final SendableGet g = getter;
+					databaseExecutor.execute(new Runnable() {
+						public void run() {
+							g.onSuccess(b, true, t, ClientRequestScheduler.this, selectorContainer);
+						}
+					}, NativeThread.NORM_PRIORITY, "Block found on register");
+				}
+				// Even with working thread priorities, we still get very high latency accessing
+				// the datastore when background threads are doing it in parallel.
+				// So yield() here, unless priority is very high.
+				if(getter.getPriorityClass() > RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS)
+					Thread.yield();
+			} else {
+				anyValid = true;
 			}
 		}
+		if(!anyValid) {
+			if(logMINOR)
+				Logger.minor(this, "No valid keys, returning without registering for "+getter);
+			return;
+		}
+		finishRegister(getter, persistent, false);
+	}
+
+	private void finishRegister(final SendableRequest req, boolean persistent, boolean onDatabaseThread) {
 		if(persistent) {
 			// Add to the persistent registration queue
 			if(onDatabaseThread) {
 				if(!databaseExecutor.onThread()) {
 					throw new IllegalStateException("Not on database thread!");
 				}
-				schedCore.queueRegister(req, databaseExecutor);
+				schedCore.innerRegister(req, random);
+				schedCore.deleteRegisterMe(req);
 			} else {
 				databaseExecutor.execute(new Runnable() {
 					public void run() {
-						schedCore.queueRegister(req, databaseExecutor);
+						schedCore.innerRegister(req, random);
+						schedCore.deleteRegisterMe(req);
 						selectorContainer.commit();
 					}
 				}, NativeThread.NORM_PRIORITY, "Add persistent job to queue");
@@ -326,14 +407,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 					offeredKeys[i].remove(key);
 			}
 			if(transientCooldownQueue != null)
-				transientCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key), null);
+				transientCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key, null), null);
 		} else {
 			databaseExecutor.execute(new Runnable() {
 				public void run() {
 					try {
 						schedCore.removePendingKey(getter, complain, key);
 						if(persistentCooldownQueue != null)
-							persistentCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key), selectorContainer);
+							persistentCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key, selectorContainer), selectorContainer);
 						selectorContainer.commit();
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t, t);
@@ -351,11 +432,19 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * @param complain
 	 */
 	public void removePendingKeys(SendableGet getter, boolean complain) {
-		// FIXME should this be a single databaseExecutor thread??
-		Object[] keyTokens = getter.allKeys();
+		ObjectContainer container;
+		if(getter.persistent()) {
+			container = selectorContainer;
+			if(!databaseExecutor.onThread()) {
+				throw new IllegalStateException("Not on database thread!");
+			}
+		} else {
+			container = null;
+		}
+		Object[] keyTokens = getter.allKeys(container);
 		for(int i=0;i<keyTokens.length;i++) {
 			Object tok = keyTokens[i];
-			ClientKey ckey = getter.getKey(tok);
+			ClientKey ckey = getter.getKey(tok, container);
 			if(ckey == null) {
 				if(complain)
 					Logger.error(this, "Key "+tok+" is null for "+getter, new Exception("debug"));
@@ -422,7 +511,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				for(int i=0;i<transientGets.length;i++) {
 					try {
 						if(logMINOR) Logger.minor(this, "Calling callback for "+transientGets[i]+" for "+key);
-						transientGets[i].onGotKey(key, block, ClientRequestScheduler.this);
+						transientGets[i].onGotKey(key, block, ClientRequestScheduler.this, null);
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t+" running callback "+transientGets[i]+" for "+key);
 					}
@@ -431,7 +520,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}, "Running off-thread callbacks for "+block.getKey());
 		if(transientCooldownQueue != null) {
 			for(int i=0;i<transientGets.length;i++)
-				transientCooldownQueue.removeKey(key, transientGets[i], transientGets[i].getCooldownWakeupByKey(key), null);
+				transientCooldownQueue.removeKey(key, transientGets[i], transientGets[i].getCooldownWakeupByKey(key, null), null);
 		}
 		
 		// Now the persistent stuff
@@ -443,7 +532,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(gets == null) return;
 				if(persistentCooldownQueue != null) {
 					for(int i=0;i<gets.length;i++)
-						persistentCooldownQueue.removeKey(key, gets[i], gets[i].getCooldownWakeupByKey(key), selectorContainer);
+						persistentCooldownQueue.removeKey(key, gets[i], gets[i].getCooldownWakeupByKey(key, selectorContainer), selectorContainer);
 				}
 				// Call the callbacks on the database executor thread, because the first thing
 				// they will need to do is access the database to decide whether they need to
@@ -451,7 +540,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				for(int i=0;i<gets.length;i++) {
 					try {
 						if(logMINOR) Logger.minor(this, "Calling callback for "+gets[i]+" for "+key);
-						gets[i].onGotKey(key, block, ClientRequestScheduler.this);
+						gets[i].onGotKey(key, block, ClientRequestScheduler.this, selectorContainer);
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t+" running callback "+gets[i]+" for "+key);
 					}
@@ -544,10 +633,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 			} else {
 				if(gets != null)
 				for(int i=0;i<gets.length;i++)
-					gets[i].requeueAfterCooldown(key, now);
+					gets[i].requeueAfterCooldown(key, now, container);
 				if(transientGets != null)
 				for(int i=0;i<transientGets.length;i++)
-					transientGets[i].requeueAfterCooldown(key, now);
+					transientGets[i].requeueAfterCooldown(key, now, container);
 			}
 		}
 		if(keys.length < MAX_KEYS) return found;
@@ -574,7 +663,25 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, String name) {
 		databaseExecutor.execute(new Runnable() {
 			public void run() {
-				get.onFailure(e, keyNum, ClientRequestScheduler.this);
+				get.onFailure(e, keyNum, ClientRequestScheduler.this, selectorContainer);
+				selectorContainer.commit();
+			}
+		}, prio, name);
+	}
+	
+	public void callFailure(final SendableInsert put, final LowLevelPutException e, final Object keyNum, int prio, String name) {
+		databaseExecutor.execute(new Runnable() {
+			public void run() {
+				put.onFailure(e, keyNum, selectorContainer);
+				selectorContainer.commit();
+			}
+		}, prio, name);
+	}
+
+	public void callSuccess(final SendableInsert put, final Object keyNum, int prio, String name) {
+		databaseExecutor.execute(new Runnable() {
+			public void run() {
+				put.onSuccess(keyNum, selectorContainer);
 				selectorContainer.commit();
 			}
 		}, prio, name);

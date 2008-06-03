@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.LinkedList;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
@@ -59,7 +61,7 @@ public class SplitFileFetcher implements ClientGetState {
 	
 	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent2,
 			FetchContext newCtx, LinkedList decompressors, ClientMetadata clientMetadata, 
-			ArchiveContext actx, int recursionLevel, Bucket returnBucket, long token2) throws FetchException, MetadataParseException {
+			ArchiveContext actx, int recursionLevel, Bucket returnBucket, long token2, ObjectContainer container) throws FetchException, MetadataParseException {
 		this.finished = false;
 		this.returnBucket = returnBucket;
 		this.fetchContext = newCtx;
@@ -86,12 +88,12 @@ public class SplitFileFetcher implements ClientGetState {
 			finalLength = overrideLength;
 		}
 		long eventualLength = Math.max(overrideLength, metadata.uncompressedDataLength());
-		cb.onExpectedSize(eventualLength);
+		cb.onExpectedSize(eventualLength, container);
 		String mimeType = metadata.getMIMEType();
 		if(mimeType != null)
-			cb.onExpectedMIME(mimeType);
+			cb.onExpectedMIME(mimeType, container);
 		if(metadata.uncompressedDataLength() > 0)
-			cb.onFinalizedMetadata();
+			cb.onFinalizedMetadata(container);
 		if(eventualLength > 0 && newCtx.maxOutputLength > 0 && eventualLength > newCtx.maxOutputLength)
 			throw new FetchException(FetchException.TOO_BIG, eventualLength, true, clientMetadata.getMIMEType());
 		
@@ -219,7 +221,7 @@ public class SplitFileFetcher implements ClientGetState {
 		return output;
 	}
 
-	public void segmentFinished(SplitFileFetcherSegment segment) {
+	public void segmentFinished(SplitFileFetcherSegment segment, ObjectContainer container) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Finished segment: "+segment);
 		boolean finish = false;
@@ -240,10 +242,10 @@ public class SplitFileFetcher implements ClientGetState {
 			} 
 			notifyAll();
 		}
-		if(finish) finish();
+		if(finish) finish(container);
 	}
 
-	private void finish() {
+	private void finish(ObjectContainer container) {
 		try {
 			synchronized(this) {
 				if(finished) {
@@ -262,47 +264,39 @@ public class SplitFileFetcher implements ClientGetState {
 					if(!decompressors.isEmpty()) out = null;
 					data = c.decompress(data, fetchContext.bucketFactory, maxLen, maxLen * 4, out);
 				} catch (IOException e) {
-					cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), this);
+					cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), this, container);
 					return;
 				} catch (CompressionOutputSizeException e) {
-					cb.onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, false /* FIXME */, clientMetadata.getMIMEType()), this);
+					cb.onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, false /* FIXME */, clientMetadata.getMIMEType()), this, container);
 					return;
 				}
 			}
-			cb.onSuccess(new FetchResult(clientMetadata, data), this);
+			cb.onSuccess(new FetchResult(clientMetadata, data), this, container);
 		} catch (FetchException e) {
-			cb.onFailure(e, this);
+			cb.onFailure(e, this, container);
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
 			System.err.println("Failing above attempted fetch...");
-			cb.onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), this);
+			cb.onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), this, container);
 		} catch (Throwable t) {
-			cb.onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), this);
+			cb.onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), this, container);
 		}
 	}
 
-	public void schedule() {
+	public void schedule(ObjectContainer container) {
 		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Scheduling "+this);
 		for(int i=0;i<segments.length;i++) {
-			segments[i].schedule();
+			segments[i].schedule(container);
 		}
 	}
 
-	public void cancel() {
+	public void cancel(ObjectContainer container) {
 		for(int i=0;i<segments.length;i++)
-			segments[i].cancel();
+			segments[i].cancel(container);
 	}
 
 	public long getToken() {
 		return token;
 	}
 
-	public void scheduleOffThread() {
-		fetchContext.slowSerialExecutor[parent.priorityClass].execute(new Runnable() {
-			public void run() {
-				schedule();
-			}
-		}, "Splitfile scheduler thread for "+this);
-	}
-	
 }

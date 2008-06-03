@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import com.db4o.ObjectContainer;
+
 /**
  * Callback interface for a low level insert, which is immediately sendable. These
  * should be registered on the ClientRequestScheduler when we want to send them. It will
@@ -12,13 +14,13 @@ package freenet.node;
 public abstract class SendableInsert extends SendableRequest {
 
 	/** Called when we successfully insert the data */
-	public abstract void onSuccess(Object keyNum);
+	public abstract void onSuccess(Object keyNum, ObjectContainer container);
 	
 	/** Called when we don't! */
-	public abstract void onFailure(LowLevelPutException e, Object keyNum);
+	public abstract void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container);
 
-	public void internalError(Object keyNum, Throwable t, RequestScheduler sched) {
-		onFailure(new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, t.getMessage(), t), keyNum);
+	public void internalError(Object keyNum, Throwable t, RequestScheduler sched, ObjectContainer container) {
+		onFailure(new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, t.getMessage(), t), keyNum, container);
 	}
 
 }

@@ -178,7 +178,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	// The worry is ... is there any nested locking outside of the hierarchy?
 	ChosenRequest removeFirst(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, int retryCount) {
 		SendableRequest req = removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, transientOnly, maxPrio, retryCount);
-		Object token = req.chooseKey(this);
+		Object token = req.chooseKey(this, req.persistent() ? container : null);
 		if(token == null) {
 			return null;
 		} else {
@@ -186,7 +186,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			if(isInsertScheduler)
 				key = null;
 			else
-				key = ((BaseSendableGet)req).getNodeKey(token);
+				key = ((BaseSendableGet)req).getNodeKey(token, persistent() ? container : null);
 			PersistentChosenRequest ret = new PersistentChosenRequest(this, req, token, key);
 			if(req.persistent())
 				container.set(ret);
@@ -213,7 +213,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		for(;choosenPriorityClass <= RequestStarter.MINIMUM_PRIORITY_CLASS;choosenPriorityClass++) {
 			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
 		if(tryOfferedKeys) {
-			if(offeredKeys[choosenPriorityClass].hasValidKeys(this))
+			if(offeredKeys[choosenPriorityClass].hasValidKeys(this, null))
 				return offeredKeys[choosenPriorityClass];
 		}
 		SortedVectorByNumber perm = null;
@@ -414,21 +414,16 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			query.descend("priority").orderAscending();
 			query.descend("addedTime").orderAscending();
 			ObjectSet result = query.execute();
-			if(result.hasNext()) {
+			while(result.hasNext()) {
 				RegisterMe reg = (RegisterMe) result.next();
-				if(result.hasNext()) {
-					databaseExecutor.execute(registerMeRunner, NativeThread.NORM_PRIORITY, "Register request");
-				}
 				container.delete(reg);
 				// Don't need to activate, fields should exist? FIXME
 				try {
-					if(reg.getter instanceof SendableGet)
-						addPendingKeys((SendableGet) reg.getter);
-					innerRegister(reg.getter, random);
+					sched.register(reg.getter, true);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t+" running RegisterMeRunner", t);
 					// Cancel the request, and commit so it isn't tried again.
-					reg.getter.internalError(null, t, sched);
+					reg.getter.internalError(null, t, sched, container);
 				}
 				container.commit();
 			}
@@ -441,24 +436,22 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		}
 		RegisterMe reg = new RegisterMe(req, this);
 		container.set(reg);
-		databaseExecutor.execute(registerMeRunner, NativeThread.NORM_PRIORITY, "Register request");
 	}
 
-	public void addPendingKeys(SendableGet getter) {
-		Object[] keyTokens = getter.sendableKeys();
-		for(int i=0;i<keyTokens.length;i++) {
-			Object tok = keyTokens[i];
-			ClientKey key = getter.getKey(tok);
-			if(key == null) {
-				if(logMINOR)
-					Logger.minor(this, "No key for "+tok+" for "+getter+" - already finished?");
-					continue;
-			} else {
-				addPendingKey(key, getter);
+	public void deleteRegisterMe(final SendableRequest req) {
+		ObjectSet result = container.query(new Predicate() {
+			public boolean match(RegisterMe reg) {
+				if(reg.core != ClientRequestSchedulerCore.this) return false;
+				if(reg.getter != req) return false;
+				return true;
 			}
+		});
+		while(result.hasNext()) {
+			RegisterMe me = (RegisterMe) result.next();
+			container.delete(me);
 		}
 	}
-
+	
 	public boolean hasKey(Key key) {
 		synchronized(keysFetching) {
 			return keysFetching.contains(key);
@@ -485,7 +478,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			}
 		}, NativeThread.NORM_PRIORITY, "Remove fetching key");
 	}
-	
+
 }
 
 class RegisterMe {

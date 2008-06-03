@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.keys.FreenetURI;
@@ -33,19 +35,19 @@ public class USKFetcherWrapper extends BaseClientGetter {
 		// Do nothing
 	}
 
-	public void onSuccess(FetchResult result, ClientGetState state) {
+	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container) {
 		// Ignore; we don't do anything with it because we are running in the background.
 	}
 
-	public void onFailure(FetchException e, ClientGetState state) {
+	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container) {
 		// Ignore
 	}
 
-	public void onBlockSetFinished(ClientGetState state) {
+	public void onBlockSetFinished(ClientGetState state, ObjectContainer container) {
 		// Ignore
 	}
 
-	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 		// Ignore
 	}
 
@@ -53,15 +55,15 @@ public class USKFetcherWrapper extends BaseClientGetter {
 		return super.toString()+ ':' +usk;
 	}
 
-	public void onExpectedMIME(String mime) {
+	public void onExpectedMIME(String mime, ObjectContainer container) {
 		// Ignore
 	}
 
-	public void onExpectedSize(long size) {
+	public void onExpectedSize(long size, ObjectContainer container) {
 		// Ignore
 	}
 
-	public void onFinalizedMetadata() {
+	public void onFinalizedMetadata(ObjectContainer container) {
 		// Ignore
 	}
 }

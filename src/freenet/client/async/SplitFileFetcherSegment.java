@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Vector;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.ArchiveContext;
 import freenet.client.FECCodec;
 import freenet.client.FECJob;
@@ -151,7 +153,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		return fatallyFailedBlocks;
 	}
 
-	public void onSuccess(Bucket data, int blockNo, SplitFileFetcherSubSegment seg, ClientKeyBlock block) {
+	public void onSuccess(Bucket data, int blockNo, SplitFileFetcherSubSegment seg, ClientKeyBlock block, ObjectContainer container) {
 		boolean decodeNow = false;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" on "+seg);
@@ -214,7 +216,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		}
 	}
 	
-	public void onDecodedSegment() {
+	public void onDecodedSegment(ObjectContainer container) {
 		try {
 			if(isCollectingBinaryBlob()) {
 				for(int i=0;i<dataBuckets.length;i++) {
@@ -222,7 +224,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 					try {
 						maybeAddToBinaryBlob(data, i, false);
 					} catch (FetchException e) {
-						fail(e);
+						fail(e, container);
 						return;
 					}
 				}
@@ -241,14 +243,14 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			// Otherwise a race is possible that might result in it not seeing our finishing.
 			finished = true;
 			if(codec == null || !isCollectingBinaryBlob())
-				parentFetcher.segmentFinished(SplitFileFetcherSegment.this);
+				parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container);
 		} catch (IOException e) {
 			Logger.normal(this, "Caught bucket error?: "+e, e);
 			synchronized(this) {
 				finished = true;
 				failureException = new FetchException(FetchException.BUCKET_ERROR);
 			}
-			parentFetcher.segmentFinished(SplitFileFetcherSegment.this);
+			parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container);
 			return;
 		}
 
@@ -265,7 +267,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		}
 	}
 
-	public void onEncodedSegment() {
+	public void onEncodedSegment(ObjectContainer container) {
 		synchronized(this) {
 			// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
 			for(int i=0;i<dataBuckets.length;i++) {
@@ -288,7 +290,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				try {
 					maybeAddToBinaryBlob(data, i, true);
 				} catch (FetchException e) {
-					fail(e);
+					fail(e, container);
 					return;
 				}
 				if(checkRetries[i] > 0)
@@ -304,7 +306,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		}
 		// Defer the completion until we have generated healing blocks if we are collecting binary blobs.
 		if(isCollectingBinaryBlob())
-			parentFetcher.segmentFinished(SplitFileFetcherSegment.this);
+			parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container);
 	}
 
 	boolean isCollectingBinaryBlob() {
@@ -337,8 +339,9 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		fetchContext.healingQueue.queue(data);
 	}
 	
-	/** This is after any retries and therefore is either out-of-retries or fatal */
-	public synchronized void onFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg) {
+	/** This is after any retries and therefore is either out-of-retries or fatal 
+	 * @param container */
+	public synchronized void onFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Permanently failed block: "+blockNo+" on "+this+" : "+e, e);
 		boolean allFailed;
@@ -373,13 +376,14 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			allFailed = failedBlocks + fatallyFailedBlocks > (dataKeys.length + checkKeys.length - minFetched);
 		}
 		if(allFailed)
-			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors));
+			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors), container);
 		else
 			seg.possiblyRemoveFromParent();
 	}
 	
-	/** A request has failed non-fatally, so the block may be retried */
-	public void onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, RequestScheduler sched) {
+	/** A request has failed non-fatally, so the block may be retried 
+	 * @param container */
+	public void onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, RequestScheduler sched, ObjectContainer container) {
 		int tries;
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		boolean failed = false;
@@ -422,7 +426,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			}
 		}
 		if(failed) {
-			onFatalFailure(e, blockNo, seg);
+			onFatalFailure(e, blockNo, seg, container);
 			if(logMINOR)
 				Logger.minor(this, "Not retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries);
 			return;
@@ -437,7 +441,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			seg.unregisterKey(key.getNodeKey());
 			if(logMINOR)
 				Logger.minor(this, "Retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
-			sub.add(blockNo, false);
+			sub.add(blockNo, false, container);
 		}
 	}
 	
@@ -454,7 +458,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		return sub;
 	}
 
-	private void fail(FetchException e) {
+	private void fail(FetchException e, ObjectContainer container) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
@@ -481,16 +485,16 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			}
 		}
 		removeSubSegments();
-		parentFetcher.segmentFinished(this);
+		parentFetcher.segmentFinished(this, container);
 	}
 
-	public void schedule() {
+	public void schedule(ObjectContainer container) {
 		try {
 			SplitFileFetcherSubSegment seg = getSubSegment(0);
 			for(int i=0;i<dataRetries.length+checkRetries.length;i++)
-				seg.add(i, true);
+				seg.add(i, true, container);
 			
-			seg.schedule();
+			seg.schedule(container);
 			synchronized(this) {
 				scheduled = true;
 			}
@@ -499,12 +503,12 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				Logger.minor(this, "scheduling "+seg+" : "+seg.blockNums);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t+" scheduling "+this, t);
-			fail(new FetchException(FetchException.INTERNAL_ERROR, t));
+			fail(new FetchException(FetchException.INTERNAL_ERROR, t), container);
 		}
 	}
 
-	public void cancel() {
-		fail(new FetchException(FetchException.CANCELLED));
+	public void cancel(ObjectContainer container) {
+		fail(new FetchException(FetchException.CANCELLED), container);
 	}
 
 	public void onBlockSetFinished(ClientGetState state) {
@@ -582,7 +586,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			return checkCooldownTimes[blockNum - dataKeys.length];
 	}
 
-	public void requeueAfterCooldown(Key key, long time) {
+	public void requeueAfterCooldown(Key key, long time, ObjectContainer container) {
 		Vector v = null;
 		boolean notFound = true;
 		synchronized(this) {
@@ -601,7 +605,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				if(logMINOR)
 					Logger.minor(this, "Retrying after cooldown on "+this+": data block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 				if(v == null) v = new Vector();
-				sub.add(i, true);
+				sub.add(i, true, container);
 				if(!v.contains(sub)) v.add(sub);
 				notFound = false;
 			}
@@ -619,7 +623,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				if(logMINOR)
 					Logger.minor(this, "Retrying after cooldown on "+this+": check block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 				if(v == null) v = new Vector();
-				sub.add(i+dataKeys.length, true);
+				sub.add(i+dataKeys.length, true, container);
 				if(!v.contains(sub)) v.add(sub);
 				notFound = false;
 			}
@@ -630,7 +634,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		}
 		if(v != null) {
 			for(int i=0;i<v.size();i++) {
-				((SplitFileFetcherSubSegment) v.get(i)).schedule();
+				((SplitFileFetcherSubSegment) v.get(i)).schedule(container);
 			}
 		}
 	}

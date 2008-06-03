@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
@@ -14,7 +16,7 @@ import freenet.support.Logger;
  */
 public abstract class ClientRequester {
 
-	public abstract void onTransition(ClientGetState oldState, ClientGetState newState);
+	public abstract void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container);
 	
 	// FIXME move the priority classes from RequestStarter here
 	protected short priorityClass;

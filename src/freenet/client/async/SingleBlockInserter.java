@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.net.MalformedURLException;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FailureCodeTracker;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
@@ -25,6 +27,7 @@ import freenet.node.SendableInsert;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
+import freenet.support.io.NativeThread;
 
 /**
  * Insert *ONE KEY*.
@@ -107,7 +110,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 	}
 
-	protected ClientKeyBlock encode() throws InsertException {
+	protected ClientKeyBlock encode(ObjectContainer container) throws InsertException {
 		ClientKeyBlock block;
 		boolean shouldSend;
 		synchronized(this) {
@@ -122,7 +125,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			resultingURI = block.getClientKey().getURI();
 		}
 		if(shouldSend && !dontSendEncoded)
-			cb.onEncode(block.getClientKey(), this);
+			cb.onEncode(block.getClientKey(), this, container);
 		return block;
 	}
 	
@@ -138,15 +141,15 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return retries;
 	}
 
-	public void onFailure(LowLevelPutException e, Object keyNum) {
+	public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container) {
 		if(parent.isCancelled()) {
-			fail(new InsertException(InsertException.CANCELLED));
+			fail(new InsertException(InsertException.CANCELLED), container);
 			return;
 		}
 		
 		switch(e.code) {
 		case LowLevelPutException.COLLISION:
-			fail(new InsertException(InsertException.COLLISION));
+			fail(new InsertException(InsertException.COLLISION), container);
 			break;
 		case LowLevelPutException.INTERNAL_ERROR:
 			errors.inc(InsertException.INTERNAL_ERROR);
@@ -169,7 +172,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" / "+ctx.consecutiveRNFsCountAsSuccess);
 			if(consecutiveRNFs == ctx.consecutiveRNFsCountAsSuccess) {
 				if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" - counting as success");
-				onSuccess(keyNum);
+				onSuccess(keyNum, container);
 				return;
 			}
 		} else
@@ -177,17 +180,17 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(logMINOR) Logger.minor(this, "Failed: "+e);
 		retries++;
 		if((retries > ctx.maxInsertRetries) && (ctx.maxInsertRetries != -1)) {
-			fail(InsertException.construct(errors));
+			fail(InsertException.construct(errors), container);
 			return;
 		}
 		getScheduler().register(this);
 	}
 
-	private void fail(InsertException e) {
-		fail(e, false);
+	private void fail(InsertException e, ObjectContainer container) {
+		fail(e, false, container);
 	}
 	
-	private void fail(InsertException e, boolean forceFatal) {
+	private void fail(InsertException e, boolean forceFatal, ObjectContainer container) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
@@ -196,7 +199,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			parent.fatallyFailedBlock();
 		else
 			parent.failedBlock();
-		cb.onFailure(e, this);
+		cb.onFailure(e, this, container);
 	}
 
 	public ClientKeyBlock getBlock() {
@@ -215,15 +218,15 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 	}
 
-	public void schedule() throws InsertException {
+	public void schedule(ObjectContainer container) throws InsertException {
 		synchronized(this) {
 			if(finished) return;
 		}
 		if(getCHKOnly) {
-			ClientKeyBlock block = encode();
-			cb.onEncode(block.getClientKey(), this);
+			ClientKeyBlock block = encode(container);
+			cb.onEncode(block.getClientKey(), this, container);
 			parent.completedBlock(false);
-			cb.onSuccess(this);
+			cb.onSuccess(this, container);
 			finished = true;
 		} else {
 			getScheduler().register(this);
@@ -255,30 +258,30 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return resultingURI;
 	}
 
-	public void onSuccess(Object keyNum) {
+	public void onSuccess(Object keyNum, ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "Succeeded ("+this+"): "+token);
 		if(parent.isCancelled()) {
-			fail(new InsertException(InsertException.CANCELLED));
+			fail(new InsertException(InsertException.CANCELLED), container);
 			return;
 		}
 		synchronized(this) {
 			finished = true;
 		}
 		parent.completedBlock(false);
-		cb.onSuccess(this);
+		cb.onSuccess(this, container);
 	}
 
 	public BaseClientPutter getParent() {
 		return parent;
 	}
 
-	public void cancel() {
+	public void cancel(ObjectContainer container) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
 		}
 		super.unregister(false);
-		cb.onFailure(new InsertException(InsertException.CANCELLED), this);
+		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container);
 	}
 
 	public synchronized boolean isEmpty() {
@@ -304,18 +307,18 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 					}
 				}
 				if(parent.isCancelled())
-					fail(new InsertException(InsertException.CANCELLED));
+					fail(new InsertException(InsertException.CANCELLED), null);
 				else
-					fail(new InsertException(InsertException.BUCKET_ERROR, "Empty block", null));
+					fail(new InsertException(InsertException.BUCKET_ERROR, "Empty block", null), null);
 				return false;
 			}
 		} catch (LowLevelPutException e) {
-			onFailure(e, keyNum);
+			sched.callFailure((SendableInsert) this, e, keyNum, NativeThread.NORM_PRIORITY, "Insert failed");
 			if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
 			return true;
 		}
 		if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
-		onSuccess(keyNum);
+		sched.callSuccess(this, keyNum, NativeThread.NORM_PRIORITY, "Insert succeeded");
 		return true;
 	}
 
@@ -352,18 +355,18 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return true;
 	}
 
-	public synchronized Object[] sendableKeys() {
+	public synchronized Object[] sendableKeys(ObjectContainer container) {
 		if(finished)
 			return new Object[] {};
 		else
 			return new Object[] { new Integer(0) };
 	}
 
-	public synchronized Object[] allKeys() {
-		return sendableKeys();
+	public synchronized Object[] allKeys(ObjectContainer container) {
+		return sendableKeys(container);
 	}
 
-	public synchronized Object chooseKey(KeysFetchingLocally ignored) {
+	public synchronized Object chooseKey(KeysFetchingLocally ignored, ObjectContainer container) {
 		if(finished) return null;
 		else return new Integer(0);
 	}

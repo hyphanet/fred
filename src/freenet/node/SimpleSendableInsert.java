@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
 import freenet.keys.CHKBlock;
@@ -42,13 +44,13 @@ public class SimpleSendableInsert extends SendableInsert {
 		this.scheduler = scheduler;
 	}
 	
-	public void onSuccess(Object keyNum) {
+	public void onSuccess(Object keyNum, ObjectContainer container) {
 		// Yay!
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Finished insert of "+block);
 	}
 
-	public void onFailure(LowLevelPutException e, Object keyNum) {
+	public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Failed insert of "+block+": "+e);
 	}
@@ -69,14 +71,15 @@ public class SimpleSendableInsert extends SendableInsert {
 			if(logMINOR) Logger.minor(this, "Starting request: "+this);
 			core.realPut(block, shouldCache());
 		} catch (LowLevelPutException e) {
-			onFailure(e, keyNum);
+			sched.callFailure(get, e, keyNum, prio, name);
+			onFailure(e, keyNum, container);
 			if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
 			return true;
 		} finally {
 			finished = true;
 		}
 		if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
-		onSuccess(keyNum);
+		onSuccess(keyNum, container);
 		return true;
 	}
 
@@ -118,17 +121,17 @@ public class SimpleSendableInsert extends SendableInsert {
 		return false;
 	}
 
-	public synchronized Object[] allKeys() {
+	public synchronized Object[] allKeys(ObjectContainer container) {
 		if(finished) return new Object[] {};
 		return new Object[] { new Integer(0) };
 	}
 
-	public synchronized Object[] sendableKeys() {
+	public synchronized Object[] sendableKeys(ObjectContainer container) {
 		if(finished) return new Object[] {};
 		return new Object[] { new Integer(0) };
 	}
 
-	public synchronized Object chooseKey(KeysFetchingLocally keys) {
+	public synchronized Object chooseKey(KeysFetchingLocally keys, ObjectContainer container) {
 		if(finished) return null;
 		else return new Integer(0);
 	}

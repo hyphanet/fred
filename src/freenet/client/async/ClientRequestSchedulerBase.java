@@ -327,4 +327,19 @@ abstract class ClientRequestSchedulerBase {
 			}
 	}
 
+	public void addPendingKeys(SendableGet getter, ObjectContainer container) {
+		Object[] keyTokens = getter.sendableKeys(container);
+		for(int i=0;i<keyTokens.length;i++) {
+			Object tok = keyTokens[i];
+			ClientKey key = getter.getKey(tok, container);
+			if(key == null) {
+				if(logMINOR)
+					Logger.minor(this, "No key for "+tok+" for "+getter+" - already finished?");
+					continue;
+			} else {
+				addPendingKey(key, getter);
+			}
+		}
+	}
+
 }

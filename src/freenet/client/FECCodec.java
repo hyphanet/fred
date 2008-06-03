@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.LinkedList;
 
+import com.db4o.ObjectContainer;
 import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.util.Buffer;
 
@@ -478,8 +479,8 @@ public abstract class FECCodec implements OOMHook {
 	 */
 	public interface StandardOnionFECCodecEncoderCallback {
 
-		public void onEncodedSegment();
+		public void onEncodedSegment(ObjectContainer container);
 
-		public void onDecodedSegment();
+		public void onDecodedSegment(ObjectContainer container);
 	}
 }

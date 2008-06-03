@@ -3,15 +3,17 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 /**
  * A ClientGetState.
  * Represents a stage in the fetch process.
  */
 public interface ClientGetState {
 
-	public void schedule();
+	public void schedule(ObjectContainer container);
 
-	public void cancel();
+	public void cancel(ObjectContainer container);
 
 	public long getToken();
 }

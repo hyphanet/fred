@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchContext;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
@@ -26,12 +28,12 @@ class USKChecker extends BaseSingleFileFetcher {
 		this.cb = cb;
 	}
 	
-	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched) {
+	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched, ObjectContainer container) {
 		unregister(false);
 		cb.onSuccess((ClientSSKBlock)block);
 	}
 
-	public void onFailure(LowLevelGetException e, Object token, RequestScheduler sched) {
+	public void onFailure(LowLevelGetException e, Object token, RequestScheduler sched, ObjectContainer container) {
         if(Logger.shouldLog(Logger.MINOR, this))
         	Logger.minor(this, "onFailure: "+e+" for "+this);
 		// Firstly, can we retry?
@@ -61,7 +63,7 @@ class USKChecker extends BaseSingleFileFetcher {
 			canRetry = true;
 		}
 
-		if(canRetry && retry(sched)) return;
+		if(canRetry && retry(sched, container)) return;
 		
 		// Ran out of retries.
 		unregister(false);

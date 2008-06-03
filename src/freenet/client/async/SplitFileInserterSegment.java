@@ -2,6 +2,8 @@ package freenet.client.async;
 
 import java.net.MalformedURLException;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FECCodec;
 import freenet.client.FECJob;
 import freenet.client.FailureCodeTracker;
@@ -393,7 +395,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 		return fs;
 	}
 
-	public void start() throws InsertException {
+	public void start(ObjectContainer container) throws InsertException {
 		if (logMINOR)
 			Logger.minor(this, "Starting segment " + segNo + " of " + parent
 					+ " (" + parent.dataLength + "): " + this + " ( finished="
@@ -444,7 +446,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 				} else
 					parent.parent.completedBlock(true);
 			}
-			onEncodedSegment();
+			onEncodedSegment(container);
 		}
 		if (hasURIs) {
 			parent.segmentHasURIs(this);
@@ -458,13 +460,13 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 		if (fin)
 			finish();
 		if (finished) {
-			parent.segmentFinished(this);
+			parent.segmentFinished(this, container);
 		}
 	}
 
-	public void onDecodedSegment() {} // irrevelant
+	public void onDecodedSegment(ObjectContainer container) {} // irrevelant
 
-	public void onEncodedSegment() {
+	public void onEncodedSegment(ObjectContainer container) {
 		// Start the inserts
 		try {
 			for (int i = 0; i < checkBlockInserters.length; i++) {

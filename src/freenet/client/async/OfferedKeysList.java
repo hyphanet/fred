@@ -6,6 +6,8 @@ package freenet.client.async;
 import java.util.HashSet;
 import java.util.Vector;
 
+import com.db4o.ObjectContainer;
+
 import freenet.crypt.RandomSource;
 import freenet.keys.Key;
 import freenet.node.BaseSendableGet;
@@ -63,17 +65,17 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		return keys.isEmpty();
 	}
 
-	public Object[] allKeys() {
+	public Object[] allKeys(ObjectContainer container) {
 		// Not supported.
 		throw new UnsupportedOperationException();
 	}
 
-	public Object[] sendableKeys() {
+	public Object[] sendableKeys(ObjectContainer container) {
 		// Not supported.
 		throw new UnsupportedOperationException();
 	}
 
-	public synchronized Object chooseKey(KeysFetchingLocally fetching) {
+	public synchronized Object chooseKey(KeysFetchingLocally fetching, ObjectContainer container) {
 		assert(keysList.size() == keys.size());
 		if(keys.size() == 1) {
 			// Shortcut the common case
@@ -99,7 +101,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		return null;
 	}
 
-	public synchronized boolean hasValidKeys(KeysFetchingLocally fetching) {
+	public synchronized boolean hasValidKeys(KeysFetchingLocally fetching, ObjectContainer container) {
 		assert(keysList.size() == keys.size());
 		if(keys.size() == 1) {
 			// Shortcut the common case
@@ -135,7 +137,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		return 0; // All keys have equal chance even if they've been tried before.
 	}
 
-	public void internalError(Object keyNum, Throwable t, RequestScheduler sched) {
+	public void internalError(Object keyNum, Throwable t, RequestScheduler sched, ObjectContainer container) {
 		Logger.error(this, "Internal error: "+t, t);
 	}
 	
@@ -172,7 +174,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		assert(keysList.size() == keys.size());
 	}
 
-	public Key getNodeKey(Object token) {
+	public Key getNodeKey(Object token, ObjectContainer container) {
 		return (Key) token;
 	}
 

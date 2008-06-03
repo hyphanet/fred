@@ -3,6 +3,8 @@ package freenet.client.async;
 import java.io.IOException;
 import java.util.Vector;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.keys.CHKBlock;
@@ -64,12 +66,12 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return ctx;
 	}
 
-	public Object chooseKey(KeysFetchingLocally keys) {
+	public Object chooseKey(KeysFetchingLocally keys, ObjectContainer container) {
 		if(cancelled) return null;
 		return removeRandomBlockNum(keys);
 	}
 	
-	public ClientKey getKey(Object token) {
+	public ClientKey getKey(Object token, ObjectContainer container) {
 		synchronized(segment) {
 			if(cancelled) {
 				if(logMINOR)
@@ -94,14 +96,14 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	 * Fetch the array from the segment because we need to include *ALL* keys, especially
 	 * those on cooldown queues. This is important when unregistering.
 	 */
-	public Object[] allKeys() {
+	public Object[] allKeys(ObjectContainer container) {
 		return segment.getKeyNumbersAtRetryLevel(retryCount);
 	}
 	
 	/**
 	 * Just those keys which are eligible to be started now.
 	 */
-	public Object[] sendableKeys() {
+	public Object[] sendableKeys(ObjectContainer container) {
 		return blockNums.toArray();
 	}
 	
@@ -136,7 +138,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		}
 	}
 
-	public boolean hasValidKeys(KeysFetchingLocally keys) {
+	public boolean hasValidKeys(KeysFetchingLocally keys, ObjectContainer container) {
 		synchronized(segment) {
 			for(int i=0;i<10;i++) {
 				Object ret;
@@ -165,49 +167,49 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 
 	// Translate it, then call the real onFailure
 	// FIXME refactor this out to a common method; see SimpleSingleFileFetcher
-	public void onFailure(LowLevelGetException e, Object token, RequestScheduler sched) {
+	public void onFailure(LowLevelGetException e, Object token, RequestScheduler sched, ObjectContainer container) {
 		if(logMINOR)
 			Logger.minor(this, "onFailure("+e+" , "+token);
 		switch(e.code) {
 		case LowLevelGetException.DATA_NOT_FOUND:
-			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), token, sched);
+			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), token, sched, container);
 			return;
 		case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
-			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), token, sched);
+			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), token, sched, container);
 			return;
 		case LowLevelGetException.RECENTLY_FAILED:
-			onFailure(new FetchException(FetchException.RECENTLY_FAILED), token, sched);
+			onFailure(new FetchException(FetchException.RECENTLY_FAILED), token, sched, container);
 			return;
 		case LowLevelGetException.DECODE_FAILED:
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR), token, sched);
+			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR), token, sched, container);
 			return;
 		case LowLevelGetException.INTERNAL_ERROR:
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR), token, sched);
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR), token, sched, container);
 			return;
 		case LowLevelGetException.REJECTED_OVERLOAD:
-			onFailure(new FetchException(FetchException.REJECTED_OVERLOAD), token, sched);
+			onFailure(new FetchException(FetchException.REJECTED_OVERLOAD), token, sched, container);
 			return;
 		case LowLevelGetException.ROUTE_NOT_FOUND:
-			onFailure(new FetchException(FetchException.ROUTE_NOT_FOUND), token, sched);
+			onFailure(new FetchException(FetchException.ROUTE_NOT_FOUND), token, sched, container);
 			return;
 		case LowLevelGetException.TRANSFER_FAILED:
-			onFailure(new FetchException(FetchException.TRANSFER_FAILED), token, sched);
+			onFailure(new FetchException(FetchException.TRANSFER_FAILED), token, sched, container);
 			return;
 		case LowLevelGetException.VERIFY_FAILED:
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR), token, sched);
+			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR), token, sched, container);
 			return;
 		case LowLevelGetException.CANCELLED:
-			onFailure(new FetchException(FetchException.CANCELLED), token, sched);
+			onFailure(new FetchException(FetchException.CANCELLED), token, sched, container);
 			return;
 		default:
 			Logger.error(this, "Unknown LowLevelGetException code: "+e.code);
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR), token, sched);
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR), token, sched, container);
 			return;
 		}
 	}
 
 	// Real onFailure
-	protected void onFailure(FetchException e, Object token, RequestScheduler sched) {
+	protected void onFailure(FetchException e, Object token, RequestScheduler sched, ObjectContainer container) {
 		boolean forceFatal = false;
 		if(parent.isCancelled()) {
 			if(Logger.shouldLog(Logger.MINOR, this)) 
@@ -217,14 +219,14 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		}
 		segment.errors.inc(e.getMode());
 		if(e.isFatal() || forceFatal) {
-			segment.onFatalFailure(e, ((Integer)token).intValue(), this);
+			segment.onFatalFailure(e, ((Integer)token).intValue(), this, container);
 		} else {
-			segment.onNonFatalFailure(e, ((Integer)token).intValue(), this, sched);
+			segment.onNonFatalFailure(e, ((Integer)token).intValue(), this, sched, container);
 		}
 	}
 	
-	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched) {
-		Bucket data = extract(block, token, sched);
+	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched, ObjectContainer container) {
+		Bucket data = extract(block, token, sched, container);
 		if(fromStore) {
 			// Normally when this method is called the block number has already
 			// been removed. However if fromStore=true, it won't have been, so
@@ -242,39 +244,39 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			}
 		}
 		if(!block.isMetadata()) {
-			onSuccess(data, fromStore, (Integer)token, ((Integer)token).intValue(), block, sched);
+			onSuccess(data, fromStore, (Integer)token, ((Integer)token).intValue(), block, sched, container);
 		} else {
-			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), token, sched);
+			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), token, sched, container);
 		}
 	}
 	
-	protected void onSuccess(Bucket data, boolean fromStore, Integer token, int blockNo, ClientKeyBlock block, RequestScheduler sched) {
+	protected void onSuccess(Bucket data, boolean fromStore, Integer token, int blockNo, ClientKeyBlock block, RequestScheduler sched, ObjectContainer container) {
 		if(parent.isCancelled()) {
 			data.free();
-			onFailure(new FetchException(FetchException.CANCELLED), token, sched);
+			onFailure(new FetchException(FetchException.CANCELLED), token, sched, container);
 			return;
 		}
-		segment.onSuccess(data, blockNo, this, block);
+		segment.onSuccess(data, blockNo, this, block, container);
 	}
 
 	/** Convert a ClientKeyBlock to a Bucket. If an error occurs, report it via onFailure
 	 * and return null.
 	 */
-	protected Bucket extract(ClientKeyBlock block, Object token, RequestScheduler sched) {
+	protected Bucket extract(ClientKeyBlock block, Object token, RequestScheduler sched, ObjectContainer container) {
 		Bucket data;
 		try {
 			data = block.decode(ctx.bucketFactory, (int)(Math.min(ctx.maxOutputLength, Integer.MAX_VALUE)), false);
 		} catch (KeyDecodeException e1) {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Decode failure: "+e1, e1);
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()), token, sched);
+			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()), token, sched, container);
 			return null;
 		} catch (TooBigException e) {
-			onFailure(new FetchException(FetchException.TOO_BIG, e.getMessage()), token, sched);
+			onFailure(new FetchException(FetchException.TOO_BIG, e.getMessage()), token, sched, container);
 			return null;
 		} catch (IOException e) {
 			Logger.error(this, "Could not capture data - disk full?: "+e, e);
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), token, sched);
+			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), token, sched, container);
 			return null;
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
@@ -327,7 +329,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return false;
 	}
 
-	public void add(int blockNo, boolean dontSchedule) {
+	public void add(int blockNo, boolean dontSchedule, ObjectContainer container) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Adding block "+blockNo+" to "+this+" dontSchedule="+dontSchedule);
 		if(blockNo < 0) throw new IllegalArgumentException();
@@ -357,7 +359,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				schedule = false;
 			}
 		}
-		if(schedule) schedule();
+		if(schedule) schedule(container);
 		else if(!dontSchedule)
 			// Already scheduled, however this key may not be registered.
 			getScheduler().addPendingKey(segment.getBlockKey(blockNo), this);
@@ -380,7 +382,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		unregister(false);
 	}
 
-	public void onGotKey(Key key, KeyBlock block, RequestScheduler sched) {
+	public void onGotKey(Key key, KeyBlock block, RequestScheduler sched, ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "onGotKey("+key+")");
 		// Find and remove block if it is on this subsegment. However it may have been
 		// removed already.
@@ -407,15 +409,15 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		try {
 			cb = new ClientCHKBlock((CHKBlock)block, ckey);
 		} catch (CHKVerifyException e) {
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e), token, sched);
+			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e), token, sched, container);
 			return;
 		}
-		Bucket data = extract(cb, token, sched);
+		Bucket data = extract(cb, token, sched, container);
 		
 		if(!cb.isMetadata()) {
-			onSuccess(data, false, (Integer)token, ((Integer)token).intValue(), cb, sched);
+			onSuccess(data, false, (Integer)token, ((Integer)token).intValue(), cb, sched, container);
 		} else {
-			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), token, sched);
+			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), token, sched, container);
 		}
 		
 	}
@@ -435,21 +437,21 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		}
 	}
 
-	public long getCooldownWakeup(Object token) {
+	public long getCooldownWakeup(Object token, ObjectContainer container) {
 		return segment.getCooldownWakeup(((Integer)token).intValue());
 	}
 
-	public void requeueAfterCooldown(Key key, long time) {
+	public void requeueAfterCooldown(Key key, long time, ObjectContainer container) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Requeueing after cooldown "+key+" for "+this);
-		segment.requeueAfterCooldown(key, time);
+		segment.requeueAfterCooldown(key, time, container);
 	}
 
-	public long getCooldownWakeupByKey(Key key) {
+	public long getCooldownWakeupByKey(Key key, ObjectContainer container) {
 		return segment.getCooldownWakeupByKey(key);
 	}
 
-	public void resetCooldownTimes() {
+	public void resetCooldownTimes(ObjectContainer container) {
 		synchronized(segment) {
 			segment.resetCooldownTimes((Integer[])blockNums.toArray(new Integer[blockNums.size()]));
 		}

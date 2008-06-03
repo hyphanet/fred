@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
@@ -51,7 +53,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	/** After attempting inserts on this many slots, go back to the Fetcher */
 	private static final long MAX_TRIED_SLOTS = 10;
 	
-	public void schedule() throws InsertException {
+	public void schedule(ObjectContainer container) throws InsertException {
 		// Caller calls schedule()
 		// schedule() calls scheduleFetcher()
 		// scheduleFetcher() creates a Fetcher (set up to tell us about author-errors as well as valid inserts)
@@ -79,7 +81,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		fetcher.schedule();
 	}
 
-	public void onFoundEdition(long l, USK key) {
+	public void onFoundEdition(long l, USK key, ObjectContainer container) {
 		boolean alreadyInserted = false;
 		synchronized(this) {
 			edition = Math.max(l, edition);
@@ -111,11 +113,11 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			parent.completedBlock(true);
 			cb.onSuccess(this);
 		} else {
-			scheduleInsert();
+			scheduleInsert(container);
 		}
 	}
 
-	private void scheduleInsert() {
+	private void scheduleInsert(ObjectContainer container) {
 		long edNo = Math.max(edition, ctx.uskManager.lookup(pubUSK)+1);
 		synchronized(this) {
 			if(finished) return;
@@ -126,7 +128,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 					ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject);
 		}
 		try {
-			sbi.schedule();
+			sbi.schedule(container);
 		} catch (InsertException e) {
 			cb.onFailure(e, this);
 		}
@@ -149,7 +151,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		// FINISHED!!!! Yay!!!
 	}
 
-	public synchronized void onFailure(InsertException e, ClientPutState state) {
+	public synchronized void onFailure(InsertException e, ClientPutState state, ObjectContainer container) {
 		sbi = null;
 		if(e.getMode() == InsertException.COLLISION) {
 			// Try the next slot
@@ -157,7 +159,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			if(consecutiveCollisions++ > MAX_TRIED_SLOTS)
 				scheduleFetcher();
 			else
-				scheduleInsert();
+				scheduleInsert(container);
 		} else {
 			cb.onFailure(e, state);
 		}
@@ -190,11 +192,11 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		return parent;
 	}
 
-	public void cancel() {
+	public void cancel(ObjectContainer container) {
 		if(fetcher != null)
 			fetcher.cancel();
 		if(sbi != null)
-			sbi.cancel();
+			sbi.cancel(container);
 		synchronized(this) {
 			finished = true;
 		}

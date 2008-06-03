@@ -113,8 +113,14 @@ public class NodeClientCore implements Persistable {
 	 * - Only one weak-reference cache for the database.
 	 * - No need to refresh live objects. 
 	 * - Deactivation is simpler.
+	 * Note that the priorities are thread priorities, not request priorities.
 	 */
 	public final PrioritizedSerialExecutor clientDatabaseExecutor;
+	/**
+	 * Whenever a new request is added, we have to check the datastore. We funnel all such access
+	 * through this thread. Note that the priorities are request priorities, not thread priorities.
+	 */
+	public final PrioritizedSerialExecutor datastoreCheckerExecutor;
 	
 	public static int maxBackgroundUSKFetchers;
 	
@@ -141,6 +147,7 @@ public class NodeClientCore implements Persistable {
 			clientSlowSerialExecutor[i] = new SerialExecutor(prio);
 		}
 		clientDatabaseExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, NativeThread.MAX_PRIORITY+1, NativeThread.NORM_PRIORITY);
+		datastoreCheckerExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, RequestStarter.NUMBER_OF_PRIORITY_CLASSES, 0);
 	  	byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
 		this.formPassword = Base64.encode(pwdBuf);
