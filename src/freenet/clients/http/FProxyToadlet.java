@@ -523,7 +523,7 @@ public final class FProxyToadlet extends Toadlet {
 				option = optionList.addChild("li");
 				option.addChild(ctx.getPageMaker().createBackLink(ctx, l10n("goBackToPrev")));
 				
-				this.writeHTMLReply(ctx, 500 /* close enough - FIXME probably should depend on status code */,
+				this.writeHTMLReply(ctx, (e.mode == 10) ? 404 : 500 /* close enough - FIXME probably should depend on status code */,
 						"Internal Error", pageNode.generate());
 			}
 		} catch (SocketException e) {
