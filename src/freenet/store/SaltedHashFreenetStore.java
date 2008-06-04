@@ -1228,12 +1228,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			synchronized (cleanerLock) {
 				cleanerLock.notifyAll();
+				cleanerThread.interrupt();
 			}
 
 			configLock.writeLock().lock();
 			try {
-				cleanerThread.interrupt();
-
 				flushAndClose();
 
 				try {
