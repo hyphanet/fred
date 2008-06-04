@@ -69,12 +69,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private long storeSize;
 
 	public static SaltedHashFreenetStore construct(File baseDir, String name, StoreCallback callback, Random random,
-	        long maxKeys, SemiOrderedShutdownHook shutdownHook) throws IOException {
+			long maxKeys, SemiOrderedShutdownHook shutdownHook) throws IOException {
 		return new SaltedHashFreenetStore(baseDir, name, callback, random, maxKeys, shutdownHook);
 	}
 
 	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback callback, Random random, long maxKeys,
-	        SemiOrderedShutdownHook shutdownHook) throws IOException {
+			SemiOrderedShutdownHook shutdownHook) throws IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 
@@ -126,25 +126,25 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				return null;
 			}
 			try {
-			Entry entry = probeEntry(routingKey);
+				Entry entry = probeEntry(routingKey);
 
-			if (entry == null) {
-				misses.incrementAndGet();
-				return null;
-			}
+				if (entry == null) {
+					misses.incrementAndGet();
+					return null;
+				}
 
-			try {
-				StorableBlock block = entry.getStorableBlock(routingKey, fullKey);
-				hits.incrementAndGet();
-				if (updateBloom && !checkBloom)
-					bloomFilter.updateFilter(getDigestedRoutingKey(routingKey), false);
-				return block;
-			} catch (KeyVerifyException e) {
-				Logger.minor(this, "key verification exception", e);
-				misses.incrementAndGet();
-				return null;
-			}
-		} finally {
+				try {
+					StorableBlock block = entry.getStorableBlock(routingKey, fullKey);
+					hits.incrementAndGet();
+					if (updateBloom && !checkBloom)
+						bloomFilter.updateFilter(getDigestedRoutingKey(routingKey), false);
+					return block;
+				} catch (KeyVerifyException e) {
+					Logger.minor(this, "key verification exception", e);
+					misses.incrementAndGet();
+					return null;
+				}
+			} finally {
 				unlockPlainKey(routingKey);
 			}
 		} finally {
@@ -155,7 +155,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	/**
 	 * Find and lock an entry with a specific routing key. This function would <strong>not</strong>
 	 * lock the entries.
-	 *
+	 * 
 	 * @param routingKey
 	 * @return <code>Entry</code> object
 	 * @throws IOException
@@ -170,7 +170,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		if (entry == null && prevStoreSize != 0)
 			entry = probeEntry0(routingKey, prevStoreSize);
 		if (checkBloom && entry == null)
-	        bloomFalsePos.incrementAndGet();
+			bloomFalsePos.incrementAndGet();
 
 		return entry;
 	}
@@ -197,7 +197,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	public void put(StorableBlock block, byte[] routingKey, byte[] fullKey, byte[] data, byte[] header,
-	        boolean overwrite) throws IOException, KeyCollisionException {
+			boolean overwrite) throws IOException, KeyCollisionException {
 		if (logMINOR)
 			Logger.minor(this, "Putting " + HexUtil.bytesToHex(routingKey) + " for " + callback);
 
@@ -210,11 +210,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				return;
 			}
 			try {
-			// don't use fetch(), as fetch() would do a miss++/hit++
-			Entry oldEntry = probeEntry(routingKey);
-			if (oldEntry != null) {
-				long oldOffset = oldEntry.curOffset;
-				try {
+				// don't use fetch(), as fetch() would do a miss++/hit++
+				Entry oldEntry = probeEntry(routingKey);
+				if (oldEntry != null) {
+					long oldOffset = oldEntry.curOffset;
+					try {
 						StorableBlock oldBlock = oldEntry.getStorableBlock(routingKey, fullKey);
 						if (!collisionPossible)
 							return;
@@ -235,12 +235,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					writeEntry(entry, oldOffset);
 					writes.incrementAndGet();
 					return;
-			}
+				}
 
-			Entry entry = new Entry(routingKey, header, data);
-			long[] offset = entry.getOffset();
+				Entry entry = new Entry(routingKey, header, data);
+				long[] offset = entry.getOffset();
 
-			for (int i = 0; i < offset.length; i++) {
+				for (int i = 0; i < offset.length; i++) {
 					if (isFree(offset[i])) {
 						// write to free block
 						if (logDEBUG)
@@ -252,9 +252,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						keyCount.incrementAndGet();
 						return;
 					}
-			}
+				}
 
-			// no free blocks, overwrite the first one
+				// no free blocks, overwrite the first one
 				if (logDEBUG)
 					Logger.debug(this, "collision, write to i=0, offset=" + offset[0]);
 				if (updateBloom)
@@ -1159,7 +1159,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	// ------------- Locking
 	private boolean shutdown = false;
-	private ReadWriteLock configLock = new ReentrantReadWriteLock(); 
+	private ReadWriteLock configLock = new ReentrantReadWriteLock();
 	private Lock entryLock = new ReentrantLock();
 	private Map<Long, Condition> lockMap = new HashMap<Long, Condition> ();
 
@@ -1396,7 +1396,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		configLock.readLock().lock();
 		long _storeSize = storeSize;
 		configLock.readLock().unlock();
-		return _storeSize;	
+		return _storeSize;
 	}
 
 	// ------------- Migration
