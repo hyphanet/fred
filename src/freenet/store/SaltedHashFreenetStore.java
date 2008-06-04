@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -118,7 +119,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			Entry entry = probeEntry(routingKey);
 
 			if (entry == null) {
-				incMisses();
+				misses.incrementAndGet();
 				return null;
 			}
 
@@ -126,13 +127,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			try {
 				StorableBlock block = entry.getStorableBlock(routingKey, fullKey);
-				incHits();
+				hits.incrementAndGet();
 				if (updateBloom && !checkBloom)
 					bloomFilter.updateFilter(getDigestedRoutingKey(routingKey), false);
 				return block;
 			} catch (KeyVerifyException e) {
 				Logger.minor(this, "key verification exception", e);
-				incMisses();
+				misses.incrementAndGet();
 				return null;
 			}
 		} finally {
@@ -158,7 +159,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		if (entry == null && prevStoreSize != 0)
 			entry = probeEntry0(routingKey, prevStoreSize);
 		if (checkBloom && entry == null)
-			incBloomFalsePos();
+	        bloomFalsePos.incrementAndGet();
 
 		return entry;
 	}
@@ -222,7 +223,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						bloomFilter.updateFilter(getDigestedRoutingKey(routingKey), syncBloom);
 					Entry entry = new Entry(routingKey, header, data);
 					writeEntry(entry, oldOffset);
-					incWrites();
+					writes.incrementAndGet();
 					return;
 				} finally {
 					unlockEntry(oldOffset);
@@ -245,8 +246,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						if (updateBloom)
 							bloomFilter.updateFilter(getDigestedRoutingKey(routingKey), syncBloom);
 						writeEntry(entry, offset[i]);
-						incWrites();
-						incKeyCount();
+						writes.incrementAndGet();
+						keyCount.incrementAndGet();
 						return;
 					}
 				} finally {
@@ -265,7 +266,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				if (updateBloom)
 					bloomFilter.updateFilter(getDigestedRoutingKey(routingKey), syncBloom);
 				writeEntry(entry, offset[0]);
-				incWrites();
+				writes.incrementAndGet();
 			} finally {
 				unlockEntry(offset[0]);
 			}
@@ -750,8 +751,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			salt = new byte[0x10];
 			random.nextBytes(salt);
 
-			keyCount = 0;
-
 			writeConfigFile();
 		} else {
 			// try to load
@@ -761,7 +760,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			storeSize = raf.readLong();
 			prevStoreSize = raf.readLong();
-			keyCount = raf.readLong();
+			keyCount.set(raf.readLong());
 			raf.readLong();
 
 			raf.close();
@@ -782,7 +781,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			raf.writeLong(storeSize);
 			raf.writeLong(prevStoreSize);
-			raf.writeLong(keyCount);
+			raf.writeLong(keyCount.get());
 			raf.writeLong(0);
 
 			raf.close();
@@ -1012,7 +1011,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 							if (Arrays.equals(digestedRoutingKey, digestedRoutingKey2)) {
 								// assume same routing key, drop this as duplicate
 								freeOffset(offset);
-								decKeyCount();
+								keyCount.decrementAndGet();
 								droppedEntries++;
 
 								if (logDEBUG)
@@ -1029,7 +1028,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 								        + " queued");
 							writeOldItem(oldItemsFC, entry);
 							freeOffset(offset);
-							decKeyCount();
+							keyCount.decrementAndGet();
 						}
 					} finally {
 						// unlock all entries
@@ -1086,7 +1085,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 								        .debug(this, "Put back old item: "
 								                + HexUtil.bytesToHex(entry.digestedRoutingKey));
 							writeEntry(entry, newOffset[i]);
-							incKeyCount();
+							keyCount.incrementAndGet();
 							resolvedEntries++;
 							continue LOOP_ITEMS;
 						}
@@ -1307,76 +1306,33 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	// ------------- Statistics (a.k.a. lies)
-	private final Object statLock = new Object();
-	private long hits;
-	private long misses;
-	private long writes;
-	private long keyCount;
-	private long bloomFalsePos;
+	private AtomicLong hits = new AtomicLong();
+	private AtomicLong misses = new AtomicLong();
+	private AtomicLong writes = new AtomicLong();
+	private AtomicLong keyCount = new AtomicLong();
+	private AtomicLong bloomFalsePos = new AtomicLong();
 
 	public long hits() {
-		synchronized (statLock) {
-			return hits;
-		}
-	}
-
-	private void incHits() {
-		Logger.debug(this, "hit");
-		synchronized (statLock) {
-			hits++;
-		}
+		return hits.get();
 	}
 
 	public long misses() {
-		synchronized (statLock) {
-			return misses;
-		}
-	}
-
-	private void incMisses() {
-		Logger.debug(this, "miss");
-		synchronized (statLock) {
-			misses++;
-		}
+		return misses.get();
 	}
 
 	public long writes() {
-		synchronized (statLock) {
-			return writes;
-		}
-	}
-
-	private void incWrites() {
-		Logger.debug(this, "write");
-		synchronized (statLock) {
-			writes++;
-		}
-	}
-
-	private void incKeyCount() {
-		synchronized (statLock) {
-			keyCount++;
-		}
-	}
-
-	private void decKeyCount() {
-		synchronized (statLock) {
-			keyCount--;
-		}
+		return writes.get();
 	}
 
 	public long keyCount() {
-		return keyCount;
+		return keyCount.get();
 	}
 
 	public long getMaxKeys() {
-		return storeSize;
-	}
-
-	private void incBloomFalsePos() {
-		synchronized (statLock) {
-			bloomFalsePos++;
-		}
+		configLock.readLock().lock();
+		long _storeSize = storeSize;
+		configLock.readLock().unlock();
+		return _storeSize;	
 	}
 
 	// ------------- Migration
