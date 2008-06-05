@@ -13,7 +13,7 @@ public interface ClientGetState {
 
 	public void schedule(ObjectContainer container, ClientContext context);
 
-	public void cancel(ObjectContainer container);
+	public void cancel(ObjectContainer container, ClientContext context);
 
 	public long getToken();
 }

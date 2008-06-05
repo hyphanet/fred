@@ -19,7 +19,7 @@ public class USKFetcherWrapper extends BaseClientGetter {
 	final USK usk;
 	
 	public USKFetcherWrapper(USK usk, short prio, ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, RequestClient client) {
-		super(prio, chkScheduler, sskScheduler, client);
+		super(prio, client);
 		this.usk = usk;
 	}
 
@@ -35,11 +35,11 @@ public class USKFetcherWrapper extends BaseClientGetter {
 		// Do nothing
 	}
 
-	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container) {
+	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
 		// Ignore; we don't do anything with it because we are running in the background.
 	}
 
-	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container) {
+	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 

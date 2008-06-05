@@ -220,7 +220,7 @@ public class ClientGetter extends BaseClientGetter {
 		}
 	}
 
-	public void cancel(ObjectContainer container) {
+	public void cancel(ObjectContainer container, ClientContext context) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Cancelling "+this);
 		ClientGetState s;
@@ -230,7 +230,7 @@ public class ClientGetter extends BaseClientGetter {
 		}
 		if(s != null) {
 			if(logMINOR) Logger.minor(this, "Cancelling "+currentState);
-			s.cancel(container);
+			s.cancel(container, context);
 		}
 	}
 

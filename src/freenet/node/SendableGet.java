@@ -40,10 +40,10 @@ public abstract class SendableGet extends BaseSendableGet {
 	public abstract FetchContext getContext();
 	
 	/** Called when/if the low-level request succeeds. */
-	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched, ObjectContainer container);
+	public abstract void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched, ObjectContainer container, ClientContext context);
 	
 	/** Called when/if the low-level request fails. */
-	public abstract void onFailure(LowLevelGetException e, Object token, RequestScheduler sched, ObjectContainer container);
+	public abstract void onFailure(LowLevelGetException e, Object token, RequestScheduler sched, ObjectContainer container, ClientContext context);
 	
 	/** Should the request ignore the datastore? */
 	public abstract boolean ignoreStore();
@@ -116,7 +116,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	 * @param block
 	 * @param sched
 	 */
-	public abstract void onGotKey(Key key, KeyBlock block, RequestScheduler sched, ObjectContainer container);
+	public abstract void onGotKey(Key key, KeyBlock block, RequestScheduler sched, ObjectContainer container, ClientContext context);
 	
 	/**
 	 * Get the time at which the key specified by the given token will wake up from the 

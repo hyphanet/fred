@@ -28,12 +28,12 @@ class USKChecker extends BaseSingleFileFetcher {
 		this.cb = cb;
 	}
 	
-	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched, ObjectContainer container) {
+	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched, ObjectContainer container, ClientContext context) {
 		unregister(false);
 		cb.onSuccess((ClientSSKBlock)block);
 	}
 
-	public void onFailure(LowLevelGetException e, Object token, RequestScheduler sched, ObjectContainer container) {
+	public void onFailure(LowLevelGetException e, Object token, RequestScheduler sched, ObjectContainer container, ClientContext context) {
         if(Logger.shouldLog(Logger.MINOR, this))
         	Logger.minor(this, "onFailure: "+e+" for "+this);
 		// Firstly, can we retry?
@@ -63,7 +63,7 @@ class USKChecker extends BaseSingleFileFetcher {
 			canRetry = true;
 		}
 
-		if(canRetry && retry(sched, container)) return;
+		if(canRetry && retry(sched, container, context)) return;
 		
 		// Ran out of retries.
 		unregister(false);

@@ -395,7 +395,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		return fs;
 	}
 
-	public void start(ObjectContainer container) throws InsertException {
+	public void start(ObjectContainer container, ClientContext context) throws InsertException {
 		if (logMINOR)
 			Logger.minor(this, "Starting segment " + segNo + " of " + parent
 					+ " (" + parent.dataLength + "): " + this + " ( finished="
@@ -409,7 +409,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 						dataBlocks[i], (short) -1, FreenetURI.EMPTY_CHK_URI,
 						blockInsertContext, this, false, CHKBlock.DATA_LENGTH,
 						i, getCHKOnly, false, false, parent.token);
-				dataBlockInserters[i].schedule();
+				dataBlockInserters[i].schedule(container, context);
 				fin = false;
 			} else {
 				parent.parent.completedBlock(true);
@@ -428,7 +428,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 				// Encode blocks
 				synchronized(this) {
 					if(!encoded){
-						splitfileAlgo.addToQueue(new FECJob(splitfileAlgo, dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory, this, false));
+						splitfileAlgo.addToQueue(new FECJob(splitfileAlgo, context.fecQueue, dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory, this, false, parent.parent.getPriorityClass(), parent.parent.persistent()), context.fecQueue, container);
 					}
 				}				
 				fin = false;
@@ -441,24 +441,24 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 							FreenetURI.EMPTY_CHK_URI, blockInsertContext, this,
 							false, CHKBlock.DATA_LENGTH, i + dataBlocks.length,
 							getCHKOnly, false, false, parent.token);
-					checkBlockInserters[i].schedule();
+					checkBlockInserters[i].schedule(container, context);
 					fin = false;
 				} else
 					parent.parent.completedBlock(true);
 			}
-			onEncodedSegment(container);
+			onEncodedSegment(container, context);
 		}
 		if (hasURIs) {
-			parent.segmentHasURIs(this);
+			parent.segmentHasURIs(this, container);
 		}
 		boolean fetchable;
 		synchronized (this) {
 			fetchable = (blocksCompleted > dataBlocks.length);
 		}
 		if (fetchable)
-			parent.segmentFetchable(this);
+			parent.segmentFetchable(this, container);
 		if (fin)
-			finish();
+			finish(container);
 		if (finished) {
 			parent.segmentFinished(this, container);
 		}
@@ -477,13 +477,13 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 						blockInsertContext, this, false, CHKBlock.DATA_LENGTH,
 						i + dataBlocks.length, getCHKOnly, false, false,
 						parent.token);
-				checkBlockInserters[i].schedule(container);
+				checkBlockInserters[i].schedule(container, context);
 			}
 		} catch (Throwable t) {
 			Logger.error(this, "Caught " + t + " while encoding " + this, t);
 			InsertException ex = new InsertException(
 					InsertException.INTERNAL_ERROR, t, null);
-			finish(ex);
+			finish(ex, container);
 			return;
 		}
 
@@ -493,7 +493,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 
 		// Tell parent only after have started the inserts.
 		// Because of the counting.
-		parent.encodedSegment(this);
+		parent.encodedSegment(this, container);
 
 		synchronized (this) {
 			for (int i = 0; i < dataBlockInserters.length; i++) {
@@ -505,7 +505,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		}
 	}
 
-	private void finish(InsertException ex) {
+	private void finish(InsertException ex, ObjectContainer container) {
 		if (logMINOR)
 			Logger.minor(this, "Finishing " + this + " with " + ex, ex);
 		synchronized (this) {
@@ -514,20 +514,20 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			finished = true;
 			toThrow = ex;
 		}
-		parent.segmentFinished(this);
+		parent.segmentFinished(this, container);
 	}
 
-	private void finish() {
+	private void finish(ObjectContainer container) {
 		synchronized (this) {
 			if (finished)
 				return;
 			finished = true;
 			toThrow = InsertException.construct(errors);
 		}
-		parent.segmentFinished(this);
+		parent.segmentFinished(this, container);
 	}
 
-	public void onEncode(BaseClientKey k, ClientPutState state) {
+	public void onEncode(BaseClientKey k, ClientPutState state, ObjectContainer container) {
 		ClientCHK key = (ClientCHK) k;
 		SingleBlockInserter sbi = (SingleBlockInserter) state;
 		int x = sbi.token;
@@ -563,40 +563,40 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			}
 			hasURIs = true;
 		}
-		parent.segmentHasURIs(this);
+		parent.segmentHasURIs(this, container);
 	}
 
-	public void onSuccess(ClientPutState state) {
+	public void onSuccess(ClientPutState state, ObjectContainer container) {
 		if (parent.parent.isCancelled()) {
-			parent.cancel();
+			parent.cancel(container);
 			return;
 		}
 		SingleBlockInserter sbi = (SingleBlockInserter) state;
 		int x = sbi.token;
-		completed(x);
+		completed(x, container);
 	}
 
-	public void onFailure(InsertException e, ClientPutState state) {
+	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container) {
 		if (parent.parent.isCancelled()) {
-			parent.cancel();
+			parent.cancel(container);
 			return;
 		}
 		SingleBlockInserter sbi = (SingleBlockInserter) state;
 		int x = sbi.token;
 		errors.merge(e);
-		completed(x);
+		completed(x, container);
 	}
 
-	private void completed(int x) {
+	private void completed(int x, ObjectContainer container) {
 		int total = innerCompleted(x);
 		if (total == -1)
 			return;
 		if (total == dataBlockInserters.length) {
-			parent.segmentFetchable(this);
+			parent.segmentFetchable(this, container);
 		}
 		if (total != dataBlockInserters.length + checkBlockInserters.length)
 			return;
-		finish();
+		finish(container);
 	}
 
 	/**
@@ -671,7 +671,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		}
 	}
 
-	public void cancel() {
+	public void cancel(ObjectContainer container) {
 		synchronized (this) {
 			if (finished)
 				return;
@@ -682,7 +682,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		for (int i = 0; i < dataBlockInserters.length; i++) {
 			SingleBlockInserter sbi = dataBlockInserters[i];
 			if (sbi != null)
-				sbi.cancel();
+				sbi.cancel(container);
 			Bucket d = dataBlocks[i];
 			if (d != null) {
 				d.free();
@@ -692,26 +692,26 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		for (int i = 0; i < checkBlockInserters.length; i++) {
 			SingleBlockInserter sbi = checkBlockInserters[i];
 			if (sbi != null)
-				sbi.cancel();
+				sbi.cancel(container);
 			Bucket d = checkBlocks[i];
 			if (d != null) {
 				d.free();
 				checkBlocks[i] = null;
 			}
 		}
-		parent.segmentFinished(this);
+		parent.segmentFinished(this, container);
 	}
 
-	public void onTransition(ClientPutState oldState, ClientPutState newState) {
+	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 		Logger.error(this, "Illegal transition in SplitFileInserterSegment: "
 				+ oldState + " -> " + newState);
 	}
 
-	public void onMetadata(Metadata m, ClientPutState state) {
+	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container) {
 		Logger.error(this, "Got onMetadata from " + state);
 	}
 
-	public void onBlockSetFinished(ClientPutState state) {
+	public void onBlockSetFinished(ClientPutState state, ObjectContainer container) {
 		// Ignore
 		Logger.error(this, "Should not happen: onBlockSetFinished(" + state
 				+ ") on " + this);
@@ -725,7 +725,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		return blocksCompleted >= dataBlocks.length;
 	}
 
-	public void onFetchable(ClientPutState state) {
+	public void onFetchable(ClientPutState state, ObjectContainer container) {
 		// Ignore
 	}
 

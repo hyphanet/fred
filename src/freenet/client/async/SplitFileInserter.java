@@ -230,9 +230,9 @@ public class SplitFileInserter implements ClientPutState {
 		return (SplitFileInserterSegment[]) segs.toArray(new SplitFileInserterSegment[segs.size()]);
 	}
 	
-	public void start(ObjectContainer container) throws InsertException {
+	public void start(ObjectContainer container, ClientContext context) throws InsertException {
 		for(int i=0;i<segments.length;i++)
-			segments[i].start(container);
+			segments[i].start(container, context);
 		
 		if(countDataBlocks > 32)
 			parent.onMajorProgress();
@@ -240,7 +240,7 @@ public class SplitFileInserter implements ClientPutState {
 		
 	}
 
-	public void encodedSegment(SplitFileInserterSegment segment) {
+	public void encodedSegment(SplitFileInserterSegment segment, ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "Encoded segment "+segment.segNo+" of "+this);
 		boolean ret = false;
 		boolean encode;
@@ -255,12 +255,12 @@ public class SplitFileInserter implements ClientPutState {
 		}
 		if(encode) segment.forceEncode();
 		if(ret) return;
-		cb.onBlockSetFinished(this);
+		cb.onBlockSetFinished(this, container);
 		if(countDataBlocks > 32)
 			parent.onMajorProgress();
 	}
 	
-	public void segmentHasURIs(SplitFileInserterSegment segment) {
+	public void segmentHasURIs(SplitFileInserterSegment segment, ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "Segment has URIs: "+segment);
 		synchronized(this) {
 			if(haveSentMetadata) {
@@ -276,10 +276,10 @@ public class SplitFileInserter implements ClientPutState {
 		}
 		
 		if(logMINOR) Logger.minor(this, "Have URIs from all segments");
-		encodeMetadata();
+		encodeMetadata(container);
 	}
 	
-	private void encodeMetadata() {
+	private void encodeMetadata(ObjectContainer container) {
 		boolean missingURIs;
 		Metadata m = null;
 		synchronized(this) {
@@ -300,18 +300,18 @@ public class SplitFileInserter implements ClientPutState {
 		if(missingURIs) {
 			if(logMINOR) Logger.minor(this, "Missing URIs");
 			// Error
-			fail(new InsertException(InsertException.INTERNAL_ERROR, "Missing URIs after encoding", null));
+			fail(new InsertException(InsertException.INTERNAL_ERROR, "Missing URIs after encoding", null), container);
 			return;
 		} else
-			cb.onMetadata(m, this);
+			cb.onMetadata(m, this, container);
 	}
 	
-	private void fail(InsertException e) {
+	private void fail(InsertException e, ObjectContainer container) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
 		}
-		cb.onFailure(e, this);
+		cb.onFailure(e, this, container);
 	}
 
 	// FIXME move this to somewhere
@@ -387,10 +387,10 @@ public class SplitFileInserter implements ClientPutState {
 			}
 			finished = true;
 		}
-		onAllFinished();
+		onAllFinished(container);
 	}
 	
-	public void segmentFetchable(SplitFileInserterSegment segment) {
+	public void segmentFetchable(SplitFileInserterSegment segment, ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "Segment fetchable: "+segment);
 		synchronized(this) {
 			if(finished) return;
@@ -403,10 +403,10 @@ public class SplitFileInserter implements ClientPutState {
 			}
 			fetchable = true;
 		}
-		cb.onFetchable(this);
+		cb.onFetchable(this, container);
 	}
 
-	private void onAllFinished() {
+	private void onAllFinished(ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "All finished");
 		try {
 			// Finished !!
@@ -422,14 +422,14 @@ public class SplitFileInserter implements ClientPutState {
 				tracker.inc(e.getMode());
 			}
 			if(allSucceeded)
-				cb.onSuccess(this);
+				cb.onSuccess(this, container);
 			else {
-				cb.onFailure(InsertException.construct(tracker), this);
+				cb.onFailure(InsertException.construct(tracker), this, container);
 			}
 		} catch (Throwable t) {
 			// We MUST tell the parent *something*!
 			Logger.error(this, "Caught "+t, t);
-			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR), this);
+			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR), this, container);
 		}
 	}
 
@@ -439,11 +439,11 @@ public class SplitFileInserter implements ClientPutState {
 			finished = true;
 		}
 		for(int i=0;i<segments.length;i++)
-			segments[i].cancel();
+			segments[i].cancel(container);
 	}
 
-	public void schedule(ObjectContainer container) throws InsertException {
-		start(container);
+	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
+		start(container, context);
 	}
 
 	public Object getToken() {

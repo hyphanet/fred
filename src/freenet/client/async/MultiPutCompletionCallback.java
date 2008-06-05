@@ -2,6 +2,8 @@ package freenet.client.async;
 
 import java.util.Vector;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.keys.BaseClientKey;
@@ -34,19 +36,19 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		finished = false;
 	}
 
-	public void onSuccess(ClientPutState state) {
-		onBlockSetFinished(state);
-		onFetchable(state);
+	public void onSuccess(ClientPutState state, ObjectContainer container) {
+		onBlockSetFinished(state, container);
+		onFetchable(state, container);
 		synchronized(this) {
 			if(finished) return;
 			waitingFor.remove(state);
 			if(!(waitingFor.isEmpty() && started))
 				return;
 		}
-		complete(null);
+		complete(null, container);
 	}
 
-	public void onFailure(InsertException e, ClientPutState state) {
+	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container) {
 		synchronized(this) {
 			if(finished) return;
 			waitingFor.remove(state);
@@ -57,10 +59,10 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 				return;
 			}
 		}
-		complete(e);
+		complete(e, container);
 	}
 
-	private void complete(InsertException e) {
+	private void complete(InsertException e, ObjectContainer container) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
@@ -71,9 +73,9 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			if(e == null) e = this.e;
 		}
 		if(e != null)
-			cb.onFailure(e, this);
+			cb.onFailure(e, this, container);
 		else
-			cb.onSuccess(this);
+			cb.onSuccess(this, container);
 	}
 
 	public synchronized void addURIGenerator(ClientPutState ps) {
@@ -88,7 +90,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		waitingForFetchable.add(ps);
 	}
 
-	public void arm() {
+	public void arm(ObjectContainer container) {
 		boolean allDone;
 		boolean allGotBlocks;
 		synchronized(this) {
@@ -98,10 +100,10 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		}
 
 		if(allGotBlocks) {
-			cb.onBlockSetFinished(this);
+			cb.onBlockSetFinished(this, container);
 		}
 		if(allDone) {
-			complete(e);
+			complete(e, container);
 		}
 	}
 
@@ -109,23 +111,23 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		return parent;
 	}
 
-	public void onEncode(BaseClientKey key, ClientPutState state) {
+	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container) {
 		synchronized(this) {
 			if(state != generator) return;
 		}
-		cb.onEncode(key, this);
+		cb.onEncode(key, this, container);
 	}
 
-	public void cancel() {
+	public void cancel(ObjectContainer container) {
 		ClientPutState[] states = new ClientPutState[waitingFor.size()];
 		synchronized(this) {
 			states = (ClientPutState[]) waitingFor.toArray(states);
 		}
 		for(int i=0;i<states.length;i++)
-			states[i].cancel();
+			states[i].cancel(container);
 	}
 
-	public synchronized void onTransition(ClientPutState oldState, ClientPutState newState) {
+	public synchronized void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 		if(generator == oldState)
 			generator = newState;
 		if(oldState == newState) return;
@@ -140,24 +142,24 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		}
 	}
 
-	public synchronized void onMetadata(Metadata m, ClientPutState state) {
+	public synchronized void onMetadata(Metadata m, ClientPutState state, ObjectContainer container) {
 		if(generator == state) {
-			cb.onMetadata(m, this);
+			cb.onMetadata(m, this, container);
 		} else {
 			Logger.error(this, "Got metadata for "+state);
 		}
 	}
 
-	public void onBlockSetFinished(ClientPutState state) {
+	public void onBlockSetFinished(ClientPutState state, ObjectContainer container) {
 		synchronized(this) {
 			this.waitingForBlockSet.remove(state);
 			if(!started) return;
 			if(!waitingForBlockSet.isEmpty()) return;
 		}
-		cb.onBlockSetFinished(this);
+		cb.onBlockSetFinished(this, container);
 	}
 
-	public void schedule() throws InsertException {
+	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
 		// Do nothing
 	}
 
@@ -169,13 +171,13 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		return null;
 	}
 
-	public void onFetchable(ClientPutState state) {
+	public void onFetchable(ClientPutState state, ObjectContainer container) {
 		synchronized(this) {
 			this.waitingForFetchable.remove(state);
 			if(!started) return;
 			if(!waitingForFetchable.isEmpty()) return;
 		}
-		cb.onFetchable(this);
+		cb.onFetchable(this, container);
 	}
 
 }

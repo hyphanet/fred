@@ -167,49 +167,49 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 
 	// Translate it, then call the real onFailure
 	// FIXME refactor this out to a common method; see SimpleSingleFileFetcher
-	public void onFailure(LowLevelGetException e, Object token, RequestScheduler sched, ObjectContainer container) {
+	public void onFailure(LowLevelGetException e, Object token, RequestScheduler sched, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "onFailure("+e+" , "+token);
 		switch(e.code) {
 		case LowLevelGetException.DATA_NOT_FOUND:
-			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), token, sched, container);
+			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), token, sched, container, context);
 			return;
 		case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
-			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), token, sched, container);
+			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), token, sched, container, context);
 			return;
 		case LowLevelGetException.RECENTLY_FAILED:
-			onFailure(new FetchException(FetchException.RECENTLY_FAILED), token, sched, container);
+			onFailure(new FetchException(FetchException.RECENTLY_FAILED), token, sched, container, context);
 			return;
 		case LowLevelGetException.DECODE_FAILED:
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR), token, sched, container);
+			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR), token, sched, container, context);
 			return;
 		case LowLevelGetException.INTERNAL_ERROR:
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR), token, sched, container);
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR), token, sched, container, context);
 			return;
 		case LowLevelGetException.REJECTED_OVERLOAD:
-			onFailure(new FetchException(FetchException.REJECTED_OVERLOAD), token, sched, container);
+			onFailure(new FetchException(FetchException.REJECTED_OVERLOAD), token, sched, container, context);
 			return;
 		case LowLevelGetException.ROUTE_NOT_FOUND:
-			onFailure(new FetchException(FetchException.ROUTE_NOT_FOUND), token, sched, container);
+			onFailure(new FetchException(FetchException.ROUTE_NOT_FOUND), token, sched, container, context);
 			return;
 		case LowLevelGetException.TRANSFER_FAILED:
-			onFailure(new FetchException(FetchException.TRANSFER_FAILED), token, sched, container);
+			onFailure(new FetchException(FetchException.TRANSFER_FAILED), token, sched, container, context);
 			return;
 		case LowLevelGetException.VERIFY_FAILED:
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR), token, sched, container);
+			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR), token, sched, container, context);
 			return;
 		case LowLevelGetException.CANCELLED:
-			onFailure(new FetchException(FetchException.CANCELLED), token, sched, container);
+			onFailure(new FetchException(FetchException.CANCELLED), token, sched, container, context);
 			return;
 		default:
 			Logger.error(this, "Unknown LowLevelGetException code: "+e.code);
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR), token, sched, container);
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR), token, sched, container, context);
 			return;
 		}
 	}
 
 	// Real onFailure
-	protected void onFailure(FetchException e, Object token, RequestScheduler sched, ObjectContainer container) {
+	protected void onFailure(FetchException e, Object token, RequestScheduler sched, ObjectContainer container, ClientContext context) {
 		boolean forceFatal = false;
 		if(parent.isCancelled()) {
 			if(Logger.shouldLog(Logger.MINOR, this)) 
@@ -219,13 +219,13 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		}
 		segment.errors.inc(e.getMode());
 		if(e.isFatal() || forceFatal) {
-			segment.onFatalFailure(e, ((Integer)token).intValue(), this, container);
+			segment.onFatalFailure(e, ((Integer)token).intValue(), this, container, context);
 		} else {
 			segment.onNonFatalFailure(e, ((Integer)token).intValue(), this, sched, container);
 		}
 	}
 	
-	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched, ObjectContainer container) {
+	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched, ObjectContainer container, ClientContext context) {
 		Bucket data = extract(block, token, sched, container);
 		if(fromStore) {
 			// Normally when this method is called the block number has already
@@ -246,14 +246,14 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		if(!block.isMetadata()) {
 			onSuccess(data, fromStore, (Integer)token, ((Integer)token).intValue(), block, sched, container);
 		} else {
-			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), token, sched, container);
+			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), token, sched, container, context);
 		}
 	}
 	
 	protected void onSuccess(Bucket data, boolean fromStore, Integer token, int blockNo, ClientKeyBlock block, RequestScheduler sched, ObjectContainer container) {
 		if(parent.isCancelled()) {
 			data.free();
-			onFailure(new FetchException(FetchException.CANCELLED), token, sched, container);
+			onFailure(new FetchException(FetchException.CANCELLED), token, sched, container, sched.getContext());
 			return;
 		}
 		segment.onSuccess(data, blockNo, this, block, container, sched);
@@ -263,20 +263,21 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	 * and return null.
 	 */
 	protected Bucket extract(ClientKeyBlock block, Object token, RequestScheduler sched, ObjectContainer container) {
+		ClientContext context = sched.getContext();
 		Bucket data;
 		try {
 			data = block.decode(ctx.bucketFactory, (int)(Math.min(ctx.maxOutputLength, Integer.MAX_VALUE)), false);
 		} catch (KeyDecodeException e1) {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Decode failure: "+e1, e1);
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()), token, sched, container);
+			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()), token, sched, container, context);
 			return null;
 		} catch (TooBigException e) {
-			onFailure(new FetchException(FetchException.TOO_BIG, e.getMessage()), token, sched, container);
+			onFailure(new FetchException(FetchException.TOO_BIG, e.getMessage()), token, sched, container, context);
 			return null;
 		} catch (IOException e) {
 			Logger.error(this, "Could not capture data - disk full?: "+e, e);
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), token, sched, container);
+			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), token, sched, container, context);
 			return null;
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
@@ -382,7 +383,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		unregister(false);
 	}
 
-	public void onGotKey(Key key, KeyBlock block, RequestScheduler sched, ObjectContainer container) {
+	public void onGotKey(Key key, KeyBlock block, RequestScheduler sched, ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "onGotKey("+key+")");
 		// Find and remove block if it is on this subsegment. However it may have been
 		// removed already.
@@ -409,7 +410,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		try {
 			cb = new ClientCHKBlock((CHKBlock)block, ckey);
 		} catch (CHKVerifyException e) {
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e), token, sched, container);
+			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e), token, sched, container, context);
 			return;
 		}
 		Bucket data = extract(cb, token, sched, container);
@@ -417,7 +418,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		if(!cb.isMetadata()) {
 			onSuccess(data, false, (Integer)token, ((Integer)token).intValue(), cb, sched, container);
 		} else {
-			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), token, sched, container);
+			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), token, sched, container, context);
 		}
 		
 	}

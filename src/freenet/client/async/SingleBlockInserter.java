@@ -141,7 +141,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return retries;
 	}
 
-	public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container) {
+	public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context) {
 		if(parent.isCancelled()) {
 			fail(new InsertException(InsertException.CANCELLED), container);
 			return;
@@ -183,7 +183,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			fail(InsertException.construct(errors), container);
 			return;
 		}
-		getScheduler().register(this);
+		getScheduler(context).register(this);
 	}
 
 	private void fail(InsertException e, ObjectContainer container) {

@@ -259,13 +259,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(logMINOR)
 					Logger.minor(this, "Decode failed: "+e, e);
 				if(!persistent)
-					getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), tok, this, persistent ? selectorContainer : null);
+					getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), tok, this, persistent ? selectorContainer : null, clientContext);
 				else {
 					final SendableGet g = getter;
 					final Object token = tok;
 					databaseExecutor.execute(new Runnable() {
 						public void run() {
-							g.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), token, ClientRequestScheduler.this, selectorContainer);
+							g.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), token, ClientRequestScheduler.this, selectorContainer, clientContext);
 							selectorContainer.commit();
 						}
 					}, NativeThread.NORM_PRIORITY, "Block decode failed");
@@ -275,14 +275,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(block != null) {
 				if(logMINOR) Logger.minor(this, "Can fulfill "+getter+" ("+tok+") immediately from store");
 				if(!persistent)
-					getter.onSuccess(block, true, tok, this, persistent ? selectorContainer : null);
+					getter.onSuccess(block, true, tok, this, persistent ? selectorContainer : null, clientContext);
 				else {
 					final ClientKeyBlock b = block;
 					final Object t = tok;
 					final SendableGet g = getter;
 					databaseExecutor.execute(new Runnable() {
 						public void run() {
-							g.onSuccess(b, true, t, ClientRequestScheduler.this, selectorContainer);
+							g.onSuccess(b, true, t, ClientRequestScheduler.this, selectorContainer, clientContext);
 						}
 					}, NativeThread.NORM_PRIORITY, "Block found on register");
 				}
@@ -514,7 +514,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				for(int i=0;i<transientGets.length;i++) {
 					try {
 						if(logMINOR) Logger.minor(this, "Calling callback for "+transientGets[i]+" for "+key);
-						transientGets[i].onGotKey(key, block, ClientRequestScheduler.this, null);
+						transientGets[i].onGotKey(key, block, ClientRequestScheduler.this, null, clientContext);
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t+" running callback "+transientGets[i]+" for "+key);
 					}
@@ -543,7 +543,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				for(int i=0;i<gets.length;i++) {
 					try {
 						if(logMINOR) Logger.minor(this, "Calling callback for "+gets[i]+" for "+key);
-						gets[i].onGotKey(key, block, ClientRequestScheduler.this, selectorContainer);
+						gets[i].onGotKey(key, block, ClientRequestScheduler.this, selectorContainer, clientContext);
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t+" running callback "+gets[i]+" for "+key);
 					}
@@ -666,7 +666,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, String name) {
 		databaseExecutor.execute(new Runnable() {
 			public void run() {
-				get.onFailure(e, keyNum, ClientRequestScheduler.this, selectorContainer);
+				get.onFailure(e, keyNum, ClientRequestScheduler.this, selectorContainer, clientContext);
 				selectorContainer.commit();
 			}
 		}, prio, name);

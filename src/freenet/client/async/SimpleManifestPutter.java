@@ -12,6 +12,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.InsertBlock;
@@ -33,7 +35,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private class PutHandler extends BaseClientPutter implements PutCompletionCallback {
 		
 		protected PutHandler(final SimpleManifestPutter smp, String name, Bucket data, ClientMetadata cm, boolean getCHKOnly) throws InsertException {
-			super(smp.priorityClass, smp.chkScheduler, smp.sskScheduler, smp.client);
+			super(smp.priorityClass, smp.client);
 			this.cm = cm;
 			this.data = data;
 			InsertBlock block = 
@@ -44,7 +46,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 
 		protected PutHandler(final SimpleManifestPutter smp, String name, FreenetURI target, ClientMetadata cm) {
-			super(smp.getPriorityClass(), smp.chkScheduler, smp.sskScheduler, smp.client);
+			super(smp.getPriorityClass(), smp.client);
 			this.cm = cm;
 			this.data = null;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, target, cm);
@@ -53,7 +55,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		
 		protected PutHandler(final SimpleManifestPutter smp, String name, String targetInZip, ClientMetadata cm, Bucket data) {
-			super(smp.getPriorityClass(), smp.chkScheduler, smp.sskScheduler, smp.client);
+			super(smp.getPriorityClass(), smp.client);
 			this.cm = cm;
 			this.data = data;
 			this.targetInZip = targetInZip;
@@ -82,10 +84,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			return SimpleManifestPutter.this.finished || cancelled || SimpleManifestPutter.this.cancelled;
 		}
 
-		public void onSuccess(ClientPutState state) {
+		public void onSuccess(ClientPutState state, ObjectContainer container) {
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Completed "+this);
-			SimpleManifestPutter.this.onFetchable(this);
+			SimpleManifestPutter.this.onFetchable(this, container);
 			synchronized(SimpleManifestPutter.this) {
 				runningPutHandlers.remove(this);
 				if(!runningPutHandlers.isEmpty()) {
@@ -95,26 +97,26 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			insertedAllFiles();
 		}
 
-		public void onFailure(InsertException e, ClientPutState state) {
+		public void onFailure(InsertException e, ClientPutState state, ObjectContainer container) {
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Failed: "+this+" - "+e, e);
 			fail(e);
 		}
 
-		public void onEncode(BaseClientKey key, ClientPutState state) {
+		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container) {
 			if(logMINOR) Logger.minor(this, "onEncode("+key+") for "+this);
 			if(metadata == null) {
 				// The file was too small to have its own metadata, we get this instead.
 				// So we make the key into metadata.
 				Metadata m =
 					new Metadata(Metadata.SIMPLE_REDIRECT, key.getURI(), cm);
-				onMetadata(m, null);
+				onMetadata(m, null, container);
 			}
 		}
 
-		public void onTransition(ClientPutState oldState, ClientPutState newState) {}
+		public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {}
 
-		public void onMetadata(Metadata m, ClientPutState state) {
+		public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container) {
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Assigning metadata: "+m+" for "+this+" from "+state,
 					new Exception("debug"));
@@ -158,7 +160,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			// FIXME generate per-filename events???
 		}
 
-		public void onBlockSetFinished(ClientPutState state) {
+		public void onBlockSetFinished(ClientPutState state, ObjectContainer container) {
 			synchronized(SimpleManifestPutter.this) {
 				waitingForBlockSets.remove(this);
 				if(!waitingForBlockSets.isEmpty()) return;
@@ -170,11 +172,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			SimpleManifestPutter.this.onMajorProgress();
 		}
 
-		public void onFetchable(ClientPutState state) {
-			SimpleManifestPutter.this.onFetchable(this);
+		public void onFetchable(ClientPutState state, ObjectContainer container) {
+			SimpleManifestPutter.this.onFetchable(this, container);
 		}
 
-		public void onTransition(ClientGetState oldState, ClientGetState newState) {
+		public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 			// Ignore
 		}
 
@@ -212,7 +214,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	public SimpleManifestPutter(ClientCallback cb, ClientRequestScheduler chkSched,
 			ClientRequestScheduler sskSched, HashMap manifestElements, short prioClass, FreenetURI target, 
 			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode) throws InsertException {
-		super(prioClass, chkSched, sskSched, clientContext);
+		super(prioClass, clientContext);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.defaultName = defaultName;
 		this.targetURI = target;
@@ -555,7 +557,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		fail(new InsertException(InsertException.CANCELLED));
 	}
 	
-	public void onSuccess(ClientPutState state) {
+	public void onSuccess(ClientPutState state, ObjectContainer container) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(this) {
 			metadataPuttersByMetadata.remove(state.getToken());
@@ -578,12 +580,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		complete();
 	}
 	
-	public void onFailure(InsertException e, ClientPutState state) {
+	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		fail(e);
 	}
 	
-	public void onEncode(BaseClientKey key, ClientPutState state) {
+	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container) {
 		if(state.getToken() == baseMetadata) {
 			this.finalURI = key.getURI();
 			if(logMINOR) Logger.minor(this, "Got metadata key: "+finalURI);
@@ -597,13 +599,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 	
-	public void onTransition(ClientPutState oldState, ClientPutState newState) {
+	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 		synchronized(this) {
 			if(logMINOR) Logger.minor(this, "Transition: "+oldState+" -> "+newState);
 		}
 	}
 	
-	public void onMetadata(Metadata m, ClientPutState state) {
+	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container) {
 		// Ignore
 	}
 
@@ -611,7 +613,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized));
 	}
 
-	public void onBlockSetFinished(ClientPutState state) {
+	public void onBlockSetFinished(ClientPutState state, ObjectContainer container) {
 		synchronized(this) {
 			this.metadataBlockSetFinalized = true;
 			if(!waitingForBlockSets.isEmpty()) return;
@@ -717,7 +719,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		cb.onMajorProgress();
 	}
 
-	protected void onFetchable(PutHandler handler) {
+	protected void onFetchable(PutHandler handler, ObjectContainer container) {
 		synchronized(this) {
 			putHandlersWaitingForFetchable.remove(handler);
 			if(fetchable) return;
@@ -729,7 +731,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		cb.onFetchable(this);
 	}
 
-	public void onFetchable(ClientPutState state) {
+	public void onFetchable(ClientPutState state, ObjectContainer container) {
 		Metadata m = (Metadata) state.getToken();
 		synchronized(this) {
 			metadataPuttersUnfetchable.remove(m);
@@ -741,7 +743,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		cb.onFetchable(this);
 	}
 
-	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 		// Ignore
 	}
 

@@ -107,7 +107,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return ctx.ignoreStore;
 	}
 
-	public void cancel(ObjectContainer container) {
+	public void cancel(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			cancelled = true;
 		}
@@ -135,7 +135,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return true;
 	}
 
-	public void onGotKey(Key key, KeyBlock block, RequestScheduler sched, ObjectContainer container) {
+	public void onGotKey(Key key, KeyBlock block, RequestScheduler sched, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(isCancelled()) return;
 			if(!key.equals(this.key.getNodeKey())) {
@@ -144,7 +144,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 			}
 		}
 		try {
-			onSuccess(Key.createKeyBlock(this.key, block), false, null, sched, container);
+			onSuccess(Key.createKeyBlock(this.key, block), false, null, sched, container, context);
 		} catch (KeyVerifyException e) {
 			Logger.error(this, "onGotKey("+key+","+block+") got "+e+" for "+this, e);
 			// FIXME if we get rid of the direct route this must call onFailure()

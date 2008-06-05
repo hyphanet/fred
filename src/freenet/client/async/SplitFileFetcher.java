@@ -221,7 +221,7 @@ public class SplitFileFetcher implements ClientGetState {
 		return output;
 	}
 
-	public void segmentFinished(SplitFileFetcherSegment segment, ObjectContainer container) {
+	public void segmentFinished(SplitFileFetcherSegment segment, ObjectContainer container, ClientContext context) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Finished segment: "+segment);
 		boolean finish = false;
@@ -242,10 +242,10 @@ public class SplitFileFetcher implements ClientGetState {
 			} 
 			notifyAll();
 		}
-		if(finish) finish(container);
+		if(finish) finish(container, context);
 	}
 
-	private void finish(ObjectContainer container) {
+	private void finish(ObjectContainer container, ClientContext context) {
 		try {
 			synchronized(this) {
 				if(finished) {
@@ -264,22 +264,22 @@ public class SplitFileFetcher implements ClientGetState {
 					if(!decompressors.isEmpty()) out = null;
 					data = c.decompress(data, fetchContext.bucketFactory, maxLen, maxLen * 4, out);
 				} catch (IOException e) {
-					cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), this, container);
+					cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), this, container, context);
 					return;
 				} catch (CompressionOutputSizeException e) {
-					cb.onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, false /* FIXME */, clientMetadata.getMIMEType()), this, container);
+					cb.onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, false /* FIXME */, clientMetadata.getMIMEType()), this, container, context);
 					return;
 				}
 			}
-			cb.onSuccess(new FetchResult(clientMetadata, data), this, container);
+			cb.onSuccess(new FetchResult(clientMetadata, data), this, container, context);
 		} catch (FetchException e) {
-			cb.onFailure(e, this, container);
+			cb.onFailure(e, this, container, context);
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
 			System.err.println("Failing above attempted fetch...");
-			cb.onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), this, container);
+			cb.onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), this, container, context);
 		} catch (Throwable t) {
-			cb.onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), this, container);
+			cb.onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), this, container, context);
 		}
 	}
 
@@ -290,9 +290,9 @@ public class SplitFileFetcher implements ClientGetState {
 		}
 	}
 
-	public void cancel(ObjectContainer container) {
+	public void cancel(ObjectContainer container, ClientContext context) {
 		for(int i=0;i<segments.length;i++)
-			segments[i].cancel(container);
+			segments[i].cancel(container, context);
 	}
 
 	public long getToken() {
