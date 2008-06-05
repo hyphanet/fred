@@ -5,6 +5,8 @@ package freenet.node;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ClientContext;
+
 /**
  * Callback interface for a low level insert, which is immediately sendable. These
  * should be registered on the ClientRequestScheduler when we want to send them. It will
@@ -14,10 +16,10 @@ import com.db4o.ObjectContainer;
 public abstract class SendableInsert extends SendableRequest {
 
 	/** Called when we successfully insert the data */
-	public abstract void onSuccess(Object keyNum, ObjectContainer container);
+	public abstract void onSuccess(Object keyNum, ObjectContainer container, ClientContext context);
 	
 	/** Called when we don't! */
-	public abstract void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container);
+	public abstract void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context);
 
 	public void internalError(Object keyNum, Throwable t, RequestScheduler sched, ObjectContainer container) {
 		onFailure(new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, t.getMessage(), t), keyNum, container);

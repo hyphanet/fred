@@ -19,7 +19,7 @@ public interface ClientPutState {
 	public abstract BaseClientPutter getParent();
 
 	/** Cancel the request. */
-	public abstract void cancel(ObjectContainer container);
+	public abstract void cancel(ObjectContainer container, ClientContext context);
 
 	/** Schedule the request. */
 	public abstract void schedule(ObjectContainer container, ClientContext context) throws InsertException;

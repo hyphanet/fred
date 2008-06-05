@@ -5,6 +5,7 @@ package freenet.node;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
 import freenet.keys.CHKBlock;
@@ -44,13 +45,13 @@ public class SimpleSendableInsert extends SendableInsert {
 		this.scheduler = scheduler;
 	}
 	
-	public void onSuccess(Object keyNum, ObjectContainer container) {
+	public void onSuccess(Object keyNum, ObjectContainer container, ClientContext context) {
 		// Yay!
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Finished insert of "+block);
 	}
 
-	public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container) {
+	public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Failed insert of "+block+": "+e);
 	}

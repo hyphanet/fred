@@ -106,7 +106,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				}
 			}
 			if(cancel) {
-				onFailure(new InsertException(InsertException.CANCELLED), null, container);
+				onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
 				oldProgress = null;
 				return false;
 			}
@@ -114,14 +114,14 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				cancel = cancelled;
 			}
 			if(cancel) {
-				onFailure(new InsertException(InsertException.CANCELLED), null, container);
+				onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
 				oldProgress = null;
 				return false;
 			}
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Starting insert: "+currentState);
 			if(currentState instanceof SingleFileInserter)
-				((SingleFileInserter)currentState).start(oldProgress);
+				((SingleFileInserter)currentState).start(oldProgress, container);
 			else
 				currentState.schedule(container, context);
 			synchronized(this) {
@@ -129,7 +129,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				cancel = cancelled;
 			}
 			if(cancel) {
-				onFailure(new InsertException(InsertException.CANCELLED), null, container);
+				onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
 				return false;
 			}
 		} catch (InsertException e) {
@@ -171,7 +171,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		return true;
 	}
 
-	public void onSuccess(ClientPutState state, ObjectContainer container) {
+	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			finished = true;
 			currentState = null;
@@ -185,7 +185,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		client.onSuccess(this);
 	}
 
-	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container) {
+	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			finished = true;
 			currentState = null;
@@ -198,7 +198,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		client.onMajorProgress();
 	}
 	
-	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container) {
+	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			this.uri = key.getURI();
 			if(targetFilename != null)
@@ -218,8 +218,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			if(startedStarting) return;
 			startedStarting = true;
 		}
-		if(oldState != null) oldState.cancel(container);
-		onFailure(new InsertException(InsertException.CANCELLED), null, container);
+		if(oldState != null) oldState.cancel(container, context);
+		onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
 	}
 	
 	public synchronized boolean isFinished() {
@@ -238,7 +238,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			Logger.error(this, "onTransition: cur="+currentState+", old="+oldState+", new="+newState);
 	}
 
-	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container) {
+	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 		Logger.error(this, "Got metadata on "+this+" from "+state+" (this means the metadata won't be inserted)");
 	}
 	

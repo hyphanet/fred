@@ -77,12 +77,12 @@ public class BinaryBlobInserter implements ClientPutState {
 		else throw new IllegalArgumentException("Unknown block type "+block.getClass()+" : "+block);
 	}
 
-	public void cancel(ObjectContainer container) {
+	public void cancel(ObjectContainer container, ClientContext context) {
 		for(int i=0;i<inserters.length;i++) {
 			if(inserters[i] != null)
 				inserters[i].cancel();
 		}
-		parent.onFailure(new InsertException(InsertException.CANCELLED), this, container);
+		parent.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}
 
 	public BaseClientPutter getParent() {
@@ -115,7 +115,7 @@ public class BinaryBlobInserter implements ClientPutState {
 			this.blockNum = i;
 		}
 		
-		public void onSuccess(ObjectContainer container) {
+		public void onSuccess(ObjectContainer container, ClientContext context) {
 			synchronized(this) {
 				if(inserters[blockNum] == null) return;
 				inserters[blockNum] = null;
@@ -123,23 +123,23 @@ public class BinaryBlobInserter implements ClientPutState {
 				succeededBlocks++;
 			}
 			parent.completedBlock(false);
-			maybeFinish(container);
+			maybeFinish(container, context);
 		}
 
 		// FIXME duplicated code from SingleBlockInserter
 		// FIXME combine it somehow
-		public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container) {
+		public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context) {
 			synchronized(BinaryBlobInserter.this) {
 				if(inserters[blockNum] == null) return;
 			}
 			if(parent.isCancelled()) {
-				fail(new InsertException(InsertException.CANCELLED), true, container);
+				fail(new InsertException(InsertException.CANCELLED), true, container, context);
 				return;
 			}
 			logMINOR = Logger.shouldLog(Logger.MINOR, BinaryBlobInserter.this);
 			switch(e.code) {
 			case LowLevelPutException.COLLISION:
-				fail(new InsertException(InsertException.COLLISION), false, container);
+				fail(new InsertException(InsertException.COLLISION), false, container, context);
 				break;
 			case LowLevelPutException.INTERNAL_ERROR:
 				errors.inc(InsertException.INTERNAL_ERROR);
@@ -162,7 +162,7 @@ public class BinaryBlobInserter implements ClientPutState {
 				if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" / "+consecutiveRNFsCountAsSuccess);
 				if(consecutiveRNFs == consecutiveRNFsCountAsSuccess) {
 					if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" - counting as success");
-					onSuccess(container);
+					onSuccess(container, context);
 					return;
 				}
 			} else
@@ -170,14 +170,14 @@ public class BinaryBlobInserter implements ClientPutState {
 			if(logMINOR) Logger.minor(this, "Failed: "+e);
 			retries++;
 			if((retries > maxRetries) && (maxRetries != -1)) {
-				fail(InsertException.construct(errors), false, container);
+				fail(InsertException.construct(errors), false, container, context);
 				return;
 			}
 			// Retry *this block*
 			this.schedule();
 		}
 
-		private void fail(InsertException e, boolean fatal, ObjectContainer container) {
+		private void fail(InsertException e, boolean fatal, ObjectContainer container, ClientContext context) {
 			synchronized(BinaryBlobInserter.this) {
 				if(inserters[blockNum] == null) return;
 				inserters[blockNum] = null;
@@ -188,7 +188,7 @@ public class BinaryBlobInserter implements ClientPutState {
 				parent.fatallyFailedBlock();
 			else
 				parent.failedBlock();
-			maybeFinish(container);
+			maybeFinish(container, context);
 		}
 		
 		public boolean shouldCache() {
@@ -196,7 +196,7 @@ public class BinaryBlobInserter implements ClientPutState {
 		}
 	}
 
-	public void maybeFinish(ObjectContainer container) {
+	public void maybeFinish(ObjectContainer container, ClientContext context) {
 		boolean success;
 		boolean wasFatal;
 		synchronized(this) {
@@ -206,11 +206,11 @@ public class BinaryBlobInserter implements ClientPutState {
 			wasFatal = fatal;
 		}
 		if(success) {
-			parent.onSuccess(this, container);
+			parent.onSuccess(this, container, context);
 		} else if(wasFatal)
-			parent.onFailure(new InsertException(InsertException.FATAL_ERRORS_IN_BLOCKS, errors, null), this, container);
+			parent.onFailure(new InsertException(InsertException.FATAL_ERRORS_IN_BLOCKS, errors, null), this, container, context);
 		else
-			parent.onFailure(new InsertException(InsertException.TOO_MANY_RETRIES_IN_BLOCKS, errors, null), this, container);
+			parent.onFailure(new InsertException(InsertException.TOO_MANY_RETRIES_IN_BLOCKS, errors, null), this, container, context);
 	}
 	
 }

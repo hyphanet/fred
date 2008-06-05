@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.InsertBlock;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
@@ -85,7 +87,7 @@ class SingleFileInserter implements ClientPutState {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
-	public void start(SimpleFieldSet fs) throws InsertException {
+	public void start(SimpleFieldSet fs, ObjectContainer container) throws InsertException {
 		if(fs != null) {
 			String type = fs.get("Type");
 			if(type.equals("SplitHandler")) {
@@ -94,7 +96,7 @@ class SingleFileInserter implements ClientPutState {
 				try {
 					SplitHandler sh = new SplitHandler();
 					sh.start(fs, false);
-					cb.onTransition(this, sh);
+					cb.onTransition(this, sh, container);
 					sh.schedule();
 					return;
 				} catch (ResumeException e) {
@@ -302,7 +304,7 @@ class SingleFileInserter implements ClientPutState {
 
 	private ClientPutState createInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
 			InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, 
-			boolean addToParent, boolean encodeCHK) throws InsertException {
+			boolean addToParent, boolean encodeCHK, ObjectContainer container) throws InsertException {
 		
 		uri.checkInsertURI(); // will throw an exception if needed
 		
@@ -318,7 +320,7 @@ class SingleFileInserter implements ClientPutState {
 				new SingleBlockInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
 						getCHKOnly, addToParent, false, this.token);
 			if(encodeCHK)
-				cb.onEncode(sbi.getBlock().getClientKey(), this);
+				cb.onEncode(sbi.getBlock().getClientKey(), this, container);
 			return sbi;
 		}
 		
@@ -393,14 +395,14 @@ class SingleFileInserter implements ClientPutState {
 			// Default constructor
 		}
 
-		public synchronized void onTransition(ClientPutState oldState, ClientPutState newState) {
+		public synchronized void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 			if(oldState == sfi)
 				sfi = newState;
 			if(oldState == metadataPutter)
 				metadataPutter = newState;
 		}
 		
-		public void onSuccess(ClientPutState state) {
+		public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "onSuccess("+state+") for "+this);
 			boolean lateStart = false;
@@ -430,12 +432,12 @@ class SingleFileInserter implements ClientPutState {
 				}
 			}
 			if(lateStart)
-				startMetadata();
+				startMetadata(container, context);
 			else if(finished)
-				cb.onSuccess(this);
+				cb.onSuccess(this, container, context);
 		}
 
-		public void onFailure(InsertException e, ClientPutState state) {
+		public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 			synchronized(this) {
 				if(finished){
 					if(freeData)
@@ -443,10 +445,10 @@ class SingleFileInserter implements ClientPutState {
 					return;
 				}
 			}
-			fail(e);
+			fail(e, container, context);
 		}
 
-		public void onMetadata(Metadata meta, ClientPutState state) {
+		public void onMetadata(Metadata meta, ClientPutState state, ObjectContainer container, ClientContext context) {
 			InsertException e = null;
 			synchronized(this) {
 				if(finished) return;
@@ -468,11 +470,11 @@ class SingleFileInserter implements ClientPutState {
 				}
 			}
 			if(reportMetadataOnly) {
-				cb.onMetadata(meta, this);
+				cb.onMetadata(meta, this, container, context);
 				return;
 			}
 			if(e != null) {
-				onFailure(e, state);
+				onFailure(e, state, container, context);
 				return;
 			}
 			
@@ -483,7 +485,7 @@ class SingleFileInserter implements ClientPutState {
 				Logger.error(this, "Impossible: "+e1, e1);
 				InsertException ex = new InsertException(InsertException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler: "+e1, null);
 				ex.initCause(e1);
-				fail(ex);
+				fail(ex, container, context);
 				return;
 			}
 			
@@ -502,7 +504,7 @@ class SingleFileInserter implements ClientPutState {
 						Logger.error(this, "Impossible (2): "+e1, e1);
 						InsertException ex = new InsertException(InsertException.INTERNAL_ERROR, "MetadataUnresolvedException in SingleFileInserter.SplitHandler(2): "+e1, null);
 						ex.initCause(e1);
-						fail(ex);
+						fail(ex, container, context);
 						return;
 					}
 				}
@@ -513,7 +515,7 @@ class SingleFileInserter implements ClientPutState {
 				metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, metaBytes);
 			} catch (IOException e1) {
 				InsertException ex = new InsertException(InsertException.BUCKET_ERROR, e1, null);
-				fail(ex);
+				fail(ex, container, context);
 				return;
 			}
 			InsertBlock newBlock = new InsertBlock(metadataBucket, null, block.desiredURI);
@@ -526,13 +528,13 @@ class SingleFileInserter implements ClientPutState {
 				}
 				if(logMINOR) Logger.minor(this, "Putting metadata on "+metadataPutter+" from "+sfi+" ("+((SplitFileInserter)sfi).getLength()+ ')');
 			} catch (InsertException e1) {
-				cb.onFailure(e1, this);
+				cb.onFailure(e1, this, container, context);
 				return;
 			}
-			startMetadata();
+			startMetadata(container, context);
 		}
 
-		private void fail(InsertException e) {
+		private void fail(InsertException e, ObjectContainer container, ClientContext context) {
 			if(logMINOR) Logger.minor(this, "Failing: "+e, e);
 			ClientPutState oldSFI = null;
 			ClientPutState oldMetadataPutter = null;
@@ -547,25 +549,25 @@ class SingleFileInserter implements ClientPutState {
 				oldMetadataPutter = metadataPutter;
 			}
 			if(oldSFI != null)
-				oldSFI.cancel();
+				oldSFI.cancel(container);
 			if(oldMetadataPutter != null)
-				oldMetadataPutter.cancel();
+				oldMetadataPutter.cancel(container);
 			finished = true;
-			cb.onFailure(e, this);
+			cb.onFailure(e, this, container, context);
 		}
 
 		public BaseClientPutter getParent() {
 			return parent;
 		}
 
-		public void onEncode(BaseClientKey key, ClientPutState state) {
+		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container) {
 			synchronized(this) {
 				if(state != metadataPutter) return;
 			}
-			cb.onEncode(key, this);
+			cb.onEncode(key, this, container);
 		}
 
-		public void cancel() {
+		public void cancel(ObjectContainer container) {
 			ClientPutState oldSFI = null;
 			ClientPutState oldMetadataPutter = null;
 			synchronized(this) {
@@ -573,15 +575,15 @@ class SingleFileInserter implements ClientPutState {
 				oldMetadataPutter = metadataPutter;
 			}
 			if(oldSFI != null)
-				oldSFI.cancel();
+				oldSFI.cancel(container);
 			if(oldMetadataPutter != null)
-				oldMetadataPutter.cancel();
+				oldMetadataPutter.cancel(container);
 			
 			if(freeData)
 				block.free();
 		}
 
-		public void onBlockSetFinished(ClientPutState state) {
+		public void onBlockSetFinished(ClientPutState state, ObjectContainer container) {
 			synchronized(this) {
 				if(state == sfi)
 					splitInsertSetBlocks = true;
@@ -590,11 +592,11 @@ class SingleFileInserter implements ClientPutState {
 				if(!(splitInsertSetBlocks && metaInsertSetBlocks)) 
 					return;
 			}
-			cb.onBlockSetFinished(this);
+			cb.onBlockSetFinished(this, container);
 		}
 
-		public void schedule() throws InsertException {
-			sfi.schedule();
+		public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
+			sfi.schedule(container, context);
 		}
 
 		public Object getToken() {
@@ -617,7 +619,7 @@ class SingleFileInserter implements ClientPutState {
 			return fs;
 		}
 
-		public void onFetchable(ClientPutState state) {
+		public void onFetchable(ClientPutState state, ObjectContainer container) {
 
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 
@@ -646,10 +648,10 @@ class SingleFileInserter implements ClientPutState {
 			}
 			
 			if(meta)
-				cb.onFetchable(this);
+				cb.onFetchable(this, container);
 		}
 		
-		private void startMetadata() {
+		private void startMetadata(ObjectContainer container, ClientContext context) {
 			try {
 				ClientPutState putter;
 				ClientPutState splitInserter;
@@ -664,7 +666,7 @@ class SingleFileInserter implements ClientPutState {
 				}
 				if(putter != null) {
 					if(logMINOR) Logger.minor(this, "Starting metadata inserter: "+putter+" for "+this);
-					putter.schedule();
+					putter.schedule(container, context);
 					if(logMINOR) Logger.minor(this, "Started metadata inserter: "+putter+" for "+this);
 				} else {
 					// Get all the URIs ASAP so we can start to insert the metadata.
@@ -672,7 +674,7 @@ class SingleFileInserter implements ClientPutState {
 				}
 			} catch (InsertException e1) {
 				Logger.error(this, "Failing "+this+" : "+e1, e1);
-				fail(e1);
+				fail(e1, container);
 				return;
 			}
 		}
@@ -688,8 +690,8 @@ class SingleFileInserter implements ClientPutState {
 			block.free();
 	}
 
-	public void schedule() throws InsertException {
-		start(null);
+	public void schedule(ObjectContainer container) throws InsertException {
+		start(null, container);
 	}
 
 	public Object getToken() {

@@ -9,6 +9,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchContext;
 import freenet.keys.ClientSSKBlock;
 import freenet.keys.FreenetURI;
@@ -447,9 +449,9 @@ public class USKFetcher implements ClientGetState {
 		return origUSK;
 	}
 	
-	public void schedule(long delay) {
+	public void schedule(long delay, ObjectContainer container, ClientContext context) {
 		if (delay<=0) {
-			schedule();
+			schedule(container, context);
 		} else {
 			uskManager.ticker.queueTimedJob(new Runnable() {
 				public void run() {
@@ -459,7 +461,7 @@ public class USKFetcher implements ClientGetState {
 		}
 	}
     
-	public void schedule() {
+	public void schedule(ObjectContainer container, ClientContext context) {
 		USKAttempt[] attempts;
 		long lookedUp = uskManager.lookup(origUSK);
 		synchronized(this) {

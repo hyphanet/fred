@@ -11,11 +11,11 @@ import freenet.keys.BaseClientKey;
  */
 public interface PutCompletionCallback {
 
-	public void onSuccess(ClientPutState state, ObjectContainer container);
+	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context);
 	
-	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container);
+	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context);
 
-	public void onEncode(BaseClientKey usk, ClientPutState state, ObjectContainer container);
+	public void onEncode(BaseClientKey usk, ClientPutState state, ObjectContainer container, ClientContext context);
 	
 	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container);
 	
@@ -23,7 +23,7 @@ public interface PutCompletionCallback {
 	 * the metadata won't be inserted. Won't be called if there isn't
 	 * any!
 	 */
-	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container);
+	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context);
 	
 	/** Called when enough data has been inserted that the file can be
 	 * retrieved, even if not all data has been inserted yet. Note that this

@@ -70,9 +70,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		private String targetInZip;
 		private final Bucket data;
 		
-		public void start() throws InsertException {
+		public void start(ObjectContainer container) throws InsertException {
 			if((origSFI == null) && (metadata != null)) return;
-			origSFI.start(null);
+			origSFI.start(null, container);
 			origSFI = null;
 		}
 		
@@ -84,7 +84,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			return SimpleManifestPutter.this.finished || cancelled || SimpleManifestPutter.this.cancelled;
 		}
 
-		public void onSuccess(ClientPutState state, ObjectContainer container) {
+		public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Completed "+this);
 			SimpleManifestPutter.this.onFetchable(this, container);
@@ -97,26 +97,26 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			insertedAllFiles();
 		}
 
-		public void onFailure(InsertException e, ClientPutState state, ObjectContainer container) {
+		public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Failed: "+this+" - "+e, e);
 			fail(e);
 		}
 
-		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container) {
+		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 			if(logMINOR) Logger.minor(this, "onEncode("+key+") for "+this);
 			if(metadata == null) {
 				// The file was too small to have its own metadata, we get this instead.
 				// So we make the key into metadata.
 				Metadata m =
 					new Metadata(Metadata.SIMPLE_REDIRECT, key.getURI(), cm);
-				onMetadata(m, null, container);
+				onMetadata(m, null, container, context);
 			}
 		}
 
 		public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {}
 
-		public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container) {
+		public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Assigning metadata: "+m+" for "+this+" from "+state,
 					new Exception("debug"));
@@ -129,7 +129,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				putHandlersWaitingForMetadata.remove(this);
 				if(!putHandlersWaitingForMetadata.isEmpty()) return;
 			}
-			gotAllMetadata();
+			gotAllMetadata(container);
 		}
 
 		public void addBlock() {
@@ -239,7 +239,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		// FIXME do something.
 	}
 
-	public void start() throws InsertException {
+	public void start(ObjectContainer container) throws InsertException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if (logMINOR)
 			Logger.minor(this, "Starting " + this);
@@ -250,7 +250,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		try {
 			for (int i = 0; i < running.length; i++) {
-				running[i].start();
+				running[i].start(container);
 				if (logMINOR)
 					Logger.minor(this, "Started " + i + " of " + running.length);
 				if (isFinished()) {
@@ -263,7 +263,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				Logger.minor(this, "Started " + running.length + " PutHandler's for " + this);
 			if (running.length == 0) {
 				insertedAllFiles = true;
-				gotAllMetadata();
+				gotAllMetadata(container);
 			}
 		} catch (InsertException e) {
 			cancelAndFinish();
@@ -339,7 +339,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		return finished || cancelled;
 	}
 
-	private void gotAllMetadata() {
+	private void gotAllMetadata(ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "Got all metadata");
 		HashMap namesToByteArrays = new HashMap();
 		namesToByteArrays(putHandlersByName, namesToByteArrays);
@@ -362,11 +362,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		baseMetadata =
 			Metadata.mkRedirectionManifestWithMetadata(namesToByteArrays);
-		resolveAndStartBase();
+		resolveAndStartBase(container);
 		
 	}
 	
-	private void resolveAndStartBase() {
+	private void resolveAndStartBase(ObjectContainer container) {
 		Bucket bucket = null;
 		synchronized(this) {
 			if(hasResolvedBase) return;
@@ -380,7 +380,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				return;
 			} catch (MetadataUnresolvedException e) {
 				try {
-					resolve(e);
+					resolve(e, container);
 				} catch (IOException e1) {
 					fail(new InsertException(InsertException.BUCKET_ERROR, e, null));
 					return;
@@ -456,13 +456,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+metadataInserter);
 			this.metadataPuttersByMetadata.put(baseMetadata, metadataInserter);
 			metadataPuttersUnfetchable.put(baseMetadata, metadataInserter);
-			metadataInserter.start(null);
+			metadataInserter.start(null, container);
 		} catch (InsertException e) {
 			fail(e);
 		}
 	}
 
-	private boolean resolve(MetadataUnresolvedException e) throws InsertException, IOException {
+	private boolean resolve(MetadataUnresolvedException e, ObjectContainer container) throws InsertException, IOException {
 		Metadata[] metas = e.mustResolve;
 		boolean mustWait = false;
 		for(int i=0;i<metas.length;i++) {
@@ -482,9 +482,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				synchronized(this) {
 					this.metadataPuttersByMetadata.put(m, metadataInserter);
 				}
-				metadataInserter.start(null);
+				metadataInserter.start(null, container);
 			} catch (MetadataUnresolvedException e1) {
-				resolve(e1);
+				resolve(e1, container);
 			}
 		}
 		return mustWait;
@@ -557,7 +557,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		fail(new InsertException(InsertException.CANCELLED));
 	}
 	
-	public void onSuccess(ClientPutState state, ObjectContainer container) {
+	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(this) {
 			metadataPuttersByMetadata.remove(state.getToken());
@@ -580,12 +580,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		complete();
 	}
 	
-	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container) {
+	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		fail(e);
 	}
 	
-	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container) {
+	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(state.getToken() == baseMetadata) {
 			this.finalURI = key.getURI();
 			if(logMINOR) Logger.minor(this, "Got metadata key: "+finalURI);
@@ -595,7 +595,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			Metadata m = (Metadata) state.getToken();
 			m.resolve(key.getURI());
 			if(logMINOR) Logger.minor(this, "Resolved "+m+" : "+key.getURI());
-			resolveAndStartBase();
+			resolveAndStartBase(container);
 		}
 	}
 	
@@ -605,7 +605,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 	
-	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container) {
+	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 

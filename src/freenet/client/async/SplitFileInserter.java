@@ -260,7 +260,7 @@ public class SplitFileInserter implements ClientPutState {
 			parent.onMajorProgress();
 	}
 	
-	public void segmentHasURIs(SplitFileInserterSegment segment, ObjectContainer container) {
+	public void segmentHasURIs(SplitFileInserterSegment segment, ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Segment has URIs: "+segment);
 		synchronized(this) {
 			if(haveSentMetadata) {
@@ -276,10 +276,10 @@ public class SplitFileInserter implements ClientPutState {
 		}
 		
 		if(logMINOR) Logger.minor(this, "Have URIs from all segments");
-		encodeMetadata(container);
+		encodeMetadata(container, context);
 	}
 	
-	private void encodeMetadata(ObjectContainer container) {
+	private void encodeMetadata(ObjectContainer container, ClientContext context) {
 		boolean missingURIs;
 		Metadata m = null;
 		synchronized(this) {
@@ -300,18 +300,18 @@ public class SplitFileInserter implements ClientPutState {
 		if(missingURIs) {
 			if(logMINOR) Logger.minor(this, "Missing URIs");
 			// Error
-			fail(new InsertException(InsertException.INTERNAL_ERROR, "Missing URIs after encoding", null), container);
+			fail(new InsertException(InsertException.INTERNAL_ERROR, "Missing URIs after encoding", null), container, context);
 			return;
 		} else
-			cb.onMetadata(m, this, container);
+			cb.onMetadata(m, this, container, context);
 	}
 	
-	private void fail(InsertException e, ObjectContainer container) {
+	private void fail(InsertException e, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
 		}
-		cb.onFailure(e, this, container);
+		cb.onFailure(e, this, container, context);
 	}
 
 	// FIXME move this to somewhere
@@ -361,7 +361,7 @@ public class SplitFileInserter implements ClientPutState {
 		return parent;
 	}
 
-	public void segmentFinished(SplitFileInserterSegment segment, ObjectContainer container) {
+	public void segmentFinished(SplitFileInserterSegment segment, ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Segment finished: "+segment, new Exception("debug"));
 		boolean allGone = true;
 		if(countDataBlocks > 32)
@@ -381,13 +381,13 @@ public class SplitFileInserter implements ClientPutState {
 			
 			InsertException e = segment.getException();
 			if((e != null) && e.isFatal()) {
-				cancel(container);
+				cancel(container, context);
 			} else {
 				if(!allGone) return;
 			}
 			finished = true;
 		}
-		onAllFinished(container);
+		onAllFinished(container, context);
 	}
 	
 	public void segmentFetchable(SplitFileInserterSegment segment, ObjectContainer container) {
@@ -406,7 +406,7 @@ public class SplitFileInserter implements ClientPutState {
 		cb.onFetchable(this, container);
 	}
 
-	private void onAllFinished(ObjectContainer container) {
+	private void onAllFinished(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "All finished");
 		try {
 			// Finished !!
@@ -422,24 +422,24 @@ public class SplitFileInserter implements ClientPutState {
 				tracker.inc(e.getMode());
 			}
 			if(allSucceeded)
-				cb.onSuccess(this, container);
+				cb.onSuccess(this, container, context);
 			else {
-				cb.onFailure(InsertException.construct(tracker), this, container);
+				cb.onFailure(InsertException.construct(tracker), this, container, context);
 			}
 		} catch (Throwable t) {
 			// We MUST tell the parent *something*!
 			Logger.error(this, "Caught "+t, t);
-			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR), this, container);
+			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR), this, container, context);
 		}
 	}
 
-	public void cancel(ObjectContainer container) {
+	public void cancel(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
 		}
 		for(int i=0;i<segments.length;i++)
-			segments[i].cancel(container);
+			segments[i].cancel(container, context);
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {

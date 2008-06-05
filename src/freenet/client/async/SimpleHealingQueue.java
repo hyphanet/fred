@@ -82,7 +82,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		// Do nothing
 	}
 
-	public void onSuccess(ClientPutState state, ObjectContainer container) {
+	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 		SingleBlockInserter sbi = (SingleBlockInserter)state;
 		Bucket data = (Bucket) sbi.getToken();
 		synchronized(this) {
@@ -93,7 +93,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		data.free();
 	}
 
-	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container) {
+	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 		SingleBlockInserter sbi = (SingleBlockInserter)state;
 		Bucket data = (Bucket) sbi.getToken();
 		synchronized(this) {
@@ -104,7 +104,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		data.free();
 	}
 
-	public void onEncode(BaseClientKey usk, ClientPutState state, ObjectContainer container) {
+	public void onEncode(BaseClientKey usk, ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
@@ -113,7 +113,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		Logger.error(this, "impossible: onTransition on SimpleHealingQueue from "+oldState+" to "+newState, new Exception("debug"));
 	}
 
-	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container) {
+	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Should never happen
 		Logger.error(this, "Got metadata on SimpleHealingQueue from "+state+": "+m, new Exception("debug"));
 	}

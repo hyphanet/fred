@@ -675,7 +675,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void callFailure(final SendableInsert put, final LowLevelPutException e, final Object keyNum, int prio, String name) {
 		databaseExecutor.execute(new Runnable() {
 			public void run() {
-				put.onFailure(e, keyNum, selectorContainer);
+				put.onFailure(e, keyNum, selectorContainer, clientContext);
 				selectorContainer.commit();
 			}
 		}, prio, name);
@@ -684,7 +684,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void callSuccess(final SendableInsert put, final Object keyNum, int prio, String name) {
 		databaseExecutor.execute(new Runnable() {
 			public void run() {
-				put.onSuccess(keyNum, selectorContainer);
+				put.onSuccess(keyNum, selectorContainer, clientContext);
 				selectorContainer.commit();
 			}
 		}, prio, name);
