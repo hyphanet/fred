@@ -8,6 +8,6 @@ import freenet.support.api.Bucket;
 public interface HealingQueue {
 
 	/** Queue a Bucket of data to insert as a CHK. */
-	void queue(Bucket data);
+	void queue(Bucket data, ClientContext context);
 
 }

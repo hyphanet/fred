@@ -636,10 +636,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 			} else {
 				if(gets != null)
 				for(int i=0;i<gets.length;i++)
-					gets[i].requeueAfterCooldown(key, now, container);
+					gets[i].requeueAfterCooldown(key, now, container, clientContext);
 				if(transientGets != null)
 				for(int i=0;i<transientGets.length;i++)
-					transientGets[i].requeueAfterCooldown(key, now, container);
+					transientGets[i].requeueAfterCooldown(key, now, container, clientContext);
 			}
 		}
 		if(keys.length < MAX_KEYS) return found;
@@ -692,6 +692,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 	public FECQueue getFECQueue() {
 		return clientContext.fecQueue;
+	}
+
+	public ClientContext getContext() {
+		return clientContext;
 	}
 
 }

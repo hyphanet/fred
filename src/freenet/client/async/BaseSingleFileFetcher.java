@@ -69,7 +69,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 
 	/** Try again - returns true if we can retry 
 	 * @param sched */
-	protected boolean retry(RequestScheduler sched, ObjectContainer container) {
+	protected boolean retry(RequestScheduler sched, ObjectContainer container, ClientContext context) {
 		retryCount++;
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+retryCount+ ')');
@@ -84,7 +84,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 				cooldownWakeupTime = sched.queueCooldown(key, this);
 				return true; // We will retry, just not yet. See requeueAfterCooldown(Key).
 			} else {
-				schedule(container);
+				schedule(container, context);
 			}
 			return true;
 		}
@@ -164,7 +164,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		cooldownWakeupTime = -1;
 	}
 	
-	public void requeueAfterCooldown(Key key, long time, ObjectContainer container) {
+	public void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context) {
 		if(cooldownWakeupTime > time) {
 			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Not requeueing as deadline has not passed yet");
 			return;
@@ -175,7 +175,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Requeueing after cooldown "+key+" for "+this);
-		schedule(container);
+		schedule(container, context);
 	}
 	
 }

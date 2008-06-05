@@ -22,7 +22,7 @@ public interface ClientPutState {
 	public abstract void cancel(ObjectContainer container);
 
 	/** Schedule the request. */
-	public abstract void schedule(ObjectContainer container) throws InsertException;
+	public abstract void schedule(ObjectContainer container, ClientContext context) throws InsertException;
 	
 	/**
 	 * Get the token, an object which is passed around with the insert and may be

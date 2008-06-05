@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashSet;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchContext;
@@ -63,7 +65,7 @@ public class ClientGetter extends BaseClientGetter {
 	 */
 	public ClientGetter(ClientCallback client, ClientRequestScheduler chkSched, ClientRequestScheduler sskSched,
 			    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, Bucket binaryBlobBucket) {
-		super(priorityClass, chkSched, sskSched, clientContext);
+		super(priorityClass, clientContext);
 		this.clientCallback = client;
 		this.returnBucket = returnBucket;
 		this.uri = uri;
@@ -78,11 +80,11 @@ public class ClientGetter extends BaseClientGetter {
 		archiveRestarts = 0;
 	}
 
-	public void start() throws FetchException {
-		start(false, null);
+	public void start(ObjectContainer container, ClientContext context) throws FetchException {
+		start(false, null, container, context);
 	}
 
-	public boolean start(boolean restart, FreenetURI overrideURI) throws FetchException {
+	public boolean start(boolean restart, FreenetURI overrideURI, ObjectContainer container, ClientContext context) throws FetchException {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Starting "+this);
 		try {
@@ -99,7 +101,7 @@ public class ClientGetter extends BaseClientGetter {
 				}
 				currentState = SingleFileFetcher.create(this, this, new ClientMetadata(),
 						uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, -1, true,
-						returnBucket, true);
+						returnBucket, true, container, context);
 			}
 			if(cancelled) cancel();
 			if(currentState != null && !finished) {
@@ -108,11 +110,11 @@ public class ClientGetter extends BaseClientGetter {
 						binaryBlobStream = new DataOutputStream(new BufferedOutputStream(binaryBlobBucket.getOutputStream()));
 						BinaryBlob.writeBinaryBlobHeader(binaryBlobStream);
 					} catch (IOException e) {
-						onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to open binary blob bucket", e), null);
+						onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to open binary blob bucket", e), null, container, context);
 						return false;
 					}
 				}
-				currentState.schedule();
+				currentState.schedule(container, context);
 			}
 			if(cancelled) cancel();
 		} catch (MalformedURLException e) {
@@ -121,10 +123,10 @@ public class ClientGetter extends BaseClientGetter {
 		return true;
 	}
 
-	public void onSuccess(FetchResult result, ClientGetState state) {
+	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Succeeded from "+state);
-		if(!closeBinaryBlobStream()) return;
+		if(!closeBinaryBlobStream(container, context)) return;
 		synchronized(this) {
 			finished = true;
 			currentState = null;
@@ -144,7 +146,7 @@ public class ClientGetter extends BaseClientGetter {
 				from.free();
 			} catch (IOException e) {
 				Logger.error(this, "Error copying from "+from+" to "+to+" : "+e.toString(), e);
-				onFailure(new FetchException(FetchException.BUCKET_ERROR, e.toString()), state /* not strictly to blame, but we're not ako ClientGetState... */);
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, e.toString()), state /* not strictly to blame, but we're not ako ClientGetState... */, container, context);
 			}
 			result = new FetchResult(result, to);
 		} else {
@@ -167,10 +169,10 @@ public class ClientGetter extends BaseClientGetter {
 		
 	}
 
-	public void onFailure(FetchException e, ClientGetState state) {
+	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Failed from "+state+" : "+e, e);
-		closeBinaryBlobStream();
+		closeBinaryBlobStream(container, context);
 		while(true) {
 			if(e.mode == FetchException.ARCHIVE_RESTART) {
 				int ar;
@@ -184,7 +186,7 @@ public class ClientGetter extends BaseClientGetter {
 					e = new FetchException(FetchException.TOO_MANY_ARCHIVE_RESTARTS);
 				else {
 					try {
-						start();
+						start(container, context);
 					} catch (FetchException e1) {
 						e = e1;
 						continue;
@@ -218,7 +220,7 @@ public class ClientGetter extends BaseClientGetter {
 		}
 	}
 
-	public void cancel() {
+	public void cancel(ObjectContainer container) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Cancelling "+this);
 		ClientGetState s;
@@ -228,7 +230,7 @@ public class ClientGetter extends BaseClientGetter {
 		}
 		if(s != null) {
 			if(logMINOR) Logger.minor(this, "Cancelling "+currentState);
-			s.cancel();
+			s.cancel(container);
 		}
 	}
 
@@ -244,13 +246,13 @@ public class ClientGetter extends BaseClientGetter {
 		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized));
 	}
 
-	public void onBlockSetFinished(ClientGetState state) {
+	public void onBlockSetFinished(ClientGetState state, ObjectContainer container) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Set finished", new Exception("debug"));
 		blockSetFinalized();
 	}
 
-	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 		synchronized(this) {
 			if(currentState == oldState) {
 				currentState = newState;
@@ -270,15 +272,15 @@ public class ClientGetter extends BaseClientGetter {
 		return true;
 	}
 
-	public boolean restart(FreenetURI redirect) throws FetchException {
-		return start(true, redirect);
+	public boolean restart(FreenetURI redirect, ObjectContainer container, ClientContext context) throws FetchException {
+		return start(true, redirect, container, context);
 	}
 
 	public String toString() {
 		return super.toString()+ ':' +uri;
 	}
 	
-	void addKeyToBinaryBlob(ClientKeyBlock block) {
+	void addKeyToBinaryBlob(ClientKeyBlock block, ObjectContainer container, ClientContext context) {
 		if(binaryBlobKeysAddedAlready == null) return;
 		if(Logger.shouldLog(Logger.MINOR, this)) 
 			Logger.minor(this, "Adding key "+block.getClientKey().getURI()+" to "+this, new Exception("debug"));
@@ -291,7 +293,7 @@ public class ClientGetter extends BaseClientGetter {
 				BinaryBlob.writeKey(binaryBlobStream, block, key);
 			} catch (IOException e) {
 				Logger.error(this, "Failed to write key to binary blob stream: "+e, e);
-				onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to write key to binary blob stream: "+e), null);
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to write key to binary blob stream: "+e), null, container, context);
 				binaryBlobStream = null;
 				binaryBlobKeysAddedAlready.clear();
 			}
@@ -303,7 +305,7 @@ public class ClientGetter extends BaseClientGetter {
 	 * @return True unless a failure occurred, in which case we will have already
 	 * called onFailure() with an appropriate error.
 	 */
-	private boolean closeBinaryBlobStream() {
+	private boolean closeBinaryBlobStream(ObjectContainer container, ClientContext context) {
 		if(binaryBlobKeysAddedAlready == null) return true;
 		synchronized(binaryBlobKeysAddedAlready) {
 			if(binaryBlobStream == null) return true;
@@ -316,7 +318,7 @@ public class ClientGetter extends BaseClientGetter {
 				return true;
 			} catch (IOException e) {
 				Logger.error(this, "Failed to close binary blob stream: "+e, e);
-				onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+e), null);
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to close binary blob stream: "+e), null, container, context);
 				if(!triedClose) {
 					try {
 						binaryBlobStream.close();
@@ -336,17 +338,17 @@ public class ClientGetter extends BaseClientGetter {
 		return binaryBlobBucket != null;
 	}
 
-	public void onExpectedMIME(String mime) {
+	public void onExpectedMIME(String mime, ObjectContainer container) {
 		if(finalizedMetadata) return;
 		expectedMIME = mime;
 	}
 
-	public void onExpectedSize(long size) {
+	public void onExpectedSize(long size, ObjectContainer container) {
 		if(finalizedMetadata) return;
 		expectedSize = size;
 	}
 
-	public void onFinalizedMetadata() {
+	public void onFinalizedMetadata(ObjectContainer container) {
 		finalizedMetadata = true;
 	}
 	

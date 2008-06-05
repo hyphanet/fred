@@ -25,7 +25,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 	final HashMap runningInserters;
 	
 	public SimpleHealingQueue(ClientRequestScheduler scheduler, InsertContext context, short prio, int maxRunning) {
-		super(prio, scheduler, null, new RequestClient() {
+		super(prio, new RequestClient() {
 			public boolean persistent() {
 				return false;
 			} });
@@ -34,7 +34,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		this.maxRunning = maxRunning;
 	}
 
-	public boolean innerQueue(Bucket data) {
+	public boolean innerQueue(Bucket data, ClientContext context) {
 		SingleBlockInserter sbi;
 		int ctr;
 		synchronized(this) {
@@ -51,7 +51,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 			runningInserters.put(data, sbi);
 		}
 		try {
-			sbi.schedule(null);
+			sbi.schedule(null, context);
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Started healing insert "+ctr+" for "+data);
 			return true;
@@ -61,8 +61,8 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		}
 	}
 
-	public void queue(Bucket data) {
-		if(!innerQueue(data))
+	public void queue(Bucket data, ClientContext context) {
+		if(!innerQueue(data, context))
 			data.free();
 	}
 	

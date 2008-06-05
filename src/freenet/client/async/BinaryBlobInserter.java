@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Vector;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FailureCodeTracker;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
@@ -33,7 +35,7 @@ public class BinaryBlobInserter implements ClientPutState {
 	private boolean fatal;
 	final InsertContext ctx;
 	
-	BinaryBlobInserter(Bucket blob, ClientPutter parent, RequestClient clientContext, boolean tolerant, short prioClass, InsertContext ctx) 
+	BinaryBlobInserter(Bucket blob, ClientPutter parent, RequestClient clientContext, boolean tolerant, short prioClass, InsertContext ctx, ClientContext context) 
 	throws IOException, BinaryBlobFormatException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.ctx = ctx;
@@ -58,7 +60,7 @@ public class BinaryBlobInserter implements ClientPutState {
 			Key key = (Key) i.next();
 			KeyBlock block = blocks.get(key);
 			MySendableInsert inserter =
-				new MySendableInsert(x++, block, prioClass, getScheduler(block), clientContext);
+				new MySendableInsert(x++, block, prioClass, getScheduler(block, context), clientContext);
 			myInserters.add(inserter);
 		}
 		
@@ -67,20 +69,20 @@ public class BinaryBlobInserter implements ClientPutState {
 		parent.notifyClients();
 	}
 	
-	private ClientRequestScheduler getScheduler(KeyBlock block) {
+	private ClientRequestScheduler getScheduler(KeyBlock block, ClientContext context) {
 		if(block instanceof CHKBlock)
-			return parent.chkScheduler;
+			return context.chkFetchScheduler;
 		else if(block instanceof SSKBlock)
-			return parent.sskScheduler;
+			return context.sskFetchScheduler;
 		else throw new IllegalArgumentException("Unknown block type "+block.getClass()+" : "+block);
 	}
 
-	public void cancel() {
+	public void cancel(ObjectContainer container) {
 		for(int i=0;i<inserters.length;i++) {
 			if(inserters[i] != null)
 				inserters[i].cancel();
 		}
-		parent.onFailure(new InsertException(InsertException.CANCELLED), this);
+		parent.onFailure(new InsertException(InsertException.CANCELLED), this, container);
 	}
 
 	public BaseClientPutter getParent() {
@@ -96,7 +98,7 @@ public class BinaryBlobInserter implements ClientPutState {
 		return clientContext;
 	}
 
-	public void schedule() throws InsertException {
+	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
 		for(int i=0;i<inserters.length;i++) {
 			inserters[i].schedule();
 		}
@@ -113,7 +115,7 @@ public class BinaryBlobInserter implements ClientPutState {
 			this.blockNum = i;
 		}
 		
-		public void onSuccess() {
+		public void onSuccess(ObjectContainer container) {
 			synchronized(this) {
 				if(inserters[blockNum] == null) return;
 				inserters[blockNum] = null;
@@ -121,23 +123,23 @@ public class BinaryBlobInserter implements ClientPutState {
 				succeededBlocks++;
 			}
 			parent.completedBlock(false);
-			maybeFinish();
+			maybeFinish(container);
 		}
 
 		// FIXME duplicated code from SingleBlockInserter
 		// FIXME combine it somehow
-		public void onFailure(LowLevelPutException e) {
+		public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container) {
 			synchronized(BinaryBlobInserter.this) {
 				if(inserters[blockNum] == null) return;
 			}
 			if(parent.isCancelled()) {
-				fail(new InsertException(InsertException.CANCELLED), true);
+				fail(new InsertException(InsertException.CANCELLED), true, container);
 				return;
 			}
 			logMINOR = Logger.shouldLog(Logger.MINOR, BinaryBlobInserter.this);
 			switch(e.code) {
 			case LowLevelPutException.COLLISION:
-				fail(new InsertException(InsertException.COLLISION), false);
+				fail(new InsertException(InsertException.COLLISION), false, container);
 				break;
 			case LowLevelPutException.INTERNAL_ERROR:
 				errors.inc(InsertException.INTERNAL_ERROR);
@@ -160,7 +162,7 @@ public class BinaryBlobInserter implements ClientPutState {
 				if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" / "+consecutiveRNFsCountAsSuccess);
 				if(consecutiveRNFs == consecutiveRNFsCountAsSuccess) {
 					if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" - counting as success");
-					onSuccess();
+					onSuccess(container);
 					return;
 				}
 			} else
@@ -168,14 +170,14 @@ public class BinaryBlobInserter implements ClientPutState {
 			if(logMINOR) Logger.minor(this, "Failed: "+e);
 			retries++;
 			if((retries > maxRetries) && (maxRetries != -1)) {
-				fail(InsertException.construct(errors), false);
+				fail(InsertException.construct(errors), false, container);
 				return;
 			}
 			// Retry *this block*
 			this.schedule();
 		}
 
-		private void fail(InsertException e, boolean fatal) {
+		private void fail(InsertException e, boolean fatal, ObjectContainer container) {
 			synchronized(BinaryBlobInserter.this) {
 				if(inserters[blockNum] == null) return;
 				inserters[blockNum] = null;
@@ -186,7 +188,7 @@ public class BinaryBlobInserter implements ClientPutState {
 				parent.fatallyFailedBlock();
 			else
 				parent.failedBlock();
-			maybeFinish();
+			maybeFinish(container);
 		}
 		
 		public boolean shouldCache() {
@@ -194,7 +196,7 @@ public class BinaryBlobInserter implements ClientPutState {
 		}
 	}
 
-	public void maybeFinish() {
+	public void maybeFinish(ObjectContainer container) {
 		boolean success;
 		boolean wasFatal;
 		synchronized(this) {
@@ -204,11 +206,11 @@ public class BinaryBlobInserter implements ClientPutState {
 			wasFatal = fatal;
 		}
 		if(success) {
-			parent.onSuccess(this);
+			parent.onSuccess(this, container);
 		} else if(wasFatal)
-			parent.onFailure(new InsertException(InsertException.FATAL_ERRORS_IN_BLOCKS, errors, null), this);
+			parent.onFailure(new InsertException(InsertException.FATAL_ERRORS_IN_BLOCKS, errors, null), this, container);
 		else
-			parent.onFailure(new InsertException(InsertException.TOO_MANY_RETRIES_IN_BLOCKS, errors, null), this);
+			parent.onFailure(new InsertException(InsertException.TOO_MANY_RETRIES_IN_BLOCKS, errors, null), this, container);
 	}
 	
 }

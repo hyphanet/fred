@@ -7,8 +7,8 @@ import freenet.node.RequestClient;
 
 public abstract class BaseClientPutter extends ClientRequester {
 
-	protected BaseClientPutter(short priorityClass, ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, RequestClient context) {
-		super(priorityClass, chkScheduler, sskScheduler, context);
+	protected BaseClientPutter(short priorityClass, RequestClient context) {
+		super(priorityClass, context);
 	}
 
 	public abstract void onMajorProgress();
