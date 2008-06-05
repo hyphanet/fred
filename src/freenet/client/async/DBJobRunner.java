@@ -11,4 +11,6 @@ public interface DBJobRunner {
 	
 	public void queue(DBJob job, int priority);
 
+	public boolean onDatabaseThread();
+
 }

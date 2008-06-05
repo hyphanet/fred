@@ -18,6 +18,7 @@ public class ClientContext {
 	public final ClientRequestScheduler chkFetchScheduler;
 	public final ClientRequestScheduler sskInsertScheduler;
 	public final ClientRequestScheduler chkInsertScheduler;
+	public final DBJobRunner jobRunner;
 
 	public ClientContext(NodeClientCore core) {
 		this.fecQueue = core.fecQueue;
@@ -25,6 +26,7 @@ public class ClientContext {
 		this.chkFetchScheduler = core.requestStarters.chkFetchScheduler;
 		this.sskInsertScheduler = core.requestStarters.sskPutScheduler;
 		this.chkInsertScheduler = core.requestStarters.chkPutScheduler;
+		jobRunner = core;
 	}
 	
 }

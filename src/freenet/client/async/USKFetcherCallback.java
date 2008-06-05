@@ -13,8 +13,8 @@ import com.db4o.ObjectContainer;
 public interface USKFetcherCallback extends USKCallback {
 
 	/** Failed to find any edition at all (later than or equal to the specified hint) */
-	void onFailure(ObjectContainer container);
+	void onFailure(ObjectContainer container, ClientContext context);
 
-	void onCancelled(ObjectContainer container);
+	void onCancelled(ObjectContainer container, ClientContext context);
 	
 }

@@ -1174,4 +1174,8 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 			
 		}, priority, ""+job);
 	}
+
+	public boolean onDatabaseThread() {
+		return clientDatabaseExecutor.onThread();
+	}
 }

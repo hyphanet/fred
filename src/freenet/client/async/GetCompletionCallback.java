@@ -14,9 +14,9 @@ import freenet.client.FetchResult;
  */
 public interface GetCompletionCallback {
 
-	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container);
+	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context);
 	
-	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container);
+	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context);
 	
 	/** Called when the ClientGetState knows that it knows about
 	 * all the blocks it will need to fetch.
