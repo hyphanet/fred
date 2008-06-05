@@ -259,7 +259,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(logMINOR)
 					Logger.minor(this, "Decode failed: "+e, e);
 				if(!persistent)
-					getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), tok, this, persistent ? selectorContainer : null, clientContext);
+					getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), tok, this, null, clientContext);
 				else {
 					final SendableGet g = getter;
 					final Object token = tok;
@@ -275,7 +275,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(block != null) {
 				if(logMINOR) Logger.minor(this, "Can fulfill "+getter+" ("+tok+") immediately from store");
 				if(!persistent)
-					getter.onSuccess(block, true, tok, this, persistent ? selectorContainer : null, clientContext);
+					getter.onSuccess(block, true, tok, this, null, clientContext);
 				else {
 					final ClientKeyBlock b = block;
 					final Object t = tok;
