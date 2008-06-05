@@ -6,22 +6,17 @@ package freenet.client;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.LinkedList;
 
 import com.db4o.ObjectContainer;
 import com.onionnetworks.fec.FECCode;
 import com.onionnetworks.util.Buffer;
 
-import freenet.node.PrioRunnable;
 import freenet.support.Executor;
 import freenet.support.Logger;
-import freenet.support.OOMHandler;
-import freenet.support.OOMHook;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
-import freenet.support.io.NativeThread;
 
 /**
  * FEC (forward error correction) handler.
@@ -30,7 +25,7 @@ import freenet.support.io.NativeThread;
  * @author root
  *
  */
-public abstract class FECCodec implements OOMHook {
+public abstract class FECCodec {
 
 	// REDFLAG: Optimal stripe size? Smaller => less memory usage, but more JNI overhead
 
@@ -38,14 +33,10 @@ public abstract class FECCodec implements OOMHook {
 	static boolean logMINOR;
 	FECCode fec;
 	protected final int k, n;
-	private final Executor executor;
 
-	protected FECCodec(Executor executor, int k, int n) {
-		this.executor = executor;
+	protected FECCodec(int k, int n) {
 		this.k = k;
 		this.n = n;
-		
-		OOMHandler.addOOMHook(this);
 	}
 	
 	/**
@@ -339,148 +330,7 @@ public abstract class FECCodec implements OOMHook {
 	 * 
 	 * @param FECJob
 	 */
-	public void addToQueue(FECJob job) {
-		addToQueue(job, this, executor);
-	}
-
-	public static void addToQueue(FECJob job, FECCodec codec, Executor executor) {
-		int maxThreads = getMaxRunningFECThreads();
-		synchronized(_awaitingJobs) {
-			_awaitingJobs.addFirst(job);
-			if(runningFECThreads < maxThreads) {
-				executor.execute(fecRunner, "FEC Pool "+fecPoolCounter++);
-				runningFECThreads++;
-			}
-			_awaitingJobs.notifyAll();
-		}
-		if(logMINOR)
-			Logger.minor(StandardOnionFECCodec.class, "Adding a new job to the queue (" + _awaitingJobs.size() + ").");
-	}
-	private static final LinkedList _awaitingJobs = new LinkedList();
-	private static final FECRunner fecRunner = new FECRunner();
-	private static int runningFECThreads;
-	private static int fecPoolCounter;
-	
-	private synchronized static int getMaxRunningFECThreads() {
-		if (maxRunningFECThreads != -1)
-			return maxRunningFECThreads;
-		String osName = System.getProperty("os.name");
-		if(osName.indexOf("Windows") == -1 && (osName.toLowerCase().indexOf("mac os x") > 0) || (!NativeThread.usingNativeCode())) {
-			// OS/X niceness is really weak, so we don't want any more background CPU load than necessary
-			// Also, on non-Windows, we need the native threads library to be working.
-			maxRunningFECThreads = 1;
-		} else {
-			// Most other OSs will have reasonable niceness, so go by RAM.
-			Runtime r = Runtime.getRuntime();
-			int max = r.availableProcessors(); // FIXME this may change in a VM, poll it
-			long maxMemory = r.maxMemory();
-			if(maxMemory < 256*1024*1024) {
-				max = 1;
-			} else {
-				// Measured 11MB decode 8MB encode on amd64.
-				// No more than 10% of available RAM, so 110MB for each extra processor.
-				// No more than 3 so that we don't reach any FileDescriptor related limit
-				max = Math.min(3, Math.min(max, (int) (Math.min(Integer.MAX_VALUE, maxMemory / (128*1024*1024)))));
-			}
-			maxRunningFECThreads = max;
-		}
-		Logger.minor(FECCodec.class, "Maximum FEC threads: "+maxRunningFECThreads);
-		return maxRunningFECThreads;
-	}
-	
-	private static int maxRunningFECThreads = -1;
-
-	/**
-	 * A private Thread started by {@link FECCodec}...
-	 * 
-	 * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
-	 */
-	private static class FECRunner implements PrioRunnable {
-
-		public void run() {
-			freenet.support.Logger.OSThread.logPID(this);
-			try {
-				while(true) {
-					FECJob job = null;
-					// Get a job
-					synchronized (_awaitingJobs) {
-						while (_awaitingJobs.isEmpty()) {
-							_awaitingJobs.wait(Integer.MAX_VALUE);
-							if (runningFECThreads > getMaxRunningFECThreads())
-								return;
-						}
-						job = (FECJob) _awaitingJobs.removeLast();
-					}
-
-					// Encode it
-					try {
-						if (job.isADecodingJob)
-							job.codec.realDecode(job.dataBlockStatus, job.checkBlockStatus, job.blockLength,
-							        job.bucketFactory);
-						else {
-							job.codec.realEncode(job.dataBlocks, job.checkBlocks, job.blockLength, job.bucketFactory);
-							// Update SplitFileBlocks from buckets if necessary
-							if ((job.dataBlockStatus != null) || (job.checkBlockStatus != null)) {
-								for (int i = 0; i < job.dataBlocks.length; i++)
-									job.dataBlockStatus[i].setData(job.dataBlocks[i]);
-								for (int i = 0; i < job.checkBlocks.length; i++)
-									job.checkBlockStatus[i].setData(job.checkBlocks[i]);
-							}
-						}
-					} catch (IOException e) {
-						Logger.error(this, "BOH! ioe:" + e.getMessage());
-					}
-
-					// Call the callback
-					try {
-						if (job.isADecodingJob)
-							job.callback.onDecodedSegment();
-						else
-							job.callback.onEncodedSegment();
-					} catch (Throwable e) {
-						Logger.error(this, "The callback failed!" + e.getMessage(), e);
-					}
-				}
-			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t+" in "+this, t);
-			}
-			finally {
-				synchronized (_awaitingJobs) {
-					runningFECThreads--;
-				}
-			}
-		}
-
-		public int getPriority() {
-			return NativeThread.LOW_PRIORITY;
-		}
-	}
-
-	public void handleLowMemory() throws Exception {
-		synchronized (_awaitingJobs) {
-			maxRunningFECThreads = Math.min(1, maxRunningFECThreads - 1);
-			_awaitingJobs.notify(); // not notifyAll()
-		}
-	}
-
-	public void handleOutOfMemory() throws Exception {
-		synchronized (_awaitingJobs) {
-			maxRunningFECThreads = 1;
-			_awaitingJobs.notifyAll();
-		}
-	}
-
-	/**
-	 * An interface wich has to be implemented by FECJob submitters
-	 * 
-	 * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
-	 * 
-	 * WARNING: the callback is expected to release the thread !
-	 */
-	public interface StandardOnionFECCodecEncoderCallback {
-
-		public void onEncodedSegment(ObjectContainer container);
-
-		public void onDecodedSegment(ObjectContainer container);
+	public void addToQueue(FECJob job, FECQueue queue, ObjectContainer container) {
+		queue.addToQueue(job, this, container);
 	}
 }

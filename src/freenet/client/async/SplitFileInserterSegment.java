@@ -4,13 +4,13 @@ import java.net.MalformedURLException;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.FECCallback;
 import freenet.client.FECCodec;
 import freenet.client.FECJob;
 import freenet.client.FailureCodeTracker;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
-import freenet.client.FECCodec.StandardOnionFECCodecEncoderCallback;
 import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
@@ -24,7 +24,7 @@ import freenet.support.io.CannotCreateFromFieldSetException;
 import freenet.support.io.SerializableToFieldSetBucket;
 import freenet.support.io.SerializableToFieldSetBucketUtil;
 
-public class SplitFileInserterSegment implements PutCompletionCallback, StandardOnionFECCodecEncoderCallback {
+public class SplitFileInserterSegment implements PutCompletionCallback, FECCallback {
 
 	private static volatile boolean logMINOR;
 

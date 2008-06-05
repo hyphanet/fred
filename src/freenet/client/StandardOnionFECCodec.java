@@ -52,7 +52,7 @@ public class StandardOnionFECCodec extends FECCodec {
 			recentlyUsedCodecs.push(key, codec);
 			return codec;
 		}
-		codec = new StandardOnionFECCodec(executor, dataBlocks, checkBlocks + dataBlocks);
+		codec = new StandardOnionFECCodec(dataBlocks, checkBlocks + dataBlocks);
 		recentlyUsedCodecs.push(key, codec);
 		while(recentlyUsedCodecs.size() > MAX_CACHED_CODECS) {
 			recentlyUsedCodecs.popKey();
@@ -60,8 +60,8 @@ public class StandardOnionFECCodec extends FECCodec {
 		return codec;
 	}
 
-	public StandardOnionFECCodec(Executor executor, int k, int n) {
-		super(executor, k, n);
+	public StandardOnionFECCodec(int k, int n) {
+		super(k, n);
 		
 		FECCode fec2 = null;
 		if(!noNative) {

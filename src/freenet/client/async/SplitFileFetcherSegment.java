@@ -10,6 +10,7 @@ import java.util.Vector;
 import com.db4o.ObjectContainer;
 
 import freenet.client.ArchiveContext;
+import freenet.client.FECCallback;
 import freenet.client.FECCodec;
 import freenet.client.FECJob;
 import freenet.client.FailureCodeTracker;
@@ -18,7 +19,6 @@ import freenet.client.FetchException;
 import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.client.SplitfileBlock;
-import freenet.client.FECCodec.StandardOnionFECCodecEncoderCallback;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHK;
@@ -35,7 +35,7 @@ import freenet.support.io.BucketTools;
  * A single segment within a SplitFileFetcher.
  * This in turn controls a large number of SplitFileFetcherSubSegment's, which are registered on the ClientRequestScheduler.
  */
-public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCallback {
+public class SplitFileFetcherSegment implements FECCallback {
 
 	private static volatile boolean logMINOR;
 	final short splitfileType;

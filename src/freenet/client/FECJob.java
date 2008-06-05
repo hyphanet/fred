@@ -3,7 +3,6 @@
  */
 package freenet.client;
 
-import freenet.client.FECCodec.StandardOnionFECCodecEncoderCallback;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -19,11 +18,19 @@ public class FECJob {
 	final SplitfileBlock[] dataBlockStatus, checkBlockStatus;
 	final BucketFactory bucketFactory;
 	final int blockLength;
-	final StandardOnionFECCodecEncoderCallback callback;
+	final FECCallback callback;
 	final boolean isADecodingJob;
+	final long addedTime;
+	final short priority;
+	final boolean persistent;
+	/** Parent queue */
+	final FECQueue queue;
 	
-	public FECJob(FECCodec codec, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus,  int blockLength, BucketFactory bucketFactory, StandardOnionFECCodecEncoderCallback callback, boolean isADecodingJob) {
+	public FECJob(FECCodec codec, FECQueue queue, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus,  int blockLength, BucketFactory bucketFactory, FECCallback callback, boolean isADecodingJob, short priority, boolean persistent) {
 		this.codec = codec;
+		this.queue = queue;
+		this.priority = priority;
+		this.addedTime = System.currentTimeMillis();
 		this.dataBlockStatus = dataBlockStatus;
 		this.checkBlockStatus = checkBlockStatus;
 		
@@ -37,11 +44,15 @@ public class FECJob {
 		this.blockLength = blockLength;
 		this.bucketFactory = bucketFactory;
 		this.callback = callback;
-		this.isADecodingJob = isADecodingJob;			
+		this.isADecodingJob = isADecodingJob;
+		this.persistent = persistent;
 	}
 	
-	public FECJob(FECCodec codec, Bucket[] dataBlocks, Bucket[] checkBlocks, int blockLength, BucketFactory bucketFactory, StandardOnionFECCodecEncoderCallback callback, boolean isADecodingJob) {
+	public FECJob(FECCodec codec, FECQueue queue, Bucket[] dataBlocks, Bucket[] checkBlocks, int blockLength, BucketFactory bucketFactory, FECCallback callback, boolean isADecodingJob, short priority, boolean persistent) {
 		this.codec = codec;
+		this.queue = queue;
+		this.priority = priority;
+		this.addedTime = System.currentTimeMillis();
 		this.dataBlocks = dataBlocks;
 		this.checkBlocks = checkBlocks;
 		this.dataBlockStatus = null;
@@ -50,5 +61,6 @@ public class FECJob {
 		this.bucketFactory = bucketFactory;
 		this.callback = callback;
 		this.isADecodingJob = isADecodingJob;
+		this.persistent = persistent;
 	}
 }
