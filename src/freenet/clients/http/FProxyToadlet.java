@@ -336,7 +336,12 @@ public final class FProxyToadlet extends Toadlet {
 				}
 				
 				if(logMINOR) Logger.minor(this, "Redirecting to FreenetURI: "+newURI);
-				headers.put("Location", "/"+newURI);
+				String type = httprequest.getParam("type");
+				if (type != null) {
+					headers.put("Location", "/"+newURI + "?type=" + type);
+				} else {
+					headers.put("Location", "/"+newURI);
+				}
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
