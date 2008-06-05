@@ -229,11 +229,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					}
 
 					// Overwrite old offset
-					if (updateBloom)
-						bloomFilter.updateFilter(getDigestedRoutingKey(routingKey), syncBloom);
 					Entry entry = new Entry(routingKey, header, data);
-					writeEntry(entry, oldOffset);
-					writes.incrementAndGet();
+					writeEntry(entry, oldOffset); // overwrite, don't increase keyCount
 					return;
 				}
 
