@@ -256,7 +256,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			onFailure(new FetchException(FetchException.CANCELLED), token, sched, container);
 			return;
 		}
-		segment.onSuccess(data, blockNo, this, block, container);
+		segment.onSuccess(data, blockNo, this, block, container, sched);
 	}
 
 	/** Convert a ClientKeyBlock to a Bucket. If an error occurs, report it via onFailure

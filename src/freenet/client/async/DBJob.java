@@ -14,6 +14,6 @@ import freenet.node.RequestScheduler;
  */
 public interface DBJob {
 	
-	void run(ObjectContainer container, RequestScheduler sched);
+	void run(ObjectContainer container);
 
 }

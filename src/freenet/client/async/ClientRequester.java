@@ -137,4 +137,8 @@ public abstract class ClientRequester {
 		return client.persistent();
 	}
 
+	public boolean isPersistent() {
+		return client.persistent();
+	}
+
 }

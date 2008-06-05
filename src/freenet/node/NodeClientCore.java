@@ -5,11 +5,15 @@ import java.io.IOException;
 import java.net.URI;
 
 import freenet.client.ArchiveManager;
+import freenet.client.FECQueue;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertContext;
 import freenet.client.async.BackgroundBlockEncoder;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
+import freenet.client.async.DBJob;
+import freenet.client.async.DBJobRunner;
 import freenet.client.async.HealingQueue;
 import freenet.client.async.SimpleHealingQueue;
 import freenet.client.async.USKManager;
@@ -68,7 +72,7 @@ import freenet.support.io.TempBucketFactory;
 /**
  * The connection between the node and the client layer.
  */
-public class NodeClientCore implements Persistable {
+public class NodeClientCore implements Persistable, DBJobRunner {
 
 	private static boolean logMINOR;
 	public final USKManager uskManager;
@@ -90,6 +94,7 @@ public class NodeClientCore implements Persistable {
 	final NodeStats nodeStats;
 	public final RandomSource random;
 	final File tempDir;
+	public final FECQueue fecQueue;
 
 	// Persistent temporary buckets
 	public final PersistentTempBucketFactory persistentTempBucketFactory;
@@ -137,6 +142,7 @@ public class NodeClientCore implements Persistable {
 		this.node = node;
 		this.nodeStats = node.nodeStats;
 		this.random = node.random;
+		fecQueue = new FECQueue();
 		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
 		clientSlowSerialExecutor = new SerialExecutor[RequestStarter.MINIMUM_PRIORITY_CLASS-RequestStarter.MAXIMUM_PRIORITY_CLASS+1];
 		for(int i=0;i<clientSlowSerialExecutor.length;i++) {
@@ -165,7 +171,7 @@ public class NodeClientCore implements Persistable {
 		if(logMINOR) Logger.minor(this, "Read throttleFS:\n"+throttleFS);
 		
 		if(logMINOR) Logger.minor(this, "Serializing RequestStarterGroup from:\n"+throttleFS);
-		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS);
+		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, new ClientContext(this));
 		
 		// Temp files
 		
@@ -1152,5 +1158,20 @@ public class NodeClientCore implements Persistable {
 
 	public long countTransientQueuedRequests() {
 		return requestStarters.countTransientQueuedRequests();
+	}
+
+	public void queue(final DBJob job, int priority) {
+		this.clientDatabaseExecutor.execute(new Runnable() {
+
+			public void run() {
+				try {
+					job.run(node.db);
+					node.db.commit();
+				} catch (Throwable t) {
+					Logger.error(this, "Failed to run database job "+job+" : caught "+t, t);
+				}
+			}
+			
+		}, priority, ""+job);
 	}
 }

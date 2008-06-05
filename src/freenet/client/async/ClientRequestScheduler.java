@@ -7,6 +7,7 @@ import java.util.LinkedList;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.FECQueue;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -100,13 +101,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final CooldownQueue persistentCooldownQueue;
 	final PrioritizedSerialExecutor databaseExecutor;
 	final PrioritizedSerialExecutor datastoreCheckerExecutor;
+	public final ClientContext clientContext;
 	
 	public static final String PRIORITY_NONE = "NONE";
 	public static final String PRIORITY_SOFT = "SOFT";
 	public static final String PRIORITY_HARD = "HARD";
 	private String choosenPriorityScheduler; 
 	
-	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, SubConfig sc, String name) {
+	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, SubConfig sc, String name, ClientContext context) {
 		this.selectorContainer = node.db;
 		schedCore = ClientRequestSchedulerCore.create(node, forInserts, forSSKs, selectorContainer, COOLDOWN_PERIOD, core.clientDatabaseExecutor, this);
 		schedTransient = new ClientRequestSchedulerNonPersistent(this);
@@ -120,6 +122,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		this.node = node;
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
+		this.clientContext = context;
 		
 		this.name = name;
 		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, false,
@@ -685,6 +688,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 				selectorContainer.commit();
 			}
 		}, prio, name);
+	}
+
+	public FECQueue getFECQueue() {
+		return clientContext.fecQueue;
 	}
 
 }

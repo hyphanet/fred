@@ -27,7 +27,7 @@ import freenet.support.io.NativeThread;
  * Sorted by priority and then by time added.
  * @author toad
  */
-class FECQueue implements OOMHook {
+public class FECQueue implements OOMHook {
 	
 	private transient LinkedList[] transientQueue;
 	private transient LinkedList[] persistentQueueCache;
@@ -148,7 +148,7 @@ class FECQueue implements OOMHook {
 						} else {
 							databaseJobRunner.queue(new DBJob() {
 
-								public void run(ObjectContainer container, RequestScheduler sched) {
+								public void run(ObjectContainer container) {
 									if(job.isADecodingJob)
 										job.callback.onDecodedSegment(container);
 									else
@@ -180,7 +180,7 @@ class FECQueue implements OOMHook {
 
 	private final DBJob cacheFillerJob = new DBJob() {
 
-		public void run(ObjectContainer container, RequestScheduler sched) {
+		public void run(ObjectContainer container) {
 			// Try to avoid accessing the database while synchronized on the FECQueue.
 			while(true) {
 				boolean addedAny = false;

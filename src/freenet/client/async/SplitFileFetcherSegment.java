@@ -13,6 +13,7 @@ import freenet.client.ArchiveContext;
 import freenet.client.FECCallback;
 import freenet.client.FECCodec;
 import freenet.client.FECJob;
+import freenet.client.FECQueue;
 import freenet.client.FailureCodeTracker;
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -153,7 +154,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		return fatallyFailedBlocks;
 	}
 
-	public void onSuccess(Bucket data, int blockNo, SplitFileFetcherSubSegment seg, ClientKeyBlock block, ObjectContainer container) {
+	public void onSuccess(Bucket data, int blockNo, SplitFileFetcherSubSegment seg, ClientKeyBlock block, ObjectContainer container, RequestScheduler sched) {
 		boolean decodeNow = false;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" on "+seg);
@@ -200,18 +201,20 @@ public class SplitFileFetcherSegment implements FECCallback {
 		seg.possiblyRemoveFromParent();
 		if(decodeNow) {
 			removeSubSegments();
-			decode();
+			decode(container, sched);
 		}
 	}
 
-	public void decode() {
+	public void decode(ObjectContainer container, RequestScheduler sched) {
 		// Now decode
 		if(logMINOR) Logger.minor(this, "Decoding "+SplitFileFetcherSegment.this);
 
 		codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length, blockFetchContext.executor);
 		
 		if(splitfileType != Metadata.SPLITFILE_NONREDUNDANT) {
-			codec.addToQueue(new FECJob(codec, dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, fetchContext.bucketFactory, this, true));
+			FECQueue queue = sched.getFECQueue();
+			codec.addToQueue(new FECJob(codec, queue, dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, fetchContext.bucketFactory, this, true, parentFetcher.parent.getPriorityClass(), parentFetcher.parent.isPersistent()), 
+					queue, container);
 			// Now have all the data blocks (not necessarily all the check blocks)
 		}
 	}

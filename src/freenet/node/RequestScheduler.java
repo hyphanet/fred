@@ -5,6 +5,7 @@ package freenet.node;
 
 import java.util.LinkedList;
 
+import freenet.client.FECQueue;
 import freenet.client.async.ChosenRequest;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
@@ -61,5 +62,7 @@ public interface RequestScheduler {
 	public void callFailure(final SendableInsert put, final LowLevelPutException e, final Object keyNum, int prio, String name);
 
 	public void callSuccess(final SendableInsert put, final Object keyNum, int prio, String name);
+
+	public FECQueue getFECQueue();
 	
 }
