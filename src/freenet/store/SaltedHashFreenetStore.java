@@ -119,7 +119,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		configLock.readLock().lock();
 		try {
-			boolean locked = lockPlainKey(routingKey);
+			boolean locked = lockPlainKey(routingKey, true);
 			if (!locked) {
 				if (logDEBUG)
 					Logger.debug(this, "cannot lock key: " + HexUtil.bytesToHex(routingKey) + ", shutting down?");
@@ -145,7 +145,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					return null;
 				}
 			} finally {
-				unlockPlainKey(routingKey);
+				unlockPlainKey(routingKey, true);
 			}
 		} finally {
 			configLock.readLock().unlock();
@@ -203,7 +203,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		configLock.readLock().lock();
 		try {
-			boolean locked = lockPlainKey(routingKey);
+			boolean locked = lockPlainKey(routingKey, false);
 			if (!locked) {
 				if (logDEBUG)
 					Logger.debug(this, "cannot lock key: " + HexUtil.bytesToHex(routingKey) + ", shutting down?");
@@ -259,7 +259,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				writeEntry(entry, offset[0]);
 				writes.incrementAndGet();
 			} finally {
-				unlockPlainKey(routingKey);
+				unlockPlainKey(routingKey, false);
 			}
 		} finally {
 			configLock.readLock().unlock();
@@ -1221,12 +1221,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * @param plainKey
 	 * @return <code>true</code> if all the offsets are locked.
 	 */
-	private boolean lockPlainKey(byte[] plainKey) {
-		return lockDigestedKey(getDigestedRoutingKey(plainKey));
+	private boolean lockPlainKey(byte[] plainKey, boolean usePrevStoreSize) {
+		return lockDigestedKey(getDigestedRoutingKey(plainKey), usePrevStoreSize);
 	}
 
-	private void unlockPlainKey(byte[] plainKey) {
-		unlockDigestedKey(getDigestedRoutingKey(plainKey));
+	private void unlockPlainKey(byte[] plainKey, boolean usePrevStoreSize) {
+		unlockDigestedKey(getDigestedRoutingKey(plainKey), usePrevStoreSize);
 	}
 
 	/**
@@ -1236,14 +1236,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * @param digestedKey
 	 * @return <code>true</code> if all the offsets are locked.
 	 */
-	private boolean lockDigestedKey(byte[] digestedKey) {
+	private boolean lockDigestedKey(byte[] digestedKey, boolean usePrevStoreSize) {
 		// use a set to prevent duplicated offsets,
 		// a sorted set to prevent deadlocks
 		SortedSet<Long> offsets = new TreeSet<Long>();
 		long[] offsetArray = getOffsetFromDigestedKey(digestedKey, storeSize);
 		for (long offset : offsetArray)
 			offsets.add(offset);
-		if (prevStoreSize != 0) {
+		if (usePrevStoreSize && prevStoreSize != 0) {
 			offsetArray = getOffsetFromDigestedKey(digestedKey, prevStoreSize);
 			for (long offset : offsetArray)
 				offsets.add(offset);
@@ -1267,13 +1267,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 	}
 
-	private void unlockDigestedKey(byte[] digestedKey) {
+	private void unlockDigestedKey(byte[] digestedKey, boolean usePrevStoreSize) {
 		// use a set to prevent duplicated offsets
 		SortedSet<Long> offsets = new TreeSet<Long>();
 		long[] offsetArray = getOffsetFromDigestedKey(digestedKey, storeSize);
 		for (long offset : offsetArray)
 			offsets.add(offset);
-		if (prevStoreSize != 0) {
+		if (usePrevStoreSize && prevStoreSize != 0) {
 			offsetArray = getOffsetFromDigestedKey(digestedKey, prevStoreSize);
 			for (long offset : offsetArray)
 				offsets.add(offset);
