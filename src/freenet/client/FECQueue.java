@@ -11,10 +11,10 @@ import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
+import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
 import freenet.node.PrioRunnable;
-import freenet.node.RequestScheduler;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -35,13 +35,15 @@ public class FECQueue implements OOMHook {
 	private transient int priorities;
 	private transient DBJobRunner databaseJobRunner;
 	private transient Executor executor;
+	private transient ClientContext clientContext;
 
 	/** Called after creating or deserializing the FECQueue. Initialises all the transient fields. */
-	void init(int priorities, int maxCacheSize, DBJobRunner dbJobRunner, Executor exec) {
+	void init(int priorities, int maxCacheSize, DBJobRunner dbJobRunner, Executor exec, ClientContext clientContext) {
 		this.priorities = priorities;
 		this.maxPersistentQueueCacheSize = maxCacheSize;
 		this.databaseJobRunner = dbJobRunner;
 		this.executor = exec;
+		this.clientContext = clientContext;
 		transientQueue = new LinkedList[priorities];
 		persistentQueueCache = new LinkedList[priorities];
 		for(int i=0;i<priorities;i++) {
@@ -142,17 +144,17 @@ public class FECQueue implements OOMHook {
 					try {
 						if(!job.persistent) {
 							if (job.isADecodingJob)
-								job.callback.onDecodedSegment(null);
+								job.callback.onDecodedSegment(null, clientContext);
 							else
-								job.callback.onEncodedSegment(null);
+								job.callback.onEncodedSegment(null, clientContext);
 						} else {
 							databaseJobRunner.queue(new DBJob() {
 
 								public void run(ObjectContainer container) {
 									if(job.isADecodingJob)
-										job.callback.onDecodedSegment(container);
+										job.callback.onDecodedSegment(container, clientContext);
 									else
-										job.callback.onEncodedSegment(container);
+										job.callback.onEncodedSegment(container, clientContext);
 									container.delete(job);
 								}
 								

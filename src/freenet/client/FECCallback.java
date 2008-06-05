@@ -5,6 +5,8 @@ package freenet.client;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ClientContext;
+
 /**
  * An interface wich has to be implemented by FECJob submitters
  * 
@@ -14,7 +16,7 @@ import com.db4o.ObjectContainer;
  */
 public interface FECCallback {
 
-	public void onEncodedSegment(ObjectContainer container);
+	public void onEncodedSegment(ObjectContainer container, ClientContext context);
 
-	public void onDecodedSegment(ObjectContainer container);
+	public void onDecodedSegment(ObjectContainer container, ClientContext context);
 }

@@ -219,7 +219,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 	}
 	
-	public void onDecodedSegment(ObjectContainer container) {
+	public void onDecodedSegment(ObjectContainer container, ClientContext context) {
 		try {
 			if(isCollectingBinaryBlob()) {
 				for(int i=0;i<dataBuckets.length;i++) {
@@ -266,11 +266,12 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 		// Encode any check blocks we don't have
 		if(codec != null) {
-			codec.addToQueue(new FECJob(codec, dataBuckets, checkBuckets, 32768, fetchContext.bucketFactory, this, false));
+			codec.addToQueue(new FECJob(codec, context.fecQueue, dataBuckets, checkBuckets, 32768, fetchContext.bucketFactory, this, false, parentFetcher.parent.getPriorityClass(), parentFetcher.parent.isPersistent()),
+					context.fecQueue, container);
 		}
 	}
 
-	public void onEncodedSegment(ObjectContainer container) {
+	public void onEncodedSegment(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
 			for(int i=0;i<dataBuckets.length;i++) {

@@ -464,9 +464,9 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		}
 	}
 
-	public void onDecodedSegment(ObjectContainer container) {} // irrevelant
+	public void onDecodedSegment(ObjectContainer container, ClientContext context) {} // irrevelant
 
-	public void onEncodedSegment(ObjectContainer container) {
+	public void onEncodedSegment(ObjectContainer container, ClientContext context) {
 		// Start the inserts
 		try {
 			for (int i = 0; i < checkBlockInserters.length; i++) {
