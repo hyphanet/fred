@@ -218,7 +218,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 	}
 
-	public void schedule(ObjectContainer container) throws InsertException {
+	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
 		synchronized(this) {
 			if(finished) return;
 		}
@@ -229,16 +229,16 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			cb.onSuccess(this, container);
 			finished = true;
 		} else {
-			getScheduler().register(this);
+			getScheduler(context).register(this);
 		}
 	}
 
-	private ClientRequestScheduler getScheduler() {
+	private ClientRequestScheduler getScheduler(ClientContext context) {
 		String uriType = uri.getKeyType();
 		if(uriType.equals("CHK"))
-			return parent.chkScheduler;
+			return context.chkInsertScheduler;
 		else if(uriType.equals("SSK") || uriType.equals("KSK"))
-			return parent.sskScheduler;
+			return context.sskInsertScheduler;
 		else throw new IllegalArgumentException();
 	}
 

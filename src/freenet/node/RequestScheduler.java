@@ -7,6 +7,7 @@ import java.util.LinkedList;
 
 import freenet.client.FECQueue;
 import freenet.client.async.ChosenRequest;
+import freenet.client.async.ClientContext;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.support.PrioritizedSerialExecutor;
@@ -64,5 +65,7 @@ public interface RequestScheduler {
 	public void callSuccess(final SendableInsert put, final Object keyNum, int prio, String name);
 
 	public FECQueue getFECQueue();
+
+	public ClientContext getContext();
 	
 }

@@ -6,6 +6,7 @@ package freenet.node;
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
 import freenet.keys.ClientKey;
@@ -96,17 +97,17 @@ public abstract class SendableGet extends BaseSendableGet {
 		return true;
 	}
 
-	public void schedule(ObjectContainer container) {
+	public void schedule(ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Scheduling "+this);
-		getScheduler().register(this);
+		getScheduler(context).register(this);
 	}
 	
-	public ClientRequestScheduler getScheduler() {
+	public ClientRequestScheduler getScheduler(ClientContext context) {
 		if(isSSK())
-			return parent.sskScheduler;
+			return context.sskFetchScheduler;
 		else
-			return parent.chkScheduler;
+			return context.chkFetchScheduler;
 	}
 
 	/**
@@ -130,14 +131,14 @@ public abstract class SendableGet extends BaseSendableGet {
 	/** Reset the cooldown times when the request is reregistered. */
 	public abstract void resetCooldownTimes(ObjectContainer container);
 
-	public final void unregister(boolean staySubscribed) {
+	public final void unregister(boolean staySubscribed, ClientContext context) {
 		if(!staySubscribed)
-			getScheduler().removePendingKeys(this, false);
+			getScheduler(context).removePendingKeys(this, false);
 		super.unregister(staySubscribed);
 	}
 	
-	public final void unregisterKey(Key key) {
-		getScheduler().removePendingKey(this, false, key);
+	public final void unregisterKey(Key key, ClientContext context) {
+		getScheduler(context).removePendingKey(this, false, key);
 	}
 
 	public void internalError(final Object keyNum, final Throwable t, final RequestScheduler sched, ObjectContainer container) {
@@ -149,6 +150,6 @@ public abstract class SendableGet extends BaseSendableGet {
 	 * Only requeue if our requeue time is less than or equal to the given time.
 	 * @param key
 	 */
-	public abstract void requeueAfterCooldown(Key key, long time, ObjectContainer container);
+	public abstract void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context);
 
 }

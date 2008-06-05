@@ -345,13 +345,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 	
 	/** This is after any retries and therefore is either out-of-retries or fatal 
 	 * @param container */
-	public synchronized void onFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container) {
+	public synchronized void onFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Permanently failed block: "+blockNo+" on "+this+" : "+e, e);
 		boolean allFailed;
 		// Since we can't keep the key, we need to unregister for it at this point to avoid a memory leak
 		NodeCHK key = getBlockNodeKey(blockNo);
-		if(key != null) seg.unregisterKey(key);
+		if(key != null) seg.unregisterKey(key, context);
 		synchronized(this) {
 			if(isFinishing()) return; // this failure is now irrelevant, and cleanup will occur on the decoder thread
 			if(blockNo < dataKeys.length) {
@@ -388,6 +388,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	/** A request has failed non-fatally, so the block may be retried 
 	 * @param container */
 	public void onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, RequestScheduler sched, ObjectContainer container) {
+		ClientContext context = sched.getContext();
 		int tries;
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		boolean failed = false;
@@ -430,22 +431,22 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 		}
 		if(failed) {
-			onFatalFailure(e, blockNo, seg, container);
+			onFatalFailure(e, blockNo, seg, container, context);
 			if(logMINOR)
 				Logger.minor(this, "Not retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries);
 			return;
 		}
 		if(cooldown) {
 			// Register to the next sub-segment before removing from the old one.
-			sub.getScheduler().addPendingKey(key, sub);
-			seg.unregisterKey(key.getNodeKey());
+			sub.getScheduler(context).addPendingKey(key, sub);
+			seg.unregisterKey(key.getNodeKey(), context);
 		} else {
 			// If we are here we are going to retry
 			// Unregister from the old sub-segment before registering on the new.
-			seg.unregisterKey(key.getNodeKey());
+			seg.unregisterKey(key.getNodeKey(), context);
 			if(logMINOR)
 				Logger.minor(this, "Retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
-			sub.add(blockNo, false, container);
+			sub.add(blockNo, false, container, context);
 		}
 	}
 	
@@ -492,13 +493,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 		parentFetcher.segmentFinished(this, container);
 	}
 
-	public void schedule(ObjectContainer container) {
+	public void schedule(ObjectContainer container, ClientContext context) {
 		try {
 			SplitFileFetcherSubSegment seg = getSubSegment(0);
 			for(int i=0;i<dataRetries.length+checkRetries.length;i++)
-				seg.add(i, true, container);
+				seg.add(i, true, container, context);
 			
-			seg.schedule(container);
+			seg.schedule(container, context);
 			synchronized(this) {
 				scheduled = true;
 			}
@@ -590,7 +591,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			return checkCooldownTimes[blockNum - dataKeys.length];
 	}
 
-	public void requeueAfterCooldown(Key key, long time, ObjectContainer container) {
+	public void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context) {
 		Vector v = null;
 		boolean notFound = true;
 		synchronized(this) {
@@ -609,7 +610,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(logMINOR)
 					Logger.minor(this, "Retrying after cooldown on "+this+": data block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 				if(v == null) v = new Vector();
-				sub.add(i, true, container);
+				sub.add(i, true, container, context);
 				if(!v.contains(sub)) v.add(sub);
 				notFound = false;
 			}
@@ -627,7 +628,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(logMINOR)
 					Logger.minor(this, "Retrying after cooldown on "+this+": check block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 				if(v == null) v = new Vector();
-				sub.add(i+dataKeys.length, true, container);
+				sub.add(i+dataKeys.length, true, container, context);
 				if(!v.contains(sub)) v.add(sub);
 				notFound = false;
 			}
@@ -638,7 +639,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		if(v != null) {
 			for(int i=0;i<v.size();i++) {
-				((SplitFileFetcherSubSegment) v.get(i)).schedule(container);
+				((SplitFileFetcherSubSegment) v.get(i)).schedule(container, context);
 			}
 		}
 	}

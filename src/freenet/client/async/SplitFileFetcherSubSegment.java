@@ -329,7 +329,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return false;
 	}
 
-	public void add(int blockNo, boolean dontSchedule, ObjectContainer container) {
+	public void add(int blockNo, boolean dontSchedule, ObjectContainer container, ClientContext context) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Adding block "+blockNo+" to "+this+" dontSchedule="+dontSchedule);
 		if(blockNo < 0) throw new IllegalArgumentException();
@@ -359,10 +359,10 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				schedule = false;
 			}
 		}
-		if(schedule) schedule(container);
+		if(schedule) schedule(container, context);
 		else if(!dontSchedule)
 			// Already scheduled, however this key may not be registered.
-			getScheduler().addPendingKey(segment.getBlockKey(blockNo), this);
+			getScheduler(context).addPendingKey(segment.getBlockKey(blockNo), this);
 	}
 
 	public String toString() {
@@ -441,10 +441,10 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return segment.getCooldownWakeup(((Integer)token).intValue());
 	}
 
-	public void requeueAfterCooldown(Key key, long time, ObjectContainer container) {
+	public void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Requeueing after cooldown "+key+" for "+this);
-		segment.requeueAfterCooldown(key, time, container);
+		segment.requeueAfterCooldown(key, time, container, context);
 	}
 
 	public long getCooldownWakeupByKey(Key key, ObjectContainer container) {

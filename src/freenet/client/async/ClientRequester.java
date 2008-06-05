@@ -21,18 +21,14 @@ public abstract class ClientRequester {
 	// FIXME move the priority classes from RequestStarter here
 	protected short priorityClass;
 	protected boolean cancelled;
-	public final ClientRequestScheduler chkScheduler;
-	public final ClientRequestScheduler sskScheduler;
 	protected final RequestClient client;
 
 	public short getPriorityClass() {
 		return priorityClass;
 	}
 
-	protected ClientRequester(short priorityClass, ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, RequestClient client) {
+	protected ClientRequester(short priorityClass, RequestClient client) {
 		this.priorityClass = priorityClass;
-		this.chkScheduler = chkScheduler;
-		this.sskScheduler = sskScheduler;
 		this.client = client;
 	}
 
@@ -127,10 +123,12 @@ public abstract class ClientRequester {
 		return client;
 	}
 
-	public void setPriorityClass(short newPriorityClass) {
+	public void setPriorityClass(short newPriorityClass, ClientContext ctx) {
 		this.priorityClass = newPriorityClass;
-		chkScheduler.reregisterAll(this);
-		sskScheduler.reregisterAll(this);
+		ctx.chkFetchScheduler.reregisterAll(this);
+		ctx.chkInsertScheduler.reregisterAll(this);
+		ctx.sskFetchScheduler.reregisterAll(this);
+		ctx.sskInsertScheduler.reregisterAll(this);
 	}
 
 	public boolean persistent() {
