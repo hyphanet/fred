@@ -493,7 +493,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 
 		// Tell parent only after have started the inserts.
 		// Because of the counting.
-		parent.encodedSegment(this, container);
+		parent.encodedSegment(this, container, context);
 
 		synchronized (this) {
 			for (int i = 0; i < dataBlockInserters.length; i++) {
@@ -733,8 +733,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 	 * Force the remaining blocks which haven't been encoded so far to be
 	 * encoded ASAP.
 	 */
-	public void forceEncode() {
-		blockInsertContext.backgroundBlockEncoder.queue(dataBlockInserters);
-		blockInsertContext.backgroundBlockEncoder.queue(checkBlockInserters);
+	public void forceEncode(ClientContext context) {
+		context.backgroundBlockEncoder.queue(dataBlockInserters);
+		context.backgroundBlockEncoder.queue(checkBlockInserters);
 	}
 }

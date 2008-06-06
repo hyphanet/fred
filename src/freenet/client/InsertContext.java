@@ -32,12 +32,11 @@ public class InsertContext {
 	/** Interesting tradeoff, see comments at top of Node.java. */
 	public final boolean cacheLocalRequests;
 	public final USKManager uskManager;
-	public final BackgroundBlockEncoder backgroundBlockEncoder;
 	public final Executor executor;
 	
 	public InsertContext(BucketFactory bf, BucketFactory persistentBF, PersistentFileTracker tracker, RandomSource random,
 			int maxRetries, int rnfsToSuccess, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
-			ClientEventProducer eventProducer, boolean cacheLocalRequests, USKManager uskManager, BackgroundBlockEncoder blockEncoder, Executor executor) {
+			ClientEventProducer eventProducer, boolean cacheLocalRequests, USKManager uskManager, Executor executor) {
 		this.bf = bf;
 		this.persistentFileTracker = tracker;
 		this.persistentBucketFactory = persistentBF;
@@ -52,7 +51,6 @@ public class InsertContext {
 		this.splitfileSegmentDataBlocks = splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = splitfileSegmentCheckBlocks;
 		this.cacheLocalRequests = cacheLocalRequests;
-		this.backgroundBlockEncoder = blockEncoder;
 		this.executor = executor;
 	}
 
@@ -71,7 +69,6 @@ public class InsertContext {
 		this.splitfileSegmentDataBlocks = ctx.splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = ctx.splitfileSegmentCheckBlocks;
 		this.cacheLocalRequests = ctx.cacheLocalRequests;
-		this.backgroundBlockEncoder = ctx.backgroundBlockEncoder;
 		this.executor = ctx.executor;
 	}
 
@@ -90,7 +87,6 @@ public class InsertContext {
 		this.splitfileSegmentDataBlocks = ctx.splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = ctx.splitfileSegmentCheckBlocks;
 		this.cacheLocalRequests = ctx.cacheLocalRequests;
-		this.backgroundBlockEncoder = ctx.backgroundBlockEncoder;
 		this.executor = ctx.executor;
 	}
 

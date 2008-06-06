@@ -22,6 +22,7 @@ public class ClientContext {
 	public final DBJobRunner jobRunner;
 	public final Executor mainExecutor;
 	public final long nodeDBHandle;
+	public final BackgroundBlockEncoder backgroundBlockEncoder;
 
 	public ClientContext(NodeClientCore core) {
 		this.fecQueue = core.fecQueue;
@@ -32,6 +33,7 @@ public class ClientContext {
 		jobRunner = core;
 		this.mainExecutor = core.getExecutor();
 		this.nodeDBHandle = core.node.nodeDBHandle;
+		this.backgroundBlockEncoder = core.backgroundBlockEncoder;
 	}
 	
 }

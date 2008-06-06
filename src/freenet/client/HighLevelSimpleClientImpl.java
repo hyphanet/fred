@@ -42,7 +42,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	private final BucketFactory persistentBucketFactory;
 	private final PersistentFileTracker persistentFileTracker;
 	private final NodeClientCore core;
-	private final BackgroundBlockEncoder blockEncoder;
 	/** One CEP for all requests and inserts */
 	private final ClientEventProducer globalEventProducer;
 	private long curMaxLength;
