@@ -36,6 +36,8 @@ public class FECQueue implements OOMHook {
 	private transient DBJobRunner databaseJobRunner;
 	private transient Executor executor;
 	private transient ClientContext clientContext;
+	private transient int runningFECThreads;
+	private transient int fecPoolCounter;
 
 	/** Called after creating or deserializing the FECQueue. Initialises all the transient fields. */
 	void init(int priorities, int maxCacheSize, DBJobRunner dbJobRunner, Executor exec, ClientContext clientContext) {
@@ -299,9 +301,6 @@ public class FECQueue implements OOMHook {
 			}
 		}
 	}
-
-	private static int runningFECThreads;
-	private static int fecPoolCounter;
 
 	public void handleLowMemory() throws Exception {
 		synchronized (this) {
