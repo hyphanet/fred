@@ -114,6 +114,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		else
 			keysFetching = null;
 		this.sched = sched;
+		InsertCompressor.load(container, sched.clientContext);
 	}
 	
 	void start() {

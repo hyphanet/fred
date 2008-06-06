@@ -3,6 +3,8 @@ package freenet.client.async;
 import java.io.IOException;
 
 import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
+import com.db4o.query.Predicate;
 
 import freenet.client.InsertException;
 import freenet.support.api.Bucket;
@@ -154,6 +156,20 @@ class InsertCompressor {
 		return compressor;
 	}
 
+	public static void load(ObjectContainer container, ClientContext context) {
+		final long handle = context.nodeDBHandle;
+		ObjectSet results = container.query(new Predicate() {
+			public boolean match(InsertCompressor comp) {
+				if(comp.nodeDBHandle == handle) return true;
+				return false;
+			}
+		});
+		while(results.hasNext()) {
+			InsertCompressor comp = (InsertCompressor) results.next();
+			comp.init(context);
+		}
+	}
+	
 	
 }
 
