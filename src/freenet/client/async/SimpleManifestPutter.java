@@ -70,9 +70,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		private String targetInZip;
 		private final Bucket data;
 		
-		public void start(ObjectContainer container) throws InsertException {
+		public void start(ObjectContainer container, ClientContext context) throws InsertException {
 			if((origSFI == null) && (metadata != null)) return;
-			origSFI.start(null, container);
+			origSFI.start(null, container, context);
 			origSFI = null;
 		}
 		
@@ -129,7 +129,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				putHandlersWaitingForMetadata.remove(this);
 				if(!putHandlersWaitingForMetadata.isEmpty()) return;
 			}
-			gotAllMetadata(container);
+			gotAllMetadata(container, context);
 		}
 
 		public void addBlock() {
@@ -239,7 +239,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		// FIXME do something.
 	}
 
-	public void start(ObjectContainer container) throws InsertException {
+	public void start(ObjectContainer container, ClientContext context) throws InsertException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if (logMINOR)
 			Logger.minor(this, "Starting " + this);
@@ -250,7 +250,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		try {
 			for (int i = 0; i < running.length; i++) {
-				running[i].start(container);
+				running[i].start(container, context);
 				if (logMINOR)
 					Logger.minor(this, "Started " + i + " of " + running.length);
 				if (isFinished()) {
@@ -263,7 +263,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				Logger.minor(this, "Started " + running.length + " PutHandler's for " + this);
 			if (running.length == 0) {
 				insertedAllFiles = true;
-				gotAllMetadata(container);
+				gotAllMetadata(container, context);
 			}
 		} catch (InsertException e) {
 			cancelAndFinish();
@@ -339,7 +339,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		return finished || cancelled;
 	}
 
-	private void gotAllMetadata(ObjectContainer container) {
+	private void gotAllMetadata(ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Got all metadata");
 		HashMap namesToByteArrays = new HashMap();
 		namesToByteArrays(putHandlersByName, namesToByteArrays);
@@ -362,11 +362,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		baseMetadata =
 			Metadata.mkRedirectionManifestWithMetadata(namesToByteArrays);
-		resolveAndStartBase(container);
+		resolveAndStartBase(container, context);
 		
 	}
 	
-	private void resolveAndStartBase(ObjectContainer container) {
+	private void resolveAndStartBase(ObjectContainer container, ClientContext context) {
 		Bucket bucket = null;
 		synchronized(this) {
 			if(hasResolvedBase) return;
@@ -380,7 +380,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				return;
 			} catch (MetadataUnresolvedException e) {
 				try {
-					resolve(e, container);
+					resolve(e, container, context);
 				} catch (IOException e1) {
 					fail(new InsertException(InsertException.BUCKET_ERROR, e, null));
 					return;
@@ -456,13 +456,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+metadataInserter);
 			this.metadataPuttersByMetadata.put(baseMetadata, metadataInserter);
 			metadataPuttersUnfetchable.put(baseMetadata, metadataInserter);
-			metadataInserter.start(null, container);
+			metadataInserter.start(null, container, context);
 		} catch (InsertException e) {
 			fail(e);
 		}
 	}
 
-	private boolean resolve(MetadataUnresolvedException e, ObjectContainer container) throws InsertException, IOException {
+	private boolean resolve(MetadataUnresolvedException e, ObjectContainer container, ClientContext context) throws InsertException, IOException {
 		Metadata[] metas = e.mustResolve;
 		boolean mustWait = false;
 		for(int i=0;i<metas.length;i++) {
@@ -482,9 +482,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				synchronized(this) {
 					this.metadataPuttersByMetadata.put(m, metadataInserter);
 				}
-				metadataInserter.start(null, container);
+				metadataInserter.start(null, container, context);
 			} catch (MetadataUnresolvedException e1) {
-				resolve(e1, container);
+				resolve(e1, container, context);
 			}
 		}
 		return mustWait;
@@ -595,7 +595,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			Metadata m = (Metadata) state.getToken();
 			m.resolve(key.getURI());
 			if(logMINOR) Logger.minor(this, "Resolved "+m+" : "+key.getURI());
-			resolveAndStartBase(container);
+			resolveAndStartBase(container, context);
 		}
 	}
 	
