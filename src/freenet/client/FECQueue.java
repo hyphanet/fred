@@ -223,7 +223,26 @@ public class FECQueue implements OOMHook {
 						}
 					}
 				}
-				if(!addedAny) return;
+				if(!addedAny) {
+					return;
+				} else {
+					int maxRunningThreads = getMaxRunningFECThreads();
+					synchronized(FECQueue.this) {
+						if(runningFECThreads < maxRunningThreads) {
+							int queueSize = 0;
+							for(int i=0;i<priorities;i++) {
+								queueSize += persistentQueueCache[i].size();
+								if(queueSize + runningFECThreads > maxRunningThreads) break;
+							}
+							if(queueSize + runningFECThreads < maxRunningThreads)
+								maxRunningThreads = queueSize + runningFECThreads;
+							while(runningFECThreads < maxRunningThreads) {
+								executor.execute(runner, "FEC Pool "+fecPoolCounter++);
+								runningFECThreads++;
+							}
+						}
+					}
+				}
 			}
 		}
 		
