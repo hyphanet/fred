@@ -66,7 +66,7 @@ public class FECQueue implements OOMHook {
 		if(job.persistent) {
 			container.set(job);
 		}
-		synchronized(FECQueue.this) {
+		synchronized(this) {
 			if(!job.persistent) {
 				transientQueue[job.priority].addLast(job);
 			} else {
@@ -302,20 +302,14 @@ public class FECQueue implements OOMHook {
 		}
 	}
 
-	public void handleLowMemory() throws Exception {
-		synchronized (this) {
-			maxRunningFECThreads = Math.min(1, maxRunningFECThreads - 1);
-			notify(); // not notifyAll()
-		}
+	public synchronized void handleLowMemory() throws Exception {
+		maxRunningFECThreads = Math.min(1, maxRunningFECThreads - 1);
+		notify(); // not notifyAll()
 	}
 
-	public void handleOutOfMemory() throws Exception {
-		synchronized (this) {
-			maxRunningFECThreads = 1;
-			notifyAll();
-		}
+	public synchronized void handleOutOfMemory() throws Exception {
+		maxRunningFECThreads = 1;
+		notifyAll();
 	}
-
-	
 	
 }
