@@ -110,33 +110,150 @@ class SingleFileInserter implements ClientPutState {
 			OffThreadCompressor otc = new OffThreadCompressor();
 			ctx.executor.execute(otc, "Compressor for "+this);
 		} else {
-			tryCompress();
+			tryCompress(container, context);
 		}
 	}
 
 	private class OffThreadCompressor implements Runnable {
 		public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
-			try {
-				tryCompress();
-			} catch (InsertException e) {
-				cb.onFailure(e, SingleFileInserter.this);
-            } catch (OutOfMemoryError e) {
-				OOMHandler.handleOOM(e);
-				System.err.println("OffThreadCompressor thread above failed.");
-				// Might not be heap, so try anyway
-				cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, e, null), SingleFileInserter.this);
-            } catch (Throwable t) {
-                Logger.error(this, "Caught in OffThreadCompressor: "+t, t);
-                System.err.println("Caught in OffThreadCompressor: "+t);
-                t.printStackTrace();
-                // Try to fail gracefully
-				cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), SingleFileInserter.this);
-			}
 		}
 	}
 	
-	private void tryCompress() throws InsertException {
+	void onCompressed(CompressionOutput output, ObjectContainer container, ClientContext context) {
+		try {
+			onCompressedInner(output, container, context);
+		} catch (InsertException e) {
+			cb.onFailure(e, SingleFileInserter.this, container, context);
+        } catch (OutOfMemoryError e) {
+			OOMHandler.handleOOM(e);
+			System.err.println("OffThreadCompressor thread above failed.");
+			// Might not be heap, so try anyway
+			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, e, null), SingleFileInserter.this, container, context);
+        } catch (Throwable t) {
+            Logger.error(this, "Caught in OffThreadCompressor: "+t, t);
+            System.err.println("Caught in OffThreadCompressor: "+t);
+            t.printStackTrace();
+            // Try to fail gracefully
+			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), SingleFileInserter.this, container, context);
+		}
+	}
+	
+	void onCompressedInner(CompressionOutput output, ObjectContainer container, ClientContext context) throws InsertException {
+		long origSize = block.getData().size();
+		Bucket bestCompressedData = output.data;
+		Bucket data = bestCompressedData;
+		Compressor bestCodec = output.bestCodec;
+		
+		boolean freeData = false;
+		if(bestCodec != null) {
+			freeData = true;
+		} else {
+			data = block.getData();
+		}
+
+		int blockSize;
+		int oneBlockCompressedSize;
+		
+		String type = block.desiredURI.getKeyType();
+		if(type.equals("SSK") || type.equals("KSK") || type.equals("USK")) {
+			blockSize = SSKBlock.DATA_LENGTH;
+			oneBlockCompressedSize = SSKBlock.MAX_COMPRESSED_DATA_LENGTH;
+		} else if(type.equals("CHK")) {
+			blockSize = CHKBlock.DATA_LENGTH;
+			oneBlockCompressedSize = CHKBlock.MAX_COMPRESSED_DATA_LENGTH;
+		} else {
+			throw new InsertException(InsertException.INVALID_URI, "Unknown key type: "+type, null);
+		}
+		
+		// Compressed data
+		
+		if(parent == cb) {
+			ctx.eventProducer.produceEvent(new FinishedCompressionEvent(bestCodec == null ? -1 : bestCodec.codecNumberForMetadata(), origSize, data.size()));
+			if(logMINOR) Logger.minor(this, "Compressed "+origSize+" to "+data.size()+" on "+this);
+		}
+		
+		// Insert it...
+		short codecNumber = bestCodec == null ? -1 : bestCodec.codecNumberForMetadata();
+		long compressedDataSize = data.size();
+		boolean fitsInOneBlockAsIs = bestCodec == null ? compressedDataSize < blockSize : compressedDataSize < oneBlockCompressedSize;
+		boolean fitsInOneCHK = bestCodec == null ? compressedDataSize < CHKBlock.DATA_LENGTH : compressedDataSize < CHKBlock.MAX_COMPRESSED_DATA_LENGTH;
+
+		if((fitsInOneBlockAsIs || fitsInOneCHK) && block.getData().size() > Integer.MAX_VALUE)
+			throw new InsertException(InsertException.INTERNAL_ERROR, "2GB+ should not encode to one block!", null);
+
+		boolean noMetadata = ((block.clientMetadata == null) || block.clientMetadata.isTrivial()) && targetFilename == null;
+		if(noMetadata && !insertAsArchiveManifest) {
+			if(fitsInOneBlockAsIs) {
+				// Just insert it
+				ClientPutState bi =
+					createInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true, true, container, context);
+				cb.onTransition(this, bi, container);
+				bi.schedule(container, context);
+				cb.onBlockSetFinished(this, container);
+				return;
+			}
+		}
+		if (fitsInOneCHK) {
+			// Insert single block, then insert pointer to it
+			if(reportMetadataOnly) {
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token);
+				Metadata meta = makeMetadata(dataPutter.getURI());
+				cb.onMetadata(meta, this, container, context);
+				cb.onTransition(this, dataPutter, container);
+				dataPutter.schedule(container, context);
+				cb.onBlockSetFinished(this, container);
+			} else {
+				MultiPutCompletionCallback mcb = 
+					new MultiPutCompletionCallback(cb, parent, token);
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token);
+				Metadata meta = makeMetadata(dataPutter.getURI());
+				Bucket metadataBucket;
+				try {
+					metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, meta.writeToByteArray());
+				} catch (IOException e) {
+					Logger.error(this, "Caught "+e, e);
+					throw new InsertException(InsertException.BUCKET_ERROR, e, null);
+				} catch (MetadataUnresolvedException e) {
+					// Impossible, we're not inserting a manifest.
+					Logger.error(this, "Caught "+e, e);
+					throw new InsertException(InsertException.INTERNAL_ERROR, "Got MetadataUnresolvedException in SingleFileInserter: "+e.toString(), null);
+				}
+				ClientPutState metaPutter = createInserter(parent, metadataBucket, (short) -1, block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly, true, false, container, context);
+				mcb.addURIGenerator(metaPutter);
+				mcb.add(dataPutter);
+				cb.onTransition(this, mcb, container);
+				Logger.minor(this, ""+mcb+" : data "+dataPutter+" meta "+metaPutter);
+				mcb.arm(container, context);
+				dataPutter.schedule(container, context);
+				if(metaPutter instanceof SingleBlockInserter)
+					((SingleBlockInserter)metaPutter).encode(container);
+				metaPutter.schedule(container, context);
+				cb.onBlockSetFinished(this, container);
+			}
+			return;
+		}
+		// Otherwise the file is too big to fit into one block
+		// We therefore must make a splitfile
+		// Job of SplitHandler: when the splitinserter has the metadata,
+		// insert it. Then when the splitinserter has finished, and the
+		// metadata insert has finished too, tell the master callback.
+		if(reportMetadataOnly) {
+			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData);
+			cb.onTransition(this, sfi, container);
+			sfi.start(container, context);
+			if(earlyEncode) sfi.forceEncode();
+		} else {
+			SplitHandler sh = new SplitHandler();
+			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData);
+			sh.sfi = sfi;
+			cb.onTransition(this, sh, container);
+			sfi.start(container, context);
+			if(earlyEncode) sfi.forceEncode();
+		}
+	}
+	
+	private void tryCompress(ObjectContainer container, ClientContext context) throws InsertException {
 		// First, determine how small it needs to be
 		Bucket origData = block.getData();
 		Bucket data = origData;
@@ -156,139 +273,9 @@ class SingleFileInserter implements ClientPutState {
 			throw new InsertException(InsertException.INVALID_URI, "Unknown key type: "+type, null);
 		}
 		
-		Compressor bestCodec = null;
-		Bucket bestCompressedData = null;
-
 		boolean tryCompress = (origSize > blockSize) && (!ctx.dontCompress) && (!dontCompress);
 		if(tryCompress) {
-			// Try to compress the data.
-			// Try each algorithm, starting with the fastest and weakest.
-			// Stop when run out of algorithms, or the compressed data fits in a single block.
-			int algos = Compressor.countCompressAlgorithms();
-			try {
-				for(int i=0;i<algos;i++) {
-					// Only produce if we are compressing *the original data*
-					if(parent == cb)
-						ctx.eventProducer.produceEvent(new StartedCompressionEvent(i));
-					Compressor comp = Compressor.getCompressionAlgorithmByDifficulty(i);
-					Bucket result;
-					result = comp.compress(origData, ctx.persistentBucketFactory, origData.size());
-					if(result.size() < oneBlockCompressedSize) {
-						bestCodec = comp;
-						if(bestCompressedData != null)
-							bestCompressedData.free();
-						bestCompressedData = result;
-						break;
-					}
-					if((bestCompressedData != null) && (result.size() <  bestCompressedData.size())) {
-						bestCompressedData.free();
-						bestCompressedData = result;
-						bestCodec = comp;
-					} else if((bestCompressedData == null) && (result.size() < data.size())) {
-						bestCompressedData = result;
-						bestCodec = comp;
-					} else {
-						result.free();
-					}
-				}
-			} catch (IOException e) {
-				throw new InsertException(InsertException.BUCKET_ERROR, e, null);
-			} catch (CompressionOutputSizeException e) {
-				// Impossible
-				throw new Error(e);
-			}
-		}
-		boolean freeData = false;
-		if(bestCompressedData != null) {
-			data = bestCompressedData;
-			freeData = true;
-		}
-		
-		if(parent == cb) {
-			if(tryCompress)
-				ctx.eventProducer.produceEvent(new FinishedCompressionEvent(bestCodec == null ? -1 : bestCodec.codecNumberForMetadata(), origSize, data.size()));
-			if(logMINOR) Logger.minor(this, "Compressed "+origSize+" to "+data.size()+" on "+this);
-		}
-		
-		// Compressed data
-		
-		// Insert it...
-		short codecNumber = bestCodec == null ? -1 : bestCodec.codecNumberForMetadata();
-		long compressedDataSize = data.size();
-		boolean fitsInOneBlockAsIs = bestCodec == null ? compressedDataSize < blockSize : compressedDataSize < oneBlockCompressedSize;
-		boolean fitsInOneCHK = bestCodec == null ? compressedDataSize < CHKBlock.DATA_LENGTH : compressedDataSize < CHKBlock.MAX_COMPRESSED_DATA_LENGTH;
-
-		if((fitsInOneBlockAsIs || fitsInOneCHK) && block.getData().size() > Integer.MAX_VALUE)
-			throw new InsertException(InsertException.INTERNAL_ERROR, "2GB+ should not encode to one block!", null);
-
-		boolean noMetadata = ((block.clientMetadata == null) || block.clientMetadata.isTrivial()) && targetFilename == null;
-		if(noMetadata && !insertAsArchiveManifest) {
-			if(fitsInOneBlockAsIs) {
-				// Just insert it
-				ClientPutState bi =
-					createInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true, true);
-				cb.onTransition(this, bi);
-				bi.schedule();
-				cb.onBlockSetFinished(this);
-				return;
-			}
-		}
-		if (fitsInOneCHK) {
-			// Insert single block, then insert pointer to it
-			if(reportMetadataOnly) {
-				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token);
-				Metadata meta = makeMetadata(dataPutter.getURI());
-				cb.onMetadata(meta, this);
-				cb.onTransition(this, dataPutter);
-				dataPutter.schedule();
-				cb.onBlockSetFinished(this);
-			} else {
-				MultiPutCompletionCallback mcb = 
-					new MultiPutCompletionCallback(cb, parent, token);
-				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token);
-				Metadata meta = makeMetadata(dataPutter.getURI());
-				Bucket metadataBucket;
-				try {
-					metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, meta.writeToByteArray());
-				} catch (IOException e) {
-					Logger.error(this, "Caught "+e, e);
-					throw new InsertException(InsertException.BUCKET_ERROR, e, null);
-				} catch (MetadataUnresolvedException e) {
-					// Impossible, we're not inserting a manifest.
-					Logger.error(this, "Caught "+e, e);
-					throw new InsertException(InsertException.INTERNAL_ERROR, "Got MetadataUnresolvedException in SingleFileInserter: "+e.toString(), null);
-				}
-				ClientPutState metaPutter = createInserter(parent, metadataBucket, (short) -1, block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly, true, false);
-				mcb.addURIGenerator(metaPutter);
-				mcb.add(dataPutter);
-				cb.onTransition(this, mcb);
-				Logger.minor(this, ""+mcb+" : data "+dataPutter+" meta "+metaPutter);
-				mcb.arm();
-				dataPutter.schedule();
-				if(metaPutter instanceof SingleBlockInserter)
-					((SingleBlockInserter)metaPutter).encode();
-				metaPutter.schedule();
-				cb.onBlockSetFinished(this);
-			}
-			return;
-		}
-		// Otherwise the file is too big to fit into one block
-		// We therefore must make a splitfile
-		// Job of SplitHandler: when the splitinserter has the metadata,
-		// insert it. Then when the splitinserter has finished, and the
-		// metadata insert has finished too, tell the master callback.
-		if(reportMetadataOnly) {
-			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData);
-			cb.onTransition(this, sfi);
-			sfi.start();
-			if(earlyEncode) sfi.forceEncode();
-		} else {
-			SplitHandler sh = new SplitHandler();
-			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData);
-			sh.sfi = sfi;
-			cb.onTransition(this, sh);
-			sfi.start();
-			if(earlyEncode) sfi.forceEncode();
+			InsertCompressor.start(container, context, this, origData, oneBlockCompressedSize, ctx.bf, parent.persistent());
 		}
 	}
 	
@@ -304,7 +291,7 @@ class SingleFileInserter implements ClientPutState {
 
 	private ClientPutState createInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
 			InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, 
-			boolean addToParent, boolean encodeCHK, ObjectContainer container) throws InsertException {
+			boolean addToParent, boolean encodeCHK, ObjectContainer container, ClientContext context) throws InsertException {
 		
 		uri.checkInsertURI(); // will throw an exception if needed
 		
@@ -320,7 +307,7 @@ class SingleFileInserter implements ClientPutState {
 				new SingleBlockInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
 						getCHKOnly, addToParent, false, this.token);
 			if(encodeCHK)
-				cb.onEncode(sbi.getBlock().getClientKey(), this, container);
+				cb.onEncode(sbi.getBlock().getClientKey(), this, container, context);
 			return sbi;
 		}
 		
@@ -549,9 +536,9 @@ class SingleFileInserter implements ClientPutState {
 				oldMetadataPutter = metadataPutter;
 			}
 			if(oldSFI != null)
-				oldSFI.cancel(container);
+				oldSFI.cancel(container, context);
 			if(oldMetadataPutter != null)
-				oldMetadataPutter.cancel(container);
+				oldMetadataPutter.cancel(container, context);
 			finished = true;
 			cb.onFailure(e, this, container, context);
 		}
@@ -674,7 +661,7 @@ class SingleFileInserter implements ClientPutState {
 				}
 			} catch (InsertException e1) {
 				Logger.error(this, "Failing "+this+" : "+e1, e1);
-				fail(e1, container);
+				fail(e1, container, context);
 				return;
 			}
 		}
@@ -700,5 +687,10 @@ class SingleFileInserter implements ClientPutState {
 
 	public SimpleFieldSet getProgressFieldset() {
 		return null;
+	}
+
+	public void onStartCompression(int i) {
+		if(parent == cb)
+			ctx.eventProducer.produceEvent(new StartedCompressionEvent(i));
 	}
 }

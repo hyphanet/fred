@@ -5,6 +5,7 @@ package freenet.client.async;
 
 import freenet.client.FECQueue;
 import freenet.node.NodeClientCore;
+import freenet.support.Executor;
 
 /**
  * Object passed in to client-layer operations, containing references to essential but transient objects
@@ -19,6 +20,8 @@ public class ClientContext {
 	public final ClientRequestScheduler sskInsertScheduler;
 	public final ClientRequestScheduler chkInsertScheduler;
 	public final DBJobRunner jobRunner;
+	public final Executor mainExecutor;
+	public final long nodeDBHandle;
 
 	public ClientContext(NodeClientCore core) {
 		this.fecQueue = core.fecQueue;
@@ -27,6 +30,8 @@ public class ClientContext {
 		this.sskInsertScheduler = core.requestStarters.sskPutScheduler;
 		this.chkInsertScheduler = core.requestStarters.chkPutScheduler;
 		jobRunner = core;
+		this.mainExecutor = core.getExecutor();
+		this.nodeDBHandle = core.node.nodeDBHandle;
 	}
 	
 }
