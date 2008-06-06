@@ -143,13 +143,13 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 
 	public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context) {
 		if(parent.isCancelled()) {
-			fail(new InsertException(InsertException.CANCELLED), container);
+			fail(new InsertException(InsertException.CANCELLED), container, context);
 			return;
 		}
 		
 		switch(e.code) {
 		case LowLevelPutException.COLLISION:
-			fail(new InsertException(InsertException.COLLISION), container);
+			fail(new InsertException(InsertException.COLLISION), container, context);
 			break;
 		case LowLevelPutException.INTERNAL_ERROR:
 			errors.inc(InsertException.INTERNAL_ERROR);
@@ -180,17 +180,17 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(logMINOR) Logger.minor(this, "Failed: "+e);
 		retries++;
 		if((retries > ctx.maxInsertRetries) && (ctx.maxInsertRetries != -1)) {
-			fail(InsertException.construct(errors), container);
+			fail(InsertException.construct(errors), container, context);
 			return;
 		}
 		getScheduler(context).register(this);
 	}
 
-	private void fail(InsertException e, ObjectContainer container) {
-		fail(e, false, container);
+	private void fail(InsertException e, ObjectContainer container, ClientContext context) {
+		fail(e, false, container, context);
 	}
 	
-	private void fail(InsertException e, boolean forceFatal, ObjectContainer container) {
+	private void fail(InsertException e, boolean forceFatal, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
@@ -199,7 +199,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			parent.fatallyFailedBlock();
 		else
 			parent.failedBlock();
-		cb.onFailure(e, this, container);
+		cb.onFailure(e, this, container, context);
 	}
 
 	public ClientKeyBlock getBlock() {
