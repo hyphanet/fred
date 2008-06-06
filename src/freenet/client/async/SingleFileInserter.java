@@ -21,7 +21,6 @@ import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
-import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
 import freenet.support.io.BucketTools;
 
@@ -547,14 +546,14 @@ class SingleFileInserter implements ClientPutState {
 			return parent;
 		}
 
-		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container) {
+		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 			synchronized(this) {
 				if(state != metadataPutter) return;
 			}
-			cb.onEncode(key, this, container);
+			cb.onEncode(key, this, container, context);
 		}
 
-		public void cancel(ObjectContainer container) {
+		public void cancel(ObjectContainer container, ClientContext context) {
 			ClientPutState oldSFI = null;
 			ClientPutState oldMetadataPutter = null;
 			synchronized(this) {
@@ -562,9 +561,9 @@ class SingleFileInserter implements ClientPutState {
 				oldMetadataPutter = metadataPutter;
 			}
 			if(oldSFI != null)
-				oldSFI.cancel(container);
+				oldSFI.cancel(container, context);
 			if(oldMetadataPutter != null)
-				oldMetadataPutter.cancel(container);
+				oldMetadataPutter.cancel(container, context);
 			
 			if(freeData)
 				block.free();
@@ -672,7 +671,7 @@ class SingleFileInserter implements ClientPutState {
 		return parent;
 	}
 
-	public void cancel() {
+	public void cancel(ObjectContainer container, ClientContext context) {
 		if(freeData)
 			block.free();
 	}
