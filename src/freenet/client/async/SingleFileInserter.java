@@ -87,7 +87,7 @@ class SingleFileInserter implements ClientPutState {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
-	public void start(SimpleFieldSet fs, ObjectContainer container) throws InsertException {
+	public void start(SimpleFieldSet fs, ObjectContainer container, ClientContext context) throws InsertException {
 		if(fs != null) {
 			String type = fs.get("Type");
 			if(type.equals("SplitHandler")) {
@@ -97,7 +97,7 @@ class SingleFileInserter implements ClientPutState {
 					SplitHandler sh = new SplitHandler();
 					sh.start(fs, false);
 					cb.onTransition(this, sh, container);
-					sh.schedule();
+					sh.schedule(container, context);
 					return;
 				} catch (ResumeException e) {
 					Logger.error(this, "Failed to restore: "+e, e);
@@ -690,8 +690,8 @@ class SingleFileInserter implements ClientPutState {
 			block.free();
 	}
 
-	public void schedule(ObjectContainer container) throws InsertException {
-		start(null, container);
+	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
+		start(null, container, context);
 	}
 
 	public Object getToken() {
