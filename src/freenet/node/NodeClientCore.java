@@ -127,6 +127,8 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 	 */
 	public final PrioritizedSerialExecutor datastoreCheckerExecutor;
 	
+	public final ClientContext clientContext;
+	
 	public static int maxBackgroundUSKFetchers;
 	
 	// Client stuff that needs to be configged - FIXME
@@ -171,7 +173,8 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		if(logMINOR) Logger.minor(this, "Read throttleFS:\n"+throttleFS);
 		
 		if(logMINOR) Logger.minor(this, "Serializing RequestStarterGroup from:\n"+throttleFS);
-		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, new ClientContext(this));
+		clientContext = new ClientContext(this);
+		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext);
 		
 		// Temp files
 		
@@ -304,7 +307,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		healingQueue = new SimpleHealingQueue(requestStarters.chkPutScheduler,
 				new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory, 
 						random, 0, 2, 1, 0, 0, new SimpleEventProducer(), 
-						!Node.DONT_CACHE_LOCAL_REQUESTS, uskManager, backgroundBlockEncoder, node.executor), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
+						!Node.DONT_CACHE_LOCAL_REQUESTS, uskManager, node.executor), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
 		nodeConfig.register("lazyResume", false, sortOrder++, true, false, "NodeClientCore.lazyResume",
 				"NodeClientCore.lazyResumeLong", new BooleanCallback() {
@@ -1160,19 +1163,34 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		return requestStarters.countTransientQueuedRequests();
 	}
 
-	public void queue(final DBJob job, int priority) {
-		this.clientDatabaseExecutor.execute(new Runnable() {
-
-			public void run() {
-				try {
-					job.run(node.db);
-					node.db.commit();
-				} catch (Throwable t) {
-					Logger.error(this, "Failed to run database job "+job+" : caught "+t, t);
-				}
-			}
+	public void queue(final DBJob job, int priority, boolean checkDupes) {
+		this.clientDatabaseExecutor.executeNoDupes(new DBJobWrapper(job), priority, ""+job);
+	}
+	
+	class DBJobWrapper implements Runnable {
+		
+		DBJobWrapper(DBJob job) {
+			this.job = job;
+		}
+		
+		final DBJob job;
+		
+		public void run() {
 			
-		}, priority, ""+job);
+			try {
+				job.run(node.db, clientContext);
+				node.db.commit();
+			} catch (Throwable t) {
+				Logger.error(this, "Failed to run database job "+job+" : caught "+t, t);
+			}
+		}
+		
+		public boolean equals(Object o) {
+			if(!(o instanceof DBJobWrapper)) return false;
+			DBJobWrapper cmp = (DBJobWrapper) o;
+			return (cmp.job == job);
+		}
+		
 	}
 
 	public boolean onDatabaseThread() {

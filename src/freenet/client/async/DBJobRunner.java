@@ -9,7 +9,7 @@ package freenet.client.async;
  */
 public interface DBJobRunner {
 	
-	public void queue(DBJob job, int priority);
+	public void queue(DBJob job, int priority, boolean checkDupes);
 
 	public boolean onDatabaseThread();
 

@@ -3,6 +3,10 @@ package freenet.client.async;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 
+import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
+import com.db4o.query.Query;
+
 import freenet.node.PrioRunnable;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
@@ -20,32 +24,59 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 		queue = new ArrayList();
 	}
 	
-	public void queue(SingleBlockInserter sbi) {
+	public void queue(SingleBlockInserter sbi, ObjectContainer container, ClientContext context) {
 		if(sbi.isCancelled()) return;
 		if(sbi.resultingURI != null) return;
-		SoftReference ref = new SoftReference(sbi);
-		synchronized(this) {
-			queue.add(ref);
-			Logger.minor(this, "Queueing encode of "+sbi);
-			notifyAll();
+		if(sbi.persistent()) {
+			queuePersistent(sbi, container, context);
+			runPersistentQueue(context);
+		} else {
+			SoftReference ref = new SoftReference(sbi);
+			synchronized(this) {
+				queue.add(ref);
+				Logger.minor(this, "Queueing encode of "+sbi);
+				notifyAll();
+			}
 		}
 	}
 	
-	public void queue(SingleBlockInserter[] sbis) {
+	public void queue(SingleBlockInserter[] sbis, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			for(int i=0;i<sbis.length;i++) {
 				SingleBlockInserter inserter = sbis[i];
 				if(inserter == null) continue;
 				if(inserter.isCancelled()) continue;
 				if(inserter.resultingURI != null) continue;
+				if(inserter.persistent()) continue;
 				Logger.minor(this, "Queueing encode of "+inserter);
 				SoftReference ref = new SoftReference(inserter);
 				queue.add(ref);
 			}
 			notifyAll();
 		}
+		boolean anyPersistent = false;
+		for(int i=0;i<sbis.length;i++) {
+			anyPersistent = true;
+			SingleBlockInserter inserter = sbis[i];
+			if(inserter == null) continue;
+			if(inserter.isCancelled()) continue;
+			if(inserter.resultingURI != null) continue;
+			if(!inserter.persistent()) continue;
+			queuePersistent(inserter, container, context);
+		}
+		if(anyPersistent)
+			runPersistentQueue(context);
 	}
 	
+	private void runPersistentQueue(ClientContext context) {
+		context.jobRunner.queue(runner, NativeThread.LOW_PRIORITY, true);
+	}
+
+	private void queuePersistent(SingleBlockInserter sbi, ObjectContainer container, ClientContext context) {
+		BackgroundBlockEncoderTag tag = new BackgroundBlockEncoderTag(sbi, context);
+		container.set(tag);
+	}
+
 	public void run() {
 	    freenet.support.Logger.OSThread.logPID(this);
 		while(true) {
@@ -75,4 +106,49 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 		return NativeThread.MIN_PRIORITY;
 	}
 
+	static final int JOBS_PER_SLOT = 1;
+	
+	private DBJob runner = new DBJob() {
+
+		public void run(ObjectContainer container, ClientContext context) {
+			Query query = container.query();
+			query.constrain(BackgroundBlockEncoderTag.class);
+			query.descend("nodeDBHandle").constrain(new Long(context.nodeDBHandle));
+			query.descend("priority").orderAscending();
+			query.descend("addedTime").orderAscending();
+			ObjectSet results = query.execute();
+			for(int x = 0; x < JOBS_PER_SLOT && results.hasNext(); x++) {
+				BackgroundBlockEncoderTag tag = (BackgroundBlockEncoderTag) results.next();
+				try {
+					SingleBlockInserter sbi = tag.inserter;
+					if(sbi == null) continue; // deleted
+					if(sbi.isCancelled()) continue;
+					if(sbi.resultingURI != null) continue;
+					sbi.tryEncode();
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t, t);
+				} finally {
+					container.delete(tag);
+				}
+			}
+		}
+		
+	};
+	
+}
+
+class BackgroundBlockEncoderTag {
+	final SingleBlockInserter inserter;
+	final long nodeDBHandle;
+	/** For implementing FIFO ordering */
+	final long addedTime;
+	/** For implementing priority ordering */
+	final short priority;
+	
+	BackgroundBlockEncoderTag(SingleBlockInserter inserter, ClientContext context) {
+		this.inserter = inserter;
+		this.nodeDBHandle = context.nodeDBHandle;
+		this.addedTime = System.currentTimeMillis();
+		this.priority = inserter.getPriorityClass();
+	}
 }

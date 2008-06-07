@@ -5,8 +5,6 @@ package freenet.client.async;
 
 import com.db4o.ObjectContainer;
 
-import freenet.node.RequestScheduler;
-
 /**
  * A job to be run on the database thread. We will pass a transactional context in,
  * and a RequestScheduler.
@@ -14,6 +12,6 @@ import freenet.node.RequestScheduler;
  */
 public interface DBJob {
 	
-	void run(ObjectContainer container);
+	void run(ObjectContainer container, ClientContext context);
 
 }
