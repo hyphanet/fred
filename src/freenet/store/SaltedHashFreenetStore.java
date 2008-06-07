@@ -891,8 +891,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 				// write unresolved entry to file
 				it = oldEntryList.listIterator();
-				while (it.hasNext())
+				while (it.hasNext()) {
 					rrWriteOldEntry(it.next());
+					it.remove();
+				}
 				
 				long processed = prevStoreSize - curOffset;
 				Logger.normal(this, "Store resize " + callback + ": " + processed + "/" + prevStoreSize);
