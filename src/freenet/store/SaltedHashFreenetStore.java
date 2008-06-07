@@ -56,7 +56,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private boolean syncBloom = true;
 	private BloomFilter bloomFilter;
 
-	private static final boolean logLOCK = true;
+	private static final boolean logLOCK = false;
 	private static boolean logMINOR;
 	private static boolean logDEBUG;
 
