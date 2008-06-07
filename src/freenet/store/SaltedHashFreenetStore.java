@@ -1244,7 +1244,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			return true;
 		} else {
 			// failed, remove the locks
-			for (long offset : offsets)
+			for (long offset : locked)
 				unlockEntry(offset);
 			return false;
 		}
