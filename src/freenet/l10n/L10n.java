@@ -24,9 +24,6 @@ import freenet.support.io.FileUtil;
 *
 * TODO: Maybe base64 the override file ?
 *
-* comment(mario): for www interface we might detect locale from http requests?
-* for other access (telnet) using system locale would probably be good, but
-* it would be nice to have a command to switch locale on the fly.
 */
 public class L10n {
 	public static final String CLASS_NAME = "L10n";
