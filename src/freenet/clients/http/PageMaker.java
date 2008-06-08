@@ -27,6 +27,8 @@ import freenet.support.io.FileUtil;
 public final class PageMaker {
 	
 	public static final String DEFAULT_THEME = "clean";
+	public static final int MODE_SIMPLE = 1;
+	public static final int MODE_ADVANCED = 2;
 	private String theme;
 	private File override;
 	private final List navigationLinkTexts = new ArrayList();
@@ -260,9 +262,6 @@ public final class PageMaker {
 		
 		return result;
 	}
-	
-	public static final int MODE_SIMPLE = 1;
-	public static final int MODE_ADVANCED = 2;
 	
 	protected int drawModeSelectionArray(NodeClientCore core, HTTPRequest req, HTMLNode contentNode) {
 		// Mode can be changed by a link, not just by the default

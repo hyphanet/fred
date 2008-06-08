@@ -140,7 +140,7 @@ public class ConfigToadlet extends Toadlet {
 		
 		contentNode.addChild(core.alerts.createSummary());
 		
-		int mode = ctx.getPageMaker().drawModeSelectionArray(core, req, contentNode);
+		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, req, contentNode);
 		
 		if(mode >= PageMaker.MODE_ADVANCED){
 			HTMLNode navigationBar = ctx.getPageMaker().getInfobox("navbar", l10n("configNavTitle"));

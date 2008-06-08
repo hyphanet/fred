@@ -200,9 +200,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		// FIXME! We need some nice images
 		long now = System.currentTimeMillis();
 	
-		int mode = ctx.getPageMaker().drawModeSelectionArray(core, request, contentNode);
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
+		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, request, contentNode);
 		
 		if(peerNodeStatuses.length>0){
 

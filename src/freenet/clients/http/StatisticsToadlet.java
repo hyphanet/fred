@@ -165,9 +165,9 @@ public class StatisticsToadlet extends Toadlet {
 		final long now = System.currentTimeMillis();
 		final long nodeUptimeSeconds = (now - node.startupTime) / 1000;
 
-		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, request, contentNode);
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
+		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, request, contentNode);
 
 		double swaps = (double)node.getSwaps();
 		double noSwaps = (double)node.getNoSwaps();
