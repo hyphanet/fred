@@ -32,8 +32,22 @@ public class L10n {
 	public static final String OVERRIDE_SUFFIX = ".override" + SUFFIX;
 	
 	public static final String FALLBACK_DEFAULT = "en";
-	public static final String[] AVAILABLE_LANGUAGES = { "en", "es", "da", "de", "fi", "fr", "it", "no", "pl", "se",
-	        "zh-cn", "zh-tw", "unlisted" };
+	/** @see http://www.omniglot.com/language/names.htm */
+	public static final String[][] AVAILABLE_LANGUAGES = {
+		new String[] { "en", "English" },
+		new String[] { "es", "Español" },
+		new String[] { "da", "Dansk" },
+		new String[] { "de", "Deutsch" },
+		new String[] { "fi", "Suomi" },
+		new String[] { "fr", "Français" },
+		new String[] { "it", "Italiano" },
+		new String[] { "no", "Norsk" },
+		new String[] { "pl", "Polski" },
+		new String[] { "se", "Svenska" },
+	        new String[] { "zh-cn", "中文" },
+		new String[] { "zh-tw", "台語" },
+		new String[] { "unlisted", "unlisted"},
+	};
 	private final String selectedLanguage;
 	
 	private static SimpleFieldSet currentTranslation = null;
@@ -81,25 +95,13 @@ public class L10n {
 	*/
 	public static void setLanguage(String selectedLanguage) throws MissingResourceException {
 		synchronized (sync) {
-			for(int i=0; i<AVAILABLE_LANGUAGES.length; i++){
-				if(selectedLanguage.equalsIgnoreCase(AVAILABLE_LANGUAGES[i])){		
-					selectedLanguage = AVAILABLE_LANGUAGES[i];
-					Logger.normal(CLASS_NAME, "Changing the current language to : " + selectedLanguage);
-
-					currentClass = new L10n(selectedLanguage);	
-
-					if(currentTranslation == null) {
-						currentClass = new L10n(FALLBACK_DEFAULT);	
-						throw new MissingResourceException("Unable to load the translation file for "+selectedLanguage, "l10n", selectedLanguage);
-					}
-
-					return;
-				}
+			Logger.normal(CLASS_NAME, "Changing the current language to : " + selectedLanguage);
+			currentClass = new L10n(selectedLanguage);
+			if(currentClass == null) {
+				currentClass = new L10n(FALLBACK_DEFAULT);
+				Logger.error(CLASS_NAME, "The requested translation is not available!" + selectedLanguage);
+				throw new MissingResourceException("The requested translation (" + selectedLanguage + ") hasn't been found!", CLASS_NAME, selectedLanguage);
 			}
-
-			currentClass = new L10n(FALLBACK_DEFAULT);
-			Logger.error(CLASS_NAME, "The requested translation is not available!" + selectedLanguage);
-			throw new MissingResourceException("The requested translation ("+selectedLanguage+") hasn't been found!", CLASS_NAME, selectedLanguage);
 		}
 	}
 	
@@ -322,6 +324,12 @@ public class L10n {
 	* @return the Properties object or null if not found
 	*/
 	public static SimpleFieldSet loadTranslation(String name) {
+		String shortCountryCode = mapLanguageNameToShortCode(name);
+		if(shortCountryCode == null) { 
+			Logger.error("L10n", "Can't map "+name+" to a country code!");
+			return null;
+		} else
+			name = shortCountryCode;
 		name = PREFIX.replace ('.', '/').concat(PREFIX.concat(name.concat(SUFFIX)));
 		
 		SimpleFieldSet result = null;
@@ -341,6 +349,23 @@ public class L10n {
 		}
 		
 		return result;
+	}
+	
+	/**
+	 * Map a full string language name to the corresponding country short code
+	 * 
+	 * @param The name to look for
+	 * @return The two letters short code OR null if not found
+	 */
+	public static String mapLanguageNameToShortCode(String name) {
+		for(int i=0; i<AVAILABLE_LANGUAGES.length; i++) {
+			String currentShortCode = AVAILABLE_LANGUAGES[i][0];
+			String currentLongName = AVAILABLE_LANGUAGES[i][1];
+			
+			if(currentShortCode.equalsIgnoreCase(name) || currentLongName.equalsIgnoreCase(name))
+				return currentShortCode;
+		}
+		return null;
 	}
 
 	public static boolean isOverridden(String key) {

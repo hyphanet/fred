@@ -212,7 +212,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 		
 		public String[] getPossibleValues() {
-			return L10n.AVAILABLE_LANGUAGES;
+			String[] result = new String[L10n.AVAILABLE_LANGUAGES.length];
+			for(int i=0; i<L10n.AVAILABLE_LANGUAGES.length; i++)
+				result[i] = L10n.AVAILABLE_LANGUAGES[i][1];
+			return result;
 		}
 	}
 	
