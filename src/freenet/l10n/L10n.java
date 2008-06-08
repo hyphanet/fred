@@ -44,8 +44,8 @@ public class L10n {
 		new String[] { "no", "Norsk" },
 		new String[] { "pl", "Polski" },
 		new String[] { "se", "Svenska" },
-	        new String[] { "zh-cn", "中文" },
-		new String[] { "zh-tw", "台語" },
+	        new String[] { "zh-cn", "中文(简体)" },
+		new String[] { "zh-tw", "中文(繁體)" },
 		new String[] { "unlisted", "unlisted"},
 	};
 	private final String selectedLanguage;
