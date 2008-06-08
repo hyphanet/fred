@@ -60,6 +60,7 @@ public class ConnectivityToadlet extends Toadlet {
 		HTMLNode pageNode = pageMaker.getPageNode(L10n.getString("ConnectivityToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 
+		int mode = ctx.getPageMaker().drawModeSelectionArray(core, request, contentNode);
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
@@ -84,7 +85,7 @@ public class ConnectivityToadlet extends Toadlet {
 			row.addChild("td", AddressTracker.statusString(tracker.getPortForwardStatus()));
 		}
 		
-		if(node.isAdvancedModeEnabled()) {
+		if(mode >= PageMaker.MODE_ADVANCED) {
 		
 		// One box per port
 		

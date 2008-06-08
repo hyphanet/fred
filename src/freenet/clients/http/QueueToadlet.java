@@ -607,11 +607,12 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				L10n.getString("QueueToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 
+		int mode = pageMaker.drawModeSelectionArray(core, request, contentNode);
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
 		/* add file insert box */
-		contentNode.addChild(createInsertBox(pageMaker, ctx, core.isAdvancedModeEnabled()));
+		contentNode.addChild(createInsertBox(pageMaker, ctx, mode >= PageMaker.MODE_ADVANCED));
 
 		/* navigation bar */
 		HTMLNode navigationBar = pageMaker.getInfobox("navbar", L10n.getString("QueueToadlet.requestNavigation"));
@@ -672,7 +673,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				L10n.getString("QueueToadlet.priority6")
 		};
 
-		boolean advancedModeEnabled = core.isAdvancedModeEnabled();
+		boolean advancedModeEnabled = (mode >= PageMaker.MODE_ADVANCED);
 
 		HTMLNode legendBox = contentNode.addChild(pageMaker.getInfobox("legend", L10n.getString("QueueToadlet.legend")));
 		HTMLNode legendContent = pageMaker.getContentNode(legendBox);
