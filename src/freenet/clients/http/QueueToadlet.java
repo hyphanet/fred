@@ -54,6 +54,7 @@ import freenet.support.api.HTTPUploadedFile;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
+import java.util.StringTokenizer;
 
 public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 
@@ -220,6 +221,60 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 					return;
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
+				return;
+			}else if(request.isPartSet("bulkDownloads")) {
+				String bulkDownloadsAsString = request.getPartAsString("bulkDownloads", Integer.MAX_VALUE);
+				String[] keys = bulkDownloadsAsString.split("\n");
+				if(("".equals(bulkDownloadsAsString)) || (keys.length < 1)) {
+					writePermanentRedirect(ctx, "Done", "/queue/");
+					return;
+				}
+				LinkedList success = new LinkedList(), failure = new LinkedList();
+				
+				for(int i=0; i<keys.length; i++) {
+					String currentKey = keys[i];
+					try {
+						FreenetURI fetchURI = new FreenetURI(currentKey);
+						fcp.makePersistentGlobalRequest(fetchURI, null, "forever", "disk");
+						success.add(currentKey);
+					} catch (Exception e) {
+						failure.add(currentKey);
+						Logger.error(this, "An error occured while attempting to download key("+i+") : "+currentKey+ " : "+e.getMessage());
+					}
+				}
+
+				boolean displayFailureBox = failure.size() > 0;
+				boolean displaySuccessBox = success.size() > 0;
+				
+				HTMLNode pageNode = ctx.getPageMaker().getPageNode(L10n.getString("QueueToadlet.downloadFiles"), ctx);
+				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+				HTMLNode alertNode = contentNode.addChild(ctx.getPageMaker().getInfobox((displayFailureBox ? "infobox-warning" : "infobox-info"), L10n.getString("QueueToadlet.downloadFiles")));
+				HTMLNode alertContent = ctx.getPageMaker().getContentNode(alertNode);
+				Iterator it;
+				if(displaySuccessBox) {
+					HTMLNode successDiv = alertContent.addChild("ul");
+					successDiv.addChild("#", L10n.getString("QueueToadlet.enqueuedSuccessfully", "number", String.valueOf(success.size())));
+					it = success.iterator();
+					while(it.hasNext()) {
+						HTMLNode line = successDiv.addChild("li");
+						line.addChild("#", (String) it.next());
+					}
+					successDiv.addChild("br");
+				}
+				if(displayFailureBox) {
+					HTMLNode failureDiv = alertContent.addChild("ul");
+					if(displayFailureBox) {
+						failureDiv.addChild("#", L10n.getString("QueueToadlet.enqueuedFailure", "number", String.valueOf(failure.size())));
+						it = failure.iterator();
+						while(it.hasNext()) {
+							HTMLNode line = failureDiv.addChild("li");
+							line.addChild("#", (String) it.next());
+						}
+					}
+					failureDiv.addChild("br");
+				}
+				alertContent.addChild("a", "href", "/queue/", L10n.getString("Toadlet.returnToQueuepage"));
+				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			} else if (request.isPartSet("change_priority")) {
 				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
@@ -494,6 +549,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
 			infoboxContent.addChild("#", L10n.getString("QueueToadlet.noTaskOnGlobalQueue"));
 			contentNode.addChild(createInsertBox(pageMaker, ctx, core.isAdvancedModeEnabled()));
+			contentNode.addChild(createBulkDownloadForm(ctx, pageMaker));
 			writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		}
@@ -798,6 +854,8 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			}
 		}
 		
+		contentNode.addChild(createBulkDownloadForm(ctx, pageMaker));
+				
 		MultiValueTable pageHeaders = new MultiValueTable();
 		writeHTMLReply(ctx, 200, "OK", pageHeaders, pageNode.generate());
 	}
@@ -1004,6 +1062,18 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		}
 		insertForm.addChild("input", new String[] { "type", "name" }, new String[] { "reset", L10n.getString("QueueToadlet.insertFileResetForm") });
 		return insertBox;
+	}
+	
+	private HTMLNode createBulkDownloadForm(ToadletContext ctx, PageMaker pageMaker) {
+		HTMLNode downloadBox = pageMaker.getInfobox(L10n.getString("QueueToadlet.downloadFiles"));
+		HTMLNode downloadBoxContent = pageMaker.getContentNode(downloadBox);
+		HTMLNode downloadForm = ctx.addFormChild(downloadBoxContent, "/queue/", "queueDownloadForm");
+		downloadForm.addChild("#", L10n.getString("QueueToadlet.downloadFilesInstructions"));
+		downloadForm.addChild("br");
+		downloadForm.addChild("textarea", new String[] { "id", "name", "cols", "rows" }, new String[] { "bulkDownloads", "bulkDownloads", "120", "8" });
+		downloadForm.addChild("br");
+		downloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert", L10n.getString("QueueToadlet.download") });
+		return downloadBox;
 	}
 	
 	private HTMLNode createRequestTable(PageMaker pageMaker, ToadletContext ctx, List requests, int[] columns, String[] priorityClasses, boolean advancedModeEnabled, boolean isUpload) {
