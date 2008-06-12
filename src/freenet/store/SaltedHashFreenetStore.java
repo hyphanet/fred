@@ -234,6 +234,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					// Overwrite old offset
 					Entry entry = new Entry(routingKey, header, data);
 					writeEntry(entry, oldOffset); // overwrite, don't increase keyCount
+					writes.incrementAndGet();
 					return;
 				}
 
