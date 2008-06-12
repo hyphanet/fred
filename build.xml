@@ -3,7 +3,10 @@
 
 <project name="Freenet" default="dist" basedir=".">
 	<description>
-		This file builds freenet...
+		This file builds Freenet: What is Freenet?
+
+		Freenet is free software which lets you publish and obtain information on the Internet without fear of censorship. To achieve this freedom, the network is entirely decentralized and publishers and consumers of information are anonymous. Without anonymity there can never be true freedom of speech, and without decentralization the network would be vulnerable to attack.
+
 		Possible targets: compile, dist (default), clean
 	</description>
 
