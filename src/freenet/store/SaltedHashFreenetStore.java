@@ -822,27 +822,17 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		public void run() {
 			while (!shutdown) {
 				synchronized (cleanerLock) {
-					boolean resizeFinished = false;
-
+					long _prevStoreSize;
+					
 					configLock.readLock().lock();
 					try {
-						if (prevStoreSize != 0)
-							resizeFinished = resizeStore();
+						_prevStoreSize = prevStoreSize;
 					} finally {
 						configLock.readLock().unlock();
 					}
 
-					if (resizeFinished) {
-						configLock.writeLock().lock();
-						try {
-							prevStoreSize = 0;
-							writeConfigFile();
-						} catch (IOException ioe) {
-							Logger.error(this, "can't write store config file", ioe);
-						} finally {
-							configLock.writeLock().unlock();
-						}
-					}
+					if (_prevStoreSize != 0)
+						resizeStore(_prevStoreSize);
 
 					cleanerLock.notifyAll();
 					try {
@@ -860,11 +850,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		/**
 		 * Move old entries to new location and resize store
 		 */
-		private boolean resizeStore() {
+		private void resizeStore(long _prevStoreSize) {
 			Logger.normal(this, "Starting datastore resize");
 			long startTime = System.currentTimeMillis();
 
-			if (storeSize > prevStoreSize)
+			if (storeSize > _prevStoreSize)
 				setStoreFileSize(storeSize);
 
 			initOldEntriesFile();
@@ -872,14 +862,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			List<Entry> oldEntryList = new LinkedList<Entry>();
 
 			// start from end of store, make store shrinking quicker 
-			long startOffset = (prevStoreSize / RESIZE_MEMORY_ENTRIES) * RESIZE_MEMORY_ENTRIES;
+			long startOffset = (_prevStoreSize / RESIZE_MEMORY_ENTRIES) * RESIZE_MEMORY_ENTRIES;
 			for (long curOffset = startOffset; curOffset >= 0; curOffset -= RESIZE_MEMORY_ENTRIES) {
 				if (shutdown)
-					return false;
+					return;
 
 				batchReadEntries(curOffset, RESIZE_MEMORY_ENTRIES, oldEntryList);
 
-				if (storeSize < prevStoreSize)
+				if (storeSize < _prevStoreSize)
 					setStoreFileSize(Math.max(storeSize, curOffset));
 
 				// try to resolve the list
@@ -896,8 +886,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					it.remove();
 				}
 				
-				long processed = prevStoreSize - curOffset;
-				Logger.normal(this, "Store resize " + callback + ": " + processed + "/" + prevStoreSize);
+				long processed = _prevStoreSize - curOffset;
+				Logger.normal(this, "Store resize " + callback + ": " + processed + "/" + _prevStoreSize);
 			}
 
 			resolveOldEntriesFile();
@@ -905,7 +895,17 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			long endTime = System.currentTimeMillis();
 			Logger.normal(this, "Finish resizing " + callback + " in " + (endTime - startTime) / 1000 + "s");
 			
-			return true;
+			configLock.writeLock().lock();
+			try {
+				assert _prevStoreSize == prevStoreSize;
+				prevStoreSize = 0;
+				writeConfigFile();
+			} catch (IOException e) {
+				Logger.error(this, "Can't write config file", e);
+				prevStoreSize = _prevStoreSize; // try again ?
+			} finally {
+				configLock.writeLock().unlock();
+			}
 		}
 
 		/**
