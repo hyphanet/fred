@@ -72,7 +72,6 @@
 
 		<!-- Create the build directory structure used by compile -->
 
-		<!-- FIXME: remove the debug and replace with optimize -->
 		<javac srcdir="${src}" destdir="${build}" debug="on" optimize="on" source="1.4">
 			<classpath>
 				<pathelement location="${freenet-ext.location}"/>
@@ -107,8 +106,6 @@
 	<target name="dist" depends="compile,unit"
 		description="generate the distribution" >
 		<!-- Create the distribution directory -->
-		<!--<mkdir dir="."/>-->
-		<!-- Put everything in ${build} into the freenet-${DSTAMP}.jar file -->
 		<jar jarfile="${lib}/freenet-cvs-snapshot.jar" basedir="${build}">
 			<manifest>
 				<attribute name="Main-Class" value="freenet/node/Node"/>
