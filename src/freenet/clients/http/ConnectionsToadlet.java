@@ -123,7 +123,6 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				return compareLongs(firstNode.getClockDelta(), secondNode.getClockDelta());
 			}else if(sortBy.equals(("uptime"))){
 				return compareInts(firstNode.getReportedUptimePercentage(), secondNode.getReportedUptimePercentage());
-			// idle backoff overload_p
 			}else
 				return 0;
 		}
@@ -500,9 +499,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		
 		if (request.isPartSet("add")) {
 			// add a new node
-			String urltext = request.getPartAsString("url", 100);
+			String urltext = request.getPartAsString("url", 200);
 			urltext = urltext.trim();
-			String reftext = request.getPartAsString("ref", 2000);
+			String reftext = request.getPartAsString("ref", Integer.MAX_VALUE);
 			reftext = reftext.trim();
 			if (reftext.length() < 200) {
 				reftext = request.getPartAsString("reffile", 2000);
@@ -522,7 +521,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					// FIXME get charset encoding from uc.getContentType()
 					in = new BufferedReader(new InputStreamReader(uc.getInputStream()));
 					String line;
-					while ( (line = in.readLine()) != null) {
+					while ((line = in.readLine()) != null) {
 						ref.append( line ).append('\n');
 					}
 				} catch (IOException e) {
