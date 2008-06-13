@@ -19,9 +19,14 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 
 	// Minimize memory usage at the cost of having to encode from the end
 	private final ArrayList queue;
+	private ClientContext context;
 	
 	public BackgroundBlockEncoder() {
 		queue = new ArrayList();
+	}
+	
+	public void setContext(ClientContext context) {
+		this.context = context;
 	}
 	
 	public void queue(SingleBlockInserter sbi, ObjectContainer container, ClientContext context) {
@@ -98,7 +103,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 			Logger.minor(this, "Encoding "+sbi);
 			if(sbi.isCancelled()) continue;
 			if(sbi.resultingURI != null) continue;
-			sbi.tryEncode(null);
+			sbi.tryEncode(null, context);
 		}
 	}
 
@@ -124,7 +129,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 					if(sbi == null) continue; // deleted
 					if(sbi.isCancelled()) continue;
 					if(sbi.resultingURI != null) continue;
-					sbi.tryEncode();
+					sbi.tryEncode(container, context);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t, t);
 				} finally {

@@ -420,6 +420,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 	}
 
 	public void start(Config config) throws NodeInitException {
+		backgroundBlockEncoder.setContext(clientContext);
 		node.executor.execute(backgroundBlockEncoder, "Background block encoder");
 		persister.start();
 		if(fcpServer != null)
