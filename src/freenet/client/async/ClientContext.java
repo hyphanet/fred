@@ -40,7 +40,8 @@ public class ClientContext {
 		this.backgroundBlockEncoder = core.backgroundBlockEncoder;
 	}
 
-	public void start(final ClientPutter inserter, final boolean param) {
+	public void start(final ClientPutter inserter, final boolean param) throws InsertException {
+		if(inserter.persistent()) {
 		jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
@@ -52,6 +53,9 @@ public class ClientContext {
 			}
 			
 		}, NativeThread.NORM_PRIORITY, false);
+		} else {
+			inserter.start(param, param, null, this);
+		}
 	}
 	
 }

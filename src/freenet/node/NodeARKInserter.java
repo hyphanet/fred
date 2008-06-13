@@ -161,6 +161,8 @@ public class NodeARKInserter implements ClientCallback, RequestClient {
 					node.clientCore.requestStarters.chkPutScheduler, node.clientCore.requestStarters.sskPutScheduler, 
 					RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this, null, null, false);
 		
+		try {
+			
 			node.clientCore.clientContext.start(inserter, false);
 			
 			synchronized (this) {
@@ -180,6 +182,9 @@ public class NodeARKInserter implements ClientCallback, RequestClient {
 					}
 				}
 			}
+		} catch (InsertException e) {
+			onFailure(e, inserter);	
+		}
 	}
 
 	public void onSuccess(FetchResult result, ClientGetter state) {
