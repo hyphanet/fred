@@ -5,12 +5,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.USKCallback;
 import freenet.keys.FreenetURI;
@@ -82,7 +85,7 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 		}
 	}
 	
-	public synchronized void onFoundEdition(long l, USK key){
+	public synchronized void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context){
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Found edition "+l);
 		System.err.println("Found "+(extUpdate?"freenet-ext.jar " : "")+"update edition "+l);
