@@ -3,11 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import freenet.client.async.BackgroundBlockEncoder;
 import freenet.client.async.USKManager;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
-import freenet.crypt.RandomSource;
 import freenet.support.Executor;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.NullPersistentFileTracker;
@@ -21,7 +19,6 @@ public class InsertContext {
 	public final PersistentFileTracker persistentFileTracker;
 	/** If true, don't try to compress the data */
 	public boolean dontCompress;
-	public final RandomSource random;
 	public final short splitfileAlgorithm;
 	public int maxInsertRetries;
 	final int maxSplitInsertThreads;
@@ -34,14 +31,13 @@ public class InsertContext {
 	public final USKManager uskManager;
 	public final Executor executor;
 	
-	public InsertContext(BucketFactory bf, BucketFactory persistentBF, PersistentFileTracker tracker, RandomSource random,
+	public InsertContext(BucketFactory bf, BucketFactory persistentBF, PersistentFileTracker tracker,
 			int maxRetries, int rnfsToSuccess, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
 			ClientEventProducer eventProducer, boolean cacheLocalRequests, USKManager uskManager, Executor executor) {
 		this.bf = bf;
 		this.persistentFileTracker = tracker;
 		this.persistentBucketFactory = persistentBF;
 		this.uskManager = uskManager;
-		this.random = random;
 		dontCompress = false;
 		splitfileAlgorithm = Metadata.SPLITFILE_ONION_STANDARD;
 		this.consecutiveRNFsCountAsSuccess = rnfsToSuccess;
@@ -59,7 +55,6 @@ public class InsertContext {
 		this.uskManager = ctx.uskManager;
 		this.bf = ctx.bf;
 		this.persistentBucketFactory = forceNonPersistent ? ctx.bf : ctx.persistentBucketFactory;
-		this.random = ctx.random;
 		this.dontCompress = ctx.dontCompress;
 		this.splitfileAlgorithm = ctx.splitfileAlgorithm;
 		this.consecutiveRNFsCountAsSuccess = ctx.consecutiveRNFsCountAsSuccess;
@@ -77,7 +72,6 @@ public class InsertContext {
 		this.uskManager = ctx.uskManager;
 		this.bf = ctx.bf;
 		this.persistentBucketFactory = ctx.persistentBucketFactory;
-		this.random = ctx.random;
 		this.dontCompress = ctx.dontCompress;
 		this.splitfileAlgorithm = ctx.splitfileAlgorithm;
 		this.consecutiveRNFsCountAsSuccess = ctx.consecutiveRNFsCountAsSuccess;
