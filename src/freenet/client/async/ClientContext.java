@@ -42,17 +42,17 @@ public class ClientContext {
 
 	public void start(final ClientPutter inserter, final boolean param) throws InsertException {
 		if(inserter.persistent()) {
-		jobRunner.queue(new DBJob() {
-
-			public void run(ObjectContainer container, ClientContext context) {
-				try {
-					inserter.start(param, param, container, context);
-				} catch (InsertException e) {
-					inserter.client.onFailure(e, inserter);
+			jobRunner.queue(new DBJob() {
+				
+				public void run(ObjectContainer container, ClientContext context) {
+					try {
+						inserter.start(param, param, container, context);
+					} catch (InsertException e) {
+						inserter.client.onFailure(e, inserter);
+					}
 				}
-			}
-			
-		}, NativeThread.NORM_PRIORITY, false);
+				
+			}, NativeThread.NORM_PRIORITY, false);
 		} else {
 			inserter.start(param, param, null, this);
 		}
