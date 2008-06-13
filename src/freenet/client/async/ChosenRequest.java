@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.node.SendableRequest;
 
@@ -19,11 +20,14 @@ public class ChosenRequest {
 	public final Object token;
 	/** The key to be fetched, null if not a BaseSendableGet */
 	public final Key key;
+	/** The client-layer key to be fetched, null if not a SendableGet */
+	public final ClientKey ckey;
 
-	ChosenRequest(SendableRequest req, Object tok, Key key) {
+	ChosenRequest(SendableRequest req, Object tok, Key key, ClientKey ckey) {
 		request = req;
 		token = tok;
 		this.key = key;
+		this.ckey = ckey;
 	}
 	
 }

@@ -4,6 +4,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequester;
+import freenet.keys.ClientKey;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
 import freenet.support.RandomGrabArrayItem;
@@ -44,9 +45,10 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	 * @param sched The scheduler this request has just been grabbed from.
 	 * @param keyNum The key number that was fed into getKeyObject().
 	 * @param key The key returned from grabKey().
+	 * @param ckey The client key for decoding, if available (mandatory for SendableGet, null otherwise).
 	 * @return True if a request was sent, false otherwise (in which case the request will
 	 * be removed if it hasn't already been). */
-	public abstract boolean send(NodeClientCore node, RequestScheduler sched, Object keyNum);
+	public abstract boolean send(NodeClientCore node, RequestScheduler sched, Object keyNum, ClientKey ckey);
 	
 	/** If true, the request has been cancelled, or has completed, either way it need not
 	 * be registered any more. isEmpty() on the other hand means there are no queued blocks.

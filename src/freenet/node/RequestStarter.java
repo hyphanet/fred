@@ -7,6 +7,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 
 import freenet.client.async.ChosenRequest;
+import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -215,7 +216,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 
 	private boolean startRequest(ChosenRequest req, boolean logMINOR) {
 		if(sched.fetchingKeys().hasKey(req.key)) return false;
-		core.getExecutor().execute(new SenderThread(req.request, req.token, req.key), "RequestStarter$SenderThread for "+req);
+		core.getExecutor().execute(new SenderThread(req.request, req.token, req.key, req.ckey), "RequestStarter$SenderThread for "+req);
 		return true;
 	}
 
@@ -237,17 +238,19 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		private final SendableRequest req;
 		private final Object keyNum;
 		private final Key key;
+		private final ClientKey ckey;
 		
-		public SenderThread(SendableRequest req, Object keyNum, Key key) {
+		public SenderThread(SendableRequest req, Object keyNum, Key key, ClientKey ckey) {
 			this.req = req;
 			this.keyNum = keyNum;
 			this.key = key;
+			this.ckey = ckey;
 		}
 
 		public void run() {
 			try {
 		    freenet.support.Logger.OSThread.logPID(this);
-			if(!req.send(core, sched, keyNum)) {
+			if(!req.send(core, sched, keyNum, ckey)) {
 				if(!req.isCancelled())
 					Logger.error(this, "run() not able to send a request on "+req);
 				else

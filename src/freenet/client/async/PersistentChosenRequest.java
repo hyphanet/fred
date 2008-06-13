@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.node.SendableRequest;
 
@@ -21,8 +22,8 @@ public class PersistentChosenRequest extends ChosenRequest {
 	
 	ClientRequestSchedulerCore core;
 	
-	PersistentChosenRequest(ClientRequestSchedulerCore core, SendableRequest req, Object tok, Key key) {
-		super(req, tok, key);
+	PersistentChosenRequest(ClientRequestSchedulerCore core, SendableRequest req, Object tok, Key key, ClientKey ckey) {
+		super(req, tok, key, ckey);
 		this.core = core;
 	}
 }

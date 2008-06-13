@@ -60,8 +60,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	/** Do the request, blocking. Called by RequestStarter. 
 	 * @return True if a request was executed. False if caller should try to find another request, and remove
 	 * this one from the queue. */
-	public boolean send(NodeClientCore core, final RequestScheduler sched, final Object keyNum) {
-		ClientKey key = getKey(keyNum, container);
+	public boolean send(NodeClientCore core, final RequestScheduler sched, final Object keyNum, ClientKey key) {
 		if(key == null) {
 			Logger.error(this, "Key is null in send(): keyNum = "+keyNum+" for "+this);
 			return false;
@@ -151,5 +150,12 @@ public abstract class SendableGet extends BaseSendableGet {
 	 * @param key
 	 */
 	public abstract void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context);
+
+	/**
+	 * Get the ClientKey for a specific token, so that we don't need to look it up on the request sender thread.
+	 * @param token The token indicating this specific key.
+	 * @param container The database if needed.
+	 */
+	public abstract ClientKey getClientKey(Object token, ObjectContainer container);
 
 }
