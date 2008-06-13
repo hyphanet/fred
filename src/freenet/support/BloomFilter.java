@@ -10,18 +10,20 @@ import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel.MapMode;
 import java.security.MessageDigest;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import freenet.crypt.SHA256;
 
 /**
  * @author sdiz
  */
-//TODO use ReadWriteLock once we move to java 5
 public class BloomFilter {
 	protected ByteBuffer filter;
 	protected final int length;
 	/** Number of hash functions */
 	protected final int k;
+	private ReadWriteLock lock = new ReentrantReadWriteLock();
 
 	/**
 	 * Constructor
@@ -61,9 +63,12 @@ public class BloomFilter {
 
 	public void updateFilter(byte[] key, boolean sync) {
 		int[] hashes = getHashes(key);
-		synchronized (this) {
+		lock.writeLock().lock();
+		try {
 			for (int i = 0; i < k; i++)
 				setBit(hashes[i]);
+		} finally {
+			lock.writeLock().unlock();
 		}
 		if (sync)
 			force();
@@ -71,12 +76,15 @@ public class BloomFilter {
 
 	public boolean checkFilter(byte[] key) {
 		int[] hashes = getHashes(key);
-		synchronized (this) {
+		lock.readLock().lock();
+		try {
 			for (int i = 0; i < k; i++)
 				if (!getBit(hashes[i]))
 					return false;
-			return true;
+		} finally {
+			lock.readLock().unlock();
 		}
+		return true;
 	}
 
 	private int[] getHashes(byte[] key) {
@@ -118,6 +126,7 @@ public class BloomFilter {
 		}
 	}
 
+	@Override
 	protected void finalize() {
 		if (filter != null) {
 			force();
