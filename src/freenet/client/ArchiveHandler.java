@@ -19,7 +19,7 @@ public interface ArchiveHandler {
 	 */
 	public abstract Bucket getMetadata(ArchiveContext archiveContext,
 			ClientMetadata dm, int recursionLevel, 
-			boolean dontEnterImplicitArchives)
+			boolean dontEnterImplicitArchives, ArchiveManager manager)
 			throws ArchiveFailureException, ArchiveRestartException,
 			MetadataParseException, FetchException;
 
@@ -36,7 +36,7 @@ public interface ArchiveHandler {
 	public abstract Bucket get(String internalName,
 			ArchiveContext archiveContext, 
 			ClientMetadata dm, int recursionLevel, 
-			boolean dontEnterImplicitArchives)
+			boolean dontEnterImplicitArchives, ArchiveManager manager)
 			throws ArchiveFailureException, ArchiveRestartException,
 			MetadataParseException, FetchException;
 

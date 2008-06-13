@@ -22,7 +22,6 @@ import freenet.support.api.Bucket;
  */
 public class ArchiveStoreContext implements ArchiveHandler {
 
-	private ArchiveManager manager;
 	private FreenetURI key;
 	private short archiveType;
 	private boolean forceRefetchArchive;
@@ -36,8 +35,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	 * the inner lock to avoid deadlocks. */
 	private final DoublyLinkedListImpl myItems;
 	
-	public ArchiveStoreContext(ArchiveManager manager, FreenetURI key, short archiveType, boolean forceRefetchArchive) {
-		this.manager = manager;
+	public ArchiveStoreContext(FreenetURI key, short archiveType, boolean forceRefetchArchive) {
 		this.key = key;
 		this.archiveType = archiveType;
 		myItems = new DoublyLinkedListImpl();
@@ -49,8 +47,8 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	 * @return A Bucket containing the metadata, in binary format, for the archive.
 	 */
 	public Bucket getMetadata(ArchiveContext archiveContext, ClientMetadata dm, int recursionLevel, 
-			boolean dontEnterImplicitArchives) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
-		return get(".metadata", archiveContext, dm, recursionLevel, dontEnterImplicitArchives);
+			boolean dontEnterImplicitArchives, ArchiveManager manager) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
+		return get(".metadata", archiveContext, dm, recursionLevel, dontEnterImplicitArchives, manager);
 	}
 
 	/**
@@ -59,7 +57,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	 * client is finished with it i.e. calls free() or it is finalized.
 	 */
 	public Bucket get(String internalName, ArchiveContext archiveContext, ClientMetadata dm, int recursionLevel, 
-			boolean dontEnterImplicitArchives) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
+			boolean dontEnterImplicitArchives, ArchiveManager manager) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
 
 		// Do loop detection on the archive that we are about to fetch.
 		archiveContext.doLoopDetection(key);
@@ -102,7 +100,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	/**
 	 * Remove all ArchiveStoreItems with this key from the cache.
 	 */
-	public void removeAllCachedItems() {
+	public void removeAllCachedItems(ArchiveManager manager) {
 		ArchiveStoreItem item = null;
 		while(true) {
 			synchronized (myItems) {
@@ -138,7 +136,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 		return key;
 	}
 
-	public void extractToCache(Bucket bucket, ArchiveContext actx, String element, ArchiveExtractCallback callback) throws ArchiveFailureException, ArchiveRestartException {
+	public void extractToCache(Bucket bucket, ArchiveContext actx, String element, ArchiveExtractCallback callback, ArchiveManager manager) throws ArchiveFailureException, ArchiveRestartException {
 		manager.extractToCache(key, archiveType, bucket, actx, this, element, callback);
 	}
 

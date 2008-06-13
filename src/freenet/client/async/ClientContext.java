@@ -5,6 +5,7 @@ package freenet.client.async;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.ArchiveManager;
 import freenet.client.FECQueue;
 import freenet.client.FetchException;
 import freenet.client.InsertException;
@@ -30,6 +31,7 @@ public class ClientContext {
 	public final long nodeDBHandle;
 	public final BackgroundBlockEncoder backgroundBlockEncoder;
 	public final RandomSource random;
+	public final ArchiveManager archiveManager;
 
 	public ClientContext(NodeClientCore core) {
 		this.fecQueue = core.fecQueue;
@@ -42,6 +44,7 @@ public class ClientContext {
 		this.nodeDBHandle = core.node.nodeDBHandle;
 		this.backgroundBlockEncoder = core.backgroundBlockEncoder;
 		this.random = core.random;
+		archiveManager = core.archiveManager;
 	}
 
 	public void start(final ClientPutter inserter, final boolean earlyEncode) throws InsertException {

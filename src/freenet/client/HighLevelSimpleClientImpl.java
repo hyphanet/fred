@@ -36,7 +36,6 @@ import freenet.support.io.PersistentFileTracker;
 
 public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, RequestClient {
 
-	private final ArchiveManager archiveManager;
 	private final short priorityClass;
 	private final BucketFactory bucketFactory;
 	private final BucketFactory persistentBucketFactory;
@@ -84,10 +83,9 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 128;
 	
 	
-	public HighLevelSimpleClientImpl(NodeClientCore node, ArchiveManager mgr, BucketFactory bf, RandomSource r, boolean cacheLocalRequests, short priorityClass, boolean forceDontIgnoreTooManyPathComponents, Executor[] slowSerialExecutor) {
+	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, boolean cacheLocalRequests, short priorityClass, boolean forceDontIgnoreTooManyPathComponents, Executor[] slowSerialExecutor) {
 		this.core = node;
 		this.slowSerialExecutor = slowSerialExecutor;
-		archiveManager = mgr;
 		this.priorityClass = priorityClass;
 		bucketFactory = bf;
 		this.persistentFileTracker = node.persistentTempBucketFactory;
@@ -195,7 +193,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES,
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
-				archiveManager, bucketFactory, globalEventProducer, 
+				bucketFactory, globalEventProducer, 
 				cacheLocalRequests, core.uskManager, healingQueue, 
 				false, core.getTicker(), core.getExecutor(), slowSerialExecutor);
 	}

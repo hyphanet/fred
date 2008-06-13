@@ -76,7 +76,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 
 	private static boolean logMINOR;
 	public final USKManager uskManager;
-	final ArchiveManager archiveManager;
+	public final ArchiveManager archiveManager;
 	public final RequestStarterGroup requestStarters;
 	private final HealingQueue healingQueue;
 	/** Must be included as a hidden field in order for any dangerous HTTP operation to complete successfully. */

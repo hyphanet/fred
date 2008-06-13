@@ -120,7 +120,7 @@ public class ArchiveManager {
 		if(!forceRefetchArchive) handler = getCached(key);
 		if(handler != null) return handler;
 		if(returnNullIfNotFound) return null;
-		handler = new ArchiveStoreContext(this, key, archiveType, forceRefetchArchive);
+		handler = new ArchiveStoreContext(key, archiveType, forceRefetchArchive);
 		putCached(key, handler);
 		return handler;
 	}
@@ -184,7 +184,7 @@ public class ArchiveManager {
 		
 		if(logMINOR) Logger.minor(this, "Extracting "+key);
 		ctx.onExtract();
-		ctx.removeAllCachedItems(); // flush cache anyway
+		ctx.removeAllCachedItems(this); // flush cache anyway
 		long expectedSize = ctx.getLastSize();
 		long archiveSize = data.size();
 		/** Set if we need to throw a RestartedException rather than returning success,

@@ -24,7 +24,6 @@ public class FetchContext implements Cloneable {
 	/** Low-level client to send low-level requests to. */
 	public long maxOutputLength;
 	public long maxTempLength;
-	public final ArchiveManager archiveManager;
 	public final BucketFactory bucketFactory;
 	public USKManager uskManager;
 	public int maxRecursionLevel;
@@ -61,7 +60,7 @@ public class FetchContext implements Cloneable {
 			int maxSplitfileBlockRetries, int maxNonSplitfileRetries,
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
 			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
-			ArchiveManager archiveManager, BucketFactory bucketFactory,
+			BucketFactory bucketFactory,
 			ClientEventProducer producer, boolean cacheLocalRequests, USKManager uskManager, 
 			HealingQueue hq, boolean ignoreTooManyPathComponents, Ticker ticker, Executor executor, 
 			Executor[] slowSerialExecutor) {
@@ -72,7 +71,6 @@ public class FetchContext implements Cloneable {
 		this.uskManager = uskManager;
 		this.maxTempLength = curMaxTempLength;
 		this.maxMetadataSize = maxMetadataSize;
-		this.archiveManager = archiveManager;
 		this.bucketFactory = bucketFactory;
 		this.maxRecursionLevel = maxRecursionLevel;
 		this.maxArchiveRestarts = maxArchiveRestarts;
@@ -109,7 +107,6 @@ public class FetchContext implements Cloneable {
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;
 			this.maxTempLength = ctx.maxTempLength;
-			this.archiveManager = ctx.archiveManager;
 			this.bucketFactory = ctx.bucketFactory;
 			this.maxRecursionLevel = ctx.maxRecursionLevel;
 			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
@@ -129,7 +126,6 @@ public class FetchContext implements Cloneable {
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;
 			this.maxTempLength = ctx.maxTempLength;
-			this.archiveManager = ctx.archiveManager;
 			this.bucketFactory = ctx.bucketFactory;
 			this.maxRecursionLevel = 1;
 			this.maxArchiveRestarts = 0;
@@ -149,7 +145,6 @@ public class FetchContext implements Cloneable {
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxTempLength = ctx.maxTempLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;
-			this.archiveManager = ctx.archiveManager;
 			this.bucketFactory = ctx.bucketFactory;
 			this.maxRecursionLevel = ctx.maxRecursionLevel;
 			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
@@ -169,7 +164,6 @@ public class FetchContext implements Cloneable {
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;
 			this.maxTempLength = ctx.maxTempLength;
-			this.archiveManager = ctx.archiveManager;
 			this.bucketFactory = ctx.bucketFactory;
 			this.maxRecursionLevel = ctx.maxRecursionLevel;
 			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
