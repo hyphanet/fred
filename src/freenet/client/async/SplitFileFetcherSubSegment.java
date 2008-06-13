@@ -138,13 +138,13 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		}
 	}
 
-	public boolean hasValidKeys(KeysFetchingLocally keys, ObjectContainer container) {
+	public boolean hasValidKeys(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
 		synchronized(segment) {
 			for(int i=0;i<10;i++) {
 				Object ret;
 				int x;
 				if(blockNums.isEmpty()) return false;
-				x = ctx.random.nextInt(blockNums.size());
+				x = context.random.nextInt(blockNums.size());
 				ret = (Integer) blockNums.get(x);
 				Key key = segment.getBlockNodeKey(((Integer)ret).intValue());
 				if(key == null) {

@@ -12,6 +12,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.FailureCodeTracker;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
+import freenet.crypt.RandomSource;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHKBlock;
 import freenet.keys.ClientKey;
@@ -81,7 +82,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
-	protected ClientKeyBlock innerEncode() throws InsertException {
+	protected ClientKeyBlock innerEncode(RandomSource random) throws InsertException {
 		String uriType = uri.getKeyType();
 		if(uriType.equals("CHK")) {
 			try {
@@ -96,7 +97,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		} else if(uriType.equals("SSK") || uriType.equals("KSK")) {
 			try {
 				InsertableClientSSK ik = InsertableClientSSK.create(uri);
-				return ik.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength, ctx.random);
+				return ik.encode(sourceData, isMetadata, compressionCodec == -1, compressionCodec, sourceLength, random);
 			} catch (MalformedURLException e) {
 				throw new InsertException(InsertException.INVALID_URI, e, null);
 			} catch (SSKEncodeException e) {
@@ -119,7 +120,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				block = (ClientKeyBlock) refToClientKeyBlock.get();
 				if(block != null) return block;
 			}
-			block = innerEncode();
+			block = innerEncode(context.random);
 			refToClientKeyBlock = 
 				new SoftReference(block);
 			shouldSend = (resultingURI == null);
