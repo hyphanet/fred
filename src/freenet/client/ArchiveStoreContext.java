@@ -35,7 +35,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	 * the inner lock to avoid deadlocks. */
 	private final DoublyLinkedListImpl myItems;
 	
-	public ArchiveStoreContext(FreenetURI key, short archiveType, boolean forceRefetchArchive) {
+	ArchiveStoreContext(FreenetURI key, short archiveType, boolean forceRefetchArchive) {
 		this.key = key;
 		this.archiveType = archiveType;
 		myItems = new DoublyLinkedListImpl();
@@ -82,25 +82,25 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	}
 	
 	/** Sets the size of the archive - @see getLastSize() */
-	public void setLastSize(long size) {
+	void setLastSize(long size) {
 		lastSize = size;
 	}
 
 	
 	/** Returns the hash of the archive last time we fetched it, or null */
-	public byte[] getLastHash() {
+	byte[] getLastHash() {
 		return lastHash;
 	}
 
 	/** Sets the hash of the archive - @see getLastHash() */
-	public void setLastHash(byte[] realHash) {
+	void setLastHash(byte[] realHash) {
 		lastHash = realHash;
 	}
 
 	/**
 	 * Remove all ArchiveStoreItems with this key from the cache.
 	 */
-	public void removeAllCachedItems(ArchiveManager manager) {
+	void removeAllCachedItems(ArchiveManager manager) {
 		ArchiveStoreItem item = null;
 		while(true) {
 			synchronized (myItems) {
@@ -112,7 +112,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	}
 
 	/** Notify that a new archive store item with this key has been added to the cache. */
-	public void addItem(ArchiveStoreItem item) {
+	void addItem(ArchiveStoreItem item) {
 		synchronized(myItems) {
 			myItems.push(item);
 		}
@@ -121,7 +121,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	/** Notify that an archive store item with this key has been expelled from the 
 	 * cache. Remove it from our local cache and ask it to free the bucket if 
 	 * necessary. */
-	public void removeItem(ArchiveStoreItem item) {
+	void removeItem(ArchiveStoreItem item) {
 		synchronized(myItems) {
 			if(myItems.remove(item) == null) return; // only removed once
 		}
@@ -141,7 +141,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	}
 
 	/** Called just before extracting this container to the cache */
-	public void onExtract() {
+	void onExtract() {
 		forceRefetchArchive = false;
 	}
 }
