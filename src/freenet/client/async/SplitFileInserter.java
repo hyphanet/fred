@@ -108,7 +108,7 @@ public class SplitFileInserter implements ClientPutState {
 		parent.onMajorProgress();
 	}
 
-	public SplitFileInserter(BaseClientPutter parent, PutCompletionCallback cb, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean metadata, Object token, boolean insertAsArchiveManifest, SimpleFieldSet fs) throws ResumeException {
+	public SplitFileInserter(BaseClientPutter parent, PutCompletionCallback cb, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean metadata, Object token, boolean insertAsArchiveManifest, SimpleFieldSet fs, ClientContext context) throws ResumeException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.parent = parent;
 		this.insertAsArchiveManifest = insertAsArchiveManifest;
@@ -185,7 +185,7 @@ public class SplitFileInserter implements ClientPutState {
 			SimpleFieldSet segment = segFS.subset(index);
 			segFS.removeSubset(index);
 			if(segment == null) throw new ResumeException("No segment "+i);
-			segments[i] = new SplitFileInserterSegment(this, segment, splitfileAlgorithm, ctx, getCHKOnly, i);
+			segments[i] = new SplitFileInserterSegment(this, segment, splitfileAlgorithm, ctx, getCHKOnly, i, context);
 			dataBlocks += segments[i].countDataBlocks();
 			checkBlocks += segments[i].countCheckBlocks();
 		}

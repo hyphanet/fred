@@ -95,7 +95,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 	 */
 	public SplitFileInserterSegment(SplitFileInserter parent,
 			SimpleFieldSet fs, short splitfileAlgorithm, InsertContext ctx,
-			boolean getCHKOnly, int segNo) throws ResumeException {
+			boolean getCHKOnly, int segNo, ClientContext context) throws ResumeException {
 		this.parent = parent;
 		this.getCHKOnly = getCHKOnly;
 		this.blockInsertContext = ctx;
@@ -191,7 +191,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 					if (bucketFS != null) {
 						try {
 							checkBlocks[i] = SerializableToFieldSetBucketUtil
-									.create(bucketFS, ctx.random,
+									.create(bucketFS, context.random,
 											ctx.persistentFileTracker);
 							if (logMINOR)
 								Logger.minor(this, "Check block " + i + " : "
@@ -281,7 +281,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			} else {
 				try {
 					dataBlocks[i] = SerializableToFieldSetBucketUtil.create(
-							bucketFS, ctx.random, ctx.persistentFileTracker);
+							bucketFS, context.random, ctx.persistentFileTracker);
 					if (logMINOR)
 						Logger.minor(this, "Data block " + i + " : "
 								+ dataBlocks[i]);

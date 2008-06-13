@@ -94,7 +94,7 @@ class SingleFileInserter implements ClientPutState {
 				// If we succeed, we bypass both compression and FEC encoding!
 				try {
 					SplitHandler sh = new SplitHandler();
-					sh.start(fs, false);
+					sh.start(fs, false, context);
 					cb.onTransition(this, sh, container);
 					sh.schedule(container, context);
 					return;
@@ -338,7 +338,7 @@ class SingleFileInserter implements ClientPutState {
 		 * @throws InsertException Thrown if some other error prevents the insert
 		 * from starting.
 		 */
-		void start(SimpleFieldSet fs, boolean forceMetadata) throws ResumeException, InsertException {
+		void start(SimpleFieldSet fs, boolean forceMetadata, ClientContext context) throws ResumeException, InsertException {
 			
 			boolean meta = metadata || forceMetadata;
 			
@@ -348,7 +348,7 @@ class SingleFileInserter implements ClientPutState {
 			if(sfiFS == null)
 				throw new ResumeException("No SplitFileInserter");
 			ClientPutState newSFI, newMetaPutter = null;
-			newSFI = new SplitFileInserter(parent, this, forceMetadata ? null : block.clientMetadata, ctx, getCHKOnly, meta, token, insertAsArchiveManifest, sfiFS);
+			newSFI = new SplitFileInserter(parent, this, forceMetadata ? null : block.clientMetadata, ctx, getCHKOnly, meta, token, insertAsArchiveManifest, sfiFS, context);
 			if(logMINOR) Logger.minor(this, "Starting "+newSFI+" for "+this);
 			fs.removeSubset("SplitFileInserter");
 			SimpleFieldSet metaFS = fs.subset("MetadataPutter");
@@ -358,10 +358,10 @@ class SingleFileInserter implements ClientPutState {
 					if(type.equals("SplitFileInserter")) {
 						// FIXME insertAsArchiveManifest ?!?!?!
 						newMetaPutter = 
-							new SplitFileInserter(parent, this, null, ctx, getCHKOnly, true, token, insertAsArchiveManifest, metaFS);
+							new SplitFileInserter(parent, this, null, ctx, getCHKOnly, true, token, insertAsArchiveManifest, metaFS, context);
 					} else if(type.equals("SplitHandler")) {
 						newMetaPutter = new SplitHandler();
-						((SplitHandler)newMetaPutter).start(metaFS, true);
+						((SplitHandler)newMetaPutter).start(metaFS, true, context);
 					}
 				} catch (ResumeException e) {
 					newMetaPutter = null;

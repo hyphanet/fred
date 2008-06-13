@@ -178,7 +178,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	// thread removes it cos its empty) ... and in addToGrabArray etc we already sync on this.
 	// The worry is ... is there any nested locking outside of the hierarchy?
 	ChosenRequest removeFirst(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, int retryCount, ClientContext context) {
-		SendableRequest req = removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, transientOnly, maxPrio, retryCount);
+		SendableRequest req = removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, transientOnly, maxPrio, retryCount, context);
 		Object token = req.chooseKey(this, req.persistent() ? container : null, context);
 		if(token == null) {
 			return null;
@@ -208,7 +208,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		}
 	}
 	
-	SendableRequest removeFirstInner(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, int retryCount) {
+	SendableRequest removeFirstInner(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, int retryCount, ClientContext context) {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		boolean tryOfferedKeys = offeredKeys != null && random.nextBoolean();
@@ -225,7 +225,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		for(;choosenPriorityClass <= RequestStarter.MINIMUM_PRIORITY_CLASS;choosenPriorityClass++) {
 			if(logMINOR) Logger.minor(this, "Using priority "+choosenPriorityClass);
 		if(tryOfferedKeys) {
-			if(offeredKeys[choosenPriorityClass].hasValidKeys(this, null))
+			if(offeredKeys[choosenPriorityClass].hasValidKeys(this, null, context))
 				return offeredKeys[choosenPriorityClass];
 		}
 		SortedVectorByNumber perm = null;
