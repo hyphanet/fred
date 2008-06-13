@@ -13,6 +13,7 @@ import java.util.HashMap;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ClientContext;
 import freenet.client.async.USKCallback;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
@@ -94,7 +95,7 @@ public class BookmarkManager implements RequestClient {
 
 	private class USKUpdatedCallback implements USKCallback {
 
-		public void onFoundEdition(long edition, USK key, ObjectContainer container) {
+		public void onFoundEdition(long edition, USK key, ObjectContainer container, ClientContext context) {
 			BookmarkItems items = MAIN_CATEGORY.getAllItems();
 			for(int i = 0; i < items.size(); i++) {
 				if(!"USK".equals(items.get(i).getKeyType()))
