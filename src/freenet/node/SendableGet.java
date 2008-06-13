@@ -140,7 +140,7 @@ public abstract class SendableGet extends BaseSendableGet {
 		getScheduler(context).removePendingKey(this, false, key);
 	}
 
-	public void internalError(final Object keyNum, final Throwable t, final RequestScheduler sched, ObjectContainer container) {
+	public void internalError(final Object keyNum, final Throwable t, final RequestScheduler sched, ObjectContainer container, ClientContext context) {
 		sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), keyNum, NativeThread.MAX_PRIORITY, "Internal error");
 	}
 
