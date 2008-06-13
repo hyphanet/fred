@@ -296,7 +296,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		// Ignore keyNum, key, since we're only sending one block.
 		try {
 			if(logMINOR) Logger.minor(this, "Starting request: "+this);
-			ClientKeyBlock b = getBlock();
+			ClientKeyBlock b = (ClientKeyBlock) keyNum;
 			if(b != null)
 				core.realPut(b, ctx.cacheLocalRequests);
 			else {
@@ -366,9 +366,9 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return sendableKeys(container);
 	}
 
-	public synchronized Object chooseKey(KeysFetchingLocally ignored, ObjectContainer container) {
-		if(finished) return null;
-		else return new Integer(0);
+	public synchronized Object chooseKey(KeysFetchingLocally ignored, ObjectContainer container, ClientContext context) {
+		// Ignore KeysFetchingLocally, it's for requests.
+		return getBlock(container, context);
 	}
 
 }
