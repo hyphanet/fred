@@ -66,7 +66,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return ctx;
 	}
 
-	public Object chooseKey(KeysFetchingLocally keys, ObjectContainer container) {
+	public Object chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
 		if(cancelled) return null;
 		return removeRandomBlockNum(keys);
 	}

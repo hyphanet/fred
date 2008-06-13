@@ -46,7 +46,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return keys;
 	}
 	
-	public Object chooseKey(KeysFetchingLocally fetching, ObjectContainer container) {
+	public Object chooseKey(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
 		if(fetching.hasKey(key.getNodeKey())) return null;
 		return keys[0];
 	}

@@ -348,7 +348,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;	
 		// schedCore juggles both
-		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, false, (short) -1, -1);
+		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, false, (short) -1, -1, clientContext);
 	}
 
 	public ChosenRequest getBetterNonPersistentRequest(ChosenRequest req) {
@@ -358,10 +358,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;	
 		if(req == null)
-			return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, (short) -1, -1);
+			return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, (short) -1, -1, clientContext);
 		short prio = req.request.getPriorityClass();
 		int retryCount = req.request.getRetryCount();
-		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, prio, retryCount);
+		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, prio, retryCount, clientContext);
 	}
 	
 	private static final int MAX_STARTER_QUEUE_SIZE = 10;

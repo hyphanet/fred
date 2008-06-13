@@ -132,7 +132,7 @@ public class SimpleSendableInsert extends SendableInsert {
 		return new Object[] { new Integer(0) };
 	}
 
-	public synchronized Object chooseKey(KeysFetchingLocally keys, ObjectContainer container) {
+	public synchronized Object chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
 		if(finished) return null;
 		else return new Integer(0);
 	}

@@ -75,7 +75,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		throw new UnsupportedOperationException();
 	}
 
-	public synchronized Object chooseKey(KeysFetchingLocally fetching, ObjectContainer container) {
+	public synchronized Object chooseKey(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
 		assert(keysList.size() == keys.size());
 		if(keys.size() == 1) {
 			// Shortcut the common case
