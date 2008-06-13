@@ -76,5 +76,23 @@ public class ClientContext {
 			getter.start(null, this);
 		}
 	}
+
+	public void start(final SimpleManifestPutter inserter) throws InsertException {
+		if(inserter.persistent()) {
+			jobRunner.queue(new DBJob() {
+				
+				public void run(ObjectContainer container, ClientContext context) {
+					try {
+						inserter.start(container, context);
+					} catch (InsertException e) {
+						inserter.cb.onFailure(e, inserter);
+					}
+				}
+				
+			}, NativeThread.NORM_PRIORITY, false);
+		} else {
+			inserter.start(null, this);
+		}
+	}
 	
 }
