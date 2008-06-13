@@ -57,7 +57,7 @@ public class FECQueue implements OOMHook {
 	}
 	
 	private void queueCacheFiller() {
-		databaseJobRunner.queue(cacheFillerJob, NativeThread.NORM_PRIORITY);
+		databaseJobRunner.queue(cacheFillerJob, NativeThread.NORM_PRIORITY, false);
 	}
 
 	public void addToQueue(FECJob job, FECCodec codec, ObjectContainer container) {
@@ -152,7 +152,7 @@ public class FECQueue implements OOMHook {
 						} else {
 							databaseJobRunner.queue(new DBJob() {
 
-								public void run(ObjectContainer container) {
+								public void run(ObjectContainer container, ClientContext context) {
 									if(job.isADecodingJob)
 										job.callback.onDecodedSegment(container, clientContext);
 									else
@@ -160,7 +160,7 @@ public class FECQueue implements OOMHook {
 									container.delete(job);
 								}
 								
-							}, job.priority);
+							}, job.priority, false);
 						}
 					} catch (Throwable e) {
 						Logger.error(this, "The callback failed!" + e.getMessage(), e);
@@ -184,7 +184,7 @@ public class FECQueue implements OOMHook {
 
 	private final DBJob cacheFillerJob = new DBJob() {
 
-		public void run(ObjectContainer container) {
+		public void run(ObjectContainer container, ClientContext context) {
 			// Try to avoid accessing the database while synchronized on the FECQueue.
 			while(true) {
 				boolean addedAny = false;
