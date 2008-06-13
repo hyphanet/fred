@@ -113,7 +113,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		schedCore = ClientRequestSchedulerCore.create(node, forInserts, forSSKs, selectorContainer, COOLDOWN_PERIOD, core.clientDatabaseExecutor, this);
 		schedTransient = new ClientRequestSchedulerNonPersistent(this);
 		schedCore.fillStarterQueue();
-		schedCore.start();
+		schedCore.start(core);
 		persistentCooldownQueue = schedCore.persistentCooldownQueue;
 		this.databaseExecutor = core.clientDatabaseExecutor;
 		this.datastoreCheckerExecutor = core.datastoreCheckerExecutor;

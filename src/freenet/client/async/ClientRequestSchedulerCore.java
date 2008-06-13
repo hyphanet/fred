@@ -117,8 +117,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		InsertCompressor.load(container, sched.clientContext);
 	}
 	
-	void start() {
-		databaseExecutor.execute(registerMeRunner, NativeThread.NORM_PRIORITY, "Register request");
+	void start(DBJobRunner runner) {
+		runner.queue(registerMeRunner, NativeThread.NORM_PRIORITY, true);
 	}
 	
 	void fillStarterQueue() {
@@ -417,9 +417,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 
 	private final RegisterMeRunner registerMeRunner = new RegisterMeRunner();
 	
-	class RegisterMeRunner implements Runnable {
+	class RegisterMeRunner implements DBJob {
 
-		public void run() {
+		public void run(ObjectContainer container, ClientContext context) {
 			Query query = container.query();
 			query.constrain(RegisterMe.class);
 			query.descend("core").constrain(ClientRequestSchedulerCore.this);
@@ -435,7 +435,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t+" running RegisterMeRunner", t);
 					// Cancel the request, and commit so it isn't tried again.
-					reg.getter.internalError(null, t, sched, container);
+					reg.getter.internalError(null, t, sched, container, context);
 				}
 				container.commit();
 			}
