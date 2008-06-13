@@ -306,7 +306,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		
 		healingQueue = new SimpleHealingQueue(requestStarters.chkPutScheduler,
 				new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory, 
-						random, 0, 2, 1, 0, 0, new SimpleEventProducer(), 
+						0, 2, 1, 0, 0, new SimpleEventProducer(), 
 						!Node.DONT_CACHE_LOCAL_REQUESTS, uskManager, node.executor), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
 		nodeConfig.register("lazyResume", false, sortOrder++, true, false, "NodeClientCore.lazyResume",

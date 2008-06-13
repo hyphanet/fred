@@ -102,7 +102,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		return null;
 	}
 
-	public synchronized boolean hasValidKeys(KeysFetchingLocally fetching, ObjectContainer container) {
+	public synchronized boolean hasValidKeys(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
 		assert(keysList.size() == keys.size());
 		if(keys.size() == 1) {
 			// Shortcut the common case
