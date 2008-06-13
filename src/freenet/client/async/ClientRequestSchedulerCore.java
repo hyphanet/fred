@@ -286,7 +286,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			}
 			if(logMINOR)
 				Logger.minor(this, "Got retry count tracker "+chosenTracker);
-			SendableRequest req = (SendableRequest) chosenTracker.removeRandom(starter);
+			SendableRequest req = (SendableRequest) chosenTracker.removeRandom(starter, container);
 			if(chosenTracker.isEmpty()) {
 				trackerParent.remove(chosenTracker.getNumber());
 				if(trackerParent.isEmpty()) {
