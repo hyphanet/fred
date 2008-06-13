@@ -9,6 +9,7 @@ import java.util.Vector;
 import com.db4o.ObjectContainer;
 
 import freenet.crypt.RandomSource;
+import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.node.BaseSendableGet;
 import freenet.node.KeysFetchingLocally;
@@ -141,7 +142,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		Logger.error(this, "Internal error: "+t, t);
 	}
 	
-	public boolean send(NodeClientCore node, RequestScheduler sched, Object keyNum) {
+	public boolean send(NodeClientCore node, RequestScheduler sched, Object keyNum, ClientKey ckey) {
 		Key key = (Key) keyNum;
 		// Have to cache it in order to propagate it; FIXME
 		// Don't let a node force us to start a real request for a specific key.

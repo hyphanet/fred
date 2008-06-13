@@ -9,6 +9,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
 import freenet.keys.CHKBlock;
+import freenet.keys.ClientKey;
 import freenet.keys.KeyBlock;
 import freenet.keys.SSKBlock;
 import freenet.support.Logger;
@@ -66,7 +67,7 @@ public class SimpleSendableInsert extends SendableInsert {
 		return 0;
 	}
 
-	public boolean send(NodeClientCore core, RequestScheduler sched, Object keyNum) {
+	public boolean send(NodeClientCore core, RequestScheduler sched, Object keyNum, ClientKey ckey) {
 		// Ignore keyNum, key, since this is a single block
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		try {
