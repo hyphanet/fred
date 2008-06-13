@@ -1,5 +1,7 @@
 package freenet.client;
 
+import java.io.IOException;
+
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Predicate;
@@ -9,6 +11,8 @@ import freenet.client.async.DBJob;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
+import freenet.support.api.BucketFactory;
+import freenet.support.io.BucketTools;
 import freenet.support.io.NativeThread;
 
 class ArchiveHandlerImpl implements ArchiveHandler {
@@ -90,10 +94,10 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 		final ArchiveManager manager = context.archiveManager;
 		final ArchiveExtractTag tag = new ArchiveExtractTag(this, bucket, actx, element, callback, context.nodeDBHandle);
 		container.set(tag);
-		runPersistentOffThread(tag, context, manager);
+		runPersistentOffThread(tag, context, manager, context.persistentBucketFactory);
 	}
 
-	private static void runPersistentOffThread(final ArchiveExtractTag tag, final ClientContext context, final ArchiveManager manager) {
+	private static void runPersistentOffThread(final ArchiveExtractTag tag, final ClientContext context, final ArchiveManager manager, final BucketFactory bf) {
 		final ProxyCallback proxyCallback = new ProxyCallback();
 		
 		context.mainExecutor.execute(new Runnable() {
@@ -101,6 +105,18 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 			public void run() {
 				try {
 					tag.handler.extractToCache(tag.data, tag.actx, tag.element, proxyCallback, manager, null, context);
+					final Bucket data;
+					if(proxyCallback.data == null)
+						data = null;
+					else {
+						try {
+							data = bf.makeBucket(proxyCallback.data.size());
+							BucketTools.copy(proxyCallback.data, data);
+							proxyCallback.data.free();
+						} catch (IOException e) {
+							throw new ArchiveFailureException("Failure copying data to persistent storage", e);
+						}
+					}
 					context.jobRunner.queue(new DBJob() {
 
 						public void run(ObjectContainer container, ClientContext context) {
@@ -150,7 +166,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 		});
 		while(set.hasNext()) {
 			ArchiveExtractTag tag = (ArchiveExtractTag) set.next();
-			runPersistentOffThread(tag, context, context.archiveManager);
+			runPersistentOffThread(tag, context, context.archiveManager, context.persistentBucketFactory);
 		}
 	}
 	

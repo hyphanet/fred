@@ -12,6 +12,7 @@ import freenet.client.InsertException;
 import freenet.crypt.RandomSource;
 import freenet.node.NodeClientCore;
 import freenet.support.Executor;
+import freenet.support.api.BucketFactory;
 import freenet.support.io.NativeThread;
 
 /**
@@ -32,6 +33,7 @@ public class ClientContext {
 	public final BackgroundBlockEncoder backgroundBlockEncoder;
 	public final RandomSource random;
 	public final ArchiveManager archiveManager;
+	public final BucketFactory persistentBucketFactory;
 
 	public ClientContext(NodeClientCore core) {
 		this.fecQueue = core.fecQueue;
@@ -45,6 +47,7 @@ public class ClientContext {
 		this.backgroundBlockEncoder = core.backgroundBlockEncoder;
 		this.random = core.random;
 		archiveManager = core.archiveManager;
+		this.persistentBucketFactory = core.persistentEncryptedTempBucketFactory;
 	}
 
 	public void start(final ClientPutter inserter, final boolean earlyEncode) throws InsertException {
