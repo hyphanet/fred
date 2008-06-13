@@ -8,6 +8,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.FECQueue;
 import freenet.client.FetchException;
 import freenet.client.InsertException;
+import freenet.crypt.RandomSource;
 import freenet.node.NodeClientCore;
 import freenet.support.Executor;
 import freenet.support.io.NativeThread;
@@ -28,6 +29,7 @@ public class ClientContext {
 	public final Executor mainExecutor;
 	public final long nodeDBHandle;
 	public final BackgroundBlockEncoder backgroundBlockEncoder;
+	public final RandomSource random;
 
 	public ClientContext(NodeClientCore core) {
 		this.fecQueue = core.fecQueue;
@@ -39,6 +41,7 @@ public class ClientContext {
 		this.mainExecutor = core.getExecutor();
 		this.nodeDBHandle = core.node.nodeDBHandle;
 		this.backgroundBlockEncoder = core.backgroundBlockEncoder;
+		this.random = core.random;
 	}
 
 	public void start(final ClientPutter inserter, final boolean earlyEncode) throws InsertException {

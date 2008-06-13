@@ -192,7 +192,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private FreenetURI targetURI;
 	private boolean finished;
 	private final InsertContext ctx;
-	private final ClientCallback cb;
+	final ClientCallback cb;
 	private final boolean getCHKOnly;
 	private boolean insertedAllFiles;
 	private boolean insertedManifest;

@@ -10,7 +10,6 @@ import freenet.client.async.HealingQueue;
 import freenet.client.async.USKManager;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
-import freenet.crypt.RandomSource;
 import freenet.node.Ticker;
 import freenet.support.Executor;
 import freenet.support.api.BucketFactory;
@@ -35,7 +34,6 @@ public class FetchContext implements Cloneable {
 	public int maxSplitfileThreads;
 	public int maxSplitfileBlockRetries;
 	public int maxNonSplitfileRetries;
-	public final RandomSource random;
 	public boolean allowSplitfiles;
 	public boolean followRedirects;
 	public boolean localRequestOnly;
@@ -63,7 +61,7 @@ public class FetchContext implements Cloneable {
 			int maxSplitfileBlockRetries, int maxNonSplitfileRetries,
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
 			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
-			RandomSource random, ArchiveManager archiveManager, BucketFactory bucketFactory,
+			ArchiveManager archiveManager, BucketFactory bucketFactory,
 			ClientEventProducer producer, boolean cacheLocalRequests, USKManager uskManager, 
 			HealingQueue hq, boolean ignoreTooManyPathComponents, Ticker ticker, Executor executor, 
 			Executor[] slowSerialExecutor) {
@@ -80,7 +78,6 @@ public class FetchContext implements Cloneable {
 		this.maxArchiveRestarts = maxArchiveRestarts;
 		this.maxArchiveLevels = maxArchiveLevels;
 		this.dontEnterImplicitArchives = dontEnterImplicitArchives;
-		this.random = random;
 		this.maxSplitfileThreads = maxSplitfileThreads;
 		this.maxSplitfileBlockRetries = maxSplitfileBlockRetries;
 		this.maxNonSplitfileRetries = maxNonSplitfileRetries;
@@ -118,7 +115,6 @@ public class FetchContext implements Cloneable {
 			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
 			this.maxArchiveLevels = ctx.maxArchiveLevels;
 			this.dontEnterImplicitArchives = ctx.dontEnterImplicitArchives;
-			this.random = ctx.random;
 			this.maxSplitfileThreads = ctx.maxSplitfileThreads;
 			this.maxSplitfileBlockRetries = ctx.maxSplitfileBlockRetries;
 			this.maxNonSplitfileRetries = ctx.maxNonSplitfileRetries;
@@ -139,7 +135,6 @@ public class FetchContext implements Cloneable {
 			this.maxArchiveRestarts = 0;
 			this.maxArchiveLevels = ctx.maxArchiveLevels;
 			this.dontEnterImplicitArchives = true;
-			this.random = ctx.random;
 			this.maxSplitfileThreads = 0;
 			this.maxSplitfileBlockRetries = ctx.maxSplitfileBlockRetries;
 			this.maxNonSplitfileRetries = ctx.maxSplitfileBlockRetries;
@@ -160,7 +155,6 @@ public class FetchContext implements Cloneable {
 			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
 			this.maxArchiveLevels = ctx.maxArchiveLevels;
 			this.dontEnterImplicitArchives = ctx.dontEnterImplicitArchives;
-			this.random = ctx.random;
 			this.maxSplitfileThreads = ctx.maxSplitfileThreads;
 			this.maxSplitfileBlockRetries = ctx.maxSplitfileBlockRetries;
 			this.maxNonSplitfileRetries = ctx.maxNonSplitfileRetries;
@@ -181,7 +175,6 @@ public class FetchContext implements Cloneable {
 			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
 			this.maxArchiveLevels = ctx.maxArchiveLevels;
 			this.dontEnterImplicitArchives = ctx.dontEnterImplicitArchives;
-			this.random = ctx.random;
 			this.maxSplitfileThreads = ctx.maxSplitfileThreads;
 			this.maxSplitfileBlockRetries = ctx.maxSplitfileBlockRetries;
 			this.maxNonSplitfileRetries = ctx.maxNonSplitfileRetries;

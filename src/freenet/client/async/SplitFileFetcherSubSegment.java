@@ -68,7 +68,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 
 	public Object chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
 		if(cancelled) return null;
-		return removeRandomBlockNum(keys);
+		return removeRandomBlockNum(keys, context);
 	}
 	
 	public ClientKey getKey(Object token, ObjectContainer container) {
@@ -107,7 +107,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return blockNums.toArray();
 	}
 	
-	private Object removeRandomBlockNum(KeysFetchingLocally keys) {
+	private Object removeRandomBlockNum(KeysFetchingLocally keys, ClientContext context) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(segment) {
 			if(blockNums.isEmpty()) {
@@ -118,7 +118,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			for(int i=0;i<10;i++) {
 				Object ret;
 				int x;
-				x = ctx.random.nextInt(blockNums.size());
+				x = context.random.nextInt(blockNums.size());
 				ret = (Integer) blockNums.remove(x);
 				Key key = segment.getBlockNodeKey(((Integer)ret).intValue());
 				if(key == null) {

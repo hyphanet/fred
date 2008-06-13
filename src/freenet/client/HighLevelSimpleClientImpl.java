@@ -195,7 +195,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				SPLITFILE_THREADS, SPLITFILE_BLOCK_RETRIES, NON_SPLITFILE_RETRIES,
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
-				random, archiveManager, bucketFactory, globalEventProducer, 
+				archiveManager, bucketFactory, globalEventProducer, 
 				cacheLocalRequests, core.uskManager, healingQueue, 
 				false, core.getTicker(), core.getExecutor(), slowSerialExecutor);
 	}
