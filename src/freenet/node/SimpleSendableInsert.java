@@ -12,6 +12,7 @@ import freenet.keys.CHKBlock;
 import freenet.keys.KeyBlock;
 import freenet.keys.SSKBlock;
 import freenet.support.Logger;
+import freenet.support.io.NativeThread;
 
 /**
  * Simple SendableInsert implementation. No feedback, no retries, just insert the
@@ -72,15 +73,14 @@ public class SimpleSendableInsert extends SendableInsert {
 			if(logMINOR) Logger.minor(this, "Starting request: "+this);
 			core.realPut(block, shouldCache());
 		} catch (LowLevelPutException e) {
-			sched.callFailure(get, e, keyNum, prio, name);
-			onFailure(e, keyNum, container);
+			sched.callFailure(this, e, keyNum, NativeThread.NORM_PRIORITY, "SSI callback: failure");
 			if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
 			return true;
 		} finally {
 			finished = true;
 		}
 		if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
-		onSuccess(keyNum, container);
+		sched.callSuccess(this, keyNum, NativeThread.NORM_PRIORITY, "SSI callback: success");
 		return true;
 	}
 
