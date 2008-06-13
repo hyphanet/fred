@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ClientContext;
 import freenet.crypt.RandomSource;
 
 /**
@@ -69,7 +70,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 		grabArrays = newArrays;
 	}
 
-	public synchronized RandomGrabArrayItem removeRandom(RandomGrabArrayItemExclusionList excluding, ObjectContainer container) {
+	public synchronized RandomGrabArrayItem removeRandom(RandomGrabArrayItemExclusionList excluding, ObjectContainer container, ClientContext context) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		/** Count of arrays that have items but didn't return anything because of exclusions */
 		int excluded = 0;
@@ -79,7 +80,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			if(grabArrays.length == 1) {
 				// Optimise the common case
 				RemoveRandomWithObject rga = grabArrays[0];
-				RandomGrabArrayItem item = rga.removeRandom(excluding, container);
+				RandomGrabArrayItem item = rga.removeRandom(excluding, container, context);
 				if(rga.isEmpty()) {
 					if(logMINOR)
 						Logger.minor(this, "Removing only grab array (0) : "+rga+" for "+rga.getObject()+" (is empty)");
@@ -96,11 +97,11 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 				int x = rand.nextBoolean() ? 1 : 0;
 				RemoveRandomWithObject rga = grabArrays[x];
 				RemoveRandomWithObject firstRGA = rga;
-				RandomGrabArrayItem item = rga.removeRandom(excluding, container);
+				RandomGrabArrayItem item = rga.removeRandom(excluding, container, context);
 				if(item == null) {
 					x = 1-x;
 					rga = grabArrays[x];
-					item = rga.removeRandom(excluding, container);
+					item = rga.removeRandom(excluding, container, context);
 					if(firstRGA.isEmpty() && rga.isEmpty()) {
 						grabArraysByClient.remove(rga.getObject());
 						grabArraysByClient.remove(firstRGA.getObject());
@@ -122,7 +123,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			RemoveRandomWithObject rga = grabArrays[x];
 			if(logMINOR)
 				Logger.minor(this, "Picked "+x+" of "+grabArrays.length+" : "+rga+" : "+rga.getObject()+" on "+this);
-			RandomGrabArrayItem item = rga.removeRandom(excluding, container);
+			RandomGrabArrayItem item = rga.removeRandom(excluding, container, context);
 			if(logMINOR)
 				Logger.minor(this, "RGA has picked "+x+"/"+grabArrays.length+": "+item+
 						(item==null ? "" : (" cancelled="+item.isEmpty()+")"))+" rga.isEmpty="+rga.isEmpty());

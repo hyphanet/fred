@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ChosenRequest;
+import freenet.client.async.ClientContext;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.support.Logger;
@@ -274,10 +275,10 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		}
 	}
 
-	public boolean exclude(RandomGrabArrayItem item, ObjectContainer container) {
+	public boolean exclude(RandomGrabArrayItem item, ObjectContainer container, ClientContext context) {
 		if(isInsert) return false;
 		BaseSendableGet get = (BaseSendableGet) item;
-		if(get.hasValidKeys(sched.fetchingKeys(), container))
+		if(get.hasValidKeys(sched.fetchingKeys(), container, context))
 			return false;
 		Logger.normal(this, "Excluding (no valid keys): "+get);
 		return true;
