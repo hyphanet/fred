@@ -842,6 +842,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						Logger.debug(this, "interrupted", e);
 					}
 				}
+				
+				try {
+					writeConfigFile();
+				} catch (IOException e) {
+					Logger.error(this, "Can't write config file", e);
+				}
 			}
 		}
 
@@ -900,10 +906,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			try {
 				assert _prevStoreSize == prevStoreSize;
 				prevStoreSize = 0;
-				writeConfigFile();
-			} catch (IOException e) {
-				Logger.error(this, "Can't write config file", e);
-				prevStoreSize = _prevStoreSize; // try again ?
 			} finally {
 				configLock.writeLock().unlock();
 			}
