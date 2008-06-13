@@ -3,9 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FECQueue;
+import freenet.client.InsertException;
 import freenet.node.NodeClientCore;
 import freenet.support.Executor;
+import freenet.support.io.NativeThread;
 
 /**
  * Object passed in to client-layer operations, containing references to essential but transient objects
@@ -34,6 +38,20 @@ public class ClientContext {
 		this.mainExecutor = core.getExecutor();
 		this.nodeDBHandle = core.node.nodeDBHandle;
 		this.backgroundBlockEncoder = core.backgroundBlockEncoder;
+	}
+
+	public void start(final ClientPutter inserter, final boolean param) {
+		jobRunner.queue(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				try {
+					inserter.start(param, param, container, context);
+				} catch (InsertException e) {
+					inserter.client.onFailure(e, inserter);
+				}
+			}
+			
+		}, NativeThread.NORM_PRIORITY, false);
 	}
 	
 }
