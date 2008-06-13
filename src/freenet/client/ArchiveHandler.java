@@ -8,12 +8,16 @@ import freenet.support.api.Bucket;
 /**
  * @author toad
  * The public face (to Fetcher, for example) of ArchiveStoreContext.
- * Just has methods for fetching stuff.
+ * Mostly has methods for fetching stuff, but SingleFileFetcher needs to be able
+ * to download and then ask the ArchiveManager to extract it, so we include that 
+ * functionality (extractToCache) too. Because ArchiveManager is not persistent,
+ * we have to pass it in to each method.
  */
 public interface ArchiveHandler {
 
 	/**
 	 * Get the metadata for this ZIP manifest, as a Bucket.
+	 * @param manager The ArchiveManager.
 	 * @throws FetchException If the container could not be fetched.
 	 * @throws MetadataParseException If there was an error parsing intermediary metadata.
 	 */
@@ -30,6 +34,7 @@ public interface ArchiveHandler {
 	 * @param inSplitZipManifest If true, indicates that the key points to a splitfile zip manifest,
 	 * which means that we need to pass a flag to the fetcher to tell it to pretend it was a straight
 	 * splitfile.
+	 * @param manager The ArchiveManager.
 	 * @throws FetchException 
 	 * @throws MetadataParseException 
 	 */
@@ -45,4 +50,16 @@ public interface ArchiveHandler {
 	 */
 	public abstract short getArchiveType();
 
+	/**
+	 * Unpack a fetched archive to cache, and call the callback if there is one.
+	 * @param bucket The downloaded data for the archive.
+	 * @param actx The ArchiveContext.
+	 * @param element The single element that the caller is especially interested in.
+	 * @param callback Callback to be notified whether the content is available, and if so, fed the data.
+	 * @param manager The ArchiveManager.
+	 * @throws ArchiveFailureException
+	 * @throws ArchiveRestartException
+	 */
+	public abstract void extractToCache(Bucket bucket, ArchiveContext actx, String element, ArchiveExtractCallback callback, ArchiveManager manager) throws ArchiveFailureException, ArchiveRestartException;
+	
 }
