@@ -188,9 +188,13 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				key = null;
 			else
 				key = ((BaseSendableGet)req).getNodeKey(token, persistent() ? container : null);
-			PersistentChosenRequest ret = new PersistentChosenRequest(this, req, token, key);
-			if(req.persistent())
+			ChosenRequest ret;
+			if(req.persistent()) {
+				ret = new PersistentChosenRequest(this, req, token, key);
 				container.set(ret);
+			} else {
+				ret = new ChosenRequest(req, token, key);
+			}
 			if(key != null)
 				keysFetching.add(key);
 			return ret;
