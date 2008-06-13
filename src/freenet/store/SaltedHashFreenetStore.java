@@ -191,8 +191,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				if (entry != null)
 					return entry;
 			} catch (EOFException e) {
-				// may occur on resize, silent it a bit
-				Logger.error(this, "EOFException on probeEntry", e);
+				if (prevStoreSize != 0) // may occur on store shrinking
+					Logger.error(this, "EOFException on probeEntry", e);
 				continue;
 			}
 		}
