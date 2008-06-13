@@ -14,6 +14,7 @@ import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHKBlock;
+import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
@@ -292,7 +293,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return finished;
 	}
 	
-	public boolean send(NodeClientCore core, RequestScheduler sched, Object keyNum) {
+	public boolean send(NodeClientCore core, RequestScheduler sched, Object keyNum, ClientKey ckey) {
 		// Ignore keyNum, key, since we're only sending one block.
 		try {
 			if(logMINOR) Logger.minor(this, "Starting request: "+this);
