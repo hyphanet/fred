@@ -733,8 +733,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 	 * Force the remaining blocks which haven't been encoded so far to be
 	 * encoded ASAP.
 	 */
-	public void forceEncode(ClientContext context) {
-		context.backgroundBlockEncoder.queue(dataBlockInserters);
-		context.backgroundBlockEncoder.queue(checkBlockInserters);
+	public void forceEncode(ObjectContainer container, ClientContext context) {
+		context.backgroundBlockEncoder.queue(dataBlockInserters, container, context);
+		context.backgroundBlockEncoder.queue(checkBlockInserters, container, context);
 	}
 }

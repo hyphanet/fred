@@ -253,7 +253,7 @@ public class SplitFileInserter implements ClientPutState {
 				}
 			}
 		}
-		if(encode) segment.forceEncode(context);
+		if(encode) segment.forceEncode(container, context);
 		if(ret) return;
 		cb.onBlockSetFinished(this, container);
 		if(countDataBlocks > 32)
@@ -455,13 +455,13 @@ public class SplitFileInserter implements ClientPutState {
 	}
 
 	/** Force the remaining blocks which haven't been encoded so far to be encoded ASAP. */
-	public void forceEncode(ClientContext context) {
+	public void forceEncode(ObjectContainer container, ClientContext context) {
 		Logger.minor(this, "Forcing encode on "+this);
 		synchronized(this) {
 			forceEncode = true;
 		}
 		for(int i=0;i<segments.length;i++) {
-			segments[i].forceEncode(context);
+			segments[i].forceEncode(container, context);
 		}
 	}
 

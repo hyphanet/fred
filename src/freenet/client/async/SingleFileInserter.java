@@ -241,14 +241,14 @@ class SingleFileInserter implements ClientPutState {
 			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData);
 			cb.onTransition(this, sfi, container);
 			sfi.start(container, context);
-			if(earlyEncode) sfi.forceEncode(context);
+			if(earlyEncode) sfi.forceEncode(container, context);
 		} else {
 			SplitHandler sh = new SplitHandler();
 			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData);
 			sh.sfi = sfi;
 			cb.onTransition(this, sh, container);
 			sfi.start(container, context);
-			if(earlyEncode) sfi.forceEncode(context);
+			if(earlyEncode) sfi.forceEncode(container, context);
 		}
 	}
 	
@@ -656,7 +656,7 @@ class SingleFileInserter implements ClientPutState {
 					if(logMINOR) Logger.minor(this, "Started metadata inserter: "+putter+" for "+this);
 				} else {
 					// Get all the URIs ASAP so we can start to insert the metadata.
-					((SplitFileInserter)splitInserter).forceEncode(context);
+					((SplitFileInserter)splitInserter).forceEncode(container, context);
 				}
 			} catch (InsertException e1) {
 				Logger.error(this, "Failing "+this+" : "+e1, e1);
