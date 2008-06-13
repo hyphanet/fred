@@ -97,12 +97,12 @@ class InsertCompressor {
 			
 				context.jobRunner.queue(new DBJob() {
 					
-					public void run(ObjectContainer container) {
+					public void run(ObjectContainer container, ClientContext context) {
 						inserter.onCompressed(output, container, context);
 						container.delete(InsertCompressor.this);
 					}
 					
-				}, NativeThread.NORM_PRIORITY);
+				}, NativeThread.NORM_PRIORITY, false);
 			} else {
 				inserter.onCompressed(output, null, context);
 			}
@@ -111,12 +111,12 @@ class InsertCompressor {
 			if(persistent) {
 				context.jobRunner.queue(new DBJob() {
 					
-					public void run(ObjectContainer container) {
+					public void run(ObjectContainer container, ClientContext context) {
 						inserter.cb.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), inserter, container, context);
 						container.delete(InsertCompressor.this);
 					}
 					
-				}, NativeThread.NORM_PRIORITY);
+				}, NativeThread.NORM_PRIORITY, false);
 			} else {
 				inserter.cb.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), inserter, null, context);
 			}
@@ -125,12 +125,12 @@ class InsertCompressor {
 			if(persistent) {
 				context.jobRunner.queue(new DBJob() {
 					
-					public void run(ObjectContainer container) {
+					public void run(ObjectContainer container, ClientContext context) {
 						inserter.cb.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), inserter, container, context);
 						container.delete(InsertCompressor.this);
 					}
 					
-				}, NativeThread.NORM_PRIORITY);
+				}, NativeThread.NORM_PRIORITY, false);
 			} else {
 				inserter.cb.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), inserter, null, context);
 			}

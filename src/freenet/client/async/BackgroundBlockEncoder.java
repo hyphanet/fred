@@ -98,7 +98,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 			Logger.minor(this, "Encoding "+sbi);
 			if(sbi.isCancelled()) continue;
 			if(sbi.resultingURI != null) continue;
-			sbi.tryEncode();
+			sbi.tryEncode(null);
 		}
 	}
 

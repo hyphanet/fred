@@ -110,7 +110,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 	}
 
-	protected ClientKeyBlock encode(ObjectContainer container) throws InsertException {
+	protected ClientKeyBlock encode(ObjectContainer container, ClientContext context) throws InsertException {
 		ClientKeyBlock block;
 		boolean shouldSend;
 		synchronized(this) {
@@ -125,7 +125,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			resultingURI = block.getClientKey().getURI();
 		}
 		if(shouldSend && !dontSendEncoded)
-			cb.onEncode(block.getClientKey(), this, container);
+			cb.onEncode(block.getClientKey(), this, container, context);
 		return block;
 	}
 	
@@ -172,7 +172,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" / "+ctx.consecutiveRNFsCountAsSuccess);
 			if(consecutiveRNFs == ctx.consecutiveRNFsCountAsSuccess) {
 				if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" - counting as success");
-				onSuccess(keyNum, container);
+				onSuccess(keyNum, container, context);
 				return;
 			}
 		} else
@@ -202,18 +202,18 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		cb.onFailure(e, this, container, context);
 	}
 
-	public ClientKeyBlock getBlock() {
+	public ClientKeyBlock getBlock(ObjectContainer container, ClientContext context) {
 		try {
 			synchronized (this) {
 				if(finished) return null;
 			}
-			return encode();				
+			return encode(container, context);				
 		} catch (InsertException e) {
-			cb.onFailure(e, this);
+			cb.onFailure(e, this, container, context);
 			return null;
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
-			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), this);
+			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), this, container, context);
 			return null;
 		}
 	}
@@ -223,8 +223,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(finished) return;
 		}
 		if(getCHKOnly) {
-			ClientKeyBlock block = encode(container);
-			cb.onEncode(block.getClientKey(), this, container);
+			ClientKeyBlock block = encode(container, context);
+			cb.onEncode(block.getClientKey(), this, container, context);
 			parent.completedBlock(false);
 			cb.onSuccess(this, container, context);
 			finished = true;
@@ -242,12 +242,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		else throw new IllegalArgumentException();
 	}
 
-	public FreenetURI getURI() {
+	public FreenetURI getURI(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(resultingURI != null)
 				return resultingURI;
 		}
-		getBlock();
+		getBlock(container, context);
 		synchronized(this) {
 			// FIXME not really necessary? resultingURI is never dropped, only set.
 			return resultingURI;
@@ -258,30 +258,30 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return resultingURI;
 	}
 
-	public void onSuccess(Object keyNum, ObjectContainer container) {
+	public void onSuccess(Object keyNum, ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Succeeded ("+this+"): "+token);
 		if(parent.isCancelled()) {
-			fail(new InsertException(InsertException.CANCELLED), container);
+			fail(new InsertException(InsertException.CANCELLED), container, context);
 			return;
 		}
 		synchronized(this) {
 			finished = true;
 		}
 		parent.completedBlock(false);
-		cb.onSuccess(this, container);
+		cb.onSuccess(this, container, context);
 	}
 
 	public BaseClientPutter getParent() {
 		return parent;
 	}
 
-	public void cancel(ObjectContainer container) {
+	public void cancel(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
 		}
 		super.unregister(false);
-		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container);
+		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}
 
 	public synchronized boolean isEmpty() {
@@ -339,11 +339,11 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	/** Attempt to encode the block, if necessary */
-	public void tryEncode() {
+	public void tryEncode(ObjectContainer container, ClientContext context) {
 		try {
-			encode();
+			encode(container, context);
 		} catch (InsertException e) {
-			fail(e);
+			fail(e, container, context);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
 			// Don't requeue on BackgroundBlockEncoder.

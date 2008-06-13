@@ -559,10 +559,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		else {
 			if(!context.jobRunner.onDatabaseThread())
 				context.jobRunner.queue(new DBJob() {
-					public void run(ObjectContainer container) {
+					public void run(ObjectContainer container, ClientContext context) {
 						innerWrapHandleMetadata(notFinalizedSize, container, context);
 					}
-				}, parent.getPriorityClass());
+				}, parent.getPriorityClass(), false);
 			else
 				innerWrapHandleMetadata(notFinalizedSize, container, context);
 		}
