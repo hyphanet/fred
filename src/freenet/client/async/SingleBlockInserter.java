@@ -300,16 +300,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(b != null)
 				core.realPut(b, ctx.cacheLocalRequests);
 			else {
-				synchronized(this) {
-					if(finished) {
-						Logger.error(this, "Trying to run send "+this+" when already finished", new Exception("error"));
-						return false;
-					}
-				}
-				if(parent.isCancelled())
-					fail(new InsertException(InsertException.CANCELLED), null);
-				else
-					fail(new InsertException(InsertException.BUCKET_ERROR, "Empty block", null), null);
+				Logger.error(this, "Asked to send empty block on "+this, new Exception("error"));
 				return false;
 			}
 		} catch (LowLevelPutException e) {
