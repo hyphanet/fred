@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import freenet.client.async.ClientContext;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.support.LRUHashtable;
@@ -24,6 +25,8 @@ import freenet.support.io.FilenameGenerator;
 import freenet.support.io.PaddedEphemerallyEncryptedBucket;
 import freenet.support.io.TempFileBucket;
 import java.util.Random;
+
+import com.db4o.ObjectContainer;
 
 /**
  * Cache of recently decoded archives:
@@ -189,7 +192,7 @@ public class ArchiveManager {
 	 * @throws ArchiveRestartException If the request needs to be restarted because the archive
 	 * changed.
 	 */
-	public void extractToCache(FreenetURI key, short archiveType, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback) throws ArchiveFailureException, ArchiveRestartException {
+	public void extractToCache(FreenetURI key, short archiveType, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws ArchiveFailureException, ArchiveRestartException {
 		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
@@ -269,7 +272,7 @@ outer:		while(true) {
 					out.close();
 					if(name.equals(".metadata"))
 						gotMetadata = true;
-					addStoreElement(ctx, key, name, temp, gotElement, element, callback);
+					addStoreElement(ctx, key, name, temp, gotElement, element, callback, container, context);
 					names.add(name);
 					trimStoredData();
 				}
@@ -277,13 +280,13 @@ outer:		while(true) {
 
 			// If no metadata, generate some
 			if(!gotMetadata) {
-				generateMetadata(ctx, key, names, gotElement, element, callback);
+				generateMetadata(ctx, key, names, gotElement, element, callback, container, context);
 				trimStoredData();
 			}
 			if(throwAtExit) throw new ArchiveRestartException("Archive changed on re-fetch");
 			
 			if((!gotElement.value) && element != null)
-				callback.notInArchive();
+				callback.notInArchive(container, context);
 			
 		} catch (IOException e) {
 			throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
@@ -308,7 +311,7 @@ outer:		while(true) {
 	 * @param callbackName If we generate a 
 	 * @throws ArchiveFailureException 
 	 */
-	private ArchiveStoreItem generateMetadata(ArchiveStoreContext ctx, FreenetURI key, HashSet names, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback) throws ArchiveFailureException {
+	private ArchiveStoreItem generateMetadata(ArchiveStoreContext ctx, FreenetURI key, HashSet names, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws ArchiveFailureException {
 		/* What we have to do is to:
 		 * - Construct a filesystem tree of the names.
 		 * - Turn each level of the tree into a Metadata object, including those below it, with
@@ -333,10 +336,10 @@ outer:		while(true) {
 				OutputStream os = element.bucket.getOutputStream();
 				os.write(buf);
 				os.close();
-				return addStoreElement(ctx, key, ".metadata", element, gotElement, element2, callback);
+				return addStoreElement(ctx, key, ".metadata", element, gotElement, element2, callback, container, context);
 			} catch (MetadataUnresolvedException e) {
 				try {
-					x = resolve(e, x, element, ctx, key, gotElement, element2, callback);
+					x = resolve(e, x, element, ctx, key, gotElement, element2, callback, container, context);
 				} catch (IOException e1) {
 					throw new ArchiveFailureException("Failed to create metadata: "+e1, e1);
 				}
@@ -347,7 +350,7 @@ outer:		while(true) {
 		}
 	}
 	
-	private int resolve(MetadataUnresolvedException e, int x, TempStoreElement element, ArchiveStoreContext ctx, FreenetURI key, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback) throws IOException, ArchiveFailureException {
+	private int resolve(MetadataUnresolvedException e, int x, TempStoreElement element, ArchiveStoreContext ctx, FreenetURI key, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws IOException, ArchiveFailureException {
 		Metadata[] m = e.mustResolve;
 		for(int i=0;i<m.length;i++) {
 			try {
@@ -355,9 +358,9 @@ outer:		while(true) {
 				OutputStream os = element.bucket.getOutputStream();
 				os.write(buf);
 				os.close();
-				addStoreElement(ctx, key, ".metadata-"+(x++), element, gotElement, element2, callback);
+				addStoreElement(ctx, key, ".metadata-"+(x++), element, gotElement, element2, callback, container, context);
 			} catch (MetadataUnresolvedException e1) {
-				x = resolve(e, x, element, ctx, key, gotElement, element2, callback);
+				x = resolve(e, x, element, ctx, key, gotElement, element2, callback, container, context);
 			}
 		}
 		return x;
@@ -425,7 +428,7 @@ outer:		while(true) {
 	 * @throws ArchiveFailureException If a failure occurred resulting in the data not being readable. Only happens if
 	 * callback != null.
 	 */
-	private ArchiveStoreItem addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, TempStoreElement temp, MutableBoolean gotElement, String callbackName, ArchiveExtractCallback callback) throws ArchiveFailureException {
+	private ArchiveStoreItem addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, TempStoreElement temp, MutableBoolean gotElement, String callbackName, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context) throws ArchiveFailureException {
 		RealArchiveStoreItem element = new RealArchiveStoreItem(ctx, key, name, temp);
 		if(logMINOR) Logger.minor(this, "Adding store element: "+element+" ( "+key+ ' ' +name+" size "+element.spaceUsed()+" )");
 		ArchiveStoreItem oldItem;
@@ -444,7 +447,7 @@ outer:		while(true) {
 			}
 		}
 		if(matchBucket != null) {
-			callback.gotBucket(matchBucket);
+			callback.gotBucket(matchBucket, container, context);
 			gotElement.value = true;
 		}
 		return element;
@@ -508,5 +511,9 @@ outer:		while(true) {
 		if(type.equals("application/zip") || type.equals("application/x-zip"))
 			return Metadata.ARCHIVE_ZIP;
 		else throw new IllegalArgumentException(); 
+	}
+	
+	public static void init(ObjectContainer container, ClientContext context, final long nodeDBHandle) {
+		ArchiveHandlerImpl.init(container, context, nodeDBHandle);
 	}
 }

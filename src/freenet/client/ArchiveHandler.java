@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
 import freenet.keys.FreenetURI;
 import freenet.support.api.Bucket;
 
@@ -66,6 +69,24 @@ public interface ArchiveHandler {
 	 * @throws ArchiveFailureException
 	 * @throws ArchiveRestartException
 	 */
-	public abstract void extractToCache(Bucket bucket, ArchiveContext actx, String element, ArchiveExtractCallback callback, ArchiveManager manager) throws ArchiveFailureException, ArchiveRestartException;
+	public abstract void extractToCache(Bucket bucket, ArchiveContext actx, String element, ArchiveExtractCallback callback, ArchiveManager manager, 
+			ObjectContainer container, ClientContext context) throws ArchiveFailureException, ArchiveRestartException;
+
+	/**
+	 * Unpack a fetched archive on a separate thread for a persistent caller.
+	 * This involves:
+	 * - Add a tag to the database so that it will be restarted on a crash.
+	 * - Run the actual unpack on a separate thread.
+	 * - Copy the data to a persistent bucket.
+	 * - Schedule a database job.
+	 * - Call the callback.
+	 * @param bucket
+	 * @param actx
+	 * @param element
+	 * @param callback
+	 * @param container
+	 * @param context
+	 */
+	public abstract void extractPersistentOffThread(Bucket bucket, ArchiveContext actx, String element, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context);
 	
 }

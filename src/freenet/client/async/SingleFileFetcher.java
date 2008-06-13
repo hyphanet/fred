@@ -285,7 +285,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					}
 				} else {
 					fetchArchive(false, archiveMetadata, ArchiveManager.METADATA_NAME, new ArchiveExtractCallback() {
-						public void gotBucket(Bucket data) {
+						public void gotBucket(Bucket data, ObjectContainer container, ClientContext context) {
 							try {
 								metadata = Metadata.construct(data);
 								wrapHandleMetadata(true, container, context);
@@ -299,8 +299,14 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 								return;
 							}
 						}
-						public void notInArchive() {
+						public void notInArchive(ObjectContainer container, ClientContext context) {
 							onFailure(new FetchException(FetchException.INTERNAL_ERROR, "No metadata in container! Cannot happen as ArchiveManager should synthesise some!"), false, sched, container, context);
+						}
+						public void onFailed(ArchiveRestartException e, ObjectContainer container, ClientContext context) {
+							SingleFileFetcher.this.onFailure(new FetchException(e), false, sched, container, context);
+						}
+						public void onFailed(ArchiveFailureException e, ObjectContainer container, ClientContext context) {
+							SingleFileFetcher.this.onFailure(new FetchException(e), false, sched, container, context);
 						}
 					}, container, context); // will result in this function being called again
 					return;
@@ -346,7 +352,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					// We enforce this in ArchiveHandler.
 					// Therefore, the archive needs to be fetched.
 					fetchArchive(true, archiveMetadata, filename, new ArchiveExtractCallback() {
-						public void gotBucket(Bucket data) {
+						public void gotBucket(Bucket data, ObjectContainer container, ClientContext context) {
 							if(logMINOR) Logger.minor(this, "Returning data");
 							Bucket out;
 							try {
@@ -365,8 +371,14 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							// Return the data
 							onSuccess(new FetchResult(clientMetadata, out), sched, container, context);
 						}
-						public void notInArchive() {
+						public void notInArchive(ObjectContainer container, ClientContext context) {
 							onFailure(new FetchException(FetchException.NOT_IN_ARCHIVE), false, sched, container, context);
+						}
+						public void onFailed(ArchiveRestartException e, ObjectContainer container, ClientContext context) {
+							SingleFileFetcher.this.onFailure(new FetchException(e), false, sched, container, context);
+						}
+						public void onFailed(ArchiveFailureException e, ObjectContainer container, ClientContext context) {
+							SingleFileFetcher.this.onFailure(new FetchException(e), false, sched, container, context);
 						}
 					}, container, context);
 					// Will call back into this function when it has been fetched.
@@ -597,8 +609,20 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 		
 		public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
+			if(!parent.persistent()) {
+				// Run directly - we are running on some thread somewhere, don't worry about it.
+				innerSuccess(result, container, context);
+			} else {
+				// We are running on the database thread.
+				// Add a tag, unpack on a separate thread, copy the data to a persistent bucket, then schedule on the database thread,
+				// remove the tag, and call the callback.
+				ah.extractPersistentOffThread(result.asBucket(), actx, element, callback, container, context);
+			}
+		}
+
+		private void innerSuccess(FetchResult result, ObjectContainer container, ClientContext context) {
 			try {
-				ah.extractToCache(result.asBucket(), actx, element, callback, context.archiveManager);
+				ah.extractToCache(result.asBucket(), actx, element, callback, context.archiveManager, container, context);
 			} catch (ArchiveFailureException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(e), false, sched, container, context);
 				return;

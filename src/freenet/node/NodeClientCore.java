@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.ArchiveManager;
 import freenet.client.FECQueue;
 import freenet.client.HighLevelSimpleClient;
@@ -57,8 +59,8 @@ import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.SerialExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BooleanCallback;
-import freenet.support.api.IntCallback;
 import freenet.support.api.BucketFactory;
+import freenet.support.api.IntCallback;
 import freenet.support.api.StringArrCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.FileUtil;
@@ -422,6 +424,13 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 	public void start(Config config) throws NodeInitException {
 		backgroundBlockEncoder.setContext(clientContext);
 		node.executor.execute(backgroundBlockEncoder, "Background block encoder");
+		clientContext.jobRunner.queue(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				ArchiveManager.init(container, context, context.nodeDBHandle);
+			}
+			
+		}, NativeThread.NORM_PRIORITY, false);
 		persister.start();
 		if(fcpServer != null)
 			fcpServer.maybeStart();
