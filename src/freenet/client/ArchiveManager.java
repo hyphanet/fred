@@ -90,7 +90,7 @@ public class ArchiveManager {
 	}
 
 	/** Add an ArchiveHandler by key */
-	private synchronized void putCached(FreenetURI key, ArchiveHandler zip) {
+	private synchronized void putCached(FreenetURI key, ArchiveStoreContext zip) {
 		if(logMINOR) Logger.minor(this, "Put cached AH for "+key+" : "+zip);
 		archiveHandlers.push(key, zip);
 		while(archiveHandlers.size() > maxArchiveHandlers)
@@ -98,9 +98,9 @@ public class ArchiveManager {
 	}
 
 	/** Get an ArchiveHandler by key */
-	public ArchiveHandler getCached(FreenetURI key) {
+	ArchiveStoreContext getCached(FreenetURI key) {
 		if(logMINOR) Logger.minor(this, "Get cached AH for "+key);
-		ArchiveHandler handler = (ArchiveHandler) archiveHandlers.get(key);
+		ArchiveStoreContext handler = (ArchiveStoreContext) archiveHandlers.get(key);
 		if(handler == null) return null;
 		archiveHandlers.push(key, handler);
 		return handler;
@@ -115,14 +115,27 @@ public class ArchiveManager {
 	 * @param archiveType The archive type, defined in Metadata.
 	 * @return An archive handler. 
 	 */
-	public synchronized ArchiveHandler makeHandler(FreenetURI key, short archiveType, boolean returnNullIfNotFound, boolean forceRefetchArchive) {
-		ArchiveHandler handler = null;
-		if(!forceRefetchArchive) handler = getCached(key);
+	synchronized ArchiveStoreContext makeContext(FreenetURI key, short archiveType, boolean returnNullIfNotFound) {
+		ArchiveStoreContext handler = null;
+		handler = getCached(key);
 		if(handler != null) return handler;
 		if(returnNullIfNotFound) return null;
-		handler = new ArchiveStoreContext(key, archiveType, forceRefetchArchive);
+		handler = new ArchiveStoreContext(key, archiveType);
 		putCached(key, handler);
 		return handler;
+	}
+
+	/**
+	 * Create an archive handler. This does not need to know how to
+	 * fetch the key, because the methods called later will ask.
+	 * It will try to serve from cache, but if that fails, will
+	 * re-fetch.
+	 * @param key The key of the archive that we are extracting data from.
+	 * @param archiveType The archive type, defined in Metadata.
+	 * @return An archive handler. 
+	 */
+	public ArchiveHandler makeHandler(FreenetURI key, short archiveType, boolean forceRefetch) {
+		return new ArchiveHandlerImpl(key, archiveType, forceRefetch);
 	}
 
 	/**
@@ -183,7 +196,6 @@ public class ArchiveManager {
 		MutableBoolean gotElement = element != null ? new MutableBoolean() : null;
 		
 		if(logMINOR) Logger.minor(this, "Extracting "+key);
-		ctx.onExtract();
 		ctx.removeAllCachedItems(this); // flush cache anyway
 		long expectedSize = ctx.getLastSize();
 		long archiveSize = data.size();

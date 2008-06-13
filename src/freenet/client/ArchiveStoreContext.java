@@ -5,8 +5,6 @@ package freenet.client;
 
 import freenet.keys.FreenetURI;
 import freenet.support.DoublyLinkedListImpl;
-import freenet.support.Logger;
-import freenet.support.api.Bucket;
 
 /**
  * Tracks all files currently in the cache from a given key.
@@ -16,15 +14,11 @@ import freenet.support.api.Bucket;
  * subject to the above.
  * 
  * Always take the lock on ArchiveStoreContext before the lock on ArchiveManager, NOT the other way around.
- * 
- * Not normally to be used directly by external packages, but public for
- * ArchiveManager.extractToCache. FIXME.
  */
-public class ArchiveStoreContext implements ArchiveHandler {
+public class ArchiveStoreContext {
 
 	private FreenetURI key;
 	private short archiveType;
-	private boolean forceRefetchArchive;
 	/** Archive size */
 	private long lastSize = -1;
 	/** Archive hash */
@@ -35,45 +29,10 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	 * the inner lock to avoid deadlocks. */
 	private final DoublyLinkedListImpl myItems;
 	
-	ArchiveStoreContext(FreenetURI key, short archiveType, boolean forceRefetchArchive) {
+	ArchiveStoreContext(FreenetURI key, short archiveType) {
 		this.key = key;
 		this.archiveType = archiveType;
 		myItems = new DoublyLinkedListImpl();
-		this.forceRefetchArchive = forceRefetchArchive;
-	}
-
-	/**
-	 * Get the metadata for a given archive.
-	 * @return A Bucket containing the metadata, in binary format, for the archive.
-	 */
-	public Bucket getMetadata(ArchiveContext archiveContext, ClientMetadata dm, int recursionLevel, 
-			boolean dontEnterImplicitArchives, ArchiveManager manager) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
-		return get(".metadata", archiveContext, dm, recursionLevel, dontEnterImplicitArchives, manager);
-	}
-
-	/**
-	 * Fetch a file in an archive.
-	 * @return A Bucket containing the data. This will not be freed until the 
-	 * client is finished with it i.e. calls free() or it is finalized.
-	 */
-	public Bucket get(String internalName, ArchiveContext archiveContext, ClientMetadata dm, int recursionLevel, 
-			boolean dontEnterImplicitArchives, ArchiveManager manager) throws ArchiveFailureException, ArchiveRestartException, MetadataParseException, FetchException {
-
-		// Do loop detection on the archive that we are about to fetch.
-		archiveContext.doLoopDetection(key);
-		
-		if(forceRefetchArchive) return null;
-		
-		Bucket data;
-		
-		// Fetch from cache
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Checking cache: "+key+ ' ' +internalName);
-		if((data = manager.getCached(key, internalName)) != null) {
-			return data;
-		}	
-		
-		return null;
 	}
 
 	/** Returns the size of the archive last time we fetched it, or -1 */
@@ -136,12 +95,4 @@ public class ArchiveStoreContext implements ArchiveHandler {
 		return key;
 	}
 
-	public void extractToCache(Bucket bucket, ArchiveContext actx, String element, ArchiveExtractCallback callback, ArchiveManager manager) throws ArchiveFailureException, ArchiveRestartException {
-		manager.extractToCache(key, archiveType, bucket, actx, this, element, callback);
-	}
-
-	/** Called just before extracting this container to the cache */
-	void onExtract() {
-		forceRefetchArchive = false;
-	}
 }

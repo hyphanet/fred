@@ -271,7 +271,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// It's more efficient to keep the existing ah if we can, and it is vital in
 				// the case of binary blobs.
 				if(ah == null || !ah.getKey().equals(thisKey))
-					ah = (ArchiveStoreContext) context.archiveManager.makeHandler(thisKey, metadata.getArchiveType(), false, 
+					ah = context.archiveManager.makeHandler(thisKey, metadata.getArchiveType(),
 							(parent instanceof ClientGetter ? ((ClientGetter)parent).collectingBinaryBlob() : false));
 				archiveMetadata = metadata;
 				// ah is set. This means we are currently handling an archive.
