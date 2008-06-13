@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import freenet.keys.FreenetURI;
 import freenet.support.api.Bucket;
 
 /**
@@ -50,6 +51,11 @@ public interface ArchiveHandler {
 	 */
 	public abstract short getArchiveType();
 
+	/**
+	 * Get the key.
+	 */
+	public abstract FreenetURI getKey();
+	
 	/**
 	 * Unpack a fetched archive to cache, and call the callback if there is one.
 	 * @param bucket The downloaded data for the archive.

@@ -12,6 +12,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.ArchiveContext;
 import freenet.client.ArchiveExtractCallback;
 import freenet.client.ArchiveFailureException;
+import freenet.client.ArchiveHandler;
 import freenet.client.ArchiveManager;
 import freenet.client.ArchiveRestartException;
 import freenet.client.ArchiveStoreContext;
@@ -50,7 +51,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	private Metadata archiveMetadata;
 	final ArchiveContext actx;
 	/** Archive handler. We can only have one archive handler at a time. */
-	private ArchiveStoreContext ah;
+	private ArchiveHandler ah;
 	private int recursionLevel;
 	/** The URI of the currently-being-processed data, for archives etc. */
 	private FreenetURI thisKey;
@@ -67,7 +68,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	 */
 	public SingleFileFetcher(ClientRequester parent, GetCompletionCallback cb, ClientMetadata metadata,
 			ClientKey key, LinkedList metaStrings, FreenetURI origURI, int addedMetaStrings, FetchContext ctx,
-			ArchiveContext actx, ArchiveStoreContext ah, Metadata archiveMetadata, int maxRetries, int recursionLevel,
+			ArchiveContext actx, ArchiveHandler ah, Metadata archiveMetadata, int maxRetries, int recursionLevel,
 			boolean dontTellClientGet, long l, boolean isEssential,
 			Bucket returnBucket, boolean isFinal) throws FetchException {
 		super(key, maxRetries, ctx, parent, cb, isEssential, false, l);
