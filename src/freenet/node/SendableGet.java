@@ -151,11 +151,4 @@ public abstract class SendableGet extends BaseSendableGet {
 	 */
 	public abstract void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context);
 
-	/**
-	 * Get the ClientKey for a specific token, so that we don't need to look it up on the request sender thread.
-	 * @param token The token indicating this specific key.
-	 * @param container The database if needed.
-	 */
-	public abstract ClientKey getClientKey(Object token, ObjectContainer container);
-
 }

@@ -191,7 +191,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			} else {
 				key = ((BaseSendableGet)req).getNodeKey(token, persistent() ? container : null);
 				if(req instanceof SendableGet)
-					ckey = ((SendableGet)req).getClientKey(token, persistent() ? container : null);
+					ckey = ((SendableGet)req).getKey(token, persistent() ? container : null);
 				else
 					ckey = null;
 			}
