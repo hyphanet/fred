@@ -1014,7 +1014,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 	}
 	
 	public HighLevelSimpleClient makeClient(short prioClass, boolean forceDontIgnoreTooManyPathComponents) {
-		return new HighLevelSimpleClientImpl(this, archiveManager, tempBucketFactory, random, !Node.DONT_CACHE_LOCAL_REQUESTS, prioClass, forceDontIgnoreTooManyPathComponents, clientSlowSerialExecutor);
+		return new HighLevelSimpleClientImpl(this, tempBucketFactory, random, !Node.DONT_CACHE_LOCAL_REQUESTS, prioClass, forceDontIgnoreTooManyPathComponents, clientSlowSerialExecutor);
 	}
 	
 	public FCPServer getFCPServer() {
