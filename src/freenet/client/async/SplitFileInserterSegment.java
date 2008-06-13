@@ -682,7 +682,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		for (int i = 0; i < dataBlockInserters.length; i++) {
 			SingleBlockInserter sbi = dataBlockInserters[i];
 			if (sbi != null)
-				sbi.cancel(container);
+				sbi.cancel(container, context);
 			Bucket d = dataBlocks[i];
 			if (d != null) {
 				d.free();
@@ -692,7 +692,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		for (int i = 0; i < checkBlockInserters.length; i++) {
 			SingleBlockInserter sbi = checkBlockInserters[i];
 			if (sbi != null)
-				sbi.cancel(container);
+				sbi.cancel(container, context);
 			Bucket d = checkBlocks[i];
 			if (d != null) {
 				d.free();
