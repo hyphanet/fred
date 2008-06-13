@@ -6,6 +6,7 @@ package freenet.client.async;
 import com.db4o.ObjectContainer;
 
 import freenet.client.FECQueue;
+import freenet.client.FetchException;
 import freenet.client.InsertException;
 import freenet.node.NodeClientCore;
 import freenet.support.Executor;
@@ -55,6 +56,24 @@ public class ClientContext {
 			}, NativeThread.NORM_PRIORITY, false);
 		} else {
 			inserter.start(param, param, null, this);
+		}
+	}
+
+	public void start(final ClientGetter getter) throws FetchException {
+		if(getter.persistent()) {
+			jobRunner.queue(new DBJob() {
+				
+				public void run(ObjectContainer container, ClientContext context) {
+					try {
+						getter.start(container, context);
+					} catch (FetchException e) {
+						getter.clientCallback.onFailure(e, getter);
+					}
+				}
+				
+			}, NativeThread.NORM_PRIORITY, false);
+		} else {
+			getter.start(null, this);
 		}
 	}
 	

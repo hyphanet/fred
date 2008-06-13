@@ -140,7 +140,7 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 		}
 		if(toStart != null)
 			try {
-				toStart.start();
+				node.clientCore.clientContext.start(toStart);
 			} catch (FetchException e) {
 				Logger.error(this, "Error while starting the fetching: "+e, e);
 				synchronized(this) {

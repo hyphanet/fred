@@ -115,7 +115,7 @@ public class RevocationChecker implements ClientCallback, RequestClient {
 			if(toCancel != null)
 				toCancel.cancel();
 			if(cg != null) {
-				cg.start();
+				core.clientContext.start(cg);
 				if(logMINOR) Logger.minor(this, "Started revocation fetcher");
 			}
 		} catch (FetchException e) {

@@ -780,7 +780,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				updateManager.revocationURI, tempContext, (short)0, this, null, cleanedBlob); 
 		
 		try {
-			cg.start();
+			updateManager.node.clientCore.clientContext.start(cg);
 		} catch (FetchException e1) {
 			System.err.println("Failed to decode UOM blob: "+e1);
 			e1.printStackTrace();
@@ -821,7 +821,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				updateManager.node.clientCore.requestStarters.sskPutScheduler,
 				RequestStarter.INTERACTIVE_PRIORITY_CLASS, false, false, this, null, null, true);
 		try {
-			putter.start(false);
+			updateManager.node.clientCore.clientContext.start(putter, false);
 		} catch (InsertException e1) {
 			Logger.error(this, "Failed to start insert of revocation key binary blob: "+e1, e1);
 		}
@@ -1159,7 +1159,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				uri, tempContext, (short)0, this, null, cleanedBlob); 
 		
 		try {
-			cg.start();
+			updateManager.node.clientCore.clientContext.start(cg);
 		} catch (FetchException e1) {
 			myCallback.onFailure(e1, cg);
 		}
