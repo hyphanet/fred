@@ -3,11 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
+import com.db4o.ObjectContainer;
+
 public interface RandomGrabArrayItemExclusionList {
 	
 	/**
 	 * Whether this item can be returned right now.
 	 */
-	public boolean exclude(RandomGrabArrayItem item);
+	public boolean exclude(RandomGrabArrayItem item, ObjectContainer container);
 
 }

@@ -2,6 +2,8 @@ package freenet.support;
 
 import java.util.HashSet;
 
+import com.db4o.ObjectContainer;
+
 import freenet.crypt.RandomSource;
 
 /**
@@ -55,7 +57,7 @@ public class RandomGrabArray {
 		}
 	}
 	
-	public RandomGrabArrayItem removeRandom(RandomGrabArrayItemExclusionList excluding) {
+	public RandomGrabArrayItem removeRandom(RandomGrabArrayItemExclusionList excluding, ObjectContainer container) {
 		RandomGrabArrayItem ret, oret;
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(this) {
@@ -89,7 +91,7 @@ public class RandomGrabArray {
 								reqs[target] = item;
 							}
 							target++;
-							if(excluding.exclude(item)) {
+							if(excluding.exclude(item, container)) {
 								exclude++;
 							} else {
 								if(valid == random) { // Picked on previous round
@@ -157,7 +159,7 @@ public class RandomGrabArray {
 					if(logMINOR) Logger.minor(this, "Not returning because cancelled: "+ret);
 					ret = null;
 				}
-				if(ret != null && excluding.exclude(ret)) {
+				if(ret != null && excluding.exclude(ret, container)) {
 					excluded++;
 					if(excluded > MAX_EXCLUDED) {
 						Logger.error(this, "Remove random returning null because "+excluded+" excluded items, length = "+index, new Exception("error"));
