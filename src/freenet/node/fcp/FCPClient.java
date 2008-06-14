@@ -38,9 +38,10 @@ public class FCPClient {
 			}
 		};
 		completionCallback = cb;
-		if(persistenceType == ClientRequest.PERSIST_FOREVER)
+		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
+			assert(root != null);
 			this.root = root;
-		else
+		} else
 			this.root = null;
 	}
 	
@@ -95,9 +96,6 @@ public class FCPClient {
 			if(runningPersistentRequests.remove(get)) {
 				completedUnackedRequests.add(get);
 			}	
-		}
-		if(get.isPersistentForever()) {
-			server.forceStorePersistentRequests();
 		}
 	}
 
@@ -165,7 +163,6 @@ public class FCPClient {
 		}
 		if(completionCallback != null)
 			completionCallback.onRemove(req);
-		server.forceStorePersistentRequests();
 	}
 
 	public boolean hasPersistentRequests() {

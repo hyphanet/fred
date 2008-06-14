@@ -80,32 +80,19 @@ public class FCPServer implements Runnable {
 	 * MUST ALWAYS BE THE OUTERMOST LOCK.
 	 */
 	private final Object persistenceSync = new Object();
-	private FCPServerPersister persister;
 	private boolean haveLoadedPersistentRequests;
-	private long persistenceInterval;
 	final FetchContext defaultFetchContext;
 	public InsertContext defaultInsertContext;
 	public static final int QUEUE_MAX_RETRIES = -1;
 	public static final long QUEUE_MAX_DATA_SIZE = Long.MAX_VALUE;
-	private boolean canStartPersister = false;
 	private boolean assumeDownloadDDAIsAllowed;
 	private boolean assumeUploadDDAIsAllowed;
 	private boolean hasFinishedStart;
 	
-	private void startPersister() {
-		node.executor.execute(persister = new FCPServerPersister(), "FCP request persister");
-	}
-
-	private void killPersister() {
-		persister.kill();
-		persister = null;
-	}
-
-	public FCPServer(String ipToBindTo, String allowedHosts, String allowedHostsFullAccess, int port, Node node, NodeClientCore core, boolean persistentDownloadsEnabled, String persistentDownloadsDir, long persistenceInterval, boolean isEnabled, boolean assumeDDADownloadAllowed, boolean assumeDDAUploadAllowed, ObjectContainer container) throws IOException, InvalidConfigValueException {
+	public FCPServer(String ipToBindTo, String allowedHosts, String allowedHostsFullAccess, int port, Node node, NodeClientCore core, boolean persistentDownloadsEnabled, String persistentDownloadsDir, boolean isEnabled, boolean assumeDDADownloadAllowed, boolean assumeDDAUploadAllowed, ObjectContainer container) throws IOException, InvalidConfigValueException {
 		this.bindTo = ipToBindTo;
 		this.allowedHosts=allowedHosts;
 		this.allowedHostsFullAccess = new AllowedHosts(allowedHostsFullAccess);
-		this.persistenceInterval = persistenceInterval;
 		this.port = port;
 		this.enabled = isEnabled;
 		this.enablePersistentDownloads = persistentDownloadsEnabled;
@@ -326,21 +313,6 @@ public class FCPServer implements Runnable {
 		
 	}
 
-	static class PersistentDownloadsEnabledCallback implements BooleanCallback {
-		
-		FCPServer server;
-		
-		public boolean get() {
-			return server.persistentDownloadsEnabled();
-		}
-		
-		public void set(boolean set) {
-			if(server.persistentDownloadsEnabled() != set)
-				server.setPersistentDownloadsEnabled(set);
-		}
-		
-	}
-
 	static class PersistentDownloadsFileCallback implements StringCallback {
 		
 		FCPServer server;
@@ -356,25 +328,6 @@ public class FCPServer implements Runnable {
 		}
 	}
 
-	static class PersistentDownloadsIntervalCallback implements LongCallback {
-		
-		FCPServer server;
-		
-		public long get() {
-			return server.persistenceInterval;
-		}
-		
-		public void set(long value) {
-			server.persistenceInterval = value;
-			FCPServerPersister p = server.persister;
-			if(p != null) {
-				synchronized(p) {
-					p.notifyAll();
-				}
-			}
-		}
-	}
-	
 	static class AssumeDDADownloadIsAllowedCallback implements BooleanCallback{
 		FCPServer server;
 
@@ -402,7 +355,7 @@ public class FCPServer implements Runnable {
 	}
 
 	
-	public static FCPServer maybeCreate(Node node, NodeClientCore core, Config config) throws IOException, InvalidConfigValueException {
+	public static FCPServer maybeCreate(Node node, NodeClientCore core, Config config, ObjectContainer container) throws IOException, InvalidConfigValueException {
 		SubConfig fcpConfig = new SubConfig("fcp", config);
 		short sortOrder = 0;
 		fcpConfig.register("enabled", true, sortOrder++, true, false, "FcpServer.isEnabled", "FcpServer.isEnabledLong", new FCPEnabledCallback(core));
@@ -411,15 +364,12 @@ public class FCPServer implements Runnable {
 		fcpConfig.register("bindTo", NetworkInterface.DEFAULT_BIND_TO, sortOrder++, true, true, "FcpServer.bindTo", "FcpServer.bindToLong", new FCPBindtoCallback(core));
 		fcpConfig.register("allowedHosts", NetworkInterface.DEFAULT_BIND_TO, sortOrder++, true, true, "FcpServer.allowedHosts", "FcpServer.allowedHostsLong", new FCPAllowedHostsCallback(core));
 		fcpConfig.register("allowedHostsFullAccess", NetworkInterface.DEFAULT_BIND_TO, sortOrder++, true, true, "FcpServer.allowedHostsFullAccess", "FcpServer.allowedHostsFullAccessLong", new FCPAllowedHostsFullAccessCallback(core));
-		PersistentDownloadsEnabledCallback cb1;
 		PersistentDownloadsFileCallback cb2;
-		PersistentDownloadsIntervalCallback cb3;
-		fcpConfig.register("persistentDownloadsEnabled", true, sortOrder++, true, true, "FcpServer.enablePersistentDownload", "FcpServer.enablePersistentDownloadLong", cb1 = new PersistentDownloadsEnabledCallback());
+		fcpConfig.register("persistentDownloadsEnabled", true, sortOrder++, true, true, "FcpServer.enablePersistentDownload", "FcpServer.enablePersistentDownloadLong", (BooleanCallback) null);
 		fcpConfig.register("persistentDownloadsFile", "downloads.dat", sortOrder++, true, false, "FcpServer.filenameToStorePData", "FcpServer.filenameToStorePDataLong", cb2 = new PersistentDownloadsFileCallback());
-		fcpConfig.register("persistentDownloadsInterval", (5*60*1000), sortOrder++, true, false, "FcpServer.intervalBetweenWrites", "FcpServer.intervalBetweenWritesLong", cb3 = new PersistentDownloadsIntervalCallback());
+		fcpConfig.register("persistentDownloadsInterval", (5*60*1000), sortOrder++, true, false, "FcpServer.intervalBetweenWrites", "FcpServer.intervalBetweenWritesLong", (IntCallback) null);
 		String persistentDownloadsDir = fcpConfig.getString("persistentDownloadsFile");
 		boolean persistentDownloadsEnabled = fcpConfig.getBoolean("persistentDownloadsEnabled");		
-		long persistentDownloadsInterval = fcpConfig.getLong("persistentDownloadsInterval");
 		
 		AssumeDDADownloadIsAllowedCallback cb4;
 		AssumeDDAUploadIsAllowedCallback cb5;
@@ -430,12 +380,10 @@ public class FCPServer implements Runnable {
 			ssl = fcpConfig.getBoolean("ssl");
 		}
 		
-		FCPServer fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getString("allowedHosts"), fcpConfig.getString("allowedHostsFullAccess"), fcpConfig.getInt("port"), node, core, persistentDownloadsEnabled, persistentDownloadsDir, persistentDownloadsInterval, fcpConfig.getBoolean("enabled"), fcpConfig.getBoolean("assumeDownloadDDAIsAllowed"), fcpConfig.getBoolean("assumeUploadDDAIsAllowed"));
+		FCPServer fcp = new FCPServer(fcpConfig.getString("bindTo"), fcpConfig.getString("allowedHosts"), fcpConfig.getString("allowedHostsFullAccess"), fcpConfig.getInt("port"), node, core, persistentDownloadsEnabled, persistentDownloadsDir, fcpConfig.getBoolean("enabled"), fcpConfig.getBoolean("assumeDownloadDDAIsAllowed"), fcpConfig.getBoolean("assumeUploadDDAIsAllowed"), container);
 		
 		if(fcp != null) {
-			cb1.server = fcp;
 			cb2.server = fcp;
-			cb3.server = fcp;
 			cb4.server = fcp;
 			cb5.server = fcp;
 		}
@@ -495,34 +443,13 @@ public class FCPServer implements Runnable {
 		return L10n.getString("FcpServer."+key, pattern, value);
 	}
 
-	public void setPersistentDownloadsEnabled(boolean set) {
-		synchronized(this) {
-			if(enablePersistentDownloads == set) return;
-			enablePersistentDownloads = set;
-		}
-		synchronized(persistenceSync) {
-			if(set) {
-				if(!haveLoadedPersistentRequests)
-					loadPersistentRequests();
-				if(canStartPersister)
-					startPersister();
-			} else {
-				killPersister();
-			}
-		}
-	}
-
-	public synchronized boolean persistentDownloadsEnabled() {
-		return enablePersistentDownloads;
-	}
-
 	public FCPClient registerRebootClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
 		FCPClient oldClient;
 		synchronized(this) {
 			oldClient = (FCPClient) clientsByName.get(name);
 			if(oldClient == null) {
 				// Create new client
-				FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_REBOOT);
+				FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_REBOOT, null);
 				clientsByName.put(name, client);
 				return client;
 			} else {
@@ -545,146 +472,14 @@ public class FCPServer implements Runnable {
 		return oldClient;
 	}
 	
-	public FCPClient registerForeverClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
-		return persistentRoot.registerForeverClient(name, core, handler, this);
+	public FCPClient registerForeverClient(String name, NodeClientCore core, FCPConnectionHandler handler, ObjectContainer container) {
+		return persistentRoot.registerForeverClient(name, core, handler, this, container);
 	}
 
 	public void unregisterClient(FCPClient client) {
 		synchronized(this) {
 			String name = client.name;
 			clientsByName.remove(name);
-		}
-	}
-
-	class FCPServerPersister implements Runnable {
-
-		private boolean killed;
-		private boolean storeNow;
-		
-		public void force() {
-			synchronized(this) {
-				storeNow = true;
-				notifyAll();
-			}
-		}
-		
-		void kill() {
-			synchronized(this) {
-				killed = true;
-				notifyAll();
-			}
-		}
-		
-		public void run() {
-		    freenet.support.Logger.OSThread.logPID(this);
-			while(true) {
-				long startTime = System.currentTimeMillis();
-				try {
-					storePersistentRequests();
-				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t, t);
-				}
-				long delta = System.currentTimeMillis() - startTime;
-				synchronized(this) {
-					long delay = Math.max(persistenceInterval, delta * 20);
-					if(killed) return;
-					startTime = System.currentTimeMillis();
-					long now;
-					while(((now = System.currentTimeMillis()) < startTime + delay) && !storeNow) {
-						try {
-							long wait = Math.max((startTime + delay) - now, Integer.MAX_VALUE);
-							if(wait > 0)
-								wait(Math.min(wait, 5000));
-						} catch (InterruptedException e) {
-							// Ignore
-						}
-						if(killed) return;
-					}
-					storeNow = false;
-				}
-			}
-		}
-		
-	}
-
-	public void forceStorePersistentRequests() {
-		if(logMINOR) Logger.minor(this, "Forcing store persistent requests");
-		if(!enablePersistentDownloads) return;
-		if(persister != null) {
-			persister.force();
-		} else {
-			if(canStartPersister)
-				Logger.error(this, "Persister not running, cannot store persistent requests");
-		}
-	}
-	
-	/** Store all persistent requests to disk */
-	private void storePersistentRequests() {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Storing persistent requests");
-		ClientRequest[] persistentRequests = getPersistentRequests();
-		if(logMINOR) Logger.minor(this, "Persistent requests count: "+persistentRequests.length);
-		LinkedList toFree = null;
-		try {
-			synchronized(persistenceSync) {
-				toFree = core.persistentTempBucketFactory.grabBucketsToFree();
-                                
-				File compressedTemp = new File(persistentDownloadsTempFile+".gz");
-				File compressedFinal = new File(persistentDownloadsFile.toString()+".gz");
-				compressedTemp.delete();
-                
-				FileOutputStream fos = null;
-				BufferedOutputStream bos = null;
-				GZIPOutputStream gos = null;
-				OutputStreamWriter osw = null;
-				BufferedWriter w = null;
-				
-				try {
-					fos = new FileOutputStream(compressedTemp);
-					bos = new BufferedOutputStream(fos);
-					gos = new GZIPOutputStream(bos);
-					osw = new OutputStreamWriter(gos, "UTF-8");
-					w = new BufferedWriter(osw);
-					w.write(Integer.toString(persistentRequests.length)+ '\n');
-					for(int i=0;i<persistentRequests.length;i++)
-						persistentRequests[i].write(w);
-					
-					w.flush();
-					w.close();
-					FileUtil.renameTo(compressedTemp, compressedFinal);
-				} catch (IOException e) {
-					Logger.error(this, "Cannot write persistent requests to disk: "+e);
-				} finally {
-					Closer.close(w);
-					Closer.close(osw);
-					Closer.close(gos);
-					Closer.close(bos);
-					Closer.close(fos);
-				}
-			}
-			if(logMINOR) Logger.minor(this, "Stored persistent requests");
-		} finally {
-			if(toFree != null) {
-				long freedBuckets = 0;
-				Iterator it = toFree.iterator();
-				while(it.hasNext()) {
-					Bucket current = (Bucket) it.next();
-					try {
-						current.free();
-						freedBuckets++;
-					} catch(Throwable t) {
-						try {
-							System.err.println("Caught " + t + " trying to free bucket " + current);
-							t.printStackTrace();
-						} catch(Throwable t1) { /* ignore */ }
-					}
-				}
-				// Help it to be collected
-				toFree.clear();
-				toFree = null;
-				if(logMINOR)
-					Logger.minor(this, "We have freed "+freedBuckets+" persistent buckets");
-			}
 		}
 	}
 
@@ -752,19 +547,6 @@ public class FCPServer implements Runnable {
 				Closer.close(ris);
 			}
 		}
-	}
-
-	private ClientRequest[] getPersistentRequests() {
-		Vector v = new Vector();
-		synchronized(this) {
-			Iterator i = clientsByName.values().iterator();
-			while(i.hasNext()) {
-				FCPClient client = (FCPClient) (i.next());
-				client.addPersistentRequests(v, true);
-			}
-			globalClient.addPersistentRequests(v, true);
-		}
-		return (ClientRequest[]) v.toArray(new ClientRequest[v.size()]);
 	}
 
 	public ClientRequest[] getGlobalRequests() {
