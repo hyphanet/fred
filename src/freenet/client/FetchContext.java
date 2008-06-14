@@ -9,7 +9,6 @@ import freenet.client.async.BlockSet;
 import freenet.client.async.USKManager;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
-import freenet.support.Executor;
 import freenet.support.api.BucketFactory;
 
 /** Context for a Fetcher. Contains all the settings a Fetcher needs to know about. */
