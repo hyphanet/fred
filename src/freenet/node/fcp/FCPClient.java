@@ -19,7 +19,7 @@ import freenet.support.Logger;
  */
 public class FCPClient {
 	
-	public FCPClient(String name2, FCPServer server, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb) {
+	public FCPClient(String name2, FCPServer server, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb, short persistenceType) {
 		this.name = name2;
 		if(name == null) throw new NullPointerException();
 		this.currentConnection = handler;
@@ -30,6 +30,8 @@ public class FCPClient {
 		this.core = server.core;
 		this.client = core.makeClient((short)0);
 		this.isGlobalQueue = isGlobalQueue;
+		this.persistenceType = persistenceType;
+		assert(persistenceType == ClientRequest.PERSIST_FOREVER || persistenceType == ClientRequest.PERSIST_REBOOT);
 		defaultFetchContext = client.getFetchContext();
 		defaultInsertContext = client.getInsertContext(false);
 		clientsWatching = new LinkedList();
@@ -78,6 +80,8 @@ public class FCPClient {
 	final RequestClient lowLevelClientPersistent;
 	final RequestClient lowLevelClientTransient;
 	private RequestCompletionCallback completionCallback;
+	/** Connection mode */
+	private final short persistenceType;
 	
 	public synchronized FCPConnectionHandler getConnection() {
 		return currentConnection;
@@ -98,6 +102,7 @@ public class FCPClient {
 	 * acked yet, so it should be moved to the unacked-completed-requests set.
 	 */
 	public void finishedClientRequest(ClientRequest get) {
+		assert(get.persistenceType == persistenceType);
 		synchronized(this) {
 			if(runningPersistentRequests.remove(get)) {
 				completedUnackedRequests.add(get);
@@ -135,6 +140,7 @@ public class FCPClient {
 	}
 	
 	public void register(ClientRequest cg, boolean startLater) throws IdentifierCollisionException {
+		assert(cg.persistenceType == persistenceType);
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Registering "+cg.getIdentifier()+(startLater ? " to start later" : ""));
 		synchronized(this) {
@@ -273,6 +279,7 @@ public class FCPClient {
 	 * Callback called when a request succeeds.
 	 */
 	public void notifySuccess(ClientRequest req) {
+		assert(req.persistenceType == persistenceType);
 		if(completionCallback != null)
 			completionCallback.notifySuccess(req);
 	}
@@ -282,6 +289,7 @@ public class FCPClient {
 	 * @param get
 	 */
 	public void notifyFailure(ClientRequest req) {
+		assert(req.persistenceType == persistenceType);
 		if(completionCallback != null)
 			completionCallback.notifyFailure(req);
 	}
