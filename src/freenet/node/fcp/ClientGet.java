@@ -93,7 +93,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			this.targetFile = returnFilename;
 			this.tempFile = returnTempFilename;
-			if(!(client.core.allowDownloadTo(returnTempFilename) && client.core.allowDownloadTo(returnFilename)))
+			if(!(server.core.allowDownloadTo(returnTempFilename) && server.core.allowDownloadTo(returnFilename)))
 				throw new NotAllowedException();
 			ret = new FileBucket(returnTempFilename, false, true, false, false, false);
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_NONE) {
@@ -124,7 +124,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				ret.free();
 				throw e;
 			}
-			getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass,
+			getter = new ClientGetter(this, server.core.requestStarters.chkFetchScheduler, server.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass,
 					persistenceType == PERSIST_CONNECTION ? client.lowLevelClientTransient : client.lowLevelClientPersistent,
 					returnBucket, null);
 			if(persistenceType != PERSIST_CONNECTION) {
@@ -161,7 +161,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			this.targetFile = message.diskFile;
 			this.tempFile = message.tempFile;
-			if(!(client.core.allowDownloadTo(tempFile) && client.core.allowDownloadTo(targetFile)))
+			if(!(server.core.allowDownloadTo(tempFile) && server.core.allowDownloadTo(targetFile)))
 				throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to download to "+tempFile+" or "+targetFile, identifier, global);
 			else if(!(handler.allowDDAFrom(tempFile, true) && handler.allowDDAFrom(targetFile, true)))
 				throw new MessageInvalidException(ProtocolErrorMessage.DIRECT_DISK_ACCESS_DENIED, "Not allowed to download to "+tempFile+" or "+targetFile + ". You might need to do a " + TestDDARequestMessage.NAME + " first.", identifier, global);
@@ -196,8 +196,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				ret.free();
 				throw e;
 			}
-			getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, 
-					client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, 
+			getter = new ClientGetter(this, server.core.requestStarters.chkFetchScheduler, 
+					server.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, 
 					persistenceType == PERSIST_CONNECTION ? client.lowLevelClientTransient : client.lowLevelClientPersistent, 
 					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? returnBucket : null);
 			if(persistenceType != PERSIST_CONNECTION) {
@@ -299,8 +299,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			for(int i=0;i<allowed.length;i++) fctx.allowedMIMETypes.add(allowed[i]);
 		}
 
-		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, 
-				client.core.requestStarters.sskFetchScheduler, uri, 
+		getter = new ClientGetter(this, server.core.requestStarters.chkFetchScheduler, 
+				server.core.requestStarters.sskFetchScheduler, uri, 
 				fctx, priorityClass, 
 				persistenceType == PERSIST_CONNECTION ? client.lowLevelClientTransient : client.lowLevelClientPersistent, 
 				binaryBlob ? new NullBucket() : returnBucket, 

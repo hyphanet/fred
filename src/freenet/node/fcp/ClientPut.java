@@ -98,8 +98,8 @@ public class ClientPut extends ClientPutBase {
 	public ClientPut(FCPClient globalClient, FreenetURI uri, String identifier, int verbosity, 
 			short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly,
 			boolean dontCompress, int maxRetries, short uploadFromType, File origFilename, String contentType,
-			Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException, MalformedURLException {
-		super(uri, identifier, verbosity, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode);
+			Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode, FCPServer server) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException, MalformedURLException {
+		super(uri, identifier, verbosity, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, server);
 		if(uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
 			if(!globalClient.core.allowUploadFrom(origFilename))
 				throw new NotAllowedException();
@@ -146,7 +146,7 @@ public class ClientPut extends ClientPutBase {
 		this.clientMetadata = cm;
 
 		putter = new ClientPutter(this, data, uri, cm, 
-				ctx, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler, priorityClass, 
+				ctx, server.core.requestStarters.chkPutScheduler, server.core.requestStarters.sskPutScheduler, priorityClass, 
 				getCHKOnly, isMetadata, 
 				persistenceType == PERSIST_CONNECTION ? client.lowLevelClientTransient : client.lowLevelClientPersistent,
 				null, targetFilename, binaryBlob);
@@ -156,10 +156,10 @@ public class ClientPut extends ClientPutBase {
 		}
 	}
 	
-	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message) throws IdentifierCollisionException, MessageInvalidException, MalformedURLException {
+	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException, MalformedURLException {
 		super(message.uri, message.identifier, message.verbosity, handler, 
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
-				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode);
+				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode, server);
 		String salt = null;
 		byte[] saltedHash = null;
 		binaryBlob = message.binaryBlob;
@@ -258,7 +258,7 @@ public class ClientPut extends ClientPutBase {
 		
 		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		putter = new ClientPutter(this, data, uri, cm, 
-				ctx, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler, priorityClass, 
+				ctx, server.core.requestStarters.chkPutScheduler, server.core.requestStarters.sskPutScheduler, priorityClass, 
 				getCHKOnly, isMetadata,
 				persistenceType == PERSIST_CONNECTION ? client.lowLevelClientTransient : client.lowLevelClientPersistent,
 				null, targetFilename, binaryBlob);
@@ -277,8 +277,8 @@ public class ClientPut extends ClientPutBase {
 	 * @throws PersistenceParseException 
 	 * @throws IOException 
 	 */
-	public ClientPut(SimpleFieldSet fs, FCPClient client2) throws PersistenceParseException, IOException {
-		super(fs, client2);
+	public ClientPut(SimpleFieldSet fs, FCPClient client2, FCPServer server) throws PersistenceParseException, IOException {
+		super(fs, client2, server);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		String mimeType = fs.get("Metadata.ContentType");
 
@@ -352,8 +352,8 @@ public class ClientPut extends ClientPutBase {
 		this.clientMetadata = cm;
 		SimpleFieldSet oldProgress = fs.subset("progress");
 		if(finished) oldProgress = null; // Not useful any more
-		putter = new ClientPutter(this, data, uri, cm, ctx, client.core.requestStarters.chkPutScheduler, 
-				client.core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata,
+		putter = new ClientPutter(this, data, uri, cm, ctx, server.core.requestStarters.chkPutScheduler, 
+				server.core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata,
 				persistenceType == PERSIST_CONNECTION ? client.lowLevelClientTransient : client.lowLevelClientPersistent,
 				oldProgress, targetFilename, binaryBlob);
 		if(persistenceType != PERSIST_CONNECTION) {

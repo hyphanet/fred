@@ -129,7 +129,7 @@ public class ClientPutDir extends ClientPutBase {
 	private void makePutter() {
 		SimpleManifestPutter p;
 		try {
-			p = new SimpleManifestPutter(this, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler,
+			p = new SimpleManifestPutter(this, server.core.requestStarters.chkPutScheduler, server.core.requestStarters.sskPutScheduler,
 					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly,
 					persistenceType == PERSIST_CONNECTION ? client.lowLevelClientTransient : client.lowLevelClientPersistent,
 					earlyEncode);
@@ -174,7 +174,7 @@ public class ClientPutDir extends ClientPutBase {
 				long sz = Long.parseLong(subset.get("DataLength"));
 				if(!finished) {
 					try {
-						data = SerializableToFieldSetBucketUtil.create(fs.subset("ReturnBucket"), ctx.random, client.server.core.persistentTempBucketFactory);
+						data = SerializableToFieldSetBucketUtil.create(fs.subset("ReturnBucket"), ctx.random, server.core.persistentTempBucketFactory);
 					} catch (CannotCreateFromFieldSetException e) {
 						throw new PersistenceParseException("Could not read old bucket for "+identifier+" : "+e, e);
 					}
@@ -210,7 +210,7 @@ public class ClientPutDir extends ClientPutBase {
 		SimpleManifestPutter p = null;
 		try {
 			if(!finished)
-				p = new SimpleManifestPutter(this, client.core.requestStarters.chkPutScheduler, client.core.requestStarters.sskPutScheduler,
+				p = new SimpleManifestPutter(this, server.core.requestStarters.chkPutScheduler, server.core.requestStarters.sskPutScheduler,
 						manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, 
 						persistenceType == PERSIST_CONNECTION ? client.lowLevelClientTransient : client.lowLevelClientPersistent,
 						earlyEncode);

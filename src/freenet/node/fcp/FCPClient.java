@@ -24,7 +24,6 @@ public class FCPClient {
 		this.completedUnackedRequests = new Vector();
 		this.clientRequestsByIdentifier = new HashMap();
 		this.server = server;
-		this.core = server.core;
 		this.isGlobalQueue = isGlobalQueue;
 		this.persistenceType = persistenceType;
 		assert(persistenceType == ClientRequest.PERSIST_FOREVER || persistenceType == ClientRequest.PERSIST_REBOOT);
@@ -55,8 +54,6 @@ public class FCPClient {
 	private final Vector completedUnackedRequests;
 	/** ClientRequest's by identifier */
 	private final HashMap clientRequestsByIdentifier;
-	/** Client (one FCPClient = one HighLevelSimpleClient = one round-robin slot) */
-	public final NodeClientCore core;
 	/** Are we the global queue? */
 	public final boolean isGlobalQueue;
 	/** Are we watching the global queue? */

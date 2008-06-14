@@ -170,17 +170,17 @@ public abstract class ClientRequest {
 			String type = fs.get("Type");
 			boolean lazyResume = server.core.lazyResume();
 			if(type.equals("GET")) {
-				ClientGet cg = new ClientGet(fs, client);
+				ClientGet cg = new ClientGet(fs, client, server);
 				client.register(cg, lazyResume);
 				if(!lazyResume) cg.start();
 				return cg;
 			} else if(type.equals("PUT")) {
-				ClientPut cp = new ClientPut(fs, client);
+				ClientPut cp = new ClientPut(fs, client, server);
 				client.register(cp, lazyResume);
 				if(!lazyResume) cp.start();
 				return cp;
 			} else if(type.equals("PUTDIR")) {
-				ClientPutDir cp = new ClientPutDir(fs, client);
+				ClientPutDir cp = new ClientPutDir(fs, client, server);
 				client.register(cp, lazyResume);
 				if(!lazyResume) cp.start();
 				return cp;
