@@ -66,8 +66,7 @@ public class ModifyPersistentRequest extends FCPMessage {
 
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		FCPClient client = global ? handler.server.globalClient : handler.getClient();
-		ClientRequest req = client.getRequest(identifier);
+		ClientRequest req = handler.getRequest(global, handler, identifier);
 		if(req==null){
 			Logger.error(this, "Huh ? the request is null!");
 			ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
@@ -77,4 +76,5 @@ public class ModifyPersistentRequest extends FCPMessage {
         
         req.modifyRequest(clientToken, priorityClass);
 	}
+
 }

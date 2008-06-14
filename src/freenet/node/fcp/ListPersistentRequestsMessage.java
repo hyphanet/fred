@@ -24,11 +24,15 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 	
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		handler.getClient().queuePendingMessagesOnConnectionRestart(handler.outputHandler);
-		handler.getClient().queuePendingMessagesFromRunningRequests(handler.outputHandler);
-		if(handler.getClient().watchGlobal) {
-			handler.server.globalClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler);
-			handler.server.globalClient.queuePendingMessagesFromRunningRequests(handler.outputHandler);
+		handler.getRebootClient().queuePendingMessagesOnConnectionRestart(handler.outputHandler);
+		handler.getForeverClient().queuePendingMessagesOnConnectionRestart(handler.outputHandler);
+		handler.getRebootClient().queuePendingMessagesFromRunningRequests(handler.outputHandler);
+		handler.getForeverClient().queuePendingMessagesFromRunningRequests(handler.outputHandler);
+		if(handler.getRebootClient().watchGlobal) {
+			handler.server.globalRebootClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler);
+			handler.server.globalForeverClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler);
+			handler.server.globalRebootClient.queuePendingMessagesFromRunningRequests(handler.outputHandler);
+			handler.server.globalForeverClient.queuePendingMessagesFromRunningRequests(handler.outputHandler);
 		}
 		handler.outputHandler.queue(new EndListPersistentRequestsMessage());
 	}

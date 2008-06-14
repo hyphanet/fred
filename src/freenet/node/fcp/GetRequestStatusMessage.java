@@ -32,11 +32,7 @@ public class GetRequestStatusMessage extends FCPMessage {
 
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		ClientRequest req;
-		if(global) {
-			req = handler.server.globalClient.getRequest(identifier);
-		} else
-			req = handler.getClient().getRequest(identifier);
+		ClientRequest req = handler.getRequest(global, handler, identifier);
 		if(req == null) {
 			ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
 			handler.outputHandler.queue(msg);

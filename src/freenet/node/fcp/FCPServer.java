@@ -68,7 +68,8 @@ public class FCPServer implements Runnable {
 	private String allowedHosts;
 	AllowedHosts allowedHostsFullAccess;
 	final WeakHashMap clientsByName;
-	final FCPClient globalClient;
+	final FCPClient globalRebootClient;
+	final FCPClient globalForeverClient;
 	private boolean enablePersistentDownloads;
 	private File persistentDownloadsFile;
 	private File persistentDownloadsTempFile;
@@ -118,7 +119,7 @@ public class FCPServer implements Runnable {
 		defaultFetchContext = client.getFetchContext();
 		defaultInsertContext = client.getInsertContext(false);
 		
-		globalClient = new FCPClient("Global Queue", this, null, true, null);
+		globalRebootClient = new FCPClient("Global Queue", this, null, true, null, ClientRequest.PERSIST_REBOOT);
 		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		

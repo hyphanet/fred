@@ -57,7 +57,8 @@ public class FCPConnectionHandler {
 	private boolean inputClosed;
 	private boolean outputClosed;
 	private String clientName;
-	private FCPClient client;
+	private FCPClient rebootClient;
+	private FCPClient foreverClient;
 	final BucketFactory bf;
 	final HashMap requestsByIdentifier;
 	protected final String connectionIdentifier;
@@ -90,8 +91,10 @@ public class FCPConnectionHandler {
 
 	public void close() {
 		ClientRequest[] requests;
-		if(client != null)
-			client.onLostConnection(this);
+		if(rebootClient != null)
+			rebootClient.onLostConnection(this);
+		if(foreverClient != null)
+			foreverClient.onLostConnection(this);
 		synchronized(this) {
 			isClosed = true;
 			requests = new ClientRequest[requestsByIdentifier.size()];
@@ -99,8 +102,10 @@ public class FCPConnectionHandler {
 		}
 		for(int i=0;i<requests.length;i++)
 			requests[i].onLostConnection();
-		if((client != null) && !client.hasPersistentRequests())
-			server.unregisterClient(client);
+		if((rebootClient != null) && !rebootClient.hasPersistentRequests())
+			server.unregisterClient(rebootClient);
+		if((foreverClient != null) && !foreverClient.hasPersistentRequests())
+			server.unregisterClient(foreverClient);
 		outputHandler.onClosed();
 	}
 	
@@ -144,7 +149,8 @@ public class FCPConnectionHandler {
 
 	public void setClientName(String name) {
 		this.clientName = name;
-		client = server.registerClient(name, server.core, this);
+		rebootClient = server.registerRebootClient(name, server.core, this);
+		foreverClient = server.registerForeverClient(name, server.core, this);
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Set client name: "+name);
 	}
@@ -296,8 +302,12 @@ public class FCPConnectionHandler {
 		}
 	}
 	
-	public FCPClient getClient() {
-		return client;
+	public FCPClient getRebootClient() {
+		return rebootClient;
+	}
+
+	public FCPClient getForeverClient() {
+		return foreverClient;
 	}
 
 	public void finishedClientRequest(ClientRequest get) {
@@ -307,7 +317,7 @@ public class FCPConnectionHandler {
 	}
 
 	public boolean isGlobalSubscribed() {
-		return client.watchGlobal;
+		return rebootClient.watchGlobal;
 	}
 
 	public boolean hasFullAccess() {
@@ -457,6 +467,39 @@ public class FCPConnectionHandler {
 			req.requestWasRemoved();
 			if(kill)
 				req.cancel();
+		}
+		return req;
+	}
+	
+	ClientRequest getRequest(boolean global, FCPConnectionHandler handler, String identifier) {
+		ClientRequest req = getRequest(global, handler, identifier, true);
+		if(req == null)
+			req = getRequest(global, handler, identifier, false);
+		return req;
+	}
+	
+	private ClientRequest getRequest(boolean global, FCPConnectionHandler handler, String identifier, boolean rebootOnly) {
+		FCPClient client = 
+			global ? (rebootOnly ? handler.server.globalRebootClient : handler.server.globalForeverClient) : 
+				(rebootOnly ? handler.getRebootClient() : handler.getForeverClient());
+		ClientRequest req = client.getRequest(identifier);
+		return req;
+	}
+
+	ClientRequest removePersistentRequest(boolean global, String identifier) throws MessageInvalidException {
+		ClientRequest req = removePersistentRequest(global, identifier, true);
+		if(req == null)
+			req = removePersistentRequest(global, identifier, false);
+		return req;
+	}
+	
+	ClientRequest removePersistentRequest(boolean global, String identifier, boolean rebootOnly) throws MessageInvalidException {
+		FCPClient client =
+			global ? (rebootOnly ? server.globalRebootClient :server.globalForeverClient) :
+			(rebootOnly ? getRebootClient() : getForeverClient());
+		ClientRequest req = client.getRequest(identifier);
+		if(req != null) {
+			client.removeByIdentifier(identifier, true);
 		}
 		return req;
 	}
