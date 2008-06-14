@@ -9,7 +9,6 @@ import freenet.client.async.BlockSet;
 import freenet.client.async.USKManager;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
-import freenet.node.Ticker;
 import freenet.support.Executor;
 import freenet.support.api.BucketFactory;
 
@@ -48,8 +47,6 @@ public class FetchContext implements Cloneable {
 	/** If set, contains a set of blocks to be consulted before checking the datastore. */
 	public BlockSet blocks;
 	public Set allowedMIMETypes;
-	public final Ticker ticker;
-	public final Executor executor;
 	public final Executor[] slowSerialExecutor;
 	
 	public FetchContext(long curMaxLength, 
@@ -60,10 +57,8 @@ public class FetchContext implements Cloneable {
 			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			BucketFactory bucketFactory,
 			ClientEventProducer producer, boolean cacheLocalRequests, USKManager uskManager, 
-			boolean ignoreTooManyPathComponents, Ticker ticker, Executor executor, 
+			boolean ignoreTooManyPathComponents,  
 			Executor[] slowSerialExecutor) {
-		this.ticker = ticker;
-		this.executor = executor;
 		this.slowSerialExecutor = slowSerialExecutor;
 		this.maxOutputLength = curMaxLength;
 		this.uskManager = uskManager;
@@ -92,8 +87,6 @@ public class FetchContext implements Cloneable {
 			this.eventProducer = ctx.eventProducer;
 		else
 			this.eventProducer = new SimpleEventProducer();
-		this.ticker = ctx.ticker;
-		this.executor = ctx.executor;
 		this.slowSerialExecutor = ctx.slowSerialExecutor;
 		this.uskManager = ctx.uskManager;
 		this.ignoreTooManyPathComponents = ctx.ignoreTooManyPathComponents;

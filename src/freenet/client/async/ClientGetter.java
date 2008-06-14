@@ -154,7 +154,7 @@ public class ClientGetter extends BaseClientGetter {
 				Logger.minor(this, "client.async returned data in returnBucket");
 		}
 		final FetchResult res = result;
-		ctx.executor.execute(new PrioRunnable() {
+		context.mainExecutor.execute(new PrioRunnable() {
 			public void run() {
 				clientCallback.onSuccess(res, ClientGetter.this);
 			}
@@ -204,7 +204,7 @@ public class ClientGetter extends BaseClientGetter {
 				e = new FetchException(e, FetchException.ALL_DATA_NOT_FOUND);
 			Logger.minor(this, "onFailure("+e+", "+state+") on "+this+" for "+uri, e);
 			final FetchException e1 = e;
-			ctx.executor.execute(new PrioRunnable() {
+			context.mainExecutor.execute(new PrioRunnable() {
 				public void run() {
 					clientCallback.onFailure(e1, ClientGetter.this);
 				}

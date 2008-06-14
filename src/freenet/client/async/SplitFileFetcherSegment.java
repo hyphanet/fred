@@ -209,7 +209,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		// Now decode
 		if(logMINOR) Logger.minor(this, "Decoding "+SplitFileFetcherSegment.this);
 
-		codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length, blockFetchContext.executor);
+		codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length, sched.getContext().mainExecutor);
 		
 		if(splitfileType != Metadata.SPLITFILE_NONREDUNDANT) {
 			FECQueue queue = sched.getFECQueue();

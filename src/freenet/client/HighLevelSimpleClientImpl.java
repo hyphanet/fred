@@ -190,7 +190,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
 				bucketFactory, globalEventProducer, 
-				cacheLocalRequests, core.uskManager, false, core.getTicker(), core.getExecutor(), slowSerialExecutor);
+				cacheLocalRequests, core.uskManager, false, slowSerialExecutor);
 	}
 
 	public InsertContext getInsertContext(boolean forceNonPersistent) {
@@ -242,7 +242,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		FetchContext ctx = getFetchContext(maxSize);
 		ctx.allowedMIMETypes = allowedTypes;
 		final ClientGetter get = new ClientGetter(nullCallback, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, ctx, RequestStarter.PREFETCH_PRIORITY_CLASS, this, new NullBucket(), null);
-		ctx.ticker.queueTimedJob(new Runnable() {
+		core.getTicker().queueTimedJob(new Runnable() {
 
 			public void run() {
 				get.cancel();
