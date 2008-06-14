@@ -39,10 +39,10 @@ public class ClientPutDir extends ClientPutBase {
 	private final boolean wasDiskPut;
 	
 	public ClientPutDir(FCPConnectionHandler handler, ClientPutDirMessage message, 
-			HashMap manifestElements, boolean wasDiskPut) throws IdentifierCollisionException, MalformedURLException {
+			HashMap manifestElements, boolean wasDiskPut, FCPServer server) throws IdentifierCollisionException, MalformedURLException {
 		super(message.uri, message.identifier, message.verbosity, handler,
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
-				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode);
+				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode, server);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.wasDiskPut = wasDiskPut;
 		this.manifestElements = manifestElements;
@@ -68,8 +68,8 @@ public class ClientPutDir extends ClientPutBase {
 	/**
 	*	Puts a disk dir
 	*/
-	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean allowUnreadableFiles, boolean global, boolean earlyEncode) throws FileNotFoundException, IdentifierCollisionException, MalformedURLException {
-		super(uri, identifier, verbosity , null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode);
+	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean allowUnreadableFiles, boolean global, boolean earlyEncode, FCPServer server) throws FileNotFoundException, IdentifierCollisionException, MalformedURLException {
+		super(uri, identifier, verbosity , null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, server);
 
 		wasDiskPut = true;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -142,8 +142,8 @@ public class ClientPutDir extends ClientPutBase {
 
 
 
-	public ClientPutDir(SimpleFieldSet fs, FCPClient client) throws PersistenceParseException, IOException {
-		super(fs, client);
+	public ClientPutDir(SimpleFieldSet fs, FCPClient client, FCPServer server) throws PersistenceParseException, IOException {
+		super(fs, client, server);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		SimpleFieldSet files = fs.subset("Files");
 		defaultName = fs.get("DefaultName");

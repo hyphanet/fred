@@ -173,7 +173,7 @@ public class FCPConnectionHandler {
 				success = !requestsByIdentifier.containsKey(id);
 			if(success) {
 				try {
-					cg = new ClientGet(this, message);
+					cg = new ClientGet(this, message, server);
 					if(!persistent)
 						requestsByIdentifier.put(id, cg);
 				} catch (IdentifierCollisionException e) {
@@ -267,7 +267,7 @@ public class FCPConnectionHandler {
 		}
 		if(success) {
 			try {
-				cp = new ClientPutDir(this, message, buckets, wasDiskPut);
+				cp = new ClientPutDir(this, message, buckets, wasDiskPut, server);
 			} catch (IdentifierCollisionException e) {
 				success = false;
 			} catch (MalformedURLException e) {

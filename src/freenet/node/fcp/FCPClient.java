@@ -6,9 +6,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
 
-import freenet.client.FetchContext;
-import freenet.client.HighLevelSimpleClient;
-import freenet.client.InsertContext;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
@@ -28,12 +25,9 @@ public class FCPClient {
 		this.clientRequestsByIdentifier = new HashMap();
 		this.server = server;
 		this.core = server.core;
-		HighLevelSimpleClient client = core.makeClient((short)0);
 		this.isGlobalQueue = isGlobalQueue;
 		this.persistenceType = persistenceType;
 		assert(persistenceType == ClientRequest.PERSIST_FOREVER || persistenceType == ClientRequest.PERSIST_REBOOT);
-		defaultFetchContext = client.getFetchContext();
-		defaultInsertContext = client.getInsertContext(false);
 		watchGlobalVerbosityMask = Integer.MAX_VALUE;
 		toStart = new LinkedList();
 		lowLevelClientPersistent = new RequestClient() {
@@ -62,8 +56,6 @@ public class FCPClient {
 	/** ClientRequest's by identifier */
 	private final HashMap clientRequestsByIdentifier;
 	/** Client (one FCPClient = one HighLevelSimpleClient = one round-robin slot) */
-	public final FetchContext defaultFetchContext;
-	public final InsertContext defaultInsertContext;
 	public final NodeClientCore core;
 	/** Are we the global queue? */
 	public final boolean isGlobalQueue;

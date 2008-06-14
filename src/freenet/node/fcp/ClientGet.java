@@ -74,12 +74,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	public ClientGet(FCPClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
 			int maxSplitfileRetries, int maxNonSplitfileRetries, long maxOutputLength,
 			short returnType, boolean persistRebootOnly, String identifier, int verbosity, short prioClass,
-			File returnFilename, File returnTempFilename) throws IdentifierCollisionException, NotAllowedException {
+			File returnFilename, File returnTempFilename, FCPServer server) throws IdentifierCollisionException, NotAllowedException {
 		super(uri, identifier, verbosity, null, globalClient, prioClass,
 				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER),
 				null, true);
 
-		fctx = new FetchContext(client.defaultFetchContext, FetchContext.IDENTICAL_MASK, false);
+		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK, false);
 		fctx.eventProducer.addEventListener(this);
 		fctx.localRequestOnly = dsOnly;
 		fctx.ignoreStore = ignoreDS;
@@ -133,12 +133,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			}
 	}
 
-	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message) throws IdentifierCollisionException, MessageInvalidException {
+	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException {
 		super(message.uri, message.identifier, message.verbosity, handler, message.priorityClass,
 				message.persistenceType, message.clientToken, message.global);
 		// Create a Fetcher directly in order to get more fine-grained control,
 		// since the client may override a few context elements.
-		fctx = new FetchContext(client.defaultFetchContext, FetchContext.IDENTICAL_MASK, false);
+		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK, false);
 		fctx.eventProducer.addEventListener(this);
 		// ignoreDS
 		fctx.localRequestOnly = message.dsOnly;
@@ -214,7 +214,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	 * supposedly serialized out by the node.
 	 * @throws IOException
 	 */
-	public ClientGet(SimpleFieldSet fs, FCPClient client2) throws IOException {
+	public ClientGet(SimpleFieldSet fs, FCPClient client2, FCPServer server) throws IOException {
 		super(fs, client2);
 
 		returnType = ClientGetMessage.parseValidReturnType(fs.get("ReturnType"));
@@ -231,7 +231,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		boolean ignoreDS = Fields.stringToBool(fs.get("IgnoreDS"), false);
 		boolean dsOnly = Fields.stringToBool(fs.get("DSOnly"), false);
 		int maxRetries = Integer.parseInt(fs.get("MaxRetries"));
-		fctx = new FetchContext(client.defaultFetchContext, FetchContext.IDENTICAL_MASK, false);
+		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK, false);
 		fctx.eventProducer.addEventListener(this);
 		// ignoreDS
 		fctx.localRequestOnly = dsOnly;
