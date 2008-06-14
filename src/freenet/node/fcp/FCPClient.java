@@ -76,7 +76,7 @@ public class FCPClient {
 	final RequestClient lowLevelClientTransient;
 	private transient RequestCompletionCallback completionCallback;
 	/** Connection mode */
-	private final short persistenceType;
+	final short persistenceType;
 	
 	public synchronized FCPConnectionHandler getConnection() {
 		return currentConnection;
@@ -309,5 +309,15 @@ public class FCPClient {
 		RequestCompletionCallback old = completionCallback;
 		completionCallback = cb;
 		return old;
+	}
+
+	public void removeFromDatabase(ObjectContainer container) {
+		container.delete(runningPersistentRequests);
+		container.delete(completedUnackedRequests);
+		container.delete(clientRequestsByIdentifier);
+		container.delete(toStart);
+		container.delete(lowLevelClientPersistent);
+		container.delete(lowLevelClientTransient);
+		container.delete(this);
 	}
 }

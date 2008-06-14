@@ -52,4 +52,10 @@ public class FCPPersistentRoot {
 		return client;
 	}
 
+	public void maybeUnregisterClient(FCPClient client, ObjectContainer container) {
+		if(!client.hasPersistentRequests(container)) {
+			client.removeFromDatabase(container);
+		}
+	}
+
 }

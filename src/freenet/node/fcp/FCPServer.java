@@ -468,7 +468,7 @@ public class FCPServer implements Runnable {
 			}
 		}
 		if(handler != null)
-			oldClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler);
+			oldClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, null);
 		return oldClient;
 	}
 	
@@ -476,10 +476,15 @@ public class FCPServer implements Runnable {
 		return persistentRoot.registerForeverClient(name, core, handler, this, container);
 	}
 
-	public void unregisterClient(FCPClient client) {
+	public void unregisterClient(FCPClient client, ObjectContainer container) {
+		if(client.persistenceType == ClientRequest.PERSIST_REBOOT) {
+			assert(container == null);
 		synchronized(this) {
 			String name = client.name;
 			clientsByName.remove(name);
+		}
+		} else {
+			persistentRoot.maybeUnregisterClient(client, container);
 		}
 	}
 

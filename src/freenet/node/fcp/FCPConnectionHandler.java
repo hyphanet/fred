@@ -10,11 +10,16 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Random;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
+import freenet.client.async.DBJob;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
+import freenet.support.io.NativeThread;
 
 public class FCPConnectionHandler {
 	private static final class DirectoryAccess {
@@ -102,10 +107,16 @@ public class FCPConnectionHandler {
 		}
 		for(int i=0;i<requests.length;i++)
 			requests[i].onLostConnection();
-		if((rebootClient != null) && !rebootClient.hasPersistentRequests())
-			server.unregisterClient(rebootClient);
-		if((foreverClient != null) && !foreverClient.hasPersistentRequests())
-			server.unregisterClient(foreverClient);
+		server.core.clientContext.jobRunner.queue(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				if((rebootClient != null) && !rebootClient.hasPersistentRequests(container))
+					server.unregisterClient(rebootClient, container);
+				if((foreverClient != null) && !foreverClient.hasPersistentRequests(container))
+					server.unregisterClient(foreverClient, container);
+			}
+			
+		}, NativeThread.NORM_PRIORITY, false);
 		outputHandler.onClosed();
 	}
 	
