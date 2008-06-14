@@ -267,7 +267,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				Bucket copiedBucket = core.persistentEncryptedTempBucketFactory.makeBucket(file.getData().size());
 				BucketTools.copy(file.getData(), copiedBucket);
 				try {
-					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), insertURI, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, null, file.getContentType(), copiedBucket, null, fnam, false);
+					ClientPut clientPut = new ClientPut(fcp.getGlobalForeverClient(), insertURI, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, null, file.getContentType(), copiedBucket, null, fnam, false);
 					clientPut.start();
 					fcp.forceStorePersistentRequests();
 				} catch (IdentifierCollisionException e) {
@@ -1141,7 +1141,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			identifiers = (String[]) completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
 		}
 		for(int i=0;i<identifiers.length;i++) {
-			ClientRequest req = fcp.getGlobalClient().getRequest(identifiers[i]);
+			ClientRequest req = fcp.getGlobalRequest(identifiers[i]);
 			if(req == null) {
 				synchronized(completedRequestIdentifiers) {
 					completedRequestIdentifiers.remove(identifiers[i]);
