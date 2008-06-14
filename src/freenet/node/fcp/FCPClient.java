@@ -34,7 +34,6 @@ public class FCPClient {
 		assert(persistenceType == ClientRequest.PERSIST_FOREVER || persistenceType == ClientRequest.PERSIST_REBOOT);
 		defaultFetchContext = client.getFetchContext();
 		defaultInsertContext = client.getInsertContext(false);
-		clientsWatching = new LinkedList();
 		watchGlobalVerbosityMask = Integer.MAX_VALUE;
 		toStart = new LinkedList();
 		lowLevelClientPersistent = new RequestClient() {
@@ -55,7 +54,7 @@ public class FCPClient {
 	/** The FCPServer */
 	final FCPServer server;
 	/** The current connection handler, if any. */
-	private FCPConnectionHandler currentConnection;
+	private transient FCPConnectionHandler currentConnection;
 	/** Currently running persistent requests */
 	private final HashSet runningPersistentRequests;
 	/** Completed unacknowledged persistent requests */
@@ -72,10 +71,9 @@ public class FCPClient {
 	/** Are we watching the global queue? */
 	boolean watchGlobal;
 	int watchGlobalVerbosityMask;
-	/** FCPClients watching us */
-	// FIXME how do we lazily init this without synchronization problems?
-	// We obviously can't synchronize on it when it hasn't been constructed yet...
-	final LinkedList clientsWatching;
+	/** FCPClients watching us. Lazy init, sync on clientsWatchingLock */
+	private transient LinkedList clientsWatching;
+	private final Object clientsWatchingLock = new Object();
 	private final LinkedList toStart;
 	final RequestClient lowLevelClientPersistent;
 	final RequestClient lowLevelClientTransient;
@@ -210,13 +208,16 @@ public class FCPClient {
 			return;
 		}
 		if(watchGlobal && !enabled) {
-			server.globalClient.unwatch(this);
+			server.globalRebootClient.unwatch(this);
+			server.globalForeverClient.unwatch(this);
 			watchGlobal = false;
 		} else if(enabled && !watchGlobal) {
-			server.globalClient.watch(this);
+			server.globalRebootClient.watch(this);
+			server.globalForeverClient.watch(this);
 			FCPConnectionHandler connHandler = getConnection();
 			if(connHandler != null) {
-				server.globalClient.queuePendingMessagesOnConnectionRestart(connHandler.outputHandler);
+				server.globalRebootClient.queuePendingMessagesOnConnectionRestart(connHandler.outputHandler);
+				server.globalForeverClient.queuePendingMessagesOnConnectionRestart(connHandler.outputHandler);
 			}
 			watchGlobal = true;
 		}
@@ -233,9 +234,13 @@ public class FCPClient {
 		}
 		FCPClient[] clients;
 		if(isGlobalQueue) {
-			synchronized(clientsWatching) {
+			synchronized(clientsWatchingLock) {
+				if(clientsWatching != null)
 				clients = (FCPClient[]) clientsWatching.toArray(new FCPClient[clientsWatching.size()]);
+				else
+					clients = null;
 			}
+			if(clients != null)
 			for(int i=0;i<clients.length;i++)
 				clients[i].queueClientRequestMessage(msg, verbosityLevel);
 		}
@@ -243,14 +248,17 @@ public class FCPClient {
 	
 	private void unwatch(FCPClient client) {
 		if(!isGlobalQueue) return;
-		synchronized(clientsWatching) {
+		synchronized(clientsWatchingLock) {
+			if(clientsWatching != null)
 			clientsWatching.remove(client);
 		}
 	}
 
 	private void watch(FCPClient client) {
 		if(!isGlobalQueue) return;
-		synchronized(clientsWatching) {
+		synchronized(clientsWatchingLock) {
+			if(clientsWatching == null)
+				clientsWatching = new LinkedList();
 			clientsWatching.add(client);
 		}
 	}
