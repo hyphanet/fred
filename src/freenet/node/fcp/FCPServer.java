@@ -23,6 +23,8 @@ import java.util.zip.GZIPOutputStream;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
 import freenet.client.HighLevelSimpleClient;
@@ -56,6 +58,7 @@ import java.util.LinkedList;
  */
 public class FCPServer implements Runnable {
 
+	final FCPPersistentRoot persistentRoot;
 	private static boolean logMINOR;
 	public final static int DEFAULT_FCP_PORT = 9481;
 	NetworkInterface networkInterface;
@@ -98,7 +101,7 @@ public class FCPServer implements Runnable {
 		persister = null;
 	}
 
-	public FCPServer(String ipToBindTo, String allowedHosts, String allowedHostsFullAccess, int port, Node node, NodeClientCore core, boolean persistentDownloadsEnabled, String persistentDownloadsDir, long persistenceInterval, boolean isEnabled, boolean assumeDDADownloadAllowed, boolean assumeDDAUploadAllowed) throws IOException, InvalidConfigValueException {
+	public FCPServer(String ipToBindTo, String allowedHosts, String allowedHostsFullAccess, int port, Node node, NodeClientCore core, boolean persistentDownloadsEnabled, String persistentDownloadsDir, long persistenceInterval, boolean isEnabled, boolean assumeDDADownloadAllowed, boolean assumeDDAUploadAllowed, ObjectContainer container) throws IOException, InvalidConfigValueException {
 		this.bindTo = ipToBindTo;
 		this.allowedHosts=allowedHosts;
 		this.allowedHostsFullAccess = new AllowedHosts(allowedHostsFullAccess);
@@ -119,7 +122,7 @@ public class FCPServer implements Runnable {
 		defaultFetchContext = client.getFetchContext();
 		defaultInsertContext = client.getInsertContext(false);
 		
-		globalRebootClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_REBOOT);
+		globalRebootClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_REBOOT, null);
 		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
@@ -128,6 +131,8 @@ public class FCPServer implements Runnable {
 		} else {
 			Logger.error(this, "Not loading persistent requests: enabled="+enabled+" enable persistent downloads="+enablePersistentDownloads);
 		}
+		persistentRoot = FCPPersistentRoot.create(node.nodeDBHandle, container);
+		globalForeverClient = persistentRoot.globalForeverClient;
 	}
 	
 	private void maybeGetNetworkInterface() {
@@ -511,13 +516,13 @@ public class FCPServer implements Runnable {
 		return enablePersistentDownloads;
 	}
 
-	public FCPClient registerClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
+	public FCPClient registerRebootClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
 		FCPClient oldClient;
 		synchronized(this) {
 			oldClient = (FCPClient) clientsByName.get(name);
 			if(oldClient == null) {
 				// Create new client
-				FCPClient client = new FCPClient(name, this, handler, false, null);
+				FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_REBOOT);
 				clientsByName.put(name, client);
 				return client;
 			} else {
@@ -538,6 +543,10 @@ public class FCPServer implements Runnable {
 		if(handler != null)
 			oldClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler);
 		return oldClient;
+	}
+	
+	public FCPClient registerForeverClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
+		return persistentRoot.registerForeverClient(name, core, handler, this);
 	}
 
 	public void unregisterClient(FCPClient client) {

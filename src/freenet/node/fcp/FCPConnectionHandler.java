@@ -499,7 +499,7 @@ public class FCPConnectionHandler {
 			(rebootOnly ? getRebootClient() : getForeverClient());
 		ClientRequest req = client.getRequest(identifier);
 		if(req != null) {
-			client.removeByIdentifier(identifier, true);
+			client.removeByIdentifier(identifier, true, server);
 		}
 		return req;
 	}

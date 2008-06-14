@@ -15,7 +15,7 @@ import freenet.support.Logger;
  */
 public class FCPClient {
 	
-	public FCPClient(String name2, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb, short persistenceType) {
+	public FCPClient(String name2, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb, short persistenceType, FCPPersistentRoot root) {
 		this.name = name2;
 		if(name == null) throw new NullPointerException();
 		this.currentConnection = handler;
@@ -38,8 +38,14 @@ public class FCPClient {
 			}
 		};
 		completionCallback = cb;
+		if(persistenceType == ClientRequest.PERSIST_FOREVER)
+			this.root = root;
+		else
+			this.root = null;
 	}
 	
+	/** The persistent root object, null if persistenceType is PERSIST_REBOOT */
+	final FCPPersistentRoot root;
 	/** The client's Name sent in the ClientHello message */
 	final String name;
 	/** The current connection handler, if any. */
