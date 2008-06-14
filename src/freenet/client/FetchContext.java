@@ -47,7 +47,6 @@ public class FetchContext implements Cloneable {
 	/** If set, contains a set of blocks to be consulted before checking the datastore. */
 	public BlockSet blocks;
 	public Set allowedMIMETypes;
-	public final Executor[] slowSerialExecutor;
 	
 	public FetchContext(long curMaxLength, 
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
@@ -57,9 +56,7 @@ public class FetchContext implements Cloneable {
 			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			BucketFactory bucketFactory,
 			ClientEventProducer producer, boolean cacheLocalRequests, USKManager uskManager, 
-			boolean ignoreTooManyPathComponents,  
-			Executor[] slowSerialExecutor) {
-		this.slowSerialExecutor = slowSerialExecutor;
+			boolean ignoreTooManyPathComponents) {
 		this.maxOutputLength = curMaxLength;
 		this.uskManager = uskManager;
 		this.maxTempLength = curMaxTempLength;
@@ -87,7 +84,6 @@ public class FetchContext implements Cloneable {
 			this.eventProducer = ctx.eventProducer;
 		else
 			this.eventProducer = new SimpleEventProducer();
-		this.slowSerialExecutor = ctx.slowSerialExecutor;
 		this.uskManager = ctx.uskManager;
 		this.ignoreTooManyPathComponents = ctx.ignoreTooManyPathComponents;
 		this.blocks = ctx.blocks;

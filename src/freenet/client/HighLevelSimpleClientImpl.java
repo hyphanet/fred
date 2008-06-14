@@ -45,7 +45,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	private long curMaxTempLength;
 	private int curMaxMetadataLength;
 	private final RandomSource random;
-	private final Executor slowSerialExecutor[];
 	/** See comments in Node */
 	private final boolean cacheLocalRequests;
 	static final int MAX_RECURSION = 10;
@@ -80,9 +79,8 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 128;
 	
 	
-	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, boolean cacheLocalRequests, short priorityClass, boolean forceDontIgnoreTooManyPathComponents, Executor[] slowSerialExecutor) {
+	public HighLevelSimpleClientImpl(NodeClientCore node, BucketFactory bf, RandomSource r, boolean cacheLocalRequests, short priorityClass, boolean forceDontIgnoreTooManyPathComponents) {
 		this.core = node;
-		this.slowSerialExecutor = slowSerialExecutor;
 		this.priorityClass = priorityClass;
 		bucketFactory = bf;
 		this.persistentFileTracker = node.persistentTempBucketFactory;
@@ -190,7 +188,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
 				bucketFactory, globalEventProducer, 
-				cacheLocalRequests, core.uskManager, false, slowSerialExecutor);
+				cacheLocalRequests, core.uskManager, false);
 	}
 
 	public InsertContext getInsertContext(boolean forceNonPersistent) {

@@ -112,7 +112,6 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 	/** If true, requests are resumed lazily i.e. startup does not block waiting for them. */
 	private boolean lazyResume;
 	protected final Persister persister;
-	private final SerialExecutor clientSlowSerialExecutor[];
 	/** All client-layer database access occurs on a SerialExecutor, so that we don't need
 	 * to have multiple parallel transactions. Advantages:
 	 * - We never have two copies of the same object in RAM, and more broadly, we don't
@@ -148,14 +147,6 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		this.random = node.random;
 		fecQueue = new FECQueue();
 		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
-		clientSlowSerialExecutor = new SerialExecutor[RequestStarter.MINIMUM_PRIORITY_CLASS-RequestStarter.MAXIMUM_PRIORITY_CLASS+1];
-		for(int i=0;i<clientSlowSerialExecutor.length;i++) {
-			int prio;
-			if(i <= RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS) prio = NativeThread.NORM_PRIORITY;
-			else if(i <= RequestStarter.UPDATE_PRIORITY_CLASS) prio = NativeThread.LOW_PRIORITY;
-			else prio = NativeThread.MIN_PRIORITY;
-			clientSlowSerialExecutor[i] = new SerialExecutor(prio);
-		}
 		clientDatabaseExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, NativeThread.MAX_PRIORITY+1, NativeThread.NORM_PRIORITY);
 		datastoreCheckerExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, RequestStarter.NUMBER_OF_PRIORITY_CLASSES, 0);
 	  	byte[] pwdBuf = new byte[16];
@@ -309,7 +300,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		healingQueue = new SimpleHealingQueue(requestStarters.chkPutScheduler,
 				new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory, 
 						0, 2, 1, 0, 0, new SimpleEventProducer(), 
-						!Node.DONT_CACHE_LOCAL_REQUESTS, uskManager, node.executor), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
+						!Node.DONT_CACHE_LOCAL_REQUESTS, uskManager), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
 		nodeConfig.register("lazyResume", false, sortOrder++, true, false, "NodeClientCore.lazyResume",
 				"NodeClientCore.lazyResumeLong", new BooleanCallback() {
@@ -436,8 +427,6 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 			fcpServer.maybeStart();
 		if(tmci != null)
 			tmci.start();
-		for(int i=0;i<clientSlowSerialExecutor.length;i++)
-			clientSlowSerialExecutor[i].start(node.executor, "Heavy client jobs runner ("+i+")");
 		
 		node.executor.execute(new PrioRunnable() {
 			public void run() {
@@ -1023,7 +1012,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 	}
 	
 	public HighLevelSimpleClient makeClient(short prioClass, boolean forceDontIgnoreTooManyPathComponents) {
-		return new HighLevelSimpleClientImpl(this, tempBucketFactory, random, !Node.DONT_CACHE_LOCAL_REQUESTS, prioClass, forceDontIgnoreTooManyPathComponents, clientSlowSerialExecutor);
+		return new HighLevelSimpleClientImpl(this, tempBucketFactory, random, !Node.DONT_CACHE_LOCAL_REQUESTS, prioClass, forceDontIgnoreTooManyPathComponents);
 	}
 	
 	public FCPServer getFCPServer() {
