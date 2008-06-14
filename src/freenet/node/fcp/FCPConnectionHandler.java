@@ -68,6 +68,7 @@ public class FCPConnectionHandler {
 	final HashMap requestsByIdentifier;
 	protected final String connectionIdentifier;
 	static boolean logMINOR;
+	private boolean killedDupe;
 
 	// We are confident that the given client can access those
 	private final HashMap checkedDirectories = new HashMap();
@@ -100,13 +101,16 @@ public class FCPConnectionHandler {
 			rebootClient.onLostConnection(this);
 		if(foreverClient != null)
 			foreverClient.onLostConnection(this);
+		boolean dupe;
 		synchronized(this) {
 			isClosed = true;
 			requests = new ClientRequest[requestsByIdentifier.size()];
 			requests = (ClientRequest[]) requestsByIdentifier.values().toArray(requests);
+			dupe = killedDupe;
 		}
 		for(int i=0;i<requests.length;i++)
 			requests[i].onLostConnection();
+		if(!dupe) {
 		server.core.clientContext.jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
@@ -117,7 +121,12 @@ public class FCPConnectionHandler {
 			}
 			
 		}, NativeThread.NORM_PRIORITY, false);
+		}
 		outputHandler.onClosed();
+	}
+	
+	synchronized void setKilledDupe() {
+		killedDupe = true;
 	}
 	
 	public synchronized boolean isClosed() {

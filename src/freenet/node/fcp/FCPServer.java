@@ -460,6 +460,7 @@ public class FCPServer implements Runnable {
 					oldClient.setConnection(handler);
 				} else {
 					// Kill old connection
+					oldConn.setKilledDupe();
 					oldConn.outputHandler.queue(new CloseConnectionDuplicateClientNameMessage());
 					oldConn.close();
 					oldClient.setConnection(handler);
