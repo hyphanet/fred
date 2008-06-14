@@ -198,7 +198,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				forceNonPersistent ? new NullPersistentFileTracker() : persistentFileTracker,
 				INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
 				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
-				globalEventProducer, cacheLocalRequests, core.uskManager, core.getExecutor());
+				globalEventProducer, cacheLocalRequests, core.uskManager);
 	}
 
 	public FreenetURI[] generateKeyPair(String docName) {

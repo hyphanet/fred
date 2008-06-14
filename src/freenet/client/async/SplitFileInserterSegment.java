@@ -223,7 +223,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 				checkFS.removeSubset(index);
 			}
 			splitfileAlgo = FECCodec.getCodec(splitfileAlgorithm,
-					dataBlockCount, checkBlocks.length, ctx.executor);
+					dataBlockCount, checkBlocks.length, context.mainExecutor);
 			
 			if(checkBlocks.length > dataBlocks.length) {
 				// Work around 1135 bug.
@@ -234,7 +234,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			Logger.normal(this, "Not encoded because no check blocks");
 			encoded = false;
 			splitfileAlgo = FECCodec.getCodec(splitfileAlgorithm,
-					dataBlockCount, ctx.executor);
+					dataBlockCount, context.mainExecutor);
 			int checkBlocksCount = splitfileAlgo.countCheckBlocks();
 			this.checkURIs = new ClientCHK[checkBlocksCount];
 			this.checkBlocks = new Bucket[checkBlocksCount];

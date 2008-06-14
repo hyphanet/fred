@@ -107,7 +107,7 @@ class SingleFileInserter implements ClientPutState {
 		if(data.size() > COMPRESS_OFF_THREAD_LIMIT) {
 			// Run off thread
 			OffThreadCompressor otc = new OffThreadCompressor();
-			ctx.executor.execute(otc, "Compressor for "+this);
+			context.mainExecutor.execute(otc, "Compressor for "+this);
 		} else {
 			tryCompress(container, context);
 		}
@@ -238,13 +238,13 @@ class SingleFileInserter implements ClientPutState {
 		// insert it. Then when the splitinserter has finished, and the
 		// metadata insert has finished too, tell the master callback.
 		if(reportMetadataOnly) {
-			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData);
+			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData, context);
 			cb.onTransition(this, sfi, container);
 			sfi.start(container, context);
 			if(earlyEncode) sfi.forceEncode(container, context);
 		} else {
 			SplitHandler sh = new SplitHandler();
-			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData);
+			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData, context);
 			sh.sfi = sfi;
 			cb.onTransition(this, sh, container);
 			sfi.start(container, context);
