@@ -6,7 +6,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
 
-import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
 
