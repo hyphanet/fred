@@ -119,7 +119,7 @@ public class FCPServer implements Runnable {
 		defaultFetchContext = client.getFetchContext();
 		defaultInsertContext = client.getInsertContext(false);
 		
-		globalRebootClient = new FCPClient("Global Queue", this, null, true, null, ClientRequest.PERSIST_REBOOT);
+		globalRebootClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_REBOOT);
 		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		

@@ -217,7 +217,7 @@ public class FCPConnectionHandler {
 				success = !requestsByIdentifier.containsKey(id);
 			if(success) {
 				try {
-					cp = new ClientPut(this, message);
+					cp = new ClientPut(this, message, server);
 				} catch (IdentifierCollisionException e) {
 					success = false;
 				} catch (MessageInvalidException e) {

@@ -368,7 +368,7 @@ public abstract class ClientRequest {
 		fs.put(name, bucket.toFieldSet());
 	}
 
-	public void restartAsync() {
+	public void restartAsync(Executor executor) {
 		synchronized(this) {
 			this.started = false;
 		}
