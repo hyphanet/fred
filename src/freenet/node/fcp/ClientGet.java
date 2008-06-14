@@ -105,7 +105,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			tempFile = null;
 			try {
 				if(persistenceType == PERSIST_FOREVER)
-					ret = client.server.core.persistentTempBucketFactory.makeEncryptedBucket();
+					ret = server.core.persistentTempBucketFactory.makeEncryptedBucket();
 				else
 					ret = fctx.bucketFactory.makeBucket(-1);
 			} catch (IOException e) {
@@ -175,7 +175,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			tempFile = null;
 			try {
 				if(persistenceType == PERSIST_FOREVER)
-					ret = client.server.core.persistentTempBucketFactory.makeEncryptedBucket();
+					ret = server.core.persistentTempBucketFactory.makeEncryptedBucket();
 				else
 					ret = fctx.bucketFactory.makeBucket(-1);
 			} catch (IOException e) {
@@ -262,14 +262,14 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			ret = new NullBucket();
 		} else if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT) {
 			try {
-				ret = SerializableToFieldSetBucketUtil.create(fs.subset("ReturnBucket"), fctx.random, client.server.core.persistentTempBucketFactory);
+				ret = SerializableToFieldSetBucketUtil.create(fs.subset("ReturnBucket"), server.core.random, server.core.persistentTempBucketFactory);
 				if(ret == null) throw new CannotCreateFromFieldSetException("ret == null");
 			} catch (CannotCreateFromFieldSetException e) {
 				Logger.error(this, "Cannot read: "+this+" : "+e, e);
 				try {
 					// Create a new temp bucket
 					if(persistenceType == PERSIST_FOREVER)
-						ret = client.server.core.persistentTempBucketFactory.makeEncryptedBucket();
+						ret = server.core.persistentTempBucketFactory.makeEncryptedBucket();
 					else
 						ret = fctx.bucketFactory.makeBucket(-1);
 				} catch (IOException e1) {

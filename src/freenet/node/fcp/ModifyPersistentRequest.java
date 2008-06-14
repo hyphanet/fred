@@ -74,7 +74,7 @@ public class ModifyPersistentRequest extends FCPMessage {
 			return;
 		}
         
-        req.modifyRequest(clientToken, priorityClass);
+        req.modifyRequest(clientToken, priorityClass, node.clientCore.getFCPServer());
 	}
 
 }

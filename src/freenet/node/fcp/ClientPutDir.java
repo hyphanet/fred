@@ -126,7 +126,7 @@ public class ClientPutDir extends ClientPutBase {
 		return map;
 	}
 	
-	private void makePutter() {
+	private void makePutter(FCPServer server) {
 		SimpleManifestPutter p;
 		try {
 			p = new SimpleManifestPutter(this, server.core.requestStarters.chkPutScheduler, server.core.requestStarters.sskPutScheduler,
@@ -174,7 +174,7 @@ public class ClientPutDir extends ClientPutBase {
 				long sz = Long.parseLong(subset.get("DataLength"));
 				if(!finished) {
 					try {
-						data = SerializableToFieldSetBucketUtil.create(fs.subset("ReturnBucket"), ctx.random, server.core.persistentTempBucketFactory);
+						data = SerializableToFieldSetBucketUtil.create(fs.subset("ReturnBucket"), server.core.random, server.core.persistentTempBucketFactory);
 					} catch (CannotCreateFromFieldSetException e) {
 						throw new PersistenceParseException("Could not read old bucket for "+identifier+" : "+e, e);
 					}

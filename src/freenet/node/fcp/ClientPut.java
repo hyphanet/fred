@@ -101,7 +101,7 @@ public class ClientPut extends ClientPutBase {
 			Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode, FCPServer server) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException, MalformedURLException {
 		super(uri, identifier, verbosity, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, server);
 		if(uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
-			if(!globalClient.core.allowUploadFrom(origFilename))
+			if(!server.core.allowUploadFrom(origFilename))
 				throw new NotAllowedException();
 			if(!(origFilename.exists() && origFilename.canRead()))
 				throw new FileNotFoundException();
@@ -313,7 +313,7 @@ public class ClientPut extends ClientPutBase {
 				Logger.minor(this, "Uploading from direct for "+this);
 			if(!finished) {
 				try {
-					data = SerializableToFieldSetBucketUtil.create(fs.subset("TempBucket"), ctx.random, client.server.core.persistentTempBucketFactory);
+					data = SerializableToFieldSetBucketUtil.create(fs.subset("TempBucket"), server.core.random, server.core.persistentTempBucketFactory);
 				} catch (CannotCreateFromFieldSetException e) {
 					throw new PersistenceParseException("Could not read old bucket for "+identifier+" : "+e, e);
 				}

@@ -239,13 +239,13 @@ public abstract class ClientRequest {
 	protected abstract void freeData(); 
 
 	/** Request completed. But we may have to stick around until we are acked. */
-	protected void finish() {
+	protected void finish(FCPServer server) {
 		completionTime = System.currentTimeMillis();
 		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
 			origHandler.finishedClientRequest(this);
 		else
-			client.server.forceStorePersistentRequests();
-		client.finishedClientRequest(this);
+			server.forceStorePersistentRequests();
+		client.finishedClientRequest(this, server);
 	}
 
 	/**
@@ -282,10 +282,10 @@ public abstract class ClientRequest {
 	 */
 	public abstract boolean isTotalFinalized();
 
-	public void onMajorProgress() {
+	public void onMajorProgress(FCPServer server) {
 		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
 			if(client != null)
-				client.server.forceStorePersistentRequests();
+				server.forceStorePersistentRequests();
 		}
 	}
 
@@ -310,7 +310,7 @@ public abstract class ClientRequest {
 	 * Called after a ModifyPersistentRequest.
 	 * Sends a PersistentRequestModified message to clients if any value changed. 
 	 */
-	public void modifyRequest(String newClientToken, short newPriorityClass) {
+	public void modifyRequest(String newClientToken, short newPriorityClass, FCPServer server) {
 
 		boolean clientTokenChanged = false;
 		boolean priorityClassChanged = false;
@@ -336,7 +336,7 @@ public abstract class ClientRequest {
 		if( clientTokenChanged || priorityClassChanged ) {
 			if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
 				if(client != null) {
-					client.server.forceStorePersistentRequests();
+					server.forceStorePersistentRequests();
 				}
 			}
 		} else {
@@ -372,7 +372,7 @@ public abstract class ClientRequest {
 		synchronized(this) {
 			this.started = false;
 		}
-		client.core.getExecutor().execute(new Runnable() {
+		executor.execute(new Runnable() {
 			public void run() {
 				restart();
 			}
