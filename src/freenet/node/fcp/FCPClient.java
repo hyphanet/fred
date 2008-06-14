@@ -28,7 +28,7 @@ public class FCPClient {
 		this.clientRequestsByIdentifier = new HashMap();
 		this.server = server;
 		this.core = server.core;
-		this.client = core.makeClient((short)0);
+		HighLevelSimpleClient client = core.makeClient((short)0);
 		this.isGlobalQueue = isGlobalQueue;
 		this.persistenceType = persistenceType;
 		assert(persistenceType == ClientRequest.PERSIST_FOREVER || persistenceType == ClientRequest.PERSIST_REBOOT);
@@ -62,7 +62,6 @@ public class FCPClient {
 	/** ClientRequest's by identifier */
 	private final HashMap clientRequestsByIdentifier;
 	/** Client (one FCPClient = one HighLevelSimpleClient = one round-robin slot) */
-	private final HighLevelSimpleClient client;
 	public final FetchContext defaultFetchContext;
 	public final InsertContext defaultInsertContext;
 	public final NodeClientCore core;
