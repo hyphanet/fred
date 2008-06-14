@@ -141,7 +141,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 	
 	private UserAlert startingUpAlert;
 
-	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet oldThrottleFS, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets) throws NodeInitException {
+	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet oldThrottleFS, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, ObjectContainer container) throws NodeInitException {
 		this.node = node;
 		this.nodeStats = node.nodeStats;
 		this.random = node.random;
@@ -347,7 +347,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		
 		// FCP (including persistent requests so needs to start before FProxy)
 		try {
-			fcpServer = FCPServer.maybeCreate(node, this, node.config);
+			fcpServer = FCPServer.maybeCreate(node, this, node.config, container);
 		} catch (IOException e) {
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FCP, "Could not start FCP: "+e);
 		} catch (InvalidConfigValueException e) {

@@ -646,10 +646,10 @@ public class FCPServer implements Runnable {
 	private void innerMakePersistentGlobalRequest(FreenetURI fetchURI, boolean persistRebootOnly, short returnType, String id, File returnFilename, 
 			File returnTempFilename) throws IdentifierCollisionException, NotAllowedException {
 		ClientGet cg = 
-			new ClientGet(globalClient, fetchURI, defaultFetchContext.localRequestOnly, 
+			new ClientGet(persistRebootOnly ? globalRebootClient : globalForeverClient, fetchURI, defaultFetchContext.localRequestOnly, 
 					defaultFetchContext.ignoreStore, QUEUE_MAX_RETRIES, QUEUE_MAX_RETRIES,
 					QUEUE_MAX_DATA_SIZE, returnType, persistRebootOnly, id, Integer.MAX_VALUE,
-					RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, returnFilename, returnTempFilename);
+					RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, returnFilename, returnTempFilename, this);
 		// Register before starting, because it may complete immediately, and if it does,
 		// we may end up with it not being removable because it wasn't registered!
 		if(cg.isPersistentForever())
@@ -662,7 +662,7 @@ public class FCPServer implements Runnable {
 	 * some time to start them.
 	 */
 	public void finishStart() {
-		this.globalClient.finishStart();
+		this.globalForeverClient.finishStart();
 		
 		FCPClient[] clients;
 		synchronized(this) {
@@ -673,9 +673,6 @@ public class FCPServer implements Runnable {
 			clients[i].finishStart();
 		}
 		
-		if(enablePersistentDownloads)
-			startPersister();
-		canStartPersister = true;
 		hasFinishedStart = true;
 	}
 	
@@ -685,8 +682,15 @@ public class FCPServer implements Runnable {
 	 * 
 	 * @return The global FCP client
 	 */
-	public FCPClient getGlobalClient() {
-		return globalClient;
+	public FCPClient getGlobalForeverClient() {
+		return globalForeverClient;
+	}
+	
+	public ClientRequest getGlobalRequest(String identifier) {
+		ClientRequest req = globalRebootClient.getRequest(identifier);
+		if(req == null)
+			req = globalForeverClient.getRequest(identifier);
+		return req;
 	}
 
 	protected boolean isDownloadDDAAlwaysAllowed() {
@@ -702,7 +706,9 @@ public class FCPServer implements Runnable {
 	}
 	
 	public void setCompletionCallback(RequestCompletionCallback cb) {
-		if(globalClient.setRequestCompletionCallback(cb) != null)
+		if(globalForeverClient.setRequestCompletionCallback(cb) != null)
+			Logger.error(this, "Replacing request completion callback "+cb, new Exception("error"));
+		if(globalRebootClient.setRequestCompletionCallback(cb) != null)
 			Logger.error(this, "Replacing request completion callback "+cb, new Exception("error"));
 	}
 	
