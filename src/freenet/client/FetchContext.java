@@ -6,7 +6,6 @@ package freenet.client;
 import java.util.Set;
 
 import freenet.client.async.BlockSet;
-import freenet.client.async.HealingQueue;
 import freenet.client.async.USKManager;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
@@ -45,7 +44,6 @@ public class FetchContext implements Cloneable {
 	/** If true, and we get a ZIP manifest, and we have no meta-strings left, then
 	 * return the manifest contents as data. */
 	public boolean returnZIPManifests;
-	public final HealingQueue healingQueue;
 	public final boolean ignoreTooManyPathComponents;
 	/** If set, contains a set of blocks to be consulted before checking the datastore. */
 	public BlockSet blocks;
@@ -62,7 +60,7 @@ public class FetchContext implements Cloneable {
 			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			BucketFactory bucketFactory,
 			ClientEventProducer producer, boolean cacheLocalRequests, USKManager uskManager, 
-			HealingQueue hq, boolean ignoreTooManyPathComponents, Ticker ticker, Executor executor, 
+			boolean ignoreTooManyPathComponents, Ticker ticker, Executor executor, 
 			Executor[] slowSerialExecutor) {
 		this.ticker = ticker;
 		this.executor = executor;
@@ -86,12 +84,10 @@ public class FetchContext implements Cloneable {
 		this.maxDataBlocksPerSegment = maxDataBlocksPerSegment;
 		this.maxCheckBlocksPerSegment = maxCheckBlocksPerSegment;
 		this.cacheLocalRequests = cacheLocalRequests;
-		this.healingQueue = hq;
 		this.ignoreTooManyPathComponents = ignoreTooManyPathComponents;
 	}
 
 	public FetchContext(FetchContext ctx, int maskID, boolean keepProducer) {
-		this.healingQueue = ctx.healingQueue;
 		if(keepProducer)
 			this.eventProducer = ctx.eventProducer;
 		else

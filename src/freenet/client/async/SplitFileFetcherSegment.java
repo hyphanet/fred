@@ -340,7 +340,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 	private void queueHeal(Bucket data, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Queueing healing insert");
-		fetchContext.healingQueue.queue(data, context);
+		context.healingQueue.queue(data, context);
 	}
 	
 	/** This is after any retries and therefore is either out-of-retries or fatal 

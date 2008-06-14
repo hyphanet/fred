@@ -7,12 +7,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Set;
 
-import freenet.client.async.BackgroundBlockEncoder;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
-import freenet.client.async.HealingQueue;
 import freenet.client.async.SimpleManifestPutter;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.ClientEventProducer;
@@ -47,7 +45,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	private long curMaxTempLength;
 	private int curMaxMetadataLength;
 	private final RandomSource random;
-	private final HealingQueue healingQueue;
 	private final Executor slowSerialExecutor[];
 	/** See comments in Node */
 	private final boolean cacheLocalRequests;
@@ -97,7 +94,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		curMaxMetadataLength = 1024 * 1024;
 		this.cacheLocalRequests = cacheLocalRequests;
 		this.persistentBucketFactory = node.persistentEncryptedTempBucketFactory;
-		this.healingQueue = node.getHealingQueue();
 	}
 	
 	public void setMaxLength(long maxLength) {
@@ -194,8 +190,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
 				bucketFactory, globalEventProducer, 
-				cacheLocalRequests, core.uskManager, healingQueue, 
-				false, core.getTicker(), core.getExecutor(), slowSerialExecutor);
+				cacheLocalRequests, core.uskManager, false, core.getTicker(), core.getExecutor(), slowSerialExecutor);
 	}
 
 	public InsertContext getInsertContext(boolean forceNonPersistent) {

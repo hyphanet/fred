@@ -34,6 +34,7 @@ public class ClientContext {
 	public final RandomSource random;
 	public final ArchiveManager archiveManager;
 	public final BucketFactory persistentBucketFactory;
+	public final HealingQueue healingQueue;
 
 	public ClientContext(NodeClientCore core) {
 		this.fecQueue = core.fecQueue;
@@ -48,6 +49,7 @@ public class ClientContext {
 		this.random = core.random;
 		archiveManager = core.archiveManager;
 		this.persistentBucketFactory = core.persistentEncryptedTempBucketFactory;
+		this.healingQueue = core.getHealingQueue();
 	}
 
 	public void start(final ClientPutter inserter, final boolean earlyEncode) throws InsertException {
