@@ -43,8 +43,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	/** Identifier in the database for the node we are attached to */
 	private final long nodeDBHandle;
 	final PersistentCooldownQueue persistentCooldownQueue;
-	private transient RandomSource random;
-	private transient PrioritizedSerialExecutor databaseExecutor;
 	private transient ClientRequestScheduler sched;
 	
 	/**
@@ -84,7 +82,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			core = new ClientRequestSchedulerCore(node, forInserts, forSSKs, selectorContainer, cooldownTime);
 		}
 		logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequestSchedulerCore.class);
-		core.onStarted(selectorContainer, cooldownTime, node.random, databaseExecutor, sched);
+		core.onStarted(selectorContainer, cooldownTime, sched);
 		return core;
 	}
 
@@ -99,7 +97,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		}
 	}
 
-	private void onStarted(ObjectContainer container, long cooldownTime, RandomSource random, PrioritizedSerialExecutor databaseExecutor, ClientRequestScheduler sched) {
+	private void onStarted(ObjectContainer container, long cooldownTime, ClientRequestScheduler sched) {
 		((Db4oMap)pendingKeys).activationDepth(1);
 		((Db4oMap)allRequestsByClientRequest).activationDepth(1);
 		((Db4oList)recentSuccesses).activationDepth(1);
@@ -107,8 +105,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		if(!isInsertScheduler) {
 			persistentCooldownQueue.setCooldownTime(cooldownTime);
 		}
-		this.random = random;
-		this.databaseExecutor = databaseExecutor;
 		if(!isInsertScheduler)
 			keysFetching = new HashSet();
 		else
