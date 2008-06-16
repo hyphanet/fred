@@ -3,11 +3,16 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
+import freenet.client.async.DBJob;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.NativeThread;
 
 /**
  * FCP message: Modify a persistent request.
@@ -64,17 +69,29 @@ public class ModifyPersistentRequest extends FCPMessage {
 		return NAME;
 	}
 
-	public void run(FCPConnectionHandler handler, Node node)
+	public void run(final FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		ClientRequest req = handler.getRequest(global, handler, identifier);
-		if(req==null){
-			Logger.error(this, "Huh ? the request is null!");
-			ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
-			handler.outputHandler.queue(msg);
-			return;
+		
+		ClientRequest req = handler.getRebootRequest(global, handler, identifier);
+		if(req == null) {
+			node.clientCore.clientContext.jobRunner.queue(new DBJob() {
+
+				public void run(ObjectContainer container, ClientContext context) {
+					ClientRequest req = handler.getForeverRequest(global, handler, identifier, container);
+					if(req==null){
+						Logger.error(this, "Huh ? the request is null!");
+						ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
+						handler.outputHandler.queue(msg);
+						return;
+					} else {
+						req.modifyRequest(clientToken, priorityClass, handler.server);
+					}
+				}
+				
+			}, NativeThread.NORM_PRIORITY, false);
+		} else {
+			req.modifyRequest(clientToken, priorityClass, node.clientCore.getFCPServer());
 		}
-        
-        req.modifyRequest(clientToken, priorityClass, node.clientCore.getFCPServer());
 	}
 
 }

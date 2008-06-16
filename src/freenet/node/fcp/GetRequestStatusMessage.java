@@ -3,9 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
+import freenet.client.async.DBJob;
 import freenet.node.Node;
 import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.NativeThread;
 
 public class GetRequestStatusMessage extends FCPMessage {
 
@@ -30,12 +35,23 @@ public class GetRequestStatusMessage extends FCPMessage {
 		return NAME;
 	}
 
-	public void run(FCPConnectionHandler handler, Node node)
+	public void run(final FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		ClientRequest req = handler.getRequest(global, handler, identifier);
+		ClientRequest req = handler.getRebootRequest(global, handler, identifier);
 		if(req == null) {
-			ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
-			handler.outputHandler.queue(msg);
+			node.clientCore.clientContext.jobRunner.queue(new DBJob() {
+
+				public void run(ObjectContainer container, ClientContext context) {
+					ClientRequest req = handler.getForeverRequest(global, handler, identifier, container);
+					if(req == null) {
+						ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
+						handler.outputHandler.queue(msg);
+					} else {
+						req.sendPendingMessages(handler.outputHandler, true, true, onlyData);
+					}
+				}
+				
+			}, NativeThread.NORM_PRIORITY, false);
 		} else {
 			req.sendPendingMessages(handler.outputHandler, true, true, onlyData);
 		}

@@ -520,21 +520,20 @@ public class FCPConnectionHandler {
 		return req;
 	}
 	
-	ClientRequest getRequest(boolean global, FCPConnectionHandler handler, String identifier) {
-		ClientRequest req = getRequest(global, handler, identifier, true);
-		if(req == null)
-			req = getRequest(global, handler, identifier, false);
-		return req;
+	ClientRequest getRebootRequest(boolean global, FCPConnectionHandler handler, String identifier) {
+		if(global)
+			return handler.server.globalRebootClient.getRequest(identifier, null);
+		else
+			return handler.getRebootClient().getRequest(identifier, null);
 	}
 	
-	private ClientRequest getRequest(boolean global, FCPConnectionHandler handler, String identifier, boolean rebootOnly) {
-		FCPClient client = 
-			global ? (rebootOnly ? handler.server.globalRebootClient : handler.server.globalForeverClient) : 
-				(rebootOnly ? handler.getRebootClient() : handler.getForeverClient());
-		ClientRequest req = client.getRequest(identifier);
-		return req;
+	ClientRequest getForeverRequest(boolean global, FCPConnectionHandler handler, String identifier, ObjectContainer container) {
+		if(global)
+			return handler.server.globalForeverClient.getRequest(identifier, container);
+		else
+			return handler.getForeverClient().getRequest(identifier, container);
 	}
-
+	
 	ClientRequest removePersistentRequest(boolean global, String identifier) throws MessageInvalidException {
 		ClientRequest req = removePersistentRequest(global, identifier, true);
 		if(req == null)
