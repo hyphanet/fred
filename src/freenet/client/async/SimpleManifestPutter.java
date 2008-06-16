@@ -94,13 +94,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					return;
 				}
 			}
-			insertedAllFiles();
+			insertedAllFiles(container);
 		}
 
 		public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Failed: "+this+" - "+e, e);
-			fail(e);
+			fail(e, container);
 		}
 
 		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
@@ -346,7 +346,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		if(defaultName != null) {
 			Metadata meta = (Metadata) namesToByteArrays.get(defaultName);
 			if(meta == null) {
-				fail(new InsertException(InsertException.INVALID_URI, "Default name "+defaultName+" does not exist", null));
+				fail(new InsertException(InsertException.INVALID_URI, "Default name "+defaultName+" does not exist", null), container);
 				return;
 			}
 			namesToByteArrays.put("", meta);
@@ -376,16 +376,16 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				bucket = BucketTools.makeImmutableBucket(ctx.bf, baseMetadata.writeToByteArray());
 				break;
 			} catch (IOException e) {
-				fail(new InsertException(InsertException.BUCKET_ERROR, e, null));
+				fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container);
 				return;
 			} catch (MetadataUnresolvedException e) {
 				try {
 					resolve(e, container, context);
 				} catch (IOException e1) {
-					fail(new InsertException(InsertException.BUCKET_ERROR, e, null));
+					fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container);
 					return;
 				} catch (InsertException e2) {
-					fail(e2);
+					fail(e2, container);
 					return;
 				}
 			}
@@ -442,10 +442,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				isMetadata = false;
 				insertAsArchiveManifest = true;
 			} catch (ZipException e) {
-				fail(new InsertException(InsertException.INTERNAL_ERROR, e, null));
+				fail(new InsertException(InsertException.INTERNAL_ERROR, e, null), container);
 				return;
 			} catch (IOException e) {
-				fail(new InsertException(InsertException.BUCKET_ERROR, e, null));
+				fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container);
 				return;
 			}
 		} else
@@ -458,7 +458,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			metadataPuttersUnfetchable.put(baseMetadata, metadataInserter);
 			metadataInserter.start(null, container, context);
 		} catch (InsertException e) {
-			fail(e);
+			fail(e, container);
 		}
 	}
 
@@ -508,7 +508,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 
-	private void insertedAllFiles() {
+	private void insertedAllFiles(ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "Inserted all files");
 		synchronized(this) {
 			insertedAllFiles = true;
@@ -522,18 +522,18 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 			finished = true;
 		}
-		complete();
+		complete(container);
 	}
 	
-	private void complete() {
-		cb.onSuccess(this);
+	private void complete(ObjectContainer container) {
+		cb.onSuccess(this, container);
 	}
 
-	private void fail(InsertException e) {
+	private void fail(InsertException e, ObjectContainer container) {
 		// Cancel all, then call the callback
 		cancelAndFinish();
 		
-		cb.onFailure(e, this);
+		cb.onFailure(e, this, container);
 	}
 	
 	/**
@@ -552,9 +552,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 	
-	public void cancel() {
+	public void cancel(ObjectContainer container) {
 		super.cancel();
-		fail(new InsertException(InsertException.CANCELLED));
+		fail(new InsertException(InsertException.CANCELLED), container);
 	}
 	
 	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
@@ -577,12 +577,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 			finished = true;
 		}
-		complete();
+		complete(container);
 	}
 	
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		fail(e);
+		fail(e, container);
 	}
 	
 	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {

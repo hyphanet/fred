@@ -60,7 +60,7 @@ public class ClientContext {
 					try {
 						inserter.start(earlyEncode, false, container, context);
 					} catch (InsertException e) {
-						inserter.client.onFailure(e, inserter);
+						inserter.client.onFailure(e, inserter, container);
 					}
 				}
 				
@@ -78,7 +78,7 @@ public class ClientContext {
 					try {
 						getter.start(container, context);
 					} catch (FetchException e) {
-						getter.clientCallback.onFailure(e, getter);
+						getter.clientCallback.onFailure(e, getter, container);
 					}
 				}
 				
@@ -96,7 +96,7 @@ public class ClientContext {
 					try {
 						inserter.start(container, context);
 					} catch (InsertException e) {
-						inserter.cb.onFailure(e, inserter);
+						inserter.cb.onFailure(e, inserter, container);
 					}
 				}
 				

@@ -141,7 +141,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			}
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
-				this.client.onFailure(e, this);
+				this.client.onFailure(e, this, container);
 			}
 		} catch (IOException e) {
 			Logger.error(this, "Failed to start insert: "+e, e);
@@ -152,7 +152,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			}
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
-				this.client.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), this);
+				this.client.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), this, container);
 			}
 		} catch (BinaryBlobFormatException e) {
 			Logger.error(this, "Failed to start insert: "+e, e);
@@ -163,7 +163,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			}
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
-				this.client.onFailure(new InsertException(InsertException.BINARY_BLOB_FORMAT_ERROR, e, null), this);
+				this.client.onFailure(new InsertException(InsertException.BINARY_BLOB_FORMAT_ERROR, e, null), this, container);
 			}
 		} 
 		if(Logger.shouldLog(Logger.MINOR, this))
@@ -182,7 +182,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 					", Successful blocks: "+successfulBlocks+", Total blocks: "+totalBlocks+" but success?! on "+this+" from "+state,
 					new Exception("debug"));
 		}
-		client.onSuccess(this);
+		client.onSuccess(this, container);
 	}
 
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
@@ -191,7 +191,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			currentState = null;
 			oldProgress = null;
 		}
-		client.onFailure(e, this);
+		client.onFailure(e, this, container);
 	}
 
 	public void onMajorProgress() {

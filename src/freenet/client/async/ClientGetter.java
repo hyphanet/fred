@@ -153,20 +153,8 @@ public class ClientGetter extends BaseClientGetter {
 			if(returnBucket != null && Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "client.async returned data in returnBucket");
 		}
-		final FetchResult res = result;
-		context.mainExecutor.execute(new PrioRunnable() {
-			public void run() {
-				clientCallback.onSuccess(res, ClientGetter.this);
-			}
-
-			public int getPriority() {
-				if(getPriorityClass() <= RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS)
-					return NativeThread.NORM_PRIORITY;
-				else
-					return NativeThread.LOW_PRIORITY;
-			}
-		}, "ClientGetter onSuccess callback for "+this);
-		
+		FetchResult res = result;
+		clientCallback.onSuccess(res, ClientGetter.this, container);
 	}
 
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
@@ -204,18 +192,7 @@ public class ClientGetter extends BaseClientGetter {
 				e = new FetchException(e, FetchException.ALL_DATA_NOT_FOUND);
 			Logger.minor(this, "onFailure("+e+", "+state+") on "+this+" for "+uri, e);
 			final FetchException e1 = e;
-			context.mainExecutor.execute(new PrioRunnable() {
-				public void run() {
-					clientCallback.onFailure(e1, ClientGetter.this);
-				}
-				public int getPriority() {
-					if(getPriorityClass() <= RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS)
-						return NativeThread.NORM_PRIORITY;
-					else
-						return NativeThread.LOW_PRIORITY;
-				}
-			}, "ClientGetter onFailure callback");
-			
+			clientCallback.onFailure(e1, ClientGetter.this, container);
 			return;
 		}
 	}
