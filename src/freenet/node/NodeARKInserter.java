@@ -6,6 +6,8 @@ package freenet.node;
 import java.io.UnsupportedEncodingException;
 import java.net.UnknownHostException;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -183,19 +185,19 @@ public class NodeARKInserter implements ClientCallback, RequestClient {
 				}
 			}
 		} catch (InsertException e) {
-			onFailure(e, inserter);	
+			onFailure(e, inserter, null);	
 		}
 	}
 
-	public void onSuccess(FetchResult result, ClientGetter state) {
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		// Impossible
 	}
 
-	public void onFailure(FetchException e, ClientGetter state) {
+	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		// Impossible
 	}
 
-	public void onSuccess(BaseClientPutter state) {
+	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		FreenetURI uri = state.getURI();
 		if(logMINOR) Logger.minor(this, darknetOpennetString + " ARK insert succeeded: " + uri);
 		synchronized (this) {
@@ -206,7 +208,7 @@ public class NodeARKInserter implements ClientCallback, RequestClient {
 		startInserter();
 	}
 
-	public void onFailure(InsertException e, BaseClientPutter state) {
+	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, darknetOpennetString + " ARK insert failed: "+e);
 		synchronized(this) {
 			lastInsertedPeers = null;

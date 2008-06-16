@@ -77,7 +77,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	public ClientGet(FCPClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
 			int maxSplitfileRetries, int maxNonSplitfileRetries, long maxOutputLength,
 			short returnType, boolean persistRebootOnly, String identifier, int verbosity, short prioClass,
-			File returnFilename, File returnTempFilename, FCPServer server) throws IdentifierCollisionException, NotAllowedException {
+			File returnFilename, File returnTempFilename, FCPServer server) throws IdentifierCollisionException, NotAllowedException, FetchException {
 		super(uri, identifier, verbosity, null, globalClient, prioClass,
 				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER),
 				null, true);
@@ -113,10 +113,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 					ret = fctx.bucketFactory.makeBucket(-1);
 			} catch (IOException e) {
 				Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
-				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), null);
 				getter = null;
 				returnBucket = null;
-				return;
+				throw new FetchException(FetchException.BUCKET_ERROR, e);
 			}
 		}
 		returnBucket = ret;
@@ -125,7 +124,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 					returnBucket, null);
 	}
 	
-	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException {
+	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException, FetchException {
 		super(message.uri, message.identifier, message.verbosity, handler, message.priorityClass,
 				message.persistenceType, message.clientToken, message.global);
 		// Create a Fetcher directly in order to get more fine-grained control,
@@ -172,10 +171,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 					ret = fctx.bucketFactory.makeBucket(-1);
 			} catch (IOException e) {
 				Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
-				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), null);
 				getter = null;
 				returnBucket = null;
-				return;
+				throw new FetchException(FetchException.BUCKET_ERROR, e);
 			}
 		}
 		if(ret == null)
@@ -192,8 +190,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	 * Can throw, and does minimal verification, as is dealing with data
 	 * supposedly serialized out by the node.
 	 * @throws IOException
+	 * @throws FetchException 
 	 */
-	public ClientGet(SimpleFieldSet fs, FCPClient client2, FCPServer server) throws IOException {
+	public ClientGet(SimpleFieldSet fs, FCPClient client2, FCPServer server) throws IOException, FetchException {
 		super(fs, client2);
 
 		returnType = ClientGetMessage.parseValidReturnType(fs.get("ReturnType"));
@@ -253,10 +252,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 						ret = fctx.bucketFactory.makeBucket(-1);
 				} catch (IOException e1) {
 					Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
-					onFailure(new FetchException(FetchException.BUCKET_ERROR, e), null);
 					getter = null;
 					returnBucket = null;
-					return;
+					throw new FetchException(FetchException.BUCKET_ERROR, e);
 				}
 			}
 		} else {
@@ -326,12 +324,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			synchronized(this) {
 				started = true;
 			} // before the failure handler
-			onFailure(e, null);
+			onFailure(e, null, container);
 		} catch (Throwable t) {
 			synchronized(this) {
 				started = true;
 			}
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), null);
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), null, container);
 		}
 	}
 
@@ -362,7 +360,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			if(failed) {
 				Logger.error(this, "returnBucket = "+returnBucket+" but onSuccess() data = "+data, new Exception("debug"));
 				// Caller guarantees that data == returnBucket
-				onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket"), null);
+				onFailure(new FetchException(FetchException.INTERNAL_ERROR, "Data != returnBucket"), null, container);
 				return;
 			}
 		}
@@ -497,11 +495,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		client.notifyFailure(this);
 	}
 
-	public void onSuccess(BaseClientPutter state) {
+	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		// Ignore
 	}
 
-	public void onFailure(InsertException e, BaseClientPutter state) {
+	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 		// Ignore
 	}
 

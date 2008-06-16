@@ -97,11 +97,12 @@ public class ClientPut extends ClientPutBase {
 	 * @throws NotAllowedException 
 	 * @throws FileNotFoundException 
 	 * @throws MalformedURLException 
+	 * @throws InsertException 
 	 */
 	public ClientPut(FCPClient globalClient, FreenetURI uri, String identifier, int verbosity, 
 			short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly,
 			boolean dontCompress, int maxRetries, short uploadFromType, File origFilename, String contentType,
-			Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode, FCPServer server) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException, MalformedURLException {
+			Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode, FCPServer server) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException, MalformedURLException, InsertException {
 		super(uri, identifier, verbosity, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, server);
 		if(uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
 			if(!server.core.allowUploadFrom(origFilename))
@@ -132,11 +133,10 @@ public class ClientPut extends ClientPutBase {
 			} catch (MetadataUnresolvedException e) {
 				// Impossible
 				Logger.error(this, "Impossible: "+e, e);
-				onFailure(new InsertException(InsertException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null), null);
 				this.data = null;
 				clientMetadata = cm;
 				putter = null;
-				return;
+				throw new InsertException(InsertException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null);
 			}
 			tempData = new SimpleReadOnlyArrayBucket(d);
 			isMetadata = true;
@@ -153,7 +153,7 @@ public class ClientPut extends ClientPutBase {
 				null, targetFilename, binaryBlob);
 	}
 	
-	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException, MalformedURLException {
+	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException, MalformedURLException, InsertException {
 		super(message.uri, message.identifier, message.verbosity, handler, 
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
 				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode, server);
@@ -207,11 +207,10 @@ public class ClientPut extends ClientPutBase {
 			} catch (MetadataUnresolvedException e) {
 				// Impossible
 				Logger.error(this, "Impossible: "+e, e);
-				onFailure(new InsertException(InsertException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null), null);
 				this.data = null;
 				clientMetadata = cm;
 				putter = null;
-				return;
+				throw new InsertException(InsertException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null);
 			}
 			tempData = new SimpleReadOnlyArrayBucket(d);
 			isMetadata = true;
@@ -265,8 +264,9 @@ public class ClientPut extends ClientPutBase {
 	 * by the node.
 	 * @throws PersistenceParseException 
 	 * @throws IOException 
+	 * @throws InsertException 
 	 */
-	public ClientPut(SimpleFieldSet fs, FCPClient client2, FCPServer server) throws PersistenceParseException, IOException {
+	public ClientPut(SimpleFieldSet fs, FCPClient client2, FCPServer server) throws PersistenceParseException, IOException, InsertException {
 		super(fs, client2, server);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		String mimeType = fs.get("Metadata.ContentType");
@@ -324,12 +324,11 @@ public class ClientPut extends ClientPutBase {
 			} catch (MetadataUnresolvedException e) {
 				// Impossible
 				Logger.error(this, "Impossible: "+e, e);
-				onFailure(new InsertException(InsertException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null), null);
 				this.data = null;
 				clientMetadata = cm;
 				origFilename = null;
 				putter = null;
-				return;
+				throw new InsertException(InsertException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null);
 			}
 			data = new SimpleReadOnlyArrayBucket(d);
 			origFilename = null;
@@ -382,12 +381,12 @@ public class ClientPut extends ClientPutBase {
 			synchronized(this) {
 				started = true;
 			}
-			onFailure(e, null);
+			onFailure(e, null, container);
 		} catch (Throwable t) {
 			synchronized(this) {
 				started = true;
 			}
-			onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), null);
+			onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), null, container);
 		}
 	}
 
@@ -497,7 +496,7 @@ public class ClientPut extends ClientPutBase {
 		}
 	}
 
-	public void onFailure(FetchException e, ClientGetter state) {}
+	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {}
 
-	public void onSuccess(FetchResult result, ClientGetter state) {}
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {}
 }
