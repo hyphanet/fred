@@ -29,20 +29,25 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 	
 	public void run(final FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
+		
+		FCPClient rebootClient = handler.getRebootClient();
+		
 		node.clientCore.clientContext.jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
-				handler.getForeverClient().queuePendingMessagesOnConnectionRestart(handler.outputHandler, container);
-				handler.getForeverClient().queuePendingMessagesFromRunningRequests(handler.outputHandler, container);
+				FCPClient foreverClient = handler.getForeverClient();
+				foreverClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, container);
+				foreverClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, container);
 				if(handler.getRebootClient().watchGlobal) {
-					handler.server.globalForeverClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, container);
-					handler.server.globalForeverClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, container);
+					FCPClient globalForeverClient = handler.server.globalForeverClient;
+					globalForeverClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, container);
+					globalForeverClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, container);
 				}
 			}
 			
 		}, NativeThread.NORM_PRIORITY, false);
-		handler.getRebootClient().queuePendingMessagesOnConnectionRestart(handler.outputHandler, null);
-		handler.getRebootClient().queuePendingMessagesFromRunningRequests(handler.outputHandler, null);
+		rebootClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, null);
+		rebootClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, null);
 		if(handler.getRebootClient().watchGlobal) {
 			handler.server.globalRebootClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, null);
 			handler.server.globalRebootClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, null);
