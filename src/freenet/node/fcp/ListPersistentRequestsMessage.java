@@ -32,6 +32,14 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		
 		FCPClient rebootClient = handler.getRebootClient();
 		
+		rebootClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, null);
+		rebootClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, null);
+		if(handler.getRebootClient().watchGlobal) {
+			FCPClient globalRebootClient = handler.server.globalRebootClient;
+			globalRebootClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, null);
+			globalRebootClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, null);
+		}
+		
 		node.clientCore.clientContext.jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
@@ -43,17 +51,10 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 					globalForeverClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, container);
 					globalForeverClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, container);
 				}
+				handler.outputHandler.queue(new EndListPersistentRequestsMessage());
 			}
 			
 		}, NativeThread.NORM_PRIORITY, false);
-		rebootClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, null);
-		rebootClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, null);
-		if(handler.getRebootClient().watchGlobal) {
-			FCPClient globalRebootClient = handler.server.globalRebootClient;
-			globalRebootClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, null);
-			globalRebootClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, null);
-		}
-		handler.outputHandler.queue(new EndListPersistentRequestsMessage());
 	}
 	
 }
