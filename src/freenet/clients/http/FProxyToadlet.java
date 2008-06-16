@@ -301,7 +301,7 @@ public final class FProxyToadlet extends Toadlet {
 		int bufProgress = 0;
 		while(offset < buf.length) {
 			byte b = buf[offset];
-			if((int)b == (int)find.charAt(bufProgress)) {
+			if(b == find.charAt(bufProgress)) {
 				bufProgress++;
 				if(bufProgress == find.length()) return true;
 			} else {
@@ -337,7 +337,7 @@ public final class FProxyToadlet extends Toadlet {
 				
 				if(logMINOR) Logger.minor(this, "Redirecting to FreenetURI: "+newURI);
 				String type = httprequest.getParam("type");
-				if (type != null) {
+				if ((type != null) && (type.length() > 0)) {
 					headers.put("Location", "/"+newURI + "?type=" + type);
 				} else {
 					headers.put("Location", "/"+newURI);
