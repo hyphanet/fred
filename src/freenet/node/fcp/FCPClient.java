@@ -95,7 +95,7 @@ public class FCPClient {
 	 * Called when a client request has finished, but is persistent. It has not been
 	 * acked yet, so it should be moved to the unacked-completed-requests set.
 	 */
-	public void finishedClientRequest(ClientRequest get, FCPServer server, ObjectContainer container) {
+	public void finishedClientRequest(ClientRequest get, ObjectContainer container) {
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		assert(get.persistenceType == persistenceType);
 		synchronized(this) {
@@ -166,7 +166,7 @@ public class FCPClient {
 				throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, "Not found", identifier, isGlobalQueue);
 			clientRequestsByIdentifier.remove(identifier);
 		}
-        req.requestWasRemoved();
+        req.requestWasRemoved(container);
 		if(kill) {
 			if(logMINOR) Logger.minor(this, "Killing request "+req);
 			req.cancel();

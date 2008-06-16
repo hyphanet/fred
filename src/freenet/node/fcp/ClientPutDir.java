@@ -50,7 +50,7 @@ public class ClientPutDir extends ClientPutBase {
 		this.wasDiskPut = wasDiskPut;
 		this.manifestElements = manifestElements;
 		this.defaultName = message.defaultName;
-		makePutter();
+		makePutter(server);
 		if(putter != null) {
 			numberOfFiles = putter.countFiles();
 			totalSize = putter.totalSize();
@@ -71,7 +71,7 @@ public class ClientPutDir extends ClientPutBase {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.manifestElements = makeDiskDirManifest(dir, "", allowUnreadableFiles);
 		this.defaultName = defaultName;
-		makePutter();
+		makePutter(server);
 		if(putter != null) {
 			numberOfFiles = putter.countFiles();
 			totalSize = putter.totalSize();

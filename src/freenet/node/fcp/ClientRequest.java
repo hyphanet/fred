@@ -241,13 +241,11 @@ public abstract class ClientRequest {
 	protected abstract void freeData(); 
 
 	/** Request completed. But we may have to stick around until we are acked. */
-	protected void finish(FCPServer server) {
+	protected void finish(ObjectContainer container) {
 		completionTime = System.currentTimeMillis();
 		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
 			origHandler.finishedClientRequest(this);
-		else
-			server.forceStorePersistentRequests();
-		client.finishedClientRequest(this, server);
+		client.finishedClientRequest(this, container);
 	}
 
 	/**
@@ -284,7 +282,7 @@ public abstract class ClientRequest {
 	 */
 	public abstract boolean isTotalFinalized();
 
-	public void onMajorProgress(FCPServer server) {
+	public void onMajorProgress() {
 		// Ignore
 	}
 
@@ -359,7 +357,7 @@ public abstract class ClientRequest {
 	/**
 	 * Called after a RemovePersistentRequest. Send a PersistentRequestRemoved to the clients.
 	 */
-	public abstract void requestWasRemoved();
+	public abstract void requestWasRemoved(ObjectContainer container);
 
 	/** Utility method for storing details of a possibly encrypted bucket. */
 	protected void bucketToFS(SimpleFieldSet fs, String name, boolean includeSize, Bucket data) {

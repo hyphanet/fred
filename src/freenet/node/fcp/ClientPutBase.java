@@ -2,6 +2,8 @@ package freenet.node.fcp;
 
 import java.net.MalformedURLException;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.*;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
@@ -131,7 +133,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		// otherwise ignore
 	}
 
-	public void onSuccess(BaseClientPutter state) {
+	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		synchronized(this) {
 			// Including this helps with certain bugs...
 			//progressMessage = null;
@@ -139,25 +141,21 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			finished = true;
 		}
 		freeData();
-		finish();
+		finish(container);
 		trySendFinalMessage(null);
 		client.notifySuccess(this);
-		if(persistenceType != PERSIST_CONNECTION)
-			client.server.forceStorePersistentRequests();
 	}
 
-	public void onFailure(InsertException e, BaseClientPutter state) {
+	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 		if(finished) return;
 		synchronized(this) {
 			finished = true;
 			putFailedMessage = new PutFailedMessage(e, identifier, global);
 		}
 		freeData();
-		finish();
+		finish(container);
 		trySendFinalMessage(null);
 		client.notifyFailure(this);
-		if(persistenceType != PERSIST_CONNECTION)
-			client.server.forceStorePersistentRequests();
 	}
 
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
@@ -169,7 +167,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		trySendGeneratedURIMessage(null);
 	}
 
-	public void requestWasRemoved() {
+	public void requestWasRemoved(ObjectContainer container) {
 		// if request is still running, send a PutFailed with code=cancelled
 		if( !finished ) {
 			synchronized(this) {
@@ -184,7 +182,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		client.queueClientRequestMessage(msg, 0);
 
 		freeData();
-		finish();
+		finish(container);
 	}
 
 	public void receive(ClientEvent ce) {

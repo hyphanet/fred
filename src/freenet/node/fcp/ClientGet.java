@@ -341,7 +341,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		// Otherwise ignore
 	}
 
-	public void onSuccess(FetchResult result, ClientGetter state) {
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		Logger.minor(this, "Succeeded: "+identifier);
 		Bucket data = result.asBucket();
 		if(returnBucket != data && !binaryBlob) {
@@ -411,7 +411,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			trySendAllDataMessage(adm, null);
 		if(!dontFree)
 			data.free();
-		finish();
+		finish(container);
 		client.notifySuccess(this);
 	}
 
@@ -482,7 +482,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		return new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, tempFile, clientToken, client.isGlobalQueue, started, fctx.maxNonSplitfileRetries, binaryBlob, fctx.maxOutputLength);
 	}
 
-	public void onFailure(FetchException e, ClientGetter state) {
+	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		if(finished) return;
 		synchronized(this) {
 			succeeded = false;
@@ -493,10 +493,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Caught "+e, e);
 		trySendDataFoundOrGetFailed(null);
-		finish();
+		finish(container);
 		client.notifyFailure(this);
-		if(persistenceType != PERSIST_CONNECTION)
-			client.server.forceStorePersistentRequests();
 	}
 
 	public void onSuccess(BaseClientPutter state) {
@@ -511,7 +509,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		// Ignore
 	}
 
-	public void requestWasRemoved() {
+	public void requestWasRemoved(ObjectContainer container) {
 		// if request is still running, send a GetFailed with code=cancelled
 		if( !finished ) {
 			synchronized(this) {
@@ -527,7 +525,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		client.queueClientRequestMessage(msg, 0);
 
 		freeData();
-		finish();
+		finish(container);
 	}
 
 	public void receive(ClientEvent ce) {
