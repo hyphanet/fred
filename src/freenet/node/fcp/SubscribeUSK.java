@@ -24,7 +24,7 @@ public class SubscribeUSK implements USKCallback {
 		this.dontPoll = message.dontPoll;
 		this.identifier = message.identifier;
 		this.core = core;
-		core.uskManager.subscribe(message.key, this, !message.dontPoll, handler.getRebootClient().lowLevelClientTransient);
+		core.uskManager.subscribe(message.key, this, !message.dontPoll, handler.getRebootClient().lowLevelClient);
 	}
 
 	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context) {
