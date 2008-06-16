@@ -51,8 +51,6 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		if(handler.getRebootClient().watchGlobal) {
 			handler.server.globalRebootClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, null);
 			handler.server.globalRebootClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, null);
-			handler.server.globalForeverClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, null);
-			handler.server.globalForeverClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, null);
 		}
 		handler.outputHandler.queue(new EndListPersistentRequestsMessage());
 	}
