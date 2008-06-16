@@ -692,10 +692,10 @@ public class FCPServer implements Runnable {
 		return globalForeverClient;
 	}
 	
-	public ClientRequest getGlobalRequest(String identifier) {
-		ClientRequest req = globalRebootClient.getRequest(identifier);
+	public ClientRequest getGlobalRequest(String identifier, ObjectContainer container) {
+		ClientRequest req = globalRebootClient.getRequest(identifier, null);
 		if(req == null)
-			req = globalForeverClient.getRequest(identifier);
+			req = globalForeverClient.getRequest(identifier, container);
 		return req;
 	}
 

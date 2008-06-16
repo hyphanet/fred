@@ -3,8 +3,13 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
+import freenet.client.async.DBJob;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.NativeThread;
 
 public class ListPersistentRequestsMessage extends FCPMessage {
 
@@ -22,17 +27,27 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 		return NAME;
 	}
 	
-	public void run(FCPConnectionHandler handler, Node node)
+	public void run(final FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		handler.getRebootClient().queuePendingMessagesOnConnectionRestart(handler.outputHandler);
-		handler.getForeverClient().queuePendingMessagesOnConnectionRestart(handler.outputHandler);
-		handler.getRebootClient().queuePendingMessagesFromRunningRequests(handler.outputHandler);
-		handler.getForeverClient().queuePendingMessagesFromRunningRequests(handler.outputHandler);
+		node.clientCore.clientContext.jobRunner.queue(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				handler.getForeverClient().queuePendingMessagesOnConnectionRestart(handler.outputHandler, container);
+				handler.getForeverClient().queuePendingMessagesFromRunningRequests(handler.outputHandler, container);
+				if(handler.getRebootClient().watchGlobal) {
+					handler.server.globalForeverClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, container);
+					handler.server.globalForeverClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, container);
+				}
+			}
+			
+		}, NativeThread.NORM_PRIORITY, false);
+		handler.getRebootClient().queuePendingMessagesOnConnectionRestart(handler.outputHandler, null);
+		handler.getRebootClient().queuePendingMessagesFromRunningRequests(handler.outputHandler, null);
 		if(handler.getRebootClient().watchGlobal) {
-			handler.server.globalRebootClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler);
-			handler.server.globalForeverClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler);
-			handler.server.globalRebootClient.queuePendingMessagesFromRunningRequests(handler.outputHandler);
-			handler.server.globalForeverClient.queuePendingMessagesFromRunningRequests(handler.outputHandler);
+			handler.server.globalRebootClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, null);
+			handler.server.globalRebootClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, null);
+			handler.server.globalForeverClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, null);
+			handler.server.globalForeverClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, null);
 		}
 		handler.outputHandler.queue(new EndListPersistentRequestsMessage());
 	}
