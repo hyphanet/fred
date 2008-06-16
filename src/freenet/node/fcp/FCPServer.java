@@ -656,10 +656,6 @@ public class FCPServer implements Runnable {
 					defaultFetchContext.ignoreStore, QUEUE_MAX_RETRIES, QUEUE_MAX_RETRIES,
 					QUEUE_MAX_DATA_SIZE, returnType, persistRebootOnly, id, Integer.MAX_VALUE,
 					RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, returnFilename, returnTempFilename, this);
-		// Register before starting, because it may complete immediately, and if it does,
-		// we may end up with it not being removable because it wasn't registered!
-		if(cg.isPersistentForever())
-			forceStorePersistentRequests();
 		cg.start();
 	}
 
