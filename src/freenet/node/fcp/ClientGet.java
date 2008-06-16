@@ -125,7 +125,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				throw e;
 			}
 			getter = new ClientGetter(this, server.core.requestStarters.chkFetchScheduler, server.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass,
-					persistenceType == PERSIST_CONNECTION ? client.lowLevelClientTransient : client.lowLevelClientPersistent,
+					client.lowLevelClient,
 					returnBucket, null);
 			if(persistenceType != PERSIST_CONNECTION) {
 				FCPMessage msg = persistentTagMessage();
@@ -198,7 +198,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			}
 			getter = new ClientGetter(this, server.core.requestStarters.chkFetchScheduler, 
 					server.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, 
-					persistenceType == PERSIST_CONNECTION ? client.lowLevelClientTransient : client.lowLevelClientPersistent, 
+					client.lowLevelClient, 
 					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? returnBucket : null);
 			if(persistenceType != PERSIST_CONNECTION) {
 				FCPMessage msg = persistentTagMessage();
@@ -302,7 +302,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		getter = new ClientGetter(this, server.core.requestStarters.chkFetchScheduler, 
 				server.core.requestStarters.sskFetchScheduler, uri, 
 				fctx, priorityClass, 
-				persistenceType == PERSIST_CONNECTION ? client.lowLevelClientTransient : client.lowLevelClientPersistent, 
+				client.lowLevelClient,
 				binaryBlob ? new NullBucket() : returnBucket, 
 						binaryBlob ? returnBucket : null);
 

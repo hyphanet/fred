@@ -33,14 +33,10 @@ public class FCPClient {
 		assert(persistenceType == ClientRequest.PERSIST_FOREVER || persistenceType == ClientRequest.PERSIST_REBOOT);
 		watchGlobalVerbosityMask = Integer.MAX_VALUE;
 		toStart = new LinkedList();
-		lowLevelClientPersistent = new RequestClient() {
+		final boolean forever = (persistenceType == ClientRequest.PERSIST_FOREVER);
+		lowLevelClient = new RequestClient() {
 			public boolean persistent() {
-				return true;
-			}
-		};
-		lowLevelClientTransient = new RequestClient() {
-			public boolean persistent() {
-				return false;
+				return forever;
 			}
 		};
 		completionCallback = cb;
@@ -72,8 +68,7 @@ public class FCPClient {
 	private transient LinkedList clientsWatching;
 	private final Object clientsWatchingLock = new Object();
 	private final LinkedList toStart;
-	final RequestClient lowLevelClientPersistent;
-	final RequestClient lowLevelClientTransient;
+	final RequestClient lowLevelClient;
 	private transient RequestCompletionCallback completionCallback;
 	/** Connection mode */
 	final short persistenceType;
@@ -316,8 +311,7 @@ public class FCPClient {
 		container.delete(completedUnackedRequests);
 		container.delete(clientRequestsByIdentifier);
 		container.delete(toStart);
-		container.delete(lowLevelClientPersistent);
-		container.delete(lowLevelClientTransient);
+		container.delete(lowLevelClient);
 		container.delete(this);
 	}
 }

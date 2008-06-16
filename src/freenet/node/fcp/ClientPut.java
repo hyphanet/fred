@@ -148,7 +148,7 @@ public class ClientPut extends ClientPutBase {
 		putter = new ClientPutter(this, data, uri, cm, 
 				ctx, server.core.requestStarters.chkPutScheduler, server.core.requestStarters.sskPutScheduler, priorityClass, 
 				getCHKOnly, isMetadata, 
-				persistenceType == PERSIST_CONNECTION ? client.lowLevelClientTransient : client.lowLevelClientPersistent,
+				client.lowLevelClient,
 				null, targetFilename, binaryBlob);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
@@ -260,7 +260,7 @@ public class ClientPut extends ClientPutBase {
 		putter = new ClientPutter(this, data, uri, cm, 
 				ctx, server.core.requestStarters.chkPutScheduler, server.core.requestStarters.sskPutScheduler, priorityClass, 
 				getCHKOnly, isMetadata,
-				persistenceType == PERSIST_CONNECTION ? client.lowLevelClientTransient : client.lowLevelClientPersistent,
+				client.lowLevelClient,
 				null, targetFilename, binaryBlob);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
@@ -354,7 +354,7 @@ public class ClientPut extends ClientPutBase {
 		if(finished) oldProgress = null; // Not useful any more
 		putter = new ClientPutter(this, data, uri, cm, ctx, server.core.requestStarters.chkPutScheduler, 
 				server.core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata,
-				persistenceType == PERSIST_CONNECTION ? client.lowLevelClientTransient : client.lowLevelClientPersistent,
+				client.lowLevelClient,
 				oldProgress, targetFilename, binaryBlob);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();

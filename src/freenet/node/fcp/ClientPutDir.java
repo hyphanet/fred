@@ -131,7 +131,7 @@ public class ClientPutDir extends ClientPutBase {
 		try {
 			p = new SimpleManifestPutter(this, server.core.requestStarters.chkPutScheduler, server.core.requestStarters.sskPutScheduler,
 					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly,
-					persistenceType == PERSIST_CONNECTION ? client.lowLevelClientTransient : client.lowLevelClientPersistent,
+					client.lowLevelClient,
 					earlyEncode);
 		} catch (InsertException e) {
 			onFailure(e, null);
@@ -212,7 +212,7 @@ public class ClientPutDir extends ClientPutBase {
 			if(!finished)
 				p = new SimpleManifestPutter(this, server.core.requestStarters.chkPutScheduler, server.core.requestStarters.sskPutScheduler,
 						manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, 
-						persistenceType == PERSIST_CONNECTION ? client.lowLevelClientTransient : client.lowLevelClientPersistent,
+						client.lowLevelClient,
 						earlyEncode);
 		} catch (InsertException e) {
 			onFailure(e, null);
