@@ -199,6 +199,10 @@ public class FCPConnectionHandler {
 		return clientName;
 	}
 
+	/**
+	 * Start a ClientGet. If there is an identifier collision, queue an IdentifierCollisionMessage.
+	 * Hence, we can run stuff on other threads if we need to, as long as we send the right messages.
+	 */
 	public void startClientGet(ClientGetMessage message) {
 		String id = message.identifier;
 		ClientGet cg = null;
