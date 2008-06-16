@@ -5,6 +5,7 @@ import java.net.*;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.InsertException;
 import freenet.client.async.*;
 import freenet.keys.*;
 import freenet.support.*;
@@ -299,7 +300,7 @@ public abstract class ClientRequest {
 
 	public abstract boolean canRestart();
 
-	public abstract boolean restart(ObjectContainer container, ClientContext context);
+	public abstract boolean restart(ObjectContainer container, ClientContext context) throws InsertException;
 
 	protected abstract FCPMessage persistentTagMessage();
 

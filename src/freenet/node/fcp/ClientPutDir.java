@@ -50,7 +50,7 @@ public class ClientPutDir extends ClientPutBase {
 		this.wasDiskPut = wasDiskPut;
 		this.manifestElements = manifestElements;
 		this.defaultName = message.defaultName;
-		makePutter(server);
+		makePutter();
 		if(putter != null) {
 			numberOfFiles = putter.countFiles();
 			totalSize = putter.totalSize();
@@ -72,7 +72,7 @@ public class ClientPutDir extends ClientPutBase {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.manifestElements = makeDiskDirManifest(dir, "", allowUnreadableFiles);
 		this.defaultName = defaultName;
-		makePutter(server);
+		makePutter();
 		if(putter != null) {
 			numberOfFiles = putter.countFiles();
 			totalSize = putter.totalSize();
@@ -127,9 +127,9 @@ public class ClientPutDir extends ClientPutBase {
 		return map;
 	}
 	
-	private void makePutter(FCPServer server) throws InsertException {
+	private void makePutter() throws InsertException {
 		SimpleManifestPutter p;
-			p = new SimpleManifestPutter(this, server.core.requestStarters.chkPutScheduler, server.core.requestStarters.sskPutScheduler,
+			p = new SimpleManifestPutter(this, 
 					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly,
 					client.lowLevelClient,
 					earlyEncode);
@@ -206,7 +206,7 @@ public class ClientPutDir extends ClientPutBase {
 		SimpleManifestPutter p = null;
 		try {
 			if(!finished)
-				p = new SimpleManifestPutter(this, server.core.requestStarters.chkPutScheduler, server.core.requestStarters.sskPutScheduler,
+				p = new SimpleManifestPutter(this, 
 						manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, 
 						client.lowLevelClient,
 						earlyEncode);
@@ -358,7 +358,7 @@ public class ClientPutDir extends ClientPutBase {
 		return true;
 	}
 
-	public boolean restart(ObjectContainer container, ClientContext context) {
+	public boolean restart(ObjectContainer container, ClientContext context) throws InsertException {
 		if(!canRestart()) return false;
 		setVarsRestart();
 		makePutter();

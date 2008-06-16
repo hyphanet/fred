@@ -211,8 +211,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private boolean fetchable;
 	private final boolean earlyEncode;
 	
-	public SimpleManifestPutter(ClientCallback cb, ClientRequestScheduler chkSched,
-			ClientRequestScheduler sskSched, HashMap manifestElements, short prioClass, FreenetURI target, 
+	public SimpleManifestPutter(ClientCallback cb, 
+			HashMap manifestElements, short prioClass, FreenetURI target, 
 			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode) throws InsertException {
 		super(prioClass, clientContext);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
