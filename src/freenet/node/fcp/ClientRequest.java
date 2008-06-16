@@ -299,7 +299,7 @@ public abstract class ClientRequest {
 
 	public abstract boolean canRestart();
 
-	public abstract boolean restart();
+	public abstract boolean restart(ObjectContainer container, ClientContext context);
 
 	protected abstract FCPMessage persistentTagMessage();
 

@@ -724,7 +724,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		return getter.canRestart();
 	}
 
-	public boolean restart() {
+	public boolean restart(ObjectContainer container, ClientContext context) {
 		if(!canRestart()) return false;
 		FreenetURI redirect;
 		synchronized(this) {
@@ -738,7 +738,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			started = false;
 		}
 		try {
-			if(getter.restart(redirect)) {
+			if(getter.restart(redirect, container, context)) {
 				synchronized(this) {
 					if(redirect != null) this.uri = redirect;
 					started = true;
@@ -746,7 +746,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			}
 			return true;
 		} catch (FetchException e) {
-			onFailure(e, null);
+			onFailure(e, null, container);
 			return false;
 		}
 	}

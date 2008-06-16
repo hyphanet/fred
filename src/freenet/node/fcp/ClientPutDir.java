@@ -358,11 +358,11 @@ public class ClientPutDir extends ClientPutBase {
 		return true;
 	}
 
-	public boolean restart() {
+	public boolean restart(ObjectContainer container, ClientContext context) {
 		if(!canRestart()) return false;
 		setVarsRestart();
 		makePutter();
-		start();
+		start(container, context);
 		return true;
 	}
 

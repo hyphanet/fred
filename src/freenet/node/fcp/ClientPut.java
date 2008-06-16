@@ -479,11 +479,11 @@ public class ClientPut extends ClientPutBase {
 		return putter.canRestart();
 	}
 
-	public boolean restart() {
+	public boolean restart(ObjectContainer container, ClientContext context) {
 		if(!canRestart()) return false;
 		setVarsRestart();
 		try {
-			if(putter.restart(earlyEncode)) {
+			if(putter.restart(earlyEncode, container, context)) {
 				synchronized(this) {
 					generatedURI = null;
 					started = true;
@@ -491,7 +491,7 @@ public class ClientPut extends ClientPutBase {
 			}
 			return true;
 		} catch (InsertException e) {
-			onFailure(e, null);
+			onFailure(e, null, container);
 			return false;
 		}
 	}
