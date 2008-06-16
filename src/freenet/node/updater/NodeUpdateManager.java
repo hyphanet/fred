@@ -88,6 +88,7 @@ public class NodeUpdateManager {
 	public final UpdateOverMandatoryManager uom;
 	
 	private boolean logMINOR;
+	private boolean disabledThisSession;
 	
 	public NodeUpdateManager(Node node, Config config) throws InvalidConfigValueException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -386,6 +387,12 @@ public class NodeUpdateManager {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		try {
 			synchronized(this) {
+				if(disabledThisSession) {
+					String msg = "Not deploying update because disabled for this session (bad java version??)";
+					Logger.error(this, msg);
+					System.err.println(msg);
+					return;
+				}
 				if(hasBeenBlown) {
 					String msg = "Trying to update but key has been blown! Not updating, message was "+revocationMessage;
 					Logger.error(this, msg);
@@ -904,5 +911,9 @@ public class NodeUpdateManager {
 		}
 		
 	};
+
+	public void disableThisSession() {
+		disabledThisSession = true;
+	}
 	
 }

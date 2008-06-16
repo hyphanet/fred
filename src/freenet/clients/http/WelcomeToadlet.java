@@ -388,7 +388,12 @@ public class WelcomeToadlet extends Toadlet {
                     }, 1);
             return;
         } else if(request.isPartSet("dismiss-events")) {
-        	String alertsToDump = request.getPartAsString("events", 4096);
+		if(noPassword) {
+			redirectToRoot(ctx);
+			return;
+		}
+
+        	String alertsToDump = request.getPartAsString("events", Integer.MAX_VALUE);
         	String[] alertAnchors = alertsToDump.split(",");
         	HashSet toDump = new HashSet();
         	for(int i=0;i<alertAnchors.length;i++) toDump.add(alertAnchors[i]);

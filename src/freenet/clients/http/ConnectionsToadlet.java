@@ -163,7 +163,6 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			return;
 		}
 		
-		final boolean advancedModeEnabled = node.isAdvancedModeEnabled();
 		final boolean fProxyJavascriptEnabled = node.isFProxyJavascriptEnabled();
 		boolean drawMessageTypes = path.endsWith("displaymessagetypes.html");
 		
@@ -189,7 +188,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
 		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly + numberOfClockProblem + numberOfConnError;
 		String titleCountString = null;
-		if(advancedModeEnabled) {
+		if(node.isAdvancedModeEnabled()) {
 			titleCountString = "(" + numberOfConnected + '/' + numberOfRoutingBackedOff + '/' + numberOfTooNew + '/' + numberOfTooOld + '/' + numberOfRoutingDisabled + '/' + numberOfNotConnected + ')';
 		} else {
 			titleCountString = (numberOfNotConnected + numberOfSimpleConnected)>0 ? String.valueOf(numberOfSimpleConnected) : "";
@@ -203,6 +202,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
+		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, request, contentNode);
 		
 		if(peerNodeStatuses.length>0){
 
@@ -226,7 +226,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			HTMLNode nextTableCell = overviewTableRow.addChild("td", "class", "first");
 
 			/* node status overview box */
-			if(advancedModeEnabled) {
+			if(mode >= PageMaker.MODE_ADVANCED) {
 				HTMLNode overviewInfobox = nextTableCell.addChild("div", "class", "infobox");
 				overviewInfobox.addChild("div", "class", "infobox-header", "Node status overview");
 				HTMLNode overviewInfoboxContent = overviewInfobox.addChild("div", "class", "infobox-content");
@@ -251,21 +251,21 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			activityInfobox.addChild("div", "class", "infobox-header", l10n("activityTitle"));
 			HTMLNode activityInfoboxContent = activityInfobox.addChild("div", "class", "infobox-content");
 			HTMLNode activityList = StatisticsToadlet.drawActivity(activityInfoboxContent, node);
-			if (advancedModeEnabled && activityList != null) {
+			if ((mode >= PageMaker.MODE_ADVANCED) && (activityList != null)) {
 				if (numARKFetchers > 0) {
 					activityList.addChild("li", "ARK\u00a0Fetch\u00a0Requests:\u00a0" + numARKFetchers);
 				}
-				StatisticsToadlet.drawBandwidth(activityList, node, nodeUptimeSeconds, advancedModeEnabled);
+				StatisticsToadlet.drawBandwidth(activityList, node, nodeUptimeSeconds, mode >= PageMaker.MODE_ADVANCED);
 			}
 
-			nextTableCell = advancedModeEnabled ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
+			nextTableCell = (mode >= PageMaker.MODE_ADVANCED) ? overviewTableRow.addChild("td") : overviewTableRow.addChild("td", "class", "last");
 
 			// Peer statistics box
 			HTMLNode peerStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
-			StatisticsToadlet.drawPeerStatsBox(peerStatsInfobox, advancedModeEnabled, numberOfConnected, numberOfRoutingBackedOff, numberOfTooNew, numberOfTooOld, numberOfDisconnected, numberOfNeverConnected, numberOfDisabled, numberOfBursting, numberOfListening, numberOfListenOnly, 0, 0, numberOfRoutingDisabled, numberOfClockProblem, numberOfConnError, numberOfDisconnecting);
+			StatisticsToadlet.drawPeerStatsBox(peerStatsInfobox, mode >= PageMaker.MODE_ADVANCED, numberOfConnected, numberOfRoutingBackedOff, numberOfTooNew, numberOfTooOld, numberOfDisconnected, numberOfNeverConnected, numberOfDisabled, numberOfBursting, numberOfListening, numberOfListenOnly, 0, 0, numberOfRoutingDisabled, numberOfClockProblem, numberOfConnError, numberOfDisconnecting);
 
 			// Peer routing backoff reason box
-			if(advancedModeEnabled) {
+			if(mode >= PageMaker.MODE_ADVANCED) {
 				nextTableCell = overviewTableRow.addChild("td", "class", "last");
 				HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
 				backoffReasonInfobox.addChild("div", "class", "infobox-header", "Peer backoff reasons");
@@ -322,7 +322,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			HTMLNode peerTableInfobox = contentNode.addChild("div", "class", "infobox infobox-normal");
 			HTMLNode peerTableInfoboxHeader = peerTableInfobox.addChild("div", "class", "infobox-header");
 			peerTableInfoboxHeader.addChild("#", getPeerListTitle());
-			if (advancedModeEnabled) {
+			if (mode >= PageMaker.MODE_ADVANCED) {
 				if (!path.endsWith("displaymessagetypes.html")) {
 					peerTableInfoboxHeader.addChild("#", " ");
 					peerTableInfoboxHeader.addChild("a", "href", "displaymessagetypes.html", "(more detailed)");
@@ -348,11 +348,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "status")).addChild("#", l10n("statusTitle"));
 				if(hasNameColumn())
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "name")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("nameClickToMessage"), "border-bottom: 1px dotted; cursor: help;" }, l10n("nameTitle"));
-				if (advancedModeEnabled) {
+				if (mode >= PageMaker.MODE_ADVANCED) {
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "address")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("ipAddress"), "border-bottom: 1px dotted; cursor: help;" }, l10n("ipAddressTitle"));
 				}
 				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "version")).addChild("#", l10n("versionTitle"));
-				if (advancedModeEnabled) {
+				if (mode >= PageMaker.MODE_ADVANCED) {
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "location")).addChild("#", "Location");
 					peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "Other node busy? Display: Percentage of time the node is overloaded, Current wait time remaining (0=not overloaded)/total/last overload reason", "border-bottom: 1px dotted; cursor: help;" }, "Backoff");
 
@@ -362,7 +362,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				if(hasPrivateNoteColumn())
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "privnote")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("privateNote"), "border-bottom: 1px dotted; cursor: help;" }, l10n("privateNoteTitle"));
 
-				if(advancedModeEnabled) {
+				if(mode >= PageMaker.MODE_ADVANCED) {
 					peerTableHeaderRow.addChild("th", "%\u00a0Time Routable");
 					peerTableHeaderRow.addChild("th", "Total\u00a0Traffic\u00a0(in/out/resent)");
 					peerTableHeaderRow.addChild("th", "Congestion\u00a0Control");
@@ -370,7 +370,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					peerTableHeaderRow.addChild("th", "Reported\u00a0Uptime");
 				}
 				
-				SimpleColumn[] endCols = endColumnHeaders(advancedModeEnabled);
+				SimpleColumn[] endCols = endColumnHeaders(mode >= PageMaker.MODE_ADVANCED);
 				if(endCols != null) {
 					for(int i=0;i<endCols.length;i++) {
 						SimpleColumn col = endCols[i];
@@ -385,19 +385,19 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
 					
 					PeerNodeStatus peerNodeStatus = peerNodeStatuses[peerIndex];
-					drawRow(peerTable, peerNodeStatus, advancedModeEnabled, fProxyJavascriptEnabled, now, path, enablePeerActions, endCols, drawMessageTypes);
+					drawRow(peerTable, peerNodeStatus, mode >= PageMaker.MODE_ADVANCED, fProxyJavascriptEnabled, now, path, enablePeerActions, endCols, drawMessageTypes);
 					
 				}
 
 				if(peerForm != null) {
-					drawPeerActionSelectBox(peerForm, advancedModeEnabled);
+					drawPeerActionSelectBox(peerForm, mode >= PageMaker.MODE_ADVANCED);
 				}
 			}
 			// END PEER TABLE
 		}
 		
 		// our reference
-		if(shouldDrawNoderefBox(advancedModeEnabled)) {
+		if(shouldDrawNoderefBox(mode >= PageMaker.MODE_ADVANCED)) {
 			drawAddPeerBox(contentNode, ctx);
 			drawNoderefBox(contentNode, ctx);
 		}

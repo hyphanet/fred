@@ -943,10 +943,13 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	private void reconstruct() throws DatabaseException, IOException {
 		if(keysDB.count() != 0)
 			throw new IllegalStateException("Store must be empty before reconstruction!");
-		System.err.println("Reconstructing store index from store file: callback="+callback);
+		// Timeout must be well below Integer.MAX_VALUE. It is added to previous timeouts in an integer value.
+		// If it's too high, we get wraparound and instant timeout.
+		int timeout = (int) (Math.min(7 * 24 * 60 * 60 * 1000, 5 * 60 * 1000
+		        + (storeRAF.length() / (dataBlockSize + headerBlockSize)) * 1000L));
+		System.err.println("Reconstructing store index from store file: callback="+callback+" - allowing "+timeout+"ms");
 		Logger.error(this, "Reconstructing store index from store file: callback="+callback);
-		WrapperManager.signalStarting((int) (Math.min(Integer.MAX_VALUE, 5 * 60 * 1000
-		        + (storeRAF.length() / (dataBlockSize + headerBlockSize)) * 1000L)));
+		WrapperManager.signalStarting(timeout);
 		// Reusing the buffer is safe, provided we don't do anything with the resulting StoreBlock.
 		byte[] header = new byte[headerBlockSize];
 		byte[] data = new byte[dataBlockSize];
@@ -983,15 +986,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 
 				long lruVal = 0;
 				Transaction t = null;
-				if(storeRAF.getFilePointer() != l * (headerBlockSize + dataBlockSize)) {
-					System.err.println("File pointer is "+storeRAF.getFilePointer()+" but should be "+((headerBlockSize + dataBlockSize)));
-					System.exit(NodeInitException.EXIT_STORE_RECONSTRUCT);
-				}
-				// FIXME only do the read if we need the data, and if we do, do a seek first.
-				// Post 0.7.0; only a useful optimisation if we have a good .keys file, but should 
-				// save some I/O when we do.
-				storeRAF.readFully(header);
-				storeRAF.readFully(data);
+				boolean dataRead = false;
 				if(lruRAFLength > (l+1)*8) {
 					try {
 						lruVal = lruRAF.readLong();
@@ -1030,6 +1025,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 							routingkey = newkey;
 						}
 					}
+					if (!dataRead) {
+						storeRAF.seek(l * (headerBlockSize + dataBlockSize));
+						storeRAF.readFully(header);
+						storeRAF.readFully(data);
+						dataRead = true;
+					}
 					if (routingkey == null && !isAllNull(header) && !isAllNull(data)) {
 						keyFromData = true;
 						try {
@@ -1061,6 +1062,12 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 						if(!keyFromData) {
 							byte[] oldRoutingkey = routingkey;
 							try {
+								if (!dataRead) {
+									storeRAF.seek(l * (headerBlockSize + dataBlockSize));
+									storeRAF.readFully(header);
+									storeRAF.readFully(data);
+									dataRead = true;
+								}
 								StorableBlock block = callback.construct(data, header, null, keyBuf);
 								routingkey = block.getRoutingKey();
 								if(Arrays.equals(oldRoutingkey, routingkey)) {
@@ -1408,7 +1415,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				if(!overwrite)
 					throw new KeyCollisionException();
 				else
-					overwriteKeyUnchanged(block, routingkey, fullKey, data, header);
+					overwriteKeyUnchanged(routingkey, fullKey, data, header);
 			} // else return; // already in store
 		} else {
 			innerPut(block, routingkey, fullKey, data, header);
@@ -1418,7 +1425,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	/**
 	 * Overwrite a block with a new block which has the same key.
 	 */
-	private boolean overwriteKeyUnchanged(StorableBlock block, byte[] routingkey, byte[] fullKey, byte[] data, byte[] header) throws IOException {
+	private boolean overwriteKeyUnchanged(byte[] routingkey, byte[] fullKey, byte[] data, byte[] header) throws IOException {
 		synchronized(this) {
 			if(closed)
 				return false;

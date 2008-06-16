@@ -10,7 +10,8 @@ public interface ProbeCallback {
 
 	void onTrace(long uid, double target, double nearest, double best, short htl, short counter, double location, long nodeUID, double[] peerLocs, long[] peerUIDs, double[] locsNotVisited, short forkCount, short linearCount, String reason, long prevUID);
 
-	/** Got a RejectedOverload passed down from some upstream node. Note that not all probe request
+	/**
+	 * Got a RejectedOverload passed down from some upstream node. Note that not all probe request
 	 * implementations may generate these.
 	 */
 	void onRejectOverload();

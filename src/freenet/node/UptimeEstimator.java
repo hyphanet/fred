@@ -20,6 +20,7 @@ import freenet.support.io.Closer;
  * A class to estimate the node's average uptime. Every 5 minutes (with a fixed offset), we write
  * an integer (the number of minutes since the epoch) to the end of a file. We rotate it when it
  * gets huge. We read it to figure out how many of the 5 minute slots in the last X period are occupied.
+ *
  * @author toad
  */
 public class UptimeEstimator implements Runnable {

@@ -1,6 +1,4 @@
-/*
- * Freenet 0.7 node.
- */
+/* Freenet 0.7 node. */
 package freenet.node;
 
 import java.io.BufferedReader;
@@ -216,7 +214,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 		
 		public String[] getPossibleValues() {
-			return L10n.AVAILABLE_LANGUAGES;
+			String[] result = new String[L10n.AVAILABLE_LANGUAGES.length];
+			for(int i=0; i<L10n.AVAILABLE_LANGUAGES.length; i++)
+				result[i] = L10n.AVAILABLE_LANGUAGES[i][1];
+			return result;
 		}
 	}
 	
@@ -1777,6 +1778,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM version: "+jvmVersion+", OS name: "+osName+", OS version: "+osVersion);
 		
+		if(jvmVersion.startsWith("1.4")) {
+			System.err.println("Java 1.4 will not be supported for much longer, PLEASE UPGRADE!");
+			nodeUpdater.disableThisSession();
+			clientCore.alerts.register(new SimpleUserAlert(false, l10n("java14Title"), l10n("java14Text"), l10n("java14ShortText"), UserAlert.ERROR));
+		}
+		
 		if(jvmVendor.startsWith("Sun ")) {
 			// Sun bugs
 			
@@ -2676,6 +2683,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		synchronized(cachedPubKeys) {
 			DSAPublicKey key2 = (DSAPublicKey) cachedPubKeys.get(w);
 			if((key2 != null) && !key2.equals(key)) {
+				// FIXME is this test really needed?
+				// SHA-256 inside synchronized{} is a bad idea
 				MessageDigest md256 = SHA256.getMessageDigest();
 				try {
 				byte[] hashCheck = md256.digest(key.asBytes());

@@ -538,21 +538,21 @@ public class ClientRequestScheduler implements RequestScheduler {
 				for(int j=0;j<getsLength;j++) {
 					if(gets[j] == getter) {
 						found = true;
+						dropped = true;
 						continue;
 					}
-					if(j == newGets.length) {
+					if(x == newGets.length) {
 						if(!found) {
 							if(complain)
 								Logger.normal(this, "Not found: "+getter+" for "+key+" removing ("+getsLength+" getters)");
 							return; // not here
-						}
+						} // else is a contradiction, let it get an ArrayIndexOutOfBounds.
 					}
 					if(gets[j] == null || gets[j].isCancelled()) continue;
 					newGets[x++] = gets[j];
 				}
 				if(x == 0) {
 					pendingKeys.remove(key);
-					dropped = true;
 				} else if(x == 1) {
 					pendingKeys.put(key, newGets[0]);
 				} else {

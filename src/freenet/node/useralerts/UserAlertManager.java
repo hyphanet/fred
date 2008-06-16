@@ -138,6 +138,8 @@ public class UserAlertManager implements Comparator {
 				if(alerts[i].isEventNotification()) events++;
 			}
 		}
+		if(events == 0)
+			return new HTMLNode("#", "");
 		if(events < 2) drawDumpEventsForm = false;
 		HTMLNode boxNode = new HTMLNode("div", "class", "infobox infobox-"+getAlertLevelName(maxLevel)+" infobox-summary-status-box");
 		boxNode.addChild("div", "class", "infobox-header infobox summary-status-header", title);
@@ -153,9 +155,6 @@ public class UserAlertManager implements Comparator {
 			HTMLNode listItem = alertsNode.addChild("li", "class", "alert-summary-text-"+getAlertLevelName(alert.getPriorityClass()));
 			listItem.addChild("a", "href", "/alerts/#"+alert.anchor(), alert.getShortText());
 			totalNumber++;
-		}
-		if (totalNumber == 0) {
-			return new HTMLNode("#", "");
 		}
 		if(drawDumpEventsForm) {
 			HTMLNode dumpFormNode = contentNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("div");

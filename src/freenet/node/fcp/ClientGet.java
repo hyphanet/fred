@@ -117,18 +117,19 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			}
 		}
 		returnBucket = ret;
-		if(persistenceType != PERSIST_CONNECTION)
+		if(persistenceType != PERSIST_CONNECTION) {
 			try {
 				client.register(this, false);
 			} catch (IdentifierCollisionException e) {
 				ret.free();
 				throw e;
 			}
-			getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, client.lowLevelClient, returnBucket, null);
-			if(persistenceType != PERSIST_CONNECTION) {
-				FCPMessage msg = persistentTagMessage();
-				client.queueClientRequestMessage(msg, 0);
-			}
+		}
+		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, client.lowLevelClient, returnBucket, null);
+		if(persistenceType != PERSIST_CONNECTION) {
+			FCPMessage msg = persistentTagMessage();
+			client.queueClientRequestMessage(msg, 0);
+		}
 	}
 
 	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message) throws IdentifierCollisionException, MessageInvalidException {
@@ -187,23 +188,24 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(ret == null)
 			Logger.error(this, "Impossible: ret = null in FCP constructor for "+this, new Exception("debug"));
 		returnBucket = ret;
-		if(persistenceType != PERSIST_CONNECTION)
+		if(persistenceType != PERSIST_CONNECTION) {
 			try {
 				client.register(this, false);
 			} catch (IdentifierCollisionException e) {
 				ret.free();
 				throw e;
 			}
-			getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, 
-					client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, 
-					client.lowLevelClient, binaryBlob ? new NullBucket() : returnBucket, 
-							binaryBlob ? returnBucket : null);
-			if(persistenceType != PERSIST_CONNECTION) {
-				FCPMessage msg = persistentTagMessage();
-				client.queueClientRequestMessage(msg, 0);
-				if(handler != null && (!handler.isGlobalSubscribed()))
-					handler.outputHandler.queue(msg);
-			}
+		}
+		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, 
+				client.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, 
+				client.lowLevelClient, binaryBlob ? new NullBucket() : returnBucket, 
+						binaryBlob ? returnBucket : null);
+		if(persistenceType != PERSIST_CONNECTION) {
+			FCPMessage msg = persistentTagMessage();
+			client.queueClientRequestMessage(msg, 0);
+			if(handler != null && (!handler.isGlobalSubscribed()))
+				handler.outputHandler.queue(msg);
+		}
 	}
 
 	/**
@@ -309,7 +311,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 
 		if(finished && succeeded)
-				allDataPending = new AllDataMessage(returnBucket, identifier, global, startupTime, completionTime);
+			allDataPending = new AllDataMessage(returnBucket, identifier, global, startupTime, completionTime);
 	}
 
 	public void start() {

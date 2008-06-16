@@ -125,8 +125,6 @@ public class StatisticsToadlet extends Toadlet {
 			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
 			return;
 		}
-
-		final boolean advancedModeEnabled = node.isAdvancedModeEnabled();
 		final SubConfig nodeConfig = node.config.get("node");
 
 		/* gather connection statistics */
@@ -169,6 +167,7 @@ public class StatisticsToadlet extends Toadlet {
 
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
+		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, request, contentNode);
 
 		double swaps = (double)node.getSwaps();
 		double noSwaps = (double)node.getNoSwaps();
@@ -204,7 +203,7 @@ public class StatisticsToadlet extends Toadlet {
 			logsList.addChild("li").addChild("a", new String[]{ "href", "target"}, new String[]{ "/?latestlog", "_new"}, l10n("getLogs"));
 		logsList.addChild("li").addChild("a", "href", TranslationToadlet.TOADLET_URL+"?getOverrideTranlationFile").addChild("#", L10n.getString("TranslationToadlet.downloadTranslationsFile"));
 		
-		if(advancedModeEnabled) {
+		if(mode >= PageMaker.MODE_ADVANCED) {
 			// store size box
 			HTMLNode storeSizeInfobox = nextTableCell.addChild("div", "class", "infobox");
 			
@@ -237,16 +236,16 @@ public class StatisticsToadlet extends Toadlet {
 			}
 		}
 
-		if(advancedModeEnabled || numberOfConnected + numberOfRoutingBackedOff > 0) {			
+		if(mode >= PageMaker.MODE_ADVANCED || numberOfConnected + numberOfRoutingBackedOff > 0) {			
 
 			// Activity box
 			nextTableCell = overviewTableRow.addChild("td", "class", "last");
 			HTMLNode activityInfobox = nextTableCell.addChild("div", "class", "infobox");
 			
-			drawActivityBox(activityInfobox, advancedModeEnabled);
+			drawActivityBox(activityInfobox, mode >= PageMaker.MODE_ADVANCED);
 
 			/* node status overview box */
-			if(advancedModeEnabled) {
+			if(mode >= PageMaker.MODE_ADVANCED) {
 				HTMLNode overviewInfobox = nextTableCell.addChild("div", "class", "infobox");
 				drawOverviewBox(overviewInfobox, nodeUptimeSeconds, now, swaps, noSwaps);
 			}
@@ -254,7 +253,7 @@ public class StatisticsToadlet extends Toadlet {
 			// Peer statistics box
 			HTMLNode peerStatsInfobox = nextTableCell.addChild("div", "class", "infobox");
 			
-			drawPeerStatsBox(peerStatsInfobox, advancedModeEnabled, numberOfConnected, numberOfRoutingBackedOff, 
+			drawPeerStatsBox(peerStatsInfobox, mode >= PageMaker.MODE_ADVANCED, numberOfConnected, numberOfRoutingBackedOff, 
 					numberOfTooNew, numberOfTooOld, numberOfDisconnected, numberOfNeverConnected, numberOfDisabled, 
 					numberOfBursting, numberOfListening, numberOfListenOnly, numberOfSeedServers, numberOfSeedClients,
 					numberOfRoutingDisabled, numberOfClockProblem, numberOfConnError, numberOfDisconnecting);
@@ -262,10 +261,10 @@ public class StatisticsToadlet extends Toadlet {
 			// Bandwidth box
 			HTMLNode bandwidthInfobox = nextTableCell.addChild("div", "class", "infobox");
 			
-			drawBandwidthBox(bandwidthInfobox, nodeUptimeSeconds, advancedModeEnabled);
+			drawBandwidthBox(bandwidthInfobox, nodeUptimeSeconds, mode >= PageMaker.MODE_ADVANCED);
 		}
 
-		if(advancedModeEnabled) {
+		if(mode >= PageMaker.MODE_ADVANCED) {
 
 			// Peer routing backoff reason box
 			HTMLNode backoffReasonInfobox = nextTableCell.addChild("div", "class", "infobox");
@@ -749,7 +748,7 @@ public class StatisticsToadlet extends Toadlet {
 		}
 		if (numberOfDisconnecting > 0) {
 			HTMLNode peerStatsListenOnlyListItem = peerStatsList.addChild("li").addChild("span");
-			peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_disconnecting", l10n("disconnecting"), "border-bottom: 1px dotted; cursor: help;" }, l10nDark("disconnectingShort"));
+			peerStatsListenOnlyListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_disconnecting", l10nDark("disconnecting"), "border-bottom: 1px dotted; cursor: help;" }, l10nDark("disconnectingShort"));
 			peerStatsListenOnlyListItem.addChild("span", ":\u00a0" + numberOfDisconnecting);
 		}
 		if (numberOfSeedServers > 0) {
@@ -766,7 +765,7 @@ public class StatisticsToadlet extends Toadlet {
 		}
 		if (numberOfRoutingDisabled > 0) {
 			HTMLNode peerStatsRoutingDisabledListItem = peerStatsList.addChild("li").addChild("span");
-			peerStatsRoutingDisabledListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_routing_disabled", l10n("routingDisabled"), "border-bottom: 1px dotted; cursor: help;" }, l10n("routingDisabledShort"));
+			peerStatsRoutingDisabledListItem.addChild("span", new String[] { "class", "title", "style" }, new String[] { "peer_routing_disabled", l10nDark("routingDisabled"), "border-bottom: 1px dotted; cursor: help;" }, l10nDark("routingDisabledShort"));
 			peerStatsRoutingDisabledListItem.addChild("span", ":\u00a0" + numberOfRoutingDisabled);
 		}
 	}
