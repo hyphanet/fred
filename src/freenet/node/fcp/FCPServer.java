@@ -29,6 +29,8 @@ import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertContext;
+import freenet.client.async.ClientContext;
+import freenet.client.async.DBJob;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -51,6 +53,8 @@ import freenet.support.api.LongCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
+import freenet.support.io.NativeThread;
+
 import java.util.LinkedList;
 
 /**
@@ -572,7 +576,7 @@ public class FCPServer implements Runnable {
 	 * @param returnType The return type.
 	 * @throws NotAllowedException 
 	 */
-	public void makePersistentGlobalRequest(FreenetURI fetchURI, String expectedMimeType, String persistenceTypeString, String returnTypeString) throws NotAllowedException {
+	public void makePersistentGlobalRequest(FreenetURI fetchURI, String expectedMimeType, String persistenceTypeString, String returnTypeString, ObjectContainer container) throws NotAllowedException {
 		boolean persistence = persistenceTypeString.equalsIgnoreCase("reboot");
 		short returnType = ClientGetMessage.parseReturnType(returnTypeString);
 		File returnFilename = null, returnTempFilename = null;
@@ -586,20 +590,20 @@ public class FCPServer implements Runnable {
 //				File returnFilename, File returnTempFilename) throws IdentifierCollisionException {
 		
 		try {
-			innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, "FProxy:"+fetchURI.getPreferredFilename(), returnFilename, returnTempFilename);
+			innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, "FProxy:"+fetchURI.getPreferredFilename(), returnFilename, returnTempFilename, container);
 			return;
 		} catch (IdentifierCollisionException ee) {
 			try {
-				innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, "FProxy:"+fetchURI.getDocName(), returnFilename, returnTempFilename);
+				innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, "FProxy:"+fetchURI.getDocName(), returnFilename, returnTempFilename, container);
 				return;
 			} catch (IdentifierCollisionException e) {
 				try {
-					innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, "FProxy:"+fetchURI.toString(false, false), returnFilename, returnTempFilename);
+					innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, "FProxy:"+fetchURI.toString(false, false), returnFilename, returnTempFilename, container);
 					return;
 				} catch (IdentifierCollisionException e1) {
 					// FIXME maybe use DateFormat
 					try {
-						innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, "FProxy ("+System.currentTimeMillis()+ ')', returnFilename, returnTempFilename);
+						innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, "FProxy ("+System.currentTimeMillis()+ ')', returnFilename, returnTempFilename, container);
 						return;
 					} catch (IdentifierCollisionException e2) {
 						while(true) {
@@ -607,7 +611,7 @@ public class FCPServer implements Runnable {
 							try {
 								core.random.nextBytes(buf);
 								String id = "FProxy:"+Base64.encode(buf);
-								innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, id, returnFilename, returnTempFilename);
+								innerMakePersistentGlobalRequest(fetchURI, persistence, returnType, id, returnFilename, returnTempFilename, container);
 								return;
 							} catch (IdentifierCollisionException e3) {}
 						}
@@ -650,14 +654,14 @@ public class FCPServer implements Runnable {
 	}
 
 	private void innerMakePersistentGlobalRequest(FreenetURI fetchURI, boolean persistRebootOnly, short returnType, String id, File returnFilename, 
-			File returnTempFilename) throws IdentifierCollisionException, NotAllowedException {
-		ClientGet cg = 
+			File returnTempFilename, ObjectContainer container) throws IdentifierCollisionException, NotAllowedException {
+		final ClientGet cg = 
 			new ClientGet(persistRebootOnly ? globalRebootClient : globalForeverClient, fetchURI, defaultFetchContext.localRequestOnly, 
 					defaultFetchContext.ignoreStore, QUEUE_MAX_RETRIES, QUEUE_MAX_RETRIES,
 					QUEUE_MAX_DATA_SIZE, returnType, persistRebootOnly, id, Integer.MAX_VALUE,
 					RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, returnFilename, returnTempFilename, this);
 		cg.register(container, false, false);
-		cg.start();
+		cg.start(container, core.clientContext);
 	}
 
 	/**
