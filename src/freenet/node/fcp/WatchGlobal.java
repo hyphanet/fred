@@ -3,9 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
+import freenet.client.async.DBJob;
 import freenet.node.Node;
 import freenet.support.Fields;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.NativeThread;
 
 public class WatchGlobal extends FCPMessage {
 
@@ -37,10 +42,17 @@ public class WatchGlobal extends FCPMessage {
 		return NAME;
 	}
 
-	public void run(FCPConnectionHandler handler, Node node)
+	public void run(final FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
-		handler.getRebootClient().setWatchGlobal(enabled, verbosityMask, node.clientCore.getFCPServer());
-		handler.getForeverClient().setWatchGlobal(enabled, verbosityMask, node.clientCore.getFCPServer());
+		handler.getRebootClient().setWatchGlobal(enabled, verbosityMask, node.clientCore.getFCPServer(), null);
+		handler.server.core.clientContext.jobRunner.queue(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				handler.getForeverClient().setWatchGlobal(enabled, verbosityMask, handler.server, container);
+			}
+			
+		}, NativeThread.NORM_PRIORITY, false);
+		
 	}
 
 }
