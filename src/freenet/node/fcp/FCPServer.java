@@ -664,7 +664,7 @@ public class FCPServer implements Runnable {
 	 * some time to start them.
 	 */
 	public void finishStart() {
-		this.globalForeverClient.finishStart();
+		this.globalForeverClient.finishStart(node.clientCore.clientContext.jobRunner);
 		
 		FCPClient[] clients;
 		synchronized(this) {
@@ -672,7 +672,7 @@ public class FCPServer implements Runnable {
 		}
 		
 		for(int i=0;i<clients.length;i++) {
-			clients[i].finishStart();
+			clients[i].finishStart(node.clientCore.clientContext.jobRunner);
 		}
 		
 		hasFinishedStart = true;

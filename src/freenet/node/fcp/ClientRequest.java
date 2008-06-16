@@ -3,6 +3,8 @@ package freenet.node.fcp;
 import java.io.*;
 import java.net.*;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.async.*;
 import freenet.keys.*;
 import freenet.support.*;
@@ -290,7 +292,7 @@ public abstract class ClientRequest {
 	}
 
 	/** Start the request, if it has not already been started. */
-	public abstract void start();
+	public abstract void start(ObjectContainer container, ClientContext context);
 
 	protected boolean started;
 

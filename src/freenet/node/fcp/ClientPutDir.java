@@ -11,10 +11,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.client.InsertException;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
 import freenet.client.async.ManifestElement;
@@ -227,18 +230,20 @@ public class ClientPutDir extends ClientPutBase {
 		}
 	}
 
-	public void start() {
+	public void start(ObjectContainer container, ClientContext context) {
 		if(finished) return;
 		if(started) return;
 		try {
 			if(putter != null)
-				putter.start();
+				putter.start(container, context);
 			started = true;
 			if(logMINOR) Logger.minor(this, "Started "+putter);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage();
 				client.queueClientRequestMessage(msg, 0);
 			}
+			if(persistenceType == PERSIST_FOREVER)
+				container.set(this); // Update
 		} catch (InsertException e) {
 			started = true;
 			onFailure(e, null);

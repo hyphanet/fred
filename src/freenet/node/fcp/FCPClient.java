@@ -8,8 +8,12 @@ import java.util.Vector;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ClientContext;
+import freenet.client.async.DBJob;
+import freenet.client.async.DBJobRunner;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
+import freenet.support.io.NativeThread;
 
 /**
  * An FCP client.
@@ -267,14 +271,21 @@ public class FCPClient {
 	/**
 	 * Start all delayed-start requests.
 	 */
-	public void finishStart(ObjectContainer container) {
-		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
+	public void finishStart(DBJobRunner runner) {
 		ClientRequest[] reqs;
 		synchronized(this) {
 			reqs = (ClientRequest[]) toStart.toArray(new ClientRequest[toStart.size()]);
 		}
-		for(int i=0;i<reqs.length;i++)
-			reqs[i].start();
+		for(int i=0;i<reqs.length;i++) {
+			final ClientRequest req = reqs[i];
+			runner.queue(new DBJob() {
+
+				public void run(ObjectContainer container, ClientContext context) {
+					req.start(container, context);
+				}
+				
+			}, NativeThread.HIGH_PRIORITY + reqs[i].getPriority(), false);
+		}
 	}
 	
 	public String toString() {

@@ -19,6 +19,7 @@ import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.BinaryBlob;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.crypt.SHA256;
@@ -34,6 +35,8 @@ import freenet.support.io.FileBucket;
 import freenet.support.io.SerializableToFieldSetBucketUtil;
 
 import java.util.Arrays;
+
+import com.db4o.ObjectContainer;
 
 public class ClientPut extends ClientPutBase {
 
@@ -363,14 +366,14 @@ public class ClientPut extends ClientPutBase {
 		
 	}
 
-	public void start() {
+	public void start(ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Starting "+this+" : "+identifier);
 		synchronized(this) {
 			if(finished) return;
 		}
 		try {
-			putter.start(earlyEncode);
+			putter.start(earlyEncode, false, container, context);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage();
 				client.queueClientRequestMessage(msg, 0);
@@ -378,6 +381,8 @@ public class ClientPut extends ClientPutBase {
 			synchronized(this) {
 				started = true;
 			}
+			if(persistenceType == PERSIST_FOREVER)
+				container.set(this); // Update
 		} catch (InsertException e) {
 			synchronized(this) {
 				started = true;

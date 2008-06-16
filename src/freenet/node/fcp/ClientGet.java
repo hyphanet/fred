@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -14,6 +16,7 @@ import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.BinaryBlob;
 import freenet.client.async.ClientCallback;
+import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
 import freenet.client.events.ClientEvent;
@@ -315,12 +318,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				allDataPending = new AllDataMessage(returnBucket, identifier, global, startupTime, completionTime);
 	}
 
-	public void start() {
+	public void start(ObjectContainer container, ClientContext context) {
 		try {
 			synchronized(this) {
 				if(finished) return;
 			}
-			getter.start();
+			getter.start(container, context);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage();
 				client.queueClientRequestMessage(msg, 0);
@@ -328,6 +331,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			synchronized(this) {
 				started = true;
 			}
+			if(persistenceType == PERSIST_FOREVER)
+				container.set(this); // Update
 		} catch (FetchException e) {
 			synchronized(this) {
 				started = true;
