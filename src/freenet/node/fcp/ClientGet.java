@@ -77,7 +77,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	public ClientGet(FCPClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
 			int maxSplitfileRetries, int maxNonSplitfileRetries, long maxOutputLength,
 			short returnType, boolean persistRebootOnly, String identifier, int verbosity, short prioClass,
-			File returnFilename, File returnTempFilename, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, NotAllowedException {
+			File returnFilename, File returnTempFilename, FCPServer server) throws IdentifierCollisionException, NotAllowedException {
 		super(uri, identifier, verbosity, null, globalClient, prioClass,
 				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER),
 				null, true);
@@ -120,23 +120,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			}
 		}
 		returnBucket = ret;
-		if(persistenceType != PERSIST_CONNECTION)
-			try {
-				client.register(this, false, container);
-			} catch (IdentifierCollisionException e) {
-				ret.free();
-				throw e;
-			}
 			getter = new ClientGetter(this, server.core.requestStarters.chkFetchScheduler, server.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass,
 					client.lowLevelClient,
 					returnBucket, null);
-			if(persistenceType != PERSIST_CONNECTION) {
-				FCPMessage msg = persistentTagMessage();
-				client.queueClientRequestMessage(msg, 0);
-			}
 	}
-
-	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MessageInvalidException {
+	
+	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException {
 		super(message.uri, message.identifier, message.verbosity, handler, message.priorityClass,
 				message.persistenceType, message.clientToken, message.global);
 		// Create a Fetcher directly in order to get more fine-grained control,
@@ -192,23 +181,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(ret == null)
 			Logger.error(this, "Impossible: ret = null in FCP constructor for "+this, new Exception("debug"));
 		returnBucket = ret;
-		if(persistenceType != PERSIST_CONNECTION)
-			try {
-				client.register(this, false, container);
-			} catch (IdentifierCollisionException e) {
-				ret.free();
-				throw e;
-			}
 			getter = new ClientGetter(this, server.core.requestStarters.chkFetchScheduler, 
 					server.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, 
 					client.lowLevelClient, 
 					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? returnBucket : null);
-			if(persistenceType != PERSIST_CONNECTION) {
-				FCPMessage msg = persistentTagMessage();
-				client.queueClientRequestMessage(msg, 0);
-				if(handler != null && (!handler.isGlobalSubscribed()))
-					handler.outputHandler.queue(msg);
-			}
 	}
 
 	/**
@@ -309,13 +285,26 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				binaryBlob ? new NullBucket() : returnBucket, 
 						binaryBlob ? returnBucket : null);
 
-		if(persistenceType != PERSIST_CONNECTION) {
-			FCPMessage msg = persistentTagMessage();
-			client.queueClientRequestMessage(msg, 0);
-		}
-
 		if(finished && succeeded)
 				allDataPending = new AllDataMessage(returnBucket, identifier, global, startupTime, completionTime);
+	}
+
+	/**
+	 * Must be called just after construction, but within a transaction.
+	 * @throws IdentifierCollisionException If the identifier is already in use.
+	 */
+	void register(ObjectContainer container, boolean lazyResume, boolean noTags) throws IdentifierCollisionException {
+		if(persistenceType != PERSIST_CONNECTION)
+			try {
+				client.register(this, lazyResume, container);
+			} catch (IdentifierCollisionException e) {
+				returnBucket.free();
+				throw e;
+			}
+			if(persistenceType != PERSIST_CONNECTION && !noTags) {
+				FCPMessage msg = persistentTagMessage();
+				client.queueClientRequestMessage(msg, 0);
+			}
 	}
 
 	public void start(ObjectContainer container, ClientContext context) {

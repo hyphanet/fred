@@ -173,7 +173,7 @@ public abstract class ClientRequest {
 			boolean lazyResume = server.core.lazyResume();
 			if(type.equals("GET")) {
 				ClientGet cg = new ClientGet(fs, client, server);
-				client.register(cg, lazyResume);
+				cg.register(container, lazyResume, true);
 				if(!lazyResume) cg.start();
 				return cg;
 			} else if(type.equals("PUT")) {

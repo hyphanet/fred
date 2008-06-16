@@ -656,6 +656,7 @@ public class FCPServer implements Runnable {
 					defaultFetchContext.ignoreStore, QUEUE_MAX_RETRIES, QUEUE_MAX_RETRIES,
 					QUEUE_MAX_DATA_SIZE, returnType, persistRebootOnly, id, Integer.MAX_VALUE,
 					RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, returnFilename, returnTempFilename, this);
+		cg.register(container, false, false);
 		cg.start();
 	}
 

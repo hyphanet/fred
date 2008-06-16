@@ -204,7 +204,8 @@ public class FCPConnectionHandler {
 	 * Hence, we can run stuff on other threads if we need to, as long as we send the right messages.
 	 */
 	public void startClientGet(ClientGetMessage message) {
-		String id = message.identifier;
+		final String id = message.identifier;
+		final boolean global = message.global;
 		ClientGet cg = null;
 		boolean success;
 		boolean persistent = message.persistenceType != ClientRequest.PERSIST_CONNECTION;
@@ -220,6 +221,25 @@ public class FCPConnectionHandler {
 					cg = new ClientGet(this, message, server);
 					if(!persistent)
 						requestsByIdentifier.put(id, cg);
+					else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
+						final ClientGet getter = cg;
+						server.core.clientContext.jobRunner.queue(new DBJob() {
+
+							public void run(ObjectContainer container, ClientContext context) {
+								try {
+									getter.register(container, false, false);
+								} catch (IdentifierCollisionException e) {
+									Logger.normal(this, "Identifier collision on "+this);
+									FCPMessage msg = new IdentifierCollisionMessage(id, global);
+									outputHandler.queue(msg);
+									return;
+								}
+								getter.start(container, context);
+							}
+							
+						}, NativeThread.NORM_PRIORITY, false);
+						return; // Don't run the start() below
+					}
 				} catch (IdentifierCollisionException e) {
 					success = false;
 				} catch (MessageInvalidException e) {
@@ -234,7 +254,7 @@ public class FCPConnectionHandler {
 			outputHandler.queue(msg);
 			return;
 		} else {
-			cg.start();
+			cg.start(null, server.core.clientContext);
 		}
 	}
 
