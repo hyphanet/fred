@@ -64,6 +64,7 @@ public class FCPConnectionHandler {
 	private String clientName;
 	private FCPClient rebootClient;
 	private FCPClient foreverClient;
+	private boolean failedGetForever;
 	final BucketFactory bf;
 	final HashMap requestsByIdentifier;
 	protected final String connectionIdentifier;
@@ -167,10 +168,29 @@ public class FCPConnectionHandler {
 		}
 	}
 
-	public void setClientName(String name) {
+	public void setClientName(final String name) {
 		this.clientName = name;
 		rebootClient = server.registerRebootClient(name, server.core, this);
-		foreverClient = server.registerForeverClient(name, server.core, this);
+		server.core.clientContext.jobRunner.queue(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				try {
+					FCPClient client = server.registerForeverClient(name, server.core, FCPConnectionHandler.this, container);
+					synchronized(FCPConnectionHandler.this) {
+						foreverClient = client;
+						FCPConnectionHandler.this.notifyAll();
+					}
+				} catch (Throwable t) {
+					Logger.error(this, "Caught "+t+" creating persistent client for "+name, t);
+					failedGetForever = true;
+					synchronized(FCPConnectionHandler.this) {
+						failedGetForever = true;
+						FCPConnectionHandler.this.notifyAll();
+					}
+				}
+			}
+			
+		}, NativeThread.NORM_PRIORITY, false);
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Set client name: "+name);
 	}
@@ -327,7 +347,16 @@ public class FCPConnectionHandler {
 	}
 
 	public FCPClient getForeverClient() {
-		return foreverClient;
+		synchronized(this) {
+			while(foreverClient == null && (!failedGetForever) && (!isClosed)) {
+				try {
+					wait();
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+			}
+			return foreverClient;
+		}
 	}
 
 	public void finishedClientRequest(ClientRequest get) {
