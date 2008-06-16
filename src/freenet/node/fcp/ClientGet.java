@@ -77,7 +77,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	public ClientGet(FCPClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
 			int maxSplitfileRetries, int maxNonSplitfileRetries, long maxOutputLength,
 			short returnType, boolean persistRebootOnly, String identifier, int verbosity, short prioClass,
-			File returnFilename, File returnTempFilename, FCPServer server) throws IdentifierCollisionException, NotAllowedException {
+			File returnFilename, File returnTempFilename, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, NotAllowedException {
 		super(uri, identifier, verbosity, null, globalClient, prioClass,
 				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER),
 				null, true);
@@ -122,7 +122,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		returnBucket = ret;
 		if(persistenceType != PERSIST_CONNECTION)
 			try {
-				client.register(this, false);
+				client.register(this, false, container);
 			} catch (IdentifierCollisionException e) {
 				ret.free();
 				throw e;
@@ -136,7 +136,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			}
 	}
 
-	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException {
+	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MessageInvalidException {
 		super(message.uri, message.identifier, message.verbosity, handler, message.priorityClass,
 				message.persistenceType, message.clientToken, message.global);
 		// Create a Fetcher directly in order to get more fine-grained control,
@@ -194,7 +194,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		returnBucket = ret;
 		if(persistenceType != PERSIST_CONNECTION)
 			try {
-				client.register(this, false);
+				client.register(this, false, container);
 			} catch (IdentifierCollisionException e) {
 				ret.free();
 				throw e;
