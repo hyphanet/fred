@@ -285,10 +285,7 @@ public abstract class ClientRequest {
 	public abstract boolean isTotalFinalized();
 
 	public void onMajorProgress(FCPServer server) {
-		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
-			if(client != null)
-				server.forceStorePersistentRequests();
-		}
+		// Ignore
 	}
 
 	/** Start the request, if it has not already been started. */
