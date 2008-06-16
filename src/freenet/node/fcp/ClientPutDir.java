@@ -358,10 +358,15 @@ public class ClientPutDir extends ClientPutBase {
 		return true;
 	}
 
-	public boolean restart(ObjectContainer container, ClientContext context) throws InsertException {
+	public boolean restart(ObjectContainer container, ClientContext context) {
 		if(!canRestart()) return false;
 		setVarsRestart();
-		makePutter();
+		try {
+			makePutter();
+		} catch (InsertException e) {
+			onFailure(e, putter, container);
+			return false;
+		}
 		start(container, context);
 		return true;
 	}

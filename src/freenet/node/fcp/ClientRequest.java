@@ -300,7 +300,7 @@ public abstract class ClientRequest {
 
 	public abstract boolean canRestart();
 
-	public abstract boolean restart(ObjectContainer container, ClientContext context) throws InsertException;
+	public abstract boolean restart(ObjectContainer container, ClientContext context);
 
 	protected abstract FCPMessage persistentTagMessage();
 
@@ -366,14 +366,16 @@ public abstract class ClientRequest {
 		fs.put(name, bucket.toFieldSet());
 	}
 
-	public void restartAsync(Executor executor) {
+	public void restartAsync(Executor executor, FCPServer server) {
 		synchronized(this) {
 			this.started = false;
 		}
-		executor.execute(new Runnable() {
-			public void run() {
-				restart();
+		server.core.clientContext.jobRunner.queue(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				restart(container, context);
 			}
-		}, "Restarting "+this);
+			
+		}, NativeThread.HIGH_PRIORITY, false);
 	}
 }
