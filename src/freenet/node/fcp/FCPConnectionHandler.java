@@ -261,7 +261,8 @@ public class FCPConnectionHandler {
 	public void startClientPut(ClientPutMessage message) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Starting insert ID=\""+message.identifier+ '"');
-		String id = message.identifier;
+		final String id = message.identifier;
+		final boolean global = message.global;
 		ClientPut cp = null;
 		boolean persistent = message.persistenceType != ClientRequest.PERSIST_CONNECTION;
 		FCPMessage failedMessage = null;
@@ -286,6 +287,25 @@ public class FCPConnectionHandler {
 				}
 				if(!persistent)
 					requestsByIdentifier.put(id, cp);
+				else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
+					final ClientPut putter = cp;
+					server.core.clientContext.jobRunner.queue(new DBJob() {
+
+						public void run(ObjectContainer container, ClientContext context) {
+							try {
+								putter.register(container, false, false);
+							} catch (IdentifierCollisionException e) {
+								Logger.normal(this, "Identifier collision on "+this);
+								FCPMessage msg = new IdentifierCollisionMessage(id, global);
+								outputHandler.queue(msg);
+								return;
+							}
+							putter.start(container, context);
+						}
+						
+					}, NativeThread.NORM_PRIORITY, false);
+					return; // Don't run the start() below
+				}
 			}
 			if(!success) {
 				Logger.normal(this, "Identifier collision on "+this);
@@ -297,14 +317,15 @@ public class FCPConnectionHandler {
 			return;
 		} else {
 			Logger.minor(this, "Starting "+cp);
-			cp.start();
+			cp.start(null, server.core.clientContext);
 		}
 	}
 
 	public void startClientPutDir(ClientPutDirMessage message, HashMap buckets, boolean wasDiskPut) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Start ClientPutDir");
-		String id = message.identifier;
+		final String id = message.identifier;
+		final boolean global = message.global;
 		ClientPutDir cp = null;
 		FCPMessage failedMessage = null;
 		boolean persistent = message.persistenceType != ClientRequest.PERSIST_CONNECTION;
@@ -330,6 +351,25 @@ public class FCPConnectionHandler {
 					requestsByIdentifier.put(id, cp);
 				}
 				// FIXME register non-persistent requests in the constructors also, we already register persistent ones...
+			} else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
+				final ClientPutDir putter = cp;
+				server.core.clientContext.jobRunner.queue(new DBJob() {
+
+					public void run(ObjectContainer container, ClientContext context) {
+						try {
+							putter.register(container, false, false);
+						} catch (IdentifierCollisionException e) {
+							Logger.normal(this, "Identifier collision on "+this);
+							FCPMessage msg = new IdentifierCollisionMessage(id, global);
+							outputHandler.queue(msg);
+							return;
+						}
+						putter.start(container, context);
+					}
+					
+				}, NativeThread.NORM_PRIORITY, false);
+				return; // Don't run the start() below
+				
 			}
 			if(!success) {
 				Logger.normal(this, "Identifier collision on "+this);
@@ -344,7 +384,7 @@ public class FCPConnectionHandler {
 		} else {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Starting "+cp);
-			cp.start();
+			cp.start(null, server.core.clientContext);
 		}
 	}
 	

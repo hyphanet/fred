@@ -42,7 +42,7 @@ public class ClientPutDir extends ClientPutBase {
 	private final boolean wasDiskPut;
 	
 	public ClientPutDir(FCPConnectionHandler handler, ClientPutDirMessage message, 
-			HashMap manifestElements, boolean wasDiskPut, FCPServer server, ObjectContainer container) throws IdentifierCollisionException, MalformedURLException {
+			HashMap manifestElements, boolean wasDiskPut, FCPServer server) throws IdentifierCollisionException, MalformedURLException {
 		super(message.uri, message.identifier, message.verbosity, handler,
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
 				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode, server);
@@ -51,13 +51,6 @@ public class ClientPutDir extends ClientPutBase {
 		this.manifestElements = manifestElements;
 		this.defaultName = message.defaultName;
 		makePutter();
-		if(persistenceType != PERSIST_CONNECTION) {
-			client.register(this, false, container);
-			FCPMessage msg = persistentTagMessage();
-			client.queueClientRequestMessage(msg, 0);
-			if(handler != null && (!handler.isGlobalSubscribed()))
-				handler.outputHandler.queue(msg);
-		}
 		if(putter != null) {
 			numberOfFiles = putter.countFiles();
 			totalSize = putter.totalSize();
@@ -71,7 +64,7 @@ public class ClientPutDir extends ClientPutBase {
 	/**
 	*	Puts a disk dir
 	*/
-	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean allowUnreadableFiles, boolean global, boolean earlyEncode, FCPServer server, ObjectContainer container) throws FileNotFoundException, IdentifierCollisionException, MalformedURLException {
+	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean allowUnreadableFiles, boolean global, boolean earlyEncode, FCPServer server) throws FileNotFoundException, IdentifierCollisionException, MalformedURLException {
 		super(uri, identifier, verbosity , null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, server);
 
 		wasDiskPut = true;
@@ -79,11 +72,6 @@ public class ClientPutDir extends ClientPutBase {
 		this.manifestElements = makeDiskDirManifest(dir, "", allowUnreadableFiles);
 		this.defaultName = defaultName;
 		makePutter();
-		if(persistenceType != PERSIST_CONNECTION) {
-			client.register(this, false, container);
-			FCPMessage msg = persistentTagMessage();
-			client.queueClientRequestMessage(msg, 0);
-		}
 		if(putter != null) {
 			numberOfFiles = putter.countFiles();
 			totalSize = putter.totalSize();
@@ -94,6 +82,15 @@ public class ClientPutDir extends ClientPutBase {
 		if(logMINOR) Logger.minor(this, "Putting dir "+identifier+" : "+priorityClass);
 	}
 
+	void register(ObjectContainer container, boolean lazyResume, boolean noTags) throws IdentifierCollisionException {
+		if(persistenceType != PERSIST_CONNECTION)
+			client.register(this, false, container);
+		if(persistenceType != PERSIST_CONNECTION && !noTags) {
+			FCPMessage msg = persistentTagMessage();
+			client.queueClientRequestMessage(msg, 0);
+		}
+	}
+	
 	private HashMap makeDiskDirManifest(File dir, String prefix, boolean allowUnreadableFiles) throws FileNotFoundException {
 
 		HashMap map = new HashMap();
