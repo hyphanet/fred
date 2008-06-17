@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Set;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
@@ -160,7 +162,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	public FreenetURI insertManifest(FreenetURI insertURI, HashMap bucketsByName, String defaultName) throws InsertException {
 		PutWaiter pw = new PutWaiter();
 		SimpleManifestPutter putter =
-			new SimpleManifestPutter(pw, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, this, false);
+			new SimpleManifestPutter(pw, SimpleManifestPutter.bucketsByNameToManifestEntries(bucketsByName), priorityClass, insertURI, defaultName, getInsertContext(true), false, this, false);
 		core.clientContext.start(putter);
 		return pw.waitForCompletion();
 	}
@@ -205,11 +207,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 
 	private final ClientCallback nullCallback = new ClientCallback() {
 
-		public void onFailure(FetchException e, ClientGetter state) {
+		public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 			// Ignore
 		}
 
-		public void onFailure(InsertException e, BaseClientPutter state) {
+		public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 			// Impossible
 		}
 
@@ -225,11 +227,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 			// Ignore
 		}
 
-		public void onSuccess(FetchResult result, ClientGetter state) {
+		public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 			result.data.free();
 		}
 
-		public void onSuccess(BaseClientPutter state) {
+		public void onSuccess(BaseClientPutter state, ObjectContainer container) {
 			// Impossible
 		}
 		
