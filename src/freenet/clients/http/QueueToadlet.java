@@ -161,7 +161,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 						clientRequest.restartAsync();
 					}
 				}
-				fcp.forceStorePersistentRequests();
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if(request.isPartSet("remove_AllRequests") && (request.getPartAsString("remove_AllRequests", 32).length() > 0)) {
@@ -192,7 +191,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 							));
 				else
 					writePermanentRedirect(ctx, "Done", "/queue/");
-				fcp.forceStorePersistentRequests();
 				return;
 			}else if(request.isPartSet("download")) {
 				// Queue a download
@@ -233,7 +231,6 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					}
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");
-				fcp.forceStorePersistentRequests();
 				return;
 			} else if (request.getPartAsString("insert", 128).length() > 0) {
 				FreenetURI insertURI;
@@ -269,7 +266,6 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				try {
 					ClientPut clientPut = new ClientPut(fcp.getGlobalForeverClient(), insertURI, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, null, file.getContentType(), copiedBucket, null, fnam, false);
 					clientPut.start();
-					fcp.forceStorePersistentRequests();
 				} catch (IdentifierCollisionException e) {
 					e.printStackTrace();
 				} catch (NotAllowedException e) {
@@ -307,7 +303,6 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, false, -1, ClientPutMessage.UPLOAD_FROM_DISK, file, contentType, new FileBucket(file, true, false, false, false, false), null, target, false);
 					if(logMINOR) Logger.minor(this, "Started global request to insert "+file+" to CHK@ as "+identifier);
 					clientPut.start();
-					fcp.forceStorePersistentRequests();
 				} catch (IdentifierCollisionException e) {
 					e.printStackTrace();
 				} catch (MalformedURLException e) {
@@ -341,7 +336,6 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					ClientPutDir clientPutDir = new ClientPutDir(fcp.getGlobalClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, false, -1, file, null, false, true, false);
 					if(logMINOR) Logger.minor(this, "Started global request to insert dir "+file+" to "+furi+" as "+identifier);
 					clientPutDir.start();
-					fcp.forceStorePersistentRequests();
 				} catch (IdentifierCollisionException e) {
 					e.printStackTrace();
 				} catch (MalformedURLException e) {
