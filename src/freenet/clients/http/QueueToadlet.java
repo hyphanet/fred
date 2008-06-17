@@ -346,50 +346,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 				fcp.startBlocking(clientPutDir);
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
-			} else if (request.isPartSet("get")) {
-				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
-				ClientRequest[] clientRequests = fcp.getGlobalRequests();
-loop:				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
-					ClientRequest clientRequest = clientRequests[requestIndex];
-					if (clientRequest.getIdentifier().equals(identifier)) {
-						if (clientRequest instanceof ClientGet) {
-							ClientGet clientGet = (ClientGet) clientRequest;
-							if (clientGet.hasSucceeded()) {
-								Bucket dataBucket = clientGet.getBucket();
-								if (dataBucket != null) {
-									String forceDownload = request.getPartAsString("forceDownload", 32);
-									if (forceDownload.length() > 0) {
-										long forceDownloadTime = Long.parseLong(forceDownload);
-										if ((System.currentTimeMillis() - forceDownloadTime) > 60 * 1000) {
-											break loop;
-										}
-										MultiValueTable responseHeaders = new MultiValueTable();
-										responseHeaders.put("Content-Disposition", "attachment; filename=\"" + clientGet.getURI().getPreferredFilename() + '"');
-										writeReply(ctx, 200, "application/x-msdownload", "OK", responseHeaders, dataBucket);
-										return;
-									}
-									HTMLNode pageNode = ctx.getPageMaker().getPageNode(L10n.getString("QueueToadlet.warningUnsafeContent"), ctx);
-									HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-									HTMLNode alertNode = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-alert", L10n.getString("QueueToadlet.warningUnsafeContent")));
-									HTMLNode alertContent = ctx.getPageMaker().getContentNode(alertNode);
-									alertContent.addChild("#", L10n.getString("QueueToadlet.warningUnsafeContentExplanation"));
-									HTMLNode optionListNode = alertContent.addChild("ul");
-									HTMLNode optionForm = ctx.addFormChild(optionListNode, "/queue/", "queueDownloadNotFilteredConfirmForm-" + identifier.hashCode());
-									optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "identifier", identifier });
-									optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "forceDownload", String.valueOf(System.currentTimeMillis()) });
-									optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "get", "Download anyway" });
-									optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "return", "Return to queue page" });
-									writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-									return;
-								}
-							}
-							writeError(L10n.getString("QueueToadlet.errorDownloadNotCompleted"), L10n.getString("QueueToadlet.errorDownloadNotCompleted"), ctx);
-							return;
-						}
-					}
-				}
-				writeError(L10n.getString("QueueToadlet.errorDownloadNotFound"), L10n.getString("QueueToadlet.errorDownloadNotFoundExplanation"), ctx);
-				return;
 			}
 		} finally {
 			request.freeParts();
