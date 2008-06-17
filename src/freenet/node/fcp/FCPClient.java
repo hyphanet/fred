@@ -11,6 +11,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
+import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
@@ -360,5 +361,14 @@ public class FCPClient {
 			req.cancel();
 			req.delete(container);
 		}
+	}
+
+	public ClientGet getCompletedRequest(FreenetURI key, ObjectContainer container) {
+		// FIXME speed this up with another hashmap or something.
+		for(int i=0;i<completedUnackedRequests.size();i++) {
+			ClientGet getter = (ClientGet) completedUnackedRequests.get(i);
+			if(getter.getURI().equals(key)) return getter;
+		}
+		return null;
 	}
 }

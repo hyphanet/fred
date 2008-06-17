@@ -25,8 +25,10 @@ import org.tanukisoftware.wrapper.WrapperManager;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.FetchContext;
+import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertContext;
 import freenet.client.async.ClientContext;
@@ -925,6 +927,55 @@ public class FCPServer implements Runnable {
 						}
 					} else {
 						return;
+					}
+				}
+			}
+		}
+	}
+
+	public FetchResult getCompletedRequestBlocking(final FreenetURI key) {
+		ClientGet get = globalRebootClient.getCompletedRequest(key, null);
+		if(get != null) {
+			// FIXME race condition with free() - arrange refcounting for the data to prevent this
+			return new FetchResult(new ClientMetadata(get.getMIMEType()), get.getBucket());
+		}
+		
+		class OutputWrapper {
+			FetchResult result;
+			boolean done;
+		}
+		
+		final OutputWrapper ow = new OutputWrapper();
+		
+		core.clientContext.jobRunner.queue(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				FetchResult result = null;
+				try {
+					ClientGet get = globalForeverClient.getCompletedRequest(key, container);
+					if(get != null) {
+						result = new FetchResult(new ClientMetadata(get.getMIMEType()), get.getBucket());
+					}
+				} finally {
+					synchronized(ow) {
+						ow.result = result;
+						ow.done = true;
+						ow.notifyAll();
+					}
+				}
+			}
+			
+		}, NativeThread.HIGH_PRIORITY, false);
+		
+		synchronized(ow) {
+			while(true) {
+				if(ow.done) {
+					return ow.result;
+				} else {
+					try {
+						ow.wait();
+					} catch (InterruptedException e) {
+						// Ignore
 					}
 				}
 			}

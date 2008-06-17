@@ -29,6 +29,7 @@ import java.util.List;
 import com.db4o.ObjectContainer;
 
 import freenet.client.DefaultMIMETypes;
+import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.MetadataUnresolvedException;
 import freenet.client.async.ClientContext;
@@ -447,20 +448,13 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				FreenetURI key = new FreenetURI(requestPath);
 				
 				/* locate request */
-				ClientRequest[] clientRequests = fcp.getGlobalRequests();
-				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
-					ClientRequest clientRequest = clientRequests[requestIndex];
-					if (clientRequest.hasFinished() && (clientRequest instanceof ClientGet)) {
-						ClientGet clientGet = (ClientGet) clientRequest;
-						if (clientGet.getURI().equals(key)) {
-							Bucket data = clientGet.getBucket();
-							String mimeType = clientGet.getMIMEType();
-							String requestedMimeType = request.getParam("type", null);
-							String forceString = request.getParam("force");
-							FProxyToadlet.handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, forceString, request.isParameterSet("forcedownload"), "/queue/", key, "", "/queue/", false, ctx);
-							return;
-						}
-					}
+				FetchResult result = fcp.getCompletedRequestBlocking(key);
+				if(result != null) {
+					Bucket data = result.asBucket();
+					String mimeType = result.getMimeType();
+					String requestedMimeType = request.getParam("type", null);
+					String forceString = request.getParam("force");
+					FProxyToadlet.handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, forceString, request.isParameterSet("forcedownload"), "/queue/", key, "", "/queue/", false, ctx);
 				}
 			} catch (MalformedURLException mue1) {
 			}
