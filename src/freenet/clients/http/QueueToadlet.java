@@ -1139,20 +1139,26 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		if(!readCompletedIdentifiers(completedIdentifiersList)) {
 			readCompletedIdentifiers(completedIdentifiersListNew);
 		}
-		String[] identifiers;
-		synchronized(completedRequestIdentifiers) {
-			identifiers = (String[]) completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
-		}
-		for(int i=0;i<identifiers.length;i++) {
-			ClientRequest req = fcp.getGlobalRequest(identifiers[i]);
-			if(req == null) {
+		core.clientContext.jobRunner.queue(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				String[] identifiers;
 				synchronized(completedRequestIdentifiers) {
-					completedRequestIdentifiers.remove(identifiers[i]);
+					identifiers = (String[]) completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
 				}
-				continue;
+				for(int i=0;i<identifiers.length;i++) {
+					ClientRequest req = fcp.getGlobalRequest(identifiers[i], container);
+					if(req == null) {
+						synchronized(completedRequestIdentifiers) {
+							completedRequestIdentifiers.remove(identifiers[i]);
+						}
+						continue;
+					}
+					registerAlert(req);
+				}
 			}
-			registerAlert(req);
-		}
+			
+		}, NativeThread.HIGH_PRIORITY, false);
 	}
 	
 	private boolean readCompletedIdentifiers(File file) {
