@@ -124,7 +124,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 					returnBucket, null);
 	}
 	
-	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException, FetchException {
+	public ClientGet(FCPConnectionHandler handler, ClientGetMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException {
 		super(message.uri, message.identifier, message.verbosity, handler, message.priorityClass,
 				message.persistenceType, message.clientToken, message.global);
 		// Create a Fetcher directly in order to get more fine-grained control,
@@ -173,7 +173,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
 				getter = null;
 				returnBucket = null;
-				throw new FetchException(FetchException.BUCKET_ERROR, e);
+				// This is *not* a FetchException since we don't register it: it's a protocol error.
+				throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, "Cannot create bucket for temporary storage (out of disk space???): "+e, identifier, global);
 			}
 		}
 		if(ret == null)

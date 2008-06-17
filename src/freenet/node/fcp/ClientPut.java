@@ -153,7 +153,7 @@ public class ClientPut extends ClientPutBase {
 				null, targetFilename, binaryBlob);
 	}
 	
-	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException, MalformedURLException, InsertException {
+	public ClientPut(FCPConnectionHandler handler, ClientPutMessage message, FCPServer server) throws IdentifierCollisionException, MessageInvalidException, MalformedURLException {
 		super(message.uri, message.identifier, message.verbosity, handler, 
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
 				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode, server);
@@ -210,7 +210,8 @@ public class ClientPut extends ClientPutBase {
 				this.data = null;
 				clientMetadata = cm;
 				putter = null;
-				throw new InsertException(InsertException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null);
+				// This is *not* an InsertException since we don't register it: it's a protocol error.
+				throw new MessageInvalidException(ProtocolErrorMessage.INTERNAL_ERROR, "Impossible: metadata unresolved: "+e, identifier, global);
 			}
 			tempData = new SimpleReadOnlyArrayBucket(d);
 			isMetadata = true;

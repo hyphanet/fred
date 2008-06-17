@@ -70,7 +70,7 @@ class SingleFileInserter implements ClientPutState {
 	SingleFileInserter(BaseClientPutter parent, PutCompletionCallback cb, InsertBlock block, 
 			boolean metadata, InsertContext ctx, boolean dontCompress, 
 			boolean getCHKOnly, boolean reportMetadataOnly, Object token, boolean insertAsArchiveManifest, 
-			boolean freeData, String targetFilename, boolean earlyEncode) throws InsertException {
+			boolean freeData, String targetFilename, boolean earlyEncode) {
 		this.earlyEncode = earlyEncode;
 		this.reportMetadataOnly = reportMetadataOnly;
 		this.token = token;
@@ -505,7 +505,6 @@ class SingleFileInserter implements ClientPutState {
 				return;
 			}
 			InsertBlock newBlock = new InsertBlock(metadataBucket, null, block.desiredURI);
-			try {
 				synchronized(this) {
 					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, false, true, metaPutterTargetFilename, earlyEncode);
 					// If EarlyEncode, then start the metadata insert ASAP, to get the key.
@@ -513,10 +512,6 @@ class SingleFileInserter implements ClientPutState {
 					if(!(earlyEncode || splitInsertSuccess)) return;
 				}
 				if(logMINOR) Logger.minor(this, "Putting metadata on "+metadataPutter+" from "+sfi+" ("+((SplitFileInserter)sfi).getLength()+ ')');
-			} catch (InsertException e1) {
-				cb.onFailure(e1, this, container, context);
-				return;
-			}
 			startMetadata(container, context);
 		}
 

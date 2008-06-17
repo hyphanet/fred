@@ -42,7 +42,7 @@ public class ClientPutDir extends ClientPutBase {
 	private final boolean wasDiskPut;
 	
 	public ClientPutDir(FCPConnectionHandler handler, ClientPutDirMessage message, 
-			HashMap manifestElements, boolean wasDiskPut, FCPServer server) throws IdentifierCollisionException, MalformedURLException, InsertException {
+			HashMap manifestElements, boolean wasDiskPut, FCPServer server) throws IdentifierCollisionException, MalformedURLException {
 		super(message.uri, message.identifier, message.verbosity, handler,
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
 				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode, server);
@@ -65,7 +65,7 @@ public class ClientPutDir extends ClientPutBase {
 	*	Puts a disk dir
 	 * @throws InsertException 
 	*/
-	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean allowUnreadableFiles, boolean global, boolean earlyEncode, FCPServer server) throws FileNotFoundException, IdentifierCollisionException, MalformedURLException, InsertException {
+	public ClientPutDir(FCPClient client, FreenetURI uri, String identifier, int verbosity, short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly, boolean dontCompress, int maxRetries, File dir, String defaultName, boolean allowUnreadableFiles, boolean global, boolean earlyEncode, FCPServer server) throws FileNotFoundException, IdentifierCollisionException, MalformedURLException {
 		super(uri, identifier, verbosity , null, client, priorityClass, persistenceType, clientToken, global, getCHKOnly, dontCompress, maxRetries, earlyEncode, server);
 
 		wasDiskPut = true;
@@ -127,7 +127,7 @@ public class ClientPutDir extends ClientPutBase {
 		return map;
 	}
 	
-	private void makePutter() throws InsertException {
+	private void makePutter() {
 		SimpleManifestPutter p;
 			p = new SimpleManifestPutter(this, 
 					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly,
@@ -138,7 +138,7 @@ public class ClientPutDir extends ClientPutBase {
 
 
 
-	public ClientPutDir(SimpleFieldSet fs, FCPClient client, FCPServer server) throws PersistenceParseException, IOException, InsertException {
+	public ClientPutDir(SimpleFieldSet fs, FCPClient client, FCPServer server) throws PersistenceParseException, IOException {
 		super(fs, client, server);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		SimpleFieldSet files = fs.subset("Files");
@@ -204,16 +204,11 @@ public class ClientPutDir extends ClientPutBase {
 		}
 		manifestElements = SimpleManifestPutter.unflatten(v);
 		SimpleManifestPutter p = null;
-		try {
 			if(!finished)
 				p = new SimpleManifestPutter(this, 
 						manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, 
 						client.lowLevelClient,
 						earlyEncode);
-		} catch (InsertException e) {
-			p = null;
-			throw e;
-		}
 		putter = p;
 		numberOfFiles = fileCount;
 		totalSize = size;
@@ -361,12 +356,7 @@ public class ClientPutDir extends ClientPutBase {
 	public boolean restart(ObjectContainer container, ClientContext context) {
 		if(!canRestart()) return false;
 		setVarsRestart();
-		try {
 			makePutter();
-		} catch (InsertException e) {
-			onFailure(e, putter, container);
-			return false;
-		}
 		start(container, context);
 		return true;
 	}

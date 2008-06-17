@@ -34,7 +34,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	private class PutHandler extends BaseClientPutter implements PutCompletionCallback {
 		
-		protected PutHandler(final SimpleManifestPutter smp, String name, Bucket data, ClientMetadata cm, boolean getCHKOnly) throws InsertException {
+		protected PutHandler(final SimpleManifestPutter smp, String name, Bucket data, ClientMetadata cm, boolean getCHKOnly) {
 			super(smp.priorityClass, smp.client);
 			this.cm = cm;
 			this.data = data;
@@ -213,7 +213,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	
 	public SimpleManifestPutter(ClientCallback cb, 
 			HashMap manifestElements, short prioClass, FreenetURI target, 
-			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode) throws InsertException {
+			String defaultName, InsertContext ctx, boolean getCHKOnly, RequestClient clientContext, boolean earlyEncode) {
 		super(prioClass, clientContext);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.defaultName = defaultName;
@@ -271,11 +271,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 	
-	private void makePutHandlers(HashMap manifestElements, HashMap putHandlersByName) throws InsertException {
+	private void makePutHandlers(HashMap manifestElements, HashMap putHandlersByName) {
 		makePutHandlers(manifestElements, putHandlersByName, "/");
 	}
 	
-	private void makePutHandlers(HashMap manifestElements, HashMap putHandlersByName, String ZipPrefix) throws InsertException {
+	private void makePutHandlers(HashMap manifestElements, HashMap putHandlersByName, String ZipPrefix) {
 		Iterator it = manifestElements.keySet().iterator();
 		while(it.hasNext()) {
 			String name = (String) it.next();
@@ -313,12 +313,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 						numberOfFiles++;
 						totalSize += data.size();
 					} else {
-						try {
 							ph = new PutHandler(this,name, data, cm, getCHKOnly);
-						} catch (InsertException e) {
-							cancelAndFinish();
-							throw e;
-						}
 						runningPutHandlers.add(ph);
 						putHandlersWaitingForMetadata.add(ph);
 						putHandlersWaitingForFetchable.add(ph);
