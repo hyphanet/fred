@@ -119,7 +119,7 @@ public class FCPServer implements Runnable {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
 		if(enabled && enablePersistentDownloads) {
-			loadPersistentRequests();
+			loadPersistentRequests(container);
 		} else {
 			Logger.error(this, "Not loading persistent requests: enabled="+enabled+" enable persistent downloads="+enablePersistentDownloads);
 		}
@@ -494,7 +494,7 @@ public class FCPServer implements Runnable {
 		}
 	}
 
-	private void loadPersistentRequests() {
+	private void loadPersistentRequests(ObjectContainer container) {
 		Logger.normal(this, "Loading persistent requests...");
 		FileInputStream fis = null;
 		BufferedInputStream bis = null;
@@ -506,7 +506,7 @@ public class FCPServer implements Runnable {
 			bis = new BufferedInputStream(gis);
 			Logger.normal(this, "Loading persistent requests from "+file);
 			if (file.length() > 0) {
-				loadPersistentRequests(bis);
+				loadPersistentRequests(bis, container);
 				haveLoadedPersistentRequests = true;
 			} else
 				throw new IOException("File empty"); // If it's empty, try the temp file.
@@ -520,7 +520,7 @@ public class FCPServer implements Runnable {
 			try {
 				fis = new FileInputStream(file);
 				bis = new BufferedInputStream(fis);
-				loadPersistentRequests(bis);
+				loadPersistentRequests(bis, container);
 				haveLoadedPersistentRequests = true;
 			} catch (IOException e1) {
 				Logger.normal(this, "It's corrupted too : Not reading any persistent requests from disk: "+e1);
@@ -533,7 +533,7 @@ public class FCPServer implements Runnable {
 		}
 	}
 	
-	private void loadPersistentRequests(InputStream is) throws IOException {
+	private void loadPersistentRequests(InputStream is, ObjectContainer container) throws IOException {
 		synchronized(persistenceSync) {
 			InputStreamReader ris = new InputStreamReader(is, "UTF-8");
 			BufferedReader br = new BufferedReader(ris);
@@ -549,7 +549,7 @@ public class FCPServer implements Runnable {
 				for(int i = 0; i < count; i++) {
 					WrapperManager.signalStarting(20 * 60 * 1000);  // 20 minutes per request; must be >ds lock timeout (10 minutes)
 					System.out.println("Loading persistent request " + (i + 1) + " of " + count + "..."); // humans count from 1..
-					ClientRequest.readAndRegister(br, this);
+					ClientRequest.readAndRegister(br, this, container, core.clientContext);
 				}
 				Logger.normal(this, "Loaded "+count+" persistent requests");
 			}

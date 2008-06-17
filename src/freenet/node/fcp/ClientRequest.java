@@ -149,7 +149,7 @@ public abstract class ClientRequest {
 		return Short.parseShort(string);
 	}
 
-	public static ClientRequest readAndRegister(BufferedReader br, FCPServer server) throws IOException {
+	public static ClientRequest readAndRegister(BufferedReader br, FCPServer server, ObjectContainer container, ClientContext context) throws IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequest.class);
 		Runtime rt = Runtime.getRuntime();
 		if(logMINOR)
@@ -164,9 +164,9 @@ public abstract class ClientRequest {
 		}
 		FCPClient client;
 		if(!isGlobal)
-			client = server.registerClient(clientName, server.core, null);
+			client = server.registerForeverClient(clientName, server.core, null, container);
 		else
-			client = server.globalClient;
+			client = server.globalForeverClient;
 		if(logMINOR)
 			Logger.minor(ClientRequest.class, rt.maxMemory()-rt.freeMemory()+" in use loading request "+clientName+" "+fs.get("Identifier"));
 		try {
@@ -175,17 +175,17 @@ public abstract class ClientRequest {
 			if(type.equals("GET")) {
 				ClientGet cg = new ClientGet(fs, client, server);
 				cg.register(container, lazyResume, true);
-				if(!lazyResume) cg.start();
+				if(!lazyResume) cg.start(container, context);
 				return cg;
 			} else if(type.equals("PUT")) {
 				ClientPut cp = new ClientPut(fs, client, server);
-				client.register(cp, lazyResume);
-				if(!lazyResume) cp.start();
+				client.register(cp, lazyResume, container);
+				if(!lazyResume) cp.start(container, context);
 				return cp;
 			} else if(type.equals("PUTDIR")) {
 				ClientPutDir cp = new ClientPutDir(fs, client, server);
-				client.register(cp, lazyResume);
-				if(!lazyResume) cp.start();
+				client.register(cp, lazyResume, container);
+				if(!lazyResume) cp.start(container, context);
 				return cp;
 			} else {
 				Logger.error(ClientRequest.class, "Unrecognized type: "+type);
