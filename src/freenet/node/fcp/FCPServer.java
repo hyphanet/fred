@@ -562,9 +562,10 @@ public class FCPServer implements Runnable {
 		}
 	}
 
-	public ClientRequest[] getGlobalRequests() {
+	public ClientRequest[] getGlobalRequests(ObjectContainer container) {
 		Vector v = new Vector();
-		globalClient.addPersistentRequests(v, false);
+		globalRebootClient.addPersistentRequests(v, false, null);
+		globalForeverClient.addPersistentRequests(v, false, container);
 		return (ClientRequest[]) v.toArray(new ClientRequest[v.size()]);
 	}
 

@@ -371,7 +371,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		writeHTMLReply(context, 400, "Bad request", pageNode.generate());
 	}
 
-	public void handleGet(URI uri, final HTTPRequest request, ToadletContext ctx) 
+	public void handleGet(URI uri, final HTTPRequest request, final ToadletContext ctx) 
 	throws ToadletContextClosedException, IOException, RedirectException {
 		
 		// We ensure that we have a FCP server running
@@ -406,7 +406,52 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			return;
 		}
 		
-		PageMaker pageMaker = ctx.getPageMaker();
+		class OutputWrapper {
+			boolean done;
+			HTMLNode pageNode;
+		}
+		
+		final OutputWrapper ow = new OutputWrapper();
+		
+		final PageMaker pageMaker = ctx.getPageMaker();
+		
+		core.clientContext.jobRunner.queue(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				HTMLNode pageNode = null;
+				try {
+					pageNode = handleGetInner(pageMaker, container, context, request, ctx);
+				} finally {
+					synchronized(ow) {
+						ow.done = true;
+						ow.notifyAll();
+					}
+				}
+			}
+			
+		}, NativeThread.HIGH_PRIORITY, false);
+		
+		HTMLNode pageNode;
+		synchronized(ow) {
+			while(true) {
+				if(ow.done) {
+					pageNode = ow.pageNode;
+					break;
+				}
+				try {
+					ow.wait();
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+			}
+		}
+		
+		MultiValueTable pageHeaders = new MultiValueTable();
+		writeHTMLReply(ctx, 200, "OK", pageHeaders, pageNode.generate());
+
+	}
+	
+	private HTMLNode handleGetInner(PageMaker pageMaker, ObjectContainer container, ClientContext context, final HTTPRequest request, ToadletContext ctx) {
 		
 		// First, get the queued requests, and separate them into different types.
 		LinkedList completedDownloadToDisk = new LinkedList();
@@ -422,7 +467,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		LinkedList uncompletedUpload = new LinkedList();
 		LinkedList uncompletedDirUpload = new LinkedList();
 		
-		ClientRequest[] reqs = fcp.getGlobalRequests();
+		ClientRequest[] reqs = fcp.getGlobalRequests(container);
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Request count: "+reqs.length);
 		
@@ -436,8 +481,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
 			infoboxContent.addChild("#", L10n.getString("QueueToadlet.noTaskOnGlobalQueue"));
 			contentNode.addChild(createInsertBox(pageMaker, ctx, core.isAdvancedModeEnabled()));
-			writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-			return;
+			return pageNode;
 		}
 
 		short lowestQueuedPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
@@ -739,8 +783,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			}
 		}
 		
-		MultiValueTable pageHeaders = new MultiValueTable();
-		writeHTMLReply(ctx, 200, "OK", pageHeaders, pageNode.generate());
+		return pageNode;
 	}
 
 	
