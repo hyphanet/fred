@@ -932,6 +932,53 @@ public class FCPServer implements Runnable {
 			}
 		}
 	}
+	
+	public boolean restartBlocking(final String identifier) {
+		ClientRequest req = globalRebootClient.getRequest(identifier, null);
+		if(req != null) {
+			req.restart(null, core.clientContext);
+			return true;
+		} else {
+			class OutputWrapper {
+				boolean done;
+				boolean success;
+			}
+			final OutputWrapper ow = new OutputWrapper();
+			core.clientContext.jobRunner.queue(new DBJob() {
+
+				public void run(ObjectContainer container, ClientContext context) {
+					boolean success = false;
+					try {
+						ClientRequest req = globalForeverClient.getRequest(identifier, container);
+						if(req != null) {
+							req.restart(container, context);
+							success = true;
+						}
+					} finally {
+						synchronized(ow) {
+							ow.success = success;
+							ow.done = true;
+							ow.notifyAll();
+						}
+					}
+				}
+				
+			}, NativeThread.HIGH_PRIORITY, false);
+			
+			synchronized(ow) {
+				while(true) {
+					if(ow.done) return ow.success;
+					try {
+						ow.wait();
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+				}
+			}
+		}
+	}
+
+
 
 	public FetchResult getCompletedRequestBlocking(final FreenetURI key) {
 		ClientGet get = globalRebootClient.getCompletedRequest(key, null);

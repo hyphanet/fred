@@ -161,13 +161,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			} else if(request.isPartSet("restart_request") && (request.getPartAsString("restart_request", 32).length() > 0)) {
 				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
 				if(logMINOR) Logger.minor(this, "Restarting "+identifier);
-				ClientRequest[] clientRequests = fcp.getGlobalRequests();
-				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
-					ClientRequest clientRequest = clientRequests[requestIndex];
-					if (clientRequest.getIdentifier().equals(identifier)) {
-						clientRequest.restartAsync(fcp);
-					}
-				}
+				fcp.restartBlocking(identifier);
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if(request.isPartSet("remove_AllRequests") && (request.getPartAsString("remove_AllRequests", 32).length() > 0)) {
