@@ -559,7 +559,7 @@ public class FCPConnectionHandler {
 			req = (ClientRequest) requestsByIdentifier.remove(identifier);
 		}
 		if(req != null) {
-			req.requestWasRemoved();
+			req.requestWasRemoved(null);
 			if(kill)
 				req.cancel();
 		}
