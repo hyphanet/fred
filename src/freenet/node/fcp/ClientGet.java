@@ -73,11 +73,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	 * Create one for a global-queued request not made by FCP.
 	 * @throws IdentifierCollisionException
 	 * @throws NotAllowedException 
+	 * @throws IOException 
 	 */
 	public ClientGet(FCPClient globalClient, FreenetURI uri, boolean dsOnly, boolean ignoreDS,
 			int maxSplitfileRetries, int maxNonSplitfileRetries, long maxOutputLength,
 			short returnType, boolean persistRebootOnly, String identifier, int verbosity, short prioClass,
-			File returnFilename, File returnTempFilename, FCPServer server) throws IdentifierCollisionException, NotAllowedException, FetchException {
+			File returnFilename, File returnTempFilename, FCPServer server) throws IdentifierCollisionException, NotAllowedException, IOException {
 		super(uri, identifier, verbosity, null, globalClient, prioClass,
 				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER),
 				null, true);
@@ -106,17 +107,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		} else {
 			targetFile = null;
 			tempFile = null;
-			try {
 				if(persistenceType == PERSIST_FOREVER)
 					ret = server.core.persistentTempBucketFactory.makeEncryptedBucket();
 				else
 					ret = fctx.bucketFactory.makeBucket(-1);
-			} catch (IOException e) {
-				Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
-				getter = null;
-				returnBucket = null;
-				throw new FetchException(FetchException.BUCKET_ERROR, e);
-			}
 		}
 		returnBucket = ret;
 			getter = new ClientGetter(this, server.core.requestStarters.chkFetchScheduler, server.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass,

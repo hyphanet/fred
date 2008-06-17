@@ -575,8 +575,9 @@ public class FCPServer implements Runnable {
 	 * @param persistence The persistence type.
 	 * @param returnType The return type.
 	 * @throws NotAllowedException 
+	 * @throws IOException 
 	 */
-	public void makePersistentGlobalRequest(FreenetURI fetchURI, String expectedMimeType, String persistenceTypeString, String returnTypeString, ObjectContainer container) throws NotAllowedException {
+	public void makePersistentGlobalRequest(FreenetURI fetchURI, String expectedMimeType, String persistenceTypeString, String returnTypeString, ObjectContainer container) throws NotAllowedException, IOException {
 		boolean persistence = persistenceTypeString.equalsIgnoreCase("reboot");
 		short returnType = ClientGetMessage.parseReturnType(returnTypeString);
 		File returnFilename = null, returnTempFilename = null;
@@ -654,7 +655,7 @@ public class FCPServer implements Runnable {
 	}
 
 	private void innerMakePersistentGlobalRequest(FreenetURI fetchURI, boolean persistRebootOnly, short returnType, String id, File returnFilename, 
-			File returnTempFilename, ObjectContainer container) throws IdentifierCollisionException, NotAllowedException {
+			File returnTempFilename, ObjectContainer container) throws IdentifierCollisionException, NotAllowedException, IOException {
 		final ClientGet cg = 
 			new ClientGet(persistRebootOnly ? globalRebootClient : globalForeverClient, fetchURI, defaultFetchContext.localRequestOnly, 
 					defaultFetchContext.ignoreStore, QUEUE_MAX_RETRIES, QUEUE_MAX_RETRIES,
