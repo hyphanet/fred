@@ -97,12 +97,13 @@ public class ClientPut extends ClientPutBase {
 	 * @throws NotAllowedException 
 	 * @throws FileNotFoundException 
 	 * @throws MalformedURLException 
+	 * @throws MetadataUnresolvedException 
 	 * @throws InsertException 
 	 */
 	public ClientPut(FCPClient globalClient, FreenetURI uri, String identifier, int verbosity, 
 			short priorityClass, short persistenceType, String clientToken, boolean getCHKOnly,
 			boolean dontCompress, int maxRetries, short uploadFromType, File origFilename, String contentType,
-			Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode, FCPServer server) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException, MalformedURLException, InsertException {
+			Bucket data, FreenetURI redirectTarget, String targetFilename, boolean earlyEncode, FCPServer server) throws IdentifierCollisionException, NotAllowedException, FileNotFoundException, MalformedURLException, MetadataUnresolvedException {
 		super(uri, identifier, verbosity, null, globalClient, priorityClass, persistenceType, null, true, getCHKOnly, dontCompress, maxRetries, earlyEncode, server);
 		if(uploadFromType == ClientPutMessage.UPLOAD_FROM_DISK) {
 			if(!server.core.allowUploadFrom(origFilename))
@@ -128,16 +129,7 @@ public class ClientPut extends ClientPutBase {
 			this.targetURI = redirectTarget;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, cm);
 			byte[] d;
-			try {
-				d = m.writeToByteArray();
-			} catch (MetadataUnresolvedException e) {
-				// Impossible
-				Logger.error(this, "Impossible: "+e, e);
-				this.data = null;
-				clientMetadata = cm;
-				putter = null;
-				throw new InsertException(InsertException.INTERNAL_ERROR, "Impossible: "+e+" in ClientPut", null);
-			}
+			d = m.writeToByteArray();
 			tempData = new SimpleReadOnlyArrayBucket(d);
 			isMetadata = true;
 		} else

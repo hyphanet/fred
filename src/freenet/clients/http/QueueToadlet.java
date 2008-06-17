@@ -26,8 +26,13 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.DefaultMIMETypes;
 import freenet.client.HighLevelSimpleClient;
+import freenet.client.MetadataUnresolvedException;
+import freenet.client.async.ClientContext;
+import freenet.client.async.DBJob;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
@@ -54,6 +59,7 @@ import freenet.support.api.HTTPUploadedFile;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
+import freenet.support.io.NativeThread;
 
 public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 
@@ -202,7 +208,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 				String persistence = request.getPartAsString("persistence", 32);
 				String returnType = request.getPartAsString("return-type", 32);
 				try {
-					fcp.makePersistentGlobalRequest(fetchURI, expectedMIMEType, persistence, returnType);
+					fcp.makePersistentGlobalRequestBlocking(fetchURI, expectedMIMEType, persistence, returnType);
 				} catch (NotAllowedException e) {
 					this.writeError(L10n.getString("QueueToadlet.errorDToDisk"), L10n.getString("QueueToadlet.errorDToDiskConfig"), ctx);
 					return;
@@ -212,14 +218,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			} else if (request.isPartSet("change_priority")) {
 				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
 				short newPriority = Short.parseShort(request.getPartAsString("priority", 32));
-				ClientRequest[] clientRequests = fcp.getGlobalRequests();
-loop:				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
-					ClientRequest clientRequest = clientRequests[requestIndex];
-					if (clientRequest.getIdentifier().equals(identifier)) {
-						clientRequest.modifyRequest(null, newPriority); // no new ClientToken
-						break loop;
-					}
-				}
+				fcp.modifyGlobalRequestBlocking(identifier, null, newPriority);
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if (request.getPartAsString("insert", 128).length() > 0) {
@@ -253,11 +252,13 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				/* copy bucket data */
 				Bucket copiedBucket = core.persistentEncryptedTempBucketFactory.makeBucket(file.getData().size());
 				BucketTools.copy(file.getData(), copiedBucket);
+				final ClientPut clientPut;
 				try {
-					ClientPut clientPut = new ClientPut(fcp.getGlobalForeverClient(), insertURI, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, null, file.getContentType(), copiedBucket, null, fnam, false);
-					clientPut.start();
+					clientPut = new ClientPut(fcp.getGlobalForeverClient(), insertURI, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, null, file.getContentType(), copiedBucket, null, fnam, false, fcp);
 				} catch (IdentifierCollisionException e) {
-					e.printStackTrace();
+					Logger.error(this, "Cannot put same file twice in same millisecond");
+					writePermanentRedirect(ctx, "Done", "/queue/");
+					return;
 				} catch (NotAllowedException e) {
 					this.writeError(L10n.getString("QueueToadlet.errorAccessDenied"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getFilename() }), ctx);
 					return;
@@ -267,7 +268,14 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				} catch (MalformedURLException mue1) {
 					writeError(L10n.getString("QueueToadlet.errorInvalidURI"), L10n.getString("QueueToadlet.errorInvalidURIToU"), ctx);
 					return;
+				} catch (MetadataUnresolvedException e) {
+					Logger.error(this, "Unresolved metadata in starting insert from data uploaded from browser: "+e, e);
+					writePermanentRedirect(ctx, "Done", "/queue/");
+					return;
+					// FIXME should this be a proper localised message? It shouldn't happen... but we'd like to get reports if it does.
 				}
+				if(clientPut != null)
+					fcp.startBlocking(clientPut);
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if (request.isPartSet("insert-local-file")) {
@@ -289,12 +297,14 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				String target = file.getName();
 				if(!furi.getKeyType().equals("CHK"))
 					target = null;
+				final ClientPut clientPut;
 				try {
-					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, false, -1, ClientPutMessage.UPLOAD_FROM_DISK, file, contentType, new FileBucket(file, true, false, false, false, false), null, target, false);
+					clientPut = new ClientPut(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, false, -1, ClientPutMessage.UPLOAD_FROM_DISK, file, contentType, new FileBucket(file, true, false, false, false, false), null, target, false, fcp);
 					if(logMINOR) Logger.minor(this, "Started global request to insert "+file+" to CHK@ as "+identifier);
-					clientPut.start();
 				} catch (IdentifierCollisionException e) {
-					e.printStackTrace();
+					Logger.error(this, "Cannot put same file twice in same millisecond");
+					writePermanentRedirect(ctx, "Done", "/queue/");
+					return;
 				} catch (MalformedURLException e) {
 					writeError(L10n.getString("QueueToadlet.errorInvalidURI"), L10n.getString("QueueToadlet.errorInvalidURIToU"), ctx);
 					return;
@@ -304,7 +314,13 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				} catch (NotAllowedException e) {
 					this.writeError(L10n.getString("QueueToadlet.errorAccessDenied"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getName() }), ctx);
 					return;
+				} catch (MetadataUnresolvedException e) {
+					Logger.error(this, "Unresolved metadata in starting insert from data from file: "+e, e);
+					writePermanentRedirect(ctx, "Done", "/queue/");
+					return;
+					// FIXME should this be a proper localised message? It shouldn't happen... but we'd like to get reports if it does.
 				}
+				fcp.startBlocking(clientPut);
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if (request.isPartSet("insert-local-dir")) {
@@ -322,12 +338,14 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 						return;
 					}
 				}
+				ClientPutDir clientPutDir;
 				try {
-					ClientPutDir clientPutDir = new ClientPutDir(fcp.getGlobalClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, false, -1, file, null, false, true, false);
+					clientPutDir = new ClientPutDir(fcp.getGlobalForeverClient(), furi, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, false, -1, file, null, false, true, false, fcp);
 					if(logMINOR) Logger.minor(this, "Started global request to insert dir "+file+" to "+furi+" as "+identifier);
-					clientPutDir.start();
 				} catch (IdentifierCollisionException e) {
-					e.printStackTrace();
+					Logger.error(this, "Cannot put same directory twice in same millisecond");
+					writePermanentRedirect(ctx, "Done", "/queue/");
+					return;
 				} catch (MalformedURLException e) {
 					writeError(L10n.getString("QueueToadlet.errorInvalidURI"), L10n.getString("QueueToadlet.errorInvalidURIToU"), ctx);
 					return;
@@ -335,6 +353,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					this.writeError(L10n.getString("QueueToadlet.errorNoFileOrCannotRead"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.toString() }), ctx);
 					return;
 				}
+				fcp.startBlocking(clientPutDir);
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if (request.isPartSet("get")) {

@@ -644,6 +644,103 @@ public class FCPServer implements Runnable {
 		}
 	}
 
+	public void makePersistentGlobalRequestBlocking(final FreenetURI fetchURI, final String expectedMimeType, final String persistenceTypeString, final String returnTypeString) throws NotAllowedException, IOException {
+		class OutputWrapper {
+			NotAllowedException ne;
+			IOException ioe;
+			boolean done;
+		}
+		
+		final OutputWrapper ow = new OutputWrapper();
+		core.clientContext.jobRunner.queue(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				NotAllowedException ne = null;
+				IOException ioe = null;
+				try {
+					makePersistentGlobalRequest(fetchURI, expectedMimeType, persistenceTypeString, returnTypeString, container);
+				} catch (NotAllowedException e) {
+					ne = e;
+				} catch (IOException e) {
+					ioe = e;
+				} catch (Throwable t) {
+					// Unexpected and severe, might even be OOM, just log it.
+					Logger.error(this, "Failed to make persistent request: "+t, t);
+				} finally {
+					synchronized(ow) {
+						ow.ne = ne;
+						ow.ioe = ioe;
+						ow.done = true;
+						ow.notifyAll();
+					}
+				}
+			}
+			
+		}, NativeThread.HIGH_PRIORITY, false);
+		
+		synchronized(ow) {
+			while(true) {
+				if(!ow.done) {
+					try {
+						ow.wait();
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+					continue;
+				}
+				if(ow.ioe != null) throw ow.ioe;
+				if(ow.ne != null) throw ow.ne;
+				return;
+			}
+		}
+	}
+	
+	public boolean modifyGlobalRequestBlocking(final String identifier, final String newToken, final short newPriority) {
+		ClientRequest req = this.globalRebootClient.getRequest(identifier, null);
+		if(req != null) {
+			req.modifyRequest(newToken, newPriority, this, null);
+			return true;
+		} else {
+			class OutputWrapper {
+				boolean success;
+				boolean done;
+			}
+			final OutputWrapper ow = new OutputWrapper();
+			core.clientContext.jobRunner.queue(new DBJob() {
+
+				public void run(ObjectContainer container, ClientContext context) {
+					boolean success = false;
+					try {
+						ClientRequest req = globalForeverClient.getRequest(identifier, container);
+						if(req != null)
+							req.modifyRequest(newToken, newPriority, FCPServer.this, container);
+					} finally {
+						synchronized(ow) {
+							ow.success = success;
+							ow.done = true;
+							ow.notifyAll();
+						}
+					}
+				}
+				
+			}, NativeThread.HIGH_PRIORITY, false);
+			
+			synchronized(ow) {
+				while(true) {
+					if(!ow.done) {
+						try {
+							ow.wait();
+						} catch (InterruptedException e) {
+							// Ignore
+						}
+						continue;
+					}
+					return ow.success;
+				}
+			}
+		}
+	}
+	
 	/**
 	 * Create a persistent globally-queued request for a file.
 	 * @param fetchURI The file to fetch.
@@ -794,5 +891,44 @@ public class FCPServer implements Runnable {
 		if(globalRebootClient.setRequestCompletionCallback(cb) != null)
 			Logger.error(this, "Replacing request completion callback "+cb, new Exception("error"));
 	}
-	
+
+	public void startBlocking(final ClientRequest req) {
+		if(req.persistenceType == ClientRequest.PERSIST_REBOOT) {
+			req.start(null, core.clientContext);
+		} else {
+			class OutputWrapper {
+				boolean done;
+			}
+			final OutputWrapper ow = new OutputWrapper();
+			core.clientContext.jobRunner.queue(new DBJob() {
+				
+				public void run(ObjectContainer container, ClientContext context) {
+					try {
+						req.start(container, context);
+					} finally {
+						synchronized(ow) {
+							ow.done = true;
+							ow.notifyAll();
+						}
+					}
+				}
+				
+			}, NativeThread.HIGH_PRIORITY, false);
+			
+			synchronized(ow) {
+				while(true) {
+					if(!ow.done) {
+						try {
+							ow.wait();
+						} catch (InterruptedException e) {
+							// Ignore
+						}
+					} else {
+						return;
+					}
+				}
+			}
+		}
+	}
+
 }
