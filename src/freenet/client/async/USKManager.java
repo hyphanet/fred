@@ -85,7 +85,7 @@ public class USKManager implements RequestClient {
 
 	public USKFetcher getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, RequestClient client) {
 		USKFetcher f = new USKFetcher(usk, this, backgroundFetchContext, 
-				new USKFetcherWrapper(usk, prioClass, chkRequestScheduler, sskRequestScheduler, client), 3, false, true);
+				new USKFetcherWrapper(usk, prioClass, client), 3, false, true);
 		f.addCallback(cb);
 		return f;
 	}
@@ -103,7 +103,7 @@ public class USKManager implements RequestClient {
 //			}
 			USKFetcher f = (USKFetcher) backgroundFetchersByClearUSK.get(clear);
 			if(f == null) {
-				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, chkRequestScheduler, sskRequestScheduler, this), 3, true, false);
+				f = new USKFetcher(usk, this, backgroundFetchContext, new USKFetcherWrapper(usk, RequestStarter.UPDATE_PRIORITY_CLASS, this), 3, true, false);
 				sched = f;
 				backgroundFetchersByClearUSK.put(clear, f);
 			}
