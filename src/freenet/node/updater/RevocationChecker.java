@@ -3,6 +3,8 @@ package freenet.node.updater;
 import java.io.File;
 import java.io.IOException;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -139,7 +141,7 @@ public class RevocationChecker implements ClientCallback, RequestClient {
 		start(wasAggressive);
 	}
 
-	public void onSuccess(FetchResult result, ClientGetter state) {
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		onSuccess(result, state, tmpBlobFile);
 	}
 	
@@ -172,7 +174,7 @@ public class RevocationChecker implements ClientCallback, RequestClient {
                 FileUtil.renameTo(tmpBlobFile, blobFile);
 	}
 
-	public void onFailure(FetchException e, ClientGetter state) {
+	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		onFailure(e, state, tmpBlobFile);
 	}
 	
@@ -213,12 +215,12 @@ public class RevocationChecker implements ClientCallback, RequestClient {
 			start(wasAggressive, false);
 	}
 
-	public void onSuccess(BaseClientPutter state) {
+	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	public void onFailure(InsertException e, BaseClientPutter state) {
+	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 		// TODO Auto-generated method stub
 		
 	}

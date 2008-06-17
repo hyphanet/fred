@@ -179,7 +179,7 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 		}
 	}
 	
-	public void onSuccess(FetchResult result, ClientGetter state) {
+	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		onSuccess(result, state, tempBlobFile, fetchingVersion);
 	}
 	
@@ -226,7 +226,7 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 		manager.onDownloadedNewJar(extUpdate);
 	}
 
-	public void onFailure(FetchException e, ClientGetter state) {
+	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(!isRunning) return;
 		int errorCode = e.getMode();
@@ -260,11 +260,11 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 		}
 	}
 
-	public void onSuccess(BaseClientPutter state) {
+	public void onSuccess(BaseClientPutter state, ObjectContainer container) {
 		// Impossible
 	}
 
-	public void onFailure(InsertException e, BaseClientPutter state) {
+	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 		// Impossible
 	}
 

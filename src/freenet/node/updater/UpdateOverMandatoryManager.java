@@ -15,6 +15,8 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
@@ -719,7 +721,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		
 		ClientCallback myCallback = new ClientCallback() {
 
-			public void onFailure(FetchException e, ClientGetter state) {
+			public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 				if(e.mode == FetchException.CANCELLED) {
 					// Eh?
 					Logger.error(this, "Cancelled fetch from store/blob of revocation certificate from "+source.userToString());
@@ -745,7 +747,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				}
 			}
 
-			public void onFailure(InsertException e, BaseClientPutter state) {
+			public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 				// Ignore, not possible
 			}
 
@@ -761,14 +763,14 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				// Ignore
 			}
 
-			public void onSuccess(FetchResult result, ClientGetter state) {
+			public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 				System.err.println("Got revocation certificate from "+source.userToString());
 				updateManager.revocationChecker.onSuccess(result, state, cleanedBlobFile);
 				temp.delete();
 				insertBlob(updateManager.revocationChecker.getBlobFile());
 			}
 
-			public void onSuccess(BaseClientPutter state) {
+			public void onSuccess(BaseClientPutter state, ObjectContainer container) {
 				// Ignore, not possible
 			}
 			
@@ -784,17 +786,17 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		} catch (FetchException e1) {
 			System.err.println("Failed to decode UOM blob: "+e1);
 			e1.printStackTrace();
-			myCallback.onFailure(e1, cg);
+			myCallback.onFailure(e1, cg, null);
 		}
 		
 	}
 
 	protected void insertBlob(final File blob) {
 		ClientCallback callback = new ClientCallback() {
-			public void onFailure(FetchException e, ClientGetter state) {
+			public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 				// Ignore, can't happen
 			}
-			public void onFailure(InsertException e, BaseClientPutter state) {
+			public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 				Logger.error(this, "Failed to insert revocation key binary blob: "+e, e);
 			}
 			public void onFetchable(BaseClientPutter state) {
@@ -806,10 +808,10 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			public void onMajorProgress() {
 				// Ignore
 			}
-			public void onSuccess(FetchResult result, ClientGetter state) {
+			public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 				// Ignore, can't happen
 			}
-			public void onSuccess(BaseClientPutter state) {
+			public void onSuccess(BaseClientPutter state, ObjectContainer container) {
 				// All done. Cool.
 				Logger.normal(this, "Inserted binary blob for revocation key");
 			}
@@ -1097,7 +1099,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		
 		ClientCallback myCallback = new ClientCallback() {
 
-			public void onFailure(FetchException e, ClientGetter state) {
+			public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {
 				if(e.mode == FetchException.CANCELLED) {
 					// Eh?
 					Logger.error(this, "Cancelled fetch from store/blob of main jar ("+version+") from "+source.userToString());
@@ -1114,7 +1116,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				}
 			}
 
-			public void onFailure(InsertException e, BaseClientPutter state) {
+			public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 				// Ignore, not possible
 			}
 
@@ -1130,7 +1132,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				// Ignore
 			}
 
-			public void onSuccess(FetchResult result, ClientGetter state) {
+			public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 				System.err.println("Got main jar version "+version+" from "+source.userToString());
 				if(result.size() == 0) {
 					System.err.println("Ignoring because 0 bytes long");
@@ -1147,7 +1149,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				insertBlob(mainUpdater.getBlobFile(version));
 			}
 
-			public void onSuccess(BaseClientPutter state) {
+			public void onSuccess(BaseClientPutter state, ObjectContainer container) {
 				// Ignore, not possible
 			}
 			
@@ -1161,7 +1163,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		try {
 			updateManager.node.clientCore.clientContext.start(cg);
 		} catch (FetchException e1) {
-			myCallback.onFailure(e1, cg);
+			myCallback.onFailure(e1, cg, null);
 		}
 		
 	}
