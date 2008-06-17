@@ -18,7 +18,7 @@ public class USKFetcherWrapper extends BaseClientGetter {
 
 	final USK usk;
 	
-	public USKFetcherWrapper(USK usk, short prio, ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, RequestClient client) {
+	public USKFetcherWrapper(USK usk, short prio, RequestClient client) {
 		super(prio, client);
 		this.usk = usk;
 	}
