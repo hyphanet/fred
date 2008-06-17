@@ -111,11 +111,11 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			parent.completedBlock(true);
 			cb.onSuccess(this, container, context);
 		} else {
-			scheduleInsert(container);
+			scheduleInsert(container, context);
 		}
 	}
 
-	private void scheduleInsert(ObjectContainer container) {
+	private void scheduleInsert(ObjectContainer container, ClientContext context) {
 		long edNo = Math.max(edition, ctx.uskManager.lookup(pubUSK)+1);
 		synchronized(this) {
 			if(finished) return;
@@ -126,19 +126,19 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 					ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject);
 		}
 		try {
-			sbi.schedule(container);
+			sbi.schedule(container, context);
 		} catch (InsertException e) {
-			cb.onFailure(e, this);
+			cb.onFailure(e, this, container, context);
 		}
 	}
 
-	public synchronized void onSuccess(ClientPutState state) {
-		cb.onEncode(pubUSK.copy(edition), this);
-		cb.onSuccess(this);
+	public synchronized void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
+		cb.onEncode(pubUSK.copy(edition), this, container, context);
+		cb.onSuccess(this, container, context);
 		finished = true;
 		sbi = null;
 		FreenetURI targetURI = pubUSK.getSSK(edition).getURI();
-		FreenetURI realURI = ((SingleBlockInserter)state).getURI();
+		FreenetURI realURI = ((SingleBlockInserter)state).getURI(container, context);
 		if(!targetURI.equals(realURI))
 			Logger.error(this, "URI should be "+targetURI+" actually is "+realURI);
 		else {
@@ -149,17 +149,17 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		// FINISHED!!!! Yay!!!
 	}
 
-	public synchronized void onFailure(InsertException e, ClientPutState state, ObjectContainer container) {
+	public synchronized void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 		sbi = null;
 		if(e.getMode() == InsertException.COLLISION) {
 			// Try the next slot
 			edition++;
 			if(consecutiveCollisions++ > MAX_TRIED_SLOTS)
-				scheduleFetcher();
+				scheduleFetcher(container, context);
 			else
-				scheduleInsert(container);
+				scheduleInsert(container, context);
 		} else {
-			cb.onFailure(e, state);
+			cb.onFailure(e, state, container, context);
 		}
 	}
 
@@ -190,43 +190,43 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		return parent;
 	}
 
-	public void cancel(ObjectContainer container) {
+	public void cancel(ObjectContainer container, ClientContext context) {
 		if(fetcher != null)
-			fetcher.cancel();
+			fetcher.cancel(container, context);
 		if(sbi != null)
-			sbi.cancel(container);
+			sbi.cancel(container, context);
 		synchronized(this) {
 			finished = true;
 		}
-		cb.onFailure(new InsertException(InsertException.CANCELLED), this);
+		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}
 
-	public void onFailure() {
+	public void onFailure(ObjectContainer container, ClientContext context) {
 		Logger.error(this, "Fetcher failed", new Exception("debug"));
-		scheduleInsert();
+		scheduleInsert(container, context);
 	}
 
-	public synchronized void onCancelled() {
+	public synchronized void onCancelled(ObjectContainer container, ClientContext context) {
 		if(finished) return;
 		Logger.error(this, "Unexpected onCancelled()", new Exception("error"));
-		cancel();
+		cancel(container, context);
 	}
 
-	public void onEncode(BaseClientKey key, ClientPutState state) {
+	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
-	public void onTransition(ClientPutState oldState, ClientPutState newState) {
+	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 		// Shouldn't happen
 		Logger.error(this, "Got onTransition("+oldState+ ',' +newState+ ')');
 	}
 
-	public void onMetadata(Metadata m, ClientPutState state) {
+	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Shouldn't happen
 		Logger.error(this, "Got onMetadata("+m+ ',' +state+ ')');
 	}
 
-	public void onBlockSetFinished(ClientPutState state) {
+	public void onBlockSetFinished(ClientPutState state, ObjectContainer container) {
 		// Ignore
 	}
 
@@ -238,7 +238,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		return null;
 	}
 
-	public void onFetchable(ClientPutState state) {
+	public void onFetchable(ClientPutState state, ObjectContainer container) {
 		// Ignore
 	}
 
