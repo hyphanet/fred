@@ -35,6 +35,7 @@ public class ClientContext {
 	public final ArchiveManager archiveManager;
 	public final BucketFactory persistentBucketFactory;
 	public final HealingQueue healingQueue;
+	public final USKManager uskManager;
 
 	public ClientContext(NodeClientCore core) {
 		this.fecQueue = core.fecQueue;
@@ -50,6 +51,7 @@ public class ClientContext {
 		archiveManager = core.archiveManager;
 		this.persistentBucketFactory = core.persistentEncryptedTempBucketFactory;
 		this.healingQueue = core.getHealingQueue();
+		this.uskManager = core.uskManager;
 	}
 
 	public void start(final ClientPutter inserter, final boolean earlyEncode) throws InsertException {

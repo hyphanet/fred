@@ -758,12 +758,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			}
 		} else {
 			// Do a thorough, blocking search
-			USKFetcher fetcher =
-				ctx.uskManager.getFetcher(usk.copy(-usk.suggestedEdition), ctx, requester, false);
+			USKFetcherTag tag = 
+				ctx.uskManager.getFetcher(usk.copy(-usk.suggestedEdition), ctx, false, requester.persistent(),
+						new MyUSKFetcherCallback(requester, cb, clientMetadata, usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, returnBucket), container, context);
 			if(isEssential)
 				requester.addMustSucceedBlocks(1);
-			fetcher.addCallback(new MyUSKFetcherCallback(requester, cb, clientMetadata, usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, returnBucket));
-			return fetcher;
+			return tag;
 		}
 	}
 
@@ -797,7 +797,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			this.returnBucket = returnBucket;
 		}
 
-		public void onFoundEdition(long l, USK newUSK, ObjectContainer container, ClientContext context) {
+		public void onFoundEdition(long l, USK newUSK, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data) {
 			ClientSSK key = usk.getSSK(l);
 			try {
 				if(l == usk.suggestedEdition) {

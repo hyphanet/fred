@@ -6,7 +6,10 @@ package freenet.client.async;
 import java.util.HashMap;
 import java.util.Vector;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchContext;
+import freenet.client.async.SingleFileFetcher.MyUSKFetcherCallback;
 import freenet.keys.USK;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
@@ -42,7 +45,6 @@ public class USKManager implements RequestClient {
 	final FetchContext backgroundFetchContext;
 	
 	final Ticker ticker;
-
 	
 	public USKManager(NodeClientCore core) {
 		backgroundFetchContext = core.makeClient(RequestStarter.UPDATE_PRIORITY_CLASS).getFetchContext();
@@ -68,7 +70,12 @@ public class USKManager implements RequestClient {
 		else return -1;
 	}
 
-	public synchronized USKFetcher getFetcher(USK usk, FetchContext ctx,
+	public USKFetcherTag getFetcher(USK usk, FetchContext ctx, boolean keepLast, boolean persistent, 
+			USKFetcherCallback callback, ObjectContainer container, ClientContext context) {
+		return USKFetcherTag.create(usk, callback, context.nodeDBHandle, persistent, container, ctx, keepLast, 0);
+	}
+
+	synchronized USKFetcher getFetcher(USK usk, FetchContext ctx,
 			ClientRequester requester, boolean keepLastData) {
 		USKFetcher f = (USKFetcher) fetchersByUSK.get(usk);
 		USK clear = usk.clearCopy();
@@ -82,12 +89,9 @@ public class USKManager implements RequestClient {
 		fetchersByUSK.put(usk, f);
 		return f;
 	}
-
-	public USKFetcher getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, RequestClient client) {
-		USKFetcher f = new USKFetcher(usk, this, backgroundFetchContext, 
-				new USKFetcherWrapper(usk, prioClass, client), 3, false, true);
-		f.addCallback(cb);
-		return f;
+	
+	public USKFetcherTag getFetcherForInsertDontSchedule(USK usk, short prioClass, USKFetcherCallback cb, RequestClient client, ObjectContainer container, ClientContext context) {
+		return getFetcher(usk, backgroundFetchContext, true, client.persistent(), cb, container, context);
 	}
 
 	public void startTemporaryBackgroundFetcher(USK usk) {

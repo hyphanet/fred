@@ -19,6 +19,7 @@ import freenet.client.async.DBJobRunner;
 import freenet.client.async.HealingQueue;
 import freenet.client.async.SimpleHealingQueue;
 import freenet.client.async.USKManager;
+import freenet.client.async.USKManagerPersistent;
 import freenet.client.events.SimpleEventProducer;
 import freenet.clients.http.FProxyToadlet;
 import freenet.clients.http.SimpleToadletServer;
@@ -296,6 +297,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		Logger.normal(this, "Initializing USK Manager");
 		System.out.println("Initializing USK Manager");
 		uskManager = new USKManager(this);
+		USKManagerPersistent.init(uskManager, container, clientContext);
 		
 		healingQueue = new SimpleHealingQueue(requestStarters.chkPutScheduler,
 				new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory, 

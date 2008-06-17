@@ -16,7 +16,7 @@ public interface USKCallback {
 	/** Found the latest edition.
 	 * @param l The edition number.
 	 * @param key The key. */
-	void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context);
+	void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data);
 	
 	/**
 	 * Priority at which the polling should run normally.

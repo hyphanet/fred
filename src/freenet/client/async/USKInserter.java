@@ -43,7 +43,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	final InsertableUSK privUSK;
 	final USK pubUSK;
 	/** Scanning for latest slot */
-	private USKFetcher fetcher;
+	private USKFetcherTag fetcher;
 	/** Insert the actual SSK */
 	private SingleBlockInserter sbi;
 	private long edition;
@@ -53,7 +53,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	/** After attempting inserts on this many slots, go back to the Fetcher */
 	private static final long MAX_TRIED_SLOTS = 10;
 	
-	public void schedule(ObjectContainer container) throws InsertException {
+	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
 		// Caller calls schedule()
 		// schedule() calls scheduleFetcher()
 		// scheduleFetcher() creates a Fetcher (set up to tell us about author-errors as well as valid inserts)
@@ -63,7 +63,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		// if that succeeds, we complete
 		// if that fails, we increment our index and try again (in the callback)
 		// if that continues to fail 5 times, we go back to scheduleFetcher()
-		scheduleFetcher();
+		scheduleFetcher(container, context);
 	}
 
 	/**
@@ -71,27 +71,25 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	 * The Fetcher must be insert-mode, in other words, it must know that we want the latest edition,
 	 * including author errors and so on.
 	 */
-	private void scheduleFetcher() {
+	private void scheduleFetcher(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "scheduling fetcher for "+pubUSK.getURI());
 			if(finished) return;
-			fetcher = ctx.uskManager.getFetcherForInsertDontSchedule(pubUSK, parent.priorityClass, this, parent.getClient());
+			fetcher = ctx.uskManager.getFetcherForInsertDontSchedule(pubUSK, parent.priorityClass, this, parent.getClient(), container, context);
 		}
-		fetcher.schedule();
+		fetcher.schedule(container, context);
 	}
 
-	public void onFoundEdition(long l, USK key, ObjectContainer container) {
+	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean lastContentWasMetadata, short codec, byte[] hisData) {
 		boolean alreadyInserted = false;
 		synchronized(this) {
 			edition = Math.max(l, edition);
 			consecutiveCollisions = 0;
-			if((fetcher.lastContentWasMetadata() == isMetadata) && fetcher.hasLastData()
-					&& (fetcher.lastCompressionCodec() == compressionCodec)) {
+			if((lastContentWasMetadata == isMetadata) && hisData != null
+					&& (codec == compressionCodec)) {
 				try {
 					byte[] myData = BucketTools.toByteArray(data);
-					byte[] hisData = BucketTools.toByteArray(fetcher.getLastData());
-					fetcher.freeLastData();
 					if(Arrays.equals(myData, hisData)) {
 						// Success
 						alreadyInserted = true;
@@ -108,10 +106,10 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		}
 		if(alreadyInserted) {
 			// Success!
-			cb.onEncode(pubUSK.copy(edition), this);
+			cb.onEncode(pubUSK.copy(edition), this, container, context);
 			parent.addMustSucceedBlocks(1);
 			parent.completedBlock(true);
-			cb.onSuccess(this);
+			cb.onSuccess(this, container, context);
 		} else {
 			scheduleInsert(container);
 		}
