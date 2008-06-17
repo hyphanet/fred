@@ -307,8 +307,9 @@ public abstract class ClientRequest {
 	/**
 	 * Called after a ModifyPersistentRequest.
 	 * Sends a PersistentRequestModified message to clients if any value changed. 
+	 * Commits before sending the messages.
 	 */
-	public void modifyRequest(String newClientToken, short newPriorityClass, FCPServer server) {
+	public void modifyRequest(String newClientToken, short newPriorityClass, FCPServer server, ObjectContainer container) {
 
 		boolean clientTokenChanged = false;
 		boolean priorityClassChanged = false;
@@ -327,19 +328,15 @@ public abstract class ClientRequest {
 
 		if(newPriorityClass >= 0 && newPriorityClass != priorityClass) {
 			this.priorityClass = newPriorityClass;
-			getClientRequest().setPriorityClass(priorityClass);
+			getClientRequest().setPriorityClass(priorityClass, server.core.clientContext, container);
 			priorityClassChanged = true;
 		}
 
-		if( clientTokenChanged || priorityClassChanged ) {
-			if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
-				if(client != null) {
-					server.forceStorePersistentRequests();
-				}
-			}
-		} else {
+		if(! ( clientTokenChanged || priorityClassChanged ) ) {
 			return; // quick return, nothing was changed
 		}
+		
+		container.commit();
 
 		// this could become too complex with more parameters, but for now its ok
 		final PersistentRequestModifiedMessage modifiedMsg;

@@ -84,13 +84,13 @@ public class ModifyPersistentRequest extends FCPMessage {
 						handler.outputHandler.queue(msg);
 						return;
 					} else {
-						req.modifyRequest(clientToken, priorityClass, handler.server);
+						req.modifyRequest(clientToken, priorityClass, handler.server, container);
 					}
 				}
 				
 			}, NativeThread.NORM_PRIORITY, false);
 		} else {
-			req.modifyRequest(clientToken, priorityClass, node.clientCore.getFCPServer());
+			req.modifyRequest(clientToken, priorityClass, node.clientCore.getFCPServer(), null);
 		}
 	}
 

@@ -457,23 +457,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 
-	public void reregisterAll(final ClientRequester request) {
-		if(request.persistent()) {
-			databaseExecutor.execute(new Runnable() {
-				public void run() {
-					try {
-						schedCore.reregisterAll(request, random, ClientRequestScheduler.this);
-						selectorContainer.commit();
-						starter.wakeUp();
-					} catch (Throwable t) {
-						Logger.error(this, "Caught "+t, t);
-					}
-				}
-			}, "Reregister for "+request);
-		} else {
-			schedTransient.reregisterAll(request, random, this);
-			starter.wakeUp();
-		}
+	public void reregisterAll(final ClientRequester request, ObjectContainer container) {
+		schedTransient.reregisterAll(request, random, this);
+		starter.wakeUp();
 	}
 	
 	public String getChoosenPriorityScheduler() {

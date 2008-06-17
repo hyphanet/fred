@@ -123,12 +123,12 @@ public abstract class ClientRequester {
 		return client;
 	}
 
-	public void setPriorityClass(short newPriorityClass, ClientContext ctx) {
+	public void setPriorityClass(short newPriorityClass, ClientContext ctx, ObjectContainer container) {
 		this.priorityClass = newPriorityClass;
-		ctx.chkFetchScheduler.reregisterAll(this);
-		ctx.chkInsertScheduler.reregisterAll(this);
-		ctx.sskFetchScheduler.reregisterAll(this);
-		ctx.sskInsertScheduler.reregisterAll(this);
+		ctx.chkFetchScheduler.reregisterAll(this, container);
+		ctx.chkInsertScheduler.reregisterAll(this, container);
+		ctx.sskFetchScheduler.reregisterAll(this, container);
+		ctx.sskInsertScheduler.reregisterAll(this, container);
 	}
 
 	public boolean persistent() {
