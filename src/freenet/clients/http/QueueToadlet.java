@@ -158,7 +158,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 				for (int requestIndex = 0, requestCount = clientRequests.length; requestIndex < requestCount; requestIndex++) {
 					ClientRequest clientRequest = clientRequests[requestIndex];
 					if (clientRequest.getIdentifier().equals(identifier)) {
-						clientRequest.restartAsync();
+						clientRequest.restartAsync(fcp);
 					}
 				}
 				writePermanentRedirect(ctx, "Done", "/queue/");

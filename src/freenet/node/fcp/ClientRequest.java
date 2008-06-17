@@ -366,7 +366,7 @@ public abstract class ClientRequest {
 		fs.put(name, bucket.toFieldSet());
 	}
 
-	public void restartAsync(Executor executor, FCPServer server) {
+	public void restartAsync(FCPServer server) {
 		synchronized(this) {
 			this.started = false;
 		}
