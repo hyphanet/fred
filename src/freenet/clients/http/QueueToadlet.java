@@ -165,30 +165,20 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 				return;
 			} else if(request.isPartSet("remove_AllRequests") && (request.getPartAsString("remove_AllRequests", 32).length() > 0)) {
 				
+				// FIXME panic button should just dump the entire database ???
+				// FIXME what about non-global requests ???
+				
 				ClientRequest[] reqs = fcp.getGlobalRequests();
 				if(logMINOR) Logger.minor(this, "Request count: "+reqs.length);
 				
 				StringBuffer failedIdentifiers = new StringBuffer();
 				
-				for(int i=0; i<reqs.length ; i++){
-					String identifier = reqs[i].getIdentifier();
-					if(logMINOR) Logger.minor(this, "Removing "+identifier);
-					try {
-						fcp.removeGlobalRequest(identifier);
-					} catch (MessageInvalidException e) {
-						failedIdentifiers.append(identifier + ' ' + e.getMessage() + ';');
-						Logger.error(this, "Failed to remove " + identifier + ':' + e.getMessage());
-						continue;
-					}
-				}
+				boolean success = fcp.removeAllGlobalRequestsBlocking();
 				
-				if(failedIdentifiers.length() > 0)
+				if(!success)
 					this.sendErrorPage(ctx, 200, 
 							L10n.getString("QueueToadlet.failedToRemoveRequest"),
-							L10n.getString("QueueToadlet.failedToRemoveId",
-									new String[]{ "id" },
-									new String[]{ failedIdentifiers.toString() }
-							));
+							L10n.getString("QueueToadlet.failedToRemoveAll"));
 				else
 					writePermanentRedirect(ctx, "Done", "/queue/");
 				return;

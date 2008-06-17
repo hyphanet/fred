@@ -566,20 +566,24 @@ public class FCPServer implements Runnable {
 		return (ClientRequest[]) v.toArray(new ClientRequest[v.size()]);
 	}
 
-	public void removeGlobalRequestBlocking(final String identifier) throws MessageInvalidException {
+	public boolean removeGlobalRequestBlocking(final String identifier) throws MessageInvalidException {
 		if(!globalRebootClient.removeByIdentifier(identifier, true, this, null)) {
 			final Object sync = new Object();
 			final MutableBoolean done = new MutableBoolean();
+			final MutableBoolean success = new MutableBoolean();
 			done.value = false;
 			core.clientContext.jobRunner.queue(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
+					boolean succeeded = false;
 					try {
-						globalForeverClient.removeByIdentifier(identifier, true, FCPServer.this, container);
+						succeeded = globalForeverClient.removeByIdentifier(identifier, true, FCPServer.this, container);
 					} catch (Throwable t) {
 						Logger.error(this, "Caught removing identifier "+identifier+": "+t, t);
 					} finally {
 						synchronized(sync) {
+							success.value = succeeded;
+							done.value = true;
 							sync.notifyAll();
 						}
 					}
@@ -594,7 +598,49 @@ public class FCPServer implements Runnable {
 						// Ignore
 					}
 				}
+				return success.value;
 			}
+		} else return true;
+	}
+	
+	public boolean removeAllGlobalRequestsBlocking() {
+		globalRebootClient.removeAll(null);
+		
+		final Object sync = new Object();
+		final MutableBoolean done = new MutableBoolean();
+		final MutableBoolean success = new MutableBoolean();
+		done.value = false;
+		core.clientContext.jobRunner.queue(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				boolean succeeded = false;
+				try {
+					globalForeverClient.removeAll(container);
+					succeeded = true;
+				} catch (Throwable t) {
+					Logger.error(this, "Caught while processing panic: "+t, t);
+					System.err.println("PANIC INCOMPLETE: CAUGHT "+t);
+					t.printStackTrace();
+					System.err.println("Your requests have not been deleted!");
+				} finally {
+					synchronized(sync) {
+						success.value = succeeded;
+						done.value = true;
+						sync.notifyAll();
+					}
+				}
+			}
+			
+		}, NativeThread.HIGH_PRIORITY, false);
+		synchronized(sync) {
+			while(!done.value) {
+				try {
+					sync.wait();
+				} catch (InterruptedException e) {
+					// Ignore
+				}
+			}
+			return success.value;
 		}
 	}
 

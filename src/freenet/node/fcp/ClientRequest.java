@@ -378,4 +378,9 @@ public abstract class ClientRequest {
 			
 		}, NativeThread.HIGH_PRIORITY, false);
 	}
+
+	public void delete(ObjectContainer container) {
+		container.delete(this);
+		// FIXME delete underlying structures
+	}
 }

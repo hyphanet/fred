@@ -328,4 +328,37 @@ public class FCPClient {
 		container.delete(lowLevelClient);
 		container.delete(this);
 	}
+
+	public void removeAll(ObjectContainer container) {
+		HashSet toKill = new HashSet();
+		synchronized(this) {
+			Iterator i = runningPersistentRequests.iterator();
+			while(i.hasNext()) {
+				ClientRequest req = (ClientRequest) i.next();
+				toKill.add(req);
+			}
+			runningPersistentRequests.clear();
+			for(int j=0;j<completedUnackedRequests.size();j++)
+				toKill.add(completedUnackedRequests.get(j));
+			completedUnackedRequests.clear();
+			i = clientRequestsByIdentifier.values().iterator();
+			while(i.hasNext()) {
+				ClientRequest req = (ClientRequest) i.next();
+				toKill.add(req);
+			}
+			clientRequestsByIdentifier.clear();
+			i = toStart.iterator();
+			while(i.hasNext()) {
+				ClientRequest req = (ClientRequest) i.next();
+				toKill.add(req);
+			}
+			toStart.clear();
+		}
+		Iterator i = toStart.iterator();
+		while(i.hasNext()) {
+			ClientRequest req = (ClientRequest) i.next();
+			req.cancel();
+			req.delete(container);
+		}
+	}
 }
