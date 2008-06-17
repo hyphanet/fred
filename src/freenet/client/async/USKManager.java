@@ -40,8 +40,6 @@ public class USKManager implements RequestClient {
 	final HashMap checkersByUSK;
 
 	final FetchContext backgroundFetchContext;
-	final ClientRequestScheduler chkRequestScheduler;
-	final ClientRequestScheduler sskRequestScheduler;
 	
 	final Ticker ticker;
 
@@ -50,8 +48,6 @@ public class USKManager implements RequestClient {
 		backgroundFetchContext = core.makeClient(RequestStarter.UPDATE_PRIORITY_CLASS).getFetchContext();
 		backgroundFetchContext.followRedirects = false;
 		backgroundFetchContext.uskManager = this;
-		this.chkRequestScheduler = core.requestStarters.chkFetchScheduler;
-		this.sskRequestScheduler = core.requestStarters.sskFetchScheduler;
 		latestVersionByClearUSK = new HashMap();
 		subscribersByClearUSK = new HashMap();
 		fetchersByUSK = new HashMap();
@@ -194,7 +190,7 @@ public class USKManager implements RequestClient {
 			if(runBackgroundFetch) {
 				USKFetcher f = (USKFetcher) backgroundFetchersByClearUSK.get(clear);
 				if(f == null) {
-					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, chkRequestScheduler, sskRequestScheduler, client), 10, true, false);
+					f = new USKFetcher(origUSK, this, backgroundFetchContext, new USKFetcherWrapper(origUSK, RequestStarter.UPDATE_PRIORITY_CLASS, client), 10, true, false);
 					sched = f;
 					backgroundFetchersByClearUSK.put(clear, f);
 				}
@@ -269,7 +265,7 @@ public class USKManager implements RequestClient {
 	 * @return
 	 */
 	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetchContext fctx, short prio, RequestClient client) {
-		USKRetriever ret = new USKRetriever(fctx, prio, chkRequestScheduler, sskRequestScheduler, client, cb);
+		USKRetriever ret = new USKRetriever(fctx, prio, client, cb);
 		subscribe(origUSK, ret, runBackgroundFetch, client);
 		return ret;
 	}

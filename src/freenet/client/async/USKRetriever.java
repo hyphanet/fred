@@ -24,9 +24,9 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	final FetchContext ctx;
 	final USKRetrieverCallback cb;
 	
-	public USKRetriever(FetchContext fctx, short prio, ClientRequestScheduler chkSched, 
-			ClientRequestScheduler sskSched, RequestClient client, USKRetrieverCallback cb) {
-		super(prio, chkSched, sskSched, client);
+	public USKRetriever(FetchContext fctx, short prio,  
+			RequestClient client, USKRetrieverCallback cb) {
+		super(prio, client);
 		this.ctx = fctx;
 		this.cb = cb;
 	}
