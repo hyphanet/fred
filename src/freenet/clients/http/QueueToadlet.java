@@ -139,7 +139,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
 				if(logMINOR) Logger.minor(this, "Removing "+identifier);
 				try {
-					fcp.removeGlobalRequest(identifier);
+					fcp.removeGlobalRequestBlocking(identifier);
 				} catch (MessageInvalidException e) {
 					this.sendErrorPage(ctx, 200, 
 							L10n.getString("QueueToadlet.failedToRemoveRequest"),

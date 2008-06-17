@@ -45,6 +45,7 @@ import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
 import freenet.support.Base64;
 import freenet.support.Logger;
+import freenet.support.MutableBoolean;
 import freenet.support.OOMHandler;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.Bucket;
@@ -565,8 +566,36 @@ public class FCPServer implements Runnable {
 		return (ClientRequest[]) v.toArray(new ClientRequest[v.size()]);
 	}
 
-	public void removeGlobalRequest(String identifier) throws MessageInvalidException {
-		globalClient.removeByIdentifier(identifier, true);
+	public void removeGlobalRequestBlocking(final String identifier) throws MessageInvalidException {
+		if(!globalRebootClient.removeByIdentifier(identifier, true, this, null)) {
+			final Object sync = new Object();
+			final MutableBoolean done = new MutableBoolean();
+			done.value = false;
+			core.clientContext.jobRunner.queue(new DBJob() {
+
+				public void run(ObjectContainer container, ClientContext context) {
+					try {
+						globalForeverClient.removeByIdentifier(identifier, true, FCPServer.this, container);
+					} catch (Throwable t) {
+						Logger.error(this, "Caught removing identifier "+identifier+": "+t, t);
+					} finally {
+						synchronized(sync) {
+							sync.notifyAll();
+						}
+					}
+				}
+				
+			}, NativeThread.HIGH_PRIORITY, false);
+			synchronized(sync) {
+				while(!done.value) {
+					try {
+						sync.wait();
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+				}
+			}
+		}
 	}
 
 	/**

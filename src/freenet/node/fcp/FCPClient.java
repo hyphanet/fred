@@ -153,7 +153,7 @@ public class FCPClient {
 		}
 	}
 
-	public void removeByIdentifier(String identifier, boolean kill, FCPServer server, ObjectContainer container) throws MessageInvalidException {
+	public boolean removeByIdentifier(String identifier, boolean kill, FCPServer server, ObjectContainer container) {
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		ClientRequest req;
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -161,9 +161,11 @@ public class FCPClient {
 		synchronized(this) {
 			req = (ClientRequest) clientRequestsByIdentifier.get(identifier);
 			if(req == null)
-				throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, "Not in hash", identifier, isGlobalQueue);
-			else if(!(runningPersistentRequests.remove(req) || completedUnackedRequests.remove(req)))
-				throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, "Not found", identifier, isGlobalQueue);
+				return false;
+			else if(!(runningPersistentRequests.remove(req) || completedUnackedRequests.remove(req))) {
+				Logger.error(this, "Removing "+identifier+": in clientRequestsByIdentifier but not in running/completed maps!");
+				return false;
+			}
 			clientRequestsByIdentifier.remove(identifier);
 		}
         req.requestWasRemoved(container);
@@ -173,6 +175,7 @@ public class FCPClient {
 		}
 		if(completionCallback != null)
 			completionCallback.onRemove(req);
+		return true;
 	}
 
 	public boolean hasPersistentRequests(ObjectContainer container) {
