@@ -162,7 +162,7 @@ public class PrioritizedSerialExecutor implements Executor {
 	public boolean onThread() {
 		Thread running = Thread.currentThread();
 		synchronized(jobs) {
-			if(runner != null) return false;
+			if(runner == null) return false;
 			return runner.current == running; 
 		}
 	}
