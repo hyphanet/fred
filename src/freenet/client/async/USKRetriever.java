@@ -5,6 +5,8 @@ package freenet.client.async;
 
 import java.net.MalformedURLException;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.ArchiveContext;
 import freenet.client.ClientMetadata;
 import freenet.client.FetchException;
@@ -27,11 +29,12 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 	public USKRetriever(FetchContext fctx, short prio,  
 			RequestClient client, USKRetrieverCallback cb) {
 		super(prio, client);
+		if(client.persistent()) throw new UnsupportedOperationException("USKRetriever cannot be persistent");
 		this.ctx = fctx;
 		this.cb = cb;
 	}
 
-	public void onFoundEdition(long l, USK key) {
+	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data) {
 		if(l < 0) {
 			Logger.error(this, "Found negative edition: "+l+" for "+key+" !!!");
 			return;
@@ -44,8 +47,8 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		try {
 			SingleFileFetcher getter =
 				(SingleFileFetcher) SingleFileFetcher.create(this, this, new ClientMetadata(), uri, ctx, new ArchiveContext(ctx.maxArchiveLevels), 
-						ctx.maxNonSplitfileRetries, 0, true, l, true, null, false);
-			getter.schedule();
+						ctx.maxNonSplitfileRetries, 0, true, l, true, null, false, null, context);
+			getter.schedule(null, context);
 		} catch (MalformedURLException e) {
 			Logger.error(this, "Impossible: "+e, e);
 		} catch (FetchException e) {
@@ -53,17 +56,17 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		}
 	}
 
-	public void onSuccess(FetchResult result, ClientGetState state) {
+	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Success on "+this+" from "+state+" : length "+result.size()+" mime type "+result.getMimeType());
 		cb.onFound(state.getToken(), result);
 	}
 
-	public void onFailure(FetchException e, ClientGetState state) {
+	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
 		Logger.error(this, "Found edition "+state.getToken()+" but failed to fetch edition: "+e, e);
 	}
 
-	public void onBlockSetFinished(ClientGetState state) {
+	public void onBlockSetFinished(ClientGetState state, ObjectContainer container) {
 		// Ignore
 	}
 
@@ -79,19 +82,19 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		// Ignore for now
 	}
 
-	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 		// Ignore
 	}
 
-	public void onExpectedMIME(String mime) {
+	public void onExpectedMIME(String mime, ObjectContainer container) {
 		// Ignore
 	}
 
-	public void onExpectedSize(long size) {
+	public void onExpectedSize(long size, ObjectContainer container) {
 		// Ignore
 	}
 
-	public void onFinalizedMetadata() {
+	public void onFinalizedMetadata(ObjectContainer container) {
 		// Ignore
 	}
 
