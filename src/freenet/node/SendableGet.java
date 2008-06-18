@@ -104,9 +104,9 @@ public abstract class SendableGet extends BaseSendableGet {
 	
 	public ClientRequestScheduler getScheduler(ClientContext context) {
 		if(isSSK())
-			return context.sskFetchScheduler;
+			return context.getSskFetchScheduler();
 		else
-			return context.chkFetchScheduler;
+			return context.getChkFetchScheduler();
 	}
 
 	/**

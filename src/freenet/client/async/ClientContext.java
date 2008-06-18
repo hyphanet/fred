@@ -11,6 +11,7 @@ import freenet.client.FetchException;
 import freenet.client.InsertException;
 import freenet.crypt.RandomSource;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestStarterGroup;
 import freenet.support.Executor;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.NativeThread;
@@ -23,10 +24,10 @@ import freenet.support.io.NativeThread;
 public class ClientContext {
 	
 	public final FECQueue fecQueue;
-	public final ClientRequestScheduler sskFetchScheduler;
-	public final ClientRequestScheduler chkFetchScheduler;
-	public final ClientRequestScheduler sskInsertScheduler;
-	public final ClientRequestScheduler chkInsertScheduler;
+	private ClientRequestScheduler sskFetchScheduler;
+	private ClientRequestScheduler chkFetchScheduler;
+	private ClientRequestScheduler sskInsertScheduler;
+	private ClientRequestScheduler chkInsertScheduler;
 	public final DBJobRunner jobRunner;
 	public final Executor mainExecutor;
 	public final long nodeDBHandle;
@@ -53,7 +54,30 @@ public class ClientContext {
 		this.healingQueue = core.getHealingQueue();
 		this.uskManager = core.uskManager;
 	}
+	
+	public void init(RequestStarterGroup starters) {
+		this.sskFetchScheduler = starters.sskFetchScheduler;
+		this.chkFetchScheduler = starters.chkFetchScheduler;
+		this.sskInsertScheduler = starters.sskPutScheduler;
+		this.chkInsertScheduler = starters.chkPutScheduler;
+	}
 
+	public ClientRequestScheduler getSskFetchScheduler() {
+		return sskFetchScheduler;
+	}
+	
+	public ClientRequestScheduler getChkFetchScheduler() {
+		return chkFetchScheduler;
+	}
+	
+	public ClientRequestScheduler getSskInsertScheduler() {
+		return sskInsertScheduler;
+	}
+	
+	public ClientRequestScheduler getChkInsertScheduler() {
+		return chkInsertScheduler;
+	}
+	
 	public void start(final ClientPutter inserter, final boolean earlyEncode) throws InsertException {
 		if(inserter.persistent()) {
 			jobRunner.queue(new DBJob() {

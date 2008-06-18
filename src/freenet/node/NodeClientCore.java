@@ -169,6 +169,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		if(logMINOR) Logger.minor(this, "Serializing RequestStarterGroup from:\n"+throttleFS);
 		clientContext = new ClientContext(this);
 		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext);
+		clientContext.init(requestStarters);
 		
 		// Temp files
 		

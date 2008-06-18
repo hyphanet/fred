@@ -125,10 +125,10 @@ public abstract class ClientRequester {
 
 	public void setPriorityClass(short newPriorityClass, ClientContext ctx, ObjectContainer container) {
 		this.priorityClass = newPriorityClass;
-		ctx.chkFetchScheduler.reregisterAll(this, container);
-		ctx.chkInsertScheduler.reregisterAll(this, container);
-		ctx.sskFetchScheduler.reregisterAll(this, container);
-		ctx.sskInsertScheduler.reregisterAll(this, container);
+		ctx.getChkFetchScheduler().reregisterAll(this, container);
+		ctx.getChkInsertScheduler().reregisterAll(this, container);
+		ctx.getSskFetchScheduler().reregisterAll(this, container);
+		ctx.getSskInsertScheduler().reregisterAll(this, container);
 	}
 
 	public boolean persistent() {
