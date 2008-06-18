@@ -189,7 +189,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				Compressor c = (Compressor) decompressors.removeLast();
 				try {
 					long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
-					data = c.decompress(data, ctx.bucketFactory, maxLen, maxLen * 4, decompressors.isEmpty() ? returnBucket : null);
+					data = c.decompress(data, context.getBucketFactory(parent.persistent()), maxLen, maxLen * 4, decompressors.isEmpty() ? returnBucket : null);
 				} catch (IOException e) {
 					onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, sched, container, context);
 					return;

@@ -21,7 +21,6 @@ public class FetchContext implements Cloneable {
 	/** Low-level client to send low-level requests to. */
 	public long maxOutputLength;
 	public long maxTempLength;
-	public final BucketFactory bucketFactory;
 	public USKManager uskManager;
 	public int maxRecursionLevel;
 	public int maxArchiveRestarts;
@@ -60,7 +59,6 @@ public class FetchContext implements Cloneable {
 		this.uskManager = uskManager;
 		this.maxTempLength = curMaxTempLength;
 		this.maxMetadataSize = maxMetadataSize;
-		this.bucketFactory = bucketFactory;
 		this.maxRecursionLevel = maxRecursionLevel;
 		this.maxArchiveRestarts = maxArchiveRestarts;
 		this.maxArchiveLevels = maxArchiveLevels;
@@ -91,7 +89,6 @@ public class FetchContext implements Cloneable {
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;
 			this.maxTempLength = ctx.maxTempLength;
-			this.bucketFactory = ctx.bucketFactory;
 			this.maxRecursionLevel = ctx.maxRecursionLevel;
 			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
 			this.maxArchiveLevels = ctx.maxArchiveLevels;
@@ -110,7 +107,6 @@ public class FetchContext implements Cloneable {
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;
 			this.maxTempLength = ctx.maxTempLength;
-			this.bucketFactory = ctx.bucketFactory;
 			this.maxRecursionLevel = 1;
 			this.maxArchiveRestarts = 0;
 			this.maxArchiveLevels = ctx.maxArchiveLevels;
@@ -129,7 +125,6 @@ public class FetchContext implements Cloneable {
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxTempLength = ctx.maxTempLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;
-			this.bucketFactory = ctx.bucketFactory;
 			this.maxRecursionLevel = ctx.maxRecursionLevel;
 			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
 			this.maxArchiveLevels = ctx.maxArchiveLevels;
@@ -148,7 +143,6 @@ public class FetchContext implements Cloneable {
 			this.maxOutputLength = ctx.maxOutputLength;
 			this.maxMetadataSize = ctx.maxMetadataSize;
 			this.maxTempLength = ctx.maxTempLength;
-			this.bucketFactory = ctx.bucketFactory;
 			this.maxRecursionLevel = ctx.maxRecursionLevel;
 			this.maxArchiveRestarts = ctx.maxArchiveRestarts;
 			this.maxArchiveLevels = ctx.maxArchiveLevels;

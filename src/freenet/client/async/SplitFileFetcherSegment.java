@@ -201,11 +201,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 		seg.possiblyRemoveFromParent();
 		if(decodeNow) {
 			removeSubSegments();
-			decode(container, sched);
+			decode(container, sched.getContext(), sched);
 		}
 	}
 
-	public void decode(ObjectContainer container, RequestScheduler sched) {
+	public void decode(ObjectContainer container, ClientContext context, RequestScheduler sched) {
 		// Now decode
 		if(logMINOR) Logger.minor(this, "Decoding "+SplitFileFetcherSegment.this);
 
@@ -213,7 +213,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		
 		if(splitfileType != Metadata.SPLITFILE_NONREDUNDANT) {
 			FECQueue queue = sched.getFECQueue();
-			codec.addToQueue(new FECJob(codec, queue, dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, fetchContext.bucketFactory, this, true, parentFetcher.parent.getPriorityClass(), parentFetcher.parent.persistent()), 
+			codec.addToQueue(new FECJob(codec, queue, dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, context.getBucketFactory(parentFetcher.parent.persistent()), this, true, parentFetcher.parent.getPriorityClass(), parentFetcher.parent.persistent()), 
 					queue, container);
 			// Now have all the data blocks (not necessarily all the check blocks)
 		}
@@ -232,7 +232,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					}
 				}
 			}
-			decodedData = fetchContext.bucketFactory.makeBucket(-1);
+			decodedData = context.getBucketFactory(parentFetcher.parent.persistent()).makeBucket(-1);
 			if(logMINOR) Logger.minor(this, "Copying data from data blocks");
 			OutputStream os = decodedData.getOutputStream();
 			for(int i=0;i<dataBuckets.length;i++) {
@@ -266,7 +266,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 		// Encode any check blocks we don't have
 		if(codec != null) {
-			codec.addToQueue(new FECJob(codec, context.fecQueue, dataBuckets, checkBuckets, 32768, fetchContext.bucketFactory, this, false, parentFetcher.parent.getPriorityClass(), parentFetcher.parent.persistent()),
+			codec.addToQueue(new FECJob(codec, context.fecQueue, dataBuckets, checkBuckets, 32768, context.getBucketFactory(parentFetcher.parent.persistent()), this, false, parentFetcher.parent.getPriorityClass(), parentFetcher.parent.persistent()),
 					context.fecQueue, container);
 		}
 	}

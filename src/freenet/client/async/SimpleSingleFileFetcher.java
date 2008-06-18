@@ -135,7 +135,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	protected Bucket extract(ClientKeyBlock block, RequestScheduler sched, ObjectContainer container, ClientContext context) {
 		Bucket data;
 		try {
-			data = block.decode(ctx.bucketFactory, (int)(Math.min(ctx.maxOutputLength, Integer.MAX_VALUE)), false);
+			data = block.decode(context.getBucketFactory(parent.persistent()), (int)(Math.min(ctx.maxOutputLength, Integer.MAX_VALUE)), false);
 		} catch (KeyDecodeException e1) {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Decode failure: "+e1, e1);

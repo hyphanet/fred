@@ -35,6 +35,7 @@ public class ClientContext {
 	public final RandomSource random;
 	public final ArchiveManager archiveManager;
 	public final BucketFactory persistentBucketFactory;
+	public final BucketFactory tempBucketFactory;
 	public final HealingQueue healingQueue;
 	public final USKManager uskManager;
 
@@ -47,6 +48,7 @@ public class ClientContext {
 		this.random = core.random;
 		archiveManager = core.archiveManager;
 		this.persistentBucketFactory = core.persistentEncryptedTempBucketFactory;
+		this.tempBucketFactory = core.tempBucketFactory;
 		this.healingQueue = core.getHealingQueue();
 		this.uskManager = core.uskManager;
 	}
@@ -126,6 +128,13 @@ public class ClientContext {
 		} else {
 			inserter.start(null, this);
 		}
+	}
+
+	public BucketFactory getBucketFactory(boolean persistent) {
+		if(persistent)
+			return persistentBucketFactory;
+		else
+			return tempBucketFactory;
 	}
 	
 }

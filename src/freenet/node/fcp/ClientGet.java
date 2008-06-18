@@ -110,7 +110,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				if(persistenceType == PERSIST_FOREVER)
 					ret = server.core.persistentTempBucketFactory.makeEncryptedBucket();
 				else
-					ret = fctx.bucketFactory.makeBucket(-1);
+					ret = server.core.tempBucketFactory.makeBucket(-1);
 		}
 		returnBucket = ret;
 			getter = new ClientGetter(this, server.core.requestStarters.chkFetchScheduler, server.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass,
@@ -162,7 +162,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				if(persistenceType == PERSIST_FOREVER)
 					ret = server.core.persistentTempBucketFactory.makeEncryptedBucket();
 				else
-					ret = fctx.bucketFactory.makeBucket(-1);
+					ret = server.core.tempBucketFactory.makeBucket(-1);
 			} catch (IOException e) {
 				Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
 				getter = null;
@@ -244,7 +244,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 					if(persistenceType == PERSIST_FOREVER)
 						ret = server.core.persistentTempBucketFactory.makeEncryptedBucket();
 					else
-						ret = fctx.bucketFactory.makeBucket(-1);
+						ret = server.core.tempBucketFactory.makeBucket(-1);
 				} catch (IOException e1) {
 					Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
 					getter = null;

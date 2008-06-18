@@ -266,7 +266,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		ClientContext context = sched.getContext();
 		Bucket data;
 		try {
-			data = block.decode(ctx.bucketFactory, (int)(Math.min(ctx.maxOutputLength, Integer.MAX_VALUE)), false);
+			data = block.decode(sched.getContext().getBucketFactory(segment.parentFetcher.parent.persistent()), (int)(Math.min(ctx.maxOutputLength, Integer.MAX_VALUE)), false);
 		} catch (KeyDecodeException e1) {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Decode failure: "+e1, e1);
