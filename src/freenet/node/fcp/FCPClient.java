@@ -14,6 +14,7 @@ import freenet.client.async.DBJobRunner;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
 import freenet.support.Logger;
+import freenet.support.NullObject;
 import freenet.support.io.NativeThread;
 
 /**
@@ -71,7 +72,7 @@ public class FCPClient {
 	int watchGlobalVerbosityMask;
 	/** FCPClients watching us. Lazy init, sync on clientsWatchingLock */
 	private transient LinkedList clientsWatching;
-	private final Object clientsWatchingLock = new Object();
+	private final NullObject clientsWatchingLock = new NullObject();
 	private final LinkedList toStart;
 	final RequestClient lowLevelClient;
 	private transient RequestCompletionCallback completionCallback;
