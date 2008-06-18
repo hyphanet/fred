@@ -40,7 +40,7 @@ public class FECQueue implements OOMHook {
 	private transient int fecPoolCounter;
 
 	/** Called after creating or deserializing the FECQueue. Initialises all the transient fields. */
-	void init(int priorities, int maxCacheSize, DBJobRunner dbJobRunner, Executor exec, ClientContext clientContext) {
+	public void init(int priorities, int maxCacheSize, DBJobRunner dbJobRunner, Executor exec, ClientContext clientContext) {
 		this.priorities = priorities;
 		this.maxPersistentQueueCacheSize = maxCacheSize;
 		this.databaseJobRunner = dbJobRunner;

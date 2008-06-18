@@ -370,6 +370,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 			toadletContainer.removeStartupToadlet();
 		}
 
+		fecQueue.init(RequestStarter.NUMBER_OF_PRIORITY_CLASSES, 100, clientContext.jobRunner, node.executor, clientContext);
 	}
 
 	private static String l10n(String key) {
@@ -428,11 +429,13 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 			
 		}, NativeThread.NORM_PRIORITY, false);
 		persister.start();
+		
+		datastoreCheckerExecutor.start(node.executor, "Datastore checker");
+		clientDatabaseExecutor.start(node.executor, "Client database access thread");
 		if(fcpServer != null)
 			fcpServer.maybeStart();
 		if(tmci != null)
 			tmci.start();
-		datastoreCheckerExecutor.start(node.executor, "Datastore checker");
 		
 		node.executor.execute(new PrioRunnable() {
 			public void run() {
