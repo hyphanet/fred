@@ -109,6 +109,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private String choosenPriorityScheduler; 
 	
 	public ClientRequestScheduler(boolean forInserts, boolean forSSKs, RandomSource random, RequestStarter starter, Node node, NodeClientCore core, SubConfig sc, String name, ClientContext context) {
+		this.isInsertScheduler = forInserts;
+		this.isSSKScheduler = forSSKs;
 		this.selectorContainer = node.db;
 		schedCore = ClientRequestSchedulerCore.create(node, forInserts, forSSKs, selectorContainer, COOLDOWN_PERIOD, core.clientDatabaseExecutor, this, context);
 		schedTransient = new ClientRequestSchedulerNonPersistent(this);
@@ -120,8 +122,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		this.starter = starter;
 		this.random = random;
 		this.node = node;
-		this.isInsertScheduler = forInserts;
-		this.isSSKScheduler = forSSKs;
 		this.clientContext = context;
 		
 		this.name = name;
@@ -348,7 +348,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;	
 		// schedCore juggles both
-		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, false, (short) -1, -1, clientContext);
+		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, false, Short.MAX_VALUE, Short.MAX_VALUE, clientContext);
 	}
 
 	public ChosenRequest getBetterNonPersistentRequest(ChosenRequest req) {
@@ -358,7 +358,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;	
 		if(req == null)
-			return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, (short) -1, -1, clientContext);
+			return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, Short.MAX_VALUE, Integer.MAX_VALUE, clientContext);
 		short prio = req.request.getPriorityClass();
 		int retryCount = req.request.getRetryCount();
 		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, prio, retryCount, clientContext);
