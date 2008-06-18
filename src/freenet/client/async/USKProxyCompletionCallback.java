@@ -13,17 +13,15 @@ import freenet.keys.USK;
 public class USKProxyCompletionCallback implements GetCompletionCallback {
 
 	final USK usk;
-	final USKManager uskManager;
 	final GetCompletionCallback cb;
 	
-	public USKProxyCompletionCallback(USK usk, USKManager um, GetCompletionCallback cb) {
+	public USKProxyCompletionCallback(USK usk, GetCompletionCallback cb) {
 		this.usk = usk;
-		this.uskManager = um;
 		this.cb = cb;
 	}
 
 	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
-		uskManager.update(usk, usk.suggestedEdition);
+		context.uskManager.update(usk, usk.suggestedEdition);
 		cb.onSuccess(result, state, container, context);
 	}
 
