@@ -19,7 +19,7 @@ public class USKManagerPersistent {
 		});
 		while(set.hasNext()) {
 			USKFetcherTag tag = (USKFetcherTag) set.next();
-			tag.start(manager, container, context);
+			tag.start(manager, context);
 		}
 	}
 
