@@ -8,9 +8,6 @@ import java.util.LinkedList;
 
 import com.db4o.ObjectContainer;
 
-import freenet.node.RequestStarter;
-import freenet.support.SortedVectorByNumber;
-
 /**
  * Parallel scheduler structures for non-persistent requests.
  * @author toad
@@ -25,12 +22,10 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 	 * 
 	 * To speed up fetching, a RGA or SVBN must only exist if it is non-empty.
 	 */
-	final SortedVectorByNumber[] priorities;
 	final LinkedList /* <BaseSendableGet> */ recentSuccesses;
 	
 	ClientRequestSchedulerNonPersistent(ClientRequestScheduler sched) {
 		super(sched.isInsertScheduler, sched.isSSKScheduler, sched.isInsertScheduler ? null : new HashMap(), new HashMap(), new LinkedList());
-		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		recentSuccesses = new LinkedList();
 	}
 
