@@ -30,7 +30,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	/** Priority */
 	private short priority;
 	private long token;
-	transient USKFetcher fetcher;
+	private transient USKFetcher fetcher;
 	
 	private USKFetcherTag(USK origUSK, USKFetcherCallback callback, long nodeDBHandle, boolean persistent, ObjectContainer container, FetchContext ctx, boolean keepLastData, long token) {
 		this.nodeDBHandle = nodeDBHandle;
