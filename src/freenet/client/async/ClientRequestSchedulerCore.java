@@ -316,9 +316,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			// Check recentSuccesses
 			List recent = req.persistent() ? recentSuccesses : schedTransient.recentSuccesses;
 			SendableRequest altReq = null;
-			if(recent.isEmpty()) {
+			if(!recent.isEmpty()) {
 				if(random.nextBoolean()) {
-					altReq = (BaseSendableGet) recentSuccesses.remove(recentSuccesses.size()-1);
+					altReq = (BaseSendableGet) recent.remove(recent.size()-1);
 				}
 			}
 			if(altReq != null && altReq.getPriorityClass() <= choosenPriorityClass && 
