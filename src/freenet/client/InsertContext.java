@@ -27,15 +27,13 @@ public class InsertContext {
 	public final ClientEventProducer eventProducer;
 	/** Interesting tradeoff, see comments at top of Node.java. */
 	public final boolean cacheLocalRequests;
-	public final USKManager uskManager;
 	
 	public InsertContext(BucketFactory bf, BucketFactory persistentBF, PersistentFileTracker tracker,
 			int maxRetries, int rnfsToSuccess, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
-			ClientEventProducer eventProducer, boolean cacheLocalRequests, USKManager uskManager) {
+			ClientEventProducer eventProducer, boolean cacheLocalRequests) {
 		this.bf = bf;
 		this.persistentFileTracker = tracker;
 		this.persistentBucketFactory = persistentBF;
-		this.uskManager = uskManager;
 		dontCompress = false;
 		splitfileAlgorithm = Metadata.SPLITFILE_ONION_STANDARD;
 		this.consecutiveRNFsCountAsSuccess = rnfsToSuccess;
@@ -49,7 +47,6 @@ public class InsertContext {
 
 	public InsertContext(InsertContext ctx, SimpleEventProducer producer, boolean forceNonPersistent) {
 		this.persistentFileTracker = forceNonPersistent ? new NullPersistentFileTracker() : ctx.persistentFileTracker;
-		this.uskManager = ctx.uskManager;
 		this.bf = ctx.bf;
 		this.persistentBucketFactory = forceNonPersistent ? ctx.bf : ctx.persistentBucketFactory;
 		this.dontCompress = ctx.dontCompress;
@@ -65,7 +62,6 @@ public class InsertContext {
 
 	public InsertContext(InsertContext ctx, SimpleEventProducer producer) {
 		this.persistentFileTracker = ctx.persistentFileTracker;
-		this.uskManager = ctx.uskManager;
 		this.bf = ctx.bf;
 		this.persistentBucketFactory = ctx.persistentBucketFactory;
 		this.dontCompress = ctx.dontCompress;

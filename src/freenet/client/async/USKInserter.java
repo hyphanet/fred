@@ -76,7 +76,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "scheduling fetcher for "+pubUSK.getURI());
 			if(finished) return;
-			fetcher = ctx.uskManager.getFetcherForInsertDontSchedule(pubUSK, parent.priorityClass, this, parent.getClient(), container, context);
+			fetcher = context.uskManager.getFetcherForInsertDontSchedule(pubUSK, parent.priorityClass, this, parent.getClient(), container, context);
 		}
 		fetcher.schedule(container, context);
 	}
@@ -118,7 +118,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	}
 
 	private void scheduleInsert(ObjectContainer container, ClientContext context) {
-		long edNo = Math.max(edition, ctx.uskManager.lookup(pubUSK)+1);
+		long edNo = Math.max(edition, context.uskManager.lookup(pubUSK)+1);
 		synchronized(this) {
 			if(finished) return;
 			edition = edNo;
@@ -146,7 +146,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		else {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "URI should be "+targetURI+" actually is "+realURI);
-			ctx.uskManager.update(pubUSK, edition, context);
+			context.uskManager.update(pubUSK, edition, context);
 		}
 		// FINISHED!!!! Yay!!!
 	}

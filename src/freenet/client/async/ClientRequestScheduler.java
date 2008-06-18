@@ -312,6 +312,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				schedCore.innerRegister(req, random);
 				schedCore.deleteRegisterMe(req);
+				starter.wakeUp();
 			} else {
 				databaseExecutor.execute(new Runnable() {
 					public void run() {
