@@ -424,6 +424,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 				} finally {
 					synchronized(ow) {
 						ow.done = true;
+						ow.pageNode = pageNode;
 						ow.notifyAll();
 					}
 				}
