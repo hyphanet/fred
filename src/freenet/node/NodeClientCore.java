@@ -430,6 +430,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 			fcpServer.maybeStart();
 		if(tmci != null)
 			tmci.start();
+		datastoreCheckerExecutor.start(node.executor, "Datastore checker");
 		
 		node.executor.execute(new PrioRunnable() {
 			public void run() {
