@@ -9,7 +9,6 @@ import java.util.Vector;
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
-import freenet.client.async.SingleFileFetcher.MyUSKFetcherCallback;
 import freenet.keys.USK;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
