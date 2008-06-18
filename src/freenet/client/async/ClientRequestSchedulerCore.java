@@ -98,7 +98,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	}
 
 	private void onStarted(ObjectContainer container, long cooldownTime, ClientRequestScheduler sched, ClientContext context) {
-		((Db4oMap)pendingKeys).activationDepth(Integer.MAX_VALUE);
+		if(!isInsertScheduler)
+			((Db4oMap)pendingKeys).activationDepth(Integer.MAX_VALUE);
 		((Db4oMap)allRequestsByClientRequest).activationDepth(Integer.MAX_VALUE);
 		((Db4oList)recentSuccesses).activationDepth(Integer.MAX_VALUE);
 		this.container = container;
