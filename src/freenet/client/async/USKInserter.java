@@ -101,6 +101,8 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 				}
 			}
 			if(!alreadyInserted) {
+				if(parent.persistent())
+					fetcher.removeFromDatabase(container);
 				fetcher = null;
 			}
 		}
@@ -197,6 +199,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			sbi.cancel(container, context);
 		synchronized(this) {
 			finished = true;
+			fetcher = null;
 		}
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}
@@ -207,6 +210,11 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	}
 
 	public synchronized void onCancelled(ObjectContainer container, ClientContext context) {
+		if(fetcher != null) {
+			if(parent.persistent())
+				fetcher.removeFromDatabase(container);
+			fetcher = null;
+		}
 		if(finished) return;
 		Logger.error(this, "Unexpected onCancelled()", new Exception("error"));
 		cancel(container, context);
