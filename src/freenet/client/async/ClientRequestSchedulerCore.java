@@ -335,7 +335,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				// Don't use the recent one
 				if(logMINOR)
 					Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
-				recent.add(altReq);
+				if(altReq != null)
+					recent.add(altReq);
 			}
 			// Now we have chosen a request.
 			if(logMINOR) Logger.debug(this, "removeFirst() returning "+req+" ("+chosenTracker.getNumber()+", prio "+
