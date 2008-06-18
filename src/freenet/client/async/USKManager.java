@@ -21,6 +21,8 @@ import freenet.support.Logger;
 /**
  * Tracks the latest version of every known USK.
  * Also does auto-updates.
+ * 
+ * Note that this is a transient class. It is not stored in the database. All fetchers and subscriptions are likewise transient.
  */
 public class USKManager implements RequestClient {
 
@@ -94,7 +96,7 @@ public class USKManager implements RequestClient {
 		return getFetcher(usk, backgroundFetchContext, true, client.persistent(), cb, container, context);
 	}
 
-	public void startTemporaryBackgroundFetcher(USK usk) {
+	public void startTemporaryBackgroundFetcher(USK usk, ClientContext context) {
 		USK clear = usk.clearCopy();
 		USKFetcher sched = null;
 		Vector toCancel = null;
@@ -133,10 +135,10 @@ public class USKManager implements RequestClient {
 				fetcher.cancel();
 			}
 		}
-		if(sched != null) sched.schedule();
+		if(sched != null) sched.schedule(null, context);
 	}
 	
-	void update(final USK origUSK, final long number) {
+	void update(final USK origUSK, final long number, final ClientContext context) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Updating "+origUSK.getURI()+" : "+number);
 		USK clear = origUSK.clearCopy();
@@ -157,7 +159,8 @@ public class USKManager implements RequestClient {
 				public void run() {
 					USK usk = origUSK.copy(number);
 					for(int i=0;i<callbacks.length;i++)
-						callbacks[i].onFoundEdition(number, usk);
+						callbacks[i].onFoundEdition(number, usk, null, // non-persistent
+								context, false, (short)-1, null);
 				}
 			}, 0);
 		}
@@ -168,7 +171,7 @@ public class USKManager implements RequestClient {
 	 * updated. Note that this does not imply that the USK will be
 	 * checked on a regular basis, unless runBackgroundFetch=true.
 	 */
-	public void subscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch, RequestClient client) {
+	public void subscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch, RequestClient client, final ClientContext context) {
 		USKFetcher sched = null;
 		long ed = origUSK.suggestedEdition;
 		if(ed < 0) {
@@ -202,12 +205,12 @@ public class USKManager implements RequestClient {
 			}
 		}
 		if(curEd > ed)
-			cb.onFoundEdition(curEd, origUSK.copy(curEd));
+			cb.onFoundEdition(curEd, origUSK.copy(curEd), null, context, false, (short)-1, null);
 		final USKFetcher fetcher = sched;
 		if(fetcher != null) {
 			ticker.queueTimedJob(new Runnable() {
 				public void run() {
-					fetcher.schedule();
+					fetcher.schedule(null, context);
 				}
 			}, 0);
 		}
@@ -268,9 +271,9 @@ public class USKManager implements RequestClient {
 	 * @param fctx Fetcher context for actually fetching the keys. Not used by the USK polling.
 	 * @return
 	 */
-	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetchContext fctx, short prio, RequestClient client) {
+	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetchContext fctx, short prio, RequestClient client, ClientContext context) {
 		USKRetriever ret = new USKRetriever(fctx, prio, client, cb);
-		subscribe(origUSK, ret, runBackgroundFetch, client);
+		subscribe(origUSK, ret, runBackgroundFetch, client, context);
 		return ret;
 	}
 	
