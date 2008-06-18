@@ -40,10 +40,6 @@ public class ClientContext {
 
 	public ClientContext(NodeClientCore core) {
 		this.fecQueue = core.fecQueue;
-		this.sskFetchScheduler = core.requestStarters.sskFetchScheduler;
-		this.chkFetchScheduler = core.requestStarters.chkFetchScheduler;
-		this.sskInsertScheduler = core.requestStarters.sskPutScheduler;
-		this.chkInsertScheduler = core.requestStarters.chkPutScheduler;
 		jobRunner = core;
 		this.mainExecutor = core.getExecutor();
 		this.nodeDBHandle = core.node.nodeDBHandle;
