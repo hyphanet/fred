@@ -494,6 +494,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		final Key key = block.getKey();
 		final SendableGet[] transientGets = schedTransient.removePendingKey(key);
+		if(transientGets != null && transientGets.length > 0) {
 		node.executor.execute(new Runnable() {
 			public void run() {
 				if(logMINOR) Logger.minor(this, "Running "+transientGets.length+" callbacks off-thread for "+block.getKey());
@@ -510,6 +511,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(transientCooldownQueue != null) {
 			for(int i=0;i<transientGets.length;i++)
 				transientCooldownQueue.removeKey(key, transientGets[i], transientGets[i].getCooldownWakeupByKey(key, null), null);
+		}
 		}
 		
 		// Now the persistent stuff
