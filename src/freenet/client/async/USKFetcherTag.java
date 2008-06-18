@@ -5,6 +5,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.FetchContext;
 import freenet.keys.USK;
 import freenet.node.RequestClient;
+import freenet.support.io.NativeThread;
 
 /**
  * Not the actual fetcher. Just a tag associating a USK with the client that should be called when
@@ -31,6 +32,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	private short priority;
 	private long token;
 	private transient USKFetcher fetcher;
+	private short pollingPriorityNormal;
+	private short pollingPriorityProgress;
 	
 	private USKFetcherTag(USK origUSK, USKFetcherCallback callback, long nodeDBHandle, boolean persistent, ObjectContainer container, FetchContext ctx, boolean keepLastData, long token) {
 		this.nodeDBHandle = nodeDBHandle;
@@ -41,8 +44,23 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		this.ctx = ctx;
 		this.keepLastData = keepLastData;
 		this.token = token;
+		pollingPriorityNormal = callback.getPollingPriorityNormal();
+		pollingPriorityProgress = callback.getPollingPriorityProgress();
 	}
 	
+	/**
+	 * For a persistent request, the caller must call removeFromDatabase() when finished. Note that the caller is responsible for
+	 * deleting the USKFetcherCallback and the FetchContext.
+	 * @param usk
+	 * @param callback
+	 * @param nodeDBHandle
+	 * @param persistent
+	 * @param container
+	 * @param ctx
+	 * @param keepLast
+	 * @param token
+	 * @return
+	 */
 	public static USKFetcherTag create(USK usk, USKFetcherCallback callback, long nodeDBHandle, boolean persistent, 
 			ObjectContainer container, FetchContext ctx, boolean keepLast, int token) {
 		USKFetcherTag tag = new USKFetcherTag(usk, callback, nodeDBHandle, persistent, container, ctx, keepLast, token);
@@ -64,13 +82,13 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		
 	};
 	
-	public void start(USKManager manager, ObjectContainer container, ClientContext context) {
+	public void start(USKManager manager, ClientContext context) {
 		USK usk = origUSK;
 		if(usk.suggestedEdition < edition)
 			usk = usk.copy(edition);
 		fetcher = manager.getFetcher(usk, ctx, new USKFetcherWrapper(usk, priority, client), keepLastData);
 		fetcher.addCallback(this);
-		fetcher.schedule(container, context);
+		fetcher.schedule(null, context); // non-persistent
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
@@ -82,33 +100,61 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context) {
-		start(context.uskManager, container, context);
+		start(context.uskManager, context);
 	}
 
 	public void onCancelled(ObjectContainer container, ClientContext context) {
-		callback.onCancelled(container, context);
-		if(persistent)
-			container.delete(this);
+		if(persistent) {
+			context.jobRunner.queue(new DBJob() {
+
+				public void run(ObjectContainer container, ClientContext context) {
+					callback.onCancelled(container, context);
+				}
+				
+			}, NativeThread.HIGH_PRIORITY, false);
+		} else {
+			callback.onCancelled(container, context);
+		}
 	}
 
 	public void onFailure(ObjectContainer container, ClientContext context) {
-		callback.onFailure(container, context);
-		if(persistent)
-			container.delete(this);
+		if(persistent) {
+			context.jobRunner.queue(new DBJob() {
+
+				public void run(ObjectContainer container, ClientContext context) {
+					callback.onFailure(container, context);
+				}
+				
+			}, NativeThread.HIGH_PRIORITY, false);
+		} else {
+			callback.onFailure(container, context);
+		}
 	}
 
 	public short getPollingPriorityNormal() {
-		return callback.getPollingPriorityNormal();
+		return pollingPriorityNormal;
 	}
 
 	public short getPollingPriorityProgress() {
-		return callback.getPollingPriorityProgress();
+		return pollingPriorityProgress;
 	}
 
-	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data) {
-		callback.onFoundEdition(l, key, container, context, metadata, codec, data);
-		if(persistent)
-			container.delete(this);
+	public void onFoundEdition(final long l, final USK key, ObjectContainer container, ClientContext context, final boolean metadata, final short codec, final byte[] data) {
+		if(persistent) {
+			context.jobRunner.queue(new DBJob() {
+
+				public void run(ObjectContainer container, ClientContext context) {
+					callback.onFoundEdition(l, key, container, context, metadata, codec, data);
+				}
+				
+			}, NativeThread.HIGH_PRIORITY, false);
+		} else {
+			callback.onFoundEdition(l, key, container, context, metadata, codec, data);
+		}
 	}
 
+	public void removeFromDatabase(ObjectContainer container) {
+		container.delete(this);
+	}
+	
 }
