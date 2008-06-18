@@ -168,6 +168,20 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		
 		if(logMINOR) Logger.minor(this, "Serializing RequestStarterGroup from:\n"+throttleFS);
 		
+		// Temp files
+		
+		nodeConfig.register("tempDir", new File(nodeDir, "temp-"+portNumber).toString(), sortOrder++, true, true, "NodeClientCore.tempDir", "NodeClientCore.tempDirLong", 
+				new StringCallback() {
+					public String get() {
+						return tempDir.getPath();
+					}
+					public void set(String val) throws InvalidConfigValueException {
+						if(tempDir.equals(new File(val))) return;
+						// FIXME
+						throw new InvalidConfigValueException(l10n("movingTempDirOnTheFlyNotSupported"));
+					}
+		});
+		
 		tempDir = new File(nodeConfig.getString("tempDir"));
 		if(!((tempDir.exists() && tempDir.isDirectory()) || (tempDir.mkdir()))) {
 			String msg = "Could not find or create temporary directory";
@@ -183,20 +197,6 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, random, node.fastWeakRandom, tempFilenameGenerator);
 		uskManager = new USKManager(this);
-		
-		// Temp files
-		
-		nodeConfig.register("tempDir", new File(nodeDir, "temp-"+portNumber).toString(), sortOrder++, true, true, "NodeClientCore.tempDir", "NodeClientCore.tempDirLong", 
-				new StringCallback() {
-					public String get() {
-						return tempDir.getPath();
-					}
-					public void set(String val) throws InvalidConfigValueException {
-						if(tempDir.equals(new File(val))) return;
-						// FIXME
-						throw new InvalidConfigValueException(l10n("movingTempDirOnTheFlyNotSupported"));
-					}
-		});
 		
 		// Persistent temp files
 		nodeConfig.register("persistentTempDir", new File(nodeDir, "persistent-temp-"+portNumber).toString(), sortOrder++, true, false, "NodeClientCore.persistentTempDir", "NodeClientCore.persistentTempDirLong",
