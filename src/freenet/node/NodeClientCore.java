@@ -167,9 +167,22 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		if(logMINOR) Logger.minor(this, "Read throttleFS:\n"+throttleFS);
 		
 		if(logMINOR) Logger.minor(this, "Serializing RequestStarterGroup from:\n"+throttleFS);
-		clientContext = new ClientContext(this);
-		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext);
-		clientContext.init(requestStarters);
+		
+		tempDir = new File(nodeConfig.getString("tempDir"));
+		if(!((tempDir.exists() && tempDir.isDirectory()) || (tempDir.mkdir()))) {
+			String msg = "Could not find or create temporary directory";
+			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
+		}
+		
+		try {
+			tempFilenameGenerator = new FilenameGenerator(random, true, tempDir, "temp-");
+		} catch (IOException e) {
+			String msg = "Could not find or create temporary directory (filename generator)";
+			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
+		}
+
+		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, random, node.fastWeakRandom, tempFilenameGenerator);
+		uskManager = new USKManager(this);
 		
 		// Temp files
 		
@@ -185,19 +198,6 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 					}
 		});
 		
-		tempDir = new File(nodeConfig.getString("tempDir"));
-		if(!((tempDir.exists() && tempDir.isDirectory()) || (tempDir.mkdir()))) {
-			String msg = "Could not find or create temporary directory";
-			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
-		}
-		
-		try {
-			tempFilenameGenerator = new FilenameGenerator(random, true, tempDir, "temp-");
-		} catch (IOException e) {
-			String msg = "Could not find or create temporary directory (filename generator)";
-			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
-		}
-
 		// Persistent temp files
 		nodeConfig.register("persistentTempDir", new File(nodeDir, "persistent-temp-"+portNumber).toString(), sortOrder++, true, false, "NodeClientCore.persistentTempDir", "NodeClientCore.persistentTempDirLong",
 				new StringCallback() {
@@ -220,6 +220,10 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		}
 
 		tempBucketFactory = new PaddedEphemerallyEncryptedBucketFactory(new TempBucketFactory(tempFilenameGenerator), random, node.fastWeakRandom, 1024);
+		
+		clientContext = new ClientContext(this);
+		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext);
+		clientContext.init(requestStarters);
 		
 		// Downloads directory
 		
@@ -294,10 +298,8 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		});
 		setUploadAllowedDirs(nodeConfig.getStringArr("uploadAllowedDirs"));
 		
-		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, random, node.fastWeakRandom, tempFilenameGenerator);
 		Logger.normal(this, "Initializing USK Manager");
 		System.out.println("Initializing USK Manager");
-		uskManager = new USKManager(this);
 		uskManager.init(container, clientContext);
 		
 		healingQueue = new SimpleHealingQueue(requestStarters.chkPutScheduler,
