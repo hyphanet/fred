@@ -165,7 +165,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 					req = getRequest();
 					if(req == null) {
 						try {
-							wait(100*1000); // as close to indefinite as I'm comfortable with! Toad
+							wait(1*1000); // as close to indefinite as I'm comfortable with! Toad
 						} catch (InterruptedException e) {
 							// Ignore
 						}
@@ -218,7 +218,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	}
 
 	private boolean startRequest(ChosenRequest req, boolean logMINOR) {
-		if(sched.fetchingKeys().hasKey(req.key)) return false;
+		if((!isInsert) && sched.fetchingKeys().hasKey(req.key)) return false;
 		core.getExecutor().execute(new SenderThread(req.request, req.token, req.key, req.ckey), "RequestStarter$SenderThread for "+req);
 		return true;
 	}
