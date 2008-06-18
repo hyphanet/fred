@@ -144,7 +144,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		else {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "URI should be "+targetURI+" actually is "+realURI);
-			ctx.uskManager.update(pubUSK, edition);
+			ctx.uskManager.update(pubUSK, edition, context);
 		}
 		// FINISHED!!!! Yay!!!
 	}
