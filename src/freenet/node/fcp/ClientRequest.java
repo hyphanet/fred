@@ -1,16 +1,22 @@
 package freenet.node.fcp;
 
-import java.io.*;
-import java.net.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.net.MalformedURLException;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.InsertException;
-import freenet.client.async.*;
-import freenet.keys.*;
-import freenet.support.*;
-import freenet.support.api.*;
-import freenet.support.io.*;
+import freenet.client.async.ClientContext;
+import freenet.client.async.ClientRequester;
+import freenet.client.async.DBJob;
+import freenet.keys.FreenetURI;
+import freenet.support.Fields;
+import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
+import freenet.support.api.Bucket;
+import freenet.support.io.NativeThread;
+import freenet.support.io.SerializableToFieldSetBucket;
 
 /**
  * A request process carried out by the node for an FCP client.
@@ -26,7 +32,7 @@ public abstract class ClientRequest {
 	 * differently. */
 	protected final int verbosity;
 	/** Original FCPConnectionHandler. Null if persistence != connection */
-	protected final FCPConnectionHandler origHandler;
+	protected transient final FCPConnectionHandler origHandler;
 	/** Client */
 	protected final FCPClient client;
 	/** Priority class */
