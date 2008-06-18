@@ -5,6 +5,8 @@ package freenet.client.async;
 
 import com.db4o.ObjectContainer;
 
+import freenet.keys.USK;
+
 /**
  * Callback interface for USK fetches. If you submit a USK fetch via 
  * USKManager.getFetcher, then register yourself on it as a listener, then you
@@ -16,5 +18,10 @@ public interface USKFetcherCallback extends USKCallback {
 	void onFailure(ObjectContainer container, ClientContext context);
 
 	void onCancelled(ObjectContainer container, ClientContext context);
+	
+	/** Found the latest edition. **This is terminal for a USKFetcherCallback**. It isn't for a USKCallback subscription.
+	 * @param l The edition number.
+	 * @param key The key. */
+	void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data);
 	
 }
