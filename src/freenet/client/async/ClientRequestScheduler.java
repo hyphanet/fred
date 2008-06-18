@@ -495,23 +495,23 @@ public class ClientRequestScheduler implements RequestScheduler {
 		final Key key = block.getKey();
 		final SendableGet[] transientGets = schedTransient.removePendingKey(key);
 		if(transientGets != null && transientGets.length > 0) {
-		node.executor.execute(new Runnable() {
-			public void run() {
-				if(logMINOR) Logger.minor(this, "Running "+transientGets.length+" callbacks off-thread for "+block.getKey());
-				for(int i=0;i<transientGets.length;i++) {
-					try {
-						if(logMINOR) Logger.minor(this, "Calling callback for "+transientGets[i]+" for "+key);
-						transientGets[i].onGotKey(key, block, ClientRequestScheduler.this, null, clientContext);
-					} catch (Throwable t) {
-						Logger.error(this, "Caught "+t+" running callback "+transientGets[i]+" for "+key);
+			node.executor.execute(new Runnable() {
+				public void run() {
+					if(logMINOR) Logger.minor(this, "Running "+transientGets.length+" callbacks off-thread for "+block.getKey());
+					for(int i=0;i<transientGets.length;i++) {
+						try {
+							if(logMINOR) Logger.minor(this, "Calling callback for "+transientGets[i]+" for "+key);
+							transientGets[i].onGotKey(key, block, ClientRequestScheduler.this, null, clientContext);
+						} catch (Throwable t) {
+							Logger.error(this, "Caught "+t+" running callback "+transientGets[i]+" for "+key);
+						}
 					}
 				}
+			}, "Running off-thread callbacks for "+block.getKey());
+			if(transientCooldownQueue != null) {
+				for(int i=0;i<transientGets.length;i++)
+					transientCooldownQueue.removeKey(key, transientGets[i], transientGets[i].getCooldownWakeupByKey(key, null), null);
 			}
-		}, "Running off-thread callbacks for "+block.getKey());
-		if(transientCooldownQueue != null) {
-			for(int i=0;i<transientGets.length;i++)
-				transientCooldownQueue.removeKey(key, transientGets[i], transientGets[i].getCooldownWakeupByKey(key, null), null);
-		}
 		}
 		
 		// Now the persistent stuff
