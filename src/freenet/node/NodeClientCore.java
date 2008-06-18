@@ -297,7 +297,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		Logger.normal(this, "Initializing USK Manager");
 		System.out.println("Initializing USK Manager");
 		uskManager = new USKManager(this);
-		USKManagerPersistent.init(uskManager, container, clientContext);
+		uskManager.init(container, clientContext);
 		
 		healingQueue = new SimpleHealingQueue(requestStarters.chkPutScheduler,
 				new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory, 

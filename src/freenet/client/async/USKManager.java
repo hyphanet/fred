@@ -48,6 +48,8 @@ public class USKManager implements RequestClient {
 	
 	final Ticker ticker;
 	
+	private ClientContext context;
+	
 	public USKManager(NodeClientCore core) {
 		backgroundFetchContext = core.makeClient(RequestStarter.UPDATE_PRIORITY_CLASS).getFetchContext();
 		backgroundFetchContext.followRedirects = false;
@@ -61,6 +63,11 @@ public class USKManager implements RequestClient {
 		ticker = core.getTicker();
 	}
 
+	public void init(ObjectContainer container, ClientContext context) {
+		this.context = context;
+		USKManagerPersistent.init(this, container, context);
+	}
+	
 	/**
 	 * Look up the latest known version of the given USK.
 	 * @return The latest known edition number, or -1.
@@ -132,7 +139,7 @@ public class USKManager implements RequestClient {
 		if(toCancel != null) {
 			for(int i=0;i<toCancel.size();i++) {
 				USKFetcher fetcher = (USKFetcher) toCancel.get(i);
-				fetcher.cancel();
+				fetcher.cancel(null, context);
 			}
 		}
 		if(sched != null) sched.schedule(null, context);
@@ -171,7 +178,7 @@ public class USKManager implements RequestClient {
 	 * updated. Note that this does not imply that the USK will be
 	 * checked on a regular basis, unless runBackgroundFetch=true.
 	 */
-	public void subscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch, RequestClient client, final ClientContext context) {
+	public void subscribe(USK origUSK, USKCallback cb, boolean runBackgroundFetch, RequestClient client) {
 		if(client.persistent()) throw new UnsupportedOperationException("USKManager subscriptions cannot be persistent");
 		USKFetcher sched = null;
 		long ed = origUSK.suggestedEdition;
@@ -249,7 +256,7 @@ public class USKManager implements RequestClient {
 					else
 						Logger.error(this, "Unsubscribing "+cb+" for "+origUSK+" but not already subscribed, remaining "+newCallbacks.length+" callbacks", new Exception("error"));
 				} else {
-					f.removeSubscriber(cb);
+					f.removeSubscriber(cb, context);
 					if(!f.hasSubscribers()) {
 						if(!temporaryBackgroundFetchersLRU.contains(clear)) {
 							toCancel = f;
@@ -259,7 +266,7 @@ public class USKManager implements RequestClient {
 				}
 			}
 		}
-		if(toCancel != null) toCancel.cancel();
+		if(toCancel != null) toCancel.cancel(null, context);
 	}
 	
 	/**
@@ -272,9 +279,9 @@ public class USKManager implements RequestClient {
 	 * @param fctx Fetcher context for actually fetching the keys. Not used by the USK polling.
 	 * @return
 	 */
-	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetchContext fctx, short prio, RequestClient client, ClientContext context) {
+	public USKRetriever subscribeContent(USK origUSK, USKRetrieverCallback cb, boolean runBackgroundFetch, FetchContext fctx, short prio, RequestClient client) {
 		USKRetriever ret = new USKRetriever(fctx, prio, client, cb);
-		subscribe(origUSK, ret, runBackgroundFetch, client, context);
+		subscribe(origUSK, ret, runBackgroundFetch, client);
 		return ret;
 	}
 	

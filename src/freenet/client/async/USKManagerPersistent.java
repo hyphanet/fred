@@ -11,7 +11,7 @@ import com.db4o.query.Predicate;
  */
 public class USKManagerPersistent {
 	
-	public static void init(USKManager manager, ObjectContainer container, final ClientContext context) {
+	static void init(USKManager manager, ObjectContainer container, final ClientContext context) {
 		ObjectSet set = container.query(new Predicate() {
 			public boolean match(USKFetcherTag tag) {
 				return tag.nodeDBHandle == context.nodeDBHandle;

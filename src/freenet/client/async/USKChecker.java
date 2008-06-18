@@ -30,7 +30,7 @@ class USKChecker extends BaseSingleFileFetcher {
 	
 	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched, ObjectContainer container, ClientContext context) {
 		unregister(false);
-		cb.onSuccess((ClientSSKBlock)block);
+		cb.onSuccess((ClientSSKBlock)block, context);
 	}
 
 	public void onFailure(LowLevelGetException e, Object token, RequestScheduler sched, ObjectContainer container, ClientContext context) {
@@ -68,17 +68,17 @@ class USKChecker extends BaseSingleFileFetcher {
 		// Ran out of retries.
 		unregister(false);
 		if(e.code == LowLevelGetException.CANCELLED){
-			cb.onCancelled();
+			cb.onCancelled(context);
 			return;
 		}else if(e.code == LowLevelGetException.DECODE_FAILED){
-			cb.onFatalAuthorError();
+			cb.onFatalAuthorError(context);
 			return;
 		}
 		// Rest are non-fatal. If have DNFs, DNF, else network error.
 		if(dnfs > 0)
-			cb.onDNF();
+			cb.onDNF(context);
 		else
-			cb.onNetworkError();
+			cb.onNetworkError(context);
 	}
 
 	public String toString() {

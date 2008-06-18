@@ -27,7 +27,7 @@ public class SubscribeUSK implements USKCallback {
 		core.uskManager.subscribe(message.key, this, !message.dontPoll, handler.getRebootClient().lowLevelClient);
 	}
 
-	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context) {
+	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data) {
 		if(handler.isClosed()) {
 			core.uskManager.unsubscribe(key, this, !dontPoll);
 			return;

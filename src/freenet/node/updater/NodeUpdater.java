@@ -85,7 +85,7 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 		}
 	}
 	
-	public synchronized void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context){
+	public synchronized void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Found edition "+l);
 		System.err.println("Found "+(extUpdate?"freenet-ext.jar " : "")+"update edition "+l);

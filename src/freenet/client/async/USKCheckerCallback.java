@@ -11,20 +11,20 @@ import freenet.keys.ClientSSKBlock;
 interface USKCheckerCallback {
 
 	/** Data Not Found */
-	public void onDNF();
+	public void onDNF(ClientContext context);
 	
 	/** Successfully found the latest version of the key 
 	 * @param block */
-	public void onSuccess(ClientSSKBlock block);
+	public void onSuccess(ClientSSKBlock block, ClientContext context);
 	
 	/** Error committed by author */
-	public void onFatalAuthorError();
+	public void onFatalAuthorError(ClientContext context);
 	
 	/** Network on our node or on nodes we have been talking to */
-	public void onNetworkError();
+	public void onNetworkError(ClientContext context);
 
 	/** Request cancelled */
-	public void onCancelled();
+	public void onCancelled(ClientContext context);
 	
 	/** Get priority to run the request at */
 	public short getPriority();
