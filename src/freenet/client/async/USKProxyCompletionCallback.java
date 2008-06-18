@@ -21,7 +21,7 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 	}
 
 	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
-		context.uskManager.update(usk, usk.suggestedEdition);
+		context.uskManager.update(usk, usk.suggestedEdition, context);
 		cb.onSuccess(result, state, container, context);
 	}
 
