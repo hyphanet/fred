@@ -14,7 +14,9 @@ public class USKManagerPersistent {
 	static void init(USKManager manager, ObjectContainer container, final ClientContext context) {
 		ObjectSet set = container.query(new Predicate() {
 			public boolean match(USKFetcherTag tag) {
-				return tag.nodeDBHandle == context.nodeDBHandle;
+				if(tag.nodeDBHandle != context.nodeDBHandle) return false;
+				if(tag.isFinished()) return false;
+				return true;
 			}
 		});
 		while(set.hasNext()) {

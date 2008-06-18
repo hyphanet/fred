@@ -5,6 +5,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.FetchContext;
 import freenet.keys.USK;
 import freenet.node.RequestClient;
+import freenet.support.Logger;
 import freenet.support.io.NativeThread;
 
 /**
@@ -34,6 +35,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	private transient USKFetcher fetcher;
 	private short pollingPriorityNormal;
 	private short pollingPriorityProgress;
+	private boolean finished;
 	
 	private USKFetcherTag(USK origUSK, USKFetcherCallback callback, long nodeDBHandle, boolean persistent, ObjectContainer container, FetchContext ctx, boolean keepLastData, long token) {
 		this.nodeDBHandle = nodeDBHandle;
@@ -93,6 +95,22 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 
 	public void cancel(ObjectContainer container, ClientContext context) {
 		if(fetcher != null) fetcher.cancel(container, context);
+		finish(context);
+	}
+
+	private void finish(ClientContext context) {
+		synchronized(this) {
+			finished = true;
+		}
+		if(persistent) {
+			context.jobRunner.queue(new DBJob() {
+
+				public void run(ObjectContainer container, ClientContext context) {
+					container.set(USKFetcherTag.this);
+				}
+				
+			}, NativeThread.HIGH_PRIORITY, false);
+		}
 	}
 
 	public long getToken() {
@@ -104,11 +122,15 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	}
 
 	public void onCancelled(ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			finished = true;
+		}
 		if(persistent) {
 			context.jobRunner.queue(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
 					callback.onCancelled(container, context);
+					container.set(this);
 				}
 				
 			}, NativeThread.HIGH_PRIORITY, false);
@@ -118,11 +140,15 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	}
 
 	public void onFailure(ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			finished = true;
+		}
 		if(persistent) {
 			context.jobRunner.queue(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
 					callback.onFailure(container, context);
+					container.set(this);
 				}
 				
 			}, NativeThread.HIGH_PRIORITY, false);
@@ -140,11 +166,19 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	}
 
 	public void onFoundEdition(final long l, final USK key, ObjectContainer container, ClientContext context, final boolean metadata, final short codec, final byte[] data) {
+		synchronized(this) {
+			if(fetcher == null) {
+				Logger.error(this, "onFoundEdition but fetcher is null - isn't onFoundEdition() terminal for USKFetcherCallback's??", new Exception("debug"));
+			}
+			finished = true;
+			fetcher = null;
+		}
 		if(persistent) {
 			context.jobRunner.queue(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
 					callback.onFoundEdition(l, key, container, context, metadata, codec, data);
+					container.set(this);
 				}
 				
 			}, NativeThread.HIGH_PRIORITY, false);
@@ -155,6 +189,10 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 
 	public void removeFromDatabase(ObjectContainer container) {
 		container.delete(this);
+	}
+
+	public final boolean isFinished() {
+		return finished;
 	}
 	
 }
