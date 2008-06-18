@@ -193,9 +193,10 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	 * @return
 	 */
 	private ChosenRequest getRequest() {
-		ChosenRequest req;
+		ChosenRequest req = null;
 		while(true) {
 			synchronized(queue) {
+				if(queue.isEmpty()) break;
 				req = (ChosenRequest) queue.removeFirst();
 			}
 			if(req.request.isCancelled()) continue;
