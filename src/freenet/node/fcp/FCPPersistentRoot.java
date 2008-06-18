@@ -44,7 +44,7 @@ public class FCPPersistentRoot {
 				return client.name.equals(name);
 			}
 		});
-		if(!set.hasNext()) {
+		if(set.hasNext()) {
 			return (FCPClient) set.next();
 		}
 		FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_FOREVER, this);
