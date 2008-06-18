@@ -744,7 +744,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				} else {
 					// Transition to SingleFileFetcher
 					GetCompletionCallback myCB =
-						new USKProxyCompletionCallback(usk, ctx.uskManager, cb);
+						new USKProxyCompletionCallback(usk, cb);
 					// Want to update the latest known good iff the fetch succeeds.
 					SingleFileFetcher sf = 
 						new SingleFileFetcher(requester, myCB, clientMetadata, usk.getSSK(), metaStrings, 
