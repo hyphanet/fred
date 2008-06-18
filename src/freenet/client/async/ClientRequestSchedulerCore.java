@@ -65,7 +65,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	 * @param executor 
 	 * @return
 	 */
-	public static ClientRequestSchedulerCore create(Node node, final boolean forInserts, final boolean forSSKs, ObjectContainer selectorContainer, long cooldownTime, PrioritizedSerialExecutor databaseExecutor, ClientRequestScheduler sched) {
+	public static ClientRequestSchedulerCore create(Node node, final boolean forInserts, final boolean forSSKs, ObjectContainer selectorContainer, long cooldownTime, PrioritizedSerialExecutor databaseExecutor, ClientRequestScheduler sched, ClientContext context) {
 		final long nodeDBHandle = node.nodeDBHandle;
 		ObjectSet results = selectorContainer.query(new Predicate() {
 			public boolean match(ClientRequestSchedulerCore core) {
@@ -82,7 +82,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			core = new ClientRequestSchedulerCore(node, forInserts, forSSKs, selectorContainer, cooldownTime);
 		}
 		logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequestSchedulerCore.class);
-		core.onStarted(selectorContainer, cooldownTime, sched);
+		core.onStarted(selectorContainer, cooldownTime, sched, context);
 		return core;
 	}
 
@@ -97,7 +97,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		}
 	}
 
-	private void onStarted(ObjectContainer container, long cooldownTime, ClientRequestScheduler sched) {
+	private void onStarted(ObjectContainer container, long cooldownTime, ClientRequestScheduler sched, ClientContext context) {
 		((Db4oMap)pendingKeys).activationDepth(1);
 		((Db4oMap)allRequestsByClientRequest).activationDepth(1);
 		((Db4oList)recentSuccesses).activationDepth(1);
@@ -110,7 +110,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		else
 			keysFetching = null;
 		this.sched = sched;
-		InsertCompressor.load(container, sched.clientContext);
+		InsertCompressor.load(container, context);
 	}
 	
 	void start(DBJobRunner runner) {
