@@ -735,7 +735,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			long edition = ctx.uskManager.lookup(usk);
 			if(edition <= usk.suggestedEdition) {
 				// Background fetch - start background fetch first so can pick up updates in the datastore during registration.
-				ctx.uskManager.startTemporaryBackgroundFetcher(usk);
+				ctx.uskManager.startTemporaryBackgroundFetcher(usk, context);
 				edition = ctx.uskManager.lookup(usk);
 				if(edition > usk.suggestedEdition) {
 					if(logMINOR) Logger.minor(SingleFileFetcher.class, "Redirecting to edition "+edition);
