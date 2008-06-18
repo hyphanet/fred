@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
 import freenet.keys.FreenetURI;
@@ -20,38 +22,38 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 		this.cb = cb;
 	}
 
-	public void onSuccess(FetchResult result, ClientGetState state) {
+	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
 		uskManager.update(usk, usk.suggestedEdition);
-		cb.onSuccess(result, state);
+		cb.onSuccess(result, state, container, context);
 	}
 
-	public void onFailure(FetchException e, ClientGetState state) {
+	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
 		FreenetURI uri = e.newURI;
 		if(uri != null) {
 			uri = usk.turnMySSKIntoUSK(uri);
 			e = new FetchException(e, uri);
 		}
-		cb.onFailure(e, state);
+		cb.onFailure(e, state, container, context);
 	}
 
-	public void onBlockSetFinished(ClientGetState state) {
-		cb.onBlockSetFinished(state);
+	public void onBlockSetFinished(ClientGetState state, ObjectContainer container) {
+		cb.onBlockSetFinished(state, container);
 	}
 
-	public void onTransition(ClientGetState oldState, ClientGetState newState) {
+	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 		// Ignore
 	}
 
-	public void onExpectedMIME(String mime) {
-		cb.onExpectedMIME(mime);
+	public void onExpectedMIME(String mime, ObjectContainer container) {
+		cb.onExpectedMIME(mime, container);
 	}
 
-	public void onExpectedSize(long size) {
-		cb.onExpectedSize(size);
+	public void onExpectedSize(long size, ObjectContainer container) {
+		cb.onExpectedSize(size, container);
 	}
 
-	public void onFinalizedMetadata() {
-		cb.onFinalizedMetadata();
+	public void onFinalizedMetadata(ObjectContainer container) {
+		cb.onFinalizedMetadata(container);
 	}
 
 }
