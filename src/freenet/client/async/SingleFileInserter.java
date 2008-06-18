@@ -275,6 +275,9 @@ class SingleFileInserter implements ClientPutState {
 		boolean tryCompress = (origSize > blockSize) && (!ctx.dontCompress) && (!dontCompress);
 		if(tryCompress) {
 			InsertCompressor.start(container, context, this, origData, oneBlockCompressedSize, ctx.bf, parent.persistent());
+		} else {
+			CompressionOutput output = new CompressionOutput(data, null);
+			onCompressed(output, container, context);
 		}
 	}
 	
