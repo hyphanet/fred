@@ -28,7 +28,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	/** Vector of streams (FileBucketInputStream or FileBucketOutputStream) which 
 	 * are open to this file. So we can be sure they are all closed when we free it. 
 	 * Can be null. */
-	private Vector streams;
+	private transient Vector streams;
 
 	protected static String tempDir = null;
 

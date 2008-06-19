@@ -5,6 +5,8 @@ package freenet.support.io;
 
 import java.io.File;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.api.Bucket;
 
 /**
@@ -95,5 +97,9 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 
 	protected boolean deleteOnFree() {
 		return deleteOnFree;
+	}
+
+	public void storeTo(ObjectContainer container) {
+		container.set(this);
 	}
 }

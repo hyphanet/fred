@@ -2,6 +2,8 @@ package freenet.support.io;
 
 import java.io.File;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -81,5 +83,10 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 
 	protected boolean deleteOnExit() {
 		return true;
+	}
+
+	public void storeTo(ObjectContainer container) {
+		container.set(generator);
+		container.set(this);
 	}
 }

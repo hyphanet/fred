@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.api.Bucket;
 
 /**
@@ -55,6 +57,10 @@ public class SimpleReadOnlyArrayBucket implements Bucket {
 
 	public void free() {
 		// Do nothing
+	}
+
+	public void storeTo(ObjectContainer container) {
+		container.set(this);
 	}
 
 }

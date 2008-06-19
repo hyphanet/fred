@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import com.db4o.ObjectContainer;
+
 import freenet.crypt.RandomSource;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -86,6 +88,10 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 			return null;
 		}
 		return fs;
+	}
+
+	public void storeTo(ObjectContainer container) {
+		container.set(this);
 	}
 
 }

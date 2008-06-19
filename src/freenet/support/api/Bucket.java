@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.api;
 import java.io.*;
+
+import com.db4o.ObjectContainer;
 /**
  * A bucket is any arbitrary object can temporarily store data.
  * 
@@ -49,5 +51,11 @@ public interface Bucket {
      * Free the bucket, if supported.
      */
 	public void free();
+	
+	/**
+	 * Write the bucket and all its dependancies to the database.
+	 * Update the stored copy and its dependancies if necessary.
+	 */
+	public void storeTo(ObjectContainer container);
 
 }

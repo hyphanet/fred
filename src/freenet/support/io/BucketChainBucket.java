@@ -9,6 +9,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Vector;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -257,6 +259,11 @@ public class BucketChainBucket implements Bucket {
 
 	public long size() {
 		return size;
+	}
+
+	public void storeTo(ObjectContainer container) {
+		// I'm not sure it's safe to serialize the BucketFactory ...
+		throw new UnsupportedOperationException();
 	}
 
 }

@@ -18,6 +18,8 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import java.util.Random;
 
+import com.db4o.ObjectContainer;
+
 /**
  * A proxy Bucket which adds:
  * - Encryption with the supplied cipher, and a random, ephemeral key.
@@ -362,6 +364,11 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		}
 		fs.put("MinPaddedSize", minPaddedSize);
 		return fs;
+	}
+
+	public void storeTo(ObjectContainer container) {
+		container.set(bucket);
+		container.set(this);
 	}
 
 }

@@ -8,6 +8,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.api.Bucket;
 
 /**
@@ -122,6 +124,10 @@ public class MultiReaderBucket {
 		
 		protected void finalize() {
 			free();
+		}
+
+		public void storeTo(ObjectContainer container) {
+			container.set(this);
 		}
 		
 	}

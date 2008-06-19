@@ -10,6 +10,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 
@@ -143,5 +145,9 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 		fs.put("Offset", startAt);
 		fs.put("Length", length);
 		return fs;
+	}
+
+	public void storeTo(ObjectContainer container) {
+		container.set(this);
 	}
 }

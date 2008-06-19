@@ -8,6 +8,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.api.Bucket;
 
 /**
@@ -185,5 +187,9 @@ public class ArrayBucket implements Bucket {
 		if(index != buf.length)
 			throw new IllegalStateException();
 		return buf;
+	}
+
+	public void storeTo(ObjectContainer container) {
+		container.set(this);
 	}
 }
