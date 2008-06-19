@@ -217,7 +217,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}, getter.getPriorityClass(), "Checking datastore");
 			}
 		} else {
-			finishRegister(req, persistent, onDatabaseThread);
+			finishRegister(req, persistent, onDatabaseThread, true);
 		}
 	}
 
@@ -295,28 +295,25 @@ public class ClientRequestScheduler implements RequestScheduler {
 				anyValid = true;
 			}
 		}
-		if(!anyValid) {
-			if(logMINOR)
-				Logger.minor(this, "No valid keys, returning without registering for "+getter);
-			return;
-		}
-		finishRegister(getter, persistent, false);
+		finishRegister(getter, persistent, false, anyValid);
 	}
 
-	private void finishRegister(final SendableRequest req, boolean persistent, boolean onDatabaseThread) {
+	private void finishRegister(final SendableRequest req, boolean persistent, boolean onDatabaseThread, final boolean anyValid) {
 		if(persistent) {
 			// Add to the persistent registration queue
 			if(onDatabaseThread) {
 				if(!databaseExecutor.onThread()) {
 					throw new IllegalStateException("Not on database thread!");
 				}
-				schedCore.innerRegister(req, random);
+				if(anyValid)
+					schedCore.innerRegister(req, random);
 				schedCore.deleteRegisterMe(req);
 				starter.wakeUp();
 			} else {
 				databaseExecutor.execute(new Runnable() {
 					public void run() {
-						schedCore.innerRegister(req, random);
+						if(anyValid)
+							schedCore.innerRegister(req, random);
 						schedCore.deleteRegisterMe(req);
 						selectorContainer.commit();
 					}
