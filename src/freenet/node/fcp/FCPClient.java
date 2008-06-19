@@ -246,7 +246,11 @@ public class FCPClient {
 	}
 
 	public void queueClientRequestMessage(FCPMessage msg, int verbosityLevel) {
-		if((verbosityLevel & watchGlobalVerbosityMask) != verbosityLevel)
+		queueClientRequestMessage(msg, verbosityLevel, false);
+	}
+	
+	public void queueClientRequestMessage(FCPMessage msg, int verbosityLevel, boolean useGlobalMask) {
+		if(useGlobalMask && (verbosityLevel & watchGlobalVerbosityMask) != verbosityLevel)
 			return;
 		FCPConnectionHandler conn = getConnection();
 		if(conn != null) {
@@ -262,7 +266,7 @@ public class FCPClient {
 			}
 			if(clients != null)
 			for(int i=0;i<clients.length;i++)
-				clients[i].queueClientRequestMessage(msg, verbosityLevel);
+				clients[i].queueClientRequestMessage(msg, verbosityLevel, true);
 		}
 	}
 	
