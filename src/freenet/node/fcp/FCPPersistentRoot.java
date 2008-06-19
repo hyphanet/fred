@@ -18,9 +18,9 @@ public class FCPPersistentRoot {
 	final long nodeDBHandle;
 	final FCPClient globalForeverClient;
 	
-	public FCPPersistentRoot(long nodeDBHandle) {
+	public FCPPersistentRoot(long nodeDBHandle, ObjectContainer container) {
 		this.nodeDBHandle = nodeDBHandle;
-		globalForeverClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_REBOOT, this);
+		globalForeverClient = new FCPClient("Global Queue", null, true, null, ClientRequest.PERSIST_FOREVER, this, container);
 	}
 
 	public static FCPPersistentRoot create(final long nodeDBHandle, ObjectContainer container) {
@@ -29,11 +29,15 @@ public class FCPPersistentRoot {
 				return root.nodeDBHandle == nodeDBHandle;
 			}
 		});
+		System.err.println("Count of roots: "+set.size());
 		if(set.hasNext()) {
-			return (FCPPersistentRoot) set.next();
+			System.err.println("Loaded FCP persistent root.");
+			FCPPersistentRoot root = (FCPPersistentRoot) set.next();
+			return root;
 		}
-		FCPPersistentRoot root = new FCPPersistentRoot(nodeDBHandle);
+		FCPPersistentRoot root = new FCPPersistentRoot(nodeDBHandle, container);
 		container.set(root);
+		System.err.println("Created FCP persistent root.");
 		return root;
 	}
 
@@ -47,7 +51,7 @@ public class FCPPersistentRoot {
 		if(set.hasNext()) {
 			return (FCPClient) set.next();
 		}
-		FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_FOREVER, this);
+		FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_FOREVER, this, container);
 		container.set(client);
 		return client;
 	}

@@ -4,9 +4,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.Vector;
 
 import com.db4o.ObjectContainer;
+import com.db4o.types.Db4oList;
+import com.db4o.types.Db4oMap;
 
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
@@ -27,19 +32,28 @@ import freenet.support.io.NativeThread;
  */
 public class FCPClient {
 	
-	public FCPClient(String name2, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb, short persistenceType, FCPPersistentRoot root) {
+	public FCPClient(String name2, FCPConnectionHandler handler, boolean isGlobalQueue, RequestCompletionCallback cb, short persistenceType, FCPPersistentRoot root, ObjectContainer container) {
 		this.name = name2;
 		if(name == null) throw new NullPointerException();
 		this.currentConnection = handler;
-		this.runningPersistentRequests = new HashSet();
-		this.completedUnackedRequests = new Vector();
-		this.clientRequestsByIdentifier = new HashMap();
+		final boolean forever = (persistenceType == ClientRequest.PERSIST_FOREVER);
+		if(forever) {
+			runningPersistentRequests = container.ext().collections().newLinkedList();
+			((Db4oList)runningPersistentRequests).activationDepth(Integer.MAX_VALUE);
+			completedUnackedRequests = container.ext().collections().newLinkedList();
+			((Db4oList)completedUnackedRequests).activationDepth(Integer.MAX_VALUE);
+			clientRequestsByIdentifier = container.ext().collections().newHashMap(10);
+			((Db4oMap)clientRequestsByIdentifier).activationDepth(Integer.MAX_VALUE);
+		} else {
+			runningPersistentRequests = new Vector();
+			completedUnackedRequests = new Vector();
+			clientRequestsByIdentifier = new HashMap();
+		}
 		this.isGlobalQueue = isGlobalQueue;
 		this.persistenceType = persistenceType;
 		assert(persistenceType == ClientRequest.PERSIST_FOREVER || persistenceType == ClientRequest.PERSIST_REBOOT);
 		watchGlobalVerbosityMask = Integer.MAX_VALUE;
 		toStart = new LinkedList();
-		final boolean forever = (persistenceType == ClientRequest.PERSIST_FOREVER);
 		lowLevelClient = new RequestClient() {
 			public boolean persistent() {
 				return forever;
@@ -60,11 +74,11 @@ public class FCPClient {
 	/** The current connection handler, if any. */
 	private transient FCPConnectionHandler currentConnection;
 	/** Currently running persistent requests */
-	private final HashSet runningPersistentRequests;
+	private final List runningPersistentRequests;
 	/** Completed unacknowledged persistent requests */
-	private final Vector completedUnackedRequests;
+	private final List completedUnackedRequests;
 	/** ClientRequest's by identifier */
-	private final HashMap clientRequestsByIdentifier;
+	private final Map clientRequestsByIdentifier;
 	/** Are we the global queue? */
 	public final boolean isGlobalQueue;
 	/** Are we watching the global queue? */
