@@ -111,6 +111,8 @@ public class FCPClient {
 	 * acked yet, so it should be moved to the unacked-completed-requests set.
 	 */
 	public void finishedClientRequest(ClientRequest get, ObjectContainer container) {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Finished client request", new Exception("debug"));
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		assert(get.persistenceType == persistenceType);
 		synchronized(this) {
