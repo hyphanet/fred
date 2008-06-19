@@ -75,8 +75,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		this.sourceLength = sourceLength;
 		this.getCHKOnly = getCHKOnly;
 		if(addToParent) {
-			parent.addBlock();
-			parent.addMustSucceedBlocks(1);
+			parent.addBlock(container);
+			parent.addMustSucceedBlocks(1, container);
 			parent.notifyClients(container, context);
 		}
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);

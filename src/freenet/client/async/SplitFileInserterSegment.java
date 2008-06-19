@@ -68,7 +68,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 
 	public SplitFileInserterSegment(SplitFileInserter parent,
 			FECCodec splitfileAlgo, Bucket[] origDataBlocks,
-			InsertContext blockInsertContext, boolean getCHKOnly, int segNo) {
+			InsertContext blockInsertContext, boolean getCHKOnly, int segNo, ObjectContainer container) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.parent = parent;
 		this.getCHKOnly = getCHKOnly;
@@ -83,8 +83,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		dataURIs = new ClientCHK[origDataBlocks.length];
 		dataBlockInserters = new SingleBlockInserter[dataBlocks.length];
 		checkBlockInserters = new SingleBlockInserter[checkBlocks.length];
-		parent.parent.addBlocks(dataURIs.length + checkURIs.length);
-		parent.parent.addMustSucceedBlocks(dataURIs.length + checkURIs.length);
+		parent.parent.addBlocks(dataURIs.length + checkURIs.length, container);
+		parent.parent.addMustSucceedBlocks(dataURIs.length + checkURIs.length, container);
 		this.segNo = segNo;
 	}
 
@@ -95,7 +95,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 	 */
 	public SplitFileInserterSegment(SplitFileInserter parent,
 			SimpleFieldSet fs, short splitfileAlgorithm, InsertContext ctx,
-			boolean getCHKOnly, int segNo, ClientContext context) throws ResumeException {
+			boolean getCHKOnly, int segNo, ClientContext context, ObjectContainer container) throws ResumeException {
 		this.parent = parent;
 		this.getCHKOnly = getCHKOnly;
 		this.blockInsertContext = ctx;
@@ -310,8 +310,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 					throw new ResumeException("Missing data block " + i
 							+ " and need to reconstruct check blocks");
 		}
-		parent.parent.addBlocks(dataURIs.length + checkURIs.length);
-		parent.parent.addMustSucceedBlocks(dataURIs.length + checkURIs.length);
+		parent.parent.addBlocks(dataURIs.length + checkURIs.length, container);
+		parent.parent.addMustSucceedBlocks(dataURIs.length + checkURIs.length, container);
 	}
 
 	public synchronized SimpleFieldSet getProgressFieldset() {

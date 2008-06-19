@@ -109,7 +109,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		if(alreadyInserted) {
 			// Success!
 			cb.onEncode(pubUSK.copy(edition), this, container, context);
-			parent.addMustSucceedBlocks(1);
+			parent.addMustSucceedBlocks(1, container);
 			parent.completedBlock(true, container, context);
 			cb.onSuccess(this, container, context);
 		} else {
@@ -179,8 +179,8 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		this.token = token;
 		this.getCHKOnly = getCHKOnly;
 		if(addToParent) {
-			parent.addBlock();
-			parent.addMustSucceedBlocks(1);
+			parent.addBlock(container);
+			parent.addMustSucceedBlocks(1, container);
 			parent.notifyClients(container, context);
 		}
 		privUSK = InsertableUSK.createInsertable(uri);

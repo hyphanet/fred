@@ -132,12 +132,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			gotAllMetadata(container, context);
 		}
 
-		public void addBlock() {
-			SimpleManifestPutter.this.addBlock();
+		public void addBlock(ObjectContainer container) {
+			SimpleManifestPutter.this.addBlock(container);
 		}
 		
-		public void addBlocks(int num) {
-			SimpleManifestPutter.this.addBlocks(num);
+		public void addBlocks(int num, ObjectContainer container) {
+			SimpleManifestPutter.this.addBlocks(num, container);
 		}
 		
 		public void completedBlock(boolean dontNotify, ObjectContainer container, ClientContext context) {
@@ -152,8 +152,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			SimpleManifestPutter.this.fatallyFailedBlock(container, context);
 		}
 		
-		public void addMustSucceedBlocks(int blocks) {
-			SimpleManifestPutter.this.addMustSucceedBlocks(blocks);
+		public void addMustSucceedBlocks(int blocks, ObjectContainer container) {
+			SimpleManifestPutter.this.addMustSucceedBlocks(blocks, container);
 		}
 		
 		public void notifyClients(ObjectContainer container, ClientContext context) {

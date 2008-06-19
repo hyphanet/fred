@@ -168,8 +168,8 @@ public class SplitFileFetcher implements ClientGetState {
 				throw new FetchException(FetchException.INVALID_METADATA, "Unable to allocate all check blocks to segments - buggy or malicious inserter");
 		}
 		this.token = token2;
-		parent.addBlocks(splitfileDataBlocks.length + splitfileCheckBlocks.length);
-		parent.addMustSucceedBlocks(splitfileDataBlocks.length);
+		parent.addBlocks(splitfileDataBlocks.length + splitfileCheckBlocks.length, container);
+		parent.addMustSucceedBlocks(splitfileDataBlocks.length, container);
 	}
 
 	/** Return the final status of the fetch. Throws an exception, or returns a 

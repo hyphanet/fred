@@ -109,7 +109,7 @@ public class SplitFileInserter implements ClientPutState {
 		parent.onMajorProgress();
 	}
 
-	public SplitFileInserter(BaseClientPutter parent, PutCompletionCallback cb, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean metadata, Object token, boolean insertAsArchiveManifest, SimpleFieldSet fs, ClientContext context) throws ResumeException {
+	public SplitFileInserter(BaseClientPutter parent, PutCompletionCallback cb, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean metadata, Object token, boolean insertAsArchiveManifest, SimpleFieldSet fs, ObjectContainer container, ClientContext context) throws ResumeException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.parent = parent;
 		this.insertAsArchiveManifest = insertAsArchiveManifest;
@@ -186,7 +186,7 @@ public class SplitFileInserter implements ClientPutState {
 			SimpleFieldSet segment = segFS.subset(index);
 			segFS.removeSubset(index);
 			if(segment == null) throw new ResumeException("No segment "+i);
-			segments[i] = new SplitFileInserterSegment(this, segment, splitfileAlgorithm, ctx, getCHKOnly, i, context);
+			segments[i] = new SplitFileInserterSegment(this, segment, splitfileAlgorithm, ctx, getCHKOnly, i, context, container);
 			dataBlocks += segments[i].countDataBlocks();
 			checkBlocks += segments[i].countCheckBlocks();
 		}
@@ -207,7 +207,7 @@ public class SplitFileInserter implements ClientPutState {
 		if((dataBlocks < segmentSize) || (segmentSize == -1)) {
 			// Single segment
 			FECCodec codec = FECCodec.getCodec(splitfileAlgorithm, origDataBlocks.length, executor);
-			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, codec, origDataBlocks, ctx, getCHKOnly, 0);
+			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, codec, origDataBlocks, ctx, getCHKOnly, 0, container);
 			segs.add(onlySeg);
 		} else {
 			int j = 0;
@@ -220,7 +220,7 @@ public class SplitFileInserter implements ClientPutState {
 				for(int x=0;x<seg.length;x++)
 					if(seg[x] == null) throw new NullPointerException("In splitIntoSegs: "+x+" is null of "+seg.length+" of "+segNo);
 				FECCodec codec = FECCodec.getCodec(splitfileAlgorithm, seg.length, executor);
-				SplitFileInserterSegment s = new SplitFileInserterSegment(this, codec, seg, ctx, getCHKOnly, segNo);
+				SplitFileInserterSegment s = new SplitFileInserterSegment(this, codec, seg, ctx, getCHKOnly, segNo, container);
 				segs.add(s);
 				
 				if(i == dataBlocks) break;

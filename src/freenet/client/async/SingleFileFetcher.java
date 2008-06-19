@@ -762,7 +762,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				context.uskManager.getFetcher(usk.copy(-usk.suggestedEdition), ctx, false, requester.persistent(),
 						new MyUSKFetcherCallback(requester, cb, clientMetadata, usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, returnBucket), container, context);
 			if(isEssential)
-				requester.addMustSucceedBlocks(1);
+				requester.addMustSucceedBlocks(1, container);
 			return tag;
 		}
 	}
