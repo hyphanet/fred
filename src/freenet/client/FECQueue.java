@@ -154,7 +154,7 @@ public class FECQueue implements OOMHook {
 
 								public void run(ObjectContainer container, ClientContext context) {
 									if(Logger.shouldLog(Logger.MINOR, this))
-										if(Logger.shouldLog(Logger.MINOR, this))
+										Logger.minor(this, "Running callback for "+job);
 									if(job.isADecodingJob)
 										job.callback.onDecodedSegment(container, clientContext);
 									else
