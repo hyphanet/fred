@@ -109,7 +109,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		openStoreFiles(baseDir, name);
 
 		if (updateBloom || checkBloom)
-			bloomFilter = new BloomFilter(new File(this.baseDir, name + ".bloom"), 0x4000000, 4);
+			bloomFilter = new BloomFilter(new File(this.baseDir, name + ".bloom"), 0x8000000, 4);
 
 		callback.setStore(this);
 		shutdownHook.addEarlyJob(new Thread(new ShutdownDB()));
