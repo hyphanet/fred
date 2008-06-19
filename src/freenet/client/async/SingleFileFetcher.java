@@ -295,7 +295,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 								return;
 							} catch (IOException e) {
 								// Bucket error?
-								onFailure(new FetchException(FetchException.BUCKET_ERROR, "Already freed "+data+" : "+e, e), false, sched, container, context);
+								onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, sched, container, context);
 								return;
 							}
 						}
