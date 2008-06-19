@@ -3,17 +3,20 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
-import freenet.crypt.RandomSource;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Random;
 
+import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
+import com.db4o.query.Predicate;
+
+import freenet.crypt.RandomSource;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import java.util.Random;
 
 /**
  * Handles persistent temp files. These are used for e.g. persistent downloads.
@@ -26,9 +29,6 @@ import java.util.Random;
  */
 public class PersistentTempBucketFactory implements BucketFactory, PersistentFileTracker {
 
-	/** Directory containing persistent temporary files */
-	private final File dir;
-	
 	/** Original contents of directory */
 	private HashSet originalFiles;
 	
@@ -36,16 +36,18 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	private final FilenameGenerator fg;
 	
 	/** Random number generator */
-	private final RandomSource strongPRNG;
-	private final Random weakPRNG;
+	private transient RandomSource strongPRNG;
+	private transient Random weakPRNG;
 	
 	/** Buckets to free */
 	private LinkedList bucketsToFree;
+	
+	private final long nodeDBHandle;
 
-	public PersistentTempBucketFactory(File dir, String prefix, RandomSource strongPRNG, Random weakPRNG) throws IOException {
+	public PersistentTempBucketFactory(File dir, String prefix, RandomSource strongPRNG, Random weakPRNG, long nodeDBHandle) throws IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		this.dir = dir;
 		this.strongPRNG = strongPRNG;
+		this.nodeDBHandle = nodeDBHandle;
 		this.weakPRNG = weakPRNG;
 		this.fg = new FilenameGenerator(weakPRNG, false, dir, prefix);
 		if(!dir.exists()) {
@@ -76,6 +78,12 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			}
 		}
 		bucketsToFree = new LinkedList();
+	}
+	
+	public void init(File dir, String prefix, RandomSource strongPRNG, Random weakPRNG) throws IOException {
+		this.strongPRNG = strongPRNG;
+		this.weakPRNG = weakPRNG;
+		fg.init(dir, prefix, weakPRNG);
 	}
 	
 	public void register(File file) {
@@ -139,7 +147,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	}
 	
 	public File getDir() {
-		return dir;
+		return fg.getDir();
 	}
 
 	public FilenameGenerator getGenerator() {
@@ -152,6 +160,21 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 
 	public long getID(File file) {
 		return fg.getID(file);
+	}
+
+	public static PersistentTempBucketFactory load(File dir, String prefix, RandomSource random, Random fastWeakRandom, ObjectContainer container, final long nodeDBHandle) throws IOException {
+		ObjectSet results = container.query(new Predicate() {
+			public boolean match(PersistentTempBucketFactory factory) {
+				if(factory.nodeDBHandle == nodeDBHandle) return true;
+				return false;
+			}
+		});
+		if(results.hasNext()) {
+			PersistentTempBucketFactory factory = (PersistentTempBucketFactory) results.next();
+			factory.init(dir, prefix, random, fastWeakRandom);
+			return factory;
+		} else
+			return new PersistentTempBucketFactory(dir, prefix, random, fastWeakRandom, nodeDBHandle);
 	}
 
 }

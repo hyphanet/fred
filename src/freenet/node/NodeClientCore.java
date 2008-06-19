@@ -215,7 +215,10 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 					}
 		});
 		try {
-			persistentTempBucketFactory = new PersistentTempBucketFactory(new File(nodeConfig.getString("persistentTempDir")), "freenet-temp-", random, node.fastWeakRandom);
+			File dir = new File(nodeConfig.getString("persistentTempDir"));
+			String prefix = "freenet-temp-";
+			persistentTempBucketFactory = PersistentTempBucketFactory.load(dir, prefix, random, node.fastWeakRandom, container, node.nodeDBHandle);
+			persistentTempBucketFactory.init(dir, prefix, random, node.fastWeakRandom);
 			persistentEncryptedTempBucketFactory = new PersistentEncryptedTempBucketFactory(persistentTempBucketFactory);
 		} catch (IOException e2) {
 			String msg = "Could not find or create persistent temporary directory";

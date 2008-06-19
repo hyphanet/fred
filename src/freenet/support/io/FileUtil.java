@@ -182,6 +182,52 @@ final public class FileUtil {
             return true;
         }
 
+        /**
+         * Like renameTo(), but can move across filesystems, by copying the data.
+         * @param f
+         * @param file
+         */
+    	public static boolean moveTo(File orig, File dest, boolean overwrite) {
+            if(orig.equals(dest))
+                throw new IllegalArgumentException("Huh? the two file descriptors are the same!");
+            if(!orig.exists()) {
+            	throw new IllegalArgumentException("Original doesn't exist!");
+            }
+    		if(dest.exists() && overwrite)
+    			dest.delete();
+    		else {
+    			System.err.println("Not overwriting "+dest+" - already exists moving "+orig);
+    			return false;
+    		}
+    		if(!orig.renameTo(dest)) {
+    			// Copy the data
+    			InputStream is = null;
+    			OutputStream os = null;
+    			try {
+    				is = new FileInputStream(orig);
+    				os = new FileOutputStream(dest);
+    				copy(is, os, orig.length());
+    				is.close();
+    				is = null;
+    				os.close();
+    				os = null;
+    				orig.delete();
+    				return true;
+    			} catch (IOException e) {
+    				dest.delete();
+    				Logger.error(FileUtil.class, "Move failed from "+orig+" to "+dest+" : "+e, e);
+    				System.err.println("Move failed from "+orig+" to "+dest+" : "+e);
+    				e.printStackTrace();
+    				return false;
+    			} finally {
+    				Closer.close(is);
+    				Closer.close(os);
+    			}
+    		} else return true;
+    	}
+
+
+        
 	public static String sanitize(String s) {
 		StringBuffer sb = new StringBuffer(s.length());
 		for(int i=0;i<s.length();i++) {
