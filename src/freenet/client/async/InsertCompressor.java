@@ -68,7 +68,7 @@ class InsertCompressor {
 		try {
 			for(int i=0;i<algos;i++) {
 				// Only produce if we are compressing *the original data*
-				inserter.onStartCompression(i);
+				inserter.onStartCompression(i, null, context);
 				Compressor comp = Compressor.getCompressionAlgorithmByDifficulty(i);
 				Bucket result;
 				result = comp.compress(origData, bucketFactory, origData.size());

@@ -31,7 +31,7 @@ public class USKFetcherWrapper extends BaseClientGetter {
 		return false;
 	}
 
-	public void notifyClients() {
+	public void notifyClients(ObjectContainer container, ClientContext context) {
 		// Do nothing
 	}
 
@@ -43,7 +43,7 @@ public class USKFetcherWrapper extends BaseClientGetter {
 		// Ignore
 	}
 
-	public void onBlockSetFinished(ClientGetState state, ObjectContainer container) {
+	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 

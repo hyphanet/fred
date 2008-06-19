@@ -69,7 +69,7 @@ public class SplitFileInserter implements ClientPutState {
 		return fs;
 	}
 
-	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, Compressor bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, boolean insertAsArchiveManifest, boolean freeData, ClientContext context) throws InsertException {
+	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, Compressor bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, boolean insertAsArchiveManifest, boolean freeData, ObjectContainer container, ClientContext context) throws InsertException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.parent = put;
 		this.insertAsArchiveManifest = insertAsArchiveManifest;
@@ -100,7 +100,7 @@ public class SplitFileInserter implements ClientPutState {
 		checkSegmentSize = splitfileAlgorithm == Metadata.SPLITFILE_NONREDUNDANT ? 0 : ctx.splitfileSegmentCheckBlocks;
 		
 		// Create segments
-		segments = splitIntoSegments(segmentSize, dataBuckets, context.mainExecutor);
+		segments = splitIntoSegments(segmentSize, dataBuckets, context.mainExecutor, container, context);
 		int count = 0;
 		for(int i=0;i<segments.length;i++)
 			count += segments[i].countCheckBlocks();
@@ -198,7 +198,7 @@ public class SplitFileInserter implements ClientPutState {
 	/**
 	 * Group the blocks into segments.
 	 */
-	private SplitFileInserterSegment[] splitIntoSegments(int segmentSize, Bucket[] origDataBlocks, Executor executor) {
+	private SplitFileInserterSegment[] splitIntoSegments(int segmentSize, Bucket[] origDataBlocks, Executor executor, ObjectContainer container, ClientContext context) {
 		int dataBlocks = origDataBlocks.length;
 
 		Vector segs = new Vector();
@@ -227,7 +227,7 @@ public class SplitFileInserter implements ClientPutState {
 				segNo++;
 			}
 		}
-		parent.notifyClients();
+		parent.notifyClients(container, context);
 		return (SplitFileInserterSegment[]) segs.toArray(new SplitFileInserterSegment[segs.size()]);
 	}
 	
@@ -237,7 +237,7 @@ public class SplitFileInserter implements ClientPutState {
 		
 		if(countDataBlocks > 32)
 			parent.onMajorProgress();
-		parent.notifyClients();
+		parent.notifyClients(container, context);
 		
 	}
 
@@ -256,7 +256,7 @@ public class SplitFileInserter implements ClientPutState {
 		}
 		if(encode) segment.forceEncode(container, context);
 		if(ret) return;
-		cb.onBlockSetFinished(this, container);
+		cb.onBlockSetFinished(this, container, context);
 		if(countDataBlocks > 32)
 			parent.onMajorProgress();
 	}

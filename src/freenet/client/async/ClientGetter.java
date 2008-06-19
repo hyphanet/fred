@@ -219,14 +219,14 @@ public class ClientGetter extends BaseClientGetter {
 		return uri;
 	}
 
-	public void notifyClients() {
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized));
+	public void notifyClients(ObjectContainer container, ClientContext context) {
+		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized), container, context);
 	}
 
-	public void onBlockSetFinished(ClientGetState state, ObjectContainer container) {
+	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Set finished", new Exception("debug"));
-		blockSetFinalized();
+		blockSetFinalized(container, context);
 	}
 
 	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {

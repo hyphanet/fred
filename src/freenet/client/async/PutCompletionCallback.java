@@ -34,6 +34,6 @@ public interface PutCompletionCallback {
 	/** Called when the ClientPutState knows that it knows about
 	 * all the blocks it will need to put.
 	 */
-	public void onBlockSetFinished(ClientPutState state, ObjectContainer container);
+	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context);
 
 }

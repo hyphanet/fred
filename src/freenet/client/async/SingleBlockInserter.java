@@ -56,7 +56,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	final int sourceLength;
 	private int consecutiveRNFs;
 	
-	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject) {
+	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ObjectContainer container, ClientContext context) {
 		this.consecutiveRNFs = 0;
 		this.tokenObject = tokenObject;
 		this.token = token;
@@ -77,7 +77,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(addToParent) {
 			parent.addBlock();
 			parent.addMustSucceedBlocks(1);
-			parent.notifyClients();
+			parent.notifyClients(container, context);
 		}
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
@@ -198,9 +198,9 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			finished = true;
 		}
 		if(e.isFatal() || forceFatal)
-			parent.fatallyFailedBlock();
+			parent.fatallyFailedBlock(container, context);
 		else
-			parent.failedBlock();
+			parent.failedBlock(container, context);
 		cb.onFailure(e, this, container, context);
 	}
 
@@ -227,7 +227,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(getCHKOnly) {
 			ClientKeyBlock block = encode(container, context);
 			cb.onEncode(block.getClientKey(), this, container, context);
-			parent.completedBlock(false);
+			parent.completedBlock(false, container, context);
 			cb.onSuccess(this, container, context);
 			finished = true;
 		} else {
@@ -269,7 +269,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		synchronized(this) {
 			finished = true;
 		}
-		parent.completedBlock(false);
+		parent.completedBlock(false, container, context);
 		cb.onSuccess(this, container, context);
 	}
 

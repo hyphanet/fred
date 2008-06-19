@@ -168,7 +168,7 @@ class SingleFileInserter implements ClientPutState {
 		// Compressed data
 		
 		if(parent == cb) {
-			ctx.eventProducer.produceEvent(new FinishedCompressionEvent(bestCodec == null ? -1 : bestCodec.codecNumberForMetadata(), origSize, data.size()));
+			ctx.eventProducer.produceEvent(new FinishedCompressionEvent(bestCodec == null ? -1 : bestCodec.codecNumberForMetadata(), origSize, data.size()), container, context);
 			if(logMINOR) Logger.minor(this, "Compressed "+origSize+" to "+data.size()+" on "+this);
 		}
 		
@@ -189,23 +189,23 @@ class SingleFileInserter implements ClientPutState {
 					createInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true, true, container, context);
 				cb.onTransition(this, bi, container);
 				bi.schedule(container, context);
-				cb.onBlockSetFinished(this, container);
+				cb.onBlockSetFinished(this, container, context);
 				return;
 			}
 		}
 		if (fitsInOneCHK) {
 			// Insert single block, then insert pointer to it
 			if(reportMetadataOnly) {
-				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token);
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token, container, context);
 				Metadata meta = makeMetadata(dataPutter.getURI(container, context));
 				cb.onMetadata(meta, this, container, context);
 				cb.onTransition(this, dataPutter, container);
 				dataPutter.schedule(container, context);
-				cb.onBlockSetFinished(this, container);
+				cb.onBlockSetFinished(this, container, context);
 			} else {
 				MultiPutCompletionCallback mcb = 
 					new MultiPutCompletionCallback(cb, parent, token);
-				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token);
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token, container, context);
 				Metadata meta = makeMetadata(dataPutter.getURI(container, context));
 				Bucket metadataBucket;
 				try {
@@ -228,7 +228,7 @@ class SingleFileInserter implements ClientPutState {
 				if(metaPutter instanceof SingleBlockInserter)
 					((SingleBlockInserter)metaPutter).encode(container, context);
 				metaPutter.schedule(container, context);
-				cb.onBlockSetFinished(this, container);
+				cb.onBlockSetFinished(this, container, context);
 			}
 			return;
 		}
@@ -238,13 +238,13 @@ class SingleFileInserter implements ClientPutState {
 		// insert it. Then when the splitinserter has finished, and the
 		// metadata insert has finished too, tell the master callback.
 		if(reportMetadataOnly) {
-			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData, context);
+			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData, container, context);
 			cb.onTransition(this, sfi, container);
 			sfi.start(container, context);
 			if(earlyEncode) sfi.forceEncode(container, context);
 		} else {
 			SplitHandler sh = new SplitHandler();
-			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData, context);
+			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData, container, context);
 			sh.sfi = sfi;
 			cb.onTransition(this, sh, container);
 			sfi.start(container, context);
@@ -300,14 +300,14 @@ class SingleFileInserter implements ClientPutState {
 		if(uri.getKeyType().equals("USK")) {
 			try {
 				return new USKInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
-					getCHKOnly, addToParent, this.token);
+					getCHKOnly, addToParent, this.token, container, context);
 			} catch (MalformedURLException e) {
 				throw new InsertException(InsertException.INVALID_URI, e, null);
 			}
 		} else {
 			SingleBlockInserter sbi = 
 				new SingleBlockInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
-						getCHKOnly, addToParent, false, this.token);
+						getCHKOnly, addToParent, false, this.token, container, context);
 			if(encodeCHK)
 				cb.onEncode(sbi.getBlock(container, context).getClientKey(), this, container, context);
 			return sbi;
@@ -567,7 +567,7 @@ class SingleFileInserter implements ClientPutState {
 				block.free();
 		}
 
-		public void onBlockSetFinished(ClientPutState state, ObjectContainer container) {
+		public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 			synchronized(this) {
 				if(state == sfi)
 					splitInsertSetBlocks = true;
@@ -576,7 +576,7 @@ class SingleFileInserter implements ClientPutState {
 				if(!(splitInsertSetBlocks && metaInsertSetBlocks)) 
 					return;
 			}
-			cb.onBlockSetFinished(this, container);
+			cb.onBlockSetFinished(this, container, context);
 		}
 
 		public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
@@ -686,8 +686,8 @@ class SingleFileInserter implements ClientPutState {
 		return null;
 	}
 
-	public void onStartCompression(int i) {
+	public void onStartCompression(int i, ObjectContainer container, ClientContext context) {
 		if(parent == cb)
-			ctx.eventProducer.produceEvent(new StartedCompressionEvent(i));
+			ctx.eventProducer.produceEvent(new StartedCompressionEvent(i), container, context);
 	}
 }

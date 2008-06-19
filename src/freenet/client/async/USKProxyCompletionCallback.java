@@ -34,8 +34,8 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 		cb.onFailure(e, state, container, context);
 	}
 
-	public void onBlockSetFinished(ClientGetState state, ObjectContainer container) {
-		cb.onBlockSetFinished(state, container);
+	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
+		cb.onBlockSetFinished(state, container, context);
 	}
 
 	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {

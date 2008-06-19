@@ -102,7 +102,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 									false, getCHKOnly, false, null, false, false, targetFilename, earlyEncode);
 					else
 						currentState =
-							new BinaryBlobInserter(data, this, null, false, priorityClass, ctx, context);
+							new BinaryBlobInserter(data, this, null, false, priorityClass, ctx, context, container);
 				}
 			}
 			if(cancel) {
@@ -242,14 +242,14 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		Logger.error(this, "Got metadata on "+this+" from "+state+" (this means the metadata won't be inserted)");
 	}
 	
-	public void notifyClients() {
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized));
+	public void notifyClients(ObjectContainer container, ClientContext context) {
+		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized), container, context);
 	}
 	
-	public void onBlockSetFinished(ClientPutState state, ObjectContainer container) {
+	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Set finished", new Exception("debug"));
-		blockSetFinalized();
+		blockSetFinalized(container, context);
 	}
 
 	public SimpleFieldSet getProgressFieldset() {

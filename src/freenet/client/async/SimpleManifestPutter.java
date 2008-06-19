@@ -140,32 +140,32 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			SimpleManifestPutter.this.addBlocks(num);
 		}
 		
-		public void completedBlock(boolean dontNotify) {
-			SimpleManifestPutter.this.completedBlock(dontNotify);
+		public void completedBlock(boolean dontNotify, ObjectContainer container, ClientContext context) {
+			SimpleManifestPutter.this.completedBlock(dontNotify, container, context);
 		}
 		
-		public void failedBlock() {
-			SimpleManifestPutter.this.failedBlock();
+		public void failedBlock(ObjectContainer container, ClientContext context) {
+			SimpleManifestPutter.this.failedBlock(container, context);
 		}
 		
-		public void fatallyFailedBlock() {
-			SimpleManifestPutter.this.fatallyFailedBlock();
+		public void fatallyFailedBlock(ObjectContainer container, ClientContext context) {
+			SimpleManifestPutter.this.fatallyFailedBlock(container, context);
 		}
 		
 		public void addMustSucceedBlocks(int blocks) {
 			SimpleManifestPutter.this.addMustSucceedBlocks(blocks);
 		}
 		
-		public void notifyClients() {
+		public void notifyClients(ObjectContainer container, ClientContext context) {
 			// FIXME generate per-filename events???
 		}
 
-		public void onBlockSetFinished(ClientPutState state, ObjectContainer container) {
+		public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 			synchronized(SimpleManifestPutter.this) {
 				waitingForBlockSets.remove(this);
 				if(!waitingForBlockSets.isEmpty()) return;
 			}
-			SimpleManifestPutter.this.blockSetFinalized();
+			SimpleManifestPutter.this.blockSetFinalized(container, context);
 		}
 
 		public void onMajorProgress() {
@@ -604,24 +604,24 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		// Ignore
 	}
 
-	public void notifyClients() {
-		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized));
+	public void notifyClients(ObjectContainer container, ClientContext context) {
+		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized), container, context);
 	}
 
-	public void onBlockSetFinished(ClientPutState state, ObjectContainer container) {
+	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			this.metadataBlockSetFinalized = true;
 			if(!waitingForBlockSets.isEmpty()) return;
 		}
-		this.blockSetFinalized();
+		this.blockSetFinalized(container, context);
 	}
 
-	public void blockSetFinalized() {
+	public void blockSetFinalized(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(!metadataBlockSetFinalized) return;
 			if(waitingForBlockSets.isEmpty()) return;
 		}
-		super.blockSetFinalized();
+		super.blockSetFinalized(container, context);
 	}
 	
 	/**

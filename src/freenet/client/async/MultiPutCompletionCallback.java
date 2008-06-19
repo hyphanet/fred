@@ -37,7 +37,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	}
 
 	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
-		onBlockSetFinished(state, container);
+		onBlockSetFinished(state, container, context);
 		onFetchable(state, container);
 		synchronized(this) {
 			if(finished) return;
@@ -100,7 +100,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		}
 
 		if(allGotBlocks) {
-			cb.onBlockSetFinished(this, container);
+			cb.onBlockSetFinished(this, container, context);
 		}
 		if(allDone) {
 			complete(e, container, context);
@@ -150,13 +150,13 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		}
 	}
 
-	public void onBlockSetFinished(ClientPutState state, ObjectContainer container) {
+	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			this.waitingForBlockSet.remove(state);
 			if(!started) return;
 			if(!waitingForBlockSet.isEmpty()) return;
 		}
-		cb.onBlockSetFinished(this, container);
+		cb.onBlockSetFinished(this, container, context);
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {

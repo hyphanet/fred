@@ -27,7 +27,7 @@ import freenet.support.api.Bucket;
 public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements ClientGetState {
 
 	SimpleSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent, 
-			GetCompletionCallback rcb, boolean isEssential, boolean dontAdd, long l) {
+			GetCompletionCallback rcb, boolean isEssential, boolean dontAdd, long l, ObjectContainer container, ClientContext context) {
 		super(key, maxRetries, ctx, parent);
 		this.rcb = rcb;
 		this.token = l;
@@ -35,7 +35,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			parent.addBlock();
 			if(isEssential)
 				parent.addMustSucceedBlocks(1);
-			parent.notifyClients();
+			parent.notifyClients(container, context);
 		}
 	}
 
@@ -100,9 +100,9 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		// :(
 		unregister(false);
 		if(e.isFatal() || forceFatal)
-			parent.fatallyFailedBlock();
+			parent.fatallyFailedBlock(container, context);
 		else
-			parent.failedBlock();
+			parent.failedBlock(container, context);
 		rcb.onFailure(e, this, container, context);
 	}
 

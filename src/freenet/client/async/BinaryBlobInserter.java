@@ -35,7 +35,7 @@ public class BinaryBlobInserter implements ClientPutState {
 	private boolean fatal;
 	final InsertContext ctx;
 	
-	BinaryBlobInserter(Bucket blob, ClientPutter parent, RequestClient clientContext, boolean tolerant, short prioClass, InsertContext ctx, ClientContext context) 
+	BinaryBlobInserter(Bucket blob, ClientPutter parent, RequestClient clientContext, boolean tolerant, short prioClass, InsertContext ctx, ClientContext context, ObjectContainer container) 
 	throws IOException, BinaryBlobFormatException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.ctx = ctx;
@@ -66,7 +66,7 @@ public class BinaryBlobInserter implements ClientPutState {
 		
 		inserters = (MySendableInsert[]) myInserters.toArray(new MySendableInsert[myInserters.size()]);
 		parent.addMustSucceedBlocks(inserters.length);
-		parent.notifyClients();
+		parent.notifyClients(container, context);
 	}
 	
 	private ClientRequestScheduler getScheduler(KeyBlock block, ClientContext context) {
@@ -122,7 +122,7 @@ public class BinaryBlobInserter implements ClientPutState {
 				completedBlocks++;
 				succeededBlocks++;
 			}
-			parent.completedBlock(false);
+			parent.completedBlock(false, container, context);
 			maybeFinish(container, context);
 		}
 
@@ -185,9 +185,9 @@ public class BinaryBlobInserter implements ClientPutState {
 				if(fatal) BinaryBlobInserter.this.fatal = true;
 			}
 			if(fatal)
-				parent.fatallyFailedBlock();
+				parent.fatallyFailedBlock(container, context);
 			else
-				parent.failedBlock();
+				parent.failedBlock(container, context);
 			maybeFinish(container, context);
 		}
 		

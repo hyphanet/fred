@@ -5,6 +5,10 @@ package freenet.client.events;
 
 import java.io.PrintWriter;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
+
 public class EventDumper implements ClientEventListener {
 
 	final PrintWriter pw;
@@ -13,7 +17,7 @@ public class EventDumper implements ClientEventListener {
 		this.pw = writer;
 	}
 
-	public void receive(ClientEvent ce) {
+	public void receive(ClientEvent ce, ObjectContainer container, ClientContext context) {
 		pw.println(ce.getDescription());
 	}
 

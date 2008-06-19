@@ -6,6 +6,9 @@ import java.util.Enumeration;
 import java.util.NoSuchElementException;
 import java.util.Vector;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
 import freenet.support.Logger;
 
 /**
@@ -49,11 +52,11 @@ public class SimpleEventProducer implements ClientEventProducer {
     /**
      * Sends the ClientEvent to all registered listeners of this object.
      **/
-    public void produceEvent(ClientEvent ce) {
+    public void produceEvent(ClientEvent ce, ObjectContainer container, ClientContext context) {
 	for (Enumeration e = listeners.elements() ; 
 	     e.hasMoreElements();) {
             try {
-                ((ClientEventListener) e.nextElement()).receive(ce);
+                ((ClientEventListener) e.nextElement()).receive(ce, container, context);
             } catch (NoSuchElementException ne) {
 		Logger.normal(this, "Concurrent modification in "+
 				"produceEvent!: "+this);

@@ -21,7 +21,7 @@ public interface GetCompletionCallback {
 	/** Called when the ClientGetState knows that it knows about
 	 * all the blocks it will need to fetch.
 	 */
-	public void onBlockSetFinished(ClientGetState state, ObjectContainer container);
+	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context);
 
 	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container);
 

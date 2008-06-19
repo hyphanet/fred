@@ -197,7 +197,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 			dontNotify = !scheduled;
 		}
-		parentFetcher.parent.completedBlock(dontNotify);
+		parentFetcher.parent.completedBlock(dontNotify, container, sched.getContext());
 		seg.possiblyRemoveFromParent();
 		if(decodeNow) {
 			removeSubSegments();
@@ -371,10 +371,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 			// :(
 			if(e.isFatal()) {
 				fatallyFailedBlocks++;
-				parentFetcher.parent.fatallyFailedBlock();
+				parentFetcher.parent.fatallyFailedBlock(container, context);
 			} else {
 				failedBlocks++;
-				parentFetcher.parent.failedBlock();
+				parentFetcher.parent.failedBlock(container, context);
 			}
 			// Once it is no longer possible to have a successful fetch, fail...
 			allFailed = failedBlocks + fatallyFailedBlocks > (dataKeys.length + checkKeys.length - minFetched);
@@ -503,7 +503,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			synchronized(this) {
 				scheduled = true;
 			}
-			parentFetcher.parent.notifyClients();
+			parentFetcher.parent.notifyClients(container, context);
 			if(logMINOR)
 				Logger.minor(this, "scheduling "+seg+" : "+seg.blockNums);
 		} catch (Throwable t) {

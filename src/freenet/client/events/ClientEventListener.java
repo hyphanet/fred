@@ -3,6 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.events;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
+
 
 /**
  * Event handling for clients.
@@ -15,7 +19,10 @@ public interface ClientEventListener {
 
     /**
      * Hears an event.
+     * @param container The database context the event was generated in.
+     * NOTE THAT IT MAY NOT HAVE BEEN GENERATED IN A DATABASE CONTEXT AT ALL:
+     * In this case, container will be null, and you should use context to schedule a DBJob.
      **/
-    public void receive(ClientEvent ce);
+    public void receive(ClientEvent ce, ObjectContainer maybeContainer, ClientContext context);
 
 }

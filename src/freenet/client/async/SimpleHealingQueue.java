@@ -43,7 +43,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 			try {
 				sbi = new SingleBlockInserter(this, data, (short)-1, 
 							FreenetURI.EMPTY_CHK_URI, ctx, this, false, 
-							CHKBlock.DATA_LENGTH, ctr, false, false, false, data);
+							CHKBlock.DATA_LENGTH, ctr, false, false, false, data, null, context);
 			} catch (Throwable e) {
 				Logger.error(this, "Caught trying to insert healing block: "+e, e);
 				return false;
@@ -78,7 +78,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		return false;
 	}
 
-	public void notifyClients() {
+	public void notifyClients(ObjectContainer container, ClientContext context) {
 		// Do nothing
 	}
 
@@ -118,7 +118,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		Logger.error(this, "Got metadata on SimpleHealingQueue from "+state+": "+m, new Exception("debug"));
 	}
 
-	public void onBlockSetFinished(ClientPutState state, ObjectContainer container) {
+	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 

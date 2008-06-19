@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.events;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
 import freenet.support.Logger;
 
 /**
@@ -24,7 +27,7 @@ public class EventLogger implements ClientEventListener {
      * @param ce
      *            The event that occured
      */
-    public void receive(ClientEvent ce) {
+    public void receive(ClientEvent ce, ObjectContainer container, ClientContext context) {
     	Logger.logStatic(ce, ce.getDescription(), logPrio);
     }
 }

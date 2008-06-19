@@ -408,11 +408,11 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 				dataBlockInserters[i] = new SingleBlockInserter(parent.parent,
 						dataBlocks[i], (short) -1, FreenetURI.EMPTY_CHK_URI,
 						blockInsertContext, this, false, CHKBlock.DATA_LENGTH,
-						i, getCHKOnly, false, false, parent.token);
+						i, getCHKOnly, false, false, parent.token, container, context);
 				dataBlockInserters[i].schedule(container, context);
 				fin = false;
 			} else {
-				parent.parent.completedBlock(true);
+				parent.parent.completedBlock(true, container, context);
 			}
 		}
 		// parent.parent.notifyClients();
@@ -440,11 +440,11 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 							parent.parent, checkBlocks[i], (short) -1,
 							FreenetURI.EMPTY_CHK_URI, blockInsertContext, this,
 							false, CHKBlock.DATA_LENGTH, i + dataBlocks.length,
-							getCHKOnly, false, false, parent.token);
+							getCHKOnly, false, false, parent.token, container, context);
 					checkBlockInserters[i].schedule(container, context);
 					fin = false;
 				} else
-					parent.parent.completedBlock(true);
+					parent.parent.completedBlock(true, container, context);
 			}
 			onEncodedSegment(container, context);
 		}
@@ -476,7 +476,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 						checkBlocks[i], (short) -1, FreenetURI.EMPTY_CHK_URI,
 						blockInsertContext, this, false, CHKBlock.DATA_LENGTH,
 						i + dataBlocks.length, getCHKOnly, false, false,
-						parent.token);
+						parent.token, container, context);
 				checkBlockInserters[i].schedule(container, context);
 			}
 		} catch (Throwable t) {
@@ -715,7 +715,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		Logger.error(this, "Got onMetadata from " + state);
 	}
 
-	public void onBlockSetFinished(ClientPutState state, ObjectContainer container) {
+	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 		Logger.error(this, "Should not happen: onBlockSetFinished(" + state
 				+ ") on " + this);

@@ -66,7 +66,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		Logger.error(this, "Found edition "+state.getToken()+" but failed to fetch edition: "+e, e);
 	}
 
-	public void onBlockSetFinished(ClientGetState state, ObjectContainer container) {
+	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
@@ -78,7 +78,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		return false;
 	}
 
-	public void notifyClients() {
+	public void notifyClients(ObjectContainer container, ClientContext context) {
 		// Ignore for now
 	}
 

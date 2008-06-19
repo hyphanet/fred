@@ -69,8 +69,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			ClientKey key, LinkedList metaStrings, FreenetURI origURI, int addedMetaStrings, FetchContext ctx,
 			ArchiveContext actx, ArchiveHandler ah, Metadata archiveMetadata, int maxRetries, int recursionLevel,
 			boolean dontTellClientGet, long l, boolean isEssential,
-			Bucket returnBucket, boolean isFinal) throws FetchException {
-		super(key, maxRetries, ctx, parent, cb, isEssential, false, l);
+			Bucket returnBucket, boolean isFinal, ObjectContainer container, ClientContext context) throws FetchException {
+		super(key, maxRetries, ctx, parent, cb, isEssential, false, l, container, context);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+key+" from "+origURI+" meta="+metaStrings.toString(), new Exception("debug"));
 		this.isFinal = isFinal;
@@ -97,9 +97,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	/** Copy constructor, modifies a few given fields, don't call schedule().
 	 * Used for things like slave fetchers for MultiLevelMetadata, therefore does not remember returnBucket,
 	 * metaStrings etc. */
-	public SingleFileFetcher(SingleFileFetcher fetcher, Metadata newMeta, GetCompletionCallback callback, FetchContext ctx2) throws FetchException {
+	public SingleFileFetcher(SingleFileFetcher fetcher, Metadata newMeta, GetCompletionCallback callback, FetchContext ctx2, ObjectContainer container, ClientContext context) throws FetchException {
 		// Don't add a block, we have already fetched the data, we are just handling the metadata in a different fetcher.
-		super(fetcher.key, fetcher.maxRetries, ctx2, fetcher.parent, callback, false, true, fetcher.token);
+		super(fetcher.key, fetcher.maxRetries, ctx2, fetcher.parent, callback, false, true, fetcher.token, container, context);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Creating SingleFileFetcher for "+fetcher.key+" meta="+fetcher.metaStrings.toString(), new Exception("debug"));
 		this.returnBucket = null;
@@ -127,7 +127,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.sched = sched;
 		if(parent instanceof ClientGetter)
 			((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
-		parent.completedBlock(fromStore);
+		parent.completedBlock(fromStore, container, context);
 		// Extract data
 		
 		if(block == null) {
@@ -388,7 +388,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(logMINOR) Logger.minor(this, "Is multi-level metadata");
 				// Fetch on a second SingleFileFetcher, like with archives.
 				metadata.setSimpleRedirect();
-				final SingleFileFetcher f = new SingleFileFetcher(this, metadata, new MultiLevelMetadataCallback(), ctx);
+				final SingleFileFetcher f = new SingleFileFetcher(this, metadata, new MultiLevelMetadataCallback(), ctx, container, context);
 				// Clear our own metadata so it can be garbage collected, it will be replaced by whatever is fetched.
 				this.metadata = null;
 				f.wrapHandleMetadata(true, container, context);
@@ -442,9 +442,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					addedMetaStrings++;
 				}
 
-				final SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, redirectedKey, metaStrings, this.uri, addedMetaStrings, ctx, actx, ah, archiveMetadata, maxRetries, recursionLevel, false, token, true, returnBucket, isFinal);
+				final SingleFileFetcher f = new SingleFileFetcher(parent, rcb, clientMetadata, redirectedKey, metaStrings, this.uri, addedMetaStrings, ctx, actx, ah, archiveMetadata, maxRetries, recursionLevel, false, token, true, returnBucket, isFinal, container, context);
 				if((redirectedKey instanceof ClientCHK) && !((ClientCHK)redirectedKey).isMetadata())
-					rcb.onBlockSetFinished(this, container);
+					rcb.onBlockSetFinished(this, container, context);
 				if(metadata.isCompressed()) {
 					Compressor codec = Compressor.getCompressionAlgorithmByMetadataID(metadata.getCompressionCodec());
 					f.addDecompressor(codec);
@@ -517,7 +517,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						decompressors, clientMetadata, actx, recursionLevel, returnBucket, token, container);
 				parent.onTransition(this, sf, container);
 				sf.schedule(container, context);
-				rcb.onBlockSetFinished(this, container);
+				rcb.onBlockSetFinished(this, container, context);
 				// Clear our own metadata, we won't need it any more.
 				// For multi-level metadata etc see above.
 				metadata = null; 
@@ -554,7 +554,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		Metadata newMeta = (Metadata) meta.clone();
 		newMeta.setSimpleRedirect();
 		final SingleFileFetcher f;
-		f = new SingleFileFetcher(this, newMeta, new ArchiveFetcherCallback(forData, element, callback), new FetchContext(ctx, FetchContext.SET_RETURN_ARCHIVES, true));
+		f = new SingleFileFetcher(this, newMeta, new ArchiveFetcherCallback(forData, element, callback), new FetchContext(ctx, FetchContext.SET_RETURN_ARCHIVES, true), container, context);
 		if(logMINOR) Logger.minor(this, "fetchArchive(): "+f);
 		// Fetch the archive. The archive fetcher callback will unpack it, and either call the element 
 		// callback, or just go back around handleMetadata() on this, which will see that the data is now
@@ -639,9 +639,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			SingleFileFetcher.this.onFailure(e, true, sched, container, context);
 		}
 
-		public void onBlockSetFinished(ClientGetState state, ObjectContainer container) {
+		public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
 			if(wasFetchingFinalData) {
-				rcb.onBlockSetFinished(SingleFileFetcher.this, container);
+				rcb.onBlockSetFinished(SingleFileFetcher.this, container, context);
 			}
 		}
 
@@ -684,7 +684,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			SingleFileFetcher.this.onFailure(e, true, sched, container, context);
 		}
 
-		public void onBlockSetFinished(ClientGetState state, ObjectContainer container) {
+		public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
 			// Ignore as we are fetching metadata here
 		}
 
@@ -721,9 +721,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		if((clientMetadata == null || clientMetadata.isTrivial()) && (!uri.hasMetaStrings()) &&
 				ctx.allowSplitfiles == false && ctx.followRedirects == false && 
 				returnBucket == null && key instanceof ClientKey)
-			return new SimpleSingleFileFetcher((ClientKey)key, maxRetries, ctx, requester, cb, isEssential, false, l);
+			return new SimpleSingleFileFetcher((ClientKey)key, maxRetries, ctx, requester, cb, isEssential, false, l, container, context);
 		if(key instanceof ClientKey)
-			return new SingleFileFetcher(requester, cb, clientMetadata, (ClientKey)key, uri.listMetaStrings(), uri, 0, ctx, actx, null, null, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal);
+			return new SingleFileFetcher(requester, cb, clientMetadata, (ClientKey)key, uri.listMetaStrings(), uri, 0, ctx, actx, null, null, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal, container, context);
 		else {
 			return uskCreate(requester, cb, clientMetadata, (USK)key, uri.listMetaStrings(), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal, container, context);
 		}
@@ -749,7 +749,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					SingleFileFetcher sf = 
 						new SingleFileFetcher(requester, myCB, clientMetadata, usk.getSSK(), metaStrings, 
 								usk.getURI().addMetaStrings(metaStrings), 0, ctx, actx, null, null, maxRetries, recursionLevel, 
-								dontTellClientGet, l, isEssential, returnBucket, isFinal);
+								dontTellClientGet, l, isEssential, returnBucket, isFinal, container, context);
 					return sf;
 				}
 			} else {
@@ -802,7 +802,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			try {
 				if(l == usk.suggestedEdition) {
 					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, clientMetadata, key, metaStrings, key.getURI().addMetaStrings(metaStrings),
-							0, ctx, actx, null, null, maxRetries, recursionLevel+1, dontTellClientGet, token, false, returnBucket, true);
+							0, ctx, actx, null, null, maxRetries, recursionLevel+1, dontTellClientGet, token, false, returnBucket, true, container, context);
 					sf.schedule(container, context);
 				} else {
 					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, newUSK.getURI().addMetaStrings(metaStrings)), null, container, context);

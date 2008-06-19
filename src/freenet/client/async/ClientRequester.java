@@ -57,14 +57,14 @@ public abstract class ClientRequester {
 	/** Has totalBlocks stopped growing? */
 	protected boolean blockSetFinalized;
 
-	public void blockSetFinalized() {
+	public void blockSetFinalized(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(blockSetFinalized) return;
 			blockSetFinalized = true;
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Finalized set of blocks for "+this, new Exception("debug"));
-		notifyClients();
+		notifyClients(container, context);
 	}
 
 	public synchronized void addBlock() {
@@ -87,28 +87,28 @@ public abstract class ClientRequester {
 		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "addBlocks("+num+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
 	}
 
-	public void completedBlock(boolean dontNotify) {
+	public void completedBlock(boolean dontNotify, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Completed block ("+dontNotify+ "): total="+totalBlocks+" success="+successfulBlocks+" failed="+failedBlocks+" fatally="+fatallyFailedBlocks+" finalised="+blockSetFinalized+" required="+minSuccessBlocks+" on "+this);
 		synchronized(this) {
 			successfulBlocks++;
 			if(dontNotify) return;
 		}
-		notifyClients();
+		notifyClients(container, context);
 	}
 
-	public void failedBlock() {
+	public void failedBlock(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			failedBlocks++;
 		}
-		notifyClients();
+		notifyClients(container, context);
 	}
 
-	public void fatallyFailedBlock() {
+	public void fatallyFailedBlock(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			fatallyFailedBlocks++;
 		}
-		notifyClients();
+		notifyClients(container, context);
 	}
 
 	public synchronized void addMustSucceedBlocks(int blocks) {
@@ -116,7 +116,7 @@ public abstract class ClientRequester {
 		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "addMustSucceedBlocks("+blocks+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
 	}
 
-	public abstract void notifyClients();
+	public abstract void notifyClients(ObjectContainer container, ClientContext context);
 
 	/** Get client context object */
 	public RequestClient getClient() {
@@ -133,6 +133,11 @@ public abstract class ClientRequester {
 
 	public boolean persistent() {
 		return client.persistent();
+	}
+
+
+	public void removeFrom(ObjectContainer container) {
+		// TODO FIXME do something!
 	}
 
 }

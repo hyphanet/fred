@@ -110,7 +110,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			// Success!
 			cb.onEncode(pubUSK.copy(edition), this, container, context);
 			parent.addMustSucceedBlocks(1);
-			parent.completedBlock(true);
+			parent.completedBlock(true, container, context);
 			cb.onSuccess(this, container, context);
 		} else {
 			scheduleInsert(container, context);
@@ -125,7 +125,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "scheduling insert for "+pubUSK.getURI()+ ' ' +edition);
 			sbi = new SingleBlockInserter(parent, data, compressionCodec, privUSK.getInsertableSSK(edition).getInsertURI(),
-					ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject);
+					ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject, container, context);
 		}
 		try {
 			sbi.schedule(container, context);
@@ -167,7 +167,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 
 	public USKInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
 			InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, 
-			boolean getCHKOnly, boolean addToParent, Object tokenObject) throws MalformedURLException {
+			boolean getCHKOnly, boolean addToParent, Object tokenObject, ObjectContainer container, ClientContext context) throws MalformedURLException {
 		this.tokenObject = tokenObject;
 		this.parent = parent;
 		this.data = data;
@@ -181,7 +181,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		if(addToParent) {
 			parent.addBlock();
 			parent.addMustSucceedBlocks(1);
-			parent.notifyClients();
+			parent.notifyClients(container, context);
 		}
 		privUSK = InsertableUSK.createInsertable(uri);
 		pubUSK = privUSK.getUSK();
@@ -234,7 +234,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		Logger.error(this, "Got onMetadata("+m+ ',' +state+ ')');
 	}
 
-	public void onBlockSetFinished(ClientPutState state, ObjectContainer container) {
+	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		// Ignore
 	}
 
