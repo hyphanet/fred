@@ -692,4 +692,15 @@ public class SplitFileFetcherSegment implements FECCallback {
 				checkCooldownTimes[blockNo - dataCooldownTimes.length] = -1;
 		}
 	}
+
+	public void onFailed(Throwable t, ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			if(finished) {
+				Logger.error(this, "FEC decode or encode failed but already finished: "+t, t);
+				return;
+			}
+			finished = true;
+		}
+		this.fail(new FetchException(FetchException.INTERNAL_ERROR, "FEC failure: "+t, t), container, context);
+	}
 }

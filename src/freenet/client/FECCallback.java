@@ -19,4 +19,7 @@ public interface FECCallback {
 	public void onEncodedSegment(ObjectContainer container, ClientContext context);
 
 	public void onDecodedSegment(ObjectContainer container, ClientContext context);
+
+	/** Something broke. */
+	public void onFailed(Throwable t, ObjectContainer container, ClientContext context);
 }

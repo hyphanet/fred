@@ -679,6 +679,10 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			if (toThrow != null)
 				toThrow = new InsertException(InsertException.CANCELLED);
 		}
+		cancelInner(container, context);
+	}
+
+	private void cancelInner(ObjectContainer container, ClientContext context) {
 		for (int i = 0; i < dataBlockInserters.length; i++) {
 			SingleBlockInserter sbi = dataBlockInserters[i];
 			if (sbi != null)
@@ -736,5 +740,18 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 	public void forceEncode(ObjectContainer container, ClientContext context) {
 		context.backgroundBlockEncoder.queue(dataBlockInserters, container, context);
 		context.backgroundBlockEncoder.queue(checkBlockInserters, container, context);
+	}
+
+	public void onFailed(Throwable t, ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			if(finished) {
+				Logger.error(this, "FEC decode or encode failed but already finished: "+t, t);
+				return;
+			}
+			finished = true;
+			Logger.error(this, "Insert segment failed: "+t+" for "+this, t);
+			this.toThrow = new InsertException(InsertException.INTERNAL_ERROR, "FEC failure: "+t, null);
+		}
+		cancelInner(container, context);
 	}
 }
