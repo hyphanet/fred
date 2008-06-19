@@ -172,6 +172,7 @@ public class FCPConnectionHandler {
 	public void setClientName(final String name) {
 		this.clientName = name;
 		rebootClient = server.registerRebootClient(name, server.core, this);
+		rebootClient.queuePendingMessagesOnConnectionRestart(outputHandler, null);
 		server.core.clientContext.jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
@@ -181,6 +182,7 @@ public class FCPConnectionHandler {
 						foreverClient = client;
 						FCPConnectionHandler.this.notifyAll();
 					}
+					client.queuePendingMessagesOnConnectionRestart(outputHandler, container);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t+" creating persistent client for "+name, t);
 					failedGetForever = true;

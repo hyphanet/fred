@@ -465,6 +465,7 @@ public class FCPServer implements Runnable {
 				if(oldConn == null) {
 					// Easy
 					oldClient.setConnection(handler);
+					return oldClient;
 				} else {
 					// Kill old connection
 					oldConn.setKilledDupe();
@@ -475,9 +476,6 @@ public class FCPServer implements Runnable {
 				}
 			}
 		}
-		if(handler != null)
-			oldClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, null);
-		return oldClient;
 	}
 	
 	public FCPClient registerForeverClient(String name, NodeClientCore core, FCPConnectionHandler handler, ObjectContainer container) {
