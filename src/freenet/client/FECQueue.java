@@ -153,6 +153,8 @@ public class FECQueue implements OOMHook {
 							databaseJobRunner.queue(new DBJob() {
 
 								public void run(ObjectContainer container, ClientContext context) {
+									if(Logger.shouldLog(Logger.MINOR, this))
+										if(Logger.shouldLog(Logger.MINOR, this))
 									if(job.isADecodingJob)
 										job.callback.onDecodedSegment(container, clientContext);
 									else
@@ -186,6 +188,8 @@ public class FECQueue implements OOMHook {
 
 		public void run(ObjectContainer container, ClientContext context) {
 			// Try to avoid accessing the database while synchronized on the FECQueue.
+			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			if(logMINOR) Logger.minor(this, "Running FEC cache filler job");
 			while(true) {
 				boolean addedAny = false;
 				int totalCached = 0;
@@ -196,6 +200,7 @@ public class FECQueue implements OOMHook {
 						if(newCached >= maxPersistentQueueCacheSize) return;
 						grab = maxPersistentQueueCacheSize - newCached;
 					}
+					if(logMINOR) Logger.minor(this, "Grabbing up to "+grab+" jobs");
 					Query query = container.query();
 					query.constrain(FECJob.class);
 					query.descend("priority").constrain(new Short(i));
@@ -205,6 +210,7 @@ public class FECQueue implements OOMHook {
 					if(results.hasNext()) {
 						for(int j=0;j<grab && results.hasNext();j++) {
 							FECJob job = (FECJob) results.next();
+							if(logMINOR) Logger.minor(this, "Maybe adding "+job);
 							synchronized(FECQueue.this) {
 								if(persistentQueueCache[j].contains(job)) {
 									j--;
@@ -227,6 +233,8 @@ public class FECQueue implements OOMHook {
 					}
 				}
 				if(!addedAny) {
+					if(logMINOR)
+						Logger.minor(this, "No more jobs to add");
 					return;
 				} else {
 					int maxRunningThreads = getMaxRunningFECThreads();
