@@ -116,10 +116,12 @@ public class FilenameGenerator {
 	 */
 	public void init(File dir, String prefix, Random random) throws IOException {
 		this.random = random;
-		if(tmpDir.equals(dir) && this.prefix.equals(prefix)) {
+		File oldDir = FileUtil.getCanonicalFile(tmpDir);
+		File newDir = FileUtil.getCanonicalFile(dir);
+		if(oldDir.equals(dir) && this.prefix.equals(prefix)) {
 			Logger.normal(this, "Initialised FilenameGenerator successfully - no change in dir and prefix: dir="+dir+" prefix="+prefix);
-		} else if(!tmpDir.equals(dir) && this.prefix.equals(prefix)) {
-			if((!dir.exists()) && tmpDir.renameTo(dir)) {
+		} else if(!oldDir.equals(newDir) && this.prefix.equals(prefix)) {
+			if((!dir.exists()) && oldDir.renameTo(dir)) {
 				tmpDir = dir;
 				// This will interest the user, since they changed it.
 				String msg = "Successfully renamed persistent temporary directory from "+tmpDir+" to "+dir;
