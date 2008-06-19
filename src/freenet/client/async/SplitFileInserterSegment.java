@@ -455,6 +455,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		synchronized (this) {
 			fetchable = (blocksCompleted > dataBlocks.length);
 		}
+		if(parent.parent.persistent())
+			container.set(this);
 		if (fetchable)
 			parent.segmentFetchable(this, container);
 		if (fin)
@@ -490,6 +492,9 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		synchronized (this) {
 			encoded = true;
 		}
+		
+		if(parent.parent.persistent())
+			container.set(this);
 
 		// Tell parent only after have started the inserts.
 		// Because of the counting.
@@ -503,6 +508,9 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 				}
 			}
 		}
+		
+		if(parent.parent.persistent())
+			container.set(this);
 	}
 
 	private void finish(InsertException ex, ObjectContainer container, ClientContext context) {
@@ -514,6 +522,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			finished = true;
 			toThrow = ex;
 		}
+		if(parent.parent.persistent())
+			container.set(this);
 		parent.segmentFinished(this, container, context);
 	}
 
@@ -524,6 +534,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			finished = true;
 			toThrow = InsertException.construct(errors);
 		}
+		if(parent.parent.persistent())
+			container.set(this);
 		parent.segmentFinished(this, container, context);
 	}
 
@@ -546,6 +558,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 				dataURIs[x] = key;
 			}
 			blocksGotURI++;
+			if(parent.parent.persistent())
+				container.set(this);
 			if (blocksGotURI != dataBlocks.length + checkBlocks.length)
 				return;
 			// Double check
@@ -563,6 +577,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			}
 			hasURIs = true;
 		}
+		if(parent.parent.persistent())
+			container.set(this);
 		parent.segmentHasURIs(this, container, context);
 	}
 
@@ -588,7 +604,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 	}
 
 	private void completed(int x, ObjectContainer container, ClientContext context) {
-		int total = innerCompleted(x);
+		int total = innerCompleted(x, container);
 		if (total == -1)
 			return;
 		if (total == dataBlockInserters.length) {
@@ -596,6 +612,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		}
 		if (total != dataBlockInserters.length + checkBlockInserters.length)
 			return;
+		if(parent.parent.persistent())
+			container.set(this);
 		finish(container, context);
 	}
 
@@ -607,7 +625,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 	 * @return -1 if the segment has already finished, otherwise the number of
 	 *         completed blocks.
 	 */
-	private synchronized int innerCompleted(int x) {
+	private synchronized int innerCompleted(int x, ObjectContainer container) {
 		if (logMINOR)
 			Logger.minor(this, "Completed: " + x + " on " + this
 					+ " ( completed=" + blocksCompleted + ", total="
@@ -638,6 +656,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			}
 		}
 		blocksCompleted++;
+		if(parent.parent.persistent())
+			container.set(this);
 		return blocksCompleted;
 	}
 
@@ -703,6 +723,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 				checkBlocks[i] = null;
 			}
 		}
+		if(parent.parent.persistent())
+			container.set(this);
 		parent.segmentFinished(this, container, context);
 	}
 
