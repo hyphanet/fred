@@ -118,7 +118,7 @@ public class FilenameGenerator {
 		this.random = random;
 		File oldDir = FileUtil.getCanonicalFile(tmpDir);
 		File newDir = FileUtil.getCanonicalFile(dir);
-		if(oldDir.equals(dir) && this.prefix.equals(prefix)) {
+		if(oldDir.equals(newDir) && this.prefix.equals(prefix)) {
 			Logger.normal(this, "Initialised FilenameGenerator successfully - no change in dir and prefix: dir="+dir+" prefix="+prefix);
 		} else if(!oldDir.equals(newDir) && this.prefix.equals(prefix)) {
 			if((!dir.exists()) && oldDir.renameTo(dir)) {
