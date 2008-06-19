@@ -429,6 +429,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			ObjectSet result = query.execute();
 			while(result.hasNext()) {
 				RegisterMe reg = (RegisterMe) result.next();
+				if(logMINOR)
+					Logger.minor(this, "Running RegisterMe for "+reg.getter+" : "+reg.addedTime+" : "+reg.priority);
 				container.delete(reg);
 				// Don't need to activate, fields should exist? FIXME
 				try {
