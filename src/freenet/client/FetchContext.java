@@ -21,7 +21,6 @@ public class FetchContext implements Cloneable {
 	/** Low-level client to send low-level requests to. */
 	public long maxOutputLength;
 	public long maxTempLength;
-	public USKManager uskManager;
 	public int maxRecursionLevel;
 	public int maxArchiveRestarts;
 	public int maxArchiveLevels;
@@ -53,10 +52,9 @@ public class FetchContext implements Cloneable {
 			boolean allowSplitfiles, boolean followRedirects, boolean localRequestOnly,
 			int maxDataBlocksPerSegment, int maxCheckBlocksPerSegment,
 			BucketFactory bucketFactory,
-			ClientEventProducer producer, boolean cacheLocalRequests, USKManager uskManager, 
+			ClientEventProducer producer, boolean cacheLocalRequests, 
 			boolean ignoreTooManyPathComponents) {
 		this.maxOutputLength = curMaxLength;
-		this.uskManager = uskManager;
 		this.maxTempLength = curMaxTempLength;
 		this.maxMetadataSize = maxMetadataSize;
 		this.maxRecursionLevel = maxRecursionLevel;
@@ -81,7 +79,6 @@ public class FetchContext implements Cloneable {
 			this.eventProducer = ctx.eventProducer;
 		else
 			this.eventProducer = new SimpleEventProducer();
-		this.uskManager = ctx.uskManager;
 		this.ignoreTooManyPathComponents = ctx.ignoreTooManyPathComponents;
 		this.blocks = ctx.blocks;
 		this.allowedMIMETypes = ctx.allowedMIMETypes;

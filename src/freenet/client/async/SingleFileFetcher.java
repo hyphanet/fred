@@ -732,11 +732,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	private static ClientGetState uskCreate(ClientRequester requester, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetchContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, boolean isEssential, Bucket returnBucket, boolean isFinal, ObjectContainer container, ClientContext context) throws FetchException {
 		if(usk.suggestedEdition >= 0) {
 			// Return the latest known version but at least suggestedEdition.
-			long edition = ctx.uskManager.lookup(usk);
+			long edition = context.uskManager.lookup(usk);
 			if(edition <= usk.suggestedEdition) {
 				// Background fetch - start background fetch first so can pick up updates in the datastore during registration.
-				ctx.uskManager.startTemporaryBackgroundFetcher(usk, context);
-				edition = ctx.uskManager.lookup(usk);
+				context.uskManager.startTemporaryBackgroundFetcher(usk, context);
+				edition = context.uskManager.lookup(usk);
 				if(edition > usk.suggestedEdition) {
 					if(logMINOR) Logger.minor(SingleFileFetcher.class, "Redirecting to edition "+edition);
 					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, usk.copy(edition).getURI().addMetaStrings(metaStrings)), null, container, context);
@@ -759,7 +759,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		} else {
 			// Do a thorough, blocking search
 			USKFetcherTag tag = 
-				ctx.uskManager.getFetcher(usk.copy(-usk.suggestedEdition), ctx, false, requester.persistent(),
+				context.uskManager.getFetcher(usk.copy(-usk.suggestedEdition), ctx, false, requester.persistent(),
 						new MyUSKFetcherCallback(requester, cb, clientMetadata, usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, returnBucket), container, context);
 			if(isEssential)
 				requester.addMustSucceedBlocks(1);

@@ -189,7 +189,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 				FETCH_SPLITFILES, FOLLOW_REDIRECTS, LOCAL_REQUESTS_ONLY,
 				MAX_SPLITFILE_BLOCKS_PER_SEGMENT, MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT,
 				bucketFactory, globalEventProducer, 
-				cacheLocalRequests, core.uskManager, false);
+				cacheLocalRequests, false);
 	}
 
 	public InsertContext getInsertContext(boolean forceNonPersistent) {

@@ -52,7 +52,6 @@ public class USKManager implements RequestClient {
 	public USKManager(NodeClientCore core) {
 		backgroundFetchContext = core.makeClient(RequestStarter.UPDATE_PRIORITY_CLASS).getFetchContext();
 		backgroundFetchContext.followRedirects = false;
-		backgroundFetchContext.uskManager = this;
 		latestVersionByClearUSK = new HashMap();
 		subscribersByClearUSK = new HashMap();
 		fetchersByUSK = new HashMap();
