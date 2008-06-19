@@ -71,9 +71,16 @@ final public class FileUtil {
 	}
 	
 	public static File getCanonicalFile(File file) {
+		// Having some problems storing File's in db4o ...
+		// It would start up, and canonicalise a file with path "/var/lib/freenet-experimental/persistent-temp-24374"
+		// to /var/lib/freenet-experimental/var/lib/freenet-experimental/persistent-temp-24374 
+		// (where /var/lib/freenet-experimental is the current working dir)
+		// Regenerating from path worked. So do that here.
+		// And yes, it's voodoo.
+		file = new File(file.getPath());
 		File result;
 		try {
-			result = file.getCanonicalFile();
+			result = file.getAbsoluteFile().getCanonicalFile();
 		} catch (IOException e) {
 			result = file.getAbsoluteFile();
 		}
