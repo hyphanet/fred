@@ -3,6 +3,8 @@ package freenet.node;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.util.Iterator;
+import java.util.LinkedList;
 
 import com.db4o.ObjectContainer;
 
@@ -60,6 +62,7 @@ import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.SerialExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BooleanCallback;
+import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.IntCallback;
 import freenet.support.api.StringArrCallback;
@@ -1188,6 +1191,15 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 			try {
 				job.run(node.db, clientContext);
 				node.db.commit();
+				LinkedList toFree = persistentTempBucketFactory.grabBucketsToFree();
+				for(Iterator i=toFree.iterator();i.hasNext();) {
+					Bucket bucket = (Bucket)i.next();
+					try {
+						bucket.free();
+					} catch (Throwable t) {
+						Logger.error(this, "Caught "+t+" freeing bucket "+bucket+" after transaction commit");
+					}
+				}
 			} catch (Throwable t) {
 				Logger.error(this, "Failed to run database job "+job+" : caught "+t, t);
 			}
