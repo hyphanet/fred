@@ -253,6 +253,8 @@ public abstract class ClientRequest {
 		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
 			origHandler.finishedClientRequest(this);
 		client.finishedClientRequest(this, container);
+		if(persistenceType == ClientRequest.PERSIST_FOREVER)
+			container.set(this);
 	}
 
 	/**
