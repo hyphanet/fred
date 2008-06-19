@@ -91,6 +91,7 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 	}
 
 	public void storeTo(ObjectContainer container) {
+		bucket.storeTo(container);
 		container.set(this);
 	}
 
