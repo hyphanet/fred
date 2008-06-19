@@ -29,6 +29,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import freenet.crypt.BlockCipher;
 import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
@@ -1397,9 +1399,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			byte[] key = new byte[fullKeyLength];
 
 			long maxKey = storeRAF.length() / (headerBlockLength + dataBlockLength);
+
+			WrapperManager.signalStarting((int) (Math.min(7 * 24 * 60 * 60 * 1000, 5 * 60 * 1000L + maxKey * 100L)));
 			for (int l = 0; true; l++) {
 				if (l % 1024 == 0)
-					System.out.println(" key " + l + "/" + maxKey);
+					System.out.println(" migrating key " + l + "/" + maxKey);
 
 				boolean keyRead = false;
 				storeRAF.readFully(header);
