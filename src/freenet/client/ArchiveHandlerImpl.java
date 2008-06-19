@@ -100,6 +100,9 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 	private static void runPersistentOffThread(final ArchiveExtractTag tag, final ClientContext context, final ArchiveManager manager, final BucketFactory bf) {
 		final ProxyCallback proxyCallback = new ProxyCallback();
 		
+		if(Logger.shouldLog(Logger.MINOR, ArchiveHandlerImpl.class))
+			Logger.minor(ArchiveHandlerImpl.class, "Scheduling off-thread extraction: "+tag.data+" for "+tag.handler.key+" element "+tag.element+" for "+tag.callback);
+		
 		context.mainExecutor.execute(new Runnable() {
 
 			public void run() {
