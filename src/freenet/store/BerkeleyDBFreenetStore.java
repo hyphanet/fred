@@ -37,7 +37,6 @@ import com.sleepycat.je.log.LogFileNotFoundException;
 
 import freenet.crypt.RandomSource;
 import freenet.keys.KeyVerifyException;
-import freenet.node.NodeInitException;
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -1774,14 +1773,16 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	*/
 	private class StoreBlockTupleBinding extends TupleBinding {
 
-		public void objectToEntry(Object object, TupleOutput to)  {
+		@Override
+        public void objectToEntry(Object object, TupleOutput to)  {
 			StoreBlock myData = (StoreBlock)object;
 
 			to.writeLong(myData.getOffset());
 			to.writeLong(myData.getRecentlyUsed());
 		}
 
-		public Object entryToObject(TupleInput ti) {
+		@Override
+        public Object entryToObject(TupleInput ti) {
 			long offset = ti.readLong();
 			long lastAccessed = ti.readLong();
 			
@@ -1831,7 +1832,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	}
 	
 	private class ShutdownHook extends Thread {
-		public void run() {
+		@Override
+        public void run() {
 			System.err.println("Closing database due to shutdown.");
 			close(true);
 		}
@@ -2303,4 +2305,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
     	envConfig.setConfigParam("je.env.backgroundSleepInterval", "10000" /* microseconds */); // 10ms
         return envConfig;
     }
+
+	public long getBloomFalsePositive() {
+		return -1;
+	}
 }

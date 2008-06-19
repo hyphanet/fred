@@ -73,6 +73,10 @@ public abstract class StoreCallback {
 	public long keyCount() {
 		return store.keyCount();
 	}
+	
+	public long getBloomFalsePositive() {
+		return store.getBloomFalsePositive();
+	}
 
 	/** Generate a routing key from a full key */
 	public abstract byte[] routingKeyFromFullKey(byte[] keyBuf);

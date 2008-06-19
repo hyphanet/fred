@@ -1383,6 +1383,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		configLock.readLock().unlock();
 		return _storeSize;
 	}
+	
+	public long getBloomFalsePositive() {
+		return bloomFalsePos.get();
+	}
 
 	// ------------- Migration
 	public void migrationFrom(File storeFile, File keyFile) {
