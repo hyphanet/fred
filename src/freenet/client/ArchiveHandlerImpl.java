@@ -104,15 +104,24 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 
 			public void run() {
 				try {
+					final boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+					if(logMINOR)
+						Logger.minor(this, "Extracting off-thread: "+tag.data+" for "+tag.handler.key+" element "+tag.element+" for "+tag.callback);
 					tag.handler.extractToCache(tag.data, tag.actx, tag.element, proxyCallback, manager, null, context);
+					if(logMINOR)
+						Logger.minor(this, "Extracted");
 					final Bucket data;
 					if(proxyCallback.data == null)
 						data = null;
 					else {
 						try {
+							if(logMINOR)
+								Logger.minor(this, "Copying data...");
 							data = bf.makeBucket(proxyCallback.data.size());
 							BucketTools.copy(proxyCallback.data, data);
 							proxyCallback.data.free();
+							if(logMINOR)
+								Logger.minor(this, "Copied and freed original");
 						} catch (IOException e) {
 							throw new ArchiveFailureException("Failure copying data to persistent storage", e);
 						}
@@ -120,11 +129,13 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 					context.jobRunner.queue(new DBJob() {
 
 						public void run(ObjectContainer container, ClientContext context) {
+							if(logMINOR)
+								Logger.minor(this, "Calling callback for "+tag.data+" for "+tag.handler.key+" element "+tag.element+" for "+tag.callback);
 							container.delete(tag);
 							if(proxyCallback.data == null)
 								tag.callback.notInArchive(container, context);
 							else
-								tag.callback.gotBucket(proxyCallback.data, container, context);
+								tag.callback.gotBucket(data, container, context);
 						}
 						
 					}, NativeThread.NORM_PRIORITY, false);
