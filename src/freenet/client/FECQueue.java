@@ -197,6 +197,7 @@ public class FECQueue implements OOMHook {
 						grab = maxPersistentQueueCacheSize - newCached;
 					}
 					Query query = container.query();
+					query.constrain(FECJob.class);
 					query.descend("priority").constrain(new Short(i));
 					query.descend("queue").constrain(FECQueue.this);
 					query.descend("addedTime").orderAscending();
