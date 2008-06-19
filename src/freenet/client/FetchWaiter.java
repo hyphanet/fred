@@ -38,7 +38,7 @@ public class FetchWaiter implements ClientCallback {
 		throw new UnsupportedOperationException();
 	}
 
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
 		throw new UnsupportedOperationException();
 	}
 

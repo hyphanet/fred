@@ -25,7 +25,7 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 	private final long length;
 
 	public ReadOnlyFileSliceBucket(File f, long startAt, long length) {
-		this.file = f;
+		this.file = new File(f.getPath()); // copy so we can delete it
 		this.startAt = startAt;
 		this.length = length;
 	}
@@ -149,5 +149,10 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 
 	public void storeTo(ObjectContainer container) {
 		container.set(this);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(file);
+		container.delete(this);
 	}
 }

@@ -25,7 +25,7 @@ public interface ClientCallback {
 	
 	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container);
 	
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state);
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container);
 	
 	/** Called when freenet.async thinks that the request should be serialized to
 	 * disk, if it is a persistent request. */

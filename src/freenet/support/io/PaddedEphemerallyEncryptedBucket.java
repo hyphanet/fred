@@ -44,6 +44,8 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	 * @param minSize The minimum padded size of the file (after it has been closed).
 	 * @param strongPRNG a strong prng we will key from.
 	 * @param weakPRNG a week prng we will padd from.
+	 * Serialization: Note that it is not our responsibility to free the random number generators,
+	 * but we WILL free the underlying bucket.
 	 * @throws UnsupportedCipherException 
 	 */
 	public PaddedEphemerallyEncryptedBucket(Bucket bucket, int minSize, RandomSource strongPRNG, Random weakPRNG) {
@@ -369,6 +371,12 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	public void storeTo(ObjectContainer container) {
 		container.set(bucket);
 		container.set(this);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		bucket.removeFrom(container);
+		// The random is passed in and not our responsibility.
+		container.delete(this);
 	}
 
 }

@@ -204,7 +204,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			if(targetFilename != null)
 				uri = uri.pushMetaString(targetFilename);
 		}
-		client.onGeneratedURI(uri, this);
+		client.onGeneratedURI(uri, this, container);
 	}
 	
 	public void cancel(ObjectContainer container, ClientContext context) {

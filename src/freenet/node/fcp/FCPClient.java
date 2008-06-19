@@ -188,7 +188,7 @@ public class FCPClient {
         req.requestWasRemoved(container);
 		if(kill) {
 			if(logMINOR) Logger.minor(this, "Killing request "+req);
-			req.cancel();
+			req.cancel(container);
 		}
 		if(completionCallback != null)
 			completionCallback.onRemove(req);
@@ -378,8 +378,8 @@ public class FCPClient {
 		Iterator i = toStart.iterator();
 		while(i.hasNext()) {
 			ClientRequest req = (ClientRequest) i.next();
-			req.cancel();
-			req.delete(container);
+			req.cancel(container);
+			req.requestWasRemoved(container);
 		}
 	}
 

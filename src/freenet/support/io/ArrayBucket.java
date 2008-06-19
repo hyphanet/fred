@@ -190,6 +190,11 @@ public class ArrayBucket implements Bucket {
 	}
 
 	public void storeTo(ObjectContainer container) {
+		container.set(data);
 		container.set(this);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(data);
 	}
 }

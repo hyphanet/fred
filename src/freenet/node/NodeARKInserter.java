@@ -224,7 +224,7 @@ public class NodeARKInserter implements ClientCallback, RequestClient {
 		startInserter();
 	}
 
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "Generated URI for " + darknetOpennetString + " ARK: "+uri);
 		long l = uri.getSuggestedEdition();
 		if(l < crypto.myARKNumber) {

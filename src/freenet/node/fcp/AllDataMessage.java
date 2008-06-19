@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import com.db4o.ObjectContainer;
+
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -56,6 +58,10 @@ public class AllDataMessage extends DataCarryingMessage {
 
 	boolean isGlobal() {
 		return global;
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
 	}
 
 }

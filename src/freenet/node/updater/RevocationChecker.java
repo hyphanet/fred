@@ -225,7 +225,7 @@ public class RevocationChecker implements ClientCallback, RequestClient {
 		
 	}
 
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
 		// TODO Auto-generated method stub
 		
 	}

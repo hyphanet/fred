@@ -111,7 +111,7 @@ public class FCPConnectionHandler {
 			dupe = killedDupe;
 		}
 		for(int i=0;i<requests.length;i++)
-			requests[i].onLostConnection();
+			requests[i].onLostConnection(null);
 		if(!dupe) {
 		server.core.clientContext.jobRunner.queue(new DBJob() {
 
@@ -382,7 +382,7 @@ public class FCPConnectionHandler {
 		if(failedMessage != null) {
 			outputHandler.queue(failedMessage);
 			if(cp != null)
-				cp.cancel();
+				cp.cancel(null);
 			return;
 		} else {
 			if(Logger.shouldLog(Logger.MINOR, this))
@@ -564,7 +564,7 @@ public class FCPConnectionHandler {
 		if(req != null) {
 			req.requestWasRemoved(null);
 			if(kill)
-				req.cancel();
+				req.cancel(null);
 		}
 		return req;
 	}

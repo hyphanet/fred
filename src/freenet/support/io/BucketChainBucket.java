@@ -262,8 +262,20 @@ public class BucketChainBucket implements Bucket {
 	}
 
 	public void storeTo(ObjectContainer container) {
-		// I'm not sure it's safe to serialize the BucketFactory ...
-		throw new UnsupportedOperationException();
+		container.set(buckets);
+		container.set(this);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		Bucket[] list;
+		synchronized(this) {
+			list = (Bucket[]) buckets.toArray(new Bucket[buckets.size()]);
+			buckets.clear();
+		}
+		for(int i=0;i<list.length;i++)
+			list[i].removeFrom(container);
+		container.delete(buckets);
+		container.delete(this);
 	}
 
 }

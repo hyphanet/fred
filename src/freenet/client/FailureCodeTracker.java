@@ -7,6 +7,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.SimpleFieldSet;
 
 /**
@@ -181,6 +183,22 @@ public class FailureCodeTracker {
 
 	public boolean isEmpty() {
 		return map.isEmpty();
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		Item[] items;
+		Integer[] ints;
+		synchronized(this) {
+			items = (Item[]) map.values().toArray(new Item[map.size()]);
+			ints = (Integer[]) map.keySet().toArray(new Integer[map.size()]);
+			map.clear();
+		}
+		for(int i=0;i<items.length;i++) {
+			container.delete(items[i]);
+			container.delete(ints[i]);
+		}
+		container.delete(map);
+		container.delete(this);
 	}
 	
 }

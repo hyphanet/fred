@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.*;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
+import freenet.client.async.ClientContext;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.FinishedCompressionEvent;
@@ -25,6 +26,7 @@ import freenet.support.SimpleFieldSet;
  */
 public abstract class ClientPutBase extends ClientRequest implements ClientCallback, ClientEventListener {
 
+	/** Created new for each ClientPutBase, so we have to delete it in requestWasRemoved() */
 	final InsertContext ctx;
 	final boolean getCHKOnly;
 
@@ -46,7 +48,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	// Not that important, so not saved on persistence.
 	// Probably saving it would conflict with later changes (full persistence at
 	// ClientPutter level).
-	private FCPMessage progressMessage;
+	private transient FCPMessage progressMessage;
 
 	/** Whether to force an early generation of the CHK */
 	protected final boolean earlyEncode;
@@ -127,9 +129,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		}
 	}
 
-	public void onLostConnection() {
+	public void onLostConnection(ObjectContainer container) {
 		if(persistenceType == PERSIST_CONNECTION)
-			cancel();
+			cancel(container);
 		// otherwise ignore
 	}
 
@@ -140,7 +142,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			succeeded = true;
 			finished = true;
 		}
-		freeData();
+		freeData(container);
 		finish(container);
 		trySendFinalMessage(null);
 		client.notifySuccess(this);
@@ -152,18 +154,20 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			finished = true;
 			putFailedMessage = new PutFailedMessage(e, identifier, global);
 		}
-		freeData();
+		freeData(container);
 		finish(container);
 		trySendFinalMessage(null);
 		client.notifyFailure(this);
 	}
 
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
 		synchronized(this) {
 			if((generatedURI != null) && !uri.equals(generatedURI))
 				Logger.error(this, "onGeneratedURI("+uri+ ',' +state+") but already set generatedURI to "+generatedURI);
 			generatedURI = uri;
 		}
+		if(persistenceType == PERSIST_FOREVER)
+			container.set(this);
 		trySendGeneratedURIMessage(null);
 	}
 
@@ -181,11 +185,18 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
 		client.queueClientRequestMessage(msg, 0);
 
-		freeData();
-		finish(container);
+		freeData(container);
+		if(persistenceType == PERSIST_FOREVER) {
+			ctx.removeFrom(container);
+			if(putFailedMessage != null)
+				putFailedMessage.removeFrom(container);
+			if(generatedURI != null)
+				generatedURI.removeFrom(container);
+			publicURI.removeFrom(container);
+		}
 	}
 
-	public void receive(ClientEvent ce) {
+	public void receive(ClientEvent ce, ObjectContainer container, ClientContext context) {
 		if(finished) return;
 		if(ce instanceof SplitfileProgressEvent) {
 			if((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) {
@@ -389,12 +400,14 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		return s;
 	}
 
-	public void setVarsRestart() {
+	public void setVarsRestart(ObjectContainer container) {
 		synchronized(this) {
 			finished = false;
 			this.putFailedMessage = null;
 			this.progressMessage = null;
 			started = false;
 		}
+		if(persistenceType == PERSIST_FOREVER)
+			container.set(this);
 	}
 }

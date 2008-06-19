@@ -129,6 +129,16 @@ public class MultiReaderBucket {
 		public void storeTo(ObjectContainer container) {
 			container.set(this);
 		}
+
+		public void removeFrom(ObjectContainer container) {
+			container.delete(this);
+			synchronized(MultiReaderBucket.this) {
+				if(!closed) return;
+			}
+			bucket.removeFrom(container);
+			container.delete(readers);
+			container.delete(MultiReaderBucket.this);
+		}
 		
 	}
 	

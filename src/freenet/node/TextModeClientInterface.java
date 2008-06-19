@@ -80,7 +80,7 @@ public class TextModeClientInterface implements Runnable {
     	this.downloadsDir = server.downloadsDir;
     	this.in = in;
     	this.out = out;
-        client.addGlobalHook(new EventDumper(new PrintWriter(out, true)));
+        client.addGlobalHook(new EventDumper(new PrintWriter(out, true), false));
 	}
 
     public TextModeClientInterface(Node n, HighLevelSimpleClient c, File downloadDir, InputStream in, OutputStream out) {
@@ -92,7 +92,7 @@ public class TextModeClientInterface implements Runnable {
     	this.downloadsDir = downloadDir;
     	this.in = in;
     	this.out = out;
-        client.addGlobalHook(new EventDumper(new PrintWriter(out, true)));
+        client.addGlobalHook(new EventDumper(new PrintWriter(out, true), false));
     }
     
     public void run() {

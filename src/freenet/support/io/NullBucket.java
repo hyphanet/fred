@@ -76,5 +76,9 @@ public class NullBucket implements Bucket, SerializableToFieldSetBucket {
 	public void storeTo(ObjectContainer container) {
 		container.set(this);
 	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
+	}
 }
 

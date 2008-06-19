@@ -238,25 +238,25 @@ public class ClientPutDir extends ClientPutBase {
 		}
 	}
 	
-	public void onLostConnection() {
+	public void onLostConnection(ObjectContainer container) {
 		if(persistenceType == PERSIST_CONNECTION)
-			cancel();
+			cancel(container);
 		// otherwise ignore
 	}
 	
-	protected void freeData() {
-		freeData(manifestElements);
+	protected void freeData(ObjectContainer container) {
+		freeData(manifestElements, container);
 	}
 	
-	private void freeData(HashMap manifestElements) {
+	private void freeData(HashMap manifestElements, ObjectContainer container) {
 		Iterator i = manifestElements.values().iterator();
 		while(i.hasNext()) {
 			Object o = i.next();
 			if(o instanceof HashMap)
-				freeData((HashMap)o);
+				freeData((HashMap)o, container);
 			else {
 				ManifestElement e = (ManifestElement) o;
-				e.freeData();
+				e.freeData(container);
 			}
 		}
 	}
@@ -355,7 +355,7 @@ public class ClientPutDir extends ClientPutBase {
 
 	public boolean restart(ObjectContainer container, ClientContext context) {
 		if(!canRestart()) return false;
-		setVarsRestart();
+		setVarsRestart(container);
 			makePutter();
 		start(container, context);
 		return true;
@@ -364,4 +364,8 @@ public class ClientPutDir extends ClientPutBase {
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {}
 
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {}
+
+	public void onRemoveEventProducer(ObjectContainer container) {
+		// Do nothing, we called the removeFrom().
+	}
 }

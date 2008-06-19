@@ -46,7 +46,7 @@ public class ClientPut extends ClientPutBase {
 	private final File origFilename;
 	/** If uploadFrom==UPLOAD_FROM_REDIRECT, this is the target of the redirect */
 	private final FreenetURI targetURI;
-	private final Bucket data;
+	private Bucket data;
 	private final ClientMetadata clientMetadata;
 	/** We store the size of inserted data before freeing it */
 	private long finishedSize;
@@ -383,10 +383,16 @@ public class ClientPut extends ClientPutBase {
 		}
 	}
 
-	protected void freeData() {
-		if(data == null) return;
-		finishedSize=data.size();
-		data.free();
+	protected void freeData(ObjectContainer container) {
+		Bucket d;
+		synchronized(this) {
+			d = data;
+			data = null;
+			finishedSize = d.size();
+		}
+		if(d == null) return;
+		d.free();
+		d.removeFrom(container);
 	}
 	
 	public SimpleFieldSet getFieldSet() {
@@ -474,7 +480,7 @@ public class ClientPut extends ClientPutBase {
 
 	public boolean restart(ObjectContainer container, ClientContext context) {
 		if(!canRestart()) return false;
-		setVarsRestart();
+		setVarsRestart(container);
 		try {
 			if(putter.restart(earlyEncode, container, context)) {
 				synchronized(this) {
@@ -482,6 +488,8 @@ public class ClientPut extends ClientPutBase {
 					started = true;
 				}
 			}
+			if(persistenceType == PERSIST_FOREVER)
+				container.set(this);
 			return true;
 		} catch (InsertException e) {
 			onFailure(e, null, container);
@@ -492,4 +500,8 @@ public class ClientPut extends ClientPutBase {
 	public void onFailure(FetchException e, ClientGetter state, ObjectContainer container) {}
 
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {}
+
+	public void onRemoveEventProducer(ObjectContainer container) {
+		// Do nothing, we called the removeFrom().
+	}
 }

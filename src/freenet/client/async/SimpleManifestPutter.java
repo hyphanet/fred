@@ -584,7 +584,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		if(state.getToken() == baseMetadata) {
 			this.finalURI = key.getURI();
 			if(logMINOR) Logger.minor(this, "Got metadata key: "+finalURI);
-			cb.onGeneratedURI(finalURI, this);
+			cb.onGeneratedURI(finalURI, this, container);
 		} else {
 			// It's a sub-Metadata
 			Metadata m = (Metadata) state.getToken();

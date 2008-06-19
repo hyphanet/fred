@@ -16,6 +16,8 @@ import java.util.LinkedList;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -830,5 +832,10 @@ public class FreenetURI implements Cloneable {
 
 	public URI toURI(String basePath) throws URISyntaxException {
 		return new URI(basePath + toString(false, false));
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		// All members are inline (arrays, ints etc), treated as values, so we can happily just call delete(this).
+		container.delete(this);
 	}
 }

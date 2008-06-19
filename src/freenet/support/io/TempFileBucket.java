@@ -89,4 +89,9 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 		container.set(generator);
 		container.set(this);
 	}
+
+	public void removeFrom(ObjectContainer container) {
+		// filenameGenerator is a global, we don't need to worry about it.
+		container.delete(this);
+	}
 }

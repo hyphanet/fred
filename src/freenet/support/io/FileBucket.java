@@ -45,7 +45,11 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 	public FileBucket(File file, boolean readOnly, boolean createFileOnly, boolean deleteOnFinalize, boolean deleteOnExit, boolean deleteOnFree) {
 		super(file);
 		if(file == null) throw new NullPointerException();
+		File origFile = file;
 		file = file.getAbsoluteFile();
+		// Copy it so we can safely delete it.
+		if(origFile == file)
+			file = new File(file.getPath());
 		this.readOnly = readOnly;
 		this.createFileOnly = createFileOnly;
 		this.file = file;
@@ -101,5 +105,10 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 
 	public void storeTo(ObjectContainer container) {
 		container.set(this);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(file);
+		container.delete(this);
 	}
 }

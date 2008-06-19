@@ -81,4 +81,13 @@ public class SimpleEventProducer implements ClientEventProducer {
 	for (int i = 0 ; i < cela.length ; i++)
 	    addEventListener(cela[i]);
     }
+
+	public void removeFrom(ObjectContainer container) {
+		ClientEventListener[] list = (ClientEventListener[]) listeners.toArray(new ClientEventListener[listeners.size()]);
+		listeners.clear();
+		container.delete(listeners);
+		for(int i=0;i<list.length;i++)
+			list[i].onRemoveEventProducer(container);
+		container.delete(this);
+	}
 }

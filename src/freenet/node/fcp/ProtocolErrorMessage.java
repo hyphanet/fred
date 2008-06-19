@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import com.db4o.ObjectContainer;
+
 import freenet.node.Node;
 import freenet.support.Fields;
 import freenet.support.Logger;
@@ -169,6 +171,10 @@ public class ProtocolErrorMessage extends FCPMessage {
 
 	public String getName() {
 		return "ProtocolError";
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
 	}
 
 }

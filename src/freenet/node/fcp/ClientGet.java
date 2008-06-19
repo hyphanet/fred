@@ -19,6 +19,7 @@ import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientRequester;
+import freenet.client.async.DBJob;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.SplitfileProgressEvent;
@@ -30,6 +31,7 @@ import freenet.support.api.Bucket;
 import freenet.support.io.CannotCreateFromFieldSetException;
 import freenet.support.io.FileBucket;
 import freenet.support.io.FileUtil;
+import freenet.support.io.NativeThread;
 import freenet.support.io.NullBucket;
 import freenet.support.io.SerializableToFieldSetBucketUtil;
 
@@ -39,6 +41,8 @@ import freenet.support.io.SerializableToFieldSetBucketUtil;
  */
 public class ClientGet extends ClientRequest implements ClientCallback, ClientEventListener {
 
+	/** Fetch context. Never passed in: always created new by the ClientGet. Therefore, we
+	 * can safely delete it in requestWasRemoved(). */
 	private final FetchContext fctx;
 	private final ClientGetter getter;
 	private final short returnType;
@@ -313,8 +317,6 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			synchronized(this) {
 				started = true;
 			}
-			if(persistenceType == PERSIST_FOREVER)
-				container.set(this); // Update
 		} catch (FetchException e) {
 			synchronized(this) {
 				started = true;
@@ -326,11 +328,13 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			}
 			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), null, container);
 		}
+		if(persistenceType == PERSIST_FOREVER)
+			container.set(this); // Update
 	}
 
-	public void onLostConnection() {
+	public void onLostConnection(ObjectContainer container) {
 		if(persistenceType == PERSIST_CONNECTION)
-			cancel();
+			cancel(null);
 		// Otherwise ignore
 	}
 
@@ -401,9 +405,13 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		trySendDataFoundOrGetFailed(null);
 
 		if(adm != null)
-			trySendAllDataMessage(adm, null);
+			trySendAllDataMessage(adm, null, container);
 		if(!dontFree)
 			data.free();
+		if(persistenceType == PERSIST_FOREVER) {
+			returnBucket.storeTo(container);
+			container.set(this);
+		}
 		finish(container);
 		client.notifySuccess(this);
 	}
@@ -432,17 +440,21 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 	}
 
-	private void trySendAllDataMessage(AllDataMessage msg, FCPConnectionOutputHandler handler) {
+	private void trySendAllDataMessage(AllDataMessage msg, FCPConnectionOutputHandler handler, ObjectContainer container) {
 		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
 			allDataPending = msg;
+			if(persistenceType == ClientRequest.PERSIST_FOREVER)
+				container.set(this);
 		} else {
 			client.queueClientRequestMessage(msg, 0);
 		}
 	}
 
-	private void trySendProgress(SimpleProgressMessage msg, FCPConnectionOutputHandler handler) {
+	private void trySendProgress(SimpleProgressMessage msg, FCPConnectionOutputHandler handler, ObjectContainer container) {
 		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
 			progressPending = msg;
+			if(persistenceType == ClientRequest.PERSIST_FOREVER)
+				container.set(this);
 		}
 		client.queueClientRequestMessage(msg, VERBOSITY_SPLITFILE_PROGRESS);
 	}
@@ -486,6 +498,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Caught "+e, e);
 		trySendDataFoundOrGetFailed(null);
+		if(persistenceType == PERSIST_FOREVER)
+			container.set(this);
 		finish(container);
 		client.notifyFailure(this);
 	}
@@ -498,7 +512,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		// Ignore
 	}
 
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
 		// Ignore
 	}
 
@@ -517,19 +531,45 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
 		client.queueClientRequestMessage(msg, 0);
 
-		freeData();
-		finish(container);
+		freeData(container);
+		
+		if(persistenceType == PERSIST_FOREVER) {
+			container.delete(fctx);
+			getter.removeFrom(container);
+			if(targetFile != null)
+				container.delete(targetFile);
+			if(tempFile != null)
+				container.delete(tempFile);
+			if(getFailedMessage != null)
+				getFailedMessage.removeFrom(container);
+			if(postFetchProtocolErrorMessage != null)
+				postFetchProtocolErrorMessage.removeFrom(container);
+			if(allDataPending != null)
+				allDataPending.removeFrom(container);
+		}
+		super.requestWasRemoved(container);
 	}
 
-	public void receive(ClientEvent ce) {
+	public void receive(ClientEvent ce, ObjectContainer container, ClientContext context) {
 		// Don't need to lock, verbosity is final and finished is never unset.
 		if(finished) return;
 		if(!(((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) &&
 				(ce instanceof SplitfileProgressEvent)))
 			return;
-		SimpleProgressMessage progress =
+		final SimpleProgressMessage progress =
 			new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
-		trySendProgress(progress, null);
+		// container may be null...
+		if(persistenceType == PERSIST_FOREVER && container == null) {
+			context.jobRunner.queue(new DBJob() {
+
+				public void run(ObjectContainer container, ClientContext context) {
+					trySendProgress(progress, null, container);
+				}
+				
+			}, NativeThread.HIGH_PRIORITY, false);
+		} else {
+			trySendProgress(progress, null, container);
+		}
 	}
 
 	// This is distinct from the ClientGetMessage code, as later on it will be radically
@@ -587,9 +627,15 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		return getter;
 	}
 
-	protected void freeData() {
-		if(returnBucket != null)
-			returnBucket.free();
+	protected void freeData(ObjectContainer container) {
+		Bucket data;
+		synchronized(this) {
+			data = returnBucket;
+			returnBucket = null;
+		}
+		data.free();
+		if(persistenceType == PERSIST_FOREVER)
+			data.removeFrom(container);
 	}
 
 	public boolean hasSucceeded() {
@@ -738,6 +784,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 					if(redirect != null) this.uri = redirect;
 					started = true;
 				}
+				if(persistenceType == PERSIST_FOREVER)
+					container.set(this);
 			}
 			return true;
 		} catch (FetchException e) {
@@ -748,5 +796,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 	public synchronized boolean hasPermRedirect() {
 		return getFailedMessage != null && getFailedMessage.redirectURI != null;
+	}
+
+	public void onRemoveEventProducer(ObjectContainer container) {
+		// Do nothing, we called the removeFrom().
 	}
 }

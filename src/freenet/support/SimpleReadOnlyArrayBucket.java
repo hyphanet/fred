@@ -63,4 +63,8 @@ public class SimpleReadOnlyArrayBucket implements Bucket {
 		container.set(this);
 	}
 
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
+	}
+
 }

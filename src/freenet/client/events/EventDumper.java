@@ -12,13 +12,20 @@ import freenet.client.async.ClientContext;
 public class EventDumper implements ClientEventListener {
 
 	final PrintWriter pw;
+	final boolean removeWithProducer;
 	
-	public EventDumper(PrintWriter writer) {
+	public EventDumper(PrintWriter writer, boolean removeWithProducer) {
 		this.pw = writer;
+		this.removeWithProducer = removeWithProducer;
 	}
 
 	public void receive(ClientEvent ce, ObjectContainer container, ClientContext context) {
 		pw.println(ce.getDescription());
+	}
+
+	public void onRemoveEventProducer(ObjectContainer container) {
+		if(removeWithProducer)
+			container.delete(this);
 	}
 
 }

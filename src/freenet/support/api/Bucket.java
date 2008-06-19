@@ -58,4 +58,10 @@ public interface Bucket {
 	 */
 	public void storeTo(ObjectContainer container);
 
+	/**
+	 * Remove the bucket and everything under it from the database.
+	 * @param container The database.
+	 */
+	public void removeFrom(ObjectContainer container);
+
 }

@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.async.USKManager;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
@@ -73,6 +75,11 @@ public class InsertContext {
 		this.splitfileSegmentDataBlocks = ctx.splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = ctx.splitfileSegmentCheckBlocks;
 		this.cacheLocalRequests = ctx.cacheLocalRequests;
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		eventProducer.removeFrom(container);
+		container.delete(this);
 	}
 
 }

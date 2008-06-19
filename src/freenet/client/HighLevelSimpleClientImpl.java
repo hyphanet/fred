@@ -87,7 +87,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		this.persistentFileTracker = node.persistentTempBucketFactory;
 		random = r;
 		this.globalEventProducer = new SimpleEventProducer();
-		globalEventProducer.addEventListener(new EventLogger(Logger.MINOR));
+		globalEventProducer.addEventListener(new EventLogger(Logger.MINOR, false));
 		curMaxLength = Long.MAX_VALUE;
 		curMaxTempLength = Long.MAX_VALUE;
 		curMaxMetadataLength = 1024 * 1024;
@@ -219,7 +219,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 			// Impossible
 		}
 
-		public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
+		public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
 			// Impossible
 		}
 

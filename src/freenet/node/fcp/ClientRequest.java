@@ -121,7 +121,7 @@ public abstract class ClientRequest {
 	}
 
 	/** Lost connection */
-	public abstract void onLostConnection();
+	public abstract void onLostConnection(ObjectContainer container);
 
 	/** Send any pending messages for a persistent request e.g. after reconnecting */
 	public abstract void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData);
@@ -206,11 +206,13 @@ public abstract class ClientRequest {
 		}
 	}
 
-	public void cancel() {
+	public void cancel(ObjectContainer container) {
 		ClientRequester cr = getClientRequest();
 		// It might have been finished on startup.
 		if(cr != null) cr.cancel();
-		freeData();
+		freeData(container);
+		if(persistenceType == PERSIST_FOREVER)
+			container.set(this);
 	}
 
 	public boolean isPersistentForever() {
@@ -234,9 +236,9 @@ public abstract class ClientRequest {
 	protected abstract ClientRequester getClientRequest();
 
 	/** Completed request dropped off the end without being acknowledged */
-	public void dropped() {
-		cancel();
-		freeData();
+	public void dropped(ObjectContainer container) {
+		cancel(container);
+		freeData(container);
 	}
 
 	/** Return the priority class */
@@ -245,7 +247,7 @@ public abstract class ClientRequest {
 	}
 
 	/** Free cached data bucket(s) */
-	protected abstract void freeData(); 
+	protected abstract void freeData(ObjectContainer container); 
 
 	/** Request completed. But we may have to stick around until we are acked. */
 	protected void finish(ObjectContainer container) {
@@ -344,7 +346,10 @@ public abstract class ClientRequest {
 			return; // quick return, nothing was changed
 		}
 		
-		container.commit();
+		if(persistenceType == PERSIST_FOREVER) {
+			container.set(this);
+			container.commit(); // commit before we send the message
+		}
 
 		// this could become too complex with more parameters, but for now its ok
 		final PersistentRequestModifiedMessage modifiedMsg;
@@ -359,11 +364,6 @@ public abstract class ClientRequest {
 		}
 		client.queueClientRequestMessage(modifiedMsg, 0);
 	}
-
-	/**
-	 * Called after a RemovePersistentRequest. Send a PersistentRequestRemoved to the clients.
-	 */
-	public abstract void requestWasRemoved(ObjectContainer container);
 
 	/** Utility method for storing details of a possibly encrypted bucket. */
 	protected void bucketToFS(SimpleFieldSet fs, String name, boolean includeSize, Bucket data) {
@@ -384,8 +384,13 @@ public abstract class ClientRequest {
 		}, NativeThread.HIGH_PRIORITY, false);
 	}
 
-	public void delete(ObjectContainer container) {
+	/**
+	 * Called after a RemovePersistentRequest. Send a PersistentRequestRemoved to the clients.
+	 * If the request is in the database, delete it.
+	 */
+	public void requestWasRemoved(ObjectContainer container) {
+		if(persistenceType != PERSIST_FOREVER) return;
+		if(uri != null) uri.removeFrom(container);
 		container.delete(this);
-		// FIXME delete underlying structures
 	}
 }

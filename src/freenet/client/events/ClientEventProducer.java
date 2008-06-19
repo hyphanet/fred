@@ -35,6 +35,8 @@ public interface ClientEventProducer {
      * @return     true if a Listener was removed, false otherwise.
      */
     boolean removeEventListener(ClientEventListener cel);
+
+	void removeFrom(ObjectContainer container);
 }
 
 

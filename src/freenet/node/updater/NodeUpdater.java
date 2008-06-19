@@ -268,7 +268,7 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 		// Impossible
 	}
 
-	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
+	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
 		// Impossible
 	}
 
