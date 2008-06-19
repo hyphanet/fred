@@ -1399,11 +1399,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			byte[] key = new byte[fullKeyLength];
 
 			long maxKey = storeRAF.length() / (headerBlockLength + dataBlockLength);
-
-			WrapperManager.signalStarting((int) (Math.min(7 * 24 * 60 * 60 * 1000, 5 * 60 * 1000L + maxKey * 100L)));
-			for (int l = 0; true; l++) {
-				if (l % 1024 == 0)
+			
+			for (int l = 0; l < maxKey; l++) {
+				if (l % 1024 == 0) {
 					System.out.println(" migrating key " + l + "/" + maxKey);
+					WrapperManager.signalStarting(10 * 60 * 1000); // max 10 minutes for every 1024 keys  
+				}
 
 				boolean keyRead = false;
 				storeRAF.readFully(header);
