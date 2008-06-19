@@ -41,9 +41,7 @@ public class NativeThread extends Thread {
 		// Loading the NativeThread library isn't useful on macos
 		_loadNative = ("Linux".equalsIgnoreCase(System.getProperty("os.name"))) && (NodeStarter.extBuildNumber > 18);
 		Logger.debug(NativeThread.class, "Run init(): should loadNative="+_loadNative);
-		if(_loadNative) {
-			//System.loadLibrary("NativeThread");
-			LibraryLoader.loadNative("/freenet/support/io/", "NativeThread");
+		if(_loadNative && LibraryLoader.loadNative("/freenet/support/io/", "NativeThread")) {
 			NATIVE_PRIORITY_BASE = getLinuxPriority();
 			NATIVE_PRIORITY_RANGE = 20 - NATIVE_PRIORITY_BASE;
 			System.out.println("Using the NativeThread implementation (base nice level is "+NATIVE_PRIORITY_BASE+')');
@@ -118,7 +116,7 @@ public class NativeThread extends Thread {
 			/* The user has reniced freenet or we didn't use the PacketSender to create the thread
 			 * either ways it's bad for us.
 			 * 
-			 * Let's diable the renicing as we can't rely on it anymore.
+			 * Let's disable the renicing as we can't rely on it anymore.
 			 */
 			_disabled = true;
 			Logger.error(this, "Freenet has detected it has been reniced : THAT'S BAD, DON'T DO IT! Nice level detected statically: "+NATIVE_PRIORITY_BASE+" actual nice level: "+realPrio+" on "+this);
