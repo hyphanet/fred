@@ -10,7 +10,6 @@ import java.util.List;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Predicate;
-import com.db4o.query.Query;
 import com.db4o.types.Db4oList;
 import com.db4o.types.Db4oMap;
 
