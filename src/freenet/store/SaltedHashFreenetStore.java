@@ -56,6 +56,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private static final long BLOOM_SYNC_INTERVAL = 256;
 	private static final boolean updateBloom = true;
 	private static final boolean checkBloom = true;
+	private boolean rebuildBloom = false;
 	private BloomFilter bloomFilter;
 
 	private static final boolean logLOCK = false;
@@ -108,8 +109,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		openStoreFiles(baseDir, name);
 
-		if (updateBloom || checkBloom)
-			bloomFilter = new BloomFilter(new File(this.baseDir, name + ".bloom"), 0x8000000, 4);
+		if (updateBloom || checkBloom) {
+			File bloomFile = new File(this.baseDir, name + ".bloom");
+			if (!bloomFile.exists() || bloomFile.length() != 0x8000000 / 8)
+				rebuildBloom = true;
+			bloomFilter = new BloomFilter(bloomFile, 0x8000000, 4);
+		}
 
 		callback.setStore(this);
 		shutdownHook.addEarlyJob(new Thread(new ShutdownDB()));
@@ -884,7 +889,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				if (shutdown)
 					return;
 
-				batchReadEntries(curOffset, RESIZE_MEMORY_ENTRIES, oldEntryList);
+				batchReadEntries(curOffset, RESIZE_MEMORY_ENTRIES, oldEntryList, true);
 
 				if (storeSize < _prevStoreSize)
 					setStoreFileSize(Math.max(storeSize, curOffset));
@@ -922,8 +927,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 
 		/**
-		 * Read a list of old items from store, the original offset will be marked as free. To save
-		 * some system calls, items are locked and read in batch.
+		 * Read a list of items from store. In resizing mode, only old items are read and the
+		 * original offsets are freed.
 		 * 
 		 * @param offset
 		 *            start offset, must be multiple of {@link FILE_SPLIT}
@@ -932,10 +937,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		 *            excess store size, read as much as possible.
 		 * @param items
 		 *            a list of items
+		 * @param resizing
+		 *            If <code>true</code>, only get old items and free the offset. Otherwise, get
+		 *            all items.
 		 * @return <code>true</code> if operation complete successfully; <code>false</code>
 		 *         otherwise (e.g. can't acquire locks, node shutting down)
 		 */
-		private boolean batchReadEntries(long offset, int length, List<Entry> items) {
+		private boolean batchReadEntries(long offset, int length, List<Entry> items, boolean resizing) {
 			assert offset % FILE_SPLIT == 0;
 			assert length % FILE_SPLIT == 0;
 
@@ -981,21 +989,28 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						Entry entry = new Entry(enBuf);
 						entry.curOffset = offset + j * FILE_SPLIT + i;
 
-						if (!entry.isFree() && entry.storeSize != storeSize) {
-							// old entry
+						try {
+							if (entry.isFree())
+								continue; // not occupied
+							if (resizing && entry.storeSize != storeSize)
+								continue; // resizing mode, not new item
+
 							items.add(entry);
 
-							try {
-								freeOffset(entry.curOffset);
-								keyCount.decrementAndGet();
-							} catch (IOException ioe) {
-								Logger.error(this, "error freeing entry " + entry.curOffset + ", node shutting down?");
+							if (resizing) { // free the offset
+								try {
+									freeOffset(entry.curOffset);
+									keyCount.decrementAndGet();
+								} catch (IOException ioe) {
+									if (!shutdown)
+										Logger.error(this, "error freeing entry " + entry.curOffset, ioe);
+								}
 							}
+						} finally {
+							// unlock current entry
+							unlockEntry(entry.curOffset);
+							locked[(int) (entry.curOffset - offset)] = false;
 						}
-
-						// unlock current entry
-						unlockEntry(entry.curOffset);
-						locked[(int) (entry.curOffset - offset)] = false;
 					}
 				}
 
