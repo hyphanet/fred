@@ -633,9 +633,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			data = returnBucket;
 			returnBucket = null;
 		}
-		data.free();
-		if(persistenceType == PERSIST_FOREVER)
-			data.removeFrom(container);
+		if(data != null) {
+			data.free();
+			if(persistenceType == PERSIST_FOREVER)
+				data.removeFrom(container);
+		}
 	}
 
 	public boolean hasSucceeded() {
