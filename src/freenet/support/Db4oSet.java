@@ -12,7 +12,7 @@ public class Db4oSet implements Set {
 	private final Db4oMap map;
 	private final NullObject object = new NullObject();
 	
-	Db4oSet(ObjectContainer container, int size) {
+	public Db4oSet(ObjectContainer container, int size) {
 		map = container.ext().collections().newHashMap(size);
 	}
 
