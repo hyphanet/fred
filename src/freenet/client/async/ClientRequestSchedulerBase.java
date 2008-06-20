@@ -6,6 +6,7 @@ package freenet.client.async;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.db4o.ObjectContainer;
 
@@ -237,15 +238,17 @@ abstract class ClientRequestSchedulerBase {
 		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+req.getPriorityClass()+" retry "+req.getRetryCount()+" for "+req.getClientRequest());
 		int retryCount = req.getRetryCount();
 		addToGrabArray(req.getPriorityClass(), retryCount, fixRetryCount(retryCount), req.getClient(), req.getClientRequest(), req, random, container);
-		HashSet v = (HashSet) allRequestsByClientRequest.get(req.getClientRequest());
+		Set v = (Set) allRequestsByClientRequest.get(req.getClientRequest());
 		if(v == null) {
-			v = new HashSet();
+			v = makeSetForAllRequestsByClientRequest();
 			allRequestsByClientRequest.put(req.getClientRequest(), v);
 		}
 		v.add(req);
 		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+req.getPriorityClass()+", retrycount="+req.getRetryCount()+" v.size()="+v.size());
 	}
 	
+	protected abstract Set makeSetForAllRequestsByClientRequest();
+
 	void addToGrabArray(short priorityClass, int retryCount, int rc, Object client, ClientRequester cr, SendableRequest req, RandomSource random, ObjectContainer container) {
 		if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
 			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
@@ -294,7 +297,7 @@ abstract class ClientRequestSchedulerBase {
 	public void reregisterAll(ClientRequester request, RandomSource random, ClientRequestScheduler lock, ObjectContainer container) {
 		SendableRequest[] reqs;
 		synchronized(lock) {
-			HashSet h = (HashSet) allRequestsByClientRequest.get(request);
+			Set h = (Set) allRequestsByClientRequest.get(request);
 			if(h == null) return;
 			reqs = (SendableRequest[]) h.toArray(new SendableRequest[h.size()]);
 		}
@@ -318,7 +321,7 @@ abstract class ClientRequestSchedulerBase {
 	}
 
 	protected void removeFromAllRequestsByClientRequest(SendableRequest req, ClientRequester cr) {
-			HashSet v = (HashSet) allRequestsByClientRequest.get(cr);
+			Set v = (Set) allRequestsByClientRequest.get(cr);
 			if(v == null) {
 				Logger.error(this, "No HashSet registered for "+cr);
 			} else {

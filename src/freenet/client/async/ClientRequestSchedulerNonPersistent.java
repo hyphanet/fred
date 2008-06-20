@@ -4,7 +4,9 @@
 package freenet.client.async;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Set;
 
 import com.db4o.ObjectContainer;
 
@@ -35,6 +37,10 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 
 	ObjectContainer container() {
 		return null;
+	}
+
+	protected Set makeSetForAllRequestsByClientRequest() {
+		return new HashSet();
 	}
 
 }

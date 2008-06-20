@@ -6,6 +6,7 @@ package freenet.client.async;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
@@ -22,6 +23,7 @@ import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableRequest;
+import freenet.support.Db4oSet;
 import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.RandomGrabArray;
@@ -511,6 +513,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				}
 			}
 		}, NativeThread.NORM_PRIORITY, "Remove fetching key");
+	}
+
+	protected Set makeSetForAllRequestsByClientRequest() {
+		return new Db4oSet(container, 1);
 	}
 
 }
