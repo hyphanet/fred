@@ -374,9 +374,16 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	}
 
 	public void removeFrom(ObjectContainer container) {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Removing from database: "+this);
 		bucket.removeFrom(container);
 		// The random is passed in and not our responsibility.
 		container.delete(this);
+	}
+	
+	public void objectOnActivate(ObjectContainer container) {
+		// Cascading activation of dependancies
+		container.activate(bucket, 1);
 	}
 
 }

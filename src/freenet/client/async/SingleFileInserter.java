@@ -104,6 +104,8 @@ class SingleFileInserter implements ClientPutState {
 			}
 		}
 		Bucket data = block.getData();
+		if(parent.persistent())
+			container.activate(data, 1); // Buckets will cascade if necessary
 		if(data.size() > COMPRESS_OFF_THREAD_LIMIT) {
 			// Run off thread
 			OffThreadCompressor otc = new OffThreadCompressor();
@@ -523,6 +525,8 @@ class SingleFileInserter implements ClientPutState {
 					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, false, true, metaPutterTargetFilename, earlyEncode);
 					// If EarlyEncode, then start the metadata insert ASAP, to get the key.
 					// Otherwise, wait until the data is fetchable (to improve persistence).
+					if(logMINOR)
+						Logger.minor(this, "Created metadata putter for "+this+" : "+metadataPutter+" bucket "+metadataBucket+" size "+metadataBucket.size());
 					if(parent.persistent())
 						container.set(this);
 					if(!(earlyEncode || splitInsertSuccess)) return;

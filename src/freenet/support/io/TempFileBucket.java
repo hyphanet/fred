@@ -91,6 +91,8 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 	}
 
 	public void removeFrom(ObjectContainer container) {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Removing from database: "+this);
 		// filenameGenerator is a global, we don't need to worry about it.
 		container.delete(this);
 	}
