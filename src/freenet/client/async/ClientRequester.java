@@ -30,6 +30,7 @@ public abstract class ClientRequester {
 	protected ClientRequester(short priorityClass, RequestClient client) {
 		this.priorityClass = priorityClass;
 		this.client = client;
+		hashCode = super.hashCode(); // the old object id will do fine, as long as we ensure it doesn't change!
 	}
 
 	public synchronized void cancel() {
@@ -43,6 +44,15 @@ public abstract class ClientRequester {
 	public abstract FreenetURI getURI();
 
 	public abstract boolean isFinished();
+	
+	private final int hashCode;
+	
+	/**
+	 * We need a hash code that persists across restarts.
+	 */
+	public int hashCode() {
+		return hashCode;
+	}
 
 	/** Total number of blocks this request has tried to fetch/put. */
 	protected int totalBlocks;
