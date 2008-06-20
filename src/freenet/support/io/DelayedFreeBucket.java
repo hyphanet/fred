@@ -25,6 +25,7 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 	public DelayedFreeBucket(PersistentTempBucketFactory factory, PaddedEphemerallyEncryptedBucket bucket) {
 		this.factory = factory;
 		this.bucket = bucket;
+		if(bucket == null) throw new NullPointerException();
 	}
 
 	public DelayedFreeBucket(SimpleFieldSet fs, RandomSource random, PersistentFileTracker f) throws CannotCreateFromFieldSetException {

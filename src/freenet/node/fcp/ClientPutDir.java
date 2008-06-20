@@ -256,7 +256,7 @@ public class ClientPutDir extends ClientPutBase {
 				freeData((HashMap)o, container);
 			else {
 				ManifestElement e = (ManifestElement) o;
-				e.freeData(container);
+				e.freeData(container, persistenceType == PERSIST_FOREVER);
 			}
 		}
 	}

@@ -392,7 +392,8 @@ public class ClientPut extends ClientPutBase {
 		}
 		if(d == null) return;
 		d.free();
-		d.removeFrom(container);
+		if(persistenceType == PERSIST_FOREVER)
+			d.removeFrom(container);
 	}
 	
 	public SimpleFieldSet getFieldSet() {

@@ -78,10 +78,11 @@ public class ManifestElement {
 		return false;
 	}
 
-	public void freeData(ObjectContainer container) {
+	public void freeData(ObjectContainer container, boolean persistForever) {
 		if(data != null) {
 			data.free();
-			data.removeFrom(container);
+			if(persistForever)
+				data.removeFrom(container);
 			data = null;
 		}
 	}
