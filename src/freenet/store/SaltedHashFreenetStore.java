@@ -11,6 +11,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.text.DecimalFormat;
+import java.util.AbstractList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -839,16 +840,21 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			while (!shutdown) {
 				synchronized (cleanerLock) {
 					long _prevStoreSize;
+					boolean _rebuildBloom;
 					
 					configLock.readLock().lock();
 					try {
 						_prevStoreSize = prevStoreSize;
+						_rebuildBloom = rebuildBloom;
 					} finally {
 						configLock.readLock().unlock();
 					}
 
 					if (_prevStoreSize != 0)
 						resizeStore(_prevStoreSize);
+					
+					if (_rebuildBloom)
+						rebuildBloom();
 
 					cleanerLock.notifyAll();
 					try {
@@ -921,6 +927,54 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			try {
 				assert _prevStoreSize == prevStoreSize;
 				prevStoreSize = 0;
+			} finally {
+				configLock.writeLock().unlock();
+			}
+		}
+
+		/**
+		 * Rebuild bloom filter
+		 */
+		private void rebuildBloom() {
+			if (bloomFilter == null)
+				return;
+			
+			Logger.normal(this, "Start rebuilding bloom filter for " + callback);
+			
+			bloomFilter.fork();
+			List<Entry> buildList = new AbstractList<Entry>() {
+				@Override
+				public void add(int index, Entry entry) {
+					bloomFilter.updateFilter(entry.getDigestedRoutingKey());
+				}
+
+				@Override
+				public Entry get(int index) {
+					return null;
+				}
+
+				@Override
+				public int size() {
+					return 0;
+				}
+
+			};
+
+			for (long curOffset = 0; curOffset < storeSize; curOffset += RESIZE_MEMORY_ENTRIES) {
+				if (shutdown) {
+					bloomFilter.discard();
+					return;
+				}
+				batchReadEntries(curOffset, RESIZE_MEMORY_ENTRIES, buildList, false);
+				Logger.normal(this, "Rebuilding bloom filter for " + callback + ": " + curOffset + "/" + storeSize);
+			}
+
+			bloomFilter.merge();
+			Logger.normal(this, "Finish rebuilding bloom filter for " + callback);
+
+			configLock.writeLock().lock();
+			try {
+				rebuildBloom = false;
 			} finally {
 				configLock.writeLock().unlock();
 			}

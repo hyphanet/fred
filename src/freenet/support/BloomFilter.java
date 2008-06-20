@@ -116,11 +116,57 @@ public class BloomFilter {
 		byte b = filter.get(offset / 8);
 		b |= 1 << (offset % 8);
 		filter.put(offset / 8, b);
+		
+		if (forkedFilter != null) {
+			forkedFilter.setBit(offset);
+		}
 	}
 
 	public void force() {
 		if (filter instanceof MappedByteBuffer) {
 			((MappedByteBuffer) filter).force();
+		}
+	}
+	
+	protected BloomFilter forkedFilter;
+
+	/**
+	 * Create an empty, in-memory copy of bloom filter. New updates are written to both filters.
+	 * This is written back to disk on #merge()
+	 */
+	public void fork() {
+		lock.writeLock().lock();
+		try {
+			forkedFilter = new BloomFilter(length, k);
+		} finally {
+			lock.writeLock().unlock();
+		}
+	}
+
+	public void discard() {
+		lock.writeLock().lock();
+		try {
+			forkedFilter = null;
+		} finally {
+			lock.writeLock().unlock();
+		}
+	}
+	
+	public void merge() {
+		lock.writeLock().lock();
+		try {
+			if (forkedFilter == null)
+				return;
+
+			filter.position(0);
+			forkedFilter.filter.position(0);
+
+			filter.put(forkedFilter.filter);
+
+			filter.position(0);
+			forkedFilter = null;
+		} finally {
+			lock.writeLock().unlock();
 		}
 	}
 
