@@ -199,6 +199,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			if(req.persistent()) {
 				ret = new PersistentChosenRequest(this, req, token, key, ckey);
 				container.set(ret);
+				if(logMINOR)
+					Logger.minor(this, "Storing "+ret);
 			} else {
 				ret = new ChosenRequest(req, token, key, ckey);
 			}
