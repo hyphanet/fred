@@ -48,7 +48,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	private final FailureCodeTracker errors;
 	private boolean finished;
 	private final boolean dontSendEncoded;
-	private SoftReference refToClientKeyBlock;
+	private transient SoftReference refToClientKeyBlock;
 	final int token; // for e.g. splitfiles
 	private final Object tokenObject;
 	final boolean isMetadata;
@@ -128,6 +128,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 		if(shouldSend && !dontSendEncoded)
 			cb.onEncode(block.getClientKey(), this, container, context);
+		if(shouldSend && parent.persistent())
+			container.set(this);
 		return block;
 	}
 	
@@ -185,6 +187,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			fail(InsertException.construct(errors), container, context);
 			return;
 		}
+		if(parent.persistent())
+			container.set(this);
 		getScheduler(context).register(this);
 	}
 
@@ -197,6 +201,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(finished) return;
 			finished = true;
 		}
+		if(parent.persistent())
+			container.set(this);
 		if(e.isFatal() || forceFatal)
 			parent.fatallyFailedBlock(container, context);
 		else
@@ -209,6 +215,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			synchronized (this) {
 				if(finished) return null;
 			}
+			if(parent.persistent())
+				container.set(this);
 			return encode(container, context);				
 		} catch (InsertException e) {
 			cb.onFailure(e, this, container, context);
@@ -230,6 +238,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			parent.completedBlock(false, container, context);
 			cb.onSuccess(this, container, context);
 			finished = true;
+			if(parent.persistent())
+				container.set(this);
 		} else {
 			getScheduler(context).register(this);
 		}
@@ -269,6 +279,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		synchronized(this) {
 			finished = true;
 		}
+		if(parent.persistent())
+			container.set(this);
 		parent.completedBlock(false, container, context);
 		cb.onSuccess(this, container, context);
 	}
@@ -282,6 +294,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(finished) return;
 			finished = true;
 		}
+		if(parent.persistent())
+			container.set(this);
 		super.unregister(false);
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}
