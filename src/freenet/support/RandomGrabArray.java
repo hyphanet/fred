@@ -45,7 +45,7 @@ public class RandomGrabArray {
 			if(logMINOR) Logger.minor(this, "Is finished already: "+req);
 			return;
 		}
-		req.setParentGrabArray(this);
+		req.setParentGrabArray(this, container);
 		synchronized(this) {
 			if(contents.contains(req)) {
 				if(logMINOR) Logger.minor(this, "Already contains "+req+" : "+this+" size now "+index);
@@ -123,7 +123,7 @@ public class RandomGrabArray {
 									reqs[chosenIndex] = reqs[index-1];
 								}
 								index--;
-								ret.setParentGrabArray(null);
+								ret.setParentGrabArray(null, container);
 							}
 							if(logMINOR) Logger.minor(this, "Chosen random item "+ret+" out of "+valid);
 							if(persistent && changedMe)
@@ -150,7 +150,7 @@ public class RandomGrabArray {
 								}
 								index--;
 								if(logMINOR) Logger.minor(this, "No valid or excluded items after removing "+ret);
-								ret.setParentGrabArray(null);
+								ret.setParentGrabArray(null, container);
 							} else {
 								if(logMINOR) Logger.minor(this, "No valid or excluded items apart from "+ret);
 							}
@@ -217,7 +217,7 @@ public class RandomGrabArray {
 			}
 		}
 		if(logMINOR) Logger.minor(this, "Returning "+ret+" of "+index);
-		ret.setParentGrabArray(null);
+		ret.setParentGrabArray(null, container);
 		if(persistent)
 			container.set(this);
 		return ret;
@@ -236,7 +236,7 @@ public class RandomGrabArray {
 				}
 			}
 		}
-		it.setParentGrabArray(null);
+		it.setParentGrabArray(null, container);
 		if(persistent)
 			container.set(this);
 	}

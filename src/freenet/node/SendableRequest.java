@@ -76,8 +76,9 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		return true;
 	}
 	
-	public synchronized void setParentGrabArray(RandomGrabArray parent) {
+	public synchronized void setParentGrabArray(RandomGrabArray parent, ObjectContainer container) {
 		parentGrabArray = parent;
+		container.set(this);
 	}
 	
 	public void unregister(boolean staySubscribed, ObjectContainer container) {

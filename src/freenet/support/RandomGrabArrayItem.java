@@ -1,5 +1,7 @@
 package freenet.support;
 
+import com.db4o.ObjectContainer;
+
 public interface RandomGrabArrayItem {
 
 	/** If true, will be automatically removed from the RGA, and not returned.
@@ -23,7 +25,7 @@ public interface RandomGrabArrayItem {
 	public boolean knowsParentGrabArray();
 	
 	/** Notify the item that it has been registered on a specific RandomGrabArray */
-	public void setParentGrabArray(RandomGrabArray parent);
+	public void setParentGrabArray(RandomGrabArray parent, ObjectContainer container);
 	
 	/** If the item remembers its parent RandomGrabArray, return it */
 	public RandomGrabArray getParentGrabArray();
