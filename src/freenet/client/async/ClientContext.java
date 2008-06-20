@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.util.Random;
+
 import com.db4o.ObjectContainer;
 
 import freenet.client.ArchiveManager;
@@ -38,6 +40,7 @@ public class ClientContext {
 	public final BucketFactory tempBucketFactory;
 	public final HealingQueue healingQueue;
 	public final USKManager uskManager;
+	public final Random fastWeakRandom;
 
 	public ClientContext(NodeClientCore core) {
 		this.fecQueue = core.fecQueue;
@@ -51,6 +54,7 @@ public class ClientContext {
 		this.tempBucketFactory = core.tempBucketFactory;
 		this.healingQueue = core.getHealingQueue();
 		this.uskManager = core.uskManager;
+		fastWeakRandom = core.node.fastWeakRandom;
 	}
 	
 	public void init(RequestStarterGroup starters) {
