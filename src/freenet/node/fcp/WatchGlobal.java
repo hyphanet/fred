@@ -55,4 +55,8 @@ public class WatchGlobal extends FCPMessage {
 		
 	}
 
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
+	}
+
 }

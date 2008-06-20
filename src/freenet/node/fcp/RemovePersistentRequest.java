@@ -64,4 +64,8 @@ public class RemovePersistentRequest extends FCPMessage {
 		}
 	}
 
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
+	}
+
 }

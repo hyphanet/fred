@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.events;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.Logger;
 
 public class SplitfileProgressEvent implements ClientEvent {
@@ -61,6 +63,10 @@ public class SplitfileProgressEvent implements ClientEvent {
 
 	public int getCode() {
 		return code;
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
 	}
 
 }

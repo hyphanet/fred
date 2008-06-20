@@ -48,7 +48,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	// Not that important, so not saved on persistence.
 	// Probably saving it would conflict with later changes (full persistence at
 	// ClientPutter level).
-	private transient FCPMessage progressMessage;
+	private FCPMessage progressMessage;
 
 	/** Whether to force an early generation of the CHK */
 	protected final boolean earlyEncode;
@@ -188,10 +188,23 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		freeData(container);
 		if(persistenceType == PERSIST_FOREVER) {
 			ctx.removeFrom(container);
-			if(putFailedMessage != null)
-				putFailedMessage.removeFrom(container);
-			if(generatedURI != null)
-				generatedURI.removeFrom(container);
+			PutFailedMessage pfm;
+			FreenetURI uri;
+			FCPMessage progress;
+			synchronized(this) {
+				pfm = putFailedMessage;
+				putFailedMessage = null;
+				uri = generatedURI;
+				generatedURI = null;
+				progress = progressMessage;
+				progressMessage = null;
+			}
+			if(pfm != null)
+				pfm.removeFrom(container);
+			if(uri != null)
+				uri.removeFrom(container);
+			if(progress != null)
+				progress.removeFrom(container);
 			publicURI.removeFrom(container);
 		}
 	}
@@ -401,12 +414,18 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	}
 
 	public void setVarsRestart(ObjectContainer container) {
+		PutFailedMessage pfm;
+		FCPMessage progress;
 		synchronized(this) {
 			finished = false;
+			pfm = putFailedMessage;
+			progress = progressMessage;
 			this.putFailedMessage = null;
 			this.progressMessage = null;
 			started = false;
 		}
+		pfm.removeFrom(container);
+		progress.removeFrom(container);
 		if(persistenceType == PERSIST_FOREVER)
 			container.set(this);
 	}

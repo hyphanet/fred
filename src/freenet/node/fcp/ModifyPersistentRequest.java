@@ -94,4 +94,8 @@ public class ModifyPersistentRequest extends FCPMessage {
 		}
 	}
 
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
+	}
+
 }

@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
 import freenet.client.async.ManifestElement;
@@ -71,5 +73,7 @@ abstract class DirPutFile {
 			Logger.minor(this, "Element name: "+name+" -> "+n);
 		return new ManifestElement(n, getData(), getMIMEType(), getData().size());
 	}
+
+	public abstract void removeFrom(ObjectContainer container);
 
 }

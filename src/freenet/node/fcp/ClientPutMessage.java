@@ -7,6 +7,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.RequestStarter;
@@ -281,6 +283,13 @@ public class ClientPutMessage extends DataCarryingMessage {
 
 	boolean isGlobal() {
 		return global;
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		uri.removeFrom(container);
+		container.delete(origFilename);
+		if(redirectTarget != null)
+			redirectTarget.removeFrom(container);
 	}
 	
 }

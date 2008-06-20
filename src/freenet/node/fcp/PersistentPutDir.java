@@ -4,6 +4,9 @@
 package freenet.node.fcp;
 
 import java.util.HashMap;
+import java.util.Iterator;
+
+import com.db4o.ObjectContainer;
 
 import freenet.client.async.ManifestElement;
 import freenet.client.async.SimpleManifestPutter;
@@ -115,6 +118,22 @@ public class PersistentPutDir extends FCPMessage {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PersistentPut goes from server to client not the other way around", identifier, global);
 	}
 
+	public void removeFrom(ObjectContainer container) {
+		uri.removeFrom(container);
+		removeFrom(manifestElements, container);
+		container.delete(this);
+	}
 
+	private void removeFrom(HashMap manifestElements, ObjectContainer container) {
+		for(Iterator i=manifestElements.values().iterator();i.hasNext();) {
+			Object o = i.next();
+			if(o instanceof HashMap)
+				removeFrom((HashMap)o, container);
+			else
+				((ManifestElement) o).removeFrom(container);
+		}
+		manifestElements.clear();
+		container.delete(manifestElements);
+	}
 	
 }

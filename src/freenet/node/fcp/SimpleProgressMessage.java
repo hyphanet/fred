@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.fcp;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
@@ -66,6 +68,11 @@ public class SimpleProgressMessage extends FCPMessage {
 
 	public boolean isTotalFinalized() {
 		return event.finalizedTotal;
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		event.removeFrom(container);
+		container.delete(this);
 	}
 
 }

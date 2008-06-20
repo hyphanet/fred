@@ -106,4 +106,10 @@ public class ManifestElement {
 	public FreenetURI getTargetURI() {
 		return targetURI;
 	}
+
+	public void removeFrom(ObjectContainer container) {
+		data.removeFrom(container);
+		targetURI.removeFrom(container);
+		container.delete(this);
+	}
 }

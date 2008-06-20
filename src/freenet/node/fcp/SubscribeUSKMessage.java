@@ -5,6 +5,8 @@ package freenet.node.fcp;
 
 import java.net.MalformedURLException;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.node.Node;
@@ -60,6 +62,10 @@ public class SubscribeUSKMessage extends FCPMessage {
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		new SubscribeUSK(this, node.clientCore, handler);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		throw new UnsupportedOperationException();
 	}
 
 }

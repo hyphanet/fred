@@ -57,4 +57,8 @@ public class GetRequestStatusMessage extends FCPMessage {
 		}
 	}
 
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
+	}
+
 }
