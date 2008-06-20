@@ -26,7 +26,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 		if(persistent) {
 			// FIXME is this too heavyweight? Maybe we should iterate the array or something?
 			grabArraysByClient = container.ext().collections().newHashMap(10);
-			((Db4oMap)grabArraysByClient).activationDepth(3);
+			((Db4oMap)grabArraysByClient).activationDepth(3); // FIXME can we get away with 1??
 		} else
 			grabArraysByClient = new HashMap();
 		grabArrays = new RemoveRandomWithObject[0];
