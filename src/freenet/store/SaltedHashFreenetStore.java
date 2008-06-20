@@ -857,19 +857,21 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					
 					if (_rebuildBloom)
 						rebuildBloom();
-
-					cleanerLock.notifyAll();
-					try {
-						cleanerLock.wait(CLEANER_PERIOD);
-					} catch (InterruptedException e) {
-						Logger.debug(this, "interrupted", e);
-					}
 				}
 
 				try {
 					writeConfigFile();
 				} catch (IOException e) {
 					Logger.error(this, "Can't write config file", e);
+				}
+
+				synchronized (cleanerLock) {
+					cleanerLock.notifyAll();
+					try {
+						cleanerLock.wait(CLEANER_PERIOD);
+					} catch (InterruptedException e) {
+						Logger.debug(this, "interrupted", e);
+					}
 				}
 			}
 		}
