@@ -55,6 +55,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private static final int OPTION_MAX_PROBE = 4;
 	
 	private static final long BLOOM_SYNC_INTERVAL = 256;
+	private static final int BLOOM_FILTER_SIZE = 0x8000000; // bits
+	private static final int BLOOM_FILTER_K = 5;
 	private static final boolean updateBloom = true;
 	private static final boolean checkBloom = true;
 	private boolean rebuildBloom = false;
@@ -112,9 +114,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		if (updateBloom || checkBloom) {
 			File bloomFile = new File(this.baseDir, name + ".bloom");
-			if (!bloomFile.exists() || bloomFile.length() != 0x8000000 / 8)
+			if (!bloomFile.exists() || bloomFile.length() != BLOOM_FILTER_SIZE / 8)
 				rebuildBloom = true;
-			bloomFilter = new BloomFilter(bloomFile, 0x8000000, 4);
+			bloomFilter = new BloomFilter(bloomFile, BLOOM_FILTER_SIZE, BLOOM_FILTER_K);
 		}
 
 		callback.setStore(this);
