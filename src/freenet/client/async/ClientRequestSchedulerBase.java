@@ -252,14 +252,16 @@ abstract class ClientRequestSchedulerBase {
 		// Priority
 		SortedVectorByNumber prio = priorities[priorityClass];
 		if(prio == null) {
-			prio = new SortedVectorByNumber();
+			prio = new SortedVectorByNumber(persistent());
 			priorities[priorityClass] = prio;
+			if(persistent())
+				container.set(this);
 		}
 		// Client
 		SectoredRandomGrabArrayWithInt clientGrabber = (SectoredRandomGrabArrayWithInt) prio.get(rc);
 		if(clientGrabber == null) {
 			clientGrabber = new SectoredRandomGrabArrayWithInt(random, rc, persistent(), container);
-			prio.add(clientGrabber);
+			prio.add(clientGrabber, container);
 			if(logMINOR) Logger.minor(this, "Registering retry count "+rc+" with prioclass "+priorityClass+" on "+clientGrabber+" for "+prio);
 		}
 		// SectoredRandomGrabArrayWithInt and lower down have hierarchical locking and auto-remove.

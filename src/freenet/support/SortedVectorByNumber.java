@@ -3,6 +3,8 @@ package freenet.support;
 import java.util.Arrays;
 import java.util.Comparator;
 
+import com.db4o.ObjectContainer;
+
 /**
  * Map of an integer to an element, based on a sorted Vector.
  * Note that we have to shuffle data around, so this is slowish if it gets big.
@@ -13,10 +15,12 @@ public class SortedVectorByNumber {
 	private int length;
 	private static final Comparator comparator = new SimpleIntNumberedItemComparator(true);
 	private static final int MIN_SIZE = 4;
+	private final boolean persistent;
 	
-	public SortedVectorByNumber() {
+	public SortedVectorByNumber(boolean persistent) {
 		this.data = new IntNumberedItem[MIN_SIZE];
 		length = 0;
+		this.persistent = persistent;
 	}
 	
 	public synchronized IntNumberedItem getFirst() {
@@ -35,7 +39,7 @@ public class SortedVectorByNumber {
 		return null;
 	}
 
-	public synchronized void remove(int item) {
+	public synchronized void remove(int item, ObjectContainer container) {
 		int x = Arrays.binarySearch(data, new Integer(item), comparator);
 		if(x >= 0) {
 			if(x < length-1)
@@ -47,6 +51,7 @@ public class SortedVectorByNumber {
 			System.arraycopy(data, 0, newData, 0, length);
 			data = newData;
 		}
+		if(persistent) container.set(this);
 		verify();
 	}
 
@@ -69,16 +74,16 @@ public class SortedVectorByNumber {
 	 * Add the item, if it (or an item of the same number) is not already present.
 	 * @return True if we added the item.
 	 */
-	public synchronized boolean push(IntNumberedItem grabber) {
+	public synchronized boolean push(IntNumberedItem grabber, ObjectContainer container) {
 		int x = Arrays.binarySearch(data, new Integer(grabber.getNumber()), comparator);
 		if(x >= 0) return false;
 		// insertion point
 		x = -x-1;
-		push(grabber, x);
+		push(grabber, x, container);
 		return true;
 	}
 	
-	public synchronized void add(IntNumberedItem grabber) {
+	public synchronized void add(IntNumberedItem grabber, ObjectContainer container) {
 		int x = Arrays.binarySearch(data, new Integer(grabber.getNumber()), comparator);
 		if(x >= 0) {
 			if(grabber != data[x])
@@ -87,10 +92,10 @@ public class SortedVectorByNumber {
 		}
 		// insertion point
 		x = -x-1;
-		push(grabber, x);
+		push(grabber, x, container);
 	}
 
-	private synchronized void push(IntNumberedItem grabber, int x) {
+	private synchronized void push(IntNumberedItem grabber, int x, ObjectContainer container) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Insertion point: "+x);
 		// Move the data
@@ -104,6 +109,8 @@ public class SortedVectorByNumber {
 			System.arraycopy(data, x, data, x+1, length-x);
 		data[x] = grabber;
 		length++;
+		if(persistent)
+			container.set(this);
 		verify();
 	}
 

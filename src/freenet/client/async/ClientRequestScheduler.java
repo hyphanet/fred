@@ -383,6 +383,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	private Runnable requestStarterQueueFiller = new Runnable() {
 		public void run() {
+			if(isInsertScheduler && !isSSKScheduler) {
+				if(logMINOR) Logger.minor(this, "Scheduling inserts...");
+			}
+			if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
 			ChosenRequest req = null;
 			while(true) {
 				req = removeFirst();
