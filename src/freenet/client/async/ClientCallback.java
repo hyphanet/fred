@@ -32,5 +32,5 @@ public interface ClientCallback {
 	public void onMajorProgress();
 
 	/** Called when the inserted data is fetchable (don't rely on this) */
-	public void onFetchable(BaseClientPutter state);
+	public void onFetchable(BaseClientPutter state, ObjectContainer container);
 }

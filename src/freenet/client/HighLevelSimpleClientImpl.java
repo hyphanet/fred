@@ -215,7 +215,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 			// Impossible
 		}
 
-		public void onFetchable(BaseClientPutter state) {
+		public void onFetchable(BaseClientPutter state, ObjectContainer container) {
 			// Impossible
 		}
 

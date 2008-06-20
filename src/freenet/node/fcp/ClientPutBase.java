@@ -8,6 +8,7 @@ import freenet.client.*;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientContext;
+import freenet.client.async.DBJob;
 import freenet.client.events.ClientEvent;
 import freenet.client.events.ClientEventListener;
 import freenet.client.events.FinishedCompressionEvent;
@@ -19,6 +20,7 @@ import freenet.keys.InsertableClientSSK;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
+import freenet.support.io.NativeThread;
 
 /**
  * Base class for ClientPut and ClientPutDir.
@@ -215,24 +217,24 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			if((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) {
 				SimpleProgressMessage progress = 
 					new SimpleProgressMessage(identifier, global, (SplitfileProgressEvent)ce);
-				trySendProgressMessage(progress, VERBOSITY_SPLITFILE_PROGRESS, null);
+				trySendProgressMessage(progress, VERBOSITY_SPLITFILE_PROGRESS, null, container, context);
 			}
 		} else if(ce instanceof StartedCompressionEvent) {
 			if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
 				StartedCompressionMessage msg =
 					new StartedCompressionMessage(identifier, global, ((StartedCompressionEvent)ce).codec);
-				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null);
+				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, container, context);
 			}
 		} else if(ce instanceof FinishedCompressionEvent) {
 			if((verbosity & VERBOSITY_COMPRESSION_START_END) == VERBOSITY_COMPRESSION_START_END) {
 				FinishedCompressionMessage msg = 
 					new FinishedCompressionMessage(identifier, global, (FinishedCompressionEvent)ce);
-				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null);
+				trySendProgressMessage(msg, VERBOSITY_COMPRESSION_START_END, null, container, context);
 			}
 		}
 	}
 
-	public void onFetchable(BaseClientPutter putter) {
+	public void onFetchable(BaseClientPutter putter, ObjectContainer container) {
 		if(finished) return;
 		if((verbosity & VERBOSITY_PUT_FETCHABLE) == VERBOSITY_PUT_FETCHABLE) {
 			FreenetURI temp;
@@ -241,7 +243,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			}
 			PutFetchableMessage msg =
 				new PutFetchableMessage(identifier, global, temp);
-			trySendProgressMessage(msg, VERBOSITY_PUT_FETCHABLE, null);
+			trySendProgressMessage(msg, VERBOSITY_PUT_FETCHABLE, null, container, null);
 		}
 	}
 
@@ -277,10 +279,30 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			client.queueClientRequestMessage(msg, 0);
 	}
 
-	private void trySendProgressMessage(FCPMessage msg, int verbosity, FCPConnectionOutputHandler handler) {
+	/**
+	 * @param msg
+	 * @param verbosity
+	 * @param handler
+	 * @param container Either container or context is required for a persistent request.
+	 * @param context Can be null if container is not null.
+	 */
+	private void trySendProgressMessage(FCPMessage msg, int verbosity, FCPConnectionOutputHandler handler, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(persistenceType != PERSIST_CONNECTION)
 				progressMessage = msg;
+		}
+		if(persistenceType == PERSIST_FOREVER) {
+			if(container != null) {
+				container.set(this);
+			} else {
+				context.jobRunner.queue(new DBJob() {
+
+					public void run(ObjectContainer container, ClientContext context) {
+						container.set(ClientPutBase.this);
+					}
+					
+				}, NativeThread.NORM_PRIORITY, false);
+			}
 		}
 		if(handler != null)
 			handler.queue(msg);

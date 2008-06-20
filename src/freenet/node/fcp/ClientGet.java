@@ -751,7 +751,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 	}
 
-	public void onFetchable(BaseClientPutter state) {
+	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
 		// Ignore, we don't insert
 	}
 

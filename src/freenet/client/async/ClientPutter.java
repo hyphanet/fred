@@ -258,7 +258,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	public void onFetchable(ClientPutState state, ObjectContainer container) {
-		client.onFetchable(this);
+		client.onFetchable(this, container);
 	}
 
 	public boolean canRestart() {

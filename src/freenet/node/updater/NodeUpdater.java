@@ -309,7 +309,7 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 		return fetchedVersion > currentVersion;
 	}
 	
-	public void onFetchable(BaseClientPutter state) {
+	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
 		// Ignore, we don't insert
 	}
 

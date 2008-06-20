@@ -751,7 +751,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				// Ignore, not possible
 			}
 
-			public void onFetchable(BaseClientPutter state) {
+			public void onFetchable(BaseClientPutter state, ObjectContainer container) {
 				// Irrelevant
 			}
 
@@ -799,7 +799,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
 				Logger.error(this, "Failed to insert revocation key binary blob: "+e, e);
 			}
-			public void onFetchable(BaseClientPutter state) {
+			public void onFetchable(BaseClientPutter state, ObjectContainer container) {
 				// Ignore
 			}
 			public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
@@ -1120,7 +1120,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				// Ignore, not possible
 			}
 
-			public void onFetchable(BaseClientPutter state) {
+			public void onFetchable(BaseClientPutter state, ObjectContainer container) {
 				// Irrelevant
 			}
 

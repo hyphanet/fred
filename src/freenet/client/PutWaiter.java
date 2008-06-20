@@ -65,7 +65,7 @@ public class PutWaiter implements ClientCallback {
 		// Ignore
 	}
 
-	public void onFetchable(BaseClientPutter state) {
+	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
 		// Ignore
 	}
 

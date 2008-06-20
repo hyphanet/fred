@@ -259,7 +259,7 @@ public class NodeARKInserter implements ClientCallback, RequestClient {
 		// Ignore
 	}
 
-	public void onFetchable(BaseClientPutter state) {
+	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
 		// Ignore, we don't care
 	}
 

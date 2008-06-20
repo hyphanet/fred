@@ -723,7 +723,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(!metadataPuttersUnfetchable.isEmpty()) return;
 			fetchable = true;
 		}
-		cb.onFetchable(this);
+		cb.onFetchable(this, container);
 	}
 
 	public void onFetchable(ClientPutState state, ObjectContainer container) {
@@ -735,7 +735,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(!putHandlersWaitingForFetchable.isEmpty()) return;
 			fetchable = true;
 		}
-		cb.onFetchable(this);
+		cb.onFetchable(this, container);
 	}
 
 	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {

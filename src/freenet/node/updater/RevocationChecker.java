@@ -235,7 +235,7 @@ public class RevocationChecker implements ClientCallback, RequestClient {
 		
 	}
 
-	public void onFetchable(BaseClientPutter state) {
+	public void onFetchable(BaseClientPutter state, ObjectContainer container) {
 		// TODO Auto-generated method stub
 		
 	}
