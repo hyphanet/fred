@@ -30,7 +30,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	private final Bucket bucket;
 	private final int minPaddedSize;
 	private final Random randomSource;
-	private SoftReference /* <Rijndael> */ aesRef;
+	private transient SoftReference /* <Rijndael> */ aesRef;
 	/** The decryption key. */
 	private final byte[] key;
 	private long dataLength;
