@@ -249,4 +249,7 @@ public class RandomGrabArray {
 		return persistent;
 	}
 
+	public void objectOnActivate(ObjectContainer container) {
+		container.activate(contents, 1);
+	}
 }

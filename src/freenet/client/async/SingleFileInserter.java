@@ -104,9 +104,9 @@ class SingleFileInserter implements ClientPutState {
 				}
 			}
 		}
-		Bucket data = block.getData();
-		if(parent.persistent())
-			container.activate(data, 1); // Buckets will cascade if necessary
+		if(parent.persistent()) {
+			container.activate(block, 1); // will cascade
+		}
 		tryCompress(container, context);
 	}
 
