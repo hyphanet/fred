@@ -374,6 +374,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	public synchronized Object chooseKey(KeysFetchingLocally ignored, ObjectContainer container, ClientContext context) {
+		if(finished) return null;
 		// Ignore KeysFetchingLocally, it's for requests.
 		return getBlock(container, context);
 	}
