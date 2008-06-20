@@ -7,7 +7,6 @@ import com.db4o.ObjectContainer;
 import com.db4o.types.Db4oMap;
 
 import freenet.client.async.ClientContext;
-import freenet.crypt.RandomSource;
 
 /**
  * Like RandomGrabArray, but there is an equal chance of any given client's requests being
@@ -17,11 +16,9 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 
 	private final Map grabArraysByClient;
 	private RemoveRandomWithObject[] grabArrays;
-	private final RandomSource rand;
 	private final boolean persistent;
 	
-	public SectoredRandomGrabArray(RandomSource rand, boolean persistent, ObjectContainer container) {
-		this.rand = rand;
+	public SectoredRandomGrabArray(boolean persistent, ObjectContainer container) {
 		this.persistent = persistent;
 		if(persistent) {
 			// FIXME is this too heavyweight? Maybe we should iterate the array or something?
@@ -41,7 +38,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 		if(!grabArraysByClient.containsKey(client)) {
 			if(logMINOR)
 				Logger.minor(this, "Adding new RGAWithClient for "+client+" on "+this+" for "+item);
-			rga = new RandomGrabArrayWithClient(client, rand, persistent, container);
+			rga = new RandomGrabArrayWithClient(client, persistent, container);
 			RemoveRandomWithObject[] newArrays = new RemoveRandomWithObject[grabArrays.length+1];
 			System.arraycopy(grabArrays, 0, newArrays, 0, grabArrays.length);
 			newArrays[grabArrays.length] = rga;
@@ -109,7 +106,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			}
 			if(grabArrays.length == 2) {
 				// Another simple common case
-				int x = rand.nextBoolean() ? 1 : 0;
+				int x = context.fastWeakRandom.nextBoolean() ? 1 : 0;
 				RemoveRandomWithObject rga = grabArrays[x];
 				RemoveRandomWithObject firstRGA = rga;
 				RandomGrabArrayItem item = rga.removeRandom(excluding, container, context);
@@ -138,7 +135,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 					return item;
 				}
 			}
-			int x = rand.nextInt(grabArrays.length);
+			int x = context.fastWeakRandom.nextInt(grabArrays.length);
 			RemoveRandomWithObject rga = grabArrays[x];
 			if(logMINOR)
 				Logger.minor(this, "Picked "+x+" of "+grabArrays.length+" : "+rga+" : "+rga.getObject()+" on "+this);

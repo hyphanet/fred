@@ -6,7 +6,6 @@ import java.util.Set;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
-import freenet.crypt.RandomSource;
 
 /**
  * An array which supports very fast remove-and-return-a-random-element.
@@ -17,8 +16,6 @@ public class RandomGrabArray {
 	private RandomGrabArrayItem[] reqs;
 	/** Index of first null item. */
 	private int index;
-	/** Random source */
-	private RandomSource rand;
 	/** What do we already have? FIXME: Replace with a Bloom filter or something (to save 
 	 * RAM), or rewrite the whole class as a custom hashset maybe based on the classpath 
 	 * HashSet. Note that removeRandom() is *the* common operation, so MUST BE FAST.
@@ -27,11 +24,10 @@ public class RandomGrabArray {
 	private final static int MIN_SIZE = 32;
 	private final boolean persistent;
 
-	public RandomGrabArray(RandomSource rand, boolean persistent, ObjectContainer container) {
+	public RandomGrabArray(boolean persistent, ObjectContainer container) {
 		this.reqs = new RandomGrabArrayItem[MIN_SIZE];
 		this.persistent = persistent;
 		index = 0;
-		this.rand = rand;
 		if(persistent)
 			contents = new Db4oSet(container, 10);
 		else
@@ -158,11 +154,11 @@ public class RandomGrabArray {
 								container.set(this);
 							return ret;
 						} else {
-							random = rand.nextInt(valid);
+							random = context.fastWeakRandom.nextInt(valid);
 						}
 					}
 				}
-				int i = rand.nextInt(index);
+				int i = context.fastWeakRandom.nextInt(index);
 				ret = reqs[i];
 				if(ret == null) {
 					Logger.error(this, "reqs["+i+"] = null");

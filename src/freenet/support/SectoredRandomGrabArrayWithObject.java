@@ -2,14 +2,12 @@ package freenet.support;
 
 import com.db4o.ObjectContainer;
 
-import freenet.crypt.RandomSource;
-
 public class SectoredRandomGrabArrayWithObject extends SectoredRandomGrabArray implements RemoveRandomWithObject {
 
 	private final Object object;
 	
-	public SectoredRandomGrabArrayWithObject(Object object, RandomSource rand, boolean persistent, ObjectContainer container) {
-		super(rand, persistent, container);
+	public SectoredRandomGrabArrayWithObject(Object object, boolean persistent, ObjectContainer container) {
+		super(persistent, container);
 		this.object = object;
 	}
 
