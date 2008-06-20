@@ -5,6 +5,8 @@ package freenet.client.async;
 
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
+import freenet.node.NodeClientCore;
+import freenet.node.RequestScheduler;
 import freenet.node.SendableRequest;
 
 /**
@@ -28,6 +30,10 @@ public class ChosenRequest {
 		token = tok;
 		this.key = key;
 		this.ckey = ckey;
+	}
+
+	public boolean send(NodeClientCore core, RequestScheduler sched) {
+		return request.send(core, sched, this);
 	}
 	
 }

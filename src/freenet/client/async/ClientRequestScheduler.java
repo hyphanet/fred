@@ -464,12 +464,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return choosenPriorityScheduler;
 	}
 
-	public synchronized void succeeded(final BaseSendableGet succeeded) {
+	public synchronized void succeeded(final BaseSendableGet succeeded, final ChosenRequest req) {
 		if(succeeded.persistent()) {
 			databaseExecutor.execute(new Runnable() {
 				public void run() {
 					try {
 						schedCore.succeeded(succeeded);
+						if(succeeded.persistent())
+							selectorContainer.delete((PersistentChosenRequest)req);
 						selectorContainer.commit();
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t, t);
@@ -649,28 +651,34 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return databaseExecutor;
 	}
 
-	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, String name) {
+	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, String name, final ChosenRequest req) {
 		databaseExecutor.execute(new Runnable() {
 			public void run() {
 				get.onFailure(e, keyNum, ClientRequestScheduler.this, selectorContainer, clientContext);
+				if(get.persistent())
+					selectorContainer.delete((PersistentChosenRequest)req);
 				selectorContainer.commit();
 			}
 		}, prio, name);
 	}
 	
-	public void callFailure(final SendableInsert put, final LowLevelPutException e, final Object keyNum, int prio, String name) {
+	public void callFailure(final SendableInsert put, final LowLevelPutException e, final Object keyNum, int prio, String name, final ChosenRequest req) {
 		databaseExecutor.execute(new Runnable() {
 			public void run() {
 				put.onFailure(e, keyNum, selectorContainer, clientContext);
+				if(put.persistent())
+					selectorContainer.delete((PersistentChosenRequest)req);
 				selectorContainer.commit();
 			}
 		}, prio, name);
 	}
 
-	public void callSuccess(final SendableInsert put, final Object keyNum, int prio, String name) {
+	public void callSuccess(final SendableInsert put, final Object keyNum, int prio, String name, final ChosenRequest req) {
 		databaseExecutor.execute(new Runnable() {
 			public void run() {
 				put.onSuccess(keyNum, selectorContainer, clientContext);
+				if(put.persistent())
+					selectorContainer.delete((PersistentChosenRequest)req);
 				selectorContainer.commit();
 			}
 		}, prio, name);

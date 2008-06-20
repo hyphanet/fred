@@ -142,8 +142,8 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		Logger.error(this, "Internal error: "+t, t);
 	}
 	
-	public boolean send(NodeClientCore node, RequestScheduler sched, Object keyNum, ClientKey ckey) {
-		Key key = (Key) keyNum;
+	public boolean send(NodeClientCore node, RequestScheduler sched, ChosenRequest req) {
+		Key key = (Key) req.token;
 		// Have to cache it in order to propagate it; FIXME
 		// Don't let a node force us to start a real request for a specific key.
 		// We check the datastore, take up offers if any (on a short timeout), and then quit if we still haven't fetched the data.

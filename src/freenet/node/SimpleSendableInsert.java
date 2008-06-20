@@ -5,6 +5,7 @@ package freenet.node;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ChosenRequest;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
@@ -67,21 +68,21 @@ public class SimpleSendableInsert extends SendableInsert {
 		return 0;
 	}
 
-	public boolean send(NodeClientCore core, RequestScheduler sched, Object keyNum, ClientKey ckey) {
+	public boolean send(NodeClientCore core, RequestScheduler sched, ChosenRequest req) {
 		// Ignore keyNum, key, since this is a single block
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		try {
 			if(logMINOR) Logger.minor(this, "Starting request: "+this);
 			core.realPut(block, shouldCache());
 		} catch (LowLevelPutException e) {
-			sched.callFailure(this, e, keyNum, NativeThread.NORM_PRIORITY, "SSI callback: failure");
+			sched.callFailure(this, e, req.token, NativeThread.NORM_PRIORITY, "SSI callback: failure", req);
 			if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
 			return true;
 		} finally {
 			finished = true;
 		}
 		if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
-		sched.callSuccess(this, keyNum, NativeThread.NORM_PRIORITY, "SSI callback: success");
+		sched.callSuccess(this, req.token, NativeThread.NORM_PRIORITY, "SSI callback: success", req);
 		return true;
 	}
 

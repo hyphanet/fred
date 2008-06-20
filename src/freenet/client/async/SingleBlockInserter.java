@@ -312,11 +312,11 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return finished;
 	}
 	
-	public boolean send(NodeClientCore core, RequestScheduler sched, Object keyNum, ClientKey ckey) {
+	public boolean send(NodeClientCore core, RequestScheduler sched, ChosenRequest req) {
 		// Ignore keyNum, key, since we're only sending one block.
 		try {
 			if(logMINOR) Logger.minor(this, "Starting request: "+this);
-			ClientKeyBlock b = (ClientKeyBlock) keyNum;
+			ClientKeyBlock b = (ClientKeyBlock) req.token;
 			if(b != null)
 				core.realPut(b, ctx.cacheLocalRequests);
 			else {
@@ -324,12 +324,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				return false;
 			}
 		} catch (LowLevelPutException e) {
-			sched.callFailure((SendableInsert) this, e, keyNum, NativeThread.NORM_PRIORITY, "Insert failed");
+			sched.callFailure((SendableInsert) this, e, req.token, NativeThread.NORM_PRIORITY, "Insert failed", req);
 			if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
 			return true;
 		}
 		if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
-		sched.callSuccess(this, keyNum, NativeThread.NORM_PRIORITY, "Insert succeeded");
+		sched.callSuccess(this, req.token, NativeThread.NORM_PRIORITY, "Insert succeeded", req);
 		return true;
 	}
 

@@ -6,6 +6,7 @@ package freenet.node;
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
+import freenet.client.async.ChosenRequest;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
@@ -60,7 +61,9 @@ public abstract class SendableGet extends BaseSendableGet {
 	/** Do the request, blocking. Called by RequestStarter. 
 	 * @return True if a request was executed. False if caller should try to find another request, and remove
 	 * this one from the queue. */
-	public boolean send(NodeClientCore core, final RequestScheduler sched, final Object keyNum, ClientKey key) {
+	public boolean send(NodeClientCore core, final RequestScheduler sched, ChosenRequest req) {
+		Object keyNum = req.token;
+		ClientKey key = req.ckey;
 		if(key == null) {
 			Logger.error(this, "Key is null in send(): keyNum = "+keyNum+" for "+this);
 			return false;
@@ -72,25 +75,25 @@ public abstract class SendableGet extends BaseSendableGet {
 		if(isCancelled()) {
 			if(logMINOR) Logger.minor(this, "Cancelled: "+this);
 			// callbacks must initially run at HIGH_PRIORITY so they are executed before we remove the key from the currently running list
-			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.CANCELLED), null, NativeThread.HIGH_PRIORITY, "onFailure(cancelled)");
+			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.CANCELLED), null, NativeThread.HIGH_PRIORITY, "onFailure(cancelled)", req);
 			return false;
 		}
 		try {
 			try {
 				core.realGetKey(key, ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
 			} catch (final LowLevelGetException e) {
-				sched.callFailure(this, e, keyNum, NativeThread.HIGH_PRIORITY, "onFailure");
+				sched.callFailure(this, e, keyNum, NativeThread.HIGH_PRIORITY, "onFailure", req);
 				return true;
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
-				sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, NativeThread.HIGH_PRIORITY, "onFailure(caught throwable)");
+				sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, NativeThread.HIGH_PRIORITY, "onFailure(caught throwable)", req);
 				return true;
 			}
 			// Don't call onSuccess(), it will be called for us by backdoor coalescing.
-			sched.succeeded(this);
+			sched.succeeded(this, req);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
-			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, NativeThread.HIGH_PRIORITY, "onFailure(caught throwable)");
+			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, NativeThread.HIGH_PRIORITY, "onFailure(caught throwable)", req);
 			return true;
 		}
 		return true;
@@ -141,7 +144,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	}
 
 	public void internalError(final Object keyNum, final Throwable t, final RequestScheduler sched, ObjectContainer container, ClientContext context) {
-		sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), keyNum, NativeThread.MAX_PRIORITY, "Internal error");
+		sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), keyNum, NativeThread.MAX_PRIORITY, "Internal error", null);
 	}
 
 	/**

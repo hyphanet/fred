@@ -218,7 +218,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 
 	private boolean startRequest(ChosenRequest req, boolean logMINOR) {
 		if((!isInsert) && sched.fetchingKeys().hasKey(req.key)) return false;
-		core.getExecutor().execute(new SenderThread(req.request, req.token, req.key, req.ckey), "RequestStarter$SenderThread for "+req);
+		core.getExecutor().execute(new SenderThread(req, req.key), "RequestStarter$SenderThread for "+req);
 		return true;
 	}
 
@@ -237,23 +237,19 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	
 	private class SenderThread implements Runnable {
 
-		private final SendableRequest req;
-		private final Object keyNum;
+		private final ChosenRequest req;
 		private final Key key;
-		private final ClientKey ckey;
 		
-		public SenderThread(SendableRequest req, Object keyNum, Key key, ClientKey ckey) {
+		public SenderThread(ChosenRequest req, Key key) {
 			this.req = req;
-			this.keyNum = keyNum;
 			this.key = key;
-			this.ckey = ckey;
 		}
 
 		public void run() {
 			try {
 		    freenet.support.Logger.OSThread.logPID(this);
-			if(!req.send(core, sched, keyNum, ckey)) {
-				if(!req.isCancelled())
+		    if(!req.send(core, sched)) {
+				if(!req.request.isCancelled())
 					Logger.error(this, "run() not able to send a request on "+req);
 				else
 					Logger.normal(this, "run() not able to send a request on "+req+" - request was cancelled");

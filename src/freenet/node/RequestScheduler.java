@@ -17,9 +17,10 @@ public interface RequestScheduler {
 	/** Tell the scheduler that a request from a specific RandomGrabArray succeeded.
 	 * Definition of "succeeded" will vary, but the point is most schedulers will run another
 	 * request from the parentGrabArray in the near future on the theory that if one works,
-	 * another may also work. 
+	 * another may also work. Also, delete the ChosenRequest if it is persistent. 
+	 * @param req The request we ran, which must be deleted.
 	 * */
-	public void succeeded(BaseSendableGet get);
+	public void succeeded(BaseSendableGet get, ChosenRequest req);
 
 	/**
 	 * After a key has been requested a few times, it is added to the cooldown queue for
@@ -58,11 +59,17 @@ public interface RequestScheduler {
 
 	public PrioritizedSerialExecutor getDatabaseExecutor();
 
-	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, String name);
+	/** Call onFailure() on the database thread, then delete the PersistentChosenRequest. For a non-persistent request, 
+	 * just call onFailure() immediately. */
+	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, String name, ChosenRequest req);
 	
-	public void callFailure(final SendableInsert put, final LowLevelPutException e, final Object keyNum, int prio, String name);
+	/** Call onFailure() on the database thread, then delete the PersistentChosenRequest. For a non-persistent request, 
+	 * just call onFailure() immediately. */
+	public void callFailure(final SendableInsert put, final LowLevelPutException e, final Object keyNum, int prio, String name, ChosenRequest req);
 
-	public void callSuccess(final SendableInsert put, final Object keyNum, int prio, String name);
+	/** Call onSuccess() on the database thread, then delete the PersistentChosenRequest. For a non-persistent request, 
+	 * just call onFailure() immediately. */
+	public void callSuccess(final SendableInsert put, final Object keyNum, int prio, String name, ChosenRequest req);
 
 	public FECQueue getFECQueue();
 
