@@ -312,7 +312,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				} else {
 					Logger.error(this, "Could not find client grabber for client "+req.getClient()+" from "+chosenTracker);
 				}
-				innerRegister(req, random);
+				if(req.persistent())
+					innerRegister(req, random);
+				else
+					schedTransient.innerRegister(req, random);
 				continue; // Try the next one on this retry count.
 			}
 			// Check recentSuccesses

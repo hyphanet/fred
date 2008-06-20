@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.FreenetURI;
 import freenet.support.api.Bucket;
 
@@ -31,11 +33,15 @@ public class InsertBlock {
 		return (isFreed ? null : data);
 	}
 	
-	public void free(){
+	public void free(ObjectContainer container){
 		synchronized (this) {
 			if(isFreed) return;
 			isFreed = true;
 		}
 		data.free();
+		if(container != null) {
+			data.removeFrom(container);
+			container.delete(this);
+		}
 	}
 }
