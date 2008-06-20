@@ -98,7 +98,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			}
 		}
 		// :(
-		unregister(false);
+		unregister(false, container);
 		if(e.isFatal() || forceFatal)
 			parent.fatallyFailedBlock(container, context);
 		else
@@ -108,7 +108,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 
 	/** Will be overridden by SingleFileFetcher */
 	protected void onSuccess(FetchResult data, RequestScheduler sched, ObjectContainer container, ClientContext context) {
-		unregister(false);
+		unregister(false, container);
 		if(parent.isCancelled()) {
 			data.asBucket().free();
 			onFailure(new FetchException(FetchException.CANCELLED), false, sched, container, context);

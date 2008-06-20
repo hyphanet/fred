@@ -80,7 +80,7 @@ public class BinaryBlobInserter implements ClientPutState {
 	public void cancel(ObjectContainer container, ClientContext context) {
 		for(int i=0;i<inserters.length;i++) {
 			if(inserters[i] != null)
-				inserters[i].cancel();
+				inserters[i].cancel(container, context);
 		}
 		parent.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}

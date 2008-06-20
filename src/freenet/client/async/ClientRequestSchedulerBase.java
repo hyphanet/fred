@@ -233,10 +233,10 @@ abstract class ClientRequestSchedulerBase {
 		else return 0;
 	}
 	
-	void innerRegister(SendableRequest req, RandomSource random) {
+	void innerRegister(SendableRequest req, RandomSource random, ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+req.getPriorityClass()+" retry "+req.getRetryCount()+" for "+req.getClientRequest());
 		int retryCount = req.getRetryCount();
-		addToGrabArray(req.getPriorityClass(), retryCount, fixRetryCount(retryCount), req.getClient(), req.getClientRequest(), req, random);
+		addToGrabArray(req.getPriorityClass(), retryCount, fixRetryCount(retryCount), req.getClient(), req.getClientRequest(), req, random, container);
 		HashSet v = (HashSet) allRequestsByClientRequest.get(req.getClientRequest());
 		if(v == null) {
 			v = new HashSet();
@@ -246,7 +246,7 @@ abstract class ClientRequestSchedulerBase {
 		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+req.getPriorityClass()+", retrycount="+req.getRetryCount()+" v.size()="+v.size());
 	}
 	
-	void addToGrabArray(short priorityClass, int retryCount, int rc, Object client, ClientRequester cr, SendableRequest req, RandomSource random) {
+	void addToGrabArray(short priorityClass, int retryCount, int rc, Object client, ClientRequester cr, SendableRequest req, RandomSource random, ObjectContainer container) {
 		if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
 			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
 		// Priority
@@ -258,7 +258,7 @@ abstract class ClientRequestSchedulerBase {
 		// Client
 		SectoredRandomGrabArrayWithInt clientGrabber = (SectoredRandomGrabArrayWithInt) prio.get(rc);
 		if(clientGrabber == null) {
-			clientGrabber = new SectoredRandomGrabArrayWithInt(random, rc, persistent());
+			clientGrabber = new SectoredRandomGrabArrayWithInt(random, rc, persistent(), container);
 			prio.add(clientGrabber);
 			if(logMINOR) Logger.minor(this, "Registering retry count "+rc+" with prioclass "+priorityClass+" on "+clientGrabber+" for "+prio);
 		}
@@ -268,12 +268,12 @@ abstract class ClientRequestSchedulerBase {
 			// Request
 			SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
 			if(requestGrabber == null) {
-				requestGrabber = new SectoredRandomGrabArrayWithObject(client, random, persistent());
+				requestGrabber = new SectoredRandomGrabArrayWithObject(client, random, persistent(), container);
 				if(logMINOR)
 					Logger.minor(this, "Creating new grabber: "+requestGrabber+" for "+client+" from "+clientGrabber+" : "+prio+" : prio="+priorityClass+", rc="+rc);
-				clientGrabber.addGrabber(client, requestGrabber);
+				clientGrabber.addGrabber(client, requestGrabber, container);
 			}
-			requestGrabber.add(cr, req);
+			requestGrabber.add(cr, req, container);
 		}
 	}
 
@@ -289,7 +289,7 @@ abstract class ClientRequestSchedulerBase {
 		return Math.max(0, retryCount-MIN_RETRY_COUNT);
 	}
 
-	public void reregisterAll(ClientRequester request, RandomSource random, ClientRequestScheduler lock) {
+	public void reregisterAll(ClientRequester request, RandomSource random, ClientRequestScheduler lock, ObjectContainer container) {
 		SendableRequest[] reqs;
 		synchronized(lock) {
 			HashSet h = (HashSet) allRequestsByClientRequest.get(request);
@@ -300,9 +300,9 @@ abstract class ClientRequestSchedulerBase {
 		for(int i=0;i<reqs.length;i++) {
 			SendableRequest req = reqs[i];
 			// Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.
-			req.unregister(true);
+			req.unregister(true, container);
 			// Then can do innerRegister() (not register()).
-			innerRegister(req, random);
+			innerRegister(req, random, container);
 		}
 	}
 

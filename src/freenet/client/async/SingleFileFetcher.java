@@ -175,7 +175,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 	protected void onSuccess(FetchResult result, RequestScheduler sched, ObjectContainer container, ClientContext context) {
 		this.sched = sched;
-		unregister(false);
+		unregister(false, container);
 		if(parent.isCancelled()) {
 			if(logMINOR)
 				Logger.minor(this, "Parent is cancelled");

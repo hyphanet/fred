@@ -29,7 +29,7 @@ class USKChecker extends BaseSingleFileFetcher {
 	}
 	
 	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched, ObjectContainer container, ClientContext context) {
-		unregister(false);
+		unregister(false, container);
 		cb.onSuccess((ClientSSKBlock)block, context);
 	}
 
@@ -66,7 +66,7 @@ class USKChecker extends BaseSingleFileFetcher {
 		if(canRetry && retry(sched, container, context)) return;
 		
 		// Ran out of retries.
-		unregister(false);
+		unregister(false, container);
 		if(e.code == LowLevelGetException.CANCELLED){
 			cb.onCancelled(context);
 			return;

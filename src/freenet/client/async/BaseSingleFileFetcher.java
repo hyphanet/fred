@@ -111,7 +111,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		synchronized(this) {
 			cancelled = true;
 		}
-		super.unregister(false);
+		super.unregister(false, container);
 	}
 
 	public synchronized boolean isCancelled() {

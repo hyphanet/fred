@@ -198,9 +198,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 			dontNotify = !scheduled;
 		}
 		parentFetcher.parent.completedBlock(dontNotify, container, sched.getContext());
-		seg.possiblyRemoveFromParent();
+		seg.possiblyRemoveFromParent(container);
 		if(decodeNow) {
-			removeSubSegments();
+			removeSubSegments(container);
 			decode(container, sched.getContext(), sched);
 		}
 	}
@@ -382,7 +382,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(allFailed)
 			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors), container, context);
 		else
-			seg.possiblyRemoveFromParent();
+			seg.possiblyRemoveFromParent(container);
 	}
 	
 	/** A request has failed non-fatally, so the block may be retried 
@@ -489,7 +489,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				checkBuckets[i] = null;
 			}
 		}
-		removeSubSegments();
+		removeSubSegments(container);
 		parentFetcher.segmentFinished(this, container, context);
 	}
 
@@ -573,14 +573,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 		return true;
 	}
 
-	private void removeSubSegments() {
+	private void removeSubSegments(ObjectContainer container) {
 		SplitFileFetcherSubSegment[] deadSegs;
 		synchronized(this) {
 			deadSegs = (SplitFileFetcherSubSegment[]) subSegments.toArray(new SplitFileFetcherSubSegment[subSegments.size()]);
 			subSegments.clear();
 		}
 		for(int i=0;i<deadSegs.length;i++) {
-			deadSegs[i].kill();
+			deadSegs[i].kill(container);
 		}
 	}
 

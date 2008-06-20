@@ -307,7 +307,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				if(clientGrabber != null) {
 					RandomGrabArray baseRGA = (RandomGrabArray) clientGrabber.getGrabber(req.getClientRequest());
 					if(baseRGA != null) {
-						baseRGA.remove(req);
+						baseRGA.remove(req, container);
 					} else {
 						Logger.error(this, "Could not find base RGA for requestor "+req.getClientRequest()+" from "+clientGrabber);
 					}
@@ -315,9 +315,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					Logger.error(this, "Could not find client grabber for client "+req.getClient()+" from "+chosenTracker);
 				}
 				if(req.persistent())
-					innerRegister(req, random);
+					innerRegister(req, random, container);
 				else
-					schedTransient.innerRegister(req, random);
+					schedTransient.innerRegister(req, random, container);
 				continue; // Try the next one on this retry count.
 			}
 			// Check recentSuccesses
@@ -334,9 +334,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				if(logMINOR)
 					Logger.minor(this, "Recently succeeded req "+altReq+" is better, using that, reregistering chosen "+req);
 				if(req.persistent())
-					innerRegister(req, random);
+					innerRegister(req, random, container);
 				else
-					schedTransient.innerRegister(req, random);
+					schedTransient.innerRegister(req, random, container);
 				req = altReq;
 			} else {
 				// Don't use the recent one

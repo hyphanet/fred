@@ -5,7 +5,6 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ChosenRequest;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequester;
-import freenet.keys.ClientKey;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
 import freenet.support.RandomGrabArrayItem;
@@ -81,10 +80,10 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		parentGrabArray = parent;
 	}
 	
-	public void unregister(boolean staySubscribed) {
+	public void unregister(boolean staySubscribed, ObjectContainer container) {
 		RandomGrabArray arr = getParentGrabArray();
 		if(arr != null) {
-			arr.remove(this);
+			arr.remove(this, container);
 		} else {
 			// Should this be a higher priority?
 			if(Logger.shouldLog(Logger.MINOR, this))

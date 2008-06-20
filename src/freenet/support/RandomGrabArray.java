@@ -1,6 +1,7 @@
 package freenet.support;
 
 import java.util.HashSet;
+import java.util.Set;
 
 import com.db4o.ObjectContainer;
 
@@ -22,19 +23,22 @@ public class RandomGrabArray {
 	 * RAM), or rewrite the whole class as a custom hashset maybe based on the classpath 
 	 * HashSet. Note that removeRandom() is *the* common operation, so MUST BE FAST.
 	 */
-	private HashSet contents;
+	private Set contents;
 	private final static int MIN_SIZE = 32;
 	private final boolean persistent;
 
-	public RandomGrabArray(RandomSource rand, boolean persistent) {
+	public RandomGrabArray(RandomSource rand, boolean persistent, ObjectContainer container) {
 		this.reqs = new RandomGrabArrayItem[MIN_SIZE];
 		this.persistent = persistent;
 		index = 0;
 		this.rand = rand;
-		contents = new HashSet();
+		if(persistent)
+			contents = new Db4oSet(container, 10);
+		else
+			contents = new HashSet();
 	}
 	
-	public void add(RandomGrabArrayItem req) {
+	public void add(RandomGrabArrayItem req, ObjectContainer container) {
 		if(req.persistent() != persistent) throw new IllegalArgumentException("req.persistent()="+req.persistent()+" but array.persistent="+persistent+" item="+req+" array="+this);
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(req.isEmpty()) {
@@ -55,6 +59,7 @@ public class RandomGrabArray {
 			}
 			reqs[index++] = req;
 			if(logMINOR) Logger.minor(this, "Added: "+req+" to "+this+" size now "+index);
+			if(persistent) container.set(this);
 		}
 	}
 	
@@ -64,6 +69,7 @@ public class RandomGrabArray {
 		synchronized(this) {
 			final int MAX_EXCLUDED = 10;
 			int excluded = 0;
+			boolean changedMe = false;
 			while(true) {
 				if(index == 0) {
 					if(logMINOR) Logger.minor(this, "All null on "+this);
@@ -83,11 +89,13 @@ public class RandomGrabArray {
 							if(item == null) {
 								continue;
 							} else if(item.isEmpty()) {
+								changedMe = true;
 								reqs[i] = null;
 								contents.remove(item);
 								continue;
 							}
 							if(i != target) {
+								changedMe = true;
 								reqs[i] = null;
 								reqs[target] = item;
 							}
@@ -102,10 +110,12 @@ public class RandomGrabArray {
 								valid++;
 							}
 						}
+						changedMe = true;
 						index = target;
 						// We reach this point if 1) the random number we picked last round is invalid because an item became cancelled or excluded
 						// or 2) we are on the first round anyway.
 						if(chosenIndex >= 0) {
+							changedMe = true;
 							ret = reqs[chosenIndex];
 							if(ret.canRemove()) {
 								contents.remove(ret);
@@ -116,18 +126,24 @@ public class RandomGrabArray {
 								ret.setParentGrabArray(null);
 							}
 							if(logMINOR) Logger.minor(this, "Chosen random item "+ret+" out of "+valid);
+							if(persistent && changedMe)
+								container.set(this);
 							return ret;
 						}
 						if(valid == 0 && exclude == 0) {
 							index = 0;
+							container.set(this);
 							if(logMINOR) Logger.minor(this, "No valid or excluded items");
 							return null;
 						} else if(valid == 0) {
+							if(persistent && changedMe)
+								container.set(this);
 							if(logMINOR) Logger.minor(this, "No valid items, "+exclude+" excluded items");
 							return null;
 						} else if(valid == 1) {
 							ret = reqs[validIndex];
 							if(ret.canRemove()) {
+								changedMe = true;
 								contents.remove(ret);
 								if(validIndex != index-1) {
 									reqs[validIndex] = reqs[index-1];
@@ -138,6 +154,8 @@ public class RandomGrabArray {
 							} else {
 								if(logMINOR) Logger.minor(this, "No valid or excluded items apart from "+ret);
 							}
+							if(persistent && changedMe)
+								container.set(this);
 							return ret;
 						} else {
 							random = rand.nextInt(valid);
@@ -153,6 +171,7 @@ public class RandomGrabArray {
 						reqs[i] = reqs[index];
 						reqs[index] = null;
 					}
+					changedMe = true;
 					continue;
 				}
 				oret = ret;
@@ -164,15 +183,20 @@ public class RandomGrabArray {
 					excluded++;
 					if(excluded > MAX_EXCLUDED) {
 						Logger.error(this, "Remove random returning null because "+excluded+" excluded items, length = "+index, new Exception("error"));
+						if(persistent && changedMe)
+							container.set(this);
 						return null;
 					}
 					continue;
 				}
 				if(ret != null && !ret.canRemove()) {
 					if(logMINOR) Logger.minor(this, "Returning (cannot remove): "+ret+" of "+index);
+					if(persistent && changedMe)
+						container.set(this);
 					return ret;
 				}
 				do {
+					changedMe = true;
 					reqs[i] = reqs[--index];
 					reqs[index] = null;
 					if(oret != null)
@@ -182,6 +206,7 @@ public class RandomGrabArray {
 				} while (index > i && (oret == null || oret.isEmpty()));
 				// Shrink array
 				if((index < reqs.length / 4) && (reqs.length > MIN_SIZE)) {
+					changedMe = true;
 					// Shrink array
 					int newSize = Math.max(index * 2, MIN_SIZE);
 					RandomGrabArrayItem[] r = new RandomGrabArrayItem[newSize];
@@ -193,10 +218,12 @@ public class RandomGrabArray {
 		}
 		if(logMINOR) Logger.minor(this, "Returning "+ret+" of "+index);
 		ret.setParentGrabArray(null);
+		if(persistent)
+			container.set(this);
 		return ret;
 	}
 	
-	public void remove(RandomGrabArrayItem it) {
+	public void remove(RandomGrabArrayItem it, ObjectContainer container) {
 		synchronized(this) {
 			if(!contents.contains(it)) return;
 			contents.remove(it);
@@ -210,6 +237,8 @@ public class RandomGrabArray {
 			}
 		}
 		it.setParentGrabArray(null);
+		if(persistent)
+			container.set(this);
 	}
 
 	public synchronized boolean isEmpty() {

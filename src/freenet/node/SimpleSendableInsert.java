@@ -111,12 +111,12 @@ public class SimpleSendableInsert extends SendableInsert {
 		scheduler.register(this);
 	}
 
-	public void cancel() {
+	public void cancel(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
 		}
-		super.unregister(false);
+		super.unregister(false, container);
 	}
 
 	public boolean shouldCache() {

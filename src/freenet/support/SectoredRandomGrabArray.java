@@ -1,6 +1,7 @@
 package freenet.support;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import com.db4o.ObjectContainer;
 
@@ -13,39 +14,46 @@ import freenet.crypt.RandomSource;
  */
 public class SectoredRandomGrabArray implements RemoveRandom {
 
-	private final HashMap grabArraysByClient;
+	private final Map grabArraysByClient;
 	private RemoveRandomWithObject[] grabArrays;
 	private final RandomSource rand;
 	private final boolean persistent;
 	
-	public SectoredRandomGrabArray(RandomSource rand, boolean persistent) {
+	public SectoredRandomGrabArray(RandomSource rand, boolean persistent, ObjectContainer container) {
 		this.rand = rand;
 		this.persistent = persistent;
-		this.grabArraysByClient = new HashMap();
+		if(persistent)
+			// FIXME is this too heavyweight? Maybe we should iterate the array or something?
+			grabArraysByClient = container.ext().collections().newHashMap(10);
+		else
+			grabArraysByClient = new HashMap();
 		grabArrays = new RemoveRandomWithObject[0];
 	}
 
 	/**
 	 * Add directly to a RandomGrabArrayWithClient under us. */
-	public synchronized void add(Object client, RandomGrabArrayItem item) {
+	public synchronized void add(Object client, RandomGrabArrayItem item, ObjectContainer container) {
 		if(item.persistent() != persistent) throw new IllegalArgumentException("item.persistent()="+item.persistent()+" but array.persistent="+persistent+" item="+item+" array="+this);
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		RandomGrabArrayWithClient rga;
 		if(!grabArraysByClient.containsKey(client)) {
 			if(logMINOR)
 				Logger.minor(this, "Adding new RGAWithClient for "+client+" on "+this+" for "+item);
-			rga = new RandomGrabArrayWithClient(client, rand, persistent);
+			rga = new RandomGrabArrayWithClient(client, rand, persistent, container);
 			RemoveRandomWithObject[] newArrays = new RemoveRandomWithObject[grabArrays.length+1];
 			System.arraycopy(grabArrays, 0, newArrays, 0, grabArrays.length);
 			newArrays[grabArrays.length] = rga;
 			grabArrays = newArrays;
 			grabArraysByClient.put(client, rga);
+			if(persistent) {
+				container.set(this);
+			}
 		} else {
 			rga = (RandomGrabArrayWithClient) grabArraysByClient.get(client);
 		}
 		if(logMINOR)
 			Logger.minor(this, "Adding "+item+" to RGA "+rga+" for "+client);
-		rga.add(item);
+		rga.add(item, container);
 		if(logMINOR)
 			Logger.minor(this, "Size now "+grabArrays.length+" on "+this);
 	}
@@ -62,12 +70,15 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 	 * Put a grabber. This lets us use things other than RandomGrabArrayWithClient's, so don't mix calls
 	 * to add() with calls to getGrabber/addGrabber!
 	 */
-	public synchronized void addGrabber(Object client, RemoveRandomWithObject requestGrabber) {
+	public synchronized void addGrabber(Object client, RemoveRandomWithObject requestGrabber, ObjectContainer container) {
 		grabArraysByClient.put(client, requestGrabber);
 		RemoveRandomWithObject[] newArrays = new RemoveRandomWithObject[grabArrays.length+1];
 		System.arraycopy(grabArrays, 0, newArrays, 0, grabArrays.length);
 		newArrays[grabArrays.length] = requestGrabber;
 		grabArrays = newArrays;
+		if(persistent) {
+			container.set(this);
+		}
 	}
 
 	public synchronized RandomGrabArrayItem removeRandom(RandomGrabArrayItemExclusionList excluding, ObjectContainer container, ClientContext context) {
@@ -87,6 +98,8 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 					Object client = rga.getObject();
 					grabArraysByClient.remove(client);
 					grabArrays = new RemoveRandomWithObject[0];
+					if(persistent)
+						container.set(this);
 				}
 				if(logMINOR)
 					Logger.minor(this, "Returning (one item only) "+item+" for "+rga+" for "+rga.getObject());
@@ -106,9 +119,13 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 						grabArraysByClient.remove(rga.getObject());
 						grabArraysByClient.remove(firstRGA.getObject());
 						grabArrays = new RemoveRandomWithObject[0];
+						if(persistent)
+							container.set(this);
 					} else if(firstRGA.isEmpty()) {
 						grabArraysByClient.remove(firstRGA.getObject());
 						grabArrays = new RemoveRandomWithObject[] { rga };
+						if(persistent)
+							container.set(this);
 					}
 					if(logMINOR)
 						Logger.minor(this, "Returning (two items only) "+item+" for "+rga+" for "+rga.getObject());
@@ -142,6 +159,8 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 				if(x < grabArraysLength-1)
 					System.arraycopy(grabArrays, x+1, newArray, x, grabArraysLength - (x+1));
 				grabArrays = newArray;
+				if(persistent)
+					container.set(this);
 			}
 			if(item == null) {
 				if(!rga.isEmpty()) {

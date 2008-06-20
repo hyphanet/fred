@@ -306,14 +306,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 					throw new IllegalStateException("Not on database thread!");
 				}
 				if(anyValid)
-					schedCore.innerRegister(req, random);
+					schedCore.innerRegister(req, random, selectorContainer);
 				schedCore.deleteRegisterMe(req);
 				starter.wakeUp();
 			} else {
 				databaseExecutor.execute(new Runnable() {
 					public void run() {
 						if(anyValid)
-							schedCore.innerRegister(req, random);
+							schedCore.innerRegister(req, random, selectorContainer);
 						schedCore.deleteRegisterMe(req);
 						selectorContainer.commit();
 					}
@@ -321,7 +321,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		} else {
 			// Register immediately.
-			schedTransient.innerRegister(req, random);
+			schedTransient.innerRegister(req, random, null);
 			starter.wakeUp();
 		}
 	}
@@ -456,7 +456,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public void reregisterAll(final ClientRequester request, ObjectContainer container) {
-		schedTransient.reregisterAll(request, random, this);
+		schedTransient.reregisterAll(request, random, this, container);
 		starter.wakeUp();
 	}
 	

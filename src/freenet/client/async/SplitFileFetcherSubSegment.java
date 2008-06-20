@@ -370,7 +370,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return super.toString()+":"+retryCount+"/"+segment+'('+blockNums.size()+')'; 
 	}
 
-	public void possiblyRemoveFromParent() {
+	public void possiblyRemoveFromParent(ObjectContainer container) {
 		if(logMINOR)
 			Logger.minor(this, "Possibly removing from parent: "+this);
 		synchronized(segment) {
@@ -380,7 +380,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			if(!segment.maybeRemoveSeg(this)) return;
 			cancelled = true;
 		}
-		unregister(false);
+		unregister(false, container);
 	}
 
 	public void onGotKey(Key key, KeyBlock block, RequestScheduler sched, ObjectContainer container, ClientContext context) {
@@ -427,11 +427,11 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	 * Terminate a subsegment. Called by the segment, which will have already removed the
 	 * subsegment from the list.
 	 */
-	public void kill() {
+	public void kill(ObjectContainer container) {
 		if(logMINOR)
 			Logger.minor(this, "Killing "+this);
 		// Do unregister() first so can get and unregister each key and avoid a memory leak
-		unregister(false);
+		unregister(false, container);
 		synchronized(segment) {
 			blockNums.clear();
 			cancelled = true;
