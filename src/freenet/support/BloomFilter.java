@@ -61,7 +61,7 @@ public class BloomFilter {
 		this.k = k;
 	}
 
-	public void updateFilter(byte[] key, boolean sync) {
+	public void updateFilter(byte[] key) {
 		int[] hashes = getHashes(key);
 		lock.writeLock().lock();
 		try {
@@ -70,8 +70,6 @@ public class BloomFilter {
 		} finally {
 			lock.writeLock().unlock();
 		}
-		if (sync)
-			force();
 	}
 
 	public boolean checkFilter(byte[] key) {
@@ -120,7 +118,7 @@ public class BloomFilter {
 		filter.put(offset / 8, b);
 	}
 
-	private void force() {
+	public void force() {
 		if (filter instanceof MappedByteBuffer) {
 			((MappedByteBuffer) filter).force();
 		}
