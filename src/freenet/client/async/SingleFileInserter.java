@@ -23,6 +23,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
 import freenet.support.io.BucketTools;
+import freenet.support.io.NativeThread;
 
 /**
  * Attempt to insert a file. May include metadata.
@@ -106,21 +107,9 @@ class SingleFileInserter implements ClientPutState {
 		Bucket data = block.getData();
 		if(parent.persistent())
 			container.activate(data, 1); // Buckets will cascade if necessary
-		if(data.size() > COMPRESS_OFF_THREAD_LIMIT) {
-			// Run off thread
-			OffThreadCompressor otc = new OffThreadCompressor();
-			context.mainExecutor.execute(otc, "Compressor for "+this);
-		} else {
-			tryCompress(container, context);
-		}
+		tryCompress(container, context);
 	}
 
-	private class OffThreadCompressor implements Runnable {
-		public void run() {
-		    freenet.support.Logger.OSThread.logPID(this);
-		}
-	}
-	
 	void onCompressed(CompressionOutput output, ObjectContainer container, ClientContext context) {
 		try {
 			onCompressedInner(output, container, context);
