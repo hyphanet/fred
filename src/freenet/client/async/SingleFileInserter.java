@@ -512,7 +512,7 @@ class SingleFileInserter implements ClientPutState {
 			
 			Bucket metadataBucket;
 			try {
-				metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, metaBytes);
+				metadataBucket = BucketTools.makeImmutableBucket(context.getBucketFactory(parent.persistent()), metaBytes);
 			} catch (IOException e1) {
 				InsertException ex = new InsertException(InsertException.BUCKET_ERROR, e1, null);
 				fail(ex, container, context);
