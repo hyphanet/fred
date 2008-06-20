@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.db4o.ObjectContainer;
+import com.db4o.types.Db4oMap;
 
 import freenet.client.async.ClientContext;
 import freenet.crypt.RandomSource;
@@ -22,10 +23,11 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 	public SectoredRandomGrabArray(RandomSource rand, boolean persistent, ObjectContainer container) {
 		this.rand = rand;
 		this.persistent = persistent;
-		if(persistent)
+		if(persistent) {
 			// FIXME is this too heavyweight? Maybe we should iterate the array or something?
 			grabArraysByClient = container.ext().collections().newHashMap(10);
-		else
+			((Db4oMap)grabArraysByClient).activationDepth(3);
+		} else
 			grabArraysByClient = new HashMap();
 		grabArrays = new RemoveRandomWithObject[0];
 	}
