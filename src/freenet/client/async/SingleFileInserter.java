@@ -209,7 +209,7 @@ class SingleFileInserter implements ClientPutState {
 				Metadata meta = makeMetadata(dataPutter.getURI(container, context));
 				Bucket metadataBucket;
 				try {
-					metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, meta.writeToByteArray());
+					metadataBucket = BucketTools.makeImmutableBucket(context.getBucketFactory(parent.persistent()), meta.writeToByteArray());
 				} catch (IOException e) {
 					Logger.error(this, "Caught "+e, e);
 					throw new InsertException(InsertException.BUCKET_ERROR, e, null);
@@ -274,7 +274,7 @@ class SingleFileInserter implements ClientPutState {
 		
 		boolean tryCompress = (origSize > blockSize) && (!ctx.dontCompress) && (!dontCompress);
 		if(tryCompress) {
-			InsertCompressor.start(container, context, this, origData, oneBlockCompressedSize, ctx.bf, parent.persistent());
+			InsertCompressor.start(container, context, this, origData, oneBlockCompressedSize, context.getBucketFactory(parent.persistent()), parent.persistent());
 		} else {
 			CompressionOutput output = new CompressionOutput(data, null);
 			onCompressed(output, container, context);

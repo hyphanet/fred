@@ -5,17 +5,14 @@ package freenet.client;
 
 import com.db4o.ObjectContainer;
 
-import freenet.client.async.USKManager;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
 import freenet.support.api.BucketFactory;
-import freenet.support.io.NullPersistentFileTracker;
 import freenet.support.io.PersistentFileTracker;
 
 /** Context object for an insert operation, including both simple and multi-file inserts */
 public class InsertContext {
 
-	public final BucketFactory bf;
 	public final BucketFactory persistentBucketFactory;
 	public final PersistentFileTracker persistentFileTracker;
 	/** If true, don't try to compress the data */
@@ -33,7 +30,6 @@ public class InsertContext {
 	public InsertContext(BucketFactory bf, BucketFactory persistentBF, PersistentFileTracker tracker,
 			int maxRetries, int rnfsToSuccess, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
 			ClientEventProducer eventProducer, boolean cacheLocalRequests) {
-		this.bf = bf;
 		this.persistentFileTracker = tracker;
 		this.persistentBucketFactory = persistentBF;
 		dontCompress = false;
@@ -47,24 +43,8 @@ public class InsertContext {
 		this.cacheLocalRequests = cacheLocalRequests;
 	}
 
-	public InsertContext(InsertContext ctx, SimpleEventProducer producer, boolean forceNonPersistent) {
-		this.persistentFileTracker = forceNonPersistent ? new NullPersistentFileTracker() : ctx.persistentFileTracker;
-		this.bf = ctx.bf;
-		this.persistentBucketFactory = forceNonPersistent ? ctx.bf : ctx.persistentBucketFactory;
-		this.dontCompress = ctx.dontCompress;
-		this.splitfileAlgorithm = ctx.splitfileAlgorithm;
-		this.consecutiveRNFsCountAsSuccess = ctx.consecutiveRNFsCountAsSuccess;
-		this.maxInsertRetries = ctx.maxInsertRetries;
-		this.maxSplitInsertThreads = ctx.maxSplitInsertThreads;
-		this.eventProducer = producer;
-		this.splitfileSegmentDataBlocks = ctx.splitfileSegmentDataBlocks;
-		this.splitfileSegmentCheckBlocks = ctx.splitfileSegmentCheckBlocks;
-		this.cacheLocalRequests = ctx.cacheLocalRequests;
-	}
-
 	public InsertContext(InsertContext ctx, SimpleEventProducer producer) {
 		this.persistentFileTracker = ctx.persistentFileTracker;
-		this.bf = ctx.bf;
 		this.persistentBucketFactory = ctx.persistentBucketFactory;
 		this.dontCompress = ctx.dontCompress;
 		this.splitfileAlgorithm = ctx.splitfileAlgorithm;

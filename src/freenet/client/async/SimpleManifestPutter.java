@@ -368,7 +368,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		while(true) {
 			try {
-				bucket = BucketTools.makeImmutableBucket(ctx.bf, baseMetadata.writeToByteArray());
+				bucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent()), baseMetadata.writeToByteArray());
 				break;
 			} catch (IOException e) {
 				fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container);
@@ -403,7 +403,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				// FIXME support formats other than .zip.
 				// Only the *decoding* is generic at present.
 				
-				Bucket zipBucket = ctx.bf.makeBucket(-1);
+				Bucket zipBucket = context.getBucketFactory(persistent()).makeBucket(-1);
 				OutputStream os = new BufferedOutputStream(zipBucket.getOutputStream());
 				ZipOutputStream zos = new ZipOutputStream(os);
 				ZipEntry ze;
@@ -468,7 +468,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				if(metadataPuttersByMetadata.containsKey(m)) continue;
 			}
 			try {
-				Bucket b = m.toBucket(ctx.bf);
+				Bucket b = m.toBucket(context.getBucketFactory(persistent()));
 				
 				InsertBlock ib = new InsertBlock(b, null, FreenetURI.EMPTY_CHK_URI);
 				SingleFileInserter metadataInserter = 
