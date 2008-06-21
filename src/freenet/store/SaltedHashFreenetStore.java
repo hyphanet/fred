@@ -866,7 +866,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				}
 
 				synchronized (cleanerLock) {
-					cleanerLock.notifyAll();
+					// cleanerLock.notifyAll();
 					try {
 						cleanerLock.wait(CLEANER_PERIOD);
 					} catch (InterruptedException e) {
