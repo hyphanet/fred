@@ -451,7 +451,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					return 0;
 				}
 			});
-			while(result.hasNext()) {
+			for(int i=0;result.hasNext() && i < 5; i++) {
 				RegisterMe reg = (RegisterMe) result.next();
 				if(logMINOR)
 					Logger.minor(this, "Running RegisterMe for "+reg.getter+" : "+reg.addedTime+" : "+reg.priority);
@@ -466,6 +466,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				}
 				container.commit();
 			}
+			if(result.hasNext())
+				context.jobRunner.queue(registerMeRunner, NativeThread.NORM_PRIORITY, true);
 		}
 		
 	}
