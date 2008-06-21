@@ -396,6 +396,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 			if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
 			ChosenRequest req = null;
+			synchronized(this) {
+				if(starterQueue.size() >= MAX_STARTER_QUEUE_SIZE) {
+					Logger.error(this, "Queue already full: "+starterQueue.size());
+					return;
+				}
+			}
 			while(true) {
 				req = removeFirst();
 				boolean finished = false;
