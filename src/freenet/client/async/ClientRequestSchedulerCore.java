@@ -313,7 +313,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					if(baseRGA != null) {
 						baseRGA.remove(req, container);
 					} else {
-						Logger.error(this, "Could not find base RGA for requestor "+req.getClientRequest()+" from "+clientGrabber);
+						// Okay, it's been removed already. Cool.
 					}
 				} else {
 					Logger.error(this, "Could not find client grabber for client "+req.getClient()+" from "+chosenTracker);
