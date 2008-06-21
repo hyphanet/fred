@@ -96,6 +96,8 @@ public class RandomGrabArray {
 								reqs[target] = item;
 							}
 							target++;
+							if(persistent)
+								container.activate(item, 1);
 							if(excluding.exclude(item, container, context)) {
 								exclude++;
 							} else {
@@ -113,6 +115,8 @@ public class RandomGrabArray {
 						if(chosenIndex >= 0) {
 							changedMe = true;
 							ret = reqs[chosenIndex];
+							if(persistent)
+								container.activate(ret, 1);
 							if(ret.canRemove()) {
 								contents.remove(ret);
 								if(chosenIndex != index-1) {
@@ -138,6 +142,8 @@ public class RandomGrabArray {
 							return null;
 						} else if(valid == 1) {
 							ret = reqs[validIndex];
+							if(persistent)
+								container.activate(ret, 1);
 							if(ret.canRemove()) {
 								changedMe = true;
 								contents.remove(ret);
@@ -170,6 +176,8 @@ public class RandomGrabArray {
 					changedMe = true;
 					continue;
 				}
+				if(persistent)
+					container.activate(ret, 1);
 				oret = ret;
 				if(ret.isEmpty()) {
 					if(logMINOR) Logger.minor(this, "Not returning because cancelled: "+ret);

@@ -23,7 +23,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 		if(persistent) {
 			// FIXME is this too heavyweight? Maybe we should iterate the array or something?
 			grabArraysByClient = container.ext().collections().newHashMap(10);
-			((Db4oMap)grabArraysByClient).activationDepth(3); // FIXME can we get away with 1??
+			((Db4oMap)grabArraysByClient).activationDepth(1); // FIXME can we get away with 1??
 		} else
 			grabArraysByClient = new HashMap();
 		grabArrays = new RemoveRandomWithObject[0];
@@ -52,6 +52,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 		}
 		if(logMINOR)
 			Logger.minor(this, "Adding "+item+" to RGA "+rga+" for "+client);
+		// rga is auto-activated to depth 1...
 		rga.add(item, container);
 		if(logMINOR)
 			Logger.minor(this, "Size now "+grabArrays.length+" on "+this);
@@ -90,6 +91,8 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			if(grabArrays.length == 1) {
 				// Optimise the common case
 				RemoveRandomWithObject rga = grabArrays[0];
+				if(persistent)
+					container.activate(rga, 1);
 				RandomGrabArrayItem item = rga.removeRandom(excluding, container, context);
 				if(rga.isEmpty()) {
 					if(logMINOR)
@@ -108,11 +111,15 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 				// Another simple common case
 				int x = context.fastWeakRandom.nextBoolean() ? 1 : 0;
 				RemoveRandomWithObject rga = grabArrays[x];
+				if(persistent)
+					container.activate(rga, 1);
 				RemoveRandomWithObject firstRGA = rga;
 				RandomGrabArrayItem item = rga.removeRandom(excluding, container, context);
 				if(item == null) {
 					x = 1-x;
 					rga = grabArrays[x];
+					if(persistent)
+						container.activate(rga, 1);
 					item = rga.removeRandom(excluding, container, context);
 					if(firstRGA.isEmpty() && rga.isEmpty()) {
 						grabArraysByClient.remove(rga.getObject());
@@ -137,6 +144,8 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			}
 			int x = context.fastWeakRandom.nextInt(grabArrays.length);
 			RemoveRandomWithObject rga = grabArrays[x];
+			if(persistent)
+				container.activate(rga, 1);
 			if(logMINOR)
 				Logger.minor(this, "Picked "+x+" of "+grabArrays.length+" : "+rga+" : "+rga.getObject()+" on "+this);
 			RandomGrabArrayItem item = rga.removeRandom(excluding, container, context);
