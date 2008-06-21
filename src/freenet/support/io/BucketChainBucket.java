@@ -256,6 +256,9 @@ public class BucketChainBucket implements Bucket {
 
 	protected OutputStream makeBucketOutputStream(int i) throws IOException {
 		Bucket bucket = bf.makeBucket(bucketSize);
+		buckets.add(bucket);
+		if(buckets.size() != i+1)
+			throw new IllegalStateException("Added bucket, size should be "+(i+1)+" but is "+buckets.size());
 		buckets.set(i, bucket);
 		return bucket.getOutputStream();
 	}
