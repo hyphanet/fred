@@ -1309,6 +1309,14 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 
 	private void registerAlert(ClientRequest req) {
 		final String identifier = req.getIdentifier();
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR)
+			Logger.minor(this, "Registering alert for "+identifier);
+		if(!req.hasFinished()) {
+			if(logMINOR)
+				Logger.minor(this, "Request hasn't finished: "+req+" for "+identifier, new Exception("debug"));
+			return;
+		}
 		if(req instanceof ClientGet) {
 			FreenetURI uri = ((ClientGet)req).getURI();
 			long size = ((ClientGet)req).getDataSize();
@@ -1344,6 +1352,10 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				return;
 			}
 			long size = ((ClientPut)req).getDataSize();
+			if(uri == null) {
+				Logger.error(this, "uri is null for "+req+" for "+identifier);
+				return;
+			}
 			String name = uri.getPreferredFilename();
 			String title = l10n("uploadSucceededTitle", "filename", name);
 			HTMLNode text = new HTMLNode("div");
