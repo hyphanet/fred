@@ -388,9 +388,9 @@ public class ClientPut extends ClientPutBase {
 		synchronized(this) {
 			d = data;
 			data = null;
+			if(d == null) return;
 			finishedSize = d.size();
 		}
-		if(d == null) return;
 		d.free();
 		if(persistenceType == PERSIST_FOREVER)
 			d.removeFrom(container);
