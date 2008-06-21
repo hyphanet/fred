@@ -322,6 +322,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(anyValid)
 					schedCore.innerRegister(req, random, selectorContainer);
 				selectorContainer.delete(reg);
+				maybeFillStarterQueue(selectorContainer, clientContext);
 				starter.wakeUp();
 			} else {
 				jobRunner.queue(new DBJob() {
@@ -330,6 +331,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						if(anyValid)
 							schedCore.innerRegister(req, random, container);
 						container.delete(reg);
+						maybeFillStarterQueue(container, context);
 						starter.wakeUp();
 					}
 					
@@ -340,6 +342,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 			schedTransient.innerRegister(req, random, null);
 			starter.wakeUp();
 		}
+	}
+
+	private void maybeFillStarterQueue(ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			if(starterQueue.size() > MAX_STARTER_QUEUE_SIZE / 2)
+				return;
+		}
+		requestStarterQueueFiller.run(container, context);
 	}
 
 	void addPendingKey(final ClientKey key, final SendableGet getter) {
