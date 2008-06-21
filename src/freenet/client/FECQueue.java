@@ -193,17 +193,17 @@ public class FECQueue implements OOMHook {
 			while(true) {
 				boolean addedAny = false;
 				int totalCached = 0;
-				for(short i=0;i<priorities;i++) {
+				for(short prio=0;prio<priorities;prio++) {
 					int grab = 0;
 					synchronized(FECQueue.this) {
-						int newCached = totalCached + persistentQueueCache[i].size();
+						int newCached = totalCached + persistentQueueCache[prio].size();
 						if(newCached >= maxPersistentQueueCacheSize) return;
 						grab = maxPersistentQueueCacheSize - newCached;
 					}
 					if(logMINOR) Logger.minor(this, "Grabbing up to "+grab+" jobs");
 					Query query = container.query();
 					query.constrain(FECJob.class);
-					query.descend("priority").constrain(new Short(i));
+					query.descend("priority").constrain(new Short(prio));
 					query.descend("queue").constrain(FECQueue.this);
 					query.descend("addedTime").orderAscending();
 					ObjectSet results = query.execute();
@@ -212,7 +212,7 @@ public class FECQueue implements OOMHook {
 							FECJob job = (FECJob) results.next();
 							if(logMINOR) Logger.minor(this, "Maybe adding "+job);
 							synchronized(FECQueue.this) {
-								if(persistentQueueCache[i].contains(job)) {
+								if(persistentQueueCache[prio].contains(job)) {
 									j--;
 									continue;
 								}
