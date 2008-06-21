@@ -1,5 +1,6 @@
 package freenet.clients.http.bookmark;
 
+import freenet.l10n.L10n;
 import freenet.support.SimpleFieldSet;
 
 public abstract class Bookmark {
@@ -11,7 +12,7 @@ public abstract class Bookmark {
 	}
 
 	protected void setName(String s) {
-		name = s;
+		name = (s.length() > 0 ? s : L10n.getString("Bookmark.noName"));
 	}
 
 	public boolean equals(Object o) {
