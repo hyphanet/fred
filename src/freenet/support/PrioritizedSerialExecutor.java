@@ -34,13 +34,7 @@ public class PrioritizedSerialExecutor implements Executor {
 			while(true) {
 				Runnable job = null;
 				synchronized(jobs) {
-					for(int i=0;i<jobs.length;i++) {
-						job = checkQueue();
-						if(!jobs[i].isEmpty()) {
-							job = (Runnable) jobs[i].removeFirst();
-							break;
-						}
-					}
+					job = checkQueue();
 					if(job == null) {
 						waiting = true;
 						try {
@@ -58,6 +52,8 @@ public class PrioritizedSerialExecutor implements Executor {
 					}
 				}
 				try {
+					if(Logger.shouldLog(Logger.MINOR, this))
+						Logger.minor(this, "Running job "+job);
 					job.run();
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t, t);
