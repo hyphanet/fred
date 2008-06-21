@@ -443,8 +443,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 							RandomGrabArray baseRGA = (RandomGrabArray) clientGrabber.getGrabber(req.getClientRequest());
 							if(baseRGA != null) {
 								baseRGA.remove(req);
-							} else {
-								Logger.error(this, "Could not find base RGA for requestor "+req.getClientRequest()+" from "+clientGrabber);
 							}
 						} else {
 							Logger.error(this, "Could not find client grabber for client "+req.getClient()+" from "+retryTracker);
