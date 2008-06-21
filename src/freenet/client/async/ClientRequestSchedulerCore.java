@@ -438,6 +438,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				}
 			});
 			// Don't sort it. It has to activate everything before sorting it!
+			// FIXME an index may improve things
 			//, new Comparator() {
 //				public int compare(Object arg0, Object arg1) {
 //					RegisterMe reg0 = (RegisterMe) arg0;
