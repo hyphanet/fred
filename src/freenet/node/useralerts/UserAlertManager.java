@@ -137,7 +137,7 @@ public class UserAlertManager implements Comparator {
 			if(level < maxLevel) maxLevel = level;
 			if(currentAlerts[i].isEventNotification()) events++;
 		}
-		if(events == 0)
+		if(maxLevel == Short.MAX_VALUE)
 			return new HTMLNode("#", "");
 		if(events < 2) drawDumpEventsForm = false;
 		HTMLNode boxNode = new HTMLNode("div", "class", "infobox infobox-"+getAlertLevelName(maxLevel)+" infobox-summary-status-box");
