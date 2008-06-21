@@ -235,7 +235,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		if(currentState == oldState)
 			currentState = newState;
 		else
-			Logger.error(this, "onTransition: cur="+currentState+", old="+oldState+", new="+newState);
+			Logger.error(this, "onTransition: cur="+currentState+", old="+oldState+", new="+newState, new Exception("debug"));
 	}
 
 	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
