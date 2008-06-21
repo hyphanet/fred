@@ -17,7 +17,7 @@ import freenet.support.api.BucketFactory;
 public class BucketChainBucket implements Bucket {
 	
 	private final Vector buckets;
-	private long bucketSize;
+	public final long bucketSize;
 	private long size;
 	private boolean freed;
 	private boolean readOnly;
@@ -41,6 +41,14 @@ public class BucketChainBucket implements Bucket {
 		}
 		for(int i=0;i<list.length;i++) {
 			list[i].free();
+		}
+	}
+	
+	/** Equivalent to free(), but don't free the underlying buckets. */
+	public void clear() {
+		synchronized(this) {
+			size = 0;
+			buckets.clear();
 		}
 	}
 

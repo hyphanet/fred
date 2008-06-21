@@ -81,14 +81,13 @@ public class SplitFileInserter implements ClientPutState {
 		this.cb = cb;
 		this.ctx = ctx;
 		this.decompressedLength = decompressedLength;
+		this.dataLength = data.size();
 		Bucket[] dataBuckets;
 		try {
-			dataBuckets = BucketTools.split(data, CHKBlock.DATA_LENGTH, ctx.persistentBucketFactory);
+			dataBuckets = BucketTools.split(data, CHKBlock.DATA_LENGTH, ctx.persistentBucketFactory, freeData);
 		} catch (IOException e) {
 			throw new InsertException(InsertException.BUCKET_ERROR, e, null);
 		}
-		this.dataLength = data.size();
-		if(freeData) data.free();
 		countDataBlocks = dataBuckets.length;
 		// Encoding is done by segments
 		if(bestCodec == null)
