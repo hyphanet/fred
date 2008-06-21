@@ -166,6 +166,7 @@ public class BucketChainBucket implements Bucket {
 			if(freed) throw new IOException("Freed");
 			size = 0;
 			list = getBuckets();
+			buckets.clear();
 		}
 		for(int i=0;i<list.length;i++) {
 			list[i].free();
