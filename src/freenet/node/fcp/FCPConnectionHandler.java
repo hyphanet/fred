@@ -240,7 +240,7 @@ public class FCPConnectionHandler {
 								getter.start(container, context);
 							}
 							
-						}, NativeThread.NORM_PRIORITY, false);
+						}, NativeThread.HIGH_PRIORITY-1, false); // user wants a response soon... but doesn't want it to block the queue page etc
 						return; // Don't run the start() below
 					}
 				} catch (IdentifierCollisionException e) {
@@ -306,7 +306,7 @@ public class FCPConnectionHandler {
 							putter.start(container, context);
 						}
 						
-					}, NativeThread.NORM_PRIORITY, false);
+					}, NativeThread.HIGH_PRIORITY-1, false); // user wants a response soon... but doesn't want it to block the queue page etc
 					return; // Don't run the start() below
 				}
 			}
@@ -370,7 +370,7 @@ public class FCPConnectionHandler {
 						putter.start(container, context);
 					}
 					
-				}, NativeThread.NORM_PRIORITY, false);
+				}, NativeThread.HIGH_PRIORITY-1, false); // user wants a response soon... but doesn't want it to block the queue page etc
 				return; // Don't run the start() below
 				
 			}
