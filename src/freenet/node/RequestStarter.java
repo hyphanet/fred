@@ -217,7 +217,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			usedReq = false;
 			req = betterReq;
 		}
-		if(usedReq)
+		if(usedReq || req == null)
 			sched.queueFillRequestStarterQueue();
 		return req;
 	}
