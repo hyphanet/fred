@@ -217,7 +217,7 @@ public class FECQueue implements OOMHook {
 									continue;
 								}
 								boolean added = false;
-								for(ListIterator it = persistentQueueCache[j].listIterator();it.hasNext();) {
+								for(ListIterator it = persistentQueueCache[prio].listIterator();it.hasNext();) {
 									FECJob cmp = (FECJob) it.next();
 									if(cmp.addedTime >= job.addedTime) {
 										it.previous();
@@ -227,7 +227,7 @@ public class FECQueue implements OOMHook {
 										break;
 									}
 								}
-								if(!added) persistentQueueCache[j].addLast(job);
+								if(!added) persistentQueueCache[prio].addLast(job);
 							}
 						}
 					}
