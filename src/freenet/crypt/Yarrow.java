@@ -85,7 +85,7 @@ public class Yarrow extends RandomSource {
             throw new RuntimeException("Cannot initialize Yarrow!: "+e, e);
         }
 		entropy_init(seed);
-		seedFromExternalStuff(false);
+		seedFromExternalStuff(true);
 		if (updateSeed && !(seed.toString()).equals("/dev/urandom")) //Dont try to update the seedfile if we know that it wont be possible anyways 
 			seedfile = seed;
 		else

@@ -113,11 +113,6 @@ public class NodeStarter implements WrapperListener {
 		// Prevent timeouts for a while. The DiffieHellman init for example could take some time on a very slow system.
 		WrapperManager.signalStarting(500000);
 
-		// Setup RNG
-		RandomSource random = new Yarrow();
-
-		DiffieHellman.init(random);
-
 		// Thread to keep the node up.
 		// JVM deadlocks losing a lock when two threads of different types (daemon|app)
 		// are contended for the same lock. So make USM daemon, and use useless to keep the JVM
@@ -154,7 +149,7 @@ public class NodeStarter implements WrapperListener {
 		SSL.init(sslConfig);
 
 		try {
-			node = new Node(cfg, random, logConfigHandler, this, executor);
+			node = new Node(cfg, null, logConfigHandler, this, executor);
 			node.start(false);
 			System.out.println("Node initialization completed.");
 		} catch(NodeInitException e) {

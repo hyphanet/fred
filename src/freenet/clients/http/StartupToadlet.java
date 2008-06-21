@@ -9,9 +9,10 @@ import freenet.support.api.HTTPRequest;
 /**
  * Toadlet for "Freenet is starting up" page.
  */
-class StartupToadlet extends Toadlet {
+public class StartupToadlet extends Toadlet {
 
     private StaticToadlet staticToadlet;
+    private volatile boolean isPRNGReady = false;
 	
 	public StartupToadlet(StaticToadlet staticToadlet) {
 		super(null);
@@ -31,12 +32,19 @@ class StartupToadlet extends Toadlet {
             HTMLNode headNode = ctx.getPageMaker().getHeadNode(pageNode);
             headNode.addChild("meta", new String[]{"http-equiv", "content"}, new String[]{"refresh", "20; url="});
             HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+	    
+		if(!isPRNGReady) {
+			HTMLNode prngInfobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", desc));
+			HTMLNode prngInfoboxContent = ctx.getPageMaker().getContentNode(prngInfobox);
+			prngInfoboxContent.addChild("#", "There isn't enough entropy available on your system... Freenet won't start until it can gather enough.");
+		}
 	
 	HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", desc));
 	HTMLNode infoboxContent = ctx.getPageMaker().getContentNode(infobox);
 	infoboxContent.addChild("#", "Your freenet node is starting up, please hold on.");
             
             WelcomeToadlet.maybeDisplayWrapperLogfile(ctx, contentNode);
+	    
             //TODO: send a Retry-After header ?
             writeHTMLReply(ctx, 503, desc, pageNode.generate());
         }
@@ -44,5 +52,9 @@ class StartupToadlet extends Toadlet {
     
     public String supportedMethods() {
         return "GET";
+    }
+    
+    public void setIsPRNGReady() {
+	    isPRNGReady = true;
     }
 }
