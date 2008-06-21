@@ -592,8 +592,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			processJFKMessage2(payload, 4, pn, replyTo, true, setupType);
 		} else if(packetType == 3) {
 			// Phase 4
-			if(!processJFKMessage4(payload, 4, pn, replyTo, false, true, setupType, true))
-				processJFKMessage4(payload, 4, pn, replyTo, false, true, setupType, false);
+			processJFKMessage4(payload, 4, pn, replyTo, false, true, setupType);
 		} else {
 			Logger.error(this, "Invalid phase "+packetType+" for anonymous-initiator (we are the responder)");
 		}
@@ -695,8 +694,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * using the same keys as in the previous message.
 				 * The signature is non-message recovering
 				 */
-				if(!processJFKMessage4(payload, 3, pn, replyTo, oldOpennetPeer, false, -1, true))
-					processJFKMessage4(payload, 3, pn, replyTo, oldOpennetPeer, false, -1, false);
+				processJFKMessage4(payload, 3, pn, replyTo, oldOpennetPeer, false, -1);
 			}
 		} else {
 			Logger.error(this, "Decrypted auth packet but unknown negotiation type "+negType+" from "+replyTo+" possibly from "+pn);
@@ -1238,7 +1236,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param pn The PeerNode we are talking to. Cannot be null as we are the initiator.
 	 * @param replyTo The Peer we are replying to.
 	 */
-	private boolean processJFKMessage4(byte[] payload, int inputOffset, PeerNode pn, Peer replyTo, boolean oldOpennetPeer, boolean unknownInitiator, int setupType, boolean bothNoderefs)
+	private boolean processJFKMessage4(byte[] payload, int inputOffset, PeerNode pn, Peer replyTo, boolean oldOpennetPeer, boolean unknownInitiator, int setupType)
 	{
 		final long t1 = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(4) message, processing it - "+pn.getPeer());
@@ -1256,13 +1254,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			HASH_LENGTH + // HMAC of the cyphertext
 			(c.getBlockSize() >> 3) + // IV
 			Node.SIGNATURE_PARAMETER_LENGTH * 2 + // the signature
-			(bothNoderefs ? pn.jfkMyRef.length : 0) + // my reference
 			8+ // bootID
 			1; // znoderefR
 
 		if(payload.length - inputOffset < expectedLength + 3) {
-			if(!bothNoderefs)
-				Logger.error(this, "Packet too short from "+pn.getPeer()+": "+payload.length+" after decryption in JFK(4), should be "+(expectedLength + 3));
+			Logger.error(this, "Packet too short from "+pn.getPeer()+": "+payload.length+" after decryption in JFK(4), should be "+(expectedLength + 3));
 			return false;
 		}
 		byte[] jfkBuffer = pn.getJFKBuffer();
@@ -1307,11 +1303,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] data = new byte[decypheredPayload.length - decypheredPayloadOffset];
 		System.arraycopy(decypheredPayload, decypheredPayloadOffset, data, 0, decypheredPayload.length - decypheredPayloadOffset);
 		long bootID = Fields.bytesToLong(data);
-		if(data.length - (bothNoderefs ? pn.jfkMyRef.length : 0) - 8 < 0) {
-			Logger.error(this, "No space for hisRef: bothNoderefs="+bothNoderefs+" data.length="+data.length+" myRef.length="+(pn.jfkMyRef==null?0:pn.jfkMyRef.length)+" orig data length "+(payload.length-inputOffset));
+		if(data.length - 8 < 0) {
+			Logger.error(this, "No space for hisRef: data.length="+data.length+" myRef.length="+(pn.jfkMyRef==null?0:pn.jfkMyRef.length)+" orig data length "+(payload.length-inputOffset));
 			return false;
 		}
-		byte[] hisRef = new byte[data.length - (bothNoderefs ? pn.jfkMyRef.length : 0) - 8];
+		byte[] hisRef = new byte[data.length - 8];
 		System.arraycopy(data, 8, hisRef, 0, hisRef.length);
 		
 		// verify the signature
@@ -1329,10 +1325,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] messageHash = SHA256.digest(locallyGeneratedText);
 		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, messageHash), false)) {
 			String error = "The signature verification has failed!! JFK(4) -"+pn.getPeer()+" message hash "+HexUtil.bytesToHex(messageHash)+" length "+locallyGeneratedText.length+" hisRef "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" myRef "+pn.jfkMyRef.length+" hash "+Fields.hashCode(pn.jfkMyRef)+" boot ID "+bootID;
-			if(bothNoderefs)
-				Logger.normal(this, error);
-			else
-				Logger.error(this, error);
+			Logger.error(this, error);
 			return false;
 		}
 		
