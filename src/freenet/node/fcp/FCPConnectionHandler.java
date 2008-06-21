@@ -308,14 +308,6 @@ public class FCPConnectionHandler {
 						
 					}, NativeThread.NORM_PRIORITY, false);
 					return; // Don't run the start() below
-				} else { // PERSIST_REBOOT
-					try {
-						cp.register(null, false, false);
-					} catch (IdentifierCollisionException e) {
-						success = false;
-					}
-					cp.start(null, server.core.clientContext);
-					
 				}
 			}
 			if(!success) {
