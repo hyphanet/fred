@@ -219,6 +219,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}, getter.getPriorityClass(), "Checking datastore");
 			}
 		} else {
+			if(persistent)
+				schedCore.queueRegister(req, databaseExecutor);
 			// Pretend to not be on the database thread.
 			// In some places (e.g. SplitFileInserter.start(), we call register() *many* times within a single transaction.
 			// We can greatly improve responsiveness at the cost of some throughput and RAM by only adding the tags at this point.
