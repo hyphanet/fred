@@ -461,7 +461,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				container.delete(reg);
 				// Don't need to activate, fields should exist? FIXME
 				try {
-					sched.register(reg.getter, true);
+					sched.register(reg.getter, true, reg);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t+" running RegisterMeRunner", t);
 					// Cancel the request, and commit so it isn't tried again.
@@ -481,20 +481,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		container.set(reg);
 	}
 
-	public void deleteRegisterMe(final SendableRequest req) {
-		ObjectSet result = container.query(new Predicate() {
-			public boolean match(RegisterMe reg) {
-				if(reg.core != ClientRequestSchedulerCore.this) return false;
-				if(reg.getter != req) return false;
-				return true;
-			}
-		});
-		while(result.hasNext()) {
-			RegisterMe me = (RegisterMe) result.next();
-			container.delete(me);
-		}
-	}
-	
 	public boolean hasKey(Key key) {
 		synchronized(keysFetching) {
 			return keysFetching.contains(key);

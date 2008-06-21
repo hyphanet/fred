@@ -122,7 +122,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			sched.moveKeysFromCooldownQueue();
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(req == null) {
-				req = getRequest();
+				req = getRequest(logMINOR);
 			}
 			if(req != null) {
 				if(logMINOR) Logger.minor(this, "Running "+req);
@@ -162,7 +162,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				// Always take the lock on RequestStarter first. AFAICS we don't synchronize on RequestStarter anywhere else.
 				// Nested locks here prevent extra latency when there is a race, and therefore allow us to sleep indefinitely
 				synchronized(this) {
-					req = getRequest();
+					req = getRequest(logMINOR);
 					if(req == null) {
 						try {
 							wait(1*1000); // as close to indefinite as I'm comfortable with! Toad
@@ -192,7 +192,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	 * thread is probably doing other things so we have to wait for that to finish).
 	 * @return
 	 */
-	private ChosenRequest getRequest() {
+	private ChosenRequest getRequest(boolean logMINOR) {
 		boolean usedReq = true;
 		ChosenRequest req = null;
 		while(true) {
@@ -219,11 +219,14 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		}
 		if(usedReq || req == null)
 			sched.queueFillRequestStarterQueue();
+		if(req == null)
+		if(req == null && logMINOR) Logger.minor(this, "No requests found");
 		return req;
 	}
 
 	private boolean startRequest(ChosenRequest req, boolean logMINOR) {
 		if((!isInsert) && sched.fetchingKeys().hasKey(req.key)) return false;
+		if(logMINOR) Logger.minor(this, "Running request "+req);
 		core.getExecutor().execute(new SenderThread(req, req.key), "RequestStarter$SenderThread for "+req);
 		return true;
 	}

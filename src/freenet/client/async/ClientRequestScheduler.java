@@ -156,10 +156,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	public void register(final SendableRequest req) {
-		register(req, databaseExecutor.onThread());
+		register(req, databaseExecutor.onThread(), null);
 	}
 	
-	public void register(final SendableRequest req, boolean onDatabaseThread) {
+	/**
+	 * Register and then delete the RegisterMe which is passed in to avoid querying.
+	 */
+	public void register(final SendableRequest req, boolean onDatabaseThread, final RegisterMe reg) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Registering "+req, new Exception("debug"));
 		boolean persistent = req.persistent();
@@ -178,7 +181,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				datastoreCheckerExecutor.execute(new Runnable() {
 
 					public void run() {
-						registerCheckStore(getter, true, keyTokens, keys);
+						registerCheckStore(getter, true, keyTokens, keys, reg);
 					}
 					
 				}, getter.getPriorityClass(), "Checking datastore");
@@ -195,7 +198,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						datastoreCheckerExecutor.execute(new Runnable() {
 
 							public void run() {
-								registerCheckStore(getter, true, keyTokens, keys);
+								registerCheckStore(getter, true, keyTokens, keys, reg);
 							}
 							
 						}, getter.getPriorityClass(), "Checking datastore");
@@ -213,7 +216,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				datastoreCheckerExecutor.execute(new Runnable() {
 
 					public void run() {
-						registerCheckStore(getter, false, keyTokens, keys);
+						registerCheckStore(getter, false, keyTokens, keys, null);
 					}
 					
 				}, getter.getPriorityClass(), "Checking datastore");
@@ -224,7 +227,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			// Pretend to not be on the database thread.
 			// In some places (e.g. SplitFileInserter.start(), we call register() *many* times within a single transaction.
 			// We can greatly improve responsiveness at the cost of some throughput and RAM by only adding the tags at this point.
-			finishRegister(req, persistent, false, true);
+			finishRegister(req, persistent, false, true, reg);
 		}
 	}
 
@@ -234,8 +237,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * (for a persistent request) queue a job on the databaseExecutor and (for a transient 
 	 * request) finish registering the request immediately.
 	 * @param getter
+	 * @param reg 
 	 */
-	protected void registerCheckStore(SendableGet getter, boolean persistent, Object[] keyTokens, ClientKey[] keys) {
+	protected void registerCheckStore(SendableGet getter, boolean persistent, Object[] keyTokens, ClientKey[] keys, RegisterMe reg) {
 		boolean anyValid = false;
 		for(int i=0;i<keyTokens.length;i++) {
 			Object tok = keyTokens[i];
@@ -305,10 +309,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 				anyValid = true;
 			}
 		}
-		finishRegister(getter, persistent, false, anyValid);
+		finishRegister(getter, persistent, false, anyValid, reg);
 	}
 
-	private void finishRegister(final SendableRequest req, boolean persistent, boolean onDatabaseThread, final boolean anyValid) {
+	private void finishRegister(final SendableRequest req, boolean persistent, boolean onDatabaseThread, final boolean anyValid, final RegisterMe reg) {
 		if(persistent) {
 			// Add to the persistent registration queue
 			if(onDatabaseThread) {
@@ -317,7 +321,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				if(anyValid)
 					schedCore.innerRegister(req, random, selectorContainer);
-				schedCore.deleteRegisterMe(req);
+				selectorContainer.delete(reg);
 				starter.wakeUp();
 			} else {
 				jobRunner.queue(new DBJob() {
@@ -325,7 +329,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					public void run(ObjectContainer container, ClientContext context) {
 						if(anyValid)
 							schedCore.innerRegister(req, random, container);
-						schedCore.deleteRegisterMe(req);
+						container.delete(reg);
 					}
 					
 				}, NativeThread.NORM_PRIORITY, false);
@@ -373,7 +377,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, prio, retryCount, clientContext);
 	}
 	
-	private static final int MAX_STARTER_QUEUE_SIZE = 10;
+	private static final int MAX_STARTER_QUEUE_SIZE = 100;
 	
 	private LinkedList starterQueue = new LinkedList();
 	
