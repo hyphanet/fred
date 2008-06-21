@@ -212,7 +212,7 @@ public class FECQueue implements OOMHook {
 							FECJob job = (FECJob) results.next();
 							if(logMINOR) Logger.minor(this, "Maybe adding "+job);
 							synchronized(FECQueue.this) {
-								if(persistentQueueCache[j].contains(job)) {
+								if(persistentQueueCache[i].contains(job)) {
 									j--;
 									continue;
 								}
