@@ -15,6 +15,10 @@ import freenet.client.async.ClientContext;
  */
 public abstract class SendableInsert extends SendableRequest {
 
+	public SendableInsert(boolean persistent) {
+		super(persistent);
+	}
+	
 	/** Called when we successfully insert the data */
 	public abstract void onSuccess(Object keyNum, ObjectContainer container, ClientContext context);
 	

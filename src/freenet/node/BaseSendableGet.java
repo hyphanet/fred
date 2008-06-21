@@ -7,6 +7,10 @@ import freenet.keys.Key;
 
 public abstract class BaseSendableGet extends SendableRequest {
 	
+	protected BaseSendableGet(boolean persistent) {
+		super(persistent);
+	}
+
 	/** Get a numbered key to fetch. */
 	public abstract Key getNodeKey(Object token, ObjectContainer container);
 	

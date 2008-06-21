@@ -43,6 +43,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	private final NodeClientCore core;
 	
 	OfferedKeysList(NodeClientCore core, RandomSource random, short priorityClass) {
+		super(false);
 		this.keys = new HashSet();
 		this.keysList = new Vector();
 		this.random = random;
@@ -177,10 +178,6 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 
 	public Key getNodeKey(Object token, ObjectContainer container) {
 		return (Key) token;
-	}
-
-	public boolean persistent() {
-		return false;
 	}
 
 }

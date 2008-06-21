@@ -55,6 +55,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	// Implementation
 
 	public SendableGet(ClientRequester parent) {
+		super(parent.persistent());
 		this.parent = parent;
 	}
 	

@@ -18,7 +18,13 @@ import freenet.support.RandomGrabArrayItem;
  */
 public abstract class SendableRequest implements RandomGrabArrayItem {
 	
+	SendableRequest(boolean persistent) {
+		this.persistent = persistent;
+	}
+	
 	protected RandomGrabArray parentGrabArray;
+	/** Member because must be accessible when only marginally activated */
+	final boolean persistent;
 	
 	/** Get the priority class of the request. */
 	public abstract short getPriorityClass();
@@ -61,8 +67,8 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	public abstract RequestClient getClient();
 	
 	/** Is this request persistent? MUST NOT CHANGE. */
-	public boolean persistent() {
-		return getClient().persistent();
+	public final boolean persistent() {
+		return persistent;
 	}
 	
 	/** Get the ClientRequest */

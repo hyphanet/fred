@@ -57,6 +57,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	private int consecutiveRNFs;
 	
 	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ObjectContainer container, ClientContext context) {
+		super(parent.persistent());
 		this.consecutiveRNFs = 0;
 		this.tokenObject = tokenObject;
 		this.token = token;

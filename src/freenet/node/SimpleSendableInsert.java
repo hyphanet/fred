@@ -30,6 +30,7 @@ public class SimpleSendableInsert extends SendableInsert {
 	public final ClientRequestScheduler scheduler;
 	
 	public SimpleSendableInsert(NodeClientCore core, KeyBlock block, short prioClass) {
+		super(false);
 		this.block = block;
 		this.prioClass = prioClass;
 		this.client = core.node.nonPersistentClient;
@@ -42,6 +43,7 @@ public class SimpleSendableInsert extends SendableInsert {
 	}
 	
 	public SimpleSendableInsert(KeyBlock block, short prioClass, RequestClient client, ClientRequestScheduler scheduler) {
+		super(false);
 		this.block = block;
 		this.prioClass = prioClass;
 		this.client = client;
