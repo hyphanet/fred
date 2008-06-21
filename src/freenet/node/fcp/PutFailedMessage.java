@@ -111,6 +111,7 @@ public class PutFailedMessage extends FCPMessage {
 	}
 
 	public void removeFrom(ObjectContainer container) {
+		container.activate(this, 5); // everything
 		tracker.removeFrom(container);
 		expectedURI.removeFrom(container);
 		container.delete(this);
