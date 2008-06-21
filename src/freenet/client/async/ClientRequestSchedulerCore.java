@@ -464,7 +464,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					// Cancel the request, and commit so it isn't tried again.
 					reg.getter.internalError(null, t, sched, container, context);
 				}
-				container.commit();
 			}
 			if(result.hasNext())
 				context.jobRunner.queue(registerMeRunner, NativeThread.NORM_PRIORITY, true);
