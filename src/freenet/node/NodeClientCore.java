@@ -1178,7 +1178,10 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 	}
 
 	public void queue(final DBJob job, int priority, boolean checkDupes) {
-		this.clientDatabaseExecutor.executeNoDupes(new DBJobWrapper(job), priority, ""+job);
+		if(checkDupes)
+			this.clientDatabaseExecutor.executeNoDupes(new DBJobWrapper(job), priority, ""+job);
+		else
+			this.clientDatabaseExecutor.execute(new DBJobWrapper(job), priority, ""+job);
 	}
 	
 	class DBJobWrapper implements Runnable {
