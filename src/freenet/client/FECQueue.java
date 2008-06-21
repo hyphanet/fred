@@ -87,6 +87,8 @@ public class FECQueue implements OOMHook {
 
 	public void addToQueue(FECJob job, FECCodec codec, ObjectContainer container) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR)
+			Logger.minor(StandardOnionFECCodec.class, "Adding a new job to the queue: "+job+".");
 		int maxThreads = getMaxRunningFECThreads();
 		if(job.persistent) {
 			container.set(job);
@@ -129,8 +131,6 @@ public class FECQueue implements OOMHook {
 			}
 			notifyAll();
 		}
-		if(logMINOR)
-			Logger.minor(StandardOnionFECCodec.class, "Adding a new job to the queue.");
 	}
 	
 	/**
@@ -171,21 +171,21 @@ public class FECQueue implements OOMHook {
 					try {
 						if(!job.persistent) {
 							if (job.isADecodingJob)
-								job.callback.onDecodedSegment(null, clientContext);
+								job.callback.onDecodedSegment(null, clientContext, job, job.dataBlocks, job.checkBlocks, job.dataBlockStatus, job.checkBlockStatus);
 							else
-								job.callback.onEncodedSegment(null, clientContext);
+								job.callback.onEncodedSegment(null, clientContext, job, job.dataBlocks, job.checkBlocks, job.dataBlockStatus, job.checkBlockStatus);
 						} else {
 							if(Logger.shouldLog(Logger.MINOR, this))
-								Logger.minor(this, "Scheduling callback...");
+								Logger.minor(this, "Scheduling callback for "+job+"...");
 							databaseJobRunner.queue(new DBJob() {
 
 								public void run(ObjectContainer container, ClientContext context) {
 									if(Logger.shouldLog(Logger.MINOR, this))
 										Logger.minor(this, "Running callback for "+job);
 									if(job.isADecodingJob)
-										job.callback.onDecodedSegment(container, clientContext);
+										job.callback.onDecodedSegment(container, clientContext, job, job.dataBlocks, job.checkBlocks, job.dataBlockStatus, job.checkBlockStatus);
 									else
-										job.callback.onEncodedSegment(container, clientContext);
+										job.callback.onEncodedSegment(container, clientContext, job, job.dataBlocks, job.checkBlocks, job.dataBlockStatus, job.checkBlockStatus);
 									container.delete(job);
 								}
 								

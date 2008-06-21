@@ -231,7 +231,11 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 
 	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
 		synchronized(this) {
-			if(finished) return;
+			if(finished) {
+				if(logMINOR)
+					Logger.minor(this, "Finished already: "+this);
+				return;
+			}
 		}
 		if(getCHKOnly) {
 			ClientKeyBlock block = encode(container, context);

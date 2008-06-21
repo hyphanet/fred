@@ -248,16 +248,20 @@ public abstract class FECCodec {
 				readers[i] = new DataInputStream(buckets[i].getInputStream());
 			}
 
+			int created = 0;
 			for(int i = 0; i < checkBlockStatus.length; i++) {
 				buckets[i + k] = checkBlockStatus[i];
 				if(buckets[i + k] == null) {
 					buckets[i + k] = bf.makeBucket(blockLength);
 					writers[i] = buckets[i + k].getOutputStream();
 					toEncode[numberToEncode++] = i + k;
+					created++;
 				}
 				else
 					writers[i] = null;
 			}
+			if(logMINOR)
+				Logger.minor(this, "Created "+created+" check buckets");
 
 			//			Runtime.getRuntime().gc();
 //			Runtime.getRuntime().runFinalization();

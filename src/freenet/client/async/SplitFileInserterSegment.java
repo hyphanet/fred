@@ -11,6 +11,7 @@ import freenet.client.FailureCodeTracker;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
+import freenet.client.SplitfileBlock;
 import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
@@ -446,7 +447,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 				} else
 					parent.parent.completedBlock(true, container, context);
 			}
-			onEncodedSegment(container, context);
+			onEncodedSegment(container, context, null, dataBlocks, checkBlocks, null, null);
 		}
 		if (hasURIs) {
 			parent.segmentHasURIs(this, container, context);
@@ -466,13 +467,22 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		}
 	}
 
-	public void onDecodedSegment(ObjectContainer container, ClientContext context) {} // irrevelant
+	public void onDecodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets, Bucket[] checkBuckets, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus) {} // irrevelant
 
-	public void onEncodedSegment(ObjectContainer container, ClientContext context) {
+	public void onEncodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets, Bucket[] checkBuckets, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		// Start the inserts
 		try {
+			if(logMINOR)
+				Logger.minor(this, "Scheduling "+checkBlockInserters.length+" check blocks...");
 			for (int i = 0; i < checkBlockInserters.length; i++) {
-				if(checkBlocks[i] == null) continue;
+				// See comments on FECCallback: WE MUST COPY THE DATA BACK!!!
+				checkBlocks[i] = checkBuckets[i];
+				if(checkBlocks[i] == null) {
+					if(logMINOR)
+						Logger.minor(this, "Skipping check block "+i+" - is null");
+					continue;
+				}
 				if(checkBlockInserters[i] != null) continue;
 				checkBlockInserters[i] = new SingleBlockInserter(parent.parent,
 						checkBlocks[i], (short) -1, FreenetURI.EMPTY_CHK_URI,

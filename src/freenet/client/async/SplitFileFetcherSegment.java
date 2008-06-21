@@ -219,11 +219,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 	}
 	
-	public void onDecodedSegment(ObjectContainer container, ClientContext context) {
+	public void onDecodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets2, Bucket[] checkBuckets2, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus) {
+		// Because we use SplitfileBlock, we DON'T have to copy here.
+		// See FECCallback comments for explanation.
 		try {
 			if(isCollectingBinaryBlob()) {
 				for(int i=0;i<dataBuckets.length;i++) {
-					Bucket data = dataBuckets[i].getData();
+					Bucket data = dataBlockStatus[i].getData();
 					try {
 						maybeAddToBinaryBlob(data, i, false, container, context);
 					} catch (FetchException e) {
@@ -271,7 +273,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 	}
 
-	public void onEncodedSegment(ObjectContainer container, ClientContext context) {
+	public void onEncodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets2, Bucket[] checkBuckets2, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus) {
+		// Because we use SplitfileBlock, we DON'T have to copy here.
+		// See FECCallback comments for explanation.
 		synchronized(this) {
 			// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
 			for(int i=0;i<dataBuckets.length;i++) {
