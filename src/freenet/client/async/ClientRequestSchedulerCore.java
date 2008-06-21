@@ -129,6 +129,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		});
 		while(results.hasNext()) {
 			PersistentChosenRequest req = (PersistentChosenRequest) results.next();
+			container.activate(req, 5);
 			sched.addToStarterQueue(req);
 			if(!isInsertScheduler) {
 				synchronized(keysFetching) {
