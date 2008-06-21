@@ -11,6 +11,7 @@ public class PrioritizedSerialExecutor implements Executor {
 	private final int priority;
 	private final int defaultPriority;
 	private boolean waiting;
+	private final boolean invertOrder;
 	
 	private String name;
 	private Executor realExecutor;
@@ -34,6 +35,7 @@ public class PrioritizedSerialExecutor implements Executor {
 				Runnable job = null;
 				synchronized(jobs) {
 					for(int i=0;i<jobs.length;i++) {
+						job = checkQueue();
 						if(!jobs[i].isEmpty()) {
 							job = (Runnable) jobs[i].removeFirst();
 							break;
@@ -48,12 +50,7 @@ public class PrioritizedSerialExecutor implements Executor {
 							// Ignore
 						}
 						waiting=false;
-						for(int i=0;i<jobs.length;i++) {
-							if(!jobs[i].isEmpty()) {
-								job = (Runnable) jobs[i].removeFirst();
-								break;
-							}
-						}
+						job = checkQueue();
 						if(job == null) {
 							running=false;
 							return;
@@ -68,15 +65,40 @@ public class PrioritizedSerialExecutor implements Executor {
 				}
 			}
 		}
+
+		private Runnable checkQueue() {
+			if(!invertOrder) {
+				for(int i=0;i<jobs.length;i++) {
+					if(!jobs[i].isEmpty()) {
+						return (Runnable) jobs[i].removeFirst();
+					}
+				}
+			} else {
+				for(int i=jobs.length-1;i>=0;i--) {
+					if(!jobs[i].isEmpty()) {
+						return (Runnable) jobs[i].removeFirst();
+					}
+				}
+			}
+			return null;
+		}
 		
 	};
 	
-	public PrioritizedSerialExecutor(int priority, int internalPriorityCount, int defaultPriority) {
+	/**
+	 * 
+	 * @param priority
+	 * @param internalPriorityCount
+	 * @param defaultPriority
+	 * @param invertOrder Set if the priorities are thread priorities. Unset if they are request priorities. D'oh!
+	 */
+	public PrioritizedSerialExecutor(int priority, int internalPriorityCount, int defaultPriority, boolean invertOrder) {
 		jobs = new LinkedList[internalPriorityCount];
 		for(int i=0;i<jobs.length;i++)
 			jobs[i] = new LinkedList();
 		this.priority = priority;
 		this.defaultPriority = defaultPriority;
+		this.invertOrder = invertOrder;
 	}
 	
 	public void start(Executor realExecutor, String name) {

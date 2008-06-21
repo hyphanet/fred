@@ -151,8 +151,8 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		this.random = node.random;
 		fecQueue = new FECQueue();
 		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
-		clientDatabaseExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, NativeThread.MAX_PRIORITY+1, NativeThread.NORM_PRIORITY);
-		datastoreCheckerExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, RequestStarter.NUMBER_OF_PRIORITY_CLASSES, 0);
+		clientDatabaseExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, NativeThread.MAX_PRIORITY+1, NativeThread.NORM_PRIORITY, true);
+		datastoreCheckerExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, RequestStarter.NUMBER_OF_PRIORITY_CLASSES, 0, false);
 	  	byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
 		this.formPassword = Base64.encode(pwdBuf);
