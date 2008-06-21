@@ -330,6 +330,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						if(anyValid)
 							schedCore.innerRegister(req, random, container);
 						container.delete(reg);
+						starter.wakeUp();
 					}
 					
 				}, NativeThread.NORM_PRIORITY, false);
