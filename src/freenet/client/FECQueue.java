@@ -162,7 +162,7 @@ public class FECQueue implements OOMHook {
 									container.delete(job);
 								}
 								
-							}, job.priority, false);
+							}, NativeThread.NORM_PRIORITY+1, false);
 						}
 					} catch (Throwable e) {
 						Logger.error(this, "The callback failed!" + e.getMessage(), e);
