@@ -436,21 +436,23 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					if(reg.core != ClientRequestSchedulerCore.this) return false;
 					return true;
 				}
-			}, new Comparator() {
-				public int compare(Object arg0, Object arg1) {
-					RegisterMe reg0 = (RegisterMe) arg0;
-					RegisterMe reg1 = (RegisterMe) arg1;
-					if(reg0.priority > reg1.priority)
-						return -1; // First is lower priority, so use the second.
-					if(reg0.priority < reg1.priority)
-						return 1; // First is lower priority, so use the second.
-					if(reg0.addedTime > reg1.addedTime)
-						return -1; // Second was added earlier
-					if(reg0.addedTime < reg1.addedTime)
-						return 1;
-					return 0;
-				}
 			});
+			// Don't sort it. It has to activate everything before sorting it!
+			//, new Comparator() {
+//				public int compare(Object arg0, Object arg1) {
+//					RegisterMe reg0 = (RegisterMe) arg0;
+//					RegisterMe reg1 = (RegisterMe) arg1;
+//					if(reg0.priority > reg1.priority)
+//						return -1; // First is lower priority, so use the second.
+//					if(reg0.priority < reg1.priority)
+//						return 1; // First is lower priority, so use the second.
+//					if(reg0.addedTime > reg1.addedTime)
+//						return -1; // Second was added earlier
+//					if(reg0.addedTime < reg1.addedTime)
+//						return 1;
+//					return 0;
+//				}
+//			});
 			for(int i=0;result.hasNext() && i < 5; i++) {
 				RegisterMe reg = (RegisterMe) result.next();
 				if(logMINOR)
