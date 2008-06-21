@@ -348,9 +348,10 @@ public class BucketTools {
 		if(origData instanceof BucketChainBucket) {
 			BucketChainBucket data = (BucketChainBucket)origData;
 			if(data.bucketSize == splitSize) {
+				Bucket[] buckets = data.getBuckets();
 				if(freeData)
 					data.clear();
-				return data.getBuckets();
+				return buckets;
 			} else {
 				Logger.error(BucketTools.class, "Incompatible split size splitting a BucketChainBucket: his split size is "+data.bucketSize+" but mine is "+splitSize+" - we will copy the data, but this suggests a bug", new Exception("debug"));
 			}
