@@ -177,12 +177,7 @@ public class FCPConnectionHandler {
 
 			public void run(ObjectContainer container, ClientContext context) {
 				try {
-					FCPClient client = server.registerForeverClient(name, server.core, FCPConnectionHandler.this, container);
-					synchronized(FCPConnectionHandler.this) {
-						foreverClient = client;
-						FCPConnectionHandler.this.notifyAll();
-					}
-					client.queuePendingMessagesOnConnectionRestart(outputHandler, container);
+					createForeverClient(name, container);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t+" creating persistent client for "+name, t);
 					failedGetForever = true;
@@ -198,6 +193,19 @@ public class FCPConnectionHandler {
 			Logger.minor(this, "Set client name: "+name);
 	}
 	
+	protected FCPClient createForeverClient(String name, ObjectContainer container) {
+		synchronized(FCPConnectionHandler.this) {
+			if(foreverClient != null) return foreverClient;
+		}
+		FCPClient client = server.registerForeverClient(name, server.core, FCPConnectionHandler.this, container);
+		synchronized(FCPConnectionHandler.this) {
+			foreverClient = client;
+			FCPConnectionHandler.this.notifyAll();
+		}
+		client.queuePendingMessagesOnConnectionRestart(outputHandler, container);
+		return foreverClient;
+	}
+
 	public String getClientName() {
 		return clientName;
 	}
@@ -395,16 +403,22 @@ public class FCPConnectionHandler {
 		return rebootClient;
 	}
 
-	public FCPClient getForeverClient() {
+	public FCPClient getForeverClient(ObjectContainer container) {
 		synchronized(this) {
-			while(foreverClient == null && (!failedGetForever) && (!isClosed)) {
-				try {
-					wait();
-				} catch (InterruptedException e) {
-					// Ignore
+			if(foreverClient != null)
+				return foreverClient;
+			if(container == null) {
+				while(foreverClient == null && (!failedGetForever) && (!isClosed)) {
+					try {
+						wait();
+					} catch (InterruptedException e) {
+						// Ignore
+					}
 				}
+				return foreverClient;
+			} else {
+				return createForeverClient(clientName, container);
 			}
-			return foreverClient;
 		}
 	}
 
@@ -580,7 +594,7 @@ public class FCPConnectionHandler {
 		if(global)
 			return handler.server.globalForeverClient.getRequest(identifier, container);
 		else
-			return handler.getForeverClient().getRequest(identifier, container);
+			return handler.getForeverClient(container).getRequest(identifier, container);
 	}
 	
 	ClientRequest removePersistentRebootRequest(boolean global, String identifier) throws MessageInvalidException {
@@ -597,7 +611,7 @@ public class FCPConnectionHandler {
 	ClientRequest removePersistentForeverRequest(boolean global, String identifier, ObjectContainer container) throws MessageInvalidException {
 		FCPClient client =
 			global ? server.globalForeverClient :
-			getForeverClient();
+			getForeverClient(container);
 		ClientRequest req = client.getRequest(identifier, container);
 		if(req != null) {
 			client.removeByIdentifier(identifier, true, server, container);

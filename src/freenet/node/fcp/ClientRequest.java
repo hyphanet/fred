@@ -92,7 +92,8 @@ public abstract class ClientRequest {
 		if(global) {
 			client = persistenceType == PERSIST_FOREVER ? handler.server.globalForeverClient : handler.server.globalRebootClient;
 		} else {
-			client = persistenceType == PERSIST_FOREVER ? handler.getForeverClient() : handler.getRebootClient();
+			assert(!handler.server.core.clientDatabaseExecutor.onThread());
+			client = persistenceType == PERSIST_FOREVER ? handler.getForeverClient(null) : handler.getRebootClient();
 		}
 		this.startupTime = System.currentTimeMillis();
 	}

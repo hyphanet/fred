@@ -48,7 +48,7 @@ public class WatchGlobal extends FCPMessage {
 		handler.server.core.clientContext.jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
-				handler.getForeverClient().setWatchGlobal(enabled, verbosityMask, handler.server, container);
+				handler.getForeverClient(container).setWatchGlobal(enabled, verbosityMask, handler.server, container);
 			}
 			
 		}, NativeThread.NORM_PRIORITY, false);
