@@ -193,6 +193,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	 * @return
 	 */
 	private ChosenRequest getRequest() {
+		boolean usedReq = true;
 		ChosenRequest req = null;
 		while(true) {
 			synchronized(queue) {
@@ -209,10 +210,15 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 					queue.addFirst(req);
 				}
 				req = null;
+				usedReq = false;
 			}
 		}
-		if(req == null) req = betterReq;
-		sched.queueFillRequestStarterQueue();
+		if(req == null) {
+			usedReq = false;
+			req = betterReq;
+		}
+		if(usedReq)
+			sched.queueFillRequestStarterQueue();
 		return req;
 	}
 
