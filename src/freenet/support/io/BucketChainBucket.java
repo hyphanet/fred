@@ -164,6 +164,7 @@ public class BucketChainBucket implements Bucket {
 			if(freed) throw new IOException("Freed");
 			size = 0;
 			list = getBuckets();
+			buckets.clear();
 		}
 		for(int i=0;i<list.length;i++) {
 			list[i].free();
@@ -190,6 +191,7 @@ public class BucketChainBucket implements Bucket {
 				if(bucketLength == bucketSize) {
 					curBucketStream.close();
 					curBucketStream = makeBucketOutputStream(bucketNo++);
+					bucketLength = 0;
 				}
 				curBucketStream.write(c);
 				bucketLength++;
