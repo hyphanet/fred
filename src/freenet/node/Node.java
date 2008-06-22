@@ -623,12 +623,27 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		if(logConfigHandler != lc)
 			logConfigHandler=lc;
 		startupTime = System.currentTimeMillis();
-		// Will be set up properly afterwards
-		L10n.setLanguage(L10n.FALLBACK_DEFAULT);
 		SimpleFieldSet oldConfig = config.getSimpleFieldSet();
 		// Setup node-specific configuration
 		SubConfig nodeConfig = new SubConfig("node", config);
+		
 		int sortOrder = 0;
+		
+		// l10n stuffs
+		nodeConfig.register("l10n", Locale.getDefault().getLanguage().toLowerCase(), sortOrder++, false, true, 
+				"Node.l10nLanguage",
+				"Node.l10nLanguageLong",
+				new L10nCallback());
+		
+		try {
+			L10n.setLanguage(nodeConfig.getString("l10n"));
+		} catch (MissingResourceException e) {
+			try {
+				L10n.setLanguage(nodeConfig.getOption("l10n").getDefault());
+			} catch (MissingResourceException e1) {
+				L10n.setLanguage(L10n.FALLBACK_DEFAULT);
+			}
+		}
 		
 		// FProxy config needs to be here too
 		SubConfig fproxyConfig = new SubConfig("fproxy", config);
@@ -1564,23 +1579,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		});
 		
 		disableHangCheckers = nodeConfig.getBoolean("disableHangCheckers");
-		
-		// l10n stuffs
-		nodeConfig.register("l10n", Locale.getDefault().getLanguage().toLowerCase(), sortOrder++, false, true, 
-				"Node.l10nLanguage",
-				"Node.l10nLanguageLong",
-				new L10nCallback());
-		
-		try {
-			L10n.setLanguage(nodeConfig.getString("l10n"));
-		} catch (MissingResourceException e) {
-			try {
-				L10n.setLanguage(nodeConfig.getOption("l10n").getDefault());
-			} catch (MissingResourceException e1) {
-				L10n.setLanguage(L10n.FALLBACK_DEFAULT);
-			}
-		}
-		
+				
 		nodeConfig.finishedInitialization();
 		writeNodeFile();
 		
