@@ -229,6 +229,7 @@ public class BucketChainBucket implements Bucket {
 				if(bucketLength == bucketSize) {
 					curBucketStream.close();
 					curBucketStream = makeBucketOutputStream(++bucketNo);
+					bucketLength = 0;
 				}
 				if(bucketLength + length > bucketSize) {
 					int split = (int) (bucketSize - bucketLength);
