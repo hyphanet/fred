@@ -190,7 +190,7 @@ public class BucketChainBucket implements Bucket {
 				}
 				if(bucketLength == bucketSize) {
 					curBucketStream.close();
-					curBucketStream = makeBucketOutputStream(bucketNo++);
+					curBucketStream = makeBucketOutputStream(++bucketNo);
 					bucketLength = 0;
 				}
 				curBucketStream.write(c);
@@ -220,7 +220,7 @@ public class BucketChainBucket implements Bucket {
 				if(length <= 0) return;
 				if(bucketLength == bucketSize) {
 					curBucketStream.close();
-					curBucketStream = makeBucketOutputStream(bucketNo++);
+					curBucketStream = makeBucketOutputStream(++bucketNo);
 				}
 				if(bucketLength + length > bucketSize) {
 					int split = (int) (bucketSize - bucketLength);
