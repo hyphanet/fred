@@ -207,8 +207,11 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			} else {
 				ret = new ChosenRequest(req, token, key, ckey);
 			}
-			if(key != null)
+			if(key != null) {
+				if(logMINOR)
+					Logger.minor(this, "Adding "+key+" for "+ret+" for "+req+" to keysFetching");
 				keysFetching.add(key);
+			}
 			return ret;
 		}
 	}
