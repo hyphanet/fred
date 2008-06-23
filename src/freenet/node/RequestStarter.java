@@ -9,7 +9,6 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ChosenRequest;
 import freenet.client.async.ClientContext;
-import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
