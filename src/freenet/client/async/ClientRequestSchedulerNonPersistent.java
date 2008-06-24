@@ -39,7 +39,7 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 		return null;
 	}
 
-	protected Set makeSetForAllRequestsByClientRequest() {
+	protected Set makeSetForAllRequestsByClientRequest(ObjectContainer ignored) {
 		return new HashSet();
 	}
 

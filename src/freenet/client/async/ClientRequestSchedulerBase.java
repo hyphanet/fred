@@ -61,9 +61,6 @@ abstract class ClientRequestSchedulerBase {
 
 	abstract boolean persistent();
 	
-	/** @return The container if this is persistent, otherwise null */
-	abstract ObjectContainer container();
-	
 	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs, Map pendingKeys, Map allRequestsByClientRequest, List recentSuccesses) {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
@@ -244,14 +241,14 @@ abstract class ClientRequestSchedulerBase {
 		addToGrabArray(req.getPriorityClass(), retryCount, fixRetryCount(retryCount), req.getClient(), req.getClientRequest(), req, random, container);
 		Set v = (Set) allRequestsByClientRequest.get(req.getClientRequest());
 		if(v == null) {
-			v = makeSetForAllRequestsByClientRequest();
+			v = makeSetForAllRequestsByClientRequest(container);
 			allRequestsByClientRequest.put(req.getClientRequest(), v);
 		}
 		v.add(req);
 		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+req.getPriorityClass()+", retrycount="+req.getRetryCount()+" v.size()="+v.size());
 	}
 	
-	protected abstract Set makeSetForAllRequestsByClientRequest();
+	protected abstract Set makeSetForAllRequestsByClientRequest(ObjectContainer container);
 
 	void addToGrabArray(short priorityClass, int retryCount, int rc, Object client, ClientRequester cr, SendableRequest req, RandomSource random, ObjectContainer container) {
 		if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))

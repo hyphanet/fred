@@ -115,7 +115,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		this.selectorContainer = node.db;
 		schedCore = ClientRequestSchedulerCore.create(node, forInserts, forSSKs, selectorContainer, COOLDOWN_PERIOD, core.clientDatabaseExecutor, this, context);
 		schedTransient = new ClientRequestSchedulerNonPersistent(this);
-		schedCore.fillStarterQueue();
+		schedCore.fillStarterQueue(selectorContainer);
 		schedCore.start(core);
 		persistentCooldownQueue = schedCore.persistentCooldownQueue;
 		this.databaseExecutor = core.clientDatabaseExecutor;
@@ -165,7 +165,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void register(final SendableRequest req, boolean onDatabaseThread, final RegisterMe reg) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Registering "+req, new Exception("debug"));
-		boolean persistent = req.persistent();
+		final boolean persistent = req.persistent();
 		if(isInsertScheduler != (req instanceof SendableInsert))
 			throw new IllegalArgumentException("Expected a SendableInsert: "+req);
 		if(req instanceof SendableGet) {
@@ -173,7 +173,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			
 			if(persistent && onDatabaseThread) {
 				schedCore.addPendingKeys(getter, selectorContainer);
-				schedCore.queueRegister(getter, databaseExecutor);
+				schedCore.queueRegister(getter, databaseExecutor, selectorContainer);
 				final Object[] keyTokens = getter.sendableKeys(selectorContainer);
 				final ClientKey[] keys = new ClientKey[keyTokens.length];
 				for(int i=0;i<keyTokens.length;i++)
@@ -190,7 +190,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 					public void run(ObjectContainer container, ClientContext context) {
 						schedCore.addPendingKeys(getter, container);
-						schedCore.queueRegister(getter, databaseExecutor);
+						schedCore.queueRegister(getter, databaseExecutor, container);
 						final Object[] keyTokens = getter.sendableKeys(container);
 						final ClientKey[] keys = new ClientKey[keyTokens.length];
 						for(int i=0;i<keyTokens.length;i++)
@@ -222,12 +222,26 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}, getter.getPriorityClass(), "Checking datastore");
 			}
 		} else {
-			if(persistent)
-				schedCore.queueRegister(req, databaseExecutor);
-			// Pretend to not be on the database thread.
-			// In some places (e.g. SplitFileInserter.start(), we call register() *many* times within a single transaction.
-			// We can greatly improve responsiveness at the cost of some throughput and RAM by only adding the tags at this point.
-			finishRegister(req, persistent, false, true, reg);
+			if(persistent) {
+				if(onDatabaseThread) {
+					schedCore.queueRegister(req, databaseExecutor, selectorContainer);
+					finishRegister(req, persistent, false, true, reg);
+				} else {
+					jobRunner.queue(new DBJob() {
+
+						public void run(ObjectContainer container, ClientContext context) {
+							schedCore.queueRegister(req, databaseExecutor, selectorContainer);
+							// Pretend to not be on the database thread.
+							// In some places (e.g. SplitFileInserter.start(), we call register() *many* times within a single transaction.
+							// We can greatly improve responsiveness at the cost of some throughput and RAM by only adding the tags at this point.
+							finishRegister(req, persistent, false, true, reg);
+						}
+						
+					}, NativeThread.NORM_PRIORITY, false);
+				}
+			} else {
+				finishRegister(req, persistent, false, true, reg);
+			}
 		}
 	}
 
@@ -366,7 +380,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			schedTransient.addPendingKey(key, getter);
 	}
 	
-	private synchronized ChosenRequest removeFirst() {
+	private synchronized ChosenRequest removeFirst(ObjectContainer container) {
 		if(!databaseExecutor.onThread()) {
 			throw new IllegalStateException("Not on database thread!");
 		}
@@ -376,7 +390,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;	
 		// schedCore juggles both
-		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, false, Short.MAX_VALUE, Short.MAX_VALUE, clientContext);
+		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, false, Short.MAX_VALUE, Short.MAX_VALUE, clientContext, container);
 	}
 
 	public ChosenRequest getBetterNonPersistentRequest(ChosenRequest req) {
@@ -386,10 +400,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;	
 		if(req == null)
-			return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, Short.MAX_VALUE, Integer.MAX_VALUE, clientContext);
+			return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, Short.MAX_VALUE, Integer.MAX_VALUE, clientContext, null);
 		short prio = req.request.getPriorityClass();
 		int retryCount = req.request.getRetryCount();
-		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, prio, retryCount, clientContext);
+		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, prio, retryCount, clientContext, null);
 	}
 	
 	private static final int MAX_STARTER_QUEUE_SIZE = 100;
@@ -424,7 +438,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 			}
 			while(true) {
-				req = removeFirst();
+				req = removeFirst(container);
 				if(req == null) return;
 				synchronized(starterQueue) {
 					if(req != null) {

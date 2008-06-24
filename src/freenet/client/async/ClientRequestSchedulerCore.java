@@ -40,7 +40,6 @@ import freenet.support.io.NativeThread;
  */
 class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements KeysFetchingLocally {
 	
-	private ObjectContainer container;
 	private static boolean logMINOR;
 	/** Identifier in the database for the node we are attached to */
 	private final long nodeDBHandle;
@@ -92,7 +91,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	ClientRequestSchedulerCore(Node node, boolean forInserts, boolean forSSKs, ObjectContainer selectorContainer, long cooldownTime) {
 		super(forInserts, forSSKs, forInserts ? null : selectorContainer.ext().collections().newHashMap(1024), selectorContainer.ext().collections().newHashMap(32), selectorContainer.ext().collections().newLinkedList());
 		this.nodeDBHandle = node.nodeDBHandle;
-		this.container = selectorContainer;
 		if(!forInserts) {
 			this.persistentCooldownQueue = new PersistentCooldownQueue();
 		} else {
@@ -105,7 +103,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			((Db4oMap)pendingKeys).activationDepth(Integer.MAX_VALUE);
 		((Db4oMap)allRequestsByClientRequest).activationDepth(1);
 		((Db4oList)recentSuccesses).activationDepth(Integer.MAX_VALUE);
-		this.container = container;
 		if(!isInsertScheduler) {
 			persistentCooldownQueue.setCooldownTime(cooldownTime);
 		}
@@ -147,7 +144,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		runner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);
 	}
 	
-	void fillStarterQueue() {
+	void fillStarterQueue(ObjectContainer container) {
 		ObjectSet results = container.query(new Predicate() {
 			public boolean match(PersistentChosenRequest req) {
 				if(req.core != ClientRequestSchedulerCore.this) return false;
@@ -206,8 +203,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	// We prevent a number of race conditions (e.g. adding a retry count and then another 
 	// thread removes it cos its empty) ... and in addToGrabArray etc we already sync on this.
 	// The worry is ... is there any nested locking outside of the hierarchy?
-	ChosenRequest removeFirst(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, int retryCount, ClientContext context) {
-		SendableRequest req = removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, transientOnly, maxPrio, retryCount, context);
+	ChosenRequest removeFirst(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
+		SendableRequest req = removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, transientOnly, maxPrio, retryCount, context, container);
 		if(req == null) return null;
 		Object token = req.chooseKey(this, req.persistent() ? container : null, context);
 		if(token == null) {
@@ -243,7 +240,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		}
 	}
 	
-	SendableRequest removeFirstInner(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, int retryCount, ClientContext context) {
+	SendableRequest removeFirstInner(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		boolean tryOfferedKeys = offeredKeys != null && random.nextBoolean();
@@ -453,10 +450,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		return true;
 	}
 
-	ObjectContainer container() {
-		return container;
-	}
-
 	private transient ObjectSet registerMeSet;
 	
 	private transient RegisterMeRunner registerMeRunner;
@@ -513,7 +506,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		}
 		
 	}
-	public void queueRegister(SendableRequest req, PrioritizedSerialExecutor databaseExecutor) {
+	public void queueRegister(SendableRequest req, PrioritizedSerialExecutor databaseExecutor, ObjectContainer container) {
 		if(!databaseExecutor.onThread()) {
 			throw new IllegalStateException("Not on database thread!");
 		}
@@ -531,8 +524,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		synchronized(keysFetching) {
 			keysFetching.remove(key);
 		}
-		sched.databaseExecutor.execute(new Runnable() {
-			public void run() {
+		sched.clientContext.jobRunner.queue(new DBJob() {
+			public void run(ObjectContainer container, ClientContext context) {
 				ObjectSet results = container.query(new Predicate() {
 					public boolean match(PersistentChosenRequest req) {
 						if(req.core != ClientRequestSchedulerCore.this) return false;
@@ -545,10 +538,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					container.commit();
 				}
 			}
-		}, NativeThread.NORM_PRIORITY, "Remove fetching key");
+		}, NativeThread.NORM_PRIORITY, false);
 	}
 
-	protected Set makeSetForAllRequestsByClientRequest() {
+	protected Set makeSetForAllRequestsByClientRequest(ObjectContainer container) {
 		return new Db4oSet(container, 1);
 	}
 
