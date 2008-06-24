@@ -52,7 +52,9 @@ public class FECQueue implements OOMHook {
 			}
 		});
 		if(result.hasNext()) {
-			return (FECQueue) result.next();
+			FECQueue queue = (FECQueue) result.next();
+			container.activate(queue, 5);
+			return queue;
 		} else {
 			FECQueue queue = new FECQueue(nodeDBHandle);
 			container.set(queue);
