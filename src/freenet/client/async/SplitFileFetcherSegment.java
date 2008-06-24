@@ -70,11 +70,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 	final FailureCodeTracker errors;
 	private boolean finishing;
 	private boolean scheduled;
+	private final boolean persistent;
 	
 	private FECCodec codec;
 	
 	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext fetchContext, long maxTempLength, int recursionLevel) throws MetadataParseException, FetchException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		this.persistent = fetcher.persistent;
 		this.parentFetcher = fetcher;
 		this.errors = new FailureCodeTracker(false);
 		this.archiveContext = archiveContext;
