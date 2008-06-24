@@ -58,10 +58,12 @@ public class SplitFileFetcher implements ClientGetState {
 	private final Bucket returnBucket;
 	private boolean finished;
 	private long token;
+	private final boolean persistent;
 	
 	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent2,
 			FetchContext newCtx, LinkedList decompressors, ClientMetadata clientMetadata, 
 			ArchiveContext actx, int recursionLevel, Bucket returnBucket, long token2, ObjectContainer container) throws FetchException, MetadataParseException {
+		this.persistent = parent2.persistent();
 		this.finished = false;
 		this.returnBucket = returnBucket;
 		this.fetchContext = newCtx;
