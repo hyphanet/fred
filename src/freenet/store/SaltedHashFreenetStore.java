@@ -76,6 +76,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private final int dataBlockLength;
 	private final Random random;
 	private long storeSize;
+	private byte generation;
 
 	public static SaltedHashFreenetStore construct(File baseDir, String name, StoreCallback callback, Random random,
 			long maxKeys, SemiOrderedShutdownHook shutdownHook) throws IOException {
@@ -305,7 +306,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	/**
 	 * Data entry
-	 *
+	 * 
 	 * <pre>
 	 *       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 	 *       |0|1|2|3|4|5|6|7|8|9|A|B|C|D|E|F|
@@ -320,9 +321,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 *  +----+---------------+---------------+
 	 *  |0040|       Plain Routing Key       |
 	 *  |0050| (Only if ENTRY_FLAG_PLAINKEY) |
-	 *  +----+-------------------------------+
-	 *  |0060|            Reserved           |
-	 *  +----+-------------------------------+
+	 *  +----+-+-----------------------------+
+	 *  |0060|G|          Reserved           |
+	 *  +----+-+-----------------------------+
 	 *  |0070|       Encrypted Header        |
 	 *  |  . + - - - - - - - - - - - - - - - +
 	 *  |  . |        Encrypted Data         |
@@ -330,7 +331,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 *  |    |           Padding             |
 	 *  +----+-------------------------------+
 	 * </pre>
-	 *
+	 * 
 	 * Total length is padded to multiple of 512bytes. All reserved bytes should be zero when
 	 * written, ignored on read.
 	 */
@@ -340,11 +341,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		private byte[] dataEncryptIV;
 		private long flag;
 		private long storeSize;
+		private byte generation;
 		private byte[] header;
 		private byte[] data;
-
+		
 		private boolean isEncrypted;
 		public long curOffset = -1;
+		
 
 		/**
 		 * Create a new entry
@@ -358,6 +361,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			flag = ENTRY_FLAG_OCCUPIED;
 			storeSize = SaltedHashFreenetStore.this.storeSize;
+			generation = SaltedHashFreenetStore.this.generation;
 
 			// header/data will be overwritten in encrypt()/decrypt(),
 			// let's make a copy here
@@ -405,6 +409,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				in.get(plainRoutingKey);
 			}
 
+			in.position(0x60);
+			generation = in.get();
+			
 			// reserved bytes
 			in.position((int) ENTRY_HEADER_LENGTH);
 
@@ -431,7 +438,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			if (OPTION_SAVE_PLAINKEY && plainRoutingKey != null) {
 				out.put(plainRoutingKey);
 			}
-
+			
+			out.position(0x60);
+			out.put(generation);
+			
 			// reserved bytes
 			out.position((int) ENTRY_HEADER_LENGTH);
 
@@ -753,7 +763,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	// ------------- Configuration
 	/**
 	 * Configuration File
-	 *
+	 * 
 	 * <pre>
 	 *       +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 	 *       |0|1|2|3|4|5|6|7|8|9|A|B|C|D|E|F|
@@ -761,9 +771,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 *  |0000|             Salt              |
 	 *  +----+---------------+---------------+
 	 *  |0010|   Store Size  | prevStoreSize |
-	 *  +----+---------------+---------------+
-	 *  |0010| Est Key Count |    reserved   |
-	 *  +----+---------------+---------------+
+	 *  +----+---------------+-+-------------+
+	 *  |0020| Est Key Count |G|  reserved   |
+	 *  +----+---------------+-+-------------+
+	 *  
+	 *  G = Generation
 	 * </pre>
 	 */
 	private final File configFile;
@@ -789,7 +801,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			storeSize = raf.readLong();
 			prevStoreSize = raf.readLong();
 			keyCount.set(raf.readLong());
-			raf.readLong();
+			generation = raf.readByte();
 
 			raf.close();
 		}
@@ -810,7 +822,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			raf.writeLong(storeSize);
 			raf.writeLong(prevStoreSize);
 			raf.writeLong(keyCount.get());
-			raf.writeLong(0);
+			raf.write(generation);
+			raf.setLength(0x30);
 
 			raf.close();
 
