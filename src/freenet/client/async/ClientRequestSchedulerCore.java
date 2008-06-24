@@ -332,7 +332,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				if(logMINOR) Logger.minor(this, "No requests, adjusted retrycount "+chosenTracker.getNumber()+" ("+chosenTracker+") of priority "+choosenPriorityClass);
 				continue; // Try next retry count.
 			}
-			container.activate(req, Integer.MAX_VALUE); // FIXME
+			if(req.persistent())
+				container.activate(req, Integer.MAX_VALUE); // FIXME
 			if(req.getPriorityClass() != choosenPriorityClass) {
 				// Reinsert it : shouldn't happen if we are calling reregisterAll,
 				// maybe we should ask people to report that error if seen
