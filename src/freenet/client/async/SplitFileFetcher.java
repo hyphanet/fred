@@ -58,7 +58,7 @@ public class SplitFileFetcher implements ClientGetState {
 	private final Bucket returnBucket;
 	private boolean finished;
 	private long token;
-	private final boolean persistent;
+	final boolean persistent;
 	
 	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent2,
 			FetchContext newCtx, LinkedList decompressors, ClientMetadata clientMetadata, 
@@ -178,10 +178,12 @@ public class SplitFileFetcher implements ClientGetState {
 	 * Bucket containing the fetched data.
 	 * @throws FetchException If the fetch failed for some reason.
 	 */
-	private Bucket finalStatus(ClientContext context) throws FetchException {
+	private Bucket finalStatus(ObjectContainer container, ClientContext context) throws FetchException {
 		long finalLength = 0;
 		for(int i=0;i<segments.length;i++) {
 			SplitFileFetcherSegment s = segments[i];
+			if(persistent)
+				container.activate(s, 1);
 			if(!s.isFinished()) throw new IllegalStateException("Not all finished");
 			s.throwError();
 			// If still here, it succeeded
@@ -224,16 +226,21 @@ public class SplitFileFetcher implements ClientGetState {
 	}
 
 	public void segmentFinished(SplitFileFetcherSegment segment, ObjectContainer container, ClientContext context) {
+		if(persistent)
+			container.activate(this, 1);
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Finished segment: "+segment);
 		boolean finish = false;
 		synchronized(this) {
 			boolean allDone = true;
-			for(int i=0;i<segments.length;i++)
+			for(int i=0;i<segments.length;i++) {
+				if(persistent)
+					container.activate(segments[i], 1);
 				if(!segments[i].isFinished()) {
 					if(logMINOR) Logger.minor(this, "Segment "+segments[i]+" is not finished");
 					allDone = false;
 				}
+			}
 			if(allDone) {
 				if(allSegmentsFinished) {
 					Logger.error(this, "Was already finished! (segmentFinished("+segment+ ')', new Exception("debug"));
@@ -244,10 +251,13 @@ public class SplitFileFetcher implements ClientGetState {
 			} 
 			notifyAll();
 		}
+		if(persistent) container.set(this);
 		if(finish) finish(container, context);
 	}
 
 	private void finish(ObjectContainer container, ClientContext context) {
+		if(persistent)
+			container.activate(this, 1);
 		try {
 			synchronized(this) {
 				if(finished) {
@@ -256,8 +266,12 @@ public class SplitFileFetcher implements ClientGetState {
 				}
 				finished = true;
 			}
-			Bucket data = finalStatus(context);
+			Bucket data = finalStatus(container, context);
 			// Decompress
+			if(persistent) {
+				container.set(this);
+				container.activate(decompressors, 1);
+			}
 			while(!decompressors.isEmpty()) {
 				Compressor c = (Compressor) decompressors.removeLast();
 				long maxLen = Math.max(fetchContext.maxTempLength, fetchContext.maxOutputLength);
@@ -286,6 +300,8 @@ public class SplitFileFetcher implements ClientGetState {
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context) {
+		if(persistent)
+			container.activate(this, 1);
 		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Scheduling "+this);
 		for(int i=0;i<segments.length;i++) {
 			segments[i].schedule(container, context);
@@ -293,6 +309,8 @@ public class SplitFileFetcher implements ClientGetState {
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
+		if(persistent)
+			container.activate(this, 1);
 		for(int i=0;i<segments.length;i++)
 			segments[i].cancel(container, context);
 	}
