@@ -1217,6 +1217,10 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 			return (cmp.job == job);
 		}
 		
+		public String toString() {
+			return super.toString()+":"+job;
+		}
+		
 	}
 
 	public boolean onDatabaseThread() {
