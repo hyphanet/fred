@@ -77,6 +77,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 	
 	public boolean start(boolean earlyEncode, boolean restart, ObjectContainer container, ClientContext context) throws InsertException {
+		if(persistent())
+			container.activate(client, 1);
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Starting "+this);
 		try {
@@ -116,6 +118,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			if(cancel) {
 				onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
 				oldProgress = null;
+				if(persistent())
+					container.set(this);
 				return false;
 			}
 			if(Logger.shouldLog(Logger.MINOR, this))
@@ -180,6 +184,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
+		if(persistent())
+			container.activate(client, 1);
 		synchronized(this) {
 			finished = true;
 			currentState = null;
@@ -196,6 +202,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
+		if(persistent())
+			container.activate(client, 1);
 		synchronized(this) {
 			finished = true;
 			currentState = null;
@@ -211,6 +219,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 	
 	public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
+		if(persistent())
+			container.activate(client, 1);
 		synchronized(this) {
 			this.uri = key.getURI();
 			if(targetFilename != null)
@@ -276,6 +286,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 
 	public void onFetchable(ClientPutState state, ObjectContainer container) {
+		if(persistent())
+			container.activate(client, 1);
 		client.onFetchable(this, container);
 	}
 
