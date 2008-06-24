@@ -171,6 +171,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		});
 		if(results.hasNext()) {
 			PersistentTempBucketFactory factory = (PersistentTempBucketFactory) results.next();
+			container.activate(factory, 5);
 			factory.init(dir, prefix, random, fastWeakRandom);
 			return factory;
 		} else
