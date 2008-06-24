@@ -478,7 +478,15 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 //					return 0;
 //				}
 //			});
-			for(int i=0;registerMeSet.hasNext() && i < 5; i++) {
+			for(int i=0;i < 5; i++) {
+				try {
+					if(!registerMeSet.hasNext()) break;
+				} catch (NullPointerException t) {
+					Logger.error(this, "DB4O thew NPE in hasNext(): "+t, t);
+					// FIXME find some way to get a reproducible test case... I suspect it won't be easy :<
+					context.jobRunner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);
+					return;
+				}
 				long startNext = System.currentTimeMillis();
 				RegisterMe reg = (RegisterMe) registerMeSet.next();
 				long endNext = System.currentTimeMillis();
