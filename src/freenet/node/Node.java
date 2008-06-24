@@ -30,6 +30,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectServer;
+import com.db4o.config.QueryEvaluationMode;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
@@ -719,6 +720,23 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		 * We need to back it up and auto-recover. */
 		/* Client-server mode. Refresh objects if you have a long-lived container! */
 		Db4o.configure().objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("key").indexed(true);
+		Db4o.configure().objectClass(freenet.client.async.RegisterMe.class).objectField("core").indexed(true);
+		Db4o.configure().objectClass(freenet.client.async.RegisterMe.class).objectField("priority").indexed(true);
+		Db4o.configure().objectClass(freenet.client.async.RegisterMe.class).objectField("addedTime").indexed(true);
+		Db4o.configure().objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("time").indexed(true);
+		/** Maybe we want a different query evaluation mode?
+		 * At the moment, a big splitfile insert will result in one SingleBlockInserter
+		 * for every key, which means one RegisterMe for each ... this results in a long pause
+		 * when we run the RegisterMe query, plus a lot of RAM usage for all the UIDs.
+		 * 
+		 * Having said that, if we only run it once, and especially if we make splitfile
+		 * inserts work like splitfile requests, it may not be a big problem.
+		 */
+		Db4o.configure().queries().evaluationMode(QueryEvaluationMode.LAZY);
+		Db4o.configure().messageLevel(1);
+		Db4o.configure().activationDepth(1);
+		System.err.println("Optimise native queries: "+Db4o.configure().optimizeNativeQueries());
+		System.err.println("Query activation depth: "+Db4o.configure().activationDepth());
 		db = Db4o.openFile(new File(nodeDir, "node.db4o").toString());
 		
 		System.err.println("Opened database");
