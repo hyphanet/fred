@@ -165,6 +165,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Parse metadata
 			try {
 				metadata = Metadata.construct(data);
+				if(persistent)
+					container.set(this);
 			} catch (MetadataParseException e) {
 				onFailure(new FetchException(e), false, sched, container, context);
 				return;
@@ -209,6 +211,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				}
 			}
 			result = new FetchResult(result, data);
+			if(persistent) {
+				container.set(this);
+				container.set(decompressors);
+			}
 		}
 		if((!ctx.ignoreTooManyPathComponents) && (!metaStrings.isEmpty()) && isFinal) {
 			// Some meta-strings left
@@ -261,11 +267,13 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(logMINOR) Logger.minor(this, "Next meta-string: "+name);
 				if(name == null) {
 					metadata = metadata.getDefaultDocument();
+					if(persistent) container.set(this);
 					if(metadata == null)
 						throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS, -1, false, null, uri.addMetaStrings(new String[] { "" }));
 				} else {
 					metadata = metadata.getDocument(name);
 					thisKey = thisKey.pushMetaString(name);
+					if(persistent) container.set(this);
 					if(metadata == null)
 						throw new FetchException(FetchException.NOT_IN_ARCHIVE);
 				}
@@ -275,6 +283,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(metaStrings.isEmpty() && ctx.returnZIPManifests) {
 					// Just return the archive, whole.
 					metadata.setSimpleRedirect();
+					if(persistent) container.set(metadata);
 					continue;
 				}
 				// First we need the archive metadata.
@@ -295,6 +304,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						// Bucket error?
 						throw new FetchException(FetchException.BUCKET_ERROR, e);
 					}
+					if(persistent) container.set(this);
 				} else {
 					fetchArchive(false, archiveMetadata, ArchiveManager.METADATA_NAME, new ArchiveExtractCallback() {
 						public void gotBucket(Bucket data, ObjectContainer container, ClientContext context) {
@@ -321,12 +331,14 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							SingleFileFetcher.this.onFailure(new FetchException(e), false, sched, container, context);
 						}
 					}, container, context); // will result in this function being called again
+					if(persistent) container.set(this);
 					return;
 				}
 				continue;
 			} else if(metadata.isArchiveInternalRedirect()) {
 				if(logMINOR) Logger.minor(this, "Is archive-internal redirect");
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata());
+				if(persistent) container.set(clientMetadata);
 				String mime = clientMetadata.getMIMEType();
 				if(mime != null) rcb.onExpectedMIME(mime, container);
 				if(metaStrings.isEmpty() && isFinal && clientMetadata.getMIMETypeNoParams() != null && ctx.allowedMIMETypes != null &&
@@ -403,11 +415,14 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				final SingleFileFetcher f = new SingleFileFetcher(this, metadata, new MultiLevelMetadataCallback(), ctx, container, context);
 				// Clear our own metadata so it can be garbage collected, it will be replaced by whatever is fetched.
 				this.metadata = null;
+				if(persistent) container.set(this);
+				if(persistent) container.set(f);
 				f.wrapHandleMetadata(true, container, context);
 				return;
 			} else if(metadata.isSingleFileRedirect()) {
 				if(logMINOR) Logger.minor(this, "Is single-file redirect");
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
+				if(persistent) container.set(clientMetadata);
 				String mime = clientMetadata.getMIMEType();
 				if(mime != null) rcb.onExpectedMIME(mime, container);
 
@@ -415,8 +430,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(mimeType != null && ArchiveManager.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
 					// Looks like an implicit archive, handle as such
 					metadata.setArchiveManifest();
+					if(persistent) container.set(metadata);
 					// Pick up MIME type from inside archive
 					clientMetadata.clear();
+					if(persistent) container.set(clientMetadata);
 					if(logMINOR) Logger.minor(this, "Handling implicit container... (redirect)");
 					continue;
 				}
@@ -463,12 +480,17 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				}
 				parent.onTransition(this, f, container);
 				f.schedule(container, context);
+				if(persistent) {
+					container.set(metaStrings);
+					container.set(this);
+				}
 				// All done! No longer our problem!
 				return;
 			} else if(metadata.isSplitfile()) {
 				if(logMINOR) Logger.minor(this, "Fetching splitfile");
 				
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
+				if(persistent) container.set(clientMetadata);
 				String mime = clientMetadata.getMIMEType();
 				if(mime != null) rcb.onExpectedMIME(mime, container);
 				
@@ -478,6 +500,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					metadata.setArchiveManifest();
 					// Pick up MIME type from inside archive
 					clientMetadata.clear();
+					if(persistent) {
+						container.set(metadata);
+						container.set(clientMetadata);
+					}
 					if(logMINOR) Logger.minor(this, "Handling implicit container... (splitfile)");
 					continue;
 				}
@@ -492,6 +518,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(metadata.isCompressed()) {
 					Compressor codec = Compressor.getCompressionAlgorithmByMetadataID(metadata.getCompressionCodec());
 					addDecompressor(codec);
+					if(persistent)
+						container.set(decompressors);
 				}
 				
 				if(isFinal && !ctx.ignoreTooManyPathComponents) {
@@ -537,6 +565,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// SplitFile will now run.
 				// Then it will return data to rcd.
 				// We are now out of the loop. Yay!
+				if(persistent) container.set(this);
 				return;
 			} else {
 				Logger.error(this, "Don't know what to do with metadata: "+metadata);
