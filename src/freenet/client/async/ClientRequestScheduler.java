@@ -394,7 +394,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	private static final int MAX_STARTER_QUEUE_SIZE = 100;
 	
-	private LinkedList starterQueue = new LinkedList();
+	private transient LinkedList starterQueue = new LinkedList();
 	
 	public LinkedList getRequestStarterQueue() {
 		return starterQueue;
@@ -417,7 +417,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 			if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
 			ChosenRequest req = null;
-			synchronized(this) {
+			synchronized(starterQueue) {
 				if(starterQueue.size() >= MAX_STARTER_QUEUE_SIZE) {
 					Logger.error(this, "Queue already full: "+starterQueue.size());
 					return;
@@ -425,15 +425,16 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 			while(true) {
 				req = removeFirst();
-				boolean finished = false;
+				if(req == null) return;
 				synchronized(starterQueue) {
 					if(req != null) {
 						starterQueue.add(req);
+						if(logMINOR)
+							Logger.minor(this, "Added to starterQueue: "+req+" size now "+starterQueue.size());
 						req = null;
 					}
-					if(starterQueue.size() >= MAX_STARTER_QUEUE_SIZE) finished = true;
+					if(starterQueue.size() >= MAX_STARTER_QUEUE_SIZE) return;
 				}
-				if(req == null || finished) return;
 			}
 		}
 	};
