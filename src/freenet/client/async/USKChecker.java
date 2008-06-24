@@ -29,11 +29,19 @@ class USKChecker extends BaseSingleFileFetcher {
 	}
 	
 	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(cb, 1);
+		}
 		unregister(false, container);
 		cb.onSuccess((ClientSSKBlock)block, context);
 	}
 
 	public void onFailure(LowLevelGetException e, Object token, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(cb, 1);
+		}
         if(Logger.shouldLog(Logger.MINOR, this))
         	Logger.minor(this, "onFailure: "+e+" for "+this);
 		// Firstly, can we retry?

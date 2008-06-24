@@ -84,6 +84,10 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 
 	// Real onFailure
 	protected void onFailure(FetchException e, boolean forceFatal, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(parent, 1);
+			container.activate(rcb, 1);
+		}
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "onFailure( "+e+" , "+forceFatal+")", e);
 		if(parent.isCancelled() || cancelled) {
@@ -108,6 +112,10 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 
 	/** Will be overridden by SingleFileFetcher */
 	protected void onSuccess(FetchResult data, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(parent, 1);
+			container.activate(rcb, 1);
+		}
 		unregister(false, container);
 		if(parent.isCancelled()) {
 			data.asBucket().free();

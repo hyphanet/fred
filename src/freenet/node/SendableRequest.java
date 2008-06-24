@@ -24,7 +24,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	
 	protected RandomGrabArray parentGrabArray;
 	/** Member because must be accessible when only marginally activated */
-	final boolean persistent;
+	protected final boolean persistent;
 	
 	/** Get the priority class of the request. */
 	public abstract short getPriorityClass();

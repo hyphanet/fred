@@ -68,10 +68,14 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 
 	public Object chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
 		if(cancelled) return null;
-		return removeRandomBlockNum(keys, context);
+		return removeRandomBlockNum(keys, context, container);
 	}
 	
 	public ClientKey getKey(Object token, ObjectContainer container) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(segment, 1);
+		}
 		synchronized(segment) {
 			if(cancelled) {
 				if(logMINOR)
@@ -97,6 +101,10 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	 * those on cooldown queues. This is important when unregistering.
 	 */
 	public Object[] allKeys(ObjectContainer container) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(segment, 1);
+		}
 		return segment.getKeyNumbersAtRetryLevel(retryCount);
 	}
 	
@@ -104,10 +112,19 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	 * Just those keys which are eligible to be started now.
 	 */
 	public Object[] sendableKeys(ObjectContainer container) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(blockNums, 1);
+		}
 		return blockNums.toArray();
 	}
 	
-	private Object removeRandomBlockNum(KeysFetchingLocally keys, ClientContext context) {
+	private Object removeRandomBlockNum(KeysFetchingLocally keys, ClientContext context, ObjectContainer container) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(blockNums, 1);
+			container.activate(segment, 1);
+		}
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(segment) {
 			if(blockNums.isEmpty()) {
@@ -132,6 +149,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				}
 				if(logMINOR)
 					Logger.minor(this, "Removing block "+x+" of "+(blockNums.size()+1)+ " : "+ret+ " on "+this);
+				if(persistent)
+					container.set(blockNums);
 				return ret;
 			}
 			return null;
@@ -139,6 +158,12 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public boolean hasValidKeys(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(blockNums, 1);
+			container.activate(segment, 1);
+		}
+		boolean hasSet = false;
 		synchronized(segment) {
 			for(int i=0;i<10;i++) {
 				Object ret;
@@ -150,6 +175,10 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				if(key == null) {
 					Logger.error(this, "Key is null for block "+ret+" for "+this+" in hasValidKeys()");
 					blockNums.remove(x);
+					if(persistent && !hasSet) {
+						hasSet = true;
+						container.set(blockNums);
+					}
 					continue;
 				}
 				if(keys.hasKey(key)) {
@@ -210,6 +239,11 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 
 	// Real onFailure
 	protected void onFailure(FetchException e, Object token, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(segment, 1);
+			container.activate(parent, 1);
+		}
 		boolean forceFatal = false;
 		if(parent.isCancelled()) {
 			if(Logger.shouldLog(Logger.MINOR, this)) 
@@ -226,11 +260,17 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 	
 	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(segment, 1);
+			container.activate(blockNums, 1);
+		}
 		Bucket data = extract(block, token, sched, container);
 		if(fromStore) {
 			// Normally when this method is called the block number has already
 			// been removed. However if fromStore=true, it won't have been, so
 			// we have to do it. (Check the call trace for why)
+			boolean removed = false;
 			synchronized(segment) {
 				for(int i=0;i<blockNums.size();i++) {
 					Integer x = (Integer) blockNums.get(i);
@@ -239,9 +279,12 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 						blockNums.remove(i);
 						if(logMINOR) Logger.minor(this, "Removed block "+i+" : "+x);
 						i--;
+						removed = true;
 					}
 				}
 			}
+			if(persistent && removed)
+				container.set(blockNums);
 		}
 		if(!block.isMetadata()) {
 			onSuccess(data, fromStore, (Integer)token, ((Integer)token).intValue(), block, sched, container);
@@ -251,6 +294,11 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 	
 	protected void onSuccess(Bucket data, boolean fromStore, Integer token, int blockNo, ClientKeyBlock block, RequestScheduler sched, ObjectContainer container) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(segment, 1);
+			container.activate(parent, 1);
+		}
 		if(parent.isCancelled()) {
 			data.free();
 			onFailure(new FetchException(FetchException.CANCELLED), token, sched, container, sched.getContext());
@@ -266,7 +314,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		ClientContext context = sched.getContext();
 		Bucket data;
 		try {
-			data = block.decode(sched.getContext().getBucketFactory(segment.parentFetcher.parent.persistent()), (int)(Math.min(ctx.maxOutputLength, Integer.MAX_VALUE)), false);
+			data = block.decode(sched.getContext().getBucketFactory(persistent), (int)(Math.min(ctx.maxOutputLength, Integer.MAX_VALUE)), false);
 		} catch (KeyDecodeException e1) {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Decode failure: "+e1, e1);
@@ -331,6 +379,11 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public void add(int blockNo, boolean dontSchedule, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(segment, 1);
+			container.activate(blockNums, 1);
+		}
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Adding block "+blockNo+" to "+this+" dontSchedule="+dontSchedule);
 		if(blockNo < 0) throw new IllegalArgumentException();
@@ -360,6 +413,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				schedule = false;
 			}
 		}
+		if(persistent)
+			container.set(blockNums);
 		if(schedule) schedule(container, context);
 		else if(!dontSchedule)
 			// Already scheduled, however this key may not be registered.
@@ -371,6 +426,10 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public void possiblyRemoveFromParent(ObjectContainer container) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(segment, 1);
+		}
 		if(logMINOR)
 			Logger.minor(this, "Possibly removing from parent: "+this);
 		synchronized(segment) {
@@ -384,6 +443,11 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public void onGotKey(Key key, KeyBlock block, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(segment, 1);
+			container.activate(blockNums, 1);
+		}
 		if(logMINOR) Logger.minor(this, "onGotKey("+key+")");
 		// Find and remove block if it is on this subsegment. However it may have been
 		// removed already.
@@ -428,6 +492,11 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	 * subsegment from the list.
 	 */
 	public void kill(ObjectContainer container) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(segment, 1);
+			container.activate(blockNums, 1);
+		}
 		if(logMINOR)
 			Logger.minor(this, "Killing "+this);
 		// Do unregister() first so can get and unregister each key and avoid a memory leak
@@ -439,20 +508,36 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public long getCooldownWakeup(Object token, ObjectContainer container) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(segment, 1);
+		}
 		return segment.getCooldownWakeup(((Integer)token).intValue());
 	}
 
 	public void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(segment, 1);
+		}
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Requeueing after cooldown "+key+" for "+this);
 		segment.requeueAfterCooldown(key, time, container, context);
 	}
 
 	public long getCooldownWakeupByKey(Key key, ObjectContainer container) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(segment, 1);
+		}
 		return segment.getCooldownWakeupByKey(key);
 	}
 
 	public void resetCooldownTimes(ObjectContainer container) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(segment, 1);
+		}
 		synchronized(segment) {
 			segment.resetCooldownTimes((Integer[])blockNums.toArray(new Integer[blockNums.size()]));
 		}

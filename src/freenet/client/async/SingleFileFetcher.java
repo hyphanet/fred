@@ -125,6 +125,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	// splitfile, or another SingleFileFetcher, etc.
 	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched, ObjectContainer container, ClientContext context) {
 		this.sched = sched;
+		if(persistent) {
+			container.activate(parent, 1);
+			container.activate(ctx, 1);
+		}
 		if(parent instanceof ClientGetter)
 			((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
 		parent.completedBlock(fromStore, container, context);
@@ -183,6 +187,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			onFailure(new FetchException(FetchException.CANCELLED), false, sched, container, context);
 			return;
 		}
+		if(persistent) {
+			container.activate(decompressors, 1);
+			container.activate(parent, 1);
+			container.activate(ctx, 1);
+			container.activate(rcb, 1);
+		}
 		if(!decompressors.isEmpty()) {
 			Bucket data = result.asBucket();
 			while(!decompressors.isEmpty()) {
@@ -238,6 +248,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	 * @throws ArchiveRestartException
 	 */
 	private synchronized void handleMetadata(final ObjectContainer container, final ClientContext context) throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
+		if(persistent)
+			container.activate(this, 2);
 		while(true) {
 			if(metadata.isSimpleManifest()) {
 				if(logMINOR) Logger.minor(this, "Is simple manifest");
@@ -566,7 +578,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	 * Call handleMetadata(), and deal with any resulting exceptions
 	 */
 	private void wrapHandleMetadata(final boolean notFinalizedSize, ObjectContainer container, final ClientContext context) {
-		if(!parent.persistent())
+		if(!persistent)
 			innerWrapHandleMetadata(notFinalizedSize, container, context);
 		else {
 			if(!context.jobRunner.onDatabaseThread())
@@ -609,18 +621,22 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 		
 		public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
-			if(!parent.persistent()) {
+			if(!persistent) {
 				// Run directly - we are running on some thread somewhere, don't worry about it.
 				innerSuccess(result, container, context);
 			} else {
 				// We are running on the database thread.
 				// Add a tag, unpack on a separate thread, copy the data to a persistent bucket, then schedule on the database thread,
 				// remove the tag, and call the callback.
+				container.activate(SingleFileFetcher.this, 1);
+				container.activate(ah, 1);
 				ah.extractPersistentOffThread(result.asBucket(), actx, element, callback, container, context);
 			}
 		}
 
 		private void innerSuccess(FetchResult result, ObjectContainer container, ClientContext context) {
+			container.activate(SingleFileFetcher.this, 1);
+			container.activate(ah, 1);
 			try {
 				ah.extractToCache(result.asBucket(), actx, element, callback, context.archiveManager, container, context);
 			} catch (ArchiveFailureException e) {
@@ -635,11 +651,14 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
+			container.activate(SingleFileFetcher.this, 1);
 			// Force fatal as the fetcher is presumed to have made a reasonable effort.
 			SingleFileFetcher.this.onFailure(e, true, sched, container, context);
 		}
 
 		public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
+			if(persistent)
+				container.activate(rcb, 1);
 			if(wasFetchingFinalData) {
 				rcb.onBlockSetFinished(SingleFileFetcher.this, container, context);
 			}
@@ -654,6 +673,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		public void onExpectedSize(long size, ObjectContainer container) {
+			if(persistent)
+				container.activate(rcb, 1);
 			rcb.onExpectedSize(size, container);
 		}
 
@@ -666,6 +687,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	class MultiLevelMetadataCallback implements GetCompletionCallback {
 		
 		public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
+			if(persistent)
+				container.activate(SingleFileFetcher.this, 1);
 			try {
 				metadata = Metadata.construct(result.asBucket());
 			} catch (MetadataParseException e) {
@@ -680,6 +703,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 		
 		public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
+			if(persistent)
+				container.activate(SingleFileFetcher.this, 1);
 			// Pass it on; fetcher is assumed to have retried as appropriate already, so this is fatal.
 			SingleFileFetcher.this.onFailure(e, true, sched, container, context);
 		}
@@ -697,6 +722,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		public void onExpectedSize(long size, ObjectContainer container) {
+			if(persistent) {
+				container.activate(SingleFileFetcher.this, 1);
+				container.activate(rcb, 1);
+			}
 			rcb.onExpectedSize(size, container);
 		}
 
@@ -760,7 +789,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Do a thorough, blocking search
 			USKFetcherTag tag = 
 				context.uskManager.getFetcher(usk.copy(-usk.suggestedEdition), ctx, false, requester.persistent(),
-						new MyUSKFetcherCallback(requester, cb, clientMetadata, usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, returnBucket), container, context);
+						new MyUSKFetcherCallback(requester, cb, clientMetadata, usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, returnBucket, requester.persistent()), container, context);
 			if(isEssential)
 				requester.addMustSucceedBlocks(1, container);
 			return tag;
@@ -781,8 +810,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		final boolean dontTellClientGet;
 		final long token;
 		final Bucket returnBucket;
+		final boolean persistent;
 		
-		public MyUSKFetcherCallback(ClientRequester requester, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetchContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, Bucket returnBucket) {
+		public MyUSKFetcherCallback(ClientRequester requester, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, LinkedList metaStrings, FetchContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, Bucket returnBucket, boolean persistent) {
 			this.parent = requester;
 			this.cb = cb;
 			this.clientMetadata = clientMetadata;
@@ -795,9 +825,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			this.dontTellClientGet = dontTellClientGet;
 			this.token = l;
 			this.returnBucket = returnBucket;
+			this.persistent = persistent;
 		}
 
 		public void onFoundEdition(long l, USK newUSK, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data) {
+			if(persistent)
+				container.activate(this, 2);
 			ClientSSK key = usk.getSSK(l);
 			try {
 				if(l == usk.suggestedEdition) {
@@ -813,10 +846,14 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		public void onFailure(ObjectContainer container, ClientContext context) {
+			if(persistent)
+				container.activate(this, 2);
 			cb.onFailure(new FetchException(FetchException.DATA_NOT_FOUND, "No USK found"), null, container, context);
 		}
 
 		public void onCancelled(ObjectContainer container, ClientContext context) {
+			if(persistent)
+				container.activate(this, 2);
 			cb.onFailure(new FetchException(FetchException.CANCELLED, (String)null), null, container, context);
 		}
 
