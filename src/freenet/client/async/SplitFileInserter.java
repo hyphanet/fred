@@ -241,6 +241,7 @@ public class SplitFileInserter implements ClientPutState {
 	}
 
 	public void encodedSegment(SplitFileInserterSegment segment, ObjectContainer container, ClientContext context) {
+		container.activate(this, 1);
 		if(logMINOR) Logger.minor(this, "Encoded segment "+segment.segNo+" of "+this);
 		boolean ret = false;
 		boolean encode;
@@ -261,6 +262,7 @@ public class SplitFileInserter implements ClientPutState {
 	}
 	
 	public void segmentHasURIs(SplitFileInserterSegment segment, ObjectContainer container, ClientContext context) {
+		container.activate(this, 1);
 		if(logMINOR) Logger.minor(this, "Segment has URIs: "+segment);
 		synchronized(this) {
 			if(haveSentMetadata) {
@@ -280,6 +282,7 @@ public class SplitFileInserter implements ClientPutState {
 	}
 	
 	private void encodeMetadata(ObjectContainer container, ClientContext context) {
+		container.activate(this, 1);
 		boolean missingURIs;
 		Metadata m = null;
 		synchronized(this) {
@@ -362,6 +365,7 @@ public class SplitFileInserter implements ClientPutState {
 	}
 
 	public void segmentFinished(SplitFileInserterSegment segment, ObjectContainer container, ClientContext context) {
+		container.activate(this, 1);
 		if(logMINOR) Logger.minor(this, "Segment finished: "+segment, new Exception("debug"));
 		boolean allGone = true;
 		if(countDataBlocks > 32)
@@ -391,6 +395,7 @@ public class SplitFileInserter implements ClientPutState {
 	}
 	
 	public void segmentFetchable(SplitFileInserterSegment segment, ObjectContainer container) {
+		container.activate(this, 1);
 		if(logMINOR) Logger.minor(this, "Segment fetchable: "+segment);
 		synchronized(this) {
 			if(finished) return;
@@ -407,12 +412,14 @@ public class SplitFileInserter implements ClientPutState {
 	}
 
 	private void onAllFinished(ObjectContainer container, ClientContext context) {
+		container.activate(this, 1);
 		if(logMINOR) Logger.minor(this, "All finished");
 		try {
 			// Finished !!
 			FailureCodeTracker tracker = new FailureCodeTracker(true);
 			boolean allSucceeded = true;
 			for(int i=0;i<segments.length;i++) {
+				container.activate(segments[i], 1);
 				InsertException e = segments[i].getException();
 				if(e == null) continue;
 				if(logMINOR) Logger.minor(this, "Failure on segment "+i+" : "+segments[i]+" : "+e, e);
@@ -434,6 +441,7 @@ public class SplitFileInserter implements ClientPutState {
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
+		container.activate(this, 1);
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
@@ -456,11 +464,13 @@ public class SplitFileInserter implements ClientPutState {
 
 	/** Force the remaining blocks which haven't been encoded so far to be encoded ASAP. */
 	public void forceEncode(ObjectContainer container, ClientContext context) {
+		container.activate(this, 1);
 		Logger.minor(this, "Forcing encode on "+this);
 		synchronized(this) {
 			forceEncode = true;
 		}
 		for(int i=0;i<segments.length;i++) {
+			container.activate(segments[i], 1);
 			segments[i].forceEncode(container, context);
 		}
 	}
