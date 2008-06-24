@@ -108,6 +108,12 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 	}
 	
 	public void objectOnActivate(ObjectContainer container) {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Activating "+super.toString());
+		if(bucket == this) {
+			Logger.error(this, "objectOnActivate on DelayedFreeBucket: wrapping self!!!");
+			return;
+		}
 		// Cascading activation of dependancies
 		container.activate(bucket, 1);
 	}
