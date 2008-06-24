@@ -866,6 +866,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				}
 
 				synchronized (cleanerLock) {
+					// FIXME use seprate lock for rebuild / write config file
 					// cleanerLock.notifyAll();
 					try {
 						cleanerLock.wait(CLEANER_PERIOD);
