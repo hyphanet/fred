@@ -46,6 +46,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	private final long nodeDBHandle;
 	final PersistentCooldownQueue persistentCooldownQueue;
 	private transient ClientRequestScheduler sched;
+	private transient long initTime;
 	
 	/**
 	 * All Key's we are currently fetching. 
@@ -114,10 +115,36 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			keysFetching = null;
 		this.sched = sched;
 		InsertCompressor.load(container, context);
+		this.initTime = System.currentTimeMillis();
+		// We DO NOT want to rerun the query after consuming the initial set...
+		preRegisterMeRunner = new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				long tStart = System.currentTimeMillis();
+				registerMeSet = container.query(new Predicate() {
+					public boolean match(RegisterMe reg) {
+						if(reg.core != ClientRequestSchedulerCore.this) return false;
+						if(reg.addedTime > initTime) return false;
+						return true;
+					}
+				});
+				long tEnd = System.currentTimeMillis();
+				if(logMINOR)
+					Logger.minor(this, "RegisterMe query took "+(tEnd-tStart));
+//				if(logMINOR)
+//					Logger.minor(this, "RegisterMe query returned: "+registerMeSet.size());
+				context.jobRunner.queue(registerMeRunner, NativeThread.NORM_PRIORITY, true);
+			}
+			
+		};
+		registerMeRunner = new RegisterMeRunner();
+
 	}
 	
+	private transient DBJob preRegisterMeRunner;
+	
 	void start(DBJobRunner runner) {
-		runner.queue(registerMeRunner, NativeThread.NORM_PRIORITY, true);
+		runner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);
 	}
 	
 	void fillStarterQueue() {
@@ -429,20 +456,14 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		return container;
 	}
 
-	private final RegisterMeRunner registerMeRunner = new RegisterMeRunner();
+	private transient ObjectSet registerMeSet;
+	
+	private transient RegisterMeRunner registerMeRunner;
 	
 	class RegisterMeRunner implements DBJob {
 
 		public void run(ObjectContainer container, ClientContext context) {
-			ObjectSet result = container.query(new Predicate() {
-				public boolean match(RegisterMe reg) {
-					if(reg.core != ClientRequestSchedulerCore.this) return false;
-					return true;
-				}
-			});
-			// Don't sort it. It has to activate everything before sorting it!
-			// FIXME an index may improve things
-			//, new Comparator() {
+//			, new Comparator() {
 //				public int compare(Object arg0, Object arg1) {
 //					RegisterMe reg0 = (RegisterMe) arg0;
 //					RegisterMe reg1 = (RegisterMe) arg1;
@@ -457,11 +478,16 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 //					return 0;
 //				}
 //			});
-			for(int i=0;result.hasNext() && i < 5; i++) {
-				RegisterMe reg = (RegisterMe) result.next();
+			for(int i=0;registerMeSet.hasNext() && i < 5; i++) {
+				long startNext = System.currentTimeMillis();
+				RegisterMe reg = (RegisterMe) registerMeSet.next();
+				long endNext = System.currentTimeMillis();
+				if(logMINOR)
+					Logger.minor(this, "RegisterMe: next() took "+(endNext-startNext));
 				if(logMINOR)
 					Logger.minor(this, "Running RegisterMe for "+reg.getter+" : "+reg.addedTime+" : "+reg.priority);
 				container.delete(reg);
+				container.activate(reg.getter, 2);
 				// Don't need to activate, fields should exist? FIXME
 				try {
 					sched.register(reg.getter, true, reg);
@@ -471,8 +497,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					reg.getter.internalError(null, t, sched, container, context);
 				}
 			}
-			if(result.hasNext())
+			if(registerMeSet.hasNext())
 				context.jobRunner.queue(registerMeRunner, NativeThread.NORM_PRIORITY, true);
+			else
+				registerMeSet = null;
 		}
 		
 	}
@@ -515,19 +543,5 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		return new Db4oSet(container, 1);
 	}
 
-}
-
-class RegisterMe {
-	final SendableRequest getter;
-	final ClientRequestSchedulerCore core;
-	final short priority;
-	final long addedTime;
-	
-	RegisterMe(SendableRequest getter, ClientRequestSchedulerCore core) {
-		this.getter = getter;
-		this.core = core;
-		this.addedTime = System.currentTimeMillis();
-		this.priority = getter.getPriorityClass();
-	}
 }
 
