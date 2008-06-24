@@ -48,6 +48,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		this.token = token;
 		pollingPriorityNormal = callback.getPollingPriorityNormal();
 		pollingPriorityProgress = callback.getPollingPriorityProgress();
+		priority = pollingPriorityNormal;
 	}
 	
 	/**
