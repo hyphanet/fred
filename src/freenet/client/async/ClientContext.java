@@ -25,22 +25,22 @@ import freenet.support.io.NativeThread;
  */
 public class ClientContext {
 	
-	public final FECQueue fecQueue;
-	private ClientRequestScheduler sskFetchScheduler;
-	private ClientRequestScheduler chkFetchScheduler;
-	private ClientRequestScheduler sskInsertScheduler;
-	private ClientRequestScheduler chkInsertScheduler;
-	public final DBJobRunner jobRunner;
-	public final Executor mainExecutor;
-	public final long nodeDBHandle;
-	public final BackgroundBlockEncoder backgroundBlockEncoder;
-	public final RandomSource random;
-	public final ArchiveManager archiveManager;
-	public final BucketFactory persistentBucketFactory;
-	public final BucketFactory tempBucketFactory;
-	public final HealingQueue healingQueue;
-	public final USKManager uskManager;
-	public final Random fastWeakRandom;
+	public transient final FECQueue fecQueue;
+	private transient ClientRequestScheduler sskFetchScheduler;
+	private transient ClientRequestScheduler chkFetchScheduler;
+	private transient ClientRequestScheduler sskInsertScheduler;
+	private transient ClientRequestScheduler chkInsertScheduler;
+	public transient final DBJobRunner jobRunner;
+	public transient final Executor mainExecutor;
+	public transient final long nodeDBHandle;
+	public transient final BackgroundBlockEncoder backgroundBlockEncoder;
+	public transient final RandomSource random;
+	public transient final ArchiveManager archiveManager;
+	public transient final BucketFactory persistentBucketFactory;
+	public transient final BucketFactory tempBucketFactory;
+	public transient final HealingQueue healingQueue;
+	public transient final USKManager uskManager;
+	public transient final Random fastWeakRandom;
 
 	public ClientContext(NodeClientCore core) {
 		this.fecQueue = core.fecQueue;
