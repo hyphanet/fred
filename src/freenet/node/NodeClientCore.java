@@ -125,14 +125,14 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 	 * - Deactivation is simpler.
 	 * Note that the priorities are thread priorities, not request priorities.
 	 */
-	public final PrioritizedSerialExecutor clientDatabaseExecutor;
+	public transient final PrioritizedSerialExecutor clientDatabaseExecutor;
 	/**
 	 * Whenever a new request is added, we have to check the datastore. We funnel all such access
 	 * through this thread. Note that the priorities are request priorities, not thread priorities.
 	 */
-	public final PrioritizedSerialExecutor datastoreCheckerExecutor;
+	public transient final PrioritizedSerialExecutor datastoreCheckerExecutor;
 	
-	public final ClientContext clientContext;
+	public transient final ClientContext clientContext;
 	
 	public static int maxBackgroundUSKFetchers;
 	
@@ -1188,6 +1188,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		
 		DBJobWrapper(DBJob job) {
 			this.job = job;
+			if(job == null) throw new NullPointerException();
 		}
 		
 		final DBJob job;
@@ -1195,6 +1196,8 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		public void run() {
 			
 			try {
+				if(job == null) throw new NullPointerException();
+				if(node == null) throw new NullPointerException();
 				job.run(node.db, clientContext);
 				node.db.commit();
 				LinkedList toFree = persistentTempBucketFactory.grabBucketsToFree();
