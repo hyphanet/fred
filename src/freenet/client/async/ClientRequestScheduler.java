@@ -292,13 +292,17 @@ public class ClientRequestScheduler implements RequestScheduler {
 					final ClientKeyBlock b = block;
 					final Object t = tok;
 					final SendableGet g = getter;
-					jobRunner.queue(new DBJob() {
-
-						public void run(ObjectContainer container, ClientContext context) {
-							g.onSuccess(b, true, t, ClientRequestScheduler.this, container, context);
-						}
-						
-					}, NativeThread.NORM_PRIORITY, false);
+					if(persistent) {
+						jobRunner.queue(new DBJob() {
+							
+							public void run(ObjectContainer container, ClientContext context) {
+								g.onSuccess(b, true, t, ClientRequestScheduler.this, container, context);
+							}
+							
+						}, NativeThread.NORM_PRIORITY, false);
+					} else {
+						g.onSuccess(b, true, t, ClientRequestScheduler.this, null, clientContext);
+					}
 				}
 				// Even with working thread priorities, we still get very high latency accessing
 				// the datastore when background threads are doing it in parallel.
