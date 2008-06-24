@@ -20,13 +20,10 @@ import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
-import freenet.node.PrioRunnable;
 import freenet.node.RequestClient;
-import freenet.node.RequestStarter;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
-import freenet.support.io.NativeThread;
 
 /**
  * A high level data request.
@@ -111,6 +108,8 @@ public class ClientGetter extends BaseClientGetter {
 						BinaryBlob.writeBinaryBlobHeader(binaryBlobStream);
 					} catch (IOException e) {
 						onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to open binary blob bucket", e), null, container, context);
+						if(persistent())
+							container.set(this);
 						return false;
 					}
 				}
@@ -120,6 +119,8 @@ public class ClientGetter extends BaseClientGetter {
 		} catch (MalformedURLException e) {
 			throw new FetchException(FetchException.INVALID_URI, e);
 		}
+		if(persistent())
+			container.set(this);
 		return true;
 	}
 
@@ -154,6 +155,8 @@ public class ClientGetter extends BaseClientGetter {
 				Logger.minor(this, "client.async returned data in returnBucket");
 		}
 		FetchResult res = result;
+		if(persistent())
+			container.set(this);
 		clientCallback.onSuccess(res, ClientGetter.this, container);
 	}
 
@@ -192,6 +195,8 @@ public class ClientGetter extends BaseClientGetter {
 				e = new FetchException(e, FetchException.ALL_DATA_NOT_FOUND);
 			Logger.minor(this, "onFailure("+e+", "+state+") on "+this+" for "+uri, e);
 			final FetchException e1 = e;
+			if(persistent())
+				container.set(this);
 			clientCallback.onFailure(e1, ClientGetter.this, container);
 			return;
 		}
@@ -220,6 +225,8 @@ public class ClientGetter extends BaseClientGetter {
 	}
 
 	public void notifyClients(ObjectContainer container, ClientContext context) {
+		if(persistent())
+			container.activate(ctx, 1);
 		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized), container, context);
 	}
 
@@ -257,7 +264,13 @@ public class ClientGetter extends BaseClientGetter {
 		return super.toString()+ ':' +uri;
 	}
 	
+	// FIXME not persisting binary blob stuff - any stream won't survive shutdown...
+	
 	void addKeyToBinaryBlob(ClientKeyBlock block, ObjectContainer container, ClientContext context) {
+		if(persistent()) {
+			container.activate(binaryBlobStream, 1);
+			container.activate(binaryBlobKeysAddedAlready, 1);
+		}
 		if(binaryBlobKeysAddedAlready == null) return;
 		if(Logger.shouldLog(Logger.MINOR, this)) 
 			Logger.minor(this, "Adding key "+block.getClientKey().getURI()+" to "+this, new Exception("debug"));
@@ -283,6 +296,10 @@ public class ClientGetter extends BaseClientGetter {
 	 * called onFailure() with an appropriate error.
 	 */
 	private boolean closeBinaryBlobStream(ObjectContainer container, ClientContext context) {
+		if(persistent()) {
+			container.activate(binaryBlobStream, 1);
+			container.activate(binaryBlobKeysAddedAlready, 1);
+		}
 		if(binaryBlobKeysAddedAlready == null) return true;
 		synchronized(binaryBlobKeysAddedAlready) {
 			if(binaryBlobStream == null) return true;
@@ -318,15 +335,21 @@ public class ClientGetter extends BaseClientGetter {
 	public void onExpectedMIME(String mime, ObjectContainer container) {
 		if(finalizedMetadata) return;
 		expectedMIME = mime;
+		if(persistent())
+			container.set(this);
 	}
 
 	public void onExpectedSize(long size, ObjectContainer container) {
 		if(finalizedMetadata) return;
 		expectedSize = size;
+		if(persistent())
+			container.set(this);
 	}
 
 	public void onFinalizedMetadata(ObjectContainer container) {
 		finalizedMetadata = true;
+		if(persistent())
+			container.set(this);
 	}
 	
 	public boolean finalizedMetadata() {
