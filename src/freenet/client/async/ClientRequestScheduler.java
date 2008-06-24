@@ -176,8 +176,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 				schedCore.queueRegister(getter, databaseExecutor, selectorContainer);
 				final Object[] keyTokens = getter.sendableKeys(selectorContainer);
 				final ClientKey[] keys = new ClientKey[keyTokens.length];
-				for(int i=0;i<keyTokens.length;i++)
+				for(int i=0;i<keyTokens.length;i++) {
 					keys[i] = getter.getKey(keyTokens[i], selectorContainer);
+					selectorContainer.activate(keys[i], 5);
+				}
 				datastoreCheckerExecutor.execute(new Runnable() {
 
 					public void run() {
@@ -193,8 +195,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 						schedCore.queueRegister(getter, databaseExecutor, container);
 						final Object[] keyTokens = getter.sendableKeys(container);
 						final ClientKey[] keys = new ClientKey[keyTokens.length];
-						for(int i=0;i<keyTokens.length;i++)
-							keys[i] = getter.getKey(keyTokens[i], container);
+						for(int i=0;i<keyTokens.length;i++) {
+							keys[i] = getter.getKey(keyTokens[i], selectorContainer);
+							container.activate(keys[i], 5);
+						}
 						datastoreCheckerExecutor.execute(new Runnable() {
 
 							public void run() {
