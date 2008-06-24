@@ -235,6 +235,10 @@ abstract class ClientRequestSchedulerBase {
 	}
 	
 	void innerRegister(SendableRequest req, RandomSource random, ObjectContainer container) {
+		if(req.getPriorityClass() == 0) {
+			Logger.normal(this, "Something wierd...");
+			Logger.normal(this, "Priority "+req.getPriorityClass());
+		}
 		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+req.getPriorityClass()+" retry "+req.getRetryCount()+" for "+req.getClientRequest());
 		int retryCount = req.getRetryCount();
 		addToGrabArray(req.getPriorityClass(), retryCount, fixRetryCount(retryCount), req.getClient(), req.getClientRequest(), req, random, container);
