@@ -38,6 +38,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 
 	final int retryCount;
 	final SplitFileFetcherSegment segment;
+	final ClientRequester parent;
 	/**
 	 * The block numbers (as Integer's) of the blocks we are currently trying to fetch.
 	 * Does not include blocks on the cooldown queue, this is simply used to make 
@@ -53,6 +54,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		super(segment.parent);
 		this.segment = segment;
 		this.retryCount = retryCount;
+		this.parent = segment.parent;
 		ctx = segment.blockFetchContext;
 		blockNums = new Vector();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -334,15 +336,15 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public RequestClient getClient() {
-		return segment.parent.getClient();
+		return parent.getClient();
 	}
 
 	public ClientRequester getClientRequest() {
-		return segment.parent;
+		return parent;
 	}
 
 	public short getPriorityClass() {
-		return segment.parent.priorityClass;
+		return parent.priorityClass;
 	}
 
 	public int getRetryCount() {
