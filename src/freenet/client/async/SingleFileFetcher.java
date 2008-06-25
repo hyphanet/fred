@@ -680,7 +680,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
-			container.activate(SingleFileFetcher.this, 1);
+			if(persistent)
+				container.activate(SingleFileFetcher.this, 1);
 			// Force fatal as the fetcher is presumed to have made a reasonable effort.
 			SingleFileFetcher.this.onFailure(e, true, sched, container, context);
 		}
