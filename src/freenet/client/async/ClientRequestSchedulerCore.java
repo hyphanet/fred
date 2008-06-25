@@ -504,7 +504,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 //					return 0;
 //				}
 //			});
-			for(int i=0;i < 5; i++) {
+			for(int i=0;i < 10; i++) {
 				try {
 					if(!registerMeSet.hasNext()) break;
 				} catch (NullPointerException t) {
