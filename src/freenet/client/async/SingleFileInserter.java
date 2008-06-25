@@ -53,6 +53,7 @@ class SingleFileInserter implements ClientPutState {
 	private final String targetFilename;
 	private final boolean earlyEncode;
 	private final boolean persistent;
+	private boolean started;
 
 	/**
 	 * @param parent
@@ -113,6 +114,10 @@ class SingleFileInserter implements ClientPutState {
 	}
 
 	void onCompressed(CompressionOutput output, ObjectContainer container, ClientContext context) {
+		if(started) {
+			Logger.error(this, "Already started, not starting again", new Exception("error"));
+			return;
+		}
 		try {
 			onCompressedInner(output, container, context);
 		} catch (InsertException e) {
@@ -132,6 +137,9 @@ class SingleFileInserter implements ClientPutState {
 	}
 	
 	void onCompressedInner(CompressionOutput output, ObjectContainer container, ClientContext context) throws InsertException {
+		if(container != null) {
+			container.activate(block, 2);
+		}
 		long origSize = block.getData().size();
 		Bucket bestCompressedData = output.data;
 		Bucket data = bestCompressedData;
@@ -183,6 +191,9 @@ class SingleFileInserter implements ClientPutState {
 				cb.onTransition(this, bi, container);
 				bi.schedule(container, context);
 				cb.onBlockSetFinished(this, container, context);
+				started = true;
+				if(persistent)
+					container.set(this);
 				return;
 			}
 		}
@@ -223,6 +234,9 @@ class SingleFileInserter implements ClientPutState {
 				metaPutter.schedule(container, context);
 				cb.onBlockSetFinished(this, container, context);
 			}
+			started = true;
+			if(persistent)
+				container.set(this);
 			return;
 		}
 		// Otherwise the file is too big to fit into one block
@@ -231,18 +245,21 @@ class SingleFileInserter implements ClientPutState {
 		// insert it. Then when the splitinserter has finished, and the
 		// metadata insert has finished too, tell the master callback.
 		if(reportMetadataOnly) {
-			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData, container, context);
+			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData, persistent, container, context);
 			cb.onTransition(this, sfi, container);
 			sfi.start(container, context);
 			if(earlyEncode) sfi.forceEncode(container, context);
 		} else {
 			SplitHandler sh = new SplitHandler();
-			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData, container, context);
+			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData, persistent, container, context);
 			sh.sfi = sfi;
 			cb.onTransition(this, sh, container);
 			sfi.start(container, context);
 			if(earlyEncode) sfi.forceEncode(container, context);
 		}
+		started = true;
+		if(persistent)
+			container.set(this);
 	}
 	
 	private void tryCompress(ObjectContainer container, ClientContext context) throws InsertException {
@@ -707,10 +724,14 @@ class SingleFileInserter implements ClientPutState {
 		return null;
 	}
 
-	public void onStartCompression(int i, ObjectContainer container, ClientContext context) {
-		if(persistent)
+	public void onStartCompression(final int i, ObjectContainer container, ClientContext context) {
+		if(persistent) {
 			container.activate(ctx, 2);
-		if(parent == cb)
+		}
+		if(parent == cb) {
+			if(ctx == null) throw new NullPointerException();
+			if(ctx.eventProducer == null) throw new NullPointerException();
 			ctx.eventProducer.produceEvent(new StartedCompressionEvent(i), container, context);
+		}
 	}
 }

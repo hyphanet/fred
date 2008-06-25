@@ -397,6 +397,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 	}
 
 	public void start(ObjectContainer container, ClientContext context) throws InsertException {
+		if(parent.persistent)
+			container.activate(parent.parent, 1);
 		if (logMINOR)
 			Logger.minor(this, "Starting segment " + segNo + " of " + parent
 					+ " (" + parent.dataLength + "): " + this + " ( finished="
@@ -429,7 +431,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 				// Encode blocks
 				synchronized(this) {
 					if(!encoded){
-						splitfileAlgo.addToQueue(new FECJob(splitfileAlgo, context.fecQueue, dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory, this, false, parent.parent.getPriorityClass(), parent.parent.persistent()), context.fecQueue, container);
+						splitfileAlgo.addToQueue(new FECJob(splitfileAlgo, context.fecQueue, dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory, this, false, parent.parent.getPriorityClass(), parent.persistent), context.fecQueue, container);
 					}
 				}				
 				fin = false;

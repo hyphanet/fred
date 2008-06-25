@@ -47,6 +47,7 @@ public class SplitFileInserter implements ClientPutState {
 	final boolean insertAsArchiveManifest;
 	private boolean forceEncode;
 	private final long decompressedLength;
+	final boolean persistent;
 
 	public SimpleFieldSet getProgressFieldset() {
 		SimpleFieldSet fs = new SimpleFieldSet(false);
@@ -69,7 +70,7 @@ public class SplitFileInserter implements ClientPutState {
 		return fs;
 	}
 
-	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, Compressor bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, boolean insertAsArchiveManifest, boolean freeData, ObjectContainer container, ClientContext context) throws InsertException {
+	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, Compressor bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, boolean insertAsArchiveManifest, boolean freeData, boolean persistent, ObjectContainer container, ClientContext context) throws InsertException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.parent = put;
 		this.insertAsArchiveManifest = insertAsArchiveManifest;
@@ -98,6 +99,11 @@ public class SplitFileInserter implements ClientPutState {
 		segmentSize = ctx.splitfileSegmentDataBlocks;
 		checkSegmentSize = splitfileAlgorithm == Metadata.SPLITFILE_NONREDUNDANT ? 0 : ctx.splitfileSegmentCheckBlocks;
 		
+		this.persistent = persistent;
+		if(persistent) {
+			container.activate(parent, 1);
+		}
+		
 		// Create segments
 		segments = splitIntoSegments(segmentSize, dataBuckets, context.mainExecutor, container, context);
 		int count = 0;
@@ -119,6 +125,7 @@ public class SplitFileInserter implements ClientPutState {
 		this.getCHKOnly = getCHKOnly;
 		this.cb = cb;
 		this.ctx = ctx;
+		this.persistent = parent.persistent();
 		// Don't read finished, wait for the segmentFinished()'s.
 		String length = fs.get("DataLength");
 		if(length == null) throw new ResumeException("No DataLength");
@@ -241,7 +248,9 @@ public class SplitFileInserter implements ClientPutState {
 	}
 
 	public void encodedSegment(SplitFileInserterSegment segment, ObjectContainer container, ClientContext context) {
-		container.activate(this, 1);
+		if(persistent) {
+			container.activate(this, 1);
+		}
 		if(logMINOR) Logger.minor(this, "Encoded segment "+segment.segNo+" of "+this);
 		boolean ret = false;
 		boolean encode;
