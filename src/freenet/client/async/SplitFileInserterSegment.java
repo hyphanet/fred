@@ -550,6 +550,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 	}
 
 	private void finish(ObjectContainer container, ClientContext context) {
+		if(persistent)
+			container.activate(errors, 5);
 		synchronized (this) {
 			if (finished)
 				return;
