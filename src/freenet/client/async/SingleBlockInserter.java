@@ -286,7 +286,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 		synchronized(this) {
 			if(finished) {
-				Logger.error(this, "Block already completed: "+this);
+				// Normal with persistence.
+				Logger.normal(this, "Block already completed: "+this);
 				return;
 			}
 			finished = true;
