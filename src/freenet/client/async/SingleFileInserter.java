@@ -353,6 +353,9 @@ class SingleFileInserter implements ClientPutState {
 		 */
 		void start(SimpleFieldSet fs, boolean forceMetadata, ObjectContainer container, ClientContext context) throws ResumeException, InsertException {
 			
+			if(persistent)
+				container.activate(parent, 1);
+			
 			boolean meta = metadata || forceMetadata;
 			
 			// Don't include the booleans; wait for the callback.
@@ -406,6 +409,9 @@ class SingleFileInserter implements ClientPutState {
 		}
 		
 		public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
+			if(persistent) {
+				container.activate(block, 2);
+			}
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "onSuccess("+state+") for "+this);
 			boolean lateStart = false;
@@ -446,6 +452,9 @@ class SingleFileInserter implements ClientPutState {
 		}
 
 		public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
+			if(persistent) {
+				container.activate(block, 1);
+			}
 			synchronized(this) {
 				if(finished){
 					if(freeData)
@@ -457,6 +466,10 @@ class SingleFileInserter implements ClientPutState {
 		}
 
 		public void onMetadata(Metadata meta, ClientPutState state, ObjectContainer container, ClientContext context) {
+			if(persistent) {
+				container.activate(cb, 1);
+				container.activate(block, 2);
+			}
 			InsertException e = null;
 			synchronized(this) {
 				if(finished) return;
@@ -550,6 +563,8 @@ class SingleFileInserter implements ClientPutState {
 			if(logMINOR) Logger.minor(this, "Failing: "+e, e);
 			ClientPutState oldSFI = null;
 			ClientPutState oldMetadataPutter = null;
+			if(persistent)
+				container.activate(block, 2);
 			synchronized(this) {
 				if(finished){
 					if(freeData)
@@ -602,8 +617,11 @@ class SingleFileInserter implements ClientPutState {
 			if(oldMetadataPutter != null)
 				oldMetadataPutter.cancel(container, context);
 			
-			if(freeData)
+			if(freeData) {
+				if(persistent)
+					container.activate(block, 2);
 				block.free(container);
+			}
 		}
 
 		public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
@@ -692,7 +710,7 @@ class SingleFileInserter implements ClientPutState {
 				ClientPutState splitInserter;
 				synchronized(this) {
 					if(metaInsertStarted) return;
-					if(persistent)
+					if(persistent && metadataPutter != null)
 						container.activate(metadataPutter, 1);
 					putter = metadataPutter;
 					if(putter == null) {
