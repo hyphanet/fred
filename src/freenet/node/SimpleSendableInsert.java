@@ -100,11 +100,11 @@ public class SimpleSendableInsert extends SendableInsert {
 		return finished;
 	}
 	
-	public boolean isEmpty() {
+	public boolean isEmpty(ObjectContainer container) {
 		return finished;
 	}
 
-	public boolean canRemove() {
+	public boolean canRemove(ObjectContainer container) {
 		return true;
 	}
 
