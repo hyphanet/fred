@@ -736,6 +736,11 @@ class SingleFileInserter implements ClientPutState {
 			}
 		}
 		
+		public void objectOnActivate(ObjectContainer container) {
+			// Chain to containing class, since we use its members extensively.
+			container.activate(SingleFileInserter.this, 1);
+		}
+		
 	}
 
 	public BaseClientPutter getParent() {
