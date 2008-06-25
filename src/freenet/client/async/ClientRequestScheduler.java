@@ -444,6 +444,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 			while(true) {
 				req = removeFirst(container);
 				if(req == null) return;
+				container.activate(req.key, 5);
+				container.activate(req.ckey, 5);
+				container.activate(req.request, 1);
+				container.activate(req.request.getClientRequest(), 1);
 				synchronized(starterQueue) {
 					if(req != null) {
 						starterQueue.add(req);
