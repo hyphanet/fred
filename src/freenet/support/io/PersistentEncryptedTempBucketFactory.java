@@ -5,6 +5,10 @@ package freenet.support.io;
 
 import java.io.IOException;
 
+import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
+import com.db4o.query.Predicate;
+
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -19,5 +23,18 @@ public class PersistentEncryptedTempBucketFactory implements BucketFactory {
 
 	public Bucket makeBucket(long size) throws IOException {
 		return bf.makeEncryptedBucket();
+	}
+
+	public static PersistentEncryptedTempBucketFactory load(final PersistentTempBucketFactory persistentTempBucketFactory, ObjectContainer container) {
+		ObjectSet results = container.query(new Predicate() {
+			public boolean match(PersistentEncryptedTempBucketFactory bf) {
+				return bf.bf == persistentTempBucketFactory;
+			}
+		});
+		if(results.hasNext()) {
+			return (PersistentEncryptedTempBucketFactory) results.next();
+		} else {
+			return new PersistentEncryptedTempBucketFactory(persistentTempBucketFactory);
+		}
 	}
 }

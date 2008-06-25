@@ -219,7 +219,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 			String prefix = "freenet-temp-";
 			persistentTempBucketFactory = PersistentTempBucketFactory.load(dir, prefix, random, node.fastWeakRandom, container, node.nodeDBHandle);
 			persistentTempBucketFactory.init(dir, prefix, random, node.fastWeakRandom);
-			persistentEncryptedTempBucketFactory = new PersistentEncryptedTempBucketFactory(persistentTempBucketFactory);
+			persistentEncryptedTempBucketFactory = PersistentEncryptedTempBucketFactory.load(persistentTempBucketFactory, container);
 		} catch (IOException e2) {
 			String msg = "Could not find or create persistent temporary directory";
 			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
