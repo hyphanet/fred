@@ -97,6 +97,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable {
     public synchronized double toNormalizedDouble() {
         if(cachedNormalizedDouble > 0) return cachedNormalizedDouble;
         MessageDigest md = SHA256.getMessageDigest();
+        if(routingKey == null) throw new NullPointerException();
         md.update(routingKey);
         int TYPE = getType();
         md.update((byte)(TYPE >> 8));
