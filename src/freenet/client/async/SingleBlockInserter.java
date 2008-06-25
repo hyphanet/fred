@@ -114,8 +114,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	protected ClientKeyBlock encode(ObjectContainer container, ClientContext context) throws InsertException {
-		if(persistent)
+		if(persistent) {
 			container.activate(sourceData, 1);
+			container.activate(cb, 1);
+		}
 		ClientKeyBlock block;
 		boolean shouldSend;
 		synchronized(this) {
@@ -212,6 +214,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			parent.fatallyFailedBlock(container, context);
 		else
 			parent.failedBlock(container, context);
+		if(persistent)
+			container.activate(cb, 1);
 		cb.onFailure(e, this, container, context);
 	}
 
@@ -224,9 +228,13 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				container.set(this);
 			return encode(container, context);				
 		} catch (InsertException e) {
+			if(persistent)
+				container.activate(cb, 1);
 			cb.onFailure(e, this, container, context);
 			return null;
 		} catch (Throwable t) {
+			if(persistent)
+				container.activate(cb, 1);
 			Logger.error(this, "Caught "+t, t);
 			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), this, container, context);
 			return null;
@@ -242,6 +250,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			}
 		}
 		if(getCHKOnly) {
+			if(persistent)
+				container.activate(cb, 1);
 			ClientKeyBlock block = encode(container, context);
 			cb.onEncode(block.getClientKey(), this, container, context);
 			parent.completedBlock(false, container, context);
@@ -281,6 +291,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 
 	public void onSuccess(Object keyNum, ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Succeeded ("+this+"): "+token);
+		if(persistent)
+			container.activate(parent, 1);
 		if(parent.isCancelled()) {
 			fail(new InsertException(InsertException.CANCELLED), container, context);
 			return;
@@ -293,8 +305,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			}
 			finished = true;
 		}
-		if(persistent)
+		if(persistent) {
+			container.activate(cb, 1);
 			container.set(this);
+		}
 		parent.completedBlock(false, container, context);
 		cb.onSuccess(this, container, context);
 	}
@@ -308,8 +322,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(finished) return;
 			finished = true;
 		}
-		if(persistent)
+		if(persistent) {
 			container.set(this);
+			container.activate(cb, 1);
+		}
 		super.unregister(false, container);
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}
