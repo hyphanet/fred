@@ -124,7 +124,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				req = getRequest(logMINOR);
 			}
 			if(req != null) {
-				if(logMINOR) Logger.minor(this, "Running "+req);
+				if(logMINOR) Logger.minor(this, "Running "+req+" priority "+req.request.getPriorityClass());
 				// Wait
 				long delay = throttle.getDelay();
 				if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
