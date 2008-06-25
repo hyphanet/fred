@@ -51,6 +51,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	final Vector subSegments;
 	final int minFetched;
 	final SplitFileFetcher parentFetcher;
+	final ClientRequester parent;
 	final ArchiveContext archiveContext;
 	final FetchContext fetchContext;
 	final long maxBlockLength;
@@ -74,13 +75,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 	
 	private FECCodec codec;
 	
-	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext fetchContext, long maxTempLength, int recursionLevel) throws MetadataParseException, FetchException {
+	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext fetchContext, long maxTempLength, int recursionLevel, ClientRequester requester) throws MetadataParseException, FetchException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.persistent = fetcher.persistent;
 		this.parentFetcher = fetcher;
 		this.errors = new FailureCodeTracker(false);
 		this.archiveContext = archiveContext;
 		this.splitfileType = splitfileType;
+		this.parent = requester;
 		dataKeys = splitfileDataKeys;
 		checkKeys = splitfileCheckKeys;
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
