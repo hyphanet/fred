@@ -211,8 +211,18 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		}
 	}
 
-	public void receive(ClientEvent ce, ObjectContainer container, ClientContext context) {
+	public void receive(final ClientEvent ce, ObjectContainer container, ClientContext context) {
 		if(finished) return;
+		if(persistenceType == PERSIST_FOREVER && container == null) {
+			context.jobRunner.queue(new DBJob() {
+
+				public void run(ObjectContainer container, ClientContext context) {
+					receive(ce, container, context);
+				}
+				
+			}, NativeThread.NORM_PRIORITY, false);
+			return;
+		}
 		if(ce instanceof SplitfileProgressEvent) {
 			if((verbosity & VERBOSITY_SPLITFILE_PROGRESS) == VERBOSITY_SPLITFILE_PROGRESS) {
 				SimpleProgressMessage progress = 
@@ -314,6 +324,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		if(persistenceType == PERSIST_CONNECTION) {
 			Logger.error(this, "WTF? persistenceType="+persistenceType, new Exception("error"));
 			return;
+		}
+		if(persistenceType == PERSIST_FOREVER) {
+			container.activate(this, 2);
 		}
 		if(includePersistentRequest) {
 			FCPMessage msg = persistentTagMessage();
