@@ -13,13 +13,13 @@ public class RegisterMeSortKey implements Comparable {
 	public int compareTo(Object arg0) {
 		RegisterMeSortKey key = (RegisterMeSortKey) arg0;
 		if(key.priority < priority)
-			return -1;
+			return 1;
 		if(key.priority > priority)
-			return 1;
-		if(key.addedTime < addedTime)
 			return -1;
-		if(key.addedTime > addedTime)
+		if(key.addedTime < addedTime)
 			return 1;
+		if(key.addedTime > addedTime)
+			return -1;
 		return 0;
 	}
 	
