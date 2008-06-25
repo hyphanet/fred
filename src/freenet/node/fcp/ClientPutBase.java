@@ -189,6 +189,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 
 		freeData(container);
 		if(persistenceType == PERSIST_FOREVER) {
+			container.activate(ctx, 2);
 			ctx.removeFrom(container);
 			PutFailedMessage pfm;
 			FreenetURI uri;
