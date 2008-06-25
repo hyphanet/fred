@@ -150,6 +150,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context) {
+		if(persistent)
+			container.activate(errors, 1);
 		if(parent.isCancelled()) {
 			fail(new InsertException(InsertException.CANCELLED), container, context);
 			return;
