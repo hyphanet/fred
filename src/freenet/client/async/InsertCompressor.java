@@ -95,7 +95,7 @@ class InsertCompressor {
 							inserter.onStartCompression(phase, container, context);
 						}
 						
-					}, NativeThread.NORM_PRIORITY, false);
+					}, NativeThread.NORM_PRIORITY+1, false);
 				}
 				
 				Compressor comp = Compressor.getCompressionAlgorithmByDifficulty(i);
@@ -131,7 +131,7 @@ class InsertCompressor {
 						container.delete(InsertCompressor.this);
 					}
 					
-				}, NativeThread.NORM_PRIORITY, false);
+				}, NativeThread.NORM_PRIORITY+1, false);
 			} else {
 				inserter.onCompressed(output, null, context);
 			}
@@ -145,7 +145,7 @@ class InsertCompressor {
 						container.delete(InsertCompressor.this);
 					}
 					
-				}, NativeThread.NORM_PRIORITY, false);
+				}, NativeThread.NORM_PRIORITY+1, false);
 			} else {
 				inserter.cb.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), inserter, null, context);
 			}
@@ -159,7 +159,7 @@ class InsertCompressor {
 						container.delete(InsertCompressor.this);
 					}
 					
-				}, NativeThread.NORM_PRIORITY, false);
+				}, NativeThread.NORM_PRIORITY+1, false);
 			} else {
 				inserter.cb.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), inserter, null, context);
 			}
