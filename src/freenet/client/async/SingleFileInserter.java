@@ -489,6 +489,9 @@ class SingleFileInserter implements ClientPutState {
 			}
 			
 			byte[] metaBytes;
+			if(persistent)
+				// Load keys
+				container.activate(meta, 2);
 			try {
 				metaBytes = meta.writeToByteArray();
 			} catch (MetadataUnresolvedException e1) {
@@ -557,14 +560,21 @@ class SingleFileInserter implements ClientPutState {
 				oldSFI = sfi;
 				oldMetadataPutter = metadataPutter;
 			}
-			if(persistent)
-				container.set(this);
+			if(persistent) {
+				if(oldSFI != null)
+					container.activate(oldSFI, 1);
+				if(oldMetadataPutter != null)
+					container.activate(oldMetadataPutter, 1);
+				container.activate(cb, 1);
+			}
 			if(oldSFI != null)
 				oldSFI.cancel(container, context);
 			if(oldMetadataPutter != null)
 				oldMetadataPutter.cancel(container, context);
 			finished = true;
 			cb.onFailure(e, this, container, context);
+			if(persistent)
+				container.set(this);
 		}
 
 		public BaseClientPutter getParent() {
@@ -669,8 +679,11 @@ class SingleFileInserter implements ClientPutState {
 				}
 			}
 			
-			if(meta)
+			if(meta) {
+				if(persistent)
+					container.activate(cb, 1);
 				cb.onFetchable(this, container);
+			}
 		}
 		
 		private void startMetadata(ObjectContainer container, ClientContext context) {
