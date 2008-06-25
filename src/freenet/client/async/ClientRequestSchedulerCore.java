@@ -164,6 +164,17 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		while(results.hasNext()) {
 			PersistentChosenRequest req = (PersistentChosenRequest) results.next();
 			container.activate(req, 2);
+			container.activate(req.key, 5);
+			container.activate(req.ckey, 5);
+			if(req.request == null) {
+				container.delete(req);
+				Logger.error(this, "Deleting bogus PersistentChosenRequest");
+				continue;
+			}
+			container.activate(req.request, 1);
+			container.activate(req.request.getClientRequest(), 1);
+			if(req.token != null)
+				container.activate(req.token, 5);
 			sched.addToStarterQueue(req);
 			if(!isInsertScheduler) {
 				synchronized(keysFetching) {
@@ -175,7 +186,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
 	
-	private int removeFirstAccordingToPriorities(boolean tryOfferedKeys, int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio){
+	private int removeFirstAccordingToPriorities(boolean tryOfferedKeys, int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, ObjectContainer container){
 		SortedVectorByNumber result = null;
 		
 		short iteration = 0, priority;
@@ -196,7 +207,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				continue; // Don't return because first round may be higher with soft scheduling
 			}
 			if((result != null) && 
-					(!result.isEmpty()) || (tryOfferedKeys && !offeredKeys[priority].isEmpty())) {
+					(!result.isEmpty()) || (tryOfferedKeys && !offeredKeys[priority].isEmpty(container))) {
 				if(logMINOR) Logger.minor(this, "using priority : "+priority);
 				return priority;
 			}
@@ -257,10 +268,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		boolean tryOfferedKeys = offeredKeys != null && random.nextBoolean();
-		int choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys, fuzz, random, offeredKeys, schedTransient, transientOnly, maxPrio);
+		int choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys, fuzz, random, offeredKeys, schedTransient, transientOnly, maxPrio, container);
 		if(choosenPriorityClass == -1 && offeredKeys != null && !tryOfferedKeys) {
 			tryOfferedKeys = true;
-			choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys, fuzz, random, offeredKeys, schedTransient, transientOnly, maxPrio);
+			choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys, fuzz, random, offeredKeys, schedTransient, transientOnly, maxPrio, container);
 		}
 		if(choosenPriorityClass == -1) {
 			if(logMINOR)
@@ -303,6 +314,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			if(permRetryCount == transRetryCount) {
 				// Choose between them.
 				SectoredRandomGrabArrayWithInt permRetryTracker = (SectoredRandomGrabArrayWithInt) perm.getByIndex(permRetryIndex);
+				if(persistent() && permRetryTracker != null)
+					container.activate(permRetryTracker, 1);
 				SectoredRandomGrabArrayWithInt transRetryTracker = (SectoredRandomGrabArrayWithInt) trans.getByIndex(transRetryIndex);
 				int permTrackerSize = permRetryTracker.size();
 				int transTrackerSize = transRetryTracker.size();
@@ -322,6 +335,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				}
 			} else if(permRetryCount < transRetryCount) {
 				chosenTracker = (SectoredRandomGrabArrayWithInt) perm.getByIndex(permRetryIndex);
+				if(persistent() && chosenTracker != null)
+					container.activate(chosenTracker, 1);
 				trackerParent = perm;
 				permRetryIndex++;
 			} else {
@@ -395,7 +410,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			if(logMINOR) Logger.debug(this, "removeFirst() returning "+req+" ("+chosenTracker.getNumber()+", prio "+
 					req.getPriorityClass()+", retries "+req.getRetryCount()+", client "+req.getClient()+", client-req "+req.getClientRequest()+ ')');
 			ClientRequester cr = req.getClientRequest();
-			if(req.canRemove()) {
+			if(req.canRemove(container)) {
 				if(req.persistent())
 					removeFromAllRequestsByClientRequest(req, cr);
 				else
