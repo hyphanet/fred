@@ -22,6 +22,7 @@ public class SemiOrderedShutdownHook extends Thread {
 	}
 	
 	public void run() {
+		System.err.println("Shutting down...");
 		// First run early jobs, all at once, and wait for them to all complete.
 		
 		for(int i=0;i<earlyJobs.size();i++) {
