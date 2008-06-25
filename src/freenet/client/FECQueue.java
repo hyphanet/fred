@@ -194,7 +194,7 @@ public class FECQueue implements OOMHook {
 							}, NativeThread.NORM_PRIORITY+1, false);
 						}
 					} catch (Throwable e) {
-						Logger.error(this, "The callback failed!" + e.getMessage(), e);
+						Logger.error(this, "The callback failed!" + e, e);
 					}
 				}
 			} catch (Throwable t) {
