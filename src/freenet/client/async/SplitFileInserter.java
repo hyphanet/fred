@@ -238,8 +238,11 @@ public class SplitFileInserter implements ClientPutState {
 	}
 	
 	public void start(ObjectContainer container, ClientContext context) throws InsertException {
-		for(int i=0;i<segments.length;i++)
+		for(int i=0;i<segments.length;i++) {
+			if(persistent)
+				container.activate(segments[i], 2);
 			segments[i].start(container, context);
+		}
 		
 		if(countDataBlocks > 32)
 			parent.onMajorProgress();
