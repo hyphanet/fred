@@ -33,6 +33,7 @@ public class FCPPersistentRoot {
 		if(set.hasNext()) {
 			System.err.println("Loaded FCP persistent root.");
 			FCPPersistentRoot root = (FCPPersistentRoot) set.next();
+			container.activate(root, 2);
 			return root;
 		}
 		FCPPersistentRoot root = new FCPPersistentRoot(nodeDBHandle, container);
@@ -49,7 +50,9 @@ public class FCPPersistentRoot {
 			}
 		});
 		if(set.hasNext()) {
-			return (FCPClient) set.next();
+			FCPClient client = (FCPClient) set.next();
+			container.activate(client, 1);
+			return client;
 		}
 		FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_FOREVER, this, container);
 		container.set(client);
