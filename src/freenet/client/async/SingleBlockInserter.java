@@ -132,7 +132,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 		if(shouldSend && !dontSendEncoded)
 			cb.onEncode(block.getClientKey(), this, container, context);
-		if(shouldSend && parent.persistent())
+		if(shouldSend && persistent)
 			container.set(this);
 		return block;
 	}
@@ -193,7 +193,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			fail(InsertException.construct(errors), container, context);
 			return;
 		}
-		if(parent.persistent())
+		if(persistent)
 			container.set(this);
 		getScheduler(context).register(this);
 	}
@@ -207,7 +207,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(finished) return;
 			finished = true;
 		}
-		if(parent.persistent())
+		if(persistent)
 			container.set(this);
 		if(e.isFatal() || forceFatal)
 			parent.fatallyFailedBlock(container, context);
@@ -221,7 +221,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			synchronized (this) {
 				if(finished) return null;
 			}
-			if(parent.persistent())
+			if(persistent)
 				container.set(this);
 			return encode(container, context);				
 		} catch (InsertException e) {
@@ -248,7 +248,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			parent.completedBlock(false, container, context);
 			cb.onSuccess(this, container, context);
 			finished = true;
-			if(parent.persistent())
+			if(persistent)
 				container.set(this);
 		} else {
 			getScheduler(context).register(this);
@@ -294,7 +294,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			}
 			finished = true;
 		}
-		if(parent.persistent())
+		if(persistent)
 			container.set(this);
 		parent.completedBlock(false, container, context);
 		cb.onSuccess(this, container, context);
@@ -309,7 +309,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(finished) return;
 			finished = true;
 		}
-		if(parent.persistent())
+		if(persistent)
 			container.set(this);
 		super.unregister(false, container);
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
