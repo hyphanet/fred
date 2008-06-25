@@ -37,6 +37,8 @@ public abstract class FECCodec {
 	protected FECCodec(int k, int n) {
 		this.k = k;
 		this.n = n;
+		if(n == 0 || n < k)
+			throw new IllegalArgumentException("Invalid: k="+k+" n="+n);
 	}
 	
 	/**
