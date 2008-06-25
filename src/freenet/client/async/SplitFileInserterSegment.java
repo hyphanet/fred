@@ -605,6 +605,10 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 	}
 
 	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(parent, 1);
+			container.activate(parent.parent, 1);
+		}
 		if (parent.parent.isCancelled()) {
 			parent.cancel(container, context);
 			return;
@@ -615,6 +619,11 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 	}
 
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(parent, 1);
+			container.activate(parent.parent, 1);
+			container.activate(errors, 1);
+		}
 		if (parent.parent.isCancelled()) {
 			parent.cancel(container, context);
 			return;
@@ -663,6 +672,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 				return blocksCompleted;
 			}
 			checkBlockInserters[x] = null;
+			if(persistent)
+				container.activate(checkBlocks[x], 1);
 			checkBlocks[x].free();
 			checkBlocks[x] = null;
 		} else {
@@ -673,6 +684,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			}
 			dataBlockInserters[x] = null;
 			if (encoded) {
+				if(persistent)
+					container.activate(dataBlocks[x], 1);
 				dataBlocks[x].free();
 				dataBlocks[x] = null;
 			}
