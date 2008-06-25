@@ -232,6 +232,8 @@ abstract class ClientRequestSchedulerBase {
 	}
 	
 	void innerRegister(SendableRequest req, RandomSource random, ObjectContainer container) {
+		if(req.persistent() != persistent())
+			throw new IllegalArgumentException("innerRegister for persistence="+req.persistent()+" but our persistence is "+persistent());
 		if(req.getPriorityClass() == 0) {
 			Logger.normal(this, "Something wierd...");
 			Logger.normal(this, "Priority "+req.getPriorityClass());
