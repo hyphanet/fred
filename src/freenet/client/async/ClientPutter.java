@@ -271,6 +271,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	}
 	
 	public void notifyClients(ObjectContainer container, ClientContext context) {
+		if(persistent())
+			container.activate(ctx, 2);
 		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized), container, context);
 	}
 	
