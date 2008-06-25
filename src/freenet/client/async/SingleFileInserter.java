@@ -52,6 +52,7 @@ class SingleFileInserter implements ClientPutState {
 	private final boolean freeData; // this is being set, but never read ???
 	private final String targetFilename;
 	private final boolean earlyEncode;
+	private final boolean persistent;
 
 	/**
 	 * @param parent
@@ -84,6 +85,7 @@ class SingleFileInserter implements ClientPutState {
 		this.insertAsArchiveManifest = insertAsArchiveManifest;
 		this.freeData = freeData;
 		this.targetFilename = targetFilename;
+		this.persistent = parent.persistent();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
@@ -706,6 +708,8 @@ class SingleFileInserter implements ClientPutState {
 	}
 
 	public void onStartCompression(int i, ObjectContainer container, ClientContext context) {
+		if(persistent)
+			container.activate(ctx, 2);
 		if(parent == cb)
 			ctx.eventProducer.produceEvent(new StartedCompressionEvent(i), container, context);
 	}
