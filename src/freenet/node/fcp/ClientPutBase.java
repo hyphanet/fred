@@ -147,7 +147,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		freeData(container);
 		finish(container);
 		trySendFinalMessage(null, container);
-		client.notifySuccess(this);
+		client.notifySuccess(this, container);
 	}
 
 	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
@@ -159,7 +159,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		freeData(container);
 		finish(container);
 		trySendFinalMessage(null, container);
-		client.notifyFailure(this);
+		client.notifyFailure(this, container);
 	}
 
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {

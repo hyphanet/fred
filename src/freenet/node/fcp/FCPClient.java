@@ -199,7 +199,7 @@ public class FCPClient {
 			req.cancel(container);
 		}
 		if(completionCallback != null)
-			completionCallback.onRemove(req);
+			completionCallback.onRemove(req, container);
 		return true;
 	}
 
@@ -336,20 +336,20 @@ public class FCPClient {
 	/**
 	 * Callback called when a request succeeds.
 	 */
-	public void notifySuccess(ClientRequest req) {
+	public void notifySuccess(ClientRequest req, ObjectContainer container) {
 		assert(req.persistenceType == persistenceType);
 		if(completionCallback != null)
-			completionCallback.notifySuccess(req);
+			completionCallback.notifySuccess(req, container);
 	}
 
 	/**
 	 * Callback called when a request fails
 	 * @param get
 	 */
-	public void notifyFailure(ClientRequest req) {
+	public void notifyFailure(ClientRequest req, ObjectContainer container) {
 		assert(req.persistenceType == persistenceType);
 		if(completionCallback != null)
-			completionCallback.notifyFailure(req);
+			completionCallback.notifyFailure(req, container);
 	}
 	
 	public synchronized RequestCompletionCallback setRequestCompletionCallback(RequestCompletionCallback cb) {

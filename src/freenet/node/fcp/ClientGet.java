@@ -413,7 +413,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			container.set(this);
 		}
 		finish(container);
-		client.notifySuccess(this);
+		client.notifySuccess(this, container);
 	}
 
 	private void trySendDataFoundOrGetFailed(FCPConnectionOutputHandler handler, ObjectContainer container) {
@@ -501,7 +501,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(persistenceType == PERSIST_FOREVER)
 			container.set(this);
 		finish(container);
-		client.notifyFailure(this);
+		client.notifyFailure(this, container);
 	}
 
 	public void onSuccess(BaseClientPutter state, ObjectContainer container) {

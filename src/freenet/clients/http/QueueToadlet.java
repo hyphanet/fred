@@ -1096,15 +1096,15 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 	
 	private final HashMap alertsByIdentifier = new HashMap();
 	
-	public void notifyFailure(ClientRequest req) {
+	public void notifyFailure(ClientRequest req, ObjectContainer container) {
 		// FIXME do something???
 	}
 
-	public void notifySuccess(ClientRequest req) {
+	public void notifySuccess(ClientRequest req, ObjectContainer container) {
 		synchronized(completedRequestIdentifiers) {
 			completedRequestIdentifiers.add(req.getIdentifier());
 		}
-		registerAlert(req);
+		registerAlert(req, container); // should be safe here
 		saveCompletedIdentifiersOffThread();
 	}
 	
@@ -1137,7 +1137,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 						}
 						continue;
 					}
-					registerAlert(req);
+					registerAlert(req, container);
 				}
 			}
 			
@@ -1228,7 +1228,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		}
 	}
 
-	private void registerAlert(ClientRequest req) {
+	private void registerAlert(ClientRequest req, ObjectContainer container) {
 		final String identifier = req.getIdentifier();
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
@@ -1240,6 +1240,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		}
 		if(req instanceof ClientGet) {
 			FreenetURI uri = ((ClientGet)req).getURI();
+			if(req.isPersistentForever() && uri != null)
+				container.activate(uri, 5);
 			long size = ((ClientGet)req).getDataSize();
 			String name = uri.getPreferredFilename();
 			String title = l10n("downloadSucceededTitle", "filename", name);
@@ -1268,6 +1270,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			}
 		} else if(req instanceof ClientPut) {
 			FreenetURI uri = ((ClientPut)req).getFinalURI();
+			if(req.isPersistentForever() && uri != null)
+				container.activate(uri, 5);
 			long size = ((ClientPut)req).getDataSize();
 			if(uri == null) {
 				Logger.error(this, "uri is null for "+req+" for "+identifier);
@@ -1334,7 +1338,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		return L10n.getString("QueueToadlet."+key, pattern, value);
 	}
 
-	public void onRemove(ClientRequest req) {
+	public void onRemove(ClientRequest req, ObjectContainer container) {
 		String identifier = req.getIdentifier();
 		synchronized(completedRequestIdentifiers) {
 			completedRequestIdentifiers.remove(identifier);
