@@ -128,4 +128,8 @@ public class SortedVectorByNumber {
 		return data[idx].getNumber();
 	}
 
+	public boolean persistent() {
+		return persistent;
+	}
+
 }
