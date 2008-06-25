@@ -159,7 +159,7 @@ public abstract class ClientRequester {
 		// TODO FIXME do something!
 	}
 	
-	public void onActivate(ObjectContainer container) {
+	public void objectOnActivate(ObjectContainer container) {
 		container.activate(client, 1);
 	}
 
