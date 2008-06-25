@@ -50,7 +50,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	private boolean cancelled;
 	
 	SplitFileFetcherSubSegment(SplitFileFetcherSegment segment, int retryCount) {
-		super(segment.parentFetcher.parent);
+		super(segment.parent);
 		this.segment = segment;
 		this.retryCount = retryCount;
 		ctx = segment.blockFetchContext;
@@ -334,15 +334,15 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public RequestClient getClient() {
-		return segment.parentFetcher.parent.getClient();
+		return segment.parent.getClient();
 	}
 
 	public ClientRequester getClientRequest() {
-		return segment.parentFetcher.parent;
+		return segment.parent;
 	}
 
 	public short getPriorityClass() {
-		return segment.parentFetcher.parent.priorityClass;
+		return segment.parent.priorityClass;
 	}
 
 	public int getRetryCount() {
