@@ -88,7 +88,7 @@ public class ClientPutDir extends ClientPutBase {
 			client.register(this, false, container);
 		if(persistenceType != PERSIST_CONNECTION && !noTags) {
 			FCPMessage msg = persistentTagMessage();
-			client.queueClientRequestMessage(msg, 0);
+			client.queueClientRequestMessage(msg, 0, container);
 		}
 	}
 	
@@ -138,7 +138,7 @@ public class ClientPutDir extends ClientPutBase {
 
 
 
-	public ClientPutDir(SimpleFieldSet fs, FCPClient client, FCPServer server) throws PersistenceParseException, IOException {
+	public ClientPutDir(SimpleFieldSet fs, FCPClient client, FCPServer server, ObjectContainer container) throws PersistenceParseException, IOException {
 		super(fs, client, server);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		SimpleFieldSet files = fs.subset("Files");
@@ -214,7 +214,7 @@ public class ClientPutDir extends ClientPutBase {
 		totalSize = size;
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
-			client.queueClientRequestMessage(msg, 0);
+			client.queueClientRequestMessage(msg, 0, container);
 		}
 	}
 
@@ -228,7 +228,7 @@ public class ClientPutDir extends ClientPutBase {
 			if(logMINOR) Logger.minor(this, "Started "+putter);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage();
-				client.queueClientRequestMessage(msg, 0);
+				client.queueClientRequestMessage(msg, 0, container);
 			}
 			if(persistenceType == PERSIST_FOREVER)
 				container.set(this); // Update

@@ -125,7 +125,7 @@ public abstract class ClientRequest {
 	public abstract void onLostConnection(ObjectContainer container);
 
 	/** Send any pending messages for a persistent request e.g. after reconnecting */
-	public abstract void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData);
+	public abstract void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData, ObjectContainer container);
 
 	// Persistence
 
@@ -190,7 +190,7 @@ public abstract class ClientRequest {
 				if(!lazyResume) cp.start(container, context);
 				return cp;
 			} else if(type.equals("PUTDIR")) {
-				ClientPutDir cp = new ClientPutDir(fs, client, server);
+				ClientPutDir cp = new ClientPutDir(fs, client, server, container);
 				client.register(cp, lazyResume, container);
 				if(!lazyResume) cp.start(container, context);
 				return cp;
@@ -363,7 +363,7 @@ public abstract class ClientRequest {
 		} else {
 			return; // paranoia, we should not be here if nothing was changed!
 		}
-		client.queueClientRequestMessage(modifiedMsg, 0);
+		client.queueClientRequestMessage(modifiedMsg, 0, container);
 	}
 
 	/** Utility method for storing details of a possibly encrypted bucket. */

@@ -339,7 +339,7 @@ public class ClientPut extends ClientPutBase {
 				oldProgress, targetFilename, binaryBlob);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage();
-			client.queueClientRequestMessage(msg, 0);
+			client.queueClientRequestMessage(msg, 0, null);
 		}
 		
 	}
@@ -349,7 +349,7 @@ public class ClientPut extends ClientPutBase {
 			client.register(this, false, container);
 		if(persistenceType != PERSIST_CONNECTION && !noTags) {
 			FCPMessage msg = persistentTagMessage();
-			client.queueClientRequestMessage(msg, 0);
+			client.queueClientRequestMessage(msg, 0, container);
 		}
 	}
 	
@@ -363,7 +363,7 @@ public class ClientPut extends ClientPutBase {
 			putter.start(earlyEncode, false, container, context);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage();
-				client.queueClientRequestMessage(msg, 0);
+				client.queueClientRequestMessage(msg, 0, container);
 			}
 			synchronized(this) {
 				started = true;

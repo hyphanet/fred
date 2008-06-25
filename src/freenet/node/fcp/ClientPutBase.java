@@ -146,7 +146,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		}
 		freeData(container);
 		finish(container);
-		trySendFinalMessage(null);
+		trySendFinalMessage(null, container);
 		client.notifySuccess(this);
 	}
 
@@ -158,7 +158,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		}
 		freeData(container);
 		finish(container);
-		trySendFinalMessage(null);
+		trySendFinalMessage(null, container);
 		client.notifyFailure(this);
 	}
 
@@ -170,7 +170,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		}
 		if(persistenceType == PERSIST_FOREVER)
 			container.set(this);
-		trySendGeneratedURIMessage(null);
+		trySendGeneratedURIMessage(null, container);
 	}
 
 	public void requestWasRemoved(ObjectContainer container) {
@@ -181,11 +181,11 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 				InsertException cancelled = new InsertException(InsertException.CANCELLED);
 				putFailedMessage = new PutFailedMessage(cancelled, identifier, global);
 			}
-			trySendFinalMessage(null);
+			trySendFinalMessage(null, container);
 		}
 		// notify client that request was removed
 		FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
-		client.queueClientRequestMessage(msg, 0);
+		client.queueClientRequestMessage(msg, 0, container);
 
 		freeData(container);
 		if(persistenceType == PERSIST_FOREVER) {
@@ -247,7 +247,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		}
 	}
 
-	private void trySendFinalMessage(FCPConnectionOutputHandler handler) {
+	private void trySendFinalMessage(FCPConnectionOutputHandler handler, ObjectContainer container) {
 
 		FCPMessage msg;
 		synchronized (this) {
@@ -264,11 +264,11 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			if(handler != null)
 				handler.queue(msg);
 			else
-				client.queueClientRequestMessage(msg, 0);
+				client.queueClientRequestMessage(msg, 0, container);
 		}
 	}
 
-	private void trySendGeneratedURIMessage(FCPConnectionOutputHandler handler) {
+	private void trySendGeneratedURIMessage(FCPConnectionOutputHandler handler, ObjectContainer container) {
 		FCPMessage msg;
 		synchronized(this) {
 			msg = new URIGeneratedMessage(generatedURI, identifier);
@@ -276,7 +276,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		if(handler != null)
 			handler.queue(msg);
 		else
-			client.queueClientRequestMessage(msg, 0);
+			client.queueClientRequestMessage(msg, 0, container);
 	}
 
 	/**
@@ -307,10 +307,10 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		if(handler != null)
 			handler.queue(msg);
 		else
-			client.queueClientRequestMessage(msg, verbosity);
+			client.queueClientRequestMessage(msg, verbosity, container);
 	}
 
-	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData) {
+	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData, ObjectContainer container) {
 		if(persistenceType == PERSIST_CONNECTION) {
 			Logger.error(this, "WTF? persistenceType="+persistenceType, new Exception("error"));
 			return;
@@ -329,11 +329,11 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			fin = finished;
 		}
 		if(generated)
-			trySendGeneratedURIMessage(handler);
+			trySendGeneratedURIMessage(handler, container);
 		if(msg != null)
 			handler.queue(msg);
 		if(fin)
-			trySendFinalMessage(handler);
+			trySendFinalMessage(handler, container);
 	}
 
 	public synchronized SimpleFieldSet getFieldSet() {

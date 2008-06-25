@@ -133,8 +133,12 @@ public class FCPClient {
 		synchronized(this) {
 			reqs = completedUnackedRequests.toArray();
 		}
-		for(int i=0;i<reqs.length;i++)
-			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, true, false, false);
+		for(int i=0;i<reqs.length;i++) {
+			ClientRequest req = (ClientRequest) reqs[i];
+			if(persistenceType == ClientRequest.PERSIST_FOREVER)
+				container.activate(req, 1);
+			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, true, false, false, container);
+		}
 	}
 	
 	/**
@@ -146,8 +150,12 @@ public class FCPClient {
 		synchronized(this) {
 			reqs = runningPersistentRequests.toArray();
 		}
-		for(int i=0;i<reqs.length;i++)
-			((ClientRequest)reqs[i]).sendPendingMessages(outputHandler, true, false, false);
+		for(int i=0;i<reqs.length;i++) {
+			ClientRequest req = (ClientRequest) reqs[i];
+			if(persistenceType == ClientRequest.PERSIST_FOREVER)
+				container.activate(req, 1);
+			req.sendPendingMessages(outputHandler, true, false, false, container);
+		}
 	}
 	
 	public void register(ClientRequest cg, boolean startLater, ObjectContainer container) throws IdentifierCollisionException {
@@ -245,11 +253,11 @@ public class FCPClient {
 		this.watchGlobalVerbosityMask = verbosityMask;
 	}
 
-	public void queueClientRequestMessage(FCPMessage msg, int verbosityLevel) {
-		queueClientRequestMessage(msg, verbosityLevel, false);
+	public void queueClientRequestMessage(FCPMessage msg, int verbosityLevel, ObjectContainer container) {
+		queueClientRequestMessage(msg, verbosityLevel, false, container);
 	}
 	
-	public void queueClientRequestMessage(FCPMessage msg, int verbosityLevel, boolean useGlobalMask) {
+	public void queueClientRequestMessage(FCPMessage msg, int verbosityLevel, boolean useGlobalMask, ObjectContainer container) {
 		if(useGlobalMask && (verbosityLevel & watchGlobalVerbosityMask) != verbosityLevel)
 			return;
 		FCPConnectionHandler conn = getConnection();
@@ -265,8 +273,11 @@ public class FCPClient {
 					clients = null;
 			}
 			if(clients != null)
-			for(int i=0;i<clients.length;i++)
-				clients[i].queueClientRequestMessage(msg, verbosityLevel, true);
+			for(int i=0;i<clients.length;i++) {
+				if(persistenceType == ClientRequest.PERSIST_FOREVER)
+					container.activate(clients[i], 1);
+				clients[i].queueClientRequestMessage(msg, verbosityLevel, true, container);
+			}
 		}
 	}
 	
@@ -289,7 +300,10 @@ public class FCPClient {
 
 	public synchronized ClientRequest getRequest(String identifier, ObjectContainer container) {
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
-		return (ClientRequest) clientRequestsByIdentifier.get(identifier);
+		ClientRequest req = (ClientRequest) clientRequestsByIdentifier.get(identifier);
+		if(persistenceType == ClientRequest.PERSIST_FOREVER)
+			container.activate(req, 1);
+		return req;
 	}
 
 	/**
@@ -299,6 +313,7 @@ public class FCPClient {
 		ClientRequest[] reqs;
 		synchronized(this) {
 			reqs = (ClientRequest[]) toStart.toArray(new ClientRequest[toStart.size()]);
+			toStart.clear();
 		}
 		for(int i=0;i<reqs.length;i++) {
 			final ClientRequest req = reqs[i];
@@ -387,7 +402,11 @@ public class FCPClient {
 		// FIXME speed this up with another hashmap or something.
 		for(int i=0;i<completedUnackedRequests.size();i++) {
 			ClientGet getter = (ClientGet) completedUnackedRequests.get(i);
-			if(getter.getURI().equals(key)) return getter;
+			if(getter.getURI().equals(key)) {
+				if(persistenceType == ClientRequest.PERSIST_FOREVER)
+					container.activate(getter, 1);
+				return getter;
+			}
 		}
 		return null;
 	}
