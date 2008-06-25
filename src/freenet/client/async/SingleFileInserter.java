@@ -107,7 +107,7 @@ class SingleFileInserter implements ClientPutState {
 				}
 			}
 		}
-		if(parent.persistent()) {
+		if(persistent) {
 			container.activate(block, 1); // will cascade
 		}
 		tryCompress(container, context);
@@ -213,7 +213,7 @@ class SingleFileInserter implements ClientPutState {
 				Metadata meta = makeMetadata(dataPutter.getURI(container, context));
 				Bucket metadataBucket;
 				try {
-					metadataBucket = BucketTools.makeImmutableBucket(context.getBucketFactory(parent.persistent()), meta.writeToByteArray());
+					metadataBucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent), meta.writeToByteArray());
 				} catch (IOException e) {
 					Logger.error(this, "Caught "+e, e);
 					throw new InsertException(InsertException.BUCKET_ERROR, e, null);
@@ -284,7 +284,7 @@ class SingleFileInserter implements ClientPutState {
 		
 		boolean tryCompress = (origSize > blockSize) && (!ctx.dontCompress) && (!dontCompress);
 		if(tryCompress) {
-			InsertCompressor.start(container, context, this, origData, oneBlockCompressedSize, context.getBucketFactory(parent.persistent()), parent.persistent());
+			InsertCompressor.start(container, context, this, origData, oneBlockCompressedSize, context.getBucketFactory(persistent), persistent);
 		} else {
 			CompressionOutput output = new CompressionOutput(data, null);
 			onCompressed(output, container, context);
@@ -388,7 +388,7 @@ class SingleFileInserter implements ClientPutState {
 				sfi = newSFI;
 				metadataPutter = newMetaPutter;
 			}
-			if(parent.persistent())
+			if(persistent)
 				container.set(this);
 		}
 
@@ -401,7 +401,7 @@ class SingleFileInserter implements ClientPutState {
 				sfi = newState;
 			if(oldState == metadataPutter)
 				metadataPutter = newState;
-			if(parent.persistent())
+			if(persistent)
 				container.set(this);
 		}
 		
@@ -413,7 +413,7 @@ class SingleFileInserter implements ClientPutState {
 				if(finished){
 					if(freeData) {
 						block.free(container);
-						if(parent.persistent())
+						if(persistent)
 							container.set(this);
 					}
 					return;
@@ -437,7 +437,7 @@ class SingleFileInserter implements ClientPutState {
 					finished = true;
 				}
 			}
-			if(parent.persistent())
+			if(persistent)
 				container.set(this);
 			if(lateStart)
 				startMetadata(container, context);
@@ -478,7 +478,7 @@ class SingleFileInserter implements ClientPutState {
 				}
 			}
 			if(reportMetadataOnly) {
-				if(parent.persistent())
+				if(persistent)
 					container.set(this);
 				cb.onMetadata(meta, this, container, context);
 				return;
@@ -522,7 +522,7 @@ class SingleFileInserter implements ClientPutState {
 			
 			Bucket metadataBucket;
 			try {
-				metadataBucket = BucketTools.makeImmutableBucket(context.getBucketFactory(parent.persistent()), metaBytes);
+				metadataBucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent), metaBytes);
 			} catch (IOException e1) {
 				InsertException ex = new InsertException(InsertException.BUCKET_ERROR, e1, null);
 				fail(ex, container, context);
@@ -535,7 +535,7 @@ class SingleFileInserter implements ClientPutState {
 					// Otherwise, wait until the data is fetchable (to improve persistence).
 					if(logMINOR)
 						Logger.minor(this, "Created metadata putter for "+this+" : "+metadataPutter+" bucket "+metadataBucket+" size "+metadataBucket.size());
-					if(parent.persistent())
+					if(persistent)
 						container.set(this);
 					if(!(earlyEncode || splitInsertSuccess)) return;
 				}
@@ -557,7 +557,7 @@ class SingleFileInserter implements ClientPutState {
 				oldSFI = sfi;
 				oldMetadataPutter = metadataPutter;
 			}
-			if(parent.persistent())
+			if(persistent)
 				container.set(this);
 			if(oldSFI != null)
 				oldSFI.cancel(container, context);
@@ -585,7 +585,7 @@ class SingleFileInserter implements ClientPutState {
 				oldSFI = sfi;
 				oldMetadataPutter = metadataPutter;
 			}
-			if(parent.persistent())
+			if(persistent)
 				container.set(this);
 			if(oldSFI != null)
 				oldSFI.cancel(container, context);
@@ -602,7 +602,7 @@ class SingleFileInserter implements ClientPutState {
 					splitInsertSetBlocks = true;
 				else if (state == metadataPutter)
 					metaInsertSetBlocks = true;
-				if(parent.persistent())
+				if(persistent)
 					container.set(this);
 				if(!(splitInsertSetBlocks && metaInsertSetBlocks)) 
 					return;
@@ -653,7 +653,7 @@ class SingleFileInserter implements ClientPutState {
 					if(logMINOR) Logger.minor(this, "Metadata fetchable"+(metaFetchable?"":" already"));
 					if(metaFetchable) return;
 					metaFetchable = true;
-					if(parent.persistent())
+					if(persistent)
 						container.set(this);
 				} else {
 					if(state != sfi) {
@@ -662,7 +662,7 @@ class SingleFileInserter implements ClientPutState {
 					}
 					if(dataFetchable) return;
 					dataFetchable = true;
-					if(parent.persistent())
+					if(persistent)
 						container.set(this);
 					if(logMINOR) Logger.minor(this, "Data fetchable");
 					if(metaInsertStarted) return;
@@ -688,7 +688,7 @@ class SingleFileInserter implements ClientPutState {
 						metaInsertStarted = true;
 					splitInserter = sfi;
 				}
-				if(parent.persistent())
+				if(persistent)
 					container.set(this);
 				if(putter != null) {
 					if(logMINOR) Logger.minor(this, "Starting metadata inserter: "+putter+" for "+this);
