@@ -80,8 +80,11 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		ClientRequestSchedulerCore core;
 		if(results.hasNext()) {
 			core = (ClientRequestSchedulerCore) (results.next());
+			selectorContainer.activate(core, 2);
+			System.err.println("Loaded core...");
 		} else {
 			core = new ClientRequestSchedulerCore(node, forInserts, forSSKs, selectorContainer, cooldownTime);
+			System.err.println("Created new core...");
 		}
 		logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequestSchedulerCore.class);
 		core.onStarted(selectorContainer, cooldownTime, sched, context);
@@ -99,6 +102,13 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	}
 
 	private void onStarted(ObjectContainer container, long cooldownTime, ClientRequestScheduler sched, ClientContext context) {
+		System.err.println("insert scheduler: "+isInsertScheduler);
+		if(pendingKeys == null)
+			System.err.println("pendingKeys is null");
+		if(allRequestsByClientRequest == null)
+			System.err.println("allRequestsByClientRequest is null");
+		if(recentSuccesses == null)
+			System.err.println("recentSuccesses is null");
 		if(!isInsertScheduler)
 			((Db4oMap)pendingKeys).activationDepth(Integer.MAX_VALUE);
 		((Db4oMap)allRequestsByClientRequest).activationDepth(1);
@@ -153,7 +163,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		});
 		while(results.hasNext()) {
 			PersistentChosenRequest req = (PersistentChosenRequest) results.next();
-			container.activate(req, 5);
+			container.activate(req, 2);
 			sched.addToStarterQueue(req);
 			if(!isInsertScheduler) {
 				synchronized(keysFetching) {
@@ -224,6 +234,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			}
 			ChosenRequest ret;
 			if(req.persistent()) {
+				container.activate(key, 5);
+				container.activate(ckey, 5);
 				ret = new PersistentChosenRequest(this, req, token, key, ckey);
 				container.set(ret);
 				if(logMINOR)
@@ -330,7 +342,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				continue; // Try next retry count.
 			}
 			if(req.persistent())
-				container.activate(req, Integer.MAX_VALUE); // FIXME
+				container.activate(req, 1); // FIXME
 			if(req.getPriorityClass() != choosenPriorityClass) {
 				// Reinsert it : shouldn't happen if we are calling reregisterAll,
 				// maybe we should ask people to report that error if seen
@@ -486,10 +498,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				long endNext = System.currentTimeMillis();
 				if(logMINOR)
 					Logger.minor(this, "RegisterMe: next() took "+(endNext-startNext));
-				if(logMINOR)
-					Logger.minor(this, "Running RegisterMe for "+reg.getter+" : "+reg.addedTime+" : "+reg.priority);
 				container.delete(reg);
 				container.activate(reg.getter, 2);
+				if(logMINOR)
+					Logger.minor(this, "Running RegisterMe for "+reg.getter+" : "+reg.addedTime+" : "+reg.priority);
 				// Don't need to activate, fields should exist? FIXME
 				try {
 					sched.register(reg.getter, true, reg);
