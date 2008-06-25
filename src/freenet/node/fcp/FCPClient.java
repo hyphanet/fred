@@ -244,8 +244,10 @@ public class FCPClient {
 			server.globalForeverClient.watch(this);
 			FCPConnectionHandler connHandler = getConnection();
 			if(connHandler != null) {
-				server.globalRebootClient.queuePendingMessagesOnConnectionRestart(connHandler.outputHandler, container);
-				server.globalForeverClient.queuePendingMessagesOnConnectionRestart(connHandler.outputHandler, container);
+				if(persistenceType == ClientRequest.PERSIST_REBOOT)
+					server.globalRebootClient.queuePendingMessagesOnConnectionRestart(connHandler.outputHandler, container);
+				else
+					server.globalForeverClient.queuePendingMessagesOnConnectionRestart(connHandler.outputHandler, container);
 			}
 			watchGlobal = true;
 		}
