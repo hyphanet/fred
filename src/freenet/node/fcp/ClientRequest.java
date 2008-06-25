@@ -279,13 +279,13 @@ public abstract class ClientRequest {
 	 */
 	public abstract SimpleFieldSet getFieldSet() throws IOException;
 
-	public abstract double getSuccessFraction();
+	public abstract double getSuccessFraction(ObjectContainer container);
 
-	public abstract double getTotalBlocks();
-	public abstract double getMinBlocks();
-	public abstract double getFetchedBlocks();
-	public abstract double getFailedBlocks();
-	public abstract double getFatalyFailedBlocks();
+	public abstract double getTotalBlocks(ObjectContainer container);
+	public abstract double getMinBlocks(ObjectContainer container);
+	public abstract double getFetchedBlocks(ObjectContainer container);
+	public abstract double getFailedBlocks(ObjectContainer container);
+	public abstract double getFatalyFailedBlocks(ObjectContainer container);
 
 	public abstract String getFailureReason();
 

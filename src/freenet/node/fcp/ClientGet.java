@@ -676,42 +676,54 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		return targetFile;
 	}
 
-	public double getSuccessFraction() {
+	public double getSuccessFraction(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER && progressPending != null)
+			container.activate(progressPending, 2);
 		if(progressPending != null) {
 			return progressPending.getFraction();
 		} else
 			return -1;
 	}
 
-	public double getTotalBlocks() {
+	public double getTotalBlocks(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER && progressPending != null)
+			container.activate(progressPending, 2);
 		if(progressPending != null) {
 			return progressPending.getTotalBlocks();
 		} else
 			return 1;
 	}
 
-	public double getMinBlocks() {
+	public double getMinBlocks(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER && progressPending != null)
+			container.activate(progressPending, 2);
 		if(progressPending != null) {
 			return progressPending.getMinBlocks();
 		} else
 			return 1;
 	}
 
-	public double getFailedBlocks() {
+	public double getFailedBlocks(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER && progressPending != null)
+			container.activate(progressPending, 2);
 		if(progressPending != null) {
 			return progressPending.getFailedBlocks();
 		} else
 			return 0;
 	}
 
-	public double getFatalyFailedBlocks() {
+	public double getFatalyFailedBlocks(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER && progressPending != null)
+			container.activate(progressPending, 2);
 		if(progressPending != null) {
 			return progressPending.getFatalyFailedBlocks();
 		} else
 			return 0;
 	}
 
-	public double getFetchedBlocks() {
+	public double getFetchedBlocks(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER && progressPending != null)
+			container.activate(progressPending, 2);
 		if(progressPending != null) {
 			return progressPending.getFetchedBlocks();
 		} else

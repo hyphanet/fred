@@ -379,7 +379,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 
 	protected abstract String getTypeName();
 
-	public synchronized double getSuccessFraction() {
+	public synchronized double getSuccessFraction(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER && progressMessage != null)
+			container.activate(progressMessage, 2);
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
 				return ((SimpleProgressMessage)progressMessage).getFraction();
@@ -389,7 +391,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	}
 
 
-	public synchronized double getTotalBlocks() {
+	public synchronized double getTotalBlocks(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER && progressMessage != null)
+			container.activate(progressMessage, 2);
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
 				return ((SimpleProgressMessage)progressMessage).getTotalBlocks();
@@ -398,7 +402,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 
-	public synchronized double getMinBlocks() {
+	public synchronized double getMinBlocks(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER && progressMessage != null)
+			container.activate(progressMessage, 2);
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
 				return ((SimpleProgressMessage)progressMessage).getMinBlocks();
@@ -407,7 +413,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 
-	public synchronized double getFailedBlocks() {
+	public synchronized double getFailedBlocks(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER && progressMessage != null)
+			container.activate(progressMessage, 2);
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
 				return ((SimpleProgressMessage)progressMessage).getFailedBlocks();
@@ -416,7 +424,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 
-	public synchronized double getFatalyFailedBlocks() {
+	public synchronized double getFatalyFailedBlocks(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER && progressMessage != null)
+			container.activate(progressMessage, 2);
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
 				return ((SimpleProgressMessage)progressMessage).getFatalyFailedBlocks();
@@ -425,7 +435,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 
-	public synchronized double getFetchedBlocks() {
+	public synchronized double getFetchedBlocks(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER && progressMessage != null)
+			container.activate(progressMessage, 2);
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
 				return ((SimpleProgressMessage)progressMessage).getFetchedBlocks();
