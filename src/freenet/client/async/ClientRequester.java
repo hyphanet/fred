@@ -158,5 +158,9 @@ public abstract class ClientRequester {
 	public void removeFrom(ObjectContainer container) {
 		// TODO FIXME do something!
 	}
+	
+	public void onActivate(ObjectContainer container) {
+		container.activate(client, 1);
+	}
 
 }
