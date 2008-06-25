@@ -657,15 +657,19 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// We are running on the database thread.
 				// Add a tag, unpack on a separate thread, copy the data to a persistent bucket, then schedule on the database thread,
 				// remove the tag, and call the callback.
-				container.activate(SingleFileFetcher.this, 1);
-				container.activate(ah, 1);
+				if(persistent) {
+					container.activate(SingleFileFetcher.this, 1);
+					container.activate(ah, 1);
+				}
 				ah.extractPersistentOffThread(result.asBucket(), actx, element, callback, container, context);
 			}
 		}
 
 		private void innerSuccess(FetchResult result, ObjectContainer container, ClientContext context) {
-			container.activate(SingleFileFetcher.this, 1);
-			container.activate(ah, 1);
+			if(persistent) {
+				container.activate(SingleFileFetcher.this, 1);
+				container.activate(ah, 1);
+			}
 			try {
 				ah.extractToCache(result.asBucket(), actx, element, callback, context.archiveManager, container, context);
 			} catch (ArchiveFailureException e) {
