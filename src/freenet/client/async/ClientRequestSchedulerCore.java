@@ -134,6 +134,16 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 						if(reg.key.addedTime > initTime) return false;
 						return true;
 					}
+				}, new Comparator() {
+
+					public int compare(Object arg0, Object arg1) {
+						RegisterMe reg0 = (RegisterMe) arg0;
+						RegisterMe reg1 = (RegisterMe) arg1;
+						RegisterMeSortKey key0 = reg0.key;
+						RegisterMeSortKey key1 = reg1.key;
+						return key0.compareTo(key1);
+					}
+					
 				});
 			long tEnd = System.currentTimeMillis();
 			if(logMINOR)
