@@ -83,7 +83,9 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
-	protected ClientKeyBlock innerEncode(RandomSource random) throws InsertException {
+	protected ClientKeyBlock innerEncode(RandomSource random, ObjectContainer container) throws InsertException {
+		if(persistent)
+			container.activate(uri, 1);
 		String uriType = uri.getKeyType();
 		if(uriType.equals("CHK")) {
 			try {
@@ -125,7 +127,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				block = (ClientKeyBlock) refToClientKeyBlock.get();
 				if(block != null) return block;
 			}
-			block = innerEncode(context.random);
+			block = innerEncode(context.random, container);
 			refToClientKeyBlock = 
 				new SoftReference(block);
 			shouldSend = (resultingURI == null);
