@@ -111,4 +111,8 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 		container.delete(file);
 		container.delete(this);
 	}
+	
+	public void objectOnActivate(ObjectContainer container) {
+		container.activate(file, 5);
+	}
 }
