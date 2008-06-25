@@ -114,6 +114,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	protected ClientKeyBlock encode(ObjectContainer container, ClientContext context) throws InsertException {
+		if(persistent)
+			container.activate(sourceData, 1);
 		ClientKeyBlock block;
 		boolean shouldSend;
 		synchronized(this) {
