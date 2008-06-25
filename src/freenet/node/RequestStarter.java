@@ -224,7 +224,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	}
 
 	private boolean startRequest(ChosenRequest req, boolean logMINOR) {
-		if(logMINOR) Logger.minor(this, "Running request "+req);
+		if(logMINOR) Logger.minor(this, "Running request "+req+" priority "+req.request.getPriorityClass());
 		core.getExecutor().execute(new SenderThread(req, req.key), "RequestStarter$SenderThread for "+req);
 		return true;
 	}
