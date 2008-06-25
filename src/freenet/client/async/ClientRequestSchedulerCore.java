@@ -512,6 +512,12 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					// FIXME find some way to get a reproducible test case... I suspect it won't be easy :<
 					context.jobRunner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);
 					return;
+				} catch (ClassCastException t) {
+					// WTF?!?!?!?!?!
+					Logger.error(this, "DB4O thew ClassCastException in hasNext(): "+t, t);
+					// FIXME find some way to get a reproducible test case... I suspect it won't be easy :<
+					context.jobRunner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);
+					return;
 				}
 				long startNext = System.currentTimeMillis();
 				RegisterMe reg = (RegisterMe) registerMeSet.next();
