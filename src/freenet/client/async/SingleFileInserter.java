@@ -200,7 +200,7 @@ class SingleFileInserter implements ClientPutState {
 		if (fitsInOneCHK) {
 			// Insert single block, then insert pointer to it
 			if(reportMetadataOnly) {
-				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token, container, context);
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token, container, context, persistent);
 				Metadata meta = makeMetadata(dataPutter.getURI(container, context));
 				cb.onMetadata(meta, this, container, context);
 				cb.onTransition(this, dataPutter, container);
@@ -209,7 +209,7 @@ class SingleFileInserter implements ClientPutState {
 			} else {
 				MultiPutCompletionCallback mcb = 
 					new MultiPutCompletionCallback(cb, parent, token);
-				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token, container, context);
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token, container, context, persistent);
 				Metadata meta = makeMetadata(dataPutter.getURI(container, context));
 				Bucket metadataBucket;
 				try {
@@ -317,7 +317,7 @@ class SingleFileInserter implements ClientPutState {
 		} else {
 			SingleBlockInserter sbi = 
 				new SingleBlockInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
-						getCHKOnly, addToParent, false, this.token, container, context);
+						getCHKOnly, addToParent, false, this.token, container, context, persistent);
 			if(encodeCHK)
 				cb.onEncode(sbi.getBlock(container, context).getClientKey(), this, container, context);
 			return sbi;
@@ -611,6 +611,8 @@ class SingleFileInserter implements ClientPutState {
 		}
 
 		public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
+			if(persistent)
+				container.activate(sfi, 1);
 			sfi.schedule(container, context);
 		}
 
@@ -677,6 +679,8 @@ class SingleFileInserter implements ClientPutState {
 				ClientPutState splitInserter;
 				synchronized(this) {
 					if(metaInsertStarted) return;
+					if(persistent)
+						container.activate(metadataPutter, 1);
 					putter = metadataPutter;
 					if(putter == null) {
 						if(logMINOR) Logger.minor(this, "Cannot start metadata yet: no metadataPutter");

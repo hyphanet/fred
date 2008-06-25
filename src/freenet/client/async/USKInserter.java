@@ -125,7 +125,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "scheduling insert for "+pubUSK.getURI()+ ' ' +edition);
 			sbi = new SingleBlockInserter(parent, data, compressionCodec, privUSK.getInsertableSSK(edition).getInsertURI(),
-					ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject, container, context);
+					ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject, container, context, parent.persistent());
 		}
 		try {
 			sbi.schedule(container, context);
