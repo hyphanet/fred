@@ -1,5 +1,7 @@
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.node.SendableRequest;
 
 public class RegisterMe {
@@ -11,6 +13,10 @@ public class RegisterMe {
 		this.getter = getter;
 		this.core = core;
 		this.key = new RegisterMeSortKey(getter.getPriorityClass());
+	}
+	
+	public void objectOnActivate(ObjectContainer container) {
+		container.activate(key, 1);
 	}
 }
 
