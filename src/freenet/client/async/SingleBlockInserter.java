@@ -311,7 +311,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}
 
-	public synchronized boolean isEmpty() {
+	public synchronized boolean isEmpty(ObjectContainer container) {
 		return finished;
 	}
 	
@@ -369,7 +369,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 	}
 
-	public boolean canRemove() {
+	public boolean canRemove(ObjectContainer container) {
 		return true;
 	}
 

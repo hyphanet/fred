@@ -63,7 +63,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		assert(keysList.size() == keys.size());
 	}
 	
-	public synchronized boolean isEmpty() {
+	public synchronized boolean isEmpty(ObjectContainer container) {
 		return keys.isEmpty();
 	}
 
@@ -159,7 +159,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		return true;
 	}
 
-	public boolean canRemove() {
+	public boolean canRemove(ObjectContainer container) {
 		return false;
 	}
 

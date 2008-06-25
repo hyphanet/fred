@@ -351,7 +351,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return retryCount;
 	}
 
-	public boolean canRemove() {
+	public boolean canRemove(ObjectContainer container) {
 		synchronized(segment) {
 			if(blockNums.size() < 2) {
 				// Can be removed, if the one key is processed.
@@ -369,7 +369,11 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		}
 	}
 	
-	public boolean isEmpty() {
+	public boolean isEmpty(ObjectContainer container) {
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(blockNums, 1);
+		}
 		synchronized(segment) {
 			return cancelled || blockNums.isEmpty();
 		}

@@ -123,7 +123,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return cancelled;
 	}
 	
-	public synchronized boolean isEmpty() {
+	public synchronized boolean isEmpty(ObjectContainer container) {
 		return cancelled;
 	}
 	
@@ -135,7 +135,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return !ctx.cacheLocalRequests;
 	}
 	
-	public boolean canRemove() {
+	public boolean canRemove(ObjectContainer container) {
 		// Simple request, once it's sent, it's sent. May be requeued at a different # retries.
 		return true;
 	}

@@ -12,14 +12,14 @@ public interface RandomGrabArrayItem {
 	 * 
 	 * LOCKING: Should hold as few locks as possible as this needs to be called while 
 	 * holding the RGA lock(s). */
-	public boolean isEmpty();
+	public boolean isEmpty(ObjectContainer container);
 	
 	/** Can this item be removed from the queue after it has been handled?
 	 * Called immediately after finding a request to remove.
 	 * If returns false, the item will remain in the queue and may be chosen again.
 	 * Note that in the case of SendableGet's, this is called before chooseKey(), so
 	 * it needs to return true if there are less than two requests on this object. */
-	public boolean canRemove();
+	public boolean canRemove(ObjectContainer container);
 	
 	/** Does this RandomGrabArrayItem support remembering where it is registered? */
 	public boolean knowsParentGrabArray();

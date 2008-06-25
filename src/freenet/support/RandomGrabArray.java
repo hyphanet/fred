@@ -37,7 +37,7 @@ public class RandomGrabArray {
 	public void add(RandomGrabArrayItem req, ObjectContainer container) {
 		if(req.persistent() != persistent) throw new IllegalArgumentException("req.persistent()="+req.persistent()+" but array.persistent="+persistent+" item="+req+" array="+this);
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(req.isEmpty()) {
+		if(req.isEmpty(container)) {
 			if(logMINOR) Logger.minor(this, "Is finished already: "+req);
 			return;
 		}
@@ -84,7 +84,7 @@ public class RandomGrabArray {
 							RandomGrabArrayItem item = reqs[i];
 							if(item == null) {
 								continue;
-							} else if(item.isEmpty()) {
+							} else if(item.isEmpty(container)) {
 								changedMe = true;
 								reqs[i] = null;
 								contents.remove(item);
@@ -117,7 +117,7 @@ public class RandomGrabArray {
 							ret = reqs[chosenIndex];
 							if(persistent)
 								container.activate(ret, 1);
-							if(ret.canRemove()) {
+							if(ret.canRemove(container)) {
 								contents.remove(ret);
 								if(chosenIndex != index-1) {
 									reqs[chosenIndex] = reqs[index-1];
@@ -144,7 +144,7 @@ public class RandomGrabArray {
 							ret = reqs[validIndex];
 							if(persistent)
 								container.activate(ret, 1);
-							if(ret.canRemove()) {
+							if(ret.canRemove(container)) {
 								changedMe = true;
 								contents.remove(ret);
 								if(validIndex != index-1) {
@@ -179,7 +179,7 @@ public class RandomGrabArray {
 				if(persistent)
 					container.activate(ret, 1);
 				oret = ret;
-				if(ret.isEmpty()) {
+				if(ret.isEmpty(container)) {
 					if(logMINOR) Logger.minor(this, "Not returning because cancelled: "+ret);
 					ret = null;
 				}
@@ -193,7 +193,7 @@ public class RandomGrabArray {
 					}
 					continue;
 				}
-				if(ret != null && !ret.canRemove()) {
+				if(ret != null && !ret.canRemove(container)) {
 					if(logMINOR) Logger.minor(this, "Returning (cannot remove): "+ret+" of "+index);
 					if(persistent && changedMe)
 						container.set(this);
@@ -207,7 +207,7 @@ public class RandomGrabArray {
 						contents.remove(oret);
 					oret = reqs[i];
 					// May as well check whether that is cancelled too.
-				} while (index > i && (oret == null || oret.isEmpty()));
+				} while (index > i && (oret == null || oret.isEmpty(container)));
 				// Shrink array
 				if((index < reqs.length / 4) && (reqs.length > MIN_SIZE)) {
 					changedMe = true;
@@ -217,7 +217,7 @@ public class RandomGrabArray {
 					System.arraycopy(reqs, 0, r, 0, r.length);
 					reqs = r;
 				}
-				if((ret != null) && !ret.isEmpty()) break;
+				if((ret != null) && !ret.isEmpty(container)) break;
 			}
 		}
 		if(logMINOR) Logger.minor(this, "Returning "+ret+" of "+index);
