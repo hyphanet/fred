@@ -721,8 +721,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		/* Client-server mode. Refresh objects if you have a long-lived container! */
 		Db4o.configure().objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("key").indexed(true);
 		Db4o.configure().objectClass(freenet.client.async.RegisterMe.class).objectField("core").indexed(true);
-		Db4o.configure().objectClass(freenet.client.async.RegisterMe.class).objectField("priority").indexed(true);
-		Db4o.configure().objectClass(freenet.client.async.RegisterMe.class).objectField("addedTime").indexed(true);
+		Db4o.configure().objectClass(freenet.client.async.RegisterMe.class).objectField("key").indexed(true);
 		Db4o.configure().objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("time").indexed(true);
 		/** Maybe we want a different query evaluation mode?
 		 * At the moment, a big splitfile insert will result in one SingleBlockInserter

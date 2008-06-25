@@ -107,9 +107,21 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 		return super.toString()+":"+bucket.toString();
 	}
 	
+	private transient int _activationCount = 0;
+	
 	public void objectOnActivate(ObjectContainer container) {
+		StackTraceElement[] elements = Thread.currentThread().getStackTrace();
+		if(elements != null && elements.length > 40) {
+			System.err.println("Infinite recursion in progress...");
+		}
+		synchronized(this) {
+			_activationCount++;
+			if(_activationCount > 10) {
+				Logger.error(this, "Activated 10 times!!: "+super.toString());
+			}
+		}
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Activating "+super.toString());
+			Logger.minor(this, "Activating "+super.toString()+" : "+bucket.getClass());
 		if(bucket == this) {
 			Logger.error(this, "objectOnActivate on DelayedFreeBucket: wrapping self!!!");
 			return;

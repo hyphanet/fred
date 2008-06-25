@@ -131,13 +131,13 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				registerMeSet = container.query(new Predicate() {
 					public boolean match(RegisterMe reg) {
 						if(reg.core != ClientRequestSchedulerCore.this) return false;
-						if(reg.addedTime > initTime) return false;
+						if(reg.key.addedTime > initTime) return false;
 						return true;
 					}
 				});
-				long tEnd = System.currentTimeMillis();
-				if(logMINOR)
-					Logger.minor(this, "RegisterMe query took "+(tEnd-tStart));
+			long tEnd = System.currentTimeMillis();
+			if(logMINOR)
+				Logger.minor(this, "RegisterMe query took "+(tEnd-tStart));
 //				if(logMINOR)
 //					Logger.minor(this, "RegisterMe query returned: "+registerMeSet.size());
 				context.jobRunner.queue(registerMeRunner, NativeThread.NORM_PRIORITY, true);
@@ -489,21 +489,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	class RegisterMeRunner implements DBJob {
 
 		public void run(ObjectContainer container, ClientContext context) {
-//			, new Comparator() {
-//				public int compare(Object arg0, Object arg1) {
-//					RegisterMe reg0 = (RegisterMe) arg0;
-//					RegisterMe reg1 = (RegisterMe) arg1;
-//					if(reg0.priority > reg1.priority)
-//						return -1; // First is lower priority, so use the second.
-//					if(reg0.priority < reg1.priority)
-//						return 1; // First is lower priority, so use the second.
-//					if(reg0.addedTime > reg1.addedTime)
-//						return -1; // Second was added earlier
-//					if(reg0.addedTime < reg1.addedTime)
-//						return 1;
-//					return 0;
-//				}
-//			});
 			for(int i=0;i < 10; i++) {
 				try {
 					if(!registerMeSet.hasNext()) break;
@@ -527,7 +512,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				container.delete(reg);
 				container.activate(reg.getter, 2);
 				if(logMINOR)
-					Logger.minor(this, "Running RegisterMe for "+reg.getter+" : "+reg.addedTime+" : "+reg.priority);
+					Logger.minor(this, "Running RegisterMe for "+reg.getter+" : "+reg.key.addedTime+" : "+reg.key.priority);
 				// Don't need to activate, fields should exist? FIXME
 				try {
 					sched.register(reg.getter, true, reg);

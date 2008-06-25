@@ -5,14 +5,12 @@ import freenet.node.SendableRequest;
 public class RegisterMe {
 	final SendableRequest getter;
 	final ClientRequestSchedulerCore core;
-	final short priority;
-	final long addedTime;
+	final RegisterMeSortKey key;
 	
 	RegisterMe(SendableRequest getter, ClientRequestSchedulerCore core) {
 		this.getter = getter;
 		this.core = core;
-		this.addedTime = System.currentTimeMillis();
-		this.priority = getter.getPriorityClass();
+		this.key = new RegisterMeSortKey(getter.getPriorityClass());
 	}
 }
 
