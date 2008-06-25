@@ -458,7 +458,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	};
 	
 	public void removePendingKey(final SendableGet getter, final boolean complain, final Key key) {
-		if(getter.persistent()) {
+		if(!getter.persistent()) {
 			boolean dropped = schedTransient.removePendingKey(getter, complain, key);
 			if(dropped && offeredKeys != null && !node.peersWantKey(key)) {
 				for(int i=0;i<offeredKeys.length;i++)
