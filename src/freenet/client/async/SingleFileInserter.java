@@ -507,7 +507,7 @@ class SingleFileInserter implements ClientPutState {
 			byte[] metaBytes;
 			if(persistent)
 				// Load keys
-				container.activate(meta, 5);
+				container.activate(meta, 100);
 			try {
 				metaBytes = meta.writeToByteArray();
 			} catch (MetadataUnresolvedException e1) {
