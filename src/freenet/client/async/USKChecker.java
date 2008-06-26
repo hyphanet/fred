@@ -28,7 +28,7 @@ class USKChecker extends BaseSingleFileFetcher {
 		this.cb = cb;
 	}
 	
-	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(cb, 1);
@@ -37,7 +37,7 @@ class USKChecker extends BaseSingleFileFetcher {
 		cb.onSuccess((ClientSSKBlock)block, context);
 	}
 
-	public void onFailure(LowLevelGetException e, Object token, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+	public void onFailure(LowLevelGetException e, Object token, ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(cb, 1);
@@ -71,7 +71,7 @@ class USKChecker extends BaseSingleFileFetcher {
 			canRetry = true;
 		}
 
-		if(canRetry && retry(sched, container, context)) return;
+		if(canRetry && retry(container, context)) return;
 		
 		// Ran out of retries.
 		unregister(false, container);

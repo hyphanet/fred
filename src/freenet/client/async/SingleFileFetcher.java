@@ -59,7 +59,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	private final Bucket returnBucket;
 	/** If true, success/failure is immediately reported to the client, and therefore we can check TOO_MANY_PATH_COMPONENTS. */
 	private final boolean isFinal;
-	private RequestScheduler sched;
 
 	/** Create a new SingleFileFetcher and register self.
 	 * Called when following a redirect, or direct from ClientGet.
@@ -123,8 +122,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 	// Process the completed data. May result in us going to a
 	// splitfile, or another SingleFileFetcher, etc.
-	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched, ObjectContainer container, ClientContext context) {
-		this.sched = sched;
+	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(parent, 1);
 			container.activate(ctx, 1);
@@ -138,7 +136,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			Logger.error(this, "block is null! fromStore="+fromStore+", token="+token, new Exception("error"));
 			return;
 		}
-		Bucket data = extract(block, sched, container, context);
+		Bucket data = extract(block, container, context);
 		if(data == null) {
 			if(logMINOR)
 				Logger.minor(this, "No data");
@@ -148,18 +146,18 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		if(logMINOR)
 			Logger.minor(this, "Block "+(block.isMetadata() ? "is metadata" : "is not metadata")+" on "+this);
 		if(!block.isMetadata()) {
-			onSuccess(new FetchResult(clientMetadata, data), sched, container, context);
+			onSuccess(new FetchResult(clientMetadata, data), container, context);
 		} else {
 			if(!ctx.followRedirects) {
-				onFailure(new FetchException(FetchException.INVALID_METADATA, "Told me not to follow redirects (splitfile block??)"), false, sched, container, context);
+				onFailure(new FetchException(FetchException.INVALID_METADATA, "Told me not to follow redirects (splitfile block??)"), false, container, context);
 				return;
 			}
 			if(parent.isCancelled()) {
-				onFailure(new FetchException(FetchException.CANCELLED), false, sched, container, context);
+				onFailure(new FetchException(FetchException.CANCELLED), false, container, context);
 				return;
 			}
 			if(data.size() > ctx.maxMetadataSize) {
-				onFailure(new FetchException(FetchException.TOO_BIG_METADATA), false, sched, container, context);
+				onFailure(new FetchException(FetchException.TOO_BIG_METADATA), false, container, context);
 				return;
 			}
 			// Parse metadata
@@ -168,25 +166,24 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(persistent)
 					container.set(this);
 			} catch (MetadataParseException e) {
-				onFailure(new FetchException(e), false, sched, container, context);
+				onFailure(new FetchException(e), false, container, context);
 				return;
 			} catch (IOException e) {
 				// Bucket error?
-				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, sched, container, context);
+				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
 				return;
 			}
 			wrapHandleMetadata(false, container, context);
 		}
 	}
 
-	protected void onSuccess(FetchResult result, RequestScheduler sched, ObjectContainer container, ClientContext context) {
-		this.sched = sched;
+	protected void onSuccess(FetchResult result, ObjectContainer container, ClientContext context) {
 		unregister(false, container);
 		if(parent.isCancelled()) {
 			if(logMINOR)
 				Logger.minor(this, "Parent is cancelled");
 			result.asBucket().free();
-			onFailure(new FetchException(FetchException.CANCELLED), false, sched, container, context);
+			onFailure(new FetchException(FetchException.CANCELLED), false, container, context);
 			return;
 		}
 		if(persistent) {
@@ -203,10 +200,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
 					data = c.decompress(data, context.getBucketFactory(parent.persistent()), maxLen, maxLen * 4, decompressors.isEmpty() ? returnBucket : null);
 				} catch (IOException e) {
-					onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, sched, container, context);
+					onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
 					return;
 				} catch (CompressionOutputSizeException e) {
-					onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, (rcb == parent), result.getMimeType()), false, sched, container, context);
+					onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, (rcb == parent), result.getMimeType()), false, container, context);
 					return;
 				}
 			}
@@ -313,22 +310,22 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 								wrapHandleMetadata(true, container, context);
 							} catch (MetadataParseException e) {
 								// Invalid metadata
-								onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, sched, container, context);
+								onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, container, context);
 								return;
 							} catch (IOException e) {
 								// Bucket error?
-								onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, sched, container, context);
+								onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
 								return;
 							}
 						}
 						public void notInArchive(ObjectContainer container, ClientContext context) {
-							onFailure(new FetchException(FetchException.INTERNAL_ERROR, "No metadata in container! Cannot happen as ArchiveManager should synthesise some!"), false, sched, container, context);
+							onFailure(new FetchException(FetchException.INTERNAL_ERROR, "No metadata in container! Cannot happen as ArchiveManager should synthesise some!"), false, container, context);
 						}
 						public void onFailed(ArchiveRestartException e, ObjectContainer container, ClientContext context) {
-							SingleFileFetcher.this.onFailure(new FetchException(e), false, sched, container, context);
+							SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
 						}
 						public void onFailed(ArchiveFailureException e, ObjectContainer container, ClientContext context) {
-							SingleFileFetcher.this.onFailure(new FetchException(e), false, sched, container, context);
+							SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
 						}
 					}, container, context); // will result in this function being called again
 					if(persistent) container.set(this);
@@ -367,7 +364,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						throw new FetchException(FetchException.BUCKET_ERROR);
 					}
 					// Return the data
-					onSuccess(new FetchResult(clientMetadata, out), sched, container, context);
+					onSuccess(new FetchResult(clientMetadata, out), container, context);
 					
 					return;
 				} else {
@@ -389,20 +386,20 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 									out = data;
 								}
 							} catch (IOException e) {
-								onFailure(new FetchException(FetchException.BUCKET_ERROR), false, sched, container, context);
+								onFailure(new FetchException(FetchException.BUCKET_ERROR), false, container, context);
 								return;
 							}
 							// Return the data
-							onSuccess(new FetchResult(clientMetadata, out), sched, container, context);
+							onSuccess(new FetchResult(clientMetadata, out), container, context);
 						}
 						public void notInArchive(ObjectContainer container, ClientContext context) {
-							onFailure(new FetchException(FetchException.NOT_IN_ARCHIVE), false, sched, container, context);
+							onFailure(new FetchException(FetchException.NOT_IN_ARCHIVE), false, container, context);
 						}
 						public void onFailed(ArchiveRestartException e, ObjectContainer container, ClientContext context) {
-							SingleFileFetcher.this.onFailure(new FetchException(e), false, sched, container, context);
+							SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
 						}
 						public void onFailed(ArchiveFailureException e, ObjectContainer container, ClientContext context) {
-							SingleFileFetcher.this.onFailure(new FetchException(e), false, sched, container, context);
+							SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
 						}
 					}, container, context);
 					// Will call back into this function when it has been fetched.
@@ -625,15 +622,15 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		try {
 			handleMetadata(container, context);
 		} catch (MetadataParseException e) {
-			onFailure(new FetchException(e), false, sched, container, context);
+			onFailure(new FetchException(e), false, container, context);
 		} catch (FetchException e) {
 			if(notFinalizedSize)
 				e.setNotFinalizedSize();
-			onFailure(e, false, sched, container, context);
+			onFailure(e, false, container, context);
 		} catch (ArchiveFailureException e) {
-			onFailure(new FetchException(e), false, sched, container, context);
+			onFailure(new FetchException(e), false, container, context);
 		} catch (ArchiveRestartException e) {
-			onFailure(new FetchException(e), false, sched, container, context);
+			onFailure(new FetchException(e), false, container, context);
 		}
 	}
 
@@ -673,10 +670,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			try {
 				ah.extractToCache(result.asBucket(), actx, element, callback, context.archiveManager, container, context);
 			} catch (ArchiveFailureException e) {
-				SingleFileFetcher.this.onFailure(new FetchException(e), false, sched, container, context);
+				SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
 				return;
 			} catch (ArchiveRestartException e) {
-				SingleFileFetcher.this.onFailure(new FetchException(e), false, sched, container, context);
+				SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
 				return;
 			}
 			if(callback != null) return;
@@ -687,7 +684,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(persistent)
 				container.activate(SingleFileFetcher.this, 1);
 			// Force fatal as the fetcher is presumed to have made a reasonable effort.
-			SingleFileFetcher.this.onFailure(e, true, sched, container, context);
+			SingleFileFetcher.this.onFailure(e, true, container, context);
 		}
 
 		public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
@@ -726,11 +723,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			try {
 				metadata = Metadata.construct(result.asBucket());
 			} catch (MetadataParseException e) {
-				SingleFileFetcher.this.onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, sched, container, context);
+				SingleFileFetcher.this.onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, container, context);
 				return;
 			} catch (IOException e) {
 				// Bucket error?
-				SingleFileFetcher.this.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, sched, container, context);
+				SingleFileFetcher.this.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
 				return;
 			}
 			wrapHandleMetadata(true, container, context);
@@ -740,7 +737,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(persistent)
 				container.activate(SingleFileFetcher.this, 1);
 			// Pass it on; fetcher is assumed to have retried as appropriate already, so this is fatal.
-			SingleFileFetcher.this.onFailure(e, true, sched, container, context);
+			SingleFileFetcher.this.onFailure(e, true, container, context);
 		}
 
 		public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {

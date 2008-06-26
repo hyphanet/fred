@@ -43,47 +43,47 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	final long token;
 	
 	// Translate it, then call the real onFailure
-	public void onFailure(LowLevelGetException e, Object reqTokenIgnored, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+	public void onFailure(LowLevelGetException e, Object reqTokenIgnored, ObjectContainer container, ClientContext context) {
 		switch(e.code) {
 		case LowLevelGetException.DATA_NOT_FOUND:
-			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), false, sched, container, context);
+			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), false, container, context);
 			return;
 		case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
-			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), false, sched, container, context);
+			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), false, container, context);
 			return;
 		case LowLevelGetException.RECENTLY_FAILED:
-			onFailure(new FetchException(FetchException.RECENTLY_FAILED), false, sched, container, context);
+			onFailure(new FetchException(FetchException.RECENTLY_FAILED), false, container, context);
 			return;
 		case LowLevelGetException.DECODE_FAILED:
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR), false, sched, container, context);
+			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR), false, container, context);
 			return;
 		case LowLevelGetException.INTERNAL_ERROR:
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR), false, sched, container, context);
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR), false, container, context);
 			return;
 		case LowLevelGetException.REJECTED_OVERLOAD:
-			onFailure(new FetchException(FetchException.REJECTED_OVERLOAD), false, sched, container, context);
+			onFailure(new FetchException(FetchException.REJECTED_OVERLOAD), false, container, context);
 			return;
 		case LowLevelGetException.ROUTE_NOT_FOUND:
-			onFailure(new FetchException(FetchException.ROUTE_NOT_FOUND), false, sched, container, context);
+			onFailure(new FetchException(FetchException.ROUTE_NOT_FOUND), false, container, context);
 			return;
 		case LowLevelGetException.TRANSFER_FAILED:
-			onFailure(new FetchException(FetchException.TRANSFER_FAILED), false, sched, container, context);
+			onFailure(new FetchException(FetchException.TRANSFER_FAILED), false, container, context);
 			return;
 		case LowLevelGetException.VERIFY_FAILED:
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR), false, sched, container, context);
+			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR), false, container, context);
 			return;
 		case LowLevelGetException.CANCELLED:
-			onFailure(new FetchException(FetchException.CANCELLED), false, sched, container, context);
+			onFailure(new FetchException(FetchException.CANCELLED), false, container, context);
 			return;
 		default:
 			Logger.error(this, "Unknown LowLevelGetException code: "+e.code);
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR), false, sched, container, context);
+			onFailure(new FetchException(FetchException.INTERNAL_ERROR), false, container, context);
 			return;
 		}
 	}
 
 	// Real onFailure
-	protected void onFailure(FetchException e, boolean forceFatal, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+	protected void onFailure(FetchException e, boolean forceFatal, ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(parent, 1);
 			container.activate(rcb, 1);
@@ -96,7 +96,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			forceFatal = true;
 		}
 		if(!(e.isFatal() || forceFatal) ) {
-			if(retry(sched, container, context)) {
+			if(retry(container, context)) {
 				if(logMINOR) Logger.minor(this, "Retrying");
 				return;
 			}
@@ -111,7 +111,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	}
 
 	/** Will be overridden by SingleFileFetcher */
-	protected void onSuccess(FetchResult data, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+	protected void onSuccess(FetchResult data, ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(parent, 1);
 			container.activate(rcb, 1);
@@ -119,45 +119,45 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		unregister(false, container);
 		if(parent.isCancelled()) {
 			data.asBucket().free();
-			onFailure(new FetchException(FetchException.CANCELLED), false, sched, container, context);
+			onFailure(new FetchException(FetchException.CANCELLED), false, container, context);
 			return;
 		}
 		rcb.onSuccess(data, this, container, context);
 	}
 
-	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object reqTokenIgnored, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object reqTokenIgnored, ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(parent, 1);
 		}
 		if(parent instanceof ClientGetter)
 			((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
-		Bucket data = extract(block, sched, container, context);
+		Bucket data = extract(block, container, context);
 		if(data == null) return; // failed
 		if(!block.isMetadata()) {
-			onSuccess(new FetchResult((ClientMetadata)null, data), sched, container, context);
+			onSuccess(new FetchResult((ClientMetadata)null, data), container, context);
 		} else {
-			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), false, sched, container, context);
+			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), false, container, context);
 		}
 	}
 
 	/** Convert a ClientKeyBlock to a Bucket. If an error occurs, report it via onFailure
 	 * and return null.
 	 */
-	protected Bucket extract(ClientKeyBlock block, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+	protected Bucket extract(ClientKeyBlock block, ObjectContainer container, ClientContext context) {
 		Bucket data;
 		try {
 			data = block.decode(context.getBucketFactory(parent.persistent()), (int)(Math.min(ctx.maxOutputLength, Integer.MAX_VALUE)), false);
 		} catch (KeyDecodeException e1) {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Decode failure: "+e1, e1);
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()), false, sched, container, context);
+			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e1.getMessage()), false, container, context);
 			return null;
 		} catch (TooBigException e) {
-			onFailure(new FetchException(FetchException.TOO_BIG, e), false, sched, container, context);
+			onFailure(new FetchException(FetchException.TOO_BIG, e), false, container, context);
 			return null;
 		} catch (IOException e) {
 			Logger.error(this, "Could not capture data - disk full?: "+e, e);
-			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, sched, container, context);
+			onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
 			return null;
 		}
 		return data;

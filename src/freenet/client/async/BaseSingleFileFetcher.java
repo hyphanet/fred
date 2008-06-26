@@ -71,7 +71,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 
 	/** Try again - returns true if we can retry 
 	 * @param sched */
-	protected boolean retry(RequestScheduler sched, ObjectContainer container, ClientContext context) {
+	protected boolean retry(ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);
 		}
@@ -85,8 +85,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 				long now = System.currentTimeMillis();
 				if(cooldownWakeupTime > now)
 					Logger.error(this, "Already on the cooldown queue for "+this, new Exception("error"));
-				else
-				cooldownWakeupTime = sched.queueCooldown(key, this);
+				else {
+					RequestScheduler sched = context.getFetchScheduler(key instanceof ClientSSK);
+					cooldownWakeupTime = sched.queueCooldown(key, this);
+				}
 				return true; // We will retry, just not yet. See requeueAfterCooldown(Key).
 			} else {
 				schedule(container, context);
@@ -142,7 +144,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return true;
 	}
 
-	public void onGotKey(Key key, KeyBlock block, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+	public void onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(this, 2);
 		synchronized(this) {
@@ -153,7 +155,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 			}
 		}
 		try {
-			onSuccess(Key.createKeyBlock(this.key, block), false, null, sched, container, context);
+			onSuccess(Key.createKeyBlock(this.key, block), false, null, container, context);
 		} catch (KeyVerifyException e) {
 			Logger.error(this, "onGotKey("+key+","+block+") got "+e+" for "+this, e);
 			// FIXME if we get rid of the direct route this must call onFailure()

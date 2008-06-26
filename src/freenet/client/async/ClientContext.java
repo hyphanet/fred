@@ -13,6 +13,7 @@ import freenet.client.FetchException;
 import freenet.client.InsertException;
 import freenet.crypt.RandomSource;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestScheduler;
 import freenet.node.RequestStarterGroup;
 import freenet.support.Executor;
 import freenet.support.api.BucketFactory;
@@ -139,6 +140,11 @@ public class ClientContext {
 			return persistentBucketFactory;
 		else
 			return tempBucketFactory;
+	}
+
+	public RequestScheduler getFetchScheduler(boolean ssk) {
+		if(ssk) return sskFetchScheduler;
+		return chkFetchScheduler;
 	}
 	
 }

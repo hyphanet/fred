@@ -290,7 +290,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(logMINOR)
 					Logger.minor(this, "Decode failed: "+e, e);
 				if(!persistent)
-					getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), tok, this, null, clientContext);
+					getter.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), tok, null, clientContext);
 				else {
 					final SendableGet g = getter;
 					final Object token = tok;
@@ -298,7 +298,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 						public void run(ObjectContainer container, ClientContext context) {
 							container.activate(g, 1);
-							g.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), token, ClientRequestScheduler.this, container, context);
+							g.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), token, container, context);
 						}
 						
 					}, NativeThread.NORM_PRIORITY, false);
@@ -308,7 +308,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(block != null) {
 				if(logMINOR) Logger.minor(this, "Can fulfill "+getter+" ("+tok+") immediately from store");
 				if(!persistent)
-					getter.onSuccess(block, true, tok, this, null, clientContext);
+					getter.onSuccess(block, true, tok, null, clientContext);
 				else {
 					final ClientKeyBlock b = block;
 					final Object t = tok;
@@ -318,12 +318,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 							
 							public void run(ObjectContainer container, ClientContext context) {
 								container.activate(g, 1);
-								g.onSuccess(b, true, t, ClientRequestScheduler.this, container, context);
+								g.onSuccess(b, true, t, container, context);
 							}
 							
 						}, NativeThread.NORM_PRIORITY, false);
 					} else {
-						g.onSuccess(b, true, t, ClientRequestScheduler.this, null, clientContext);
+						g.onSuccess(b, true, t, null, clientContext);
 					}
 				}
 			} else {
@@ -556,7 +556,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					for(int i=0;i<transientGets.length;i++) {
 						try {
 							if(logMINOR) Logger.minor(this, "Calling callback for "+transientGets[i]+" for "+key);
-							transientGets[i].onGotKey(key, block, ClientRequestScheduler.this, null, clientContext);
+							transientGets[i].onGotKey(key, block, null, clientContext);
 						} catch (Throwable t) {
 							Logger.error(this, "Caught "+t+" running callback "+transientGets[i]+" for "+key);
 						}
@@ -587,7 +587,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				for(int i=0;i<gets.length;i++) {
 					try {
 						if(logMINOR) Logger.minor(this, "Calling callback for "+gets[i]+" for "+key);
-						gets[i].onGotKey(key, block, ClientRequestScheduler.this, container, context);
+						gets[i].onGotKey(key, block, container, context);
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t+" running callback "+gets[i]+" for "+key);
 					}
@@ -706,7 +706,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 			public void run(ObjectContainer container, ClientContext context) {
 				container.activate(get, 1);
-				get.onFailure(e, keyNum, ClientRequestScheduler.this, selectorContainer, clientContext);
+				get.onFailure(e, keyNum, selectorContainer, clientContext);
 				if(get.persistent())
 					selectorContainer.delete((PersistentChosenRequest)req);
 			}

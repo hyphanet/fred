@@ -158,14 +158,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 		return fatallyFailedBlocks;
 	}
 
-	public void onSuccess(Bucket data, int blockNo, SplitFileFetcherSubSegment seg, ClientKeyBlock block, ObjectContainer container, RequestScheduler sched) {
+	public void onSuccess(Bucket data, int blockNo, SplitFileFetcherSubSegment seg, ClientKeyBlock block, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(this, 1);
 		boolean decodeNow = false;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" on "+seg);
 		if(parentFetcher.parent instanceof ClientGetter)
-			((ClientGetter)parentFetcher.parent).addKeyToBinaryBlob(block, container, sched.getContext());
+			((ClientGetter)parentFetcher.parent).addKeyToBinaryBlob(block, container, context);
 		// No need to unregister key, because it will be cleared in tripPendingKey().
 		boolean dontNotify;
 		synchronized(this) {
@@ -209,26 +209,26 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		if(persistent)
 			container.set(this);
-		parentFetcher.parent.completedBlock(dontNotify, container, sched.getContext());
+		parentFetcher.parent.completedBlock(dontNotify, container, context);
 		seg.possiblyRemoveFromParent(container);
 		if(decodeNow) {
 			removeSubSegments(container);
-			decode(container, sched.getContext(), sched);
+			decode(container, context);
 		}
 	}
 
-	public void decode(ObjectContainer container, ClientContext context, RequestScheduler sched) {
+	public void decode(ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(this, 1);
 		// Now decode
 		if(logMINOR) Logger.minor(this, "Decoding "+SplitFileFetcherSegment.this);
 
-		codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length, sched.getContext().mainExecutor);
+		codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length, context.mainExecutor);
 		if(persistent)
 			container.set(this);
 		
 		if(splitfileType != Metadata.SPLITFILE_NONREDUNDANT) {
-			FECQueue queue = sched.getFECQueue();
+			FECQueue queue = context.fecQueue;
 			codec.addToQueue(new FECJob(codec, queue, dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, context.getBucketFactory(parentFetcher.parent.persistent()), this, true, parentFetcher.parent.getPriorityClass(), parentFetcher.parent.persistent()), 
 					queue, container);
 			// Now have all the data blocks (not necessarily all the check blocks)
@@ -429,10 +429,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 	
 	/** A request has failed non-fatally, so the block may be retried 
 	 * @param container */
-	public void onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, RequestScheduler sched, ObjectContainer container) {
+	public void onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(this, 1);
-		ClientContext context = sched.getContext();
+		RequestScheduler sched = context.getFetchScheduler(false);
 		int tries;
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		boolean failed = false;
