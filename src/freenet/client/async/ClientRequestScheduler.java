@@ -548,14 +548,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 			jobRunner.queue(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
-					schedCore.succeeded(succeeded);
+					schedCore.succeeded(succeeded, container);
 					if(succeeded.persistent())
 						container.delete((PersistentChosenRequest)req);
 				}
 				
 			}, NativeThread.NORM_PRIORITY, false);
 		} else
-			schedTransient.succeeded(succeeded);
+			schedTransient.succeeded(succeeded, null);
 	}
 
 	public void tripPendingKey(final KeyBlock block) {

@@ -321,8 +321,9 @@ abstract class ClientRequestSchedulerBase {
 		}
 	}
 
-	public void succeeded(BaseSendableGet succeeded) {
+	public void succeeded(BaseSendableGet succeeded, ObjectContainer container) {
 		if(isInsertScheduler) return;
+		if(succeeded.isEmpty(container)) return;
 			if(logMINOR)
 				Logger.minor(this, "Recording successful fetch from "+succeeded);
 			recentSuccesses.add(succeeded);
@@ -333,7 +334,7 @@ abstract class ClientRequestSchedulerBase {
 	protected void removeFromAllRequestsByClientRequest(SendableRequest req, ClientRequester cr) {
 			Set v = (Set) allRequestsByClientRequest.get(cr);
 			if(v == null) {
-				Logger.error(this, "No HashSet registered for "+cr);
+				Logger.error(this, "No HashSet registered for "+cr+" for "+req);
 			} else {
 				boolean removed = v.remove(req);
 				if(v.isEmpty())
