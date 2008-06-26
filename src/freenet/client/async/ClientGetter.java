@@ -119,8 +119,10 @@ public class ClientGetter extends BaseClientGetter {
 		} catch (MalformedURLException e) {
 			throw new FetchException(FetchException.INVALID_URI, e);
 		}
-		if(persistent())
+		if(persistent()) {
 			container.set(this);
+			container.deactivate(currentState, 1);
+		}
 		return true;
 	}
 
@@ -145,6 +147,8 @@ public class ClientGetter extends BaseClientGetter {
 					Logger.minor(this, "Copying - returnBucket not respected by client.async");
 				BucketTools.copy(from, to);
 				from.free();
+				if(persistent())
+					from.removeFrom(container);
 			} catch (IOException e) {
 				Logger.error(this, "Error copying from "+from+" to "+to+" : "+e.toString(), e);
 				onFailure(new FetchException(FetchException.BUCKET_ERROR, e.toString()), state /* not strictly to blame, but we're not ako ClientGetState... */, container, context);
@@ -212,6 +216,8 @@ public class ClientGetter extends BaseClientGetter {
 		}
 		if(s != null) {
 			if(logMINOR) Logger.minor(this, "Cancelling "+currentState);
+			if(persistent())
+				container.activate(s, 1);
 			s.cancel(container, context);
 		}
 	}
