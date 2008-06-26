@@ -367,7 +367,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				if(logMINOR) Logger.minor(this, "No requests, adjusted retrycount "+chosenTracker.getNumber()+" ("+chosenTracker+") of priority "+choosenPriorityClass);
 				continue; // Try next retry count.
 			}
-			if(req.persistent())
+			if(chosenTracker.persistent())
 				container.activate(req, 1); // FIXME
 			if(req.persistent() != trackerParent.persistent()) {
 				Logger.error(this, "Request.persistent()="+req.persistent()+" but is in the queue for persistent="+trackerParent.persistent()+" for "+req);
