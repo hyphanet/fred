@@ -191,6 +191,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				jobRunner.queue(new DBJob() {
 
 					public void run(ObjectContainer container, ClientContext context) {
+						container.activate(getter, 1);
 						schedCore.addPendingKeys(getter, container);
 						schedCore.queueRegister(getter, databaseExecutor, container);
 						final Object[] keyTokens = getter.sendableKeys(container);
@@ -234,6 +235,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					jobRunner.queue(new DBJob() {
 
 						public void run(ObjectContainer container, ClientContext context) {
+							container.activate(req, 1);
 							schedCore.queueRegister(req, databaseExecutor, selectorContainer);
 							// Pretend to not be on the database thread.
 							// In some places (e.g. SplitFileInserter.start(), we call register() *many* times within a single transaction.
@@ -295,6 +297,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					jobRunner.queue(new DBJob() {
 
 						public void run(ObjectContainer container, ClientContext context) {
+							container.activate(g, 1);
 							g.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), token, ClientRequestScheduler.this, container, context);
 						}
 						
@@ -314,6 +317,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						jobRunner.queue(new DBJob() {
 							
 							public void run(ObjectContainer container, ClientContext context) {
+								container.activate(g, 1);
 								g.onSuccess(b, true, t, ClientRequestScheduler.this, container, context);
 							}
 							
@@ -350,6 +354,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				jobRunner.queue(new DBJob() {
 
 					public void run(ObjectContainer container, ClientContext context) {
+						container.activate(req, 1);
 						if(anyValid)
 							schedCore.innerRegister(req, random, container);
 						container.delete(reg);
@@ -474,6 +479,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			jobRunner.queue(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
+					container.activate(getter, 1);
 					schedCore.removePendingKey(getter, complain, key);
 					if(persistentCooldownQueue != null)
 						persistentCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key, container), container);
@@ -573,6 +579,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
+				container.activate(key, 1);
 				final SendableGet[] gets = schedCore.removePendingKey(key);
 				if(gets == null) return;
 				if(persistentCooldownQueue != null) {
@@ -617,6 +624,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
+				container.activate(key, 1);
 				short priority = schedCore.getKeyPrio(key, oldPrio, container);
 				if(priority >= oldPrio) return; // already on list at >= priority
 				offeredKeys[priority].queueKey(key);
