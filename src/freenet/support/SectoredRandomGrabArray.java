@@ -103,16 +103,18 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 				if(persistent) // deactivate to save memory
 					container.deactivate(item, 1);
 				if(rga.isEmpty()) {
+					Object client = rga.getObject();
+					if(persistent)
+						container.activate(client, 1);
 					if(logMINOR)
 						Logger.minor(this, "Removing only grab array (0) : "+rga+" for "+rga.getObject()+" (is empty)");
-					Object client = rga.getObject();
 					grabArraysByClient.remove(client);
 					grabArrays = new RemoveRandomWithObject[0];
 					if(persistent)
 						container.set(this);
 				}
 				if(logMINOR)
-					Logger.minor(this, "Returning (one item only) "+item+" for "+rga+" for "+rga.getObject());
+					Logger.minor(this, "Returning (one item only) "+item+" for "+rga);
 				return item;
 			}
 			if(grabArrays.length == 2) {
@@ -130,12 +132,21 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 						container.activate(rga, 1);
 					item = rga.removeRandom(excluding, container, context);
 					if(firstRGA.isEmpty() && rga.isEmpty()) {
+						Object rgaClient = rga.getObject();
+						Object firstClient = firstRGA.getObject();
+						if(persistent) {
+							container.activate(rgaClient, 1);
+							container.activate(firstClient, 1);
+						}
 						grabArraysByClient.remove(rga.getObject());
 						grabArraysByClient.remove(firstRGA.getObject());
 						grabArrays = new RemoveRandomWithObject[0];
 						if(persistent)
 							container.set(this);
 					} else if(firstRGA.isEmpty()) {
+						if(persistent) {
+							container.activate(firstRGA, 1);
+						}
 						grabArraysByClient.remove(firstRGA.getObject());
 						grabArrays = new RemoveRandomWithObject[] { rga };
 						if(persistent)
@@ -146,13 +157,13 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 						container.deactivate(firstRGA, 1);
 					}
 					if(logMINOR)
-						Logger.minor(this, "Returning (two items only) "+item+" for "+rga+" for "+rga.getObject());
+						Logger.minor(this, "Returning (two items only) "+item+" for "+rga);
 					return item;
 				} else {
 					if(persistent)
 						container.deactivate(rga, 1);
 					if(logMINOR)
-						Logger.minor(this, "Returning (two items only) "+item+" for "+rga+" for "+rga.getObject());
+						Logger.minor(this, "Returning (two items only) "+item+" for "+rga);
 					return item;
 				}
 			}
@@ -161,7 +172,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			if(persistent)
 				container.activate(rga, 1);
 			if(logMINOR)
-				Logger.minor(this, "Picked "+x+" of "+grabArrays.length+" : "+rga+" : "+rga.getObject()+" on "+this);
+				Logger.minor(this, "Picked "+x+" of "+grabArrays.length+" : "+rga+" on "+this);
 			RandomGrabArrayItem item = rga.removeRandom(excluding, container, context);
 			if(logMINOR)
 				Logger.minor(this, "RGA has picked "+x+"/"+grabArrays.length+": "+item+
@@ -172,8 +183,10 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			final int grabArraysLength = grabArrays.length;
 			if(rga.isEmpty()) {
 				if(logMINOR)
-					Logger.minor(this, "Removing grab array "+x+" : "+rga+" for "+rga.getObject()+" (is empty)");
+					Logger.minor(this, "Removing grab array "+x+" : "+rga+" (is empty)");
 				Object client = rga.getObject();
+				if(persistent)
+					container.activate(client, 1);
 				grabArraysByClient.remove(client);
 				RemoveRandomWithObject[] newArray = new RemoveRandomWithObject[grabArraysLength > 1 ? grabArraysLength-1 : 0];
 				if(x > 0)
