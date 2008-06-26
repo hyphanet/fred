@@ -540,6 +540,10 @@ public class FreenetURI implements Cloneable {
 	}
 
 	public String toString(boolean prefix, boolean pureAscii) {
+		if(keyType == null) {
+			// Not activated or something...
+			return null;
+		}
 		StringBuffer b;
 		if(prefix)
 			b = new StringBuffer("freenet:");
