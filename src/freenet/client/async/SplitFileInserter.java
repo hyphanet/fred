@@ -303,8 +303,8 @@ public class SplitFileInserter implements ClientPutState {
 		Metadata m = null;
 		synchronized(this) {
 			// Create metadata
-			ClientCHK[] dataURIs = getDataCHKs();
-			ClientCHK[] checkURIs = getCheckCHKs();
+			ClientCHK[] dataURIs = getDataCHKs(container);
+			ClientCHK[] checkURIs = getCheckCHKs(container);
 			
 			if(logMINOR) Logger.minor(this, "Data URIs: "+dataURIs.length+", check URIs: "+checkURIs.length);
 			
@@ -347,7 +347,7 @@ public class SplitFileInserter implements ClientPutState {
 		return false;
 	}
 
-	private ClientCHK[] getCheckCHKs() {
+	private ClientCHK[] getCheckCHKs(ObjectContainer container) {
 		// Copy check blocks from each segment into a FreenetURI[].
 		ClientCHK[] uris = new ClientCHK[countCheckBlocks];
 		int x = 0;
@@ -359,13 +359,18 @@ public class SplitFileInserter implements ClientPutState {
 			x += segURIs.length;
 		}
 
+		if(persistent) {
+			for(int i=0;i<uris.length;i++)
+				container.activate(uris[i], 5);
+		}
+		
 		if(uris.length != x)
 			throw new IllegalStateException("Total is wrong");
 		
 		return uris;
 	}
 
-	private ClientCHK[] getDataCHKs() {
+	private ClientCHK[] getDataCHKs(ObjectContainer container) {
 		// Copy check blocks from each segment into a FreenetURI[].
 		ClientCHK[] uris = new ClientCHK[countDataBlocks];
 		int x = 0;
@@ -377,6 +382,11 @@ public class SplitFileInserter implements ClientPutState {
 			x += segURIs.length;
 		}
 
+		if(persistent) {
+			for(int i=0;i<uris.length;i++)
+				container.activate(uris[i], 5);
+		}
+		
 		if(uris.length != x)
 			throw new IllegalStateException("Total is wrong");
 		
