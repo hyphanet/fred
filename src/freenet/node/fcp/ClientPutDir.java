@@ -329,7 +329,9 @@ public class ClientPutDir extends ClientPutBase {
 		return succeeded;
 	}
 
-	public FreenetURI getFinalURI() {
+	public FreenetURI getFinalURI(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(uri, 5);
 		return generatedURI;
 	}
 

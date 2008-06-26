@@ -675,7 +675,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		return this.returnType == ClientGetMessage.RETURN_TYPE_DISK;
 	}
 
-	public FreenetURI getURI() {
+	public FreenetURI getURI(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(uri, 5);
 		return uri;
 	}
 

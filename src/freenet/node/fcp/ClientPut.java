@@ -447,7 +447,9 @@ public class ClientPut extends ClientPutBase {
 		return succeeded;
 	}
 
-	public FreenetURI getFinalURI() {
+	public FreenetURI getFinalURI(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(generatedURI, 5);
 		return generatedURI;
 	}
 

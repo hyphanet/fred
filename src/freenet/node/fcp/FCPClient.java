@@ -404,7 +404,7 @@ public class FCPClient {
 		// FIXME speed this up with another hashmap or something.
 		for(int i=0;i<completedUnackedRequests.size();i++) {
 			ClientGet getter = (ClientGet) completedUnackedRequests.get(i);
-			if(getter.getURI().equals(key)) {
+			if(getter.getURI(container).equals(key)) {
 				if(persistenceType == ClientRequest.PERSIST_FOREVER)
 					container.activate(getter, 1);
 				return getter;

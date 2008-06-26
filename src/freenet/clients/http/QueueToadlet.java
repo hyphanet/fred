@@ -924,9 +924,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		return persistenceCell;
 	}
 
-	private HTMLNode createDownloadCell(PageMaker pageMaker, ClientGet p) {
+	private HTMLNode createDownloadCell(PageMaker pageMaker, ClientGet p, ObjectContainer container) {
 		HTMLNode downloadCell = new HTMLNode("td", "class", "request-download");
-		downloadCell.addChild("a", "href", p.getURI().toString(), L10n.getString("QueueToadlet.download"));
+		downloadCell.addChild("a", "href", p.getURI(container).toString(), L10n.getString("QueueToadlet.download"));
 		return downloadCell;
 	}
 
@@ -1033,11 +1033,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 				int column = columns[columnIndex];
 				if (column == LIST_IDENTIFIER) {
 					if (clientRequest instanceof ClientGet) {
-						requestRow.addChild(createIdentifierCell(((ClientGet) clientRequest).getURI(), clientRequest.getIdentifier(), false));
+						requestRow.addChild(createIdentifierCell(((ClientGet) clientRequest).getURI(container), clientRequest.getIdentifier(), false));
 					} else if (clientRequest instanceof ClientPutDir) {
-						requestRow.addChild(createIdentifierCell(((ClientPutDir) clientRequest).getFinalURI(), clientRequest.getIdentifier(), true));
+						requestRow.addChild(createIdentifierCell(((ClientPutDir) clientRequest).getFinalURI(container), clientRequest.getIdentifier(), true));
 					} else if (clientRequest instanceof ClientPut) {
-						requestRow.addChild(createIdentifierCell(((ClientPut) clientRequest).getFinalURI(), clientRequest.getIdentifier(), false));
+						requestRow.addChild(createIdentifierCell(((ClientPut) clientRequest).getFinalURI(container), clientRequest.getIdentifier(), false));
 					}
 				} else if (column == LIST_SIZE) {
 					if (clientRequest instanceof ClientGet) {
@@ -1046,7 +1046,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 						requestRow.addChild(createSizeCell(((ClientPut) clientRequest).getDataSize(), true, advancedModeEnabled));
 					}
 				} else if (column == LIST_DOWNLOAD) {
-					requestRow.addChild(createDownloadCell(pageMaker, (ClientGet) clientRequest));
+					requestRow.addChild(createDownloadCell(pageMaker, (ClientGet) clientRequest, container));
 				} else if (column == LIST_MIME_TYPE) {
 					if (clientRequest instanceof ClientGet) {
 						requestRow.addChild(createTypeCell(((ClientGet) clientRequest).getMIMEType(container)));
@@ -1057,11 +1057,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 					requestRow.addChild(createPersistenceCell(clientRequest.isPersistent(), clientRequest.isPersistentForever()));
 				} else if (column == LIST_KEY) {
 					if (clientRequest instanceof ClientGet) {
-						requestRow.addChild(createKeyCell(((ClientGet) clientRequest).getURI(), false));
+						requestRow.addChild(createKeyCell(((ClientGet) clientRequest).getURI(container), false));
 					} else if (clientRequest instanceof ClientPut) {
-						requestRow.addChild(createKeyCell(((ClientPut) clientRequest).getFinalURI(), false));
+						requestRow.addChild(createKeyCell(((ClientPut) clientRequest).getFinalURI(container), false));
 					}else {
-						requestRow.addChild(createKeyCell(((ClientPutDir) clientRequest).getFinalURI(), true));
+						requestRow.addChild(createKeyCell(((ClientPutDir) clientRequest).getFinalURI(container), true));
 					}
 				} else if (column == LIST_FILENAME) {
 					if (clientRequest instanceof ClientGet) {
@@ -1239,7 +1239,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			return;
 		}
 		if(req instanceof ClientGet) {
-			FreenetURI uri = ((ClientGet)req).getURI();
+			FreenetURI uri = ((ClientGet)req).getURI(container);
 			if(req.isPersistentForever() && uri != null)
 				container.activate(uri, 5);
 			long size = ((ClientGet)req).getDataSize(container);
@@ -1269,7 +1269,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 				alertsByIdentifier.put(identifier, alert);
 			}
 		} else if(req instanceof ClientPut) {
-			FreenetURI uri = ((ClientPut)req).getFinalURI();
+			FreenetURI uri = ((ClientPut)req).getFinalURI(container);
 			if(req.isPersistentForever() && uri != null)
 				container.activate(uri, 5);
 			long size = ((ClientPut)req).getDataSize();
@@ -1303,7 +1303,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 				alertsByIdentifier.put(identifier, alert);
 			}
 		} else if(req instanceof ClientPutDir) {
-			FreenetURI uri = ((ClientPutDir)req).getFinalURI();
+			FreenetURI uri = ((ClientPutDir)req).getFinalURI(container);
 			long size = ((ClientPutDir)req).getTotalDataSize();
 			int files = ((ClientPutDir)req).getNumberOfFiles();
 			String name = uri.getPreferredFilename();
