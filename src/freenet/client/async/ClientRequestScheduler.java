@@ -163,7 +163,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	/**
 	 * Register and then delete the RegisterMe which is passed in to avoid querying.
 	 */
-	public void register(final SendableRequest req, boolean onDatabaseThread, final RegisterMe reg) {
+	public void register(final SendableRequest req, boolean onDatabaseThread, RegisterMe reg) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Registering "+req, new Exception("debug"));
 		final boolean persistent = req.persistent();
@@ -174,7 +174,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 			
 			if(persistent && onDatabaseThread) {
 				schedCore.addPendingKeys(getter, selectorContainer);
-				schedCore.queueRegister(getter, databaseExecutor, selectorContainer);
+				if(reg == null)
+					reg = schedCore.queueRegister(getter, databaseExecutor, selectorContainer);
+				final RegisterMe regme = reg;
 				final Object[] keyTokens = getter.sendableKeys(selectorContainer);
 				final ClientKey[] keys = new ClientKey[keyTokens.length];
 				for(int i=0;i<keyTokens.length;i++) {
@@ -186,17 +188,21 @@ public class ClientRequestScheduler implements RequestScheduler {
 				datastoreCheckerExecutor.execute(new Runnable() {
 
 					public void run() {
-						registerCheckStore(getter, true, keyTokens, keys, reg, blocks, dontCache);
+						registerCheckStore(getter, true, keyTokens, keys, regme, blocks, dontCache);
 					}
 					
 				}, getter.getPriorityClass(selectorContainer), "Checking datastore");
 			} else if(persistent) {
+				final RegisterMe regme = reg;
 				jobRunner.queue(new DBJob() {
 
 					public void run(ObjectContainer container, ClientContext context) {
 						container.activate(getter, 1);
 						schedCore.addPendingKeys(getter, container);
-						schedCore.queueRegister(getter, databaseExecutor, container);
+						RegisterMe reg = regme;
+						if(reg == null)
+							reg = schedCore.queueRegister(getter, databaseExecutor, container);
+						final RegisterMe regInner = reg;
 						final Object[] keyTokens = getter.sendableKeys(container);
 						final ClientKey[] keys = new ClientKey[keyTokens.length];
 						for(int i=0;i<keyTokens.length;i++) {
@@ -208,7 +214,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						datastoreCheckerExecutor.execute(new Runnable() {
 
 							public void run() {
-								registerCheckStore(getter, true, keyTokens, keys, reg, blocks, dontCache);
+								registerCheckStore(getter, true, keyTokens, keys, regInner, blocks, dontCache);
 							}
 							
 						}, getter.getPriorityClass(container), "Checking datastore");
@@ -237,11 +243,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 					schedCore.queueRegister(req, databaseExecutor, selectorContainer);
 					finishRegister(req, persistent, false, true, reg);
 				} else {
+					final RegisterMe regme = reg;
 					jobRunner.queue(new DBJob() {
 
 						public void run(ObjectContainer container, ClientContext context) {
 							container.activate(req, 1);
-							schedCore.queueRegister(req, databaseExecutor, selectorContainer);
+							RegisterMe reg = regme;
+							if(reg == null)
+								reg = schedCore.queueRegister(req, databaseExecutor, selectorContainer);
 							// Pretend to not be on the database thread.
 							// In some places (e.g. SplitFileInserter.start(), we call register() *many* times within a single transaction.
 							// We can greatly improve responsiveness at the cost of some throughput and RAM by only adding the tags at this point.
