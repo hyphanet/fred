@@ -330,7 +330,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			container.activate(this, 2);
 		}
 		if(includePersistentRequest) {
-			FCPMessage msg = persistentTagMessage();
+			FCPMessage msg = persistentTagMessage(container);
 			handler.queue(msg);
 		}
 

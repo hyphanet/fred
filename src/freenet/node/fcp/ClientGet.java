@@ -299,7 +299,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				throw e;
 			}
 			if(persistenceType != PERSIST_CONNECTION && !noTags) {
-				FCPMessage msg = persistentTagMessage();
+				FCPMessage msg = persistentTagMessage(container);
 				client.queueClientRequestMessage(msg, 0, container);
 			}
 	}
@@ -311,7 +311,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			}
 			getter.start(container, context);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
-				FCPMessage msg = persistentTagMessage();
+				FCPMessage msg = persistentTagMessage(container);
 				client.queueClientRequestMessage(msg, 0, container);
 			}
 			synchronized(this) {
@@ -466,7 +466,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 		if(!onlyData) {
 			if(includePersistentRequest) {
-				FCPMessage msg = persistentTagMessage();
+				FCPMessage msg = persistentTagMessage(container);
 				handler.queue(msg);
 			}
 			if(progressPending != null)
@@ -483,7 +483,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			handler.queue(allDataPending);
 	}
 
-	protected FCPMessage persistentTagMessage() {
+	protected FCPMessage persistentTagMessage(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER) {
+			container.activate(uri, 5);
+			container.activate(fctx, 1);
+			container.activate(client, 1);
+		}
 		return new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, tempFile, clientToken, client.isGlobalQueue, started, fctx.maxNonSplitfileRetries, binaryBlob, fctx.maxOutputLength);
 	}
 

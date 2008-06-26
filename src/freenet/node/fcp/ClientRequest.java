@@ -313,7 +313,7 @@ public abstract class ClientRequest {
 
 	public abstract boolean restart(ObjectContainer container, ClientContext context);
 
-	protected abstract FCPMessage persistentTagMessage();
+	protected abstract FCPMessage persistentTagMessage(ObjectContainer container);
 
 	/**
 	 * Called after a ModifyPersistentRequest.

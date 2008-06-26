@@ -87,7 +87,7 @@ public class ClientPutDir extends ClientPutBase {
 		if(persistenceType != PERSIST_CONNECTION)
 			client.register(this, false, container);
 		if(persistenceType != PERSIST_CONNECTION && !noTags) {
-			FCPMessage msg = persistentTagMessage();
+			FCPMessage msg = persistentTagMessage(container);
 			client.queueClientRequestMessage(msg, 0, container);
 		}
 	}
@@ -213,7 +213,7 @@ public class ClientPutDir extends ClientPutBase {
 		numberOfFiles = fileCount;
 		totalSize = size;
 		if(persistenceType != PERSIST_CONNECTION) {
-			FCPMessage msg = persistentTagMessage();
+			FCPMessage msg = persistentTagMessage(container);
 			client.queueClientRequestMessage(msg, 0, container);
 		}
 	}
@@ -227,7 +227,7 @@ public class ClientPutDir extends ClientPutBase {
 			started = true;
 			if(logMINOR) Logger.minor(this, "Started "+putter);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
-				FCPMessage msg = persistentTagMessage();
+				FCPMessage msg = persistentTagMessage(container);
 				client.queueClientRequestMessage(msg, 0, container);
 			}
 			if(persistenceType == PERSIST_FOREVER)
@@ -311,7 +311,12 @@ public class ClientPutDir extends ClientPutBase {
 		return fs;
 	}
 
-	protected FCPMessage persistentTagMessage() {
+	protected FCPMessage persistentTagMessage(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER) {
+			container.activate(publicURI, 5);
+			container.activate(ctx, 1);
+			container.activate(manifestElements, 5);
+		}
 		return new PersistentPutDir(identifier, publicURI, verbosity, priorityClass,
 				persistenceType, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries, wasDiskPut);
 	}

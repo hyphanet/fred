@@ -338,7 +338,7 @@ public class ClientPut extends ClientPutBase {
 				client.lowLevelClient,
 				oldProgress, targetFilename, binaryBlob);
 		if(persistenceType != PERSIST_CONNECTION) {
-			FCPMessage msg = persistentTagMessage();
+			FCPMessage msg = persistentTagMessage(null);
 			client.queueClientRequestMessage(msg, 0, null);
 		}
 		
@@ -348,7 +348,7 @@ public class ClientPut extends ClientPutBase {
 		if(persistenceType != PERSIST_CONNECTION)
 			client.register(this, false, container);
 		if(persistenceType != PERSIST_CONNECTION && !noTags) {
-			FCPMessage msg = persistentTagMessage();
+			FCPMessage msg = persistentTagMessage(container);
 			client.queueClientRequestMessage(msg, 0, container);
 		}
 	}
@@ -362,7 +362,7 @@ public class ClientPut extends ClientPutBase {
 		try {
 			putter.start(earlyEncode, false, container, context);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
-				FCPMessage msg = persistentTagMessage();
+				FCPMessage msg = persistentTagMessage(container);
 				client.queueClientRequestMessage(msg, 0, container);
 			}
 			synchronized(this) {
@@ -428,7 +428,11 @@ public class ClientPut extends ClientPutBase {
 		return putter;
 	}
 
-	protected FCPMessage persistentTagMessage() {
+	protected FCPMessage persistentTagMessage(ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER) {
+			container.activate(publicURI, 5);
+			container.activate(clientMetadata, 5);
+		}
 		return new PersistentPut(identifier, publicURI, verbosity, priorityClass, uploadFrom, targetURI, 
 				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue,
 				getDataSize(), clientToken, started, ctx.maxInsertRetries, targetFilename, binaryBlob);
