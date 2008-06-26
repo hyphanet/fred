@@ -401,8 +401,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 	}
 
 	public void start(ObjectContainer container, ClientContext context) throws InsertException {
+		// Always called by parent, so don't activate or deactivate parent.
 		if(persistent) {
-			container.activate(parent, 1);
 			container.activate(parent.parent, 1);
 		}
 		if (logMINOR)
@@ -473,8 +473,6 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		if (finished) {
 			parent.segmentFinished(this, container, context);
 		}
-		if(persistent)
-			container.deactivate(parent, 1);
 	}
 
 	public void onDecodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets, Bucket[] checkBuckets, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus) {} // irrevelant
