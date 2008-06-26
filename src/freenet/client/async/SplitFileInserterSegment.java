@@ -544,8 +544,10 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			finished = true;
 			toThrow = ex;
 		}
-		if(persistent)
+		if(persistent) {
+			container.activate(parent, 1);
 			container.set(this);
+		}
 		parent.segmentFinished(this, container, context);
 	}
 
@@ -558,8 +560,10 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			finished = true;
 			toThrow = InsertException.construct(errors);
 		}
-		if(persistent)
+		if(persistent) {
 			container.set(this);
+			container.activate(parent, 1);
+		}
 		parent.segmentFinished(this, container, context);
 	}
 
@@ -643,6 +647,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		if (total == -1)
 			return;
 		if (total == dataBlockInserters.length) {
+			if(persistent)
+				container.activate(parent, 1);
 			parent.segmentFetchable(this, container);
 		}
 		if (total != dataBlockInserters.length + checkBlockInserters.length)
@@ -748,6 +754,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 				sbi.cancel(container, context);
 			Bucket d = dataBlocks[i];
 			if (d != null) {
+				if(persistent)
+					container.activate(d, 5);
 				d.free();
 				dataBlocks[i] = null;
 			}
@@ -758,12 +766,16 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 				sbi.cancel(container, context);
 			Bucket d = checkBlocks[i];
 			if (d != null) {
+				if(persistent)
+					container.activate(d, 5);
 				d.free();
 				checkBlocks[i] = null;
 			}
 		}
-		if(persistent)
+		if(persistent) {
 			container.set(this);
+			container.activate(parent, 1);
+		}
 		parent.segmentFinished(this, container, context);
 	}
 

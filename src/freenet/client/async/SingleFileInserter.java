@@ -329,8 +329,11 @@ class SingleFileInserter implements ClientPutState {
 	 * When we get the metadata, start inserting it to our target key.
 	 * When we have inserted both the metadata and the splitfile,
 	 * call the master callback.
+	 * 
+	 * This class has to be public so that db4o can access objectOnActivation
+	 * through reflection.
 	 */
-	class SplitHandler implements PutCompletionCallback, ClientPutState, HasActivationCallback {
+	public class SplitHandler implements PutCompletionCallback, ClientPutState {
 
 		ClientPutState sfi;
 		ClientPutState metadataPutter;
@@ -610,8 +613,13 @@ class SingleFileInserter implements ClientPutState {
 				oldSFI = sfi;
 				oldMetadataPutter = metadataPutter;
 			}
-			if(persistent)
+			if(persistent) {
 				container.set(this);
+				if(oldSFI != null)
+					container.activate(oldSFI, 1);
+				if(oldMetadataPutter != null)
+					container.activate(oldMetadataPutter, 1);
+			}
 			if(oldSFI != null)
 				oldSFI.cancel(container, context);
 			if(oldMetadataPutter != null)
@@ -727,6 +735,8 @@ class SingleFileInserter implements ClientPutState {
 					if(logMINOR) Logger.minor(this, "Started metadata inserter: "+putter+" for "+this);
 				} else {
 					// Get all the URIs ASAP so we can start to insert the metadata.
+					if(persistent)
+						container.activate(splitInserter, 1);
 					((SplitFileInserter)splitInserter).forceEncode(container, context);
 				}
 			} catch (InsertException e1) {

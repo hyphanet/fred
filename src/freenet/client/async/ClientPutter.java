@@ -242,8 +242,11 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			if(startedStarting) return;
 			startedStarting = true;
 		}
-		if(persistent())
+		if(persistent()) {
 			container.set(this);
+			if(oldState != null)
+				container.activate(oldState, 1);
+		}
 		if(oldState != null) oldState.cancel(container, context);
 		onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
 	}
