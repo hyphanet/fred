@@ -150,7 +150,8 @@ public class RandomGrabArray {
 						}
 						if(valid == 0 && exclude == 0) {
 							index = 0;
-							container.set(this);
+							if(persistent)
+								container.set(this);
 							if(logMINOR) Logger.minor(this, "No valid or excluded items");
 							return null;
 						} else if(valid == 0) {
