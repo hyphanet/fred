@@ -241,7 +241,6 @@ abstract class ClientRequestSchedulerBase {
 		int retryCount = req.getRetryCount();
 		short prio = req.getPriorityClass(container);
 		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" retry "+retryCount+" for "+req.getClientRequest());
-		addToGrabArray(prio, retryCount, fixRetryCount(retryCount), req.getClient(), req.getClientRequest(), req, random, container);
 		Set v = (Set) allRequestsByClientRequest.get(req.getClientRequest());
 		if(v == null) {
 			v = makeSetForAllRequestsByClientRequest(container);
@@ -252,6 +251,7 @@ abstract class ClientRequestSchedulerBase {
 		v.add(req);
 		if(persistent())
 			container.set(v);
+		addToGrabArray(prio, retryCount, fixRetryCount(retryCount), req.getClient(), req.getClientRequest(), req, random, container);
 		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio+", retrycount="+retryCount+" v.size()="+v.size());
 	}
 	
@@ -332,6 +332,7 @@ abstract class ClientRequestSchedulerBase {
 	}
 
 	protected void removeFromAllRequestsByClientRequest(SendableRequest req, ClientRequester cr) {
+		
 			Set v = (Set) allRequestsByClientRequest.get(cr);
 			if(v == null) {
 				Logger.error(this, "No HashSet registered for "+cr+" for "+req);
