@@ -469,10 +469,12 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		if (fetchable)
 			parent.segmentFetchable(this, container);
 		if (fin)
-			finish(container, context);
+			finish(container, context, parent);
 		if (finished) {
 			parent.segmentFinished(this, container, context);
 		}
+		if(persistent)
+			container.deactivate(parent, 1);
 	}
 
 	public void onDecodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets, Bucket[] checkBuckets, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus) {} // irrevelant
@@ -507,7 +509,9 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			Logger.error(this, "Caught " + t + " while encoding " + this, t);
 			InsertException ex = new InsertException(
 					InsertException.INTERNAL_ERROR, t, null);
-			finish(ex, container, context);
+			finish(ex, container, context, parent);
+			if(persistent)
+				container.deactivate(parent, 1);
 			return;
 		}
 
@@ -531,11 +535,20 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			}
 		}
 		
-		if(persistent)
+		if(persistent) {
 			container.set(this);
+			container.deactivate(parent, 1);
+		}
 	}
 
-	private void finish(InsertException ex, ObjectContainer container, ClientContext context) {
+	/**
+	 * Caller must activate and pass in parent.
+	 * @param ex
+	 * @param container
+	 * @param context
+	 * @param parent
+	 */
+	private void finish(InsertException ex, ObjectContainer container, ClientContext context, SplitFileInserter parent) {
 		if (logMINOR)
 			Logger.minor(this, "Finishing " + this + " with " + ex, ex);
 		synchronized (this) {
@@ -545,13 +558,18 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			toThrow = ex;
 		}
 		if(persistent) {
-			container.activate(parent, 1);
 			container.set(this);
 		}
 		parent.segmentFinished(this, container, context);
 	}
 
-	private void finish(ObjectContainer container, ClientContext context) {
+	/**
+	 * Caller must activate and pass in parent.
+	 * @param container
+	 * @param context
+	 * @param parent
+	 */
+	private void finish(ObjectContainer container, ClientContext context, SplitFileInserter parent) {
 		if(persistent)
 			container.activate(errors, 5);
 		synchronized (this) {
@@ -562,7 +580,6 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		}
 		if(persistent) {
 			container.set(this);
-			container.activate(parent, 1);
 		}
 		parent.segmentFinished(this, container, context);
 	}
@@ -610,6 +627,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			container.set(this);
 		}
 		parent.segmentHasURIs(this, container, context);
+		if(persistent)
+			container.deactivate(parent, 1);
 	}
 
 	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
@@ -624,6 +643,10 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		SingleBlockInserter sbi = (SingleBlockInserter) state;
 		int x = sbi.token;
 		completed(x, container, context);
+		if(persistent) {
+			container.deactivate(parent.parent, 1);
+			container.deactivate(parent, 1);
+		}
 	}
 
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
@@ -640,6 +663,11 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		int x = sbi.token;
 		errors.merge(e);
 		completed(x, container, context);
+		if(persistent) {
+			container.deactivate(parent.parent, 1);
+			container.deactivate(parent, 1);
+			container.deactivate(errors, 1);
+		}
 	}
 
 	private void completed(int x, ObjectContainer container, ClientContext context) {
@@ -655,7 +683,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			return;
 		if(persistent)
 			container.set(this);
-		finish(container, context);
+		finish(container, context, parent);
 	}
 
 	/**
@@ -757,6 +785,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 				if(persistent)
 					container.activate(d, 5);
 				d.free();
+				d.removeFrom(container);
 				dataBlocks[i] = null;
 			}
 		}
@@ -769,6 +798,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 				if(persistent)
 					container.activate(d, 5);
 				d.free();
+				d.removeFrom(container);
 				checkBlocks[i] = null;
 			}
 		}
