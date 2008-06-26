@@ -346,6 +346,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(!databaseExecutor.onThread()) {
 					throw new IllegalStateException("Not on database thread!");
 				}
+				if(persistent)
+					selectorContainer.activate(req, 1);
+				if(logMINOR)
+					Logger.minor(this, "finishRegister() for "+req);
 				if(anyValid)
 					schedCore.innerRegister(req, random, selectorContainer);
 				selectorContainer.delete(reg);
@@ -356,6 +360,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 					public void run(ObjectContainer container, ClientContext context) {
 						container.activate(req, 1);
+						if(logMINOR)
+							Logger.minor(this, "finishRegister() for "+req);
 						if(anyValid)
 							schedCore.innerRegister(req, random, container);
 						container.delete(reg);

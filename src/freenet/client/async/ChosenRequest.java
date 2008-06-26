@@ -38,5 +38,9 @@ public class ChosenRequest {
 	public boolean send(NodeClientCore core, RequestScheduler sched) {
 		return request.send(core, sched, this);
 	}
+
+	public boolean isPersistent() {
+		return this instanceof PersistentChosenRequest;
+	}
 	
 }
