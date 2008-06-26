@@ -390,7 +390,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(logMINOR) Logger.minor(this, "Permanently failed block: "+blockNo+" on "+this+" : "+e, e);
 		boolean allFailed;
 		// Since we can't keep the key, we need to unregister for it at this point to avoid a memory leak
-		NodeCHK key = getBlockNodeKey(blockNo);
+		NodeCHK key = getBlockNodeKey(blockNo, container);
 		if(key != null) seg.unregisterKey(key, context);
 		synchronized(this) {
 			if(isFinishing()) return; // this failure is now irrelevant, and cleanup will occur on the decoder thread
@@ -585,17 +585,21 @@ public class SplitFileFetcherSegment implements FECCallback {
 		// Ignore
 	}
 
-	public synchronized ClientCHK getBlockKey(int blockNum) {
+	public synchronized ClientCHK getBlockKey(int blockNum, ObjectContainer container) {
+		ClientCHK ret;
 		if(blockNum < 0) return null;
 		else if(blockNum < dataKeys.length)
-			return dataKeys[blockNum];
+			ret = dataKeys[blockNum];
 		else if(blockNum < dataKeys.length + checkKeys.length)
-			return checkKeys[blockNum - dataKeys.length];
+			ret = checkKeys[blockNum - dataKeys.length];
 		else return null;
+		if(persistent)
+			container.activate(ret, 5);
+		return ret;
 	}
 	
-	public NodeCHK getBlockNodeKey(int blockNum) {
-		ClientCHK key = getBlockKey(blockNum);
+	public NodeCHK getBlockNodeKey(int blockNum, ObjectContainer container) {
+		ClientCHK key = getBlockKey(blockNum, container);
 		if(key != null) return key.getNodeCHK();
 		else return null;
 	}

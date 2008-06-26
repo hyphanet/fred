@@ -84,7 +84,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 					Logger.minor(this, "Segment is finishing when getting key "+token+" on "+this);
 				return null;
 			}
-			ClientKey key = segment.getBlockKey(((Integer)token).intValue());
+			ClientKey key = segment.getBlockKey(((Integer)token).intValue(), container);
 			if(key == null) {
 				if(segment.isFinished()) {
 					Logger.error(this, "Segment finished but didn't tell us! "+this);
@@ -139,7 +139,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				int x;
 				x = context.random.nextInt(blockNums.size());
 				ret = (Integer) blockNums.remove(x);
-				Key key = segment.getBlockNodeKey(((Integer)ret).intValue());
+				Key key = segment.getBlockNodeKey(((Integer)ret).intValue(), container);
 				if(key == null) {
 					if(segment.isFinishing() || segment.isFinished()) return null;
 					Logger.error(this, "Key is null for block "+ret+" for "+this);
@@ -173,7 +173,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				if(blockNums.isEmpty()) return false;
 				x = context.random.nextInt(blockNums.size());
 				ret = (Integer) blockNums.get(x);
-				Key key = segment.getBlockNodeKey(((Integer)ret).intValue());
+				Key key = segment.getBlockNodeKey(((Integer)ret).intValue(), container);
 				if(key == null) {
 					Logger.error(this, "Key is null for block "+ret+" for "+this+" in hasValidKeys()");
 					blockNums.remove(x);
@@ -425,7 +425,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		if(schedule) schedule(container, context);
 		else if(!dontSchedule)
 			// Already scheduled, however this key may not be registered.
-			getScheduler(context).addPendingKey(segment.getBlockKey(blockNo), this);
+			getScheduler(context).addPendingKey(segment.getBlockKey(blockNo, container), this);
 	}
 
 	public String toString() {
@@ -462,7 +462,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			for(int i=0;i<blockNums.size();i++) {
 				Integer token = (Integer) blockNums.get(i);
 				int num = ((Integer)token).intValue();
-				Key k = segment.getBlockNodeKey(num);
+				Key k = segment.getBlockNodeKey(num, container);
 				if(k != null && k.equals(key)) {
 					blockNums.remove(i);
 					break;
@@ -475,7 +475,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			return;
 		}
 		Integer token = new Integer(blockNo);
-		ClientCHK ckey = (ClientCHK) segment.getBlockKey(blockNo);
+		ClientCHK ckey = (ClientCHK) segment.getBlockKey(blockNo, container);
 		ClientCHKBlock cb;
 		try {
 			cb = new ClientCHKBlock((CHKBlock)block, ckey);
