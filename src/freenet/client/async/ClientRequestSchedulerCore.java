@@ -407,6 +407,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					altReq = (BaseSendableGet) recent.remove(recent.size()-1);
 				}
 			}
+			if(altReq != null)
+				container.activate(altReq, 1);
 			if(altReq != null && altReq.getPriorityClass(container) <= choosenPriorityClass && 
 					fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber() && !altReq.isEmpty(container)) {
 				// Use the recent one instead
