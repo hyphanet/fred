@@ -338,7 +338,7 @@ abstract class ClientRequestSchedulerBase {
 				boolean removed = v.remove(req);
 				if(v.isEmpty())
 					allRequestsByClientRequest.remove(cr);
-				if(logMINOR) Logger.minor(this, (removed ? "" : "Not ") + "Removed from HashSet for "+cr+" which now has "+v.size()+" elements");
+				if(logMINOR) Logger.minor(this, (removed ? "" : "Not ") + "Removed "+req+" from HashSet for "+cr+" which now has "+v.size()+" elements");
 			}
 	}
 
