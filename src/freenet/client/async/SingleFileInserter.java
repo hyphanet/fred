@@ -330,7 +330,7 @@ class SingleFileInserter implements ClientPutState {
 	 * When we have inserted both the metadata and the splitfile,
 	 * call the master callback.
 	 */
-	class SplitHandler implements PutCompletionCallback, ClientPutState {
+	class SplitHandler implements PutCompletionCallback, ClientPutState, HasActivationCallback {
 
 		ClientPutState sfi;
 		ClientPutState metadataPutter;
