@@ -343,7 +343,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public short getPriorityClass(ObjectContainer container) {
-		if(parent != null) container.activate(parent, 1);
+		if(persistent) container.activate(parent, 1);
 		return parent.priorityClass;
 	}
 
