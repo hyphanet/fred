@@ -259,6 +259,10 @@ public class SplitFileInserter implements ClientPutState {
 		synchronized(this) {
 			encode = forceEncode;
 			for(int i=0;i<segments.length;i++) {
+				if(segments[i] != segment) {
+					if(persistent)
+						container.activate(segments[i], 1);
+				}
 				if((segments[i] == null) || !segments[i].isEncoded()) {
 					ret = true;
 					break;
@@ -266,7 +270,13 @@ public class SplitFileInserter implements ClientPutState {
 			}
 		}
 		if(encode) segment.forceEncode(container, context);
-		if(ret) return;
+		if(ret) {
+			for(int i=0;i<segments.length;i++) {
+				if(segments[i] != segment)
+					container.deactivate(segments[i], 1);
+			}
+			return;
+		}
 		if(persistent)
 			container.activate(cb, 1);
 		cb.onBlockSetFinished(this, container, context);
@@ -289,18 +299,26 @@ public class SplitFileInserter implements ClientPutState {
 					container.activate(segments[i], 1);
 				if(!segments[i].hasURIs()) {
 					if(logMINOR) Logger.minor(this, "Segment does not have URIs: "+segments[i]);
+					if(persistent) {
+						for(int j=0;j<i;j++) {
+							if(segments[j] == segment) continue;
+							container.deactivate(segments[i], 1);
+						}
+					}
 					return;
 				}
 			}
 		}
 		
 		if(logMINOR) Logger.minor(this, "Have URIs from all segments");
-		encodeMetadata(container, context);
+		encodeMetadata(container, context, segment);
 	}
 	
-	private void encodeMetadata(ObjectContainer container, ClientContext context) {
+	private void encodeMetadata(ObjectContainer container, ClientContext context, SplitFileInserterSegment dontDeactivateSegment) {
 		boolean missingURIs;
 		Metadata m = null;
+		if(persistent)
+			activateSegments(container, dontDeactivateSegment);
 		synchronized(this) {
 			// Create metadata
 			ClientCHK[] dataURIs = getDataCHKs(container);
@@ -316,6 +334,8 @@ public class SplitFileInserter implements ClientPutState {
 			}
 			haveSentMetadata = true;
 		}
+		if(persistent)
+			deactivateSegments(container, dontDeactivateSegment);
 		if(missingURIs) {
 			if(logMINOR) Logger.minor(this, "Missing URIs");
 			// Error
@@ -328,6 +348,20 @@ public class SplitFileInserter implements ClientPutState {
 		}
 	}
 	
+	private void activateSegments(ObjectContainer container, SplitFileInserterSegment notMe) {
+		for(int i=0;i<segments.length;i++) {
+			if(segments[i] == notMe) continue;
+			container.activate(segments[i], 1);
+		}
+	}
+
+	private void deactivateSegments(ObjectContainer container, SplitFileInserterSegment notMe) {
+		for(int i=0;i<segments.length;i++) {
+			if(segments[i] == notMe) continue;
+			container.deactivate(segments[i], 1);
+		}
+	}
+
 	private void fail(InsertException e, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(finished) return;
@@ -347,6 +381,12 @@ public class SplitFileInserter implements ClientPutState {
 		return false;
 	}
 
+	/**
+	 * Segments MUST BE ACTIVATED TO DEPTH 1 BEFORE CALLING,
+	 * and should be deactivated by caller.
+	 * @param container
+	 * @return
+	 */
 	private ClientCHK[] getCheckCHKs(ObjectContainer container) {
 		// Copy check blocks from each segment into a FreenetURI[].
 		ClientCHK[] uris = new ClientCHK[countCheckBlocks];
@@ -370,6 +410,12 @@ public class SplitFileInserter implements ClientPutState {
 		return uris;
 	}
 
+	/**
+	 * Segments MUST BE ACTIVATED TO DEPTH 1 BEFORE CALLING,
+	 * and should be deactivated by caller.
+	 * @param container
+	 * @return
+	 */
 	private ClientCHK[] getDataCHKs(ObjectContainer container) {
 		// Copy check blocks from each segment into a FreenetURI[].
 		ClientCHK[] uris = new ClientCHK[countDataBlocks];
@@ -411,9 +457,17 @@ public class SplitFileInserter implements ClientPutState {
 				return;
 			}
 			for(int i=0;i<segments.length;i++) {
+				if(persistent && segments[i] != segment)
+					container.activate(segments[i], 1);
 				if(!segments[i].isFinished()) {
 					if(logMINOR) Logger.minor(this, "Segment not finished: "+i+": "+segments[i]);
 					allGone = false;
+					if(persistent) {
+						for(int j=0;j<=i;j++) {
+							if(segments[j] == segment) continue;
+							container.deactivate(segments[i], 1);
+						}
+					}
 					break;
 				}
 			}
@@ -437,8 +491,16 @@ public class SplitFileInserter implements ClientPutState {
 			if(finished) return;
 			if(fetchable) return;
 			for(int i=0;i<segments.length;i++) {
+				if(persistent && segments[i] != segment)
+					container.activate(segments[i], 1);
 				if(!segments[i].isFetchable()) {
 					if(logMINOR) Logger.minor(this, "Segment not fetchable: "+i+": "+segments[i]);
+					if(persistent) {
+						for(int j=0;j<=i;j++) {
+							if(segments[j] == segment) continue;
+							container.deactivate(segments[i], 1);
+						}
+					}
 					return;
 				}
 			}
@@ -520,6 +582,8 @@ public class SplitFileInserter implements ClientPutState {
 			if(persistent)
 				container.activate(segments[i], 1);
 			segments[i].forceEncode(container, context);
+			if(persistent)
+				container.deactivate(segments[i], 1);
 		}
 	}
 
