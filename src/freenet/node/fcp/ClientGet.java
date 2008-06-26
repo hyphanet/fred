@@ -557,12 +557,18 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				container.delete(targetFile);
 			if(tempFile != null)
 				container.delete(tempFile);
-			if(getFailedMessage != null)
+			if(getFailedMessage != null) {
+				container.activate(getFailedMessage, 5);
 				getFailedMessage.removeFrom(container);
-			if(postFetchProtocolErrorMessage != null)
+			}
+			if(postFetchProtocolErrorMessage != null) {
+				container.activate(postFetchProtocolErrorMessage, 5);
 				postFetchProtocolErrorMessage.removeFrom(container);
-			if(allDataPending != null)
+			}
+			if(allDataPending != null) {
+				container.activate(allDataPending, 5);
 				allDataPending.removeFrom(container);
+			}
 		}
 		super.requestWasRemoved(container);
 	}
