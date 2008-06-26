@@ -242,7 +242,6 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	// Real onFailure
 	protected void onFailure(FetchException e, Object token, RequestScheduler sched, ObjectContainer container, ClientContext context) {
 		if(persistent) {
-			container.activate(this, 1);
 			container.activate(segment, 1);
 			container.activate(parent, 1);
 		}
