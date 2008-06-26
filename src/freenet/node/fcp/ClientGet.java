@@ -425,6 +425,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			msg = new DataFoundMessage(foundDataLength, foundDataMimeType, identifier, global);
 		} else {
 			msg = getFailedMessage;
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(msg, 5);
 		}
 
 		if(handler != null)
@@ -432,6 +434,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		else
 			client.queueClientRequestMessage(msg, 0, container);
 		if(postFetchProtocolErrorMessage != null) {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(postFetchProtocolErrorMessage, 5);
 			if(handler != null)
 				handler.queue(postFetchProtocolErrorMessage);
 			else
@@ -469,8 +473,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				FCPMessage msg = persistentTagMessage(container);
 				handler.queue(msg);
 			}
-			if(progressPending != null)
+			if(progressPending != null) {
+				if(persistenceType == PERSIST_FOREVER)
+					container.activate(progressPending, 5);
 				handler.queue(progressPending);
+			}
 			if(finished)
 				trySendDataFoundOrGetFailed(handler, container);
 		}
@@ -479,8 +486,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			Logger.error(this, "No data pending !");
 		}
 
-		if(includeData && (allDataPending != null))
+		if(includeData && (allDataPending != null)) {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(allDataPending, 5);
 			handler.queue(allDataPending);
+		}
 	}
 
 	protected FCPMessage persistentTagMessage(ObjectContainer container) {
