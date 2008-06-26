@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import java.util.LinkedList;
+import java.util.Set;
 
 import com.db4o.ObjectContainer;
 
@@ -180,10 +181,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 					keys[i] = getter.getKey(keyTokens[i], selectorContainer);
 					selectorContainer.activate(keys[i], 5);
 				}
+				final BlockSet blocks = getter.getContext().blocks;
+				final boolean dontCache = getter.dontCache();
 				datastoreCheckerExecutor.execute(new Runnable() {
 
 					public void run() {
-						registerCheckStore(getter, true, keyTokens, keys, reg);
+						registerCheckStore(getter, true, keyTokens, keys, reg, blocks, dontCache);
 					}
 					
 				}, getter.getPriorityClass(selectorContainer), "Checking datastore");
@@ -200,10 +203,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 							keys[i] = getter.getKey(keyTokens[i], selectorContainer);
 							container.activate(keys[i], 5);
 						}
+						final BlockSet blocks = getter.getContext().blocks;
+						final boolean dontCache = getter.dontCache();
 						datastoreCheckerExecutor.execute(new Runnable() {
 
 							public void run() {
-								registerCheckStore(getter, true, keyTokens, keys, reg);
+								registerCheckStore(getter, true, keyTokens, keys, reg, blocks, dontCache);
 							}
 							
 						}, getter.getPriorityClass(container), "Checking datastore");
@@ -221,7 +226,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				datastoreCheckerExecutor.execute(new Runnable() {
 
 					public void run() {
-						registerCheckStore(getter, false, keyTokens, keys, null);
+						registerCheckStore(getter, false, keyTokens, keys, null, getter.getContext().blocks, getter.dontCache());
 					}
 					
 				}, getter.getPriorityClass(null), "Checking datastore");
@@ -256,10 +261,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * been set up, and this is run on the datastore checker thread. Once completed, this should
 	 * (for a persistent request) queue a job on the databaseExecutor and (for a transient 
 	 * request) finish registering the request immediately.
-	 * @param getter
+	 * @param getter The SendableGet. NOTE: If persistent, DO NOT USE THIS INLINE, because it won't
+	 * be activated. This is why we pass in extraBlocks and dontCache.
 	 * @param reg 
 	 */
-	protected void registerCheckStore(SendableGet getter, boolean persistent, Object[] keyTokens, ClientKey[] keys, RegisterMe reg) {
+	protected void registerCheckStore(SendableGet getter, boolean persistent, Object[] keyTokens, ClientKey[] keys, RegisterMe reg, BlockSet extraBlocks, boolean dontCache) {
 		boolean anyValid = false;
 		for(int i=0;i<keyTokens.length;i++) {
 			Object tok = keyTokens[i];
@@ -271,10 +277,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 						Logger.minor(this, "No key for "+tok+" for "+getter+" - already finished?");
 					continue;
 				} else {
-					if(getter.getContext().blocks != null)
-						block = getter.getContext().blocks.get(key);
+					if(extraBlocks != null)
+						block = extraBlocks.get(key);
 					if(block == null)
-						block = node.fetchKey(key, getter.dontCache());
+						block = node.fetchKey(key, dontCache);
 					if(block == null) {
 						if(!persistent) {
 							schedTransient.addPendingKey(key, getter);
