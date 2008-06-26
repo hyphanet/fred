@@ -185,6 +185,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			container.activate(req.request.getClientRequest(), 1);
 			if(req.token != null)
 				container.activate(req.token, 5);
+			if(req.request.isCancelled()) {
+				container.delete(req);
+				continue;
+			}
 			sched.addToStarterQueue(req);
 			if(!isInsertScheduler) {
 				synchronized(keysFetching) {
