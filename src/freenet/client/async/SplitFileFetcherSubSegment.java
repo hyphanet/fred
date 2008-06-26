@@ -253,7 +253,9 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			forceFatal = true;
 		}
 		segment.errors.inc(e.getMode());
-		if(e.isFatal() || forceFatal) {
+		if(e.isFatal() && token == null) {
+			segment.fail(e, container, context);
+		} else if(e.isFatal() || forceFatal) {
 			segment.onFatalFailure(e, ((Integer)token).intValue(), this, container, context);
 		} else {
 			segment.onNonFatalFailure(e, ((Integer)token).intValue(), this, sched, container);

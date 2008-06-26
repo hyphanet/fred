@@ -513,7 +513,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		return sub;
 	}
 
-	private void fail(FetchException e, ObjectContainer container, ClientContext context) {
+	void fail(FetchException e, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
