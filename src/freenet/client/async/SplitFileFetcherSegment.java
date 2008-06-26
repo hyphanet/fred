@@ -186,8 +186,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 				}
 				dataRetries[blockNo] = 0; // Prevent healing of successfully fetched block.
 				dataKeys[blockNo] = null;
-				if(persistent)
+				if(persistent) {
 					container.activate(dataBuckets[blockNo], 1);
+					container.set(dataBuckets[blockNo]);
+				}
 				dataBuckets[blockNo].setData(data);
 			} else if(blockNo < checkKeys.length + dataKeys.length) {
 				blockNo -= dataKeys.length;
@@ -198,8 +200,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 				}
 				checkRetries[blockNo] = 0; // Prevent healing of successfully fetched block.
 				checkKeys[blockNo] = null;
-				if(persistent)
+				if(persistent) {
 					container.activate(checkBuckets[blockNo], 1);
+					container.set(checkBuckets[blockNo]);
+				}
 				checkBuckets[blockNo].setData(data);
 			} else
 				Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
