@@ -432,6 +432,7 @@ public class ClientPut extends ClientPutBase {
 		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(publicURI, 5);
 			container.activate(clientMetadata, 5);
+			container.activate(origFilename, 5);
 		}
 		return new PersistentPut(identifier, publicURI, verbosity, priorityClass, uploadFrom, targetURI, 
 				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue,

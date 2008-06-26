@@ -488,6 +488,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			container.activate(uri, 5);
 			container.activate(fctx, 1);
 			container.activate(client, 1);
+			container.activate(targetFile, 5);
+			container.activate(tempFile, 5);
 		}
 		return new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, tempFile, clientToken, client.isGlobalQueue, started, fctx.maxNonSplitfileRetries, binaryBlob, fctx.maxOutputLength);
 	}
