@@ -231,8 +231,10 @@ public class ClientGetter extends BaseClientGetter {
 	}
 
 	public void notifyClients(ObjectContainer container, ClientContext context) {
-		if(persistent())
+		if(persistent()) {
 			container.activate(ctx, 1);
+			container.activate(ctx.eventProducer, 1);
+		}
 		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized), container, context);
 	}
 
