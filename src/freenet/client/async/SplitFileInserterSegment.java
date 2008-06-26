@@ -601,8 +601,10 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			}
 			hasURIs = true;
 		}
-		if(persistent)
+		if(persistent) {
+			container.activate(parent, 1);
 			container.set(this);
+		}
 		parent.segmentHasURIs(this, container, context);
 	}
 

@@ -281,8 +281,6 @@ public class SplitFileInserter implements ClientPutState {
 	}
 	
 	public void segmentHasURIs(SplitFileInserterSegment segment, ObjectContainer container, ClientContext context) {
-		if(persistent)
-			container.activate(this, 1);
 		if(logMINOR) Logger.minor(this, "Segment has URIs: "+segment);
 		synchronized(this) {
 			if(haveSentMetadata) {
