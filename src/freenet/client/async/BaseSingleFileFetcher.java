@@ -104,8 +104,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return parent;
 	}
 
-	public short getPriorityClass() {
-		return parent.getPriorityClass();
+	public short getPriorityClass(ObjectContainer container) {
+		if(persistent) container.activate(parent, 1); // Not much point deactivating it
+		short retval = parent.getPriorityClass();
+		return retval;
 	}
 
 	public boolean ignoreStore() {

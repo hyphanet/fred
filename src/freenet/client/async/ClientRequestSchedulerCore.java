@@ -258,12 +258,12 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				container.activate(key, 5);
 				container.activate(ckey, 5);
 				container.activate(req.getClientRequest(), 1);
-				ret = new PersistentChosenRequest(this, req, token, key, ckey);
+				ret = new PersistentChosenRequest(this, req, token, key, ckey, req.getPriorityClass(container));
 				container.set(ret);
 				if(logMINOR)
 					Logger.minor(this, "Storing "+ret);
 			} else {
-				ret = new ChosenRequest(req, token, key, ckey);
+				ret = new ChosenRequest(req, token, key, ckey, req.getPriorityClass(container));
 			}
 			if(key != null) {
 				if(logMINOR)
@@ -373,10 +373,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				Logger.error(this, "Request.persistent()="+req.persistent()+" but is in the queue for persistent="+trackerParent.persistent()+" for "+req);
 				// FIXME fix it
 			}
-			if(req.getPriorityClass() != choosenPriorityClass) {
+			if(req.getPriorityClass(container) != choosenPriorityClass) {
 				// Reinsert it : shouldn't happen if we are calling reregisterAll,
 				// maybe we should ask people to report that error if seen
-				Logger.normal(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass()+" but chosen="+choosenPriorityClass+ ')');
+				Logger.normal(this, "In wrong priority class: "+req+" (req.prio="+req.getPriorityClass(container)+" but chosen="+choosenPriorityClass+ ')');
 				// Remove it.
 				SectoredRandomGrabArrayWithObject clientGrabber = (SectoredRandomGrabArrayWithObject) chosenTracker.getGrabber(req.getClient());
 				if(clientGrabber != null) {
@@ -403,7 +403,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					altReq = (BaseSendableGet) recent.remove(recent.size()-1);
 				}
 			}
-			if(altReq != null && altReq.getPriorityClass() <= choosenPriorityClass && 
+			if(altReq != null && altReq.getPriorityClass(container) <= choosenPriorityClass && 
 					fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber()) {
 				// Use the recent one instead
 				if(logMINOR)
@@ -422,7 +422,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			}
 			// Now we have chosen a request.
 			if(logMINOR) Logger.debug(this, "removeFirst() returning "+req+" ("+chosenTracker.getNumber()+", prio "+
-					req.getPriorityClass()+", retries "+req.getRetryCount()+", client "+req.getClient()+", client-req "+req.getClientRequest()+ ')');
+					req.getPriorityClass(container)+", retries "+req.getRetryCount()+", client "+req.getClient()+", client-req "+req.getClientRequest()+ ')');
 			ClientRequester cr = req.getClientRequest();
 			if(req.canRemove(container)) {
 				if(req.persistent())
@@ -543,7 +543,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		if(!databaseExecutor.onThread()) {
 			throw new IllegalStateException("Not on database thread!");
 		}
-		RegisterMe reg = new RegisterMe(req, this);
+		RegisterMe reg = new RegisterMe(req, req.getPriorityClass(container), this);
 		container.set(reg);
 	}
 

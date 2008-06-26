@@ -191,18 +191,18 @@ abstract class ClientRequestSchedulerBase {
 		}
 	}
 
-	public short getKeyPrio(Key key, short priority) {
+	public short getKeyPrio(Key key, short priority, ObjectContainer container) {
 		synchronized(pendingKeys) {
 			Object o = pendingKeys.get(key);
 			if(o == null) {
 				// Blah
 			} else if(o instanceof SendableGet) {
-				short p = ((SendableGet)o).getPriorityClass();
+				short p = ((SendableGet)o).getPriorityClass(container);
 				if(p < priority) priority = p;
 			} else { // if(o instanceof SendableGet[]) {
 				SendableGet[] gets = (SendableGet[]) o;
 				for(int i=0;i<gets.length;i++) {
-					short p = gets[i].getPriorityClass();
+					short p = gets[i].getPriorityClass(container);
 					if(p < priority) priority = p;
 				}
 			}
@@ -234,20 +234,21 @@ abstract class ClientRequestSchedulerBase {
 	void innerRegister(SendableRequest req, RandomSource random, ObjectContainer container) {
 		if(req.persistent() != persistent())
 			throw new IllegalArgumentException("innerRegister for persistence="+req.persistent()+" but our persistence is "+persistent());
-		if(req.getPriorityClass() == 0) {
+		if(req.getPriorityClass(container) == 0) {
 			Logger.normal(this, "Something wierd...");
-			Logger.normal(this, "Priority "+req.getPriorityClass());
+			Logger.normal(this, "Priority "+req.getPriorityClass(container));
 		}
-		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+req.getPriorityClass()+" retry "+req.getRetryCount()+" for "+req.getClientRequest());
 		int retryCount = req.getRetryCount();
-		addToGrabArray(req.getPriorityClass(), retryCount, fixRetryCount(retryCount), req.getClient(), req.getClientRequest(), req, random, container);
+		short prio = req.getPriorityClass(container);
+		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" retry "+retryCount+" for "+req.getClientRequest());
+		addToGrabArray(prio, retryCount, fixRetryCount(retryCount), req.getClient(), req.getClientRequest(), req, random, container);
 		Set v = (Set) allRequestsByClientRequest.get(req.getClientRequest());
 		if(v == null) {
 			v = makeSetForAllRequestsByClientRequest(container);
 			allRequestsByClientRequest.put(req.getClientRequest(), v);
 		}
 		v.add(req);
-		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+req.getPriorityClass()+", retrycount="+req.getRetryCount()+" v.size()="+v.size());
+		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio+", retrycount="+retryCount+" v.size()="+v.size());
 	}
 	
 	protected abstract Set makeSetForAllRequestsByClientRequest(ObjectContainer container);

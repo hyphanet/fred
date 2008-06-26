@@ -61,7 +61,7 @@ public class SimpleSendableInsert extends SendableInsert {
 			Logger.minor(this, "Failed insert of "+block+": "+e);
 	}
 
-	public short getPriorityClass() {
+	public short getPriorityClass(ObjectContainer container) {
 		return prioClass;
 	}
 

@@ -24,12 +24,15 @@ public class ChosenRequest {
 	public final Key key;
 	/** The client-layer key to be fetched, null if not a SendableGet */
 	public final ClientKey ckey;
+	/** Priority when we selected it */
+	public short prio;
 
-	ChosenRequest(SendableRequest req, Object tok, Key key, ClientKey ckey) {
+	ChosenRequest(SendableRequest req, Object tok, Key key, ClientKey ckey, short prio) {
 		request = req;
 		token = tok;
 		this.key = key;
 		this.ckey = ckey;
+		this.prio = prio;
 	}
 
 	public boolean send(NodeClientCore core, RequestScheduler sched) {

@@ -124,7 +124,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				req = getRequest(logMINOR);
 			}
 			if(req != null) {
-				if(logMINOR) Logger.minor(this, "Running "+req+" priority "+req.request.getPriorityClass());
+				if(logMINOR) Logger.minor(this, "Running "+req+" priority "+req.prio);
 				// Wait
 				long delay = throttle.getDelay();
 				if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
@@ -224,7 +224,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	}
 
 	private boolean startRequest(ChosenRequest req, boolean logMINOR) {
-		if(logMINOR) Logger.minor(this, "Running request "+req+" priority "+req.request.getPriorityClass());
+		if(logMINOR) Logger.minor(this, "Running request "+req+" priority "+req.prio);
 		core.getExecutor().execute(new SenderThread(req, req.key), "RequestStarter$SenderThread for "+req);
 		return true;
 	}

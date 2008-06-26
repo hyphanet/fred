@@ -22,8 +22,8 @@ public class PersistentChosenRequest extends ChosenRequest {
 	
 	ClientRequestSchedulerCore core;
 	
-	PersistentChosenRequest(ClientRequestSchedulerCore core, SendableRequest req, Object tok, Key key, ClientKey ckey) {
-		super(req, tok, key, ckey);
+	PersistentChosenRequest(ClientRequestSchedulerCore core, SendableRequest req, Object tok, Key key, ClientKey ckey, short prio) {
+		super(req, tok, key, ckey, prio);
 		this.core = core;
 	}
 }

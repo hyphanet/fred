@@ -78,7 +78,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 	}
 
 	private void queuePersistent(SingleBlockInserter sbi, ObjectContainer container, ClientContext context) {
-		BackgroundBlockEncoderTag tag = new BackgroundBlockEncoderTag(sbi, context);
+		BackgroundBlockEncoderTag tag = new BackgroundBlockEncoderTag(sbi, sbi.getPriorityClass(container), context);
 		container.set(tag);
 	}
 
@@ -150,10 +150,10 @@ class BackgroundBlockEncoderTag {
 	/** For implementing priority ordering */
 	final short priority;
 	
-	BackgroundBlockEncoderTag(SingleBlockInserter inserter, ClientContext context) {
+	BackgroundBlockEncoderTag(SingleBlockInserter inserter, short prio, ClientContext context) {
 		this.inserter = inserter;
 		this.nodeDBHandle = context.nodeDBHandle;
 		this.addedTime = System.currentTimeMillis();
-		this.priority = inserter.getPriorityClass();
+		this.priority = prio;
 	}
 }

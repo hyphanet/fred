@@ -9,10 +9,10 @@ public class RegisterMe {
 	final ClientRequestSchedulerCore core;
 	final RegisterMeSortKey key;
 	
-	RegisterMe(SendableRequest getter, ClientRequestSchedulerCore core) {
+	RegisterMe(SendableRequest getter, short prio, ClientRequestSchedulerCore core) {
 		this.getter = getter;
 		this.core = core;
-		this.key = new RegisterMeSortKey(getter.getPriorityClass());
+		this.key = new RegisterMeSortKey(prio);
 	}
 	
 	public void objectOnActivate(ObjectContainer container) {

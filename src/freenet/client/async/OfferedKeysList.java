@@ -131,7 +131,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		return null;
 	}
 
-	public short getPriorityClass() {
+	public short getPriorityClass(ObjectContainer container) {
 		return priorityClass;
 	}
 

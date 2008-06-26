@@ -27,7 +27,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	protected final boolean persistent;
 	
 	/** Get the priority class of the request. */
-	public abstract short getPriorityClass();
+	public abstract short getPriorityClass(ObjectContainer container);
 	
 	public abstract int getRetryCount();
 	

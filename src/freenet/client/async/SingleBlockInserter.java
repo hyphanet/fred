@@ -144,8 +144,9 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return true;
 	}
 
-	public short getPriorityClass() {
-		return parent.getPriorityClass();
+	public short getPriorityClass(ObjectContainer container) {
+		if(persistent) container.activate(parent, 1);
+		return parent.getPriorityClass(); // Not much point deactivating
 	}
 
 	public int getRetryCount() {

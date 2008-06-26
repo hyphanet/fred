@@ -186,7 +186,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						registerCheckStore(getter, true, keyTokens, keys, reg);
 					}
 					
-				}, getter.getPriorityClass(), "Checking datastore");
+				}, getter.getPriorityClass(selectorContainer), "Checking datastore");
 			} else if(persistent) {
 				jobRunner.queue(new DBJob() {
 
@@ -205,7 +205,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 								registerCheckStore(getter, true, keyTokens, keys, reg);
 							}
 							
-						}, getter.getPriorityClass(), "Checking datastore");
+						}, getter.getPriorityClass(container), "Checking datastore");
 					}
 					
 				}, NativeThread.NORM_PRIORITY, false);
@@ -223,7 +223,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						registerCheckStore(getter, false, keyTokens, keys, null);
 					}
 					
-				}, getter.getPriorityClass(), "Checking datastore");
+				}, getter.getPriorityClass(null), "Checking datastore");
 			}
 		} else {
 			if(persistent) {
@@ -325,7 +325,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				// Even with working thread priorities, we still get very high latency accessing
 				// the datastore when background threads are doing it in parallel.
 				// So yield() here, unless priority is very high.
-				if(getter.getPriorityClass() > RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS)
+				if(getter.getPriorityClass(selectorContainer) > RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS)
 					Thread.yield();
 			} else {
 				anyValid = true;
@@ -405,7 +405,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			fuzz = 0;	
 		if(req == null)
 			return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, Short.MAX_VALUE, Integer.MAX_VALUE, clientContext, null);
-		short prio = req.request.getPriorityClass();
+		short prio = req.prio;
 		int retryCount = req.request.getRetryCount();
 		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, prio, retryCount, clientContext, null);
 	}
@@ -606,7 +606,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			// FIXME what priority???
 			priority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 		}
-		priority = schedTransient.getKeyPrio(key, priority);
+		priority = schedTransient.getKeyPrio(key, priority, null);
 		if(priority < Short.MAX_VALUE) {
 			offeredKeys[priority].queueKey(key);
 			starter.wakeUp();
@@ -617,7 +617,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
-				short priority = schedCore.getKeyPrio(key, oldPrio);
+				short priority = schedCore.getKeyPrio(key, oldPrio, container);
 				if(priority >= oldPrio) return; // already on list at >= priority
 				offeredKeys[priority].queueKey(key);
 				starter.wakeUp();
