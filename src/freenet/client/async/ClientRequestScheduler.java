@@ -702,6 +702,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
+				container.activate(get, 1);
 				get.onFailure(e, keyNum, ClientRequestScheduler.this, selectorContainer, clientContext);
 				if(get.persistent())
 					selectorContainer.delete((PersistentChosenRequest)req);
@@ -714,6 +715,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
+				container.activate(put, 1);
 				put.onFailure(e, keyNum, selectorContainer, clientContext);
 				if(put.persistent())
 					selectorContainer.delete((PersistentChosenRequest)req);
@@ -726,6 +728,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
+				container.activate(put, 1);
 				put.onSuccess(keyNum, selectorContainer, clientContext);
 				if(put.persistent())
 					selectorContainer.delete((PersistentChosenRequest)req);
