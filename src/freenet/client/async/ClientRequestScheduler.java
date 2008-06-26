@@ -326,11 +326,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 						g.onSuccess(b, true, t, ClientRequestScheduler.this, null, clientContext);
 					}
 				}
-				// Even with working thread priorities, we still get very high latency accessing
-				// the datastore when background threads are doing it in parallel.
-				// So yield() here, unless priority is very high.
-				if(getter.getPriorityClass(selectorContainer) > RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS)
-					Thread.yield();
 			} else {
 				anyValid = true;
 			}
