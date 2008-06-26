@@ -113,7 +113,7 @@ public class RandomGrabArray {
 									chosenIndex = target-1;
 									chosenItem = item;
 								}
-								if(validIndex != -1) {
+								if(validIndex == -1) {
 									// Take the first valid item
 									validIndex = target-1;
 									validItem = item;
