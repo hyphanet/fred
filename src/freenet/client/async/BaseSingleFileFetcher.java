@@ -21,6 +21,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 
 	final ClientKey key;
 	protected boolean cancelled;
+	protected boolean finished;
 	final int maxRetries;
 	private int retryCount;
 	final FetchContext ctx;
@@ -132,7 +133,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 	}
 	
 	public synchronized boolean isEmpty(ObjectContainer container) {
-		return cancelled;
+		return cancelled || finished;
 	}
 	
 	public RequestClient getClient() {
@@ -152,6 +153,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		if(persistent)
 			container.activate(this, 2);
 		synchronized(this) {
+			finished = true;
 			if(isCancelled(container)) return;
 			if(!key.equals(this.key.getNodeKey())) {
 				Logger.normal(this, "Got sent key "+key+" but want "+this.key+" for "+this);
