@@ -100,8 +100,6 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 				if(persistent)
 					container.activate(rga, 1);
 				RandomGrabArrayItem item = rga.removeRandom(excluding, container, context);
-				if(persistent) // deactivate to save memory
-					container.deactivate(item, 1);
 				if(rga.isEmpty()) {
 					Object client = rga.getObject();
 					if(persistent)
