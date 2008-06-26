@@ -544,12 +544,13 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		}
 		
 	}
-	public void queueRegister(SendableRequest req, PrioritizedSerialExecutor databaseExecutor, ObjectContainer container) {
+	public RegisterMe queueRegister(SendableRequest req, PrioritizedSerialExecutor databaseExecutor, ObjectContainer container) {
 		if(!databaseExecutor.onThread()) {
 			throw new IllegalStateException("Not on database thread!");
 		}
 		RegisterMe reg = new RegisterMe(req, req.getPriorityClass(container), this);
 		container.set(reg);
+		return reg;
 	}
 
 	public boolean hasKey(Key key) {
