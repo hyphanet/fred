@@ -544,7 +544,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public synchronized void succeeded(final BaseSendableGet succeeded, final ChosenRequest req) {
-		if(succeeded.persistent()) {
+		if(req.isPersistent()) {
 			jobRunner.queue(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
