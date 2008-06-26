@@ -787,4 +787,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 			container.activate(this, 1);
 		this.fail(new FetchException(FetchException.INTERNAL_ERROR, "FEC failure: "+t, t), container, context);
 	}
+
+	public boolean haveBlock(int blockNo) {
+		if(blockNo < dataBuckets.length)
+			return dataBuckets[blockNo] != null && dataBuckets[blockNo].hasData();
+		else {
+			blockNo -= dataBuckets.length;
+			return checkBuckets[blockNo] != null && checkBuckets[blockNo].hasData();
+		}
+	}
 }

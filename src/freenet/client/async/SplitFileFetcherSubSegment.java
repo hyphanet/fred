@@ -142,7 +142,10 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				Key key = segment.getBlockNodeKey(((Integer)ret).intValue(), container);
 				if(key == null) {
 					if(segment.isFinishing(container) || segment.isFinished(container)) return null;
-					Logger.error(this, "Key is null for block "+ret+" for "+this);
+					if(segment.haveBlock(((Integer)ret).intValue()))
+						Logger.error(this, "Already have block "+ret+" but was in blockNums on "+this);
+					else
+						Logger.error(this, "Key is null for block "+ret+" for "+this);
 					continue;
 				}
 				if(keys.hasKey(key)) {
