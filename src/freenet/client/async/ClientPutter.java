@@ -132,8 +132,11 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				oldProgress = null;
 				cancel = cancelled;
 			}
-			if(persistent())
+			if(persistent()) {
 				container.set(this);
+				// It has scheduled, we can safely deactivate it now, so it won't hang around in memory.
+				container.deactivate(currentState, 1);
+			}
 			if(cancel) {
 				onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
 				return false;
