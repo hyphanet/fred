@@ -108,7 +108,7 @@ abstract class ClientRequestSchedulerBase {
 		}
 	}
 
-	public boolean removePendingKey(SendableGet getter, boolean complain, Key key) {
+	public boolean removePendingKey(SendableGet getter, boolean complain, Key key, ObjectContainer container) {
 		boolean dropped = false;
 		Object o;
 		/*
@@ -150,7 +150,7 @@ abstract class ClientRequestSchedulerBase {
 						}
 					}
 					if(gets[j] == null) continue;
-					if(gets[j].isCancelled()) continue;
+					if(gets[j].isCancelled(container)) continue;
 					newGets[x++] = gets[j];
 				}
 				if(x == 0) {

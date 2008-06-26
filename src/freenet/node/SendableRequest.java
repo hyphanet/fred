@@ -61,7 +61,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	/** If true, the request has been cancelled, or has completed, either way it need not
 	 * be registered any more. isEmpty() on the other hand means there are no queued blocks.
 	 */
-	public abstract boolean isCancelled();
+	public abstract boolean isCancelled(ObjectContainer container);
 	
 	/** Get client context object */
 	public abstract RequestClient getClient();

@@ -96,7 +96,7 @@ public class SimpleSendableInsert extends SendableInsert {
 		return null;
 	}
 
-	public boolean isCancelled() {
+	public boolean isCancelled(ObjectContainer container) {
 		return finished;
 	}
 	

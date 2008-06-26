@@ -473,9 +473,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	};
 	
-	public void removePendingKey(final SendableGet getter, final boolean complain, final Key key) {
+	public void removePendingKey(final SendableGet getter, final boolean complain, final Key key, ObjectContainer container) {
 		if(!getter.persistent()) {
-			boolean dropped = schedTransient.removePendingKey(getter, complain, key);
+			boolean dropped = schedTransient.removePendingKey(getter, complain, key, container);
 			if(dropped && offeredKeys != null && !node.peersWantKey(key)) {
 				for(int i=0;i<offeredKeys.length;i++)
 					offeredKeys[i].remove(key);
@@ -487,7 +487,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 				public void run(ObjectContainer container, ClientContext context) {
 					container.activate(getter, 1);
-					schedCore.removePendingKey(getter, complain, key);
+					schedCore.removePendingKey(getter, complain, key, container);
 					if(persistentCooldownQueue != null)
 						persistentCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key, container), container);
 				}
@@ -521,7 +521,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					Logger.error(this, "Key "+tok+" is null for "+getter, new Exception("debug"));
 				continue;
 			}
-			removePendingKey(getter, complain, ckey.getNodeKey());
+			removePendingKey(getter, complain, ckey.getNodeKey(), container);
 		}
 	}
 

@@ -73,7 +73,7 @@ public abstract class SendableGet extends BaseSendableGet {
 			Logger.minor(this, "Sending get for key "+keyNum+" : "+key);
 		FetchContext ctx = getContext();
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if((!req.isPersistent()) && isCancelled()) {
+		if((!req.isPersistent()) && isCancelled(null)) {
 			if(logMINOR) Logger.minor(this, "Cancelled: "+this);
 			// callbacks must initially run at HIGH_PRIORITY so they are executed before we remove the key from the currently running list
 			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.CANCELLED), keyNum, NativeThread.HIGH_PRIORITY, req);
@@ -140,8 +140,8 @@ public abstract class SendableGet extends BaseSendableGet {
 		super.unregister(staySubscribed, container);
 	}
 	
-	public final void unregisterKey(Key key, ClientContext context) {
-		getScheduler(context).removePendingKey(this, false, key);
+	public final void unregisterKey(Key key, ClientContext context, ObjectContainer container) {
+		getScheduler(context).removePendingKey(this, false, key, container);
 	}
 
 	public void internalError(final Object keyNum, final Throwable t, final RequestScheduler sched, ObjectContainer container, ClientContext context) {

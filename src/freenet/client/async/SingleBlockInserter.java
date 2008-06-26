@@ -337,7 +337,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return finished;
 	}
 	
-	public synchronized boolean isCancelled() {
+	public synchronized boolean isCancelled(ObjectContainer container) {
 		return finished;
 	}
 	

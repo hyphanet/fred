@@ -163,7 +163,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		return false;
 	}
 
-	public boolean isCancelled() {
+	public boolean isCancelled(ObjectContainer container) {
 		return false;
 	}
 

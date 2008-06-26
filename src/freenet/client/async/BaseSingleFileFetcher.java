@@ -127,7 +127,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		super.unregister(false, container);
 	}
 
-	public synchronized boolean isCancelled() {
+	public synchronized boolean isCancelled(ObjectContainer container) {
 		return cancelled;
 	}
 	
@@ -152,7 +152,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		if(persistent)
 			container.activate(this, 2);
 		synchronized(this) {
-			if(isCancelled()) return;
+			if(isCancelled(container)) return;
 			if(!key.equals(this.key.getNodeKey())) {
 				Logger.normal(this, "Got sent key "+key+" but want "+this.key+" for "+this);
 				return;

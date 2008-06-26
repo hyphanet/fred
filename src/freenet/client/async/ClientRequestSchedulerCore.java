@@ -185,7 +185,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			container.activate(req.request.getClientRequest(), 1);
 			if(req.token != null)
 				container.activate(req.token, 5);
-			if(req.request.isCancelled()) {
+			if(req.request.isCancelled(container)) {
 				container.delete(req);
 				continue;
 			}
@@ -525,7 +525,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					Logger.minor(this, "RegisterMe: next() took "+(endNext-startNext));
 				container.delete(reg);
 				container.activate(reg.getter, 2);
-				if(reg.getter.isCancelled()) continue;
+				if(reg.getter.isCancelled(container)) continue;
 				if(logMINOR)
 					Logger.minor(this, "Running RegisterMe for "+reg.getter+" : "+reg.key.addedTime+" : "+reg.key.priority);
 				// Don't need to activate, fields should exist? FIXME

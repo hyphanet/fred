@@ -173,7 +173,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			}
 			if(req == null) continue;
 			if(!startRequest(req, logMINOR)) {
-				if(!req.request.isCancelled())
+				if((!req.isPersistent()) && req.request.isCancelled(null))
 					Logger.normal(this, "No requests to start on "+req);
 			}
 			req = null;
@@ -199,7 +199,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				if(queue.isEmpty()) break;
 				req = (ChosenRequest) queue.removeFirst();
 			}
-			if((!req.isPersistent()) && req.request.isCancelled()) continue;
+			if((!req.isPersistent()) && req.request.isCancelled(null)) continue;
 			break;
 		}
 		ChosenRequest betterReq = sched.getBetterNonPersistentRequest(req);
@@ -256,7 +256,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			try {
 		    freenet.support.Logger.OSThread.logPID(this);
 		    if(!req.send(core, sched)) {
-				if(!req.request.isCancelled())
+				if((!req.isPersistent()) && req.request.isCancelled(null))
 					Logger.error(this, "run() not able to send a request on "+req);
 				else
 					Logger.normal(this, "run() not able to send a request on "+req+" - request was cancelled");

@@ -400,7 +400,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		boolean allFailed;
 		// Since we can't keep the key, we need to unregister for it at this point to avoid a memory leak
 		NodeCHK key = getBlockNodeKey(blockNo, container);
-		if(key != null) seg.unregisterKey(key, context);
+		if(key != null) seg.unregisterKey(key, context, container);
 		synchronized(this) {
 			if(isFinishing(container)) return; // this failure is now irrelevant, and cleanup will occur on the decoder thread
 			if(blockNo < dataKeys.length) {
@@ -498,11 +498,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(cooldown) {
 			// Register to the next sub-segment before removing from the old one.
 			sub.getScheduler(context).addPendingKey(key, sub);
-			seg.unregisterKey(key.getNodeKey(), context);
+			seg.unregisterKey(key.getNodeKey(), context, container);
 		} else {
 			// If we are here we are going to retry
 			// Unregister from the old sub-segment before registering on the new.
-			seg.unregisterKey(key.getNodeKey(), context);
+			seg.unregisterKey(key.getNodeKey(), context, container);
 			if(logMINOR)
 				Logger.minor(this, "Retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 			sub.add(blockNo, false, container, context);

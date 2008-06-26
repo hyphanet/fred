@@ -365,7 +365,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		}
 	}
 
-	public boolean isCancelled() {
+	public boolean isCancelled(ObjectContainer container) {
 		synchronized(segment) {
 			return parent.cancelled;
 		}

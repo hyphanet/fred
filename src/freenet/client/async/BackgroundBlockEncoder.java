@@ -30,7 +30,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 	}
 	
 	public void queue(SingleBlockInserter sbi, ObjectContainer container, ClientContext context) {
-		if(sbi.isCancelled()) return;
+		if(sbi.isCancelled(container)) return;
 		if(sbi.resultingURI != null) return;
 		if(sbi.persistent()) {
 			queuePersistent(sbi, container, context);
@@ -50,7 +50,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 			for(int i=0;i<sbis.length;i++) {
 				SingleBlockInserter inserter = sbis[i];
 				if(inserter == null) continue;
-				if(inserter.isCancelled()) continue;
+				if(inserter.isCancelled(container)) continue;
 				if(inserter.resultingURI != null) continue;
 				if(inserter.persistent()) continue;
 				Logger.minor(this, "Queueing encode of "+inserter);
@@ -64,7 +64,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 			anyPersistent = true;
 			SingleBlockInserter inserter = sbis[i];
 			if(inserter == null) continue;
-			if(inserter.isCancelled()) continue;
+			if(inserter.isCancelled(container)) continue;
 			if(inserter.resultingURI != null) continue;
 			if(!inserter.persistent()) continue;
 			queuePersistent(inserter, container, context);
@@ -101,7 +101,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 				}
 			}
 			Logger.minor(this, "Encoding "+sbi);
-			if(sbi.isCancelled()) continue;
+			if(sbi.isCancelled(null)) continue;
 			if(sbi.resultingURI != null) continue;
 			sbi.tryEncode(null, context);
 		}
@@ -127,7 +127,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 				try {
 					SingleBlockInserter sbi = tag.inserter;
 					if(sbi == null) continue; // deleted
-					if(sbi.isCancelled()) continue;
+					if(sbi.isCancelled(container)) continue;
 					if(sbi.resultingURI != null) continue;
 					sbi.tryEncode(container, context);
 				} catch (Throwable t) {
