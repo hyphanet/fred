@@ -521,6 +521,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					Logger.minor(this, "RegisterMe: next() took "+(endNext-startNext));
 				container.delete(reg);
 				container.activate(reg.getter, 2);
+				if(reg.getter.isCancelled()) continue;
 				if(logMINOR)
 					Logger.minor(this, "Running RegisterMe for "+reg.getter+" : "+reg.key.addedTime+" : "+reg.key.priority);
 				// Don't need to activate, fields should exist? FIXME
