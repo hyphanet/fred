@@ -45,6 +45,8 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			grabArrays = newArrays;
 			grabArraysByClient.put(client, rga);
 			if(persistent) {
+				container.set(rga);
+				container.set(grabArraysByClient);
 				container.set(this);
 			}
 		} else {
@@ -54,6 +56,9 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			Logger.minor(this, "Adding "+item+" to RGA "+rga+" for "+client);
 		// rga is auto-activated to depth 1...
 		rga.add(item, container);
+		if(persistent)
+			// now deactivate to save memory
+			container.deactivate(rga, 1);
 		if(logMINOR)
 			Logger.minor(this, "Size now "+grabArrays.length+" on "+this);
 	}
@@ -63,7 +68,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 	 * to add() with calls to getGrabber/addGrabber!
 	 */
 	public synchronized RemoveRandomWithObject getGrabber(Object client) {
-		return (RemoveRandomWithObject) grabArraysByClient.get(client);
+		return (RemoveRandomWithObject) grabArraysByClient.get(client); // auto-activated to depth 1
 	}
 
 	/**
@@ -77,6 +82,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 		newArrays[grabArrays.length] = requestGrabber;
 		grabArrays = newArrays;
 		if(persistent) {
+			container.set(grabArraysByClient);
 			container.set(this);
 		}
 	}
@@ -94,6 +100,8 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 				if(persistent)
 					container.activate(rga, 1);
 				RandomGrabArrayItem item = rga.removeRandom(excluding, container, context);
+				if(persistent) // deactivate to save memory
+					container.deactivate(item, 1);
 				if(rga.isEmpty()) {
 					if(logMINOR)
 						Logger.minor(this, "Removing only grab array (0) : "+rga+" for "+rga.getObject()+" (is empty)");
@@ -133,10 +141,16 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 						if(persistent)
 							container.set(this);
 					}
+					if(persistent) {
+						container.deactivate(rga, 1);
+						container.deactivate(firstRGA, 1);
+					}
 					if(logMINOR)
 						Logger.minor(this, "Returning (two items only) "+item+" for "+rga+" for "+rga.getObject());
 					return item;
 				} else {
+					if(persistent)
+						container.deactivate(rga, 1);
 					if(logMINOR)
 						Logger.minor(this, "Returning (two items only) "+item+" for "+rga+" for "+rga.getObject());
 					return item;
@@ -176,11 +190,17 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 					excluded++;
 					if(excluded > MAX_EXCLUDED) {
 						Logger.normal(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArraysLength, new Exception("error"));
+						if(persistent)
+							container.deactivate(rga, 1);
 						return null;
 					}
 				}
+				if(persistent)
+					container.deactivate(rga, 1);
 				continue;
 			}
+			if(persistent)
+				container.deactivate(rga, 1);
 			if(item.isEmpty(container)) continue;
 			return item;
 		}
