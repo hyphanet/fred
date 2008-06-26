@@ -447,14 +447,20 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 
-	public synchronized boolean isTotalFinalized() {
+	public synchronized boolean isTotalFinalized(ObjectContainer container) {
 		if(!(progressMessage instanceof SimpleProgressMessage)) return false;
-		else return ((SimpleProgressMessage)progressMessage).isTotalFinalized();
+		else {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(putFailedMessage, 5);
+			return ((SimpleProgressMessage)progressMessage).isTotalFinalized();
+		}
 	}
 
-	public synchronized String getFailureReason() {
+	public synchronized String getFailureReason(ObjectContainer container) {
 		if(putFailedMessage == null)
 			return null;
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(putFailedMessage, 5);
 		String s = putFailedMessage.shortCodeDescription;
 		if(putFailedMessage.extraDescription != null)
 			s += ": "+putFailedMessage.extraDescription;

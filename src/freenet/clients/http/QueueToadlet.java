@@ -1041,7 +1041,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 					}
 				} else if (column == LIST_SIZE) {
 					if (clientRequest instanceof ClientGet) {
-						requestRow.addChild(createSizeCell(((ClientGet) clientRequest).getDataSize(), ((ClientGet) clientRequest).isTotalFinalized(), advancedModeEnabled));
+						requestRow.addChild(createSizeCell(((ClientGet) clientRequest).getDataSize(container), ((ClientGet) clientRequest).isTotalFinalized(container), advancedModeEnabled));
 					} else if (clientRequest instanceof ClientPut) {
 						requestRow.addChild(createSizeCell(((ClientPut) clientRequest).getDataSize(), true, advancedModeEnabled));
 					}
@@ -1049,7 +1049,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 					requestRow.addChild(createDownloadCell(pageMaker, (ClientGet) clientRequest));
 				} else if (column == LIST_MIME_TYPE) {
 					if (clientRequest instanceof ClientGet) {
-						requestRow.addChild(createTypeCell(((ClientGet) clientRequest).getMIMEType()));
+						requestRow.addChild(createTypeCell(((ClientGet) clientRequest).getMIMEType(container)));
 					} else if (clientRequest instanceof ClientPut) {
 						requestRow.addChild(createTypeCell(((ClientPut) clientRequest).getMIMEType()));
 					}
@@ -1076,9 +1076,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 				} else if (column == LIST_TOTAL_SIZE) {
 					requestRow.addChild(createSizeCell(((ClientPutDir) clientRequest).getTotalDataSize(), true, advancedModeEnabled));
 				} else if (column == LIST_PROGRESS) {
-					requestRow.addChild(createProgressCell(clientRequest.isStarted(), (int) clientRequest.getFetchedBlocks(container), (int) clientRequest.getFailedBlocks(container), (int) clientRequest.getFatalyFailedBlocks(container), (int) clientRequest.getMinBlocks(container), (int) clientRequest.getTotalBlocks(container), clientRequest.isTotalFinalized() || clientRequest instanceof ClientPut, isUpload));
+					requestRow.addChild(createProgressCell(clientRequest.isStarted(), (int) clientRequest.getFetchedBlocks(container), (int) clientRequest.getFailedBlocks(container), (int) clientRequest.getFatalyFailedBlocks(container), (int) clientRequest.getMinBlocks(container), (int) clientRequest.getTotalBlocks(container), clientRequest.isTotalFinalized(container) || clientRequest instanceof ClientPut, isUpload));
 				} else if (column == LIST_REASON) {
-					requestRow.addChild(createReasonCell(clientRequest.getFailureReason()));
+					requestRow.addChild(createReasonCell(clientRequest.getFailureReason(container)));
 				}
 			}
 		}
@@ -1242,7 +1242,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			FreenetURI uri = ((ClientGet)req).getURI();
 			if(req.isPersistentForever() && uri != null)
 				container.activate(uri, 5);
-			long size = ((ClientGet)req).getDataSize();
+			long size = ((ClientGet)req).getDataSize(container);
 			String name = uri.getPreferredFilename();
 			String title = l10n("downloadSucceededTitle", "filename", name);
 			HTMLNode text = new HTMLNode("div");

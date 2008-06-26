@@ -679,19 +679,25 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		return uri;
 	}
 
-	public long getDataSize() {
+	public long getDataSize(ObjectContainer container) {
 		if(foundDataLength > 0)
 			return foundDataLength;
-		if(getter != null)
+		if(getter != null) {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(getter, 1);
 			return getter.expectedSize();
+		}
 		return -1;
 	}
 
-	public String getMIMEType() {
+	public String getMIMEType(ObjectContainer container) {
 		if(foundDataMimeType != null)
 			return foundDataMimeType;
-		if(getter != null)
+		if(getter != null) {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(getter, 1);
 			return getter.expectedMIME();
+		}
 		return null;
 	}
 
@@ -753,9 +759,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			return 0;
 	}
 
-	public String getFailureReason() {
+	public String getFailureReason(ObjectContainer container) {
 		if(getFailedMessage == null)
 			return null;
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(getFailedMessage, 5);
 		String s = getFailedMessage.shortCodeDescription;
 		if(getFailedMessage.extraDescription != null)
 			s += ": "+getFailedMessage.extraDescription;
@@ -763,10 +771,14 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	}
 
 
-	public boolean isTotalFinalized() {
+	public boolean isTotalFinalized(ObjectContainer container) {
 		if(finished && succeeded) return true;
 		if(progressPending == null) return false;
-		else return progressPending.isTotalFinalized();
+		else {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(progressPending, 1);
+			return progressPending.isTotalFinalized();
+		}
 	}
 
 	/**
