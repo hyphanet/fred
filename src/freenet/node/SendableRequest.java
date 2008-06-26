@@ -91,6 +91,8 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	public void unregister(boolean staySubscribed, ObjectContainer container) {
 		RandomGrabArray arr = getParentGrabArray();
 		if(arr != null) {
+			if(persistent)
+				container.activate(arr, 1);
 			arr.remove(this, container);
 		} else {
 			// Should this be a higher priority?
