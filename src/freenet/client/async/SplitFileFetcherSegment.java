@@ -115,12 +115,21 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(checkKeys[i] == null) throw new NullPointerException("Null: check block "+i);
 	}
 
-	public synchronized boolean isFinished() {
-		return finished || parentFetcher.parent.isCancelled();
+	public synchronized boolean isFinished(ObjectContainer container) {
+		if(finished) return true;
+		if(persistent) {
+			container.activate(parentFetcher, 1);
+			container.activate(parentFetcher.parent, 1);
+		}
+		return parentFetcher.parent.isCancelled();
+	}
+	
+	public synchronized boolean succeeded() {
+		return finished;
 	}
 
-	public synchronized boolean isFinishing() {
-		return isFinished() || finishing;
+	public synchronized boolean isFinishing(ObjectContainer container) {
+		return isFinished(container) || finishing;
 	}
 	
 	/** Throw a FetchException, if we have one. Else do nothing. */
@@ -393,7 +402,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		NodeCHK key = getBlockNodeKey(blockNo, container);
 		if(key != null) seg.unregisterKey(key, context);
 		synchronized(this) {
-			if(isFinishing()) return; // this failure is now irrelevant, and cleanup will occur on the decoder thread
+			if(isFinishing(container)) return; // this failure is now irrelevant, and cleanup will occur on the decoder thread
 			if(blockNo < dataKeys.length) {
 				if(dataKeys[blockNo] == null) {
 					Logger.error(this, "Block already finished: "+blockNo);
@@ -440,7 +449,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		ClientCHK key;
 		SplitFileFetcherSubSegment sub = null;
 		synchronized(this) {
-			if(isFinished()) return;
+			if(isFinished(container)) return;
 			if(blockNo < dataKeys.length) {
 				key = dataKeys[blockNo];
 				if(persistent)
@@ -612,7 +621,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	 * case we get duplicated structures in memory.
 	 * @return True if we removed the subsegment.
 	 */
-	public synchronized boolean maybeRemoveSeg(SplitFileFetcherSubSegment segment) {
+	public synchronized boolean maybeRemoveSeg(SplitFileFetcherSubSegment segment, ObjectContainer container) {
 		int retryCount = segment.retryCount;
 		boolean dontRemove = true;
 		for(int i=0;i<dataRetries.length;i++)
@@ -625,7 +634,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				dontRemove = false;
 				break;
 			}
-		if(isFinishing()) dontRemove = false;
+		if(isFinishing(container)) dontRemove = false;
 		if(dontRemove) return false;
 		if(logMINOR)
 			Logger.minor(this, "Removing sub segment: "+segment+" for retry count "+retryCount);
@@ -664,7 +673,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		Vector v = null;
 		boolean notFound = true;
 		synchronized(this) {
-		if(isFinishing()) return;
+		if(isFinishing(container)) return;
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		for(int i=0;i<dataKeys.length;i++) {
 			if(dataKeys[i] == null) continue;

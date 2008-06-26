@@ -184,7 +184,9 @@ public class SplitFileFetcher implements ClientGetState {
 			SplitFileFetcherSegment s = segments[i];
 			if(persistent)
 				container.activate(s, 1);
-			if(!s.isFinished()) throw new IllegalStateException("Not all finished");
+			if(!s.succeeded()) {
+				throw new IllegalStateException("Not all finished");
+			}
 			s.throwError();
 			// If still here, it succeeded
 			finalLength += s.decodedLength();
@@ -236,7 +238,7 @@ public class SplitFileFetcher implements ClientGetState {
 			for(int i=0;i<segments.length;i++) {
 				if(persistent)
 					container.activate(segments[i], 1);
-				if(!segments[i].isFinished()) {
+				if(!segments[i].isFinished(container)) {
 					if(logMINOR) Logger.minor(this, "Segment "+segments[i]+" is not finished");
 					allDone = false;
 				}

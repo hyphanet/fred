@@ -86,9 +86,9 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			}
 			ClientKey key = segment.getBlockKey(((Integer)token).intValue(), container);
 			if(key == null) {
-				if(segment.isFinished()) {
+				if(segment.isFinished(container)) {
 					Logger.error(this, "Segment finished but didn't tell us! "+this);
-				} else if(segment.isFinishing()) {
+				} else if(segment.isFinishing(container)) {
 					Logger.error(this, "Segment finishing but didn't tell us! "+this);
 				} else {
 					Logger.error(this, "Segment not finishing yet still returns null for getKey()!: "+token+" for "+this, new Exception("debug"));
@@ -141,7 +141,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				ret = (Integer) blockNums.remove(x);
 				Key key = segment.getBlockNodeKey(((Integer)ret).intValue(), container);
 				if(key == null) {
-					if(segment.isFinishing() || segment.isFinished()) return null;
+					if(segment.isFinishing(container) || segment.isFinished(container)) return null;
 					Logger.error(this, "Key is null for block "+ret+" for "+this);
 					continue;
 				}
@@ -443,7 +443,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			if(!blockNums.isEmpty()) return;
 			if(logMINOR)
 				Logger.minor(this, "Definitely removing from parent: "+this);
-			if(!segment.maybeRemoveSeg(this)) return;
+			if(!segment.maybeRemoveSeg(this, container)) return;
 		}
 		unregister(false, container);
 	}
