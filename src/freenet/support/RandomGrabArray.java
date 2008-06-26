@@ -143,7 +143,7 @@ public class RandomGrabArray {
 								index--;
 								ret.setParentGrabArray(null, container);
 							}
-							if(logMINOR) Logger.minor(this, "Chosen random item "+ret+" out of "+valid);
+							if(logMINOR) Logger.minor(this, "Chosen random item "+ret.getClass()+" out of "+valid);
 							if(persistent && changedMe)
 								container.set(this);
 							return ret;
@@ -213,7 +213,7 @@ public class RandomGrabArray {
 					continue;
 				}
 				if(ret != null && !ret.canRemove(container)) {
-					if(logMINOR) Logger.minor(this, "Returning (cannot remove): "+ret+" of "+index);
+					if(logMINOR) Logger.minor(this, "Returning (cannot remove): "+ret.getClass()+" of "+index);
 					if(persistent && changedMe)
 						container.set(this);
 					return ret;
@@ -242,7 +242,7 @@ public class RandomGrabArray {
 				if(ret != null) break;
 			}
 		}
-		if(logMINOR) Logger.minor(this, "Returning "+ret+" of "+index);
+		if(logMINOR) Logger.minor(this, "Returning "+ret.getClass()+" of "+index);
 		ret.setParentGrabArray(null, container);
 		if(persistent)
 			container.set(this);
