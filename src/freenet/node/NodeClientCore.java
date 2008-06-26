@@ -227,6 +227,11 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 
 		tempBucketFactory = new PaddedEphemerallyEncryptedBucketFactory(new TempBucketFactory(tempFilenameGenerator), random, node.fastWeakRandom, 1024);
 		
+		healingQueue = new SimpleHealingQueue(
+				new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory, 
+						0, 2, 1, 0, 0, new SimpleEventProducer(), 
+						!Node.DONT_CACHE_LOCAL_REQUESTS), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
+		
 		clientContext = new ClientContext(this);
 		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext);
 		clientContext.init(requestStarters);
@@ -307,11 +312,6 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		Logger.normal(this, "Initializing USK Manager");
 		System.out.println("Initializing USK Manager");
 		uskManager.init(container, clientContext);
-		
-		healingQueue = new SimpleHealingQueue(requestStarters.chkPutScheduler,
-				new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory, 
-						0, 2, 1, 0, 0, new SimpleEventProducer(), 
-						!Node.DONT_CACHE_LOCAL_REQUESTS), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
 		nodeConfig.register("lazyResume", false, sortOrder++, true, false, "NodeClientCore.lazyResume",
 				"NodeClientCore.lazyResumeLong", new BooleanCallback() {
