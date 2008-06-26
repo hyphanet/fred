@@ -366,7 +366,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 
 	public boolean isCancelled() {
 		synchronized(segment) {
-			return cancelled;
+			return parent.cancelled;
 		}
 	}
 	
@@ -444,7 +444,6 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			if(logMINOR)
 				Logger.minor(this, "Definitely removing from parent: "+this);
 			if(!segment.maybeRemoveSeg(this)) return;
-			cancelled = true;
 		}
 		unregister(false, container);
 	}
