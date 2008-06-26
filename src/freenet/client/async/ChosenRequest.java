@@ -3,10 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import freenet.client.FetchContext;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
+import freenet.node.SendableGet;
 import freenet.node.SendableRequest;
 
 /**
@@ -26,6 +28,9 @@ public class ChosenRequest {
 	public final ClientKey ckey;
 	/** Priority when we selected it */
 	public short prio;
+	public final boolean localRequestOnly;
+	public final boolean cacheLocalRequests;
+	public final boolean ignoreStore;
 
 	ChosenRequest(SendableRequest req, Object tok, Key key, ClientKey ckey, short prio) {
 		request = req;
@@ -33,6 +38,17 @@ public class ChosenRequest {
 		this.key = key;
 		this.ckey = ckey;
 		this.prio = prio;
+		if(req instanceof SendableGet) {
+			SendableGet sg = (SendableGet) req;
+			FetchContext ctx = sg.getContext();
+			localRequestOnly = ctx.localRequestOnly;
+			cacheLocalRequests = ctx.cacheLocalRequests;
+			ignoreStore = ctx.ignoreStore;
+		} else {
+			localRequestOnly = false;
+			cacheLocalRequests = false;
+			ignoreStore = false;
+		}
 	}
 
 	public boolean send(NodeClientCore core, RequestScheduler sched) {

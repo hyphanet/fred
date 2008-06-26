@@ -71,7 +71,6 @@ public abstract class SendableGet extends BaseSendableGet {
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Sending get for key "+keyNum+" : "+key);
-		FetchContext ctx = getContext();
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if((!req.isPersistent()) && isCancelled(null)) {
 			if(logMINOR) Logger.minor(this, "Cancelled: "+this);
@@ -81,7 +80,7 @@ public abstract class SendableGet extends BaseSendableGet {
 		}
 		try {
 			try {
-				core.realGetKey(key, ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
+				core.realGetKey(key, req.localRequestOnly, req.cacheLocalRequests, req.ignoreStore);
 			} catch (final LowLevelGetException e) {
 				sched.callFailure(this, e, keyNum, NativeThread.HIGH_PRIORITY, req);
 				return true;
