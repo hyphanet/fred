@@ -77,14 +77,14 @@ public class SimpleSendableInsert extends SendableInsert {
 			if(logMINOR) Logger.minor(this, "Starting request: "+this);
 			core.realPut(block, shouldCache());
 		} catch (LowLevelPutException e) {
-			sched.callFailure(this, e, req.token, NativeThread.NORM_PRIORITY, "SSI callback: failure", req);
+			sched.callFailure(this, e, req.token, NativeThread.NORM_PRIORITY, req);
 			if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
 			return true;
 		} finally {
 			finished = true;
 		}
 		if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
-		sched.callSuccess(this, req.token, NativeThread.NORM_PRIORITY, "SSI callback: success", req);
+		sched.callSuccess(this, req.token, NativeThread.NORM_PRIORITY, req);
 		return true;
 	}
 

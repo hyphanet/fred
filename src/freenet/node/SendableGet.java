@@ -76,25 +76,25 @@ public abstract class SendableGet extends BaseSendableGet {
 		if(isCancelled()) {
 			if(logMINOR) Logger.minor(this, "Cancelled: "+this);
 			// callbacks must initially run at HIGH_PRIORITY so they are executed before we remove the key from the currently running list
-			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.CANCELLED), null, NativeThread.HIGH_PRIORITY, "onFailure(cancelled)", req);
+			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.CANCELLED), null, NativeThread.HIGH_PRIORITY, req);
 			return false;
 		}
 		try {
 			try {
 				core.realGetKey(key, ctx.localRequestOnly, ctx.cacheLocalRequests, ctx.ignoreStore);
 			} catch (final LowLevelGetException e) {
-				sched.callFailure(this, e, keyNum, NativeThread.HIGH_PRIORITY, "onFailure", req);
+				sched.callFailure(this, e, keyNum, NativeThread.HIGH_PRIORITY, req);
 				return true;
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
-				sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, NativeThread.HIGH_PRIORITY, "onFailure(caught throwable)", req);
+				sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, NativeThread.HIGH_PRIORITY, req);
 				return true;
 			}
 			// Don't call onSuccess(), it will be called for us by backdoor coalescing.
 			sched.succeeded(this, req);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
-			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, NativeThread.HIGH_PRIORITY, "onFailure(caught throwable)", req);
+			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, NativeThread.HIGH_PRIORITY, req);
 			return true;
 		}
 		return true;
@@ -145,7 +145,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	}
 
 	public void internalError(final Object keyNum, final Throwable t, final RequestScheduler sched, ObjectContainer container, ClientContext context) {
-		sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), keyNum, NativeThread.MAX_PRIORITY, "Internal error", null);
+		sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), keyNum, NativeThread.MAX_PRIORITY, null);
 	}
 
 	/**

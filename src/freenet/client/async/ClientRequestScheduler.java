@@ -698,7 +698,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		schedCore.removeFetchingKey(key);
 	}
 
-	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, String name, final ChosenRequest req) {
+	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, final ChosenRequest req) {
 		jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
@@ -710,7 +710,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}, NativeThread.NORM_PRIORITY, false);
 	}
 	
-	public void callFailure(final SendableInsert put, final LowLevelPutException e, final Object keyNum, int prio, String name, final ChosenRequest req) {
+	public void callFailure(final SendableInsert put, final LowLevelPutException e, final Object keyNum, int prio, final ChosenRequest req) {
 		jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
@@ -722,7 +722,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}, NativeThread.NORM_PRIORITY, false);
 	}
 
-	public void callSuccess(final SendableInsert put, final Object keyNum, int prio, String name, final ChosenRequest req) {
+	public void callSuccess(final SendableInsert put, final Object keyNum, int prio, final ChosenRequest req) {
 		jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
