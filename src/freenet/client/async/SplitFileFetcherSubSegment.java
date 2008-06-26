@@ -244,6 +244,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		if(persistent) {
 			container.activate(segment, 1);
 			container.activate(parent, 1);
+			container.activate(segment.errors, 1);
 		}
 		boolean forceFatal = false;
 		if(parent.isCancelled()) {
