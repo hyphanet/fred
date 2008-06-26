@@ -698,10 +698,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		schedCore.removeFetchingKey(key);
 	}
 
-	public PrioritizedSerialExecutor getDatabaseExecutor() {
-		return databaseExecutor;
-	}
-
 	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, String name, final ChosenRequest req) {
 		jobRunner.queue(new DBJob() {
 

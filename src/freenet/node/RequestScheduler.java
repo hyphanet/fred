@@ -57,8 +57,6 @@ public interface RequestScheduler {
 
 	public void removeFetchingKey(Key key);
 
-	public PrioritizedSerialExecutor getDatabaseExecutor();
-
 	/** Call onFailure() on the database thread, then delete the PersistentChosenRequest. For a non-persistent request, 
 	 * just call onFailure() immediately. */
 	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, String name, ChosenRequest req);
