@@ -76,7 +76,7 @@ public abstract class SendableGet extends BaseSendableGet {
 		if(isCancelled()) {
 			if(logMINOR) Logger.minor(this, "Cancelled: "+this);
 			// callbacks must initially run at HIGH_PRIORITY so they are executed before we remove the key from the currently running list
-			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.CANCELLED), null, NativeThread.HIGH_PRIORITY, req);
+			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.CANCELLED), keyNum, NativeThread.HIGH_PRIORITY, req);
 			return false;
 		}
 		try {
