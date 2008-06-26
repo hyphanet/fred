@@ -354,6 +354,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public boolean canRemove(ObjectContainer container) {
+		if(persistent)
+			container.activate(blockNums, 1);
 		synchronized(segment) {
 			if(blockNums.size() < 2) {
 				// Can be removed, if the one key is processed.
@@ -366,6 +368,9 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public boolean isCancelled(ObjectContainer container) {
+		if(persistent) {
+			container.activate(parent, 1);
+		}
 		synchronized(segment) {
 			return parent.cancelled;
 		}
@@ -437,6 +442,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(segment, 1);
+			container.activate(blockNums, 1);
 		}
 		if(logMINOR)
 			Logger.minor(this, "Possibly removing from parent: "+this);
