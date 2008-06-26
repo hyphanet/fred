@@ -248,7 +248,12 @@ public class SplitFileFetcher implements ClientGetState {
 					allSegmentsFinished = true;
 					finish = true;
 				}
-			} 
+			} else {
+				for(int i=0;i<segments.length;i++) {
+					if(segments[i] == segment) continue;
+					container.deactivate(segments[i], 1);
+				}
+			}
 			notifyAll();
 		}
 		if(persistent) container.set(this);
