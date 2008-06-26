@@ -199,7 +199,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				if(queue.isEmpty()) break;
 				req = (ChosenRequest) queue.removeFirst();
 			}
-			if(req.request.isCancelled()) continue;
+			if((!req.request.persistent) && req.request.isCancelled()) continue;
 			break;
 		}
 		ChosenRequest betterReq = sched.getBetterNonPersistentRequest(req);
