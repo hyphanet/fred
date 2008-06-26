@@ -370,7 +370,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			if(req.persistent())
 				container.activate(req, 1); // FIXME
 			if(req.persistent() != trackerParent.persistent()) {
-				Logger.error(this, "Request.persistent()="+req.persistent()+" but is in the queue for persistent="+trackerParent.persistent());
+				Logger.error(this, "Request.persistent()="+req.persistent()+" but is in the queue for persistent="+trackerParent.persistent()+" for "+req);
 				// FIXME fix it
 			}
 			if(req.getPriorityClass() != choosenPriorityClass) {
