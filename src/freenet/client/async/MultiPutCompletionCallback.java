@@ -25,6 +25,14 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	private boolean finished;
 	private boolean started;
 	public final Object token;
+	private final boolean persistent;
+	
+	public void objectOnActivate(ObjectContainer container) {
+		// Only activate the arrays
+		container.activate(waitingFor, 1);
+		container.activate(waitingForBlockSet, 1);
+		container.activate(waitingForFetchable, 1);
+	}
 	
 	public MultiPutCompletionCallback(PutCompletionCallback cb, BaseClientPutter parent, Object token) {
 		this.cb = cb;
@@ -34,6 +42,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		this.parent = parent;
 		this.token = token;
 		finished = false;
+		this.persistent = parent.persistent();
 	}
 
 	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
@@ -59,6 +68,11 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 				return;
 			}
 		}
+		if(persistent) {
+			container.set(waitingFor);
+			container.set(waitingForBlockSet);
+			container.set(waitingForFetchable);
+		}
 		complete(e, container, context);
 	}
 
@@ -72,22 +86,33 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			}
 			if(e == null) e = this.e;
 		}
+		if(persistent) {
+			container.set(this);
+			container.activate(cb, 1);
+		}
 		if(e != null)
 			cb.onFailure(e, this, container, context);
 		else
 			cb.onSuccess(this, container, context);
 	}
 
-	public synchronized void addURIGenerator(ClientPutState ps) {
-		add(ps);
+	public synchronized void addURIGenerator(ClientPutState ps, ObjectContainer container) {
+		add(ps, container);
 		generator = ps;
+		if(persistent)
+			container.set(this);
 	}
 	
-	public synchronized void add(ClientPutState ps) {
+	public synchronized void add(ClientPutState ps, ObjectContainer container) {
 		if(finished) return;
 		waitingFor.add(ps);
 		waitingForBlockSet.add(ps);
 		waitingForFetchable.add(ps);
+		if(persistent) {
+			container.set(waitingFor);
+			container.set(waitingForBlockSet);
+			container.set(waitingForFetchable);
+		}
 	}
 
 	public void arm(ObjectContainer container, ClientContext context) {
@@ -98,7 +123,10 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			allDone = waitingFor.isEmpty();
 			allGotBlocks = waitingForBlockSet.isEmpty();
 		}
-
+		if(persistent) {
+			container.set(this);
+			container.activate(cb, 1);
+		}
 		if(allGotBlocks) {
 			cb.onBlockSetFinished(this, container, context);
 		}
@@ -115,6 +143,8 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		synchronized(this) {
 			if(state != generator) return;
 		}
+		if(persistent)
+			container.activate(cb, 1);
 		cb.onEncode(key, this, container, context);
 	}
 
@@ -123,8 +153,11 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		synchronized(this) {
 			states = (ClientPutState[]) waitingFor.toArray(states);
 		}
-		for(int i=0;i<states.length;i++)
+		for(int i=0;i<states.length;i++) {
+			if(persistent)
+				container.activate(states[i], 1);
 			states[i].cancel(container, context);
+		}
 	}
 
 	public synchronized void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
@@ -132,17 +165,28 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			generator = newState;
 		if(oldState == newState) return;
 		for(int i=0;i<waitingFor.size();i++) {
-			if(waitingFor.get(i) == oldState) waitingFor.set(i, newState);
+			if(waitingFor.get(i) == oldState) {
+				waitingFor.set(i, newState);
+				container.set(waitingFor);
+			}
 		}
 		for(int i=0;i<waitingFor.size();i++) {
-			if(waitingForBlockSet.get(i) == oldState) waitingForBlockSet.set(i, newState);
+			if(waitingForBlockSet.get(i) == oldState) {
+				waitingForBlockSet.set(i, newState);
+				container.set(waitingFor);
+			}
 		}
 		for(int i=0;i<waitingFor.size();i++) {
-			if(waitingForFetchable.get(i) == oldState) waitingForFetchable.set(i, newState);
+			if(waitingForFetchable.get(i) == oldState) {
+				waitingForFetchable.set(i, newState);
+				container.set(waitingFor);
+			}
 		}
 	}
 
 	public synchronized void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
+		if(persistent)
+			container.activate(cb, 1);
 		if(generator == state) {
 			cb.onMetadata(m, this, container, context);
 		} else {
@@ -153,9 +197,13 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			this.waitingForBlockSet.remove(state);
+			if(persistent)
+				container.set(waitingForBlockSet);
 			if(!started) return;
 			if(!waitingForBlockSet.isEmpty()) return;
 		}
+		if(persistent)
+			container.activate(cb, 1);
 		cb.onBlockSetFinished(this, container, context);
 	}
 
@@ -174,9 +222,13 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 	public void onFetchable(ClientPutState state, ObjectContainer container) {
 		synchronized(this) {
 			this.waitingForFetchable.remove(state);
+			if(persistent)
+				container.set(waitingForFetchable);
 			if(!started) return;
 			if(!waitingForFetchable.isEmpty()) return;
 		}
+		if(persistent)
+			container.activate(cb, 1);
 		cb.onFetchable(this, container);
 	}
 

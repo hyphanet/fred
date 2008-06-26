@@ -223,8 +223,8 @@ class SingleFileInserter implements ClientPutState {
 					throw new InsertException(InsertException.INTERNAL_ERROR, "Got MetadataUnresolvedException in SingleFileInserter: "+e.toString(), null);
 				}
 				ClientPutState metaPutter = createInserter(parent, metadataBucket, (short) -1, block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly, true, false, container, context);
-				mcb.addURIGenerator(metaPutter);
-				mcb.add(dataPutter);
+				mcb.addURIGenerator(metaPutter, container);
+				mcb.add(dataPutter, container);
 				cb.onTransition(this, mcb, container);
 				Logger.minor(this, ""+mcb+" : data "+dataPutter+" meta "+metaPutter);
 				mcb.arm(container, context);
