@@ -112,7 +112,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 						container.set(this);
 				}
 				if(logMINOR)
-					Logger.minor(this, "Returning (one item only) "+item.getClass()+" for "+rga+" for "+rga.getObject());
+					Logger.minor(this, "Returning (one item only) "+item+" for "+rga+" for "+rga.getObject());
 				return item;
 			}
 			if(grabArrays.length == 2) {
@@ -146,13 +146,13 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 						container.deactivate(firstRGA, 1);
 					}
 					if(logMINOR)
-						Logger.minor(this, "Returning (two items only) "+item.getClass()+" for "+rga+" for "+rga.getObject());
+						Logger.minor(this, "Returning (two items only) "+item+" for "+rga+" for "+rga.getObject());
 					return item;
 				} else {
 					if(persistent)
 						container.deactivate(rga, 1);
 					if(logMINOR)
-						Logger.minor(this, "Returning (two items only) "+item.getClass()+" for "+rga+" for "+rga.getObject());
+						Logger.minor(this, "Returning (two items only) "+item+" for "+rga+" for "+rga.getObject());
 					return item;
 				}
 			}
