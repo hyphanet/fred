@@ -304,7 +304,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		SortedVectorByNumber trans = schedTransient.priorities[choosenPriorityClass];
 		if(perm == null && trans == null) {
 			if(logMINOR) Logger.minor(this, "No requests to run: chosen priority empty");
-			return null;
+			continue; // Try next priority
 		}
 		int permRetryIndex = 0;
 		int transRetryIndex = 0;
@@ -321,7 +321,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			}
 			if(permRetryCount == Integer.MAX_VALUE && transRetryCount == Integer.MAX_VALUE) {
 				if(logMINOR) Logger.minor(this, "No requests to run: ran out of retrycounts on chosen priority");
-				return null;
+				break; // Try next priority
 			}
 			SectoredRandomGrabArrayWithInt chosenTracker = null;
 			SortedVectorByNumber trackerParent = null;
