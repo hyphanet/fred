@@ -667,18 +667,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public void moveKeysFromCooldownQueue() {
-		moveKeysFromCooldownQueue(transientCooldownQueue, null);
+		moveKeysFromCooldownQueue(transientCooldownQueue, false, null);
 		jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
-				if(moveKeysFromCooldownQueue(persistentCooldownQueue, selectorContainer))
+				if(moveKeysFromCooldownQueue(persistentCooldownQueue, true, selectorContainer))
 					starter.wakeUp();
 			}
 			
 		}, NativeThread.NORM_PRIORITY, false);
 	}
 	
-	private boolean moveKeysFromCooldownQueue(CooldownQueue queue, ObjectContainer container) {
+	private boolean moveKeysFromCooldownQueue(CooldownQueue queue, boolean persistent, ObjectContainer container) {
 		if(queue == null) return false;
 		long now = System.currentTimeMillis();
 		final int MAX_KEYS = 1024;
@@ -689,6 +689,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 		found = true;
 		for(int j=0;j<keys.length;j++) {
 			Key key = keys[j];
+			if(persistent)
+				container.activate(key, 5);
 			if(logMINOR) Logger.minor(this, "Restoring key: "+key);
 			SendableGet[] gets = schedCore.getClientsForPendingKey(key);
 			SendableGet[] transientGets = schedTransient.getClientsForPendingKey(key);
@@ -698,8 +700,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 				continue;
 			} else {
 				if(gets != null)
-				for(int i=0;i<gets.length;i++)
+				for(int i=0;i<gets.length;i++) {
+					if(persistent)
+						container.activate(gets[i], 1);
 					gets[i].requeueAfterCooldown(key, now, container, clientContext);
+				}
 				if(transientGets != null)
 				for(int i=0;i<transientGets.length;i++)
 					transientGets[i].requeueAfterCooldown(key, now, container, clientContext);
