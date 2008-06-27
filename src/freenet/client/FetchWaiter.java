@@ -55,7 +55,7 @@ public class FetchWaiter implements ClientCallback {
 		return result;
 	}
 
-	public void onMajorProgress() {
+	public void onMajorProgress(ObjectContainer container) {
 		// Ignore
 	}
 

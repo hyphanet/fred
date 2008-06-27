@@ -29,7 +29,7 @@ public interface ClientCallback {
 	
 	/** Called when freenet.async thinks that the request should be serialized to
 	 * disk, if it is a persistent request. */
-	public void onMajorProgress();
+	public void onMajorProgress(ObjectContainer container);
 
 	/** Called when the inserted data is fetchable (don't rely on this) */
 	public void onFetchable(BaseClientPutter state, ObjectContainer container);

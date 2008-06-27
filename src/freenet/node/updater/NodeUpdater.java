@@ -301,7 +301,7 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 		return URI;
 	}
 	
-	public void onMajorProgress() {
+	public void onMajorProgress(ObjectContainer container) {
 		// Ignore
 	}
 

@@ -66,7 +66,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 			data.free();
 	}
 	
-	public void onMajorProgress() {
+	public void onMajorProgress(ObjectContainer container) {
 		// Ignore
 	}
 

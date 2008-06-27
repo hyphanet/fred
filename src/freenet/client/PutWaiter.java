@@ -61,7 +61,7 @@ public class PutWaiter implements ClientCallback {
 		throw new InsertException(InsertException.INTERNAL_ERROR, "Did not succeed but no error", uri);
 	}
 
-	public void onMajorProgress() {
+	public void onMajorProgress(ObjectContainer container) {
 		// Ignore
 	}
 

@@ -255,7 +255,7 @@ public class NodeARKInserter implements ClientCallback, RequestClient {
 		startInserter();
 	}
 
-	public void onMajorProgress() {
+	public void onMajorProgress(ObjectContainer container) {
 		// Ignore
 	}
 

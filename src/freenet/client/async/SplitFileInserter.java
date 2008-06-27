@@ -111,7 +111,7 @@ public class SplitFileInserter implements ClientPutState {
 			count += segments[i].countCheckBlocks();
 		countCheckBlocks = count;
 		// Save progress to disk, don't want to do all that again (probably includes compression in caller)
-		parent.onMajorProgress();
+		parent.onMajorProgress(container);
 	}
 
 	public SplitFileInserter(BaseClientPutter parent, PutCompletionCallback cb, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean metadata, Object token, boolean insertAsArchiveManifest, SimpleFieldSet fs, ObjectContainer container, ClientContext context) throws ResumeException {
@@ -247,7 +247,7 @@ public class SplitFileInserter implements ClientPutState {
 			container.activate(parent, 1);
 		
 		if(countDataBlocks > 32)
-			parent.onMajorProgress();
+			parent.onMajorProgress(container);
 		parent.notifyClients(container, context);
 		
 	}
@@ -283,7 +283,7 @@ public class SplitFileInserter implements ClientPutState {
 		if(countDataBlocks > 32) {
 			if(persistent)
 				container.activate(parent, 1);
-			parent.onMajorProgress();
+			parent.onMajorProgress(container);
 		}
 	}
 	
@@ -449,7 +449,7 @@ public class SplitFileInserter implements ClientPutState {
 		if(countDataBlocks > 32) {
 			if(persistent)
 				container.activate(parent, 1);
-			parent.onMajorProgress();
+			parent.onMajorProgress(container);
 		}
 		synchronized(this) {
 			if(finished) {

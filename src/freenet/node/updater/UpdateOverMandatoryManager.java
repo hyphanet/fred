@@ -759,7 +759,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				// Ignore, not possible
 			}
 
-			public void onMajorProgress() {
+			public void onMajorProgress(ObjectContainer container) {
 				// Ignore
 			}
 
@@ -805,7 +805,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
 				// Ignore
 			}
-			public void onMajorProgress() {
+			public void onMajorProgress(ObjectContainer container) {
 				// Ignore
 			}
 			public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
@@ -1128,7 +1128,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				// Ignore, not possible
 			}
 
-			public void onMajorProgress() {
+			public void onMajorProgress(ObjectContainer container) {
 				// Ignore
 			}
 

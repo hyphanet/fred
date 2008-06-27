@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.node.RequestClient;
 
 public abstract class BaseClientPutter extends ClientRequester {
@@ -11,6 +13,6 @@ public abstract class BaseClientPutter extends ClientRequester {
 		super(priorityClass, context);
 	}
 
-	public abstract void onMajorProgress();
+	public abstract void onMajorProgress(ObjectContainer container);
 
 }

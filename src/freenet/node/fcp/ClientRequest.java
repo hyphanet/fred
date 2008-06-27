@@ -294,7 +294,7 @@ public abstract class ClientRequest {
 	 */
 	public abstract boolean isTotalFinalized(ObjectContainer container);
 
-	public void onMajorProgress() {
+	public void onMajorProgress(ObjectContainer container) {
 		// Ignore
 	}
 

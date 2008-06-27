@@ -230,7 +230,7 @@ public class RevocationChecker implements ClientCallback, RequestClient {
 		
 	}
 
-	public void onMajorProgress() {
+	public void onMajorProgress(ObjectContainer container) {
 		// TODO Auto-generated method stub
 		
 	}

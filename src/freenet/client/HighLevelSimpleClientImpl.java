@@ -223,7 +223,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 			// Impossible
 		}
 
-		public void onMajorProgress() {
+		public void onMajorProgress(ObjectContainer container) {
 			// Ignore
 		}
 

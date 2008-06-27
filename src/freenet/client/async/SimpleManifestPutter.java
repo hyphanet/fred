@@ -168,8 +168,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			SimpleManifestPutter.this.blockSetFinalized(container, context);
 		}
 
-		public void onMajorProgress() {
-			SimpleManifestPutter.this.onMajorProgress();
+		public void onMajorProgress(ObjectContainer container) {
+			SimpleManifestPutter.this.onMajorProgress(container);
 		}
 
 		public void onFetchable(ClientPutState state, ObjectContainer container) {
@@ -710,8 +710,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		return totalSize;
 	}
 
-	public void onMajorProgress() {
-		cb.onMajorProgress();
+	public void onMajorProgress(ObjectContainer container) {
+		cb.onMajorProgress(container);
 	}
 
 	protected void onFetchable(PutHandler handler, ObjectContainer container) {
