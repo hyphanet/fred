@@ -491,6 +491,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 			if(transientCooldownQueue != null)
 				transientCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key, null), null);
+		} else if(container != null) {
+			// We are on the database thread already.
+			schedCore.removePendingKey(getter, complain, key, container);
+			if(persistentCooldownQueue != null)
+				persistentCooldownQueue.removeKey(key, getter, getter.getCooldownWakeupByKey(key, container), container);
 		} else {
 			jobRunner.queue(new DBJob() {
 
@@ -681,11 +686,15 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private boolean moveKeysFromCooldownQueue(CooldownQueue queue, boolean persistent, ObjectContainer container) {
 		if(queue == null) return false;
 		long now = System.currentTimeMillis();
-		final int MAX_KEYS = 10;
+		/*
+		 * Only go around once. We will be called again. If there are keys to move, then RequestStarter will not
+		 * sleep, because it will start them. Then it will come back here. If we are off-thread i.e. on the database
+		 * thread, then we will wake it up if we find keys... and we'll be scheduled again.
+		 */
+		final int MAX_KEYS = 20;
 		boolean found = false;
-		while(true) {
 		Key[] keys = queue.removeKeyBefore(now, container, MAX_KEYS);
-		if(keys == null) return found;
+		if(keys == null) return false;
 		found = true;
 		for(int j=0;j<keys.length;j++) {
 			Key key = keys[j];
@@ -710,8 +719,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					transientGets[i].requeueAfterCooldown(key, now, container, clientContext);
 			}
 		}
-		if(keys.length < MAX_KEYS) return found;
-		}
+		return found;
 	}
 
 	public long countTransientQueuedRequests() {
