@@ -346,8 +346,14 @@ abstract class ClientRequestSchedulerBase {
 
 	public void addPendingKeys(SendableGet getter, ObjectContainer container) {
 		Object[] keyTokens = getter.sendableKeys(container);
+		Object prevTok = null;
 		for(int i=0;i<keyTokens.length;i++) {
 			Object tok = keyTokens[i];
+			if(i != 0 && prevTok == tok || (prevTok != null && tok != null && prevTok.equals(tok))) {
+				Logger.error(this, "Ignoring duplicate token");
+				continue;
+			}
+			prevTok = tok;
 			ClientKey key = getter.getKey(tok, container);
 			if(getter.persistent())
 				container.activate(key, 5);
