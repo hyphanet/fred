@@ -507,7 +507,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				tries = ++dataRetries[blockNo];
 				if(tries > maxTries && maxTries >= 0) failed = true;
 				else {
-					sub = getSubSegment(tries);
+					sub = getSubSegment(tries, container);
 					if(tries % ClientRequestScheduler.COOLDOWN_RETRIES == 0) {
 						long now = System.currentTimeMillis();
 						if(dataCooldownTimes[blockNo] > now)
@@ -525,7 +525,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				tries = ++checkRetries[checkNo];
 				if(tries > maxTries && maxTries >= 0) failed = true;
 				else {
-					sub = getSubSegment(tries);
+					sub = getSubSegment(tries, container);
 					if(tries % ClientRequestScheduler.COOLDOWN_RETRIES == 0) {
 						long now = System.currentTimeMillis();
 						if(checkCooldownTimes[checkNo] > now)
@@ -549,6 +549,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 			// Register to the next sub-segment before removing from the old one.
 			sub.getScheduler(context).addPendingKey(key, sub);
 			seg.unregisterKey(key.getNodeKey(), context, container);
+			if(logMINOR)
+				Logger.minor(this, "Adding to cooldown queue: "+key+" for "+this+" was on segment "+seg+" now registered to "+sub);
 		} else {
 			// If we are here we are going to retry
 			// Unregister from the old sub-segment before registering on the new.
@@ -559,8 +561,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 	}
 	
-	private SplitFileFetcherSubSegment getSubSegment(int retryCount) {
+	private SplitFileFetcherSubSegment getSubSegment(int retryCount, ObjectContainer container) {
 		SplitFileFetcherSubSegment sub;
+		if(persistent)
+			container.activate(subSegments, 1);
 		synchronized(this) {
 			for(int i=0;i<subSegments.size();i++) {
 				sub = (SplitFileFetcherSubSegment) subSegments.get(i);
@@ -569,6 +573,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 			sub = new SplitFileFetcherSubSegment(this, retryCount);
 			subSegments.add(sub);
 		}
+		if(persistent)
+			container.set(subSegments);
 		return sub;
 	}
 
@@ -615,7 +621,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			container.activate(parentFetcher.parent, 1);
 		}
 		try {
-			SplitFileFetcherSubSegment seg = getSubSegment(0);
+			SplitFileFetcherSubSegment seg = getSubSegment(0, container);
 			if(persistent)
 				container.activate(seg, 1);
 			for(int i=0;i<dataRetries.length+checkRetries.length;i++)
@@ -692,16 +698,23 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(dontRemove) return false;
 		if(logMINOR)
 			Logger.minor(this, "Removing sub segment: "+segment+" for retry count "+retryCount);
+		if(persistent) {
+			container.activate(subSegments, 1);
+		}
 		for(int i=0;i<subSegments.size();i++) {
 			if(segment.equals(subSegments.get(i))) {
 				subSegments.remove(i);
 				i--;
 			}
 		}
+		if(persistent)
+			container.set(subSegments);
 		return true;
 	}
 
 	private void removeSubSegments(ObjectContainer container) {
+		if(persistent)
+			container.activate(subSegments, 1);
 		SplitFileFetcherSubSegment[] deadSegs;
 		synchronized(this) {
 			deadSegs = (SplitFileFetcherSubSegment[]) subSegments.toArray(new SplitFileFetcherSubSegment[subSegments.size()]);
@@ -711,6 +724,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 			container.set(this);
 		for(int i=0;i<deadSegs.length;i++) {
 			deadSegs[i].kill(container);
+		}
+		if(persistent) {
+			container.set(this);
+			container.set(subSegments);
 		}
 	}
 
@@ -744,7 +761,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					return false;
 				}
 				int tries = dataRetries[i];
-				SplitFileFetcherSubSegment sub = getSubSegment(tries);
+				SplitFileFetcherSubSegment sub = getSubSegment(tries, container);
 				if(logMINOR)
 					Logger.minor(this, "Retrying after cooldown on "+this+": data block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 				if(v == null) v = new Vector();
@@ -765,7 +782,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					return false;
 				}
 				int tries = checkRetries[i];
-				SplitFileFetcherSubSegment sub = getSubSegment(tries);
+				SplitFileFetcherSubSegment sub = getSubSegment(tries, container);
 				if(logMINOR)
 					Logger.minor(this, "Retrying after cooldown on "+this+": check block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 				if(v == null) v = new Vector();
