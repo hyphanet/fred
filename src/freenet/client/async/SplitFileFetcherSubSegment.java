@@ -429,6 +429,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			if(blockNums.contains(i)) {
 				if(!dontComplainOnDupes)
 					Logger.error(this, "Block numbers already contain block "+blockNo);
+				else if(logMINOR)
+					Logger.minor(this, "Block numbers already contain block "+blockNo);
 			} else {
 				blockNums.add(i);
 			}
