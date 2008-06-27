@@ -69,6 +69,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 			ArrayList v = new ArrayList(Math.min(maxCount, results.size()));
 			while(results.hasNext() && v.size() < maxCount) {
 				PersistentCooldownQueueItem i = (PersistentCooldownQueueItem) results.next();
+				container.delete(i);
 				v.add(i.key);
 			}
 			return (Key[]) v.toArray(new Key[v.size()]);
