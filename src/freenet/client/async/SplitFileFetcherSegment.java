@@ -705,8 +705,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				sub.add(i, true, container, context);
 				if(!v.contains(sub)) v.add(sub);
 				notFound = false;
-			} else
-				container.deactivate(k, 5);
+			}
 		}
 		for(int i=0;i<checkKeys.length;i++) {
 			if(checkKeys[i] == null) continue;
@@ -727,8 +726,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				sub.add(i+dataKeys.length, true, container, context);
 				if(!v.contains(sub)) v.add(sub);
 				notFound = false;
-			} else
-				container.deactivate(k, 5);
+			}
 		}
 		}
 		if(notFound) {
@@ -749,8 +747,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				container.activate(k, 5);
 			if(k.getNodeKey().equals(key)) {
 				return dataCooldownTimes[i];
-			} else
-				container.deactivate(k, 5);
+			}
 		}
 		for(int i=0;i<checkKeys.length;i++) {
 			if(checkKeys[i] == null) continue;
@@ -759,8 +756,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				container.activate(k, 5);
 			if(checkKeys[i].getNodeKey().equals(key)) {
 				return checkCooldownTimes[i];
-			} else
-				container.deactivate(k, 5);
+			}
 		}
 		return -1;
 	}
@@ -772,7 +768,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(persistent)
 				container.activate(k, 5);
 			if(k.equals(key)) return i;
-			else container.deactivate(k, 5);
 		}
 		for(int i=0;i<checkKeys.length;i++) {
 			ClientKey k = checkKeys[i];
@@ -780,7 +775,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(persistent)
 				container.activate(k, 5);
 			if(k.equals(key)) return dataKeys.length+i;
-			else container.deactivate(k, 5);
 		}
 		return -1;
 	}
