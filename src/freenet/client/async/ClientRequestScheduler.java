@@ -613,6 +613,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				for(int i=0;i<gets.length;i++) {
 					try {
 						if(logMINOR) Logger.minor(this, "Calling callback for "+gets[i]+" for "+key);
+						container.activate(gets[i], 1);
 						gets[i].onGotKey(key, block, container, context);
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t+" running callback "+gets[i]+" for "+key, t);
