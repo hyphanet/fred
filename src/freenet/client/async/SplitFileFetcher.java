@@ -201,10 +201,17 @@ public class SplitFileFetcher implements ClientGetState {
 		long bytesWritten = 0;
 		OutputStream os = null;
 		Bucket output;
+		if(persistent) {
+			container.activate(decompressors, 5);
+			if(returnBucket != null)
+				container.activate(returnBucket, 5);
+		}
 		try {
-			if((returnBucket != null) && decompressors.isEmpty())
+			if((returnBucket != null) && decompressors.isEmpty()) {
 				output = returnBucket;
-			else
+				if(persistent)
+					container.activate(output, 5);
+			} else
 				output = context.getBucketFactory(parent.persistent()).makeBucket(finalLength);
 			os = output.getOutputStream();
 			for(int i=0;i<segments.length;i++) {
@@ -277,7 +284,9 @@ public class SplitFileFetcher implements ClientGetState {
 			// Decompress
 			if(persistent) {
 				container.set(this);
-				container.activate(decompressors, 1);
+				container.activate(decompressors, 5);
+				container.activate(returnBucket, 5);
+				container.activate(cb, 1);
 			}
 			while(!decompressors.isEmpty()) {
 				Compressor c = (Compressor) decompressors.removeLast();
