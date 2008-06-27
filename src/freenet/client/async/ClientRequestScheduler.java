@@ -681,7 +681,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private boolean moveKeysFromCooldownQueue(CooldownQueue queue, boolean persistent, ObjectContainer container) {
 		if(queue == null) return false;
 		long now = System.currentTimeMillis();
-		final int MAX_KEYS = 1024;
+		final int MAX_KEYS = 10;
 		boolean found = false;
 		while(true) {
 		Key[] keys = queue.removeKeyBefore(now, container, MAX_KEYS);
