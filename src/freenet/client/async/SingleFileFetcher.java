@@ -639,11 +639,14 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		private final boolean wasFetchingFinalData;
 		private final String element;
 		private final ArchiveExtractCallback callback;
+		/** For activation we need to know whether we are persistent even though the parent may not have been activated yet */
+		private final boolean persistent;
 		
 		ArchiveFetcherCallback(boolean wasFetchingFinalData, String element, ArchiveExtractCallback cb) {
 			this.wasFetchingFinalData = wasFetchingFinalData;
 			this.element = element;
 			this.callback = cb;
+			this.persistent = SingleFileFetcher.this.persistent;
 		}
 		
 		public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
@@ -716,6 +719,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	}
 
 	class MultiLevelMetadataCallback implements GetCompletionCallback {
+		
+		private final boolean persistent;
+		
+		MultiLevelMetadataCallback() {
+			this.persistent = SingleFileFetcher.this.persistent;
+		}
 		
 		public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
 			if(persistent)
@@ -804,7 +813,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				} else {
 					// Transition to SingleFileFetcher
 					GetCompletionCallback myCB =
-						new USKProxyCompletionCallback(usk, cb);
+						new USKProxyCompletionCallback(usk, cb, requester.persistent());
 					// Want to update the latest known good iff the fetch succeeds.
 					SingleFileFetcher sf = 
 						new SingleFileFetcher(requester, myCB, clientMetadata, usk.getSSK(), metaStrings, 
