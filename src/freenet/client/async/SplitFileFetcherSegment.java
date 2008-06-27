@@ -512,7 +512,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			seg.unregisterKey(key.getNodeKey(), context, container);
 			if(logMINOR)
 				Logger.minor(this, "Retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
-			sub.add(blockNo, false, container, context);
+			sub.add(blockNo, false, container, context, false);
 		}
 	}
 	
@@ -576,7 +576,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(persistent)
 				container.activate(seg, 1);
 			for(int i=0;i<dataRetries.length+checkRetries.length;i++)
-				seg.add(i, true, container, context);
+				seg.add(i, true, container, context, false);
 			
 			seg.schedule(container, context);
 			synchronized(this) {
@@ -678,13 +678,16 @@ public class SplitFileFetcherSegment implements FECCallback {
 			return checkCooldownTimes[blockNum - dataKeys.length];
 	}
 
-	public void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context) {
+	/**
+	 * @return True if the key was wanted and the scheduled segment was the one that called, false otherwise. 
+	 */
+	public boolean requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context, SplitFileFetcherSubSegment segment) {
 		if(persistent)
 			container.activate(this, 1);
 		Vector v = null;
 		boolean notFound = true;
 		synchronized(this) {
-		if(isFinishing(container)) return;
+		if(isFinishing(container)) return false;
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		for(int i=0;i<dataKeys.length;i++) {
 			if(dataKeys[i] == null) continue;
@@ -695,14 +698,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(dataCooldownTimes[i] > time) {
 					if(logMINOR)
 						Logger.minor(this, "Not retrying after cooldown for data block "+i+"as deadline has not passed yet on "+this);
-					return;
+					return false;
 				}
 				int tries = dataRetries[i];
 				SplitFileFetcherSubSegment sub = getSubSegment(tries);
 				if(logMINOR)
 					Logger.minor(this, "Retrying after cooldown on "+this+": data block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 				if(v == null) v = new Vector();
-				sub.add(i, true, container, context);
+				sub.add(i, true, container, context, true);
 				if(!v.contains(sub)) v.add(sub);
 				notFound = false;
 			}
@@ -716,14 +719,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(checkCooldownTimes[i] > time) {
 					if(logMINOR)
 						Logger.minor(this, "Not retrying after cooldown for data block "+i+" as deadline has not passed yet on "+this);
-					return;
+					return false;
 				}
 				int tries = checkRetries[i];
 				SplitFileFetcherSubSegment sub = getSubSegment(tries);
 				if(logMINOR)
 					Logger.minor(this, "Retrying after cooldown on "+this+": check block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 				if(v == null) v = new Vector();
-				sub.add(i+dataKeys.length, true, container, context);
+				sub.add(i+dataKeys.length, true, container, context, true);
 				if(!v.contains(sub)) v.add(sub);
 				notFound = false;
 			}
@@ -732,11 +735,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(notFound) {
 			Logger.error(this, "requeueAfterCooldown: Key not found!: "+key+" on "+this);
 		}
+		boolean foundCaller = false;
 		if(v != null) {
 			for(int i=0;i<v.size();i++) {
+				if(v.get(i) == segment) foundCaller = true;
 				((SplitFileFetcherSubSegment) v.get(i)).schedule(container, context);
 			}
 		}
+		return foundCaller;
 	}
 
 	public synchronized long getCooldownWakeupByKey(Key key, ObjectContainer container) {

@@ -118,9 +118,27 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			container.activate(this, 1);
 			container.activate(blockNums, 1);
 		}
+		cleanBlockNums();
 		return blockNums.toArray();
 	}
 	
+	private void cleanBlockNums() {
+		synchronized(segment) {
+			int initSize = blockNums.size();
+			Integer prev = null;
+			for(int i=0;i<blockNums.size();i++) {
+				Integer x = (Integer) blockNums.get(i);
+				if(x == prev || x.equals(prev)) {
+					blockNums.remove(i);
+					i--;
+				}
+			}
+			if(blockNums.size() < initSize) {
+				Logger.error(this, "Cleaned block number list duplicates: was "+initSize+" now "+blockNums.size());
+			}
+		}
+	}
+
 	private Object removeRandomBlockNum(KeysFetchingLocally keys, ClientContext context, ObjectContainer container) {
 		if(persistent) {
 			container.activate(this, 1);
@@ -394,7 +412,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return false;
 	}
 
-	public void add(int blockNo, boolean dontSchedule, ObjectContainer container, ClientContext context) {
+	public void add(int blockNo, boolean dontSchedule, ObjectContainer container, ClientContext context, boolean dontComplainOnDupes) {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(segment, 1);
@@ -409,7 +427,12 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		synchronized(segment) {
 			if(cancelled)
 				throw new IllegalStateException("Adding block "+blockNo+" to already cancelled "+this);
-			blockNums.add(i);
+			if(blockNums.contains(i)) {
+				if(!dontComplainOnDupes)
+					Logger.error(this, "Block numbers already contain block "+blockNo);
+			} else {
+				blockNums.add(i);
+			}
 			if(dontSchedule) schedule = false;
 			/**
 			 * Race condition:
@@ -538,7 +561,10 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Requeueing after cooldown "+key+" for "+this);
-		segment.requeueAfterCooldown(key, time, container, context);
+		if(!segment.requeueAfterCooldown(key, time, container, context, this)) {
+			Logger.error(this, "Removing key "+key+" for "+this+" in requeueAfterCooldown as is now registered to a different subsegment");
+			unregisterKey(key, context, container);
+		}
 	}
 
 	public long getCooldownWakeupByKey(Key key, ObjectContainer container) {
