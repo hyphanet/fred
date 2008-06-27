@@ -323,6 +323,9 @@ abstract class ClientRequestSchedulerBase {
 
 	public void succeeded(BaseSendableGet succeeded, ObjectContainer container) {
 		if(isInsertScheduler) return;
+		if(persistent()) {
+			container.activate(succeeded, 1);
+		}
 		if(succeeded.isEmpty(container)) return;
 			if(logMINOR)
 				Logger.minor(this, "Recording successful fetch from "+succeeded);
