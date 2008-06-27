@@ -36,6 +36,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		
 		protected PutHandler(final SimpleManifestPutter smp, String name, Bucket data, ClientMetadata cm, boolean getCHKOnly) {
 			super(smp.priorityClass, smp.client);
+			this.persistent = SimpleManifestPutter.this.persistent();
 			this.cm = cm;
 			this.data = data;
 			InsertBlock block = 
@@ -47,6 +48,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 		protected PutHandler(final SimpleManifestPutter smp, String name, FreenetURI target, ClientMetadata cm) {
 			super(smp.getPriorityClass(), smp.client);
+			this.persistent = SimpleManifestPutter.this.persistent();
 			this.cm = cm;
 			this.data = null;
 			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, target, cm);
@@ -56,6 +58,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		
 		protected PutHandler(final SimpleManifestPutter smp, String name, String targetInZip, ClientMetadata cm, Bucket data) {
 			super(smp.getPriorityClass(), smp.client);
+			this.persistent = SimpleManifestPutter.this.persistent();
 			this.cm = cm;
 			this.data = data;
 			this.targetInZip = targetInZip;
@@ -69,11 +72,16 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		private Metadata metadata;
 		private String targetInZip;
 		private final Bucket data;
+		private final boolean persistent;
 		
 		public void start(ObjectContainer container, ClientContext context) throws InsertException {
 			if((origSFI == null) && (metadata != null)) return;
+			if(persistent)
+				container.activate(origSFI, 1);
 			origSFI.start(null, container, context);
 			origSFI = null;
+			if(persistent)
+				container.set(this);
 		}
 		
 		public FreenetURI getURI() {
@@ -87,6 +95,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Completed "+this);
+			if(persistent) {
+				container.activate(SimpleManifestPutter.this, 1);
+				container.activate(runningPutHandlers, 1);
+			}
 			SimpleManifestPutter.this.onFetchable(this, container);
 			synchronized(SimpleManifestPutter.this) {
 				runningPutHandlers.remove(this);
@@ -94,12 +106,16 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					return;
 				}
 			}
+			if(persistent)
+				container.set(runningPutHandlers);
 			insertedAllFiles(container);
 		}
 
 		public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR) Logger.minor(this, "Failed: "+this+" - "+e, e);
+			if(persistent)
+				container.activate(SimpleManifestPutter.this, 1);
 			fail(e, container);
 		}
 
@@ -108,6 +124,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(metadata == null) {
 				// The file was too small to have its own metadata, we get this instead.
 				// So we make the key into metadata.
+				if(persistent) {
+					container.activate(key, 5);
+					container.activate(SimpleManifestPutter.this, 1);
+				}
 				Metadata m =
 					new Metadata(Metadata.SIMPLE_REDIRECT, key.getURI(), cm);
 				onMetadata(m, null, container, context);
@@ -125,34 +145,54 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				return;
 			}
 			metadata = m;
+			if(persistent) {
+				container.activate(putHandlersWaitingForMetadata, 1);
+			}
 			synchronized(SimpleManifestPutter.this) {
 				putHandlersWaitingForMetadata.remove(this);
 				if(!putHandlersWaitingForMetadata.isEmpty()) return;
+			}
+			if(persistent) {
+				container.set(putHandlersWaitingForMetadata);
+				container.set(this);
+				container.activate(SimpleManifestPutter.this, 1);
 			}
 			gotAllMetadata(container, context);
 		}
 
 		public void addBlock(ObjectContainer container) {
+			if(persistent)
+				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.addBlock(container);
 		}
 		
 		public void addBlocks(int num, ObjectContainer container) {
+			if(persistent)
+				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.addBlocks(num, container);
 		}
 		
 		public void completedBlock(boolean dontNotify, ObjectContainer container, ClientContext context) {
+			if(persistent)
+				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.completedBlock(dontNotify, container, context);
 		}
 		
 		public void failedBlock(ObjectContainer container, ClientContext context) {
+			if(persistent)
+				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.failedBlock(container, context);
 		}
 		
 		public void fatallyFailedBlock(ObjectContainer container, ClientContext context) {
+			if(persistent)
+				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.fatallyFailedBlock(container, context);
 		}
 		
 		public void addMustSucceedBlocks(int blocks, ObjectContainer container) {
+			if(persistent)
+				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.addMustSucceedBlocks(blocks, container);
 		}
 		
@@ -161,18 +201,28 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 
 		public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
+			if(persistent) {
+				container.activate(SimpleManifestPutter.this, 1);
+				container.activate(waitingForBlockSets, 1);
+			}
 			synchronized(SimpleManifestPutter.this) {
 				waitingForBlockSets.remove(this);
 				if(!waitingForBlockSets.isEmpty()) return;
 			}
+			if(persistent)
+				container.set(waitingForBlockSets);
 			SimpleManifestPutter.this.blockSetFinalized(container, context);
 		}
 
 		public void onMajorProgress(ObjectContainer container) {
+			if(persistent)
+				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.onMajorProgress(container);
 		}
 
 		public void onFetchable(ClientPutState state, ObjectContainer container) {
+			if(persistent)
+				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.onFetchable(this, container);
 		}
 
@@ -245,6 +295,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			Logger.minor(this, "Starting " + this);
 		PutHandler[] running;
 
+		if(persistent()) {
+			container.activate(runningPutHandlers, 2);
+		}
 		synchronized (this) {
 			running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
 		}
@@ -263,10 +316,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				Logger.minor(this, "Started " + running.length + " PutHandler's for " + this);
 			if (running.length == 0) {
 				insertedAllFiles = true;
+				if(persistent())
+					container.set(this);
 				gotAllMetadata(container, context);
 			}
 		} catch (InsertException e) {
-			cancelAndFinish();
+			cancelAndFinish(container);
 			throw e;
 		}
 	}
@@ -335,6 +390,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 
 	private void gotAllMetadata(ObjectContainer container, ClientContext context) {
+		if(persistent()) {
+			container.activate(putHandlersByName, 1);
+		}
 		if(logMINOR) Logger.minor(this, "Got all metadata");
 		HashMap namesToByteArrays = new HashMap();
 		namesToByteArrays(putHandlersByName, namesToByteArrays);
@@ -357,6 +415,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		baseMetadata =
 			Metadata.mkRedirectionManifestWithMetadata(namesToByteArrays);
+		if(persistent()) {
+			container.set(baseMetadata);
+		}
 		resolveAndStartBase(container, context);
 		
 	}
@@ -408,11 +469,16 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				ZipOutputStream zos = new ZipOutputStream(os);
 				ZipEntry ze;
 				
+				if(persistent()) {
+					container.activate(elementsToPutInZip, 2);
+				}
 				for(Iterator i=elementsToPutInZip.iterator();i.hasNext();) {
 					PutHandler ph = (PutHandler) i.next();
 					ze = new ZipEntry(ph.targetInZip);
 					ze.setTime(0);
 					zos.putNextEntry(ze);
+					if(persistent())
+						container.activate(ph.data, 5);
 					BucketTools.copyTo(ph.data, zos, ph.data.size());
 				}
 				
@@ -449,9 +515,17 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			SingleFileInserter metadataInserter = 
 				new SingleFileInserter(this, this, block, isMetadata, ctx, false, getCHKOnly, false, baseMetadata, insertAsArchiveManifest, true, null, earlyEncode);
 			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+metadataInserter);
+			if(persistent()) {
+				container.activate(metadataPuttersByMetadata, 2);
+				container.activate(metadataPuttersUnfetchable, 2);
+			}
 			this.metadataPuttersByMetadata.put(baseMetadata, metadataInserter);
 			metadataPuttersUnfetchable.put(baseMetadata, metadataInserter);
 			metadataInserter.start(null, container, context);
+			if(persistent()) {
+				container.set(metadataPuttersByMetadata);
+				container.set(metadataPuttersUnfetchable);
+			}
 		} catch (InsertException e) {
 			fail(e, container);
 		}
@@ -460,6 +534,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private boolean resolve(MetadataUnresolvedException e, ObjectContainer container, ClientContext context) throws InsertException, IOException {
 		Metadata[] metas = e.mustResolve;
 		boolean mustWait = false;
+		if(persistent())
+			container.activate(metadataPuttersByMetadata, 2);
 		for(int i=0;i<metas.length;i++) {
 			Metadata m = metas[i];
 			if(!m.isResolved())
@@ -482,6 +558,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				resolve(e1, container, context);
 			}
 		}
+		if(persistent())
+			container.set(metadataPuttersByMetadata);
 		return mustWait;
 	}
 
@@ -517,25 +595,33 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 			finished = true;
 		}
+		if(persistent())
+			container.set(this);
 		complete(container);
 	}
 	
 	private void complete(ObjectContainer container) {
+		if(persistent())
+			container.activate(cb, 1);
 		cb.onSuccess(this, container);
 	}
 
 	private void fail(InsertException e, ObjectContainer container) {
 		// Cancel all, then call the callback
-		cancelAndFinish();
+		cancelAndFinish(container);
 		
+		if(persistent())
+			container.activate(cb, 1);
 		cb.onFailure(e, this, container);
 	}
 	
 	/**
 	 * Cancel all running inserters and set finished to true.
 	 */
-	private void cancelAndFinish() {
+	private void cancelAndFinish(ObjectContainer container) {
 		PutHandler[] running;
+		if(persistent())
+			container.activate(runningPutHandlers, 2);
 		synchronized(this) {
 			if(finished) return;
 			running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
@@ -554,6 +640,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	
 	public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(persistent()) {
+			container.activate(metadataPuttersByMetadata, 2);
+		}
 		synchronized(this) {
 			metadataPuttersByMetadata.remove(state.getToken());
 			if(!metadataPuttersByMetadata.isEmpty()) {
@@ -572,6 +661,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 			finished = true;
 		}
+		if(persistent()) {
+			container.set(metadataPuttersByMetadata);
+			container.set(this);
+		}
 		complete(container);
 	}
 	
@@ -584,7 +677,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		if(state.getToken() == baseMetadata) {
 			this.finalURI = key.getURI();
 			if(logMINOR) Logger.minor(this, "Got metadata key: "+finalURI);
+			if(persistent())
+				container.activate(cb, 1);
 			cb.onGeneratedURI(finalURI, this, container);
+			if(persistent())
+				container.set(this);
 		} else {
 			// It's a sub-Metadata
 			Metadata m = (Metadata) state.getToken();
@@ -605,6 +702,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 
 	public void notifyClients(ObjectContainer container, ClientContext context) {
+		if(persistent()) {
+			container.activate(ctx, 1);
+			container.activate(ctx.eventProducer, 1);
+		}
 		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized), container, context);
 	}
 
@@ -614,6 +715,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(!waitingForBlockSets.isEmpty()) return;
 		}
 		this.blockSetFinalized(container, context);
+		if(persistent())
+			container.set(this);
 	}
 
 	public void blockSetFinalized(ObjectContainer container, ClientContext context) {
@@ -622,6 +725,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(waitingForBlockSets.isEmpty()) return;
 		}
 		super.blockSetFinalized(container, context);
+		if(persistent())
+			container.set(this);
 	}
 	
 	/**
@@ -711,10 +816,17 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 
 	public void onMajorProgress(ObjectContainer container) {
+		if(persistent())
+			container.activate(cb, 1);
 		cb.onMajorProgress(container);
 	}
 
 	protected void onFetchable(PutHandler handler, ObjectContainer container) {
+		if(persistent()) {
+			container.activate(putHandlersWaitingForFetchable, 1);
+			container.activate(metadataPuttersUnfetchable, 1);
+			container.activate(cb, 1);
+		}
 		synchronized(this) {
 			putHandlersWaitingForFetchable.remove(handler);
 			if(fetchable) return;
@@ -723,17 +835,31 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(!metadataPuttersUnfetchable.isEmpty()) return;
 			fetchable = true;
 		}
+		if(persistent()) {
+			container.set(putHandlersWaitingForMetadata);
+			container.set(this);
+		}
 		cb.onFetchable(this, container);
 	}
 
 	public void onFetchable(ClientPutState state, ObjectContainer container) {
 		Metadata m = (Metadata) state.getToken();
+		if(persistent()) {
+			container.activate(m, 100);
+			container.activate(metadataPuttersUnfetchable, 1);
+			container.activate(putHandlersWaitingForFetchable, 1);
+			container.activate(cb, 1);
+		}
 		synchronized(this) {
 			metadataPuttersUnfetchable.remove(m);
 			if(!metadataPuttersUnfetchable.isEmpty()) return;
 			if(fetchable) return;
 			if(!putHandlersWaitingForFetchable.isEmpty()) return;
 			fetchable = true;
+		}
+		if(persistent()) {
+			container.set(metadataPuttersUnfetchable);
+			container.set(this);
 		}
 		cb.onFetchable(this, container);
 	}
