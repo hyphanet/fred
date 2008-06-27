@@ -110,9 +110,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		if(recentSuccesses == null)
 			System.err.println("recentSuccesses is null");
 		if(!isInsertScheduler)
-			((Db4oMap)pendingKeys).activationDepth(Integer.MAX_VALUE);
+			((Db4oMap)pendingKeys).activationDepth(1);
 		((Db4oMap)allRequestsByClientRequest).activationDepth(1);
-		((Db4oList)recentSuccesses).activationDepth(Integer.MAX_VALUE);
+		((Db4oList)recentSuccesses).activationDepth(1);
 		if(!isInsertScheduler) {
 			persistentCooldownQueue.setCooldownTime(cooldownTime);
 		}
