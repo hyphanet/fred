@@ -579,7 +579,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 							if(logMINOR) Logger.minor(this, "Calling callback for "+transientGets[i]+" for "+key);
 							transientGets[i].onGotKey(key, block, null, clientContext);
 						} catch (Throwable t) {
-							Logger.error(this, "Caught "+t+" running callback "+transientGets[i]+" for "+key);
+							Logger.error(this, "Caught "+t+" running callback "+transientGets[i]+" for "+key, t);
 						}
 					}
 				}
@@ -610,7 +610,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						if(logMINOR) Logger.minor(this, "Calling callback for "+gets[i]+" for "+key);
 						gets[i].onGotKey(key, block, container, context);
 					} catch (Throwable t) {
-						Logger.error(this, "Caught "+t+" running callback "+gets[i]+" for "+key);
+						Logger.error(this, "Caught "+t+" running callback "+gets[i]+" for "+key, t);
 					}
 				}
 				if(logMINOR) Logger.minor(this, "Finished running callbacks");
