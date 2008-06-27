@@ -28,7 +28,6 @@ import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSK;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
-import freenet.node.RequestScheduler;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;

@@ -4,7 +4,6 @@
 package freenet.client.async;
 
 import java.util.LinkedList;
-import java.util.Set;
 
 import com.db4o.ObjectContainer;
 

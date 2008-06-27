@@ -23,7 +23,6 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
 import freenet.support.io.BucketTools;
-import freenet.support.io.NativeThread;
 
 /**
  * Attempt to insert a file. May include metadata.

@@ -10,7 +10,6 @@ import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.ClientSSKBlock;
 import freenet.node.LowLevelGetException;
-import freenet.node.RequestScheduler;
 import freenet.support.Logger;
 
 /**

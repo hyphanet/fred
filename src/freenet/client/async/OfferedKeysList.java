@@ -9,7 +9,6 @@ import java.util.Vector;
 import com.db4o.ObjectContainer;
 
 import freenet.crypt.RandomSource;
-import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.node.BaseSendableGet;
 import freenet.node.KeysFetchingLocally;

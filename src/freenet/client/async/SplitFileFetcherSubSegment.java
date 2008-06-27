@@ -20,7 +20,6 @@ import freenet.keys.TooBigException;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
 import freenet.node.RequestClient;
-import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
