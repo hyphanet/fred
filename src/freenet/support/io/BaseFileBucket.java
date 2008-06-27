@@ -241,7 +241,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 
 	public synchronized InputStream getInputStream() throws IOException {
 		if(freed)
-			throw new IOException("File already freed");
+			throw new IOException("File already freed: "+this);
 		File file = getFile();
 		if(!file.exists()) {
 			Logger.normal(this, "File does not exist: "+file+" for "+this);
