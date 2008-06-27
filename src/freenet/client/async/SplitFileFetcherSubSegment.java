@@ -517,6 +517,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			return;
 		}
 		Bucket data = extract(cb, token,  container, context);
+		if(data == null) return;
 		
 		if(!cb.isMetadata()) {
 			onSuccess(data, false, (Integer)token, ((Integer)token).intValue(), cb, container, context);
