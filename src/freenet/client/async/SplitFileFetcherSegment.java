@@ -256,6 +256,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 		try {
 			if(isCollectingBinaryBlob()) {
 				for(int i=0;i<dataBuckets.length;i++) {
+					if(persistent)
+						container.activate(dataBlockStatus[i], 1);
 					Bucket data = dataBlockStatus[i].getData();
 					try {
 						maybeAddToBinaryBlob(data, i, false, container, context);
@@ -537,6 +539,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 			for(int i=0;i<dataBuckets.length;i++) {
 				MinimalSplitfileBlock b = dataBuckets[i];
+				if(persistent)
+					container.activate(b, 2);
 				if(b != null) {
 					Bucket d = b.getData();
 					if(d != null) d.free();
@@ -545,6 +549,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 			for(int i=0;i<checkBuckets.length;i++) {
 				MinimalSplitfileBlock b = checkBuckets[i];
+				if(persistent)
+					container.activate(b, 2);
 				if(b != null) {
 					Bucket d = b.getData();
 					if(d != null) d.free();
