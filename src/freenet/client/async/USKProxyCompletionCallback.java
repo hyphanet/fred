@@ -14,13 +14,17 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 
 	final USK usk;
 	final GetCompletionCallback cb;
+	final boolean persistent;
 	
-	public USKProxyCompletionCallback(USK usk, GetCompletionCallback cb) {
+	public USKProxyCompletionCallback(USK usk, GetCompletionCallback cb, boolean persistent) {
 		this.usk = usk;
 		this.cb = cb;
+		this.persistent = persistent;
 	}
 
 	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
+		if(container != null && persistent)
+			container.activate(cb, 1);
 		context.uskManager.update(usk, usk.suggestedEdition, context);
 		cb.onSuccess(result, state, container, context);
 	}
@@ -31,10 +35,14 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 			uri = usk.turnMySSKIntoUSK(uri);
 			e = new FetchException(e, uri);
 		}
+		if(container != null && persistent)
+			container.activate(cb, 1);
 		cb.onFailure(e, state, container, context);
 	}
 
 	public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
+		if(container != null && persistent)
+			container.activate(cb, 1);
 		cb.onBlockSetFinished(state, container, context);
 	}
 
@@ -43,14 +51,20 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 	}
 
 	public void onExpectedMIME(String mime, ObjectContainer container) {
+		if(container != null && persistent)
+			container.activate(cb, 1);
 		cb.onExpectedMIME(mime, container);
 	}
 
 	public void onExpectedSize(long size, ObjectContainer container) {
+		if(container != null && persistent)
+			container.activate(cb, 1);
 		cb.onExpectedSize(size, container);
 	}
 
 	public void onFinalizedMetadata(ObjectContainer container) {
+		if(container != null && persistent)
+			container.activate(cb, 1);
 		cb.onFinalizedMetadata(container);
 	}
 
