@@ -3,6 +3,8 @@
  */
 package freenet.client;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -66,5 +68,13 @@ public class FECJob {
 		this.callback = callback;
 		this.isADecodingJob = isADecodingJob;
 		this.persistent = persistent;
+	}
+
+	public void activateForExecution(ObjectContainer container) {
+		container.activate(this, 2);
+		if(dataBlockStatus != null)
+			container.activate(dataBlockStatus, 2);
+		if(checkBlockStatus != null)
+			container.activate(checkBlockStatus, 2);
 	}
 }
