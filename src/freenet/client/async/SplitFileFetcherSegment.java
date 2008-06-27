@@ -773,14 +773,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(k == null) continue;
 			if(persistent)
 				container.activate(k, 5);
-			if(k.equals(key)) return i;
+			if(k.getNodeKey().equals(key)) return i;
 		}
 		for(int i=0;i<checkKeys.length;i++) {
 			ClientKey k = checkKeys[i];
 			if(k == null) continue;
 			if(persistent)
 				container.activate(k, 5);
-			if(k.equals(key)) return dataKeys.length+i;
+			if(k.getNodeKey().equals(key)) return dataKeys.length+i;
 		}
 		return -1;
 	}
