@@ -24,6 +24,7 @@ import freenet.keys.CHKBlock;
 import freenet.keys.CHKEncodeException;
 import freenet.keys.ClientCHK;
 import freenet.keys.ClientCHKBlock;
+import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
 import freenet.keys.NodeCHK;
@@ -687,7 +688,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		for(int i=0;i<dataKeys.length;i++) {
 			if(dataKeys[i] == null) continue;
-			if(dataKeys[i].getNodeKey().equals(key)) {
+			ClientKey k = dataKeys[i];
+			if(persistent)
+				container.activate(k, 5);
+			if(k.getNodeKey().equals(key)) {
 				if(dataCooldownTimes[i] > time) {
 					if(logMINOR)
 						Logger.minor(this, "Not retrying after cooldown for data block "+i+"as deadline has not passed yet on "+this);
@@ -701,11 +705,15 @@ public class SplitFileFetcherSegment implements FECCallback {
 				sub.add(i, true, container, context);
 				if(!v.contains(sub)) v.add(sub);
 				notFound = false;
-			}
+			} else
+				container.deactivate(k, 5);
 		}
 		for(int i=0;i<checkKeys.length;i++) {
 			if(checkKeys[i] == null) continue;
-			if(checkKeys[i].getNodeKey().equals(key)) {
+			ClientKey k = checkKeys[i];
+			if(persistent)
+				container.activate(k, 5);
+			if(k.getNodeKey().equals(key)) {
 				if(checkCooldownTimes[i] > time) {
 					if(logMINOR)
 						Logger.minor(this, "Not retrying after cooldown for data block "+i+" as deadline has not passed yet on "+this);
@@ -719,7 +727,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 				sub.add(i+dataKeys.length, true, container, context);
 				if(!v.contains(sub)) v.add(sub);
 				notFound = false;
-			}
+			} else
+				container.deactivate(k, 5);
 		}
 		}
 		if(notFound) {
@@ -732,27 +741,47 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 	}
 
-	public synchronized long getCooldownWakeupByKey(Key key) {
+	public synchronized long getCooldownWakeupByKey(Key key, ObjectContainer container) {
 		for(int i=0;i<dataKeys.length;i++) {
 			if(dataKeys[i] == null) continue;
-			if(dataKeys[i].getNodeKey().equals(key)) {
+			ClientKey k = dataKeys[i];
+			if(persistent)
+				container.activate(k, 5);
+			if(k.getNodeKey().equals(key)) {
 				return dataCooldownTimes[i];
-			}
+			} else
+				container.deactivate(k, 5);
 		}
 		for(int i=0;i<checkKeys.length;i++) {
 			if(checkKeys[i] == null) continue;
+			ClientKey k = checkKeys[i];
+			if(persistent)
+				container.activate(k, 5);
 			if(checkKeys[i].getNodeKey().equals(key)) {
 				return checkCooldownTimes[i];
-			}
+			} else
+				container.deactivate(k, 5);
 		}
 		return -1;
 	}
 
-	public synchronized int getBlockNumber(Key key) {
-		for(int i=0;i<dataKeys.length;i++)
-			if(dataKeys[i] != null && dataKeys[i].getNodeKey().equals(key)) return i;
-		for(int i=0;i<checkKeys.length;i++)
-			if(checkKeys[i] != null && checkKeys[i].getNodeKey().equals(key)) return dataKeys.length+i;
+	public synchronized int getBlockNumber(Key key, ObjectContainer container) {
+		for(int i=0;i<dataKeys.length;i++) {
+			ClientKey k = dataKeys[i];
+			if(k == null) continue;
+			if(persistent)
+				container.activate(k, 5);
+			if(k.equals(key)) return i;
+			else container.deactivate(k, 5);
+		}
+		for(int i=0;i<checkKeys.length;i++) {
+			ClientKey k = checkKeys[i];
+			if(k == null) continue;
+			if(persistent)
+				container.activate(k, 5);
+			if(k.equals(key)) return dataKeys.length+i;
+			else container.deactivate(k, 5);
+		}
 		return -1;
 	}
 

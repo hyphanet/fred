@@ -478,7 +478,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 					break;
 				}
 			}
-			blockNo = segment.getBlockNumber(key);
+			blockNo = segment.getBlockNumber(key, container);
 		}
 		if(blockNo == -1) {
 			Logger.minor(this, "No block found for key "+key+" on "+this);
@@ -546,7 +546,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			container.activate(this, 1);
 			container.activate(segment, 1);
 		}
-		return segment.getCooldownWakeupByKey(key);
+		return segment.getCooldownWakeupByKey(key, container);
 	}
 
 	public void resetCooldownTimes(ObjectContainer container) {
