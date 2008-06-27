@@ -334,7 +334,7 @@ public class USKFetcher implements ClientGetState {
 		Bucket data = null;
 		if(decode) {
 			try {
-				data = lastRequestData = block.decode(context.getBucketFactory(parent.persistent()), 1025 /* it's an SSK */, true);
+				data = block.decode(context.getBucketFactory(parent.persistent()), 1025 /* it's an SSK */, true);
 			} catch (KeyDecodeException e) {
 				data = null;
 			} catch (IOException e) {
@@ -345,8 +345,11 @@ public class USKFetcher implements ClientGetState {
 			if (decode) {
 					lastCompressionCodec = block.getCompressionCodec();
 					lastWasMetadata = block.isMetadata();
-					if(keepLastData)
+					if(keepLastData) {
+						if(lastRequestData != null)
+							lastRequestData.free();
 						lastRequestData = data;
+					}
 					else
 						data.free();
 			}
