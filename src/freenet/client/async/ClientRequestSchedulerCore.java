@@ -190,11 +190,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				continue;
 			}
 			sched.addToStarterQueue(req);
-			if(!isInsertScheduler) {
-				synchronized(keysFetching) {
-					keysFetching.add(req.key);
-				}
-			}
 		}
 	}
 	
@@ -268,11 +263,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					Logger.minor(this, "Storing "+ret);
 			} else {
 				ret = new ChosenRequest(req, token, key, ckey, req.getPriorityClass(container));
-			}
-			if(key != null) {
-				if(logMINOR)
-					Logger.minor(this, "Adding "+key+" for "+ckey+" for "+ret+" for "+req+" to keysFetching");
-				keysFetching.add(key);
 			}
 			return ret;
 		}
@@ -557,6 +547,15 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		return reg;
 	}
 
+	/**
+	 * @return True unless the key was already present.
+	 */
+	public boolean addToFetching(Key key) {
+		synchronized(keysFetching) {
+			return keysFetching.add(key);
+		}
+	}
+	
 	public boolean hasKey(Key key) {
 		synchronized(keysFetching) {
 			return keysFetching.contains(key);

@@ -73,4 +73,8 @@ public interface RequestScheduler {
 
 	public ClientContext getContext();
 	
+	public boolean addToFetching(Key key);
+
+	public void requeue(ChosenRequest req);
+	
 }

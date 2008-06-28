@@ -432,6 +432,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	private static final int MAX_STARTER_QUEUE_SIZE = 100;
 	
+	/**
+	 * Normally this will only contain PersistentChosenRequest's, however in the
+	 * case of coalescing keys, we will put ChosenRequest's back onto it as well.
+	 */
 	private transient LinkedList starterQueue = new LinkedList();
 	
 	public LinkedList getRequestStarterQueue() {
@@ -442,7 +446,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		jobRunner.queue(requestStarterQueueFiller, NativeThread.MAX_PRIORITY, true);
 	}
 
-	void addToStarterQueue(PersistentChosenRequest req) {
+	void addToStarterQueue(ChosenRequest req) {
 		synchronized(starterQueue) {
 			starterQueue.add(req);
 		}
@@ -782,4 +786,29 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return clientContext;
 	}
 
+	/**
+	 * @return True unless the key was already present.
+	 */
+	public boolean addToFetching(Key key) {
+		return schedCore.addToFetching(key);
+	}
+
+	public void requeue(final ChosenRequest req) {
+		if(req.isPersistent()) {
+			this.clientContext.jobRunner.queue(new DBJob() {
+
+				public void run(ObjectContainer container, ClientContext context) {
+					container.activate(req.request, 1);
+					if(req.request.isCancelled(container)) return;
+					addToStarterQueue(req);
+				}
+				
+			}, NativeThread.HIGH_PRIORITY, false);
+		} else {
+			if(req.request.isCancelled(null)) return;
+			addToStarterQueue(req);
+		}
+	}
+	
+	
 }
