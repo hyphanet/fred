@@ -23,20 +23,24 @@ public class USKProxyCompletionCallback implements GetCompletionCallback {
 	}
 
 	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
-		if(container != null && persistent)
+		if(container != null && persistent) {
 			container.activate(cb, 1);
+			container.activate(usk, 5);
+		}
 		context.uskManager.update(usk, usk.suggestedEdition, context);
 		cb.onSuccess(result, state, container, context);
 	}
 
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(cb, 1);
+			container.activate(usk, 5);
+		}
 		FreenetURI uri = e.newURI;
 		if(uri != null) {
 			uri = usk.turnMySSKIntoUSK(uri);
 			e = new FetchException(e, uri);
 		}
-		if(container != null && persistent)
-			container.activate(cb, 1);
 		cb.onFailure(e, state, container, context);
 	}
 
