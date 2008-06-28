@@ -611,11 +611,12 @@ public class FreenetURI implements Cloneable {
 	}
 
 	public ArrayList listMetaStrings() {
-		ArrayList l = new ArrayList(metaStr.length);
-		if(metaStr != null)
+		if(metaStr != null) {
+			ArrayList l = new ArrayList(metaStr.length);
 			for(int i = 0; i < metaStr.length; i++)
 				l.add(metaStr[i]);
-		return l;
+			return l;
+		} else return new ArrayList(0);
 	}
 	static final byte CHK = 1;
 	static final byte SSK = 2;
