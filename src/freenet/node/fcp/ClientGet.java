@@ -341,6 +341,17 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	public void onSuccess(FetchResult result, ClientGetter state, ObjectContainer container) {
 		Logger.minor(this, "Succeeded: "+identifier);
 		Bucket data = result.asBucket();
+		if(persistenceType == PERSIST_FOREVER) {
+			if(data != null)
+				container.activate(data, 5);
+			if(returnBucket != null)
+				container.activate(returnBucket, 5);
+			container.activate(client, 1);
+			if(tempFile != null)
+				container.activate(tempFile, 5);
+			if(targetFile != null)
+				container.activate(targetFile, 5);
+		}
 		if(returnBucket != data && !binaryBlob) {
 			boolean failed = true;
 			synchronized(this) {
@@ -438,8 +449,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				container.activate(postFetchProtocolErrorMessage, 5);
 			if(handler != null)
 				handler.queue(postFetchProtocolErrorMessage);
-			else
+			else {
+				if(persistenceType == PERSIST_FOREVER)
+					container.activate(client, 1);
 				client.queueClientRequestMessage(postFetchProtocolErrorMessage, 0, container);
+			}
 		}
 
 	}
@@ -450,6 +464,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			if(persistenceType == ClientRequest.PERSIST_FOREVER)
 				container.set(this);
 		} else {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(client, 1);
 			client.queueClientRequestMessage(msg, 0, container);
 		}
 	}
@@ -460,6 +476,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			if(persistenceType == ClientRequest.PERSIST_FOREVER)
 				container.set(this);
 		}
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(client, 1);
 		client.queueClientRequestMessage(msg, VERBOSITY_SPLITFILE_PROGRESS, container);
 	}
 
@@ -515,8 +533,10 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Caught "+e, e);
 		trySendDataFoundOrGetFailed(null, container);
-		if(persistenceType == PERSIST_FOREVER)
+		if(persistenceType == PERSIST_FOREVER) {
+			container.activate(client, 1);
 			container.set(this);
+		}
 		finish(container);
 		client.notifyFailure(this, container);
 	}
@@ -546,6 +566,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 		// notify client that request was removed
 		FCPMessage msg = new PersistentRequestRemovedMessage(getIdentifier(), global);
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(client, 1);
 		client.queueClientRequestMessage(msg, 0, container);
 
 		freeData(container);
@@ -657,6 +679,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			returnBucket = null;
 		}
 		if(data != null) {
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(data, 5);
 			data.free();
 			if(persistenceType == PERSIST_FOREVER)
 				data.removeFrom(container);

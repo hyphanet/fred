@@ -904,6 +904,7 @@ public class FCPServer implements Runnable {
 			core.clientContext.jobRunner.queue(new DBJob() {
 				
 				public void run(ObjectContainer container, ClientContext context) {
+					container.activate(req, 1);
 					try {
 						req.start(container, context);
 					} finally {

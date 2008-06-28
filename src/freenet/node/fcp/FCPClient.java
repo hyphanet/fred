@@ -322,6 +322,7 @@ public class FCPClient {
 			runner.queue(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
+					container.activate(req, 1);
 					req.start(container, context);
 				}
 				

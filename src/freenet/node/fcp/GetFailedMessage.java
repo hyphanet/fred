@@ -139,7 +139,8 @@ public class GetFailedMessage extends FCPMessage {
 	public void removeFrom(ObjectContainer container) {
 		if(redirectURI != null)
 			redirectURI.removeFrom(container); // URI belongs to the parent which is also being removed.
-		tracker.removeFrom(container);
+		if(tracker != null)
+			tracker.removeFrom(container);
 		container.delete(this);
 	}
 
