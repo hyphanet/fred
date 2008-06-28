@@ -31,9 +31,11 @@ public abstract class FECCodec {
 
 	private static int STRIPE_SIZE = 4096;
 	static boolean logMINOR;
-	FECCode fec;
+	protected transient FECCode fec;
 	protected final int k, n;
 
+	protected abstract void loadFEC();
+	
 	protected FECCodec(int k, int n) {
 		this.k = k;
 		this.n = n;
@@ -86,6 +88,7 @@ public abstract class FECCodec {
 	public abstract int countCheckBlocks();
 
 	protected void realDecode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
+		loadFEC();
 		if(logMINOR)
 			Logger.minor(this, "Doing decode: " + dataBlockStatus.length + " data blocks, " + checkBlockStatus.length + " check blocks, block length " + blockLength + " with " + this, new Exception("debug"));
 		if(dataBlockStatus.length + checkBlockStatus.length != n)
@@ -204,6 +207,7 @@ public abstract class FECCodec {
 	protected void realEncode(Bucket[] dataBlockStatus,
 		Bucket[] checkBlockStatus, int blockLength, BucketFactory bf)
 		throws IOException {
+		loadFEC();
 		//		Runtime.getRuntime().gc();
 //		Runtime.getRuntime().runFinalization();
 //		Runtime.getRuntime().gc();

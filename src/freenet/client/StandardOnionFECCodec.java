@@ -63,6 +63,15 @@ public class StandardOnionFECCodec extends FECCodec {
 	public StandardOnionFECCodec(int k, int n) {
 		super(k, n);
 		
+		loadFEC();
+		
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+	}
+	
+	protected void loadFEC() {
+		synchronized(this) {
+			if(fec != null) return;
+		}
 		FECCode fec2 = null;
 		if(!noNative) {
 			try {
@@ -80,19 +89,22 @@ public class StandardOnionFECCodec extends FECCodec {
 		}
 		
 		if (fec2 != null){
+			synchronized(this) {
 			fec = fec2;
+			}
 		} else 	{
-			fec = new PureCode(k,n);
+			fec2 = new PureCode(k,n);
+			synchronized(this) {
+				fec = fec2;
+			}
 		}
 
 		// revert to below if above causes JVM crashes
 		// Worst performance, but decode crashes
 		// fec = new PureCode(k,n);
 		// Crashes are caused by bugs which cause to use 320/128 etc. - n > 256, k < 256.
-
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
-	
+
 	public int countCheckBlocks() {
 		return n-k;
 	}
