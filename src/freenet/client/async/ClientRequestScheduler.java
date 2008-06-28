@@ -560,7 +560,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 					container.delete((PersistentChosenRequest)req);
 				}
 				
-			}, NativeThread.NORM_PRIORITY, false);
+			}, NativeThread.HIGH_PRIORITY-1, false);
+			// Boost the priority so the PersistentChosenRequest gets deleted reasonably quickly.
 		} else
 			schedTransient.succeeded(succeeded, null);
 	}
