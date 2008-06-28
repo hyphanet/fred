@@ -430,7 +430,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, false, prio, retryCount, clientContext, null);
 	}
 	
-	private static final int MAX_STARTER_QUEUE_SIZE = 100;
+	static final int MAX_STARTER_QUEUE_SIZE = 100;
 	
 	/**
 	 * Normally this will only contain PersistentChosenRequest's, however in the
@@ -449,6 +449,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 	void addToStarterQueue(ChosenRequest req) {
 		synchronized(starterQueue) {
 			starterQueue.add(req);
+		}
+	}
+	
+	int starterQueueSize() {
+		synchronized(starterQueue) {
+			return starterQueue.size();
 		}
 	}
 	

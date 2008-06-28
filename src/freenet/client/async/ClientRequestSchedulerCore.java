@@ -171,7 +171,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				return true;
 			}
 		});
+		int count = 0;
 		while(results.hasNext()) {
+			count++;
 			PersistentChosenRequest req = (PersistentChosenRequest) results.next();
 			container.activate(req, 2);
 			container.activate(req.key, 5);
@@ -191,6 +193,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			}
 			sched.addToStarterQueue(req);
 		}
+		if(count > ClientRequestScheduler.MAX_STARTER_QUEUE_SIZE)
+			Logger.error(this, "Added "+count+" requests to the starter queue, size now "+sched.starterQueueSize());
+		else
+			Logger.normal(this, "Added "+count+" requests to the starter queue, size now "+sched.starterQueueSize());
 	}
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
