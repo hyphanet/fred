@@ -557,8 +557,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 				public void run(ObjectContainer container, ClientContext context) {
 					schedCore.succeeded(succeeded, container);
-					if(succeeded.persistent())
-						container.delete((PersistentChosenRequest)req);
+					container.delete((PersistentChosenRequest)req);
 				}
 				
 			}, NativeThread.NORM_PRIORITY, false);
