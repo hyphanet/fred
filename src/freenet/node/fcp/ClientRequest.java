@@ -185,7 +185,7 @@ public abstract class ClientRequest {
 				if(!lazyResume) cg.start(container, context);
 				return cg;
 			} else if(type.equals("PUT")) {
-				ClientPut cp = new ClientPut(fs, client, server);
+				ClientPut cp = new ClientPut(fs, client, server, container);
 				client.register(cp, lazyResume, container);
 				if(!lazyResume) cp.start(container, context);
 				return cp;

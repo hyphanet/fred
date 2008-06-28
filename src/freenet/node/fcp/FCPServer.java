@@ -109,13 +109,16 @@ public class FCPServer implements Runnable {
 		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
+		persistentRoot = FCPPersistentRoot.create(node.nodeDBHandle, container);
+		globalForeverClient = persistentRoot.globalForeverClient;
+		
 		if(enabled && enablePersistentDownloads) {
+			Logger.error(this, "Persistent downloads enabled: attempting to migrate old persistent downloads to database...");
+			Logger.error(this, "Note that we will not write to downloads.dat.gz, we will read from it and rename it if migration is successful.");
 			loadPersistentRequests(container);
 		} else {
 			Logger.error(this, "Not loading persistent requests: enabled="+enabled+" enable persistent downloads="+enablePersistentDownloads);
 		}
-		persistentRoot = FCPPersistentRoot.create(node.nodeDBHandle, container);
-		globalForeverClient = persistentRoot.globalForeverClient;
 	}
 	
 	private void maybeGetNetworkInterface() {
@@ -289,6 +292,22 @@ public class FCPServer implements Runnable {
 		
 	}
 
+	static class PersistentDownloadsEnabledCallback implements BooleanCallback {
+		
+		boolean enabled;
+		
+		public boolean get() {
+			return enabled;
+		}
+		
+		public void set(boolean set) throws InvalidConfigValueException {
+			// This option will be removed completely soon, so there is little
+			// point in translating it. FIXME remove.
+			if(set != enabled) throw new InvalidConfigValueException("Cannot disable/enable persistent download loading support on the fly");
+		}
+		
+	}
+
 	static class FCPAllowedHostsFullAccessCallback implements StringCallback {
 
 		private final NodeClientCore node;
@@ -308,7 +327,7 @@ public class FCPServer implements Runnable {
 		}
 		
 	}
-
+	
 	static class PersistentDownloadsFileCallback implements StringCallback {
 		
 		FCPServer server;
@@ -361,11 +380,13 @@ public class FCPServer implements Runnable {
 		fcpConfig.register("allowedHosts", NetworkInterface.DEFAULT_BIND_TO, sortOrder++, true, true, "FcpServer.allowedHosts", "FcpServer.allowedHostsLong", new FCPAllowedHostsCallback(core));
 		fcpConfig.register("allowedHostsFullAccess", NetworkInterface.DEFAULT_BIND_TO, sortOrder++, true, true, "FcpServer.allowedHostsFullAccess", "FcpServer.allowedHostsFullAccessLong", new FCPAllowedHostsFullAccessCallback(core));
 		PersistentDownloadsFileCallback cb2;
-		fcpConfig.register("persistentDownloadsEnabled", true, sortOrder++, true, true, "FcpServer.enablePersistentDownload", "FcpServer.enablePersistentDownloadLong", (BooleanCallback) null);
+		PersistentDownloadsEnabledCallback enabledCB = new PersistentDownloadsEnabledCallback();
+		fcpConfig.register("persistentDownloadsEnabled", true, sortOrder++, true, true, "FcpServer.enablePersistentDownload", "FcpServer.enablePersistentDownloadLong", enabledCB);
 		fcpConfig.register("persistentDownloadsFile", "downloads.dat", sortOrder++, true, false, "FcpServer.filenameToStorePData", "FcpServer.filenameToStorePDataLong", cb2 = new PersistentDownloadsFileCallback());
 		fcpConfig.register("persistentDownloadsInterval", (5*60*1000), sortOrder++, true, false, "FcpServer.intervalBetweenWrites", "FcpServer.intervalBetweenWritesLong", (IntCallback) null);
 		String persistentDownloadsDir = fcpConfig.getString("persistentDownloadsFile");
-		boolean persistentDownloadsEnabled = fcpConfig.getBoolean("persistentDownloadsEnabled");		
+		boolean persistentDownloadsEnabled = fcpConfig.getBoolean("persistentDownloadsEnabled");
+		enabledCB.enabled = persistentDownloadsEnabled;
 		
 		AssumeDDADownloadIsAllowedCallback cb4;
 		AssumeDDAUploadIsAllowedCallback cb5;
@@ -841,6 +862,24 @@ public class FCPServer implements Runnable {
 		
 		for(int i=0;i<clients.length;i++) {
 			clients[i].finishStart(node.clientCore.clientContext.jobRunner);
+		}
+		
+		if(enablePersistentDownloads) {
+			boolean movedMain = false;
+			// Rename
+			if(persistentDownloadsFile.exists()) {
+				File target = new File(persistentDownloadsFile.getPath()+".old.pre-db4o");
+				if(persistentDownloadsFile.renameTo(target)) {
+					Logger.error(this, "Successfully migrated persistent downloads and renamed "+persistentDownloadsFile.getName()+" to "+target.getName());
+					movedMain = true;
+				}
+			}
+			if(persistentDownloadsTempFile.exists()) {
+				File target = new File(persistentDownloadsFile.getPath()+".old.pre-db4o");
+				if(persistentDownloadsFile.renameTo(target) && !movedMain)
+					Logger.error(this, "Successfully migrated persistent downloads and renamed "+persistentDownloadsFile.getName()+" to "+target.getName());
+			}
+			
 		}
 		
 		hasFinishedStart = true;

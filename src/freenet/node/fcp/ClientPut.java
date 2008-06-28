@@ -259,7 +259,7 @@ public class ClientPut extends ClientPutBase {
 	 * @throws IOException 
 	 * @throws InsertException 
 	 */
-	public ClientPut(SimpleFieldSet fs, FCPClient client2, FCPServer server) throws PersistenceParseException, IOException, InsertException {
+	public ClientPut(SimpleFieldSet fs, FCPClient client2, FCPServer server, ObjectContainer container) throws PersistenceParseException, IOException, InsertException {
 		super(fs, client2, server);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		String mimeType = fs.get("Metadata.ContentType");
@@ -338,8 +338,8 @@ public class ClientPut extends ClientPutBase {
 				client.lowLevelClient,
 				oldProgress, targetFilename, binaryBlob);
 		if(persistenceType != PERSIST_CONNECTION) {
-			FCPMessage msg = persistentTagMessage(null);
-			client.queueClientRequestMessage(msg, 0, null);
+			FCPMessage msg = persistentTagMessage(container);
+			client.queueClientRequestMessage(msg, 0, container);
 		}
 		
 	}
