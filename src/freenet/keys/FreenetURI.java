@@ -11,8 +11,10 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
@@ -501,7 +503,7 @@ public class FreenetURI implements Cloneable {
 		}
 	}
 
-	public FreenetURI addMetaStrings(LinkedList metaStrings) {
+	public FreenetURI addMetaStrings(List metaStrings) {
 		return addMetaStrings((String[]) metaStrings.toArray(new String[metaStrings.size()]));
 	}
 
@@ -608,11 +610,11 @@ public class FreenetURI implements Cloneable {
 		return extra;
 	}
 
-	public LinkedList listMetaStrings() {
-		LinkedList l = new LinkedList();
+	public ArrayList listMetaStrings() {
+		ArrayList l = new ArrayList(metaStr.length);
 		if(metaStr != null)
 			for(int i = 0; i < metaStr.length; i++)
-				l.addLast(metaStr[i]);
+				l.add(metaStr[i]);
 		return l;
 	}
 	static final byte CHK = 1;

@@ -6,7 +6,6 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipException;
@@ -257,7 +256,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private final static String[] defaultDefaultNames =
 		new String[] { "index.html", "index.htm", "default.html", "default.htm" };
 	private int bytesOnZip;
-	private LinkedList elementsToPutInZip;
+	private Vector elementsToPutInZip;
 	private boolean fetchable;
 	private final boolean earlyEncode;
 	
@@ -279,7 +278,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		waitingForBlockSets = new HashSet();
 		metadataPuttersByMetadata = new HashMap();
 		metadataPuttersUnfetchable = new HashMap();
-		elementsToPutInZip = new LinkedList();
+		elementsToPutInZip = new Vector();
 		makePutHandlers(manifestElements, putHandlersByName);
 		checkZips();
 	}
@@ -364,7 +363,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 						bytesOnZip += sz;
 						// Put it in the zip.
 						ph = new PutHandler(this, name, ZipPrefix+element.fullName, cm, data);
-						elementsToPutInZip.addLast(ph);
+						elementsToPutInZip.add(ph);
 						numberOfFiles++;
 						totalSize += data.size();
 					} else {

@@ -5,7 +5,7 @@ package freenet.client.async;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.LinkedList;
+import java.util.ArrayList;
 
 import com.db4o.ObjectContainer;
 
@@ -34,7 +34,7 @@ public class SplitFileFetcher implements ClientGetState {
 
 	final FetchContext fetchContext;
 	final ArchiveContext archiveContext;
-	final LinkedList decompressors;
+	final ArrayList decompressors;
 	final ClientMetadata clientMetadata;
 	final ClientRequester parent;
 	final GetCompletionCallback cb;
@@ -62,14 +62,14 @@ public class SplitFileFetcher implements ClientGetState {
 	final boolean persistent;
 	
 	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent2,
-			FetchContext newCtx, LinkedList decompressors, ClientMetadata clientMetadata, 
+			FetchContext newCtx, ArrayList decompressors2, ClientMetadata clientMetadata, 
 			ArchiveContext actx, int recursionLevel, Bucket returnBucket, long token2, ObjectContainer container) throws FetchException, MetadataParseException {
 		this.persistent = parent2.persistent();
 		this.finished = false;
 		this.returnBucket = returnBucket;
 		this.fetchContext = newCtx;
 		this.archiveContext = actx;
-		this.decompressors = decompressors;
+		this.decompressors = decompressors2;
 		this.clientMetadata = clientMetadata;
 		this.cb = rcb;
 		this.recursionLevel = recursionLevel + 1;
@@ -297,7 +297,7 @@ public class SplitFileFetcher implements ClientGetState {
 				container.activate(fetchContext, 1);
 			}
 			while(!decompressors.isEmpty()) {
-				Compressor c = (Compressor) decompressors.removeLast();
+				Compressor c = (Compressor) decompressors.remove(decompressors.size()-1);
 				long maxLen = Math.max(fetchContext.maxTempLength, fetchContext.maxOutputLength);
 				try {
 					Bucket out = returnBucket;

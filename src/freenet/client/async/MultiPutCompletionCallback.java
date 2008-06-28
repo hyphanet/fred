@@ -12,7 +12,7 @@ import freenet.support.SimpleFieldSet;
 
 public class MultiPutCompletionCallback implements PutCompletionCallback, ClientPutState {
 
-	// LinkedList's rather than HashSet's for memory reasons.
+	// Vector's rather than HashSet's for memory reasons.
 	// This class will not be used with large sets, so O(n) is cheaper than O(1) -
 	// at least it is on memory!
 	private final Vector waitingFor;
