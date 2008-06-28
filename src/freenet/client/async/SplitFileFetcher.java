@@ -287,6 +287,7 @@ public class SplitFileFetcher implements ClientGetState {
 				container.activate(decompressors, 5);
 				container.activate(returnBucket, 5);
 				container.activate(cb, 1);
+				container.activate(fetchContext, 1);
 			}
 			while(!decompressors.isEmpty()) {
 				Compressor c = (Compressor) decompressors.removeLast();
@@ -299,6 +300,8 @@ public class SplitFileFetcher implements ClientGetState {
 					cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), this, container, context);
 					return;
 				} catch (CompressionOutputSizeException e) {
+					if(Logger.shouldLog(Logger.MINOR, this))
+						Logger.minor(this, "Too big: maxSize = "+fetchContext.maxOutputLength+" maxTempSize = "+fetchContext.maxTempLength);
 					cb.onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, false /* FIXME */, clientMetadata.getMIMEType()), this, container, context);
 					return;
 				}
@@ -311,6 +314,7 @@ public class SplitFileFetcher implements ClientGetState {
 			System.err.println("Failing above attempted fetch...");
 			cb.onFailure(new FetchException(FetchException.INTERNAL_ERROR, e), this, container, context);
 		} catch (Throwable t) {
+			Logger.error(this, "Caught "+t, t);
 			cb.onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), this, container, context);
 		}
 	}
