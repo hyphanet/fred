@@ -18,6 +18,7 @@ import freenet.client.Metadata;
 import freenet.client.MetadataParseException;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
+import freenet.keys.NodeCHK;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -192,7 +193,7 @@ public class SplitFileFetcher implements ClientGetState {
 			// If still here, it succeeded
 			finalLength += s.decodedLength();
 			if(logMINOR)
-				Logger.minor(this, "Segment "+i+" decoded length "+s.decodedLength()+" total length now "+finalLength);
+				Logger.minor(this, "Segment "+i+" decoded length "+s.decodedLength()+" total length now "+finalLength+" for "+s.dataBuckets.length+" blocks which should be "+(s.dataBuckets.length * NodeCHK.BLOCK_SIZE));
 			// Healing is done by Segment
 		}
 		if(finalLength > overrideLength) {
