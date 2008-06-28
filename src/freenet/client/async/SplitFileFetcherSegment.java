@@ -181,7 +181,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 		boolean dontNotify;
 		synchronized(this) {
 			if(finished) {
-				Logger.error(this, "onSuccess() when already finished");
+				// Happens sometimes, don't complain about it...
+				// What this means is simply that there were a bunch of requests
+				// running, one of them completed, the whole segment went into
+				// decode, and now the extra requests are surplus to requirements.
+				// It's a slight overhead, but the alternative is worse.
+				if(logMINOR)
+					Logger.minor(this, "onSuccess() when already finished for "+this);
 				return;
 			}
 			if(blockNo < dataKeys.length) {
