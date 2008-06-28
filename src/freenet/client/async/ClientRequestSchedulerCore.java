@@ -238,8 +238,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	// We prevent a number of race conditions (e.g. adding a retry count and then another 
 	// thread removes it cos its empty) ... and in addToGrabArray etc we already sync on this.
 	// The worry is ... is there any nested locking outside of the hierarchy?
-	ChosenRequest removeFirst(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
-		SendableRequest req = removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, transientOnly, maxPrio, retryCount, context, container);
+	ChosenRequest removeFirst(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
+		SendableRequest req = removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, transientOnly, notTransient, maxPrio, retryCount, context, container);
 		if(req == null) return null;
 		Object token = req.chooseKey(this, req.persistent() ? container : null, context);
 		if(token == null) {
@@ -278,7 +278,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		}
 	}
 	
-	SendableRequest removeFirstInner(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
+	SendableRequest removeFirstInner(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		boolean tryOfferedKeys = offeredKeys != null && random.nextBoolean();
@@ -301,7 +301,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		SortedVectorByNumber perm = null;
 		if(!transientOnly)
 			perm = priorities[choosenPriorityClass];
-		SortedVectorByNumber trans = schedTransient.priorities[choosenPriorityClass];
+		SortedVectorByNumber trans = null;
+		if(!notTransient)
+			trans = schedTransient.priorities[choosenPriorityClass];
 		if(perm == null && trans == null) {
 			if(logMINOR) Logger.minor(this, "No requests to run: chosen priority empty");
 			continue; // Try next priority

@@ -404,7 +404,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			schedTransient.addPendingKey(key, getter);
 	}
 	
-	private synchronized ChosenRequest removeFirst(ObjectContainer container) {
+	private synchronized ChosenRequest removeFirst(ObjectContainer container, boolean transientOnly, boolean notTransient) {
 		if(!databaseExecutor.onThread()) {
 			throw new IllegalStateException("Not on database thread!");
 		}
@@ -414,7 +414,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;	
 		// schedCore juggles both
-		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, false, Short.MAX_VALUE, Short.MAX_VALUE, clientContext, container);
+		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, transientOnly, notTransient, Short.MAX_VALUE, Short.MAX_VALUE, clientContext, container);
 	}
 
 	public ChosenRequest getBetterNonPersistentRequest(ChosenRequest req) {
@@ -424,10 +424,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;	
 		if(req == null)
-			return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, Short.MAX_VALUE, Integer.MAX_VALUE, clientContext, null);
+			return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, false, Short.MAX_VALUE, Integer.MAX_VALUE, clientContext, null);
 		short prio = req.prio;
 		int retryCount = req.request.getRetryCount();
-		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, prio, retryCount, clientContext, null);
+		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, false, prio, retryCount, clientContext, null);
 	}
 	
 	private static final int MAX_STARTER_QUEUE_SIZE = 100;
@@ -462,7 +462,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 			}
 			while(true) {
-				req = removeFirst(container);
+				req = removeFirst(container, false, true);
 				if(req == null) return;
 				container.activate(req.key, 5);
 				container.activate(req.ckey, 5);
