@@ -205,6 +205,8 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		ChosenRequest betterReq = sched.getBetterNonPersistentRequest(req);
 		if(req != null) {
 			if(betterReq != null) {
+				if(logMINOR)
+					Logger.minor(this, "Not using "+req+" in favour of "+betterReq);
 				synchronized(queue) {
 					queue.addFirst(req);
 				}
