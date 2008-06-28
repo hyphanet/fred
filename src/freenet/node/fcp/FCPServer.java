@@ -4,22 +4,16 @@
 package freenet.node.fcp;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.Socket;
-import java.util.Iterator;
 import java.util.Vector;
 import java.util.WeakHashMap;
 import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -50,15 +44,10 @@ import freenet.support.Logger;
 import freenet.support.MutableBoolean;
 import freenet.support.OOMHandler;
 import freenet.support.api.BooleanCallback;
-import freenet.support.api.Bucket;
 import freenet.support.api.IntCallback;
-import freenet.support.api.LongCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.Closer;
-import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
-
-import java.util.LinkedList;
 
 /**
  * FCP server process.
