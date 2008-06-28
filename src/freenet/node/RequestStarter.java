@@ -219,7 +219,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		if(usedReq || req == null)
 			sched.queueFillRequestStarterQueue();
 		if(req == null && logMINOR) Logger.minor(this, "No requests found");
-		if(req != null) {
+		if(req != null && !this.isInsert) {
 			if(!sched.addToFetching(req.key)) {
 				sched.requeue(req);
 			}
