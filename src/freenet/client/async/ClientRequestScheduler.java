@@ -430,7 +430,16 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, false, prio, retryCount, clientContext, null);
 	}
 	
+	/** The maximum number of requests that we will keep on the in-RAM request
+	 * starter queue. */
 	static final int MAX_STARTER_QUEUE_SIZE = 100;
+	
+	/** The above doesn't include in-flight requests. In-flight requests will
+	 * of course still have PersistentChosenRequest's in the database (on disk)
+	 * even though they are not on the starter queue and so don't count towards
+	 * the above limit. So we have a higher limit before we complain that 
+	 * something odd is happening.. (e.g. leaking PersistentChosenRequest's). */
+	static final int WARNING_STARTER_QUEUE_SIZE = 300;
 	
 	/**
 	 * Normally this will only contain PersistentChosenRequest's, however in the
@@ -466,8 +475,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
 			ChosenRequest req = null;
 			synchronized(starterQueue) {
-				if(starterQueue.size() >= MAX_STARTER_QUEUE_SIZE) {
-					Logger.error(this, "Queue already full: "+starterQueue.size());
+				int size = starterQueue.size();
+				if(size >= MAX_STARTER_QUEUE_SIZE) {
+					if(size >= WARNING_STARTER_QUEUE_SIZE)
+						Logger.error(this, "Queue already full: "+starterQueue.size());
 					return;
 				}
 			}

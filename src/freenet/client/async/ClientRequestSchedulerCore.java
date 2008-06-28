@@ -193,10 +193,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			}
 			sched.addToStarterQueue(req);
 		}
-		if(count > ClientRequestScheduler.MAX_STARTER_QUEUE_SIZE)
+//		if(count > ClientRequestScheduler.MAX_STARTER_QUEUE_SIZE)
 			Logger.error(this, "Added "+count+" requests to the starter queue, size now "+sched.starterQueueSize());
-		else
-			Logger.normal(this, "Added "+count+" requests to the starter queue, size now "+sched.starterQueueSize());
+//		else
+//			Logger.normal(this, "Added "+count+" requests to the starter queue, size now "+sched.starterQueueSize());
 	}
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
