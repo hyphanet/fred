@@ -866,18 +866,28 @@ public class FCPServer implements Runnable {
 		
 		if(enablePersistentDownloads) {
 			boolean movedMain = false;
+			if(logMINOR) {
+				Logger.minor(this, "Persistent downloads file should be "+persistentDownloadsFile);
+				Logger.minor(this, "Persistent downloads temp file should be "+persistentDownloadsTempFile);
+			}
+			File from = new File(persistentDownloadsFile.getPath()+".gz");
+			File fromTemp = new File(persistentDownloadsTempFile.getPath()+".gz");
 			// Rename
-			if(persistentDownloadsFile.exists()) {
-				File target = new File(persistentDownloadsFile.getPath()+".old.pre-db4o");
-				if(persistentDownloadsFile.renameTo(target)) {
-					Logger.error(this, "Successfully migrated persistent downloads and renamed "+persistentDownloadsFile.getName()+" to "+target.getName());
+			if(from.exists()) {
+				File target = new File(from.getPath()+".old.pre-db4o");
+				if(logMINOR)
+					Logger.minor(this, "Trying to move "+persistentDownloadsFile+" to "+target);
+				if(from.renameTo(target)) {
+					Logger.error(this, "Successfully migrated persistent downloads and renamed "+from.getName()+" to "+target.getName());
 					movedMain = true;
 				}
 			}
-			if(persistentDownloadsTempFile.exists()) {
-				File target = new File(persistentDownloadsFile.getPath()+".old.pre-db4o");
-				if(persistentDownloadsFile.renameTo(target) && !movedMain)
-					Logger.error(this, "Successfully migrated persistent downloads and renamed "+persistentDownloadsFile.getName()+" to "+target.getName());
+			if(fromTemp.exists()) {
+				File target = new File(fromTemp.getPath()+".old.pre-db4o");
+				if(logMINOR)
+					Logger.minor(this, "Trying to move "+fromTemp+" to "+target);
+				if(fromTemp.renameTo(target) && !movedMain)
+					Logger.error(this, "Successfully migrated persistent downloads and renamed "+fromTemp.getName()+" to "+target.getName());
 			}
 			
 		}
