@@ -802,6 +802,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			prevStoreSize = raf.readLong();
 			keyCount.set(raf.readLong());
 			generation = raf.readByte();
+			
+			if (prevStoreSize != 0)
+				rebuildBloom = true;
 
 			raf.close();
 		}
@@ -835,7 +838,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	// ------------- Store resizing
 	private long prevStoreSize = 0;
-	private static Object cleanerLock = new Object();
+	private Object cleanerLock = new Object(); // local to this datastore
+	private static Lock cleanerGlobalLock = new ReentrantLock(); // global across all datastore
 	private Cleaner cleanerThread;
 
 	private class Cleaner extends Thread {
@@ -865,22 +869,30 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						configLock.readLock().unlock();
 					}
 
-					if (_prevStoreSize != 0)
-						resizeStore(_prevStoreSize);
+					if (_prevStoreSize != 0 && cleanerGlobalLock.tryLock()) {
+						try {
+							resizeStore(_prevStoreSize);
+						} finally {
+							cleanerGlobalLock.unlock();
+						}
+					}
 					
-					if (_rebuildBloom)
-						rebuildBloom();
-				}
+					if (_rebuildBloom && cleanerGlobalLock.tryLock()) {
+						try {
+							rebuildBloom();
+						} finally {
+							cleanerGlobalLock.unlock();
+						}
+					}
 
-				try {
-					writeConfigFile();
-				} catch (IOException e) {
-					Logger.error(this, "Can't write config file", e);
-				}
+					try {
+						writeConfigFile();
+					} catch (IOException e) {
+						Logger.error(this, "Can't write config file", e);
+					}
 
-				synchronized (cleanerLock) {
-					// FIXME use seprate lock for rebuild / write config file
-					// cleanerLock.notifyAll();
+					cleanerLock.notifyAll();
+
 					try {
 						cleanerLock.wait(CLEANER_PERIOD);
 					} catch (InterruptedException e) {
@@ -1223,11 +1235,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 				prevStoreSize = storeSize;
 				storeSize = newStoreSize;
+				rebuildBloom = true;
 				writeConfigFile();
 			} finally {
 				configLock.writeLock().unlock();
 			}
-			// don't notify for now, or we will be held here for a long time
+
+			cleanerLock.notify();
 		}
 	}
 
