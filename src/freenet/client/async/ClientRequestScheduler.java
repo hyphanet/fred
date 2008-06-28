@@ -745,8 +745,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 			public void run(ObjectContainer container, ClientContext context) {
 				container.activate(get, 1);
 				get.onFailure(e, keyNum, selectorContainer, clientContext);
-				if(get.persistent())
+				if(get.persistent()) {
+					if(logMINOR)
+						Logger.minor(this, "Deleting "+req);
 					selectorContainer.delete((PersistentChosenRequest)req);
+				}
 			}
 			
 		}, NativeThread.NORM_PRIORITY, false);
@@ -758,8 +761,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 			public void run(ObjectContainer container, ClientContext context) {
 				container.activate(put, 1);
 				put.onFailure(e, keyNum, selectorContainer, clientContext);
-				if(put.persistent())
+				if(put.persistent()) {
+					if(logMINOR)
+						Logger.minor(this, "Deleting "+req);
 					selectorContainer.delete((PersistentChosenRequest)req);
+				}
 			}
 			
 		}, NativeThread.NORM_PRIORITY, false);
@@ -771,8 +777,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 			public void run(ObjectContainer container, ClientContext context) {
 				container.activate(put, 1);
 				put.onSuccess(keyNum, selectorContainer, clientContext);
-				if(put.persistent())
+				if(put.persistent()) {
+					if(logMINOR)
+						Logger.minor(this, "Deleting "+req);
 					selectorContainer.delete((PersistentChosenRequest)req);
+				}
 			}
 			
 		}, NativeThread.NORM_PRIORITY, false);
