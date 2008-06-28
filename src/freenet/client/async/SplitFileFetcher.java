@@ -179,6 +179,7 @@ public class SplitFileFetcher implements ClientGetState {
 	 * @throws FetchException If the fetch failed for some reason.
 	 */
 	private Bucket finalStatus(ObjectContainer container, ClientContext context) throws FetchException {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long finalLength = 0;
 		for(int i=0;i<segments.length;i++) {
 			SplitFileFetcherSegment s = segments[i];
@@ -190,6 +191,8 @@ public class SplitFileFetcher implements ClientGetState {
 			s.throwError();
 			// If still here, it succeeded
 			finalLength += s.decodedLength();
+			if(logMINOR)
+				Logger.minor(this, "Segment "+i+" decoded length "+s.decodedLength()+" total length now "+finalLength);
 			// Healing is done by Segment
 		}
 		if(finalLength > overrideLength) {
@@ -230,6 +233,9 @@ public class SplitFileFetcher implements ClientGetState {
 					throw new FetchException(FetchException.BUCKET_ERROR, e);
 				}
 			}
+		}
+		if(finalLength != output.size()) {
+			Logger.error(this, "Final length is supposed to be "+finalLength+" but only written "+output.size());
 		}
 		return output;
 	}
