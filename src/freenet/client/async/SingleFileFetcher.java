@@ -202,6 +202,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
 					return;
 				} catch (CompressionOutputSizeException e) {
+					if(logMINOR)
+						Logger.minor(this, "Too big: limit="+ctx.maxOutputLength+" temp="+ctx.maxTempLength);
 					onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, (rcb == parent), result.getMimeType()), false, container, context);
 					return;
 				}
@@ -250,8 +252,21 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	 * @throws ArchiveRestartException
 	 */
 	private synchronized void handleMetadata(final ObjectContainer container, final ClientContext context) throws FetchException, MetadataParseException, ArchiveFailureException, ArchiveRestartException {
-		if(persistent)
+		if(persistent) {
 			container.activate(this, 2);
+			// ,1's are probably redundant
+			container.activate(metadata, 100);
+			container.activate(metaStrings, Integer.MAX_VALUE);
+			container.activate(thisKey, 5);
+			container.activate(ctx, 2); // for event producer and allowed mime types
+			if(ah != null)
+				ah.activateForExecution(container);
+			container.activate(parent, 1);
+			container.activate(actx, 5);
+			container.activate(clientMetadata, 5);
+			container.activate(rcb, 1);
+			container.activate(returnBucket, 5);
+		}
 		while(true) {
 			if(metadata.isSimpleManifest()) {
 				if(logMINOR) Logger.minor(this, "Is simple manifest");
@@ -302,8 +317,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					}
 					if(persistent) container.set(this);
 				} else {
+					final boolean persistent = this.persistent;
 					fetchArchive(false, archiveMetadata, ArchiveManager.METADATA_NAME, new ArchiveExtractCallback() {
 						public void gotBucket(Bucket data, ObjectContainer container, ClientContext context) {
+							if(persistent)
+								container.activate(SingleFileFetcher.this, 1);
 							try {
 								metadata = Metadata.construct(data);
 								wrapHandleMetadata(true, container, context);
@@ -318,12 +336,18 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							}
 						}
 						public void notInArchive(ObjectContainer container, ClientContext context) {
+							if(persistent)
+								container.activate(SingleFileFetcher.this, 1);
 							onFailure(new FetchException(FetchException.INTERNAL_ERROR, "No metadata in container! Cannot happen as ArchiveManager should synthesise some!"), false, container, context);
 						}
 						public void onFailed(ArchiveRestartException e, ObjectContainer container, ClientContext context) {
+							if(persistent)
+								container.activate(SingleFileFetcher.this, 1);
 							SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
 						}
 						public void onFailed(ArchiveFailureException e, ObjectContainer container, ClientContext context) {
+							if(persistent)
+								container.activate(SingleFileFetcher.this, 1);
 							SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
 						}
 					}, container, context); // will result in this function being called again
@@ -371,8 +395,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					// Metadata cannot contain pointers to files which don't exist.
 					// We enforce this in ArchiveHandler.
 					// Therefore, the archive needs to be fetched.
+					final boolean persistent = this.persistent;
 					fetchArchive(true, archiveMetadata, filename, new ArchiveExtractCallback() {
 						public void gotBucket(Bucket data, ObjectContainer container, ClientContext context) {
+							if(persistent)
+								container.activate(SingleFileFetcher.this, 1);
 							if(logMINOR) Logger.minor(this, "Returning data");
 							Bucket out;
 							try {
@@ -392,12 +419,18 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							onSuccess(new FetchResult(clientMetadata, out), container, context);
 						}
 						public void notInArchive(ObjectContainer container, ClientContext context) {
+							if(persistent)
+								container.activate(SingleFileFetcher.this, 1);
 							onFailure(new FetchException(FetchException.NOT_IN_ARCHIVE), false, container, context);
 						}
 						public void onFailed(ArchiveRestartException e, ObjectContainer container, ClientContext context) {
+							if(persistent)
+								container.activate(SingleFileFetcher.this, 1);
 							SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
 						}
 						public void onFailed(ArchiveFailureException e, ObjectContainer container, ClientContext context) {
+							if(persistent)
+								container.activate(SingleFileFetcher.this, 1);
 							SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
 						}
 					}, container, context);
@@ -658,7 +691,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// remove the tag, and call the callback.
 				if(persistent) {
 					container.activate(SingleFileFetcher.this, 1);
-					container.activate(ah, 1);
+					ah.activateForExecution(container);
 				}
 				ah.extractPersistentOffThread(result.asBucket(), actx, element, callback, container, context);
 			}
@@ -667,7 +700,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		private void innerSuccess(FetchResult result, ObjectContainer container, ClientContext context) {
 			if(persistent) {
 				container.activate(SingleFileFetcher.this, 1);
-				container.activate(ah, 1);
+				ah.activateForExecution(container);
 			}
 			try {
 				ah.extractToCache(result.asBucket(), actx, element, callback, context.archiveManager, container, context);

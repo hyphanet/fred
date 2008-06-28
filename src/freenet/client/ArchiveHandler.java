@@ -89,4 +89,6 @@ public interface ArchiveHandler {
 	 */
 	public abstract void extractPersistentOffThread(Bucket bucket, ArchiveContext actx, String element, ArchiveExtractCallback callback, ObjectContainer container, ClientContext context);
 	
+	public abstract void activateForExecution(ObjectContainer container);
+	
 }

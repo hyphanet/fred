@@ -135,6 +135,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 							if(logMINOR)
 								Logger.minor(this, "Calling callback for "+tag.data+" for "+tag.handler.key+" element "+tag.element+" for "+tag.callback);
 							container.delete(tag);
+							container.activate(tag.callback, 1);
 							if(proxyCallback.data == null)
 								tag.callback.notInArchive(container, context);
 							else
@@ -149,6 +150,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 
 						public void run(ObjectContainer container, ClientContext context) {
 							container.delete(tag);
+							container.activate(tag.callback, 1);
 							tag.callback.onFailed(e, container, context);
 						}
 						
@@ -160,6 +162,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 
 						public void run(ObjectContainer container, ClientContext context) {
 							container.delete(tag);
+							container.activate(tag.callback, 1);
 							tag.callback.onFailed(e, container, context);
 						}
 						
@@ -180,6 +183,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 		});
 		while(set.hasNext()) {
 			ArchiveExtractTag tag = (ArchiveExtractTag) set.next();
+			tag.activateForExecution(container);
 			runPersistentOffThread(tag, context, context.archiveManager, context.persistentBucketFactory);
 		}
 	}
@@ -207,6 +211,11 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 		}
 		
 	}
+
+	public void activateForExecution(ObjectContainer container) {
+		container.activate(this, 1);
+		container.activate(key, 5);
+	}
 	
 }
 
@@ -226,6 +235,14 @@ class ArchiveExtractTag {
 		this.element = element;
 		this.callback = callback;
 		this.nodeDBHandle = nodeDBHandle;
+	}
+
+	public void activateForExecution(ObjectContainer container) {
+		container.activate(this, 1);
+		container.activate(data, 5);
+		handler.activateForExecution(container);
+		container.activate(actx, 5);
+		container.activate(callback, 1);
 	}
 	
 }
