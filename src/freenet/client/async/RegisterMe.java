@@ -4,6 +4,11 @@ import com.db4o.ObjectContainer;
 
 import freenet.node.SendableRequest;
 
+/**
+ * These must be deleted once the request has been registered.
+ * See PersistentChosenRequest.
+ * @author toad
+ */
 public class RegisterMe {
 	final SendableRequest getter;
 	final ClientRequestSchedulerCore core;

@@ -8,6 +8,8 @@ import freenet.keys.Key;
 import freenet.node.SendableRequest;
 
 /**
+ * These must be deleted once the request has been executed. See RegisterMe.
+ * 
  * When we choose a request on the database thread, if it is persistent, we store it to the database.
  * The reason for this is that we may crash before it completes, in which case we don't want to lose 
  * it, and the process of choosing a request is destructive i.e. it will be removed from the queue
