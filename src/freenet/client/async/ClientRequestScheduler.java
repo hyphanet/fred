@@ -807,7 +807,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 				public void run(ObjectContainer container, ClientContext context) {
 					container.activate(req.request, 1);
-					if(req.request.isCancelled(container)) return;
+					if(req.request.isCancelled(container)) {
+						container.delete(req);
+						return;
+					}
 					addToStarterQueue(req);
 				}
 				
