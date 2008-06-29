@@ -334,24 +334,27 @@ public class BucketTools {
 	 * and the data written to them.
 	 * 
 	 * Note that this method will allocate a buffer of size splitSize.
-	 * @param freeData
+	 * @param freeData 
 	 * @throws IOException If there is an error creating buckets, reading from
 	 * the provided bucket, or writing to created buckets.
 	 */
 	public static Bucket[] split(Bucket origData, int splitSize, BucketFactory bf, boolean freeData) throws IOException {
 		if(origData instanceof FileBucket) {
-			if(freeData)
+			if(freeData) {
 				Logger.error(BucketTools.class, "Asked to free data when splitting a FileBucket ?!?!? Not freeing as this would clobber the split result...");
+			}
 			return ((FileBucket)origData).split(splitSize);
 		}
 		if(origData instanceof BucketChainBucket) {
-			BucketChainBucket data = (BucketChainBucket) origData;
+			BucketChainBucket data = (BucketChainBucket)origData;
 			if(data.bucketSize == splitSize) {
+				Bucket[] buckets = data.getBuckets();
 				if(freeData)
 					data.clear();
-				return data.getBuckets();
-			} else
-				Logger.error(BucketTools.class, "Incompatible split size splitting a BucketChainBucket: his split size is " + data.bucketSize + " but mine is " + splitSize + " - we will copy the data, but this suggests a bug", new Exception("debug"));
+				return buckets;
+			} else {
+				Logger.error(BucketTools.class, "Incompatible split size splitting a BucketChainBucket: his split size is "+data.bucketSize+" but mine is "+splitSize+" - we will copy the data, but this suggests a bug", new Exception("debug"));
+			}
 		}
 		long length = origData.size();
 		if(length > ((long)Integer.MAX_VALUE) * splitSize)

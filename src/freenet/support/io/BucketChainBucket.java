@@ -41,7 +41,7 @@ public class BucketChainBucket implements Bucket {
 			list[i].free();
 		}
 	}
-
+	
 	/** Equivalent to free(), but don't free the underlying buckets. */
 	public void clear() {
 		synchronized(this) {
@@ -49,7 +49,7 @@ public class BucketChainBucket implements Bucket {
 			buckets.clear();
 		}
 	}
-	
+
 	public synchronized Bucket[] getBuckets() {
 		return (Bucket[]) buckets.toArray(new Bucket[buckets.size()]);
 	}
