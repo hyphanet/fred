@@ -513,7 +513,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					f.addDecompressor(codec);
 				}
 				parent.onTransition(this, f, container);
-				f.schedule(container, context);
+				f.schedule(container, context, false);
 				if(persistent) {
 					container.set(metaStrings);
 					container.set(this);
@@ -590,7 +590,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, parent, ctx, 
 						decompressors, clientMetadata, actx, recursionLevel, returnBucket, token, container);
 				parent.onTransition(this, sf, container);
-				sf.schedule(container, context);
+				sf.schedule(container, context, false);
 				rcb.onBlockSetFinished(this, container, context);
 				// Clear our own metadata, we won't need it any more.
 				// For multi-level metadata etc see above.
@@ -913,7 +913,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(l == usk.suggestedEdition) {
 					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, clientMetadata, key, metaStrings, key.getURI().addMetaStrings(metaStrings),
 							0, ctx, actx, null, null, maxRetries, recursionLevel+1, dontTellClientGet, token, false, returnBucket, true, container, context);
-					sf.schedule(container, context);
+					sf.schedule(container, context, false);
 				} else {
 					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, newUSK.getURI().addMetaStrings(metaStrings)), null, container, context);
 				}

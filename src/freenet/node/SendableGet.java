@@ -99,10 +99,10 @@ public abstract class SendableGet extends BaseSendableGet {
 		return true;
 	}
 
-	public void schedule(ObjectContainer container, ClientContext context) {
+	public void schedule(ObjectContainer container, ClientContext context, boolean assumeNotInStore) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Scheduling "+this);
-		getScheduler(context).register(this);
+		getScheduler(context).register(this, assumeNotInStore);
 	}
 	
 	public ClientRequestScheduler getScheduler(ClientContext context) {

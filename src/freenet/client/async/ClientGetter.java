@@ -113,7 +113,7 @@ public class ClientGetter extends BaseClientGetter {
 						return false;
 					}
 				}
-				currentState.schedule(container, context);
+				currentState.schedule(container, context, false);
 			}
 			if(cancelled) cancel();
 		} catch (MalformedURLException e) {

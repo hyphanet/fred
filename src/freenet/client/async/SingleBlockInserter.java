@@ -199,7 +199,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 		if(persistent)
 			container.set(this);
-		getScheduler(context).register(this);
+		getScheduler(context).register(this, false);
 	}
 
 	private void fail(InsertException e, ObjectContainer container, ClientContext context) {
@@ -263,7 +263,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(persistent)
 				container.set(this);
 		} else {
-			getScheduler(context).register(this);
+			getScheduler(context).register(this, false);
 		}
 	}
 

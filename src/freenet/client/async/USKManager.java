@@ -140,7 +140,7 @@ public class USKManager implements RequestClient {
 				fetcher.cancel(null, context);
 			}
 		}
-		if(sched != null) sched.schedule(null, context);
+		if(sched != null) sched.schedule(null, context, false);
 	}
 	
 	void update(final USK origUSK, final long number, final ClientContext context) {
@@ -216,7 +216,7 @@ public class USKManager implements RequestClient {
 		if(fetcher != null) {
 			ticker.queueTimedJob(new Runnable() {
 				public void run() {
-					fetcher.schedule(null, context);
+					fetcher.schedule(null, context, false);
 				}
 			}, 0);
 		}

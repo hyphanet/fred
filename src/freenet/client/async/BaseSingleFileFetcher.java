@@ -96,7 +96,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 				}
 				return true; // We will retry, just not yet. See requeueAfterCooldown(Key).
 			} else {
-				schedule(container, context);
+				schedule(container, context, true);
 			}
 			return true;
 		}
@@ -192,7 +192,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Requeueing after cooldown "+key+" for "+this);
-		schedule(container, context);
+		schedule(container, context, true);
 	}
 	
 }

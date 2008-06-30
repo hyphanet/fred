@@ -155,14 +155,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 		choosenPriorityScheduler = val;
 	}
 	
-	public void register(final SendableRequest req) {
-		register(req, databaseExecutor.onThread(), null);
+	public void register(final SendableRequest req, boolean probablyNotInStore) {
+		register(req, databaseExecutor.onThread(), null, probablyNotInStore);
 	}
 	
 	/**
 	 * Register and then delete the RegisterMe which is passed in to avoid querying.
 	 */
-	public void register(final SendableRequest req, boolean onDatabaseThread, RegisterMe reg) {
+	public void register(final SendableRequest req, boolean onDatabaseThread, RegisterMe reg, final boolean probablyNotInStore) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Registering "+req, new Exception("debug"));
 		final boolean persistent = req.persistent();
@@ -173,11 +173,21 @@ public class ClientRequestScheduler implements RequestScheduler {
 			
 			if(persistent && onDatabaseThread) {
 				schedCore.addPendingKeys(getter, selectorContainer);
-				if(reg == null)
-					reg = schedCore.queueRegister(getter, databaseExecutor, selectorContainer);
-				final RegisterMe regme = reg;
 				final Object[] keyTokens = getter.sendableKeys(selectorContainer);
 				final ClientKey[] keys = new ClientKey[keyTokens.length];
+				
+				if(probablyNotInStore) {
+					// Complete the registration *before* checking the store.
+					// Check the store anyway though!
+					finishRegister(req, persistent, false, true, reg);
+					// RegisterMe has been deleted or was null in the first place.
+					reg = null;
+				} else {
+					if(reg == null)
+						reg = schedCore.queueRegister(getter, databaseExecutor, selectorContainer);
+				}
+				final RegisterMe regme = reg;
+				
 				for(int i=0;i<keyTokens.length;i++) {
 					keys[i] = getter.getKey(keyTokens[i], selectorContainer);
 					selectorContainer.activate(keys[i], 5);
@@ -199,9 +209,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 						container.activate(getter, 1);
 						schedCore.addPendingKeys(getter, container);
 						RegisterMe reg = regme;
-						if(reg == null)
-							reg = schedCore.queueRegister(getter, databaseExecutor, container);
+						if(probablyNotInStore) {
+							// Complete the registration *before* checking the store.
+							// Check the store anyway though!
+							finishRegister(req, persistent, false, true, reg);
+							// RegisterMe has been deleted or was null in the first place.
+							reg = null;
+						} else {
+							if(reg == null)
+								reg = schedCore.queueRegister(getter, databaseExecutor, container);
+						}
 						final RegisterMe regInner = reg;
+						
 						final Object[] keyTokens = getter.sendableKeys(container);
 						final ClientKey[] keys = new ClientKey[keyTokens.length];
 						for(int i=0;i<keyTokens.length;i++) {
@@ -360,7 +379,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 					Logger.minor(this, "finishRegister() for "+req);
 				if(anyValid)
 					schedCore.innerRegister(req, random, selectorContainer);
-				selectorContainer.delete(reg);
+				if(reg != null)
+					selectorContainer.delete(reg);
 				maybeFillStarterQueue(selectorContainer, clientContext);
 				starter.wakeUp();
 			} else {
@@ -372,7 +392,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 							Logger.minor(this, "finishRegister() for "+req);
 						if(anyValid)
 							schedCore.innerRegister(req, random, container);
-						container.delete(reg);
+						if(reg != null)
+							container.delete(reg);
 						maybeFillStarterQueue(container, context);
 						starter.wakeUp();
 					}

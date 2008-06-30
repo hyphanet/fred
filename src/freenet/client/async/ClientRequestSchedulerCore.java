@@ -530,7 +530,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					Logger.minor(this, "Running RegisterMe for "+reg.getter+" : "+reg.key.addedTime+" : "+reg.key.priority);
 				// Don't need to activate, fields should exist? FIXME
 				try {
-					sched.register(reg.getter, true, reg);
+					sched.register(reg.getter, true, reg, false);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t+" running RegisterMeRunner", t);
 					// Cancel the request, and commit so it isn't tried again.

@@ -620,7 +620,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		parentFetcher.segmentFinished(this, container, context);
 	}
 
-	public void schedule(ObjectContainer container, ClientContext context) {
+	public void schedule(ObjectContainer container, ClientContext context, boolean probablyNotInStore) {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(parentFetcher, 1);
@@ -633,7 +633,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			for(int i=0;i<dataRetries.length+checkRetries.length;i++)
 				seg.add(i, true, container, context, false);
 			
-			seg.schedule(container, context);
+			seg.schedule(container, context, probablyNotInStore);
 			synchronized(this) {
 				scheduled = true;
 			}
@@ -807,7 +807,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(v != null) {
 			for(int i=0;i<v.size();i++) {
 				if(v.get(i) == segment) foundCaller = true;
-				((SplitFileFetcherSubSegment) v.get(i)).schedule(container, context);
+				((SplitFileFetcherSubSegment) v.get(i)).schedule(container, context, true);
 			}
 		}
 		return foundCaller;

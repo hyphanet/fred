@@ -11,7 +11,7 @@ import com.db4o.ObjectContainer;
  */
 public interface ClientGetState {
 
-	public void schedule(ObjectContainer container, ClientContext context);
+	public void schedule(ObjectContainer container, ClientContext context, boolean probablyNotInStore);
 
 	public void cancel(ObjectContainer container, ClientContext context);
 

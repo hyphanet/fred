@@ -91,7 +91,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			usk = usk.copy(edition);
 		fetcher = manager.getFetcher(usk, ctx, new USKFetcherWrapper(usk, priority, client), keepLastData);
 		fetcher.addCallback(this);
-		fetcher.schedule(null, context); // non-persistent
+		fetcher.schedule(null, context, false); // non-persistent
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
@@ -118,7 +118,7 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 		return token;
 	}
 
-	public void schedule(ObjectContainer container, ClientContext context) {
+	public void schedule(ObjectContainer container, ClientContext context, boolean probablyNotInStore) {
 		start(context.uskManager, context);
 	}
 
