@@ -568,25 +568,19 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		}
 	}
 
-	public void removeFetchingKey(final Key key) {
+	public void removeFetchingKey(final Key key, final ChosenRequest req) {
+		if(key != null) {
 		synchronized(keysFetching) {
 			keysFetching.remove(key);
 		}
+		}
+		if(req != null && req.isPersistent()) {
 		sched.clientContext.jobRunner.queue(new DBJob() {
 			public void run(ObjectContainer container, ClientContext context) {
-				ObjectSet results = container.query(new Predicate() {
-					public boolean match(PersistentChosenRequest req) {
-						if(req.core != ClientRequestSchedulerCore.this) return false;
-						return req.key.equals(key);
-					}
-				});
-				if(results.hasNext()) {
-					PersistentChosenRequest req = (PersistentChosenRequest) results.next();
-					container.delete(req);
-					container.commit();
-				}
+				container.delete(req);
 			}
-		}, NativeThread.NORM_PRIORITY, false);
+		}, NativeThread.NORM_PRIORITY+1, false);
+		}
 	}
 
 	protected Set makeSetForAllRequestsByClientRequest(ObjectContainer container) {

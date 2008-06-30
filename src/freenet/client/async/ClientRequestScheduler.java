@@ -752,8 +752,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return schedCore;
 	}
 
-	public void removeFetchingKey(Key key) {
-		schedCore.removeFetchingKey(key);
+	public void removeFetchingKey(Key key, ChosenRequest req) {
+		schedCore.removeFetchingKey(key, req);
 	}
 
 	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, final ChosenRequest req) {

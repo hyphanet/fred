@@ -231,7 +231,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 
 	private boolean startRequest(ChosenRequest req, boolean logMINOR) {
 		if((!req.isPersistent()) && req.request.isCancelled(null)) {
-			sched.removeFetchingKey(req.key);
+			sched.removeFetchingKey(req.key, req);
 			return false;
 		}
 		if(logMINOR) Logger.minor(this, "Running request "+req+" priority "+req.prio);
@@ -274,9 +274,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			if(Logger.shouldLog(Logger.MINOR, this)) 
 				Logger.minor(this, "Finished "+req);
 			} finally {
-				if(!isInsert) {
-					sched.removeFetchingKey(key);
-				}
+					sched.removeFetchingKey(key, req);
 			}
 		}
 		
