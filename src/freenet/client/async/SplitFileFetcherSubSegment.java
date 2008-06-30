@@ -54,6 +54,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		this.segment = segment;
 		this.retryCount = retryCount;
 		this.parent = segment.parent;
+		if(parent == null) throw new NullPointerException();
 		ctx = segment.blockFetchContext;
 		blockNums = new Vector();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
