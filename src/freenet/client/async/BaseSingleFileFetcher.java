@@ -127,6 +127,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		synchronized(this) {
 			cancelled = true;
 		}
+		if(persistent)
+			container.set(this);
 		super.unregister(false, container);
 	}
 
