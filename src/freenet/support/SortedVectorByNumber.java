@@ -54,13 +54,15 @@ public class SortedVectorByNumber {
 			data = newData;
 		}
 		if(persistent) container.set(this);
-		verify();
+		verify(container);
 	}
 
-	private synchronized void verify() {
+	private synchronized void verify(ObjectContainer container) {
 		IntNumberedItem lastItem = null;
 		for(int i=0;i<length;i++) {
 			IntNumberedItem item = data[i];
+			if(persistent)
+				container.activate(data[i], 1);
 			if(i>0) {
 				if(item.getNumber() <= lastItem.getNumber())
 					throw new IllegalStateException("Verify failed! at "+i+" this="+item.getNumber()+" but last="+lastItem.getNumber());
@@ -119,7 +121,7 @@ public class SortedVectorByNumber {
 		length++;
 		if(persistent)
 			container.set(this);
-		verify();
+		verify(container);
 	}
 
 	public synchronized int count() {
