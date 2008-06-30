@@ -40,8 +40,11 @@ public class SortedVectorByNumber {
 	}
 
 	public synchronized void remove(int item, ObjectContainer container) {
-		if(persistent)
+		if(persistent) {
 			container.activate(this, 1);
+			for(int i=0;i<length;i++)
+				container.activate(data[i], 1);
+		}
 		int x = Arrays.binarySearch(data, new Integer(item), comparator);
 		if(x >= 0) {
 			if(x < length-1)
@@ -79,8 +82,11 @@ public class SortedVectorByNumber {
 	 * @return True if we added the item.
 	 */
 	public synchronized boolean push(IntNumberedItem grabber, ObjectContainer container) {
-		if(persistent)
+		if(persistent) {
 			container.activate(this, 1);
+			for(int i=0;i<length;i++)
+				container.activate(data[i], 1);
+		}
 		int x = Arrays.binarySearch(data, new Integer(grabber.getNumber()), comparator);
 		if(x >= 0) return false;
 		// insertion point
@@ -90,8 +96,11 @@ public class SortedVectorByNumber {
 	}
 	
 	public synchronized void add(IntNumberedItem grabber, ObjectContainer container) {
-		if(persistent)
+		if(persistent) {
 			container.activate(this, 1);
+			for(int i=0;i<length;i++)
+				container.activate(data[i], 1);
+		}
 		int x = Arrays.binarySearch(data, new Integer(grabber.getNumber()), comparator);
 		if(x >= 0) {
 			if(grabber != data[x])
@@ -104,8 +113,11 @@ public class SortedVectorByNumber {
 	}
 
 	private synchronized void push(IntNumberedItem grabber, int x, ObjectContainer container) {
-		if(persistent)
+		if(persistent) {
 			container.activate(this, 1);
+			for(int i=0;i<length;i++)
+				container.activate(data[i], 1);
+		}
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Insertion point: "+x);
 		// Move the data
