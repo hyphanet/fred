@@ -93,6 +93,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 				else {
 					RequestScheduler sched = context.getFetchScheduler(key instanceof ClientSSK);
 					cooldownWakeupTime = sched.queueCooldown(key, this);
+					if(persistent)
+						container.set(this);
 				}
 				return true; // We will retry, just not yet. See requeueAfterCooldown(Key).
 			} else {
