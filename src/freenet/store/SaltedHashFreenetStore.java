@@ -57,7 +57,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private static final byte FLAG_DIRTY = 0x1;
 	private static final byte FLAG_REBUILD_BLOOM = 0x2;
 	
-	private static final long BLOOM_SYNC_INTERVAL = 256;
 	private static final int BLOOM_FILTER_SIZE = 0x8000000; // bits
 	private static final int BLOOM_FILTER_K = 5;
 	private static final boolean updateBloom = true;
@@ -272,8 +271,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						long written = writes.incrementAndGet();
 						keyCount.incrementAndGet();
 						
-						if (updateBloom && written % BLOOM_SYNC_INTERVAL == 0)
-							bloomFilter.force();
 						return;
 					}
 				}
@@ -285,8 +282,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					bloomFilter.updateFilter(getDigestedRoutingKey(routingKey));
 				writeEntry(entry, offset[0]);
 				long written = writes.incrementAndGet();
-				if (updateBloom && written % BLOOM_SYNC_INTERVAL == 0)
-					bloomFilter.force();
 			} finally {
 				unlockPlainKey(routingKey, false);
 			}
@@ -897,6 +892,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						}
 					}
 
+					try {
+						if (bloomFilter != null)
+							bloomFilter.force();
+					} catch (Exception e) { // may throw IOException (even if it is not defined)
+						Logger.error(this, "Can't force bloom filter", e);
+					}
 					try {
 						writeConfigFile();
 					} catch (IOException e) {
