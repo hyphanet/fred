@@ -32,7 +32,12 @@ public class SortedVectorByNumber {
 		return length == 0;
 	}
 
-	public synchronized IntNumberedItem get(int retryCount) {
+	public synchronized IntNumberedItem get(int retryCount, ObjectContainer container) {
+		if(persistent) {
+			container.activate(this, 1);
+			for(int i=0;i<length;i++)
+				container.activate(data[i], 1);
+		}
 		int x = Arrays.binarySearch(data, new Integer(retryCount), comparator);
 		if(x >= 0)
 			return data[x];

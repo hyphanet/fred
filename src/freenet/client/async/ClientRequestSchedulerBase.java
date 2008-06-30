@@ -268,7 +268,7 @@ abstract class ClientRequestSchedulerBase {
 				container.set(this);
 		}
 		// Client
-		SectoredRandomGrabArrayWithInt clientGrabber = (SectoredRandomGrabArrayWithInt) prio.get(rc);
+		SectoredRandomGrabArrayWithInt clientGrabber = (SectoredRandomGrabArrayWithInt) prio.get(rc, container);
 		if(persistent()) container.activate(clientGrabber, 1);
 		if(clientGrabber == null) {
 			clientGrabber = new SectoredRandomGrabArrayWithInt(rc, persistent(), container);
