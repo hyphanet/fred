@@ -53,13 +53,15 @@ import freenet.support.io.FileUtil;
 public class SaltedHashFreenetStore implements FreenetStore {
 	private static final boolean OPTION_SAVE_PLAINKEY = true;
 	private static final int OPTION_MAX_PROBE = 4;
+
+	private static final byte FLAG_DIRTY = 0x1;
+	private static final byte FLAG_REBUILD_BLOOM = 0x2;
 	
 	private static final long BLOOM_SYNC_INTERVAL = 256;
 	private static final int BLOOM_FILTER_SIZE = 0x8000000; // bits
 	private static final int BLOOM_FILTER_K = 5;
 	private static final boolean updateBloom = true;
 	private static final boolean checkBloom = true;
-	private boolean rebuildBloom = false;
 	private BloomFilter bloomFilter;
 
 	private static final boolean logLOCK = false;
@@ -77,6 +79,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private final Random random;
 	private long storeSize;
 	private byte generation;
+	private byte flags;
 
 	public static SaltedHashFreenetStore construct(File baseDir, String name, StoreCallback callback, Random random,
 			long maxKeys, SemiOrderedShutdownHook shutdownHook) throws IOException {
@@ -116,10 +119,16 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		if (updateBloom || checkBloom) {
 			File bloomFile = new File(this.baseDir, name + ".bloom");
 			if (!bloomFile.exists() || bloomFile.length() != BLOOM_FILTER_SIZE / 8)
-				rebuildBloom = true;
+				flags |= FLAG_REBUILD_BLOOM;
 			bloomFilter = new BloomFilter(bloomFile, BLOOM_FILTER_SIZE, BLOOM_FILTER_K);
 		}
+		
+		if ((flags & FLAG_DIRTY) != 0)
+			System.err.println("Datastore(" + name + ") is dirty.");
 
+		flags |= FLAG_DIRTY; // datastore is now dirty until flushAndClose()
+		writeConfigFile();
+		
 		callback.setStore(this);
 		shutdownHook.addEarlyJob(new Thread(new ShutdownDB()));
 
@@ -771,11 +780,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 *  |0000|             Salt              |
 	 *  +----+---------------+---------------+
 	 *  |0010|   Store Size  | prevStoreSize |
-	 *  +----+---------------+-+-------------+
-	 *  |0020| Est Key Count |G|  reserved   |
-	 *  +----+---------------+-+-------------+
+	 *  +----+---------------+-+-+-----------+
+	 *  |0020| Est Key Count |G|F|  reserved |
+	 *  +----+---------------+-+-+-----------+
 	 *  
 	 *  G = Generation
+	 *  F = Flags
 	 * </pre>
 	 */
 	private final File configFile;
@@ -802,9 +812,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			prevStoreSize = raf.readLong();
 			keyCount.set(raf.readLong());
 			generation = raf.readByte();
+			flags = raf.readByte();
 			
-			if (prevStoreSize != 0)
-				rebuildBloom = true;
+			if (prevStoreSize != 0 || (flags & FLAG_DIRTY) != 0)
+				flags |= FLAG_REBUILD_BLOOM;
 
 			raf.close();
 		}
@@ -826,6 +837,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			raf.writeLong(prevStoreSize);
 			raf.writeLong(keyCount.get());
 			raf.write(generation);
+			raf.write(flags);
 			raf.setLength(0x30);
 
 			raf.close();
@@ -864,7 +876,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					configLock.readLock().lock();
 					try {
 						_prevStoreSize = prevStoreSize;
-						_rebuildBloom = rebuildBloom;
+						_rebuildBloom = ((flags & FLAG_REBUILD_BLOOM) != 0);
 					} finally {
 						configLock.readLock().unlock();
 					}
@@ -1004,7 +1016,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			configLock.writeLock().lock();
 			try {
-				rebuildBloom = false;
+				flags &= ~FLAG_REBUILD_BLOOM;
 			} finally {
 				configLock.writeLock().unlock();
 			}
@@ -1235,7 +1247,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 				prevStoreSize = storeSize;
 				storeSize = newStoreSize;
-				rebuildBloom = true;
+				flags |= FLAG_REBUILD_BLOOM;
 				writeConfigFile();
 			} finally {
 				configLock.writeLock().unlock();
@@ -1387,7 +1399,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			configLock.writeLock().lock();
 			try {
 				flushAndClose();
-
+				flags &= ~FLAG_DIRTY; // clean shutdown
 				try {
 					writeConfigFile();
 				} catch (IOException e) {
