@@ -77,9 +77,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 	/** Try again - returns true if we can retry 
 	 * @param sched */
 	protected boolean retry(ObjectContainer container, ClientContext context) {
-		if(persistent) {
-			container.activate(this, 1);
-		}
 		retryCount++;
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+retryCount+ ')');
@@ -158,6 +155,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 			container.activate(this, 2);
 		synchronized(this) {
 			finished = true;
+			if(persistent)
+				container.set(this);
 			if(isCancelled(container)) return;
 			if(!key.equals(this.key.getNodeKey())) {
 				Logger.normal(this, "Got sent key "+key+" but want "+this.key+" for "+this);
@@ -183,6 +182,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 	
 	public synchronized void resetCooldownTimes(ObjectContainer container) {
 		cooldownWakeupTime = -1;
+		if(persistent)
+			container.set(this);
 	}
 	
 	public void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context) {

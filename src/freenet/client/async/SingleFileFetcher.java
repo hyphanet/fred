@@ -183,18 +183,18 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 	protected void onSuccess(FetchResult result, ObjectContainer container, ClientContext context) {
 		unregister(false, container);
+		if(persistent) {
+			container.activate(decompressors, 1);
+			container.activate(parent, 1);
+			container.activate(ctx, 1);
+			container.activate(rcb, 1);
+		}
 		if(parent.isCancelled()) {
 			if(logMINOR)
 				Logger.minor(this, "Parent is cancelled");
 			result.asBucket().free();
 			onFailure(new FetchException(FetchException.CANCELLED), false, container, context);
 			return;
-		}
-		if(persistent) {
-			container.activate(decompressors, 1);
-			container.activate(parent, 1);
-			container.activate(ctx, 1);
-			container.activate(rcb, 1);
 		}
 		if(!decompressors.isEmpty()) {
 			Bucket data = result.asBucket();
@@ -410,6 +410,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							try {
 								// Data will not be freed until client is finished with it.
 								if(returnBucket != null) {
+									if(persistent)
+										container.activate(returnBucket, 5);
 									out = returnBucket;
 									BucketTools.copy(data, out);
 									data.free();
@@ -647,6 +649,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(!context.jobRunner.onDatabaseThread())
 				context.jobRunner.queue(new DBJob() {
 					public void run(ObjectContainer container, ClientContext context) {
+						container.activate(SingleFileFetcher.this, 1);
 						innerWrapHandleMetadata(notFinalizedSize, container, context);
 					}
 				}, parent.getPriorityClass(), false);
@@ -768,6 +771,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				container.activate(SingleFileFetcher.this, 1);
 			try {
 				metadata = Metadata.construct(result.asBucket());
+				if(persistent)
+					container.set(SingleFileFetcher.this);
 			} catch (MetadataParseException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, container, context);
 				return;
