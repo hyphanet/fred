@@ -131,7 +131,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		if (maxKeys != storeSize) {
 			if (prevStoreSize != 0) {
-				storeSize = prevStoreSize;
+				storeSize = Math.max(prevStoreSize, storeSize);
 				prevStoreSize = 0;
 			}
 			setMaxKeys(maxKeys, true);
