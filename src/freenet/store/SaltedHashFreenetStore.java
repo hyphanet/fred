@@ -952,6 +952,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			// start from end of store, make store shrinking quicker 
 			long startOffset = (_prevStoreSize / RESIZE_MEMORY_ENTRIES) * RESIZE_MEMORY_ENTRIES;
+			int i = 0;
 			for (long curOffset = startOffset; curOffset >= 0; curOffset -= RESIZE_MEMORY_ENTRIES) {
 				if (shutdown)
 					return;
@@ -984,7 +985,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				}
 				
 				long processed = _prevStoreSize - curOffset;
-				Logger.normal(this, "Store resize (" + name + "): " + processed + "/" + _prevStoreSize);
+				if (i++ % 16 == 0)
+					Logger.normal(this, "Store resize (" + name + "): " + processed + "/" + _prevStoreSize);
 			}
 
 			resolveOldEntriesFile();
@@ -1009,6 +1011,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				return;
 			
 			Logger.normal(this, "Start rebuilding bloom filter (" + name + ")");
+			long startTime = System.currentTimeMillis();
 			
 			configLock.writeLock().lock();
 			try {
@@ -1019,6 +1022,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				configLock.writeLock().unlock();
 			}
 
+			int i = 0;
 			for (long curOffset = 0; curOffset < storeSize; curOffset += RESIZE_MEMORY_ENTRIES) {
 				if (shutdown) {
 					bloomFilter.discard();
@@ -1037,12 +1041,16 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					}
 				});
 				
-				Logger.normal(this, "Rebuilding bloom filter (" + name + "): " + curOffset + "/" + storeSize);
-				writeConfigFile();
+				if (i++ % 16 == 0) {
+					Logger.normal(this, "Rebuilding bloom filter (" + name + "): " + curOffset + "/" + storeSize);
+					writeConfigFile();
+				}
 			}
 
 			bloomFilter.merge();
-			Logger.normal(this, "Finish rebuilding bloom filter (" + name + ")");
+			long endTime = System.currentTimeMillis();
+			Logger.normal(this, "Finish rebuilding bloom filter (" + name + ") in " + (endTime - startTime) / 1000
+			        + "s");
 
 			configLock.writeLock().lock();
 			try {
