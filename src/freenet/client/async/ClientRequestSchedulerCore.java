@@ -511,6 +511,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	class RegisterMeRunner implements DBJob {
 
 		public void run(ObjectContainer container, ClientContext context) {
+			long deadline = System.currentTimeMillis() + 10*1000;
 			for(int i=0;i < 10; i++) {
 				try {
 					if(!registerMeSet.hasNext()) break;
@@ -544,6 +545,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					// Cancel the request, and commit so it isn't tried again.
 					reg.getter.internalError(null, t, sched, container, context);
 				}
+				if(System.currentTimeMillis() > deadline) break;
 			}
 			if(registerMeSet.hasNext())
 				context.jobRunner.queue(registerMeRunner, NativeThread.NORM_PRIORITY, true);
