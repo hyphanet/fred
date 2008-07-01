@@ -13,6 +13,7 @@ import java.security.MessageDigest;
 import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -39,6 +40,7 @@ import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.KeyVerifyException;
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.BloomFilter;
+import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -1475,14 +1477,27 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 */
 	private byte[] salt;
 
+	private Map<ByteArrayWrapper, byte[]> digestRoutingKeyCache = new LinkedHashMap<ByteArrayWrapper, byte[]>() {
+		@Override
+		protected boolean removeEldestEntry(Map.Entry<ByteArrayWrapper, byte[]> eldest) {
+			return size() > 128;
+		}
+	};
+	
 	/**
 	 * Get hashed routing key
 	 *
 	 * @param routingKey
 	 * @return
 	 */
-	// TODO use a little cache?
 	private byte[] getDigestedRoutingKey(byte[] routingKey) {
+		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
+		synchronized (digestRoutingKeyCache) {
+			byte[] dk = digestRoutingKeyCache.get(key);
+			if (dk != null)
+				return dk;
+		}
+		
 		MessageDigest digest = SHA256.getMessageDigest();
 		try {
 			digest.update(routingKey);
@@ -1491,6 +1506,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			byte[] hashedRoutingKey = digest.digest();
 			assert hashedRoutingKey.length == 0x20;
 
+			synchronized (digestRoutingKeyCache) {
+				digestRoutingKeyCache.put(key, hashedRoutingKey);
+			}
+			
 			return hashedRoutingKey;
 		} finally {
 			SHA256.returnMessageDigest(digest);
