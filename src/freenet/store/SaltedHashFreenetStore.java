@@ -961,19 +961,36 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			initOldEntriesFile();
 
+			configLock.writeLock().lock();
+			try {
+				generation++;
+				bloomFilter.fork();
+				keyCount.set(0);
+			} finally {
+				configLock.writeLock().unlock();
+			}
+			
 			final List<Entry> oldEntryList = new LinkedList<Entry>();
 
 			// start from end of store, make store shrinking quicker 
 			long startOffset = (_prevStoreSize / RESIZE_MEMORY_ENTRIES) * RESIZE_MEMORY_ENTRIES;
 			int i = 0;
 			for (long curOffset = startOffset; curOffset >= 0; curOffset -= RESIZE_MEMORY_ENTRIES) {
-				if (shutdown || _prevStoreSize != prevStoreSize)
+				if (shutdown || _prevStoreSize != prevStoreSize) {
+					bloomFilter.discard();
 					return;
+				}
 
 				batchProcessEntries(curOffset, RESIZE_MEMORY_ENTRIES, new BatchProcessor() {
 					public Entry process(Entry entry) {
-						if (entry.getStoreSize() == storeSize) // new size
-							return NOT_MODIFIED;
+						entry.setGeneration(generation);
+						keyCount.incrementAndGet();
+
+						if (entry.getStoreSize() == storeSize) {// new size
+							bloomFilter.updateFilter(entry.getDigestedRoutingKey());
+
+							return entry;
+						}
 
 						oldEntryList.add(entry);
 						return null;
@@ -1011,7 +1028,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			try {
 				if (_prevStoreSize != prevStoreSize)
 					return;
+				bloomFilter.merge();
 				prevStoreSize = 0;
+				flags &= ~FLAG_REBUILD_BLOOM;
 			} finally {
 				configLock.writeLock().unlock();
 			}
@@ -1198,7 +1217,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					try {
 						if (!isFree(offset)
 								&& Arrays.equals(getDigestedKeyFromOffset(offset), entry.getDigestedRoutingKey())) {
-							writeEntry(entry, offset);	// overwrite, don't update key count
+							// do nothing
 							return true;
 						}
 					} catch (IOException e) {
@@ -1211,6 +1230,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					try {
 						if (isFree(offset)) {
 							writeEntry(entry, offset);
+							bloomFilter.updateFilter(entry.getDigestedRoutingKey());
 							keyCount.incrementAndGet();
 							return true;
 						}
@@ -1307,7 +1327,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			prevStoreSize = storeSize;
 			storeSize = newStoreSize;
-			flags |= FLAG_REBUILD_BLOOM;
 			writeConfigFile();
 		} finally {
 			configLock.writeLock().unlock();
