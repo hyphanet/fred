@@ -958,7 +958,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				if (shutdown)
 					return;
 
-				batchReadEntries(curOffset, RESIZE_MEMORY_ENTRIES, new BatchProcessor() {
+				batchProcessEntries(curOffset, RESIZE_MEMORY_ENTRIES, new BatchProcessor() {
 					public Entry processs(Entry entry) {
 						if (entry.getStoreSize() == storeSize) // new size
 							return NOT_MODIFIED;
@@ -1027,7 +1027,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					bloomFilter.discard();
 					return;
 				}
-				batchReadEntries(curOffset, RESIZE_MEMORY_ENTRIES, new BatchProcessor() {
+				batchProcessEntries(curOffset, RESIZE_MEMORY_ENTRIES, new BatchProcessor() {
 					public Entry processs(Entry entry) {
 						if (entry.getGeneration() != generation) {
 							bloomFilter.updateFilter(entry.getDigestedRoutingKey());
@@ -1068,7 +1068,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		 * @return <code>true</code> if operation complete successfully; <code>false</code>
 		 *         otherwise (e.g. can't acquire locks, node shutting down)
 		 */
-		private boolean batchReadEntries(long offset, int length, BatchProcessor processor) {
+		private boolean batchProcessEntries(long offset, int length, BatchProcessor processor) {
 			assert offset % FILE_SPLIT == 0;
 			assert length % FILE_SPLIT == 0;
 
