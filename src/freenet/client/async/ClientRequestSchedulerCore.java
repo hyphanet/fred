@@ -407,7 +407,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			}
 			if(altReq != null)
 				container.activate(altReq, 1);
-			if(altReq != null && altReq.isCancelled(container)) {
+			if(altReq != null && (altReq.isCancelled(container) || altReq.isEmpty(container))) {
 				if(logMINOR)
 					Logger.minor(this, "Ignoring cancelled recently succeeded item "+altReq);
 				altReq = null;
