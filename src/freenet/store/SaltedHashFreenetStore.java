@@ -830,7 +830,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			generation = raf.readByte();
 			flags = raf.readByte();
 			
-			if (prevStoreSize != 0 || (flags & FLAG_DIRTY) != 0)
+			if ((flags & FLAG_DIRTY) != 0)
 				flags |= FLAG_REBUILD_BLOOM;
 
 			raf.close();
