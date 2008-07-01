@@ -60,7 +60,7 @@ public class RemovePersistentRequest extends FCPMessage {
 					}
 				}
 				
-			}, NativeThread.NORM_PRIORITY, false);
+			}, NativeThread.HIGH_PRIORITY, false);
 		}
 	}
 
