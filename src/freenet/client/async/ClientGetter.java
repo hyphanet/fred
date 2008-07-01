@@ -214,6 +214,8 @@ public class ClientGetter extends BaseClientGetter {
 			super.cancel();
 			s = currentState;
 		}
+		if(persistent())
+			container.set(this);
 		if(s != null) {
 			if(logMINOR) Logger.minor(this, "Cancelling "+currentState);
 			if(persistent())

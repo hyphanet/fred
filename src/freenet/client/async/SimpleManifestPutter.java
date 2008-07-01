@@ -626,6 +626,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
 			finished = true;
 		}
+		if(persistent())
+			container.set(this);
 		
 		for(int i=0;i<running.length;i++) {
 			running[i].cancel();
@@ -634,6 +636,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	
 	public void cancel(ObjectContainer container) {
 		super.cancel();
+		if(persistent())
+			container.set(this);
 		fail(new InsertException(InsertException.CANCELLED), container);
 	}
 	
