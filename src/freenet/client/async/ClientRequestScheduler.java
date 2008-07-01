@@ -155,14 +155,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 		choosenPriorityScheduler = val;
 	}
 	
-	public void register(final SendableRequest req, boolean probablyNotInStore) {
-		register(req, databaseExecutor.onThread(), null, probablyNotInStore);
+	public void register(final SendableRequest req, boolean regmeOnly, boolean probablyNotInStore) {
+		register(req, databaseExecutor.onThread(), regmeOnly, null, probablyNotInStore);
 	}
 	
 	/**
 	 * Register and then delete the RegisterMe which is passed in to avoid querying.
 	 */
-	public void register(final SendableRequest req, boolean onDatabaseThread, RegisterMe reg, final boolean probablyNotInStore) {
+	public void register(final SendableRequest req, boolean onDatabaseThread, final boolean regmeOnly, RegisterMe reg, final boolean probablyNotInStore) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Registering "+req, new Exception("debug"));
 		final boolean persistent = req.persistent();
@@ -172,6 +172,19 @@ public class ClientRequestScheduler implements RequestScheduler {
 			final SendableGet getter = (SendableGet)req;
 			
 			if(persistent && onDatabaseThread) {
+				if(regmeOnly) {
+					assert(reg == null);
+					reg = schedCore.queueRegister(getter, databaseExecutor, selectorContainer);
+					final RegisterMe regme = reg;
+					clientContext.jobRunner.queue(new DBJob() {
+
+						public void run(ObjectContainer container, ClientContext context) {
+							register(req, true, false, regme, probablyNotInStore);
+						}
+						
+					}, NativeThread.NORM_PRIORITY+1, false);
+					return;
+				}
 				schedCore.addPendingKeys(getter, selectorContainer);
 				final Object[] keyTokens = getter.sendableKeys(selectorContainer);
 				final ClientKey[] keys = new ClientKey[keyTokens.length];

@@ -326,12 +326,14 @@ public class SplitFileFetcher implements ClientGetState {
 		}
 	}
 
-	public void schedule(ObjectContainer container, ClientContext context, boolean probablyNotInStore) {
+	public void schedule(ObjectContainer container, ClientContext context, boolean regmeOnly, boolean probablyNotInStore) {
 		if(persistent)
 			container.activate(this, 1);
+		if(segments.length > 1)
+			regmeOnly = true;
 		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Scheduling "+this);
 		for(int i=0;i<segments.length;i++) {
-			segments[i].schedule(container, context, probablyNotInStore);
+			segments[i].schedule(container, context, true, probablyNotInStore);
 		}
 	}
 

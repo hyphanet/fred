@@ -621,7 +621,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		parentFetcher.segmentFinished(this, container, context);
 	}
 
-	public void schedule(ObjectContainer container, ClientContext context, boolean probablyNotInStore) {
+	public void schedule(ObjectContainer container, ClientContext context, boolean regmeOnly, boolean probablyNotInStore) {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(parentFetcher, 1);
@@ -634,7 +634,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			for(int i=0;i<dataRetries.length+checkRetries.length;i++)
 				seg.add(i, true, container, context, false);
 			
-			seg.schedule(container, context, probablyNotInStore);
+			seg.schedule(container, context, regmeOnly, probablyNotInStore);
 			synchronized(this) {
 				scheduled = true;
 			}
@@ -811,13 +811,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 				SplitFileFetcherSubSegment sub = (SplitFileFetcherSubSegment) v.get(i);
 				RandomGrabArray rga = sub.getParentGrabArray();
 				if(sub.getParentGrabArray() == null) {
-					sub.schedule(container, context, true);
+					sub.schedule(container, context, false, true);
 				} else {
 //					if(logMINOR) {
 						container.activate(rga, 1);
 						if(!rga.contains(sub, container)) {
 							Logger.error(this, "Sub-segment has RGA but isn't registered to it!!: "+sub+" for "+rga);
-							sub.schedule(container, context, true);
+							sub.schedule(container, context, false, true);
 						}
 						container.deactivate(rga, 1);
 //					}

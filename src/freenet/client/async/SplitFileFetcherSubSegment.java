@@ -456,7 +456,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		}
 		if(persistent)
 			container.set(blockNums);
-		if(schedule) schedule(container, context, true); // Retrying so not in store
+		if(schedule) schedule(container, context, false, true); // Retrying so not in store
 		else if(!dontSchedule)
 			// Already scheduled, however this key may not be registered.
 			getScheduler(context).addPendingKey(segment.getBlockKey(blockNo, container), this);
