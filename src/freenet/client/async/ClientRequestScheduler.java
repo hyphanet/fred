@@ -503,9 +503,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	private DBJob requestStarterQueueFiller = new DBJob() {
 		public void run(ObjectContainer container, ClientContext context) {
-			if(isInsertScheduler && !isSSKScheduler) {
-				if(logMINOR) Logger.minor(this, "Scheduling inserts...");
-			}
 			if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
 			ChosenRequest req = null;
 			synchronized(starterQueue) {
