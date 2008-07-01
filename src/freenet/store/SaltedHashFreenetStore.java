@@ -157,8 +157,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				try {
 					StorableBlock block = entry.getStorableBlock(routingKey, fullKey);
 					hits.incrementAndGet();
-					if (updateBloom && !checkBloom)
-						bloomFilter.updateFilter(getDigestedRoutingKey(routingKey));
 					return block;
 				} catch (KeyVerifyException e) {
 					Logger.minor(this, "key verification exception", e);
