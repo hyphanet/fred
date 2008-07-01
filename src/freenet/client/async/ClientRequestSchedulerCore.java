@@ -410,6 +410,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			if(altReq != null && altReq.isCancelled(container)) {
 				if(logMINOR)
 					Logger.minor(this, "Ignoring cancelled recently succeeded item "+altReq);
+				altReq = null;
 			}
 			if(altReq != null && altReq.getPriorityClass(container) <= choosenPriorityClass && 
 					fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber() && !altReq.isEmpty(container)) {
