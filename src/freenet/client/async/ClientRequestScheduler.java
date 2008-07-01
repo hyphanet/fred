@@ -856,6 +856,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 				public void run(ObjectContainer container, ClientContext context) {
 					container.activate(req.request, 1);
+					if(logMINOR)
+						Logger.minor(this, "Requeueing "+req);
 					if(req.request.isCancelled(container)) {
 						container.delete(req);
 						return;
