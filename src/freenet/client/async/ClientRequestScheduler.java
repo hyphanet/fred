@@ -507,6 +507,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			ChosenRequest req = null;
 			synchronized(starterQueue) {
 				int size = starterQueue.size();
+				if(logMINOR) Logger.minor(this, "Queue size: "+size);
 				if(size >= MAX_STARTER_QUEUE_SIZE) {
 					if(size >= WARNING_STARTER_QUEUE_SIZE)
 						Logger.error(this, "Queue already full: "+starterQueue.size());
@@ -600,6 +601,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return choosenPriorityScheduler;
 	}
 
+	/*
+	 * tripPendingKey() callbacks must run quickly, since we've found a block.
+	 * succeeded() must run quickly, since we delete the PersistentChosenRequest.
+	 * tripPendingKey() must run before succeeded() so we don't choose the same
+	 * request again, then remove it from pendingKeys before it completes! 
+	 */
+	static final short TRIP_PENDING_PRIORITY = NativeThread.HIGH_PRIORITY-1;
+	
 	public synchronized void succeeded(final BaseSendableGet succeeded, final ChosenRequest req) {
 		if(req.isPersistent()) {
 			jobRunner.queue(new DBJob() {
@@ -609,7 +618,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					container.delete((PersistentChosenRequest)req);
 				}
 				
-			}, NativeThread.HIGH_PRIORITY-1, false);
+			}, TRIP_PENDING_PRIORITY, false);
 			// Boost the priority so the PersistentChosenRequest gets deleted reasonably quickly.
 		} else
 			schedTransient.succeeded(succeeded, null);
@@ -674,7 +683,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(logMINOR) Logger.minor(this, "Finished running callbacks");
 			}
 			
-		}, NativeThread.NORM_PRIORITY, false);
+		}, TRIP_PENDING_PRIORITY, false);
 		
 	}
 
