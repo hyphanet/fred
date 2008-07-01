@@ -403,8 +403,12 @@ public class FCPClient {
 
 	public ClientGet getCompletedRequest(FreenetURI key, ObjectContainer container) {
 		// FIXME speed this up with another hashmap or something.
+		// FIXME keep a transient hashmap in RAM, use it for fproxy.
+		// FIXME consider supporting inserts too.
 		for(int i=0;i<completedUnackedRequests.size();i++) {
-			ClientGet getter = (ClientGet) completedUnackedRequests.get(i);
+			ClientRequest req = (ClientRequest) completedUnackedRequests.get(i);
+			if(!(req instanceof ClientGet)) continue;
+			ClientGet getter = (ClientGet) req;
 			if(getter.getURI(container).equals(key)) {
 				if(persistenceType == ClientRequest.PERSIST_FOREVER)
 					container.activate(getter, 1);
