@@ -434,6 +434,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			isEncrypted = true;
 		}
 
+		private Entry() {
+        }
+
 		public ByteBuffer toByteBuffer() {
 			ByteBuffer out = ByteBuffer.allocate((int) entryTotalLength);
 			encrypt();
@@ -863,8 +866,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private static Lock cleanerGlobalLock = new ReentrantLock(); // global across all datastore
 	private Cleaner cleanerThread;
 
-	private interface BatchProcessor {
+	private final Entry NOT_MODIFIED = new Entry();
+
+	private interface BatchProcessor {	
 		// return <code>null</code> to free the entry
+		// return NOT_MODIFIED to keep the old entry
 		Entry processs(Entry entry);
 	}
 	
@@ -955,7 +961,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				batchReadEntries(curOffset, RESIZE_MEMORY_ENTRIES, new BatchProcessor() {
 					public Entry processs(Entry entry) {
 						if (entry.getStoreSize() == storeSize) // new size
-							return entry;
+							return NOT_MODIFIED;
 
 						oldEntryList.add(entry);
 						return null;
@@ -1026,8 +1032,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						if (entry.getGeneration() != generation) {
 							bloomFilter.updateFilter(entry.getDigestedRoutingKey());
 							keyCount.incrementAndGet();
+							
+							entry.setGeneration(generation);
+							return entry;
 						}
-						return entry;
+						return NOT_MODIFIED;
 					}
 				});
 				
@@ -1113,12 +1122,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 								continue; // not occupied
 
 							Entry newEntry = processor.processs(entry);
-							if (newEntry != null) {
-								// write back
-								buf.position((int) (j * entryTotalLength));
-								buf.put(newEntry.toByteBuffer());
-								dirty = true;
-							} else { // free the offset
+							if (newEntry == null) {// free the offset
 								try {
 									freeOffset(entry.curOffset);
 									keyCount.decrementAndGet();
@@ -1126,7 +1130,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 									if (!shutdown)
 										Logger.error(this, "error freeing entry " + entry.curOffset, ioe);
 								}
-							}
+							} else if (newEntry == NOT_MODIFIED) {
+							} else {
+								// write back
+								buf.position((int) (j * entryTotalLength));
+								buf.put(newEntry.toByteBuffer());
+								dirty = true;
+							} 
 						}
 					} finally {
 						// write back.
