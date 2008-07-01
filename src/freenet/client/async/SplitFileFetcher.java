@@ -333,7 +333,7 @@ public class SplitFileFetcher implements ClientGetState {
 			regmeOnly = true;
 		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Scheduling "+this);
 		for(int i=0;i<segments.length;i++) {
-			segments[i].schedule(container, context, true, probablyNotInStore);
+			segments[i].schedule(container, context, regmeOnly, probablyNotInStore);
 		}
 	}
 
