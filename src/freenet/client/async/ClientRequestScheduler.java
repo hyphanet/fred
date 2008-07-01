@@ -181,8 +181,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 						public void run(ObjectContainer container, ClientContext context) {
 							register(req, true, false, regme, probablyNotInStore);
 						}
-						
-					}, NativeThread.NORM_PRIORITY+1, false);
+					// NORM_PRIORITY so the completion (finishRegister()) runs before the next block does addPendingKeys().
+					}, NativeThread.NORM_PRIORITY, false);
 					return;
 				}
 				schedCore.addPendingKeys(getter, selectorContainer);
@@ -346,8 +346,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 							container.activate(g, 1);
 							g.onFailure(new LowLevelGetException(LowLevelGetException.DECODE_FAILED), token, container, context);
 						}
-						
-					}, NativeThread.NORM_PRIORITY, false);
+						// NORM_PRIORITY+1 as must run before finishRegister()
+					}, NativeThread.NORM_PRIORITY+1, false);
 				}
 				continue; // other keys might be valid
 			}
@@ -366,8 +366,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 								container.activate(g, 1);
 								g.onSuccess(b, true, t, container, context);
 							}
-							
-						}, NativeThread.NORM_PRIORITY, false);
+							// NORM_PRIORITY+1 as must run before finishRegister()
+						}, NativeThread.NORM_PRIORITY+1, false);
 					} else {
 						g.onSuccess(b, true, t, null, clientContext);
 					}
@@ -411,7 +411,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						starter.wakeUp();
 					}
 					
-				}, NativeThread.NORM_PRIORITY, false);
+				}, NativeThread.NORM_PRIORITY+1, false);
 			}
 		} else {
 			// Register immediately.
