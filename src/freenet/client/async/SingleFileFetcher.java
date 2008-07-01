@@ -280,16 +280,23 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS, -1, false, null, uri.addMetaStrings(new String[] { "" }));
 				else name = removeMetaString();
 				// Since metadata is a document, we just replace metadata here
-				if(logMINOR) Logger.minor(this, "Next meta-string: "+name);
+				if(logMINOR) Logger.minor(this, "Next meta-string: "+name+" length "+name.length()+" for "+this);
 				if(name == null) {
 					metadata = metadata.getDefaultDocument();
-					if(persistent) container.set(this);
+					if(persistent) {
+						container.set(this);
+						container.set(metaStrings);
+					}
 					if(metadata == null)
 						throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS, -1, false, null, uri.addMetaStrings(new String[] { "" }));
 				} else {
 					metadata = metadata.getDocument(name);
 					thisKey = thisKey.pushMetaString(name);
-					if(persistent) container.set(this);
+					if(persistent) {
+						container.set(this);
+						container.set(metaStrings);
+						container.set(thisKey);
+					}
 					if(metadata == null)
 						throw new FetchException(FetchException.NOT_IN_ARCHIVE);
 				}
