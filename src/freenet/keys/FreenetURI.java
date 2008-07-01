@@ -544,6 +544,8 @@ public class FreenetURI implements Cloneable {
 	public String toString(boolean prefix, boolean pureAscii) {
 		if(keyType == null) {
 			// Not activated or something...
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "Not activated?? in toString("+prefix+","+pureAscii+")");
 			return null;
 		}
 		StringBuffer b;
