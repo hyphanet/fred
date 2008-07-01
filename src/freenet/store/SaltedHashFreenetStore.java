@@ -860,7 +860,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	// ------------- Store resizing
 	private long prevStoreSize = 0;
-	private Object cleanerLock = new Object(); // local to this datastore
+	private Lock cleanerLock = new ReentrantLock(); // local to this datastore
+	private Condition cleanerCondition = cleanerLock.newCondition();
 	private static Lock cleanerGlobalLock = new ReentrantLock(); // global across all datastore
 	private Cleaner cleanerThread;
 
@@ -887,7 +888,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		@Override
 		public void run() {
 			while (!shutdown) {
-				synchronized (cleanerLock) {
+				cleanerLock.lock();
+				try {
 					long _prevStoreSize;
 					boolean _rebuildBloom;
 					
@@ -907,7 +909,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						}
 					}
 					
-					if (_rebuildBloom && cleanerGlobalLock.tryLock()) {
+					if (_rebuildBloom && prevStoreSize == 0 && cleanerGlobalLock.tryLock()) {
 						try {
 							rebuildBloom();
 						} finally {
@@ -922,13 +924,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						Logger.error(this, "Can't force bloom filter", e);
 					}
 					writeConfigFile();
-					cleanerLock.notifyAll();
 
 					try {
-						cleanerLock.wait(CLEANER_PERIOD);
+						cleanerCondition.await(CLEANER_PERIOD, TimeUnit.MILLISECONDS);
 					} catch (InterruptedException e) {
 						Logger.debug(this, "interrupted", e);
 					}
+				} finally {
+					cleanerLock.unlock();
 				}
 			}
 		}
@@ -954,7 +957,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			long startOffset = (_prevStoreSize / RESIZE_MEMORY_ENTRIES) * RESIZE_MEMORY_ENTRIES;
 			int i = 0;
 			for (long curOffset = startOffset; curOffset >= 0; curOffset -= RESIZE_MEMORY_ENTRIES) {
-				if (shutdown)
+				if (shutdown || _prevStoreSize != prevStoreSize)
 					return;
 
 				batchProcessEntries(curOffset, RESIZE_MEMORY_ENTRIES, new BatchProcessor() {
@@ -996,7 +999,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			
 			configLock.writeLock().lock();
 			try {
-				assert _prevStoreSize == prevStoreSize;
+				if (_prevStoreSize != prevStoreSize)
+					return;
 				prevStoreSize = 0;
 			} finally {
 				configLock.writeLock().unlock();
@@ -1024,7 +1028,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			int i = 0;
 			for (long curOffset = 0; curOffset < storeSize; curOffset += RESIZE_MEMORY_ENTRIES) {
-				if (shutdown) {
+				if (shutdown || prevStoreSize != 0) {
 					bloomFilter.discard();
 					return;
 				}
@@ -1283,26 +1287,27 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	public void setMaxKeys(long newStoreSize, boolean shrinkNow) throws IOException {
 		Logger.normal(this, "[" + name + "] Resize newStoreSize=" + newStoreSize + ", shinkNow=" + shrinkNow);
 
-		synchronized (cleanerLock) {
-			configLock.writeLock().lock();
-			try {
-				if (newStoreSize == this.storeSize)
-					return;
+		configLock.writeLock().lock();
+		try {
+			if (newStoreSize == this.storeSize)
+				return;
 
-				if (prevStoreSize != 0) {
-					Logger.normal(this, "[" + name + "] resize already in progress, ignore resize request");
-					return;
-				}
-
-				prevStoreSize = storeSize;
-				storeSize = newStoreSize;
-				flags |= FLAG_REBUILD_BLOOM;
-				writeConfigFile();
-			} finally {
-				configLock.writeLock().unlock();
+			if (prevStoreSize != 0) {
+				Logger.normal(this, "[" + name + "] resize already in progress, ignore resize request");
+				return;
 			}
 
-			cleanerLock.notify();
+			prevStoreSize = storeSize;
+			storeSize = newStoreSize;
+			flags |= FLAG_REBUILD_BLOOM;
+			writeConfigFile();
+		} finally {
+			configLock.writeLock().unlock();
+		}
+
+		if (cleanerLock.tryLock()) {
+			cleanerCondition.signal();
+			cleanerLock.unlock();
 		}
 	}
 
