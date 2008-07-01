@@ -1142,13 +1142,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 							Entry newEntry = processor.processs(entry);
 							if (newEntry == null) {// free the offset
-								try {
-									freeOffset(entry.curOffset);
-									keyCount.decrementAndGet();
-								} catch (IOException ioe) {
-									if (!shutdown)
-										Logger.error(this, "error freeing entry " + entry.curOffset, ioe);
-								}
+								buf.position((int) (j * entryTotalLength));
+								buf.put(ByteBuffer.allocate((int) entryTotalLength));
+								keyCount.decrementAndGet();
+
+								dirty = true;
 							} else if (newEntry == NOT_MODIFIED) {
 							} else {
 								// write back
