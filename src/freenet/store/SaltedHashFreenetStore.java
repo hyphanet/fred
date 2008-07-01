@@ -220,7 +220,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	public void put(StorableBlock block, byte[] routingKey, byte[] fullKey, byte[] data, byte[] header,
 			boolean overwrite) throws IOException, KeyCollisionException {
 		if (logMINOR)
-			Logger.minor(this, "Putting " + HexUtil.bytesToHex(routingKey) + " for " + callback);
+			Logger.minor(this, "Putting " + HexUtil.bytesToHex(routingKey) + " (" + name + ")");
 
 		configLock.readLock().lock();
 		try {
@@ -986,13 +986,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				}
 				
 				long processed = _prevStoreSize - curOffset;
-				Logger.normal(this, "Store resize " + callback + ": " + processed + "/" + _prevStoreSize);
+				Logger.normal(this, "Store resize (" + name + "): " + processed + "/" + _prevStoreSize);
 			}
 
 			resolveOldEntriesFile();
 
 			long endTime = System.currentTimeMillis();
-			Logger.normal(this, "Finish resizing " + callback + " in " + (endTime - startTime) / 1000 + "s");
+			Logger.normal(this, "Finish resizing (" + name + ") in " + (endTime - startTime) / 1000 + "s");
 			
 			configLock.writeLock().lock();
 			try {
@@ -1010,9 +1010,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			if (bloomFilter == null)
 				return;
 			
-			Logger.normal(this, "Start rebuilding bloom filter for " + callback);
+			Logger.normal(this, "Start rebuilding bloom filter (" + name + ")");
 			
-
 			configLock.writeLock().lock();
 			try {
 				generation++;
@@ -1040,12 +1039,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					}
 				});
 				
-				Logger.normal(this, "Rebuilding bloom filter for " + callback + ": " + curOffset + "/" + storeSize);
+				Logger.normal(this, "Rebuilding bloom filter (" + name + "): " + curOffset + "/" + storeSize);
 				writeConfigFile();
 			}
 
 			bloomFilter.merge();
-			Logger.normal(this, "Finish rebuilding bloom filter for " + callback);
+			Logger.normal(this, "Finish rebuilding bloom filter (" + name + ")");
 
 			configLock.writeLock().lock();
 			try {
