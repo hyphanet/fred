@@ -267,6 +267,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				container.set(ret);
 				if(logMINOR)
 					Logger.minor(this, "Storing "+ret);
+				if((req instanceof SendableGet) && inPendingKeys(req, key)) {
+					Logger.error(this, "Selected key not in pendingKeys: key "+key+" for "+req);
+				}
 			} else {
 				ret = new ChosenRequest(req, token, key, ckey, req.getPriorityClass(container));
 			}

@@ -224,6 +224,23 @@ abstract class ClientRequestSchedulerBase {
 		}
 	}
 
+	protected boolean inPendingKeys(SendableRequest req, Key key) {
+		Object o;
+		synchronized(pendingKeys) {
+			o = pendingKeys.get(key);
+		}
+		if(o == null) {
+			return false;
+		} else if(o instanceof SendableGet) {
+			return o == req;
+		} else {
+			SendableGet[] gets = (SendableGet[]) o;
+			for(int i=0;i<gets.length;i++)
+				if(gets[i] == req) return true;
+		}
+		return false;
+	}
+
 	public long countQueuedRequests() {
 		if(pendingKeys != null)
 			return pendingKeys.size();
