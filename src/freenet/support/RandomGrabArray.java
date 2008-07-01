@@ -6,6 +6,7 @@ import java.util.Set;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
+import freenet.client.async.SplitFileFetcherSubSegment;
 
 /**
  * An array which supports very fast remove-and-return-a-random-element.
@@ -281,5 +282,12 @@ public class RandomGrabArray {
 
 	public void objectOnActivate(ObjectContainer container) {
 		container.activate(contents, 1);
+	}
+
+	public boolean contains(RandomGrabArrayItem item, ObjectContainer container) {
+		container.activate(contents, 1);
+		boolean ret = contents.contains(item);
+		container.deactivate(contents, 1);
+		return ret;
 	}
 }

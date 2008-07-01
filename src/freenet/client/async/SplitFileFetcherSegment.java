@@ -30,6 +30,7 @@ import freenet.keys.Key;
 import freenet.keys.NodeCHK;
 import freenet.node.RequestScheduler;
 import freenet.support.Logger;
+import freenet.support.RandomGrabArray;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 
@@ -807,7 +808,20 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(v != null) {
 			for(int i=0;i<v.size();i++) {
 				if(v.get(i) == segment) foundCaller = true;
-				((SplitFileFetcherSubSegment) v.get(i)).schedule(container, context, true);
+				SplitFileFetcherSubSegment sub = (SplitFileFetcherSubSegment) v.get(i);
+				RandomGrabArray rga = sub.getParentGrabArray();
+				if(sub.getParentGrabArray() == null) {
+					sub.schedule(container, context, true);
+				} else {
+//					if(logMINOR) {
+						container.activate(rga, 1);
+						if(!rga.contains(sub, container)) {
+							Logger.error(this, "Sub-segment has RGA but isn't registered to it!!: "+sub+" for "+rga);
+							sub.schedule(container, context, true);
+						}
+						container.deactivate(rga, 1);
+//					}
+				}
 			}
 		}
 		return foundCaller;
