@@ -880,7 +880,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private interface BatchProcessor {	
 		// return <code>null</code> to free the entry
 		// return NOT_MODIFIED to keep the old entry
-		Entry processs(Entry entry);
+		Entry process(Entry entry);
 	}
 	
 	private class Cleaner extends Thread {
@@ -971,7 +971,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					return;
 
 				batchProcessEntries(curOffset, RESIZE_MEMORY_ENTRIES, new BatchProcessor() {
-					public Entry processs(Entry entry) {
+					public Entry process(Entry entry) {
 						if (entry.getStoreSize() == storeSize) // new size
 							return NOT_MODIFIED;
 
@@ -1043,7 +1043,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					return;
 				}
 				batchProcessEntries(curOffset, RESIZE_MEMORY_ENTRIES, new BatchProcessor() {
-					public Entry processs(Entry entry) {
+					public Entry process(Entry entry) {
 						if (entry.getGeneration() != generation) {
 							bloomFilter.updateFilter(entry.getDigestedRoutingKey());
 							keyCount.incrementAndGet();
@@ -1140,7 +1140,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 							if (entry.isFree())
 								continue; // not occupied
 
-							Entry newEntry = processor.processs(entry);
+							Entry newEntry = processor.process(entry);
 							if (newEntry == null) {// free the offset
 								buf.position((int) (j * entryTotalLength));
 								buf.put(ByteBuffer.allocate((int) entryTotalLength));
