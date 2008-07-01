@@ -106,4 +106,8 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		return cb.getPollingPriorityProgress();
 	}
 
+	public void cancel(ObjectContainer container, ClientContext context) {
+		super.cancel();
+	}
+
 }

@@ -178,7 +178,7 @@ public class FCPClient {
 		}
 	}
 
-	public boolean removeByIdentifier(String identifier, boolean kill, FCPServer server, ObjectContainer container) {
+	public boolean removeByIdentifier(String identifier, boolean kill, FCPServer server, ObjectContainer container, ClientContext context) {
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		ClientRequest req;
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -196,7 +196,7 @@ public class FCPClient {
         req.requestWasRemoved(container);
 		if(kill) {
 			if(logMINOR) Logger.minor(this, "Killing request "+req);
-			req.cancel(container);
+			req.cancel(container, context);
 		}
 		if(completionCallback != null)
 			completionCallback.onRemove(req, container);
@@ -368,7 +368,7 @@ public class FCPClient {
 		container.delete(this);
 	}
 
-	public void removeAll(ObjectContainer container) {
+	public void removeAll(ObjectContainer container, ClientContext context) {
 		HashSet toKill = new HashSet();
 		synchronized(this) {
 			Iterator i = runningPersistentRequests.iterator();
@@ -396,7 +396,7 @@ public class FCPClient {
 		Iterator i = toStart.iterator();
 		while(i.hasNext()) {
 			ClientRequest req = (ClientRequest) i.next();
-			req.cancel(container);
+			req.cancel(container, context);
 			req.requestWasRemoved(container);
 		}
 	}

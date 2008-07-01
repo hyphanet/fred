@@ -332,9 +332,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			container.set(this); // Update
 	}
 
-	public void onLostConnection(ObjectContainer container) {
+	public void onLostConnection(ObjectContainer container, ClientContext context) {
 		if(persistenceType == PERSIST_CONNECTION)
-			cancel(null);
+			cancel(container, context);
 		// Otherwise ignore
 	}
 

@@ -83,6 +83,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.set(this);
 		}
 		
+		public void cancel(ObjectContainer container, ClientContext context) {
+			super.cancel();
+		}
+		
 		public FreenetURI getURI() {
 			return null;
 		}
@@ -634,7 +638,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 	
-	public void cancel(ObjectContainer container) {
+	public void cancel(ObjectContainer container, ClientContext context) {
 		super.cancel();
 		if(persistent())
 			container.set(this);

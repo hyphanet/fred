@@ -238,9 +238,9 @@ public class ClientPutDir extends ClientPutBase {
 		}
 	}
 	
-	public void onLostConnection(ObjectContainer container) {
+	public void onLostConnection(ObjectContainer container, ClientContext context) {
 		if(persistenceType == PERSIST_CONNECTION)
-			cancel(container);
+			cancel(container, context);
 		// otherwise ignore
 	}
 	

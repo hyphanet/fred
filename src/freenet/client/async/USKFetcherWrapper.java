@@ -66,4 +66,8 @@ public class USKFetcherWrapper extends BaseClientGetter {
 	public void onFinalizedMetadata(ObjectContainer container) {
 		// Ignore
 	}
+
+	public void cancel(ObjectContainer container, ClientContext context) {
+		super.cancel();
+	}
 }

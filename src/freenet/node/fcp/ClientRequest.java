@@ -122,7 +122,7 @@ public abstract class ClientRequest {
 	}
 
 	/** Lost connection */
-	public abstract void onLostConnection(ObjectContainer container);
+	public abstract void onLostConnection(ObjectContainer container, ClientContext context);
 
 	/** Send any pending messages for a persistent request e.g. after reconnecting */
 	public abstract void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData, ObjectContainer container);
@@ -207,10 +207,10 @@ public abstract class ClientRequest {
 		}
 	}
 
-	public void cancel(ObjectContainer container) {
+	public void cancel(ObjectContainer container, ClientContext context) {
 		ClientRequester cr = getClientRequest();
 		// It might have been finished on startup.
-		if(cr != null) cr.cancel();
+		if(cr != null) cr.cancel(container, context);
 		freeData(container);
 		if(persistenceType == PERSIST_FOREVER)
 			container.set(this);
@@ -237,8 +237,8 @@ public abstract class ClientRequest {
 	protected abstract ClientRequester getClientRequest();
 
 	/** Completed request dropped off the end without being acknowledged */
-	public void dropped(ObjectContainer container) {
-		cancel(container);
+	public void dropped(ObjectContainer container, ClientContext context) {
+		cancel(container, context);
 		freeData(container);
 	}
 

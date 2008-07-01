@@ -578,7 +578,7 @@ public class FCPServer implements Runnable {
 	}
 
 	public boolean removeGlobalRequestBlocking(final String identifier) throws MessageInvalidException {
-		if(!globalRebootClient.removeByIdentifier(identifier, true, this, null)) {
+		if(!globalRebootClient.removeByIdentifier(identifier, true, this, null, core.clientContext)) {
 			final Object sync = new Object();
 			final MutableBoolean done = new MutableBoolean();
 			final MutableBoolean success = new MutableBoolean();
@@ -588,7 +588,7 @@ public class FCPServer implements Runnable {
 				public void run(ObjectContainer container, ClientContext context) {
 					boolean succeeded = false;
 					try {
-						succeeded = globalForeverClient.removeByIdentifier(identifier, true, FCPServer.this, container);
+						succeeded = globalForeverClient.removeByIdentifier(identifier, true, FCPServer.this, container, core.clientContext);
 					} catch (Throwable t) {
 						Logger.error(this, "Caught removing identifier "+identifier+": "+t, t);
 					} finally {
@@ -615,7 +615,7 @@ public class FCPServer implements Runnable {
 	}
 	
 	public boolean removeAllGlobalRequestsBlocking() {
-		globalRebootClient.removeAll(null);
+		globalRebootClient.removeAll(null, core.clientContext);
 		
 		final Object sync = new Object();
 		final MutableBoolean done = new MutableBoolean();
@@ -626,7 +626,7 @@ public class FCPServer implements Runnable {
 			public void run(ObjectContainer container, ClientContext context) {
 				boolean succeeded = false;
 				try {
-					globalForeverClient.removeAll(container);
+					globalForeverClient.removeAll(container, core.clientContext);
 					succeeded = true;
 				} catch (Throwable t) {
 					Logger.error(this, "Caught while processing panic: "+t, t);

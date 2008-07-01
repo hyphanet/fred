@@ -33,9 +33,11 @@ public abstract class ClientRequester {
 		hashCode = super.hashCode(); // the old object id will do fine, as long as we ensure it doesn't change!
 	}
 
-	public synchronized void cancel() {
+	synchronized void cancel() {
 		cancelled = true;
 	}
+	
+	public abstract void cancel(ObjectContainer container, ClientContext context);
 
 	public boolean isCancelled() {
 		return cancelled;
@@ -106,6 +108,7 @@ public abstract class ClientRequester {
 			Logger.minor(this, "Completed block ("+dontNotify+ "): total="+totalBlocks+" success="+successfulBlocks+" failed="+failedBlocks+" fatally="+fatallyFailedBlocks+" finalised="+blockSetFinalized+" required="+minSuccessBlocks+" on "+this);
 		synchronized(this) {
 			successfulBlocks++;
+			if(cancelled) return;
 			if(dontNotify) return;
 		}
 		if(persistent()) container.set(this);

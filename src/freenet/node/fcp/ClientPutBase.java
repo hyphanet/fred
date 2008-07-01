@@ -131,9 +131,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		}
 	}
 
-	public void onLostConnection(ObjectContainer container) {
+	public void onLostConnection(ObjectContainer container, ClientContext context) {
 		if(persistenceType == PERSIST_CONNECTION)
-			cancel(container);
+			cancel(container, context);
 		// otherwise ignore
 	}
 
