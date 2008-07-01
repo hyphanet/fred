@@ -407,6 +407,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			}
 			if(altReq != null)
 				container.activate(altReq, 1);
+			if(altReq != null && altReq.isCancelled(container)) {
+				if(logMINOR)
+					Logger.minor(this, "Ignoring cancelled recently succeeded item "+altReq);
+			}
 			if(altReq != null && altReq.getPriorityClass(container) <= choosenPriorityClass && 
 					fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber() && !altReq.isEmpty(container)) {
 				// Use the recent one instead
@@ -550,6 +554,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		}
 		RegisterMe reg = new RegisterMe(req, req.getPriorityClass(container), this);
 		container.set(reg);
+		if(logMINOR)
+			Logger.minor(this, "Queued RegisterMe for "+req+" : "+reg);
 		return reg;
 	}
 
