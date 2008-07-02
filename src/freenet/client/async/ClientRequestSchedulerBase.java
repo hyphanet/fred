@@ -351,7 +351,8 @@ abstract class ClientRequestSchedulerBase {
 	}
 
 	protected void removeFromAllRequestsByClientRequest(SendableRequest req, ClientRequester cr) {
-		
+		if(logMINOR)
+			Logger.minor(this, "Removing from allRequestsByClientRequest: "+req+ " for "+cr);
 			Set v = (Set) allRequestsByClientRequest.get(cr);
 			if(v == null) {
 				Logger.error(this, "No HashSet registered for "+cr+" for "+req);
