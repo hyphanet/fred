@@ -122,10 +122,15 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
                 return;
             }
 			
+	    double nextValue=next.getLocation();
+
             if(logMINOR) Logger.minor(this, "Routing request to "+next);
             nodesRoutedTo.add(next);
             
-            htl = node.decrementHTL((hasForwarded ? next : source), htl);
+	    if(Location.distance(target, nextValue, true) > Location.distance(target, nearestLoc, true)) {
+		    htl = node.decrementHTL((hasForwarded ? next : source), htl);
+		    if(logMINOR) Logger.minor(this, "Backtracking: target="+target+" next="+nextValue+" closest="+nearestLoc+" so htl="+htl); 	 
+	    }
             
             Message req = createDataRequest();
             
