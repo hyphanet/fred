@@ -155,4 +155,10 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 		container.delete(file);
 		container.delete(this);
 	}
+	
+	public void objectOnActivate(ObjectContainer container) {
+		// Cascading activation of dependancies
+		container.activate(file, 5);
+	}
+
 }
