@@ -130,6 +130,8 @@ abstract class ClientRequestSchedulerBase {
 				} else {
 					dropped = true;
 					pendingKeys.remove(key);
+					if(logMINOR)
+						Logger.minor(this, "Removed only getter (1) for "+key);
 				}
 			} else {
 				SendableGet[] gets = (SendableGet[]) o;
@@ -156,6 +158,8 @@ abstract class ClientRequestSchedulerBase {
 				}
 				if(x == 0) {
 					pendingKeys.remove(key);
+					if(logMINOR)
+						Logger.minor(this, "Removed only getter (2) for "+key);
 				} else if(x == 1) {
 					pendingKeys.put(key, newGets[0]);
 				} else {
