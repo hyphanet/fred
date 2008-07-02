@@ -48,7 +48,7 @@ public class InsertBlock {
 	public void objectOnActivate(ObjectContainer container) {
 		// Cascading activation of dependancies
 		container.activate(data, 1); // will cascade
-		container.activate(desiredURI, 1);
+		container.activate(desiredURI, 5);
 	}
 
 }
