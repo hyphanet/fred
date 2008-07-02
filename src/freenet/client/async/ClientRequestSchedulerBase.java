@@ -131,7 +131,7 @@ abstract class ClientRequestSchedulerBase {
 					dropped = true;
 					pendingKeys.remove(key);
 					if(logMINOR)
-						Logger.minor(this, "Removed only getter (1) for "+key);
+						Logger.minor(this, "Removed only getter (1) for "+key, new Exception("debug"));
 				}
 			} else {
 				SendableGet[] gets = (SendableGet[]) o;
@@ -159,7 +159,7 @@ abstract class ClientRequestSchedulerBase {
 				if(x == 0) {
 					pendingKeys.remove(key);
 					if(logMINOR)
-						Logger.minor(this, "Removed only getter (2) for "+key);
+						Logger.minor(this, "Removed only getter (2) for "+key, new Exception("debug"));
 				} else if(x == 1) {
 					pendingKeys.put(key, newGets[0]);
 				} else {
@@ -176,8 +176,6 @@ abstract class ClientRequestSchedulerBase {
 	}
 
 	public SendableGet[] removePendingKey(Key key) {
-		if(logMINOR)
-			Logger.minor(this, "Removing all pending keys for "+key);
 		Object o;
 		final SendableGet[] gets;
 		synchronized(pendingKeys) {
@@ -186,8 +184,12 @@ abstract class ClientRequestSchedulerBase {
 		if(o == null) return null;
 		if(o instanceof SendableGet) {
 			gets = new SendableGet[] { (SendableGet) o };
+			if(logMINOR)
+				Logger.minor(this, "Removing all pending keys for "+key+" (1)", new Exception("debug"));
 		} else {
 			gets = (SendableGet[]) o;
+			if(logMINOR)
+				Logger.minor(this, "Removing all pending keys for "+key+" ("+gets.length+")", new Exception("debug"));
 		}
 		return gets;
 	}
