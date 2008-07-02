@@ -206,6 +206,8 @@ public abstract class ClientRequest {
 			return null;
 		}
 	}
+	
+	abstract void register(ObjectContainer container, boolean lazyResume, boolean noTags) throws IdentifierCollisionException;
 
 	public void cancel(ObjectContainer container, ClientContext context) {
 		ClientRequester cr = getClientRequest();

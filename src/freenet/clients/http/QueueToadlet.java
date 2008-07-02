@@ -265,7 +265,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 					// FIXME should this be a proper localised message? It shouldn't happen... but we'd like to get reports if it does.
 				}
 				if(clientPut != null)
-					fcp.startBlocking(clientPut);
+					try {
+						fcp.startBlocking(clientPut);
+					} catch (IdentifierCollisionException e) {
+						Logger.error(this, "Cannot put same file twice in same millisecond");
+						writePermanentRedirect(ctx, "Done", "/queue/");
+						return;
+					}
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if (request.isPartSet("insert-local-file")) {
@@ -310,7 +316,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 					return;
 					// FIXME should this be a proper localised message? It shouldn't happen... but we'd like to get reports if it does.
 				}
-				fcp.startBlocking(clientPut);
+				if(clientPut != null)
+					try {
+						fcp.startBlocking(clientPut);
+					} catch (IdentifierCollisionException e) {
+						Logger.error(this, "Cannot put same file twice in same millisecond");
+						writePermanentRedirect(ctx, "Done", "/queue/");
+						return;
+					}
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if (request.isPartSet("insert-local-dir")) {
@@ -343,7 +356,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 					this.writeError(L10n.getString("QueueToadlet.errorNoFileOrCannotRead"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.toString() }), ctx);
 					return;
 				}
-				fcp.startBlocking(clientPutDir);
+				if(clientPutDir != null)
+					try {
+						fcp.startBlocking(clientPutDir);
+					} catch (IdentifierCollisionException e) {
+						Logger.error(this, "Cannot put same file twice in same millisecond");
+						writePermanentRedirect(ctx, "Done", "/queue/");
+						return;
+					}
 				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			}
