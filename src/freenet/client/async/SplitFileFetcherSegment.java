@@ -570,11 +570,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 				Logger.minor(this, "Adding to cooldown queue: "+key+" for "+this+" was on segment "+seg+" now registered to "+sub);
 		} else {
 			// If we are here we are going to retry
-			// Unregister from the old sub-segment before registering on the new.
-			seg.unregisterKey(key.getNodeKey(), context, container);
 			if(logMINOR)
 				Logger.minor(this, "Retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 			sub.add(blockNo, false, container, context, false);
+			seg.unregisterKey(key.getNodeKey(), context, container);
 		}
 	}
 	
