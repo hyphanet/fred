@@ -18,8 +18,16 @@ import freenet.support.RandomGrabArrayItem;
  */
 public abstract class SendableRequest implements RandomGrabArrayItem {
 	
+	// Since we put these into Set's etc, hashCode must be persistent.
+	private final int hashCode;
+	
 	SendableRequest(boolean persistent) {
 		this.persistent = persistent;
+		this.hashCode = super.hashCode();
+	}
+	
+	public final int hashCode() {
+		return hashCode;
 	}
 	
 	protected RandomGrabArray parentGrabArray;
