@@ -68,11 +68,21 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 	private int blocksCompleted;
 	
 	private final boolean persistent;
+	
+	// A persistent hashCode is helpful in debugging, and also means we can put
+	// these objects into sets etc when we need to.
+	
+	private final int hashCode;
+	
+	public int hashCode() {
+		return hashCode;
+	}
 
 	public SplitFileInserterSegment(SplitFileInserter parent,
 			FECCodec splitfileAlgo, Bucket[] origDataBlocks,
 			InsertContext blockInsertContext, boolean getCHKOnly, int segNo, ObjectContainer container) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		hashCode = super.hashCode();
 		this.parent = parent;
 		this.getCHKOnly = getCHKOnly;
 		this.persistent = parent.persistent;
@@ -100,6 +110,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 	public SplitFileInserterSegment(SplitFileInserter parent,
 			SimpleFieldSet fs, short splitfileAlgorithm, InsertContext ctx,
 			boolean getCHKOnly, int segNo, ClientContext context, ObjectContainer container) throws ResumeException {
+		hashCode = super.hashCode();
 		this.parent = parent;
 		this.getCHKOnly = getCHKOnly;
 		this.persistent = parent.persistent;

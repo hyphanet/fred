@@ -61,10 +61,20 @@ public class SplitFileFetcher implements ClientGetState {
 	private long token;
 	final boolean persistent;
 	
+	// A persistent hashCode is helpful in debugging, and also means we can put
+	// these objects into sets etc when we need to.
+	
+	private final int hashCode;
+	
+	public int hashCode() {
+		return hashCode;
+	}
+	
 	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent2,
 			FetchContext newCtx, ArrayList decompressors2, ClientMetadata clientMetadata, 
 			ArchiveContext actx, int recursionLevel, Bucket returnBucket, long token2, ObjectContainer container) throws FetchException, MetadataParseException {
 		this.persistent = parent2.persistent();
+		this.hashCode = super.hashCode();
 		this.finished = false;
 		this.returnBucket = returnBucket;
 		this.fetchContext = newCtx;

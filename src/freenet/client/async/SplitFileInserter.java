@@ -48,6 +48,15 @@ public class SplitFileInserter implements ClientPutState {
 	private boolean forceEncode;
 	private final long decompressedLength;
 	final boolean persistent;
+	
+	// A persistent hashCode is helpful in debugging, and also means we can put
+	// these objects into sets etc when we need to.
+	
+	private final int hashCode;
+	
+	public int hashCode() {
+		return hashCode;
+	}
 
 	public SimpleFieldSet getProgressFieldset() {
 		SimpleFieldSet fs = new SimpleFieldSet(false);
@@ -72,6 +81,7 @@ public class SplitFileInserter implements ClientPutState {
 
 	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, Compressor bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, boolean insertAsArchiveManifest, boolean freeData, boolean persistent, ObjectContainer container, ClientContext context) throws InsertException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		hashCode = super.hashCode();
 		this.parent = put;
 		this.insertAsArchiveManifest = insertAsArchiveManifest;
 		this.token = token;
@@ -116,6 +126,7 @@ public class SplitFileInserter implements ClientPutState {
 
 	public SplitFileInserter(BaseClientPutter parent, PutCompletionCallback cb, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean metadata, Object token, boolean insertAsArchiveManifest, SimpleFieldSet fs, ObjectContainer container, ClientContext context) throws ResumeException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		hashCode = super.hashCode();
 		this.parent = parent;
 		this.insertAsArchiveManifest = insertAsArchiveManifest;
 		this.token = token;

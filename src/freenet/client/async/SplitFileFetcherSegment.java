@@ -75,10 +75,20 @@ public class SplitFileFetcherSegment implements FECCallback {
 	private boolean scheduled;
 	private final boolean persistent;
 	
+	// A persistent hashCode is helpful in debugging, and also means we can put
+	// these objects into sets etc when we need to.
+	
+	private final int hashCode;
+	
+	public int hashCode() {
+		return hashCode;
+	}
+	
 	private FECCodec codec;
 	
 	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext fetchContext, long maxTempLength, int recursionLevel, ClientRequester requester) throws MetadataParseException, FetchException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		this.hashCode = super.hashCode();
 		this.persistent = fetcher.persistent;
 		this.parentFetcher = fetcher;
 		this.errors = new FailureCodeTracker(false);

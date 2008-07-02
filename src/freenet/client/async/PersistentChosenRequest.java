@@ -23,9 +23,16 @@ import freenet.node.SendableRequest;
 public class PersistentChosenRequest extends ChosenRequest {
 	
 	ClientRequestSchedulerCore core;
+	// A persistent hashCode is helpful for debugging and lets us put PCR's into hash-based maps and sets.
+	private final int hashCode;
 	
 	PersistentChosenRequest(ClientRequestSchedulerCore core, SendableRequest req, Object tok, Key key, ClientKey ckey, short prio) {
 		super(req, tok, key, ckey, prio);
+		hashCode = core.hashCode() ^ req.hashCode() ^ key.hashCode() ^ ckey.hashCode();
 		this.core = core;
+	}
+	
+	public int hashCode() {
+		return hashCode;
 	}
 }

@@ -53,6 +53,15 @@ class SingleFileInserter implements ClientPutState {
 	private final boolean earlyEncode;
 	private final boolean persistent;
 	private boolean started;
+	
+	// A persistent hashCode is helpful in debugging, and also means we can put
+	// these objects into sets etc when we need to.
+	
+	private final int hashCode;
+	
+	public int hashCode() {
+		return hashCode;
+	}
 
 	/**
 	 * @param parent
@@ -73,6 +82,7 @@ class SingleFileInserter implements ClientPutState {
 			boolean metadata, InsertContext ctx, boolean dontCompress, 
 			boolean getCHKOnly, boolean reportMetadataOnly, Object token, boolean insertAsArchiveManifest, 
 			boolean freeData, String targetFilename, boolean earlyEncode) {
+		hashCode = super.hashCode();
 		this.earlyEncode = earlyEncode;
 		this.reportMetadataOnly = reportMetadataOnly;
 		this.token = token;

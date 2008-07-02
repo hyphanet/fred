@@ -27,6 +27,12 @@ public class FECJob {
 	final boolean persistent;
 	/** Parent queue */
 	final FECQueue queue;
+	// A persistent hash code helps with debugging.
+	private final int hashCode;
+	
+	public int hashCode() {
+		return hashCode;
+	}
 	
 	public FECJob(FECCodec codec, FECQueue queue, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus,  int blockLength, BucketFactory bucketFactory, FECCallback callback, boolean isADecodingJob, short priority, boolean persistent) {
 		this.codec = codec;
@@ -48,6 +54,7 @@ public class FECJob {
 		this.callback = callback;
 		this.isADecodingJob = isADecodingJob;
 		this.persistent = persistent;
+		this.hashCode = super.hashCode();
 	}
 	
 	public String toString() {
@@ -55,6 +62,7 @@ public class FECJob {
 	}
 	
 	public FECJob(FECCodec codec, FECQueue queue, Bucket[] dataBlocks, Bucket[] checkBlocks, int blockLength, BucketFactory bucketFactory, FECCallback callback, boolean isADecodingJob, short priority, boolean persistent) {
+		this.hashCode = super.hashCode();
 		this.codec = codec;
 		this.queue = queue;
 		this.priority = priority;
