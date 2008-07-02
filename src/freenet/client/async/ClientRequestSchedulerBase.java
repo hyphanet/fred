@@ -108,6 +108,8 @@ abstract class ClientRequestSchedulerBase {
 	}
 
 	public boolean removePendingKey(SendableGet getter, boolean complain, Key key, ObjectContainer container) {
+		if(logMINOR)
+			Logger.minor(this, "Removing pending key: "+getter+" for "+key);
 		boolean dropped = false;
 		Object o;
 		/*
@@ -170,6 +172,8 @@ abstract class ClientRequestSchedulerBase {
 	}
 
 	public SendableGet[] removePendingKey(Key key) {
+		if(logMINOR)
+			Logger.minor(this, "Removing all pending keys for "+key);
 		Object o;
 		final SendableGet[] gets;
 		synchronized(pendingKeys) {
