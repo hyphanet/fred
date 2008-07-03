@@ -75,6 +75,11 @@ public class GenericReadFilterCallback implements FilterCallback {
 	}
 	
 	public String processURI(String u, String overrideType, boolean noRelative, boolean inline) throws CommentException {
+		if(u.matches("^#[a-zA-Z0-9-_]+$")) {
+			// Hack for anchors, see #710
+			return u;
+		}
+		
 		URI uri;
 		URI resolved;
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -110,9 +115,6 @@ public class GenericReadFilterCallback implements FilterCallback {
 					url = url+"&hasAnActivelink=true";
 				}
 				return url;
-			}else if(path.equals("") && uri.toString().matches("^#[a-zA-Z0-9-_]+$")){
-				// Hack for anchors, see #710
-				return uri.toString();
 			}
 		}
 		
