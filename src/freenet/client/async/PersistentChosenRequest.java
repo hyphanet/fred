@@ -28,7 +28,7 @@ public class PersistentChosenRequest extends ChosenRequest {
 	
 	PersistentChosenRequest(ClientRequestSchedulerCore core, SendableRequest req, Object tok, Key key, ClientKey ckey, short prio) {
 		super(req, tok, key, ckey, prio);
-		hashCode = core.hashCode() ^ req.hashCode() ^ key.hashCode() ^ ckey.hashCode();
+		hashCode = core.hashCode() ^ req.hashCode() ^ key.hashCode() ^ ckey.hashCode() ^ tok.hashCode();
 		this.core = core;
 	}
 	
