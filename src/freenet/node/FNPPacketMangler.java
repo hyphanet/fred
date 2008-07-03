@@ -2811,8 +2811,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @return True if we reset the transient key and therefore the authenticator cache.
 	 */
 	private boolean maybeResetTransientKey() {
+		long now = System.currentTimeMillis();
 		synchronized (authenticatorCache) {
-			long now = System.currentTimeMillis();
 			if(authenticatorCache.size() < AUTHENTICATOR_CACHE_SIZE) {
 				if(now - timeLastReset < TRANSIENT_KEY_REKEYING_MIN_INTERVAL)
 					return false;
@@ -2824,7 +2824,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			
 			timeLastReset = now;
 		}
-		node.getTicker().queueTimedJob(transientKeyRekeyer, TRANSIENT_KEY_REKEYING_MIN_INTERVAL);
+		node.getTicker().queueTimedJob(transientKeyRekeyer, "JFKmaybeResetTransitentKey "+now, TRANSIENT_KEY_REKEYING_MIN_INTERVAL, false);
 		Logger.normal(this, "JFK's TransientKey has been changed and the message cache flushed.");
 		return true;
 	}
