@@ -11,8 +11,10 @@ import java.net.URLEncoder;
 import java.util.HashSet;
 
 import freenet.clients.http.HTTPRequestImpl;
+import freenet.clients.http.StaticToadlet;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
+import freenet.node.StaticSwapRequestInterval;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.URIPreEncoder;
@@ -115,6 +117,9 @@ public class GenericReadFilterCallback implements FilterCallback {
 					url = url+"&hasAnActivelink=true";
 				}
 				return url;
+			} else if(path.startsWith(StaticToadlet.ROOT_URL)) {
+				// @see bug #2297
+				return path;
 			}
 		}
 		
