@@ -947,7 +947,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// We don't except such a message;
 		if(myNi == null) {
 			if(shouldLogErrorInHandshake(t1))
-				Logger.normal(this, "We received an unexpected JFK(2) message from "+pn.getPeer());
+				Logger.normal(this, "We received an unexpected JFK(2) message from "+pn.getPeer()+" (time since added: "+pn.timeSinceAddedOrRestarted()+" time last receive:"+pn.lastReceivedPacketTime()+')');
 			return;
 		} else if(!Arrays.equals(myNi, nonceInitiator)){
 			if(logMINOR)
