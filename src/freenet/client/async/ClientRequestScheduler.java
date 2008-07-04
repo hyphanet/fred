@@ -701,8 +701,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 				final SendableGet[] gets = schedCore.removePendingKey(key);
 				if(gets == null) return;
 				if(persistentCooldownQueue != null) {
-					for(int i=0;i<gets.length;i++)
+					for(int i=0;i<gets.length;i++) {
+						container.activate(gets[i], 1);
 						persistentCooldownQueue.removeKey(key, gets[i], gets[i].getCooldownWakeupByKey(key, container), container);
+					}
 				}
 				// Call the callbacks on the database executor thread, because the first thing
 				// they will need to do is access the database to decide whether they need to
