@@ -195,7 +195,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(probablyNotInStore) {
 					// Complete the registration *before* checking the store.
 					// Check the store anyway though!
-					finishRegister(req, persistent, false, true, reg);
+					finishRegister(req, persistent, true, true, reg);
 					// RegisterMe has been deleted or was null in the first place.
 					reg = null;
 				} else {
@@ -228,7 +228,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						if(probablyNotInStore) {
 							// Complete the registration *before* checking the store.
 							// Check the store anyway though!
-							finishRegister(req, persistent, false, true, reg);
+							finishRegister(req, persistent, true, true, reg);
 							// RegisterMe has been deleted or was null in the first place.
 							reg = null;
 						} else {
@@ -275,6 +275,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(persistent) {
 				if(onDatabaseThread) {
 					schedCore.queueRegister(req, databaseExecutor, selectorContainer);
+					// Pretend to not be on the database thread.
+					// In some places (e.g. SplitFileInserter.start(), we call register() *many* times within a single transaction.
+					// We can greatly improve responsiveness at the cost of some throughput and RAM by only adding the tags at this point.
 					finishRegister(req, persistent, false, true, reg);
 				} else {
 					final RegisterMe regme = reg;
@@ -285,16 +288,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 							RegisterMe reg = regme;
 							if(reg == null)
 								reg = schedCore.queueRegister(req, databaseExecutor, selectorContainer);
-							// Pretend to not be on the database thread.
-							// In some places (e.g. SplitFileInserter.start(), we call register() *many* times within a single transaction.
-							// We can greatly improve responsiveness at the cost of some throughput and RAM by only adding the tags at this point.
-							finishRegister(req, persistent, false, true, reg);
+							// Self-contained job, will complete quickly enough.
+							finishRegister(req, persistent, true, true, reg);
 						}
 						
 					}, NativeThread.NORM_PRIORITY, false);
 				}
 			} else {
-				finishRegister(req, persistent, false, true, reg);
+				finishRegister(req, persistent, onDatabaseThread, true, reg);
 			}
 		}
 	}
