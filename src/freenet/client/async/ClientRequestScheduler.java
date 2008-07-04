@@ -407,8 +407,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 						container.activate(req, 1);
 						if(logMINOR)
 							Logger.minor(this, "finishRegister() for "+req);
-						if(anyValid)
-							schedCore.innerRegister(req, random, container);
+						if(anyValid) {
+							if(req.isCancelled(container) || req.isEmpty(container)) {
+								Logger.error(this, "Request is empty/cancelled: "+req);
+							} else
+								schedCore.innerRegister(req, random, container);
+						}
 						if(reg != null)
 							container.delete(reg);
 						maybeFillStarterQueue(container, context);
