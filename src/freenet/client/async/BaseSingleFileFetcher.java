@@ -29,6 +29,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 	/** It is essential that we know when the cooldown will end, otherwise we cannot 
 	 * remove the key from the queue if we are killed before that */
 	long cooldownWakeupTime;
+	private boolean chosen;
 
 	protected BaseSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent) {
 		super(parent);
@@ -51,12 +52,17 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		if(persistent)
 			container.activate(key, 5);
 		if(fetching.hasKey(key.getNodeKey())) return null;
+		if(chosen) return null;
+		chosen = true;
+		if(persistent)
+			container.set(this);
 		return keys[0];
 	}
 	
 	public boolean hasValidKeys(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(key, 5);
+		if(chosen) return false;
 		return !fetching.hasKey(key.getNodeKey());
 	}
 	
@@ -78,10 +84,13 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 	 * @param sched */
 	protected boolean retry(ObjectContainer container, ClientContext context) {
 		retryCount++;
+		chosen = false;
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+retryCount+ ')');
 		// We want 0, 1, ... maxRetries i.e. maxRetries+1 attempts (maxRetries=0 => try once, no retries, maxRetries=1 = original try + 1 retry)
 		if((retryCount <= maxRetries) || (maxRetries == -1)) {
+			if(persistent)
+				container.set(this);
 			if(retryCount % ClientRequestScheduler.COOLDOWN_RETRIES == 0) {
 				// Add to cooldown queue. Don't reschedule yet.
 				long now = System.currentTimeMillis();
@@ -90,8 +99,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 				else {
 					RequestScheduler sched = context.getFetchScheduler(key instanceof ClientSSK);
 					cooldownWakeupTime = sched.queueCooldown(key, this);
-					if(persistent)
-						container.set(this);
 				}
 				return true; // We will retry, just not yet. See requeueAfterCooldown(Key).
 			} else {
@@ -134,7 +141,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 	}
 	
 	public synchronized boolean isEmpty(ObjectContainer container) {
-		return cancelled || finished;
+		return cancelled || finished || chosen;
 	}
 	
 	public RequestClient getClient() {
@@ -154,6 +161,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		if(persistent)
 			container.activate(this, 2);
 		synchronized(this) {
+			chosen = true;
 			finished = true;
 			if(persistent)
 				container.set(this);
