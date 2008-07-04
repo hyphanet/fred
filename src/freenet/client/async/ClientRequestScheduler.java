@@ -490,6 +490,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	public void queueFillRequestStarterQueue() {
+		synchronized(starterQueue) {
+			if(starterQueue.size() > MAX_STARTER_QUEUE_SIZE / 2)
+				return;
+		}
 		jobRunner.queue(requestStarterQueueFiller, NativeThread.MAX_PRIORITY, true);
 	}
 
