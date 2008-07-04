@@ -825,7 +825,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public long countTransientQueuedRequests() {
-		// Approximately... there might be some overlap in the two pendingKeys's...
 		return schedTransient.countQueuedRequests(null);
 	}
 
