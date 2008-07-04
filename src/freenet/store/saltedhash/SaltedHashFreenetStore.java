@@ -12,7 +12,6 @@ import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.text.DecimalFormat;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -68,7 +67,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private static final boolean checkBloom = true;
 	private BloomFilter bloomFilter;
 
-	private static final boolean logLOCK = false;
 	private static boolean logMINOR;
 	private static boolean logDEBUG;
 
@@ -112,6 +110,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		entryPaddingLength = 0x200L - (length % 0x200L);
 		entryTotalLength = length + entryPaddingLength;
 
+		lockManager = new LockManager();
+		
 		// Create a directory it not exist
 		this.baseDir.mkdirs();
 
@@ -1118,7 +1118,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			try {
 				// acquire all locks in the region, will unlock in the finally block
 				for (int i = 0; i < length; i++) {
-					if (lockEntry(offset + i))
+					if (lockManager.lockEntry(offset + i))
 						locked[i] = true;
 					else
 						return false;
@@ -1199,7 +1199,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				// unlock
 				for (int i = 0; i < length; i++)
 					if (locked[i])
-						unlockEntry(offset + i);
+						lockManager.unlockEntry(offset + i);
 			}
 		}
 
@@ -1343,64 +1343,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	// ------------- Locking
-	private boolean shutdown = false;
+	volatile boolean shutdown = false;
+	private LockManager lockManager;
 	private ReadWriteLock configLock = new ReentrantReadWriteLock(); 
-	private Lock entryLock = new ReentrantLock();
-	private Map<Long, Condition> lockMap = new HashMap<Long, Condition> ();
-
-	/**
-	 * Lock the entry
-	 * 
-	 * This lock is <strong>not</strong> re-entrance. No threads except Cleaner should hold more
-	 * then one lock at a time (or deadlock may occur).
-	 */
-	private boolean lockEntry(long offset) {
-		if (logDEBUG && logLOCK)
-			Logger.debug(this, "try locking " + offset, new Exception());
-
-		try {
-			entryLock.lock();
-			try {
-				do {
-					if (shutdown)
-						return false;
-
-					Condition lockCond = lockMap.get(offset);
-					if (lockCond != null)
-						lockCond.await(10, TimeUnit.SECONDS); // 10s for checking shutdown
-					else
-						break;
-				} while (true);
-				lockMap.put(offset, entryLock.newCondition());
-			} finally {
-				entryLock.unlock();
-			}
-		} catch (InterruptedException e) {
-			Logger.error(this, "lock interrupted", e);
-			return false;
-		}
-
-		if (logDEBUG && logLOCK)
-			Logger.debug(this, "locked " + offset, new Exception());
-		return true;
-	}
-
-	/**
-	 * Unlock the entry
-	 */
-	private void unlockEntry(long offset) {
-		if (logDEBUG && logLOCK)
-			Logger.debug(this, "unlocking " + offset, new Exception("debug"));
-
-		entryLock.lock();
-		try {
-			Condition cond = lockMap.remove(offset);
-			assert cond != null;
-			cond.signal();
-		} finally {
-			entryLock.unlock();
-		}
-	}
 
 	/**
 	 * Lock all possible offsets of a key. This method would release the locks if any locking
@@ -1439,7 +1384,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		Set<Long> locked = new TreeSet<Long>();
 		for (long offset : offsets) {
-			boolean status = lockEntry(offset);
+			boolean status = lockManager.lockEntry(offset);
 			if (!status)
 				break;
 			locked.add(offset);
@@ -1450,7 +1395,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		} else {
 			// failed, remove the locks
 			for (long offset : locked)
-				unlockEntry(offset);
+				lockManager.unlockEntry(offset);
 			return false;
 		}
 	}
@@ -1468,13 +1413,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 
 		for (long offset : offsets) {
-			unlockEntry(offset);
+			lockManager.unlockEntry(offset);
 		}
 	}
 
 	public class ShutdownDB implements Runnable {
 		public void run() {
 			shutdown = true;
+			lockManager.shutdown();
 
 			synchronized (cleanerLock) {
 				cleanerLock.notifyAll();
@@ -1544,7 +1490,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * @param storeSize
 	 * @return
 	 */
-	public long[] getOffsetFromPlainKey(byte[] plainKey, long storeSize) {
+	private long[] getOffsetFromPlainKey(byte[] plainKey, long storeSize) {
 		return getOffsetFromDigestedKey(getDigestedRoutingKey(plainKey), storeSize);
 	}
 
@@ -1555,7 +1501,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * @param storeSize
 	 * @return
 	 */
-	public long[] getOffsetFromDigestedKey(byte[] digestedKey, long storeSize) {
+	private long[] getOffsetFromDigestedKey(byte[] digestedKey, long storeSize) {
 		long keyValue = Fields.bytesToLong(digestedKey);
 		long[] offsets = new long[OPTION_MAX_PROBE];
 
