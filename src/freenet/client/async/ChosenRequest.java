@@ -59,4 +59,25 @@ public class ChosenRequest {
 		return this instanceof PersistentChosenRequest;
 	}
 	
+	public boolean equals(Object o) {
+		if(!(o instanceof ChosenRequest)) return false;
+		ChosenRequest cr = (ChosenRequest) o;
+		if(!cr.request.equals(request)) return false;
+		if(!cr.token.equals(token)) return false;
+		if(cr.key != null) {
+			if(key != null) {
+				if(!key.equals(cr.key)) return false;
+			} else return false;
+		} else {
+			if(key != null) return false;
+		}
+		if(cr.ckey != null) {
+			if(ckey != null) {
+				if(!ckey.equals(cr.ckey)) return false;
+			} else return false;
+		} else {
+			if(ckey != null) return false;
+		}
+		return true;
+	}
 }
