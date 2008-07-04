@@ -546,6 +546,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						Logger.error(this, "Selected "+sameKey+" requests from same SendableRequest: "+lastReq);
 				}
 				if(req == null) return;
+				lastReq = req.request;
 				container.activate(req.key, 5);
 				container.activate(req.ckey, 5);
 				container.activate(req.request, 1);
