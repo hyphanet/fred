@@ -92,7 +92,7 @@ import freenet.store.KeyCollisionException;
 import freenet.store.PubkeyStore;
 import freenet.store.RAMFreenetStore;
 import freenet.store.SSKStore;
-import freenet.store.SaltedHashFreenetStore;
+import freenet.store.saltedhash.SaltedHashFreenetStore;
 import freenet.support.DoubleTokenBucket;
 import freenet.support.Executor;
 import freenet.support.Fields;

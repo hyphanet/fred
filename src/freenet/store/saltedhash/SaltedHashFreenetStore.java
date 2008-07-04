@@ -1,7 +1,7 @@
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
-package freenet.store;
+package freenet.store.saltedhash;
 
 import java.io.EOFException;
 import java.io.File;
@@ -39,6 +39,10 @@ import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.KeyVerifyException;
 import freenet.node.SemiOrderedShutdownHook;
+import freenet.store.FreenetStore;
+import freenet.store.KeyCollisionException;
+import freenet.store.StorableBlock;
+import freenet.store.StoreCallback;
 import freenet.support.BloomFilter;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
