@@ -806,6 +806,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 			public void run(ObjectContainer container, ClientContext context) {
 				container.activate(get, 1);
+				if(logMINOR)
+					Logger.minor(this, "callFailure() on "+get+" : "+e);
 				get.onFailure(e, keyNum, selectorContainer, clientContext);
 				if(get.persistent()) {
 					if(logMINOR)
