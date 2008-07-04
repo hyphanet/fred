@@ -774,14 +774,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final DBJob moveFromCooldownJob = new DBJob() {
 		
 		public void run(ObjectContainer container, ClientContext context) {
-			if(moveKeysFromCooldownQueue(persistentCooldownQueue, true, selectorContainer))
+			if(moveKeysFromCooldownQueue(persistentCooldownQueue, true, selectorContainer) ||
+					moveKeysFromCooldownQueue(transientCooldownQueue, true, selectorContainer))
 				starter.wakeUp();
 		}
 		
 	};
 	
 	public void moveKeysFromCooldownQueue() {
-		moveKeysFromCooldownQueue(transientCooldownQueue, false, null);
 		jobRunner.queue(moveFromCooldownJob, NativeThread.NORM_PRIORITY, true);
 	}
 	
