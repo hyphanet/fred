@@ -224,6 +224,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		if(req != null && !this.isInsert) {
 			if(!sched.addToFetching(req.key)) {
 				sched.requeue(req);
+				Logger.error(this, "Skipping request as duplicate: "+req);
 				req = null;
 			}
 		}
