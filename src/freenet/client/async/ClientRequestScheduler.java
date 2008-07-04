@@ -520,6 +520,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 			synchronized(starterQueue) {
 				int size = starterQueue.size();
 				if(logMINOR) Logger.minor(this, "Queue size: "+size+" SSK="+isSSKScheduler+" insert="+isInsertScheduler);
+				if(size > MAX_STARTER_QUEUE_SIZE * 3 / 4) {
+					return;
+				}
 				if(size >= MAX_STARTER_QUEUE_SIZE) {
 					if(size >= WARNING_STARTER_QUEUE_SIZE)
 						Logger.error(this, "Queue already full: "+starterQueue.size());
