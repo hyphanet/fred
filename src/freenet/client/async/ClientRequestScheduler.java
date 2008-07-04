@@ -856,7 +856,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 			}
 			
-		}, NativeThread.NORM_PRIORITY, false);
+		}, NativeThread.NORM_PRIORITY+1, false);
 	}
 
 	public FECQueue getFECQueue() {
