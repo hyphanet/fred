@@ -74,11 +74,10 @@ abstract class ClientRequestSchedulerBase {
 	 * Register a pending key to an already-registered request. This is necessary if we've
 	 * already registered a SendableGet, but we later add some more keys to it.
 	 */
-	void addPendingKey(ClientKey key, SendableGet getter, ObjectContainer container) {
+	void addPendingKey(Key nodeKey, SendableGet getter, ObjectContainer container) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequestSchedulerBase.class);
 		if(logMINOR)
-			Logger.minor(this, "Adding pending key "+key+" for "+getter);
-		Key nodeKey = key.getNodeKey();
+			Logger.minor(this, "Adding pending key "+nodeKey+" for "+getter);
 		synchronized(pendingKeys) {
 			Object o = pendingKeys.get(nodeKey);
 			if(o == null) {
@@ -392,7 +391,7 @@ abstract class ClientRequestSchedulerBase {
 					Logger.minor(this, "No key for "+tok+" for "+getter+" - already finished?");
 					continue;
 			} else {
-				addPendingKey(key, getter, container);
+				addPendingKey(key.getNodeKey(), getter, container);
 			}
 		}
 	}

@@ -327,7 +327,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						block = node.fetchKey(key, dontCache);
 					if(block == null) {
 						if(!persistent) {
-							schedTransient.addPendingKey(key, getter, null);
+							schedTransient.addPendingKey(key.getNodeKey(), getter, null);
 						} // If persistent, when it is registered (in a later job) the keys will be added first.
 					} else {
 						if(logMINOR)
@@ -441,9 +441,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(!databaseExecutor.onThread()) {
 				throw new IllegalStateException("Not on database thread!");
 			}
-			schedCore.addPendingKey(key, getter, selectorContainer);
+			schedCore.addPendingKey(key.getNodeKey(), getter, selectorContainer);
 		} else
-			schedTransient.addPendingKey(key, getter, null);
+			schedTransient.addPendingKey(key.getNodeKey(), getter, null);
 	}
 	
 	private synchronized ChosenRequest removeFirst(ObjectContainer container, boolean transientOnly, boolean notTransient) {
