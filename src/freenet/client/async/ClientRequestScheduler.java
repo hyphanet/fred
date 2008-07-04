@@ -172,6 +172,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 			final SendableGet getter = (SendableGet)req;
 			
 			if(persistent && onDatabaseThread) {
+				if(req.isEmpty(selectorContainer) || req.isCancelled(selectorContainer)) {
+					Logger.error(this, "In register(): Request is empty/cancelled: "+req, new Exception("debug"));
+				}
 				if(regmeOnly) {
 					assert(reg == null);
 					reg = schedCore.queueRegister(getter, databaseExecutor, selectorContainer);
