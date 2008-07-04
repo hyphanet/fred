@@ -1,6 +1,9 @@
 package freenet.support;
 
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
 
 import freenet.node.PrioRunnable;
 import freenet.support.io.NativeThread;
@@ -12,6 +15,7 @@ public class PrioritizedSerialExecutor implements Executor {
 	private final int defaultPriority;
 	private boolean waiting;
 	private final boolean invertOrder;
+	private final Map timeByJobClasses = new HashMap();
 	
 	private String name;
 	private Executor realExecutor;
@@ -30,6 +34,7 @@ public class PrioritizedSerialExecutor implements Executor {
 		}
 
 		public void run() {
+			long lastDumped = System.currentTimeMillis();
 			current = Thread.currentThread();
 			while(true) {
 				Runnable job = null;
@@ -54,7 +59,34 @@ public class PrioritizedSerialExecutor implements Executor {
 				try {
 					if(Logger.shouldLog(Logger.MINOR, this))
 						Logger.minor(this, "Running job "+job);
+					long start = System.currentTimeMillis();
 					job.run();
+					long end = System.currentTimeMillis();
+					if(Logger.shouldLog(Logger.MINOR, this))
+						Logger.minor(this, "Job "+job+" took "+(end-start)+"ms");
+					synchronized(timeByJobClasses) {
+						String name = job.toString();
+						if(name.indexOf('@') > 0)
+							name = name.substring(0, name.indexOf('@'));
+						Long l = (Long) timeByJobClasses.get(name);
+						if(l != null) {
+							l = new Long(l.longValue() + (end-start));
+						} else {
+							l = new Long(end-start);
+						}
+						timeByJobClasses.put(name, l);
+						if(Logger.shouldLog(Logger.MINOR, this)) {
+							Logger.minor(this, "Total for class "+name+" : "+l);
+							if(System.currentTimeMillis() > (lastDumped + 60*1000)) {
+								Iterator i = timeByJobClasses.entrySet().iterator();
+								while(i.hasNext()) {
+									Map.Entry e = (Map.Entry) i.next();
+									Logger.minor(this, "Class "+e.getKey()+" : total time "+e.getValue());
+								}
+								lastDumped = System.currentTimeMillis();
+							}
+						}
+					}
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t, t);
 					Logger.error(this, "While running "+job+" on "+this);
@@ -66,12 +98,16 @@ public class PrioritizedSerialExecutor implements Executor {
 			if(!invertOrder) {
 				for(int i=0;i<jobs.length;i++) {
 					if(!jobs[i].isEmpty()) {
+						if(Logger.shouldLog(Logger.MINOR, this))
+							Logger.minor(this, "Chosen job at priority "+i);
 						return (Runnable) jobs[i].removeFirst();
 					}
 				}
 			} else {
 				for(int i=jobs.length-1;i>=0;i--) {
 					if(!jobs[i].isEmpty()) {
+						if(Logger.shouldLog(Logger.MINOR, this))
+							Logger.minor(this, "Chosen job at priority "+i);
 						return (Runnable) jobs[i].removeFirst();
 					}
 				}
@@ -183,6 +219,15 @@ public class PrioritizedSerialExecutor implements Executor {
 			if(runner == null) return false;
 			return runner.current == running; 
 		}
+	}
+
+	public int[] runningJobs() {
+		int[] retval = new int[jobs.length];
+		synchronized(jobs) {
+			for(int i=0;i<retval.length;i++)
+				retval[i] = jobs[i].size();
+		}
+		return retval;
 	}
 
 }
