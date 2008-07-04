@@ -552,6 +552,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				container.activate(req.ckey, 5);
 				container.activate(req.request, 1);
 				container.activate(req.request.getClientRequest(), 1);
+				if(logMINOR) Logger.minor(this, "Activated");
 				synchronized(starterQueue) {
 					if(req != null) {
 						starterQueue.add(req);
