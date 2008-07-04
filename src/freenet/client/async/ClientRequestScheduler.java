@@ -771,16 +771,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 			return transientCooldownQueue.add(key.getNodeKey(), getter, null);
 	}
 
+	private final DBJob moveFromCooldownJob = new DBJob() {
+		
+		public void run(ObjectContainer container, ClientContext context) {
+			if(moveKeysFromCooldownQueue(persistentCooldownQueue, true, selectorContainer))
+				starter.wakeUp();
+		}
+		
+	};
+	
 	public void moveKeysFromCooldownQueue() {
 		moveKeysFromCooldownQueue(transientCooldownQueue, false, null);
-		jobRunner.queue(new DBJob() {
-
-			public void run(ObjectContainer container, ClientContext context) {
-				if(moveKeysFromCooldownQueue(persistentCooldownQueue, true, selectorContainer))
-					starter.wakeUp();
-			}
-			
-		}, NativeThread.NORM_PRIORITY, false);
+		jobRunner.queue(moveFromCooldownJob, NativeThread.NORM_PRIORITY, true);
 	}
 	
 	private boolean moveKeysFromCooldownQueue(CooldownQueue queue, boolean persistent, ObjectContainer container) {
