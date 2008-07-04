@@ -9,14 +9,11 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.security.MessageDigest;
 import java.text.DecimalFormat;
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedSet;
@@ -31,11 +28,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
-import freenet.crypt.BlockCipher;
-import freenet.crypt.PCFBMode;
-import freenet.crypt.SHA256;
-import freenet.crypt.UnsupportedCipherException;
-import freenet.crypt.ciphers.Rijndael;
 import freenet.keys.KeyVerifyException;
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.store.FreenetStore;
@@ -43,7 +35,6 @@ import freenet.store.KeyCollisionException;
 import freenet.store.StorableBlock;
 import freenet.store.StoreCallback;
 import freenet.support.BloomFilter;
-import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
@@ -195,7 +186,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 */
 	private Entry probeEntry(byte[] routingKey) throws IOException {
 		if (checkBloom)
-			if (!bloomFilter.checkFilter(getDigestedRoutingKey(routingKey)))
+			if (!bloomFilter.checkFilter(cipherManager.getDigestedKey(routingKey)))
 				return null;
 
 		Entry entry = probeEntry0(routingKey, storeSize);
@@ -279,7 +270,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						if (logDEBUG)
 							Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
 						if (updateBloom)
-							bloomFilter.updateFilter(getDigestedRoutingKey(routingKey));
+							bloomFilter.updateFilter(cipherManager.getDigestedKey(routingKey));
 						writeEntry(entry, offset[i]);
 						writes.incrementAndGet();
 						keyCount.incrementAndGet();
@@ -292,7 +283,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				if (logDEBUG)
 					Logger.debug(this, "collision, write to i=0, offset=" + offset[0]);
 				if (updateBloom)
-					bloomFilter.updateFilter(getDigestedRoutingKey(routingKey));
+					bloomFilter.updateFilter(cipherManager.getDigestedKey(routingKey));
 				oldEntry = readEntry(offset[0], null);
 				writeEntry(entry, offset[0]);
 				writes.incrementAndGet();
@@ -355,17 +346,17 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * Total length is padded to multiple of 512bytes. All reserved bytes should be zero when
 	 * written, ignored on read.
 	 */
-	private class Entry {
-		private byte[] plainRoutingKey;
-		private byte[] digestedRoutingKey;
-		private byte[] dataEncryptIV;
+	 class Entry {
+		byte[] plainRoutingKey;
+		byte[] digestedRoutingKey;
+		byte[] dataEncryptIV;
 		private long flag;
 		private long storeSize;
 		private byte generation;
-		private byte[] header;
-		private byte[] data;
+		byte[] header;
+		byte[] data;
 		
-		private boolean isEncrypted;
+		boolean isEncrypted;
 		public long curOffset = -1;
 		
 
@@ -451,7 +442,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		public ByteBuffer toByteBuffer() {
 			ByteBuffer out = ByteBuffer.allocate((int) entryTotalLength);
-			encrypt();
+			cipherManager.encrypt(this, random);
 			out.put(getDigestedRoutingKey());
 			out.put(dataEncryptIV);
 
@@ -480,7 +471,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		public StorableBlock getStorableBlock(byte[] routingKey, byte[] fullKey) throws KeyVerifyException {
 			if ((flag & ENTRY_FLAG_OCCUPIED) == 0)
 				return null; // this is a free block
-			if (!decrypt(routingKey))
+			if (!cipherManager.decrypt(this, routingKey))
 				return null;
 
 			StorableBlock block = callback.construct(data, header, routingKey, fullKey);
@@ -502,89 +493,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				return getOffsetFromPlainKey(plainRoutingKey, storeSize);
 		}
 
-		/**
-		 * Verify and decrypt this entry
-		 *
-		 * @param routingKey
-		 * @return <code>true</code> if the <code>routeKey</code> match and the entry is decrypted.
-		 */
-		private boolean decrypt(byte[] routingKey) {
-			if (!isEncrypted) {
-				// Already decrypted
-				if (Arrays.equals(this.plainRoutingKey, routingKey))
-					return true;
-				else
-					return false;
-			}
-
-			if (plainRoutingKey != null) {
-				// we knew the key
-				if (!Arrays.equals(this.plainRoutingKey, routingKey)) {
-					return false;
-				}
-			} else {
-				// we do not know the plain key, let's check the digest
-				if (!Arrays.equals(this.digestedRoutingKey, SaltedHashFreenetStore.this
-				        .getDigestedRoutingKey(routingKey)))
-					return false;
-			}
-
-			this.plainRoutingKey = routingKey;
-
-			PCFBMode cipher = makeCipher(plainRoutingKey);
-			header = cipher.blockDecipher(header, 0, header.length);
-			data = cipher.blockDecipher(data, 0, data.length);
-
-			isEncrypted = false;
-
-			return true;
-		}
-
-		/**
-		 * Encrypt this entry
-		 */
-		private void encrypt() {
-			if (isEncrypted)
-				return;
-
-			dataEncryptIV = new byte[16];
-			random.nextBytes(dataEncryptIV);
-
-			PCFBMode cipher = makeCipher(plainRoutingKey);
-			header = cipher.blockEncipher(header, 0, header.length);
-			data = cipher.blockEncipher(data, 0, data.length);
-
-			getDigestedRoutingKey();
-			isEncrypted = true;
-		}
-
-		/**
-		 * Create Cipher
-		 */
-		private PCFBMode makeCipher(byte[] routingKey) {
-			byte[] iv = new byte[0x20]; // 256 bits
-
-			System.arraycopy(salt, 0, iv, 0, 0x10);
-			System.arraycopy(dataEncryptIV, 0, iv, 0x10, 0x10);
-
-			try {
-				BlockCipher aes = new Rijndael(256, 256);
-				aes.initialize(routingKey);
-
-				return PCFBMode.create(aes, iv);
-			} catch (UnsupportedCipherException e) {
-				Logger.error(this, "Rijndael not supported!", e);
-				throw new RuntimeException(e);
-			}
-		}
-
 		public boolean isFree() {
 			return (flag & ENTRY_FLAG_OCCUPIED) == 0;
 		}
 
 		public byte[] getDigestedRoutingKey() {
 			if (digestedRoutingKey == null)
-				digestedRoutingKey = SaltedHashFreenetStore.this.getDigestedRoutingKey(this.plainRoutingKey);
+				digestedRoutingKey = cipherManager.getDigestedKey(plainRoutingKey);
 			return digestedRoutingKey;
 		}
 
@@ -656,7 +571,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		Entry entry = new Entry(bf);
 
 		if (routingKey != null) {
-			boolean decrypted = entry.decrypt(routingKey);
+			boolean decrypted = cipherManager.decrypt(entry, routingKey);
 			if (!decrypted)
 				return null;
 		}
@@ -675,7 +590,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * </ul>
 	 */
 	private void writeEntry(Entry entry, long offset) throws IOException {
-		entry.encrypt();
+		cipherManager.encrypt(entry, random);
 
 		int split = (int) (offset % FILE_SPLIT);
 		long rawOffset = (offset / FILE_SPLIT) * entryTotalLength;
@@ -816,19 +731,21 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * Load config file
 	 */
 	private void loadConfigFile() throws IOException {
-		assert salt == null; // never load the configuration twice
+		assert cipherManager == null; // never load the configuration twice
 
 		if (!configFile.exists()) {
 			// create new
-			salt = new byte[0x10];
-			random.nextBytes(salt);
+			byte[] newsalt = new byte[0x10];
+			random.nextBytes(newsalt);
+			cipherManager = new CipherManager(newsalt);
 
 			writeConfigFile();
 		} else {
 			// try to load
 			RandomAccessFile raf = new RandomAccessFile(configFile, "r");
-			salt = new byte[0x10];
+			byte[] salt = new byte[0x10];
 			raf.readFully(salt);
+			cipherManager = new CipherManager(salt);
 
 			storeSize = raf.readLong();
 			prevStoreSize = raf.readLong();
@@ -853,7 +770,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			File tempConfig = new File(configFile.getPath() + ".tmp");
 			RandomAccessFile raf = new RandomAccessFile(tempConfig, "rw");
 			raf.seek(0);
-			raf.write(salt);
+			raf.write(cipherManager.getSalt());
 
 			raf.writeLong(storeSize);
 			raf.writeLong(prevStoreSize);
@@ -1355,11 +1272,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * @return <code>true</code> if all the offsets are locked.
 	 */
 	private boolean lockPlainKey(byte[] plainKey, boolean usePrevStoreSize) {
-		return lockDigestedKey(getDigestedRoutingKey(plainKey), usePrevStoreSize);
+		return lockDigestedKey(cipherManager.getDigestedKey(plainKey), usePrevStoreSize);
 	}
 
 	private void unlockPlainKey(byte[] plainKey, boolean usePrevStoreSize) {
-		unlockDigestedKey(getDigestedRoutingKey(plainKey), usePrevStoreSize);
+		unlockDigestedKey(cipherManager.getDigestedKey(plainKey), usePrevStoreSize);
 	}
 
 	/**
@@ -1439,49 +1356,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	// ------------- Hashing
-	/**
-	 * <tt>0x10</tt> bytes of salt for better digestion, not too salty.
-	 */
-	private byte[] salt;
-
-	private Map<ByteArrayWrapper, byte[]> digestRoutingKeyCache = new LinkedHashMap<ByteArrayWrapper, byte[]>() {
-		@Override
-		protected boolean removeEldestEntry(Map.Entry<ByteArrayWrapper, byte[]> eldest) {
-			return size() > 128;
-		}
-	};
+	private CipherManager cipherManager;
 	
-	/**
-	 * Get hashed routing key
-	 *
-	 * @param routingKey
-	 * @return
-	 */
-	private byte[] getDigestedRoutingKey(byte[] routingKey) {
-		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
-		synchronized (digestRoutingKeyCache) {
-			byte[] dk = digestRoutingKeyCache.get(key);
-			if (dk != null)
-				return dk;
-		}
-		
-		MessageDigest digest = SHA256.getMessageDigest();
-		try {
-			digest.update(routingKey);
-			digest.update(salt);
-
-			byte[] hashedRoutingKey = digest.digest();
-			assert hashedRoutingKey.length == 0x20;
-
-			synchronized (digestRoutingKeyCache) {
-				digestRoutingKeyCache.put(key, hashedRoutingKey);
-			}
-			
-			return hashedRoutingKey;
-		} finally {
-			SHA256.returnMessageDigest(digest);
-		}
-	}
 
 	/**
 	 * Get offset in the hash table, given a plain routing key.
@@ -1491,7 +1367,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * @return
 	 */
 	private long[] getOffsetFromPlainKey(byte[] plainKey, long storeSize) {
-		return getOffsetFromDigestedKey(getDigestedRoutingKey(plainKey), storeSize);
+		return getOffsetFromDigestedKey(cipherManager.getDigestedKey(plainKey), storeSize);
 	}
 
 	/**
