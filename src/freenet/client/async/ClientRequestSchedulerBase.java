@@ -78,12 +78,8 @@ abstract class ClientRequestSchedulerBase {
 		if(v == null) {
 			v = makeSetForAllRequestsByClientRequest(container);
 			allRequestsByClientRequest.put(req.getClientRequest(), v);
-			if(persistent())
-				container.set(allRequestsByClientRequest);
 		}
 		v.add(req);
-		if(persistent())
-			container.set(v);
 		addToGrabArray(prio, retryCount, fixRetryCount(retryCount), req.getClient(), req.getClientRequest(), req, random, container);
 		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio+", retrycount="+retryCount+" v.size()="+v.size());
 	}
