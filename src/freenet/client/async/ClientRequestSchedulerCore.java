@@ -11,6 +11,7 @@ import java.util.Set;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Predicate;
+import com.db4o.query.Query;
 import com.db4o.types.Db4oList;
 import com.db4o.types.Db4oMap;
 
@@ -92,7 +93,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	}
 
 	ClientRequestSchedulerCore(Node node, boolean forInserts, boolean forSSKs, ObjectContainer selectorContainer, long cooldownTime) {
-		super(forInserts, forSSKs, forInserts ? null : selectorContainer.ext().collections().newHashMap(1024), selectorContainer.ext().collections().newHashMap(32), selectorContainer.ext().collections().newLinkedList());
+		super(forInserts, forSSKs, selectorContainer.ext().collections().newHashMap(32), selectorContainer.ext().collections().newLinkedList());
 		this.nodeDBHandle = node.nodeDBHandle;
 		if(!forInserts) {
 			this.persistentCooldownQueue = new PersistentCooldownQueue();
@@ -103,14 +104,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 
 	private void onStarted(ObjectContainer container, long cooldownTime, ClientRequestScheduler sched, ClientContext context) {
 		System.err.println("insert scheduler: "+isInsertScheduler);
-		if(pendingKeys == null)
-			System.err.println("pendingKeys is null");
 		if(allRequestsByClientRequest == null)
 			System.err.println("allRequestsByClientRequest is null");
 		if(recentSuccesses == null)
 			System.err.println("recentSuccesses is null");
-		if(!isInsertScheduler)
-			((Db4oMap)pendingKeys).activationDepth(1);
 		((Db4oMap)allRequestsByClientRequest).activationDepth(1);
 		((Db4oList)recentSuccesses).activationDepth(1);
 		if(!isInsertScheduler) {
@@ -191,6 +188,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				container.delete(req);
 				continue;
 			}
+			if(logMINOR)
+				Logger.minor(this, "Adding old request: "+req);
 			sched.addToStarterQueue(req);
 		}
 //		if(count > ClientRequestScheduler.MAX_STARTER_QUEUE_SIZE)
@@ -276,7 +275,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					Logger.minor(this, "Storing "+ret+" for "+req);
 				if((ctr++ & 15) == 0) {
 					// This check is quite expensive, don't do it all the time.
-					if((req instanceof SendableGet) && !inPendingKeys(req, key, container)) {
+					if((req instanceof SendableGet) && !inPendingKeys((SendableGet)req, key, container)) {
 						Logger.error(this, "Selected key not in pendingKeys: key "+key+" for "+req);
 					}
 				}
@@ -286,7 +285,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			return ret;
 		}
 	}
-	
+
 	SendableRequest removeFirstInner(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
@@ -607,6 +606,149 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 
 	protected Set makeSetForAllRequestsByClientRequest(ObjectContainer container) {
 		return new Db4oSet(container, 1);
+	}
+
+	public long countQueuedRequests(ObjectContainer container) {
+		ObjectSet pending = container.query(new Predicate() {
+			public boolean match(PendingKeyItem item) {
+				if(item.nodeDBHandle == nodeDBHandle) return true;
+				return false;
+			}
+		});
+		return pending.size();
+	}
+
+	protected boolean inPendingKeys(SendableGet req, final Key key, ObjectContainer container) {
+		ObjectSet pending = container.query(new Predicate() {
+			public boolean match(PendingKeyItem item) {
+				if(!key.equals(item.key)) return false;
+				if(item.nodeDBHandle != nodeDBHandle) return false;
+				return true;
+			}
+		});
+		if(pending.hasNext()) {
+			PendingKeyItem item = (PendingKeyItem) pending.next();
+			return item.hasGetter(req);
+		}
+		Logger.error(this, "Key not in pendingKeys at all");
+//		Key copy = key.cloneKey();
+//		addPendingKey(copy, req, container);
+//		container.commit();
+//		pending = container.query(new Predicate() {
+//			public boolean match(PendingKeyItem item) {
+//				if(!key.equals(item.key)) return false;
+//				if(item.nodeDBHandle != nodeDBHandle) return false;
+//				return true;
+//			}
+//		});
+//		if(!pending.hasNext()) {
+//			Logger.error(this, "INDEXES BROKEN!!!");
+//		} else {
+//			PendingKeyItem item = (PendingKeyItem) (pending.next());
+//			Key k = item.key;
+//			container.delete(item);
+//			Logger.error(this, "Indexes work");
+//		}
+		return false;
+	}
+
+	public SendableGet[] getClientsForPendingKey(final Key key, ObjectContainer container) {
+		ObjectSet pending = container.query(new Predicate() {
+			public boolean match(PendingKeyItem item) {
+				if(!key.equals(item.key)) return false;
+				if(item.nodeDBHandle != nodeDBHandle) return false;
+				return true;
+			}
+		});
+		if(pending.hasNext()) {
+			PendingKeyItem item = (PendingKeyItem) pending.next();
+			return item.getters();
+		}
+		return null;
+	}
+
+	public boolean anyWantKey(final Key key, ObjectContainer container) {
+		ObjectSet pending = container.query(new Predicate() {
+			public boolean match(PendingKeyItem item) {
+				if(!key.equals(item.key)) return false;
+				if(item.nodeDBHandle != nodeDBHandle) return false;
+				return true;
+			}
+		});
+		return pending.hasNext();
+	}
+
+	public SendableGet[] removePendingKey(final Key key, ObjectContainer container) {
+		ObjectSet pending = container.query(new Predicate() {
+			public boolean match(PendingKeyItem item) {
+				if(!key.equals(item.key)) return false;
+				if(item.nodeDBHandle != nodeDBHandle) return false;
+				return true;
+			}
+		});
+		if(pending.hasNext()) {
+			PendingKeyItem item = (PendingKeyItem) pending.next();
+			SendableGet[] getters = item.getters();
+			container.delete(item);
+			return getters;
+		}
+		return null;
+	}
+
+	public boolean removePendingKey(SendableGet getter, boolean complain, final Key key, ObjectContainer container) {
+		ObjectSet pending = container.query(new Predicate() {
+			public boolean match(PendingKeyItem item) {
+				if(!key.equals(item.key)) return false;
+				if(item.nodeDBHandle != nodeDBHandle) return false;
+				return true;
+			}
+		});
+		if(pending.hasNext()) {
+			PendingKeyItem item = (PendingKeyItem) pending.next();
+			boolean ret = item.removeGetter(getter);
+			if(item.isEmpty()) {
+				container.delete(item);
+			} else {
+				container.set(item);
+			}
+			return ret;
+		}
+		return false;
+	}
+
+	protected void addPendingKey(final Key key, SendableGet getter, ObjectContainer container) {
+		if(logMINOR)
+			Logger.minor(this, "Adding pending key for "+key+" for "+getter);
+		long startTime = System.currentTimeMillis();
+//		Query query = container.query();
+//		query.constrain(PendingKeyItem.class);
+//		query.descend("key").constrain(key);
+//		query.descend("nodeDBHandle").constrain(new Long(nodeDBHandle));
+//		ObjectSet pending = query.execute();
+		
+		// Native version seems to be faster, at least for a few thousand items...
+		// I'm not sure whether it's using the index though, we may need to reconsider for larger queues... FIXME
+		
+		ObjectSet pending = container.query(new Predicate() {
+			public boolean match(PendingKeyItem item) {
+				if(!key.equals(item.key)) return false;
+				if(item.nodeDBHandle != nodeDBHandle) return false;
+				return true;
+			}
+		});
+		long endTime = System.currentTimeMillis();
+		if(endTime - startTime > 1000)
+			Logger.error(this, "Query took "+(endTime - startTime)+"ms");
+		else if(logMINOR)
+			Logger.minor(this, "Query took "+(endTime - startTime)+"ms");
+		if(pending.hasNext()) {
+			PendingKeyItem item = (PendingKeyItem) pending.next();
+			item.addGetter(getter);
+			container.set(item);
+		} else {
+			PendingKeyItem item = new PendingKeyItem(key, getter, nodeDBHandle);
+			container.set(item);
+		}
 	}
 
 }
