@@ -936,5 +936,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
+	public long countPersistentQueuedRequests(ObjectContainer container) {
+		return schedCore.countQueuedRequests(container);
+	}
+	
 	
 }

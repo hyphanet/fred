@@ -440,6 +440,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			public void run(ObjectContainer container, ClientContext context) {
 				HTMLNode pageNode = null;
 				try {
+					System.err.println("Total queued CHK requests: "+core.requestStarters.chkFetchScheduler.countPersistentQueuedRequests(container));
 					pageNode = handleGetInner(pageMaker, container, context, request, ctx);
 				} finally {
 					synchronized(ow) {
