@@ -554,6 +554,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 				}
 			}
 		}
+		if(tries != seg.retryCount+1) {
+			Logger.error(this, "Failed on segment "+seg+" but tries for block (after increment) is "+tries);
+		}
 		if(persistent)
 			container.set(this);
 		if(failed) {
