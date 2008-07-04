@@ -567,7 +567,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		if(cooldown) {
 			// Register to the next sub-segment before removing from the old one.
-			sub.getScheduler(context).addPendingKey(key, sub, container);
+			sub.getScheduler(context).addPendingKey(key, sub);
 			seg.unregisterKey(key.getNodeKey(), context, container);
 			if(logMINOR)
 				Logger.minor(this, "Adding to cooldown queue: "+key+" for "+this+" was on segment "+seg+" now registered to "+sub);

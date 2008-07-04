@@ -436,14 +436,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 		requestStarterQueueFiller.run(container, context);
 	}
 
-	void addPendingKey(final ClientKey key, final SendableGet getter, ObjectContainer container) {
+	void addPendingKey(final ClientKey key, final SendableGet getter) {
 		if(getter.persistent()) {
 			if(!databaseExecutor.onThread()) {
 				throw new IllegalStateException("Not on database thread!");
 			}
-			schedCore.addPendingKey(key, getter, container);
+			schedCore.addPendingKey(key, getter, selectorContainer);
 		} else
-			schedTransient.addPendingKey(key, getter, container);
+			schedTransient.addPendingKey(key, getter, null);
 	}
 	
 	private synchronized ChosenRequest removeFirst(ObjectContainer container, boolean transientOnly, boolean notTransient) {
