@@ -68,6 +68,21 @@ public class NodeSSK extends Key {
 		hashCode = Fields.hashCode(pkHash) ^ Fields.hashCode(ehDocname);
 	}
 	
+    private NodeSSK(NodeSSK key) {
+    	super(key);
+    	this.cryptoAlgorithm = key.cryptoAlgorithm;
+    	this.pubKey = key.pubKey;
+    	this.pubKeyHash = new byte[key.pubKeyHash.length];
+    	System.arraycopy(key.pubKeyHash, 0, pubKeyHash, 0, key.pubKeyHash.length);
+    	this.encryptedHashedDocname = new byte[key.encryptedHashedDocname.length];
+    	System.arraycopy(key.encryptedHashedDocname, 0, encryptedHashedDocname, 0, key.encryptedHashedDocname.length);
+    	this.hashCode = key.hashCode;
+    }
+    
+    public Key cloneKey() {
+    	return new NodeSSK(this);
+    }
+
 	// routingKey = H( E(H(docname)) + H(pubkey) )
 	private static byte[] makeRoutingKey(byte[] pkHash, byte[] ehDocname) {
 		MessageDigest md256 = SHA256.getMessageDigest();
@@ -147,6 +162,7 @@ public class NodeSSK extends Key {
 	}
 
 	public boolean equals(Object o) {
+		if(o == this) return true;
 		if(!(o instanceof NodeSSK)) return false;
 		NodeSSK key = (NodeSSK)o;
 		if(!Arrays.equals(key.encryptedHashedDocname, encryptedHashedDocname)) return false;

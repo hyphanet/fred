@@ -28,6 +28,15 @@ public class NodeCHK extends Key {
             throw new IllegalArgumentException("Wrong length: "+routingKey2.length+" should be "+KEY_LENGTH);
         this.cryptoAlgorithm = cryptoAlgorithm;
     }
+    
+    private NodeCHK(NodeCHK key) {
+    	super(key);
+    	this.cryptoAlgorithm = key.cryptoAlgorithm;
+    }
+    
+    public Key cloneKey() {
+    	return new NodeCHK(this);
+    }
 
     public static final int KEY_LENGTH = 32;
     
@@ -58,6 +67,7 @@ public class NodeCHK extends Key {
     }
 
     public boolean equals(Object key) {
+    	if(key == this) return true;
         if(key instanceof NodeCHK) {
             NodeCHK chk = (NodeCHK) key;
             return java.util.Arrays.equals(chk.routingKey, routingKey) && (cryptoAlgorithm == chk.cryptoAlgorithm);

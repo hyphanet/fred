@@ -45,6 +45,15 @@ public abstract class Key implements WritableToDataOutputStream, Comparable {
         cachedNormalizedDouble = -1;
     }
     
+    protected Key(Key key) {
+    	this.hash = key.hash;
+    	this.cachedNormalizedDouble = key.cachedNormalizedDouble;
+    	this.routingKey = new byte[key.routingKey.length];
+    	System.arraycopy(key.routingKey, 0, routingKey, 0, routingKey.length);
+    }
+    
+    public abstract Key cloneKey();
+    
     /**
      * Write to disk.
      * Take up exactly 22 bytes.
