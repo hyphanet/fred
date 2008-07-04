@@ -1221,7 +1221,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		}
 		
 		public String toString() {
-			return super.toString()+":"+job;
+			return "DBJobWrapper:"+job;
 		}
 		
 	}
