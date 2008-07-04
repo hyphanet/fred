@@ -276,7 +276,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					Logger.minor(this, "Storing "+ret+" for "+req);
 				if((ctr++ & 15) == 0) {
 					// This check is quite expensive, don't do it all the time.
-					if((req instanceof SendableGet) && !inPendingKeys(req, key)) {
+					if((req instanceof SendableGet) && !inPendingKeys(req, key, container)) {
 						Logger.error(this, "Selected key not in pendingKeys: key "+key+" for "+req);
 					}
 				}

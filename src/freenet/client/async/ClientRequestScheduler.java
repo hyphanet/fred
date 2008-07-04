@@ -327,7 +327,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						block = node.fetchKey(key, dontCache);
 					if(block == null) {
 						if(!persistent) {
-							schedTransient.addPendingKey(key, getter);
+							schedTransient.addPendingKey(key, getter, null);
 						} // If persistent, when it is registered (in a later job) the keys will be added first.
 					} else {
 						if(logMINOR)
@@ -436,14 +436,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 		requestStarterQueueFiller.run(container, context);
 	}
 
-	void addPendingKey(final ClientKey key, final SendableGet getter) {
+	void addPendingKey(final ClientKey key, final SendableGet getter, ObjectContainer container) {
 		if(getter.persistent()) {
 			if(!databaseExecutor.onThread()) {
 				throw new IllegalStateException("Not on database thread!");
 			}
-			schedCore.addPendingKey(key, getter);
+			schedCore.addPendingKey(key, getter, container);
 		} else
-			schedTransient.addPendingKey(key, getter);
+			schedTransient.addPendingKey(key, getter, container);
 	}
 	
 	private synchronized ChosenRequest removeFirst(ObjectContainer container, boolean transientOnly, boolean notTransient) {
@@ -671,7 +671,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		}
 		final Key key = block.getKey();
-		final SendableGet[] transientGets = schedTransient.removePendingKey(key);
+		final SendableGet[] transientGets = schedTransient.removePendingKey(key, null);
 		if(transientGets != null && transientGets.length > 0) {
 			node.executor.execute(new Runnable() {
 				public void run() {
@@ -698,7 +698,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 			public void run(ObjectContainer container, ClientContext context) {
 				container.activate(key, 1);
-				final SendableGet[] gets = schedCore.removePendingKey(key);
+				final SendableGet[] gets = schedCore.removePendingKey(key, container);
 				if(gets == null) return;
 				if(persistentCooldownQueue != null) {
 					for(int i=0;i<gets.length;i++) {
@@ -803,8 +803,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(persistent)
 				container.activate(key, 5);
 			if(logMINOR) Logger.minor(this, "Restoring key: "+key);
-			SendableGet[] gets = schedCore.getClientsForPendingKey(key);
-			SendableGet[] transientGets = schedTransient.getClientsForPendingKey(key);
+			SendableGet[] gets = schedCore.getClientsForPendingKey(key, container);
+			SendableGet[] transientGets = schedTransient.getClientsForPendingKey(key, null);
 			if(gets == null && transientGets == null) {
 				// Not an error as this can happen due to race conditions etc.
 				if(logMINOR) Logger.minor(this, "Restoring key but no keys queued?? for "+key);
@@ -826,7 +826,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 	public long countTransientQueuedRequests() {
 		// Approximately... there might be some overlap in the two pendingKeys's...
-		return schedCore.countQueuedRequests() + schedTransient.countQueuedRequests();
+		return schedTransient.countQueuedRequests(null);
 	}
 
 	public KeysFetchingLocally fetchingKeys() {

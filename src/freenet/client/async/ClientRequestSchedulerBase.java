@@ -74,7 +74,7 @@ abstract class ClientRequestSchedulerBase {
 	 * Register a pending key to an already-registered request. This is necessary if we've
 	 * already registered a SendableGet, but we later add some more keys to it.
 	 */
-	void addPendingKey(ClientKey key, SendableGet getter) {
+	void addPendingKey(ClientKey key, SendableGet getter, ObjectContainer container) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequestSchedulerBase.class);
 		if(logMINOR)
 			Logger.minor(this, "Adding pending key "+key+" for "+getter);
@@ -175,7 +175,7 @@ abstract class ClientRequestSchedulerBase {
 		return dropped;
 	}
 
-	public SendableGet[] removePendingKey(Key key) {
+	public SendableGet[] removePendingKey(Key key, ObjectContainer container) {
 		Object o;
 		final SendableGet[] gets;
 		synchronized(pendingKeys) {
@@ -194,7 +194,7 @@ abstract class ClientRequestSchedulerBase {
 		return gets;
 	}
 
-	public boolean anyWantKey(Key key) {
+	public boolean anyWantKey(Key key, ObjectContainer container) {
 		synchronized(pendingKeys) {
 			return pendingKeys.get(key) != null;
 		}
@@ -219,7 +219,7 @@ abstract class ClientRequestSchedulerBase {
 		return priority;
 	}
 
-	public SendableGet[] getClientsForPendingKey(Key key) {
+	public SendableGet[] getClientsForPendingKey(Key key, ObjectContainer container) {
 		Object o;
 		synchronized(pendingKeys) {
 			o = pendingKeys.get(key);
@@ -234,7 +234,7 @@ abstract class ClientRequestSchedulerBase {
 		}
 	}
 
-	protected boolean inPendingKeys(SendableRequest req, Key key) {
+	protected boolean inPendingKeys(SendableRequest req, Key key, ObjectContainer container) {
 		Object o;
 		synchronized(pendingKeys) {
 			o = pendingKeys.get(key);
@@ -251,7 +251,7 @@ abstract class ClientRequestSchedulerBase {
 		return false;
 	}
 
-	public long countQueuedRequests() {
+	public long countQueuedRequests(ObjectContainer container) {
 		if(pendingKeys != null)
 			return pendingKeys.size();
 		else return 0;
@@ -392,7 +392,7 @@ abstract class ClientRequestSchedulerBase {
 					Logger.minor(this, "No key for "+tok+" for "+getter+" - already finished?");
 					continue;
 			} else {
-				addPendingKey(key, getter);
+				addPendingKey(key, getter, container);
 			}
 		}
 	}
