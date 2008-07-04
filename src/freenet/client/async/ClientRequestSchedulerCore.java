@@ -246,6 +246,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	
 	public ChosenRequest maybeMakeChosenRequest(SendableRequest req, ObjectContainer container, ClientContext context) {
 		if(req == null) return null;
+		if(req.isEmpty(container) || req.isCancelled(container)) return null;
 		Object token = req.chooseKey(this, req.persistent() ? container : null, context);
 		if(token == null) {
 			return null;
