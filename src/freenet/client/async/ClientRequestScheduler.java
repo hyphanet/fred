@@ -382,6 +382,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		finishRegister(getter, persistent, false, anyValid, reg);
 	}
+	
+	/** If enabled, if the queue is less than 25% full, attempt to add newly 
+	 * registered requests directly to it, storing a PersistentChosenRequest and 
+	 * bypassing registration on the queue. Risky optimisation. */
+	static final boolean TRY_DIRECT = true;
 
 	private void finishRegister(final SendableRequest req, boolean persistent, boolean onDatabaseThread, final boolean anyValid, final RegisterMe reg) {
 		if(persistent) {
@@ -392,10 +397,40 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				if(persistent)
 					selectorContainer.activate(req, 1);
+				boolean tryDirect = false;
+				if(anyValid && TRY_DIRECT) {
+					synchronized(starterQueue) {
+						tryDirect = starterQueue.size() < MAX_STARTER_QUEUE_SIZE * 1 / 4;
+					}
+					if(tryDirect) {
+						while(true) {
+							PersistentChosenRequest cr = (PersistentChosenRequest) schedCore.maybeMakeChosenRequest(req, selectorContainer, clientContext);
+							if(cr == null) {
+								if(!(req.isEmpty(selectorContainer) || req.isCancelled(selectorContainer)))
+									// Still needs to be registered
+									tryDirect = false;
+								break;
+							}
+							synchronized(starterQueue) {
+								if(starterQueue.size() >= MAX_STARTER_QUEUE_SIZE) {
+									break;
+								}
+								starterQueue.add(cr);
+							}
+						}
+					}
+				}
 				if(logMINOR)
 					Logger.minor(this, "finishRegister() for "+req);
-				if(anyValid)
-					schedCore.innerRegister(req, random, selectorContainer);
+				if(anyValid) {
+					if(!tryDirect) {
+						if(req.isCancelled(selectorContainer) || req.isEmpty(selectorContainer)) {
+							Logger.error(this, "Request is empty/cancelled: "+req);
+						} else {
+							schedCore.innerRegister(req, random, selectorContainer);
+						}
+					}
+				}
 				if(reg != null)
 					selectorContainer.delete(reg);
 				maybeFillStarterQueue(selectorContainer, clientContext);
