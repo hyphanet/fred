@@ -547,6 +547,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				if(req == null) return;
 				lastReq = req.request;
+				if(logMINOR) Logger.minor(this, "Activating key");
 				container.activate(req.key, 5);
 				container.activate(req.ckey, 5);
 				container.activate(req.request, 1);
