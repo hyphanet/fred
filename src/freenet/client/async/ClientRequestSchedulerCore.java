@@ -244,6 +244,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		return maybeMakeChosenRequest(req, container, context);
 	}
 	
+	private int ctr;
+	
 	public ChosenRequest maybeMakeChosenRequest(SendableRequest req, ObjectContainer container, ClientContext context) {
 		if(req == null) return null;
 		if(req.isEmpty(container) || req.isCancelled(container)) return null;
@@ -272,8 +274,11 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				container.set(ret);
 				if(logMINOR)
 					Logger.minor(this, "Storing "+ret+" for "+req);
-				if((req instanceof SendableGet) && !inPendingKeys(req, key)) {
-					Logger.error(this, "Selected key not in pendingKeys: key "+key+" for "+req);
+				if((ctr++ & 15) == 0) {
+					// This check is quite expensive, don't do it all the time.
+					if((req instanceof SendableGet) && !inPendingKeys(req, key)) {
+						Logger.error(this, "Selected key not in pendingKeys: key "+key+" for "+req);
+					}
 				}
 			} else {
 				ret = new ChosenRequest(req, token, key, ckey, req.getPriorityClass(container));
