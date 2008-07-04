@@ -241,6 +241,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	// The worry is ... is there any nested locking outside of the hierarchy?
 	ChosenRequest removeFirst(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
 		SendableRequest req = removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, transientOnly, notTransient, maxPrio, retryCount, context, container);
+		return maybeMakeChosenRequest(req, container, context);
+	}
+	
+	public ChosenRequest maybeMakeChosenRequest(SendableRequest req, ObjectContainer container, ClientContext context) {
 		if(req == null) return null;
 		Object token = req.chooseKey(this, req.persistent() ? container : null, context);
 		if(token == null) {

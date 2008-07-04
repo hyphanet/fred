@@ -513,6 +513,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
+	/** Maximum number of requests to select from a single SendableRequest */
+	final int MAX_CONSECUTIVE_SAME_REQ = 50;
+	
 	private DBJob requestStarterQueueFiller = new DBJob() {
 		public void run(ObjectContainer container, ClientContext context) {
 			if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
@@ -529,8 +532,19 @@ public class ClientRequestScheduler implements RequestScheduler {
 					return;
 				}
 			}
+			SendableRequest lastReq = null;
+			int sameKey = 0;
 			while(true) {
-				req = removeFirst(container, false, true);
+				req = null;
+				if(lastReq != null && sameKey < MAX_CONSECUTIVE_SAME_REQ) {
+					req = schedCore.maybeMakeChosenRequest(lastReq, container, context);
+					sameKey++;
+				}
+				if(req == null) {
+					req = removeFirst(container, false, true);
+					if(sameKey > 1)
+						Logger.error(this, "Selected "+sameKey+" requests from same SendableRequest: "+lastReq);
+				}
 				if(req == null) return;
 				container.activate(req.key, 5);
 				container.activate(req.ckey, 5);
