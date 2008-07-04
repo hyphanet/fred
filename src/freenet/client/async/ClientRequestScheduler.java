@@ -499,6 +499,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 	void addToStarterQueue(ChosenRequest req) {
 		synchronized(starterQueue) {
+			if(starterQueue.contains(req)) {
+				Logger.error(this, "Not re-adding: "+req);
+				return;
+			}
 			starterQueue.add(req);
 		}
 	}
