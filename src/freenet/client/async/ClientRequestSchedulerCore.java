@@ -543,7 +543,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t+" running RegisterMeRunner", t);
 					// Cancel the request, and commit so it isn't tried again.
-					reg.getter.internalError(null, t, sched, container, context);
+					reg.getter.internalError(null, t, sched, container, context, true);
 				}
 				if(System.currentTimeMillis() > deadline) break;
 			}

@@ -110,6 +110,6 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	}
 
 	/** Requeue after an internal error */
-	public abstract void internalError(Object keyNum, Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context);
+	public abstract void internalError(Object keyNum, Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent);
 
 }

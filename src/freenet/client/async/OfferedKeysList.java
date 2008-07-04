@@ -138,7 +138,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		return 0; // All keys have equal chance even if they've been tried before.
 	}
 
-	public void internalError(Object keyNum, Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+	public void internalError(Object keyNum, Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
 		Logger.error(this, "Internal error: "+t, t);
 	}
 	

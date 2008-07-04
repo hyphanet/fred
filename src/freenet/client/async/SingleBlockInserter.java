@@ -353,12 +353,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				return false;
 			}
 		} catch (LowLevelPutException e) {
-			sched.callFailure((SendableInsert) this, e, req.token, NativeThread.NORM_PRIORITY, req);
+			sched.callFailure((SendableInsert) this, e, req.token, NativeThread.NORM_PRIORITY, req, req.isPersistent());
 			if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
 			return true;
 		}
 		if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
-		sched.callSuccess(this, req.token, NativeThread.NORM_PRIORITY, req);
+		sched.callSuccess(this, req.token, NativeThread.NORM_PRIORITY, req, req.isPersistent());
 		return true;
 	}
 

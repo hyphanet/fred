@@ -75,25 +75,25 @@ public abstract class SendableGet extends BaseSendableGet {
 		if((!req.isPersistent()) && isCancelled(null)) {
 			if(logMINOR) Logger.minor(this, "Cancelled: "+this);
 			// callbacks must initially run at HIGH_PRIORITY so they are executed before we remove the key from the currently running list
-			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.CANCELLED), keyNum, NativeThread.HIGH_PRIORITY, req);
+			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.CANCELLED), keyNum, NativeThread.HIGH_PRIORITY, req, req.isPersistent());
 			return false;
 		}
 		try {
 			try {
 				core.realGetKey(key, req.localRequestOnly, req.cacheLocalRequests, req.ignoreStore);
 			} catch (final LowLevelGetException e) {
-				sched.callFailure(this, e, keyNum, NativeThread.HIGH_PRIORITY, req);
+				sched.callFailure(this, e, keyNum, NativeThread.HIGH_PRIORITY, req, req.isPersistent());
 				return true;
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
-				sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, NativeThread.HIGH_PRIORITY, req);
+				sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, NativeThread.HIGH_PRIORITY, req, req.isPersistent());
 				return true;
 			}
 			// Don't call onSuccess(), it will be called for us by backdoor coalescing.
 			sched.succeeded(this, req);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
-			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, NativeThread.HIGH_PRIORITY, req);
+			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, NativeThread.HIGH_PRIORITY, req, req.isPersistent());
 			return true;
 		}
 		return true;
@@ -143,8 +143,8 @@ public abstract class SendableGet extends BaseSendableGet {
 		getScheduler(context).removePendingKey(this, false, key, container);
 	}
 
-	public void internalError(final Object keyNum, final Throwable t, final RequestScheduler sched, ObjectContainer container, ClientContext context) {
-		sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), keyNum, NativeThread.MAX_PRIORITY, null);
+	public void internalError(final Object keyNum, final Throwable t, final RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
+		sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), keyNum, NativeThread.MAX_PRIORITY, null, persistent);
 	}
 
 	/**

@@ -797,7 +797,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		schedCore.removeFetchingKey(key, req);
 	}
 
-	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, final ChosenRequest req) {
+	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, final ChosenRequest req, boolean persistent) {
+		if(!persistent) {
+			get.onFailure(e, keyNum, null, clientContext);
+			return;
+		}
 		jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
@@ -813,7 +817,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}, NativeThread.NORM_PRIORITY, false);
 	}
 	
-	public void callFailure(final SendableInsert put, final LowLevelPutException e, final Object keyNum, int prio, final ChosenRequest req) {
+	public void callFailure(final SendableInsert put, final LowLevelPutException e, final Object keyNum, int prio, final ChosenRequest req, boolean persistent) {
+		if(!persistent) {
+			put.onFailure(e, keyNum, null, clientContext);
+			return;
+		}
 		jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
@@ -829,7 +837,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}, NativeThread.NORM_PRIORITY, false);
 	}
 
-	public void callSuccess(final SendableInsert put, final Object keyNum, int prio, final ChosenRequest req) {
+	public void callSuccess(final SendableInsert put, final Object keyNum, int prio, final ChosenRequest req, boolean persistent) {
+		if(!persistent) {
+			put.onSuccess(keyNum, null, clientContext);
+			return;
+		}
 		jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {

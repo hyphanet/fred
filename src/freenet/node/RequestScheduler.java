@@ -58,15 +58,15 @@ public interface RequestScheduler {
 
 	/** Call onFailure() on the database thread, then delete the PersistentChosenRequest. For a non-persistent request, 
 	 * just call onFailure() immediately. */
-	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, ChosenRequest req);
+	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, ChosenRequest req, boolean persistent);
 	
 	/** Call onFailure() on the database thread, then delete the PersistentChosenRequest. For a non-persistent request, 
 	 * just call onFailure() immediately. */
-	public void callFailure(final SendableInsert put, final LowLevelPutException e, final Object keyNum, int prio, ChosenRequest req);
+	public void callFailure(final SendableInsert put, final LowLevelPutException e, final Object keyNum, int prio, ChosenRequest req, boolean persistent);
 
 	/** Call onSuccess() on the database thread, then delete the PersistentChosenRequest. For a non-persistent request, 
 	 * just call onFailure() immediately. */
-	public void callSuccess(final SendableInsert put, final Object keyNum, int prio, ChosenRequest req);
+	public void callSuccess(final SendableInsert put, final Object keyNum, int prio, ChosenRequest req, boolean persistent);
 
 	public FECQueue getFECQueue();
 
