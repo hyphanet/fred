@@ -247,7 +247,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	private void trySendGeneratedURIMessage(FCPConnectionOutputHandler handler) {
 		FCPMessage msg;
 		synchronized(this) {
-			msg = new URIGeneratedMessage(generatedURI, identifier);
+			msg = new URIGeneratedMessage(generatedURI, identifier, client.isGlobalQueue);
 		}
 		if(handler != null)
 			handler.queue(msg);

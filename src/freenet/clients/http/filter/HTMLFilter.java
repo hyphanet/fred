@@ -1815,8 +1815,6 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					}
 				}
 			}
-			if (hn.isEmpty())
-				return null;
 			return hn;
 		}
 	}

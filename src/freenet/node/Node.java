@@ -33,6 +33,7 @@ import com.sleepycat.je.StatsConfig;
 
 import freenet.client.FetchContext;
 import freenet.clients.http.SimpleToadletServer;
+import freenet.clients.http.StartupToadlet;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
@@ -40,6 +41,7 @@ import freenet.config.LongOption;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
 import freenet.crypt.DSAPublicKey;
+import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
 import freenet.crypt.Yarrow;
@@ -119,6 +121,7 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.HostnameSyntaxException;
+import java.net.URI;
 
 /**
  * @author amphibian
@@ -606,11 +609,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * @param config The Config object for this node.
 	 * @param random The random number generator for this node. Passed in because we may want
 	 * to use a non-secure RNG for e.g. one-JVM live-code simulations. Should be a Yarrow in
-	 * a production node.
+	 * a production node. Yarrow will be used if that parameter is null
 	 * @param the loggingHandler
 	 * @throws NodeInitException If the node initialization fails.
 	 */
-	 Node(PersistentConfig config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns, Executor executor) throws NodeInitException {
+	 Node(PersistentConfig config, RandomSource r, LoggingConfigHandler lc, NodeStarter ns, Executor executor) throws NodeInitException {
 		// Easy stuff
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		String tmp = "Initializing Node using Freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vendor")+" JVM version "+System.getProperty("java.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
@@ -622,16 +625,30 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		if(logConfigHandler != lc)
 			logConfigHandler=lc;
 		startupTime = System.currentTimeMillis();
-		// Will be set up properly afterwards
-		L10n.setLanguage(L10n.FALLBACK_DEFAULT);
 		SimpleFieldSet oldConfig = config.getSimpleFieldSet();
 		// Setup node-specific configuration
 		SubConfig nodeConfig = new SubConfig("node", config);
+		
 		int sortOrder = 0;
+		
+		// l10n stuffs
+		nodeConfig.register("l10n", Locale.getDefault().getLanguage().toLowerCase(), sortOrder++, false, true, 
+				"Node.l10nLanguage",
+				"Node.l10nLanguageLong",
+				new L10nCallback());
+		
+		try {
+			L10n.setLanguage(nodeConfig.getString("l10n"));
+		} catch (MissingResourceException e) {
+			try {
+				L10n.setLanguage(nodeConfig.getOption("l10n").getDefault());
+			} catch (MissingResourceException e1) {
+				L10n.setLanguage(L10n.FALLBACK_DEFAULT);
+			}
+		}
 		
 		// FProxy config needs to be here too
 		SubConfig fproxyConfig = new SubConfig("fproxy", config);
-
 		try {
 			toadlets = new SimpleToadletServer(fproxyConfig, new ArrayBucketFactory(), executor);
 			fproxyConfig.finishedInitialization();
@@ -646,14 +663,18 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			e4.printStackTrace();
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e4);
 		}
-		
-		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
-		recentlyCompletedIDs = new LRUQueue();
-		this.config = config;
-		this.random = random;
+
+		// Setup RNG if needed : DO NOT USE IT BEFORE THAT POINT!
+		this.random = (r == null ? new Yarrow() : r);
+		DiffieHellman.init(random);
 		byte buffer[] = new byte[16];
 		random.nextBytes(buffer);
 		this.fastWeakRandom = new MersenneTwister(buffer);
+		toadlets.getStartupToadlet().setIsPRNGReady();
+
+		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
+		recentlyCompletedIDs = new LRUQueue();
+		this.config = config;
 		cachedPubKeys = new LRUHashtable();
 		lm = new LocationManager(random, this);
 
@@ -1627,23 +1648,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		});
 		
 		disableHangCheckers = nodeConfig.getBoolean("disableHangCheckers");
-		
-		// l10n stuffs
-		nodeConfig.register("l10n", Locale.getDefault().getLanguage().toLowerCase(), sortOrder++, false, true, 
-				"Node.l10nLanguage",
-				"Node.l10nLanguageLong",
-				new L10nCallback());
-		
-		try {
-			L10n.setLanguage(nodeConfig.getString("l10n"));
-		} catch (MissingResourceException e) {
-			try {
-				L10n.setLanguage(nodeConfig.getOption("l10n").getDefault());
-			} catch (MissingResourceException e1) {
-				L10n.setLanguage(L10n.FALLBACK_DEFAULT);
-			}
-		}
-		
+				
 		nodeConfig.finishedInitialization();
 		writeNodeFile();
 		

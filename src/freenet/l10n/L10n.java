@@ -34,19 +34,19 @@ public class L10n {
 	public static final String FALLBACK_DEFAULT = "en";
 	/** @see http://www.omniglot.com/language/names.htm */
 	public static final String[][] AVAILABLE_LANGUAGES = {
-		new String[] { "en", "English" },
-		new String[] { "es", "Español" },
-		new String[] { "da", "Dansk" },
-		new String[] { "de", "Deutsch" },
-		new String[] { "fi", "Suomi" },
-		new String[] { "fr", "Français" },
-		new String[] { "it", "Italiano" },
-		new String[] { "no", "Norsk" },
-		new String[] { "pl", "Polski" },
-		new String[] { "se", "Svenska" },
-	        new String[] { "zh-cn", "中文(简体)" },
-		new String[] { "zh-tw", "中文(繁體)" },
-		new String[] { "unlisted", "unlisted"},
+		new String[] { "en", "English", "eng" },
+		new String[] { "es", "Español", "spa" },
+		new String[] { "da", "Dansk", "dan" },
+		new String[] { "de", "Deutsch", "deu" },
+		new String[] { "fi", "Suomi", "fin" },
+		new String[] { "fr", "Français", "fra" },
+		new String[] { "it", "Italiano", "ita" },
+		new String[] { "no", "Norsk", "nor" },
+		new String[] { "pl", "Polski", "pol" },
+		new String[] { "se", "Svenska", "svk" },
+	        new String[] { "zh-cn", "中文(简体)", "chn" },
+		new String[] { "zh-tw", "中文(繁體)", "zh-tw" },
+		new String[] { "unlisted", "unlisted", "unlisted"},
 	};
 	private final String selectedLanguage;
 	
@@ -59,7 +59,7 @@ public class L10n {
 
 	L10n(String selected) {
 		selectedLanguage = selected;
-		File tmpFile = new File(L10n.PREFIX + selected + L10n.OVERRIDE_SUFFIX);
+		File tmpFile = new File(L10n.PREFIX + mapLanguageNameToShortCode(selected) + L10n.OVERRIDE_SUFFIX);
 		
 		try {
 			if(tmpFile.exists() && tmpFile.canRead() && tmpFile.length() > 0) {
@@ -361,8 +361,9 @@ public class L10n {
 		for(int i=0; i<AVAILABLE_LANGUAGES.length; i++) {
 			String currentShortCode = AVAILABLE_LANGUAGES[i][0];
 			String currentLongName = AVAILABLE_LANGUAGES[i][1];
+			String currentCountryCodeName = AVAILABLE_LANGUAGES[i][2];
 			
-			if(currentShortCode.equalsIgnoreCase(name) || currentLongName.equalsIgnoreCase(name))
+			if(currentShortCode.equalsIgnoreCase(name) || currentLongName.equalsIgnoreCase(name) ||	currentCountryCodeName.equalsIgnoreCase(name))
 				return currentShortCode;
 		}
 		return null;

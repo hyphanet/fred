@@ -15,7 +15,7 @@ import freenet.support.api.BucketFactory;
 public class BucketChainBucket implements Bucket {
 	
 	private final Vector buckets;
-	private long bucketSize;
+	public final long bucketSize;
 	private long size;
 	private boolean freed;
 	private boolean readOnly;
@@ -39,6 +39,14 @@ public class BucketChainBucket implements Bucket {
 		}
 		for(int i=0;i<list.length;i++) {
 			list[i].free();
+		}
+	}
+	
+	/** Equivalent to free(), but don't free the underlying buckets. */
+	public void clear() {
+		synchronized(this) {
+			size = 0;
+			buckets.clear();
 		}
 	}
 
@@ -164,6 +172,7 @@ public class BucketChainBucket implements Bucket {
 			if(freed) throw new IOException("Freed");
 			size = 0;
 			list = getBuckets();
+			buckets.clear();
 		}
 		for(int i=0;i<list.length;i++) {
 			list[i].free();
@@ -189,7 +198,8 @@ public class BucketChainBucket implements Bucket {
 				}
 				if(bucketLength == bucketSize) {
 					curBucketStream.close();
-					curBucketStream = makeBucketOutputStream(bucketNo++);
+					curBucketStream = makeBucketOutputStream(++bucketNo);
+					bucketLength = 0;
 				}
 				curBucketStream.write(c);
 				bucketLength++;
@@ -218,7 +228,8 @@ public class BucketChainBucket implements Bucket {
 				if(length <= 0) return;
 				if(bucketLength == bucketSize) {
 					curBucketStream.close();
-					curBucketStream = makeBucketOutputStream(bucketNo++);
+					curBucketStream = makeBucketOutputStream(++bucketNo);
+					bucketLength = 0;
 				}
 				if(bucketLength + length > bucketSize) {
 					int split = (int) (bucketSize - bucketLength);
@@ -243,6 +254,9 @@ public class BucketChainBucket implements Bucket {
 
 	protected OutputStream makeBucketOutputStream(int i) throws IOException {
 		Bucket bucket = bf.makeBucket(bucketSize);
+		buckets.add(bucket);
+		if(buckets.size() != i+1)
+			throw new IllegalStateException("Added bucket, size should be "+(i+1)+" but is "+buckets.size());
 		buckets.set(i, bucket);
 		return bucket.getOutputStream();
 	}

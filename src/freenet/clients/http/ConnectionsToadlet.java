@@ -82,6 +82,23 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				return result < 0 ? -1 : 1;
 			}
 		}
+		
+		// TODO: use Long.valueOf().compare when we switch to 1.5
+		private int compareLongs(long long1, long long2) {
+			long diff = long1 - long2;
+			if(diff == 0)
+				return 0;
+			else
+				return (diff > 0 ? 1 : -1);
+		}
+		
+		private int compareInts(int int1, int int2) {
+			int diff = int1 -int2;
+			if(diff == 0)
+				return 0;
+			else
+				return (diff > 0 ? 1 : -1);
+		}
 
 		protected int customCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode, String sortBy2) {
 			if(sortBy.equals("address")){
@@ -90,6 +107,22 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				return compareLocations(firstNode, secondNode);
 			}else if(sortBy.equals("version")){
 				return Version.getArbitraryBuildNumber(firstNode.getVersion(), -1) - Version.getArbitraryBuildNumber(secondNode.getVersion(), -1);
+			}else if(sortBy.equals("backoff")){
+				return Double.compare(firstNode.getBackedOffPercent(), secondNode.getBackedOffPercent());
+			}else if(sortBy.equals(("overload_p"))){
+				return Double.compare(firstNode.getPReject(), secondNode.getPReject());
+			}else if(sortBy.equals(("idle"))){
+				return compareLongs(firstNode.getTimeLastConnectionCompleted(), secondNode.getTimeLastConnectionCompleted());
+			}else if(sortBy.equals("time_routable")){
+				return Double.compare(firstNode.getPercentTimeRoutableConnection(), secondNode.getPercentTimeRoutableConnection());
+			}else if(sortBy.equals("total_traffic")){
+				long total1 = firstNode.getTotalInputBytes()+firstNode.getTotalOutputBytes();
+				long total2 = secondNode.getTotalInputBytes()+secondNode.getTotalOutputBytes();
+				return compareLongs(total1, total2);
+			}else if(sortBy.equals("time_delta")){
+				return compareLongs(firstNode.getClockDelta(), secondNode.getClockDelta());
+			}else if(sortBy.equals(("uptime"))){
+				return compareInts(firstNode.getReportedUptimePercentage(), secondNode.getReportedUptimePercentage());
 			}else
 				return 0;
 		}
@@ -354,20 +387,20 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "version")).addChild("#", l10n("versionTitle"));
 				if (mode >= PageMaker.MODE_ADVANCED) {
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "location")).addChild("#", "Location");
-					peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "Other node busy? Display: Percentage of time the node is overloaded, Current wait time remaining (0=not overloaded)/total/last overload reason", "border-bottom: 1px dotted; cursor: help;" }, "Backoff");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "backoff")).addChild("span", new String[] { "title", "style" }, new String[] { "Other node busy? Display: Percentage of time the node is overloaded, Current wait time remaining (0=not overloaded)/total/last overload reason", "border-bottom: 1px dotted; cursor: help;" }, "Backoff");
 
-					peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { "Probability of the node rejecting a request due to overload or causing a timeout.", "border-bottom: 1px dotted; cursor: help;" }, "Overload Probability");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "overload_p")).addChild("span", new String[] { "title", "style" }, new String[] { "Probability of the node rejecting a request due to overload or causing a timeout.", "border-bottom: 1px dotted; cursor: help;" }, "Overload Probability");
 				}
-				peerTableHeaderRow.addChild("th").addChild("span", new String[] { "title", "style" }, new String[] { l10n("idleTime"), "border-bottom: 1px dotted; cursor: help;" }, l10n("idleTimeTitle"));
+				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "idle")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("idleTime"), "border-bottom: 1px dotted; cursor: help;" }, l10n("idleTimeTitle"));
 				if(hasPrivateNoteColumn())
 					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "privnote")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("privateNote"), "border-bottom: 1px dotted; cursor: help;" }, l10n("privateNoteTitle"));
 
 				if(mode >= PageMaker.MODE_ADVANCED) {
-					peerTableHeaderRow.addChild("th", "%\u00a0Time Routable");
-					peerTableHeaderRow.addChild("th", "Total\u00a0Traffic\u00a0(in/out/resent)");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "time_routable")).addChild("#", "%\u00a0Time Routable");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "total_traffic")).addChild("#", "Total\u00a0Traffic\u00a0(in/out/resent)");
 					peerTableHeaderRow.addChild("th", "Congestion\u00a0Control");
-					peerTableHeaderRow.addChild("th", "Time\u00a0Delta");
-					peerTableHeaderRow.addChild("th", "Reported\u00a0Uptime");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "time_delta")).addChild("#", "Time\u00a0Delta");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "uptime")).addChild("#", "Reported\u00a0Uptime");
 				}
 				
 				SimpleColumn[] endCols = endColumnHeaders(mode >= PageMaker.MODE_ADVANCED);
@@ -466,9 +499,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		
 		if (request.isPartSet("add")) {
 			// add a new node
-			String urltext = request.getPartAsString("url", 100);
+			String urltext = request.getPartAsString("url", 200);
 			urltext = urltext.trim();
-			String reftext = request.getPartAsString("ref", 2000);
+			String reftext = request.getPartAsString("ref", Integer.MAX_VALUE);
 			reftext = reftext.trim();
 			if (reftext.length() < 200) {
 				reftext = request.getPartAsString("reffile", 2000);
@@ -488,7 +521,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					// FIXME get charset encoding from uc.getContentType()
 					in = new BufferedReader(new InputStreamReader(uc.getInputStream()));
 					String line;
-					while ( (line = in.readLine()) != null) {
+					while ((line = in.readLine()) != null) {
 						ref.append( line ).append('\n');
 					}
 				} catch (IOException e) {

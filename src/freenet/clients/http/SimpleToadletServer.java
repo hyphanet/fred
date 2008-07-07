@@ -465,10 +465,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 	}
 	
-	private StartupToadlet startupToadlet;
+	public StartupToadlet startupToadlet;
 	
 	public void removeStartupToadlet() {
 		unregister(startupToadlet);
+		// Ready to be GCed
+		startupToadlet = null;
 		// Not in the navbar.
 	}
 	
@@ -518,6 +520,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				return;
 			}
 		}
+	}
+	
+	public StartupToadlet getStartupToadlet() {
+		return startupToadlet;
 	}
 	
 	public Toadlet findToadlet(URI uri) throws PermanentRedirectException {
