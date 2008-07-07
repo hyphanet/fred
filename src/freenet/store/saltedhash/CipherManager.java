@@ -111,6 +111,9 @@ public class CipherManager {
 	 * @return <code>true</code> if the <code>routeKey</code> match and the entry is decrypted.
 	 */
 	boolean decrypt(SaltedHashFreenetStore.Entry entry, byte[] routingKey) {
+		assert entry.header != null;
+		assert entry.data != null;
+
 		if (!entry.isEncrypted) {
 			// Already decrypted
 			if (Arrays.equals(entry.plainRoutingKey, routingKey))
