@@ -892,7 +892,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			configLock.writeLock().lock();
 			try {
 				generation++;
-				bloomFilter.fork();
+				bloomFilter.fork(BLOOM_FILTER_K);
 				keyCount.set(0);
 			} finally {
 				configLock.writeLock().unlock();
@@ -982,7 +982,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			configLock.writeLock().lock();
 			try {
 				generation++;
-				bloomFilter.fork();
+				bloomFilter.fork(BLOOM_FILTER_K);
 				keyCount.set(0);
 			} finally {
 				configLock.writeLock().unlock();

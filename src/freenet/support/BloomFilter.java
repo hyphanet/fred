@@ -70,6 +70,9 @@ public class BloomFilter {
 		} finally {
 			lock.writeLock().unlock();
 		}
+		
+		if (forkedFilter != null)
+			forkedFilter.updateFilter(key);
 	}
 
 	public boolean checkFilter(byte[] key) {
@@ -116,10 +119,6 @@ public class BloomFilter {
 		byte b = filter.get(offset / 8);
 		b |= 1 << (offset % 8);
 		filter.put(offset / 8, b);
-		
-		if (forkedFilter != null) {
-			forkedFilter.setBit(offset);
-		}
 	}
 
 	public void force() {
@@ -134,7 +133,7 @@ public class BloomFilter {
 	 * Create an empty, in-memory copy of bloom filter. New updates are written to both filters.
 	 * This is written back to disk on #merge()
 	 */
-	public void fork() {
+	public void fork(int k) {
 		lock.writeLock().lock();
 		try {
 			forkedFilter = new BloomFilter(length, k);
@@ -176,5 +175,10 @@ public class BloomFilter {
 			force();
 		}
 		filter = null;
+		forkedFilter = null;
+	}
+
+	public int getK() {
+		return k;
 	}
 }
