@@ -41,7 +41,7 @@ import freenet.support.io.FileUtil;
 
 /**
  * Index-less data store based on salted hash
- *
+ * 
  * @author sdiz
  */
 public class SaltedHashFreenetStore implements FreenetStore {
@@ -75,12 +75,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private int flags;
 
 	public static SaltedHashFreenetStore construct(File baseDir, String name, StoreCallback callback, Random random,
-			long maxKeys, SemiOrderedShutdownHook shutdownHook) throws IOException {
+	        long maxKeys, SemiOrderedShutdownHook shutdownHook) throws IOException {
 		return new SaltedHashFreenetStore(baseDir, name, callback, random, maxKeys, shutdownHook);
 	}
 
 	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback callback, Random random, long maxKeys,
-			SemiOrderedShutdownHook shutdownHook) throws IOException {
+	        SemiOrderedShutdownHook shutdownHook) throws IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 
@@ -222,7 +222,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	public void put(StorableBlock block, byte[] routingKey, byte[] fullKey, byte[] data, byte[] header,
-			boolean overwrite) throws IOException, KeyCollisionException {
+	        boolean overwrite) throws IOException, KeyCollisionException {
 		if (logMINOR)
 			Logger.minor(this, "Putting " + HexUtil.bytesToHex(routingKey) + " (" + name + ")");
 
@@ -555,7 +555,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	/**
 	 * Read entry from disk.
-	 *
+	 * 
 	 * Before calling this function, you should acquire all required locks.
 	 */
 	private Entry readEntry(long offset, byte[] routingKey, boolean withData) throws IOException {
@@ -573,7 +573,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		if (entry.isFree())
 			return entry; // don't read free entry
-		
+
 		if (routingKey != null) {
 			if (!Arrays.equals(routingKey, entry.digestedRoutingKey))
 				return null;
@@ -639,7 +639,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	/**
 	 * Write entry to disk.
-	 *
+	 * 
 	 * Before calling this function, you should:
 	 * <ul>
 	 * <li>acquire all required locks</li>
@@ -701,7 +701,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	/**
 	 * Change on disk store file size
-	 *
+	 * 
 	 * @param storeFileSize
 	 */
 	private void setStoreFileSize(long storeFileSize) {
@@ -804,7 +804,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	private final Entry NOT_MODIFIED = new Entry();
 
-	private interface BatchProcessor {	
+	private interface BatchProcessor {
 		// return <code>null</code> to free the entry
 		// return NOT_MODIFIED to keep the old entry
 		Entry process(Entry entry);
@@ -912,16 +912,16 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				batchProcessEntries(curOffset, RESIZE_MEMORY_ENTRIES, new BatchProcessor() {
 					public Entry process(Entry entry) {
 						if (entry.generation != generation) {
-						entry.generation = generation;
-						keyCount.incrementAndGet();
+							entry.generation = generation;
+							keyCount.incrementAndGet();
 						}
 
 						if (entry.storeSize == storeSize) {
 							// new size, don't have to relocate
 							if (entry.generation != generation) {
 								// update filter
-							bloomFilter.updateFilter(entry.getDigestedRoutingKey());
-							return entry;
+								bloomFilter.updateFilter(entry.getDigestedRoutingKey());
+								return entry;
 							} else {
 								return NOT_MODIFIED;
 							}
@@ -930,7 +930,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						// remove from store, prepare for relocation
 						try {
 							entry.setData(readHeader(entry.curOffset), readData(entry.curOffset));
-						oldEntryList.add(entry);
+							oldEntryList.add(entry);
 						} catch (IOException e) {
 							Logger.error(this, "error reading entry (offset=" + entry.curOffset + ")", e);
 						}
@@ -1016,7 +1016,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			bloomFilter.merge();
 			long endTime = System.currentTimeMillis();
 			Logger.normal(this, "Finish rebuilding bloom filter (" + name + ") in " + (endTime - startTime) / 1000
-					+ "s");
+			        + "s");
 
 			configLock.writeLock().lock();
 			try {
@@ -1050,73 +1050,73 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						return false;
 				}
 
-				long startFileOffset = offset  * Entry.METADATA_LENGTH;
+				long startFileOffset = offset * Entry.METADATA_LENGTH;
 				long entriesToRead = length;
-				long bufLen =  Entry.METADATA_LENGTH * entriesToRead;
+				long bufLen = Entry.METADATA_LENGTH * entriesToRead;
 
 				ByteBuffer buf = ByteBuffer.allocate((int) bufLen);
-					boolean dirty = false;
-					try {
-						while (buf.hasRemaining()) {
+				boolean dirty = false;
+				try {
+					while (buf.hasRemaining()) {
 						int status = metaFC.read(buf, startFileOffset + buf.position());
-							if (status == -1)
-								break;
-						}
-					} catch (IOException ioe) {
-						if (shutdown)
-							return false;
-						Logger.error(this, "unexpected IOException", ioe);
+						if (status == -1)
+							break;
 					}
-					buf.flip();
+				} catch (IOException ioe) {
+					if (shutdown)
+						return false;
+					Logger.error(this, "unexpected IOException", ioe);
+				}
+				buf.flip();
 
-					try { 
+				try {
 					for (int j = 0; !shutdown && buf.limit() > j * Entry.METADATA_LENGTH; j++) {
 						buf.position(j * Entry.METADATA_LENGTH);
 						if (buf.remaining() < Entry.METADATA_LENGTH) // EOF
-								break;
+							break;
 
-							ByteBuffer enBuf = buf.slice();
+						ByteBuffer enBuf = buf.slice();
 						enBuf.limit(Entry.METADATA_LENGTH);
 
 						Entry entry = new Entry(enBuf, null, null);
 						entry.curOffset = offset + j;
 
-							if (entry.isFree())
-								continue; // not occupied
+						if (entry.isFree())
+							continue; // not occupied
 
-							Entry newEntry = processor.process(entry);
-							if (newEntry == null) {// free the offset
+						Entry newEntry = processor.process(entry);
+						if (newEntry == null) {// free the offset
 							buf.position(j * Entry.METADATA_LENGTH);
 							buf.put(ByteBuffer.allocate(Entry.METADATA_LENGTH));
-								keyCount.decrementAndGet();
+							keyCount.decrementAndGet();
 
-								dirty = true;
-							} else if (newEntry == NOT_MODIFIED) {
-							} else {
-								// write back
+							dirty = true;
+						} else if (newEntry == NOT_MODIFIED) {
+						} else {
+							// write back
 							buf.position(j * Entry.METADATA_LENGTH);
 							buf.put(newEntry.toMetaDataBuffer());
 
 							assert newEntry.header == null; // not supported
 							assert newEntry.data == null; // not supported
 
-								dirty = true;
-							} 
-						}
-					} finally {
-						// write back.
-						if (dirty) {
-							buf.flip();
-
-							try {
-								while (buf.hasRemaining()) {
-								metaFC.write(buf, startFileOffset + buf.position());
-								}
-							} catch (IOException ioe) {
-								Logger.error(this, "unexpected IOException", ioe);
-							}
+							dirty = true;
 						}
 					}
+				} finally {
+					// write back.
+					if (dirty) {
+						buf.flip();
+
+						try {
+							while (buf.hasRemaining()) {
+								metaFC.write(buf, startFileOffset + buf.position());
+							}
+						} catch (IOException ioe) {
+							Logger.error(this, "unexpected IOException", ioe);
+						}
+					}
+				}
 
 				return true;
 			} finally {
@@ -1144,7 +1144,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				for (long offset : offsets) {
 					try {
 						if (!isFree(offset)
-								&& Arrays.equals(getDigestedKeyFromOffset(offset), entry.getDigestedRoutingKey())) {
+						        && Arrays.equals(getDigestedKeyFromOffset(offset), entry.getDigestedRoutingKey())) {
 							// do nothing
 							return true;
 						}
@@ -1202,7 +1202,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	// ------------- Locking
 	volatile boolean shutdown = false;
 	private LockManager lockManager;
-	private ReadWriteLock configLock = new ReentrantReadWriteLock(); 
+	private ReadWriteLock configLock = new ReentrantReadWriteLock();
 
 	/**
 	 * Lock all possible offsets of a key. This method would release the locks if any locking
@@ -1303,7 +1303,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	/**
 	 * Get offset in the hash table, given a plain routing key.
-	 *
+	 * 
 	 * @param plainKey
 	 * @param storeSize
 	 * @return
@@ -1314,7 +1314,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	/**
 	 * Get offset in the hash table, given a digested routing key.
-	 *
+	 * 
 	 * @param digestedKey
 	 * @param storeSize
 	 * @return
@@ -1323,7 +1323,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		long keyValue = Fields.bytesToLong(digestedKey);
 		long[] offsets = new long[OPTION_MAX_PROBE];
 
-		for (int i = 0 ; i < OPTION_MAX_PROBE ; i++) {
+		for (int i = 0; i < OPTION_MAX_PROBE; i++) {
 			// h + 141 i^2 + 13 i
 			offsets[i] = ((keyValue + 141 * (i * i) + 13 * i) & Long.MAX_VALUE) % storeSize;
 		}
