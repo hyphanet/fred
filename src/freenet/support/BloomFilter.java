@@ -29,7 +29,7 @@ public class BloomFilter {
 	 * Constructor
 	 * 
 	 * @param length
-	 * 		length in bits
+	 *            length in bits
 	 */
 	public BloomFilter(int length, int k) {
 		if (length % 8 != 0)
@@ -44,9 +44,9 @@ public class BloomFilter {
 	 * Constructor
 	 * 
 	 * @param file
-	 * 		disk file
+	 *            disk file
 	 * @param length
-	 * 		length in bits
+	 *            length in bits
 	 * @throws IOException
 	 */
 	public BloomFilter(File file, int length, int k) throws IOException {
@@ -70,7 +70,7 @@ public class BloomFilter {
 		} finally {
 			lock.writeLock().unlock();
 		}
-		
+
 		if (forkedFilter != null)
 			forkedFilter.updateFilter(key);
 	}
@@ -94,7 +94,7 @@ public class BloomFilter {
 		MessageDigest md = SHA256.getMessageDigest();
 		try {
 			ByteBuffer bf = null;
-			
+
 			for (int i = 0; i < k; i++) {
 				if (bf == null || bf.remaining() < 8) {
 					md.update(key);
@@ -126,7 +126,7 @@ public class BloomFilter {
 			((MappedByteBuffer) filter).force();
 		}
 	}
-	
+
 	protected BloomFilter forkedFilter;
 
 	/**
@@ -150,7 +150,7 @@ public class BloomFilter {
 			lock.writeLock().unlock();
 		}
 	}
-	
+
 	public void merge() {
 		lock.writeLock().lock();
 		try {
@@ -180,5 +180,24 @@ public class BloomFilter {
 
 	public int getK() {
 		return k;
+	}
+
+	/**
+	 * Calculate optimal K value
+	 * 
+	 * @param filterLength
+	 *            filter length in bits
+	 * @param maxKey
+	 * @return optimal K
+	 */
+	public static int optimialK(int filterLength, long maxKey) {
+		long k = Math.round(Math.log(2) * maxKey / filterLength);
+
+		if (k < 1)
+			k = 1;
+		if (k > 128)
+			k = 128;
+
+		return (int) k;
 	}
 }

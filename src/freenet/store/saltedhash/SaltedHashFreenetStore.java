@@ -53,9 +53,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private static final byte FLAG_REBUILD_BLOOM = 0x2;
 
 	private static final int BLOOM_FILTER_SIZE = 0x8000000; // bits
-	private static final int BLOOM_FILTER_K = 5;
 	private static final boolean updateBloom = true;
 	private static final boolean checkBloom = true;
+	private int bloomFilterK;
 	private BloomFilter bloomFilter;
 
 	private static boolean logMINOR;
@@ -111,7 +111,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			File bloomFile = new File(this.baseDir, name + ".bloom");
 			if (!bloomFile.exists() || bloomFile.length() != BLOOM_FILTER_SIZE / 8)
 				flags |= FLAG_REBUILD_BLOOM;
-			bloomFilter = new BloomFilter(bloomFile, BLOOM_FILTER_SIZE, BLOOM_FILTER_K);
+			bloomFilter = new BloomFilter(bloomFile, BLOOM_FILTER_SIZE, bloomFilterK);
 		}
 
 		if ((flags & FLAG_DIRTY) != 0)
@@ -727,9 +727,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 *  |0010|   Store Size  | prevStoreSize |
 	 *  +----+---------------+-------+-------+
 	 *  |0020| Est Key Count |  Gen  | Flags |
-	 *  +----+---------------+-------+-------+
+	 *  +----+-------+-------+-------+-------+
+	 *  |0030|   K   |                       |
+	 *  +----+-------+-----------------------+
 	 *  
 	 *  Gen = Generation
+	 *    K = K for bloom filter
 	 * </pre>
 	 */
 	private final File configFile;
@@ -763,6 +766,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			if ((flags & FLAG_DIRTY) != 0)
 				flags |= FLAG_REBUILD_BLOOM;
 
+			try {
+				bloomFilterK = raf.readInt();
+			} catch (IOException e) {
+				flags |= FLAG_REBUILD_BLOOM;
+			}
+
 			raf.close();
 		}
 
@@ -784,6 +793,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			raf.writeLong(keyCount.get());
 			raf.writeInt(generation);
 			raf.writeInt(flags);
+			raf.writeInt(bloomFilterK);
+			raf.writeInt(0);
+			raf.writeLong(0);
 
 			raf.close();
 
@@ -889,10 +901,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			if (storeSize > _prevStoreSize)
 				setStoreFileSize(storeSize);
 
+			int optimialK = BloomFilter.optimialK(BLOOM_FILTER_SIZE, storeSize);
 			configLock.writeLock().lock();
 			try {
 				generation++;
-				bloomFilter.fork(BLOOM_FILTER_K);
+				bloomFilter.fork(optimialK);
 				keyCount.set(0);
 			} finally {
 				configLock.writeLock().unlock();
@@ -963,7 +976,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					return;
 				bloomFilter.merge();
 				prevStoreSize = 0;
+
 				flags &= ~FLAG_REBUILD_BLOOM;
+				bloomFilterK = optimialK;
 			} finally {
 				configLock.writeLock().unlock();
 			}
@@ -978,11 +993,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			Logger.normal(this, "Start rebuilding bloom filter (" + name + ")");
 			long startTime = System.currentTimeMillis();
+			int optimialK = BloomFilter.optimialK(BLOOM_FILTER_SIZE, storeSize);
 
 			configLock.writeLock().lock();
 			try {
 				generation++;
-				bloomFilter.fork(BLOOM_FILTER_K);
+				bloomFilter.fork(bloomFilterK);
 				keyCount.set(0);
 			} finally {
 				configLock.writeLock().unlock();
@@ -1021,6 +1037,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			configLock.writeLock().lock();
 			try {
 				flags &= ~FLAG_REBUILD_BLOOM;
+				bloomFilterK = optimialK;
 			} finally {
 				configLock.writeLock().unlock();
 			}
