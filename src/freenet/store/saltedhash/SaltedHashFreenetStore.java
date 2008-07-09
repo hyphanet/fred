@@ -595,7 +595,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			if (status == -1)
 				throw new EOFException();
 		} while (buf.hasRemaining());
-
+		buf.flip();
 		return buf;
 	}
 
@@ -613,7 +613,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			if (status == -1)
 				throw new EOFException();
 		} while (buf.hasRemaining());
-
+		buf.flip();
 		return buf;
 	}
 
