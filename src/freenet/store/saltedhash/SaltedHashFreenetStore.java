@@ -1266,9 +1266,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			shutdown = true;
 			lockManager.shutdown();
 
-			synchronized (cleanerLock) {
-				cleanerLock.notifyAll();
+			cleanerLock.lock();
+			try {
+				cleanerCondition.signalAll();
 				cleanerThread.interrupt();
+			} finally {
+				cleanerLock.unlock();
 			}
 
 			configLock.writeLock().lock();
