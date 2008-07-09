@@ -571,6 +571,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		if (routingKey != null) {
 			if (!Arrays.equals(routingKey, entry.digestedRoutingKey))
 				return null;
+
 			if (withData) {
 				ByteBuffer headerBuf = readHeader(offset);
 				ByteBuffer dataBuf = readData(offset);
