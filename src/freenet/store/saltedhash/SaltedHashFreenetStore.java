@@ -463,6 +463,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		private ByteBuffer toHeaderBuffer() {
 			assert isEncrypted; // should have encrypted to get dataEncryptIV in control buffer
 
+			if (header == null)
+				return null;
+
 			ByteBuffer out = ByteBuffer.allocate(headerBlockLength);
 			out.put(header);
 			assert out.remaining() == 0;
@@ -473,6 +476,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		private ByteBuffer toDataBuffer() {
 			assert isEncrypted; // should have encrypted to get dataEncryptIV in control buffer
+
+			if (data == null)
+				return null;
 
 			ByteBuffer out = ByteBuffer.allocate(dataBlockLength);
 			out.put(data);
@@ -822,12 +828,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				cleanerLock.lock();
 				try {
 					long _prevStoreSize;
-					boolean _rebuildBloom;
-
 					configLock.readLock().lock();
 					try {
 						_prevStoreSize = prevStoreSize;
-						_rebuildBloom = ((flags & FLAG_REBUILD_BLOOM) != 0);
 					} finally {
 						configLock.readLock().unlock();
 					}
@@ -840,6 +843,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						}
 					}
 
+					boolean _rebuildBloom;
+					configLock.readLock().lock();
+					try {
+						_rebuildBloom = ((flags & FLAG_REBUILD_BLOOM) != 0);
+					} finally {
+						configLock.readLock().unlock();
+					}
 					if (_rebuildBloom && prevStoreSize == 0 && cleanerGlobalLock.tryLock()) {
 						try {
 							rebuildBloom();
@@ -873,9 +883,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		 * Move old entries to new location and resize store
 		 */
 		private void resizeStore(long _prevStoreSize) {
-			if (true) // temporary disabled
-				return;
-
 			Logger.normal(this, "Starting datastore resize");
 			long startTime = System.currentTimeMillis();
 
@@ -904,20 +911,34 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 				batchProcessEntries(curOffset, RESIZE_MEMORY_ENTRIES, new BatchProcessor() {
 					public Entry process(Entry entry) {
+						if (entry.generation != generation) {
 						entry.generation = generation;
 						keyCount.incrementAndGet();
-
-						if (entry.storeSize == storeSize) {// new size
-							bloomFilter.updateFilter(entry.getDigestedRoutingKey());
-
-							return entry;
 						}
 
+						if (entry.storeSize == storeSize) {
+							// new size, don't have to relocate
+							if (entry.generation != generation) {
+								// update filter
+							bloomFilter.updateFilter(entry.getDigestedRoutingKey());
+							return entry;
+							} else {
+								return NOT_MODIFIED;
+							}
+						}
+
+						// remove from store, prepare for relocation
+						try {
+							entry.setData(readHeader(entry.curOffset), readData(entry.curOffset));
 						oldEntryList.add(entry);
+						} catch (IOException e) {
+							Logger.error(this, "error reading entry (offset=" + entry.curOffset + ")", e);
+						}
 						return null;
 					}
 				});
 
+				// shrink data file to current size
 				if (storeSize < _prevStoreSize)
 					setStoreFileSize(Math.max(storeSize, curOffset));
 
@@ -952,9 +973,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		 * Rebuild bloom filter
 		 */
 		private void rebuildBloom() {
-			if (true) // temporary disabled
-				return;
-
 			if (bloomFilter == null)
 				return;
 
@@ -1022,12 +1040,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		 *         otherwise (e.g. can't acquire locks, node shutting down)
 		 */
 		private boolean batchProcessEntries(long offset, int length, BatchProcessor processor) {
-			return false;
-
-			/*- temporary disabled
-			assert offset % FILE_SPLIT == 0;
-			assert length % FILE_SPLIT == 0;
-
 			boolean[] locked = new boolean[length];
 			try {
 				// acquire all locks in the region, will unlock in the finally block
@@ -1038,17 +1050,15 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						return false;
 				}
 
-				long startFileOffset = (offset / FILE_SPLIT) * entryTotalLength;
-				long entriesToRead = length / FILE_SPLIT;
-				long bufLen = entryTotalLength * entriesToRead;
+				long startFileOffset = offset  * Entry.METADATA_LENGTH;
+				long entriesToRead = length;
+				long bufLen =  Entry.METADATA_LENGTH * entriesToRead;
 
 				ByteBuffer buf = ByteBuffer.allocate((int) bufLen);
-				for (int i = 0; i < FILE_SPLIT; i++) { // for each split file
 					boolean dirty = false;
-					buf.clear();
 					try {
 						while (buf.hasRemaining()) {
-							int status = storeFC[i].read(buf, startFileOffset + buf.position());
+						int status = metaFC.read(buf, startFileOffset + buf.position());
 							if (status == -1)
 								break;
 						}
@@ -1060,35 +1070,36 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					buf.flip();
 
 					try { 
-						for (int j = 0; buf.limit() >= j * entryTotalLength; j++) {
-							if (shutdown)
-								return false;
-
-							buf.position((int) (j * entryTotalLength));
-							if (buf.remaining() < entryTotalLength) // EOF
+					for (int j = 0; !shutdown && buf.limit() > j * Entry.METADATA_LENGTH; j++) {
+						buf.position(j * Entry.METADATA_LENGTH);
+						if (buf.remaining() < Entry.METADATA_LENGTH) // EOF
 								break;
 
 							ByteBuffer enBuf = buf.slice();
-							enBuf.limit((int) entryTotalLength);
+						enBuf.limit(Entry.METADATA_LENGTH);
 
-							Entry entry = new Entry(enBuf, SaltedHashFreenetStore.this);
-							entry.curOffset = offset + j * FILE_SPLIT + i;
+						Entry entry = new Entry(enBuf, null, null);
+						entry.curOffset = offset + j;
 
 							if (entry.isFree())
 								continue; // not occupied
 
 							Entry newEntry = processor.process(entry);
 							if (newEntry == null) {// free the offset
-								buf.position((int) (j * entryTotalLength));
-								buf.put(ByteBuffer.allocate((int) entryTotalLength));
+							buf.position(j * Entry.METADATA_LENGTH);
+							buf.put(ByteBuffer.allocate(Entry.METADATA_LENGTH));
 								keyCount.decrementAndGet();
 
 								dirty = true;
 							} else if (newEntry == NOT_MODIFIED) {
 							} else {
 								// write back
-								buf.position((int) (j * entryTotalLength));
-								buf.put(newEntry.toByteBuffer(SaltedHashFreenetStore.this));
+							buf.position(j * Entry.METADATA_LENGTH);
+							buf.put(newEntry.toMetaDataBuffer());
+
+							assert newEntry.header == null; // not supported
+							assert newEntry.data == null; // not supported
+
 								dirty = true;
 							} 
 						}
@@ -1099,14 +1110,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 							try {
 								while (buf.hasRemaining()) {
-									storeFC[i].write(buf, startFileOffset + buf.position());
+								metaFC.write(buf, startFileOffset + buf.position());
 								}
 							} catch (IOException ioe) {
 								Logger.error(this, "unexpected IOException", ioe);
 							}
 						}
 					}
-				}
 
 				return true;
 			} finally {
@@ -1115,7 +1125,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					if (locked[i])
 						lockManager.unlockEntry(offset + i);
 			}
-			 */
 		}
 
 		/**
