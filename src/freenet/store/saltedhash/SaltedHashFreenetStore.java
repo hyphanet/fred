@@ -157,6 +157,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 				try {
 					StorableBlock block = entry.getStorableBlock(routingKey, fullKey);
+					if (block == null) {
+						misses.incrementAndGet();
+						return null;
+					}
 					hits.incrementAndGet();
 					return block;
 				} catch (KeyVerifyException e) {
