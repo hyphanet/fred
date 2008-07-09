@@ -51,7 +51,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	private static final byte FLAG_DIRTY = 0x1;
 	private static final byte FLAG_REBUILD_BLOOM = 0x2;
-	
+
 	private static final int BLOOM_FILTER_SIZE = 0x8000000; // bits
 	private static final int BLOOM_FILTER_K = 5;
 	private static final boolean updateBloom = true;
@@ -98,7 +98,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		storeSize = maxKeys;
 
 		lockManager = new LockManager();
-		
+
 		// Create a directory it not exist
 		this.baseDir.mkdirs();
 
@@ -113,7 +113,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				flags |= FLAG_REBUILD_BLOOM;
 			bloomFilter = new BloomFilter(bloomFile, BLOOM_FILTER_SIZE, BLOOM_FILTER_K);
 		}
-		
+
 		if ((flags & FLAG_DIRTY) != 0)
 			System.err.println("Datastore(" + name + ") is dirty.");
 
@@ -127,10 +127,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			}
 			setMaxKeys(maxKeys, true);
 		}
-		
+
 		callback.setStore(this);
 		shutdownHook.addEarlyJob(new Thread(new ShutdownDB()));
-		
+
 		cleanerThread = new Cleaner();
 		cleanerThread.start();
 	}
@@ -275,7 +275,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						writeEntry(entry, offset[i]);
 						writes.incrementAndGet();
 						keyCount.incrementAndGet();
-						
+
 						return;
 					}
 				}
@@ -560,7 +560,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		Entry entry = new Entry(mbf, null, null);
 		entry.curOffset = offset;
-		
+
 		if (routingKey != null) {
 			if (!Arrays.equals(routingKey, entry.digestedRoutingKey))
 				return null;
@@ -644,7 +644,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		bf = entry.toHeaderBuffer();
 		if (bf != null) {
-		do {
+			do {
 				int status = headerFC.write(bf, headerBlockLength * offset + bf.position());
 				if (status == -1)
 					throw new EOFException();
@@ -653,21 +653,21 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			bf = entry.toDataBuffer();
 			do {
 				int status = dataFC.write(bf, dataBlockLength * offset + bf.position());
-			if (status == -1)
-				throw new EOFException();
-		} while (bf.hasRemaining());
+				if (status == -1)
+					throw new EOFException();
+			} while (bf.hasRemaining());
 		}
 
 		entry.curOffset = offset;
 	}
 
 	private void flushAndClose() {
-			try {
+		try {
 			metaFC.force(true);
 			metaFC.close();
-			} catch (Exception e) {
-				Logger.error(this, "error flusing store", e);
-			}
+		} catch (Exception e) {
+			Logger.error(this, "error flusing store", e);
+		}
 		try {
 			headerFC.force(true);
 			headerFC.close();
@@ -680,7 +680,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		} catch (Exception e) {
 			Logger.error(this, "error flusing store", e);
 		}
-		
+
 		if (bloomFilter != null)
 			bloomFilter.force();
 	}
@@ -691,14 +691,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * @param storeFileSize
 	 */
 	private void setStoreFileSize(long storeFileSize) {
-			try {
+		try {
 			metaRAF.setLength(Entry.METADATA_LENGTH * storeFileSize);
 			headerRAF.setLength(headerBlockLength * storeFileSize);
 			dataRAF.setLength(dataBlockLength * storeFileSize);
-			} catch (IOException e) {
-				Logger.error(this, "error resizing store file", e);
-			}
+		} catch (IOException e) {
+			Logger.error(this, "error resizing store file", e);
 		}
+	}
 
 	// ------------- Configuration
 	/**
@@ -745,7 +745,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			keyCount.set(raf.readLong());
 			generation = raf.readInt();
 			flags = raf.readInt();
-			
+
 			if ((flags & FLAG_DIRTY) != 0)
 				flags |= FLAG_REBUILD_BLOOM;
 
@@ -795,7 +795,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		// return NOT_MODIFIED to keep the old entry
 		Entry process(Entry entry);
 	}
-	
+
 	private class Cleaner extends Thread {
 		/**
 		 * How often the clean should run
@@ -815,7 +815,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				try {
 					long _prevStoreSize;
 					boolean _rebuildBloom;
-					
+
 					configLock.readLock().lock();
 					try {
 						_prevStoreSize = prevStoreSize;
@@ -831,7 +831,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 							cleanerGlobalLock.unlock();
 						}
 					}
-					
+
 					if (_rebuildBloom && prevStoreSize == 0 && cleanerGlobalLock.tryLock()) {
 						try {
 							rebuildBloom();
@@ -882,7 +882,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			} finally {
 				configLock.writeLock().unlock();
 			}
-			
+
 			final List<Entry> oldEntryList = new LinkedList<Entry>();
 
 			// start from end of store, make store shrinking quicker 
@@ -927,7 +927,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			long endTime = System.currentTimeMillis();
 			Logger.normal(this, "Finish resizing (" + name + ") in " + (endTime - startTime) / 1000 + "s");
-			
+
 			configLock.writeLock().lock();
 			try {
 				if (_prevStoreSize != prevStoreSize)
@@ -949,10 +949,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			if (bloomFilter == null)
 				return;
-			
+
 			Logger.normal(this, "Start rebuilding bloom filter (" + name + ")");
 			long startTime = System.currentTimeMillis();
-			
+
 			configLock.writeLock().lock();
 			try {
 				generation++;
@@ -973,14 +973,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						if (entry.generation != generation) {
 							bloomFilter.updateFilter(entry.getDigestedRoutingKey());
 							keyCount.incrementAndGet();
-							
+
 							entry.generation = generation;
 							return entry;
 						}
 						return NOT_MODIFIED;
 					}
 				});
-				
+
 				if (i++ % 16 == 0) {
 					Logger.normal(this, "Rebuilding bloom filter (" + name + "): " + curOffset + "/" + storeSize);
 					writeConfigFile();
@@ -990,7 +990,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			bloomFilter.merge();
 			long endTime = System.currentTimeMillis();
 			Logger.normal(this, "Finish rebuilding bloom filter (" + name + ") in " + (endTime - startTime) / 1000
-			        + "s");
+					+ "s");
 
 			configLock.writeLock().lock();
 			try {
@@ -1280,7 +1280,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	// ------------- Hashing
 	private CipherManager cipherManager;
-	
+
 	/**
 	 * Get offset in the hash table, given a plain routing key.
 	 *
@@ -1340,7 +1340,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		configLock.readLock().unlock();
 		return _storeSize;
 	}
-	
+
 	public long getBloomFalsePositive() {
 		return bloomFalsePos.get();
 	}
@@ -1358,7 +1358,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			byte[] key = new byte[fullKeyLength];
 
 			long maxKey = storeRAF.length() / (headerBlockLength + dataBlockLength);
-			
+
 			for (int l = 0; l < maxKey; l++) {
 				if (l % 1024 == 0) {
 					System.out.println(" migrating key " + l + "/" + maxKey);
