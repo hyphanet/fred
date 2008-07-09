@@ -565,6 +565,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		Entry entry = new Entry(mbf, null, null);
 		entry.curOffset = offset;
 
+		if (entry.isFree())
+			return entry; // don't read free entry
+		
 		if (routingKey != null) {
 			if (!Arrays.equals(routingKey, entry.digestedRoutingKey))
 				return null;
