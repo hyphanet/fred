@@ -457,7 +457,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		if(persistent)
 			container.set(blockNums);
 		if(schedule)
-			context.getChkFetchScheduler().register(null, new SendableGet[] { this }, false, persistent, true, null);
+			context.getChkFetchScheduler().register(null, new SendableGet[] { this }, false, persistent, true, null, null);
 	}
 
 	public String toString() {
@@ -586,7 +586,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context, boolean firstTime, boolean regmeOnly) {
-		getScheduler(context).register(firstTime ? segment : null, new SendableGet[] { this }, regmeOnly, persistent, true, segment.blockFetchContext.blocks);
+		getScheduler(context).register(firstTime ? segment : null, new SendableGet[] { this }, regmeOnly, persistent, true, segment.blockFetchContext.blocks, null);
 	}
 
 	public void removeBlockNum(int blockNum) {

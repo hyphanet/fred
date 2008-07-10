@@ -13,10 +13,8 @@ import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientKey;
-import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
-import freenet.keys.KeyVerifyException;
 import freenet.node.BaseSendableGet;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
@@ -192,19 +190,19 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * NOTE: delayedStoreCheck/probablyNotInStore is unnecessary because we only
 	 * register the listener once.
 	 */
-	public void register(final GotKeyListener listener, final SendableGet[] getters, boolean registerOffThread, final boolean persistent, boolean onDatabaseThread, final BlockSet blocks) {
+	public void register(final GotKeyListener listener, final SendableGet[] getters, boolean registerOffThread, final boolean persistent, boolean onDatabaseThread, final BlockSet blocks, final RegisterMe oldReg) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "register("+persistent+","+listener+","+getters+","+registerOffThread);
 		if(persistent) {
 			if(onDatabaseThread) {
-				innerRegister(listener, getters, registerOffThread, persistent, blocks);
+				innerRegister(listener, getters, registerOffThread, persistent, blocks, oldReg);
 			} else {
 				jobRunner.queue(new DBJob() {
 
 					public void run(ObjectContainer container, ClientContext context) {
 						// registerOffThread would be pointless because this is a separate job.
-						innerRegister(listener, getters, false, persistent, blocks);
+						innerRegister(listener, getters, false, persistent, blocks, oldReg);
 					}
 					
 				}, NativeThread.NORM_PRIORITY, false);
@@ -230,17 +228,20 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	
-	private void innerRegister(final GotKeyListener listener, final SendableGet[] getters, boolean registerOffThread, boolean persistent, final BlockSet blocks) {
+	private void innerRegister(final GotKeyListener listener, final SendableGet[] getters, boolean registerOffThread, boolean persistent, final BlockSet blocks, RegisterMe reg) {
 		if(listener != null) {
 			if(registerOffThread) {
 				short prio = listener.getPriorityClass(selectorContainer);
-				RegisterMe regme = new RegisterMe(listener, getters, prio, schedCore, blocks);
-				selectorContainer.set(regme);
+				if(reg == null) {
+					reg = new RegisterMe(listener, getters, prio, schedCore, blocks);
+					selectorContainer.set(reg);
+				}
+				final RegisterMe regme = reg;
 				if(logMINOR) Logger.minor(this, "Added regme: "+regme);
 				jobRunner.queue(new DBJob() {
 
 					public void run(ObjectContainer container, ClientContext context) {
-						register(listener, getters, false, true, true, blocks);
+						register(listener, getters, false, true, true, blocks, regme);
 					}
 					
 				}, NativeThread.NORM_PRIORITY, false);
@@ -248,12 +249,16 @@ public class ClientRequestScheduler implements RequestScheduler {
 			} else {
 				short prio = listener.getPriorityClass(selectorContainer);
 				schedCore.addPendingKeys(listener, selectorContainer);
-				final RegisterMe regme;
-				if(getters != null) {
-					regme = new RegisterMe(null, getters, prio, schedCore, blocks);
-					selectorContainer.set(regme);
-					if(logMINOR) Logger.minor(this, "Added regme: "+regme);
-				} else regme = null; // Nothing to finish registering.
+				if(reg == null && getters != null) {
+					reg = new RegisterMe(null, getters, prio, schedCore, blocks);
+					selectorContainer.set(reg);
+					if(logMINOR) Logger.minor(this, "Added regme: "+reg);
+				} else {
+					if(reg != null)
+						selectorContainer.delete(reg);
+					reg = null; // Nothing to finish registering.
+				}
+				final RegisterMe regme = reg;
 				// Check the datastore before proceding.
 				final Key[] keys = listener.listKeys(selectorContainer);
 				final boolean dontCache = listener.dontCache(selectorContainer);

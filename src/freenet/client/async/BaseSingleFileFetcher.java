@@ -228,7 +228,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements GotKe
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context, boolean delayed) {
-		getScheduler(context).register(this, new SendableGet[] { this }, delayed, persistent, true, ctx.blocks);
+		getScheduler(context).register(this, new SendableGet[] { this }, delayed, persistent, true, ctx.blocks, null);
 	}
 	
 	public SendableGet getRequest(Key key, ObjectContainer container) {
