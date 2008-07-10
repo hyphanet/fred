@@ -983,8 +983,10 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		ClientCHKBlock cb;
 		int retryCount = getBlockRetryCount(blockNum);
 		SplitFileFetcherSubSegment seg = this.getSubSegment(retryCount, container, true);
-		seg.removeBlockNum(blockNum);
-		seg.possiblyRemoveFromParent(container);
+		if(seg != null) {
+			seg.removeBlockNum(blockNum);
+			seg.possiblyRemoveFromParent(container);
+		}
 		try {
 			cb = new ClientCHKBlock((CHKBlock)block, ckey);
 		} catch (CHKVerifyException e) {
