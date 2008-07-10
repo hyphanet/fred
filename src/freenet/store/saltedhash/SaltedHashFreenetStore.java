@@ -575,7 +575,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			return entry; // don't read free entry
 
 		if (routingKey != null) {
-			if (!Arrays.equals(routingKey, entry.digestedRoutingKey))
+			if (!Arrays.equals(cipherManager.getDigestedKey(routingKey), entry.digestedRoutingKey))
 				return null;
 
 			if (withData) {
