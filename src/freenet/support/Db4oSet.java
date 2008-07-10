@@ -75,4 +75,14 @@ public class Db4oSet implements Set {
 	public void objectOnActivate(ObjectContainer container) {
 		container.activate(map, 1);
 	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		if(map == null) throw new NullPointerException();
+		return true;
+	}
+	
+	public boolean objectCanUpdate(ObjectContainer container) {
+		if(map == null) throw new NullPointerException();
+		return true;
+	}
 }
