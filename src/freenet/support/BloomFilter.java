@@ -191,7 +191,7 @@ public class BloomFilter {
 	 * @return optimal K
 	 */
 	public static int optimialK(int filterLength, long maxKey) {
-		long k = Math.round(Math.log(2) * maxKey / filterLength);
+		long k = Math.round(Math.log(2) * filterLength / maxKey);
 
 		if (k < 1)
 			k = 1;

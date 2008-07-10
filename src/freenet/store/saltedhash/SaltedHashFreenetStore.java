@@ -53,7 +53,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private static final byte FLAG_DIRTY = 0x1;
 	private static final byte FLAG_REBUILD_BLOOM = 0x2;
 
-	private static final int BLOOM_FILTER_SIZE = 0x8000000; // bits
+	private static final int BLOOM_FILTER_SIZE = 0x10000000; // 128Mib = 16MiB
 	private static final boolean updateBloom = true;
 	private static final boolean checkBloom = true;
 	private int bloomFilterK;
