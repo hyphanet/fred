@@ -115,7 +115,6 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			container.activate(parent, 1);
 			container.activate(rcb, 1);
 		}
-		unregister(container); // pending key has already been removed
 		if(parent.isCancelled()) {
 			data.asBucket().free();
 			onFailure(new FetchException(FetchException.CANCELLED), false, container, context);

@@ -181,7 +181,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	}
 
 	protected void onSuccess(FetchResult result, ObjectContainer container, ClientContext context) {
-		unregister(container); // Key has already been removed from pendingKeys
 		if(persistent) {
 			container.activate(decompressors, 1);
 			container.activate(parent, 1);

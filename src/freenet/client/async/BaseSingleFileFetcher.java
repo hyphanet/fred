@@ -187,6 +187,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements GotKe
 				return;
 			}
 		}
+		unregister(container); // Key has already been removed from pendingKeys
 		try {
 			onSuccess(Key.createKeyBlock(this.key, block), false, null, container, context);
 		} catch (KeyVerifyException e) {
