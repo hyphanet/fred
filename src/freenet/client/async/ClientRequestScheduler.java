@@ -516,7 +516,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 			int sameKey = 0;
 			while(true) {
 				req = null;
-				if(lastReq != null && sameKey < MAX_CONSECUTIVE_SAME_REQ) {
+				if(lastReq != null && sameKey < MAX_CONSECUTIVE_SAME_REQ &&
+						lastReq.getParentGrabArray() != null) {
 					req = schedCore.maybeMakeChosenRequest(lastReq, container, context);
 					sameKey++;
 				}
