@@ -692,6 +692,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						GotKeyListener got = gets[i];
 						container.activate(got, 1);
 						SendableGet req = got.getRequest(key, container);
+						container.activate(req, 1);
 						if(req == null) continue;
 						persistentCooldownQueue.removeKey(key, req, req.getCooldownWakeupByKey(key, container), container);
 					}
