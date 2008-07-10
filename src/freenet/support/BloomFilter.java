@@ -195,8 +195,8 @@ public class BloomFilter {
 
 		if (k < 1)
 			k = 1;
-		if (k > 128)
-			k = 128;
+		if (k > 32)
+			k = 32;
 
 		return (int) k;
 	}
