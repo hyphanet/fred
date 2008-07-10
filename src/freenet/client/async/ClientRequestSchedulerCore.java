@@ -558,7 +558,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				if(System.currentTimeMillis() > deadline) break;
 			}
 			if(registerMeSet.hasNext())
-				context.jobRunner.queue(registerMeRunner, NativeThread.NORM_PRIORITY, true);
+				context.jobRunner.queue(registerMeRunner, NativeThread.NORM_PRIORITY-1, true);
 			else
 				registerMeSet = null;
 		}
