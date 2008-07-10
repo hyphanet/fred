@@ -1496,7 +1496,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 				byte[] b = new byte[(int) entryTotalLength];
 
-				while (true) {
+				while (!shutdown) {
 					int status = storeRAF.read(b);
 					if (status != entryTotalLength)
 						break;
@@ -1519,7 +1519,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				}
 			} catch (IOException ioe) {
 			}
-			storeFiles.delete();	
+			if (!shutdown)
+				storeFiles.delete();	
 		}
 
 		System.out.println(name + ": old salt hash-->new salt hash migrated: " + c + " keys(done)");
