@@ -489,7 +489,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 
 		private StorableBlock getStorableBlock(byte[] routingKey, byte[] fullKey) throws KeyVerifyException {
-			if ((flag & ENTRY_FLAG_OCCUPIED) == 0)
+			if (isFree() || header == null || data == null)
 				return null; // this is a free block
 			if (!cipherManager.decrypt(this, routingKey))
 				return null;
