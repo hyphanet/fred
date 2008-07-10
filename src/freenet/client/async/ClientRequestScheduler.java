@@ -529,7 +529,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(req == null) {
 					req = removeFirst(container, false, true);
 					if(sameKey > 1)
-						Logger.error(this, "Selected "+sameKey+" requests from same SendableRequest: "+lastReq);
+						Logger.normal(this, "Selected "+sameKey+" requests from same SendableRequest: "+lastReq);
 					sameKey = 0;
 				}
 				if(req == null) return;
