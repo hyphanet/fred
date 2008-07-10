@@ -872,7 +872,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		/**
 		 * How often the clean should run
 		 */
-		private static final int CLEANER_PERIOD = 10 * 60 * 1000; // 10 minutes
+		private static final int CLEANER_PERIOD = 5 * 60 * 1000; // 5 minutes
 
 		public Cleaner() {
 			setName("Store-" + name + "-Cleaner");
