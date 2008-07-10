@@ -6,7 +6,6 @@ import java.util.Set;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
-import freenet.client.async.SplitFileFetcherSubSegment;
 
 /**
  * An array which supports very fast remove-and-return-a-random-element.
