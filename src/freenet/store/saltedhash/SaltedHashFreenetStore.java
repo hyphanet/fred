@@ -55,7 +55,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	private static final int BLOOM_FILTER_SIZE = 0x10000000; // 128Mib = 16MiB
 	private static final boolean updateBloom = true;
-	private static final boolean checkBloom = true;
+	private static boolean checkBloom = true;
 	private int bloomFilterK;
 	private BloomFilter bloomFilter;
 
@@ -110,8 +110,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		if (updateBloom || checkBloom) {
 			File bloomFile = new File(this.baseDir, name + ".bloom");
-			if (!bloomFile.exists() || bloomFile.length() != BLOOM_FILTER_SIZE / 8)
+			if (!bloomFile.exists() || bloomFile.length() != BLOOM_FILTER_SIZE / 8) {
 				flags |= FLAG_REBUILD_BLOOM;
+				checkBloom = false;
+			}
 			bloomFilter = new BloomFilter(bloomFile, BLOOM_FILTER_SIZE, bloomFilterK);
 		}
 
@@ -1021,6 +1023,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				prevStoreSize = 0;
 
 				flags &= ~FLAG_REBUILD_BLOOM;
+				checkBloom = true;
 				bloomFilterK = optimialK;
 			} finally {
 				configLock.writeLock().unlock();
@@ -1080,6 +1083,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			configLock.writeLock().lock();
 			try {
 				flags &= ~FLAG_REBUILD_BLOOM;
+				checkBloom = true;
 				bloomFilterK = optimialK;
 			} finally {
 				configLock.writeLock().unlock();
