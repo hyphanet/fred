@@ -135,6 +135,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		shutdownHook.addEarlyJob(new Thread(new ShutdownDB()));
 
 		cleanerThread = new Cleaner();
+
+		if (cleanerGlobalLock.tryLock()) {
+			migrateFromOldSaltedHash(); // XXX Old Format, to be removed in next build
+			cleanerGlobalLock.unlock();
+		}
+		
 		cleanerThread.start();
 	}
 
@@ -885,10 +891,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						Logger.debug(this, "interrupted", e);
 					}
 
-					if (cleanerGlobalLock.tryLock()) {
-						migrateFromOldSaltedHash(); // XXX Old Format, to be removed in next build
-						cleanerGlobalLock.unlock();
-					}
 					
 					long _prevStoreSize;
 					configLock.readLock().lock();
@@ -1501,6 +1503,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				byte[] b = new byte[(int) entryTotalLength];
 
 				while (!shutdown) {
+					WrapperManager.signalStarting(10 * 60 * 1000); // max 10 minutes
 					int status = storeRAF.read(b);
 					if (status != entryTotalLength)
 						break;
