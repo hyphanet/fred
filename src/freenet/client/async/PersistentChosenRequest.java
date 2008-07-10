@@ -29,7 +29,14 @@ public class PersistentChosenRequest extends ChosenRequest {
 	PersistentChosenRequest(ClientRequestSchedulerCore core, SendableRequest req, Object tok, Key key, ClientKey ckey, short prio) {
 		super(req, tok, key, ckey, prio);
 		if(tok == null) throw new NullPointerException();
-		hashCode = core.hashCode() ^ req.hashCode() ^ key.hashCode() ^ ckey.hashCode() ^ tok.hashCode();
+		int hash = core.hashCode() ^ req.hashCode();
+		if(key != null)
+			hash ^= key.hashCode();
+		if(ckey != null)
+			hash ^= ckey.hashCode();
+		if(tok != null)
+			hash ^= tok.hashCode();
+		hashCode = hash;
 		this.core = core;
 	}
 	
