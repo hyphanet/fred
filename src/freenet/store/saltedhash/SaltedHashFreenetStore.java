@@ -587,6 +587,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		dataFC.lock();
 
 		long storeFileSize = Math.max(storeSize, prevStoreSize);
+		WrapperManager.signalStarting(10 * 60 * 1000); // 10minutes, for filesystem that support no sparse file.
 		setStoreFileSize(storeFileSize);
 	}
 
