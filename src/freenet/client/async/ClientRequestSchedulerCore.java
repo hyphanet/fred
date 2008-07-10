@@ -25,6 +25,7 @@ import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableRequest;
 import freenet.support.Db4oSet;
+import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.RandomGrabArray;
@@ -619,8 +620,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	}
 
 	protected boolean inPendingKeys(SendableGet req, final Key key, ObjectContainer container) {
+		final String pks = HexUtil.bytesToHex(key.getFullKey());
 		ObjectSet pending = container.query(new Predicate() {
 			public boolean match(PendingKeyItem item) {
+				if(!pks.equals(item.fullKeyAsBytes)) return false;
 				if(!key.equals(item.key)) return false;
 				if(item.nodeDBHandle != nodeDBHandle) return false;
 				return true;
@@ -653,8 +656,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	}
 
 	public SendableGet[] getClientsForPendingKey(final Key key, ObjectContainer container) {
+		final String pks = HexUtil.bytesToHex(key.getFullKey());
 		ObjectSet pending = container.query(new Predicate() {
 			public boolean match(PendingKeyItem item) {
+				if(!pks.equals(item.fullKeyAsBytes)) return false;
 				if(!key.equals(item.key)) return false;
 				if(item.nodeDBHandle != nodeDBHandle) return false;
 				return true;
@@ -668,8 +673,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	}
 
 	public boolean anyWantKey(final Key key, ObjectContainer container) {
+		final String pks = HexUtil.bytesToHex(key.getFullKey());
 		ObjectSet pending = container.query(new Predicate() {
 			public boolean match(PendingKeyItem item) {
+				if(!pks.equals(item.fullKeyAsBytes)) return false;
 				if(!key.equals(item.key)) return false;
 				if(item.nodeDBHandle != nodeDBHandle) return false;
 				return true;
@@ -679,8 +686,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	}
 
 	public SendableGet[] removePendingKey(final Key key, ObjectContainer container) {
+		final String pks = HexUtil.bytesToHex(key.getFullKey());
 		ObjectSet pending = container.query(new Predicate() {
 			public boolean match(PendingKeyItem item) {
+				if(!pks.equals(item.fullKeyAsBytes)) return false;
 				if(!key.equals(item.key)) return false;
 				if(item.nodeDBHandle != nodeDBHandle) return false;
 				return true;
@@ -696,8 +705,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	}
 
 	public boolean removePendingKey(SendableGet getter, boolean complain, final Key key, ObjectContainer container) {
+		final String pks = HexUtil.bytesToHex(key.getFullKey());
 		ObjectSet pending = container.query(new Predicate() {
 			public boolean match(PendingKeyItem item) {
+				if(!pks.equals(item.fullKeyAsBytes)) return false;
 				if(!key.equals(item.key)) return false;
 				if(item.nodeDBHandle != nodeDBHandle) return false;
 				return true;
@@ -729,8 +740,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		// Native version seems to be faster, at least for a few thousand items...
 		// I'm not sure whether it's using the index though, we may need to reconsider for larger queues... FIXME
 		
+		final String pks = HexUtil.bytesToHex(key.getFullKey());
 		ObjectSet pending = container.query(new Predicate() {
 			public boolean match(PendingKeyItem item) {
+				if(!pks.equals(item.fullKeyAsBytes)) return false;
 				if(!key.equals(item.key)) return false;
 				if(item.nodeDBHandle != nodeDBHandle) return false;
 				return true;

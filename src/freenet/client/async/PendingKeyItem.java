@@ -5,17 +5,28 @@ import com.db4o.ObjectContainer;
 import freenet.keys.Key;
 import freenet.node.SendableGet;
 import freenet.node.SendableRequest;
+import freenet.support.HexUtil;
 
 public class PendingKeyItem {
 	
 	final long nodeDBHandle;
 	final Key key;
+	/**
+	 * EVIL DB4O HACK:
+	 * Db4o does not support indexing objects with a Comparator. It will only
+	 * index by the object id. It will not index by a byte[]. But it WILL index
+	 * by a string quite happily and very fast. So we convert to a string here.
+	 * Not doing so results in db4o instantiating every key in order to compare
+	 * it... whereas doing so results in a fast index lookup.
+	 */
+	final String fullKeyAsBytes;
 	private SendableGet[] getters;
 	
 	PendingKeyItem(Key key, SendableGet getter, long nodeDBHandle) {
 		this.key = key;
 		this.getters = new SendableGet[] { getter };
 		this.nodeDBHandle = nodeDBHandle;
+		this.fullKeyAsBytes = HexUtil.bytesToHex(key.getFullKey());
 	}
 	
 	public void addGetter(SendableGet getter) {
