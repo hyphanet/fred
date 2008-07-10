@@ -583,6 +583,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					req = removeFirst(container, false, true);
 					if(sameKey > 1)
 						Logger.error(this, "Selected "+sameKey+" requests from same SendableRequest: "+lastReq);
+					sameKey = 0;
 				}
 				if(req == null) return;
 				lastReq = req.request;
