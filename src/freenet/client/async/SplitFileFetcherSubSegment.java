@@ -49,8 +49,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	private static boolean logMINOR;
 	private boolean cancelled;
 	
-	SplitFileFetcherSubSegment(SplitFileFetcherSegment segment, int retryCount) {
-		super(segment.parent);
+	SplitFileFetcherSubSegment(SplitFileFetcherSegment segment, ClientRequester parent, int retryCount) {
+		super(parent);
 		this.segment = segment;
 		this.retryCount = retryCount;
 		this.parent = segment.parent;
