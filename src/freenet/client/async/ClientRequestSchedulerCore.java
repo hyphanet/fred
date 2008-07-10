@@ -540,7 +540,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					boolean allKilled = true;
 					for(int j=0;j<reg.getters.length;j++) {
 						container.activate(reg.getters[j], 2);
-						if(!reg.getters[i].isCancelled(container))
+						if(!reg.getters[j].isCancelled(container))
 							allKilled = false;
 					}
 					if(allKilled) {
