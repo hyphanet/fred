@@ -32,7 +32,7 @@ class USKChecker extends BaseSingleFileFetcher {
 			container.activate(this, 1);
 			container.activate(cb, 1);
 		}
-		unregister(false, container);
+		unregister(container); // Key has already been removed from pendingKeys
 		cb.onSuccess((ClientSSKBlock)block, context);
 	}
 
@@ -73,7 +73,7 @@ class USKChecker extends BaseSingleFileFetcher {
 		if(canRetry && retry(container, context)) return;
 		
 		// Ran out of retries.
-		unregister(false, container);
+		unregisterAll(container, context);
 		if(e.code == LowLevelGetException.CANCELLED){
 			cb.onCancelled(context);
 			return;

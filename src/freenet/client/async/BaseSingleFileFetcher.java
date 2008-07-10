@@ -17,7 +17,7 @@ import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
 import freenet.support.Logger;
 
-public abstract class BaseSingleFileFetcher extends SendableGet {
+public abstract class BaseSingleFileFetcher extends SendableGet implements GotKeyListener {
 
 	final ClientKey key;
 	protected boolean cancelled;
@@ -102,7 +102,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 				}
 				return true; // We will retry, just not yet. See requeueAfterCooldown(Key).
 			} else {
-				schedule(container, context, false, true);
+				schedule(container, context, false);
 			}
 			return true;
 		}
@@ -131,9 +131,21 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		synchronized(this) {
 			cancelled = true;
 		}
-		if(persistent)
+		if(persistent) {
 			container.set(this);
-		super.unregister(false, container);
+			container.activate(key, 5);
+		}
+		
+		unregisterAll(container, context);
+	}
+	
+	/**
+	 * Remove the pendingKeys item and then remove from the queue as well.
+	 * Call unregister(container) if you only want to remove from the queue.
+	 */
+	public void unregisterAll(ObjectContainer container, ClientContext context) {
+		getScheduler(context).removePendingKey(this, false, key.getNodeKey(), container);
+		super.unregister(container);
 	}
 
 	public synchronized boolean isCancelled(ObjectContainer container) {
@@ -148,6 +160,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return parent.getClient();
 	}
 
+	public boolean dontCache(ObjectContainer container) {
+		return !ctx.cacheLocalRequests;
+	}
+	
 	public boolean dontCache() {
 		return !ctx.cacheLocalRequests;
 	}
@@ -207,7 +223,25 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Requeueing after cooldown "+key+" for "+this);
-		schedule(container, context, false, true);
+		schedule(container, context, false);
+	}
+
+	public void schedule(ObjectContainer container, ClientContext context, boolean delayed) {
+		getScheduler(context).register(this, new SendableGet[] { this }, delayed, persistent, true, ctx.blocks);
 	}
 	
+	public SendableGet getRequest(Key key, ObjectContainer container) {
+		return this;
+	}
+
+	public Key[] listKeys(ObjectContainer container) {
+		if(cancelled || finished)
+			return new Key[0];
+		else {
+			if(persistent)
+				container.activate(key, 5);
+			return new Key[] { key.getNodeKey() };
+		}
+	}
+
 }

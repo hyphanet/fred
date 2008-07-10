@@ -110,7 +110,7 @@ public class SimpleSendableInsert extends SendableInsert {
 
 	public void schedule() {
 		finished = false; // can reschedule
-		scheduler.register(this, false, false);
+		scheduler.registerInsert(this, false, false);
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
@@ -118,7 +118,7 @@ public class SimpleSendableInsert extends SendableInsert {
 			if(finished) return;
 			finished = true;
 		}
-		super.unregister(false, container);
+		super.unregister(container);
 	}
 
 	public boolean shouldCache() {

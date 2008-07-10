@@ -273,12 +273,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				container.set(ret);
 				if(logMINOR)
 					Logger.minor(this, "Storing "+ret+" for "+req);
-				if((ctr++ & 15) == 0) {
-					// This check is quite expensive, don't do it all the time.
-					if((req instanceof SendableGet) && !inPendingKeys((SendableGet)req, key, container)) {
-						Logger.error(this, "Selected key not in pendingKeys: key "+key+" for "+req);
-					}
-				}
 			} else {
 				ret = new ChosenRequest(req, token, key, ckey, req.getPriorityClass(container));
 			}
@@ -542,17 +536,31 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				if(logMINOR)
 					Logger.minor(this, "RegisterMe: next() took "+(endNext-startNext));
 				container.delete(reg);
-				container.activate(reg.getter, 2);
-				if(reg.getter.isCancelled(container)) continue;
+				if(reg.getters != null) {
+					boolean allKilled = true;
+					for(int j=0;j<reg.getters.length;j++) {
+						container.activate(reg.getters[j], 2);
+						if(!reg.getters[i].isCancelled(container))
+							allKilled = false;
+					}
+					if(allKilled) {
+						if(logMINOR)
+							Logger.minor(this, "Not registering as all SendableGet's already cancelled");
+					}
+				}
+				
 				if(logMINOR)
-					Logger.minor(this, "Running RegisterMe for "+reg.getter+" : "+reg.key.addedTime+" : "+reg.key.priority);
+					Logger.minor(this, "Running RegisterMe for "+reg.listener+" and "+reg.getters+" : "+reg.key.addedTime+" : "+reg.key.priority);
 				// Don't need to activate, fields should exist? FIXME
 				try {
-					sched.register(reg.getter, true, false, reg, false);
+					sched.register(reg.listener, reg.getters, false, true, true, reg.blocks);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t+" running RegisterMeRunner", t);
 					// Cancel the request, and commit so it isn't tried again.
-					reg.getter.internalError(null, t, sched, container, context, true);
+					if(reg.getters != null) {
+						for(int k=0;k<reg.getters.length;k++)
+							reg.getters[k].internalError(null, t, sched, container, context, true);
+					}
 				}
 				if(System.currentTimeMillis() > deadline) break;
 			}
@@ -565,17 +573,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		}
 		
 	}
-	public RegisterMe queueRegister(SendableRequest req, PrioritizedSerialExecutor databaseExecutor, ObjectContainer container) {
-		if(!databaseExecutor.onThread()) {
-			throw new IllegalStateException("Not on database thread!");
-		}
-		RegisterMe reg = new RegisterMe(req, req.getPriorityClass(container), this);
-		container.set(reg);
-		if(logMINOR)
-			Logger.minor(this, "Queued RegisterMe for "+req+" : "+reg);
-		return reg;
-	}
-
 	/**
 	 * @return True unless the key was already present.
 	 */
@@ -620,7 +617,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		return pending.size();
 	}
 
-	protected boolean inPendingKeys(SendableGet req, final Key key, ObjectContainer container) {
+	protected boolean inPendingKeys(GotKeyListener req, final Key key, ObjectContainer container) {
 		final String pks = HexUtil.bytesToHex(key.getFullKey());
 		ObjectSet pending = container.query(new Predicate() {
 			public boolean match(PendingKeyItem item) {
@@ -656,7 +653,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		return false;
 	}
 
-	public SendableGet[] getClientsForPendingKey(final Key key, ObjectContainer container) {
+	public GotKeyListener[] getClientsForPendingKey(final Key key, ObjectContainer container) {
 		final String pks = HexUtil.bytesToHex(key.getFullKey());
 		ObjectSet pending = container.query(new Predicate() {
 			public boolean match(PendingKeyItem item) {
@@ -686,7 +683,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		return pending.hasNext();
 	}
 
-	public SendableGet[] removePendingKey(final Key key, ObjectContainer container) {
+	public GotKeyListener[] removePendingKey(final Key key, ObjectContainer container) {
 		final String pks = HexUtil.bytesToHex(key.getFullKey());
 		ObjectSet pending = container.query(new Predicate() {
 			public boolean match(PendingKeyItem item) {
@@ -698,14 +695,14 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		});
 		if(pending.hasNext()) {
 			PendingKeyItem item = (PendingKeyItem) pending.next();
-			SendableGet[] getters = item.getters();
+			GotKeyListener[] getters = item.getters();
 			container.delete(item);
 			return getters;
 		}
 		return null;
 	}
 
-	public boolean removePendingKey(SendableGet getter, boolean complain, final Key key, ObjectContainer container) {
+	public boolean removePendingKey(GotKeyListener getter, boolean complain, final Key key, ObjectContainer container) {
 		final String pks = HexUtil.bytesToHex(key.getFullKey());
 		ObjectSet pending = container.query(new Predicate() {
 			public boolean match(PendingKeyItem item) {
@@ -728,7 +725,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		return false;
 	}
 
-	protected void addPendingKey(final Key key, SendableGet getter, ObjectContainer container) {
+	protected void addPendingKey(final Key key, GotKeyListener getter, ObjectContainer container) {
 		if(logMINOR)
 			Logger.minor(this, "Adding pending key for "+key+" for "+getter);
 		long startTime = System.currentTimeMillis();

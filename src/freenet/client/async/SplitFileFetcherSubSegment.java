@@ -329,7 +329,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			onFailure(new FetchException(FetchException.CANCELLED), token, container, context);
 			return;
 		}
-		segment.onSuccess(data, blockNo, this, block, container, context);
+		segment.onSuccess(data, blockNo, block, container, context);
 	}
 
 	/** Convert a ClientKeyBlock to a Bucket. If an error occurs, report it via onFailure
@@ -456,10 +456,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		}
 		if(persistent)
 			container.set(blockNums);
-		if(schedule) schedule(container, context, false, true); // Retrying so not in store
-		else if(!dontSchedule)
-			// Already scheduled, however this key may not be registered.
-			getScheduler(context).addPendingKey(segment.getBlockKey(blockNo, container), this);
+		if(schedule)
+			context.getChkFetchScheduler().register(null, new SendableGet[] { this }, false, persistent, true, null);
 	}
 
 	public String toString() {
@@ -480,7 +478,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				Logger.minor(this, "Definitely removing from parent: "+this);
 			if(!segment.maybeRemoveSeg(this, container)) return;
 		}
-		unregister(false, container);
+		unregister(container);
 	}
 
 	public void onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
@@ -542,7 +540,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		if(logMINOR)
 			Logger.minor(this, "Killing "+this);
 		// Do unregister() first so can get and unregister each key and avoid a memory leak
-		unregister(false, container);
+		unregister(container);
 		synchronized(segment) {
 			blockNums.clear();
 			cancelled = true;
@@ -564,9 +562,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Requeueing after cooldown "+key+" for "+this);
-		if(!segment.requeueAfterCooldown(key, time, container, context, this)) {
-			Logger.error(this, "Removing key "+key+" for "+this+" in requeueAfterCooldown as is now registered to a different subsegment");
-			unregisterKey(key, context, container);
+		if(!segment.requeueAfterCooldown(key, time, container, context)) {
+			Logger.error(this, "Key was not wanted after cooldown: "+key+" for "+this+" in requeueAfterCooldown");
 		}
 	}
 
@@ -585,6 +582,23 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		}
 		synchronized(segment) {
 			segment.resetCooldownTimes((Integer[])blockNums.toArray(new Integer[blockNums.size()]));
+		}
+	}
+
+	public void schedule(ObjectContainer container, ClientContext context, boolean firstTime, boolean regmeOnly) {
+		getScheduler(context).register(firstTime ? segment : null, new SendableGet[] { this }, regmeOnly, persistent, true, segment.blockFetchContext.blocks);
+	}
+
+	public void removeBlockNum(int blockNum) {
+		synchronized(segment) {
+			for(int i=0;i<blockNums.size();i++) {
+				Integer token = (Integer) blockNums.get(i);
+				int num = ((Integer)token).intValue();
+				if(num == blockNum) {
+					blockNums.remove(i);
+					break;
+				}
+			}
 		}
 	}
 

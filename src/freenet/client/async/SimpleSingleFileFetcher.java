@@ -101,7 +101,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			}
 		}
 		// :(
-		unregister(false, container);
+		unregisterAll(container, context);
 		if(e.isFatal() || forceFatal)
 			parent.fatallyFailedBlock(container, context);
 		else
@@ -115,7 +115,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			container.activate(parent, 1);
 			container.activate(rcb, 1);
 		}
-		unregister(false, container);
+		unregister(container); // pending key has already been removed
 		if(parent.isCancelled()) {
 			data.asBucket().free();
 			onFailure(new FetchException(FetchException.CANCELLED), false, container, context);

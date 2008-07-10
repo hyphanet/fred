@@ -10,11 +10,9 @@ import java.util.Set;
 import com.db4o.ObjectContainer;
 
 import freenet.crypt.RandomSource;
-import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.node.BaseSendableGet;
 import freenet.node.RequestStarter;
-import freenet.node.SendableGet;
 import freenet.node.SendableRequest;
 import freenet.support.Logger;
 import freenet.support.SectoredRandomGrabArrayWithInt;
@@ -142,7 +140,7 @@ abstract class ClientRequestSchedulerBase {
 		for(int i=0;i<reqs.length;i++) {
 			SendableRequest req = reqs[i];
 			// Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.
-			req.unregister(true, container);
+			req.unregister(container);
 			// Then can do innerRegister() (not register()).
 			innerRegister(req, random, container);
 		}
@@ -175,31 +173,25 @@ abstract class ClientRequestSchedulerBase {
 			}
 	}
 
-	public void addPendingKeys(SendableGet getter, ObjectContainer container) {
-		Object[] keyTokens = getter.sendableKeys(container);
-		Object prevTok = null;
+	public void addPendingKeys(GotKeyListener getter, ObjectContainer container) {
+		if(persistent())
+			container.activate(getter, 1);
+		Key[] keyTokens = getter.listKeys(container);
+		Key prevTok = null;
 		for(int i=0;i<keyTokens.length;i++) {
-			Object tok = keyTokens[i];
-			if(i != 0 && prevTok == tok || (prevTok != null && tok != null && prevTok.equals(tok))) {
+			Key key = keyTokens[i];
+			if(i != 0 && prevTok == key || (prevTok != null && key != null && prevTok.equals(key))) {
 				Logger.error(this, "Ignoring duplicate token");
 				continue;
 			}
-			prevTok = tok;
-			ClientKey key = getter.getKey(tok, container);
 			if(getter.persistent())
 				container.activate(key, 5);
-			if(key == null) {
-				if(logMINOR)
-					Logger.minor(this, "No key for "+tok+" for "+getter+" - already finished?");
-					continue;
-			} else {
-				addPendingKey(key.getNodeKey(), getter, container);
-			}
+			addPendingKey(key, getter, container);
 		}
 	}
 	
 	public short getKeyPrio(Key key, short priority, ObjectContainer container) {
-		SendableGet[] getters = getClientsForPendingKey(key, container);
+		GotKeyListener[] getters = getClientsForPendingKey(key, container);
 		if(getters == null) return priority;
 		for(int i=0;i<getters.length;i++) {
 			if(persistent())
@@ -214,17 +206,17 @@ abstract class ClientRequestSchedulerBase {
 	
 	public abstract long countQueuedRequests(ObjectContainer container);
 	
-	protected abstract boolean inPendingKeys(SendableGet req, Key key, ObjectContainer container);
+	protected abstract boolean inPendingKeys(GotKeyListener req, Key key, ObjectContainer container);
 	
-	public abstract SendableGet[] getClientsForPendingKey(Key key, ObjectContainer container);
+	public abstract GotKeyListener[] getClientsForPendingKey(Key key, ObjectContainer container);
 	
 	public abstract boolean anyWantKey(Key key, ObjectContainer container);
 	
-	public abstract SendableGet[] removePendingKey(Key key, ObjectContainer container);
+	public abstract GotKeyListener[] removePendingKey(Key key, ObjectContainer container);
 	
-	public abstract boolean removePendingKey(SendableGet getter, boolean complain, Key key, ObjectContainer container);
+	public abstract boolean removePendingKey(GotKeyListener getter, boolean complain, Key key, ObjectContainer container);
 	
-	abstract void addPendingKey(Key key, SendableGet getter, ObjectContainer container);
+	abstract void addPendingKey(Key key, GotKeyListener getter, ObjectContainer container);
 	
 	protected abstract Set makeSetForAllRequestsByClientRequest(ObjectContainer container);
 

@@ -2,7 +2,7 @@ package freenet.client.async;
 
 import com.db4o.ObjectContainer;
 
-import freenet.node.SendableRequest;
+import freenet.node.SendableGet;
 
 /**
  * These must be deleted once the request has been registered.
@@ -10,16 +10,28 @@ import freenet.node.SendableRequest;
  * @author toad
  */
 public class RegisterMe {
-	final SendableRequest getter;
+	final GotKeyListener listener;
+	final SendableGet[] getters;
 	final ClientRequestSchedulerCore core;
 	final RegisterMeSortKey key;
 	private final int hashCode;
+	public final BlockSet blocks;
 	
-	RegisterMe(SendableRequest getter, short prio, ClientRequestSchedulerCore core) {
-		hashCode = (getter.hashCode() * prio) ^ core.hashCode();
-		this.getter = getter;
+	RegisterMe(GotKeyListener listener, SendableGet[] getters, short prio, ClientRequestSchedulerCore core, BlockSet blocks) {
+		this.listener = listener;
+		this.getters = getters;
 		this.core = core;
 		this.key = new RegisterMeSortKey(prio);
+		this.blocks = blocks;
+		int hash = core.hashCode();
+		if(listener != null)
+			hash ^= listener.hashCode();
+		if(getters != null) {
+			for(int i=0;i<getters.length;i++)
+				hash ^= getters[i].hashCode();
+		}
+		hash *= prio;
+		hashCode = hash;
 	}
 	
 	public void objectOnActivate(ObjectContainer container) {

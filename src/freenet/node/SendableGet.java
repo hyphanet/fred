@@ -99,12 +99,6 @@ public abstract class SendableGet extends BaseSendableGet {
 		return true;
 	}
 
-	public void schedule(ObjectContainer container, ClientContext context, boolean regmeOnly, boolean assumeNotInStore) {
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Scheduling "+this);
-		getScheduler(context).register(this, regmeOnly, assumeNotInStore);
-	}
-	
 	public ClientRequestScheduler getScheduler(ClientContext context) {
 		if(isSSK())
 			return context.getSskFetchScheduler();
@@ -112,14 +106,6 @@ public abstract class SendableGet extends BaseSendableGet {
 			return context.getChkFetchScheduler();
 	}
 
-	/**
-	 * Callback for when a block is found. Will be called on the database executor thread.
-	 * @param key
-	 * @param block
-	 * @param sched
-	 */
-	public abstract void onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context);
-	
 	/**
 	 * Get the time at which the key specified by the given token will wake up from the 
 	 * cooldown queue.
@@ -132,16 +118,6 @@ public abstract class SendableGet extends BaseSendableGet {
 	
 	/** Reset the cooldown times when the request is reregistered. */
 	public abstract void resetCooldownTimes(ObjectContainer container);
-
-	public final void unregister(boolean staySubscribed, ObjectContainer container, ClientContext context) {
-		if(!staySubscribed)
-			getScheduler(context).removePendingKeys(this, false);
-		super.unregister(staySubscribed, container);
-	}
-	
-	public final void unregisterKey(Key key, ClientContext context, ObjectContainer container) {
-		getScheduler(context).removePendingKey(this, false, key, container);
-	}
 
 	public void internalError(final Object keyNum, final Throwable t, final RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
 		sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), keyNum, NativeThread.MAX_PRIORITY, null, persistent);

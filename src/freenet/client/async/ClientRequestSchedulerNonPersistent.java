@@ -63,7 +63,7 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 	 * Register a pending key to an already-registered request. This is necessary if we've
 	 * already registered a SendableGet, but we later add some more keys to it.
 	 */
-	void addPendingKey(Key nodeKey, SendableGet getter, ObjectContainer container) {
+	void addPendingKey(Key nodeKey, GotKeyListener getter, ObjectContainer container) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequestSchedulerBase.class);
 		if(logMINOR)
 			Logger.minor(this, "Adding pending key "+nodeKey+" for "+getter);
@@ -71,13 +71,13 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 			Object o = pendingKeys.get(nodeKey);
 			if(o == null) {
 				pendingKeys.put(nodeKey, getter);
-			} else if(o instanceof SendableGet) {
-				SendableGet oldGet = (SendableGet) o;
+			} else if(o instanceof GotKeyListener) {
+				GotKeyListener oldGet = (GotKeyListener) o;
 				if(oldGet != getter) {
-					pendingKeys.put(nodeKey, new SendableGet[] { oldGet, getter });
+					pendingKeys.put(nodeKey, new GotKeyListener[] { oldGet, getter });
 				}
 			} else {
-				SendableGet[] gets = (SendableGet[]) o;
+				GotKeyListener[] gets = (GotKeyListener[]) o;
 				boolean found = false;
 				for(int j=0;j<gets.length;j++) {
 					if(gets[j] == getter) {
@@ -86,7 +86,7 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 					}
 				}
 				if(!found) {
-					SendableGet[] newGets = new SendableGet[gets.length+1];
+					GotKeyListener[] newGets = new GotKeyListener[gets.length+1];
 					System.arraycopy(gets, 0, newGets, 0, gets.length);
 					newGets[gets.length] = getter;
 					pendingKeys.put(nodeKey, newGets);
@@ -95,7 +95,7 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 		}
 	}
 
-	public boolean removePendingKey(SendableGet getter, boolean complain, Key key, ObjectContainer container) {
+	public boolean removePendingKey(GotKeyListener getter, boolean complain, Key key, ObjectContainer container) {
 		if(logMINOR)
 			Logger.minor(this, "Removing pending key: "+getter+" for "+key);
 		boolean dropped = false;
@@ -110,8 +110,8 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 			if(o == null) {
 				if(complain)
 					Logger.normal(this, "Not found: "+getter+" for "+key+" removing (no such key)");
-			} else if(o instanceof SendableGet) {
-				SendableGet oldGet = (SendableGet) o;
+			} else if(o instanceof GotKeyListener) {
+				GotKeyListener oldGet = (GotKeyListener) o;
 				if(oldGet != getter) {
 					if(complain)
 						Logger.normal(this, "Not found: "+getter+" for "+key+" removing (1 getter)");
@@ -122,9 +122,9 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 						Logger.minor(this, "Removed only getter (1) for "+key, new Exception("debug"));
 				}
 			} else {
-				SendableGet[] gets = (SendableGet[]) o;
+				GotKeyListener[] gets = (GotKeyListener[]) o;
 				final int getsLength = gets.length;
-				SendableGet[] newGets = new SendableGet[getsLength > 1 ? getsLength-1 : 0];
+				GotKeyListener[] newGets = new GotKeyListener[getsLength > 1 ? getsLength-1 : 0];
 				boolean found = false;
 				int x = 0;
 				for(int j=0;j<getsLength;j++) {
@@ -152,7 +152,7 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 					pendingKeys.put(key, newGets[0]);
 				} else {
 					if(x != getsLength-1) {
-						SendableGet[] newNewGets = new SendableGet[x];
+						GotKeyListener[] newNewGets = new GotKeyListener[x];
 						System.arraycopy(newGets, 0, newNewGets, 0, x);
 						newGets = newNewGets;
 					}
@@ -163,19 +163,19 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 		return dropped;
 	}
 
-	public SendableGet[] removePendingKey(Key key, ObjectContainer container) {
+	public GotKeyListener[] removePendingKey(Key key, ObjectContainer container) {
 		Object o;
-		final SendableGet[] gets;
+		final GotKeyListener[] gets;
 		synchronized(pendingKeys) {
 			o = pendingKeys.remove(key);
 		}
 		if(o == null) return null;
-		if(o instanceof SendableGet) {
-			gets = new SendableGet[] { (SendableGet) o };
+		if(o instanceof GotKeyListener) {
+			gets = new GotKeyListener[] { (GotKeyListener) o };
 			if(logMINOR)
 				Logger.minor(this, "Removing all pending keys for "+key+" (1)", new Exception("debug"));
 		} else {
-			gets = (SendableGet[]) o;
+			gets = (GotKeyListener[]) o;
 			if(logMINOR)
 				Logger.minor(this, "Removing all pending keys for "+key+" ("+gets.length+")", new Exception("debug"));
 		}
@@ -193,11 +193,11 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 			Object o = pendingKeys.get(key);
 			if(o == null) {
 				// Blah
-			} else if(o instanceof SendableGet) {
-				short p = ((SendableGet)o).getPriorityClass(container);
+			} else if(o instanceof GotKeyListener) {
+				short p = ((GotKeyListener)o).getPriorityClass(container);
 				if(p < priority) priority = p;
 			} else { // if(o instanceof SendableGet[]) {
-				SendableGet[] gets = (SendableGet[]) o;
+				GotKeyListener[] gets = (GotKeyListener[]) o;
 				for(int i=0;i<gets.length;i++) {
 					short p = gets[i].getPriorityClass(container);
 					if(p < priority) priority = p;
@@ -207,32 +207,32 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 		return priority;
 	}
 
-	public SendableGet[] getClientsForPendingKey(Key key, ObjectContainer container) {
+	public GotKeyListener[] getClientsForPendingKey(Key key, ObjectContainer container) {
 		Object o;
 		synchronized(pendingKeys) {
 			o = pendingKeys.get(key);
 		}
 		if(o == null) {
 			return null;
-		} else if(o instanceof SendableGet) {
-			SendableGet get = (SendableGet) o;
-			return new SendableGet[] { get };
+		} else if(o instanceof GotKeyListener) {
+			GotKeyListener get = (GotKeyListener) o;
+			return new GotKeyListener[] { get };
 		} else {
-			return (SendableGet[]) o;
+			return (GotKeyListener[]) o;
 		}
 	}
 
-	protected boolean inPendingKeys(SendableGet req, Key key, ObjectContainer container) {
+	protected boolean inPendingKeys(GotKeyListener req, Key key, ObjectContainer container) {
 		Object o;
 		synchronized(pendingKeys) {
 			o = pendingKeys.get(key);
 		}
 		if(o == null) {
 			return false;
-		} else if(o instanceof SendableGet) {
+		} else if(o instanceof GotKeyListener) {
 			return o == req;
 		} else {
-			SendableGet[] gets = (SendableGet[]) o;
+			GotKeyListener[] gets = (GotKeyListener[]) o;
 			for(int i=0;i<gets.length;i++)
 				if(gets[i] == req) return true;
 		}
