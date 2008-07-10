@@ -558,8 +558,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			}
 			if(registerMeSet.hasNext())
 				context.jobRunner.queue(registerMeRunner, NativeThread.NORM_PRIORITY-1, true);
-			else
+			else {
+				if(logMINOR) Logger.minor(this, "RegisterMeRunner finished");
 				registerMeSet = null;
+			}
 		}
 		
 	}
