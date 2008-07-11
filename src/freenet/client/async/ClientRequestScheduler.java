@@ -688,6 +688,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 			public void run(ObjectContainer container, ClientContext context) {
 				container.activate(key, 1);
+				if(logMINOR) Logger.minor(this, "tripPendingKey for "+key);
 				final GotKeyListener[] gets = schedCore.removePendingKey(key, container);
 				if(gets == null) return;
 				if(persistentCooldownQueue != null) {
