@@ -436,7 +436,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					recent.add(altReq);
 			}
 			// Now we have chosen a request.
-			if(logMINOR) Logger.debug(this, "removeFirst() returning "+req+" ("+chosenTracker.getNumber()+", prio "+
+			if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" ("+chosenTracker.getNumber()+", prio "+
 					req.getPriorityClass(container)+", retries "+req.getRetryCount()+", client "+req.getClient()+", client-req "+req.getClientRequest()+ ')');
 			ClientRequester cr = req.getClientRequest();
 			if(req.canRemove(container)) {
@@ -598,6 +598,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		sched.clientContext.jobRunner.queue(new DBJob() {
 			public void run(ObjectContainer container, ClientContext context) {
 				container.delete(req);
+			}
+			public String toString() {
+				return "Delete "+req;
 			}
 		}, NativeThread.NORM_PRIORITY+1, false);
 		}
