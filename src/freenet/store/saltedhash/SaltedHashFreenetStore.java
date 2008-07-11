@@ -887,7 +887,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				Thread.sleep((int)(CLEANER_PERIOD / 2 + CLEANER_PERIOD * Math.random()));
 			} catch (InterruptedException e){}
 
+			int loop = 0;
 			while (!shutdown) {
+				loop++;
+
 				cleanerLock.lock();
 				try {
 					long _prevStoreSize;
@@ -922,7 +925,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					}
 
 					try {
-						if (bloomFilter != null)
+						if (bloomFilter != null && loop % 6 == 0)
 							bloomFilter.force();
 					} catch (Exception e) { // may throw IOException (even if it is not defined)
 						Logger.error(this, "Can't force bloom filter", e);
