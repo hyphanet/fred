@@ -609,6 +609,26 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		return new Db4oSet(container, 1);
 	}
 
+	private ObjectSet queryForKey(final Key key, ObjectContainer container) {
+		final String pks = HexUtil.bytesToHex(key.getFullKey());
+		long startTime = System.currentTimeMillis();
+		// Can db4o handle this???
+		ObjectSet ret = container.query(new Predicate() {
+			public boolean match(PendingKeyItem item) {
+				if(!pks.equals(item.fullKeyAsBytes)) return false;
+				if(item.nodeDBHandle != nodeDBHandle) return false;
+				if(!key.equals(item.key)) return false;
+				return true;
+			}
+		});
+		long endTime = System.currentTimeMillis();
+		if(endTime - startTime > 1000)
+			Logger.error(this, "Query took "+(endTime - startTime)+"ms for "+((key instanceof freenet.keys.NodeSSK) ? "SSK" : "CHK"));
+		else if(logMINOR)
+			Logger.minor(this, "Query took "+(endTime - startTime)+"ms for "+((key instanceof freenet.keys.NodeSSK) ? "SSK" : "CHK"));
+		return ret;
+	}
+	
 	public long countQueuedRequests(ObjectContainer container) {
 		ObjectSet pending = container.query(new Predicate() {
 			public boolean match(PendingKeyItem item) {
@@ -620,15 +640,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	}
 
 	protected boolean inPendingKeys(GotKeyListener req, final Key key, ObjectContainer container) {
-		final String pks = HexUtil.bytesToHex(key.getFullKey());
-		ObjectSet pending = container.query(new Predicate() {
-			public boolean match(PendingKeyItem item) {
-				if(!pks.equals(item.fullKeyAsBytes)) return false;
-				if(!key.equals(item.key)) return false;
-				if(item.nodeDBHandle != nodeDBHandle) return false;
-				return true;
-			}
-		});
+		ObjectSet pending = queryForKey(key, container);
 		if(pending.hasNext()) {
 			PendingKeyItem item = (PendingKeyItem) pending.next();
 			return item.hasGetter(req);
@@ -656,15 +668,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	}
 
 	public GotKeyListener[] getClientsForPendingKey(final Key key, ObjectContainer container) {
-		final String pks = HexUtil.bytesToHex(key.getFullKey());
-		ObjectSet pending = container.query(new Predicate() {
-			public boolean match(PendingKeyItem item) {
-				if(!pks.equals(item.fullKeyAsBytes)) return false;
-				if(!key.equals(item.key)) return false;
-				if(item.nodeDBHandle != nodeDBHandle) return false;
-				return true;
-			}
-		});
+		ObjectSet pending = queryForKey(key, container);
 		if(pending.hasNext()) {
 			PendingKeyItem item = (PendingKeyItem) pending.next();
 			return item.getters();
@@ -673,28 +677,12 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	}
 
 	public boolean anyWantKey(final Key key, ObjectContainer container) {
-		final String pks = HexUtil.bytesToHex(key.getFullKey());
-		ObjectSet pending = container.query(new Predicate() {
-			public boolean match(PendingKeyItem item) {
-				if(!pks.equals(item.fullKeyAsBytes)) return false;
-				if(!key.equals(item.key)) return false;
-				if(item.nodeDBHandle != nodeDBHandle) return false;
-				return true;
-			}
-		});
+		ObjectSet pending = queryForKey(key, container);
 		return pending.hasNext();
 	}
 
 	public GotKeyListener[] removePendingKey(final Key key, ObjectContainer container) {
-		final String pks = HexUtil.bytesToHex(key.getFullKey());
-		ObjectSet pending = container.query(new Predicate() {
-			public boolean match(PendingKeyItem item) {
-				if(!pks.equals(item.fullKeyAsBytes)) return false;
-				if(!key.equals(item.key)) return false;
-				if(item.nodeDBHandle != nodeDBHandle) return false;
-				return true;
-			}
-		});
+		ObjectSet pending = queryForKey(key, container);
 		if(pending.hasNext()) {
 			PendingKeyItem item = (PendingKeyItem) pending.next();
 			GotKeyListener[] getters = item.getters();
@@ -705,15 +693,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	}
 
 	public boolean removePendingKey(GotKeyListener getter, boolean complain, final Key key, ObjectContainer container) {
-		final String pks = HexUtil.bytesToHex(key.getFullKey());
-		ObjectSet pending = container.query(new Predicate() {
-			public boolean match(PendingKeyItem item) {
-				if(!pks.equals(item.fullKeyAsBytes)) return false;
-				if(!key.equals(item.key)) return false;
-				if(item.nodeDBHandle != nodeDBHandle) return false;
-				return true;
-			}
-		});
+		ObjectSet pending = queryForKey(key, container);
 		if(pending.hasNext()) {
 			PendingKeyItem item = (PendingKeyItem) pending.next();
 			boolean ret = item.removeGetter(getter);
@@ -740,20 +720,12 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		// Native version seems to be faster, at least for a few thousand items...
 		// I'm not sure whether it's using the index though, we may need to reconsider for larger queues... FIXME
 		
-		final String pks = HexUtil.bytesToHex(key.getFullKey());
-		ObjectSet pending = container.query(new Predicate() {
-			public boolean match(PendingKeyItem item) {
-				if(!pks.equals(item.fullKeyAsBytes)) return false;
-				if(!key.equals(item.key)) return false;
-				if(item.nodeDBHandle != nodeDBHandle) return false;
-				return true;
-			}
-		});
+		ObjectSet pending = queryForKey(key, container);
 		long endTime = System.currentTimeMillis();
 		if(endTime - startTime > 1000)
-			Logger.error(this, "Query took "+(endTime - startTime)+"ms");
+			Logger.error(this, "Query took "+(endTime - startTime)+"ms for "+((key instanceof freenet.keys.NodeSSK) ? "SSK" : "CHK"));
 		else if(logMINOR)
-			Logger.minor(this, "Query took "+(endTime - startTime)+"ms");
+			Logger.minor(this, "Query took "+(endTime - startTime)+"ms for "+((key instanceof freenet.keys.NodeSSK) ? "SSK" : "CHK"));
 		if(pending.hasNext()) {
 			PendingKeyItem item = (PendingKeyItem) pending.next();
 			item.addGetter(getter);
