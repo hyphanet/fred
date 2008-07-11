@@ -52,6 +52,7 @@ public class FCPPersistentRoot {
 		if(set.hasNext()) {
 			FCPClient client = (FCPClient) set.next();
 			container.activate(client, 1);
+			client.setConnection(handler);
 			return client;
 		}
 		FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_FOREVER, this, container);
