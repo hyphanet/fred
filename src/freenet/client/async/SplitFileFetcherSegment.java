@@ -423,8 +423,10 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 				checkKeys[i] = null;
 			}
 		}
-		if(persistent)
+		if(persistent) {
 			container.set(this);
+			container.activate(parentFetcher, 1);
+		}
 		// Defer the completion until we have generated healing blocks if we are collecting binary blobs.
 		if(isCollectingBinaryBlob())
 			parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
@@ -636,8 +638,10 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		}
 		context.getChkFetchScheduler().removePendingKeys(this, true);
 		removeSubSegments(container);
-		if(persistent)
+		if(persistent) {
 			container.set(this);
+			container.activate(parentFetcher, 1);
+		}
 		parentFetcher.segmentFinished(this, container, context);
 	}
 
