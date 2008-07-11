@@ -727,6 +727,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		 * We need to back it up and auto-recover. */
 		/* Client-server mode. Refresh objects if you have a long-lived container! */
 		Db4o.configure().objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("key").indexed(true);
+		Db4o.configure().objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("time").indexed(true);
 		Db4o.configure().objectClass(freenet.client.async.RegisterMe.class).objectField("core").indexed(true);
 		Db4o.configure().objectClass(freenet.client.async.RegisterMe.class).objectField("key").indexed(true);
 		Db4o.configure().objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("time").indexed(true);
