@@ -535,7 +535,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			return digestedRoutingKey;
 		}
 		
-
 		// XXX Old Format, to be removed in next build
 		public void readOldFormat(ByteBuffer in) {
 			assert in.remaining() == entryTotalLength;
@@ -891,7 +890,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			while (!shutdown) {
 				cleanerLock.lock();
 				try {
-					
 					long _prevStoreSize;
 					configLock.readLock().lock();
 					try {
@@ -902,7 +900,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 					if (_prevStoreSize != 0 && cleanerGlobalLock.tryLock()) {
 						try {
-							resizeStore(_prevStoreSize);
+							resizeStore(_prevStoreSize, true);
 						} finally {
 							cleanerGlobalLock.unlock();
 						}
@@ -917,7 +915,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					}
 					if (_rebuildBloom && prevStoreSize == 0 && cleanerGlobalLock.tryLock()) {
 						try {
-							rebuildBloom();
+							rebuildBloom(true);
 						} finally {
 							cleanerGlobalLock.unlock();
 						}
@@ -942,12 +940,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			}
 		}
 
-		private static final int RESIZE_MEMORY_ENTRIES = 256; // temporary memory store size (in # of entries)
+		private static final int RESIZE_MEMORY_ENTRIES = 128; // temporary memory store size (in # of entries)
 
 		/**
 		 * Move old entries to new location and resize store
 		 */
-		private void resizeStore(long _prevStoreSize) {
+		private void resizeStore(long _prevStoreSize, boolean sleep) {
 			Logger.normal(this, "Starting datastore resize");
 			long startTime = System.currentTimeMillis();
 
@@ -975,6 +973,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					return;
 				}
 
+				WrapperManager.signalStarting(RESIZE_MEMORY_ENTRIES * 30 * 1000 + 1000);
 				batchProcessEntries(curOffset, RESIZE_MEMORY_ENTRIES, new BatchProcessor() {
 					public Entry process(Entry entry) {
 						if (entry.generation != generation) {
@@ -1018,6 +1017,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				long processed = _prevStoreSize - curOffset;
 				if (i++ % 16 == 0)
 					Logger.normal(this, "Store resize (" + name + "): " + processed + "/" + _prevStoreSize);
+
+				try {
+					if (!sleep)
+						Thread.sleep(500);
+				} catch (InterruptedException e) {
+					bloomFilter.discard();
+					return;
+				}
 			}
 
 			long endTime = System.currentTimeMillis();
@@ -1041,7 +1048,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		/**
 		 * Rebuild bloom filter
 		 */
-		private void rebuildBloom() {
+		private void rebuildBloom(boolean sleep) {
 			if (bloomFilter == null)
 				return;
 
@@ -1064,6 +1071,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					bloomFilter.discard();
 					return;
 				}
+				WrapperManager.signalStarting(RESIZE_MEMORY_ENTRIES * 5 * 1000 + 1000);
 				batchProcessEntries(curOffset, RESIZE_MEMORY_ENTRIES, new BatchProcessor() {
 					public Entry process(Entry entry) {
 						if (entry.generation != generation) {
@@ -1080,6 +1088,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				if (i++ % 16 == 0) {
 					Logger.normal(this, "Rebuilding bloom filter (" + name + "): " + curOffset + "/" + storeSize);
 					writeConfigFile();
+				}
+
+				try {
+					if (sleep)
+						Thread.sleep(500);
+				} catch (InterruptedException e) {
+					bloomFilter.discard();
+					return;
 				}
 			}
 
