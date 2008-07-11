@@ -535,7 +535,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				long endNext = System.currentTimeMillis();
 				if(logMINOR)
 					Logger.minor(this, "RegisterMe: next() took "+(endNext-startNext));
-				container.delete(reg);
 				if(reg.getters != null) {
 					boolean allKilled = true;
 					for(int j=0;j<reg.getters.length;j++) {
@@ -553,7 +552,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					Logger.minor(this, "Running RegisterMe "+reg+" for "+reg.listener+" and "+reg.getters+" : "+reg.key.addedTime+" : "+reg.key.priority);
 				// Don't need to activate, fields should exist? FIXME
 				try {
-					sched.register(reg.listener, reg.getters, false, true, true, reg.blocks, null);
+					sched.register(reg.listener, reg.getters, false, true, true, reg.blocks, reg);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t+" running RegisterMeRunner", t);
 					// Cancel the request, and commit so it isn't tried again.
