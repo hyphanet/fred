@@ -882,15 +882,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		@Override
 		public void run() {
+			try {
+				Thread.sleep((int)(CLEANER_PERIOD / 2 + CLEANER_PERIOD * Math.random()));
+			} catch (InterruptedException e){}
+
 			while (!shutdown) {
 				cleanerLock.lock();
 				try {
-					try {
-						cleanerCondition.await(CLEANER_PERIOD, TimeUnit.MILLISECONDS);
-					} catch (InterruptedException e) {
-						Logger.debug(this, "interrupted", e);
-					}
-
 					
 					long _prevStoreSize;
 					configLock.readLock().lock();
@@ -930,6 +928,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						Logger.error(this, "Can't force bloom filter", e);
 					}
 					writeConfigFile();
+
+					try {
+						cleanerCondition.await(CLEANER_PERIOD, TimeUnit.MILLISECONDS);
+					} catch (InterruptedException e) {
+						Logger.debug(this, "interrupted", e);
+					}
 				} finally {
 					cleanerLock.unlock();
 				}
