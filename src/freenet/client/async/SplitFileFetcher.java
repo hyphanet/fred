@@ -72,7 +72,7 @@ public class SplitFileFetcher implements ClientGetState {
 	
 	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent2,
 			FetchContext newCtx, ArrayList decompressors2, ClientMetadata clientMetadata, 
-			ArchiveContext actx, int recursionLevel, Bucket returnBucket, long token2, ObjectContainer container) throws FetchException, MetadataParseException {
+			ArchiveContext actx, int recursionLevel, Bucket returnBucket, long token2, ObjectContainer container, ClientContext context) throws FetchException, MetadataParseException {
 		this.persistent = parent2.persistent();
 		this.hashCode = super.hashCode();
 		this.finished = false;
@@ -183,6 +183,7 @@ public class SplitFileFetcher implements ClientGetState {
 		this.token = token2;
 		parent.addBlocks(splitfileDataBlocks.length + splitfileCheckBlocks.length, container);
 		parent.addMustSucceedBlocks(splitfileDataBlocks.length, container);
+		parent.notifyClients(container, context);
 	}
 
 	/** Return the final status of the fetch. Throws an exception, or returns a 

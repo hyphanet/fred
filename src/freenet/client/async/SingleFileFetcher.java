@@ -595,7 +595,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				}
 				
 				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, parent, ctx, 
-						decompressors, clientMetadata, actx, recursionLevel, returnBucket, token, container);
+						decompressors, clientMetadata, actx, recursionLevel, returnBucket, token, container, context);
 				parent.onTransition(this, sf, container);
 				sf.schedule(container, context, false);
 				rcb.onBlockSetFinished(this, container, context);
