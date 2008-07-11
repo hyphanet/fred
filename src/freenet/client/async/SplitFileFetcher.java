@@ -287,8 +287,10 @@ public class SplitFileFetcher implements ClientGetState {
 	}
 
 	private void finish(ObjectContainer container, ClientContext context) {
-		if(persistent)
+		if(persistent) {
 			container.activate(this, 1);
+			container.activate(cb, 1);
+		}
 		try {
 			synchronized(this) {
 				if(finished) {
