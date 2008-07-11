@@ -419,7 +419,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				altReq = null;
 			}
 			if(altReq != null && altReq.getPriorityClass(container) <= choosenPriorityClass && 
-					fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber() && !altReq.isEmpty(container)) {
+					fixRetryCount(altReq.getRetryCount()) <= chosenTracker.getNumber() && !altReq.isEmpty(container) && altReq != req) {
 				// Use the recent one instead
 				if(logMINOR)
 					Logger.minor(this, "Recently succeeded req "+altReq+" is better, using that, reregistering chosen "+req);
