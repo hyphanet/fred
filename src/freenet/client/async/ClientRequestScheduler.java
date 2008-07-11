@@ -344,11 +344,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 									break;
 								}
 								synchronized(starterQueue) {
+									starterQueue.add(cr);
 									if(starterQueue.size() >= MAX_STARTER_QUEUE_SIZE) {
 										tryDirect = false;
 										break;
 									}
-									starterQueue.add(cr);
 								}
 							}
 						}
