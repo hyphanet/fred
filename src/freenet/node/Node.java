@@ -737,6 +737,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		Db4o.configure().objectClass(freenet.client.FECJob.class).objectField("addedTime").indexed(true);
 		Db4o.configure().objectClass(freenet.client.FECJob.class).objectField("queue").indexed(true);
 		Db4o.configure().objectClass(freenet.client.async.PendingKeyItem.class).objectField("nodeDBHandle").indexed(true);
+		Db4o.configure().objectClass(freenet.client.async.InsertCompressor.class).objectField("nodeDBHandle").indexed(true);
 		/** Maybe we want a different query evaluation mode?
 		 * At the moment, a big splitfile insert will result in one SingleBlockInserter
 		 * for every key, which means one RegisterMe for each ... this results in a long pause
@@ -766,9 +767,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			public void onDiagnostic(Diagnostic arg0) {
 				if(arg0 instanceof DiagnosticBase) {
 					DiagnosticBase d = (DiagnosticBase) arg0;
-					Logger.error(this, "Diagnostic: "+d.getClass()+" : "+d.problem()+" : "+d.solution()+" : "+d.reason());
+					Logger.error(this, "Diagnostic: "+d.getClass()+" : "+d.problem()+" : "+d.solution()+" : "+d.reason(), new Exception("debug"));
 				} else
-					Logger.error(this, "Diagnostic: "+arg0+" : "+arg0.getClass());
+					Logger.error(this, "Diagnostic: "+arg0+" : "+arg0.getClass(), new Exception("debug"));
 			}
 			
 		});

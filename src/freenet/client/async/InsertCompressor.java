@@ -25,7 +25,7 @@ import freenet.support.io.NativeThread;
  * 
  * @author toad
  */
-class InsertCompressor {
+public class InsertCompressor {
 	
 	/** Database handle to identify which node it belongs to in the database */
 	public final long nodeDBHandle;
