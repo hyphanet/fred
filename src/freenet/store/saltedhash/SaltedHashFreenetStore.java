@@ -39,6 +39,7 @@ import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.io.FileUtil;
+import freenet.support.io.NativeThread;
 
 /**
  * Index-less data store based on salted hash
@@ -868,20 +869,21 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		Entry process(Entry entry);
 	}
 
-	private class Cleaner extends Thread {
+	private class Cleaner extends NativeThread {
 		/**
 		 * How often the clean should run
 		 */
 		private static final int CLEANER_PERIOD = 5 * 60 * 1000; // 5 minutes
 
 		public Cleaner() {
-			setName("Store-" + name + "-Cleaner");
+			super("Store-" + name + "-Cleaner", NativeThread.LOW_PRIORITY, false);
 			setPriority(MIN_PRIORITY);
 			setDaemon(true);
 		}
 
 		@Override
 		public void run() {
+			super.run();
 			try {
 				Thread.sleep((int)(CLEANER_PERIOD / 2 + CLEANER_PERIOD * Math.random()));
 			} catch (InterruptedException e){}
