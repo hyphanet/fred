@@ -664,7 +664,6 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			}
 			if(persistent)
 				container.set(this);
-			parentFetcher.parent.notifyClients(container, context);
 			if(logMINOR)
 				Logger.minor(this, "scheduling "+seg+" : "+seg.blockNums);
 		} catch (Throwable t) {
