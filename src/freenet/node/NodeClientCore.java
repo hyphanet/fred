@@ -1200,6 +1200,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 				if(node == null) throw new NullPointerException();
 				job.run(node.db, clientContext);
 				node.db.commit();
+				if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
 				LinkedList toFree = persistentTempBucketFactory.grabBucketsToFree();
 				for(Iterator i=toFree.iterator();i.hasNext();) {
 					Bucket bucket = (Bucket)i.next();

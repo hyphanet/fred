@@ -352,6 +352,7 @@ public abstract class ClientRequest {
 		if(persistenceType == PERSIST_FOREVER) {
 			container.set(this);
 			container.commit(); // commit before we send the message
+			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
 		}
 
 		// this could become too complex with more parameters, but for now its ok
