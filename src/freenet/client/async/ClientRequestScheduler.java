@@ -345,8 +345,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 								}
 								synchronized(starterQueue) {
 									if(starterQueue.size() >= MAX_STARTER_QUEUE_SIZE) {
-										if(i != getters.length-1)
-											tryDirect = false;
+										tryDirect = false;
 										break;
 									}
 									starterQueue.add(cr);
