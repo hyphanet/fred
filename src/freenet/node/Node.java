@@ -716,6 +716,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_NODE_DIR, msg);
 		}
 		
+		// init shutdown hook
+		shutdownHook = new SemiOrderedShutdownHook();
+		Runtime.getRuntime().addShutdownHook(shutdownHook);
+
 		/* FIXME: this may throw if e.g. we ran out of disk space last time. 
 		 * We need to back it up and auto-recover. */
 		/* Client-server mode. Refresh objects if you have a long-lived container! */
@@ -739,6 +743,28 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 //		Db4o.configure().queries().evaluationMode(QueryEvaluationMode.LAZY);
 		Db4o.configure().messageLevel(1);
 		Db4o.configure().activationDepth(1);
+		/* TURN OFF SHUTDOWN HOOK.
+		 * The shutdown hook does auto-commit. We do NOT want auto-commit: if a 
+		 * transaction hasn't commit()ed, it's not safe to commit it. For example,
+		 * a splitfile is started, gets half way through, then we shut down. 
+		 * The shutdown hook commits the half-finished transaction. When we start
+		 * back up, we assume the whole transaction has been committed, and end
+		 * up only registering the proportion of segments for which a RegisterMe
+		 * has already been created. Yes, this has happened, yes, it sucks.
+		 * Add our own hook to rollback and close... */
+		Db4o.configure().automaticShutDown(false);
+		
+		shutdownHook.addLateJob(new Thread() {
+
+			public void run() {
+				System.err.println("Rolling back unfinished transactions...");
+				db.rollback();
+				System.err.println("Closing database...");
+				db.close();
+			}
+			
+		});
+		
 		System.err.println("Optimise native queries: "+Db4o.configure().optimizeNativeQueries());
 		System.err.println("Query activation depth: "+Db4o.configure().activationDepth());
 		db = Db4o.openFile(new File(nodeDir, "node.db4o").toString());
@@ -920,6 +946,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		nodeDBHandle = darknetCrypto.getNodeHandle(db);
 		
 		db.commit();
+		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
 
 		// Must be created after darknetCrypto
 		dnsr = new DNSRequester(this);
@@ -928,10 +955,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			((PooledExecutor)executor).setTicker(ps);
 		
 		Logger.normal(Node.class, "Creating node...");
-
-		// init shutdown hook
-		shutdownHook = new SemiOrderedShutdownHook();
-		Runtime.getRuntime().addShutdownHook(shutdownHook);
 
 		shutdownHook.addEarlyJob(new Thread() {
 			public void run() {
@@ -943,13 +966,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		shutdownHook.addEarlyJob(new Thread() {
 			public void run() {
 				darknetCrypto.stop();
-			}
-		});
-		
-		shutdownHook.addLateJob(new Thread() {
-			public void run() {
-				System.err.println("Shutting down database...");
-				db.close();
 			}
 		});
 		
