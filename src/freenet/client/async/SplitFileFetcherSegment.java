@@ -941,7 +941,8 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 	}
 
 	public short getPriorityClass(ObjectContainer container) {
-		container.activate(parent, 1);
+		if(persistent)
+			container.activate(parent, 1);
 		return parent.priorityClass;
 	}
 
