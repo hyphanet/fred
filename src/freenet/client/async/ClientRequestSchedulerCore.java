@@ -10,7 +10,10 @@ import java.util.Set;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
+import com.db4o.query.Candidate;
+import com.db4o.query.Evaluation;
 import com.db4o.query.Predicate;
+import com.db4o.query.Query;
 import com.db4o.types.Db4oList;
 import com.db4o.types.Db4oMap;
 
@@ -613,14 +616,38 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		final String pks = HexUtil.bytesToHex(key.getFullKey());
 		long startTime = System.currentTimeMillis();
 		// Can db4o handle this???
-		ObjectSet ret = container.query(new Predicate() {
-			public boolean match(PendingKeyItem item) {
-				if(!pks.equals(item.fullKeyAsBytes)) return false;
-				if(item.nodeDBHandle != nodeDBHandle) return false;
-				if(!key.equals(item.key)) return false;
-				return true;
+		// Apparently not. Diagnostics say it's not optimised. Which is annoying,
+		// since it can quite clearly be turned into 2 simple constraints and
+		// one evaluation... :(
+		// FIXME maybe db4o 7.2 can handle this???
+//		ObjectSet ret = container.query(new Predicate() {
+//			public boolean match(PendingKeyItem item) {
+//				if(!pks.equals(item.fullKeyAsBytes)) return false;
+//				if(item.nodeDBHandle != nodeDBHandle) return false;
+//				if(!key.equals(item.key)) return false;
+//				return true;
+//			}
+//		});
+		Query query = container.query();
+		query.constrain(PendingKeyItem.class);
+		query.descend("fullKeyAsBytes").constrain(pks);
+		query.descend("nodeDBHandle").constrain(new Long(nodeDBHandle));
+		Evaluation eval = new Evaluation() {
+
+			public void evaluate(Candidate candidate) {
+				PendingKeyItem item = (PendingKeyItem) candidate.getObject();
+				Key k = item.key;
+				candidate.objectContainer().activate(k, 5);
+				if(k.equals(key))
+					candidate.include(true);
+				else {
+					candidate.include(false);
+				}
 			}
-		});
+			
+		};
+		query.constrain(eval);
+		ObjectSet ret = query.execute();
 		long endTime = System.currentTimeMillis();
 		if(endTime - startTime > 1000)
 			Logger.error(this, "Query took "+(endTime - startTime)+"ms for "+((key instanceof freenet.keys.NodeSSK) ? "SSK" : "CHK"));
