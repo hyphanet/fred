@@ -7,10 +7,14 @@ import java.util.ArrayList;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
+import com.db4o.query.Candidate;
+import com.db4o.query.Evaluation;
 import com.db4o.query.Predicate;
+import com.db4o.query.Query;
 
 import freenet.keys.Key;
 import freenet.node.SendableGet;
+import freenet.support.HexUtil;
 
 /**
  * Persistable implementation of CooldownQueue. Much simpler than RequestCooldownQueue,
@@ -38,15 +42,29 @@ public class PersistentCooldownQueue implements CooldownQueue {
 
 	public boolean removeKey(final Key key, final SendableGet client, final long time, ObjectContainer container) {
 		boolean found = false;
-		ObjectSet results = container.query(new Predicate() {
-			public boolean match(PersistentCooldownQueueItem persistentCooldownQueueItem) {
-				if(persistentCooldownQueueItem.parent != PersistentCooldownQueue.this) return false;
-				if(persistentCooldownQueueItem.key != key) return false;
-				if(persistentCooldownQueueItem.client != client) return false;
-				return true;
-				// Ignore time
+		final String keyAsBytes = HexUtil.bytesToHex(key.getFullKey());
+		Query query = container.query();
+		query.constrain(PersistentCooldownQueueItem.class);
+		query.descend("keyAsBytes").constrain(keyAsBytes);
+		query.descend("client").constrain(client);
+		query.descend("parent").constrain(this);
+		Evaluation eval = new Evaluation() {
+
+			public void evaluate(Candidate candidate) {
+				PersistentCooldownQueueItem item = (PersistentCooldownQueueItem) candidate.getObject();
+				Key k = item.key;
+				candidate.objectContainer().activate(k, 5);
+				if(k.equals(key))
+					candidate.include(true);
+				else {
+					candidate.include(false);
+				}
 			}
-		});
+			
+		};
+		query.constrain(eval);
+		ObjectSet results = query.execute();
+
 		while(results.hasNext()) {
 			found = true;
 			PersistentCooldownQueueItem i = (PersistentCooldownQueueItem) results.next();
@@ -60,8 +78,8 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		// matter very much if they're not in order.
 		ObjectSet results = container.query(new Predicate() {
 			public boolean match(PersistentCooldownQueueItem persistentCooldownQueueItem) {
-				if(persistentCooldownQueueItem.parent != PersistentCooldownQueue.this) return false;
 				if(persistentCooldownQueueItem.time > now) return false;
+				if(persistentCooldownQueueItem.parent != PersistentCooldownQueue.this) return false;
 				return true;
 			}
 		});
