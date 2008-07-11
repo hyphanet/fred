@@ -31,6 +31,9 @@ import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectServer;
 import com.db4o.config.QueryEvaluationMode;
+import com.db4o.diagnostic.Diagnostic;
+import com.db4o.diagnostic.DiagnosticBase;
+import com.db4o.diagnostic.DiagnosticListener;
 import com.sleepycat.je.DatabaseException;
 import com.sleepycat.je.Environment;
 import com.sleepycat.je.EnvironmentConfig;
@@ -729,6 +732,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		Db4o.configure().objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("time").indexed(true);
 		Db4o.configure().objectClass(freenet.client.async.PendingKeyItem.class).objectField("key").indexed(true);
 		Db4o.configure().objectClass(freenet.client.async.PendingKeyItem.class).objectField("fullKeyAsBytes").indexed(true);
+		Db4o.configure().objectClass(freenet.client.FECJob.class).objectField("priority").indexed(true);
+		Db4o.configure().objectClass(freenet.client.FECJob.class).objectField("addedTime").indexed(true);
+		Db4o.configure().objectClass(freenet.client.FECJob.class).objectField("queue").indexed(true);
+		Db4o.configure().objectClass(freenet.client.async.PendingKeyItem.class).objectField("nodeDBHandle").indexed(true);
 		/** Maybe we want a different query evaluation mode?
 		 * At the moment, a big splitfile insert will result in one SingleBlockInserter
 		 * for every key, which means one RegisterMe for each ... this results in a long pause
@@ -753,6 +760,17 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		 * has already been created. Yes, this has happened, yes, it sucks.
 		 * Add our own hook to rollback and close... */
 		Db4o.configure().automaticShutDown(false);
+		Db4o.configure().diagnostic().addListener(new DiagnosticListener() {
+
+			public void onDiagnostic(Diagnostic arg0) {
+				if(arg0 instanceof DiagnosticBase) {
+					DiagnosticBase d = (DiagnosticBase) arg0;
+					Logger.error(this, "Diagnostic: "+d.getClass()+" : "+d.problem()+" : "+d.solution()+" : "+d.reason());
+				} else
+					Logger.error(this, "Diagnostic: "+arg0+" : "+arg0.getClass());
+			}
+			
+		});
 		
 		shutdownHook.addLateJob(new Thread() {
 
