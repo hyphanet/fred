@@ -344,6 +344,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 									break;
 								}
 								synchronized(starterQueue) {
+									if(logMINOR) Logger.minor(this, "Adding directly to queue: "+cr);
 									starterQueue.add(cr);
 									if(starterQueue.size() >= MAX_STARTER_QUEUE_SIZE) {
 										if(!(getter.isEmpty(selectorContainer) || getter.isCancelled(selectorContainer)))
