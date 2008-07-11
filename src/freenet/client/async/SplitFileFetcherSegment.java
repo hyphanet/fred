@@ -578,6 +578,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 				Logger.minor(this, "Adding to cooldown queue: "+key+" for "+this+" was on segment "+seg+" now registered to "+sub);
 		} else {
 			// If we are here we are going to retry
+			sub.add(blockNo, false, container, context, false);
 			if(logMINOR)
 				Logger.minor(this, "Retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 		}
