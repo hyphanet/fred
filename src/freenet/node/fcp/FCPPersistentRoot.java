@@ -6,8 +6,10 @@ package freenet.node.fcp;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Predicate;
+import com.db4o.query.Query;
 
 import freenet.node.NodeClientCore;
+import freenet.support.Logger;
 
 /**
  * Persistent root object for FCP.
@@ -43,16 +45,26 @@ public class FCPPersistentRoot {
 	}
 
 	public FCPClient registerForeverClient(final String name, NodeClientCore core, FCPConnectionHandler handler, FCPServer server, ObjectContainer container) {
-		ObjectSet set = container.query(new Predicate() {
-			public boolean match(FCPClient client) {
-				if(!client.name.equals(name)) return false;
-				return client.root == FCPPersistentRoot.this;
-			}
-		});
+		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Registering forever-client for "+name);
+		/**
+		 * FIXME DB4O:
+		 * Native queries involving strings seem to do wierd things. I was getting
+		 * the global queue returned here even though I compared with the passed-in 
+		 * name! :<
+		 * FIXME reproduce and file a bug for db4o.
+		 */
+		Query query = container.query();
+		query.constrain(FCPClient.class);
+		query.descend("name").constrain(name);
+		query.descend("root").constrain(this);
+		ObjectSet set = query.execute();
 		if(set.hasNext()) {
 			FCPClient client = (FCPClient) set.next();
 			container.activate(client, 1);
 			client.setConnection(handler);
+			if(!(name.equals(client.name)))
+				Logger.error(this, "Returning "+client+" for "+name);
+			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Returning "+client+" for "+name);
 			return client;
 		}
 		FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_FOREVER, this, container);
