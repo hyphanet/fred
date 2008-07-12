@@ -897,6 +897,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						Logger.minor(this, "Deleting "+req);
 					selectorContainer.delete((PersistentChosenRequest)req);
 				}
+				selectorContainer.deactivate(req, 1);
 			}
 			
 		}, NativeThread.NORM_PRIORITY, false);
@@ -917,6 +918,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						Logger.minor(this, "Deleting "+req);
 					selectorContainer.delete((PersistentChosenRequest)req);
 				}
+				selectorContainer.deactivate(put, 1);
 			}
 			
 		}, NativeThread.NORM_PRIORITY, false);
@@ -937,6 +939,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						Logger.minor(this, "Deleting "+req);
 					selectorContainer.delete((PersistentChosenRequest)req);
 				}
+				selectorContainer.deactivate(put, 1);
 			}
 			
 		}, NativeThread.NORM_PRIORITY+1, false);
