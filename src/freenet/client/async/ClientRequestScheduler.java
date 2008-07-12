@@ -319,6 +319,15 @@ public class ClientRequestScheduler implements RequestScheduler {
 	static final boolean TRY_DIRECT = true;
 
 	private void finishRegister(final SendableGet[] getters, boolean persistent, boolean onDatabaseThread, final boolean anyValid, final RegisterMe reg) {
+		if(isInsertScheduler && getters != null) {
+			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
+			if(onDatabaseThread) {
+				for(int i=0;i<getters.length;i++) {
+					getters[i].internalError(null, e, this, selectorContainer, clientContext, persistent);
+				}
+			}
+			throw e;
+		}
 		if(persistent) {
 			// Add to the persistent registration queue
 			if(onDatabaseThread) {
