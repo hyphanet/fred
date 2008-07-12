@@ -33,6 +33,8 @@ public class RegisterMe {
 			for(int i=0;i<getters.length;i++)
 				hash ^= getters[i].hashCode();
 		}
+		if(nonGetRequest != null)
+			hash ^= nonGetRequest.hashCode();
 		hash *= prio;
 		hashCode = hash;
 	}
