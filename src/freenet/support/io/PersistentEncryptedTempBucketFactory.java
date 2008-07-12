@@ -35,12 +35,14 @@ public class PersistentEncryptedTempBucketFactory implements BucketFactory {
 //		});
 		Query query = container.query();
 		query.constrain(PersistentEncryptedTempBucketFactory.class);
-		query.descend("bf").constrain(persistentTempBucketFactory);
+		//query.descend("bf").constrain(persistentTempBucketFactory);
 		ObjectSet results = query.execute();
-		if(results.hasNext()) {
-			return (PersistentEncryptedTempBucketFactory) results.next();
-		} else {
-			return new PersistentEncryptedTempBucketFactory(persistentTempBucketFactory);
+		while(results.hasNext()) {
+			PersistentEncryptedTempBucketFactory factory = (PersistentEncryptedTempBucketFactory) results.next();
+			if(factory.bf == persistentTempBucketFactory) return factory;
+			System.err.println("Not matched factory");
 		}
+		System.err.println("Creating new factory");
+		return new PersistentEncryptedTempBucketFactory(persistentTempBucketFactory);
 	}
 }
