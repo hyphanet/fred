@@ -58,6 +58,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 					candidate.include(true);
 				else {
 					candidate.include(false);
+					candidate.objectContainer().deactivate(k, 5);
 				}
 			}
 			
