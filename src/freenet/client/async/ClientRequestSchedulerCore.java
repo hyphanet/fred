@@ -580,6 +580,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				RegisterMe reg = (RegisterMe) registerMeSet.next();
 				// FIXME remove the leftover/old core handling at some point, an NPE is acceptable long-term.
 				if(reg.core != ClientRequestSchedulerCore.this) {
+					container.activate(reg, 1);
 					if(reg.core == null) {
 						Logger.error(this, "Leftover RegisterMe: core already deleted. THIS IS AN ERROR unless you have seen \"Old core not active\" messages before this point.");
 						container.delete(reg);
