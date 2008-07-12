@@ -154,7 +154,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	public void registerInsert(final SendableRequest req, boolean persistent, boolean regmeOnly) {
-		registerInsert(req, persistent, databaseExecutor.onThread());
+		registerInsert(req, persistent, regmeOnly, databaseExecutor.onThread());
 	}
 	
 	public void registerInsert(final SendableRequest req, boolean persistent, boolean regmeOnly, boolean onDatabaseThread) {
