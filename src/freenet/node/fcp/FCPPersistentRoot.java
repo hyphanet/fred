@@ -55,12 +55,17 @@ public class FCPPersistentRoot {
 		 */
 		Query query = container.query();
 		query.constrain(FCPClient.class);
+		// Don't constrain by root because that set is huge.
+		// I think that was the cause of the OOMs here...
 		query.descend("name").constrain(name);
-		query.descend("root").constrain(this);
 		ObjectSet set = query.execute();
-		if(set.hasNext()) {
+		while(set.hasNext()) {
 			FCPClient client = (FCPClient) set.next();
 			container.activate(client, 1);
+			if(client.root != this) {
+				container.deactivate(client, 1);
+				continue;
+			}
 			client.setConnection(handler);
 			if(!(name.equals(client.name)))
 				Logger.error(this, "Returning "+client+" for "+name);
