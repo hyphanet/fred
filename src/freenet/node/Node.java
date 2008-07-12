@@ -31,6 +31,7 @@ import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectServer;
 import com.db4o.config.QueryEvaluationMode;
+import com.db4o.diagnostic.ClassHasNoFields;
 import com.db4o.diagnostic.Diagnostic;
 import com.db4o.diagnostic.DiagnosticBase;
 import com.db4o.diagnostic.DiagnosticListener;
@@ -767,6 +768,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		Db4o.configure().diagnostic().addListener(new DiagnosticListener() {
 
 			public void onDiagnostic(Diagnostic arg0) {
+				if(arg0 instanceof ClassHasNoFields)
+					return; // Ignore
 				if(arg0 instanceof DiagnosticBase) {
 					DiagnosticBase d = (DiagnosticBase) arg0;
 					Logger.error(this, "Diagnostic: "+d.getClass()+" : "+d.problem()+" : "+d.solution()+" : "+d.reason(), new Exception("debug"));
