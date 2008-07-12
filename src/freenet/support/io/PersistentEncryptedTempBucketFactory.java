@@ -8,6 +8,7 @@ import java.io.IOException;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Predicate;
+import com.db4o.query.Query;
 
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -26,11 +27,16 @@ public class PersistentEncryptedTempBucketFactory implements BucketFactory {
 	}
 
 	public static PersistentEncryptedTempBucketFactory load(final PersistentTempBucketFactory persistentTempBucketFactory, ObjectContainer container) {
-		ObjectSet results = container.query(new Predicate() {
-			public boolean match(PersistentEncryptedTempBucketFactory bf) {
-				return bf.bf == persistentTempBucketFactory;
-			}
-		});
+		// This causes an OOM in init. WTF?
+//		ObjectSet results = container.query(new Predicate() {
+//			public boolean match(PersistentEncryptedTempBucketFactory bf) {
+//				return bf.bf == persistentTempBucketFactory;
+//			}
+//		});
+		Query query = container.query();
+		query.constrain(PersistentEncryptedTempBucketFactory.class);
+		query.descend("bf").constrain(persistentTempBucketFactory);
+		ObjectSet results = query.execute();
 		if(results.hasNext()) {
 			return (PersistentEncryptedTempBucketFactory) results.next();
 		} else {
