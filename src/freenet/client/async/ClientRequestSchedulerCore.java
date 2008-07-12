@@ -91,6 +91,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			if(core.isSSKScheduler != forSSKs) throw new IllegalStateException("Wrong forSSKs");
 		} else {
 			core = new ClientRequestSchedulerCore(node, forInserts, forSSKs, selectorContainer, cooldownTime);
+			selectorContainer.set(core);
 			System.err.println("Created new core...");
 		}
 		logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequestSchedulerCore.class);
