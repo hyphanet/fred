@@ -155,6 +155,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			for(int i=0;i<10;i++) {
 				Object ret;
 				int x;
+				if(blockNums.size() == 0) return null;
 				x = context.random.nextInt(blockNums.size());
 				ret = (Integer) blockNums.remove(x);
 				Key key = segment.getBlockNodeKey(((Integer)ret).intValue(), container);
