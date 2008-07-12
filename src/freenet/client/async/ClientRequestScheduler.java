@@ -161,10 +161,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(persistent) {
 			if(onDatabaseThread) {
 				if(regmeOnly) {
-					RegisterMe regme = new RegisterMe(null, null, req, req.getPriorityClass(selectorContainer), schedCore, null);
+					final RegisterMe regme = new RegisterMe(null, null, req, req.getPriorityClass(selectorContainer), schedCore, null);
 					selectorContainer.set(regme);
 					if(logMINOR)
 						Logger.minor(this, "Added insert RegisterMe: "+regme);
+					jobRunner.queue(new DBJob() {
+
+						public void run(ObjectContainer container, ClientContext context) {
+							container.delete(regme);
+							registerInsert(req, true, false, true);
+						}
+						
+					}, NativeThread.NORM_PRIORITY, false);
 				}
 				schedCore.innerRegister(req, random, selectorContainer);
 			} else {
