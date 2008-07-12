@@ -232,7 +232,7 @@ public class FCPClient {
 	public void setWatchGlobal(boolean enabled, int verbosityMask, FCPServer server, ObjectContainer container) {
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		if(isGlobalQueue) {
-			Logger.error(this, "Set watch global on global queue!");
+			Logger.error(this, "Set watch global on global queue!: "+this, new Exception("debug"));
 			return;
 		}
 		if(watchGlobal && !enabled) {
