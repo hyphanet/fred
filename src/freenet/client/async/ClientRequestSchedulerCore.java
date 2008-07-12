@@ -86,6 +86,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			core = (ClientRequestSchedulerCore) (results.next());
 			selectorContainer.activate(core, 2);
 			System.err.println("Loaded core...");
+			if(core.nodeDBHandle != nodeDBHandle) throw new IllegalStateException("Wrong nodeDBHandle");
+			if(core.isInsertScheduler != forInserts) throw new IllegalStateException("Wrong isInsertScheduler");
+			if(core.isSSKScheduler != forSSKs) throw new IllegalStateException("Wrong forSSKs");
 		} else {
 			core = new ClientRequestSchedulerCore(node, forInserts, forSSKs, selectorContainer, cooldownTime);
 			System.err.println("Created new core...");
@@ -243,6 +246,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	// The worry is ... is there any nested locking outside of the hierarchy?
 	ChosenRequest removeFirst(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
 		SendableRequest req = removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, transientOnly, notTransient, maxPrio, retryCount, context, container);
+		if(isInsertScheduler && req instanceof SendableGet) {
+			throw new IllegalStateException("removeFirstInner returned a SendableGet on an insert scheduler!!");
+		}
 		return maybeMakeChosenRequest(req, container, context);
 	}
 	
@@ -585,6 +591,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	}
 	
 	public boolean hasKey(Key key) {
+		if(keysFetching == null) {
+			throw new NullPointerException();
+		}
 		synchronized(keysFetching) {
 			return keysFetching.contains(key);
 		}
