@@ -89,7 +89,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		// matter very much if they're not in order.
 		ObjectSet results = container.query(new Predicate() {
 			public boolean match(PersistentCooldownQueueItem persistentCooldownQueueItem) {
-				if(persistentCooldownQueueItem.time > now) return false;
+				if(persistentCooldownQueueItem.time >= now) return false;
 				if(persistentCooldownQueueItem.parent != PersistentCooldownQueue.this) return false;
 				return true;
 			}
