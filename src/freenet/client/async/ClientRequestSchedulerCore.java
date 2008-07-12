@@ -171,6 +171,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				query.constrain(eval);
 				query.descend("key").descend("priority").orderAscending();
 				query.descend("key").descend("addedTime").orderAscending();
+				registerMeSet = query.execute();
 			long tEnd = System.currentTimeMillis();
 			if(logMINOR)
 				Logger.minor(this, "RegisterMe query took "+(tEnd-tStart));
