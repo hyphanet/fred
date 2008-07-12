@@ -155,12 +155,17 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 //				});
 				Query query = container.query();
 				query.constrain(RegisterMe.class);
-				query.descend("core").constrain(ClientRequestSchedulerCore.this);
+				/**
+				 * Another db4o bug. This doesn't return anything unless I move all the constraints into
+				 * the Evaluation. Getting rid of the indexes might help. Or upgrading to a fixed version
+				 * of db4o?? :<
+				 */
+//				query.descend("core").constrain(ClientRequestSchedulerCore.this);
 				Evaluation eval = new Evaluation() {
 
 					public void evaluate(Candidate candidate) {
 						RegisterMe reg = (RegisterMe) candidate.getObject();
-						if(reg.key.addedTime > initTime) {
+						if(reg.key.addedTime > initTime || reg.core != ClientRequestSchedulerCore.this) {
 							candidate.include(false);
 						} else {
 							candidate.include(true);
@@ -169,12 +174,12 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					
 				};
 				query.constrain(eval);
-				query.descend("key").descend("priority").orderAscending();
-				query.descend("key").descend("addedTime").orderAscending();
+//				query.descend("key").descend("priority").orderAscending();
+//				query.descend("key").descend("addedTime").orderAscending();
 				registerMeSet = query.execute();
 			long tEnd = System.currentTimeMillis();
 			if(logMINOR)
-				Logger.minor(this, "RegisterMe query took "+(tEnd-tStart));
+				Logger.minor(this, "RegisterMe query took "+(tEnd-tStart)+" hasNext="+registerMeSet.hasNext()+" for insert="+isInsertScheduler+" ssk="+isSSKScheduler);
 //				if(logMINOR)
 //					Logger.minor(this, "RegisterMe query returned: "+registerMeSet.size());
 				context.jobRunner.queue(registerMeRunner, NativeThread.NORM_PRIORITY, true);
