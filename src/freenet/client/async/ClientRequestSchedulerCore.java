@@ -247,7 +247,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	ChosenRequest removeFirst(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
 		SendableRequest req = removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, transientOnly, notTransient, maxPrio, retryCount, context, container);
 		if(isInsertScheduler && req instanceof SendableGet) {
-			throw new IllegalStateException("removeFirstInner returned a SendableGet on an insert scheduler!!");
+			IllegalStateException e = new IllegalStateException("removeFirstInner returned a SendableGet on an insert scheduler!!");
+			req.internalError(null, e, sched, container, context, req.persistent());
+			throw e;
 		}
 		return maybeMakeChosenRequest(req, container, context);
 	}
