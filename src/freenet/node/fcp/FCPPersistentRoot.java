@@ -45,8 +45,8 @@ public class FCPPersistentRoot {
 	public FCPClient registerForeverClient(final String name, NodeClientCore core, FCPConnectionHandler handler, FCPServer server, ObjectContainer container) {
 		ObjectSet set = container.query(new Predicate() {
 			public boolean match(FCPClient client) {
-				if(client.root != FCPPersistentRoot.this) return false;
-				return client.name.equals(name);
+				if(!client.name.equals(name)) return false;
+				return client.root == FCPPersistentRoot.this;
 			}
 		});
 		if(set.hasNext()) {
