@@ -999,6 +999,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						try {
 							entry.setData(readHeader(entry.curOffset), readData(entry.curOffset));
 							oldEntryList.add(entry);
+							if (oldEntryList.size() > RESIZE_MEMORY_ENTRIES)
+								oldEntryList.remove(0);
 						} catch (IOException e) {
 							Logger.error(this, "error reading entry (offset=" + entry.curOffset + ")", e);
 						}
