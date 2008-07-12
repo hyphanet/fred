@@ -286,6 +286,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 	protected void registerCheckStore(SendableGet[] getters, boolean persistent, 
 			Key[] keys, RegisterMe regme, BlockSet extraBlocks, boolean dontCache) {
+		if(isInsertScheduler && getters != null) {
+			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
+			throw e;
+		}
 		boolean anyValid = false;
 		for(int i=0;i<keys.length;i++) {
 			Key key = keys[i];
