@@ -46,12 +46,22 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		Query query = container.query();
 		query.constrain(PersistentCooldownQueueItem.class);
 		query.descend("keyAsBytes").constrain(keyAsBytes);
-		query.descend("client").constrain(client);
-		query.descend("parent").constrain(this);
+		// The result from parent will be huge, and client may be huge too.
+		// Don't bother with a join, just check in the evaluation.
+//		query.descend("client").constrain(client);
+//		query.descend("parent").constrain(this);
 		Evaluation eval = new Evaluation() {
 
 			public void evaluate(Candidate candidate) {
 				PersistentCooldownQueueItem item = (PersistentCooldownQueueItem) candidate.getObject();
+				if(item.client != client) {
+					candidate.include(false);
+					return;
+				}
+				if(item.parent != PersistentCooldownQueue.this) {
+					candidate.include(false);
+					return;
+				}
 				Key k = item.key;
 				candidate.objectContainer().activate(k, 5);
 				if(k.equals(key))
