@@ -600,6 +600,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				if(logMINOR)
 					Logger.minor(this, "Running RegisterMe "+reg+" for "+reg.listener+" and "+reg.getters+" : "+reg.key.addedTime+" : "+reg.key.priority);
 				// Don't need to activate, fields should exist? FIXME
+				if(reg.listener != null || reg.getters != null) {
 				try {
 					sched.register(reg.listener, reg.getters, false, true, true, reg.blocks, reg);
 				} catch (Throwable t) {
@@ -609,6 +610,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 						for(int k=0;k<reg.getters.length;k++)
 							reg.getters[k].internalError(null, t, sched, container, context, true);
 					}
+				}
+				}
+				if(reg.nonGetRequest != null) {
+					sched.registerInsert(reg.nonGetRequest, true, false);
 				}
 				if(System.currentTimeMillis() > deadline) break;
 			}

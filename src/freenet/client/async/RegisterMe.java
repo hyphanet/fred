@@ -3,6 +3,7 @@ package freenet.client.async;
 import com.db4o.ObjectContainer;
 
 import freenet.node.SendableGet;
+import freenet.node.SendableRequest;
 
 /**
  * These must be deleted once the request has been registered.
@@ -12,15 +13,17 @@ import freenet.node.SendableGet;
 public class RegisterMe {
 	final GotKeyListener listener;
 	final SendableGet[] getters;
+	final SendableRequest nonGetRequest;
 	final ClientRequestSchedulerCore core;
 	final RegisterMeSortKey key;
 	private final int hashCode;
 	public final BlockSet blocks;
 	
-	RegisterMe(GotKeyListener listener, SendableGet[] getters, short prio, ClientRequestSchedulerCore core, BlockSet blocks) {
+	RegisterMe(GotKeyListener listener, SendableGet[] getters, SendableRequest nonGetRequest, short prio, ClientRequestSchedulerCore core, BlockSet blocks) {
 		this.listener = listener;
 		this.getters = getters;
 		this.core = core;
+		this.nonGetRequest = nonGetRequest;
 		this.key = new RegisterMeSortKey(prio);
 		this.blocks = blocks;
 		int hash = core.hashCode();

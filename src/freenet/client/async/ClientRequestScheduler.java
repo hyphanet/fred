@@ -153,13 +153,19 @@ public class ClientRequestScheduler implements RequestScheduler {
 		choosenPriorityScheduler = val;
 	}
 	
-	public void registerInsert(final SendableRequest req, boolean persistent) {
+	public void registerInsert(final SendableRequest req, boolean persistent, boolean regmeOnly) {
 		registerInsert(req, persistent, databaseExecutor.onThread());
 	}
 	
-	public void registerInsert(final SendableRequest req, boolean persistent, boolean onDatabaseThread) {
+	public void registerInsert(final SendableRequest req, boolean persistent, boolean regmeOnly, boolean onDatabaseThread) {
 		if(persistent) {
 			if(onDatabaseThread) {
+				if(regmeOnly) {
+					RegisterMe regme = new RegisterMe(null, null, req, req.getPriorityClass(selectorContainer), schedCore, null);
+					selectorContainer.set(regme);
+					if(logMINOR)
+						Logger.minor(this, "Added insert RegisterMe: "+regme);
+				}
 				schedCore.innerRegister(req, random, selectorContainer);
 			} else {
 				jobRunner.queue(new DBJob() {
@@ -241,7 +247,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(registerOffThread) {
 				short prio = listener.getPriorityClass(selectorContainer);
 				if(reg == null) {
-					reg = new RegisterMe(listener, getters, prio, schedCore, blocks);
+					reg = new RegisterMe(listener, getters, null, prio, schedCore, blocks);
 					selectorContainer.set(reg);
 				}
 				final RegisterMe regme = reg;
@@ -258,7 +264,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				short prio = listener.getPriorityClass(selectorContainer);
 				schedCore.addPendingKeys(listener, selectorContainer);
 				if(reg == null && getters != null) {
-					reg = new RegisterMe(null, getters, prio, schedCore, blocks);
+					reg = new RegisterMe(null, getters, null, prio, schedCore, blocks);
 					selectorContainer.set(reg);
 					if(logMINOR) Logger.minor(this, "Added regme: "+reg);
 				} else {
