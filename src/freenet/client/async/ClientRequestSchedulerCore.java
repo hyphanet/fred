@@ -156,24 +156,27 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				Query query = container.query();
 				query.constrain(RegisterMe.class);
 				/**
-				 * Another db4o bug. This doesn't return anything unless I move all the constraints into
-				 * the Evaluation. Getting rid of the indexes might help. Or upgrading to a fixed version
-				 * of db4o?? :<
+				 * FIXME DB4O
+				 * db4o says it has indexed core. But then when we try to query, it produces a diagnostic
+				 * suggesting we index it. And of course the query takes ages and uses tons of RAM. So don't
+				 * try to filter by core at this point, deal with that later.
 				 */
 //				query.descend("core").constrain(ClientRequestSchedulerCore.this);
-				Evaluation eval = new Evaluation() {
-
-					public void evaluate(Candidate candidate) {
-						RegisterMe reg = (RegisterMe) candidate.getObject();
-						if(reg.key.addedTime > initTime || reg.core != ClientRequestSchedulerCore.this) {
-							candidate.include(false);
-						} else {
-							candidate.include(true);
-						}
-					}
-					
-				};
-				query.constrain(eval);
+//				Evaluation eval = new Evaluation() {
+//
+//					public void evaluate(Candidate candidate) {
+//						RegisterMe reg = (RegisterMe) candidate.getObject();
+//						if(reg.key.addedTime > initTime || reg.core != ClientRequestSchedulerCore.this) {
+//							candidate.include(false);
+//							candidate.objectContainer().deactivate(reg.key, 1);
+//							candidate.objectContainer().deactivate(reg, 1);
+//						} else {
+//							candidate.include(true);
+//						}
+//					}
+//					
+//				};
+//				query.constrain(eval);
 //				query.descend("key").descend("priority").orderAscending();
 //				query.descend("key").descend("addedTime").orderAscending();
 				registerMeSet = query.execute();
@@ -575,6 +578,18 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				}
 				long startNext = System.currentTimeMillis();
 				RegisterMe reg = (RegisterMe) registerMeSet.next();
+				if(reg.core != ClientRequestSchedulerCore.this) {
+					Logger.error(this, "Ignoring RegisterMe as doesn't belong to me: my insert="+isInsertScheduler+" my ssk="+isSSKScheduler+" his insert="+reg.core.isInsertScheduler+" his ssk="+reg.core.isSSKScheduler);
+					container.deactivate(reg, 1);
+					continue; // Don't delete.
+				}
+				container.activate(reg.key, 1);
+				if(reg.key.addedTime > initTime) {
+					if(logMINOR) Logger.minor(this, "Ignoring RegisterMe as created since startup");
+					container.deactivate(reg.key, 1);
+					container.deactivate(reg, 1);
+					continue; // Don't delete
+				}
 				long endNext = System.currentTimeMillis();
 				if(logMINOR)
 					Logger.minor(this, "RegisterMe: next() took "+(endNext-startNext));
