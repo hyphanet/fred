@@ -131,23 +131,45 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 
 			public void run(ObjectContainer container, ClientContext context) {
 				long tStart = System.currentTimeMillis();
-				registerMeSet = container.query(new Predicate() {
-					public boolean match(RegisterMe reg) {
-						if(reg.core != ClientRequestSchedulerCore.this) return false;
-						if(reg.key.addedTime > initTime) return false;
-						return true;
-					}
-				}, new Comparator() {
+				// FIXME REDFLAG EVIL DB4O BUG!!!
+				// FIXME verify and file a bug
+				// This code doesn't check the first bit!
+				// I think this is related to the comparator...
+//				registerMeSet = container.query(new Predicate() {
+//					public boolean match(RegisterMe reg) {
+//						if(reg.core != ClientRequestSchedulerCore.this) return false;
+//						if(reg.key.addedTime > initTime) return false;
+//						return true;
+//					}
+//				}, new Comparator() {
+//
+//					public int compare(Object arg0, Object arg1) {
+//						RegisterMe reg0 = (RegisterMe) arg0;
+//						RegisterMe reg1 = (RegisterMe) arg1;
+//						RegisterMeSortKey key0 = reg0.key;
+//						RegisterMeSortKey key1 = reg1.key;
+//						return key0.compareTo(key1);
+//					}
+//					
+//				});
+				Query query = container.query();
+				query.constrain(RegisterMe.class);
+				query.descend("core").constrain(ClientRequestSchedulerCore.this);
+				Evaluation eval = new Evaluation() {
 
-					public int compare(Object arg0, Object arg1) {
-						RegisterMe reg0 = (RegisterMe) arg0;
-						RegisterMe reg1 = (RegisterMe) arg1;
-						RegisterMeSortKey key0 = reg0.key;
-						RegisterMeSortKey key1 = reg1.key;
-						return key0.compareTo(key1);
+					public void evaluate(Candidate candidate) {
+						RegisterMe reg = (RegisterMe) candidate.getObject();
+						if(reg.key.addedTime > initTime) {
+							candidate.include(false);
+						} else {
+							candidate.include(true);
+						}
 					}
 					
-				});
+				};
+				query.constrain(eval);
+				query.descend("key").descend("priority").orderAscending();
+				query.descend("key").descend("addedTime").orderAscending();
 			long tEnd = System.currentTimeMillis();
 			if(logMINOR)
 				Logger.minor(this, "RegisterMe query took "+(tEnd-tStart));
