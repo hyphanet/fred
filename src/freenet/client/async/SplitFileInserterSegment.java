@@ -787,6 +787,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 	private void cancelInner(ObjectContainer container, ClientContext context) {
 		for (int i = 0; i < dataBlockInserters.length; i++) {
 			SingleBlockInserter sbi = dataBlockInserters[i];
+			if(persistent)
+				container.activate(sbi, 1);
 			if (sbi != null)
 				sbi.cancel(container, context);
 			Bucket d = dataBlocks[i];
@@ -800,6 +802,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		}
 		for (int i = 0; i < checkBlockInserters.length; i++) {
 			SingleBlockInserter sbi = checkBlockInserters[i];
+			if(persistent)
+				container.activate(sbi, 1);
 			if (sbi != null)
 				sbi.cancel(container, context);
 			Bucket d = checkBlocks[i];
