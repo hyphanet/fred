@@ -190,7 +190,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	private transient DBJob preRegisterMeRunner;
 	
 	void start(DBJobRunner runner) {
-		runner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);
+		if(!this.isInsertScheduler)
+			runner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);
 	}
 	
 	void fillStarterQueue(ObjectContainer container) {
