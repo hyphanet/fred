@@ -127,6 +127,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		InsertCompressor.load(container, context);
 		this.initTime = System.currentTimeMillis();
 		// We DO NOT want to rerun the query after consuming the initial set...
+		if(!this.isInsertScheduler) {
 		preRegisterMeRunner = new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
@@ -180,6 +181,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			
 		};
 		registerMeRunner = new RegisterMeRunner();
+		} else {
+			registerMeRunner = null;
+		}
 
 	}
 	
