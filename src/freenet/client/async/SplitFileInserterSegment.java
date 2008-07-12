@@ -430,6 +430,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 						blockInsertContext, this, false, CHKBlock.DATA_LENGTH,
 						i, getCHKOnly, false, false, parent.token, container, context, persistent);
 				dataBlockInserters[i].schedule(container, context);
+				container.deactivate(dataBlockInserters[i], 1);
 				fin = false;
 			} else {
 				parent.parent.completedBlock(true, container, context);
@@ -462,6 +463,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 							false, CHKBlock.DATA_LENGTH, i + dataBlocks.length,
 							getCHKOnly, false, false, parent.token, container, context, persistent);
 					checkBlockInserters[i].schedule(container, context);
+					container.deactivate(checkBlockInserters[i], 1);
 					fin = false;
 				} else
 					parent.parent.completedBlock(true, container, context);
@@ -513,6 +515,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 						i + dataBlocks.length, getCHKOnly, false, false,
 						parent.token, container, context, persistent);
 				checkBlockInserters[i].schedule(container, context);
+				container.deactivate(checkBlockInserters[i], 1);
 			}
 		} catch (Throwable t) {
 			Logger.error(this, "Caught " + t + " while encoding " + this, t);
@@ -538,6 +541,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		synchronized (this) {
 			for (int i = 0; i < dataBlockInserters.length; i++) {
 				if (dataBlockInserters[i] == null && dataBlocks[i] != null) {
+					container.activate(dataBlocks[i], 1);
 					dataBlocks[i].free();
 					dataBlocks[i] = null;
 				}
