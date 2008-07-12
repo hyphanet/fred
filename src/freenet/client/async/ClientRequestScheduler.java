@@ -169,6 +169,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 						public void run(ObjectContainer container, ClientContext context) {
 							container.delete(regme);
+							container.activate(req, 1);
 							registerInsert(req, true, false, true);
 						}
 						
@@ -180,6 +181,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				jobRunner.queue(new DBJob() {
 
 					public void run(ObjectContainer container, ClientContext context) {
+						container.activate(req, 1);
 						schedCore.innerRegister(req, random, selectorContainer);
 					}
 					
