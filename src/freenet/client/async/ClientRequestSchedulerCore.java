@@ -182,6 +182,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		};
 		registerMeRunner = new RegisterMeRunner();
 		} else {
+			preRegisterMeRunner = null;
 			registerMeRunner = null;
 		}
 
@@ -553,6 +554,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 
 		public void run(ObjectContainer container, ClientContext context) {
 			long deadline = System.currentTimeMillis() + 10*1000;
+			if(registerMeSet == null) {
+				Logger.error(this, "registerMeSet is null for "+ClientRequestSchedulerCore.this+" ( "+this+" )");
+				return;
+			}
 			for(int i=0;i < 10; i++) {
 				try {
 					if(!registerMeSet.hasNext()) break;
