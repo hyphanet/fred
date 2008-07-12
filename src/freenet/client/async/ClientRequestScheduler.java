@@ -194,6 +194,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "register("+persistent+","+listener+","+getters+","+registerOffThread);
+		if(isInsertScheduler) {
+			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
+			throw e;
+		}
 		if(persistent) {
 			if(onDatabaseThread) {
 				innerRegister(listener, getters, registerOffThread, persistent, blocks, oldReg);
@@ -229,6 +233,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	
 	private void innerRegister(final GotKeyListener listener, final SendableGet[] getters, boolean registerOffThread, boolean persistent, final BlockSet blocks, RegisterMe reg) {
+		if(isInsertScheduler) {
+			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
+			throw e;
+		}
 		if(listener != null) {
 			if(registerOffThread) {
 				short prio = listener.getPriorityClass(selectorContainer);
