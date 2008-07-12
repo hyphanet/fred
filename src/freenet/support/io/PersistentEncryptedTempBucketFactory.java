@@ -33,6 +33,10 @@ public class PersistentEncryptedTempBucketFactory implements BucketFactory {
 //				return bf.bf == persistentTempBucketFactory;
 //			}
 //		});
+		// REDFLAG: 
+		// Constraining on bf causes an OOM for Cooo on db4o 6.4.48.10991. Commenting out bf below fixes it.
+		// Neither of the below log messages was logged ... which suggests something very strange is happening in db4o.
+		// FIXME EVIL DB4O BUG - if can replicate, file a bug... but it didn't happen to me, on the same version, also on linux, so it may not be replicable.
 		Query query = container.query();
 		query.constrain(PersistentEncryptedTempBucketFactory.class);
 		//query.descend("bf").constrain(persistentTempBucketFactory);
