@@ -239,7 +239,7 @@ class SingleFileInserter implements ClientPutState {
 				mcb.arm(container, context);
 				dataPutter.schedule(container, context);
 				if(metaPutter instanceof SingleBlockInserter)
-					((SingleBlockInserter)metaPutter).encode(container, context);
+					((SingleBlockInserter)metaPutter).encode(container, context, true);
 				metaPutter.schedule(container, context);
 				cb.onBlockSetFinished(this, container, context);
 			}
@@ -328,7 +328,7 @@ class SingleFileInserter implements ClientPutState {
 				new SingleBlockInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
 						getCHKOnly, addToParent, false, this.token, container, context, persistent);
 			if(encodeCHK)
-				cb.onEncode(sbi.getBlock(container, context).getClientKey(), this, container, context);
+				cb.onEncode(sbi.getBlock(container, context, true).getClientKey(), this, container, context);
 			return sbi;
 		}
 		

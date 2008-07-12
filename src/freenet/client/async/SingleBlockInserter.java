@@ -115,7 +115,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 	}
 
-	protected ClientKeyBlock encode(ObjectContainer container, ClientContext context) throws InsertException {
+	protected ClientKeyBlock encode(ObjectContainer container, ClientContext context, boolean calledByCB) throws InsertException {
 		if(persistent) {
 			container.activate(sourceData, 1);
 			container.activate(cb, 1);
@@ -137,6 +137,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			cb.onEncode(block.getClientKey(), this, container, context);
 		if(shouldSend && persistent)
 			container.set(this);
+		if(persistent && !calledByCB)
+			container.deactivate(cb, 1);
 		return block;
 	}
 	
@@ -222,24 +224,28 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		cb.onFailure(e, this, container, context);
 	}
 
-	public ClientKeyBlock getBlock(ObjectContainer container, ClientContext context) {
+	public ClientKeyBlock getBlock(ObjectContainer container, ClientContext context, boolean calledByCB) {
 		try {
 			synchronized (this) {
 				if(finished) return null;
 			}
 			if(persistent)
 				container.set(this);
-			return encode(container, context);				
+			return encode(container, context, calledByCB);
 		} catch (InsertException e) {
 			if(persistent)
 				container.activate(cb, 1);
 			cb.onFailure(e, this, container, context);
+			if(!calledByCB)
+				container.deactivate(cb, 1);
 			return null;
 		} catch (Throwable t) {
 			if(persistent)
 				container.activate(cb, 1);
 			Logger.error(this, "Caught "+t, t);
 			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), this, container, context);
+			if(!calledByCB)
+				container.deactivate(cb, 1);
 			return null;
 		}
 	}
@@ -255,7 +261,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(getCHKOnly) {
 			if(persistent)
 				container.activate(cb, 1);
-			ClientKeyBlock block = encode(container, context);
+			ClientKeyBlock block = encode(container, context, true);
 			cb.onEncode(block.getClientKey(), this, container, context);
 			parent.completedBlock(false, container, context);
 			cb.onSuccess(this, container, context);
@@ -281,7 +287,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(resultingURI != null)
 				return resultingURI;
 		}
-		getBlock(container, context);
+		getBlock(container, context, true);
 		synchronized(this) {
 			// FIXME not really necessary? resultingURI is never dropped, only set.
 			return resultingURI;
@@ -381,7 +387,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	/** Attempt to encode the block, if necessary */
 	public void tryEncode(ObjectContainer container, ClientContext context) {
 		try {
-			encode(container, context);
+			encode(container, context, false);
 		} catch (InsertException e) {
 			fail(e, container, context);
 		} catch (Throwable t) {
@@ -409,7 +415,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	public synchronized Object chooseKey(KeysFetchingLocally ignored, ObjectContainer container, ClientContext context) {
 		if(finished) return null;
 		// Ignore KeysFetchingLocally, it's for requests.
-		return getBlock(container, context);
+		return getBlock(container, context, false);
 	}
 
 }
