@@ -55,7 +55,7 @@ public class BloomFilter {
 
 		RandomAccessFile raf = new RandomAccessFile(file, "rw");
 		raf.setLength(length / 8);
-		filter = raf.getChannel().map(MapMode.READ_WRITE, 0, length / 8);
+		filter = raf.getChannel().map(MapMode.READ_WRITE, 0, length / 8).load();
 
 		this.length = length;
 		this.k = k;
