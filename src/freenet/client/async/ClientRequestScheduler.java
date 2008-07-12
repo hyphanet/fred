@@ -173,6 +173,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						}
 						
 					}, NativeThread.NORM_PRIORITY, false);
+					return;
 				}
 				schedCore.innerRegister(req, random, selectorContainer);
 			} else {
