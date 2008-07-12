@@ -251,7 +251,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				 * SHA-256 hash.
 				 */
 				Entry oldEntry = probeEntry(routingKey, false);
-				if (oldEntry != null) {
+				if (oldEntry != null && !oldEntry.isFree()) {
 					long oldOffset = oldEntry.curOffset;
 					try {
 						if (!collisionPossible)
