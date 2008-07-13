@@ -600,9 +600,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	/**
-	 * Read entry from disk.
+	 * Read entry from disk. Before calling this function, you should acquire all required locks.
 	 * 
-	 * Before calling this function, you should acquire all required locks.
+	 * @return <code>null</code> if and only if <code>routingKey</code> is not <code>null</code> and
+	 *         the key does not match the entry.
 	 */
 	private Entry readEntry(long offset, byte[] routingKey, boolean withData) throws IOException {
 		ByteBuffer mbf = ByteBuffer.allocate(Entry.METADATA_LENGTH);
@@ -617,10 +618,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		Entry entry = new Entry(mbf, null, null);
 		entry.curOffset = offset;
 
-		if (entry.isFree())
-			return entry; // don't read free entry
-
 		if (routingKey != null) {
+			if (entry.isFree())
+				return null;
 			if (!Arrays.equals(cipherManager.getDigestedKey(routingKey), entry.digestedRoutingKey))
 				return null;
 
