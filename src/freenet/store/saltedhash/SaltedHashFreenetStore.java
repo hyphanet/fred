@@ -14,9 +14,10 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -151,8 +152,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		configLock.readLock().lock();
 		try {
-			boolean locked = lockPlainKey(routingKey, true);
-			if (!locked) {
+			Map<Long, Condition> lockMap = lockPlainKey(routingKey, true);
+			if (lockMap == null) {
 				if (logDEBUG)
 					Logger.debug(this, "cannot lock key: " + HexUtil.bytesToHex(routingKey) + ", shutting down?");
 				return null;
@@ -179,7 +180,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					return null;
 				}
 			} finally {
-				unlockPlainKey(routingKey, true);
+				unlockPlainKey(routingKey, true, lockMap);
 			}
 		} finally {
 			configLock.readLock().unlock();
@@ -238,8 +239,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		configLock.readLock().lock();
 		try {
-			boolean locked = lockPlainKey(routingKey, false);
-			if (!locked) {
+			Map<Long, Condition> lockMap = lockPlainKey(routingKey, false);
+			if (lockMap == null) {
 				if (logDEBUG)
 					Logger.debug(this, "cannot lock key: " + HexUtil.bytesToHex(routingKey) + ", shutting down?");
 				return;
@@ -305,7 +306,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				if (oldEntry.generation != generation)
 					keyCount.incrementAndGet();
 			} finally {
-				unlockPlainKey(routingKey, false);
+				unlockPlainKey(routingKey, false, lockMap);
 			}
 		} finally {
 			configLock.readLock().unlock();
@@ -1133,13 +1134,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		 *         otherwise (e.g. can't acquire locks, node shutting down)
 		 */
 		private boolean batchProcessEntries(long offset, int length, BatchProcessor processor) {
-			boolean[] locked = new boolean[length];
+			Condition[] locked = new Condition[length];
 			try {
 				// acquire all locks in the region, will unlock in the finally block
 				for (int i = 0; i < length; i++) {
-					if (lockManager.lockEntry(offset + i))
-						locked[i] = true;
-					else
+					locked[i] = lockManager.lockEntry(offset + i);
+					if (locked[i] == null)
 						return false;
 				}
 
@@ -1215,8 +1215,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			} finally {
 				// unlock
 				for (int i = 0; i < length; i++)
-					if (locked[i])
-						lockManager.unlockEntry(offset + i);
+					if (locked[i] != null)
+						lockManager.unlockEntry(offset + i, locked[i]);
 			}
 		}
 
@@ -1227,7 +1227,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		 * @return <code>true</code> if the entry have put back successfully.
 		 */
 		private boolean resolveOldEntry(Entry entry) {
-			if (!lockDigestedKey(entry.getDigestedRoutingKey(), false))
+			Map<Long, Condition> lockMap = lockDigestedKey(entry.getDigestedRoutingKey(), false);
+			if (lockMap == null)
 				return false;
 			try {
 				entry.storeSize = storeSize;
@@ -1261,7 +1262,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				}
 				return false;
 			} finally {
-				unlockDigestedKey(entry.getDigestedRoutingKey(), false);
+				unlockDigestedKey(entry.getDigestedRoutingKey(), false, lockMap);
 			}
 		}
 	}
@@ -1304,12 +1305,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * @param plainKey
 	 * @return <code>true</code> if all the offsets are locked.
 	 */
-	private boolean lockPlainKey(byte[] plainKey, boolean usePrevStoreSize) {
+	private Map<Long, Condition> lockPlainKey(byte[] plainKey, boolean usePrevStoreSize) {
 		return lockDigestedKey(cipherManager.getDigestedKey(plainKey), usePrevStoreSize);
 	}
 
-	private void unlockPlainKey(byte[] plainKey, boolean usePrevStoreSize) {
-		unlockDigestedKey(cipherManager.getDigestedKey(plainKey), usePrevStoreSize);
+	private void unlockPlainKey(byte[] plainKey, boolean usePrevStoreSize, Map<Long, Condition> lockMap) {
+		unlockDigestedKey(cipherManager.getDigestedKey(plainKey), usePrevStoreSize, lockMap);
 	}
 
 	/**
@@ -1319,7 +1320,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * @param digestedKey
 	 * @return <code>true</code> if all the offsets are locked.
 	 */
-	private boolean lockDigestedKey(byte[] digestedKey, boolean usePrevStoreSize) {
+	private Map<Long, Condition> lockDigestedKey(byte[] digestedKey, boolean usePrevStoreSize) {
 		// use a set to prevent duplicated offsets,
 		// a sorted set to prevent deadlocks
 		SortedSet<Long> offsets = new TreeSet<Long>();
@@ -1332,25 +1333,25 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				offsets.add(offset);
 		}
 
-		Set<Long> locked = new TreeSet<Long>();
+		Map<Long, Condition> locked = new TreeMap<Long, Condition>();
 		for (long offset : offsets) {
-			boolean status = lockManager.lockEntry(offset);
-			if (!status)
+			Condition condition = lockManager.lockEntry(offset);
+			if (condition == null)
 				break;
-			locked.add(offset);
+			locked.put(offset, condition);
 		}
 
 		if (locked.size() == offsets.size()) {
-			return true;
+			return locked;
 		} else {
 			// failed, remove the locks
-			for (long offset : locked)
-				lockManager.unlockEntry(offset);
-			return false;
+			for (Map.Entry<Long, Condition> e : locked.entrySet())
+				lockManager.unlockEntry(e.getKey(), e.getValue());
+			return null;
 		}
 	}
 
-	private void unlockDigestedKey(byte[] digestedKey, boolean usePrevStoreSize) {
+	private void unlockDigestedKey(byte[] digestedKey, boolean usePrevStoreSize, Map<Long, Condition> lockMap) {
 		// use a set to prevent duplicated offsets
 		SortedSet<Long> offsets = new TreeSet<Long>();
 		long[] offsetArray = getOffsetFromDigestedKey(digestedKey, storeSize);
@@ -1363,7 +1364,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 
 		for (long offset : offsets) {
-			lockManager.unlockEntry(offset);
+			lockManager.unlockEntry(offset, lockMap.get(offset));
+			lockMap.remove(offset);
 		}
 	}
 

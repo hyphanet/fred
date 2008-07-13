@@ -35,16 +35,17 @@ public class LockManager {
 	 * This lock is <strong>not</strong> re-entrance. No threads except Cleaner should hold more
 	 * then one lock at a time (or deadlock may occur).
 	 */
-	boolean lockEntry(long offset) {
+	Condition lockEntry(long offset) {
 		if (logDEBUG)
 			Logger.debug(this, "try locking " + offset, new Exception());
 
+		Condition condition;
 		try {
 			entryLock.lock();
 			try {
 				do {
 					if (shutdown)
-						return false;
+						return null;
 
 					Condition lockCond = lockMap.get(offset);
 					if (lockCond != null)
@@ -52,31 +53,32 @@ public class LockManager {
 					else
 						break;
 				} while (true);
-				lockMap.put(offset, entryLock.newCondition());
+				condition = entryLock.newCondition();
+				lockMap.put(offset, condition);
 			} finally {
 				entryLock.unlock();
 			}
 		} catch (InterruptedException e) {
 			Logger.error(this, "lock interrupted", e);
-			return false;
+			return null;
 		}
 
 		if (logDEBUG)
 			Logger.debug(this, "locked " + offset, new Exception());
-		return true;
+		return condition;
 	}
 
 	/**
 	 * Unlock the entry
 	 */
-	void unlockEntry(long offset) {
+	void unlockEntry(long offset, Condition condition) {
 		if (logDEBUG)
 			Logger.debug(this, "unlocking " + offset, new Exception("debug"));
 
 		entryLock.lock();
 		try {
 			Condition cond = lockMap.remove(offset);
-			assert cond != null;
+			assert cond != condition;
 			cond.signal();
 		} finally {
 			entryLock.unlock();
