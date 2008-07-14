@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.text.DecimalFormat;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -135,11 +134,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		shutdownHook.addEarlyJob(new Thread(new ShutdownDB()));
 
 		cleanerThread = new Cleaner();
-
-		if (cleanerGlobalLock.tryLock()) {
-			migrateFromOldSaltedHash(); // XXX Old Format, to be removed in next build
-			cleanerGlobalLock.unlock();
-		}
 		
 		cleanerThread.start();
 	}
@@ -530,41 +524,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				else
 					digestedRoutingKey = cipherManager.getDigestedKey(plainRoutingKey);
 			return digestedRoutingKey;
-		}
-		
-		// XXX Old Format, to be removed in next build
-		public void readOldFormat(ByteBuffer in) {
-			assert in.remaining() == entryTotalLength;
-
-			digestedRoutingKey = new byte[0x20];
-			in.get(digestedRoutingKey);
-
-			dataEncryptIV = new byte[0x10];
-			in.get(dataEncryptIV);
-
-			flag = in.getLong();
-			storeSize = in.getLong();
-
-			if ((flag & ENTRY_FLAG_PLAINKEY) != 0) {
-				plainRoutingKey = new byte[0x20];
-				in.get(plainRoutingKey);
-			}
-
-			in.position(0x60);
-			generation = in.get();
-
-			// reserved bytes
-			in.position((int) ENTRY_HEADER_LENGTH);
-
-			header = new byte[headerBlockLength];
-			in.get(header);
-
-			data = new byte[dataBlockLength];
-			in.get(data);
-
-			assert in.remaining() == entryPaddingLength;
-
-			isEncrypted = true;
 		}
 	}
 
@@ -1500,60 +1459,5 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-	}
-	
-	// XXX Old Format, to be removed in next build
-	private final static int FILE_SPLIT = 0x04;
-	private final long ENTRY_HEADER_LENGTH = 0x70L;
-	private long entryPaddingLength;
-	private long entryTotalLength;
-
-	public void migrateFromOldSaltedHash() {
-		long length = ENTRY_HEADER_LENGTH + headerBlockLength + dataBlockLength;
-		entryPaddingLength = 0x200L - (length % 0x200L);
-		entryTotalLength = length + entryPaddingLength;
-
-        DecimalFormat fmt = new DecimalFormat("000");
-        int c = 0;
-		for (int i = 0; i < FILE_SPLIT; i++) {
-			File storeFiles = new File(baseDir, name + ".data-" + fmt.format(i));
-			if (!storeFiles.exists())
-				continue;
-			
-			try {
-				RandomAccessFile storeRAF = new RandomAccessFile(storeFiles, "rw");
-				storeRAF.seek(0);
-
-				byte[] b = new byte[(int) entryTotalLength];
-
-				while (!shutdown) {
-					WrapperManager.signalStarting(10 * 60 * 1000); // max 10 minutes
-					int status = storeRAF.read(b);
-					if (status != entryTotalLength)
-						break;
-					
-					ByteBuffer bf = ByteBuffer.wrap(b);
-					Entry e = new Entry();
-					e.readOldFormat(bf);
-					e.generation = generation;
-					
-					if (!e.isFree()) {
-						if (c++ % 1024 == 0)
-							System.out.println(name + ": old salt hash-->new salt hash migrated: " + c + " keys");
-						cleanerThread.resolveOldEntry(e);
-					}
-				}
-				
-				try {
-					storeRAF.close();
-				} catch (IOException e) {
-				}
-			} catch (IOException ioe) {
-			}
-			if (!shutdown)
-				storeFiles.delete();	
-		}
-
-		System.out.println(name + ": old salt hash-->new salt hash migrated: " + c + " keys(done)");
 	}
 }
