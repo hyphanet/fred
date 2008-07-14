@@ -988,7 +988,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					Logger.normal(this, "Store resize (" + name + "): " + processed + "/" + _prevStoreSize);
 
 				try {
-					if (!sleep)
+					if (sleep)
 						Thread.sleep(500);
 				} catch (InterruptedException e) {
 					bloomFilter.discard();
