@@ -64,7 +64,7 @@ public class BloomFilter {
 		this.k = k;
 	}
 
-	public void updateFilter(byte[] key) {
+	public void addKey(byte[] key) {
 		int[] hashes = getHashes(key);
 		lock.writeLock().lock();
 		try {
@@ -75,7 +75,11 @@ public class BloomFilter {
 		}
 
 		if (forkedFilter != null)
-			forkedFilter.updateFilter(key);
+			forkedFilter.addKey(key);
+	}
+
+	public void removeKey(byte[] key) {
+		// ignore
 	}
 
 	public boolean checkFilter(byte[] key) {

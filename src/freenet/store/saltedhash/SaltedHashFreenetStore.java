@@ -269,7 +269,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						// ignore
 					}
 
-					// Overwrite old offset
+					// Overwrite old offset with same key
 					Entry entry = new Entry(routingKey, header, data);
 					writeEntry(entry, oldOffset);
 					writes.incrementAndGet();
@@ -286,7 +286,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						// write to free block
 						if (logDEBUG)
 							Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
-						bloomFilter.updateFilter(cipherManager.getDigestedKey(routingKey));
+						bloomFilter.addKey(cipherManager.getDigestedKey(routingKey));
 						writeEntry(entry, offset[i]);
 						writes.incrementAndGet();
 						keyCount.incrementAndGet();
@@ -298,11 +298,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				// no free blocks, overwrite the first one
 				if (logDEBUG)
 					Logger.debug(this, "collision, write to i=0, offset=" + offset[0]);
-				bloomFilter.updateFilter(cipherManager.getDigestedKey(routingKey));
+				bloomFilter.addKey(cipherManager.getDigestedKey(routingKey));
 				oldEntry = readEntry(offset[0], null, false);
 				writeEntry(entry, offset[0]);
 				writes.incrementAndGet();
-				if (oldEntry.generation != generation)
+				if (oldEntry.generation == generation)
+					bloomFilter.removeKey(oldEntry.getDigestedRoutingKey());
+				else
 					keyCount.incrementAndGet();
 			} finally {
 				unlockPlainKey(routingKey, false, lockMap);
@@ -943,7 +945,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				WrapperManager.signalStarting(RESIZE_MEMORY_ENTRIES * 30 * 1000 + 1000);
 				batchProcessEntries(curOffset, RESIZE_MEMORY_ENTRIES, new BatchProcessor() {
 					public Entry process(Entry entry) {
-						if (entry.generation != generation) {
+						int oldGeneration = entry.generation;
+						if (oldGeneration != generation) {
 							entry.generation = generation;
 							keyCount.incrementAndGet();
 						}
@@ -952,7 +955,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 							// new size, don't have to relocate
 							if (entry.generation != generation) {
 								// update filter
-								bloomFilter.updateFilter(entry.getDigestedRoutingKey());
+								bloomFilter.addKey(entry.getDigestedRoutingKey());
 								return entry;
 							} else {
 								return NOT_MODIFIED;
@@ -960,6 +963,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						}
 
 						// remove from store, prepare for relocation
+						if (oldGeneration == generation) {
+							// should be impossible
+							Logger.error(this, //
+							        "new generation object with wrong storeSize. DigestedRoutingKey=" //
+							        + HexUtil.bytesToHex(entry.getDigestedRoutingKey()) //
+							        + ", Offset=" + entry.curOffset);
+							bloomFilter.removeKey(entry.getDigestedRoutingKey());
+						}
 						try {
 							entry.setData(readHeader(entry.curOffset), readData(entry.curOffset));
 							oldEntryList.add(entry);
@@ -1044,7 +1055,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				batchProcessEntries(curOffset, RESIZE_MEMORY_ENTRIES, new BatchProcessor() {
 					public Entry process(Entry entry) {
 						if (entry.generation != generation) {
-							bloomFilter.updateFilter(entry.getDigestedRoutingKey());
+							bloomFilter.addKey(entry.getDigestedRoutingKey());
 							keyCount.incrementAndGet();
 
 							entry.generation = generation;
@@ -1215,7 +1226,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					try {
 						if (isFree(offset)) {
 							writeEntry(entry, offset);
-							bloomFilter.updateFilter(entry.getDigestedRoutingKey());
+							bloomFilter.addKey(entry.getDigestedRoutingKey());
 							keyCount.incrementAndGet();
 							return true;
 						}
