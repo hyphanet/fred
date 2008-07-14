@@ -55,11 +55,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private static final byte FLAG_DIRTY = 0x1;
 	private static final byte FLAG_REBUILD_BLOOM = 0x2;
 
-	private boolean updateBloom = true;
 	private boolean checkBloom = true;
 	private int bloomFilterSize;
 	private int bloomFilterK;
-	private BloomFilter bloomFilter;
+	private final BloomFilter bloomFilter;
 
 	private static boolean logMINOR;
 	private static boolean logDEBUG;
@@ -111,14 +110,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		openStoreFiles(baseDir, name);
 
-		if (updateBloom || checkBloom) {
-			File bloomFile = new File(this.baseDir, name + ".bloom");
-			if (!bloomFile.exists() || bloomFile.length() != bloomFilterSize / 8) {
-				flags |= FLAG_REBUILD_BLOOM;
-				checkBloom = false;
-			}
-			bloomFilter = new BloomFilter(bloomFile, bloomFilterSize, bloomFilterK);
+		File bloomFile = new File(this.baseDir, name + ".bloom");
+		if (!bloomFile.exists() || bloomFile.length() != bloomFilterSize / 8) {
+			flags |= FLAG_REBUILD_BLOOM;
+			checkBloom = false;
 		}
+		bloomFilter = new BloomFilter(bloomFile, bloomFilterSize, bloomFilterK);
 
 		if ((flags & FLAG_DIRTY) != 0)
 			System.err.println("Datastore(" + name + ") is dirty.");
@@ -286,8 +283,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						// write to free block
 						if (logDEBUG)
 							Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
-						if (updateBloom)
-							bloomFilter.updateFilter(cipherManager.getDigestedKey(routingKey));
+						bloomFilter.updateFilter(cipherManager.getDigestedKey(routingKey));
 						writeEntry(entry, offset[i]);
 						writes.incrementAndGet();
 						keyCount.incrementAndGet();
@@ -299,8 +295,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				// no free blocks, overwrite the first one
 				if (logDEBUG)
 					Logger.debug(this, "collision, write to i=0, offset=" + offset[0]);
-				if (updateBloom)
-					bloomFilter.updateFilter(cipherManager.getDigestedKey(routingKey));
+				bloomFilter.updateFilter(cipherManager.getDigestedKey(routingKey));
 				oldEntry = readEntry(offset[0], null, false);
 				writeEntry(entry, offset[0]);
 				writes.incrementAndGet();
@@ -743,8 +738,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			Logger.error(this, "error flusing store", e);
 		}
 
-		if (bloomFilter != null)
-			bloomFilter.force();
+		bloomFilter.force();
 	}
 
 	/**
@@ -927,7 +921,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					}
 
 					try {
-						if (bloomFilter != null && loop % 6 == 0)
+						if (loop % 6 == 0)
 							bloomFilter.force();
 					} catch (Exception e) { // may throw IOException (even if it is not defined)
 						Logger.error(this, "Can't force bloom filter", e);
