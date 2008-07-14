@@ -111,11 +111,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		openStoreFiles(baseDir, name);
 
 		File bloomFile = new File(this.baseDir, name + ".bloom");
-		if (!bloomFile.exists() || bloomFile.length() != bloomFilterSize / 8) {
+		bloomFilter = new BloomFilter(bloomFile, bloomFilterSize, bloomFilterK);
+		if (bloomFilter.needRebuild()) {
 			flags |= FLAG_REBUILD_BLOOM;
 			checkBloom = false;
 		}
-		bloomFilter = new BloomFilter(bloomFile, bloomFilterSize, bloomFilterK);
 
 		if ((flags & FLAG_DIRTY) != 0)
 			System.err.println("Datastore(" + name + ") is dirty.");

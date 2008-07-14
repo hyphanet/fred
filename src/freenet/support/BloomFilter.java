@@ -24,6 +24,7 @@ public class BloomFilter {
 	/** Number of hash functions */
 	protected final int k;
 	private ReadWriteLock lock = new ReentrantReadWriteLock();
+	private boolean needRebuild;
 
 	/**
 	 * Constructor
@@ -52,6 +53,8 @@ public class BloomFilter {
 	public BloomFilter(File file, int length, int k) throws IOException {
 		if (length % 8 != 0)
 			throw new IllegalArgumentException();
+		if (!file.exists() || file.length() != length / 8)
+			needRebuild = true;
 
 		RandomAccessFile raf = new RandomAccessFile(file, "rw");
 		raf.setLength(length / 8);
@@ -199,5 +202,11 @@ public class BloomFilter {
 			k = 32;
 
 		return (int) k;
+	}
+
+	public boolean needRebuild() {
+		boolean _needRebuild = needRebuild;
+		needRebuild = false;
+		return _needRebuild;
 	}
 }
