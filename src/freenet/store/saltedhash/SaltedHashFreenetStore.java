@@ -134,7 +134,16 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		shutdownHook.addEarlyJob(new Thread(new ShutdownDB()));
 
 		cleanerThread = new Cleaner();
-		
+		// finish all resizing before continue
+		if (prevStoreSize != 0 && cleanerGlobalLock.tryLock()) {
+			System.out.println("Resizing datastore (" + name + "), see freenet-latest.log for progress.");
+			try {
+				cleanerThread.resizeStore(prevStoreSize, false);
+			} finally {
+				cleanerGlobalLock.unlock();
+			}
+		}
+
 		cleanerThread.start();
 	}
 
