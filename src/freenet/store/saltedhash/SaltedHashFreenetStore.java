@@ -55,9 +55,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private static final byte FLAG_DIRTY = 0x1;
 	private static final byte FLAG_REBUILD_BLOOM = 0x2;
 
-	private static final int BLOOM_FILTER_SIZE = 0x10000000; // 128Mib = 16MiB
-	private static final boolean updateBloom = true;
-	private static boolean checkBloom = true;
+	private boolean updateBloom = true;
+	private boolean checkBloom = true;
+	private int bloomFilterSize;
 	private int bloomFilterK;
 	private BloomFilter bloomFilter;
 
@@ -78,12 +78,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private int flags;
 
 	public static SaltedHashFreenetStore construct(File baseDir, String name, StoreCallback callback, Random random,
-	        long maxKeys, SemiOrderedShutdownHook shutdownHook) throws IOException {
-		return new SaltedHashFreenetStore(baseDir, name, callback, random, maxKeys, shutdownHook);
+	        long maxKeys, int bloomFilterSize, SemiOrderedShutdownHook shutdownHook) throws IOException {
+		return new SaltedHashFreenetStore(baseDir, name, callback, random, maxKeys, bloomFilterSize, shutdownHook);
 	}
 
 	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback callback, Random random, long maxKeys,
-	        SemiOrderedShutdownHook shutdownHook) throws IOException {
+	        int bloomFilterSize, SemiOrderedShutdownHook shutdownHook) throws IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 
@@ -99,6 +99,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		this.random = random;
 		storeSize = maxKeys;
+		this.bloomFilterSize = bloomFilterSize;
 
 		lockManager = new LockManager();
 
@@ -112,11 +113,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		if (updateBloom || checkBloom) {
 			File bloomFile = new File(this.baseDir, name + ".bloom");
-			if (!bloomFile.exists() || bloomFile.length() != BLOOM_FILTER_SIZE / 8) {
+			if (!bloomFile.exists() || bloomFile.length() != bloomFilterSize / 8) {
 				flags |= FLAG_REBUILD_BLOOM;
 				checkBloom = false;
 			}
-			bloomFilter = new BloomFilter(bloomFile, BLOOM_FILTER_SIZE, bloomFilterK);
+			bloomFilter = new BloomFilter(bloomFile, bloomFilterSize, bloomFilterK);
 		}
 
 		if ((flags & FLAG_DIRTY) != 0)
@@ -956,7 +957,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			if (storeSize > _prevStoreSize)
 				setStoreFileSize(storeSize);
 
-			int optimialK = BloomFilter.optimialK(BLOOM_FILTER_SIZE, storeSize);
+			int optimialK = BloomFilter.optimialK(bloomFilterSize, storeSize);
 			configLock.writeLock().lock();
 			try {
 				generation++;
@@ -1060,7 +1061,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			Logger.normal(this, "Start rebuilding bloom filter (" + name + ")");
 			long startTime = System.currentTimeMillis();
-			int optimialK = BloomFilter.optimialK(BLOOM_FILTER_SIZE, storeSize);
+			int optimialK = BloomFilter.optimialK(bloomFilterSize, storeSize);
 
 			configLock.writeLock().lock();
 			try {
