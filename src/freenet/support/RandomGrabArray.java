@@ -207,7 +207,7 @@ public class RandomGrabArray {
 					if(persistent)
 						container.deactivate(ret, 1);
 					if(excluded > MAX_EXCLUDED) {
-						Logger.error(this, "Remove random returning null because "+excluded+" excluded items, length = "+index, new Exception("error"));
+						Logger.normal(this, "Remove random returning null because "+excluded+" excluded items, length = "+index, new Exception("error"));
 						if(persistent && changedMe)
 							container.set(this);
 						return null;
