@@ -58,8 +58,8 @@ public class L10n {
 	private static final Object sync = new Object();
 
 	L10n(String selected) {
-		selectedLanguage = selected;
-		File tmpFile = new File(L10n.PREFIX + mapLanguageNameToShortCode(selected) + L10n.OVERRIDE_SUFFIX);
+		selectedLanguage = mapLanguageNameToShortCode(selected);
+		File tmpFile = new File(L10n.PREFIX + selected + L10n.OVERRIDE_SUFFIX);
 		
 		try {
 			if(tmpFile.exists() && tmpFile.canRead() && tmpFile.length() > 0) {
