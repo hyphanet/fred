@@ -275,8 +275,11 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			}
 			if(Logger.shouldLog(Logger.MINOR, this)) 
 				Logger.minor(this, "Finished "+req);
-			} finally {
-					sched.removeFetchingKey(key, req);
+			} catch (Throwable t) {
+				// Remove it if something is thrown.
+				// But normally send() will remove it.
+				Logger.error(this, "Caught "+t, t);
+				sched.removeFetchingKey(key, req);
 			}
 		}
 		

@@ -60,6 +60,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	}
 	
 	/** Do the request, blocking. Called by RequestStarter. 
+	 * Also responsible for deleting it.
 	 * @return True if a request was executed. False if caller should try to find another request, and remove
 	 * this one from the queue. */
 	public boolean send(NodeClientCore core, final RequestScheduler sched, ChosenRequest req) {
@@ -89,8 +90,12 @@ public abstract class SendableGet extends BaseSendableGet {
 				sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, NativeThread.HIGH_PRIORITY, req, req.isPersistent());
 				return true;
 			}
+			// We must remove the request even in this case.
+			// On other paths, callFailure() will do the removal.
+			sched.removeFetchingKey(key.getNodeKey(), req);
 			// Don't call onSuccess(), it will be called for us by backdoor coalescing.
 			sched.succeeded(this, req);
+			
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
 			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, NativeThread.HIGH_PRIORITY, req, req.isPersistent());
