@@ -896,11 +896,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(logMINOR)
 						Logger.minor(this, "Deleting "+req);
 					selectorContainer.delete((PersistentChosenRequest)req);
+				} else {
+					selectorContainer.deactivate(req, 1);
 				}
-				selectorContainer.deactivate(req, 1);
 			}
 			
-		}, NativeThread.NORM_PRIORITY, false);
+		}, prio, false);
 	}
 	
 	public void callFailure(final SendableInsert put, final LowLevelPutException e, final Object keyNum, int prio, final ChosenRequest req, boolean persistent) {
@@ -917,8 +918,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(logMINOR)
 						Logger.minor(this, "Deleting "+req);
 					selectorContainer.delete((PersistentChosenRequest)req);
+				} else {
+					selectorContainer.deactivate(put, 1);
 				}
-				selectorContainer.deactivate(put, 1);
 			}
 			
 		}, NativeThread.NORM_PRIORITY, false);
