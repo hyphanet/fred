@@ -232,7 +232,7 @@ public class NodeIPDetector {
 				while(it.hasNext()) {
 					FreenetInetAddress cur = (FreenetInetAddress) (it.next());
 					int curPop = ((Integer) (countsByPeer.get(cur))).intValue();
-					Logger.normal(this, "Detected peer: "+cur+" popularity "+curPop);
+					Logger.minor(this, "Detected peer: "+cur+" popularity "+curPop);
 					if(curPop >= bestPopularity) {
 						secondBestPopularity = bestPopularity;
 						bestPopularity = curPop;
@@ -243,14 +243,14 @@ public class NodeIPDetector {
 				if(best != null) {
 					if((bestPopularity > 1) || (detectedAddrs.length == 0)) {
  						if(!addresses.contains(best)) {
-							Logger.normal(this, "Adding best peer "+best+" ("+bestPopularity+ ')');
+							Logger.minor(this, "Adding best peer "+best+" ("+bestPopularity+ ')');
 							addresses.add(best);
 							if(best.isRealInternetAddress(false, false, false))
 								addedValidIP = true;
 						}
 						if((secondBest != null) && (secondBestPopularity > 1)) {
 							if(!addresses.contains(secondBest)) {
-								Logger.normal(this, "Adding second best peer "+secondBest+" ("+secondBest+ ')');
+								Logger.minor(this, "Adding second best peer "+secondBest+" ("+secondBest+ ')');
 								addresses.add(secondBest);
 								if(secondBest.isRealInternetAddress(false, false, false))
 									addedValidIP = true;
