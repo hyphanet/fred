@@ -611,7 +611,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 			schedCore.removePendingKey(getter, complain, key, container);
 			if(persistentCooldownQueue != null) {
 				SendableGet cooldownGetter = getter.getRequest(key, container);
+				container.activate(cooldownGetter, 1);
 				persistentCooldownQueue.removeKey(key, cooldownGetter, cooldownGetter.getCooldownWakeupByKey(key, container), container);
+				container.deactivate(cooldownGetter, 1);
 			}
 		} else {
 			jobRunner.queue(new DBJob() {
@@ -621,7 +623,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 					schedCore.removePendingKey(getter, complain, key, container);
 					if(persistentCooldownQueue != null) {
 						SendableGet cooldownGetter = getter.getRequest(key, container);
+						container.activate(cooldownGetter, 1);
 						persistentCooldownQueue.removeKey(key, cooldownGetter, cooldownGetter.getCooldownWakeupByKey(key, container), container);
+						container.deactivate(cooldownGetter, 1);
 					}
 				}
 				
