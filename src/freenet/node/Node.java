@@ -198,7 +198,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private static class L10nCallback implements StringCallback, EnumerableOptionCallback {
 		
 		public String get() {
-			return L10n.getSelectedLanguage();
+			return L10n.mapLanguageNameToLongName(L10n.getSelectedLanguage());
 		}
 		
 		public void set(String val) throws InvalidConfigValueException {
