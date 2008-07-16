@@ -592,7 +592,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 						container.delete(reg);
 						continue;
 					}
-					Logger.error(this, "Ignoring RegisterMe as doesn't belong to me: my insert="+isInsertScheduler+" my ssk="+isSSKScheduler+" his insert="+reg.core.isInsertScheduler+" his ssk="+reg.core.isSSKScheduler);
+					if(logMINOR)
+						Logger.minor(this, "Ignoring RegisterMe as doesn't belong to me: my insert="+isInsertScheduler+" my ssk="+isSSKScheduler+" his insert="+reg.core.isInsertScheduler+" his ssk="+reg.core.isSSKScheduler);
 					container.deactivate(reg, 1);
 					continue; // Don't delete.
 				}
