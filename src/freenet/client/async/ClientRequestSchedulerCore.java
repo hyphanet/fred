@@ -674,6 +674,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			keysFetching.remove(key);
 		}
 		}
+		int prio = NativeThread.NORM_PRIORITY+1;
+		assert(prio < ClientRequestScheduler.TRIP_PENDING_PRIORITY);
 		if(req != null && req.isPersistent()) {
 		sched.clientContext.jobRunner.queue(new DBJob() {
 			public void run(ObjectContainer container, ClientContext context) {
@@ -682,7 +684,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			public String toString() {
 				return "Delete "+req;
 			}
-		}, NativeThread.NORM_PRIORITY+1, false);
+		}, prio, false);
 		}
 	}
 
