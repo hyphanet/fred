@@ -655,7 +655,14 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	 */
 	public boolean addToFetching(Key key) {
 		synchronized(keysFetching) {
-			return keysFetching.add(key);
+			boolean retval = keysFetching.add(key);
+			if(!retval) {
+				Logger.error(this, "Already in keysFetching: "+key);
+			} else {
+				if(logMINOR)
+					Logger.minor(this, "Added to keysFetching: "+key);
+			}
+			return retval;
 		}
 	}
 	
