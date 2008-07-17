@@ -92,7 +92,7 @@ public abstract class SendableGet extends BaseSendableGet {
 			}
 			// We must remove the request even in this case.
 			// On other paths, callFailure() will do the removal.
-			sched.removeFetchingKey(key.getNodeKey(), req);
+			sched.removeChosenRequest(req);
 			// Don't call onSuccess(), it will be called for us by backdoor coalescing.
 			sched.succeeded(this, req);
 			

@@ -54,7 +54,9 @@ public interface RequestScheduler {
 
 	public KeysFetchingLocally fetchingKeys();
 
-	public void removeFetchingKey(Key key, ChosenRequest req);
+	public void removeFetchingKey(Key key);
+	
+	public void removeChosenRequest(ChosenRequest req);
 
 	/** Call onFailure() on the database thread, then delete the PersistentChosenRequest. For a non-persistent request, 
 	 * just call onFailure() immediately. */

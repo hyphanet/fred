@@ -675,12 +675,15 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		}
 	}
 
-	public void removeFetchingKey(final Key key, final ChosenRequest req) {
+	public void removeFetchingKey(final Key key) {
 		if(key != null) {
-		synchronized(keysFetching) {
-			keysFetching.remove(key);
+			synchronized(keysFetching) {
+				keysFetching.remove(key);
+			}
 		}
-		}
+	}
+		
+	public void removeChosenRequest(final ChosenRequest req) {
 		int prio = NativeThread.NORM_PRIORITY+1;
 		assert(prio < ClientRequestScheduler.TRIP_PENDING_PRIORITY);
 		if(req != null && req.isPersistent()) {
