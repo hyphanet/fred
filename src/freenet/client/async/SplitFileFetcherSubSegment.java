@@ -226,7 +226,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	// FIXME refactor this out to a common method; see SimpleSingleFileFetcher
 	public void onFailure(LowLevelGetException e, Object token, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
-			Logger.minor(this, "onFailure("+e+" , "+token);
+			Logger.minor(this, "onFailure("+e+" , "+token+" on "+this);
 		switch(e.code) {
 		case LowLevelGetException.DATA_NOT_FOUND:
 			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), token, container, context);
