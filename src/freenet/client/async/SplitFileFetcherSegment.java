@@ -789,7 +789,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			if(k.getNodeKey().equals(key)) {
 				if(dataCooldownTimes[i] > time) {
 					if(logMINOR)
-						Logger.minor(this, "Not retrying after cooldown for data block "+i+"as deadline has not passed yet on "+this);
+						Logger.minor(this, "Not retrying after cooldown for data block "+i+" as deadline has not passed yet on "+this+" remaining time: "+(dataCooldownTimes[i]-time)+"ms");
 					return false;
 				}
 				int tries = dataRetries[i];
@@ -810,7 +810,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			if(k.getNodeKey().equals(key)) {
 				if(checkCooldownTimes[i] > time) {
 					if(logMINOR)
-						Logger.minor(this, "Not retrying after cooldown for data block "+i+" as deadline has not passed yet on "+this);
+						Logger.minor(this, "Not retrying after cooldown for check block "+i+" as deadline has not passed yet on "+this+" remaining time: "+(checkCooldownTimes[i]-time)+"ms");
 					return false;
 				}
 				int tries = checkRetries[i];
