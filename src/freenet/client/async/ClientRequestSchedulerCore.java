@@ -155,6 +155,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 //				});
 				Query query = container.query();
 				query.constrain(RegisterMe.class);
+				// This throws NotSupported.
+//				query.descend("core").constrain(this).identity().
+//					and(query.descend("key").descend("addedTime").constrain(new Long(initTime)).smaller());
 				/**
 				 * FIXME DB4O
 				 * db4o says it has indexed core. But then when we try to query, it produces a diagnostic
@@ -720,8 +723,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 //		});
 		Query query = container.query();
 		query.constrain(PendingKeyItem.class);
-		query.descend("fullKeyAsBytes").constrain(pks);
-		query.descend("nodeDBHandle").constrain(new Long(nodeDBHandle));
+		query.descend("fullKeyAsBytes").constrain(pks).and(query.descend("nodeDBHandle").constrain(new Long(nodeDBHandle)));
 		Evaluation eval = new Evaluation() {
 
 			public void evaluate(Candidate candidate) {
