@@ -30,6 +30,8 @@ public abstract class ClientRequester {
 	protected ClientRequester(short priorityClass, RequestClient client) {
 		this.priorityClass = priorityClass;
 		this.client = client;
+		if(client == null)
+			throw new NullPointerException();
 		hashCode = super.hashCode(); // the old object id will do fine, as long as we ensure it doesn't change!
 	}
 
