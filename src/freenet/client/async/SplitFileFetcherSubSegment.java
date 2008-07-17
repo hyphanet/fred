@@ -281,11 +281,16 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		}
 		segment.errors.inc(e.getMode());
 		if(e.isFatal() && token == null) {
-			segment.fail(e, container, context);
+			segment.fail(e, container, context, false);
 		} else if(e.isFatal() || forceFatal) {
 			segment.onFatalFailure(e, ((Integer)token).intValue(), this, container, context);
 		} else {
 			segment.onNonFatalFailure(e, ((Integer)token).intValue(), this, container, context);
+		}
+		if(persistent) {
+			container.deactivate(segment, 1);
+			container.deactivate(parent, 1);
+			container.deactivate(segment.errors, 1);
 		}
 	}
 	
@@ -320,6 +325,10 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			onSuccess(data, fromStore, (Integer)token, ((Integer)token).intValue(), block, container, context);
 		} else {
 			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), token, container, context);
+		}
+		if(persistent) {
+			container.deactivate(segment, 1);
+			container.deactivate(blockNums, 1);
 		}
 	}
 	

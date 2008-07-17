@@ -325,7 +325,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 					try {
 						maybeAddToBinaryBlob(data, i, false, container, context);
 					} catch (FetchException e) {
-						fail(e, container, context);
+						fail(e, container, context, false);
 						return;
 					}
 				}
@@ -372,6 +372,11 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 
 			codec.addToQueue(new FECJob(codec, context.fecQueue, dataBuckets, checkBuckets, 32768, context.getBucketFactory(parentFetcher.parent.persistent()), this, false, parentFetcher.parent.getPriorityClass(), parentFetcher.parent.persistent()),
 					context.fecQueue, container);
+		if(persistent) {
+			container.deactivate(parentFetcher, 1);
+			container.deactivate(parentFetcher.parent, 1);
+			container.deactivate(context, 1);
+		}
 	}
 
 	public void onEncodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets2, Bucket[] checkBuckets2, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus) {
@@ -409,7 +414,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 				try {
 					maybeAddToBinaryBlob(data, i, true, container, context);
 				} catch (FetchException e) {
-					fail(e, container, context);
+					fail(e, container, context, false);
 					return;
 				}
 				if(checkRetries[i] > 0)
@@ -425,11 +430,15 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		}
 		if(persistent) {
 			container.set(this);
-			container.activate(parentFetcher, 1);
 		}
 		// Defer the completion until we have generated healing blocks if we are collecting binary blobs.
-		if(isCollectingBinaryBlob())
+		if(isCollectingBinaryBlob()) {
+			if(persistent)
+				container.activate(parentFetcher, 1);
 			parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
+			if(persistent)
+				container.deactivate(parentFetcher, 1);
+		}
 	}
 
 	boolean isCollectingBinaryBlob() {
@@ -505,7 +514,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		if(persistent)
 			container.set(this);
 		if(allFailed)
-			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors), container, context);
+			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors), container, context, false);
 		else if(seg != null)
 			seg.possiblyRemoveFromParent(container);
 	}
@@ -606,7 +615,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		return sub;
 	}
 
-	void fail(FetchException e, ObjectContainer container, ClientContext context) {
+	void fail(FetchException e, ObjectContainer container, ClientContext context, boolean dontDeactivateParent) {
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
@@ -643,6 +652,8 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			container.activate(parentFetcher, 1);
 		}
 		parentFetcher.segmentFinished(this, container, context);
+		if(!dontDeactivateParent)
+			container.deactivate(parentFetcher, 1);
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context, boolean regmeOnly) {
@@ -659,6 +670,8 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 				seg.add(i, true, container, context, false);
 			
 			seg.schedule(container, context, true, regmeOnly);
+			if(persistent)
+				container.deactivate(seg, 1);
 			synchronized(this) {
 				scheduled = true;
 			}
@@ -668,12 +681,12 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 				Logger.minor(this, "scheduling "+seg+" : "+seg.blockNums);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t+" scheduling "+this, t);
-			fail(new FetchException(FetchException.INTERNAL_ERROR, t), container, context);
+			fail(new FetchException(FetchException.INTERNAL_ERROR, t), container, context, true);
 		}
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
-		fail(new FetchException(FetchException.CANCELLED), container, context);
+		fail(new FetchException(FetchException.CANCELLED), container, context, true);
 	}
 
 	public void onBlockSetFinished(ClientGetState state) {
@@ -832,15 +845,23 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 				SplitFileFetcherSubSegment sub = (SplitFileFetcherSubSegment) v.get(i);
 				RandomGrabArray rga = sub.getParentGrabArray();
 				if(sub.getParentGrabArray() == null) {
+					if(persistent)
+						container.activate(sub, 1);
 					sub.schedule(container, context, false, false);
+					if(persistent)
+						container.deactivate(sub, 1);
 				} else {
 //					if(logMINOR) {
-						container.activate(rga, 1);
+						if(persistent)
+							container.activate(rga, 1);
 						if(!rga.contains(sub, container)) {
 							Logger.error(this, "Sub-segment has RGA but isn't registered to it!!: "+sub+" for "+rga);
 							sub.schedule(container, context, false, false);
+							if(persistent)
+								container.deactivate(sub, 1);
 						}
-						container.deactivate(rga, 1);
+						if(persistent)
+							container.deactivate(rga, 1);
 //					}
 				}
 			}
@@ -923,7 +944,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		}
 		if(persistent)
 			container.activate(this, 1);
-		this.fail(new FetchException(FetchException.INTERNAL_ERROR, "FEC failure: "+t, t), container, context);
+		this.fail(new FetchException(FetchException.INTERNAL_ERROR, "FEC failure: "+t, t), container, context, false);
 	}
 
 	public boolean haveBlock(int blockNo, ObjectContainer container) {
