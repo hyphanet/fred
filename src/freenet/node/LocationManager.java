@@ -611,7 +611,7 @@ public class LocationManager implements ByteCounter {
     }
     
     private void announceLocChange(boolean log, boolean randomReset, boolean fromDupLocation) {
-        Message msg = DMT.createFNPLocChangeNotificationNew(getLocation(), node.peers.getPeerLocationDoubles());
+        Message msg = DMT.createFNPLocChangeNotificationNew(getLocation(), node.peers.getPeerLocationDoubles(true));
         node.peers.localBroadcast(msg, false, true, this);
 	if(log)
 		recordLocChange(randomReset, fromDupLocation);
