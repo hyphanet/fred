@@ -233,6 +233,7 @@ public class FECQueue implements OOMHook {
 						int newCached = totalCached + persistentQueueCache[prio].size();
 						if(newCached >= maxPersistentQueueCacheSize) return;
 						grab = maxPersistentQueueCacheSize - newCached;
+						totalCached = newCached;
 					}
 					if(logMINOR) Logger.minor(this, "Grabbing up to "+grab+" jobs at priority "+prio);
 					Query query = container.query();
