@@ -5,6 +5,7 @@ package freenet.node.fcp;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
+import com.db4o.query.Constraint;
 import com.db4o.query.Predicate;
 import com.db4o.query.Query;
 
@@ -57,7 +58,8 @@ public class FCPPersistentRoot {
 		query.constrain(FCPClient.class);
 		// Don't constrain by root because that set is huge.
 		// I think that was the cause of the OOMs here...
-		query.descend("name").constrain(name);
+		Constraint con = query.descend("name").constrain(name);
+		con.and(query.descend("root").constrain(this).identity());
 		ObjectSet set = query.execute();
 		while(set.hasNext()) {
 			FCPClient client = (FCPClient) set.next();
