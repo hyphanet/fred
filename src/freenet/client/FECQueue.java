@@ -9,6 +9,7 @@ import java.util.ListIterator;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
+import com.db4o.query.Constraint;
 import com.db4o.query.Predicate;
 import com.db4o.query.Query;
 
@@ -236,8 +237,8 @@ public class FECQueue implements OOMHook {
 					if(logMINOR) Logger.minor(this, "Grabbing up to "+grab+" jobs at priority "+prio);
 					Query query = container.query();
 					query.constrain(FECJob.class);
-					query.descend("priority").constrain(new Short(prio));
-					query.descend("queue").constrain(FECQueue.this);
+					Constraint con = query.descend("priority").constrain(new Short(prio));
+					con.and(query.descend("queue").constrain(FECQueue.this));
 					query.descend("addedTime").orderAscending();
 					ObjectSet results = query.execute();
 					if(results.hasNext()) {
