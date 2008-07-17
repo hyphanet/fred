@@ -652,7 +652,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			container.activate(parentFetcher, 1);
 		}
 		parentFetcher.segmentFinished(this, container, context);
-		if(!dontDeactivateParent)
+		if(!dontDeactivateParent && persistent)
 			container.deactivate(parentFetcher, 1);
 	}
 
