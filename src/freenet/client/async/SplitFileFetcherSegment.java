@@ -991,7 +991,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		if(persistent)
 			container.activate(seg, 1);
 		if(seg != null) {
-			seg.removeBlockNum(blockNum);
+			seg.removeBlockNum(blockNum, container);
 			seg.possiblyRemoveFromParent(container);
 		}
 		if(persistent)

@@ -594,7 +594,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		getScheduler(context).register(firstTime ? segment : null, new SendableGet[] { this }, regmeOnly, persistent, true, segment.blockFetchContext.blocks, null);
 	}
 
-	public void removeBlockNum(int blockNum) {
+	public void removeBlockNum(int blockNum, ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "Removing block "+blockNum+" from "+this);
 		synchronized(segment) {
 			for(int i=0;i<blockNums.size();i++) {
@@ -607,6 +607,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				}
 			}
 		}
+		container.set(blockNums);
 	}
 
 }
