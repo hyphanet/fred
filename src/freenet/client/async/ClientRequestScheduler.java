@@ -896,13 +896,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(logMINOR)
 					Logger.minor(this, "callFailure() on "+get+" : "+e);
 				get.onFailure(e, keyNum, selectorContainer, clientContext);
-				if(get.persistent()) {
-					if(logMINOR)
-						Logger.minor(this, "Deleting "+req);
-					selectorContainer.delete((PersistentChosenRequest)req);
-				} else {
-					selectorContainer.deactivate(req, 1);
-				}
+				if(logMINOR)
+					Logger.minor(this, "Deleting "+req);
+				selectorContainer.delete((PersistentChosenRequest)req);
 			}
 			
 		}, prio, false);
@@ -918,13 +914,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 			public void run(ObjectContainer container, ClientContext context) {
 				container.activate(put, 1);
 				put.onFailure(e, keyNum, selectorContainer, clientContext);
-				if(put.persistent()) {
-					if(logMINOR)
-						Logger.minor(this, "Deleting "+req);
-					selectorContainer.delete((PersistentChosenRequest)req);
-				} else {
-					selectorContainer.deactivate(put, 1);
-				}
+				if(logMINOR)
+					Logger.minor(this, "Deleting "+req);
+				selectorContainer.delete((PersistentChosenRequest)req);
 			}
 			
 		}, NativeThread.NORM_PRIORITY, false);
@@ -940,12 +932,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 			public void run(ObjectContainer container, ClientContext context) {
 				container.activate(put, 1);
 				put.onSuccess(keyNum, selectorContainer, clientContext);
-				if(put.persistent()) {
-					if(logMINOR)
-						Logger.minor(this, "Deleting "+req);
-					selectorContainer.delete((PersistentChosenRequest)req);
-				}
-				selectorContainer.deactivate(put, 1);
+				if(logMINOR)
+					Logger.minor(this, "Deleting "+req);
+				selectorContainer.delete((PersistentChosenRequest)req);
 			}
 			
 		}, NativeThread.NORM_PRIORITY+1, false);
