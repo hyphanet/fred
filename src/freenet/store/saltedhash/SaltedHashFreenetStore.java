@@ -142,6 +142,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			} finally {
 				cleanerGlobalLock.unlock();
 			}
+			writeConfigFile();
 		}
 
 		cleanerThread.start();
