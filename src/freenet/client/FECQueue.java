@@ -239,7 +239,7 @@ public class FECQueue implements OOMHook {
 					Query query = container.query();
 					query.constrain(FECJob.class);
 					Constraint con = query.descend("priority").constrain(new Short(prio));
-					con.and(query.descend("queue").constrain(FECQueue.this));
+					con.and(query.descend("queue").constrain(FECQueue.this).identity());
 					query.descend("addedTime").orderAscending();
 					ObjectSet results = query.execute();
 					if(results.hasNext()) {
