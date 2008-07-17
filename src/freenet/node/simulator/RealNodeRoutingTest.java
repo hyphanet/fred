@@ -35,6 +35,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
     static final int MAX_PINGS = 2000;
     static final boolean ENABLE_SWAPPING = false;
     static final boolean ENABLE_SWAP_QUEUEING = false;
+    static final boolean ENABLE_FOAF = true;
     
     public static void main(String[] args) throws Exception {
         System.out.println("Routing test using real nodes:");
@@ -55,8 +56,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
         	System.err.println("Creating node "+i);
-            nodes[i] = 
-            	NodeStarter.createTestNode(5001+i, dir, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, 65536, true, ENABLE_SWAPPING, false, false, false, ENABLE_SWAP_QUEUEING, true, 0);
+            nodes[i] = NodeStarter.createTestNode(5001+i, dir, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, 65536, true, ENABLE_SWAPPING, false, false, false, ENABLE_SWAP_QUEUEING, true, 0, ENABLE_FOAF);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         Logger.normal(RealNodeRoutingTest.class, "Created "+NUMBER_OF_NODES+" nodes");
