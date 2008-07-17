@@ -78,7 +78,7 @@ public class LockManager {
 		entryLock.lock();
 		try {
 			Condition cond = lockMap.remove(offset);
-			assert cond != condition;
+			assert cond == condition;
 			cond.signal();
 		} finally {
 			entryLock.unlock();
