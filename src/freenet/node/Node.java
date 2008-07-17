@@ -33,7 +33,6 @@ import com.sleepycat.je.StatsConfig;
 
 import freenet.client.FetchContext;
 import freenet.clients.http.SimpleToadletServer;
-import freenet.clients.http.StartupToadlet;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
@@ -106,7 +105,6 @@ import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
-import freenet.support.OOMHook;
 import freenet.support.PooledExecutor;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
@@ -120,7 +118,6 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.HostnameSyntaxException;
-import java.net.URI;
 
 /**
  * @author amphibian
@@ -413,6 +410,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	final boolean enablePerNodeFailureTables;
 	final boolean enableULPRDataPropagation;
 	final boolean enableSwapping;
+	private volatile boolean publishOurPeersLocation;
+	private volatile boolean routeAccordingToOurPeersLocation;
 	boolean enableSwapQueueing;
 	boolean enablePacketCoalescing;
 	public static final short DEFAULT_MAX_HTL = (short)10;
@@ -858,6 +857,30 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			
 		});
 		enableSwapping = nodeConfig.getBoolean("enableSwapping");
+		
+		nodeConfig.register("publishOurPeersLocation", true, sortOrder++, true, false, "Node.publishOurPeersLocation", "Node.publishOurPeersLocationLong", new BooleanCallback() {
+
+			public boolean get() {
+				return publishOurPeersLocation;
+			}
+
+			public void set(boolean val) throws InvalidConfigValueException {
+				publishOurPeersLocation = val;
+			}
+		});
+		publishOurPeersLocation = nodeConfig.getBoolean("publishOurPeersLocation");
+		
+		nodeConfig.register("routeAccordingToOurPeersLocation", true, sortOrder++, true, false, "Node.routeAccordingToOurPeersLocation", "Node.routeAccordingToOurPeersLocationLong", new BooleanCallback() {
+
+			public boolean get() {
+				return routeAccordingToOurPeersLocation;
+			}
+
+			public void set(boolean val) throws InvalidConfigValueException {
+				routeAccordingToOurPeersLocation = val;
+			}
+		});
+		routeAccordingToOurPeersLocation = nodeConfig.getBoolean("routeAccordingToOurPeersLocation");
 		
 		nodeConfig.register("enableSwapQueueing", true, sortOrder++, true, false, "Node.enableSwapQueueing", "Node.enableSwapQueueingLong", new BooleanCallback() {
 			public boolean get() {
@@ -3321,5 +3344,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 	public void setDispatcherHook(NodeDispatcherCallback cb) {
 		this.dispatcher.setHook(cb);
+	}
+	
+	public boolean shallWePublishOurPeersLocation() {
+		return publishOurPeersLocation;
+	}
+	
+	public boolean shallWeRouteAccordingToOurPeersLocation() {
+		return routeAccordingToOurPeersLocation;
 	}
 }

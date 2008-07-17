@@ -560,6 +560,8 @@ public class PeerManager {
 	 */
 	public double[] getPeerLocationDoubles(boolean pruneBackedOffedPeers) {
 		double[] locs;
+		if(!node.shallWePublishOurPeersLocation())
+			return new double[0];
 		PeerNode[] conns;
 		synchronized(this) {
 			conns = connectedPeers;
@@ -885,7 +887,7 @@ public class PeerManager {
 			double diff = Location.distance(loc, target);
 			
 			double[] peersLocation = p.getPeersLocation();
-			if(peersLocation != null) {
+			if((node.shallWeRouteAccordingToOurPeersLocation()) && (peersLocation != null)) {
 				for(double l : peersLocation) {
 					double newDiff = Location.distance(l, target);
 					if(newDiff < diff) {
