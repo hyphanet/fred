@@ -1177,6 +1177,15 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	   		Logger.error(this, "Persistent temporary files location is not a directory: "+oldTempFilesPeerDir.getPath());
 	 		return false;
 	 	}
+	 	// FIXME remove... for Cooo
+	 	System.gc();
+	 	System.runFinalization();
+	 	System.gc();
+	 	System.runFinalization();
+	 	Runtime r = Runtime.getRuntime();
+	 	long memoryInUse = r.totalMemory() - r.freeMemory();
+	 	System.err.println("Memory in use before listing temp files: "+memoryInUse);
+	 	
 	 	File[] oldTempFiles = oldTempFilesPeerDir.listFiles();
 	 	if(oldTempFiles == null) {
 	 		return false;
