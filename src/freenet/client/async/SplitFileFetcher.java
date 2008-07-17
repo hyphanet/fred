@@ -348,7 +348,11 @@ public class SplitFileFetcher implements ClientGetState {
 		for(int i=0;i<segments.length;i++) {
 			if(logMINOR)
 				Logger.minor(this, "Scheduling segment "+i+" : "+segments[i]);
+			if(persistent)
+				container.activate(segments[i], 1);
 			segments[i].schedule(container, context, regmeOnly);
+			if(persistent)
+				container.deactivate(segments[i], 1);
 		}
 	}
 
