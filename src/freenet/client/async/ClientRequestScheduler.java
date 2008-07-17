@@ -706,10 +706,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(logMINOR) Logger.minor(this, "Running "+transientGets.length+" callbacks off-thread for "+block.getKey());
 					for(int i=0;i<transientGets.length;i++) {
 						try {
-							if(logMINOR) Logger.minor(this, "Calling callback for "+transientGets[i]+" for "+key);
+							if(logMINOR) Logger.minor(this, "Calling tripPendingKey() callback for "+transientGets[i]+" for "+key);
 							transientGets[i].onGotKey(key, block, null, clientContext);
 						} catch (Throwable t) {
-							Logger.error(this, "Caught "+t+" running callback "+transientGets[i]+" for "+key, t);
+							Logger.error(this, "Caught "+t+" running tripPendingKey() callback "+transientGets[i]+" for "+key, t);
 						}
 					}
 				}
