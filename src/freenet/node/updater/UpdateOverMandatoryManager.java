@@ -1190,7 +1190,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	 	File[] oldTempFiles = oldTempFilesPeerDir.listFiles(new FileFilter() {
 
 			public boolean accept(File arg0) {
-				return arg0.getName().toLowerCase().endsWith(".fblob");
+				String name = arg0.getName().toLowerCase();
+				return name.endsWith(".fblob") || name.endsWith(".fblob.tmp");
 			}
 	 		
 	 	});
