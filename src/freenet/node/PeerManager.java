@@ -558,7 +558,7 @@ public class PeerManager {
 	 * @return An array of the current locations (as doubles) of all
 	 * our connected peers.
 	 */
-	public double[] getPeerLocationDoubles() {
+	public double[] getPeerLocationDoubles(boolean pruneBackedOffedPeers) {
 		double[] locs;
 		PeerNode[] conns;
 		synchronized(this) {
@@ -567,8 +567,11 @@ public class PeerManager {
 		locs = new double[conns.length];
 		int x = 0;
 		for(int i = 0; i < conns.length; i++) {
-			if(conns[i].isRoutable())
-				locs[x++] = conns[i].getLocation();
+			if(conns[i].isRoutable()) {
+				if(!conns[i].shouldBeExcludedFromPeerList()) {
+					locs[x++] = conns[i].getLocation();
+				}
+			}
 		}
 		// Wipe out any information contained in the order
 		java.util.Arrays.sort(locs, 0, x);

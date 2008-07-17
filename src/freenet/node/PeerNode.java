@@ -74,9 +74,7 @@ import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPUtil;
-import java.util.ArrayList;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.Collection;
 
 /**
  * @author amphibian
@@ -326,6 +324,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	
 	// NodeCrypto for the relevant node reference for this peer's type (Darknet or Opennet at this time))
 	protected NodeCrypto crypto;
+	
+	/**
+	 * Some alchemy we use in PeerNode.shouldBeExcludedFromPeerList()
+	 */
+	public static final int BLACK_MAGIC_BACKOFF_PRUNING_TIME = 5 * 60 * 1000;
+	public static final double BLACK_MAGIC_BACKOFF_PRUNING_PERCENTAGE = 0.9;
 	
 	/**
 	 * For FNP link setup:
@@ -912,6 +916,18 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	*/
 	public synchronized double getLocation() {
 		return currentLocation;
+	}
+	
+	public boolean shouldBeExcludedFromPeerList() {
+		long now = System.currentTimeMillis();
+		synchronized(this) {
+			if(BLACK_MAGIC_BACKOFF_PRUNING_PERCENTAGE < backedOffPercent.currentValue())
+				return false;
+			else if(BLACK_MAGIC_BACKOFF_PRUNING_TIME + now < getRoutingBackedOffUntil())
+				return false;
+			else
+				return true;
+		}
 	}
 	
 	public synchronized  double[] getPeersLocation() {
@@ -2082,7 +2098,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	*/
 	protected void sendInitialMessages() {
 		Message locMsg = ((getVersionNumber() > 1153) ?
-			DMT.createFNPLocChangeNotificationNew(node.lm.getLocation(), node.peers.getPeerLocationDoubles()) :
+			DMT.createFNPLocChangeNotificationNew(node.lm.getLocation(), node.peers.getPeerLocationDoubles(true)) :
 			DMT.createFNPLocChangeNotification(node.lm.getLocation()));
 		Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
 		Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
