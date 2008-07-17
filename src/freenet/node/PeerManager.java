@@ -880,6 +880,20 @@ public class PeerManager {
 			//To help avoid odd race conditions, get the location only once and use it for all calculations.
 			double loc = p.getLocation();
 			double diff = Location.distance(loc, target);
+			
+			double[] peersLocation = p.getPeersLocation();
+			if(peersLocation != null) {
+				for(double l : peersLocation) {
+					double newDiff = Location.distance(l, target);
+					if(newDiff < diff) {
+						loc = l;
+						diff = newDiff;
+					}
+				}
+				if(logMINOR)
+					Logger.minor(this, "The peer "+p+" has published his peer's locations and the closest we have found to the target is "+diff+" away.");
+			}
+			
 			if(diff > maxDistance)
 				continue;
 			if((!ignoreSelf) && (diff > maxDiff)) {
