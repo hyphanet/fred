@@ -663,7 +663,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 		// Setup RNG if needed : DO NOT USE IT BEFORE THAT POINT!
 		this.random = (r == null ? new Yarrow() : r);
-		DiffieHellman.init(random);
+		if(r == null) // if it's not null it's because we are running in the simulator
+			DiffieHellman.init(random);
 		byte buffer[] = new byte[16];
 		random.nextBytes(buffer);
 		this.fastWeakRandom = new MersenneTwister(buffer);
