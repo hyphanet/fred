@@ -191,6 +191,8 @@ public class FECQueue implements OOMHook {
 									else
 										job.callback.onEncodedSegment(container, clientContext, job, job.dataBlocks, job.checkBlocks, job.dataBlockStatus, job.checkBlockStatus);
 									container.delete(job);
+									if(container.ext().isStored(job.callback))
+										container.deactivate(job.callback, 1);
 								}
 								
 							}, NativeThread.NORM_PRIORITY+1, false);
