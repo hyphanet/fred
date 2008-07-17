@@ -15,6 +15,7 @@ import com.db4o.query.Query;
 import freenet.keys.Key;
 import freenet.node.SendableGet;
 import freenet.support.HexUtil;
+import freenet.support.Logger;
 
 /**
  * Persistable implementation of CooldownQueue. Much simpler than RequestCooldownQueue,
@@ -87,23 +88,53 @@ public class PersistentCooldownQueue implements CooldownQueue {
 	public Key[] removeKeyBefore(final long now, ObjectContainer container, int maxCount) {
 		// Will be called repeatedly until no more keys are returned, so it doesn't
 		// matter very much if they're not in order.
-		ObjectSet results = container.query(new Predicate() {
-			public boolean match(PersistentCooldownQueueItem persistentCooldownQueueItem) {
-				if(persistentCooldownQueueItem.time >= now) return false;
-				if(persistentCooldownQueueItem.parent != PersistentCooldownQueue.this) return false;
-				return true;
-			}
-		});
+		
+		// This query returns bogus results (cooldown items with times in the future).
+//		ObjectSet results = container.query(new Predicate() {
+//			public boolean match(PersistentCooldownQueueItem persistentCooldownQueueItem) {
+//				if(persistentCooldownQueueItem.time >= now) return false;
+//				if(persistentCooldownQueueItem.parent != PersistentCooldownQueue.this) return false;
+//				return true;
+//			}
+//		});
+		// Lets re-code it in SODA.
+		long tStart = System.currentTimeMillis();
+		Query query = container.query();
+		query.constrain(PersistentCooldownQueueItem.class);
+		query.descend("time").constrain(new Long(now)).smaller()
+			.and(query.descend("parent").constrain(this).identity());
+		ObjectSet results = query.execute();
 		if(results.hasNext()) {
+			long tEnd = System.currentTimeMillis();
+			if(tEnd - tStart > 1000)
+				Logger.error(this, "Query took "+(tEnd-tStart));
+			else
+				if(Logger.shouldLog(Logger.MINOR, this))
+					Logger.minor(this, "Query took "+(tEnd-tStart));
 			ArrayList v = new ArrayList(Math.min(maxCount, results.size()));
 			while(results.hasNext() && v.size() < maxCount) {
 				PersistentCooldownQueueItem i = (PersistentCooldownQueueItem) results.next();
+				if(i.time >= now) {
+					Logger.error(this, "removeKeyBefore(): time >= now: diff="+(now-i.time));
+					continue;
+				}
+				if(i.parent != this) {
+					Logger.error(this, "parent="+i.parent+" but should be "+this);
+					continue;
+				}
 				container.delete(i);
 				v.add(i.key);
 			}
 			return (Key[]) v.toArray(new Key[v.size()]);
-		} else
+		} else {
+			long tEnd = System.currentTimeMillis();
+			if(tEnd - tStart > 1000)
+				Logger.error(this, "Query took "+(tEnd-tStart));
+			else
+				if(Logger.shouldLog(Logger.MINOR, this))
+					Logger.minor(this, "Query took "+(tEnd-tStart));
 			return null;
+		}
 	}
 
 }
