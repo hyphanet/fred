@@ -1,13 +1,17 @@
 package freenet.node.fcp;
 
-import java.io.*;
-import java.net.*;
+import freenet.client.async.ClientRequester;
+import freenet.keys.FreenetURI;
+import freenet.support.Fields;
+import freenet.support.Logger;
+import freenet.support.SimpleFieldSet;
+import freenet.support.api.Bucket;
+import freenet.support.io.SerializableToFieldSetBucket;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.net.MalformedURLException;
 
-import freenet.client.async.*;
-import freenet.keys.*;
-import freenet.support.*;
-import freenet.support.api.*;
-import freenet.support.io.*;
 
 /**
  * A request process carried out by the node for an FCP client.
