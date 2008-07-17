@@ -174,8 +174,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements GotKe
 	}
 
 	public void onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
-		if(persistent)
-			container.activate(this, 2);
+		if(persistent) {
+			container.activate(this, 1);
+			container.activate(key, 5);
+		}
 		synchronized(this) {
 			chosen = true;
 			finished = true;
@@ -194,6 +196,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements GotKe
 			Logger.error(this, "onGotKey("+key+","+block+") got "+e+" for "+this, e);
 			// FIXME if we get rid of the direct route this must call onFailure()
 		}
+		if(persistent)
+			container.deactivate(this, 1);
 	}
 	
 
