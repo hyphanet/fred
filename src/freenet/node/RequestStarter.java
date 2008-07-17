@@ -209,6 +209,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 					Logger.minor(this, "Not using "+req+" in favour of "+betterReq);
 				synchronized(queue) {
 					queue.addFirst(req);
+					queue.remove(betterReq);
 				}
 				req = null;
 				usedReq = false;
