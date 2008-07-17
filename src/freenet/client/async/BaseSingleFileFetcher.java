@@ -177,6 +177,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements GotKe
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(key, 5);
+			container.activate(this.key, 5);
 		}
 		synchronized(this) {
 			chosen = true;
