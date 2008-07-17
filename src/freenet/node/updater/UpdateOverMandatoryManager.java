@@ -6,6 +6,7 @@ package freenet.node.updater;
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -1186,7 +1187,13 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	 	long memoryInUse = r.totalMemory() - r.freeMemory();
 	 	System.err.println("Memory in use before listing temp files: "+memoryInUse);
 	 	
-	 	File[] oldTempFiles = oldTempFilesPeerDir.listFiles();
+	 	File[] oldTempFiles = oldTempFilesPeerDir.listFiles(new FileFilter() {
+
+			public boolean accept(File arg0) {
+				return arg0.getName().toLowerCase().endsWith(".fblob");
+			}
+	 		
+	 	});
 	 	if(oldTempFiles == null) {
 	 		return false;
 	 	}
