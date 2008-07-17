@@ -190,7 +190,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		if(data == null) throw new NullPointerException();
 		boolean decodeNow = false;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo);
+		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" in "+this);
 		if(parentFetcher.parent instanceof ClientGetter)
 			((ClientGetter)parentFetcher.parent).addKeyToBinaryBlob(block, container, context);
 		// No need to unregister key, because it will be cleared in tripPendingKey().
