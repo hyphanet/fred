@@ -1354,34 +1354,32 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				System.out.println("Initializing CHK Datastore (" + maxStoreKeys + " keys)");
 				chkDatastore = new CHKStore();
 				SaltedHashFreenetStore chkDataFS = SaltedHashFreenetStore.construct(storeDir, "CHK-store",
-				        chkDatastore, random, maxStoreKeys, 0x10000000, shutdownHook);
+				        chkDatastore, this, maxStoreKeys, 0x10000000, shutdownHook);
 				Logger.normal(this, "Initializing CHK Datacache");
 				System.out.println("Initializing CHK Datacache (" + maxCacheKeys + ':' + maxCacheKeys + " keys)");
 				chkDatacache = new CHKStore();
 				SaltedHashFreenetStore chkCacheFS = SaltedHashFreenetStore.construct(storeDir, "CHK-cache",
-				        chkDatacache, random, maxCacheKeys, 0x10000000, shutdownHook);
-
+				        chkDatacache, this, maxCacheKeys, 0x10000000, shutdownHook);
 				Logger.normal(this, "Initializing pubKey Datastore");
 				System.out.println("Initializing pubKey Datastore");
 				pubKeyDatastore = new PubkeyStore();
 				SaltedHashFreenetStore pubkeyDataFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-store",
-				        pubKeyDatastore, random, maxStoreKeys, 0x10000000, shutdownHook);
+				        pubKeyDatastore, this, maxStoreKeys, 0x10000000, shutdownHook);
 				Logger.normal(this, "Initializing pubKey Datacache");
 				System.out.println("Initializing pubKey Datacache (" + maxCacheKeys + " keys)");
 				pubKeyDatacache = new PubkeyStore();
 				SaltedHashFreenetStore pubkeyCacheFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-cache",
-				        pubKeyDatacache, random, maxCacheKeys, 0x10000000, shutdownHook);
-
+				        pubKeyDatacache, this, maxCacheKeys, 0x10000000, shutdownHook);
 				Logger.normal(this, "Initializing SSK Datastore");
 				System.out.println("Initializing SSK Datastore");
 				sskDatastore = new SSKStore(this);
 				SaltedHashFreenetStore sskDataFS = SaltedHashFreenetStore.construct(storeDir, "SSK-store",
-				        sskDatastore, random, maxStoreKeys, 0x10000000, shutdownHook);
+				        sskDatastore, this, maxStoreKeys, 0x10000000, shutdownHook);
 				Logger.normal(this, "Initializing SSK Datacache");
 				System.out.println("Initializing SSK Datacache (" + maxCacheKeys + " keys)");
 				sskDatacache = new SSKStore(this);
 				SaltedHashFreenetStore sskCacheFS = SaltedHashFreenetStore.construct(storeDir, "SSK-cache",
-				        sskDatacache, random, maxCacheKeys, 0x10000000, shutdownHook);
+				        sskDatacache, this, maxCacheKeys, 0x10000000, shutdownHook);
 				
 				File migrationFile = new File(storeDir, "migrated");
 				if (!migrationFile.exists()) {

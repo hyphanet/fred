@@ -14,7 +14,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Random;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -29,13 +28,17 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.keys.KeyVerifyException;
+import freenet.l10n.L10n;
+import freenet.node.Node;
 import freenet.node.SemiOrderedShutdownHook;
+import freenet.node.useralerts.UserAlert;
 import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
 import freenet.store.StorableBlock;
 import freenet.store.StoreCallback;
 import freenet.support.BloomFilter;
 import freenet.support.Fields;
+import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.io.FileUtil;
@@ -70,18 +73,21 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private final int routeKeyLength;
 	private final int fullKeyLength;
 	private final int dataBlockLength;
-	private final Random random;
+	private final Node node;
+	
 	private long storeSize;
 	private int generation;
 	private int flags;
 
-	public static SaltedHashFreenetStore construct(File baseDir, String name, StoreCallback callback, Random random,
-	        long maxKeys, int bloomFilterSize, SemiOrderedShutdownHook shutdownHook) throws IOException {
-		return new SaltedHashFreenetStore(baseDir, name, callback, random, maxKeys, bloomFilterSize, shutdownHook);
+	public static SaltedHashFreenetStore construct(File baseDir, String name, StoreCallback callback, Node node,
+	        long maxKeys, int bloomFilterSize, SemiOrderedShutdownHook shutdownHook)
+	        throws IOException {
+		return new SaltedHashFreenetStore(baseDir, name, callback, node, maxKeys, bloomFilterSize, shutdownHook);
 	}
 
-	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback callback, Random random, long maxKeys,
-	        int bloomFilterSize, SemiOrderedShutdownHook shutdownHook) throws IOException {
+	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback callback, Node node, long maxKeys,
+	        int bloomFilterSize, SemiOrderedShutdownHook shutdownHook)
+	        throws IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 
@@ -95,7 +101,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		fullKeyLength = callback.fullKeyLength();
 		dataBlockLength = callback.dataLength();
 
-		this.random = random;
+		this.node = node;
 		storeSize = maxKeys;
 		this.bloomFilterSize = bloomFilterSize;
 
@@ -454,7 +460,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		private ByteBuffer toMetaDataBuffer() {
 			ByteBuffer out = ByteBuffer.allocate(METADATA_LENGTH);
-			cipherManager.encrypt(this, random);
+			cipherManager.encrypt(this, node.random);
 
 			out.put(getDigestedRoutingKey());
 			out.put(dataEncryptIV);
@@ -661,7 +667,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * </ul>
 	 */
 	private void writeEntry(Entry entry, long offset) throws IOException {
-		cipherManager.encrypt(entry, random);
+		cipherManager.encrypt(entry, node.random);
 
 		ByteBuffer bf = entry.toMetaDataBuffer();
 		do {
@@ -759,7 +765,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		if (!configFile.exists()) {
 			// create new
 			byte[] newsalt = new byte[0x10];
-			random.nextBytes(newsalt);
+			node.random.nextBytes(newsalt);
 			cipherManager = new CipherManager(newsalt);
 
 			writeConfigFile();
@@ -852,6 +858,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		 * How often the clean should run
 		 */
 		private static final int CLEANER_PERIOD = 5 * 60 * 1000; // 5 minutes
+		
+		private volatile boolean isRebuilding;
+		private volatile boolean isResizing;
 
 		public Cleaner() {
 			super("Store-" + name + "-Cleaner", NativeThread.LOW_PRIORITY, false);
@@ -862,10 +871,88 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		@Override
 		public void run() {
 			super.run();
+			
 			try {
+				while (node.clientCore == null) {
+					Thread.sleep(1000);
+				}	
 				Thread.sleep((int)(CLEANER_PERIOD / 2 + CLEANER_PERIOD * Math.random()));
 			} catch (InterruptedException e){}
+			
+			node.clientCore.alerts.register(new UserAlert() {
+				public String anchor() {
+					return "store-cleaner-" + name;
+				}
 
+				public String dismissButtonText() {
+					return L10n.getString("UserAlert.hide");
+				}
+
+				public HTMLNode getHTMLText() {
+					return new HTMLNode("#", getText());
+				}
+
+				public short getPriorityClass() {
+					return UserAlert.ERROR;
+				}
+
+				public String getShortText() {
+					if (isResizing)
+						return L10n.getString("SaltedHashFreenetStore.shortResizeProgress", //
+					        new String[] { "name", "processed", "total" },// 
+						        new String[] { name, (entriesTotal - entriesLeft) + "", entriesTotal + "" });
+					else
+						return L10n.getString("SaltedHashFreenetStore.shortRebuildProgress", //
+						        new String[] { "name", "processed", "total" },// 
+						        new String[] { name, (entriesTotal - entriesLeft) + "", entriesTotal + "" });
+				}
+
+				public String getText() {
+					if (isResizing)
+						return L10n.getString("SaltedHashFreenetStore.longResizeProgress", //
+						        new String[] { "name", "processed", "total" },// 
+						        new String[] { name, (entriesTotal - entriesLeft) + "", entriesTotal + "" });
+					else
+						return L10n.getString("SaltedHashFreenetStore.longRebuildProgress", //
+						        new String[] { "name", "processed", "total" },// 
+						        new String[] { name, (entriesTotal - entriesLeft) + "", entriesTotal + "" });
+				}
+
+				public String getTitle() {
+					return L10n.getString("SaltedHashFreenetStore.cleanerAlertTitle", //
+					        new String[] { "name" }, //
+					        new String[] { name });
+				}
+
+				public Object getUserIdentifier() {
+					return null;
+				}
+
+				public boolean isValid() {
+					return isRebuilding || isResizing;
+				}
+				
+				public void isValid(boolean validity) {
+					// Ignore
+				}
+
+				public void onDismiss() {
+					// Ignore
+				}
+
+				public boolean shouldUnregisterOnDismiss() {
+					return true;
+				}
+
+				public boolean userCanDismiss() {
+					return true;
+				}
+
+				public boolean isEventNotification() {
+					return false;
+				}
+			});
+			
 			int loop = 0;
 			while (!shutdown) {
 				loop++;
@@ -882,8 +969,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 					if (_prevStoreSize != 0 && cleanerGlobalLock.tryLock()) {
 						try {
+							isResizing = true;
 							resizeStore(_prevStoreSize, true);
 						} finally {
+							isResizing = false;
 							cleanerGlobalLock.unlock();
 						}
 					}
@@ -897,8 +986,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					}
 					if (_rebuildBloom && prevStoreSize == 0 && cleanerGlobalLock.tryLock()) {
 						try {
+							isRebuilding = true;
 							rebuildBloom(true);
 						} finally {
+							isRebuilding = false;
 							cleanerGlobalLock.unlock();
 						}
 					}
