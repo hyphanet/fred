@@ -77,7 +77,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 	}
 
 	static void waitForPingAverage(double accuracy, Node[] nodes, RandomSource random, int maxTests, int sleepTime) throws InterruptedException {
-
+		int totalHopsTaken = 0;
 		int cycleNumber = 0;
 		int lastSwaps = 0;
 		int lastNoSwaps = 0;
@@ -138,6 +138,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 					}
 					double loc2 = randomNode2.getLocation();
 					Logger.normal(RealNodeRoutingTest.class, "Pinging " + randomNode2.getDarknetPortNumber() + " @ " + loc2 + " from " + randomNode.getDarknetPortNumber() + " @ " + randomNode.getLocation());
+					
 					int hopsTaken = randomNode.routedPing(loc2, randomNode2.getDarknetIdentity());
 					pings++;
 					if(hopsTaken < 0) {
@@ -147,6 +148,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 						double ratio = (double) successes / ((double) (failures + successes));
 						System.err.println("Routed ping " + pings + " FAILED from " + randomNode.getDarknetPortNumber() + " to " + randomNode2.getDarknetPortNumber() + " (long:" + ratio + ", short:" + avg.currentValue() + ", vague:" + avg2.currentValue() + ')');
 					} else {
+						totalHopsTaken += hopsTaken;
 						successes++;
 						avg.report(1.0);
 						avg2.report(1.0);
@@ -163,6 +165,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 				System.err.println();
 				System.err.println("Network size: " + nodes.length);
 				System.err.println("Maximum HTL: " + MAX_HTL);
+				System.err.println("Average path length for successful requests: "+totalHopsTaken/successes);
 				System.err.println("Total started swaps: " + LocationManager.startedSwaps);
 				System.err.println("Total rejected swaps (already locked): " + LocationManager.swapsRejectedAlreadyLocked);
 				System.err.println("Total swaps rejected (nowhere to go): " + LocationManager.swapsRejectedNowhereToGo);
