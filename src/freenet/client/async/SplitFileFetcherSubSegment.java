@@ -595,12 +595,14 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	}
 
 	public void removeBlockNum(int blockNum) {
+		if(logMINOR) Logger.minor(this, "Removing block "+blockNum+" from "+this);
 		synchronized(segment) {
 			for(int i=0;i<blockNums.size();i++) {
 				Integer token = (Integer) blockNums.get(i);
 				int num = ((Integer)token).intValue();
 				if(num == blockNum) {
 					blockNums.remove(i);
+					if(logMINOR) Logger.minor(this, "Removed block "+blockNum+" from "+this);
 					break;
 				}
 			}
