@@ -277,11 +277,11 @@ public class ClientGetter extends BaseClientGetter {
 	// FIXME not persisting binary blob stuff - any stream won't survive shutdown...
 	
 	void addKeyToBinaryBlob(ClientKeyBlock block, ObjectContainer container, ClientContext context) {
+		if(binaryBlobKeysAddedAlready == null) return;
 		if(persistent()) {
 			container.activate(binaryBlobStream, 1);
 			container.activate(binaryBlobKeysAddedAlready, 1);
 		}
-		if(binaryBlobKeysAddedAlready == null) return;
 		if(Logger.shouldLog(Logger.MINOR, this)) 
 			Logger.minor(this, "Adding key "+block.getClientKey().getURI()+" to "+this, new Exception("debug"));
 		Key key = block.getKey();
