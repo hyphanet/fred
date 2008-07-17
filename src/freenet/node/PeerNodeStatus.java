@@ -30,6 +30,7 @@ public class PeerNodeStatus {
 	private final String statusCSSName;
 
 	private final double location;
+	private final double[] peersLocation;
 
 	private final String version;
 
@@ -109,6 +110,7 @@ public class PeerNodeStatus {
 		this.statusName = peerNode.getPeerNodeStatusString();
 		this.statusCSSName = peerNode.getPeerNodeStatusCSSClassName();
 		this.location = peerNode.getLocation();
+		this.peersLocation = peerNode.getPeersLocation();
 		this.version = peerNode.getVersion();
 		this.simpleVersion = peerNode.getSimpleVersion();
 		this.routingBackoffLength = peerNode.getRoutingBackoffLength();
@@ -248,6 +250,10 @@ public class PeerNodeStatus {
 		return location;
 	}
 
+	public double[] getPeersLocation() {
+		return peersLocation;
+	}
+	
 	/**
 	 * @return the peerAddress
 	 */

@@ -74,6 +74,9 @@ import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPUtil;
+import java.util.ArrayList;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * @author amphibian
@@ -169,6 +172,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private static final int MAX_HANDSHAKE_COUNT = 2;
 	/** Current location in the keyspace, or -1 if it is unknown */
 	private double currentLocation;
+	/** Current locations of our peer's peers */
+	private double[] currentPeersLocation;
 	/** Time the location was set */
 	private long locSetTime;
 	/** Node identity; for now a block of data, in future a
@@ -373,8 +378,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			throw new FSParseException("Invalid version "+version+" : "+e2);
 		}
 		String locationString = fs.get("location");
+		String[] peerLocationsString = fs.getAll("peersLocation");
 		try {
 			currentLocation = Location.getLocation(locationString);
+			if(peerLocationsString != null) {
+				double[] peerLocations = new double[peerLocationsString.length];
+				for(int i = 0; i < peerLocationsString.length; i++)
+					peerLocations[i] = Location.getLocation(peerLocationsString[i]);
+				currentPeersLocation = peerLocations;
+			}
 			locSetTime = System.currentTimeMillis();
 		} catch(FSParseException e) {
 			// Wait for them to send us an FNPLocChangeNotification
@@ -900,6 +912,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	*/
 	public synchronized double getLocation() {
 		return currentLocation;
+	}
+	
+	public synchronized  double[] getPeersLocation() {
+		return currentPeersLocation;
 	}
 
 	public synchronized long getLocSetTime() {
@@ -1569,11 +1585,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	/**
 	* Update the Location to a new value.
+	* @deprecated
 	*/
 	public void updateLocation(double newLoc) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
 		if(newLoc < 0.0 || newLoc > 1.0) {
-			Logger.error(this, "Invalid location update for " + this, new Exception("error"));
+			Logger.error(this, "Invalid location update for " + this+ " ("+newLoc+')', new Exception("error"));
 			// Ignore it
 			return;
 		}
@@ -1582,6 +1599,34 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			locSetTime = System.currentTimeMillis();
 		}
 		node.peers.writePeers();
+	}
+	
+	public void updateLocation(double newLoc, double[] newLocs) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
+		
+		if(newLoc < 0.0 || newLoc > 1.0) {
+			Logger.error(this, "Invalid location update for " + this+ " ("+newLoc+')', new Exception("error"));
+			// Ignore it
+			return;
+		}
+		
+		for(double currentLoc : newLocs) {
+			if(currentLoc < 0.0 || currentLoc > 1.0) {
+				Logger.error(this, "Invalid location update for " + this + " ("+currentLoc+')', new Exception("error"));
+				// Ignore it
+				return;
+			}
+		}
+
+		Arrays.sort(newLocs);
+		
+		synchronized(this) {
+			currentLocation = newLoc;
+			currentPeersLocation = newLocs;
+			locSetTime = System.currentTimeMillis();
+		}
+		node.peers.writePeers();
+		node.lm.announceLocChange();
 	}
 
 	/**
@@ -2036,7 +2081,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* Send any high level messages that need to be sent on connect.
 	*/
 	protected void sendInitialMessages() {
-		Message locMsg = DMT.createFNPLocChangeNotification(node.lm.getLocation());
+		Message locMsg = ((getVersionNumber() > 1153) ?
+			DMT.createFNPLocChangeNotificationNew(node.lm.getLocation(), node.peers.getPeerLocationDoubles()) :
+			DMT.createFNPLocChangeNotification(node.lm.getLocation()));
 		Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
 		Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
 		Message packetsMsg = createSentPacketsMessage();
@@ -2522,6 +2569,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			fs.putSingle("hadRoutableConnectionCount", Long.toString(hadRoutableConnectionCount));
 		if(routableConnectionCheckCount > 0)
 			fs.putSingle("routableConnectionCheckCount", Long.toString(routableConnectionCheckCount));
+		if(currentPeersLocation != null)
+			fs.put("peersLocation", currentPeersLocation);
 		return fs;
 	}
 
