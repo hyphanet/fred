@@ -607,7 +607,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				}
 			}
 		}
-		container.set(blockNums);
+		if(persistent)
+			container.set(blockNums);
 	}
 
 }
