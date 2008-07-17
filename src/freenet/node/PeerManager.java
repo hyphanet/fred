@@ -359,6 +359,7 @@ public class PeerManager {
 			connectedPeers = newConnectedPeers;
 		}
 		updatePMUserAlert();
+		node.lm.announceLocChange();
 		return true;
 	}
 	long timeFirstAnyConnections = 0;
@@ -411,6 +412,7 @@ public class PeerManager {
 				Logger.minor(this, "Connected peers: " + connectedPeers.length);
 		}
 		updatePMUserAlert();
+		node.lm.announceLocChange();
 	}
 //    NodePeer route(double targetLocation, RoutingContext ctx) {
 //        double minDist = 1.1;
