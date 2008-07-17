@@ -266,6 +266,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 				jobRunner.queue(new DBJob() {
 
 					public void run(ObjectContainer container, ClientContext context) {
+						if(listener != null)
+							container.activate(listener, 1);
+						if(getters != null) {
+							for(int i=0;i<getters.length;i++)
+								container.activate(getters[i], 1);
+						}
 						register(listener, getters, false, true, true, blocks, regme);
 					}
 					
@@ -408,7 +414,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 							}
 						}
 						if(!wereAnyValid) {
-							Logger.error(this, "No requests valid: "+getters);
+							Logger.normal(this, "No requests valid: "+getters);
 						}
 					}
 				}
@@ -432,7 +438,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 							}
 						}
 						if(!wereAnyValid) {
-							Logger.error(this, "No requests valid: "+getters);
+							Logger.normal(this, "No requests valid: "+getters);
 						}
 						if(reg != null)
 							container.delete(reg);
