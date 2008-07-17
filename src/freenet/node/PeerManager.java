@@ -556,7 +556,7 @@ public class PeerManager {
 
 	/**
 	 * @return An array of the current locations (as doubles) of all
-	 * our connected peers.
+	 * our connected peers or double[0] if Node.shallWePublishOurPeersLocation() is false
 	 */
 	public double[] getPeerLocationDoubles(boolean pruneBackedOffedPeers) {
 		double[] locs;
