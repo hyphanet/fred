@@ -75,19 +75,18 @@ public abstract class SendableGet extends BaseSendableGet {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if((!req.isPersistent()) && isCancelled(null)) {
 			if(logMINOR) Logger.minor(this, "Cancelled: "+this);
-			// callbacks must initially run at HIGH_PRIORITY so they are executed before we remove the key from the currently running list
-			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.CANCELLED), keyNum, NativeThread.HIGH_PRIORITY, req, req.isPersistent());
+			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.CANCELLED), keyNum, NativeThread.NORM_PRIORITY+1, req, req.isPersistent());
 			return false;
 		}
 		try {
 			try {
 				core.realGetKey(key, req.localRequestOnly, req.cacheLocalRequests, req.ignoreStore);
 			} catch (final LowLevelGetException e) {
-				sched.callFailure(this, e, keyNum, NativeThread.HIGH_PRIORITY, req, req.isPersistent());
+				sched.callFailure(this, e, keyNum, NativeThread.NORM_PRIORITY+1, req, req.isPersistent());
 				return true;
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t, t);
-				sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, NativeThread.HIGH_PRIORITY, req, req.isPersistent());
+				sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, NativeThread.NORM_PRIORITY+1, req, req.isPersistent());
 				return true;
 			}
 			// We must remove the request even in this case.
@@ -98,7 +97,7 @@ public abstract class SendableGet extends BaseSendableGet {
 			
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t, t);
-			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, NativeThread.HIGH_PRIORITY, req, req.isPersistent());
+			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, NativeThread.NORM_PRIORITY+1, req, req.isPersistent());
 			return true;
 		}
 		return true;
