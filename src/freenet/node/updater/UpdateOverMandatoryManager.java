@@ -48,6 +48,7 @@ import freenet.support.Logger;
 import freenet.support.SizeUtil;
 import freenet.support.io.FileBucket;
 import freenet.support.io.RandomAccessFileWrapper;
+import java.io.FileFilter;
 
 /**
  * Co-ordinates update over mandatory. Update over mandatory = updating from your peers, even
@@ -79,6 +80,8 @@ public class UpdateOverMandatoryManager {
 	private boolean logMINOR;
 	
 	private UserAlert alert;
+	private static final Pattern extBuildNumberPattern = Pattern.compile("^ext(?:-jar)?-(\\d+)\\.fblob$");
+	private static final Pattern mainBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+)\\.fblob$");
 	
 	public UpdateOverMandatoryManager(NodeUpdateManager manager) {
 		this.updateManager = manager;
@@ -1174,66 +1177,52 @@ public class UpdateOverMandatoryManager {
 	   		Logger.error(this, "Persistent temporary files location is not a directory: "+oldTempFilesPeerDir.getPath());
 	 		return false;
 	 	}
-	 	File[] oldTempFiles = oldTempFilesPeerDir.listFiles();
-	 	if(oldTempFiles == null) {
-	 		return false;
-	 	}
+		
 		boolean gotError = false;
-		File oldTempFile;
-		String oldTempFileName;
-		String extBuildNumberRegexStr = "^ext(?:-jar)?-(\\d+)\\.fblob$";
-		String mainBuildNumberRegexStr = "^main(?:-jar)?-(\\d+)\\.fblob$";
-		Pattern extBuildNumberPattern = Pattern.compile(extBuildNumberRegexStr);
-		Pattern mainBuildNumberPattern = Pattern.compile(mainBuildNumberRegexStr);
-		Matcher extBuildNumberMatcher;
-		Matcher mainBuildNumberMatcher;
-		String buildNumberStr;
-		int buildNumber;
-		int lastGoodMainBuildNumber = Version.lastGoodBuild();
-		int recommendedExtBuildNumber = NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER;
-		for (int i = 0; i < oldTempFiles.length; i++) {
-			oldTempFile = oldTempFiles[i];
-			oldTempFileName = oldTempFile.getName();
-			if(oldTempFileName.endsWith(".fblob.tmp")) {
-				if(oldTempFileName.startsWith("ext-jar-") || oldTempFileName.startsWith("main-jar-") || oldTempFileName.startsWith("revocation-") || oldTempFileName.startsWith("main-")) {
-					if(!oldTempFile.delete()) {
-						if(oldTempFile.exists()) {
-							Logger.error(this, "Cannot delete temporary persistent file "+oldTempFileName+" even though it exists: must be TOO persistent :)");
-						} else {
-							Logger.normal(this, "Temporary persistent file does not exist when deleting: "+oldTempFileName);
-						}
-					}
-				}
-			} else if(oldTempFileName.endsWith(".fblob")) {
-				mainBuildNumberMatcher = mainBuildNumberPattern.matcher(oldTempFileName);
-				extBuildNumberMatcher = extBuildNumberPattern.matcher(oldTempFileName);
+	 	File[] oldTempFiles = oldTempFilesPeerDir.listFiles(new FileFilter() {
+			private final int lastGoodMainBuildNumber = Version.lastGoodBuild();
+			private final int recommendedExtBuildNumber = NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER;
+			
+			public boolean accept(File file) {
+				String fileName = file.getName();
+				
+				if(fileName.startsWith("revocation-") && fileName.endsWith(".fblob.tmp"))
+					return true;
+				
+				String buildNumberStr;
+				int buildNumber;
+				Matcher extBuildNumberMatcher = extBuildNumberPattern.matcher(fileName);
+				Matcher mainBuildNumberMatcher = mainBuildNumberPattern.matcher(fileName);
+				
 				if(mainBuildNumberMatcher.matches()) {
 					buildNumberStr = mainBuildNumberMatcher.group(1);
 					buildNumber = Integer.parseInt(buildNumberStr);
 					if(buildNumber < lastGoodMainBuildNumber) {
-						if(!oldTempFile.delete()) {
-							if(oldTempFile.exists()) {
-								Logger.error(this, "Cannot delete temporary persistent file "+oldTempFileName+" even though it exists: must be TOO persistent :)");
-							} else {
-								Logger.normal(this, "Temporary persistent file does not exist when deleting: "+oldTempFileName);
-							}
-						}
+						return true;
 					}
 				} else if(extBuildNumberMatcher.matches()) {
 					buildNumberStr = extBuildNumberMatcher.group(1);
 					buildNumber = Integer.parseInt(buildNumberStr);
 					if(buildNumber < recommendedExtBuildNumber) {
-						if(!oldTempFile.delete()) {
-							if(oldTempFile.exists()) {
-								Logger.error(this, "Cannot delete temporary persistent file "+oldTempFileName+" even though it exists: must be TOO persistent :)");
-							} else {
-								Logger.normal(this, "Temporary persistent file does not exist when deleting: "+oldTempFileName);
-							}
-						}
+						return true;
 					}
 				}
+				
+				return false;
+			}
+		});
+
+		for(File fileToDelete : oldTempFiles) {
+			String fileToDeleteName = fileToDelete.getName();
+			if(!fileToDelete.delete()) {
+				if(fileToDelete.exists())
+					Logger.error(this, "Cannot delete temporary persistent file " + fileToDeleteName + " even though it exists: must be TOO persistent :)");
+				else
+					Logger.normal(this, "Temporary persistent file does not exist when deleting: " + fileToDeleteName);
+				gotError =true;
 			}
 		}
+	 	
 		return !gotError;
 	}
 }
