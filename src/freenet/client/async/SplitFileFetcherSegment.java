@@ -135,10 +135,9 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 	public synchronized boolean isFinished(ObjectContainer container) {
 		if(finished) return true;
 		if(persistent) {
-			container.activate(parentFetcher, 1);
-			container.activate(parentFetcher.parent, 1);
+			container.activate(parent, 1);
 		}
-		return parentFetcher.parent.isCancelled();
+		return parent.isCancelled();
 	}
 	
 	public synchronized boolean succeeded() {
@@ -191,8 +190,8 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		boolean decodeNow = false;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" in "+this);
-		if(parentFetcher.parent instanceof ClientGetter)
-			((ClientGetter)parentFetcher.parent).addKeyToBinaryBlob(block, container, context);
+		if(parent instanceof ClientGetter)
+			((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
 		// No need to unregister key, because it will be cleared in tripPendingKey().
 		boolean dontNotify;
 		synchronized(this) {
@@ -250,18 +249,16 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		}
 		if(persistent) {
 			container.set(this);
-			container.activate(parentFetcher, 1);
-			container.activate(parentFetcher.parent, 1);
+			container.activate(parent, 1);
 		}
-		parentFetcher.parent.completedBlock(dontNotify, container, context);
+		parent.completedBlock(dontNotify, container, context);
 		if(decodeNow) {
 			context.getChkFetchScheduler().removePendingKeys(this, true);
 			removeSubSegments(container);
 			decode(container, context);
 		}
 		if(persistent) {
-			container.deactivate(parentFetcher.parent, 1);
-			container.deactivate(parentFetcher, 1);
+			container.deactivate(parent, 1);
 		}
 	}
 
@@ -301,8 +298,12 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			if(count < dataBuckets.length) {
 				Logger.error(this, "Attempting to decode but only "+count+" of "+dataBuckets.length+" blocks available!");
 			}
-			codec.addToQueue(new FECJob(codec, queue, dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, context.getBucketFactory(parentFetcher.parent.persistent()), this, true, parentFetcher.parent.getPriorityClass(), parentFetcher.parent.persistent()), 
+			if(persistent)
+				container.activate(parent, 1);
+			codec.addToQueue(new FECJob(codec, queue, dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, context.getBucketFactory(persistent), this, true, parent.getPriorityClass(), persistent), 
 					queue, container);
+			if(persistent)
+				container.deactivate(parent, 1);
 			// Now have all the data blocks (not necessarily all the check blocks)
 		}
 	}
@@ -311,13 +312,19 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(parentFetcher, 1);
-			container.activate(parentFetcher.parent, 1);
+			container.activate(parent, 1);
 			container.activate(context, 1);
 		}
 		// Because we use SplitfileBlock, we DON'T have to copy here.
 		// See FECCallback comments for explanation.
 		try {
-			if(isCollectingBinaryBlob()) {
+			if(persistent) {
+				for(int i=0;i<dataBuckets.length;i++) {
+					// The FECCodec won't set them.
+					container.set(dataBuckets[i]);
+				}
+			}
+			if(isCollectingBinaryBlob(parent)) {
 				for(int i=0;i<dataBuckets.length;i++) {
 					if(persistent)
 						container.activate(dataBlockStatus[i], 1);
@@ -330,8 +337,8 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 					}
 				}
 			}
-			decodedData = context.getBucketFactory(parentFetcher.parent.persistent()).makeBucket(-1);
-			if(logMINOR) Logger.minor(this, "Copying data from data blocks");
+			decodedData = context.getBucketFactory(persistent).makeBucket(-1);
+			if(logMINOR) Logger.minor(this, "Copying data from "+dataBuckets.length+" data blocks");
 			OutputStream os = decodedData.getOutputStream();
 			for(int i=0;i<dataBuckets.length;i++) {
 				SplitfileBlock status = dataBuckets[i];
@@ -345,7 +352,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			// Must set finished BEFORE calling parentFetcher.
 			// Otherwise a race is possible that might result in it not seeing our finishing.
 			finished = true;
-			if(codec == null || !isCollectingBinaryBlob())
+			if(codec == null || !isCollectingBinaryBlob(parent))
 				parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
 			if(persistent) container.set(this);
 		} catch (IOException e) {
@@ -374,14 +381,18 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 					context.fecQueue, container);
 		if(persistent) {
 			container.deactivate(parentFetcher, 1);
-			container.deactivate(parentFetcher.parent, 1);
+			container.deactivate(parent, 1);
 			container.deactivate(context, 1);
 		}
 	}
 
 	public void onEncodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets2, Bucket[] checkBuckets2, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus) {
-		if(persistent)
+		if(persistent) {
 			container.activate(this, 1);
+			container.activate(parent, 1);
+		}
+		if(logMINOR)
+			Logger.minor(this, "Encoded "+this);
 		// Because we use SplitfileBlock, we DON'T have to copy here.
 		// See FECCallback comments for explanation.
 		synchronized(this) {
@@ -409,6 +420,10 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 				if(persistent)
 					container.activate(checkBuckets[i], 1);
 				Bucket data = checkBuckets[i].getData();
+				if(data == null) {
+					Logger.error(this, "Check block "+i+" is null on "+this);
+					continue;
+				}
 				if(persistent)
 					container.activate(data, 1);
 				try {
@@ -422,7 +437,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 				if(heal) {
 					queueHeal(data, context);
 				} else {
-					checkBuckets[i].data.free();
+					data.free();
 				}
 				checkBuckets[i] = null;
 				checkKeys[i] = null;
@@ -432,7 +447,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			container.set(this);
 		}
 		// Defer the completion until we have generated healing blocks if we are collecting binary blobs.
-		if(isCollectingBinaryBlob()) {
+		if(isCollectingBinaryBlob(parent)) {
 			if(persistent)
 				container.activate(parentFetcher, 1);
 			parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
@@ -441,16 +456,16 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		}
 	}
 
-	boolean isCollectingBinaryBlob() {
-		if(parentFetcher.parent instanceof ClientGetter) {
-			ClientGetter getter = (ClientGetter) (parentFetcher.parent);
+	boolean isCollectingBinaryBlob(ClientRequester parent) {
+		if(parent instanceof ClientGetter) {
+			ClientGetter getter = (ClientGetter) (parent);
 			return getter.collectingBinaryBlob();
 		} else return false;
 	}
 	
 	private void maybeAddToBinaryBlob(Bucket data, int i, boolean check, ObjectContainer container, ClientContext context) throws FetchException {
-		if(parentFetcher.parent instanceof ClientGetter) {
-			ClientGetter getter = (ClientGetter) (parentFetcher.parent);
+		if(parent instanceof ClientGetter) {
+			ClientGetter getter = (ClientGetter) (parent);
 			if(getter.collectingBinaryBlob()) {
 				try {
 					ClientCHKBlock block =
@@ -501,13 +516,17 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			} else
 				Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
 			// :(
+			if(persistent)
+				container.activate(parent, 1);
 			if(e.isFatal()) {
 				fatallyFailedBlocks++;
-				parentFetcher.parent.fatallyFailedBlock(container, context);
+				parent.fatallyFailedBlock(container, context);
 			} else {
 				failedBlocks++;
-				parentFetcher.parent.failedBlock(container, context);
+				parent.failedBlock(container, context);
 			}
+			if(persistent)
+				container.deactivate(parent, 1);
 			// Once it is no longer possible to have a successful fetch, fail...
 			allFailed = failedBlocks + fatallyFailedBlocks > (dataKeys.length + checkKeys.length - minFetched);
 		}
@@ -593,6 +612,10 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			if(logMINOR)
 				Logger.minor(this, "Retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 		}
+		if(persistent) {
+			if(sub != null && sub != seg) container.deactivate(sub, 1);
+			container.deactivate(key, 5);
+		}
 	}
 	
 	private SplitFileFetcherSubSegment getSubSegment(int retryCount, ObjectContainer container, boolean noCreate) {
@@ -608,6 +631,8 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			if(persistent)
 				container.activate(parent, 1);
 			sub = new SplitFileFetcherSubSegment(this, parent, retryCount);
+			if(persistent)
+				container.deactivate(parent, 1);
 			subSegments.add(sub);
 		}
 		if(persistent)
@@ -659,8 +684,6 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 	public void schedule(ObjectContainer container, ClientContext context, boolean regmeOnly) {
 		if(persistent) {
 			container.activate(this, 1);
-			container.activate(parentFetcher, 1);
-			container.activate(parentFetcher.parent, 1);
 		}
 		try {
 			SplitFileFetcherSubSegment seg = getSubSegment(0, container, false);
@@ -813,6 +836,9 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 				sub.add(i, true, container, context, true);
 				if(!v.contains(sub)) v.add(sub);
 				notFound = false;
+			} else {
+				if(persistent)
+					container.deactivate(k, 5);
 			}
 		}
 		for(int i=0;i<checkKeys.length;i++) {
@@ -834,6 +860,9 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 				sub.add(i+dataKeys.length, true, container, context, true);
 				if(!v.contains(sub)) v.add(sub);
 				notFound = false;
+			} else {
+				if(persistent)
+					container.deactivate(k, 5);
 			}
 		}
 		}
@@ -877,6 +906,9 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 				container.activate(k, 5);
 			if(k.getNodeKey().equals(key)) {
 				return dataCooldownTimes[i];
+			} else {
+				if(persistent)
+					container.deactivate(k, 5);
 			}
 		}
 		for(int i=0;i<checkKeys.length;i++) {
@@ -886,6 +918,9 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 				container.activate(k, 5);
 			if(checkKeys[i].getNodeKey().equals(key)) {
 				return checkCooldownTimes[i];
+			} else {
+				if(persistent)
+					container.deactivate(k, 5);
 			}
 		}
 		return -1;
@@ -898,6 +933,10 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			if(persistent)
 				container.activate(k, 5);
 			if(k.getNodeKey().equals(key)) return i;
+			else {
+				if(persistent)
+					container.deactivate(k, 5);
+			}
 		}
 		for(int i=0;i<checkKeys.length;i++) {
 			ClientKey k = checkKeys[i];
@@ -905,6 +944,10 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			if(persistent)
 				container.activate(k, 5);
 			if(k.getNodeKey().equals(key)) return dataKeys.length+i;
+			else {
+				if(persistent)
+					container.deactivate(k, 5);
+			}
 		}
 		return -1;
 	}
@@ -951,12 +994,16 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		if(blockNo < dataBuckets.length) {
 			if(dataBuckets[blockNo] == null) return false;
 			if(persistent) container.activate(dataBuckets[blockNo], 1);
-			return dataBuckets[blockNo].hasData();
+			boolean retval = dataBuckets[blockNo].hasData();
+			if(persistent) container.deactivate(dataBuckets[blockNo], 1);
+			return retval;
 		} else {
 			blockNo -= dataBuckets.length;
 			if(checkBuckets[blockNo] != null) return false;
 			if(persistent) container.activate(checkBuckets[blockNo], 1);
-			return checkBuckets[blockNo].hasData();
+			boolean retval = checkBuckets[blockNo].hasData();
+			if(persistent) container.deactivate(checkBuckets[blockNo], 1);
+			return retval;
 		}
 	}
 
