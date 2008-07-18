@@ -1568,25 +1568,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			this.storeEnvironment = null;
 		}
 		
-		// FIXME back compatibility
-		SimpleFieldSet oldThrottleFS = null;
-		File oldThrottle = new File("throttle.dat");
-		String oldThrottleName = nodeConfig.getRawOption("throttleFile");
-		if(oldThrottleName != null)
-			oldThrottle = new File(oldThrottleName);
-		if(oldThrottle.exists() && (!new File("node-throttle.dat").exists()) && lastVersion < 1021) {
-			// Migrate from old throttle file to new node- and client- throttle files
-			try {
-				oldThrottleFS = SimpleFieldSet.readFrom(new File("throttle.dat"), false, true);
-			} catch (IOException e) {
-				// Ignore
-			}
-			oldThrottle.delete();
-		}
+		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), obwLimit, ibwLimit, nodeDir);
 		
-		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), oldThrottleFS, obwLimit, ibwLimit, nodeDir);
-		
-		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"), oldConfig, fproxyConfig, toadlets);
+		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets);
 
 		netid = new NetworkIDManager(this);
 		 
