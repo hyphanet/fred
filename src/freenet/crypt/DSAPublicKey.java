@@ -59,6 +59,12 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 		this(new ByteArrayInputStream(pubkeyBytes));
 	}
 
+	private DSAPublicKey(DSAPublicKey key) {
+		fingerprint = null; // regen when needed
+		this.y = new NativeBigInteger(1, key.y.toByteArray());
+		this.group = key.group.cloneKey();
+	}
+
 	public static DSAPublicKey create(byte[] pubkeyAsBytes) throws CryptFormatException {
 		try {
 			return new DSAPublicKey(new ByteArrayInputStream(pubkeyAsBytes));
@@ -200,5 +206,9 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 
 	public byte[] getRoutingKey() {
 		return asBytesHash();
+	}
+
+	public DSAPublicKey cloneKey() {
+		return new DSAPublicKey(this);
 	}
 }

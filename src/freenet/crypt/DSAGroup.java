@@ -64,7 +64,13 @@ public class DSAGroup extends CryptoKey {
         	throw new IllegalArgumentException();
     }
 
-    /**
+    private DSAGroup(DSAGroup group) {
+    	this.p = new NativeBigInteger(1, group.p.toByteArray());
+    	this.q = new NativeBigInteger(1, group.q.toByteArray());
+    	this.g = new NativeBigInteger(1, group.g.toByteArray());
+	}
+
+	/**
      * Parses a DSA Group from a string, where p, q, and g are in unsigned
      * hex-strings, separated by a commas
      */
@@ -237,5 +243,10 @@ public class DSAGroup extends CryptoKey {
 		if(this == Global.DSAgroupBigA)
 			return "Global.DSAgroupBigA";
 		return "p="+HexUtil.biToHex(p)+", q="+HexUtil.biToHex(q)+", g="+HexUtil.biToHex(g);
+	}
+
+	public DSAGroup cloneKey() {
+		if(this == Global.DSAgroupBigA) return this;
+		return new DSAGroup(this);
 	}
 }
