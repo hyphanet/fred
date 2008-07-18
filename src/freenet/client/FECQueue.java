@@ -150,8 +150,11 @@ public class FECQueue implements OOMHook {
 					// Get a job
 					synchronized (FECQueue.this) {
 						job = getFECJobBlockingNoDBAccess();
+						job.running = true;
 					}
 
+					if(Logger.shouldLog(Logger.MINOR, this))
+						Logger.minor(this, "Running job "+job);
 					// Encode it
 					try {
 						if (job.isADecodingJob)
@@ -184,9 +187,10 @@ public class FECQueue implements OOMHook {
 							databaseJobRunner.queue(new DBJob() {
 
 								public void run(ObjectContainer container, ClientContext context) {
+									container.activate(job, 2);
+									container.activate(job.callback, 1);
 									if(Logger.shouldLog(Logger.MINOR, this))
 										Logger.minor(this, "Running callback for "+job);
-									container.activate(job, 2);
 									if(job.isADecodingJob)
 										job.callback.onDecodedSegment(container, clientContext, job, job.dataBlocks, job.checkBlocks, job.dataBlockStatus, job.checkBlockStatus);
 									else
@@ -197,6 +201,9 @@ public class FECQueue implements OOMHook {
 								}
 								
 							}, NativeThread.NORM_PRIORITY+1, false);
+							if(Logger.shouldLog(Logger.MINOR, this))
+								Logger.minor(this, "Scheduled callback for "+job+"...");
+							
 						}
 					} catch (Throwable e) {
 						Logger.error(this, "The callback failed!" + e, e);
@@ -248,6 +255,10 @@ public class FECQueue implements OOMHook {
 							job.activateForExecution(container);
 							if(logMINOR) Logger.minor(this, "Maybe adding "+job);
 							synchronized(FECQueue.this) {
+								if(job.running) {
+									if(logMINOR) Logger.minor(this, "Not adding, already running: "+job);
+									continue;
+								}
 								if(persistentQueueCache[prio].contains(job)) {
 									j--;
 									continue;

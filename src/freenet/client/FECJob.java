@@ -29,6 +29,7 @@ public class FECJob {
 	final FECQueue queue;
 	// A persistent hash code helps with debugging.
 	private final int hashCode;
+	transient boolean running;
 	
 	public int hashCode() {
 		return hashCode;
