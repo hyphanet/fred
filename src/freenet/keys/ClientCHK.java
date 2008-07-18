@@ -37,6 +37,17 @@ public class ClientCHK extends ClientKey {
     /** The length of the decryption key */
     static final short CRYPTO_KEY_LENGTH = 32;
     
+    private ClientCHK(ClientCHK key) {
+    	this.routingKey = new byte[key.routingKey.length];
+    	System.arraycopy(key.routingKey, 0, routingKey, 0, key.routingKey.length);
+    	this.nodeKey = (NodeCHK) key.nodeKey.cloneKey();
+    	this.cryptoKey = new byte[key.cryptoKey.length];
+    	System.arraycopy(key.cryptoKey, 0, cryptoKey, 0, key.cryptoKey.length);
+    	this.controlDocument = key.controlDocument;
+    	this.cryptoAlgorithm = key.cryptoAlgorithm;
+    	this.compressionAlgorithm = key.compressionAlgorithm;
+    }
+    
     /**
      * @param routingKey The routing key. This is the overall hash of the
      * header and content of the key.
@@ -164,5 +175,9 @@ public class ClientCHK extends ClientKey {
 
 	public boolean isCompressed() {
 		return compressionAlgorithm >= 0;
+	}
+
+	public ClientKey cloneKey() {
+		return new ClientCHK(this);
 	}
 }

@@ -33,6 +33,21 @@ public class ClientSSK extends ClientKey {
 	static final int CRYPTO_KEY_LENGTH = 32;
 	public static final int EXTRA_LENGTH = 5;
 	
+	private ClientSSK(ClientSSK key) {
+		this.cryptoAlgorithm = key.cryptoAlgorithm;
+		this.docName = new String(key.docName);
+		if(pubKey != null)
+			this.pubKey = key.pubKey.cloneKey();
+		else
+			this.pubKey = null;
+		pubKeyHash = new byte[key.pubKeyHash.length];
+		System.arraycopy(key.pubKeyHash, 0, pubKeyHash, 0, pubKeyHash.length);
+		cryptoKey = new byte[key.cryptoKey.length];
+		System.arraycopy(key.cryptoKey, 0, cryptoKey, 0, key.cryptoKey.length);
+		ehDocname = new byte[key.ehDocname.length];
+		System.arraycopy(key.ehDocname, 0, ehDocname, 0, key.ehDocname.length);
+	}
+	
 	public ClientSSK(String docName, byte[] pubKeyHash, byte[] extras, DSAPublicKey pubKey, byte[] cryptoKey) throws MalformedURLException {
 		this.docName = docName;
 		this.pubKey = pubKey;
@@ -131,5 +146,9 @@ public class ClientSSK extends ClientKey {
 
 	public String toString() {
 		return "ClientSSK:"+getURI().toString();
+	}
+
+	public ClientKey cloneKey() {
+		return new ClientSSK(this);
 	}
 }

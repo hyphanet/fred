@@ -12,4 +12,6 @@ public abstract class ClientKey extends BaseClientKey {
 	 */
 	public abstract Key getNodeKey();
 
+	public abstract ClientKey cloneKey();
+
 }
