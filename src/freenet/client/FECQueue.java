@@ -359,7 +359,7 @@ public class FECQueue implements OOMHook {
 	}
 
 	public synchronized void handleLowMemory() throws Exception {
-		maxRunningFECThreads = Math.min(1, maxRunningFECThreads - 1);
+		maxRunningFECThreads = Math.max(1, maxRunningFECThreads - 1);
 		notify(); // not notifyAll()
 	}
 
