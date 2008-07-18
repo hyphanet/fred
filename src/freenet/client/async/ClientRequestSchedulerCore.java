@@ -314,11 +314,15 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				container.activate(key, 5);
 				container.activate(ckey, 5);
 				container.activate(req.getClientRequest(), 1);
+				if(key != null && key.getRoutingKey() == null)
+					throw new NullPointerException();
 				ret = new PersistentChosenRequest(this, req, token, key, ckey, req.getPriorityClass(container));
 				container.set(ret);
 				if(logMINOR)
 					Logger.minor(this, "Storing "+ret+" for "+req);
 			} else {
+				if(key != null && key.getRoutingKey() == null)
+					throw new NullPointerException();
 				ret = new ChosenRequest(req, token, key, ckey, req.getPriorityClass(container));
 			}
 			return ret;
