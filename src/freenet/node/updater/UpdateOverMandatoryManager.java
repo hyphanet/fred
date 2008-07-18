@@ -80,8 +80,8 @@ public class UpdateOverMandatoryManager {
 	private boolean logMINOR;
 	
 	private UserAlert alert;
-	private static final Pattern extBuildNumberPattern = Pattern.compile("^ext(?:-jar)?-(\\d+)\\.fblob$");
-	private static final Pattern mainBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+)\\.fblob$");
+	private static final Pattern extBuildNumberPattern = Pattern.compile("^ext(?:-jar)?-(\\d+)\\.fblob(\\.tmp)*$");
+	private static final Pattern mainBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+)\\.fblob(\\.tmp)*$");
 	
 	public UpdateOverMandatoryManager(NodeUpdateManager manager) {
 		this.updateManager = manager;
