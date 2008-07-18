@@ -147,6 +147,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
      */
     public RequestSender(Key key, DSAPublicKey pubKey, short htl, long uid, Node n,
             PeerNode source, boolean offersOnly) {
+    	if(key.getRoutingKey() == null) throw new NullPointerException();
         this.key = key;
         this.pubKey = pubKey;
         this.htl = htl;
