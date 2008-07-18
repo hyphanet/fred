@@ -429,7 +429,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	public void add(int blockNo, boolean dontSchedule, ObjectContainer container, ClientContext context, boolean dontComplainOnDupes) {
 		if(persistent) {
 			container.activate(this, 1);
-			container.activate(segment, 1);
+//			container.activate(segment, 1);
 			container.activate(blockNums, 1);
 		}
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -605,6 +605,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 
 	public void removeBlockNum(int blockNum, ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "Removing block "+blockNum+" from "+this);
+		if(persistent)
+			container.activate(blockNums, 2);
 		synchronized(segment) {
 			for(int i=0;i<blockNums.size();i++) {
 				Integer token = (Integer) blockNums.get(i);
@@ -616,8 +618,10 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				}
 			}
 		}
-		if(persistent)
+		if(persistent) {
 			container.set(blockNums);
+			container.deactivate(blockNums, 2);
+		}
 	}
 
 }
