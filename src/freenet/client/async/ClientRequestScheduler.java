@@ -356,9 +356,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private void finishRegister(final SendableGet[] getters, boolean persistent, boolean onDatabaseThread, final boolean anyValid, final RegisterMe reg) {
 		if(isInsertScheduler && getters != null) {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
-			if(onDatabaseThread) {
+			if(onDatabaseThread || !persistent) {
 				for(int i=0;i<getters.length;i++) {
+					if(persistent)
+						selectorContainer.activate(getters[i], 1);
 					getters[i].internalError(null, e, this, selectorContainer, clientContext, persistent);
+					if(persistent)
+						selectorContainer.deactivate(getters[i], 1);
 				}
 			}
 			throw e;
@@ -379,6 +383,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(tryDirect) {
 						for(int i=0;i<getters.length;i++) {
 							SendableGet getter = getters[i];
+							if(persistent)
+								selectorContainer.activate(getter, 1);
 							while(true) {
 								PersistentChosenRequest cr = (PersistentChosenRequest) schedCore.maybeMakeChosenRequest(getter, selectorContainer, clientContext);
 								if(cr == null) {
@@ -398,6 +404,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 									}
 								}
 							}
+							if(persistent)
+								selectorContainer.deactivate(getter, 1);
 						}
 					}
 				}
@@ -754,14 +762,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 				// decode, and if so to find the key to decode with.
 				for(int i=0;i<gets.length;i++) {
 					try {
-						if(logMINOR) Logger.minor(this, "Calling callback for "+gets[i]+" for "+key);
+						if(logMINOR) Logger.minor(this, "Calling tripPendingKey() callback for "+gets[i]+" for "+key);
 						container.activate(gets[i], 1);
 						gets[i].onGotKey(key, block, container, context);
 					} catch (Throwable t) {
-						Logger.error(this, "Caught "+t+" running callback "+gets[i]+" for "+key, t);
+						Logger.error(this, "Caught "+t+" running tripPendingKey() callback "+gets[i]+" for "+key, t);
 					}
 				}
-				if(logMINOR) Logger.minor(this, "Finished running callbacks");
+				if(logMINOR) Logger.minor(this, "Finished running tripPendingKey() callbacks");
 			}
 			
 		}, TRIP_PENDING_PRIORITY, false);
