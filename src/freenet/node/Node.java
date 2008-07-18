@@ -118,6 +118,7 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.HostnameSyntaxException;
+import java.io.FileFilter;
 
 /**
  * @author amphibian
@@ -483,6 +484,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 */
 	private static final int MIN_UPTIME_STORE_KEY = 40;
 	
+	private volatile boolean isPRNGReady = false;
+	
 	/**
 	 * Read all storable settings (identity etc) from the node file.
 	 * @param filename The name of the file to read from.
@@ -662,13 +665,42 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 
 		// Setup RNG if needed : DO NOT USE IT BEFORE THAT POINT!
-		this.random = (r == null ? new Yarrow() : r);
-		if(r == null) // if it's not null it's because we are running in the simulator
+		if(r == null) {
+			final NativeThread entropyGatheringThread = new NativeThread(new Runnable() {
+
+				private void recurse(File f) {
+					if(isPRNGReady)
+						return;
+					File[] subDirs = f.listFiles(new FileFilter() {
+
+						public boolean accept(File pathname) {
+							return pathname.exists() && pathname.canRead() && pathname.isDirectory();
+						}
+					});
+
+					for(File currentDir : subDirs)
+						recurse(currentDir);
+				}
+
+				public void run() {
+					for(File root : File.listRoots()) {
+						if(isPRNGReady)
+							return;
+						recurse(root);
+					}
+				}
+			}, "Entropy Gathering Thread", NativeThread.MIN_PRIORITY, true);
+
+			entropyGatheringThread.start();
+			this.random = new Yarrow();
 			DiffieHellman.init(random);
+		} else // if it's not null it's because we are running in the simulator
+			this.random = r;
+		isPRNGReady = true;
+		toadlets.getStartupToadlet().setIsPRNGReady();
 		byte buffer[] = new byte[16];
 		random.nextBytes(buffer);
 		this.fastWeakRandom = new MersenneTwister(buffer);
-		toadlets.getStartupToadlet().setIsPRNGReady();
 
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		recentlyCompletedIDs = new LRUQueue();
