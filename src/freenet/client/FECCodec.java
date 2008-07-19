@@ -457,7 +457,7 @@ public abstract class FECCodec implements OOMHook {
 
 	public void handleLowMemory() throws Exception {
 		synchronized (_awaitingJobs) {
-			maxRunningFECThreads = Math.min(1, maxRunningFECThreads - 1);
+			maxRunningFECThreads = Math.max(1, maxRunningFECThreads - 1);
 			_awaitingJobs.notify(); // not notifyAll()
 		}
 	}
