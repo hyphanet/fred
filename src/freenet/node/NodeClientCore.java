@@ -1233,4 +1233,8 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 	public boolean onDatabaseThread() {
 		return clientDatabaseExecutor.onThread();
 	}
+
+	public int getQueueSize(int priority) {
+		return clientDatabaseExecutor.getQueueSize(priority);
+	}
 }
