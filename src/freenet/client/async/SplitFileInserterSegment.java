@@ -445,7 +445,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			if (splitfileAlgo != null) {
 				if (logMINOR)
 					Logger.minor(this, "Encoding segment " + segNo + " of "
-							+ parent + " (" + parent.dataLength + ')');
+							+ parent + " (" + parent.dataLength + ") persistent="+persistent);
 				// Encode blocks
 				synchronized(this) {
 					if(!encoded){
