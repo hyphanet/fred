@@ -354,6 +354,7 @@ class SingleFileInserter implements ClientPutState {
 		boolean metaInsertStarted;
 		boolean metaFetchable;
 		boolean dataFetchable;
+		final boolean persistent;
 
 		/**
 		 * Create a SplitHandler from a stored progress SimpleFieldSet.
@@ -409,6 +410,7 @@ class SingleFileInserter implements ClientPutState {
 
 		public SplitHandler() {
 			// Default constructor
+			this.persistent = SingleFileInserter.this.persistent;
 		}
 
 		public synchronized void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
