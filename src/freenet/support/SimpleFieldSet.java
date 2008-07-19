@@ -842,7 +842,7 @@ public class SimpleFieldSet {
 	public void put(String key, int[] value) {
 		removeValue(key);
 		for(int v : value)
-			putAppend(key, v);
+			putAppend(key, String.valueOf(v));
 	}
 	
 	public void put(String key, double[] value) {
