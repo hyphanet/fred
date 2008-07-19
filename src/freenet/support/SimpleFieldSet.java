@@ -840,10 +840,9 @@ public class SimpleFieldSet {
 	}
 
 	public void put(String key, int[] value) {
-		// FIXME this could be more efficient...
 		removeValue(key);
-		for(int i=0;i<value.length;i++)
-			putAppend(key, Integer.toString(value[i]));
+		for(int v : value)
+			putAppend(key, v);
 	}
 	
 	public void put(String key, double[] value) {
