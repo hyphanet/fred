@@ -49,9 +49,9 @@ public class FailureTable implements OOMHook {
 	private final Node node;
 	
 	/** Maximum number of keys to track */
-	static final int MAX_ENTRIES = 2*1000;
+	static final int MAX_ENTRIES = 20*1000;
 	/** Maximum number of offers to track */
-	static final int MAX_OFFERS = 1*1000;
+	static final int MAX_OFFERS = 10*1000;
 	/** Terminate a request if there was a DNF on the same key less than 10 minutes ago */
 	static final int REJECT_TIME = 10*60*1000;
 	/** After 1 hour we forget about an entry completely */
