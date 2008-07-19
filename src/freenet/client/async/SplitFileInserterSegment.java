@@ -414,6 +414,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 	public void start(ObjectContainer container, ClientContext context) throws InsertException {
 		// Always called by parent, so don't activate or deactivate parent.
 		if(persistent) {
+			container.activate(parent, 1);
 			container.activate(parent.parent, 1);
 		}
 		if (logMINOR)
