@@ -81,9 +81,13 @@ public class FECJob {
 
 	public void activateForExecution(ObjectContainer container) {
 		container.activate(this, 2);
-		if(dataBlockStatus != null)
-			container.activate(dataBlockStatus, 2);
-		if(checkBlockStatus != null)
-			container.activate(checkBlockStatus, 2);
+		if(dataBlockStatus != null) {
+			for(int i=0;i<dataBlockStatus.length;i++)
+				container.activate(dataBlockStatus[i], 2);
+		}
+		if(checkBlockStatus != null) {
+			for(int i=0;i<checkBlockStatus.length;i++)
+				container.activate(checkBlockStatus[i], 2);
+		}
 	}
 }
