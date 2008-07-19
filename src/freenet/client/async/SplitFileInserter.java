@@ -121,7 +121,7 @@ public class SplitFileInserter implements ClientPutState {
 			for(int i=0;i<dataBuckets.length;i++) {
 				// If we don't set them now, they will be set when the segment is set, which means they will be set deactivated, and cause NPEs.
 				container.set(dataBuckets[i]);
-				container.deactivate(dataBuckets[i], 5);
+				container.deactivate(dataBuckets[i], 1);
 				if(dataBuckets.length > segmentSize) // Otherwise we are nulling out within the segment
 					dataBuckets[i] = null;
 			}
