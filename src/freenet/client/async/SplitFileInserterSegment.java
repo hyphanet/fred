@@ -417,11 +417,13 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			container.activate(parent, 1);
 			container.activate(parent.parent, 1);
 		}
-		if (logMINOR)
+		if (logMINOR) {
+			if(parent == null) throw new NullPointerException();
 			Logger.minor(this, "Starting segment " + segNo + " of " + parent
 					+ " (" + parent.dataLength + "): " + this + " ( finished="
 					+ finished + " encoded=" + encoded + " hasURIs=" + hasURIs
 					+ ')');
+		}
 		boolean fin = true;
 
 		for (int i = 0; i < dataBlockInserters.length; i++) {
