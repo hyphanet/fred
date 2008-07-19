@@ -125,7 +125,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		else
 			keysFetching = null;
 		this.sched = sched;
-		InsertCompressor.load(container, context);
 		this.initTime = System.currentTimeMillis();
 		// We DO NOT want to rerun the query after consuming the initial set...
 		preRegisterMeRunner = new DBJob() {

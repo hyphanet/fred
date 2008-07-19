@@ -19,6 +19,7 @@ import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
 import freenet.client.async.HealingQueue;
+import freenet.client.async.InsertCompressor;
 import freenet.client.async.SimpleHealingQueue;
 import freenet.client.async.USKManager;
 import freenet.client.async.USKManagerPersistent;
@@ -238,6 +239,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		clientContext = new ClientContext(this);
 		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext);
 		clientContext.init(requestStarters);
+		InsertCompressor.load(container, clientContext);
 		
 		// Downloads directory
 		
