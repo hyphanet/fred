@@ -130,6 +130,11 @@ public class SplitFileInserter implements ClientPutState {
 		countCheckBlocks = count;
 		// Save progress to disk, don't want to do all that again (probably includes compression in caller)
 		parent.onMajorProgress(container);
+		if(persistent) {
+			for(int i=0;i<segments.length;i++) {
+				container.deactivate(segments[i], 1);
+			}
+		}
 	}
 
 	public SplitFileInserter(BaseClientPutter parent, PutCompletionCallback cb, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean metadata, Object token, boolean insertAsArchiveManifest, SimpleFieldSet fs, ObjectContainer container, ClientContext context) throws ResumeException {
