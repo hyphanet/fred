@@ -89,5 +89,13 @@ public class FECJob {
 			for(int i=0;i<checkBlockStatus.length;i++)
 				container.activate(checkBlockStatus[i], 2);
 		}
+		if(dataBlocks != null) {
+			for(int i=0;i<dataBlocks.length;i++)
+				container.activate(dataBlocks[i], 1);
+		}
+		if(checkBlocks != null) {
+			for(int i=0;i<checkBlocks.length;i++)
+				container.activate(checkBlocks[i], 1);
+		}
 	}
 }
