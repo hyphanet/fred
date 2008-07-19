@@ -195,9 +195,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		} else if(logDEBUG) Logger.minor(this, "No packet received");
 	}
 	
-    // FIXME necessary to deal with bugs around build 1000; arguably necessary to deal with large node names in connection setup
-    // Revert to 1500?
-    private static final int MAX_RECEIVE_SIZE = 2048;
+    private static final int MAX_RECEIVE_SIZE = 1500;
     
     private boolean getPacket(DatagramPacket packet) {
 		try {
