@@ -35,7 +35,7 @@ public class PacketThrottle {
 	protected static final double PACKET_TRANSMIT_INCREMENT = (4 * (1 - (PACKET_DROP_DECREASE_MULTIPLE * PACKET_DROP_DECREASE_MULTIPLE))) / 3;
 	protected static final double SLOW_START_DIVISOR = 3.0;
 	protected static final long MAX_DELAY = 1000;
-	protected static final long MIN_DELAY = 25;
+	protected static final long MIN_DELAY = 1;
 	public static final String VERSION = "$Id: PacketThrottle.java,v 1.3 2005/08/25 17:28:19 amphibian Exp $";
 	public static final long DEFAULT_DELAY = 200;
 	private final Peer _peer;
