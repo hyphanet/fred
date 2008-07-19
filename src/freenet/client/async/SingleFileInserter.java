@@ -461,8 +461,13 @@ class SingleFileInserter implements ClientPutState {
 				container.set(this);
 			if(lateStart)
 				startMetadata(container, context);
-			else if(finished)
+			else if(finished) {
+				if(persistent)
+					container.activate(cb, 1);
 				cb.onSuccess(this, container, context);
+				if(persistent)
+					container.deactivate(cb, 1);
+			}
 		}
 
 		public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
