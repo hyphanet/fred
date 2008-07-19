@@ -5,6 +5,7 @@ package freenet.client;
 
 import com.db4o.ObjectContainer;
 
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -80,6 +81,7 @@ public class FECJob {
 	}
 
 	public void activateForExecution(ObjectContainer container) {
+		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Activating FECJob...");
 		container.activate(this, 2);
 		if(dataBlockStatus != null) {
 			for(int i=0;i<dataBlockStatus.length;i++)
