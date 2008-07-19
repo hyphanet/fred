@@ -194,7 +194,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				Logger.minor(this, "RegisterMe query took "+(tEnd-tStart)+" hasNext="+registerMeSet.hasNext()+" for insert="+isInsertScheduler+" ssk="+isSSKScheduler);
 //				if(logMINOR)
 //					Logger.minor(this, "RegisterMe query returned: "+registerMeSet.size());
-				context.jobRunner.queue(registerMeRunner, NativeThread.NORM_PRIORITY, true);
+				boolean boost = ClientRequestSchedulerCore.this.sched.isQueueAlmostEmpty();
+
+				context.jobRunner.queue(registerMeRunner, (NativeThread.NORM_PRIORITY-1) + (boost ? 2 : 0), true);
 			}
 			
 		};
@@ -664,8 +666,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				}
 				if(System.currentTimeMillis() > deadline) break;
 			}
+			boolean boost = sched.isQueueAlmostEmpty();
 			if(registerMeSet.hasNext())
-				context.jobRunner.queue(registerMeRunner, NativeThread.NORM_PRIORITY-1, true);
+				context.jobRunner.queue(registerMeRunner, (NativeThread.NORM_PRIORITY-1) + (boost ? 2 : 0), true);
 			else {
 				if(logMINOR) Logger.minor(this, "RegisterMeRunner finished");
 				boolean rerun;

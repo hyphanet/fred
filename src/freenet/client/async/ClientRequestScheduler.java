@@ -157,7 +157,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		registerInsert(req, persistent, regmeOnly, databaseExecutor.onThread());
 	}
 
-	static final int QUEUE_THRESHOLD = 250;
+	static final int QUEUE_THRESHOLD = 100;
 	
 	public void registerInsert(final SendableRequest req, boolean persistent, boolean regmeOnly, boolean onDatabaseThread) {
 		if(persistent) {
@@ -1018,6 +1018,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	public long countPersistentQueuedRequests(ObjectContainer container) {
 		return schedCore.countQueuedRequests(container);
+	}
+
+	public boolean isQueueAlmostEmpty() {
+		synchronized(starterQueue) {
+			return this.starterQueue.size() < MAX_STARTER_QUEUE_SIZE / 4;
+		}
 	}
 	
 	
