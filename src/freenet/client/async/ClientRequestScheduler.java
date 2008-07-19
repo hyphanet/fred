@@ -174,6 +174,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						}
 						
 					}, NativeThread.NORM_PRIORITY, false);
+					selectorContainer.deactivate(req, 1);
 					return;
 				}
 				schedCore.innerRegister(req, random, selectorContainer);
