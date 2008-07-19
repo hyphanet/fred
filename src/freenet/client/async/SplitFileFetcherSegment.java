@@ -341,9 +341,12 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			if(logMINOR) Logger.minor(this, "Copying data from "+dataBuckets.length+" data blocks");
 			OutputStream os = decodedData.getOutputStream();
 			for(int i=0;i<dataBuckets.length;i++) {
+				if(logMINOR) Logger.minor(this, "Copying data from block "+i);
 				SplitfileBlock status = dataBuckets[i];
 				if(persistent) container.activate(status, 1);
+				if(status == null) throw new NullPointerException();
 				Bucket data = status.getData();
+				if(data == null) throw new NullPointerException();
 				if(persistent) container.activate(data, 1);
 				BucketTools.copyTo(data, os, Long.MAX_VALUE);
 			}
