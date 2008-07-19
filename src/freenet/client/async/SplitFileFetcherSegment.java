@@ -692,8 +692,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			SplitFileFetcherSubSegment seg = getSubSegment(0, container, false);
 			if(persistent)
 				container.activate(seg, 1);
-			for(int i=0;i<dataRetries.length+checkRetries.length;i++)
-				seg.add(i, true, container, context, false);
+			seg.addAll(dataRetries.length+checkRetries.length, true, container, context, false);
 			
 			seg.schedule(container, context, true, regmeOnly);
 			if(persistent)

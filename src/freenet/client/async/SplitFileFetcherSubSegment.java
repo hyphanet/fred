@@ -426,6 +426,57 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return false;
 	}
 
+	public void addAll(int blocks, boolean dontSchedule, ObjectContainer container, ClientContext context, boolean dontComplainOnDupes) {
+		if(persistent) {
+//			container.activate(segment, 1);
+			container.activate(blockNums, 1);
+		}
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Adding "+blocks+" blocks to "+this+" dontSchedule="+dontSchedule);
+		boolean schedule = true;
+		synchronized(segment) {
+			if(cancelled)
+				throw new IllegalStateException("Adding blocks to already cancelled "+this);
+			for(int i=0;i<blocks;i++) {
+				Integer ii = new Integer(i);
+				if(blockNums.contains(ii)) {
+					if(!dontComplainOnDupes)
+						Logger.error(this, "Block numbers already contain block "+i);
+					else if(logMINOR)
+						Logger.minor(this, "Block numbers already contain block "+i);
+				} else {
+					blockNums.add(ii);
+				}
+				if(dontSchedule) schedule = false;
+				/**
+				 * Race condition:
+				 * 
+				 * Starter thread sees there is only one block on us, so removes us.
+				 * Another thread adds a block. We don't schedule as we now have two blocks.
+				 * Starter thread removes us.
+				 * Other blocks may be added later, but we are never rescheduled.
+				 * 
+				 * Fixing this by only removing the SendableRequest after we've removed the 
+				 * block is nontrivial with the current code.
+				 * So what we do here is simply check whether we are registered, instead of 
+				 * checking whether blockNums.size() > 1 as we used to.
+				 */
+				if(schedule && getParentGrabArray() != null) {
+					if(logMINOR) Logger.minor(this, "Already registered, not scheduling: "+blockNums.size()+" : "+blockNums);
+					schedule = false;
+				}
+
+			}
+		}
+		if(persistent)
+			container.set(blockNums);
+		if(schedule) {
+			// Only need to register once for all the blocks.
+			context.getChkFetchScheduler().register(null, new SendableGet[] { this }, false, persistent, true, null, null);
+		}
+
+	}
+	
 	public void add(int blockNo, boolean dontSchedule, ObjectContainer container, ClientContext context, boolean dontComplainOnDupes) {
 		if(persistent) {
 //			container.activate(segment, 1);
