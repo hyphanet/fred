@@ -142,6 +142,9 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 	static final long MAX_ARCHIVE_SIZE = 2*1024*1024; // ??? FIXME
 	static final long MAX_ARCHIVED_FILE_SIZE = 1024*1024; // arbitrary... FIXME
 	static final int MAX_CACHED_ELEMENTS = 256*1024; // equally arbitrary! FIXME hopefully we can cache many of these though
+	/** Each FEC item can take a fair amount of RAM, since it's fully activated with all the buckets, potentially 256 
+	 * of them, so only cache a small number of them */
+	private static final int FEC_QUEUE_CACHE_SIZE = 20;
 	
 	private UserAlert startingUpAlert;
 
@@ -376,7 +379,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 			toadletContainer.removeStartupToadlet();
 		}
 
-		fecQueue.init(RequestStarter.NUMBER_OF_PRIORITY_CLASSES, 100, clientContext.jobRunner, node.executor, clientContext);
+		fecQueue.init(RequestStarter.NUMBER_OF_PRIORITY_CLASSES, FEC_QUEUE_CACHE_SIZE, clientContext.jobRunner, node.executor, clientContext);
 	}
 
 	private static String l10n(String key) {
