@@ -128,7 +128,10 @@ public class FilePersistentConfig extends PersistentConfig {
 	}
 	
 	/** Don't call without taking storeSync first */
-	protected void innerStore() throws IOException {
+	protected final void innerStore() throws IOException {
+		if(!finishedInit)
+			throw new IllegalStateException("SHOULD NOT HAPPEN!!");
+		
 		SimpleFieldSet fs = exportFieldSet();
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "fs = " + fs);

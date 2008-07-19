@@ -8,8 +8,8 @@ import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 
 public class FreenetFilePersistentConfig extends FilePersistentConfig {
-	private boolean isWritingConfig = false;
-	private boolean hasNodeStarted = false;
+	private volatile boolean isWritingConfig = false;
+	private volatile boolean hasNodeStarted = false;
 	private Ticker ticker;
 	public final Runnable thread = new Runnable() {
 		public void run() {
