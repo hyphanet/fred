@@ -135,6 +135,7 @@ public class SplitFileInserter implements ClientPutState {
 		parent.onMajorProgress(container);
 		if(persistent) {
 			for(int i=0;i<segments.length;i++) {
+				container.set(segments[i]);
 				container.deactivate(segments[i], 1);
 			}
 		}
