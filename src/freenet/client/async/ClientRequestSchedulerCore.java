@@ -621,12 +621,12 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					continue; // Don't delete.
 				}
 				container.activate(reg.key, 1);
-				if(reg.key.addedTime > initTime) {
-					if(logMINOR) Logger.minor(this, "Ignoring RegisterMe as created since startup");
-					container.deactivate(reg.key, 1);
-					container.deactivate(reg, 1);
-					continue; // Don't delete
-				}
+//				if(reg.key.addedTime > initTime) {
+//					if(logMINOR) Logger.minor(this, "Ignoring RegisterMe as created since startup");
+//					container.deactivate(reg.key, 1);
+//					container.deactivate(reg, 1);
+//					continue; // Don't delete
+//				}
 				long endNext = System.currentTimeMillis();
 				if(logMINOR)
 					Logger.minor(this, "RegisterMe: next() took "+(endNext-startNext));
