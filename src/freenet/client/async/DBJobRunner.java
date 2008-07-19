@@ -13,4 +13,6 @@ public interface DBJobRunner {
 
 	public boolean onDatabaseThread();
 
+	public int getQueueSize(int priority);
+
 }

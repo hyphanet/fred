@@ -156,17 +156,24 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void registerInsert(final SendableRequest req, boolean persistent, boolean regmeOnly) {
 		registerInsert(req, persistent, regmeOnly, databaseExecutor.onThread());
 	}
+
+	static final int QUEUE_THRESHOLD = 250;
 	
 	public void registerInsert(final SendableRequest req, boolean persistent, boolean regmeOnly, boolean onDatabaseThread) {
 		if(persistent) {
 			if(onDatabaseThread) {
 				if(regmeOnly) {
-					final RegisterMe regme = new RegisterMe(null, null, req, req.getPriorityClass(selectorContainer), schedCore, null);
+					long bootID = 0;
+					boolean queueFull = jobRunner.getQueueSize(NativeThread.NORM_PRIORITY) <= QUEUE_THRESHOLD;
+					if(!queueFull)
+						bootID = this.node.bootID;
+					final RegisterMe regme = new RegisterMe(null, null, req, req.getPriorityClass(selectorContainer), schedCore, null, bootID);
 					selectorContainer.set(regme);
 					if(logMINOR)
 						Logger.minor(this, "Added insert RegisterMe: "+regme);
+					if(!queueFull) {
 					jobRunner.queue(new DBJob() {
-
+						
 						public void run(ObjectContainer container, ClientContext context) {
 							container.delete(regme);
 							container.activate(req, 1);
@@ -174,6 +181,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 						}
 						
 					}, NativeThread.NORM_PRIORITY, false);
+					} else {
+						schedCore.rerunRegisterMeRunner(jobRunner);
+					}
 					selectorContainer.deactivate(req, 1);
 					return;
 				}
@@ -258,12 +268,19 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(listener != null) {
 			if(registerOffThread) {
 				short prio = listener.getPriorityClass(selectorContainer);
+				boolean queueFull = false;
 				if(reg == null) {
-					reg = new RegisterMe(listener, getters, null, prio, schedCore, blocks);
+					long bootID = 0;
+					queueFull = jobRunner.getQueueSize(NativeThread.NORM_PRIORITY) <= QUEUE_THRESHOLD;
+					if(!queueFull)
+						bootID = this.node.bootID;
+
+					reg = new RegisterMe(listener, getters, null, prio, schedCore, blocks, bootID);
 					selectorContainer.set(reg);
 				}
 				final RegisterMe regme = reg;
 				if(logMINOR) Logger.minor(this, "Added regme: "+regme);
+				if(!queueFull) {
 				jobRunner.queue(new DBJob() {
 
 					public void run(ObjectContainer container, ClientContext context) {
@@ -277,12 +294,15 @@ public class ClientRequestScheduler implements RequestScheduler {
 					}
 					
 				}, NativeThread.NORM_PRIORITY, false);
+				} else {
+					schedCore.rerunRegisterMeRunner(jobRunner);
+				}
 				return;
 			} else {
 				short prio = listener.getPriorityClass(selectorContainer);
 				schedCore.addPendingKeys(listener, selectorContainer);
 				if(reg == null && getters != null) {
-					reg = new RegisterMe(null, getters, null, prio, schedCore, blocks);
+					reg = new RegisterMe(null, getters, null, prio, schedCore, blocks, node.bootID);
 					selectorContainer.set(reg);
 					if(logMINOR) Logger.minor(this, "Added regme: "+reg);
 				} else {

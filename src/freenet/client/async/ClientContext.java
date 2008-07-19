@@ -42,8 +42,10 @@ public class ClientContext {
 	public transient final HealingQueue healingQueue;
 	public transient final USKManager uskManager;
 	public transient final Random fastWeakRandom;
+	public transient final long bootID;
 
 	public ClientContext(NodeClientCore core) {
+		this.bootID = core.node.bootID;
 		this.fecQueue = core.fecQueue;
 		jobRunner = core;
 		this.mainExecutor = core.getExecutor();

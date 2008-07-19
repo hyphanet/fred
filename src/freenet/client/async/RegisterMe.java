@@ -16,11 +16,16 @@ public class RegisterMe {
 	final SendableRequest nonGetRequest;
 	final ClientRequestSchedulerCore core;
 	final RegisterMeSortKey key;
+	/**
+	 * Only set if the key is on the queue.
+	 */
+	final long bootID;
 	private final int hashCode;
 	public final BlockSet blocks;
 	
-	RegisterMe(GotKeyListener listener, SendableGet[] getters, SendableRequest nonGetRequest, short prio, ClientRequestSchedulerCore core, BlockSet blocks) {
+	RegisterMe(GotKeyListener listener, SendableGet[] getters, SendableRequest nonGetRequest, short prio, ClientRequestSchedulerCore core, BlockSet blocks, long bootID) {
 		this.listener = listener;
+		this.bootID = bootID;
 		this.getters = getters;
 		this.core = core;
 		this.nonGetRequest = nonGetRequest;

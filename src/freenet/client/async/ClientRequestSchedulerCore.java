@@ -131,6 +131,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		preRegisterMeRunner = new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
+				synchronized(ClientRequestSchedulerCore.this) {
+					if(registerMeSet != null) return;
+				}
 				long tStart = System.currentTimeMillis();
 				// FIXME REDFLAG EVIL DB4O BUG!!!
 				// FIXME verify and file a bug
@@ -182,7 +185,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 //				query.constrain(eval);
 //				query.descend("key").descend("priority").orderAscending();
 //				query.descend("key").descend("addedTime").orderAscending();
-				registerMeSet = query.execute();
+				ObjectSet results = query.execute();
+				synchronized(ClientRequestSchedulerCore.this) {
+					registerMeSet = results;
+				}
 			long tEnd = System.currentTimeMillis();
 			if(logMINOR)
 				Logger.minor(this, "RegisterMe query took "+(tEnd-tStart)+" hasNext="+registerMeSet.hasNext()+" for insert="+isInsertScheduler+" ssk="+isSSKScheduler);
@@ -198,7 +204,11 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	private transient DBJob preRegisterMeRunner;
 	
 	void start(DBJobRunner runner) {
-			runner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);
+		startRegisterMeRunner(runner);
+	}
+	
+	private final void startRegisterMeRunner(DBJobRunner runner) {
+		runner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);
 	}
 	
 	void fillStarterQueue(ObjectContainer container) {
@@ -560,6 +570,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	
 	private transient RegisterMeRunner registerMeRunner;
 	
+	private transient boolean shouldReRunRegisterMeRunner;
+	
 	class RegisterMeRunner implements DBJob {
 
 		public void run(ObjectContainer container, ClientContext context) {
@@ -586,6 +598,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				long startNext = System.currentTimeMillis();
 				RegisterMe reg = (RegisterMe) registerMeSet.next();
 				container.activate(reg, 1);
+				if(reg.bootID == context.bootID) {
+					if(logMINOR) Logger.minor(this, "Not registering block as was added to the queue");
+					continue;
+				}
 				// FIXME remove the leftover/old core handling at some point, an NPE is acceptable long-term.
 				if(reg.core != ClientRequestSchedulerCore.this) {
 					if(reg.core == null) {
@@ -652,7 +668,15 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				context.jobRunner.queue(registerMeRunner, NativeThread.NORM_PRIORITY-1, true);
 			else {
 				if(logMINOR) Logger.minor(this, "RegisterMeRunner finished");
-				registerMeSet = null;
+				boolean rerun;
+				synchronized(ClientRequestSchedulerCore.this) {
+					rerun = shouldReRunRegisterMeRunner;
+					shouldReRunRegisterMeRunner = false;
+					registerMeSet = null;
+				}
+				if(rerun) {
+					preRegisterMeRunner.run(container, context);
+				}
 			}
 		}
 		
@@ -857,6 +881,14 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			PendingKeyItem item = new PendingKeyItem(key, getter, nodeDBHandle);
 			container.set(item);
 		}
+	}
+
+	public void rerunRegisterMeRunner(DBJobRunner runner) {
+		synchronized(this) {
+			shouldReRunRegisterMeRunner = true;
+			if(registerMeSet != null) return;
+		}
+		startRegisterMeRunner(runner);
 	}
 
 }

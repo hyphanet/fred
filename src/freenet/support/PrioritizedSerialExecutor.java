@@ -230,4 +230,10 @@ public class PrioritizedSerialExecutor implements Executor {
 		return retval;
 	}
 
+	public int getQueueSize(int priority) {
+		synchronized(jobs) {
+			return jobs[priority].size();
+		}
+	}
+
 }
