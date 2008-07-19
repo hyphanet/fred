@@ -389,6 +389,8 @@ public class ClientPut extends ClientPutBase {
 			d = data;
 			data = null;
 			if(d == null) return;
+			if(persistenceType == PERSIST_FOREVER)
+				container.activate(d, 5);
 			finishedSize = d.size();
 		}
 		d.free();
