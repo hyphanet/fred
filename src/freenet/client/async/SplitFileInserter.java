@@ -116,6 +116,14 @@ public class SplitFileInserter implements ClientPutState {
 		
 		// Create segments
 		segments = splitIntoSegments(segmentSize, dataBuckets, context.mainExecutor, container, context);
+		if(persistent) {
+			// Deactivate all buckets, and let dataBuckets be GC'ed
+			for(int i=0;i<dataBuckets.length;i++) {
+				container.deactivate(dataBuckets[i], 5);
+				dataBuckets[i] = null;
+			}
+		}
+		dataBuckets = null;
 		int count = 0;
 		for(int i=0;i<segments.length;i++)
 			count += segments[i].countCheckBlocks();
