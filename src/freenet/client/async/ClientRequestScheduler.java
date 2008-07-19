@@ -164,7 +164,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(onDatabaseThread) {
 				if(regmeOnly) {
 					long bootID = 0;
-					boolean queueFull = jobRunner.getQueueSize(NativeThread.NORM_PRIORITY) <= QUEUE_THRESHOLD;
+					boolean queueFull = jobRunner.getQueueSize(NativeThread.NORM_PRIORITY) >= QUEUE_THRESHOLD;
 					if(!queueFull)
 						bootID = this.node.bootID;
 					final RegisterMe regme = new RegisterMe(null, null, req, req.getPriorityClass(selectorContainer), schedCore, null, bootID);
@@ -271,7 +271,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				boolean queueFull = false;
 				if(reg == null) {
 					long bootID = 0;
-					queueFull = jobRunner.getQueueSize(NativeThread.NORM_PRIORITY) <= QUEUE_THRESHOLD;
+					queueFull = jobRunner.getQueueSize(NativeThread.NORM_PRIORITY) >= QUEUE_THRESHOLD;
 					if(!queueFull)
 						bootID = this.node.bootID;
 
