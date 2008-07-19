@@ -428,7 +428,6 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 
 	public void add(int blockNo, boolean dontSchedule, ObjectContainer container, ClientContext context, boolean dontComplainOnDupes) {
 		if(persistent) {
-			container.activate(this, 1);
 //			container.activate(segment, 1);
 			container.activate(blockNums, 1);
 		}
