@@ -313,8 +313,10 @@ public class L10n {
 	*/
 	public static String getSelectedLanguage() {
 		synchronized (sync) {
-			if(currentClass == null) return FALLBACK_DEFAULT;
-			return currentClass.selectedLanguage;	
+			if((currentClass == null) || (currentClass.selectedLanguage == null))
+				return FALLBACK_DEFAULT;
+			else
+				return currentClass.selectedLanguage;	
 		}
 	}
 	
