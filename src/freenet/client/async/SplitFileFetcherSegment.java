@@ -572,6 +572,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 	 * Caller must set(this) iff returns true.
 	 */
 	private boolean onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context, RequestScheduler sched, int maxTries) {
+		if(logMINOR) Logger.minor(this, "Calling onNonFatalFailure for block "+blockNo+" on "+this+" from "+seg);
 		int tries;
 		boolean failed = false;
 		boolean cooldown = false;
@@ -617,7 +618,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			}
 		}
 		if(tries != seg.retryCount+1) {
-			Logger.error(this, "Failed on segment "+seg+" but tries for block (after increment) is "+tries);
+			Logger.error(this, "Failed on segment "+seg+" but tries for block "+blockNo+" (after increment) is "+tries);
 		}
 		if(failed) {
 			onFatalFailure(e, blockNo, seg, container, context);
