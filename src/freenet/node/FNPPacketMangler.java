@@ -1253,6 +1253,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		BlockCipher c = null;
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
 		
+		if(bothNoderefs && pn.jfkMyRef == null) {
+			if(node.getUptime() < 60*1000) {
+				Logger.normal(this, "Avoiding NPE: got JFK(4) but no pn.jfkMyRef on "+pn);
+				return false;
+			} else {
+				Logger.error(this, "Got JFK(4) but no pn.jfkMyRef on "+pn);
+				return false;
+			}
+		}
 		final int expectedLength =
 			HASH_LENGTH + // HMAC of the cyphertext
 			(c.getBlockSize() >> 3) + // IV
