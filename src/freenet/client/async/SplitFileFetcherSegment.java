@@ -547,15 +547,38 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		if(persistent) {
 			container.activate(blockFetchContext, 1);
 		}
-		RequestScheduler sched = context.getFetchScheduler(false);
-		int tries;
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
+		RequestScheduler sched = context.getFetchScheduler(false);
+		boolean set = onNonFatalFailure(e, blockNo, seg, container, context, sched, maxTries);
+		if(persistent && set)
+			container.set(this);
+	}
+	
+	public void onNonFatalFailure(FetchException[] failures, int[] blockNos, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(blockFetchContext, 1);
+		}
+		int maxTries = blockFetchContext.maxNonSplitfileRetries;
+		RequestScheduler sched = context.getFetchScheduler(false);
+		boolean set = false;
+		for(int i=0;i<failures.length;i++)
+			if(onNonFatalFailure(failures[i], blockNos[i], seg, container, context, sched, maxTries))
+				set = true;
+		if(persistent && set)
+			container.set(this);
+	}
+	
+	/**
+	 * Caller must set(this) iff returns true.
+	 */
+	private boolean onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context, RequestScheduler sched, int maxTries) {
+		int tries;
 		boolean failed = false;
 		boolean cooldown = false;
 		ClientCHK key;
 		SplitFileFetcherSubSegment sub = null;
 		synchronized(this) {
-			if(isFinished(container)) return;
+			if(isFinished(container)) return false;
 			if(blockNo < dataKeys.length) {
 				key = dataKeys[blockNo];
 				if(persistent)
@@ -596,13 +619,11 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		if(tries != seg.retryCount+1) {
 			Logger.error(this, "Failed on segment "+seg+" but tries for block (after increment) is "+tries);
 		}
-		if(persistent)
-			container.set(this);
 		if(failed) {
 			onFatalFailure(e, blockNo, seg, container, context);
 			if(logMINOR)
 				Logger.minor(this, "Not retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries);
-			return;
+			return false;
 		}
 		if(cooldown) {
 			// Registered to cooldown queue
@@ -618,6 +639,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			if(sub != null && sub != seg) container.deactivate(sub, 1);
 			container.deactivate(key, 5);
 		}
+		return true;
 	}
 	
 	private SplitFileFetcherSubSegment getSubSegment(int retryCount, ObjectContainer container, boolean noCreate) {

@@ -17,10 +17,12 @@ import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.KeyDecodeException;
 import freenet.keys.TooBigException;
+import freenet.node.BulkCallFailureItem;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
 import freenet.node.RequestClient;
 import freenet.node.SendableGet;
+import freenet.node.SupportsBulkCallFailure;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
@@ -33,7 +35,7 @@ import freenet.support.api.Bucket;
  * LOCKING: Synchronize on the parent segment. Nothing else makes sense w.r.t. nested locking.
  * Note that SendableRequest will occasionally lock on (this). That lock is always taken last.
  */
-public class SplitFileFetcherSubSegment extends SendableGet {
+public class SplitFileFetcherSubSegment extends SendableGet implements SupportsBulkCallFailure {
 
 	final int retryCount;
 	final SplitFileFetcherSegment segment;
@@ -222,47 +224,90 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		return ctx.ignoreStore;
 	}
 
-	// Translate it, then call the real onFailure
+	// SendableGet has a hashCode() and inherits equals(), which is consistent with the hashCode().
+	
+	public void onFailure(BulkCallFailureItem[] items, ObjectContainer container, ClientContext context) {
+		FetchException[] fetchExceptions = new FetchException[items.length];
+		int countFatal = 0;
+		for(int i=0;i<items.length;i++) {
+			fetchExceptions[i] = translateException(items[i].e);
+			if(fetchExceptions[i].isFatal()) countFatal++;
+		}
+		if(persistent) {
+			container.activate(segment, 1);
+			container.activate(parent, 1);
+			container.activate(segment.errors, 1);
+		}
+		if(parent.isCancelled()) {
+			if(Logger.shouldLog(Logger.MINOR, this)) 
+				Logger.minor(this, "Failing: cancelled");
+			// Fail the segment.
+			segment.fail(new FetchException(FetchException.CANCELLED), container, context, false);
+			// FIXME do we need to free the keyNum's??? Or will that happen later anyway?
+			return;
+		}
+		for(int i=0;i<fetchExceptions.length;i++)
+			segment.errors.inc(fetchExceptions[i].getMode());
+		int nonFatalExceptions = items.length - countFatal;
+		int[] blockNumbers = new int[nonFatalExceptions];
+		if(countFatal > 0) {
+			FetchException[] newFetchExceptions = new FetchException[items.length - countFatal];
+			// Call the fatal callbacks directly.
+			int x = 0;
+			for(int i=0;i<items.length;i++) {
+				int blockNum = ((Integer)items[i].token).intValue();
+				if(fetchExceptions[i].isFatal()) {
+					segment.onFatalFailure(fetchExceptions[i], blockNum, this, container, context);
+				} else {
+					blockNumbers[x] = blockNum;
+					newFetchExceptions[x] = fetchExceptions[i];
+					x++;
+				}
+			}
+			fetchExceptions = newFetchExceptions;
+		} else {
+			for(int i=0;i<blockNumbers.length;i++)
+				blockNumbers[i] = ((Integer)items[i].token).intValue();
+		}
+		segment.onNonFatalFailure(fetchExceptions, blockNumbers, this, container, context);
+
+		// TODO Auto-generated method stub
+		
+	}
+	
 	// FIXME refactor this out to a common method; see SimpleSingleFileFetcher
+	private FetchException translateException(LowLevelGetException e) {
+		switch(e.code) {
+		case LowLevelGetException.DATA_NOT_FOUND:
+		case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
+			return new FetchException(FetchException.DATA_NOT_FOUND);
+		case LowLevelGetException.RECENTLY_FAILED:
+			return new FetchException(FetchException.RECENTLY_FAILED);
+		case LowLevelGetException.DECODE_FAILED:
+			return new FetchException(FetchException.BLOCK_DECODE_ERROR);
+		case LowLevelGetException.INTERNAL_ERROR:
+			return new FetchException(FetchException.INTERNAL_ERROR);
+		case LowLevelGetException.REJECTED_OVERLOAD:
+			return new FetchException(FetchException.REJECTED_OVERLOAD);
+		case LowLevelGetException.ROUTE_NOT_FOUND:
+			return new FetchException(FetchException.ROUTE_NOT_FOUND);
+		case LowLevelGetException.TRANSFER_FAILED:
+			return new FetchException(FetchException.TRANSFER_FAILED);
+		case LowLevelGetException.VERIFY_FAILED:
+			return new FetchException(FetchException.BLOCK_DECODE_ERROR);
+		case LowLevelGetException.CANCELLED:
+			return new FetchException(FetchException.CANCELLED);
+		default:
+			Logger.error(this, "Unknown LowLevelGetException code: "+e.code);
+			return new FetchException(FetchException.INTERNAL_ERROR, "Unknown error code: "+e.code);
+		}
+	}
+
+	// Translate it, then call the real onFailure
 	public void onFailure(LowLevelGetException e, Object token, ObjectContainer container, ClientContext context) {
 		if(logMINOR)
 			Logger.minor(this, "onFailure("+e+" , "+token+" on "+this);
-		switch(e.code) {
-		case LowLevelGetException.DATA_NOT_FOUND:
-			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), token, container, context);
-			return;
-		case LowLevelGetException.DATA_NOT_FOUND_IN_STORE:
-			onFailure(new FetchException(FetchException.DATA_NOT_FOUND), token, container, context);
-			return;
-		case LowLevelGetException.RECENTLY_FAILED:
-			onFailure(new FetchException(FetchException.RECENTLY_FAILED), token, container, context);
-			return;
-		case LowLevelGetException.DECODE_FAILED:
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR), token, container, context);
-			return;
-		case LowLevelGetException.INTERNAL_ERROR:
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR), token, container, context);
-			return;
-		case LowLevelGetException.REJECTED_OVERLOAD:
-			onFailure(new FetchException(FetchException.REJECTED_OVERLOAD), token, container, context);
-			return;
-		case LowLevelGetException.ROUTE_NOT_FOUND:
-			onFailure(new FetchException(FetchException.ROUTE_NOT_FOUND), token, container, context);
-			return;
-		case LowLevelGetException.TRANSFER_FAILED:
-			onFailure(new FetchException(FetchException.TRANSFER_FAILED), token, container, context);
-			return;
-		case LowLevelGetException.VERIFY_FAILED:
-			onFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR), token, container, context);
-			return;
-		case LowLevelGetException.CANCELLED:
-			onFailure(new FetchException(FetchException.CANCELLED), token, container, context);
-			return;
-		default:
-			Logger.error(this, "Unknown LowLevelGetException code: "+e.code);
-			onFailure(new FetchException(FetchException.INTERNAL_ERROR), token, container, context);
-			return;
-		}
+		onFailure(translateException(e), token, container, context);
 	}
 
 	// Real onFailure

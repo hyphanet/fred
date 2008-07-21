@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 
 import com.db4o.ObjectContainer;
@@ -16,6 +17,7 @@ import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.node.BaseSendableGet;
+import freenet.node.BulkCallFailureItem;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
 import freenet.node.LowLevelPutException;
@@ -26,6 +28,7 @@ import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
+import freenet.node.SupportsBulkCallFailure;
 import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.api.StringCallback;
@@ -923,10 +926,59 @@ public class ClientRequestScheduler implements RequestScheduler {
 		schedCore.removeChosenRequest(req);
 	}
 
+	/**
+	 * Map from SendableGet implementing SupportsBulkCallFailure to BulkCallFailureItem[].
+	 */
+	private transient HashMap bulkFailureLookup = new HashMap();
+	
+	private class BulkCaller implements DBJob {
+		
+		private final SupportsBulkCallFailure getter;
+		
+		BulkCaller(SupportsBulkCallFailure getter) {
+			this.getter = getter;
+		}
+
+		public void run(ObjectContainer container, ClientContext context) {
+			BulkCallFailureItem[] items;
+			synchronized(ClientRequestScheduler.this) {
+				items = (BulkCallFailureItem[]) bulkFailureLookup.get(getter);
+				bulkFailureLookup.remove(getter);
+			}
+			if(items != null && items.length > 0) {
+				if(logMINOR) Logger.minor(this, "Calling non-fatal failure in bulk for "+items.length+" items");
+				getter.onFailure(items, container, context);
+			} else
+				Logger.normal(this, "Calling non-fatal failure in bulk for "+getter+" but no items to run");
+		}
+		
+		public boolean equals(Object o) {
+			if(o instanceof BulkCaller) {
+				return ((BulkCaller)o).getter == getter;
+			} else return false;
+		}
+	}
+	
 	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, final ChosenRequest req, boolean persistent) {
 		if(!persistent) {
 			get.onFailure(e, keyNum, null, clientContext);
 			return;
+		}
+		if(get instanceof SupportsBulkCallFailure) {
+			SupportsBulkCallFailure getter = (SupportsBulkCallFailure) get;
+			BulkCallFailureItem item = new BulkCallFailureItem(e, keyNum);
+			synchronized(this) {
+				BulkCallFailureItem[] items = (BulkCallFailureItem[]) bulkFailureLookup.get(get);
+				if(items == null) {
+					bulkFailureLookup.put(getter, new BulkCallFailureItem[] { item } );
+				} else {
+					BulkCallFailureItem[] newItems = new BulkCallFailureItem[items.length+1];
+					System.arraycopy(items, 0, newItems, 0, items.length);
+					newItems[items.length] = item;
+					bulkFailureLookup.put(getter, newItems);
+				}
+			}
+			jobRunner.queue(new BulkCaller(getter), prio, true);
 		}
 		jobRunner.queue(new DBJob() {
 
