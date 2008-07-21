@@ -653,10 +653,11 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		getScheduler(context).register(firstTime ? segment : null, new SendableGet[] { this }, regmeOnly, persistent, true, segment.blockFetchContext.blocks, null);
 	}
 
-	public void removeBlockNum(int blockNum, ObjectContainer container) {
+	public boolean removeBlockNum(int blockNum, ObjectContainer container) {
 		if(logMINOR) Logger.minor(this, "Removing block "+blockNum+" from "+this);
 		if(persistent)
 			container.activate(blockNums, 2);
+		boolean found = false;
 		synchronized(segment) {
 			for(int i=0;i<blockNums.size();i++) {
 				Integer token = (Integer) blockNums.get(i);
@@ -664,6 +665,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 				if(num == blockNum) {
 					blockNums.remove(i);
 					if(logMINOR) Logger.minor(this, "Removed block "+blockNum+" from "+this);
+					found = true;
 					break;
 				}
 			}
@@ -672,6 +674,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			container.set(blockNums);
 			container.deactivate(blockNums, 2);
 		}
+		return found;
 	}
 
 }

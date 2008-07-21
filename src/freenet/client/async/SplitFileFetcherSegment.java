@@ -1064,6 +1064,16 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			seg.removeBlockNum(blockNum, container);
 			seg.possiblyRemoveFromParent(container);
 		}
+		for(int i=0;i<subSegments.size();i++) {
+			SplitFileFetcherSubSegment checkSeg = (SplitFileFetcherSubSegment) subSegments.get(i);
+			if(checkSeg == seg) continue;
+			if(persistent)
+				container.activate(checkSeg, 1);
+			if(checkSeg.removeBlockNum(blockNum, container))
+				Logger.error(this, "Block number "+blockNum+" was registered to wrong subsegment "+checkSeg+" should be "+seg);
+			if(persistent)
+				container.deactivate(checkSeg, 1);
+		}
 		if(persistent)
 			container.deactivate(seg, 1);
 		try {
