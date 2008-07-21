@@ -122,6 +122,37 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 				if(persistent)
 					container.activate(rga, 1);
 				RemoveRandomWithObject firstRGA = rga;
+				if(rga == null) {
+					Logger.error(this, "rga = null on "+this);
+					if(container != null && !container.ext().isActive(this))
+						Logger.error(this, "NOT ACTIVE!!");
+					if(grabArrays[1-x] == null) {
+						Logger.error(this, "other rga is also null on "+this);
+						if(grabArraysByClient == null) {
+							Logger.error(this, "as is grabArraysByClient");
+							// Let it NPE
+						} else {
+							if(grabArraysByClient.isEmpty()) {
+								Logger.error(this, "grabArraysByClient is also empty");
+								return null;
+							}
+						}
+					} else {
+						RemoveRandomWithObject valid = grabArrays[1-x];
+						if(grabArraysByClient.size() != 1) {
+							Logger.error(this, "Grab arrays by client size should be 1 (since there is 1 non-null), but is "+grabArraysByClient.size());
+							grabArraysByClient.clear();
+							if(persistent) {
+								container.activate(valid, 1);
+								Object client = valid.getObject();
+								grabArraysByClient.put(client, valid);
+							}
+						}
+						Logger.error(this, "grabArrays["+(1-x)+"] is valid but ["+x+"] is null, correcting...");
+						grabArrays = new RemoveRandomWithObject[] { grabArrays[1-x] };
+						continue;
+					}
+				}
 				RandomGrabArrayItem item = rga.removeRandom(excluding, container, context);
 				if(item == null) {
 					x = 1-x;
