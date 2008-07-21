@@ -979,6 +979,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 			}
 			jobRunner.queue(new BulkCaller(getter), prio, true);
+			return;
 		}
 		jobRunner.queue(new DBJob() {
 
