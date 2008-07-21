@@ -661,7 +661,13 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				}
 				if(reg.nonGetRequest != null) {
 					container.activate(reg.nonGetRequest, 1);
-					sched.registerInsert(reg.nonGetRequest, true, false);
+					if(reg.nonGetRequest.isCancelled(container)) {
+						Logger.normal(this, "RegisterMe: request cancelled: "+reg.nonGetRequest);
+					} else {
+						if(logMINOR)
+							Logger.minor(this, "Registering RegisterMe for insert: "+reg.nonGetRequest);
+						sched.registerInsert(reg.nonGetRequest, true, false);
+					}
 					container.delete(reg);
 				}
 				if(System.currentTimeMillis() > deadline) break;
