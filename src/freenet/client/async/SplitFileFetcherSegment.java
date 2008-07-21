@@ -545,7 +545,6 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 	 * @param container */
 	public void onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context) {
 		if(persistent) {
-			container.activate(this, 1);
 			container.activate(blockFetchContext, 1);
 		}
 		RequestScheduler sched = context.getFetchScheduler(false);
