@@ -13,7 +13,6 @@ import freenet.client.async.ClientRequester;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
-import freenet.keys.KeyBlock;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
 
