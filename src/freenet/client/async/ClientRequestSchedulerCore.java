@@ -581,7 +581,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				Logger.error(this, "registerMeSet is null for "+ClientRequestSchedulerCore.this+" ( "+this+" )");
 				return;
 			}
-			for(int i=0;i < 10; i++) {
+			for(int i=0;i < 1000; i++) {
 				try {
 					if(!registerMeSet.hasNext()) break;
 				} catch (NullPointerException t) {
