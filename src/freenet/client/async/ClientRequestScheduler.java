@@ -948,6 +948,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(items != null && items.length > 0) {
 				if(logMINOR) Logger.minor(this, "Calling non-fatal failure in bulk for "+items.length+" items");
 				getter.onFailure(items, container, context);
+				for(int i=0;i<items.length;i++)
+					if(items[i] != null)
+						container.delete(items[i].req);
 			} else
 				Logger.normal(this, "Calling non-fatal failure in bulk for "+getter+" but no items to run");
 		}
@@ -966,7 +969,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		if(get instanceof SupportsBulkCallFailure) {
 			SupportsBulkCallFailure getter = (SupportsBulkCallFailure) get;
-			BulkCallFailureItem item = new BulkCallFailureItem(e, keyNum);
+			BulkCallFailureItem item = new BulkCallFailureItem(e, keyNum, (PersistentChosenRequest) req);
 			synchronized(this) {
 				BulkCallFailureItem[] items = (BulkCallFailureItem[]) bulkFailureLookup.get(get);
 				if(items == null) {
