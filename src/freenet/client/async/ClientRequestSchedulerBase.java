@@ -14,6 +14,7 @@ import freenet.keys.Key;
 import freenet.node.BaseSendableGet;
 import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
+import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.support.Logger;
 import freenet.support.SectoredRandomGrabArrayWithInt;
@@ -64,8 +65,10 @@ abstract class ClientRequestSchedulerBase {
 	}
 	
 	void innerRegister(SendableRequest req, RandomSource random, ObjectContainer container) {
-		if(isInsertScheduler && req instanceof SendableGet)
+		if(isInsertScheduler && req instanceof BaseSendableGet)
 			throw new IllegalArgumentException("Adding a SendableGet to an insert scheduler!!");
+		if((!isInsertScheduler) && req instanceof SendableInsert)
+			throw new IllegalArgumentException("Adding a SendableInsert to a request scheduler!!");
 		if(req.persistent() != persistent())
 			throw new IllegalArgumentException("innerRegister for persistence="+req.persistent()+" but our persistence is "+persistent());
 		if(req.getPriorityClass(container) == 0) {
