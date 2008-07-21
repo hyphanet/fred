@@ -929,7 +929,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	/**
 	 * Map from SendableGet implementing SupportsBulkCallFailure to BulkCallFailureItem[].
 	 */
-	private transient HashMap bulkFailureLookup = new HashMap();
+	private transient HashMap bulkFailureLookupItems = new HashMap();
+	private transient HashMap bulkFailureLookupJob = new HashMap();
 	
 	private class BulkCaller implements DBJob {
 		
@@ -942,8 +943,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 		public void run(ObjectContainer container, ClientContext context) {
 			BulkCallFailureItem[] items;
 			synchronized(ClientRequestScheduler.this) {
-				items = (BulkCallFailureItem[]) bulkFailureLookup.get(getter);
-				bulkFailureLookup.remove(getter);
+				items = (BulkCallFailureItem[]) bulkFailureLookupItems.get(getter);
+				bulkFailureLookupItems.remove(getter);
+				bulkFailureLookupJob.remove(getter);
 			}
 			if(items != null && items.length > 0) {
 				if(logMINOR) Logger.minor(this, "Calling non-fatal failure in bulk for "+items.length+" items");
@@ -970,18 +972,27 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(get instanceof SupportsBulkCallFailure) {
 			SupportsBulkCallFailure getter = (SupportsBulkCallFailure) get;
 			BulkCallFailureItem item = new BulkCallFailureItem(e, keyNum, (PersistentChosenRequest) req);
+			BulkCaller caller = null;
 			synchronized(this) {
-				BulkCallFailureItem[] items = (BulkCallFailureItem[]) bulkFailureLookup.get(get);
+				BulkCallFailureItem[] items = (BulkCallFailureItem[]) bulkFailureLookupItems.get(get);
 				if(items == null) {
-					bulkFailureLookup.put(getter, new BulkCallFailureItem[] { item } );
+					bulkFailureLookupItems.put(getter, new BulkCallFailureItem[] { item } );
 				} else {
 					BulkCallFailureItem[] newItems = new BulkCallFailureItem[items.length+1];
 					System.arraycopy(items, 0, newItems, 0, items.length);
 					newItems[items.length] = item;
-					bulkFailureLookup.put(getter, newItems);
+					bulkFailureLookupItems.put(getter, newItems);
 				}
+				caller = (BulkCaller) bulkFailureLookupJob.get(getter);
+				if(caller == null) {
+					caller = new BulkCaller(getter);
+					bulkFailureLookupJob.put(getter, caller);
+				} else
+					caller = null;
+				
 			}
-			jobRunner.queue(new BulkCaller(getter), prio, true);
+			if(caller != null)
+				jobRunner.queue(caller, prio, true);
 			return;
 		}
 		jobRunner.queue(new DBJob() {
