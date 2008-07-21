@@ -908,4 +908,7 @@ public class NodeUpdateManager {
 		disabledThisSession = true;
 	}
 	
+	protected long getStartedFetchingNextMainJarTimestamp() {
+		return startedFetchingNextMainJar;
+	}
 }

@@ -2833,6 +2833,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		return false;
 	}
 	
+	public synchronized boolean isOudated() {
+		return (buildOldAgeUserAlert.lastGoodVersion > 0);
+	}
+	
 	/**
 	 * Handle a received node to node message
 	 */
