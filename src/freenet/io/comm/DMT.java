@@ -29,8 +29,6 @@ import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.Fields;
 import freenet.support.ShortBuffer;
-import java.nio.DoubleBuffer;
-
 
 /**
  * @author ian
@@ -985,26 +983,6 @@ public class DMT {
 	
 	public static final Message createFNPPing(int seqNo) {
 		Message msg = new Message(FNPPing);
-		msg.set(PING_SEQNO, seqNo);
-		return msg;
-	}
-
-	public static final MessageType FNPLinkPing = new MessageType("FNPLinkPing", PRIORITY_HIGH) {{
-		addField(PING_SEQNO, Long.class);
-	}};
-	
-	public static final Message createFNPLinkPing(long seqNo) {
-		Message msg = new Message(FNPLinkPing);
-		msg.set(PING_SEQNO, seqNo);
-		return msg;
-	}
-	
-	public static final MessageType FNPLinkPong = new MessageType("FNPLinkPong", PRIORITY_HIGH) {{
-		addField(PING_SEQNO, Long.class);
-	}};
-	
-	public static final Message createFNPLinkPong(long seqNo) {
-		Message msg = new Message(FNPLinkPong);
 		msg.set(PING_SEQNO, seqNo);
 		return msg;
 	}

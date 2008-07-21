@@ -98,15 +98,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				if(logMINOR) Logger.minor(this, "Lost connection replying to "+m);
 			}
 			return true;
-		}else if(spec == DMT.FNPLinkPing) {
-			long id = m.getLong(DMT.PING_SEQNO);
-			Message msg = DMT.createFNPLinkPong(id);
-			try {
-				source.sendAsync(msg, null, 0, pingCounter);
-			} catch (NotConnectedException e) {
-				// Ignore
-			}
-			return true;
 		} else if (spec == DMT.FNPStoreSecret) {
 			return node.netid.handleStoreSecret(m);
 		} else if(spec == DMT.FNPSecretPing) {
