@@ -662,6 +662,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				if(reg.nonGetRequest != null) {
 					container.activate(reg.nonGetRequest, 1);
 					sched.registerInsert(reg.nonGetRequest, true, false);
+					container.delete(reg);
 				}
 				if(System.currentTimeMillis() > deadline) break;
 			}
