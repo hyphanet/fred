@@ -1,8 +1,5 @@
 package freenet.support;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
@@ -12,15 +9,13 @@ import freenet.client.async.ClientContext;
  */
 public class RandomGrabArray {
 
-	/** Array of items. Non-null's followed by null's. */
+	/** Array of items. Non-null's followed by null's. 
+	 * We used to have a Set so we could check whether something is in the set quickly.
+	 * We got rid of this because for persistent requests it is vastly faster to just loop the
+	 * loop and check ==, and for non-persistent requests it doesn't matter much. */
 	private RandomGrabArrayItem[] reqs;
 	/** Index of first null item. */
 	private int index;
-	/** What do we already have? FIXME: Replace with a Bloom filter or something (to save 
-	 * RAM), or rewrite the whole class as a custom hashset maybe based on the classpath 
-	 * HashSet. Note that removeRandom() is *the* common operation, so MUST BE FAST.
-	 */
-	private Set contents;
 	private final static int MIN_SIZE = 32;
 	private final boolean persistent;
 
@@ -28,10 +23,6 @@ public class RandomGrabArray {
 		this.reqs = new RandomGrabArrayItem[MIN_SIZE];
 		this.persistent = persistent;
 		index = 0;
-		if(persistent)
-			contents = new Db4oSet(container, 10);
-		else
-			contents = new HashSet();
 	}
 	
 	public void add(RandomGrabArrayItem req, ObjectContainer container) {
@@ -43,11 +34,15 @@ public class RandomGrabArray {
 		}
 		req.setParentGrabArray(this, container);
 		synchronized(this) {
-			if(contents.contains(req)) {
-				if(logMINOR) Logger.minor(this, "Already contains "+req+" : "+this+" size now "+index);
-				return;
+			for(int i=0;i<index;i++) {
+				if(reqs[i] == req) {
+					if(logMINOR) Logger.minor(this, "Already contains "+req+" : "+this+" size now "+index);
+					return;
+				}
+				if(reqs[i] == null) {
+					Logger.error(this, "reqs["+i+"] = null on "+this);
+				}
 			}
-			contents.add(req);
 			if(index >= reqs.length) {
 				RandomGrabArrayItem[] r = new RandomGrabArrayItem[reqs.length*2];
 				System.arraycopy(reqs, 0, r, 0, reqs.length);
@@ -56,7 +51,6 @@ public class RandomGrabArray {
 			reqs[index++] = req;
 			if(logMINOR) Logger.minor(this, "Added: "+req+" to "+this+" size now "+index);
 			if(persistent) {
-				container.set(contents);
 				container.set(this);
 			}
 		}
@@ -96,7 +90,6 @@ public class RandomGrabArray {
 								changedMe = true;
 								// We are doing compaction here. We don't need to swap with the end; we write valid ones to the target location.
 								reqs[i] = null;
-								contents.remove(item);
 								item.setParentGrabArray(null, container);
 								continue;
 							}
@@ -136,7 +129,6 @@ public class RandomGrabArray {
 							ret = chosenItem;
 							assert(ret == reqs[chosenIndex]);
 							if(ret.canRemove(container)) {
-								contents.remove(ret);
 								if(chosenIndex != index-1) {
 									reqs[chosenIndex] = reqs[index-1];
 								}
@@ -164,7 +156,6 @@ public class RandomGrabArray {
 							assert(ret == reqs[validIndex]);
 							if(ret.canRemove(container)) {
 								changedMe = true;
-								contents.remove(ret);
 								if(validIndex != index-1) {
 									reqs[validIndex] = reqs[index-1];
 								}
@@ -225,8 +216,6 @@ public class RandomGrabArray {
 					changedMe = true;
 					reqs[i] = reqs[--index];
 					reqs[index] = null;
-					if(oret != null)
-						contents.remove(oret);
 					if(persistent && oret != null && ret == null) // if ret != null we will return it
 						container.deactivate(oret, 1);
 					oret = reqs[i];
@@ -253,8 +242,6 @@ public class RandomGrabArray {
 	
 	public void remove(RandomGrabArrayItem it, ObjectContainer container) {
 		synchronized(this) {
-			if(!contents.contains(it)) return;
-			contents.remove(it);
 			for(int i=0;i<index;i++) {
 				if(reqs[i] == null) continue;
 				if((reqs[i] == it) || reqs[i].equals(it)) {
@@ -266,7 +253,6 @@ public class RandomGrabArray {
 		}
 		it.setParentGrabArray(null, container);
 		if(persistent) {
-			container.set(contents);
 			container.set(this);
 		}
 	}
@@ -279,14 +265,10 @@ public class RandomGrabArray {
 		return persistent;
 	}
 
-	public void objectOnActivate(ObjectContainer container) {
-		container.activate(contents, 1);
-	}
-
 	public boolean contains(RandomGrabArrayItem item, ObjectContainer container) {
-		container.activate(contents, 1);
-		boolean ret = contents.contains(item);
-		container.deactivate(contents, 1);
-		return ret;
+		for(int i=0;i<index;i++) {
+			if(reqs[i] == item) return true;
+		}
+		return false;
 	}
 }
