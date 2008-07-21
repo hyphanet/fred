@@ -297,6 +297,10 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 
 	public boolean exclude(RandomGrabArrayItem item, ObjectContainer container, ClientContext context) {
 		if(isInsert) return false;
+		if(!(item instanceof BaseSendableGet)) {
+			Logger.error(this, "On a request scheduler, exclude() called with "+item, new Exception("error"));
+			return false;
+		}
 		BaseSendableGet get = (BaseSendableGet) item;
 		if(get.hasValidKeys(sched.fetchingKeys(), container, context))
 			return false;
