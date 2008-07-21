@@ -645,7 +645,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				}
 				
 				if(logMINOR)
-					Logger.minor(this, "Running RegisterMe "+reg+" for "+reg.listener+" and "+reg.getters+" : "+reg.key.addedTime+" : "+reg.key.priority);
+					Logger.minor(this, "Running RegisterMe "+reg+" for "+reg.listener+" and "+reg.getters+" and "+reg.nonGetRequest+" : "+reg.key.addedTime+" : "+reg.key.priority);
 				// Don't need to activate, fields should exist? FIXME
 				if(reg.listener != null || reg.getters != null) {
 				try {
