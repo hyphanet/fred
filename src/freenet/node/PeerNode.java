@@ -1492,7 +1492,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	*/
 	public boolean ping(int pingID) throws NotConnectedException {
 		Message ping = DMT.createFNPPing(pingID);
-		node.usm.send(this, ping, null);
+		node.usm.send(this, ping, node.dispatcher.pingCounter);
 		Message msg;
 		try {
 			msg = node.usm.waitFor(MessageFilter.create().setTimeout(2000).setType(DMT.FNPPong).setField(DMT.PING_SEQNO, pingID), null);

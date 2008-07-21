@@ -331,7 +331,7 @@ public class NodeStarter implements WrapperListener {
 	 * @throws NodeInitException If the node cannot start up for some reason, most
 	 * likely a config problem.
 	 */
-	public static Node createTestNode(int port, String testName, boolean doClient,
+	public static Node createTestNode(int port, int opennetPort, String testName, boolean doClient,
 		boolean doSwapping, boolean disableProbabilisticHTLs, short maxHTL,
 		int dropProb, RandomSource random, Executor executor, int threadLimit,
 		long storeSize, boolean ramStore, boolean enableSwapping, boolean enableARKs,
@@ -387,6 +387,8 @@ public class NodeStarter implements WrapperListener {
 		configFS.put("node.enablePacketCoalescing", enablePacketCoalescing);
 		configFS.put("node.publishOurPeersLocation", enableFOAF);
 		configFS.put("node.routeAccordingToOurPeersLocation", enableFOAF);
+		configFS.put("node.opennet.enabled", opennetPort > 0);
+		configFS.put("node.opennet.listenPort", opennetPort);
 
 		PersistentConfig config = new PersistentConfig(configFS);
 
@@ -396,5 +398,5 @@ public class NodeStarter implements WrapperListener {
 		node.peers.removeAllPeers();
 
 		return node;
-	}
+	}	
 }

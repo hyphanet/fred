@@ -110,7 +110,7 @@ public class Announcer {
 		boolean announceNow = false;
 		if(logMINOR)
 			Logger.minor(this, "Connecting some seednodes...");
-		Vector/*<SimpleFieldSet>*/ seeds = readSeednodes();
+		Vector/*<SimpleFieldSet>*/ seeds = Announcer.readSeednodes(node.nodeDir);
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			if(now - timeAddedSeeds < MIN_ADDED_SEEDS_INTERVAL) return;
@@ -212,10 +212,8 @@ public class Announcer {
 		return count;
 	}
 
-	private Vector readSeednodes() {
-		if(logMINOR)
-			Logger.minor(this, "Reading seednodes");
-		File file = new File(node.nodeDir, "seednodes.fref");
+	public static Vector readSeednodes(File nodeDir) {
+		File file = new File(nodeDir, "seednodes.fref");
 		Vector list = new Vector();
 		FileInputStream fis = null;
 		try {

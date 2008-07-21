@@ -1781,6 +1781,16 @@ public class PeerManager {
 		}
 		return count;
 	}
+	
+	public int countSeednodes() {
+		int count = 0;
+		for(PeerNode peer : myPeers) {
+			if(peer.isRealConnection())
+				continue;
+			count++;
+		}
+		return count;
+	}
 
 	public int countBackedOffPeers() {
 		PeerNode[] peers = myPeers;

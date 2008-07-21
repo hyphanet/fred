@@ -3115,6 +3115,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	/** 
 	 * Connect this node to another node (for purposes of testing) 
 	 */
+	public void connectToSeednode(SeedServerPeerNode node) throws OpennetDisabledException, FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		peers.addPeer(createNewSeedServerPeerNode(node.exportSeedNodeFieldSet()),false,false);
+	}
 	public void connect(Node node) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		peers.connect(node.darknetCrypto.exportPublicFieldSet(), darknetCrypto.packetMangler);
 	}
@@ -3170,6 +3173,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public OpennetPeerNode createNewOpennetNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException {
 		if(opennet == null) throw new OpennetDisabledException("Opennet is not currently enabled");
 		return new OpennetPeerNode(fs, this, opennet.crypto, opennet, peers, false, opennet.crypto.packetMangler);
+	}
+	
+	public SeedServerPeerNode createNewSeedServerPeerNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException {		
+		if(opennet == null) throw new OpennetDisabledException("Opennet is not currently enabled");
+		return new SeedServerPeerNode(fs, this, opennet.crypto, peers, true, opennet.crypto.packetMangler);
 	}
 	
 	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
