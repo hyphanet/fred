@@ -425,8 +425,14 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		// Not allowed in splitfiles
 		return false;
 	}
-
+	
 	public void addAll(int blocks, boolean dontSchedule, ObjectContainer container, ClientContext context, boolean dontComplainOnDupes) {
+		int[] list = new int[blocks];
+		for(int i=0;i<blocks;i++) list[i] = i;
+		addAll(list, dontSchedule, container, context, dontComplainOnDupes);
+	}
+
+	public void addAll(int[] blocks, boolean dontSchedule, ObjectContainer container, ClientContext context, boolean dontComplainOnDupes) {
 		if(persistent) {
 //			container.activate(segment, 1);
 			container.activate(blockNums, 1);
@@ -437,7 +443,8 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		synchronized(segment) {
 			if(cancelled)
 				throw new IllegalStateException("Adding blocks to already cancelled "+this);
-			for(int i=0;i<blocks;i++) {
+			for(int x=0;x<blocks.length;x++) {
+				int i = blocks[x];
 				Integer ii = new Integer(i);
 				if(blockNums.contains(ii)) {
 					if(!dontComplainOnDupes)
