@@ -109,11 +109,11 @@ public abstract class ClientRequester {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Completed block ("+dontNotify+ "): total="+totalBlocks+" success="+successfulBlocks+" failed="+failedBlocks+" fatally="+fatallyFailedBlocks+" finalised="+blockSetFinalized+" required="+minSuccessBlocks+" on "+this);
 		synchronized(this) {
-			successfulBlocks++;
 			if(cancelled) return;
-			if(dontNotify) return;
+			successfulBlocks++;
 		}
 		if(persistent()) container.set(this);
+		if(dontNotify) return;
 		notifyClients(container, context);
 	}
 
