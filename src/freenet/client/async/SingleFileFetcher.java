@@ -598,6 +598,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						decompressors, clientMetadata, actx, recursionLevel, returnBucket, token, container, context);
 				parent.onTransition(this, sf, container);
 				sf.schedule(container, context, false);
+				if(persistent) container.deactivate(sf, 1);
 				rcb.onBlockSetFinished(this, container, context);
 				// Clear our own metadata, we won't need it any more.
 				// For multi-level metadata etc see above.
@@ -656,6 +657,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					public void run(ObjectContainer container, ClientContext context) {
 						container.activate(SingleFileFetcher.this, 1);
 						innerWrapHandleMetadata(notFinalizedSize, container, context);
+						container.deactivate(SingleFileFetcher.this, 1);
 					}
 				}, parent.getPriorityClass(), false);
 			else
