@@ -943,6 +943,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 		public void run(ObjectContainer container, ClientContext context) {
 			BulkCallFailureItem[] items;
+			container.activate(getter, 1);
 			synchronized(ClientRequestScheduler.this) {
 				items = (BulkCallFailureItem[]) bulkFailureLookupItems.get(getter);
 				bulkFailureLookupItems.remove(getter);
@@ -950,7 +951,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 			if(items != null && items.length > 0) {
 				if(logMINOR) Logger.minor(this, "Calling non-fatal failure in bulk for "+items.length+" items");
-				container.activate(getter, 1);
 				getter.onFailure(items, container, context);
 				for(int i=0;i<items.length;i++)
 					if(items[i] != null)
