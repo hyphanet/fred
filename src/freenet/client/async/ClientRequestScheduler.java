@@ -1095,5 +1095,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
+	public boolean isInsertScheduler() {
+		return isInsertScheduler;
+	}
+	
 	
 }

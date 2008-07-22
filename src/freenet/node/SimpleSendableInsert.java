@@ -40,6 +40,8 @@ public class SimpleSendableInsert extends SendableInsert {
 			scheduler = core.requestStarters.sskPutScheduler;
 		else
 			throw new IllegalArgumentException("Don't know what to do with "+block);
+		if(!scheduler.isInsertScheduler())
+			throw new IllegalStateException("Scheduler "+scheduler+" is not an insert scheduler!");
 	}
 	
 	public SimpleSendableInsert(KeyBlock block, short prioClass, RequestClient client, ClientRequestScheduler scheduler) {
