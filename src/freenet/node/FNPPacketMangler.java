@@ -339,7 +339,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		int ivLength = pcfb.lengthIV();
 		int digestLength = HASH_LENGTH;
 		if(length < digestLength + ivLength + 4) {
-			if(logMINOR) Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 4));
+			if(logMINOR) {
+				if(buf.length < length)
+					Logger.debug(this, "The packet is smaller than the decrypted size: it's probably the wrong tracker ("+buf.length+'<'+length+')');
+				else
+					Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 4));
+			}
 			return false;
 		}
 		// IV at the beginning
