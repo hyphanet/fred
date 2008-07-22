@@ -331,6 +331,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				container.set(ret);
 				if(logMINOR)
 					Logger.minor(this, "Storing "+ret+" for "+req);
+				container.deactivate(key, 5);
+				container.deactivate(ckey, 5);
+				container.deactivate(req.getClientRequest(), 1);
 			} else {
 				if(key != null && key.getRoutingKey() == null)
 					throw new NullPointerException();
@@ -658,6 +661,12 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 							reg.getters[k].internalError(null, t, sched, container, context, true);
 					}
 				}
+				if(reg.listener != null)
+					container.deactivate(reg.listener, 1);
+				if(reg.getters != null) {
+					for(int j=0;j<reg.getters.length;j++)
+						container.deactivate(reg.getters[j], 1);
+				}
 				}
 				if(reg.nonGetRequest != null) {
 					container.activate(reg.nonGetRequest, 1);
@@ -669,7 +678,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 						sched.registerInsert(reg.nonGetRequest, true, false);
 					}
 					container.delete(reg);
+					container.deactivate(reg.nonGetRequest, 1);
 				}
+				container.deactivate(reg, 1);
 				if(System.currentTimeMillis() > deadline) break;
 			}
 			boolean boost = sched.isQueueAlmostEmpty();
