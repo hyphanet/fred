@@ -957,6 +957,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						container.delete(items[i].req);
 			} else
 				Logger.normal(this, "Calling non-fatal failure in bulk for "+getter+" but no items to run");
+			container.deactivate(getter, 1);
 		}
 		
 		public boolean equals(Object o) {
