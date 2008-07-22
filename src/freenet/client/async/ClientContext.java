@@ -88,11 +88,13 @@ public class ClientContext {
 			jobRunner.queue(new DBJob() {
 				
 				public void run(ObjectContainer container, ClientContext context) {
+					container.activate(inserter, 1);
 					try {
 						inserter.start(earlyEncode, false, container, context);
 					} catch (InsertException e) {
 						inserter.client.onFailure(e, inserter, container);
 					}
+					container.deactivate(inserter, 1);
 				}
 				
 			}, NativeThread.NORM_PRIORITY, false);
@@ -106,11 +108,13 @@ public class ClientContext {
 			jobRunner.queue(new DBJob() {
 				
 				public void run(ObjectContainer container, ClientContext context) {
+					container.activate(getter, 1);
 					try {
 						getter.start(container, context);
 					} catch (FetchException e) {
 						getter.clientCallback.onFailure(e, getter, container);
 					}
+					container.deactivate(getter, 1);
 				}
 				
 			}, NativeThread.NORM_PRIORITY, false);
@@ -124,11 +128,13 @@ public class ClientContext {
 			jobRunner.queue(new DBJob() {
 				
 				public void run(ObjectContainer container, ClientContext context) {
+					container.activate(inserter, 1);
 					try {
 						inserter.start(container, context);
 					} catch (InsertException e) {
 						inserter.cb.onFailure(e, inserter, container);
 					}
+					container.deactivate(inserter, 1);
 				}
 				
 			}, NativeThread.NORM_PRIORITY, false);
