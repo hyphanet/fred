@@ -37,10 +37,10 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 	 * itself. */
 	protected final Map /* <Key, SendableGet[]> */ pendingKeys;
 	
-	ClientRequestSchedulerNonPersistent(ClientRequestScheduler sched) {
-		super(sched.isInsertScheduler, sched.isSSKScheduler, new HashMap(), new LinkedList());
+	ClientRequestSchedulerNonPersistent(ClientRequestScheduler sched, boolean forInserts, boolean forSSKs) {
+		super(forInserts, forSSKs, new HashMap(), new LinkedList());
 		recentSuccesses = new LinkedList();
-		if(sched.isInsertScheduler)
+		if(forInserts)
 			pendingKeys = null;
 		else
 			pendingKeys = new HashMap();
