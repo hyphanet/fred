@@ -154,7 +154,19 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			double newLoc = m.getDouble(DMT.LOCATION);
 			ShortBuffer buffer = ((ShortBuffer) m.getObject(DMT.PEER_LOCATIONS));
 			double[] locs = Fields.bytesToDoubles(buffer.getData());
-			source.updateLocation(newLoc, locs);
+			
+			/**
+			 * Do *NOT* remove the sanity check below! 
+			 * @see http://archives.freenetproject.org/message/20080718.144240.359e16d3.en.html
+			 */
+			if((OpennetManager.MAX_PEERS_FOR_SCALING < locs.length) && (source.isOpennet())) {
+				Logger.error(this, "We received "+locs.length+ " locations from "+source.toString()+"! That should *NOT* happen!");
+				return true;
+			} else {
+				// We are on darknet and we trust our peers OR we are on opennet
+				// and the amount of locations sent to us seems reasonable
+				source.updateLocation(newLoc, locs);
+			}
 			
 			return true;
 		}
