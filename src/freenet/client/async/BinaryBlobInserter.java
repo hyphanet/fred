@@ -71,9 +71,9 @@ public class BinaryBlobInserter implements ClientPutState {
 	
 	private ClientRequestScheduler getScheduler(KeyBlock block, ClientContext context) {
 		if(block instanceof CHKBlock)
-			return context.getChkFetchScheduler();
+			return context.getChkInsertScheduler();
 		else if(block instanceof SSKBlock)
-			return context.getSskFetchScheduler();
+			return context.getSskInsertScheduler();
 		else throw new IllegalArgumentException("Unknown block type "+block.getClass()+" : "+block);
 	}
 
