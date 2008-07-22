@@ -104,7 +104,7 @@ public class OpennetManager {
 	
 	private final long creationTime;
 	
-	public OpennetManager(Node node, NodeCryptoConfig opennetConfig, long startupTime) throws NodeInitException {
+	public OpennetManager(Node node, NodeCryptoConfig opennetConfig, long startupTime, boolean enableAnnouncement) throws NodeInitException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.creationTime = System.currentTimeMillis();
 		this.node = node;
@@ -154,7 +154,7 @@ public class OpennetManager {
 		writeFile(nodeFile, backupNodeFile);
 		// Read old peers
 		node.peers.tryReadPeers(new File(node.nodeDir, "openpeers-old-"+crypto.portNumber).toString(), crypto, this, true, true);
-		announcer = new Announcer(this);
+		announcer = (enableAnnouncement ? new Announcer(this) : null);
 		if(logMINOR) {
 			Logger.minor(this, "My full compressed ref: "+crypto.myCompressedFullRef().length);
 			Logger.minor(this, "My full setup ref: "+crypto.myCompressedSetupRef().length);
@@ -223,14 +223,16 @@ public class OpennetManager {
 
 	public void start() {
 		crypto.start(node.disableHangCheckers);
-		announcer.start();
+		if(announcer!= null)
+			announcer.start();
 	}
 
 	/**
 	 * Called when opennet is disabled
 	 */
 	public void stop(boolean purge) {
-		announcer.stop();
+		if(announcer != null)
+			announcer.stop();
 		crypto.stop();
 		if(purge)
 			node.peers.removeOpennetPeers();

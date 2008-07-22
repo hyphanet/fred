@@ -314,9 +314,7 @@ public class Announcer {
 						if(runningAnnouncements > 0) return;
 					}
 					if(enoughPeers()) {
-						Vector seeds = node.peers.getConnectedSeedServerPeersVector(null);
-						for(int i=0;i<seeds.size();i++) {
-							SeedServerPeerNode pn = (SeedServerPeerNode) seeds.get(i);
+						for(SeedServerPeerNode pn : node.peers.getConnectedSeedServerPeersVector(null)) {
 							node.peers.disconnect(pn, true, true);
 						}
 						// Re-check every minute. Something bad might happen (e.g. cpu starvation), causing us to have to reseed.
@@ -373,14 +371,14 @@ public class Announcer {
 				return;
 			}
 			// Now find a node to announce to
-			Vector seeds = node.peers.getConnectedSeedServerPeersVector(announcedToIdentities);
+			Vector<SeedServerPeerNode> seeds = node.peers.getConnectedSeedServerPeersVector(announcedToIdentities);
 			while(sentAnnouncements < WANT_ANNOUNCEMENTS) {
 				if(seeds.isEmpty()) {
 					if(logMINOR)
 						Logger.minor(this, "No more seednodes, announcedTo = "+announcedToIdentities.size());
 					break;
 				}
-				final SeedServerPeerNode seed = (SeedServerPeerNode) seeds.remove(node.random.nextInt(seeds.size()));
+				final SeedServerPeerNode seed = seeds.remove(node.random.nextInt(seeds.size()));
 				InetAddress[] addrs = seed.getInetAddresses();
 				if(!newAnnouncedIPs(addrs)) {
 					if(logMINOR)

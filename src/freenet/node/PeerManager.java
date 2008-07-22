@@ -1575,13 +1575,13 @@ public class PeerManager {
 		return (DarknetPeerNode[]) v.toArray(new DarknetPeerNode[v.size()]);
 	}
 
-	public Vector getConnectedSeedServerPeersVector(HashSet exclude) {
+	public Vector<SeedServerPeerNode> getConnectedSeedServerPeersVector(HashSet exclude) {
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = myPeers;
 		}
 		// FIXME optimise! Maybe maintain as a separate list?
-		Vector v = new Vector(myPeers.length);
+		Vector<SeedServerPeerNode> v = new Vector<SeedServerPeerNode>(myPeers.length);
 		for(int i = 0; i < peers.length; i++) {
 			if(peers[i] instanceof SeedServerPeerNode) {
 				if(exclude != null && exclude.contains(peers[i].getIdentity())) {
@@ -1594,7 +1594,7 @@ public class PeerManager {
 						Logger.minor(this, "Not including in getConnectedSeedServerPeersVector() as disconnected: " + peers[i].userToString());
 					continue;
 				}
-				v.add(peers[i]);
+				v.add((SeedServerPeerNode)peers[i]);
 			}
 		}
 		return v;

@@ -387,6 +387,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	private final NodeCryptoConfig opennetCryptoConfig;
 	private OpennetManager opennet;
+	private volatile boolean isAllowedToConnectToSeednodes;
 	private int maxOpennetPeers;
 	private boolean acceptSeedConnections;
 	private boolean passOpennetRefsThroughDarknet;
@@ -1129,6 +1130,21 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// Opennet
 		
 		final SubConfig opennetConfig = new SubConfig("node.opennet", config);
+		opennetConfig.register("connectToSeednodes", true, 0, true, false, "Node.withAnnouncement", "Node.withAnnouncementLong", new BooleanCallback() {
+			public boolean get() {
+				return isAllowedToConnectToSeednodes;
+			}
+			public void set(boolean val) throws InvalidConfigValueException {
+				if(val == get()) return;
+				synchronized(Node.this) {
+					if(opennet != null)
+						throw new InvalidConfigValueException("Can't change that setting on the fly when opennet is already active!");
+					else
+						isAllowedToConnectToSeednodes = val;
+				}
+			}
+		});
+		isAllowedToConnectToSeednodes = opennetConfig.getBoolean("connectToSeednodes");
 		
 		// Can be enabled on the fly
 		opennetConfig.register("enabled", false, 0, false, true, "Node.opennetEnabled", "Node.opennetEnabledLong", new BooleanCallback() {
@@ -1143,7 +1159,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 					if(val == (opennet != null)) return;
 					if(val) {
 						try {
-							o = opennet = new OpennetManager(Node.this, opennetCryptoConfig, System.currentTimeMillis());
+							o = opennet = new OpennetManager(Node.this, opennetCryptoConfig, System.currentTimeMillis(), isAllowedToConnectToSeednodes);
 						} catch (NodeInitException e) {
 							opennet = null;
 							throw new InvalidConfigValueException(e.getMessage());
@@ -1157,8 +1173,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				else o.stop(true);
 				ipDetector.ipDetectorManager.notifyPortChange(getPublicInterfacePorts());
 			}
-		});
-		
+		});		
 		boolean opennetEnabled = opennetConfig.getBoolean("enabled");
 		
 		opennetConfig.register("maxOpennetPeers", "20", 1, true, false, "Node.maxOpennetPeers",
@@ -1183,7 +1198,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		opennetCryptoConfig = new NodeCryptoConfig(opennetConfig, 2 /* 0 = enabled */, true);
 		
 		if(opennetEnabled) {
-			opennet = new OpennetManager(this, opennetCryptoConfig, System.currentTimeMillis());
+			opennet = new OpennetManager(this, opennetCryptoConfig, System.currentTimeMillis(), isAllowedToConnectToSeednodes);
 			// Will be started later
 		} else {
 			opennet = null;
@@ -3116,7 +3131,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * Connect this node to another node (for purposes of testing) 
 	 */
 	public void connectToSeednode(SeedServerPeerNode node) throws OpennetDisabledException, FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		peers.addPeer(createNewSeedServerPeerNode(node.exportSeedNodeFieldSet()),false,false);
+		peers.addPeer(createNewSeedServerTestPeerNode(node.exportFieldSet()),false,false);
 	}
 	public void connect(Node node) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		peers.connect(node.darknetCrypto.exportPublicFieldSet(), darknetCrypto.packetMangler);
@@ -3175,9 +3190,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		return new OpennetPeerNode(fs, this, opennet.crypto, opennet, peers, false, opennet.crypto.packetMangler);
 	}
 	
-	public SeedServerPeerNode createNewSeedServerPeerNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException {		
+	public SeedServerTestPeerNode createNewSeedServerTestPeerNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException {		
 		if(opennet == null) throw new OpennetDisabledException("Opennet is not currently enabled");
-		return new SeedServerPeerNode(fs, this, opennet.crypto, peers, true, opennet.crypto.packetMangler);
+		return new SeedServerTestPeerNode(fs, this, opennet.crypto, peers, true, opennet.crypto.packetMangler);
 	}
 	
 	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {

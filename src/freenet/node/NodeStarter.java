@@ -337,7 +337,7 @@ public class NodeStarter implements WrapperListener {
 		long storeSize, boolean ramStore, boolean enableSwapping, boolean enableARKs,
 		boolean enableULPRs, boolean enablePerNodeFailureTables,
 		boolean enableSwapQueueing, boolean enablePacketCoalescing,
-		int outputBandwidthLimit, boolean enableFOAF) throws NodeInitException {
+		int outputBandwidthLimit, boolean enableFOAF, boolean connectToSeednodes) throws NodeInitException {
 
 		File baseDir = new File(testName);
 		File portDir = new File(baseDir, Integer.toString(port));
@@ -389,7 +389,11 @@ public class NodeStarter implements WrapperListener {
 		configFS.put("node.routeAccordingToOurPeersLocation", enableFOAF);
 		configFS.put("node.opennet.enabled", opennetPort > 0);
 		configFS.put("node.opennet.listenPort", opennetPort);
-
+		configFS.put("node.opennet.alwaysAllowLocalAddresses", true);
+		configFS.put("node.opennet.oneConnectionPerIP", false);
+		configFS.put("node.opennet.assumeNATed", true);
+		configFS.put("node.opennet.connectToSeednodes", connectToSeednodes);
+		
 		PersistentConfig config = new PersistentConfig(configFS);
 
 		Node node = new Node(config, random, null, null, executor);
