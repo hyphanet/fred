@@ -126,10 +126,12 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 				BackgroundBlockEncoderTag tag = (BackgroundBlockEncoderTag) results.next();
 				try {
 					SingleBlockInserter sbi = tag.inserter;
+					container.activate(sbi, 1);
 					if(sbi == null) continue; // deleted
 					if(sbi.isCancelled(container)) continue;
 					if(sbi.resultingURI != null) continue;
 					sbi.tryEncode(container, context);
+					container.deactivate(sbi, 1);
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t, t);
 				} finally {
