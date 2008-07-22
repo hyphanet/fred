@@ -807,6 +807,8 @@ public class StatisticsToadlet extends Toadlet {
 	
 	static void drawBandwidth(HTMLNode activityList, Node node, long nodeUptimeSeconds, boolean isAdvancedModeEnabled) {
 		long[] total = node.collector.getTotalIO();
+		if(total[0] == 0 || total[1] == 0)
+			return;
 		long total_output_rate = (total[0]) / nodeUptimeSeconds;
 		long total_input_rate = (total[1]) / nodeUptimeSeconds;
 		long totalPayload = node.getTotalPayloadSent();
