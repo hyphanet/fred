@@ -93,6 +93,7 @@ public class InsertCompressor {
 						public void run(ObjectContainer container, ClientContext context) {
 							container.activate(inserter, 1);
 							inserter.onStartCompression(phase, container, context);
+							container.deactivate(inserter, 1);
 						}
 						
 					}, NativeThread.NORM_PRIORITY+1, false);
