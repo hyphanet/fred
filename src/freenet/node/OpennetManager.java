@@ -65,41 +65,41 @@ public class OpennetManager {
 	
 	/** Only drop a connection after at least this many successful requests */
 	// FIXME should be a function of # opennet peers? max # opennet peers? ...
-	static final int MIN_SUCCESS_BETWEEN_DROP_CONNS = 10;
+	public static final int MIN_SUCCESS_BETWEEN_DROP_CONNS = 10;
 	/** Chance of resetting path folding (for plausible deniability) is 1 in this number. */
-	static final int RESET_PATH_FOLDING_PROB = 20;
+	public static final int RESET_PATH_FOLDING_PROB = 20;
 	/** Don't re-add a node until it's been up and disconnected for at least this long */
-	static final int DONT_READD_TIME = 60*1000;
+	public static final int DONT_READD_TIME = 60*1000;
 	/** Don't drop a node until it's at least this old */
-	static final int DROP_MIN_AGE = 300*1000;
+	public static final int DROP_MIN_AGE = 300*1000;
 	/** Don't drop a node until this long after startup */
-	static final int DROP_STARTUP_DELAY = 120*1000;
+	public static final int DROP_STARTUP_DELAY = 120*1000;
 	/** Don't drop a node until this long after losing connection to it.
 	 * This should be long enough to cover a typical reboot, but not so long as to result in a lot
 	 * of disconnected nodes in the Strangers list. */
-	static final int DROP_DISCONNECT_DELAY = 10*60*1000;
+	public static final int DROP_DISCONNECT_DELAY = 10*60*1000;
 	/** But if it has disconnected more than once in this period, allow it to be dropped anyway */
-	static final int DROP_DISCONNECT_DELAY_COOLDOWN = 60*60*1000;
+	public static final int DROP_DISCONNECT_DELAY_COOLDOWN = 60*60*1000;
 	/** Every DROP_CONNECTED_TIME, we may drop a peer even though it is connected */
-	static final int DROP_CONNECTED_TIME = 10*60*1000;
+	public static final int DROP_CONNECTED_TIME = 10*60*1000;
 	/** Minimum time between offers, if we have maximum peers. Less than the above limits,
 	 * since an offer may not be accepted. */
-	static final int MIN_TIME_BETWEEN_OFFERS = 30*1000;
+	public static final int MIN_TIME_BETWEEN_OFFERS = 30*1000;
 	private static boolean logMINOR;
 
 	/** How big to pad opennet noderefs to? If they are bigger than this then we won't send them. */
-	static final int PADDED_NODEREF_SIZE = 3072;
+	public static final int PADDED_NODEREF_SIZE = 3072;
 	/** Allow for future expansion. However at any given time all noderefs should be PADDED_NODEREF_SIZE */
-	static final int MAX_OPENNET_NODEREF_LENGTH = 32768;
+	public static final int MAX_OPENNET_NODEREF_LENGTH = 32768;
 	
 	/** Enable scaling of peers with bandwidth? */
-	static final boolean ENABLE_PEERS_PER_KB_OUTPUT = false;
+	public static final boolean ENABLE_PEERS_PER_KB_OUTPUT = false;
 	/** Target bandwidth usage - above this, we use MAX_PEERS_FOR_SCALING */
-	static final int TARGET_BANDWIDTH_USAGE = 20*1024; // 20 peers at 20K/sec.
+	public static final int TARGET_BANDWIDTH_USAGE = 20*1024; // 20 peers at 20K/sec.
 	/** Minimum number of peers */
-	static final int MIN_PEERS_FOR_SCALING = 10;
+	public static final int MIN_PEERS_FOR_SCALING = 10;
 	/** Maximum number of peers */
-	static final int MAX_PEERS_FOR_SCALING = 20;
+	public static final int MAX_PEERS_FOR_SCALING = 20;
 	
 	
 	private final long creationTime;
