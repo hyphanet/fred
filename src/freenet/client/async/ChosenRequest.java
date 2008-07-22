@@ -35,14 +35,8 @@ public class ChosenRequest {
 	ChosenRequest(SendableRequest req, Object tok, Key key, ClientKey ckey, short prio) {
 		request = req;
 		token = tok;
-		if(key != null)
-			this.key = key.cloneKey();
-		else
-			this.key = null;
-		if(ckey != null)
-			this.ckey = ckey.cloneKey();
-		else
-			this.ckey = null;
+		this.key = key;
+		this.ckey = ckey;
 		this.prio = prio;
 		if(req instanceof SendableGet) {
 			SendableGet sg = (SendableGet) req;
