@@ -140,6 +140,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 								tag.callback.notInArchive(container, context);
 							else
 								tag.callback.gotBucket(data, container, context);
+							container.deactivate(tag.callback, 1);
 						}
 						
 					}, NativeThread.NORM_PRIORITY, false);
