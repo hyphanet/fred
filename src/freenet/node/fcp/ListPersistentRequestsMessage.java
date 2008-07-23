@@ -44,6 +44,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 
 			public void run(ObjectContainer container, ClientContext context) {
 				FCPClient foreverClient = handler.getForeverClient(container);
+				container.activate(foreverClient, 1);
 				foreverClient.queuePendingMessagesOnConnectionRestart(handler.outputHandler, container);
 				foreverClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, container);
 				if(handler.getRebootClient().watchGlobal) {
@@ -52,6 +53,7 @@ public class ListPersistentRequestsMessage extends FCPMessage {
 					globalForeverClient.queuePendingMessagesFromRunningRequests(handler.outputHandler, container);
 				}
 				handler.outputHandler.queue(new EndListPersistentRequestsMessage());
+				container.deactivate(foreverClient, 1);
 			}
 			
 		}, NativeThread.HIGH_PRIORITY-1, false);
