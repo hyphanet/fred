@@ -240,7 +240,19 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 					public void run(ObjectContainer container, ClientContext context) {
 						// registerOffThread would be pointless because this is a separate job.
+						if(listener != null)
+							container.activate(listener, 1);
+						if(getters != null) {
+							for(int i=0;i<getters.length;i++)
+								container.activate(getters[i], 1);
+						}
 						innerRegister(listener, getters, false, persistent, blocks, oldReg);
+						if(listener != null)
+							container.deactivate(listener, 1);
+						if(getters != null) {
+							for(int i=0;i<getters.length;i++)
+								container.deactivate(getters[i], 1);
+						}
 					}
 					
 				}, NativeThread.NORM_PRIORITY, false);
@@ -297,6 +309,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 								container.activate(getters[i], 1);
 						}
 						register(listener, getters, false, true, true, blocks, regme);
+						if(listener != null)
+							container.deactivate(listener, 1);
+						if(getters != null) {
+							for(int i=0;i<getters.length;i++)
+								container.deactivate(getters[i], 1);
+						}
 					}
 					
 				}, NativeThread.NORM_PRIORITY, false);
@@ -328,6 +346,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 					}
 					
 				}, prio, "Checking datastore");
+				selectorContainer.deactivate(listener, 1);
+				if(getters != null) {
+					for(int i=0;i<getters.length;i++)
+						selectorContainer.deactivate(getters[i], 1);
+				}
 
 			}
 		} else {
@@ -443,6 +466,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						boolean wereAnyValid = false;
 						for(int i=0;i<getters.length;i++) {
 							SendableGet getter = getters[i];
+							selectorContainer.activate(getters[i], 1);
 							if(!(getter.isCancelled(selectorContainer) || getter.isEmpty(selectorContainer))) {
 								wereAnyValid = true;
 								schedCore.innerRegister(getter, random, selectorContainer);
@@ -467,10 +491,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 						boolean wereAnyValid = false;
 						for(int i=0;i<getters.length;i++) {
 							SendableGet getter = getters[i];
+							container.activate(getters[i], 1);
 							if(!(getter.isCancelled(selectorContainer) || getter.isEmpty(selectorContainer))) {
 								wereAnyValid = true;
 								schedCore.innerRegister(getter, random, selectorContainer);
 							}
+							container.deactivate(getters[i], 1);
 						}
 						if(!wereAnyValid) {
 							Logger.normal(this, "No requests valid: "+getters);
@@ -614,7 +640,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 						Logger.normal(this, "Selected "+sameKey+" requests from same SendableRequest: "+lastReq);
 					sameKey = 0;
 				}
-				if(req == null) return;
+				if(req == null) {
+					if(lastReq != null) {
+						container.deactivate(lastReq, 1);
+					}
+					return;
+				}
 				lastReq = req.request;
 				if(logMINOR) Logger.minor(this, "Activating key");
 				container.activate(req.key, 5);
@@ -629,7 +660,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 							Logger.minor(this, "Added to starterQueue: "+req+" size now "+starterQueue.size());
 						req = null;
 					}
-					if(starterQueue.size() >= MAX_STARTER_QUEUE_SIZE) return;
+					if(starterQueue.size() >= MAX_STARTER_QUEUE_SIZE) {
+						if(lastReq != null) {
+							container.deactivate(lastReq, 1);
+						}
+						return;
+					}
 				}
 			}
 		}
@@ -719,8 +755,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 			jobRunner.queue(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
+					container.activate(succeeded, 1);
 					schedCore.succeeded(succeeded, container);
 					container.delete((PersistentChosenRequest)req);
+					container.deactivate(succeeded, 1);
 				}
 				
 			}, TRIP_PENDING_PRIORITY, false);
@@ -770,7 +808,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 		jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
-				container.activate(key, 1);
+				// FIXME is this necessary? the key is probably non-persistent, no?
+				container.activate(key, 5);
 				if(logMINOR) Logger.minor(this, "tripPendingKey for "+key);
 				final GotKeyListener[] gets = schedCore.removePendingKey(key, container);
 				if(gets == null) return;
@@ -792,6 +831,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						if(logMINOR) Logger.minor(this, "Calling tripPendingKey() callback for "+gets[i]+" for "+key);
 						container.activate(gets[i], 1);
 						gets[i].onGotKey(key, block, container, context);
+						container.deactivate(gets[i], 1);
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t+" running tripPendingKey() callback "+gets[i]+" for "+key, t);
 					}
@@ -823,11 +863,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 		jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
-				container.activate(key, 1);
+				container.activate(key, 5);
 				short priority = schedCore.getKeyPrio(key, oldPrio, container);
 				if(priority >= oldPrio) return; // already on list at >= priority
 				offeredKeys[priority].queueKey(key);
 				starter.wakeUp();
+				container.deactivate(key, 5);
 			}
 			
 		}, NativeThread.NORM_PRIORITY, false);
@@ -909,6 +950,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 					req.requeueAfterCooldown(key, now, container, clientContext);
 				}
 			}
+			if(persistent)
+				container.deactivate(key, 5);
 		}
 		return found;
 	}
