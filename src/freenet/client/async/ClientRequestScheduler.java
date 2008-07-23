@@ -827,6 +827,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						container.activate(req, 1);
 						if(req == null) continue;
 						persistentCooldownQueue.removeKey(key, req, req.getCooldownWakeupByKey(key, container), container);
+						container.deactivate(req, 1);
 					}
 				}
 				// Call the callbacks on the database executor thread, because the first thing
@@ -900,7 +901,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		
 		public void run(ObjectContainer container, ClientContext context) {
 			if(moveKeysFromCooldownQueue(persistentCooldownQueue, true, selectorContainer) ||
-					moveKeysFromCooldownQueue(transientCooldownQueue, true, selectorContainer))
+					moveKeysFromCooldownQueue(transientCooldownQueue, false, selectorContainer))
 				starter.wakeUp();
 		}
 		
@@ -935,7 +936,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(logMINOR) Logger.minor(this, "Restoring key but no keys queued?? for "+key);
 				continue;
 			} else {
-				if(gets != null)
+				if(gets != null) {
+					if(logMINOR) Logger.minor(this, "Restoring keys for persistent jobs...");
 				for(int i=0;i<gets.length;i++) {
 					if(persistent)
 						container.activate(gets[i], 1);
@@ -953,7 +955,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 						container.deactivate(req, 1);
 					}
 				}
-				if(transientGets != null)
+				}
+				if(transientGets != null) {
+					if(gets != null) {
+						if(logMINOR) Logger.minor(this, "Restoring keys for transient jobs...");
 				for(int i=0;i<transientGets.length;i++) {
 					GotKeyListener got = transientGets[i];
 					SendableGet req = got.getRequest(key, null);
@@ -961,6 +966,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 						Logger.error(this, "No request for listener "+got+" while requeueing "+key);
 					}
 					req.requeueAfterCooldown(key, now, container, clientContext);
+				}
+				}
 				}
 			}
 			if(persistent)
