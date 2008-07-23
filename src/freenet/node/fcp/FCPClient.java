@@ -325,6 +325,7 @@ public class FCPClient {
 				public void run(ObjectContainer container, ClientContext context) {
 					container.activate(req, 1);
 					req.start(container, context);
+					container.deactivate(req, 1);
 				}
 				
 			}, NativeThread.HIGH_PRIORITY + reqs[i].getPriority(), false);
