@@ -183,6 +183,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 							container.delete(regme);
 							container.activate(req, 1);
 							registerInsert(req, true, false, true);
+							container.deactivate(req, 1);
 						}
 						
 					}, NativeThread.NORM_PRIORITY, false);
