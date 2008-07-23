@@ -573,8 +573,6 @@ public class FCPServer implements Runnable {
 	public ClientRequest[] getGlobalRequests(ObjectContainer container) {
 		Vector v = new Vector();
 		globalRebootClient.addPersistentRequests(v, false, null);
-		// FIXME remove this???? I think we avoid deactivating the global client now...?
-		container.activate(globalForeverClient, 1);
 		globalForeverClient.addPersistentRequests(v, false, container);
 		return (ClientRequest[]) v.toArray(new ClientRequest[v.size()]);
 	}
