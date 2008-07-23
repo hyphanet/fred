@@ -38,11 +38,11 @@ public class FCPClient {
 		final boolean forever = (persistenceType == ClientRequest.PERSIST_FOREVER);
 		if(forever) {
 			runningPersistentRequests = container.ext().collections().newLinkedList();
-			((Db4oList)runningPersistentRequests).activationDepth(Integer.MAX_VALUE);
+			((Db4oList)runningPersistentRequests).activationDepth(1);
 			completedUnackedRequests = container.ext().collections().newLinkedList();
-			((Db4oList)completedUnackedRequests).activationDepth(Integer.MAX_VALUE);
+			((Db4oList)completedUnackedRequests).activationDepth(1);
 			clientRequestsByIdentifier = container.ext().collections().newHashMap(10);
-			((Db4oMap)clientRequestsByIdentifier).activationDepth(Integer.MAX_VALUE);
+			((Db4oMap)clientRequestsByIdentifier).activationDepth(1);
 		} else {
 			runningPersistentRequests = new Vector();
 			completedUnackedRequests = new Vector();
@@ -420,5 +420,11 @@ public class FCPClient {
 			}
 		}
 		return null;
+	}
+
+	public void init() {
+		((Db4oList)runningPersistentRequests).activationDepth(1);
+		((Db4oList)completedUnackedRequests).activationDepth(1);
+		((Db4oMap)clientRequestsByIdentifier).activationDepth(1);
 	}
 }
