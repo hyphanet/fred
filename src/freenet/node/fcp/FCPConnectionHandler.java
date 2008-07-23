@@ -118,8 +118,12 @@ public class FCPConnectionHandler {
 			public void run(ObjectContainer container, ClientContext context) {
 				if((rebootClient != null) && !rebootClient.hasPersistentRequests(container))
 					server.unregisterClient(rebootClient, container);
-				if((foreverClient != null) && !foreverClient.hasPersistentRequests(container))
-					server.unregisterClient(foreverClient, container);
+				if(foreverClient != null) {
+					container.activate(foreverClient, 1);
+					if(!foreverClient.hasPersistentRequests(container))
+						server.unregisterClient(foreverClient, container);
+					container.deactivate(foreverClient, 1);
+				}
 			}
 			
 		}, NativeThread.NORM_PRIORITY, false);
@@ -618,10 +622,12 @@ public class FCPConnectionHandler {
 		FCPClient client =
 			global ? server.globalForeverClient :
 			getForeverClient(container);
+		container.activate(client, 1);
 		ClientRequest req = client.getRequest(identifier, container);
 		if(req != null) {
 			client.removeByIdentifier(identifier, true, server, container, server.core.clientContext);
 		}
+		container.deactivate(client, 1);
 		return req;
 	}
 }

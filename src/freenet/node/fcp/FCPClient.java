@@ -280,6 +280,8 @@ public class FCPClient {
 					container.activate(clients[i], 1);
 				if(clients[i].persistenceType != persistenceType) continue;
 				clients[i].queueClientRequestMessage(msg, verbosityLevel, true, container);
+				if(persistenceType == ClientRequest.PERSIST_FOREVER)
+					container.deactivate(clients[i], 1);
 			}
 		}
 	}

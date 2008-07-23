@@ -479,6 +479,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(persistenceType == PERSIST_FOREVER)
 			container.activate(client, 1);
 		client.queueClientRequestMessage(msg, VERBOSITY_SPLITFILE_PROGRESS, container);
+		if(persistenceType == PERSIST_FOREVER && !client.isGlobalQueue)
+			container.deactivate(client, 1);
 	}
 
 	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData, ObjectContainer container) {
