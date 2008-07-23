@@ -218,7 +218,9 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			context.jobRunner.queue(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
+					container.activate(ClientPutBase.this, 1);
 					receive(ce, container, context);
+					container.deactivate(ClientPutBase.this, 1);
 				}
 				
 			}, NativeThread.NORM_PRIORITY, false);
