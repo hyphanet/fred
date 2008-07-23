@@ -407,7 +407,12 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		
 		final String requestPath = request.getPath().substring("/queue/".length());
 		
+		boolean countRequests = false;
+		
 		if (requestPath.length() > 0) {
+			if(requestPath.equals("countRequests.txt") || requestPath.equals("/countRequests.txt")) {
+				countRequests = true;
+			} else {
 			/* okay, there is something in the path, check it. */
 			try {
 				FreenetURI key = new FreenetURI(requestPath);
@@ -424,6 +429,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			} catch (MalformedURLException mue1) {
 			}
 			return;
+			}
 		}
 		
 		class OutputWrapper {
@@ -435,12 +441,15 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		
 		final PageMaker pageMaker = ctx.getPageMaker();
 		
+		final boolean count = countRequests; 
+		
 		core.clientContext.jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
 				HTMLNode pageNode = null;
 				try {
-					System.err.println("Total queued CHK requests: "+core.requestStarters.chkFetchScheduler.countPersistentQueuedRequests(container));
+					if(count)
+						System.err.println("Total queued CHK requests: "+core.requestStarters.chkFetchScheduler.countPersistentQueuedRequests(container));
 					pageNode = handleGetInner(pageMaker, container, context, request, ctx);
 				} finally {
 					synchronized(ow) {
