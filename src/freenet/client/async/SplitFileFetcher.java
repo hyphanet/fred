@@ -159,6 +159,7 @@ public class SplitFileFetcher implements ClientGetState {
 					this, archiveContext, fetchContext, maxTempLength, recursionLevel, parent);
 			if(persistent) {
 				container.set(segments[0]);
+				segments[0].deactivateKeys(container);
 				container.deactivate(segments[0], 1);
 			}
 		} else {
@@ -180,6 +181,7 @@ public class SplitFileFetcher implements ClientGetState {
 						fetchContext, maxTempLength, recursionLevel+1, parent);
 				if(persistent) {
 					container.set(segments[i]);
+					segments[i].deactivateKeys(container);
 					container.deactivate(segments[i], 1);
 				}
 			}

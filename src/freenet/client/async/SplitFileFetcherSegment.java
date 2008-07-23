@@ -718,6 +718,9 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			if(persistent)
 				container.activate(seg, 1);
 			seg.addAll(dataRetries.length+checkRetries.length, true, container, context, false);
+
+			if(logMINOR)
+				Logger.minor(this, "scheduling "+seg+" : "+seg.blockNums);
 			
 			seg.schedule(container, context, true, regmeOnly);
 			if(persistent)
@@ -727,8 +730,6 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			}
 			if(persistent)
 				container.set(this);
-			if(logMINOR)
-				Logger.minor(this, "scheduling "+seg+" : "+seg.blockNums);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t+" scheduling "+this, t);
 			fail(new FetchException(FetchException.INTERNAL_ERROR, t), container, context, true);
@@ -1150,5 +1151,12 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 
 	public boolean persistent() {
 		return persistent;
+	}
+
+	public void deactivateKeys(ObjectContainer container) {
+		for(int i=0;i<dataKeys.length;i++)
+			container.deactivate(dataKeys[i], 1);
+		for(int i=0;i<checkKeys.length;i++)
+			container.deactivate(checkKeys[i], 1);
 	}
 }
