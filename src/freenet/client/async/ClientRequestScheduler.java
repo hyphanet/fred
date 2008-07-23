@@ -942,6 +942,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 					} else {
 						req.requeueAfterCooldown(key, now, container, clientContext);
 					}
+					if(persistent) {
+						container.deactivate(gets[i], 1);
+						container.deactivate(req, 1);
+					}
 				}
 				if(transientGets != null)
 				for(int i=0;i<transientGets.length;i++) {
