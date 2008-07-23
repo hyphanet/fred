@@ -939,8 +939,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 					SendableGet req = got.getRequest(key, container);
 					if(req == null) {
 						Logger.error(this, "No request for listener "+got+" while requeueing "+key);
+					} else {
+						req.requeueAfterCooldown(key, now, container, clientContext);
 					}
-					req.requeueAfterCooldown(key, now, container, clientContext);
 				}
 				if(transientGets != null)
 				for(int i=0;i<transientGets.length;i++) {
