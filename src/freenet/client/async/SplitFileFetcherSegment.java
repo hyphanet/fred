@@ -899,13 +899,11 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		if(v != null) {
 			for(int i=0;i<v.size();i++) {
 				SplitFileFetcherSubSegment sub = (SplitFileFetcherSubSegment) v.get(i);
+				if(persistent)
+					container.activate(sub, 1);
 				RandomGrabArray rga = sub.getParentGrabArray();
 				if(sub.getParentGrabArray() == null) {
-					if(persistent)
-						container.activate(sub, 1);
 					sub.schedule(container, context, false, false);
-					if(persistent)
-						container.deactivate(sub, 1);
 				} else {
 //					if(logMINOR) {
 						if(persistent)
@@ -913,13 +911,13 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 						if(!rga.contains(sub, container)) {
 							Logger.error(this, "Sub-segment has RGA but isn't registered to it!!: "+sub+" for "+rga);
 							sub.schedule(container, context, false, false);
-							if(persistent)
-								container.deactivate(sub, 1);
 						}
 						if(persistent)
 							container.deactivate(rga, 1);
 //					}
 				}
+				if(persistent)
+					container.deactivate(sub, 1);
 			}
 		}
 		return true;
