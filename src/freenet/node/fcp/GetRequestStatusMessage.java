@@ -43,12 +43,14 @@ public class GetRequestStatusMessage extends FCPMessage {
 
 				public void run(ObjectContainer container, ClientContext context) {
 					ClientRequest req = handler.getForeverRequest(global, handler, identifier, container);
+					container.activate(req, 1);
 					if(req == null) {
 						ProtocolErrorMessage msg = new ProtocolErrorMessage(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, false, null, identifier, global);
 						handler.outputHandler.queue(msg);
 					} else {
 						req.sendPendingMessages(handler.outputHandler, true, true, onlyData, container);
 					}
+					container.deactivate(req, 1);
 				}
 				
 			}, NativeThread.NORM_PRIORITY, false);
