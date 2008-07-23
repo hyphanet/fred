@@ -337,6 +337,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 				final RegisterMe regme = reg;
 				// Check the datastore before proceding.
 				final Key[] keys = listener.listKeys(selectorContainer);
+				for(int i=0;i<keys.length;i++)
+					keys[i] = keys[i].cloneKey();
 				final boolean dontCache = listener.dontCache(selectorContainer);
 				datastoreCheckerExecutor.execute(new Runnable() {
 
@@ -866,7 +868,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				container.activate(key, 5);
 				short priority = schedCore.getKeyPrio(key, oldPrio, container);
 				if(priority >= oldPrio) return; // already on list at >= priority
-				offeredKeys[priority].queueKey(key);
+				offeredKeys[priority].queueKey(key.cloneKey());
 				starter.wakeUp();
 				container.deactivate(key, 5);
 			}
