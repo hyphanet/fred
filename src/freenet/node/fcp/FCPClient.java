@@ -276,9 +276,9 @@ public class FCPClient {
 			}
 			if(clients != null)
 			for(int i=0;i<clients.length;i++) {
-				if(clients[i].persistenceType != persistenceType) continue;
 				if(persistenceType == ClientRequest.PERSIST_FOREVER)
 					container.activate(clients[i], 1);
+				if(clients[i].persistenceType != persistenceType) continue;
 				clients[i].queueClientRequestMessage(msg, verbosityLevel, true, container);
 			}
 		}
