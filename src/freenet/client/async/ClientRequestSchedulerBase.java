@@ -193,6 +193,8 @@ abstract class ClientRequestSchedulerBase {
 			if(getter.persistent())
 				container.activate(key, 5);
 			addPendingKey(key, getter, container);
+			if(persistent())
+				container.deactivate(key, 5);
 		}
 	}
 	
