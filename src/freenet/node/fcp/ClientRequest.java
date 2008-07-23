@@ -382,7 +382,9 @@ public abstract class ClientRequest {
 		server.core.clientContext.jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
+				container.activate(ClientRequest.this, 1);
 				restart(container, context);
+				container.deactivate(ClientRequest.this, 1);
 			}
 			
 		}, NativeThread.HIGH_PRIORITY, false);
