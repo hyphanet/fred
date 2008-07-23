@@ -247,6 +247,7 @@ public class FCPConnectionHandler {
 									return;
 								}
 								getter.start(container, context);
+								container.deactivate(getter, 1);
 							}
 							
 						}, NativeThread.HIGH_PRIORITY-1, false); // user wants a response soon... but doesn't want it to block the queue page etc
@@ -304,6 +305,7 @@ public class FCPConnectionHandler {
 					server.core.clientContext.jobRunner.queue(new DBJob() {
 
 						public void run(ObjectContainer container, ClientContext context) {
+							container.activate(putter, 1);
 							try {
 								putter.register(container, false, false);
 							} catch (IdentifierCollisionException e) {
@@ -313,6 +315,7 @@ public class FCPConnectionHandler {
 								return;
 							}
 							putter.start(container, context);
+							container.deactivate(putter, 1);
 						}
 						
 					}, NativeThread.HIGH_PRIORITY-1, false); // user wants a response soon... but doesn't want it to block the queue page etc
@@ -368,6 +371,7 @@ public class FCPConnectionHandler {
 				server.core.clientContext.jobRunner.queue(new DBJob() {
 
 					public void run(ObjectContainer container, ClientContext context) {
+						container.activate(putter, 1);
 						try {
 							putter.register(container, false, false);
 						} catch (IdentifierCollisionException e) {
@@ -377,6 +381,7 @@ public class FCPConnectionHandler {
 							return;
 						}
 						putter.start(container, context);
+						container.deactivate(putter, 1);
 					}
 					
 				}, NativeThread.HIGH_PRIORITY-1, false); // user wants a response soon... but doesn't want it to block the queue page etc
