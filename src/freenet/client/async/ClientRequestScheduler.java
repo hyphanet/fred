@@ -163,6 +163,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	static final int QUEUE_THRESHOLD = 100;
 	
 	public void registerInsert(final SendableRequest req, boolean persistent, boolean regmeOnly, boolean onDatabaseThread) {
+		if(!isInsertScheduler)
+			throw new IllegalArgumentException("Adding a SendableInsert to a request scheduler!!");
 		if(persistent) {
 			if(onDatabaseThread) {
 				if(regmeOnly) {
