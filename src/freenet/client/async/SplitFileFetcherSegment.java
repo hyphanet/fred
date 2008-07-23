@@ -818,7 +818,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		for(int i=0;i<deadSegs.length;i++) {
 			if(persistent)
 				container.activate(deadSegs[i], 1);
-			deadSegs[i].kill(container);
+			deadSegs[i].kill(container, true);
 		}
 		if(persistent) {
 			container.set(this);

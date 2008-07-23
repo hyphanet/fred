@@ -271,8 +271,11 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 		segment.onNonFatalFailure(fetchExceptions, blockNumbers, this, container, context);
 
-		// TODO Auto-generated method stub
-		
+		if(persistent) {
+			container.deactivate(segment, 1);
+			container.deactivate(parent, 1);
+			container.deactivate(segment.errors, 1);
+		}
 	}
 	
 	// FIXME refactor this out to a common method; see SimpleSingleFileFetcher
@@ -647,7 +650,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	 * Terminate a subsegment. Called by the segment, which will have already removed the
 	 * subsegment from the list.
 	 */
-	public void kill(ObjectContainer container) {
+	public void kill(ObjectContainer container, boolean dontDeactivateSeg) {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(segment, 1);
@@ -661,6 +664,15 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			blockNums.clear();
 			cancelled = true;
 		}
+		if(persistent) {
+			if(!dontDeactivateSeg)
+				container.deactivate(segment, 1);
+			if(container.ext().isStored(this))
+				container.set(this);
+			if(container.ext().isStored(blockNums))
+				container.set(blockNums);
+			container.deactivate(blockNums, 1);
+		}
 	}
 
 	public long getCooldownWakeup(Object token, ObjectContainer container) {
@@ -668,12 +680,12 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			container.activate(this, 1);
 			container.activate(segment, 1);
 		}
-		return segment.getCooldownWakeup(((Integer)token).intValue());
+		long ret = segment.getCooldownWakeup(((Integer)token).intValue());
+		return ret;
 	}
 
 	public void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context) {
 		if(persistent) {
-			container.activate(this, 1);
 			container.activate(segment, 1);
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
@@ -681,14 +693,26 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		if(!segment.requeueAfterCooldown(key, time, container, context)) {
 			Logger.error(this, "Key was not wanted after cooldown: "+key+" for "+this+" in requeueAfterCooldown");
 		}
+		if(persistent) {
+			container.deactivate(segment, 1);
+		}
 	}
 
 	public long getCooldownWakeupByKey(Key key, ObjectContainer container) {
+		/* Only deactivate if was deactivated in the first place. 
+		 * See the removePendingKey() stack trace: Segment is the listener (getter) ! */
+		boolean activated = false;
 		if(persistent) {
-			container.activate(this, 1);
-			container.activate(segment, 1);
+			activated = container.ext().isActive(segment);
+			if(!activated)
+				container.activate(segment, 1);
 		}
-		return segment.getCooldownWakeupByKey(key, container);
+		long ret = segment.getCooldownWakeupByKey(key, container);
+		if(persistent) {
+			if(!activated)
+				container.deactivate(segment, 1);
+		}
+		return ret;
 	}
 
 	public void resetCooldownTimes(ObjectContainer container) {
