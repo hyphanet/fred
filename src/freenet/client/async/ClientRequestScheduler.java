@@ -941,6 +941,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 						container.activate(gets[i], 1);
 					GotKeyListener got = gets[i];
 					SendableGet req = got.getRequest(key, container);
+					if(persistent)
+						container.activate(req, 1);
 					if(req == null) {
 						Logger.error(this, "No request for listener "+got+" while requeueing "+key);
 					} else {
