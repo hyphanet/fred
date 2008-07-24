@@ -341,8 +341,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 				final RegisterMe regme = reg;
 				// Check the datastore before proceding.
 				final Key[] keys = listener.listKeys(selectorContainer);
-				for(int i=0;i<keys.length;i++)
+				for(int i=0;i<keys.length;i++) {
+					selectorContainer.activate(keys[i], 1);
 					keys[i] = keys[i].cloneKey();
+					selectorContainer.deactivate(keys[i], 1);
+				}
 				final boolean dontCache = listener.dontCache(selectorContainer);
 				datastoreCheckerExecutor.execute(new Runnable() {
 
