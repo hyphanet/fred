@@ -422,7 +422,10 @@ public class FCPClient {
 		return null;
 	}
 
-	public void init() {
+	public void init(ObjectContainer container) {
+		container.activate(runningPersistentRequests, 1);
+		container.activate(completedUnackedRequests, 1);
+		container.activate(clientRequestsByIdentifier, 1);
 		((Db4oList)runningPersistentRequests).activationDepth(1);
 		((Db4oList)completedUnackedRequests).activationDepth(1);
 		((Db4oMap)clientRequestsByIdentifier).activationDepth(1);

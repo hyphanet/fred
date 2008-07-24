@@ -37,7 +37,7 @@ public class FCPPersistentRoot {
 			System.err.println("Loaded FCP persistent root.");
 			FCPPersistentRoot root = (FCPPersistentRoot) set.next();
 			container.activate(root, 2);
-			root.globalForeverClient.init();
+			root.globalForeverClient.init(container);
 			return root;
 		}
 		FCPPersistentRoot root = new FCPPersistentRoot(nodeDBHandle, container);
@@ -73,7 +73,7 @@ public class FCPPersistentRoot {
 			if(!(name.equals(client.name)))
 				Logger.error(this, "Returning "+client+" for "+name);
 			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Returning "+client+" for "+name);
-			client.init();
+			client.init(container);
 			return client;
 		}
 		FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_FOREVER, this, container);
