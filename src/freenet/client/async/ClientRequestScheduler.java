@@ -551,7 +551,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;	
 		// schedCore juggles both
-		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, transientOnly, notTransient, Short.MAX_VALUE, Short.MAX_VALUE, clientContext, container);
+		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, transientOnly, notTransient, Short.MAX_VALUE, Integer.MAX_VALUE, clientContext, container);
 	}
 
 	public ChosenRequest getBetterNonPersistentRequest(ChosenRequest req) {
