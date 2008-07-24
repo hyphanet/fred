@@ -1039,6 +1039,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 			return;
 		}
 		if(get instanceof SupportsBulkCallFailure) {
+			if(logMINOR)
+				Logger.minor(this, "Calling bulk failure for "+get);
 			SupportsBulkCallFailure getter = (SupportsBulkCallFailure) get;
 			BulkCallFailureItem item = new BulkCallFailureItem(e, keyNum, (PersistentChosenRequest) req);
 			BulkCaller caller = null;
