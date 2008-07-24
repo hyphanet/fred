@@ -310,6 +310,8 @@ public class SplitFileInserter implements ClientPutState {
 		if(persistent)
 			container.activate(cb, 1);
 		cb.onBlockSetFinished(this, container, context);
+		if(persistent)
+			container.deactivate(cb, 1);
 		if(countDataBlocks > 32) {
 			if(persistent)
 				container.activate(parent, 1);
@@ -375,6 +377,8 @@ public class SplitFileInserter implements ClientPutState {
 			if(persistent)
 				container.activate(cb, 1);
 			cb.onMetadata(m, this, container, context);
+			if(persistent)
+				container.deactivate(cb, 1);
 		}
 	}
 	
@@ -402,6 +406,9 @@ public class SplitFileInserter implements ClientPutState {
 			container.activate(cb, 1);
 		}
 		cb.onFailure(e, this, container, context);
+		if(persistent) {
+			container.deactivate(cb, 1);
+		}
 	}
 
 	// FIXME move this to somewhere
