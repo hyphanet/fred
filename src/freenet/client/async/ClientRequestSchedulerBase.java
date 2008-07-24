@@ -189,7 +189,7 @@ abstract class ClientRequestSchedulerBase {
 				Logger.error(this, "Ignoring duplicate token");
 				continue;
 			}
-			if(getter.persistent())
+			if(persistent())
 				container.activate(key, 5);
 			addPendingKey(key, getter, container);
 			if(persistent())
