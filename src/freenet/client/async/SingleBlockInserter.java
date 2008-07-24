@@ -353,7 +353,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(logMINOR) Logger.minor(this, "Starting request: "+this);
 			ClientKeyBlock b = (ClientKeyBlock) req.token;
 			if(b != null)
-				core.realPut(b, ctx.cacheLocalRequests);
+				core.realPut(b, req.cacheLocalRequests);
 			else {
 				Logger.error(this, "Asked to send empty block on "+this, new Exception("error"));
 				return false;
