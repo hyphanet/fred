@@ -342,7 +342,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				// Check the datastore before proceding.
 				final Key[] keys = listener.listKeys(selectorContainer);
 				for(int i=0;i<keys.length;i++) {
-					selectorContainer.activate(keys[i], 1);
+					selectorContainer.activate(keys[i], 5);
 					Key oldKey = keys[i];
 					keys[i] = oldKey.cloneKey();
 					selectorContainer.deactivate(oldKey, 1);
