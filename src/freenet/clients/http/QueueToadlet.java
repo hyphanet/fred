@@ -479,7 +479,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		}
 		
 		MultiValueTable pageHeaders = new MultiValueTable();
-		writeHTMLReply(ctx, 200, "OK", pageHeaders, pageNode.generate());
+		if(pageNode != null)
+			writeHTMLReply(ctx, 200, "OK", pageHeaders, pageNode.generate());
+		else
+			this.writeError("Internal error", "Internal error", ctx);
 
 	}
 	
