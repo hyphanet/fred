@@ -277,12 +277,12 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			container.set(this);
 		
 		// Activate buckets
-		for(int i=0;i<dataBuckets.length;i++) {
-			if(persistent)
+		if(persistent) {
+			for(int i=0;i<dataBuckets.length;i++)
 				container.activate(dataBuckets[i], 1);
 		}
-		for(int i=0;i<checkBuckets.length;i++) {
-			if(persistent)
+		if(persistent) {
+			for(int i=0;i<checkBuckets.length;i++)
 				container.activate(checkBuckets[i], 1);
 		}
 		
