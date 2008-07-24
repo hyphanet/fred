@@ -382,6 +382,9 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			return;
 		}
 
+		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
+			return;
+		
 		// Now heal
 
 		/** Splitfile healing:
