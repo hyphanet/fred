@@ -727,6 +727,7 @@ public class FCPServer implements Runnable {
 						if(req != null)
 							req.modifyRequest(newToken, newPriority, FCPServer.this, container);
 						container.deactivate(req, 1);
+						success = true;
 					} finally {
 						synchronized(ow) {
 							ow.success = success;
