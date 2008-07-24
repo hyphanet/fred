@@ -197,8 +197,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements GotKe
 			Logger.error(this, "onGotKey("+key+","+block+") got "+e+" for "+this, e);
 			// FIXME if we get rid of the direct route this must call onFailure()
 		}
-		if(persistent)
+		if(persistent) {
 			container.deactivate(this, 1);
+			container.deactivate(this.key, 1);
+		}
 	}
 	
 
@@ -230,6 +232,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements GotKe
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Requeueing after cooldown "+key+" for "+this);
 		schedule(container, context, false);
+		if(persistent)
+			container.deactivate(this.key, 5);
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context, boolean delayed) {
