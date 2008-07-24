@@ -430,6 +430,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			} catch (MalformedURLException mue1) {
 			}
 			}
+			this.writeTemporaryRedirect(ctx, "Redirected", "/queue/");
 		}
 		
 		class OutputWrapper {
