@@ -303,8 +303,11 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			}
 			if(persistent)
 				container.activate(parent, 1);
-			codec.addToQueue(new FECJob(codec, queue, dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, context.getBucketFactory(persistent), this, true, parent.getPriorityClass(), persistent), 
+			FECJob job = new FECJob(codec, queue, dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, context.getBucketFactory(persistent), this, true, parent.getPriorityClass(), persistent);
+			codec.addToQueue(job, 
 					queue, container);
+			if(logMINOR)
+				Logger.minor(this, "Queued FEC job: "+job);
 			if(persistent)
 				container.deactivate(parent, 1);
 			// Now have all the data blocks (not necessarily all the check blocks)
