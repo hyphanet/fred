@@ -90,7 +90,10 @@ public class RandomGrabArray {
 								changedMe = true;
 								// We are doing compaction here. We don't need to swap with the end; we write valid ones to the target location.
 								reqs[i] = null;
+								RandomGrabArrayItem oldItem = item;
 								item.setParentGrabArray(null, container);
+								if(persistent)
+									container.deactivate(oldItem, 1);
 								continue;
 							}
 							if(i != target) {
@@ -192,6 +195,8 @@ public class RandomGrabArray {
 					if(logMINOR) Logger.minor(this, "Not returning because cancelled: "+ret);
 					ret = null;
 					// Will be removed in the do{} loop
+					// Need to tell it first.
+					oret.setParentGrabArray(this, null);
 				}
 				if(ret != null && excluding.exclude(ret, container, context)) {
 					excluded++;
