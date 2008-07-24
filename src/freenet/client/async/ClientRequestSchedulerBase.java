@@ -13,7 +13,6 @@ import freenet.crypt.RandomSource;
 import freenet.keys.Key;
 import freenet.node.BaseSendableGet;
 import freenet.node.RequestStarter;
-import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.support.Logger;

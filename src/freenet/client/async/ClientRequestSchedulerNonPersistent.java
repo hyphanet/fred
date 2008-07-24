@@ -12,7 +12,6 @@ import java.util.Set;
 import com.db4o.ObjectContainer;
 
 import freenet.keys.Key;
-import freenet.node.SendableGet;
 import freenet.support.Logger;
 
 /**

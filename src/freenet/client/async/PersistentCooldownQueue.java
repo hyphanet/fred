@@ -9,7 +9,6 @@ import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Candidate;
 import com.db4o.query.Evaluation;
-import com.db4o.query.Predicate;
 import com.db4o.query.Query;
 
 import freenet.keys.Key;
