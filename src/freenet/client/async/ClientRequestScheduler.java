@@ -1033,37 +1033,51 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
-	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, final ChosenRequest req, boolean persistent) {
+	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, final int prio, final ChosenRequest req, boolean persistent) {
 		if(!persistent) {
 			get.onFailure(e, keyNum, null, clientContext);
 			return;
 		}
 		if(get instanceof SupportsBulkCallFailure) {
-			if(logMINOR)
-				Logger.minor(this, "Calling bulk failure for "+get);
-			SupportsBulkCallFailure getter = (SupportsBulkCallFailure) get;
-			BulkCallFailureItem item = new BulkCallFailureItem(e, keyNum, (PersistentChosenRequest) req);
-			BulkCaller caller = null;
-			synchronized(this) {
-				BulkCallFailureItem[] items = (BulkCallFailureItem[]) bulkFailureLookupItems.get(get);
-				if(items == null) {
-					bulkFailureLookupItems.put(getter, new BulkCallFailureItem[] { item } );
-				} else {
-					BulkCallFailureItem[] newItems = new BulkCallFailureItem[items.length+1];
-					System.arraycopy(items, 0, newItems, 0, items.length);
-					newItems[items.length] = item;
-					bulkFailureLookupItems.put(getter, newItems);
+			// Getter MUST BE ACTIVATED for us to use it as a key.
+			// The below job doesn't write anything, so it will run fast.
+			jobRunner.queue(new DBJob() {
+
+				public void run(ObjectContainer container, ClientContext context) {
+					container.activate(get, 1);
+					if(logMINOR)
+						Logger.minor(this, "Calling bulk failure for "+get);
+					SupportsBulkCallFailure getter = (SupportsBulkCallFailure) get;
+					BulkCallFailureItem item = new BulkCallFailureItem(e, keyNum, (PersistentChosenRequest) req);
+					BulkCaller caller = null;
+					synchronized(this) {
+						BulkCallFailureItem[] items = (BulkCallFailureItem[]) bulkFailureLookupItems.get(get);
+						if(items == null) {
+							bulkFailureLookupItems.put(getter, new BulkCallFailureItem[] { item } );
+						} else {
+							BulkCallFailureItem[] newItems = new BulkCallFailureItem[items.length+1];
+							System.arraycopy(items, 0, newItems, 0, items.length);
+							newItems[items.length] = item;
+							bulkFailureLookupItems.put(getter, newItems);
+						}
+						caller = (BulkCaller) bulkFailureLookupJob.get(getter);
+						if(caller == null) {
+							caller = new BulkCaller(getter);
+							bulkFailureLookupJob.put(getter, caller);
+						} else
+							caller = null;
+						
+					}
+					if(caller != null)
+						jobRunner.queue(caller, prio, true);
+					else {
+						if(logMINOR)
+							Logger.minor(this, "Not calling bulk failure for "+get);
+					}
+					container.deactivate(get, 1);
 				}
-				caller = (BulkCaller) bulkFailureLookupJob.get(getter);
-				if(caller == null) {
-					caller = new BulkCaller(getter);
-					bulkFailureLookupJob.put(getter, caller);
-				} else
-					caller = null;
 				
-			}
-			if(caller != null)
-				jobRunner.queue(caller, prio, true);
+			}, NativeThread.HIGH_PRIORITY, false);
 			return;
 		}
 		jobRunner.queue(new DBJob() {
