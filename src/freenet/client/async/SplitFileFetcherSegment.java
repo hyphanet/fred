@@ -311,7 +311,8 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			if(persistent)
 				container.deactivate(parent, 1);
 			// Now have all the data blocks (not necessarily all the check blocks)
-		}
+		} else
+			Logger.error(this, "SPLITFILE_NONREDUNDANT !! Deal with this!!");
 	}
 	
 	public void onDecodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets2, Bucket[] checkBuckets2, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus) {
