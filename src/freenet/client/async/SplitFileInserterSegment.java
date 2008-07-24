@@ -452,6 +452,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 				// Encode blocks
 				synchronized(this) {
 					if(!encoded){
+						// FIXME necessary??? the queue is persistence aware, won't it activate them...?
 						if(persistent) {
 							for(int i=0;i<dataBlocks.length;i++)
 								container.activate(dataBlocks[i], 5);
@@ -601,6 +602,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		}
 		if(persistent) {
 			container.set(this);
+			container.deactivate(errors, 5);
 		}
 		parent.segmentFinished(this, container, context);
 	}
