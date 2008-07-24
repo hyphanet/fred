@@ -115,8 +115,10 @@ public class SplitFileFetcher implements ClientGetState {
 			blocksPerSegment = -1;
 			checkBlocksPerSegment = -1;
 			segmentCount = 1;
-			if(splitfileCheckBlocks.length > 0)
+			if(splitfileCheckBlocks.length > 0) {
 				Logger.error(this, "Splitfile type is SPLITFILE_NONREDUNDANT yet "+splitfileCheckBlocks.length+" check blocks found!!");
+				splitfileCheckBlocks = new ClientCHK[0];
+			}
 		} else if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
 			byte[] params = metadata.splitfileParams();
 			if((params == null) || (params.length < 8))
