@@ -1016,13 +1016,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 				bulkFailureLookupJob.remove(getter);
 			}
 			if(items != null && items.length > 0) {
-				if(logMINOR) Logger.minor(this, "Calling non-fatal failure in bulk for "+items.length+" items");
+				if(logMINOR) Logger.minor(this, "Calling non-fatal failure in bulk for "+items.length+" items for "+getter);
 				getter.onFailure(items, container, context);
 				for(int i=0;i<items.length;i++)
 					if(items[i] != null)
 						container.delete(items[i].req);
 			} else
-				Logger.normal(this, "Calling non-fatal failure in bulk for "+getter+" but no items to run");
+				Logger.normal(this, "Calling non-fatal failure in bulk for "+getter+" but no items to run for "+getter);
 			container.deactivate(getter, 1);
 		}
 		
