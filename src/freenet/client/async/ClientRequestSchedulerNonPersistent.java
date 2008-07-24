@@ -109,12 +109,12 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 			o = pendingKeys.get(key);
 			if(o == null) {
 				if(complain)
-					Logger.normal(this, "Not found: "+getter+" for "+key+" removing (no such key)");
+					Logger.normal(this, "Not found: "+getter+" for "+key+" removing (no such key)", new Exception("debug"));
 			} else if(o instanceof GotKeyListener) {
 				GotKeyListener oldGet = (GotKeyListener) o;
 				if(oldGet != getter) {
 					if(complain)
-						Logger.normal(this, "Not found: "+getter+" for "+key+" removing (1 getter)");
+						Logger.normal(this, "Not found: "+getter+" for "+key+" removing (1 getter)", new Exception("debug"));
 				} else {
 					dropped = true;
 					pendingKeys.remove(key);
