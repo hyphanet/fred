@@ -492,12 +492,11 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				else
 					schedTransient.innerRegister(req, random, container);
 				req = altReq;
-			} else {
+			} else if(altReq != null) {
 				// Don't use the recent one
 				if(logMINOR)
 					Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
-				if(altReq != null)
-					recent.add(altReq);
+				recent.add(altReq);
 			}
 			// Now we have chosen a request.
 			if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" ("+chosenTracker.getNumber()+", prio "+
