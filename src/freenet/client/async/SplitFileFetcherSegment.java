@@ -358,6 +358,10 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 				if(data == null) throw new NullPointerException();
 				if(persistent) container.activate(data, 1);
 				BucketTools.copyTo(data, os, Long.MAX_VALUE);
+				if(persistent) {
+					container.deactivate(data, 1);
+					container.deactivate(status, 1);
+				}
 			}
 			if(logMINOR) Logger.minor(this, "Copied data");
 			os.close();
