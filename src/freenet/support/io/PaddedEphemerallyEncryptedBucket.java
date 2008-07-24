@@ -6,7 +6,12 @@ package freenet.support.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
+import java.util.Random;
+
+import org.spaceroots.mantissa.random.MersenneTwister;
+
+import com.db4o.ObjectContainer;
 
 import freenet.crypt.PCFBMode;
 import freenet.crypt.RandomSource;
@@ -16,11 +21,6 @@ import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
-import java.util.Random;
-
-import org.spaceroots.mantissa.random.MersenneTwister;
-
-import com.db4o.ObjectContainer;
 
 /**
  * A proxy Bucket which adds:
@@ -31,7 +31,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 
 	private final Bucket bucket;
 	private final int minPaddedSize;
-	private transient SoftReference /* <Rijndael> */ aesRef;
+	private transient WeakReference /* <Rijndael> */ aesRef;
 	/** The decryption key. */
 	private final byte[] key;
 	private final byte[] randomSeed;
@@ -310,7 +310,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			throw new Error(e);
 		}
 		aes.initialize(key);
-		aesRef = new SoftReference(aes);
+		aesRef = new WeakReference(aes);
 		return aes;
 	}
 
