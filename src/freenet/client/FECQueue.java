@@ -368,4 +368,7 @@ public class FECQueue implements OOMHook {
 		notifyAll();
 	}
 	
+	public void objectOnDeactivate(ObjectContainer container) {
+		Logger.error(this, "Attempting to deactivate FECQueue!", new Exception("debug"));
+	}
 }
