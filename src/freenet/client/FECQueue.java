@@ -44,6 +44,7 @@ public class FECQueue implements OOMHook {
 	private transient int runningFECThreads;
 	private transient int fecPoolCounter;
 	private transient PrioRunnable runner;
+	private transient DBJob cacheFillerJob;
 	private final long nodeDBHandle;
 
 	public static FECQueue create(final long nodeDBHandle, ObjectContainer container) {
@@ -56,7 +57,6 @@ public class FECQueue implements OOMHook {
 		if(result.hasNext()) {
 			FECQueue queue = (FECQueue) result.next();
 			container.activate(queue, 1);
-			container.activate(queue.cacheFillerJob, 2);
 			return queue;
 		} else {
 			FECQueue queue = new FECQueue(nodeDBHandle);
@@ -84,6 +84,7 @@ public class FECQueue implements OOMHook {
 		}
 		OOMHandler.addOOMHook(this);
 		initRunner();
+		initCacheFillerJob();
 		queueCacheFiller();
 	}
 	
@@ -230,7 +231,8 @@ public class FECQueue implements OOMHook {
 	};
 	}
 
-	private final DBJob cacheFillerJob = new DBJob() {
+	private void initCacheFillerJob() {
+		cacheFillerJob = new DBJob() {
 
 		public void run(ObjectContainer container, ClientContext context) {
 			// Try to avoid accessing the database while synchronized on the FECQueue.
@@ -308,8 +310,9 @@ public class FECQueue implements OOMHook {
 				}
 			}
 		}
+		};
 		
-	};
+	}
 	
 	private int maxRunningFECThreads = -1;
 
