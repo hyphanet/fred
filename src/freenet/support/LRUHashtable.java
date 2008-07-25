@@ -60,7 +60,22 @@ public class LRUHashtable {
     
 	public final synchronized Object peekValue() {
         if ( list.size() > 0 ) {
-            return ((QItem)hash.get(((QItem)list.tail()).obj)).value;
+        	if(hash == null) throw new NullPointerException();
+        	QItem tail = (QItem) list.tail();
+        	Object object = tail.obj;
+        	QItem i = (QItem) hash.get(object);
+        	if(i == null) {
+        		String obToString = "(toString() threw)";
+        		try {
+        			obToString = object.toString();
+        		} catch (Throwable t) {
+        			// Ignore
+        		}
+        		Logger.error(this, "Lookup failed in LRUHashtable for "+obToString+" in LRUHashtable - maybe an object was deactivated or its hash code changed some other way????");
+        		return null;
+        	}
+        	return i.value;
+            //return ((QItem)hash.get(((QItem)list.tail()).obj)).value;
         } else {
             return null;
         }
