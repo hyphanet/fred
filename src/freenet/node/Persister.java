@@ -85,7 +85,8 @@ class Persister implements Runnable {
 			} catch (FileNotFoundException e1) {
 				// Ignore
 			} catch (IOException e1) {
-				Logger.error(this, "Could not read "+persistTarget+" ("+e+") and could not read "+persistTemp+" either ("+e1+ ')');
+				if(persistTarget.length() > 0 || persistTemp.length() > 0)
+					Logger.error(this, "Could not read "+persistTarget+" ("+e+") and could not read "+persistTemp+" either ("+e1+ ')');
 			}
 		}
 		return throttleFS;

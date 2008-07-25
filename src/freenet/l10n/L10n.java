@@ -58,8 +58,8 @@ public class L10n {
 	private static final Object sync = new Object();
 
 	L10n(String selected) {
-		selectedLanguage = selected;
-		File tmpFile = new File(L10n.PREFIX + mapLanguageNameToShortCode(selected) + L10n.OVERRIDE_SUFFIX);
+		selectedLanguage = mapLanguageNameToShortCode(selected);
+		File tmpFile = new File(L10n.PREFIX + selected + L10n.OVERRIDE_SUFFIX);
 		
 		try {
 			if(tmpFile.exists() && tmpFile.canRead() && tmpFile.length() > 0) {
@@ -94,6 +94,7 @@ public class L10n {
 	* @throws MissingResourceException
 	*/
 	public static void setLanguage(String selectedLanguage) throws MissingResourceException {
+		selectedLanguage = mapLanguageNameToLongName(selectedLanguage);
 		synchronized (sync) {
 			Logger.normal(CLASS_NAME, "Changing the current language to : " + selectedLanguage);
 			currentClass = new L10n(selectedLanguage);
@@ -312,8 +313,10 @@ public class L10n {
 	*/
 	public static String getSelectedLanguage() {
 		synchronized (sync) {
-			if(currentClass == null) return null;
-			return currentClass.selectedLanguage;	
+			if((currentClass == null) || (currentClass.selectedLanguage == null))
+				return FALLBACK_DEFAULT;
+			else
+				return currentClass.selectedLanguage;	
 		}
 	}
 	
@@ -365,6 +368,24 @@ public class L10n {
 			
 			if(currentShortCode.equalsIgnoreCase(name) || currentLongName.equalsIgnoreCase(name) ||	currentCountryCodeName.equalsIgnoreCase(name))
 				return currentShortCode;
+		}
+		return null;
+	}
+
+	/**
+	 * Map a language identifier to its corresponding long name
+	 * 
+	 * @param The name to look for
+	 * @return The full text language name OR null if not found
+	 */
+	public static String mapLanguageNameToLongName(String name) {
+		for(int i=0; i<AVAILABLE_LANGUAGES.length; i++) {
+			String currentShortCode = AVAILABLE_LANGUAGES[i][0];
+			String currentLongName = AVAILABLE_LANGUAGES[i][1];
+			String currentCountryCodeName = AVAILABLE_LANGUAGES[i][2];
+			
+			if(currentShortCode.equalsIgnoreCase(name) || currentLongName.equalsIgnoreCase(name) ||	currentCountryCodeName.equalsIgnoreCase(name))
+				return currentLongName;
 		}
 		return null;
 	}

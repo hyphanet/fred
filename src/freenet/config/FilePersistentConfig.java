@@ -111,11 +111,9 @@ public class FilePersistentConfig extends PersistentConfig {
 	}
 	
 	public void store() {
-		synchronized(this) {
-			if(!finishedInit) {
-				Logger.minor(this, "Initialization not finished, refusing to write config", new Exception("error"));
-				return;
-			}
+		if(!finishedInit) {
+			Logger.minor(this, "Initialization not finished, refusing to write config", new Exception("error"));
+			return;
 		}
 		try {
 			synchronized(storeSync) {
@@ -130,7 +128,10 @@ public class FilePersistentConfig extends PersistentConfig {
 	}
 	
 	/** Don't call without taking storeSync first */
-	protected void innerStore() throws IOException {
+	protected final void innerStore() throws IOException {
+		if(!finishedInit)
+			throw new IllegalStateException("SHOULD NOT HAPPEN!!");
+		
 		SimpleFieldSet fs = exportFieldSet();
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "fs = " + fs);

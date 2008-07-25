@@ -20,6 +20,7 @@ public class StartupToadlet extends Toadlet {
 		this.staticToadlet = staticToadlet;
 	}
 
+	@Override
 	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		// If we don't disconnect we will have pipelining issues
 		ctx.forceDisconnect();

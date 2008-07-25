@@ -29,6 +29,7 @@ import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.Fields;
 import freenet.support.ShortBuffer;
+import java.nio.DoubleBuffer;
 
 
 /**
@@ -1228,13 +1229,29 @@ public class DMT {
 		return msg;
 	}
 
+	@Deprecated
 	public static final MessageType FNPLocChangeNotification = new MessageType("FNPLocationChangeNotification", PRIORITY_LOW) {{
 		addField(LOCATION, Double.class);
 	}};
 	
+	@Deprecated
 	public static final Message createFNPLocChangeNotification(double newLoc) {
 		Message msg = new Message(FNPLocChangeNotification);
 		msg.set(LOCATION, newLoc);
+		return msg;
+	}
+		
+	public static final MessageType FNPLocChangeNotificationNew = new MessageType("FNPLocationChangeNotification2", PRIORITY_LOW) {{
+		addField(LOCATION, Double.class);
+		addField(PEER_LOCATIONS, ShortBuffer.class);
+	}};
+	
+	public static final Message createFNPLocChangeNotificationNew(double myLocation, double[] locations) {
+		Message msg = new Message(FNPLocChangeNotificationNew);
+		ShortBuffer dst = new ShortBuffer(Fields.doublesToBytes(locations));
+		msg.set(LOCATION, myLocation);
+		msg.set(PEER_LOCATIONS, dst);
+		
 		return msg;
 	}
 
@@ -1571,7 +1588,7 @@ public class DMT {
 		
 		return msg;
 	}
-
+	
 	public static void init() { }
 
 }

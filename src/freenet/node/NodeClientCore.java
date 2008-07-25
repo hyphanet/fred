@@ -117,7 +117,7 @@ public class NodeClientCore implements Persistable {
 	
 	private UserAlert startingUpAlert;
 
-	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet oldThrottleFS, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets) throws NodeInitException {
+	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets) throws NodeInitException {
 		this.node = node;
 		this.nodeStats = node.nodeStats;
 		this.random = node.random;
@@ -140,10 +140,6 @@ public class NodeClientCore implements Persistable {
 				"NodeClientCore.fileForClientStats", "NodeClientCore.fileForClientStatsLong", node.ps, nodeDir);
 		
 		SimpleFieldSet throttleFS = persister.read();
-		
-		if(throttleFS == null)
-			throttleFS = oldThrottleFS;
-
 		if(logMINOR) Logger.minor(this, "Read throttleFS:\n"+throttleFS);
 		
 		if(logMINOR) Logger.minor(this, "Serializing RequestStarterGroup from:\n"+throttleFS);

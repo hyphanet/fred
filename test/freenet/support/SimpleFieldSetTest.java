@@ -620,6 +620,20 @@ public class SimpleFieldSetTest extends TestCase {
 	}
 	
 	/**
+	 * Tests the getDoubleArray(String) method
+	 */
+	public void testGetDoubleArray() {
+		SimpleFieldSet methodSFS = new SimpleFieldSet(true);
+		String keyPrefix = "foo";
+		for (int i = 0; i<15; i++)
+			methodSFS.putAppend(keyPrefix,String.valueOf((double)i));
+		double[] result = methodSFS.getDoubleArray(keyPrefix);
+		for (int i = 0; i<15; i++)
+			assertTrue(result[i]== ((double)i));
+		
+	}
+	
+	/**
 	 * Tests removeValue(String) method
 	 */
 	public void testRemoveValue() {

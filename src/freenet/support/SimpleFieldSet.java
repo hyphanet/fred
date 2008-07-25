@@ -840,10 +840,15 @@ public class SimpleFieldSet {
 	}
 
 	public void put(String key, int[] value) {
-		// FIXME this could be more efficient...
 		removeValue(key);
-		for(int i=0;i<value.length;i++)
-			putAppend(key, Integer.toString(value[i]));
+		for(int v : value)
+			putAppend(key, String.valueOf(v));
+	}
+	
+	public void put(String key, double[] value) {
+		removeValue(key);
+		for(double v : value)
+			putAppend(key, String.valueOf(v));
 	}
 
 	public int[] getIntArray(String key) {
@@ -858,6 +863,22 @@ public class SimpleFieldSet {
 				return null;
 			}
 		}
+		return ret;
+	}
+	
+	public double[] getDoubleArray(String key) {
+		String[] strings = getAll(key);
+		if(strings == null) return null;
+		double[] ret = new double[strings.length];
+		for(int i=0;i<strings.length;i++) {
+			try {
+				ret[i] = Double.valueOf(strings[i]);
+			} catch(NumberFormatException e) {
+				Logger.error(this, "Cannot parse "+strings[i]+" : "+e,e);
+				return null;
+			}
+		}
+		
 		return ret;
 	}
 

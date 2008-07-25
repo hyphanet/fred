@@ -84,16 +84,8 @@ public class PluginManager {
 
 		String fns[] = pmconfig.getStringArr("loadplugin");
 		if (fns != null) {
-			for (int i = 0; i < fns.length; i++) {
-				String name = fns[i];
-				/* FIXME - compatibility code, remove somewhen */
-				boolean refresh = name.endsWith("*");
-				if (refresh) {
-					name = name.substring(0, name.length() - 1);
-				}
-				/* FIXME - end of compatibility code */
+			for (String name : fns)
 				startPlugin(name, false);
-			}
 		}
 
 		pmconfig.finishedInitialization();

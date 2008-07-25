@@ -127,7 +127,7 @@
 
 	<!-- ================================================== -->
 
-	<target name="unit-build" depends="compile" if="junit.present">
+	<target name="unit-build" depends="compile" if="junit.present" unless="skip_tests">
 		<javac srcdir="${test}" destdir="${build-test}" debug="on" optimize="on" source="1.5">
 			<classpath>
 				<pathelement path="${build}"/>
@@ -139,7 +139,7 @@
 		</javac>
 	</target>
 
-	<target name="unit" depends="unit-build" if="junit.present">
+	<target name="unit" depends="unit-build" if="junit.present" unless="skip_tests">
 		<junit printsummary="yes" fork="yes" haltonfailure="yes">
 			<classpath>
 				<pathelement path="${build}"/>

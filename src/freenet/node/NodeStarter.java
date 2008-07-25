@@ -337,7 +337,7 @@ public class NodeStarter implements WrapperListener {
 		long storeSize, boolean ramStore, boolean enableSwapping, boolean enableARKs,
 		boolean enableULPRs, boolean enablePerNodeFailureTables,
 		boolean enableSwapQueueing, boolean enablePacketCoalescing,
-		int outputBandwidthLimit) throws NodeInitException {
+		int outputBandwidthLimit, boolean enableFOAF) throws NodeInitException {
 
 		File baseDir = new File(testName);
 		File portDir = new File(baseDir, Integer.toString(port));
@@ -385,6 +385,8 @@ public class NodeStarter implements WrapperListener {
 		configFS.put("node.enableULPRDataPropagation", enableULPRs);
 		configFS.put("node.enablePerNodeFailureTables", enablePerNodeFailureTables);
 		configFS.put("node.enablePacketCoalescing", enablePacketCoalescing);
+		configFS.put("node.publishOurPeersLocation", enableFOAF);
+		configFS.put("node.routeAccordingToOurPeersLocation", enableFOAF);
 
 		PersistentConfig config = new PersistentConfig(configFS);
 

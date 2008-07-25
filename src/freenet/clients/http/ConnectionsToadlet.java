@@ -724,7 +724,14 @@ public abstract class ConnectionsToadlet extends Toadlet {
 
 		// location column
 		if (advancedModeEnabled) {
-			peerRow.addChild("td", "class", "peer-location", String.valueOf(peerNodeStatus.getLocation()));
+			HTMLNode locationNode = peerRow.addChild("td", "class", "peer-location");
+			locationNode.addChild("b", String.valueOf(peerNodeStatus.getLocation()));
+			locationNode.addChild("br");
+			double[] peersLoc = peerNodeStatus.getPeersLocation();
+			if(peersLoc != null) {
+				for(double loc : peersLoc)
+					locationNode.addChild("i", String.valueOf(loc)).addChild("br");
+			}
 		}
 
 		if (advancedModeEnabled) {

@@ -69,6 +69,7 @@ public class RealNodeULPRTest extends RealNodeTest {
     static final boolean ENABLE_SWAPPING = true;
     static final boolean ENABLE_ULPRS = true; // This is the point of the test, but it's probably a good idea to be able to do a comparison if we want to
     static final boolean ENABLE_PER_NODE_FAILURE_TABLES = true;
+    static final boolean ENABLE_FOAF = true;
     
     public static void main(String[] args) throws FSParseException, PeerParseException, CHKEncodeException, InvalidThresholdException, NodeInitException, ReferenceSignatureVerificationException, KeyCollisionException, SSKEncodeException, IOException, InterruptedException, SSKVerifyException {
     	freenet.node.RequestHandler.SEND_OLD_FORMAT_SSK = false;
@@ -92,7 +93,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] = 
-            	NodeStarter.createTestNode(5000+i, testName, false, true, true, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 1024*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, true, true, 0);
+            	NodeStarter.createTestNode(5000+i, testName, false, true, true, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 1024*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, true, true, 0, ENABLE_FOAF);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         SimpleFieldSet refs[] = new SimpleFieldSet[NUMBER_OF_NODES];

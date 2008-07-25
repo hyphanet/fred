@@ -178,7 +178,7 @@ public class NodeStats implements Persistable {
 	/** PeerManagerUserAlert stats update interval (milliseconds) */
 	private static final long peerManagerUserAlertStatsUpdateInterval = 1000;  // 1 second
 	
-	NodeStats(Node node, int sortOrder, SubConfig statsConfig, SimpleFieldSet oldThrottleFS, int obwLimit, int ibwLimit, File nodeDir) throws NodeInitException {
+	NodeStats(Node node, int sortOrder, SubConfig statsConfig, int obwLimit, int ibwLimit, File nodeDir) throws NodeInitException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.node = node;
 		this.peers = node.peers;
@@ -269,10 +269,6 @@ public class NodeStats implements Persistable {
 				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.ps, nodeDir);
 
 		SimpleFieldSet throttleFS = persister.read();
-		
-		if(throttleFS == null)
-			throttleFS = oldThrottleFS;
-
 		if(logMINOR) Logger.minor(this, "Read throttleFS:\n"+throttleFS);
 		
 		// Guesstimates. Hopefully well over the reality.

@@ -42,7 +42,7 @@ public class StringOption extends Option {
 
 	public boolean isDefault() {
 		getValue();
-		return currentValue.equals(defaultValue);
+		return (currentValue == null ? false : currentValue.equals(defaultValue));
 	}
 	
 	public void setDefault() {

@@ -88,14 +88,15 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		if(!isRunning) return;
 		int found = (int)key.suggestedEdition;
 		
-		if(found > availableVersion){
-			Logger.minor(this, "Updating availableVersion from "+availableVersion+" to "+found+" and queueing an update");
+		if(found > availableVersion) {
+			Logger.minor(this, "Updating availableVersion from " + availableVersion + " to " + found + " and queueing an update");
 			this.availableVersion = found;
 			ticker.queueTimedJob(new Runnable() {
+
 				public void run() {
 					maybeUpdate();
 				}
-			}, 60*1000); // leave some time in case we get later editions
+			}, 60 * 1000); // leave some time in case we get later editions
 			// LOCKING: Always take the NodeUpdater lock *BEFORE* the NodeUpdateManager lock
 			manager.onStartFetching(extUpdate);
 		}
@@ -266,10 +267,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
 		// Impossible
-	}
-
-	public synchronized boolean isRunning(){
-		return isRunning;
 	}
 	
 	/** Called before kill(). Don't do anything that will involve taking locks. */

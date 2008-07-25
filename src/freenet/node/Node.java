@@ -33,7 +33,6 @@ import com.sleepycat.je.StatsConfig;
 
 import freenet.client.FetchContext;
 import freenet.clients.http.SimpleToadletServer;
-import freenet.clients.http.StartupToadlet;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
@@ -107,7 +106,6 @@ import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
-import freenet.support.OOMHook;
 import freenet.support.PooledExecutor;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
@@ -121,7 +119,7 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.HostnameSyntaxException;
-import java.net.URI;
+import java.io.FileFilter;
 
 /**
  * @author amphibian
@@ -200,7 +198,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private static class L10nCallback implements StringCallback, EnumerableOptionCallback {
 		
 		public String get() {
-			return L10n.getSelectedLanguage();
+			return L10n.mapLanguageNameToLongName(L10n.getSelectedLanguage());
 		}
 		
 		public void set(String val) throws InvalidConfigValueException {
@@ -415,6 +413,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	final boolean enablePerNodeFailureTables;
 	final boolean enableULPRDataPropagation;
 	final boolean enableSwapping;
+	private volatile boolean publishOurPeersLocation;
+	private volatile boolean routeAccordingToOurPeersLocation;
 	boolean enableSwapQueueing;
 	boolean enablePacketCoalescing;
 	public static final short DEFAULT_MAX_HTL = (short)10;
@@ -485,6 +485,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * we are a sink we ignore nodes which have less uptime (percentage) than this parameter.
 	 */
 	private static final int MIN_UPTIME_STORE_KEY = 40;
+	
+	private volatile boolean isPRNGReady = false;
 	
 	/**
 	 * Read all storable settings (identity etc) from the node file.
@@ -665,12 +667,42 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 
 		// Setup RNG if needed : DO NOT USE IT BEFORE THAT POINT!
-		this.random = (r == null ? new Yarrow() : r);
-		DiffieHellman.init(random);
+		if(r == null) {
+			final NativeThread entropyGatheringThread = new NativeThread(new Runnable() {
+
+				private void recurse(File f) {
+					if(isPRNGReady)
+						return;
+					File[] subDirs = f.listFiles(new FileFilter() {
+
+						public boolean accept(File pathname) {
+							return pathname.exists() && pathname.canRead() && pathname.isDirectory();
+						}
+					});
+
+					for(File currentDir : subDirs)
+						recurse(currentDir);
+				}
+
+				public void run() {
+					for(File root : File.listRoots()) {
+						if(isPRNGReady)
+							return;
+						recurse(root);
+					}
+				}
+			}, "Entropy Gathering Thread", NativeThread.MIN_PRIORITY, true);
+
+			entropyGatheringThread.start();
+			this.random = new Yarrow();
+			DiffieHellman.init(random);
+		} else // if it's not null it's because we are running in the simulator
+			this.random = r;
+		isPRNGReady = true;
+		toadlets.getStartupToadlet().setIsPRNGReady();
 		byte buffer[] = new byte[16];
 		random.nextBytes(buffer);
 		this.fastWeakRandom = new MersenneTwister(buffer);
-		toadlets.getStartupToadlet().setIsPRNGReady();
 
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		recentlyCompletedIDs = new LRUQueue();
@@ -860,6 +892,30 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			
 		});
 		enableSwapping = nodeConfig.getBoolean("enableSwapping");
+		
+		nodeConfig.register("publishOurPeersLocation", false, sortOrder++, true, false, "Node.publishOurPeersLocation", "Node.publishOurPeersLocationLong", new BooleanCallback() {
+
+			public boolean get() {
+				return publishOurPeersLocation;
+			}
+
+			public void set(boolean val) throws InvalidConfigValueException {
+				publishOurPeersLocation = val;
+			}
+		});
+		publishOurPeersLocation = nodeConfig.getBoolean("publishOurPeersLocation");
+		
+		nodeConfig.register("routeAccordingToOurPeersLocation", false, sortOrder++, true, false, "Node.routeAccordingToOurPeersLocation", "Node.routeAccordingToOurPeersLocationLong", new BooleanCallback() {
+
+			public boolean get() {
+				return routeAccordingToOurPeersLocation;
+			}
+
+			public void set(boolean val) throws InvalidConfigValueException {
+				routeAccordingToOurPeersLocation = val;
+			}
+		});
+		routeAccordingToOurPeersLocation = nodeConfig.getBoolean("routeAccordingToOurPeersLocation");
 		
 		nodeConfig.register("enableSwapQueueing", true, sortOrder++, true, false, "Node.enableSwapQueueing", "Node.enableSwapQueueingLong", new BooleanCallback() {
 			public boolean get() {
@@ -1610,25 +1666,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			this.storeEnvironment = null;
 		}
 		
-		// FIXME back compatibility
-		SimpleFieldSet oldThrottleFS = null;
-		File oldThrottle = new File("throttle.dat");
-		String oldThrottleName = nodeConfig.getRawOption("throttleFile");
-		if(oldThrottleName != null)
-			oldThrottle = new File(oldThrottleName);
-		if(oldThrottle.exists() && (!new File("node-throttle.dat").exists()) && lastVersion < 1021) {
-			// Migrate from old throttle file to new node- and client- throttle files
-			try {
-				oldThrottleFS = SimpleFieldSet.readFrom(new File("throttle.dat"), false, true);
-			} catch (IOException e) {
-				// Ignore
-			}
-			oldThrottle.delete();
-		}
+		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), obwLimit, ibwLimit, nodeDir);
 		
-		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), oldThrottleFS, obwLimit, ibwLimit, nodeDir);
-		
-		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"), oldConfig, fproxyConfig, toadlets);
+		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets);
 
 		netid = new NetworkIDManager(this);
 		 
@@ -3387,5 +3427,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 	public void setDispatcherHook(NodeDispatcherCallback cb) {
 		this.dispatcher.setHook(cb);
+	}
+	
+	public boolean shallWePublishOurPeersLocation() {
+		return publishOurPeersLocation;
+	}
+	
+	public boolean shallWeRouteAccordingToOurPeersLocation() {
+		return routeAccordingToOurPeersLocation;
 	}
 }
