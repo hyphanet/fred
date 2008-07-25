@@ -43,6 +43,7 @@ public class FECQueue implements OOMHook {
 	private transient ClientContext clientContext;
 	private transient int runningFECThreads;
 	private transient int fecPoolCounter;
+	private transient PrioRunnable runner;
 	private final long nodeDBHandle;
 
 	public static FECQueue create(final long nodeDBHandle, ObjectContainer container) {
@@ -82,6 +83,7 @@ public class FECQueue implements OOMHook {
 			persistentQueueCache[i] = new LinkedList();
 		}
 		OOMHandler.addOOMHook(this);
+		initRunner();
 		queueCacheFiller();
 	}
 	
@@ -138,11 +140,12 @@ public class FECQueue implements OOMHook {
 		}
 	}
 	
-	/**
-	 * Runs on each thread.
-	 * @author nextgens
-	 */
-	private final PrioRunnable runner = new PrioRunnable() {
+	private void initRunner() {
+		runner = new PrioRunnable() {
+		/**
+		 * Runs on each thread.
+		 * @author nextgens
+		 */
 		public void run() {
 			freenet.support.Logger.OSThread.logPID(this);
 			try {
@@ -225,6 +228,7 @@ public class FECQueue implements OOMHook {
 		}
 
 	};
+	}
 
 	private final DBJob cacheFillerJob = new DBJob() {
 
