@@ -313,6 +313,9 @@ public class StatisticsToadlet extends Toadlet {
 			
 			HTMLNode databaseJobsInfobox = nextTableCell.addChild("div", "class", "infobox");
 			drawDatabaseJobsBox(databaseJobsInfobox);
+			
+			HTMLNode storeCheckerJobsInfobox = nextTableCell.addChild("div", "class", "infobox");
+			drawStoreCheckerJobsBox(storeCheckerJobsInfobox);
 
 			// peer distribution box
 			overviewTableRow = overviewTable.addChild("tr");
@@ -421,6 +424,24 @@ public class StatisticsToadlet extends Toadlet {
 		node.addChild("div", "class", "infobox-header", l10n("databaseJobsByPriority"));
 		HTMLNode threadsInfoboxContent = node.addChild("div", "class", "infobox-content");
 		int[] jobsByPriority = core.clientDatabaseExecutor.runningJobs();
+		
+		HTMLNode threadsByPriorityTable = threadsInfoboxContent.addChild("table", "border", "0");
+		HTMLNode row = threadsByPriorityTable.addChild("tr");
+
+		row.addChild("th", l10n("priority"));
+		row.addChild("th", l10n("waiting"));
+		
+		for(int i=0; i<jobsByPriority.length; i++) {
+			row = threadsByPriorityTable.addChild("tr");
+			row.addChild("td", String.valueOf(i));
+			row.addChild("td", String.valueOf(jobsByPriority[i]));
+		}
+	}
+	
+	private void drawStoreCheckerJobsBox(HTMLNode node) {
+		node.addChild("div", "class", "infobox-header", l10n("storeJobsByPriority"));
+		HTMLNode threadsInfoboxContent = node.addChild("div", "class", "infobox-content");
+		int[] jobsByPriority = core.datastoreCheckerExecutor.runningJobs();
 		
 		HTMLNode threadsByPriorityTable = threadsInfoboxContent.addChild("table", "border", "0");
 		HTMLNode row = threadsByPriorityTable.addChild("tr");
