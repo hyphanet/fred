@@ -205,6 +205,16 @@ public class FCPClient {
 
 	public boolean hasPersistentRequests(ObjectContainer container) {
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
+		if(runningPersistentRequests == null) {
+			if(!container.ext().isActive(this))
+				Logger.error(this, "FCPCLIENT NOT ACTIVE!!!");
+			throw new NullPointerException();
+		}
+		if(completedUnackedRequests == null) {
+			if(!container.ext().isActive(this))
+				Logger.error(this, "FCPCLIENT NOT ACTIVE!!!");
+			throw new NullPointerException();
+		}
 		return !(runningPersistentRequests.isEmpty() && completedUnackedRequests.isEmpty());
 	}
 
