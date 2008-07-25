@@ -196,7 +196,7 @@ public class RandomGrabArray {
 					ret = null;
 					// Will be removed in the do{} loop
 					// Need to tell it first.
-					oret.setParentGrabArray(this, null);
+					oret.setParentGrabArray(this, container);
 				}
 				if(ret != null && excluding.exclude(ret, container, context)) {
 					excluded++;
