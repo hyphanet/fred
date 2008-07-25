@@ -878,12 +878,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
-				container.activate(key, 5);
+				// Don't activate/deactivate the key, because it's not persistent in the first place!!
 				short priority = schedCore.getKeyPrio(key, oldPrio, container);
 				if(priority >= oldPrio) return; // already on list at >= priority
 				offeredKeys[priority].queueKey(key.cloneKey());
 				starter.wakeUp();
-				container.deactivate(key, 5);
 			}
 			
 		}, NativeThread.NORM_PRIORITY, false);
