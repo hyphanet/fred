@@ -526,6 +526,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					container.set(this);
 				}
 				// All done! No longer our problem!
+				metadata = null; // Get rid just in case we stick around somehow.
 				return;
 			} else if(metadata.isSplitfile()) {
 				if(logMINOR) Logger.minor(this, "Fetching splitfile");
@@ -551,7 +552,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				
 				if(metaStrings.isEmpty() && isFinal && mimeType != null && ctx.allowedMIMETypes != null &&
 						!ctx.allowedMIMETypes.contains(mimeType)) {
-					throw new FetchException(FetchException.WRONG_MIME_TYPE, metadata.uncompressedDataLength(), false, clientMetadata.getMIMEType());
+					// Just in case...
+					long len = metadata.uncompressedDataLength();
+					metadata = null;
+					throw new FetchException(FetchException.WRONG_MIME_TYPE, len, false, clientMetadata.getMIMEType());
 				}
 				
 				// Splitfile (possibly compressed)
@@ -579,6 +583,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							tryURI = tryURI.dropLastMetaStrings(metaStrings.size());
 							rcb.onFailure(new FetchException(FetchException.TOO_MANY_PATH_COMPONENTS, metadata.uncompressedDataLength(), (rcb == parent), clientMetadata.getMIMEType(), tryURI), this, container, context);
 						}
+						// Just in case...
+						metadata = null;
 						return;
 					}
 				} else
@@ -590,8 +596,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				
 				if((len > ctx.maxOutputLength) ||
 						(len > ctx.maxTempLength)) {
-					
-					throw new FetchException(FetchException.TOO_BIG, len, isFinal && decompressors.size() <= (metadata.isCompressed() ? 1 : 0), clientMetadata.getMIMEType());
+					// Just in case...
+					boolean compressed = metadata.isCompressed();
+					metadata = null;
+					throw new FetchException(FetchException.TOO_BIG, len, isFinal && decompressors.size() <= (compressed ? 1 : 0), clientMetadata.getMIMEType());
 				}
 				
 				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, parent, ctx, 
@@ -777,7 +785,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(persistent)
 				container.activate(SingleFileFetcher.this, 1);
 			try {
-				metadata = Metadata.construct(result.asBucket());
+				Metadata meta = Metadata.construct(result.asBucket());
+				synchronized(SingleFileFetcher.this) {
+					metadata = meta;
+				}
 				if(persistent)
 					container.set(SingleFileFetcher.this);
 			} catch (MetadataParseException e) {
