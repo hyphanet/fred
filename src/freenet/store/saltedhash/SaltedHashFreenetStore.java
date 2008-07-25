@@ -893,7 +893,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				}
 
 				public short getPriorityClass() {
-					return UserAlert.ERROR;
+					return UserAlert.MINOR;
 				}
 
 				public String getShortText() {
@@ -945,7 +945,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				}
 
 				public boolean userCanDismiss() {
-					return true;
+					return false;
 				}
 
 				public boolean isEventNotification() {
