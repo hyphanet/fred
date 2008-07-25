@@ -679,8 +679,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						}
 					});
 
-					for(File currentDir : subDirs)
-						recurse(currentDir);
+
+					// @see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=5086412
+					if(subDirs != null) 
+						for(File currentDir : subDirs)
+							recurse(currentDir);
 				}
 
 				public void run() {
