@@ -259,9 +259,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		} else {
 			if(listener != null) {
-				schedTransient.addPendingKeys(listener, null);
-				short prio = listener.getPriorityClass(selectorContainer);
 				final Key[] keys = listener.listKeys(selectorContainer);
+				schedTransient.addPendingKeys(listener, keys, null);
+				short prio = listener.getPriorityClass(selectorContainer);
 				final boolean dontCache = listener.dontCache(null);
 				for(int i=0;i<keys.length;i++) {
 					if(keys[i].getRoutingKey() == null)
@@ -328,7 +328,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 				return;
 			} else {
 				short prio = listener.getPriorityClass(selectorContainer);
-				schedCore.addPendingKeys(listener, selectorContainer);
+				final Key[] keys = listener.listKeys(selectorContainer);
+				for(int i=0;i<keys.length;i++) {
+					selectorContainer.activate(keys[i], 5);
+					if(keys[i].getRoutingKey() == null)
+						throw new NullPointerException();
+				}
+				schedCore.addPendingKeys(listener, keys, selectorContainer);
 				if(reg == null && getters != null) {
 					reg = new RegisterMe(null, getters, null, prio, schedCore, blocks, node.bootID);
 					selectorContainer.set(reg);
@@ -340,12 +346,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				final RegisterMe regme = reg;
 				// Check the datastore before proceding.
-				final Key[] keys = listener.listKeys(selectorContainer);
 				for(int i=0;i<keys.length;i++) {
-					selectorContainer.activate(keys[i], 5);
 					Key oldKey = keys[i];
 					keys[i] = oldKey.cloneKey();
-					selectorContainer.deactivate(oldKey, 1);
+					selectorContainer.deactivate(oldKey, 5);
 				}
 				final boolean dontCache = listener.dontCache(selectorContainer);
 				datastoreCheckerExecutor.execute(new Runnable() {

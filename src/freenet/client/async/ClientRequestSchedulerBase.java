@@ -178,10 +178,15 @@ abstract class ClientRequestSchedulerBase {
 			}
 	}
 
-	public void addPendingKeys(GotKeyListener getter, ObjectContainer container) {
+	/**
+	 * Keys must already be activated.
+	 * @param getter
+	 * @param keyTokens
+	 * @param container
+	 */
+	public void addPendingKeys(GotKeyListener getter, Key[] keyTokens, ObjectContainer container) {
 		if(persistent())
 			container.activate(getter, 1);
-		Key[] keyTokens = getter.listKeys(container);
 		Key prevTok = null;
 		for(int i=0;i<keyTokens.length;i++) {
 			Key key = keyTokens[i];
@@ -189,11 +194,7 @@ abstract class ClientRequestSchedulerBase {
 				Logger.error(this, "Ignoring duplicate token");
 				continue;
 			}
-			if(persistent())
-				container.activate(key, 5);
 			addPendingKey(key, getter, container);
-			if(persistent())
-				container.deactivate(key, 5);
 		}
 	}
 	
