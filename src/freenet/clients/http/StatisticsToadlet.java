@@ -322,6 +322,18 @@ public class StatisticsToadlet extends Toadlet {
 			nodeCircleInfobox.addChild("div", "class", "infobox-header", "Node\u00a0Location\u00a0Distribution (w/Swap\u00a0Age)");
 			HTMLNode nodeCircleTable = nodeCircleInfobox.addChild("div", "class", "infobox-content").addChild("table");
 			addNodeCircle(nodeCircleTable);
+			
+			// specialisation box
+			int[] incomingRequestCountArray = new int[1];
+			int[] incomingRequestLocation = stats.getIncomingRequestLocation(incomingRequestCountArray);
+			int incomingRequestsCount = incomingRequestCountArray[0];
+			
+			if(incomingRequestsCount > 0) {
+				HTMLNode nodeSpecialisationInfobox = nextTableCell.addChild("div", "class", "infobox");
+				nodeSpecialisationInfobox.addChild("div", "class", "infobox-header", "Incoming\u00a0Request\u00a0Distribution");
+				HTMLNode nodeSpecialisationTable = nodeSpecialisationInfobox.addChild("div", "class", "infobox-content").addChild("table");
+				addSpecialisation(nodeSpecialisationTable, incomingRequestsCount, incomingRequestLocation);
+			}
 		}
 
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
@@ -1101,6 +1113,18 @@ public class StatisticsToadlet extends Toadlet {
 			histogramPercent = ((double) histogram[ i ] ) / nodeCount;
 			nodeHistogramGraphCell.addChild("div", new String[] { "class", "style" }, new String[] { "histogramConnected", "height: " + fix3pctUS.format(histogramPercent) + "; width: 100%;" }, "\u00a0");
 		}
+	}
+	
+	private void addSpecialisation(HTMLNode table, int incomingRequestsCount, int[] incomingRequestLocation) {
+		HTMLNode nodeHistogramLegendTableRow = table.addChild("tr");
+		HTMLNode nodeHistogramGraphTableRow = table.addChild("tr");
+		for (int i = 0; i<incomingRequestLocation.length; i++) {
+			HTMLNode nodeHistogramLegendCell = nodeHistogramLegendTableRow.addChild("td");
+			HTMLNode nodeHistogramGraphCell = nodeHistogramGraphTableRow.addChild("td", "style", "height: 100px;");
+			nodeHistogramLegendCell.addChild("div", "class", "histogramLabel").addChild("#", fix1p1.format(((double) i) / incomingRequestLocation.length ));
+			nodeHistogramGraphCell.addChild("div", new String[] { "class", "style" }, new String[] { "histogramConnected", "height: " + fix3pctUS.format(((double)incomingRequestLocation[i]) / incomingRequestsCount) + "; width: 100%;" }, "\u00a0");
+		}
+
 	}
 
 	private void addPeerCircle (HTMLNode circleTable, PeerNodeStatus[] peerNodeStatuses) {

@@ -381,6 +381,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			// failure table even though we didn't accept any of them.
 			return true;
 		}
+		nodeStats.reportIncomingRequestLocation(key.toNormalizedDouble());
 		//if(!node.lockUID(id)) return false;
 		RequestHandler rh = new RequestHandler(m, source, id, node, htl, key);
 		node.executor.execute(rh, "RequestHandler for UID "+id+" on "+node.getDarknetPortNumber());

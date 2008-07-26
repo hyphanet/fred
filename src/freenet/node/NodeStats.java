@@ -53,6 +53,9 @@ public class NodeStats implements Persistable {
 	 * block send time.
 	 */
 	public static final int MAX_INTERREQUEST_TIME = 10*1000;
+	/** Locations of incoming requests */
+	private final int[] incomingRequestsByLoc = new int[10];
+	private int incomingRequestsAccounted = 0;
 	
 	private final Node node;
 	private MemoryChecker myMemoryChecker;
@@ -1669,4 +1672,22 @@ public class NodeStats implements Persistable {
 		if(logMINOR) Logger.minor(this, "Successful receives: "+blockTransferPSuccess.currentValue()+" count="+blockTransferPSuccess.countReports());
 	}
 	
+	public void reportIncomingRequestLocation(double loc) {
+		assert((loc > 0) && (loc < 1.0));
+		
+		synchronized(incomingRequestsByLoc) {
+			incomingRequestsByLoc[(int)Math.floor(loc*incomingRequestsByLoc.length)]++;
+			incomingRequestsAccounted++;
+		}
+	}
+	
+	public int[] getIncomingRequestLocation(int[] retval) {
+		int[] result = new int[incomingRequestsByLoc.length];
+		synchronized(incomingRequestsByLoc) {
+			System.arraycopy(incomingRequestsByLoc, 0, result, 0, incomingRequestsByLoc.length);
+			retval[0] = incomingRequestsAccounted;
+		}
+		
+		return result;
+	}
 }
