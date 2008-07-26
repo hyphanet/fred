@@ -59,7 +59,7 @@ public class L10n {
 
 	L10n(String selected) {
 		selectedLanguage = mapLanguageNameToShortCode(selected);
-		File tmpFile = new File(L10n.PREFIX + selected + L10n.OVERRIDE_SUFFIX);
+		File tmpFile = new File(L10n.PREFIX + selectedLanguage + L10n.OVERRIDE_SUFFIX);
 		
 		try {
 			if(tmpFile.exists() && tmpFile.canRead() && tmpFile.length() > 0) {
