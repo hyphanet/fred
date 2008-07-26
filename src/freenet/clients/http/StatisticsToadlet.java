@@ -357,7 +357,7 @@ public class StatisticsToadlet extends Toadlet {
 			int[] outgoingRequestLocation = stats.getOutgoingRequestLocation(outgoingRequestCountArray);
 			int outgoingRequestsCount = outgoingRequestCountArray[0];
 			
-			if(outgoingLocalRequestsCount > 0) {
+			if(outgoingRequestsCount > 0) {
 				HTMLNode nodeSpecialisationInfobox = nextTableCell.addChild("div", "class", "infobox");
 				nodeSpecialisationInfobox.addChild("div", "class", "infobox-header", "Outgoing\u00a0Request\u00a0Distribution");
 				HTMLNode nodeSpecialisationTable = nodeSpecialisationInfobox.addChild("div", "class", "infobox-content").addChild("table");
