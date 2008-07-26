@@ -7,6 +7,7 @@ import freenet.client.async.ClientRequestScheduler;
 import freenet.config.Config;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
+import freenet.keys.Key;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
@@ -34,9 +35,10 @@ public class RequestStarterGroup {
 	public final ClientRequestScheduler sskFetchScheduler;
 	public final ClientRequestScheduler sskPutScheduler;
 
+	private final NodeStats stats;
 	RequestStarterGroup(Node node, NodeClientCore core, int portNumber, RandomSource random, Config config, SimpleFieldSet fs) {
 		SubConfig schedulerConfig = new SubConfig("node.scheduler", config);
-		NodeStats stats = core.nodeStats;
+		this.stats = core.nodeStats;
 		
 		throttleWindow = new ThrottleWindowManager(2.0, fs == null ? null : fs.subset("ThrottleWindow"), node);
 		throttleWindowCHK = new ThrottleWindowManager(2.0, fs == null ? null : fs.subset("ThrottleWindowCHK"), node);
@@ -139,10 +141,11 @@ public class RequestStarterGroup {
 		return sskInsertThrottle;
 	}
 
-	public void requestCompleted(boolean isSSK, boolean isInsert) {
+	public void requestCompleted(boolean isSSK, boolean isInsert, Key key) {
 		throttleWindow.requestCompleted();
 		(isSSK ? throttleWindowSSK : throttleWindowCHK).requestCompleted();
 		(isInsert ? throttleWindowInsert : throttleWindowRequest).requestCompleted();
+		stats.reportOutgoingRequestLocation(key.toNormalizedDouble());
 	}
 	
 	public void rejectedOverload(boolean isSSK, boolean isInsert) {

@@ -554,7 +554,7 @@ public class NodeClientCore implements Persistable {
 						(status == RequestSender.GET_OFFER_VERIFY_FAILURE))) {
 					long rtt = System.currentTimeMillis() - startTime;
 					if(!rejectedOverload)
-						requestStarters.requestCompleted(false, false);
+						requestStarters.requestCompleted(false, false, key.getNodeKey());
 					// Count towards RTT even if got a RejectedOverload - but not if timed out.
 					requestStarters.chkRequestThrottle.successfulCompletion(rtt);
 				}
@@ -671,7 +671,7 @@ public class NodeClientCore implements Persistable {
 					long rtt = System.currentTimeMillis() - startTime;
 					
 					if(!rejectedOverload)
-						requestStarters.requestCompleted(true, false);
+						requestStarters.requestCompleted(true, false, key.getNodeKey());
 					// Count towards RTT even if got a RejectedOverload - but not if timed out.
 					requestStarters.sskRequestThrottle.successfulCompletion(rtt);
 				}
@@ -794,7 +794,7 @@ public class NodeClientCore implements Persistable {
 				
 				// RejectedOverload requests count towards RTT (timed out ones don't).
 				requestStarters.chkInsertThrottle.successfulCompletion(len);
-				requestStarters.requestCompleted(false, true);
+				requestStarters.requestCompleted(false, true, block.getKey());
 			}
 		}
 		
@@ -903,7 +903,7 @@ public class NodeClientCore implements Persistable {
 				// It worked!
 				long endTime = System.currentTimeMillis();
 				long rtt = endTime - startTime;
-				requestStarters.requestCompleted(true, true);
+				requestStarters.requestCompleted(true, true, block.getKey());
 				requestStarters.sskInsertThrottle.successfulCompletion(rtt);
 			}
 		}

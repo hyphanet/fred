@@ -341,7 +341,7 @@ public class StatisticsToadlet extends Toadlet {
 			
 			nextTableCell = overviewTableRow.addChild("td");
 			int[] outgoingLocalRequestCountArray = new int[1];
-			int[] outgoingLocalRequestLocation = stats.getOutgoingRequestLocation(outgoingLocalRequestCountArray);
+			int[] outgoingLocalRequestLocation = stats.getOutgoingLocalRequestLocation(outgoingLocalRequestCountArray);
 			int outgoingLocalRequestsCount = outgoingLocalRequestCountArray[0];
 			
 			if(outgoingLocalRequestsCount > 0) {
@@ -349,6 +349,19 @@ public class StatisticsToadlet extends Toadlet {
 				nodeSpecialisationInfobox.addChild("div", "class", "infobox-header", "Outgoing\u00a0Local\u00a0Request\u00a0Distribution");
 				HTMLNode nodeSpecialisationTable = nodeSpecialisationInfobox.addChild("div", "class", "infobox-content").addChild("table");
 				addSpecialisation(nodeSpecialisationTable, myLocation, outgoingLocalRequestsCount, outgoingLocalRequestLocation);
+			}
+			
+			overviewTableRow = overviewTable.addChild("tr");
+			nextTableCell = overviewTableRow.addChild("td", "class", "first");
+			int[] outgoingRequestCountArray = new int[1];
+			int[] outgoingRequestLocation = stats.getOutgoingRequestLocation(outgoingRequestCountArray);
+			int outgoingRequestsCount = outgoingRequestCountArray[0];
+			
+			if(outgoingLocalRequestsCount > 0) {
+				HTMLNode nodeSpecialisationInfobox = nextTableCell.addChild("div", "class", "infobox");
+				nodeSpecialisationInfobox.addChild("div", "class", "infobox-header", "Outgoing\u00a0Request\u00a0Distribution");
+				HTMLNode nodeSpecialisationTable = nodeSpecialisationInfobox.addChild("div", "class", "infobox-content").addChild("table");
+				addSpecialisation(nodeSpecialisationTable, myLocation, outgoingRequestsCount, outgoingRequestLocation);
 			}
 		}
 

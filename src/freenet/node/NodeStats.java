@@ -56,9 +56,11 @@ public class NodeStats implements Persistable {
 	/** Locations of incoming requests */
 	private final int[] incomingRequestsByLoc = new int[10];
 	private int incomingRequestsAccounted = 0;
-	/** Locations of outoing requests */
+	/** Locations of outgoing requests */
 	private final int[] outgoingLocalRequestByLoc = new int[10];
 	private int outgoingLocalRequestsAccounted = 0;
+	private final int[] outgoingRequestByLoc = new int[10];
+	private int outgoingRequestsAccounted = 0;
 	
 	private final Node node;
 	private MemoryChecker myMemoryChecker;
@@ -1703,11 +1705,30 @@ public class NodeStats implements Persistable {
 		}
 	}
 	
-	public int[] getOutgoingRequestLocation(int[] retval) {
+	public int[] getOutgoingLocalRequestLocation(int[] retval) {
 		int[] result = new int[outgoingLocalRequestByLoc.length];
 		synchronized(outgoingLocalRequestByLoc) {
 			System.arraycopy(outgoingLocalRequestByLoc, 0, result, 0, outgoingLocalRequestByLoc.length);
 			retval[0] = outgoingLocalRequestsAccounted;
+		}
+		
+		return result;
+	}
+	
+	public void reportOutgoingRequestLocation(double loc) {
+		assert((loc > 0) && (loc < 1.0));
+		
+		synchronized(outgoingRequestByLoc) {
+			outgoingRequestByLoc[(int)Math.floor(loc*outgoingRequestByLoc.length)]++;
+			outgoingRequestsAccounted++;
+		}
+	}
+	
+	public int[] getOutgoingRequestLocation(int[] retval) {
+		int[] result = new int[outgoingRequestByLoc.length];
+		synchronized(outgoingRequestByLoc) {
+			System.arraycopy(outgoingRequestByLoc, 0, result, 0, outgoingRequestByLoc.length);
+			retval[0] = outgoingRequestsAccounted;
 		}
 		
 		return result;
