@@ -56,6 +56,9 @@ public class NodeStats implements Persistable {
 	/** Locations of incoming requests */
 	private final int[] incomingRequestsByLoc = new int[10];
 	private int incomingRequestsAccounted = 0;
+	/** Locations of outoing requests */
+	private final int[] outgoingLocalRequestByLoc = new int[10];
+	private int outgoingLocalRequestsAccounted = 0;
 	
 	private final Node node;
 	private MemoryChecker myMemoryChecker;
@@ -1686,6 +1689,25 @@ public class NodeStats implements Persistable {
 		synchronized(incomingRequestsByLoc) {
 			System.arraycopy(incomingRequestsByLoc, 0, result, 0, incomingRequestsByLoc.length);
 			retval[0] = incomingRequestsAccounted;
+		}
+		
+		return result;
+	}
+	
+	public void reportOutgoingLocalRequestLocation(double loc) {
+		assert((loc > 0) && (loc < 1.0));
+		
+		synchronized(outgoingLocalRequestByLoc) {
+			outgoingLocalRequestByLoc[(int)Math.floor(loc*outgoingLocalRequestByLoc.length)]++;
+			outgoingLocalRequestsAccounted++;
+		}
+	}
+	
+	public int[] getOutgoingRequestLocation(int[] retval) {
+		int[] result = new int[outgoingLocalRequestByLoc.length];
+		synchronized(outgoingLocalRequestByLoc) {
+			System.arraycopy(outgoingLocalRequestByLoc, 0, result, 0, outgoingLocalRequestByLoc.length);
+			retval[0] = outgoingLocalRequestsAccounted;
 		}
 		
 		return result;
