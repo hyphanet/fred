@@ -15,6 +15,7 @@ import java.io.IOException;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
+import java.text.DecimalFormat;
 
 /**
  * A class to estimate the node's average uptime. Every 5 minutes (with a fixed offset), we write
@@ -46,6 +47,8 @@ public class UptimeEstimator implements Runnable {
 	
 	/** We write to disk every 5 minutes. The offset is derived from the node's identity. */
 	private long timeOffset;
+	
+	private final DecimalFormat fix1p2 = new DecimalFormat("0.00");
 
 	public UptimeEstimator(File nodeDir, Ticker ticker, byte[] bs) {
 		this.ticker = ticker;
@@ -64,7 +67,7 @@ public class UptimeEstimator implements Runnable {
 		readData(prevFile, base);
 		readData(logFile, base);
 		schedule(System.currentTimeMillis());
-		System.err.println("Created uptime estimator, time offset is "+timeOffset+" uptime at startup is "+getUptime());
+		System.out.println("Created uptime estimator, time offset is "+timeOffset+" uptime at startup is "+fix1p2.format(getUptime()));
 	}
 	
 	private void readData(File file, int base) {
