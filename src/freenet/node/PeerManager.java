@@ -79,6 +79,9 @@ public class PeerManager {
 	private long nextRoutableConnectionStatsUpdateTime = -1;
 	/** routableConnectionStats update interval (milliseconds) */
 	private static final long routableConnectionStatsUpdateInterval = 7 * 1000;  // 7 seconds
+	/** number of samples we have to do stats on peer-selection */
+	private long numberOfSelectionSamples = 0;
+	
 	public static final int PEER_NODE_STATUS_CONNECTED = 1;
 	public static final int PEER_NODE_STATUS_ROUTING_BACKED_OFF = 2;
 	public static final int PEER_NODE_STATUS_TOO_NEW = 3;
@@ -987,6 +990,10 @@ public class PeerManager {
 			if(closestNotBackedOff != null && closestBackedOff != null)
 				addUnpickedLocsTo.add(new Double(closestBackedOff.getLocation()));
 
+		//TODO: synchronize! ; store the stats here instead of into PeerNode?
+		best.incrementNumberOfSelections();
+		numberOfSelectionSamples++;
+		
 		return best;
 	}
 
@@ -1813,5 +1820,9 @@ public class PeerManager {
 				return peers[i];
 		}
 		return null;
+	}
+	
+	public long getNumberOfSelectionSamples() {
+		return numberOfSelectionSamples;
 	}
 }

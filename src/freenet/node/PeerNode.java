@@ -149,6 +149,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private long timeLastRoutable;
 	/** Time added or restarted (reset on startup unlike peerAddedTime) */
 	private long timeAddedOrRestarted;
+	/** Number of time that peer has been selected by the routing algorithm */
+	private long numberOfSelections = 0;
+	
 	/** Are we connected? If not, we need to start trying to
 	* handshake.
 	*/
@@ -3978,5 +3981,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	
 	public short getUptime() {
 		return (short)(((int)uptime) & 0xFF);
+	}
+	
+	public long getNumberOfSelections() {
+		return numberOfSelections;
+	}
+	
+	public void incrementNumberOfSelections() {
+		numberOfSelections++;
 	}
 }
