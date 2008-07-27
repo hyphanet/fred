@@ -509,7 +509,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 							String mimeType = clientGet.getMIMEType();
 							String requestedMimeType = request.getParam("type", null);
 							String forceString = request.getParam("force");
-							FProxyToadlet.handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, forceString, request.isParameterSet("forcedownload"), "/queue/", key, "", "/queue/", false, ctx);
+							FProxyToadlet.handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, forceString, request.isParameterSet("forcedownload"), "/queue/", key, "", "/queue/", false, ctx, core);
 							return;
 						}
 					}

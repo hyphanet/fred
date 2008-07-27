@@ -369,6 +369,22 @@ public class PluginManager {
 		}
 		return null;
 	}
+	
+	/**
+	 * look for a Plugin with given classname
+	 * @param plugname
+	 * @return the true if not found
+	 */
+	public boolean isPluginLoaded(String plugname) {
+		synchronized (pluginWrappers) {
+			for(int i=0;i<pluginWrappers.size();i++) {
+				PluginInfoWrapper pi = (PluginInfoWrapper) pluginWrappers.get(i);
+				if (pi.getPluginClassName().equals(plugname))
+					return true;
+			}
+		}
+		return false;
+	}
 
 	public String handleHTTPGet(String plugin, HTTPRequest request) throws PluginHTTPException {
 		FredPlugin handler = null;
