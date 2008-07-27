@@ -116,7 +116,8 @@ public class L10n {
 			
 			// If there is no need to keep it in the override, remove it...
 			// unless the original/default is the same as the translation
-			if (("".equals(value)) || (value.equals(currentTranslation.get(key)))) {
+			String currentValue = currentTranslation.get(key);
+			if (("".equals(value)) || ((currentValue != null) && (value.equals(currentValue)))) {
 				translationOverride.removeValue(key);
 			} else {
 				value = value.replaceAll("(\r|\n|\t)+", "");
