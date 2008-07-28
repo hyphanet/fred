@@ -61,9 +61,11 @@ public class InsertCompressor {
 				return; // Inserter was cancelled, we weren't told.
 			} else if(inserter.started()) {
 				Logger.error(this, "Inserter started already, but we are about to attempt to compress the data!");
+				container.delete(this);
 				return; // Already started, no point ... but this really shouldn't happen.
 			} else {
 				Logger.error(this, "Original data was deleted but inserter neither deleted nor cancelled nor missing!");
+				container.delete(this);
 				return;
 			}
 		}
