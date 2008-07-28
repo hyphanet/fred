@@ -106,7 +106,7 @@ public class PluginDownLoaderOfficial extends PluginDownLoaderURL {
 			System.out.println("The CA has been imported into the trustStore");
 		} catch(Exception e) {
 			System.err.println("Error while handling the CA :" + e.getMessage());
-			throw new IOException("Error while handling the CA : "+e, e);
+			throw new IOException("Error while handling the CA : "+e);
 		} finally {
 			Closer.close(fis);
 		}
