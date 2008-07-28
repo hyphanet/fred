@@ -53,6 +53,7 @@ class SingleFileInserter implements ClientPutState {
 	private final boolean earlyEncode;
 	private final boolean persistent;
 	private boolean started;
+	private boolean cancelled;
 	
 	// A persistent hashCode is helpful in debugging, and also means we can put
 	// these objects into sets etc when we need to.
@@ -774,8 +775,11 @@ class SingleFileInserter implements ClientPutState {
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
+		cancelled = true;
 		if(freeData)
 			block.free(container);
+		if(persistent)
+			container.set(this);
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context) throws InsertException {
@@ -799,5 +803,13 @@ class SingleFileInserter implements ClientPutState {
 			if(ctx.eventProducer == null) throw new NullPointerException();
 			ctx.eventProducer.produceEvent(new StartedCompressionEvent(i), container, context);
 		}
+	}
+	
+	boolean cancelled() {
+		return cancelled;
+	}
+	
+	boolean started() {
+		return started;
 	}
 }

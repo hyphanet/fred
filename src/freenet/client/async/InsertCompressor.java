@@ -55,6 +55,15 @@ public class InsertCompressor {
 			container.activate(inserter, 1);
 			container.activate(origData, 1);
 		}
+		if(origData == null) {
+			if(inserter == null || inserter.cancelled()) {
+				container.delete(this);
+				return; // Inserter was cancelled, we weren't told.
+			} else if(inserter.started()) {
+				Logger.error(this, "Inserter started already, but we are about to attempt to compress the data!");
+				return; // Already started, no point ... but this really shouldn't happen.
+			}
+		}
 		synchronized(this) {
 			// Can happen with the above activation and lazy query evaluation.
 			if(scheduled) {
