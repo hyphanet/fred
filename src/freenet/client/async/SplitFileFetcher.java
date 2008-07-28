@@ -377,7 +377,8 @@ public class SplitFileFetcher implements ClientGetState {
 		for(int i=0;i<segments.length;i++) {
 			if(logMINOR)
 				Logger.minor(this, "Cancelling segment "+i);
-			container.activate(segments[i], 1);
+			if(persistent)
+				container.activate(segments[i], 1);
 			segments[i].cancel(container, context);
 		}
 	}
