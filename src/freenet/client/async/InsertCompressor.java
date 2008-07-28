@@ -128,7 +128,9 @@ public class InsertCompressor {
 				context.jobRunner.queue(new DBJob() {
 					
 					public void run(ObjectContainer container, ClientContext context) {
+						container.activate(inserter, 1);
 						inserter.onCompressed(output, container, context);
+						container.deactivate(inserter, 1);
 						container.delete(InsertCompressor.this);
 					}
 					
@@ -153,7 +155,11 @@ public class InsertCompressor {
 				context.jobRunner.queue(new DBJob() {
 					
 					public void run(ObjectContainer container, ClientContext context) {
+						container.activate(inserter, 1);
+						container.activate(inserter.cb, 1);
 						inserter.cb.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), inserter, container, context);
+						container.deactivate(inserter.cb, 1);
+						container.deactivate(inserter, 1);
 						container.delete(InsertCompressor.this);
 					}
 					
@@ -167,7 +173,11 @@ public class InsertCompressor {
 				context.jobRunner.queue(new DBJob() {
 					
 					public void run(ObjectContainer container, ClientContext context) {
+						container.activate(inserter, 1);
+						container.activate(inserter.cb, 1);
 						inserter.cb.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), inserter, container, context);
+						container.deactivate(inserter.cb, 1);
+						container.deactivate(inserter, 1);
 						container.delete(InsertCompressor.this);
 					}
 					
