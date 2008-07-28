@@ -561,7 +561,7 @@ public class PluginManager {
 	}
 	
 	public boolean isOfficialPlugin(String name) {
-		if ((name == null) || name.trim().isEmpty()) return false;
+		if ((name == null) || (name.trim().length() == 0)) return false;
 		List<String> availablePlugins = findAvailablePlugins();
 		for(String n:availablePlugins) {
 			if (n.equals(name)) return true;			
