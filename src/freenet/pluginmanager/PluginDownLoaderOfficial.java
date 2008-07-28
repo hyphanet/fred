@@ -21,7 +21,7 @@ import freenet.support.io.Closer;
 
 public class PluginDownLoaderOfficial extends PluginDownLoaderURL {
 
-	private final byte[] cert = ("-----BEGIN CERTIFICATE-----\n"
+	private static final byte[] cert = ("-----BEGIN CERTIFICATE-----\n"
 			+ "MIIHyTCCBbGgAwIBAgIBATANBgkqhkiG9w0BAQUFADB9MQswCQYDVQQGEwJJTDEW\n"
 			+ "MBQGA1UEChMNU3RhcnRDb20gTHRkLjErMCkGA1UECxMiU2VjdXJlIERpZ2l0YWwg\n"
 			+ "Q2VydGlmaWNhdGUgU2lnbmluZzEpMCcGA1UEAxMgU3RhcnRDb20gQ2VydGlmaWNh\n"
