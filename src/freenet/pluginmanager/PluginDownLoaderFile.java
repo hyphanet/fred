@@ -24,4 +24,9 @@ public class PluginDownLoaderFile extends PluginDownLoader<File> {
 		return source.substring(source.lastIndexOf('/') + 1);
 	}
 
+	@Override
+	String getSHA1sum() throws PluginNotFoundException {
+		return null;
+	}
+
 }

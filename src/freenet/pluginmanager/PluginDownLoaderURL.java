@@ -40,4 +40,9 @@ public class PluginDownLoaderURL extends PluginDownLoader<URL> {
 		return name;
 	}
 
+	@Override
+	String getSHA1sum() throws PluginNotFoundException {
+		return null;
+	}
+
 }

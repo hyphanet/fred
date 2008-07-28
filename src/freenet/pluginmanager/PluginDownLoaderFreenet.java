@@ -46,4 +46,9 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 		return source.substring(source.lastIndexOf('/') + 1);
 	}
 
+	@Override
+	String getSHA1sum() throws PluginNotFoundException {
+		return null;
+	}
+
 }

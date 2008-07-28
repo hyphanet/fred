@@ -3,7 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,6 +14,8 @@ import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -35,6 +40,7 @@ import freenet.node.RequestStarter;
 import freenet.node.Ticker;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
+import freenet.support.HexUtil;
 import freenet.support.JarClassLoader;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
@@ -629,6 +635,16 @@ public class PluginManager {
 							Logger.error(this, "could not rename temp file to plugin file");
 							throw new PluginNotFoundException("could not rename temp file to plugin file");
 						}
+						
+						String digest = pdl.getSHA1sum();
+						if (digest != null) {
+							String testsum = getFileSHA1(pluginFile);
+							if (!(digest.equalsIgnoreCase(testsum))) {
+								Logger.error(this, "Checksum verification failed, should be " +digest+ " but was " + testsum);
+								throw new PluginNotFoundException("Checksum verification failed, should be " +digest+ " but was " + testsum);
+							}
+						}
+						
 					} catch (IOException ioe1) {
 						Logger.error(this, "could not load plugin", ioe1);
 						if (tempPluginFile != null) {
@@ -722,6 +738,32 @@ public class PluginManager {
 			pluginFile.delete();
 			throw new PluginNotFoundException("unexcpected error while plugin loading "+t, t);
 		}
+	}
+
+	private String getFileSHA1(File file) throws PluginNotFoundException {
+		final int BUFFERSIZE = 4096;
+		MessageDigest hash = null;
+		FileInputStream fis = null;
+		BufferedInputStream bis = null;
+		
+		try {
+			hash = MessageDigest.getInstance("SHA-1");
+			// We compute the hash
+			// http://java.sun.com/developer/TechTips/1998/tt0915.html#tip2
+			fis = new FileInputStream(file);
+			bis = new BufferedInputStream(fis);
+			int len = 0;
+			byte[] buffer = new byte[BUFFERSIZE];
+			while((len = bis.read(buffer)) > -1) {
+				hash.update(buffer, 0, len);
+			}	
+		} catch (Exception e) {
+			throw new PluginNotFoundException("Error while computing sha1 hash of the downloaded plugin: "+e, e);
+		} finally {
+			Closer.close(bis);
+			Closer.close(fis);
+		}
+		return HexUtil.bytesToHex(hash.digest());
 	}
 
 	Ticker getTicker() {
