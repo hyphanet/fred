@@ -118,15 +118,31 @@ public class PproxyToadlet extends Toadlet {
 		else
 		{
 			PageMaker pageMaker = ctx.getPageMaker();
-
-			if (request.isPartSet("submit-official") || request.isPartSet("submit-other")) {
+			
+			if (request.isPartSet("submit-official")) {
 				String pluginName = null;
-				if (request.isPartSet("submit-official")) {
-					pluginName = request.getPartAsString("plugin-name", 40);
-				} else {
-					pluginName = request.getPartAsString("plugin-url", 200);
-				}
-				pm.startPlugin(pluginName, true);
+				pluginName = request.getPartAsString("plugin-name", 40);
+				pm.startPluginOfficial(pluginName, true);
+				headers.put("Location", ".");
+				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+				return;
+			}
+			if (request.isPartSet("submit-other")) {
+				String pluginName = null;
+				pluginName = request.getPartAsString("plugin-url", 200);
+				boolean fileonly = "on".equalsIgnoreCase(request.getPartAsString("fileonly", 20));
+				if (fileonly) 
+					pm.startPluginFile(pluginName, true);
+				else
+					pm.startPluginURL(pluginName, true);
+				headers.put("Location", ".");
+				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+				return;
+			}
+			if (request.isPartSet("submit-freenet")) {
+				String pluginName = null;
+				pluginName = request.getPartAsString("plugin-uri", 300);
+				pm.startPluginFreenet(pluginName, true);
 				headers.put("Location", ".");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
@@ -211,7 +227,8 @@ public class PproxyToadlet extends Toadlet {
 					if (purge) {
 						pm.removeCachedCopy(fn);
 					}
-					pm.startPlugin(fn, true);
+					// FIXME
+					pm.startPluginAuto(fn, true);
 
 					headers.put("Location", ".");
 					ctx.sendReplyHeaders(302, "Found", headers, null, 0);
@@ -299,7 +316,7 @@ public class PproxyToadlet extends Toadlet {
 				}
 				
 				/* find which plugins have already been loaded. */
-				List/*<String>*/ availablePlugins = findAvailablePlugins();
+				List<String> availablePlugins = pm.findAvailablePlugins();
 				Iterator/*<PluginInfoWrapper>*/ loadedPlugins = pm.getPlugins().iterator();
 				while (loadedPlugins.hasNext()) {
 					PluginInfoWrapper pluginInfoWrapper = (PluginInfoWrapper) loadedPlugins.next();
@@ -317,6 +334,7 @@ public class PproxyToadlet extends Toadlet {
 				showPluginList(ctx, pm, contentNode);
 				showOfficialPluginLoader(ctx, contentNode, availablePlugins);
 				showUnofficialPluginLoader(ctx, contentNode);
+				showFreenetPluginLoader(ctx, contentNode);
 
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			} else {
@@ -355,31 +373,6 @@ public class PproxyToadlet extends Toadlet {
 			ctx.forceDisconnect();
 			writeInternalError(t, ctx);
 		}
-	}
-
-	/**
-	 * Returns a list of the names of all available official plugins. Right now
-	 * this list is hardcoded but in future we could retrieve this list from emu
-	 * or from freenet itself.
-	 * 
-	 * @return A list of all available plugin names
-	 */
-	private List/* <String> */findAvailablePlugins() {
-		List/* <String> */availablePlugins = new ArrayList/* <String> */();
-		availablePlugins.add("Echo");
-		availablePlugins.add("Freemail");
-		availablePlugins.add("HelloWorld");
-		availablePlugins.add("HelloFCP");
-		availablePlugins.add("JSTUN");
-		availablePlugins.add("KeyExplorer");
-		availablePlugins.add("MDNSDiscovery");
-		availablePlugins.add("SNMP");
-		availablePlugins.add("TestGallery");
-		availablePlugins.add("ThawIndexBrowser");
-		availablePlugins.add("UPnP");
-		availablePlugins.add("XMLLibrarian");
-		availablePlugins.add("XMLSpider");
-		return availablePlugins;
 	}
 
 	/**
@@ -489,6 +482,22 @@ public class PproxyToadlet extends Toadlet {
 		addOtherForm.addChild("input", new String[] { "type", "name", "size" }, new String[] { "text", "plugin-url", "80" });
 		addOtherForm.addChild("#", " ");
 		addOtherForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-other", l10n("Load") });
+		addOtherForm.addChild("br");
+		addOtherForm.addChild("input", new String[] { "type", "name", "checked" }, new String[] { "checkbox", "fileonly", "checked" });
+		addOtherForm.addChild("#", " " + l10n("fileonly"));
+	}
+	
+	private void showFreenetPluginLoader(ToadletContext toadletContext, HTMLNode contentNode) {
+		/* box for freenet plugins. */
+		HTMLNode addFreenetPluginBox = contentNode.addChild("div", "class", "infobox infobox-normal");
+		addFreenetPluginBox.addChild("div", "class", "infobox-header", l10n("loadFreenetPlugin"));
+		HTMLNode addFreenetPluginContent = addFreenetPluginBox.addChild("div", "class", "infobox-content");
+		HTMLNode addFreenetForm = toadletContext.addFormChild(addFreenetPluginContent, ".", "addFreenetPluginForm");
+		addFreenetForm.addChild("div", l10n("loadFreenetPluginText"));
+		addFreenetForm.addChild("#", (l10n("loadFreenetURLLabel") + ": "));
+		addFreenetForm.addChild("input", new String[] { "type", "name", "size" }, new String[] { "text", "plugin-uri", "80" });
+		addFreenetForm.addChild("#", " ");
+		addFreenetForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "submit-freenet", l10n("Load") });
 	}
 
 }

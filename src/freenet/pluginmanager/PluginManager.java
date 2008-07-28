@@ -11,9 +11,11 @@ import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 import java.util.jar.Attributes;
@@ -22,11 +24,14 @@ import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 import java.util.zip.ZipException;
 
+import freenet.client.HighLevelSimpleClient;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
+import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.RequestStarter;
 import freenet.node.Ticker;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -34,6 +39,7 @@ import freenet.support.JarClassLoader;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.StringArrCallback;
+import freenet.support.api.StringCallback;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
@@ -49,6 +55,9 @@ public class PluginManager {
 	 *
 	 */
 
+	private String configFile;
+	private String installDir;
+	
 	private final HashMap toadletList;
 
 	/* All currently starting plugins. */
@@ -59,15 +68,55 @@ public class PluginManager {
 	private final NodeClientCore core;
 	SubConfig pmconfig;
 	private boolean logMINOR;
+	private boolean logDEBUG;
+	private final HighLevelSimpleClient client;
 
 	public PluginManager(Node node) {
+		
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+		// config 
+		
 		toadletList = new HashMap();
 		pluginWrappers = new Vector();
 		this.node = node;
 		this.core = node.clientCore;
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		
+		if(logMINOR) Logger.minor(this, "Starting Plugin Manager");
+		
+		if(logDEBUG) Logger.debug(this, "Initialize Plugin Manager config");
+		
+		client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true);
+		
 
 		pmconfig = new SubConfig("pluginmanager", node.config);
+//		pmconfig.register("configfile", "fplugins.ini", 9, true, true, "PluginConfig.configFile", "PluginConfig.configFileLong",
+//				new StringCallback() {
+//			public String get() {
+//				return configFile;
+//			}
+//
+//			public void set(String val) throws InvalidConfigValueException {
+//				configFile = val;
+//			}
+//		});
+//		configFile = pmconfig.getString("configfile");
+//		pmconfig.register("installdir", "fplugins", 9, true, true, "PluginConfig.installDir", "PluginConfig.installDirLong",
+//				new StringCallback() {
+//			public String get() {
+//				return installDir;
+//				//return getConfigLoadString();
+//			}
+//
+//			public void set(String val) throws InvalidConfigValueException {
+//				installDir = val;
+//				//if(storeDir.equals(new File(val))) return;
+//				// FIXME
+//				//throw new InvalidConfigValueException(L10n.getString("PluginManager.cannotSetOnceLoaded"));
+//			}
+//		});
+//		installDir = pmconfig.getString("installdir");
+
 		// Start plugins in the config
 		pmconfig.register("loadplugin", null, 9, true, false, "PluginManager.loadedOnStartup", "PluginManager.loadedOnStartupLong",
 				new StringArrCallback() {
@@ -85,17 +134,10 @@ public class PluginManager {
 		String fns[] = pmconfig.getStringArr("loadplugin");
 		if (fns != null) {
 			for (String name : fns)
-				startPlugin(name, false);
+				startPluginAuto(name, false);
 		}
 
 		pmconfig.finishedInitialization();
-		/*System.err.println("=================================");
-		  pmconfig.finishedInitialization();
-		  fns = pmconfig.getStringArr("loadplugin");
-		  for (int i = 0 ; i < fns.length ; i++)
-		  System.err.println("Load: " + StringArrOption.decode(fns[i]));
-		  System.err.println("=================================");
-		 */
 	}
 
 	private String[] getConfigLoadString() {
@@ -126,8 +168,52 @@ public class PluginManager {
 			return new HashSet/* <PluginProgress> */(startingPlugins);
 		}
 	}
+	
+	
+	// try to guess around...
+	public void startPluginAuto(final String pluginname, boolean store) {
+		
+		if (isOfficialPlugin(pluginname)) {
+			startPluginOfficial(pluginname, store);
+			return;
+		}
+		
+		try {
+			FreenetURI uri = new FreenetURI(pluginname);
+			startPluginFreenet(pluginname, store);
+			return;
+		} catch (MalformedURLException e) {
+			// not a freenet key
+		}
+		
+		File[] roots = File.listRoots();
+		for (File f: roots) {
+			if (pluginname.startsWith(f.getName())) {
+				startPluginFile(pluginname, store);
+				return;
+			}
+		}
 
-	public void startPlugin(final String filename, final boolean store) {
+		startPluginURL(pluginname, store);
+	}
+	
+	public void startPluginOfficial(final String pluginname, boolean store) {
+		realStartPlugin(new PluginDownLoaderOfficial(), pluginname, store);
+	}
+	
+	public void startPluginFile(final String filename, boolean store) {
+		realStartPlugin(new PluginDownLoaderFile(), filename, store);
+	}
+	
+	public void startPluginURL(final String filename, boolean store) {
+		realStartPlugin(new PluginDownLoaderURL(), filename, store);
+	}
+	
+	public void startPluginFreenet(final String filename, boolean store) {
+		realStartPlugin(new PluginDownLoaderFreenet(client), filename, true);
+	}
+	
+	private void realStartPlugin(final PluginDownLoader pdl, final String filename, final boolean store) {
 		if (filename.trim().length() == 0)
 			return;
 		final PluginProgress pluginProgress = new PluginProgress(filename);
@@ -140,7 +226,7 @@ public class PluginManager {
 				Logger.normal(this, "Loading plugin: " + filename);
 				FredPlugin plug;
 				try {
-					plug = loadPlugin(filename);
+					plug = loadPlugin(pdl, filename);
 					pluginProgress.setProgress(PluginProgress.STARTING);
 					PluginInfoWrapper pi = PluginHandler.startPlugin(PluginManager.this, filename, plug, new PluginRespirator(node, PluginManager.this));
 					synchronized (pluginWrappers) {
@@ -448,6 +534,40 @@ public class PluginManager {
 			pi.stopPlugin(this, maxWaitTime);
 		}
 	}
+	
+	/**
+	 * Returns a list of the names of all available official plugins. Right now
+	 * this list is hardcoded but in future we could retrieve this list from emu
+	 * or from freenet itself.
+	 * 
+	 * @return A list of all available plugin names
+	 */
+	public List<String> findAvailablePlugins() {
+		List<String> availablePlugins = new ArrayList<String> ();
+		availablePlugins.add("Echo");
+		availablePlugins.add("Freemail");
+		availablePlugins.add("HelloWorld");
+		availablePlugins.add("HelloFCP");
+		availablePlugins.add("JSTUN");
+		availablePlugins.add("KeyExplorer");
+		availablePlugins.add("MDNSDiscovery");
+		availablePlugins.add("SNMP");
+		availablePlugins.add("TestGallery");
+		availablePlugins.add("ThawIndexBrowser");
+		availablePlugins.add("UPnP");
+		availablePlugins.add("XMLLibrarian");
+		availablePlugins.add("XMLSpider");
+		return availablePlugins;
+	}
+	
+	public boolean isOfficialPlugin(String name) {
+		if ((name == null) || name.trim().isEmpty()) return false;
+		List<String> availablePlugins = findAvailablePlugins();
+		for(String n:availablePlugins) {
+			if (n.equals(name)) return true;			
+		}
+		return false;
+	}
 
 	/**
 	 * Tries to load a plugin from the given name. If the name only contains the
@@ -456,6 +576,7 @@ public class PluginManager {
 	 * complete url and the short file already exists in the plugin directory
 	 * it's loaded from the plugin directory, otherwise it's retrieved from the
 	 * remote server.
+	 * @param pdl 
 	 * 
 	 * @param name
 	 *            The specification of the plugin
@@ -463,32 +584,10 @@ public class PluginManager {
 	 * @throws PluginNotFoundException
 	 *             If anything goes wrong.
 	 */
-	private FredPlugin loadPlugin(String name) throws PluginNotFoundException {
-		URL pluginUrl = null;
-		/* check if name is a local file. */
-		File pluginFile = new File(name);
-		if (pluginFile.exists() && pluginFile.isFile()) {
-			try {
-				pluginUrl = pluginFile.toURI().toURL();
-			} catch (MalformedURLException e) {
-				throw new PluginNotFoundException("can not convert local path");
-			}
-		} else {
-			/* check if name contains a URL. */
-			try {
-				pluginUrl = new URL(name);
-			} catch (MalformedURLException mue1) {
-			}
-		}
-		if (pluginUrl == null) {
-			try {
-				pluginUrl = new URL("http://downloads.freenetproject.org/alpha/plugins/" + name + ".jar.url");
-			} catch (MalformedURLException mue1) {
-				Logger.error(this, "could not build plugin url for " + name, mue1);
-				throw new PluginNotFoundException("could not build plugin url for " + name, mue1);
-			}
-		}
-
+	private FredPlugin loadPlugin(PluginDownLoader pdl, String name) throws PluginNotFoundException {
+		
+		pdl.setSource(name);
+		
 		/* check for plugin directory. */
 		File pluginDirectory = new File(node.getNodeDir(), "plugins");
 		if ((pluginDirectory.exists() && !pluginDirectory.isDirectory()) || (!pluginDirectory.exists() && !pluginDirectory.mkdirs())) {
@@ -497,14 +596,8 @@ public class PluginManager {
 		}
 
 		/* get plugin filename. */
-		String completeFilename = pluginUrl.getPath();
-		String filename = completeFilename.substring(completeFilename.lastIndexOf('/') + 1);
-		// The URL to the JAR file might end with .url because of the insane download server that redirects to a JAR file
-		// in response to a request for a file ending '.url'. Strip it off if so, since we want our JAR to end with '.jar'.
-		if (filename.endsWith(".url")) {
-			filename = filename.substring(0, filename.length() - 4);
-		}
-		pluginFile = new File(pluginDirectory, filename);
+		String filename = pdl.getPluginName(name);
+		File pluginFile = new File(pluginDirectory, filename);
 
 		/* check if file needs to be downloaded. */
 		if (logMINOR) {
@@ -516,16 +609,14 @@ public class PluginManager {
 				try {
 					File tempPluginFile = null;
 					OutputStream pluginOutputStream = null;
-					URLConnection urlConnection = null;
 					InputStream pluginInputStream = null;
 					try {
 						tempPluginFile = File.createTempFile("plugin-", ".jar", pluginDirectory);
+						tempPluginFile.deleteOnExit();
+						
+						
 						pluginOutputStream = new FileOutputStream(tempPluginFile);
-						urlConnection = pluginUrl.openConnection();
-						urlConnection.setUseCaches(false);
-						urlConnection.setAllowUserInteraction(false);
-						urlConnection.connect();
-						pluginInputStream = urlConnection.getInputStream();
+						pluginInputStream = pdl.getInputStream();
 						byte[] buffer = new byte[1024];
 						int read;
 						while ((read = pluginInputStream.read(buffer)) != -1) {
