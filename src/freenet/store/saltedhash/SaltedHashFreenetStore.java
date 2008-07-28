@@ -36,6 +36,7 @@ import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
 import freenet.store.StorableBlock;
 import freenet.store.StoreCallback;
+import freenet.support.BinaryBloomFilter;
 import freenet.support.BloomFilter;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
@@ -116,7 +117,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		openStoreFiles(baseDir, name);
 
 		File bloomFile = new File(this.baseDir, name + ".bloom");
-		bloomFilter = new BloomFilter(bloomFile, bloomFilterSize, bloomFilterK);
+		bloomFilter = new BinaryBloomFilter(bloomFile, bloomFilterSize, bloomFilterK);
 		if (bloomFilter.needRebuild()) {
 			flags |= FLAG_REBUILD_BLOOM;
 			checkBloom = false;
