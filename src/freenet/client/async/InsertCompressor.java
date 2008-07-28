@@ -196,6 +196,10 @@ public class InsertCompressor {
 		});
 		while(results.hasNext()) {
 			InsertCompressor comp = (InsertCompressor) results.next();
+			if(!container.ext().isActive(comp)) {
+				Logger.error(InsertCompressor.class, "InsertCompressor not activated by query?!?!");
+				container.activate(comp, 1);
+			}
 			comp.init(container, context);
 		}
 	}
