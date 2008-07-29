@@ -241,6 +241,7 @@ public class UpdateOverMandatoryManager {
 
 	private void sendUOMRequestMain(final PeerNode source, boolean addOnFail) {
 		synchronized(this) {
+			if(updateManager.getMainVersion() >= updateManager.newMainJarVersion()) return;
 			if(nodesAskedSendMainJar.contains(source)) {
 				if(logMINOR) Logger.minor(this, "Recently asked node "+source+" so not re-asking yet.");
 				return;
