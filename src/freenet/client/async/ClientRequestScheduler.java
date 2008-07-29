@@ -747,8 +747,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public void reregisterAll(final ClientRequester request, ObjectContainer container) {
-		schedTransient.reregisterAll(request, random, this, null);
-		schedCore.reregisterAll(request, random, this, container);
+		schedTransient.reregisterAll(request, random, this, null, clientContext);
+		schedCore.reregisterAll(request, random, this, container, clientContext);
 		starter.wakeUp();
 	}
 	

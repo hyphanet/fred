@@ -145,7 +145,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements GotKe
 	 */
 	public void unregisterAll(ObjectContainer container, ClientContext context) {
 		getScheduler(context).removePendingKey(this, false, key.getNodeKey(), container);
-		super.unregister(container);
+		super.unregister(container, context);
 	}
 
 	public synchronized boolean isCancelled(ObjectContainer container) {
@@ -190,7 +190,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements GotKe
 				return;
 			}
 		}
-		unregister(container); // Key has already been removed from pendingKeys
+		unregister(container, context); // Key has already been removed from pendingKeys
 		try {
 			onSuccess(Key.createKeyBlock(this.key, block), false, null, container, context);
 		} catch (KeyVerifyException e) {

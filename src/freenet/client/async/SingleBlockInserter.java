@@ -335,7 +335,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			container.set(this);
 			container.activate(cb, 1);
 		}
-		super.unregister(container);
+		super.unregister(container, context);
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}
 

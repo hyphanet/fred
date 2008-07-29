@@ -257,7 +257,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		parent.completedBlock(dontNotify, container, context);
 		if(decodeNow) {
 			context.getChkFetchScheduler().removePendingKeys(this, true);
-			removeSubSegments(container);
+			removeSubSegments(container, context);
 			decode(container, context);
 		}
 		if(persistent) {
@@ -551,7 +551,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		if(allFailed)
 			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors), container, context, false);
 		else if(seg != null)
-			seg.possiblyRemoveFromParent(container);
+			seg.possiblyRemoveFromParent(container, context);
 	}
 	
 	/** A request has failed non-fatally, so the block may be retried 
@@ -709,7 +709,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			}
 		}
 		context.getChkFetchScheduler().removePendingKeys(this, true);
-		removeSubSegments(container);
+		removeSubSegments(container, context);
 		if(persistent) {
 			container.set(this);
 			container.activate(parentFetcher, 1);
@@ -816,7 +816,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		return true;
 	}
 
-	private void removeSubSegments(ObjectContainer container) {
+	private void removeSubSegments(ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(subSegments, 1);
 		SplitFileFetcherSubSegment[] deadSegs;
@@ -829,7 +829,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		for(int i=0;i<deadSegs.length;i++) {
 			if(persistent)
 				container.activate(deadSegs[i], 1);
-			deadSegs[i].kill(container, true);
+			deadSegs[i].kill(container, context, true);
 		}
 		if(persistent) {
 			container.set(this);
@@ -1096,7 +1096,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			container.activate(seg, 1);
 		if(seg != null) {
 			seg.removeBlockNum(blockNum, container);
-			seg.possiblyRemoveFromParent(container);
+			seg.possiblyRemoveFromParent(container, context);
 		}
 		for(int i=0;i<subSegments.size();i++) {
 			SplitFileFetcherSubSegment checkSeg = (SplitFileFetcherSubSegment) subSegments.get(i);

@@ -583,7 +583,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		return super.toString()+":"+retryCount+"/"+segment+'('+(blockNums == null ? "null" : String.valueOf(blockNums.size()))+')'; 
 	}
 
-	public void possiblyRemoveFromParent(ObjectContainer container) {
+	public void possiblyRemoveFromParent(ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(segment, 1);
@@ -597,7 +597,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				Logger.minor(this, "Definitely removing from parent: "+this);
 			if(!segment.maybeRemoveSeg(this, container)) return;
 		}
-		unregister(container);
+		unregister(container, context);
 	}
 
 	public void onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
@@ -650,7 +650,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	 * Terminate a subsegment. Called by the segment, which will have already removed the
 	 * subsegment from the list.
 	 */
-	public void kill(ObjectContainer container, boolean dontDeactivateSeg) {
+	public void kill(ObjectContainer container, ClientContext context, boolean dontDeactivateSeg) {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(segment, 1);
@@ -659,7 +659,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		if(logMINOR)
 			Logger.minor(this, "Killing "+this);
 		// Do unregister() first so can get and unregister each key and avoid a memory leak
-		unregister(container);
+		unregister(container, context);
 		synchronized(segment) {
 			blockNums.clear();
 			cancelled = true;

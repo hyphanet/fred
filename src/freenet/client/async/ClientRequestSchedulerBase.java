@@ -134,7 +134,7 @@ abstract class ClientRequestSchedulerBase {
 		return Math.max(0, retryCount-MIN_RETRY_COUNT);
 	}
 
-	public void reregisterAll(ClientRequester request, RandomSource random, ClientRequestScheduler lock, ObjectContainer container) {
+	public void reregisterAll(ClientRequester request, RandomSource random, ClientRequestScheduler lock, ObjectContainer container, ClientContext context) {
 		SendableRequest[] reqs;
 		synchronized(lock) {
 			Set h = (Set) allRequestsByClientRequest.get(request);
@@ -145,7 +145,7 @@ abstract class ClientRequestSchedulerBase {
 		for(int i=0;i<reqs.length;i++) {
 			SendableRequest req = reqs[i];
 			// Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.
-			req.unregister(container);
+			req.unregister(container, context);
 			// Then can do innerRegister() (not register()).
 			innerRegister(req, random, container);
 		}
