@@ -21,6 +21,7 @@ import freenet.node.RequestStarter;
 import freenet.node.Ticker;
 import freenet.node.Version;
 import freenet.support.Logger;
+import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 
@@ -185,7 +186,11 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		synchronized(this) {
 			if(fetchedVersion <= this.fetchedVersion) {
 				tempBlobFile.delete();
-				result.asBucket().free();
+				if(result != null) {
+					Bucket toFree = result.asBucket();
+					if(toFree != null)
+						toFree.free();
+				}
 				return;
 			}
 			if(result == null || result.asBucket() == null || result.asBucket().size() == 0) {
