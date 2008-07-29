@@ -196,6 +196,7 @@ public class ArrayBucket implements Bucket {
 
 	public void removeFrom(ObjectContainer container) {
 		container.delete(data);
+		container.delete(this);
 	}
 
 	public Bucket createShadow() throws IOException {
