@@ -212,6 +212,8 @@ public abstract class ClientRequest {
 	public void cancel(ObjectContainer container, ClientContext context) {
 		ClientRequester cr = getClientRequest();
 		// It might have been finished on startup.
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(cr, 1);
 		if(cr != null) cr.cancel(container, context);
 		freeData(container);
 		if(persistenceType == PERSIST_FOREVER)
