@@ -109,10 +109,11 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 				Logger.minor(this, "Cannot unregister "+this+" : not registered", new Exception("debug"));
 		}
 		ClientRequester cr = getClientRequest();
-		container.activate(cr, 1);
+		if(persistent)
+			container.activate(cr, 1);
 		getScheduler(context).removeFromAllRequestsByClientRequest(cr, this);
 		// FIXME should we deactivate??
-		//container.deactivate(cr, 1);
+		//if(persistent) container.deactivate(cr, 1);
 	}
 
 	public ClientRequestScheduler getScheduler(ClientContext context) {
