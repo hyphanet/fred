@@ -144,10 +144,14 @@ abstract class ClientRequestSchedulerBase {
 		
 		for(int i=0;i<reqs.length;i++) {
 			SendableRequest req = reqs[i];
+			if(persistent())
+				container.activate(req, 1);
 			// Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.
 			req.unregister(container, context);
 			// Then can do innerRegister() (not register()).
 			innerRegister(req, random, container);
+			if(persistent())
+				container.deactivate(req, 1);
 		}
 	}
 
