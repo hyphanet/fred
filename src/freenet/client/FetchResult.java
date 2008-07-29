@@ -5,8 +5,6 @@ package freenet.client;
 
 import java.io.IOException;
 
-import com.db4o.ObjectContainer;
-
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 
@@ -34,11 +32,8 @@ public class FetchResult {
 
 	/** Get the MIME type of the fetched data. 
 	 * If unknown, returns application/octet-stream. */
-	public String getMimeType(ObjectContainer container) {
-		if(container != null)
-			container.activate(metadata, 1);
-		String ret = metadata.getMIMEType();
-		return ret;
+	public String getMimeType() {
+		return metadata.getMIMEType();
 	}
 
 	public ClientMetadata getMetadata() {
