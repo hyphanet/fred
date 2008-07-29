@@ -433,7 +433,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 						blockInsertContext, this, false, CHKBlock.DATA_LENGTH,
 						i, getCHKOnly, false, false, parent.token, container, context, persistent);
 				dataBlockInserters[i].schedule(container, context);
-				container.deactivate(dataBlockInserters[i], 1);
+				if(persistent)
+					container.deactivate(dataBlockInserters[i], 1);
 				fin = false;
 			} else {
 				parent.parent.completedBlock(true, container, context);
@@ -471,7 +472,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 							false, CHKBlock.DATA_LENGTH, i + dataBlocks.length,
 							getCHKOnly, false, false, parent.token, container, context, persistent);
 					checkBlockInserters[i].schedule(container, context);
-					container.deactivate(checkBlockInserters[i], 1);
+					if(persistent)
+						container.deactivate(checkBlockInserters[i], 1);
 					fin = false;
 				} else
 					parent.parent.completedBlock(true, container, context);
