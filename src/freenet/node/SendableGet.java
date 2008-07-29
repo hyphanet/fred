@@ -21,9 +21,6 @@ import freenet.support.io.NativeThread;
  */
 public abstract class SendableGet extends BaseSendableGet {
 
-	/** Is this an SSK? */
-	public abstract boolean isSSK();
-	
 	/** Parent BaseClientGetter. Required for schedulers. */
 	public final ClientRequester parent;
 	

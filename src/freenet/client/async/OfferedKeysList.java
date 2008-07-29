@@ -40,14 +40,16 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	private final RandomSource random;
 	private final short priorityClass;
 	private final NodeClientCore core;
+	private final boolean isSSK;
 	
-	OfferedKeysList(NodeClientCore core, RandomSource random, short priorityClass) {
+	OfferedKeysList(NodeClientCore core, RandomSource random, short priorityClass, boolean isSSK) {
 		super(false);
 		this.keys = new HashSet();
 		this.keysList = new Vector();
 		this.random = random;
 		this.priorityClass = priorityClass;
 		this.core = core;
+		this.isSSK = isSSK;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
@@ -177,6 +179,10 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 
 	public Key getNodeKey(Object token, ObjectContainer container) {
 		return (Key) token;
+	}
+
+	public boolean isSSK() {
+		return isSSK;
 	}
 
 }

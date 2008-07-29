@@ -142,4 +142,8 @@ public class SimpleSendableInsert extends SendableInsert {
 		if(finished) return null;
 		else return new Integer(0);
 	}
+
+	public boolean isSSK() {
+		return block instanceof SSKBlock;
+	}
 }

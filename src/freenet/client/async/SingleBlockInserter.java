@@ -273,13 +273,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 	}
 
-	private ClientRequestScheduler getScheduler(ClientContext context) {
-		String uriType = uri.getKeyType();
-		if(uriType.equals("CHK"))
-			return context.getChkInsertScheduler();
-		else if(uriType.equals("SSK") || uriType.equals("KSK"))
-			return context.getSskInsertScheduler();
-		else throw new IllegalArgumentException();
+	public boolean isSSK() {
+		return uri.getKeyType().toUpperCase().equals("SSK");
 	}
 
 	public FreenetURI getURI(ObjectContainer container, ClientContext context) {

@@ -136,7 +136,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(!forInserts) {
 			offeredKeys = new OfferedKeysList[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 			for(short i=0;i<RequestStarter.NUMBER_OF_PRIORITY_CLASSES;i++)
-				offeredKeys[i] = new OfferedKeysList(core, random, i);
+				offeredKeys[i] = new OfferedKeysList(core, random, i, forSSKs);
 		} else {
 			offeredKeys = null;
 		}
@@ -1191,6 +1191,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	public boolean isInsertScheduler() {
 		return isInsertScheduler;
+	}
+
+	public void removeFromAllRequestsByClientRequest(ClientRequester clientRequest, SendableRequest get) {
+		if(get.persistent())
+			schedCore.removeFromAllRequestsByClientRequest(get, clientRequest);
+		else
+			schedTransient.removeFromAllRequestsByClientRequest(get, clientRequest);
 	}
 	
 	

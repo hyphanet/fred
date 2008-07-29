@@ -4,6 +4,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.client.async.ChosenRequest;
 import freenet.client.async.ClientContext;
+import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
@@ -107,8 +108,23 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Cannot unregister "+this+" : not registered", new Exception("debug"));
 		}
+		ClientRequester cr = getClientRequest();
+		container.activate(cr, 1);
+		getScheduler(context).removeFromAllRequestsByClientRequest(cr, this);
+		// FIXME should we deactivate??
+		//container.deactivate(cr, 1);
 	}
 
+	public ClientRequestScheduler getScheduler(ClientContext context) {
+		if(isSSK())
+			return context.getSskInsertScheduler();
+		else
+			return context.getChkInsertScheduler();
+	}
+	
+	/** Is this an SSK? For purposes of determining which scheduler to use. */
+	public abstract boolean isSSK();
+	
 	/** Requeue after an internal error */
 	public abstract void internalError(Object keyNum, Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent);
 
