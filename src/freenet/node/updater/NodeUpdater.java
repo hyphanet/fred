@@ -110,7 +110,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			if(logMINOR)
 				Logger.minor(this, "maybeUpdate: isFetching="+isFetching+", isRunning="+isRunning+", availableVersion="+availableVersion);
 			if(isFetching || (!isRunning)) return;
-			if(availableVersion == fetchedVersion) return;
+			if(availableVersion <= fetchedVersion) return;
 			fetchingVersion = availableVersion;
 			
 			if(availableVersion > currentVersion) {
@@ -183,7 +183,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	void onSuccess(FetchResult result, ClientGetter state, File tempBlobFile, int fetchedVersion) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(this) {
-			if(fetchedVersion < this.fetchedVersion) {
+			if(fetchedVersion <= this.fetchedVersion) {
 				tempBlobFile.delete();
 				result.asBucket().free();
 				return;
