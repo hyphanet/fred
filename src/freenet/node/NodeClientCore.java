@@ -59,6 +59,8 @@ import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.OOMHandler;
+import freenet.support.OOMHook;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.SerialExecutor;
 import freenet.support.SimpleFieldSet;
@@ -79,7 +81,7 @@ import freenet.support.io.TempBucketFactory;
 /**
  * The connection between the node and the client layer.
  */
-public class NodeClientCore implements Persistable, DBJobRunner {
+public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 
 	private static boolean logMINOR;
 	public final USKManager uskManager;
@@ -382,6 +384,7 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		}
 
 		fecQueue.init(RequestStarter.NUMBER_OF_PRIORITY_CLASSES, FEC_QUEUE_CACHE_SIZE, clientContext.jobRunner, node.executor, clientContext);
+		OOMHandler.addOOMHook(this);
 	}
 
 	private static String l10n(String key) {
@@ -1189,6 +1192,8 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 			this.clientDatabaseExecutor.execute(new DBJobWrapper(job), priority, ""+job);
 	}
 	
+	private boolean killedDatabase = false;
+	
 	class DBJobWrapper implements Runnable {
 		
 		DBJobWrapper(DBJob job) {
@@ -1201,10 +1206,24 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 		public void run() {
 			
 			try {
+				synchronized(NodeClientCore.this) {
+					if(killedDatabase) {
+						Logger.error(this, "Database killed already, not running job");
+						return;
+					}
+				}
 				if(job == null) throw new NullPointerException();
 				if(node == null) throw new NullPointerException();
 				job.run(node.db, clientContext);
-				node.db.commit();
+				boolean killed;
+				synchronized(NodeClientCore.this) {
+					killed = killedDatabase;
+				}
+				if(killed) {
+					node.db.rollback();
+					return;
+				} else
+					node.db.commit();
 				if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
 				LinkedList toFree = persistentTempBucketFactory.grabBucketsToFree();
 				for(Iterator i=toFree.iterator();i.hasNext();) {
@@ -1216,7 +1235,21 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 					}
 				}
 			} catch (Throwable t) {
-				Logger.error(this, "Failed to run database job "+job+" : caught "+t, t);
+				if(t instanceof OutOfMemoryError) {
+					synchronized(NodeClientCore.this) {
+						killedDatabase = true;
+					}
+					OOMHandler.handleOOM((OutOfMemoryError) t);
+				} else {
+					Logger.error(this, "Failed to run database job "+job+" : caught "+t, t);
+				}
+				boolean killed;
+				synchronized(NodeClientCore.this) {
+					killed = killedDatabase;
+				}
+				if(killed) {
+					node.db.rollback();
+				}				
 			}
 		}
 		
@@ -1238,5 +1271,17 @@ public class NodeClientCore implements Persistable, DBJobRunner {
 
 	public int getQueueSize(int priority) {
 		return clientDatabaseExecutor.getQueueSize(priority);
+	}
+
+	public void handleLowMemory() throws Exception {
+		// Ignore
+	}
+
+	public void handleOutOfMemory() throws Exception {
+		synchronized(this) {
+			killedDatabase = true;
+		}
+		System.err.println("Out of memory: Emergency shutdown to protect database integrity in progress...");
+		System.exit(NodeInitException.EXIT_OUT_OF_MEMORY_PROTECTING_DATABASE);
 	}
 }
