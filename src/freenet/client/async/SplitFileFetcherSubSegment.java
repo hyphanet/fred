@@ -690,7 +690,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Requeueing after cooldown "+key+" for "+this);
-		if(!segment.requeueAfterCooldown(key, time, container, context)) {
+		if(!segment.requeueAfterCooldown(key, time, container, context, this)) {
 			Logger.error(this, "Key was not wanted after cooldown: "+key+" for "+this+" in requeueAfterCooldown");
 		}
 		if(persistent) {

@@ -600,7 +600,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 				tries = ++dataRetries[blockNo];
 				if(tries > maxTries && maxTries >= 0) failed = true;
 				else {
-					sub = getSubSegment(tries, container, false);
+					sub = getSubSegment(tries, container, false, seg);
 					if(tries % ClientRequestScheduler.COOLDOWN_RETRIES == 0) {
 						long now = System.currentTimeMillis();
 						if(dataCooldownTimes[blockNo] > now)
@@ -618,7 +618,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 				tries = ++checkRetries[checkNo];
 				if(tries > maxTries && maxTries >= 0) failed = true;
 				else {
-					sub = getSubSegment(tries, container, false);
+					sub = getSubSegment(tries, container, false, seg);
 					if(tries % ClientRequestScheduler.COOLDOWN_RETRIES == 0) {
 						long now = System.currentTimeMillis();
 						if(checkCooldownTimes[checkNo] > now)
@@ -656,7 +656,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		return true;
 	}
 	
-	private SplitFileFetcherSubSegment getSubSegment(int retryCount, ObjectContainer container, boolean noCreate) {
+	private SplitFileFetcherSubSegment getSubSegment(int retryCount, ObjectContainer container, boolean noCreate, SplitFileFetcherSubSegment dontDeactivate) {
 		SplitFileFetcherSubSegment sub;
 		if(persistent)
 			container.activate(subSegments, 1);
@@ -673,7 +673,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 					} else
 						ret = sub;
 				}
-				if(persistent && sub != ret) container.deactivate(sub, 1);
+				if(persistent && sub != ret && sub != dontDeactivate) container.deactivate(sub, 1);
 			}
 			if(ret != null) return ret;
 			if(noCreate) return null;
@@ -735,7 +735,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			container.activate(this, 1);
 		}
 		try {
-			SplitFileFetcherSubSegment seg = getSubSegment(0, container, false);
+			SplitFileFetcherSubSegment seg = getSubSegment(0, container, false, null);
 			if(persistent)
 				container.activate(seg, 1);
 			seg.addAll(dataRetries.length+checkRetries.length, true, container, context, false);
@@ -858,7 +858,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 	/**
 	 * @return True if the key was wanted, false otherwise. 
 	 */
-	public boolean requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context) {
+	public boolean requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context, SplitFileFetcherSubSegment dontDeactivate) {
 		if(persistent)
 			container.activate(this, 1);
 		Vector v = null;
@@ -878,7 +878,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 					return false;
 				}
 				int tries = dataRetries[i];
-				SplitFileFetcherSubSegment sub = getSubSegment(tries, container, false);
+				SplitFileFetcherSubSegment sub = getSubSegment(tries, container, false, dontDeactivate);
 				if(logMINOR)
 					Logger.minor(this, "Retrying after cooldown on "+this+": data block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 				if(v == null) v = new Vector();
@@ -902,7 +902,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 					return false;
 				}
 				int tries = checkRetries[i];
-				SplitFileFetcherSubSegment sub = getSubSegment(tries, container, false);
+				SplitFileFetcherSubSegment sub = getSubSegment(tries, container, false, dontDeactivate);
 				if(logMINOR)
 					Logger.minor(this, "Retrying after cooldown on "+this+": check block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 				if(v == null) v = new Vector();
@@ -1068,7 +1068,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		int blockNum = this.getBlockNumber(key, container);
 		if(blockNum < 0) return null;
 		int retryCount = getBlockRetryCount(blockNum);
-		return getSubSegment(retryCount, container, false);
+		return getSubSegment(retryCount, container, false, null);
 	}
 
 	public boolean isCancelled(ObjectContainer container) {
@@ -1102,7 +1102,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		ClientCHK ckey = this.getBlockKey(blockNum, container);
 		ClientCHKBlock cb;
 		int retryCount = getBlockRetryCount(blockNum);
-		SplitFileFetcherSubSegment seg = this.getSubSegment(retryCount, container, true);
+		SplitFileFetcherSubSegment seg = this.getSubSegment(retryCount, container, true, null);
 		if(persistent)
 			container.activate(seg, 1);
 		if(seg != null) {
