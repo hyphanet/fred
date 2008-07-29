@@ -660,13 +660,22 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		SplitFileFetcherSubSegment sub;
 		if(persistent)
 			container.activate(subSegments, 1);
+		SplitFileFetcherSubSegment ret = null;
+		int dupes = 0;
 		synchronized(this) {
 			for(int i=0;i<subSegments.size();i++) {
 				sub = (SplitFileFetcherSubSegment) subSegments.get(i);
 				if(persistent) container.activate(sub, 1);
-				if(sub.retryCount == retryCount) return sub;
-				if(persistent) container.deactivate(sub, 1);
+				if(sub.retryCount == retryCount) {
+					if(ret != null) {
+						Logger.error(this, "Duplicate subsegment (count="+dupes+"): "+ret+" and "+sub+" for retry count "+retryCount+" on "+this);
+						dupes++;
+					} else
+						ret = sub;
+				}
+				if(persistent && sub != ret) container.deactivate(sub, 1);
 			}
+			if(ret != null) return ret;
 			if(noCreate) return null;
 			if(persistent)
 				container.activate(parent, 1);
