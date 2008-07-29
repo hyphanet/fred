@@ -2,11 +2,10 @@ package freenet.support;
 
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
-import java.security.MessageDigest;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import freenet.crypt.SHA256;
+import org.spaceroots.mantissa.random.MersenneTwister;
 
 public abstract class BloomFilter {
 	protected ByteBuffer filter;
@@ -77,22 +76,9 @@ public abstract class BloomFilter {
 	protected int[] getHashes(byte[] key) {
 		int[] hashes = new int[k];
 
-		MessageDigest md = SHA256.getMessageDigest();
-		try {
-			byte[] lastDigest = key;
-			ByteBuffer bf = ByteBuffer.wrap(lastDigest);
-
-			for (int i = 0; i < k; i++) {
-				if (bf.remaining() < 4) {
-					lastDigest = md.digest(lastDigest);
-					bf = ByteBuffer.wrap(lastDigest);
-				}
-
-				hashes[i] = (int) ((bf.getInt() & Long.MAX_VALUE) % length);
-			}
-		} finally {
-			SHA256.returnMessageDigest(md);
-		}
+		MersenneTwister mt = new MersenneTwister(key);
+		for (int i = 0; i < k; i++)
+			hashes[i] = mt.nextInt(length);
 
 		return hashes;
 	}

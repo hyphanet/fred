@@ -902,7 +902,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			
 			if (shutdown)
 				return;
-			
+
 			node.clientCore.alerts.register(new UserAlert() {
 				public String anchor() {
 					return "store-cleaner-" + name;
