@@ -1193,11 +1193,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return isInsertScheduler;
 	}
 
-	public void removeFromAllRequestsByClientRequest(ClientRequester clientRequest, SendableRequest get) {
+	public void removeFromAllRequestsByClientRequest(ClientRequester clientRequest, SendableRequest get, boolean dontComplain) {
 		if(get.persistent())
-			schedCore.removeFromAllRequestsByClientRequest(get, clientRequest);
+			schedCore.removeFromAllRequestsByClientRequest(get, clientRequest, dontComplain);
 		else
-			schedTransient.removeFromAllRequestsByClientRequest(get, clientRequest);
+			schedTransient.removeFromAllRequestsByClientRequest(get, clientRequest, dontComplain);
 	}
 	
 	

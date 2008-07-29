@@ -164,12 +164,13 @@ abstract class ClientRequestSchedulerBase {
 				recentSuccesses.remove(0);
 	}
 
-	protected void removeFromAllRequestsByClientRequest(SendableRequest req, ClientRequester cr) {
+	protected void removeFromAllRequestsByClientRequest(SendableRequest req, ClientRequester cr, boolean dontComplain) {
 		if(logMINOR)
 			Logger.minor(this, "Removing from allRequestsByClientRequest: "+req+ " for "+cr);
 			Set v = (Set) allRequestsByClientRequest.get(cr);
 			if(v == null) {
-				Logger.error(this, "No HashSet registered for "+cr+" for "+req);
+				if(!dontComplain)
+					Logger.error(this, "No HashSet registered for "+cr+" for "+req);
 			} else {
 				boolean removed = v.remove(req);
 				if(v.isEmpty())
