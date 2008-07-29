@@ -975,8 +975,8 @@ public class PeerManager {
 			}
 
 		//racy... getLocation() could have changed
-		if(calculateMisrouting)
-			if(best != null) {
+		if(best != null) {
+			if(calculateMisrouting) {
 				node.nodeStats.routingMissDistance.report(Location.distance(best, closest.getLocation()));
 				int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, false);
 				int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, false);
@@ -984,15 +984,16 @@ public class PeerManager {
 					node.nodeStats.backedOffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
 			}
 
-		//racy... getLocation() could have changed
-		if(best != null && addUnpickedLocsTo != null)
-			//Add the location which we did not pick, if it exists.
-			if(closestNotBackedOff != null && closestBackedOff != null)
-				addUnpickedLocsTo.add(new Double(closestBackedOff.getLocation()));
+			//racy... getLocation() could have changed
+			if(addUnpickedLocsTo != null)
+				//Add the location which we did not pick, if it exists.
+				if(closestNotBackedOff != null && closestBackedOff != null)
+					addUnpickedLocsTo.add(new Double(closestBackedOff.getLocation()));
 
-		//TODO: synchronize! ; store the stats here instead of into PeerNode?
-		best.incrementNumberOfSelections();
-		numberOfSelectionSamples++;
+			//TODO: synchronize! ; store the stats here instead of into PeerNode?
+			best.incrementNumberOfSelections();
+			numberOfSelectionSamples++;
+		}
 		
 		return best;
 	}
