@@ -411,7 +411,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		boolean countRequests = false;
 		
 		if (requestPath.length() > 0) {
-			if(requestPath.equals("countRequests.txt") || requestPath.equals("/countRequests.txt")) {
+			if(requestPath.equals("countRequests.html") || requestPath.equals("/countRequests.html")) {
 				countRequests = true;
 			} else {
 			/* okay, there is something in the path, check it. */
@@ -433,7 +433,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			} catch (MalformedURLException mue1) {
 			}
 			}
-			this.writeTemporaryRedirect(ctx, "Redirected", "/queue/");
 		}
 		
 		class OutputWrapper {
@@ -452,9 +451,21 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			public void run(ObjectContainer container, ClientContext context) {
 				HTMLNode pageNode = null;
 				try {
-					if(count)
-						System.err.println("Total queued CHK requests: "+core.requestStarters.chkFetchScheduler.countPersistentQueuedRequests(container));
-					pageNode = handleGetInner(pageMaker, container, context, request, ctx);
+					if(count) {
+						long queued = core.requestStarters.chkFetchScheduler.countPersistentQueuedRequests(container);
+						System.err.println("Total queued CHK requests: "+queued);
+						pageNode = pageMaker.getPageNode(L10n.getString("QueueToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
+						HTMLNode contentNode = pageMaker.getContentNode(pageNode);
+						/* add alert summary box */
+						if(ctx.isAllowedFullAccess())
+							contentNode.addChild(core.alerts.createSummary());
+						HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-information", "Queued requests status"));
+						HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
+						infoboxContent.addChild("#", "Total queued CHK requests: "+queued);
+						return;
+					} else {
+						pageNode = handleGetInner(pageMaker, container, context, request, ctx);
+					}
 				} finally {
 					synchronized(ow) {
 						ow.done = true;
