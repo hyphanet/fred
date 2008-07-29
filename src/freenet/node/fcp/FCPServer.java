@@ -25,6 +25,7 @@ import freenet.client.FetchContext;
 import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertContext;
+import freenet.client.TempFetchResult;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.config.Config;
@@ -44,8 +45,10 @@ import freenet.support.Logger;
 import freenet.support.MutableBoolean;
 import freenet.support.OOMHandler;
 import freenet.support.api.BooleanCallback;
+import freenet.support.api.Bucket;
 import freenet.support.api.IntCallback;
 import freenet.support.api.StringCallback;
+import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.NativeThread;
 
@@ -1028,15 +1031,15 @@ public class FCPServer implements Runnable {
 
 
 
-	public FetchResult getCompletedRequestBlocking(final FreenetURI key) {
+	public TempFetchResult getCompletedRequestBlocking(final FreenetURI key) {
 		ClientGet get = globalRebootClient.getCompletedRequest(key, null);
 		if(get != null) {
 			// FIXME race condition with free() - arrange refcounting for the data to prevent this
-			return new FetchResult(new ClientMetadata(get.getMIMEType(null)), get.getBucket());
+			return new TempFetchResult(new ClientMetadata(get.getMIMEType(null)), get.getBucket(), false);
 		}
 		
 		class OutputWrapper {
-			FetchResult result;
+			TempFetchResult result;
 			boolean done;
 		}
 		
@@ -1045,12 +1048,33 @@ public class FCPServer implements Runnable {
 		core.clientContext.jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
-				FetchResult result = null;
+				TempFetchResult result = null;
 				try {
 					ClientGet get = globalForeverClient.getCompletedRequest(key, container);
 					container.activate(get, 1);
 					if(get != null) {
-						result = new FetchResult(new ClientMetadata(get.getMIMEType(container)), get.getBucket());
+						Bucket origData = get.getBucket();
+						container.activate(origData, 5);
+						boolean copied = false;
+						Bucket newData;
+						try {
+							newData = origData.createShadow();
+						} catch (IOException e) {
+							Logger.error(this, "Caught error "+e+" trying to create shallow copy, copying data...", e);
+							newData = null;
+						}
+						if(newData == null) {
+							try {
+								newData = core.tempBucketFactory.makeBucket(origData.size());
+								BucketTools.copy(origData, newData);
+							} catch (IOException e) {
+								Logger.error(this, "Unable to copy data: "+e, e);
+								result = null;
+								return;
+							}
+							copied = true;
+						}
+						result = new TempFetchResult(new ClientMetadata(get.getMIMEType(container)), newData, copied);
 					}
 					container.deactivate(get, 1);
 				} finally {

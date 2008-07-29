@@ -4,6 +4,7 @@
 package freenet.support.io;
 
 import java.io.File;
+import java.io.IOException;
 
 import com.db4o.ObjectContainer;
 
@@ -114,5 +115,11 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 	
 	public void objectOnActivate(ObjectContainer container) {
 		container.activate(file, 5);
+	}
+
+	public Bucket createShadow() throws IOException {
+		String fnam = new String(file.getPath());
+		File newFile = new File(fnam);
+		return new FileBucket(newFile, true, false, false, false, false);
 	}
 }

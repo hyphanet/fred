@@ -2,6 +2,7 @@
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
@@ -79,6 +80,10 @@ public class NullBucket implements Bucket, SerializableToFieldSetBucket {
 
 	public void removeFrom(ObjectContainer container) {
 		container.delete(this);
+	}
+
+	public Bucket createShadow() throws IOException {
+		return new NullBucket();
 	}
 }
 

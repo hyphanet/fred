@@ -32,6 +32,14 @@ public class BucketChainBucket implements Bucket {
 		readOnly = false;
 	}
 
+	private BucketChainBucket(Vector newBuckets, long bucketSize2, long size2, boolean readOnly, BucketFactory bf2) {
+		this.buckets = newBuckets;
+		this.bucketSize = bucketSize2;
+		this.size = size2;
+		this.readOnly = readOnly;
+		this.bf = bf2;
+	}
+
 	public void free() {
 		Bucket[] list;
 		synchronized(this) {
@@ -290,6 +298,20 @@ public class BucketChainBucket implements Bucket {
 			list[i].removeFrom(container);
 		container.delete(buckets);
 		container.delete(this);
+	}
+
+	public Bucket createShadow() throws IOException {
+		Vector newBuckets = new Vector();
+		for(int i=0;i<buckets.size();i++) {
+			Bucket data = (Bucket) buckets.get(i);
+			Bucket shadow = data.createShadow();
+			if(shadow == null) {
+				// Shadow buckets don't need to be freed.
+				return null;
+			}
+			newBuckets.add(shadow);
+		}
+		return new BucketChainBucket(newBuckets, bucketSize, size, true, bf);
 	}
 
 }

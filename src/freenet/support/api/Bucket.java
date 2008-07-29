@@ -64,4 +64,14 @@ public interface Bucket {
 	 */
 	public void removeFrom(ObjectContainer container);
 
+	/**
+	 * Create a shallow read-only copy of this bucket, using different 
+	 * objects but using the same external storage. If this is not possible, 
+	 * return null. Note that if the underlying bucket is deleted, the copy
+	 * will become invalid and probably throw an IOException on read, or 
+	 * possibly return too-short data etc. In some use cases e.g. on fproxy, 
+	 * this is acceptable.
+	 */
+	public Bucket createShadow() throws IOException;
+
 }

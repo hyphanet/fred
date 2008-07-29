@@ -67,4 +67,13 @@ public class SimpleReadOnlyArrayBucket implements Bucket {
 		container.delete(this);
 	}
 
+	public Bucket createShadow() throws IOException {
+		if(buf.length < 256*1024) {
+			byte[] newBuf = new byte[length];
+			System.arraycopy(buf, offset, newBuf, 0, length);
+			return new SimpleReadOnlyArrayBucket(newBuf);
+		}
+		return null;
+	}
+
 }

@@ -129,6 +129,10 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 		// Cascading activation of dependancies
 		container.activate(bucket, 1);
 	}
+
+	public Bucket createShadow() throws IOException {
+		return bucket.createShadow();
+	}
 	
 //	public void objectOnDeactivate(ObjectContainer container) {
 //		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Deactivating "+super.toString()+" : "+bucket, new Exception("debug"));

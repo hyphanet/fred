@@ -123,6 +123,16 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		origRandom.nextBytes(randomSeed);
 	}
 
+	public PaddedEphemerallyEncryptedBucket(PaddedEphemerallyEncryptedBucket orig, Bucket newBucket) {
+		this.dataLength = orig.dataLength;
+		this.key = new byte[orig.key.length];
+		System.arraycopy(orig.key, 0, key, 0, orig.key.length);
+		this.randomSeed = null; // Will be read-only
+		setReadOnly();
+		this.bucket = newBucket;
+		this.minPaddedSize = orig.minPaddedSize;
+	}
+
 	public OutputStream getOutputStream() throws IOException {
 		if(readOnly) throw new IOException("Read only");
 		OutputStream os = bucket.getOutputStream();
@@ -390,6 +400,12 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	public void objectOnActivate(ObjectContainer container) {
 		// Cascading activation of dependancies
 		container.activate(bucket, 1);
+	}
+
+	public Bucket createShadow() throws IOException {
+		Bucket newUnderlying = bucket.createShadow();
+		if(newUnderlying == null) return null;
+		return new PaddedEphemerallyEncryptedBucket(this, newUnderlying);
 	}
 
 }

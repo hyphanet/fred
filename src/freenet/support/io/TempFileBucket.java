@@ -1,6 +1,7 @@
 package freenet.support.io;
 
 import java.io.File;
+import java.io.IOException;
 
 import com.db4o.ObjectContainer;
 
@@ -95,5 +96,11 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 			Logger.minor(this, "Removing from database: "+this);
 		// filenameGenerator is a global, we don't need to worry about it.
 		container.delete(this);
+	}
+
+	public Bucket createShadow() throws IOException {
+		TempFileBucket ret = new TempFileBucket(filenameID, generator);
+		ret.setReadOnly();
+		return ret;
 	}
 }
