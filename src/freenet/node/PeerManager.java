@@ -958,7 +958,7 @@ public class PeerManager {
 
 		PeerNode best = closestNotBackedOff;
 
-		if(best == null)
+		if(best == null) {
 			if(leastRecentlyTimedOut != null) {
 				// FIXME downgrade to DEBUG
 				best = leastRecentlyTimedOut;
@@ -973,9 +973,11 @@ public class PeerManager {
 				if(logMINOR)
 					Logger.minor(this, "Using least recently failed in-timeout-period backed-off peer for key: " + best.shortToString() + " for " + key);
 			}
+		}
 
-		//racy... getLocation() could have changed
+		// DO NOT PUT A ELSE HERE: we need to re-check the value!
 		if(best != null) {
+			//racy... getLocation() could have changed
 			if(calculateMisrouting) {
 				node.nodeStats.routingMissDistance.report(Location.distance(best, closest.getLocation()));
 				int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, false);
