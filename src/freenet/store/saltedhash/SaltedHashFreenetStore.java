@@ -894,11 +894,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			super.run();
 			
 			try {
-				while (node.clientCore == null) {
+				while (node.clientCore == null && !shutdown) {
 					Thread.sleep(1000);
 				}	
 				Thread.sleep((int)(CLEANER_PERIOD / 2 + CLEANER_PERIOD * Math.random()));
 			} catch (InterruptedException e){}
+			
+			if (shutdown)
+				return;
 			
 			node.clientCore.alerts.register(new UserAlert() {
 				public String anchor() {
