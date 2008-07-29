@@ -145,6 +145,8 @@ public class ClientGetter extends BaseClientGetter {
 			try {
 				if(Logger.shouldLog(Logger.MINOR, this))
 					Logger.minor(this, "Copying - returnBucket not respected by client.async");
+				if(persistent())
+					container.activate(from, 5);
 				BucketTools.copy(from, to);
 				from.free();
 				if(persistent())
