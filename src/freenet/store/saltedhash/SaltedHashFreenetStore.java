@@ -118,10 +118,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		File bloomFile = new File(this.baseDir, name + ".bloom");
 		bloomFilter = new BinaryBloomFilter(bloomFile, bloomFilterSize, bloomFilterK);
-		if (bloomFilter.needRebuild() && !newStore) {
-			flags |= FLAG_REBUILD_BLOOM;
-			checkBloom = false;
-		}
 
 		if ((flags & FLAG_DIRTY) != 0)
 			System.err.println("Datastore(" + name + ") is dirty.");
@@ -141,6 +137,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		shutdownHook.addEarlyJob(new Thread(new ShutdownDB()));
 
 		cleanerThread = new Cleaner();
+
 		// finish all resizing before continue
 		if (prevStoreSize != 0 && cleanerGlobalLock.tryLock()) {
 			System.out.println("Resizing datastore (" + name + ")");
@@ -150,6 +147,20 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				cleanerGlobalLock.unlock();
 			}
 			writeConfigFile();
+		} else if (bloomFilter.needRebuild() && !newStore) {
+			// Bloom filter resized?
+			flags |= FLAG_REBUILD_BLOOM;
+			checkBloom = false;
+
+			if (cleanerGlobalLock.tryLock()) {
+				System.out.println("Bloom filter for datastore (" + name + ") missing/mismatch, rebuilding.");
+				try {
+					cleanerThread.rebuildBloom(false);
+				} finally {
+					cleanerGlobalLock.unlock();
+				}
+				writeConfigFile();
+			}
 		}
 
 		cleanerThread.start();
