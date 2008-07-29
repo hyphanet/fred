@@ -414,24 +414,24 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			if(requestPath.equals("countRequests.html") || requestPath.equals("/countRequests.html")) {
 				countRequests = true;
 			} else {
-			/* okay, there is something in the path, check it. */
-			try {
-				FreenetURI key = new FreenetURI(requestPath);
-				
-				/* locate request */
-				TempFetchResult result = fcp.getCompletedRequestBlocking(key);
-				if(result != null) {
-					Bucket data = result.asBucket();
-					String mimeType = result.getMimeType();
-					String requestedMimeType = request.getParam("type", null);
-					String forceString = request.getParam("force");
-					FProxyToadlet.handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, forceString, request.isParameterSet("forcedownload"), "/queue/", key, "", "/queue/", false, ctx);
-					if(result.freeWhenDone)
-						data.free();
-					return;
+				/* okay, there is something in the path, check it. */
+				try {
+					FreenetURI key = new FreenetURI(requestPath);
+					
+					/* locate request */
+					TempFetchResult result = fcp.getCompletedRequestBlocking(key);
+					if(result != null) {
+						Bucket data = result.asBucket();
+						String mimeType = result.getMimeType();
+						String requestedMimeType = request.getParam("type", null);
+						String forceString = request.getParam("force");
+						FProxyToadlet.handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, forceString, request.isParameterSet("forcedownload"), "/queue/", key, "", "/queue/", false, ctx);
+						if(result.freeWhenDone)
+							data.free();
+						return;
+					}
+				} catch (MalformedURLException mue1) {
 				}
-			} catch (MalformedURLException mue1) {
-			}
 			}
 		}
 		
