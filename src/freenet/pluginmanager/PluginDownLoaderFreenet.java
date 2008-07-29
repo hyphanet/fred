@@ -15,9 +15,12 @@ import freenet.support.Logger;
 
 public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 	
+	private boolean logMINOR;
+
 	final HighLevelSimpleClient hlsc;
-	
+
 	PluginDownLoaderFreenet(HighLevelSimpleClient hlsc) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.hlsc = hlsc;
 	}
 
@@ -32,12 +35,19 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 
 	@Override
 	InputStream getInputStream() throws IOException, PluginNotFoundException {
-		try {
-			FetchResult fres = hlsc.fetch(getSource());
-			return fres.asBucket().getInputStream();
-		} catch (FetchException e) {
-			Logger.error(this, "error while fetching plugin: " + getSource(), e);
-			throw new PluginNotFoundException("error while fetching plugin: " + getSource(), e);
+		FreenetURI uri = getSource();
+		while (true) {
+			try {
+				FetchResult fres = hlsc.fetch(uri);
+				return fres.asBucket().getInputStream();
+			} catch (FetchException e) {
+				if ((e.getMode() == FetchException.PERMANENT_REDIRECT) || (e.getMode() == FetchException.TOO_MANY_PATH_COMPONENTS)) {
+					uri = e.newURI;
+					continue;
+				}
+				Logger.error(this, "error while fetching plugin: " + getSource(), e);
+				throw new PluginNotFoundException("error while fetching plugin: " + getSource(), e);
+			}
 		}
 	}
 
