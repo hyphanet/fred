@@ -407,7 +407,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			progressPending = null;
 			this.foundDataLength = returnBucket.size();
 			if(!binaryBlob)
-				this.foundDataMimeType = result.getMimeType();
+				this.foundDataMimeType = result.getMimeType(persistenceType == PERSIST_FOREVER ? container : null);
 			else
 				this.foundDataMimeType = BinaryBlob.MIME_TYPE;
 			this.succeeded = true;
