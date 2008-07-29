@@ -796,13 +796,29 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	}
 	
 	public long countQueuedRequests(ObjectContainer container) {
-		ObjectSet pending = container.query(new Predicate() {
-			public boolean match(PendingKeyItem item) {
-				if(item.nodeDBHandle == nodeDBHandle) return true;
-				return false;
+//		ObjectSet pending = container.query(new Predicate() {
+//			public boolean match(PendingKeyItem item) {
+//				if(item.nodeDBHandle == nodeDBHandle) return true;
+//				return false;
+//			}
+//		});
+//		return pending.size();
+		// If we just ask for the set of all PendingKeyItem's, we can
+		// filter them manually, and the query doesn't need to allocate any
+		// significant amount of RAM - it just remembers to return the class 
+		// index.
+		ObjectSet pending = container.query(PendingKeyItem.class);
+		long total = 0;
+		while(pending.hasNext()) {
+			PendingKeyItem item = (PendingKeyItem) pending.next();
+			if(item.nodeDBHandle != nodeDBHandle) {
+				container.deactivate(item, 1);
+				continue;
 			}
-		});
-		return pending.size();
+			container.deactivate(item, 1);
+			total++;
+		}
+		return total;
 	}
 
 	protected boolean inPendingKeys(GotKeyListener req, final Key key, ObjectContainer container) {
