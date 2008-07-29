@@ -112,13 +112,13 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		this.baseDir.mkdirs();
 
 		configFile = new File(this.baseDir, name + ".config");
-		loadConfigFile();
+		boolean newStore = loadConfigFile();
 
-		openStoreFiles(baseDir, name);
+		newStore |= openStoreFiles(baseDir, name);
 
 		File bloomFile = new File(this.baseDir, name + ".bloom");
 		bloomFilter = new BinaryBloomFilter(bloomFile, bloomFilterSize, bloomFilterK);
-		if (bloomFilter.needRebuild()) {
+		if (bloomFilter.needRebuild() && !newStore) {
 			flags |= FLAG_REBUILD_BLOOM;
 			checkBloom = false;
 		}
@@ -552,19 +552,23 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * @param baseDir
 	 * @param name
 	 * @throws IOException
+	 * @return <code>true</code> iff this is a new datastore
 	 */
-	private void openStoreFiles(File baseDir, String name) throws IOException {
+	private boolean openStoreFiles(File baseDir, String name) throws IOException {
 		metaFile = new File(baseDir, name + ".metadata");
+		headerFile = new File(baseDir, name + ".header");
+		dataFile = new File(baseDir, name + ".data");
+
+		boolean newStore = !metaFile.exists() || !headerFile.exists() || !dataFile.exists();
+		
 		metaRAF = new RandomAccessFile(metaFile, "rw");
 		metaFC = metaRAF.getChannel();
 		metaFC.lock();
-
-		headerFile = new File(baseDir, name + ".header");
+		
 		headerRAF = new RandomAccessFile(headerFile, "rw");
 		headerFC = headerRAF.getChannel();
 		headerFC.lock();
 
-		dataFile = new File(baseDir, name + ".data");
 		dataRAF = new RandomAccessFile(dataFile, "rw");
 		dataFC = dataRAF.getChannel();
 		dataFC.lock();
@@ -572,6 +576,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		long storeFileSize = Math.max(storeSize, prevStoreSize);
 		WrapperManager.signalStarting(10 * 60 * 1000); // 10minutes, for filesystem that support no sparse file.
 		setStoreFileSize(storeFileSize);
+		
+		return newStore;
 	}
 
 	/**
@@ -759,8 +765,10 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 	/**
 	 * Load config file
+	 * 
+	 * @return <code>true</code> iff this is a new datastore
 	 */
-	private void loadConfigFile() throws IOException {
+	private boolean loadConfigFile() throws IOException {
 		assert cipherManager == null; // never load the configuration twice
 
 		if (!configFile.exists()) {
@@ -770,6 +778,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			cipherManager = new CipherManager(newsalt);
 
 			writeConfigFile();
+			return true;
 		} else {
 			// try to load
 			RandomAccessFile raf = new RandomAccessFile(configFile, "r");
@@ -793,8 +802,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			}
 
 			raf.close();
+			return false;
 		}
-
 	}
 
 	/**
