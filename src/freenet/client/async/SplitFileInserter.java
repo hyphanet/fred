@@ -261,6 +261,8 @@ public class SplitFileInserter implements ClientPutState {
 				segNo++;
 			}
 		}
+		if(persistent)
+			container.activate(parent, 1);
 		parent.notifyClients(container, context);
 		return (SplitFileInserterSegment[]) segs.toArray(new SplitFileInserterSegment[segs.size()]);
 	}
