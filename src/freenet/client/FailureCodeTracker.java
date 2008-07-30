@@ -201,4 +201,7 @@ public class FailureCodeTracker {
 		container.delete(this);
 	}
 	
+	public void objectOnActivate(ObjectContainer container) {
+		container.activate(map, 5);
+	}
 }
