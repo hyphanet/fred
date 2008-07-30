@@ -111,6 +111,12 @@ public class InsertCompressor {
 						}
 						
 					}, NativeThread.NORM_PRIORITY+1, false);
+				} else {
+					try {
+						inserter.onStartCompression(i, null, context);
+					} catch (Throwable t) {
+						Logger.error(this, "Transient insert callback threw "+t, t);
+					}
 				}
 				
 				Compressor comp = Compressor.getCompressionAlgorithmByDifficulty(i);
