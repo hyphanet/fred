@@ -299,22 +299,30 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	 * @param container Either container or context is required for a persistent request.
 	 * @param context Can be null if container is not null.
 	 */
-	private void trySendProgressMessage(FCPMessage msg, int verbosity, FCPConnectionOutputHandler handler, ObjectContainer container, ClientContext context) {
-		synchronized(this) {
-			if(persistenceType != PERSIST_CONNECTION)
-				progressMessage = msg;
-		}
+	private void trySendProgressMessage(final FCPMessage msg, final int verbosity, final FCPConnectionOutputHandler handler, ObjectContainer container, ClientContext context) {
 		if(persistenceType == PERSIST_FOREVER) {
 			if(container != null) {
+				synchronized(this) {
+					if(persistenceType != PERSIST_CONNECTION)
+						progressMessage = msg;
+				}
 				container.set(this);
 			} else {
 				context.jobRunner.queue(new DBJob() {
 
 					public void run(ObjectContainer container, ClientContext context) {
-						container.set(ClientPutBase.this);
+						container.activate(ClientPutBase.this, 1);
+						trySendProgressMessage(msg, verbosity, handler, container, context);
+						container.deactivate(ClientPutBase.this, 1);
 					}
 					
 				}, NativeThread.NORM_PRIORITY, false);
+				return;
+			}
+		} else {
+			synchronized(this) {
+				if(persistenceType != PERSIST_CONNECTION)
+					progressMessage = msg;
 			}
 		}
 		if(handler != null)
