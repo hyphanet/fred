@@ -834,7 +834,9 @@ public class FileLoggerHook extends LoggerHook {
 				}
 			}
 			
-			e = e.getCause();
+			Throwable cause = e.getCause();
+			if(cause != e) e = cause;
+			else break;
 		}
 
 		logString(sb.toString().getBytes());
