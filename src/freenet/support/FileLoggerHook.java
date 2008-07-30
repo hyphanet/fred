@@ -815,7 +815,7 @@ public class FileLoggerHook extends LoggerHook {
 		}
 		sb.append('\n');
 
-		for(int j=0;j<5 && e != null;j++) {
+		for(int j=0;j<20 && e != null;j++) {
 
 			sb.append(e.toString());
 			
