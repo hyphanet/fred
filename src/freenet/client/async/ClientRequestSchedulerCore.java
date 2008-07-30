@@ -578,6 +578,13 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	class RegisterMeRunner implements DBJob {
 
 		public void run(ObjectContainer container, ClientContext context) {
+			if(sched.databaseExecutor.getQueueSize(NativeThread.NORM_PRIORITY) > 100) {
+				// If the queue isn't empty, reschedule at NORM-1
+				if(!sched.isQueueAlmostEmpty()) {
+					context.jobRunner.queue(registerMeRunner, NativeThread.NORM_PRIORITY-1, false);
+					return;
+				}
+			}
 			long deadline = System.currentTimeMillis() + 10*1000;
 			if(registerMeSet == null) {
 				Logger.error(this, "registerMeSet is null for "+ClientRequestSchedulerCore.this+" ( "+this+" )");
