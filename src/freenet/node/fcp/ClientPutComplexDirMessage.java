@@ -190,7 +190,6 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 				((DirPutFile)val).removeFrom(container);
 			}
 		}
-		container.delete(this);
 	}
 
 }
