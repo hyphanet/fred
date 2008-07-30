@@ -164,7 +164,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 					req = getRequest(logMINOR);
 					if(req == null) {
 						try {
-							wait(1*1000); // as close to indefinite as I'm comfortable with! Toad
+							wait(100*1000); // as close to indefinite as I'm comfortable with! Toad
 						} catch (InterruptedException e) {
 							// Ignore
 						}
