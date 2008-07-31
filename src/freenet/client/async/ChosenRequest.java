@@ -65,6 +65,7 @@ public class ChosenRequest {
 	
 	public boolean equals(Object o) {
 		if(!(o instanceof ChosenRequest)) return false;
+		if(o == this) return true;
 		ChosenRequest cr = (ChosenRequest) o;
 		if(!cr.request.equals(request)) return false;
 		if(!cr.token.equals(token)) return false;
