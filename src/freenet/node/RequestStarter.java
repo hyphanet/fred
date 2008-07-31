@@ -173,7 +173,8 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			}
 			if(req == null) continue;
 			if(!startRequest(req, logMINOR)) {
-				if((!req.isPersistent()) && req.request.isCancelled(null))
+				// Don't log if it's a cancelled transient request.
+				if(!((!req.isPersistent()) && req.request.isCancelled(null)))
 					Logger.normal(this, "No requests to start on "+req);
 			}
 			req = null;
