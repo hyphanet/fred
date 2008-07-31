@@ -36,8 +36,8 @@ import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
 import freenet.store.StorableBlock;
 import freenet.store.StoreCallback;
-import freenet.support.BinaryBloomFilter;
 import freenet.support.BloomFilter;
+import freenet.support.CountingBloomFilter;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
@@ -117,7 +117,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		newStore |= openStoreFiles(baseDir, name);
 
 		File bloomFile = new File(this.baseDir, name + ".bloom");
-		bloomFilter = new BinaryBloomFilter(bloomFile, bloomFilterSize, bloomFilterK);
+		bloomFilter = new CountingBloomFilter(bloomFile, bloomFilterSize, bloomFilterK);
 
 		if ((flags & FLAG_DIRTY) != 0)
 			System.err.println("Datastore(" + name + ") is dirty.");
