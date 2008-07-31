@@ -109,6 +109,8 @@ class SingleFileInserter implements ClientPutState {
 				try {
 					SplitHandler sh = new SplitHandler();
 					sh.start(fs, false, container, context);
+					if(persistent)
+						container.activate(cb, 1);
 					cb.onTransition(this, sh, container);
 					sh.schedule(container, context);
 					return;
