@@ -238,8 +238,6 @@ public class SplitFileFetcher implements ClientGetState {
 		try {
 			if((returnBucket != null) && decompressors.isEmpty()) {
 				output = returnBucket;
-				if(persistent)
-					container.activate(output, 5);
 			} else
 				output = context.getBucketFactory(parent.persistent()).makeBucket(finalLength);
 			os = output.getOutputStream();
