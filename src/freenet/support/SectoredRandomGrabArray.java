@@ -176,7 +176,11 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 						if(persistent) {
 							container.activate(firstRGA, 1);
 						}
-						grabArraysByClient.remove(firstRGA.getObject());
+						Object firstClient = firstRGA.getObject();
+						if(persistent) {
+							container.activate(firstClient, 1);
+						}
+						grabArraysByClient.remove(firstClient);
 						grabArrays = new RemoveRandomWithObject[] { rga };
 						if(persistent)
 							container.set(this);
