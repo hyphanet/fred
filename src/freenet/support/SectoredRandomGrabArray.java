@@ -142,12 +142,12 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 						if(grabArraysByClient.size() != 1) {
 							Logger.error(this, "Grab arrays by client size should be 1 (since there is 1 non-null), but is "+grabArraysByClient.size());
 							grabArraysByClient.clear();
-							if(persistent) {
+							if(persistent)
 								container.activate(valid, 1);
-								Object client = valid.getObject();
+							Object client = valid.getObject();
+							if(persistent)
 								container.activate(client, 1);
-								grabArraysByClient.put(client, valid);
-							}
+							grabArraysByClient.put(client, valid);
 						}
 						Logger.error(this, "grabArrays["+(1-x)+"] is valid but ["+x+"] is null, correcting...");
 						grabArrays = new RemoveRandomWithObject[] { grabArrays[1-x] };
