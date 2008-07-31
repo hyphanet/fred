@@ -145,6 +145,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 							if(persistent) {
 								container.activate(valid, 1);
 								Object client = valid.getObject();
+								container.activate(client, 1);
 								grabArraysByClient.put(client, valid);
 							}
 						}
