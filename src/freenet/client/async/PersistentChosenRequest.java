@@ -45,4 +45,11 @@ public class PersistentChosenRequest extends ChosenRequest {
 	public int hashCode() {
 		return hashCode;
 	}
+	
+	public boolean equals(Object o) {
+		if(!(o instanceof PersistentChosenRequest)) return false;
+		PersistentChosenRequest req = (PersistentChosenRequest) o;
+		if(req.core != core) return false;
+		return super.equals(o);
+	}
 }
