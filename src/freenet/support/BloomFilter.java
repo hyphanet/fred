@@ -75,7 +75,7 @@ public abstract class BloomFilter {
 		}
 
 		if (forkedFilter != null)
-			forkedFilter.addKey(key);
+			forkedFilter.removeKey(key);
 	}
 
 	//-- Bits and Hashes
