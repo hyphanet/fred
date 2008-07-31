@@ -99,6 +99,7 @@ public abstract class BloomFilter {
 			filter.put(forkedFilter.filter);
 
 			filter.position(0);
+			forkedFilter.finalize();
 			forkedFilter = null;
 		} finally {
 			lock.writeLock().unlock();
@@ -108,6 +109,9 @@ public abstract class BloomFilter {
 	public void discard() {
 		lock.writeLock().lock();
 		try {
+			if (forkedFilter == null)
+				return;
+			forkedFilter.finalize();
 			forkedFilter = null;
 		} finally {
 			lock.writeLock().unlock();
