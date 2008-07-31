@@ -461,7 +461,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		if(!(progressMessage instanceof SimpleProgressMessage)) return false;
 		else {
 			if(persistenceType == PERSIST_FOREVER)
-				container.activate(putFailedMessage, 5);
+				container.activate(progressMessage, 5);
 			return ((SimpleProgressMessage)progressMessage).isTotalFinalized();
 		}
 	}
