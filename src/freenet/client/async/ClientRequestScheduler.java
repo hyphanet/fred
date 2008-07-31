@@ -927,10 +927,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 		 * thread, then we will wake it up if we find keys... and we'll be scheduled again.
 		 */
 		final int MAX_KEYS = 20;
-		boolean found = false;
 		Key[] keys = queue.removeKeyBefore(now, container, MAX_KEYS);
 		if(keys == null) return false;
-		found = true;
 		for(int j=0;j<keys.length;j++) {
 			Key key = keys[j];
 			if(persistent)
@@ -980,7 +978,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(persistent)
 				container.deactivate(key, 5);
 		}
-		return found;
+		return true;
 	}
 
 	public long countTransientQueuedRequests() {
