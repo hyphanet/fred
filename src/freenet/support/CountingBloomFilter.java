@@ -63,7 +63,7 @@ public class CountingBloomFilter extends BloomFilter {
 		b &= ~(3 << offset % 4 * 2); // unset bit
 		b |= (v + 1) << offset % 4 * 2; // set bit
 
-		filter.put(offset / 8, b);
+		filter.put(offset / 8 * 2, b);
 	}
 
 	@Override
@@ -77,7 +77,7 @@ public class CountingBloomFilter extends BloomFilter {
 		b &= ~(3 << offset % 4 * 2); // unset bit
 		b |= (v - 1) << offset % 4 * 2; // set bit
 
-		filter.put(offset / 8, b);
+		filter.put(offset / 8 * 2, b);
 	}
 
 	@Override
