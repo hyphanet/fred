@@ -2,6 +2,7 @@ package freenet.support;
 
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
+import java.util.Random;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -26,11 +27,11 @@ public abstract class BloomFilter {
 
 	//-- Core
 	public void addKey(byte[] key) {
-		int[] hashes = getHashes(key);
+		Random hashes = getHashes(key);
 		lock.writeLock().lock();
 		try {
-			for (int i = 0; i < hashes.length; i++)
-				setBit(hashes[i]);
+			for (int i = 0; i < k; i++)
+				setBit(hashes.nextInt(length));
 		} finally {
 			lock.writeLock().unlock();
 		}
@@ -40,11 +41,11 @@ public abstract class BloomFilter {
 	}
 
 	public boolean checkFilter(byte[] key) {
-		int[] hashes = getHashes(key);
+		Random hashes = getHashes(key);
 		lock.readLock().lock();
 		try {
-			for (int i = 0; i < hashes.length; i++)
-				if (!getBit(hashes[i]))
+			for (int i = 0; i < k; i++)
+				if (!getBit(hashes.nextInt(length)))
 					return false;
 		} finally {
 			lock.readLock().unlock();
@@ -53,11 +54,11 @@ public abstract class BloomFilter {
 	}
 
 	public void removeKey(byte[] key) {
-		int[] hashes = getHashes(key);
+		Random hashes = getHashes(key);
 		lock.writeLock().lock();
 		try {
-			for (int i = 0; i < hashes.length; i++)
-				unsetBit(hashes[i]);
+			for (int i = 0; i < k; i++)
+				unsetBit(hashes.nextInt(length));
 		} finally {
 			lock.writeLock().unlock();
 		}
@@ -73,14 +74,8 @@ public abstract class BloomFilter {
 
 	protected abstract void unsetBit(int offset);
 
-	protected int[] getHashes(byte[] key) {
-		int[] hashes = new int[k];
-
-		MersenneTwister mt = new MersenneTwister(key);
-		for (int i = 0; i < k; i++)
-			hashes[i] = mt.nextInt(length);
-
-		return hashes;
+	protected Random getHashes(byte[] key) {
+		return new MersenneTwister(key);
 	}
 
 	//-- Fork & Merge
