@@ -271,7 +271,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			try {
 		    freenet.support.Logger.OSThread.logPID(this);
 		    if(!req.send(core, sched)) {
-				if((!req.isPersistent()) && req.request.isCancelled(null))
+				if(!((!req.isPersistent()) && req.request.isCancelled(null)))
 					Logger.error(this, "run() not able to send a request on "+req);
 				else
 					Logger.normal(this, "run() not able to send a request on "+req+" - request was cancelled");
