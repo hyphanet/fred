@@ -99,11 +99,6 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 			Logger.minor(this, "Removing pending key: "+getter+" for "+key);
 		boolean dropped = false;
 		Object o;
-		/*
-		 * Because arrays are not basic types, pendingKeys.activationDepth(1) means that
-		 * the SendableGet's returned here will be activated to depth 1, even if they were
-		 * within a SendableGet[]. Tested as of 21/05/08.
-		 */
 		synchronized(pendingKeys) {
 			o = pendingKeys.get(key);
 			if(o == null) {
