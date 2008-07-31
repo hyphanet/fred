@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FetchContext;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
@@ -32,7 +34,7 @@ public class ChosenRequest {
 	public final boolean cacheLocalRequests;
 	public final boolean ignoreStore;
 
-	ChosenRequest(SendableRequest req, Object tok, Key key, ClientKey ckey, short prio) {
+	ChosenRequest(SendableRequest req, Object tok, Key key, ClientKey ckey, short prio, ObjectContainer container) {
 		request = req;
 		token = tok;
 		this.key = key;
@@ -41,6 +43,8 @@ public class ChosenRequest {
 		if(req instanceof SendableGet) {
 			SendableGet sg = (SendableGet) req;
 			FetchContext ctx = sg.getContext();
+			if(container != null)
+				container.activate(ctx, 1);
 			localRequestOnly = ctx.localRequestOnly;
 			cacheLocalRequests = ctx.cacheLocalRequests;
 			ignoreStore = ctx.ignoreStore;

@@ -327,7 +327,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				if(key != null && key.getRoutingKey() == null)
 					throw new NullPointerException();
 				ret = new PersistentChosenRequest(this, req, token, key == null ? null : key.cloneKey(), 
-						ckey == null ? null : ckey.cloneKey(), req.getPriorityClass(container));
+						ckey == null ? null : ckey.cloneKey(), req.getPriorityClass(container), container);
 				container.set(ret);
 				if(logMINOR)
 					Logger.minor(this, "Storing "+ret+" for "+req);
@@ -337,7 +337,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			} else {
 				if(key != null && key.getRoutingKey() == null)
 					throw new NullPointerException();
-				ret = new ChosenRequest(req, token, key, ckey, req.getPriorityClass(container));
+				ret = new ChosenRequest(req, token, key, ckey, req.getPriorityClass(container), null);
 			}
 			return ret;
 		}

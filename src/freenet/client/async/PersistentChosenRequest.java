@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.node.SendableRequest;
@@ -26,8 +28,8 @@ public class PersistentChosenRequest extends ChosenRequest {
 	// A persistent hashCode is helpful for debugging and lets us put PCR's into hash-based maps and sets.
 	private final int hashCode;
 	
-	PersistentChosenRequest(ClientRequestSchedulerCore core, SendableRequest req, Object tok, Key key, ClientKey ckey, short prio) {
-		super(req, tok, key, ckey, prio);
+	PersistentChosenRequest(ClientRequestSchedulerCore core, SendableRequest req, Object tok, Key key, ClientKey ckey, short prio, ObjectContainer container) {
+		super(req, tok, key, ckey, prio, container);
 		if(tok == null) throw new NullPointerException();
 		int hash = core.hashCode() ^ req.hashCode();
 		if(key != null)
