@@ -195,7 +195,7 @@ abstract class ClientRequestSchedulerBase {
 		Key prevTok = null;
 		for(int i=0;i<keyTokens.length;i++) {
 			Key key = keyTokens[i];
-			if(i != 0 && prevTok == key || (prevTok != null && key != null && prevTok.equals(key))) {
+			if(i != 0 && (prevTok == key || (prevTok != null && key != null && prevTok.equals(key)))) {
 				Logger.error(this, "Ignoring duplicate token");
 				continue;
 			}
