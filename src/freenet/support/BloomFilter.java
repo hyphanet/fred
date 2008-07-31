@@ -1,5 +1,7 @@
 package freenet.support;
 
+import java.io.File;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.util.Random;
@@ -17,6 +19,15 @@ public abstract class BloomFilter {
 
 	protected ReadWriteLock lock = new ReentrantReadWriteLock();
 
+	public static BloomFilter createFilter(File file, int length, int k, boolean counting) throws IOException {
+		if (k == 0 || length == 0)
+			return new NullBloomFilter(length, k);
+		if (counting)
+			return new CountingBloomFilter(file, length, k);
+		else
+			return new BinaryBloomFilter(file, length, k);
+	}
+	
 	protected BloomFilter(int length, int k) {
 		if (length % 8 != 0)
 			throw new IllegalArgumentException();
@@ -127,13 +138,12 @@ public abstract class BloomFilter {
 	 * @param maxKey
 	 * @return optimal K
 	 */
+	// may return 0 if the length is too short
 	public static int optimialK(int filterLength, long maxKey) {
 		long k = Math.round(Math.log(2) * filterLength / maxKey);
-
-		if (k < 1)
-			k = 1;
-		if (k > 32)
-			k = 32;
+		
+		if (k > 64)
+			k = 64;
 
 		return (int) k;
 	}

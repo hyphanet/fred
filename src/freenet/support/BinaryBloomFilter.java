@@ -19,7 +19,7 @@ public class BinaryBloomFilter extends BloomFilter {
 	 * @param length
 	 *            length in bits
 	 */
-	public BinaryBloomFilter(int length, int k) {
+	protected BinaryBloomFilter(int length, int k) {
 		super(length, k);
 		filter = ByteBuffer.allocate(length / 8);
 	}
@@ -33,7 +33,7 @@ public class BinaryBloomFilter extends BloomFilter {
 	 *            length in bits
 	 * @throws IOException
 	 */
-	public BinaryBloomFilter(File file, int length, int k) throws IOException {
+	protected BinaryBloomFilter(File file, int length, int k) throws IOException {
 		super(length, k);
 		if (!file.exists() || file.length() != length / 8)
 			needRebuild = true;

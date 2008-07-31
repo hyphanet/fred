@@ -7,7 +7,7 @@ package freenet.support;
  * @author sdiz
  */
 public class NullBloomFilter extends BloomFilter {
-	public NullBloomFilter(int length, int k) {
+	protected NullBloomFilter(int length, int k) {
 		super(length, k);
 	}
 

@@ -37,7 +37,6 @@ import freenet.store.KeyCollisionException;
 import freenet.store.StorableBlock;
 import freenet.store.StoreCallback;
 import freenet.support.BloomFilter;
-import freenet.support.CountingBloomFilter;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
@@ -81,13 +80,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private int flags;
 
 	public static SaltedHashFreenetStore construct(File baseDir, String name, StoreCallback callback, Node node,
-	        long maxKeys, int bloomFilterSize, SemiOrderedShutdownHook shutdownHook)
+	        long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook)
 	        throws IOException {
-		return new SaltedHashFreenetStore(baseDir, name, callback, node, maxKeys, bloomFilterSize, shutdownHook);
+		return new SaltedHashFreenetStore(baseDir, name, callback, node, maxKeys, bloomFilterSize, bloomCounting,
+		        shutdownHook);
 	}
 
 	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback callback, Node node, long maxKeys,
-	        int bloomFilterSize, SemiOrderedShutdownHook shutdownHook)
+	        int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook)
 	        throws IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
@@ -117,7 +117,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		newStore |= openStoreFiles(baseDir, name);
 
 		File bloomFile = new File(this.baseDir, name + ".bloom");
-		bloomFilter = new CountingBloomFilter(bloomFile, bloomFilterSize, bloomFilterK);
+		bloomFilter = BloomFilter.createFilter(bloomFile, bloomFilterSize, bloomFilterK, bloomCounting);
 
 		if ((flags & FLAG_DIRTY) != 0)
 			System.err.println("Datastore(" + name + ") is dirty.");
