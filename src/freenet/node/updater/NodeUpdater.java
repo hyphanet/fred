@@ -274,7 +274,7 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 		// Impossible
 	}
 
-	public boolean isRunning(){
+	public synchronized  boolean isRunning(){
 		return isRunning;
 	}
 	
