@@ -217,43 +217,43 @@ public class UpdateOverMandatoryManager {
 		if(mainJarVersion > Version.buildNumber() && mainJarFileLength > 0 &&
 				mainJarVersion > updateManager.newMainJarVersion()) {
 			// Offer is valid.
-		if((isOutdated) || (whenToTakeOverTheNormalUpdater > 0 && whenToTakeOverTheNormalUpdater < now)) {
-			// Take up the offer, subject to limits on number of simultaneous downloads.
-			// If we have fetches running already, then sendUOMRequestMain() will add the offer to nodesOfferedMainJar,
-			// so that if all our fetches fail, we can fetch from this node.
-				if(!isOutdated) {
-					Logger.error(this, "The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN!");
-					System.out.println("The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN!");
+			if((isOutdated) || (whenToTakeOverTheNormalUpdater > 0 && whenToTakeOverTheNormalUpdater < now)) {
+				// Take up the offer, subject to limits on number of simultaneous downloads.
+				// If we have fetches running already, then sendUOMRequestMain() will add the offer to nodesOfferedMainJar,
+				// so that if all our fetches fail, we can fetch from this node.
+					if(!isOutdated) {
+						Logger.error(this, "The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN!");
+						System.out.println("The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN!");
+					}
+					// Fetch it
+					try {
+						FreenetURI mainJarURI = new FreenetURI(jarKey).setSuggestedEdition(mainJarVersion);
+						if(mainJarURI.equals(updateManager.updateURI.setSuggestedEdition(mainJarVersion)))
+							sendUOMRequestMain(source, true);
+						else
+							System.err.println("Node " + source.userToString() + " offered us a new main jar (version " + mainJarVersion + ") but his key was different to ours:\n" +
+									"our key: " + updateManager.updateURI + "\nhis key:" + mainJarURI);
+					} catch(MalformedURLException e) {
+						// Should maybe be a useralert?
+						Logger.error(this, "Node " + source + " sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: " + revocationKey + " : " + e, e);
+						System.err.println("Node " + source.userToString() + " sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: " + revocationKey + " : " + e);
+					}
+			} else {
+				// Don't take up the offer. Add to nodesOfferedMainJar, so that we know where to fetch it from when we need it.
+				synchronized(this) {
+					nodesOfferedMainJar.add(source);
 				}
-				// Fetch it
-				try {
-					FreenetURI mainJarURI = new FreenetURI(jarKey).setSuggestedEdition(mainJarVersion);
-					if(mainJarURI.equals(updateManager.updateURI.setSuggestedEdition(mainJarVersion)))
-						sendUOMRequestMain(source, true);
-					else
-						System.err.println("Node " + source.userToString() + " offered us a new main jar (version " + mainJarVersion + ") but his key was different to ours:\n" +
-							"our key: " + updateManager.updateURI + "\nhis key:" + mainJarURI);
-				} catch(MalformedURLException e) {
-					// Should maybe be a useralert?
-					Logger.error(this, "Node " + source + " sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: " + revocationKey + " : " + e, e);
-					System.err.println("Node " + source.userToString() + " sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: " + revocationKey + " : " + e);
-				}
-		} else {
-			// Don't take up the offer. Add to nodesOfferedMainJar, so that we know where to fetch it from when we need it.
-			synchronized(this) {
-				nodesOfferedMainJar.add(source);
+				updateManager.node.getTicker().queueTimedJob(new Runnable() {
+					
+					public void run() {
+						if(updateManager.isBlown()) return;
+						if(!updateManager.isEnabled()) return;
+						if(updateManager.hasNewMainJar()) return;
+						maybeRequestMainJar();
+					}
+					
+				}, REQUEST_MAIN_JAR_TIMEOUT+1);
 			}
-			updateManager.node.getTicker().queueTimedJob(new Runnable() {
-
-				public void run() {
-					if(updateManager.isBlown()) return;
-					if(!updateManager.isEnabled()) return;
-					if(updateManager.hasNewMainJar()) return;
-					maybeRequestMainJar();
-				}
-				
-			}, REQUEST_MAIN_JAR_TIMEOUT+1);
-		}
 		}
 		
 		return true;
