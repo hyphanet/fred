@@ -214,9 +214,13 @@ public class UpdateOverMandatoryManager {
 		boolean isOutdated = updateManager.node.isOudated();
 		// if the new build is self-mandatory or if the "normal" updater has been trying to update for more than one hour
 		Logger.normal(this, "We received a valid UOMAnnounce : (isOutdated="+isOutdated+" version="+mainJarVersion +" whenToTakeOverTheNormalUpdater="+TimeUtil.formatTime(whenToTakeOverTheNormalUpdater-now)+')');
-		if((isOutdated) || (whenToTakeOverTheNormalUpdater > 0 && whenToTakeOverTheNormalUpdater < now)) {
-			if(mainJarVersion > Version.buildNumber() && mainJarFileLength > 0 &&
+		if(mainJarVersion > Version.buildNumber() && mainJarFileLength > 0 &&
 				mainJarVersion > updateManager.newMainJarVersion()) {
+			// Offer is valid.
+		if((isOutdated) || (whenToTakeOverTheNormalUpdater > 0 && whenToTakeOverTheNormalUpdater < now)) {
+			// Take up the offer, subject to limits on number of simultaneous downloads.
+			// If we have fetches running already, then sendUOMRequestMain() will add the offer to nodesOfferedMainJar,
+			// so that if all our fetches fail, we can fetch from this node.
 				if(!isOutdated) {
 					Logger.error(this, "The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN!");
 					System.out.println("The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN!");
@@ -234,7 +238,12 @@ public class UpdateOverMandatoryManager {
 					Logger.error(this, "Node " + source + " sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: " + revocationKey + " : " + e, e);
 					System.err.println("Node " + source.userToString() + " sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: " + revocationKey + " : " + e);
 				}
+		} else {
+			// Don't take up the offer. Add to nodesOfferedMainJar, so that we know where to fetch it from when we need it.
+			synchronized(this) {
+				nodesOfferedMainJar.add(source);
 			}
+		}
 		}
 		
 		return true;
