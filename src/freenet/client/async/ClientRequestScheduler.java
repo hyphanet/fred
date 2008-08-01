@@ -943,36 +943,36 @@ public class ClientRequestScheduler implements RequestScheduler {
 			} else {
 				if(gets != null) {
 					if(logMINOR) Logger.minor(this, "Restoring keys for persistent jobs...");
-				for(int i=0;i<gets.length;i++) {
-					if(persistent)
-						container.activate(gets[i], 1);
-					GotKeyListener got = gets[i];
-					SendableGet req = got.getRequest(key, container);
-					if(persistent)
-						container.activate(req, 1);
-					if(req == null) {
-						Logger.error(this, "No request for listener "+got+" while requeueing "+key);
-					} else {
-						req.requeueAfterCooldown(key, now, container, clientContext);
+					for(int i=0;i<gets.length;i++) {
+						if(persistent)
+							container.activate(gets[i], 1);
+						GotKeyListener got = gets[i];
+						SendableGet req = got.getRequest(key, container);
+						if(persistent)
+							container.activate(req, 1);
+						if(req == null) {
+							Logger.error(this, "No request for listener "+got+" while requeueing "+key);
+						} else {
+							req.requeueAfterCooldown(key, now, container, clientContext);
+						}
+						if(persistent) {
+							container.deactivate(gets[i], 1);
+							container.deactivate(req, 1);
+						}
 					}
-					if(persistent) {
-						container.deactivate(gets[i], 1);
-						container.deactivate(req, 1);
-					}
-				}
 				}
 				if(transientGets != null) {
 					if(gets != null) {
 						if(logMINOR) Logger.minor(this, "Restoring keys for transient jobs...");
-				for(int i=0;i<transientGets.length;i++) {
-					GotKeyListener got = transientGets[i];
-					SendableGet req = got.getRequest(key, null);
-					if(req == null) {
-						Logger.error(this, "No request for listener "+got+" while requeueing "+key);
+						for(int i=0;i<transientGets.length;i++) {
+							GotKeyListener got = transientGets[i];
+							SendableGet req = got.getRequest(key, null);
+							if(req == null) {
+								Logger.error(this, "No request for listener "+got+" while requeueing "+key);
+							}
+							req.requeueAfterCooldown(key, now, container, clientContext);
+						}
 					}
-					req.requeueAfterCooldown(key, now, container, clientContext);
-				}
-				}
 				}
 			}
 			if(persistent)
