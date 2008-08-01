@@ -82,16 +82,20 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		}
 	}
 	
-	public synchronized void onFoundEdition(long l, USK key){
+	public void onFoundEdition(long l, USK key){
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Found edition "+l);
 		System.err.println("Found "+(extUpdate?"freenet-ext.jar " : "")+"update edition "+l);
+		synchronized(this) {
 		if(!isRunning) return;
 		int found = (int)key.suggestedEdition;
 		
-		if(found > availableVersion) {
+		if(found <= availableVersion){
+			return;
+		}
 			Logger.minor(this, "Updating availableVersion from " + availableVersion + " to " + found + " and queueing an update");
 			this.availableVersion = found;
+		}
 			ticker.queueTimedJob(new Runnable() {
 
 				public void run() {
@@ -100,7 +104,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			}, 60 * 1000); // leave some time in case we get later editions
 			// LOCKING: Always take the NodeUpdater lock *BEFORE* the NodeUpdateManager lock
 			manager.onStartFetching(extUpdate);
-		}
 	}
 
 	public void maybeUpdate(){
