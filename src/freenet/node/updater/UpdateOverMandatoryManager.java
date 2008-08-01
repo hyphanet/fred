@@ -243,6 +243,16 @@ public class UpdateOverMandatoryManager {
 			synchronized(this) {
 				nodesOfferedMainJar.add(source);
 			}
+			updateManager.node.getTicker().queueTimedJob(new Runnable() {
+
+				public void run() {
+					if(updateManager.isBlown()) return;
+					if(!updateManager.isEnabled()) return;
+					if(updateManager.hasNewMainJar()) return;
+					maybeRequestMainJar();
+				}
+				
+			}, REQUEST_MAIN_JAR_TIMEOUT+1);
 		}
 		}
 		
