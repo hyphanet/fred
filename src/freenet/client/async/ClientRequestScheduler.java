@@ -962,7 +962,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					}
 				}
 				if(transientGets != null) {
-					if(gets != null) {
+					if(transientGets != null) {
 						if(logMINOR) Logger.minor(this, "Restoring keys for transient jobs...");
 						for(int i=0;i<transientGets.length;i++) {
 							GotKeyListener got = transientGets[i];
