@@ -84,6 +84,10 @@ public class CountingBloomFilter extends BloomFilter {
 	public void fork(int k) {
 		lock.writeLock().lock();
 		try {
+			File tempFile = File.createTempFile("bloom-", ".tmp");
+			tempFile.deleteOnExit();
+			forkedFilter = new CountingBloomFilter(tempFile, length, k);
+		} catch (IOException e) {
 			forkedFilter = new CountingBloomFilter(length, k);
 		} finally {
 			lock.writeLock().unlock();

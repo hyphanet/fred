@@ -69,6 +69,10 @@ public class BinaryBloomFilter extends BloomFilter {
 	public void fork(int k) {
 		lock.writeLock().lock();
 		try {
+			File tempFile = File.createTempFile("bloom-", ".tmp");
+			tempFile.deleteOnExit();
+			forkedFilter = new BinaryBloomFilter(tempFile, length, k);
+		} catch (IOException e) {
 			forkedFilter = new BinaryBloomFilter(length, k);
 		} finally {
 			lock.writeLock().unlock();
