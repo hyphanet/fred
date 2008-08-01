@@ -90,10 +90,9 @@ public class RandomGrabArray {
 								changedMe = true;
 								// We are doing compaction here. We don't need to swap with the end; we write valid ones to the target location.
 								reqs[i] = null;
-								RandomGrabArrayItem oldItem = item;
 								item.setParentGrabArray(null, container);
 								if(persistent)
-									container.deactivate(oldItem, 1);
+									container.deactivate(item, 1);
 								continue;
 							}
 							if(i != target) {
