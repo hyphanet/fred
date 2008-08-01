@@ -149,7 +149,7 @@ public class NodeStarter implements WrapperListener {
 		SSL.init(sslConfig);
 
 		try {
-			node = new Node(cfg, null, logConfigHandler, this, executor);
+			node = new Node(cfg, null, null, logConfigHandler, this, executor);
 			node.start(false);
 			System.out.println("Node initialization completed.");
 		} catch(NodeInitException e) {
@@ -396,7 +396,7 @@ public class NodeStarter implements WrapperListener {
 		
 		PersistentConfig config = new PersistentConfig(configFS);
 
-		Node node = new Node(config, random, null, null, executor);
+		Node node = new Node(config, random, random, null, null, executor);
 
 		//All testing environments connect the nodes as they want, even if the old setup is restored, it is not desired.
 		node.peers.removeAllPeers();

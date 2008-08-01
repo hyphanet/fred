@@ -611,10 +611,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * @param random The random number generator for this node. Passed in because we may want
 	 * to use a non-secure RNG for e.g. one-JVM live-code simulations. Should be a Yarrow in
 	 * a production node. Yarrow will be used if that parameter is null
+	 * @param weakRandom The fast random number generator the node will use. If null a MT
+	 * instance will be used, seeded from the secure PRNG.
 	 * @param the loggingHandler
 	 * @throws NodeInitException If the node initialization fails.
 	 */
-	 Node(PersistentConfig config, RandomSource r, LoggingConfigHandler lc, NodeStarter ns, Executor executor) throws NodeInitException {
+	 Node(PersistentConfig config, RandomSource r, RandomSource weakRandom, LoggingConfigHandler lc, NodeStarter ns, Executor executor) throws NodeInitException {
 		// Easy stuff
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		String tmp = "Initializing Node using Freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vendor")+" JVM version "+System.getProperty("java.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
@@ -698,13 +700,17 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			entropyGatheringThread.start();
 			this.random = new Yarrow();
 			DiffieHellman.init(random);
+			
 		} else // if it's not null it's because we are running in the simulator
 			this.random = r;
 		isPRNGReady = true;
 		toadlets.getStartupToadlet().setIsPRNGReady();
-		byte buffer[] = new byte[16];
-		random.nextBytes(buffer);
-		this.fastWeakRandom = new MersenneTwister(buffer);
+		if(weakRandom == null) {
+			byte buffer[] = new byte[16];
+			random.nextBytes(buffer);
+			this.fastWeakRandom = new MersenneTwister(buffer);
+		}else
+			this.fastWeakRandom = weakRandom;
 
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		recentlyCompletedIDs = new LRUQueue();
