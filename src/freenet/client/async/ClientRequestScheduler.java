@@ -259,9 +259,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		} else {
 			if(listener != null) {
-				final Key[] keys = listener.listKeys(selectorContainer);
+				final Key[] keys = listener.listKeys(null);
 				schedTransient.addPendingKeys(listener, keys, null);
-				short prio = listener.getPriorityClass(selectorContainer);
+				short prio = listener.getPriorityClass(null);
 				final boolean dontCache = listener.dontCache(null);
 				for(int i=0;i<keys.length;i++) {
 					if(keys[i].getRoutingKey() == null)
