@@ -647,9 +647,14 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 						if(!reg.getters[j].isCancelled(container))
 							allKilled = false;
 					}
+					if(reg.listener != null) {
+						if(!reg.listener.isCancelled(container))
+							allKilled = false;
+					}
 					if(allKilled) {
 						if(logMINOR)
 							Logger.minor(this, "Not registering as all SendableGet's already cancelled");
+						continue;
 					}
 				}
 				
