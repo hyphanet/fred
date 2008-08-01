@@ -216,7 +216,7 @@ public class UpdateOverMandatoryManager {
 		Logger.normal(this, "We received a valid UOMAnnounce : (isOutdated="+isOutdated+" version="+mainJarVersion +" whenToTakeOverTheNormalUpdater="+TimeUtil.formatTime(whenToTakeOverTheNormalUpdater-now)+')');
 		if((isOutdated) || (whenToTakeOverTheNormalUpdater > 0 && whenToTakeOverTheNormalUpdater < now)) {
 			if(mainJarVersion > Version.buildNumber() && mainJarFileLength > 0 &&
-				mainJarVersion > updateManager.newMainJarVersion())
+				mainJarVersion > updateManager.newMainJarVersion()) {
 				if(!isOutdated) {
 					Logger.error(this, "The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN!");
 					System.out.println("The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN!");
@@ -234,6 +234,7 @@ public class UpdateOverMandatoryManager {
 					Logger.error(this, "Node " + source + " sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: " + revocationKey + " : " + e, e);
 					System.err.println("Node " + source.userToString() + " sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: " + revocationKey + " : " + e);
 				}
+			}
 		}
 		
 		return true;
