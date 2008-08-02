@@ -78,11 +78,15 @@ abstract class ClientRequestSchedulerBase {
 		short prio = req.getPriorityClass(container);
 		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" retry "+retryCount+" for "+req.getClientRequest());
 		Set v = (Set) allRequestsByClientRequest.get(req.getClientRequest());
+		if(persistent())
+			container.activate(v, 1);
 		if(v == null) {
 			v = makeSetForAllRequestsByClientRequest(container);
 			allRequestsByClientRequest.put(req.getClientRequest(), v);
 		}
 		v.add(req);
+		if(persistent())
+			container.deactivate(v, 1);
 		addToGrabArray(prio, retryCount, fixRetryCount(retryCount), req.getClient(), req.getClientRequest(), req, random, container);
 		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio+", retrycount="+retryCount+" v.size()="+v.size());
 	}
@@ -139,7 +143,11 @@ abstract class ClientRequestSchedulerBase {
 		synchronized(lock) {
 			Set h = (Set) allRequestsByClientRequest.get(request);
 			if(h == null) return;
+			if(persistent())
+				container.activate(h, 1);
 			reqs = (SendableRequest[]) h.toArray(new SendableRequest[h.size()]);
+			if(persistent())
+				container.deactivate(h, 1);
 		}
 		
 		for(int i=0;i<reqs.length;i++) {
@@ -168,7 +176,7 @@ abstract class ClientRequestSchedulerBase {
 				recentSuccesses.remove(0);
 	}
 
-	protected void removeFromAllRequestsByClientRequest(SendableRequest req, ClientRequester cr, boolean dontComplain) {
+	protected void removeFromAllRequestsByClientRequest(SendableRequest req, ClientRequester cr, boolean dontComplain, ObjectContainer container) {
 		if(logMINOR)
 			Logger.minor(this, "Removing from allRequestsByClientRequest: "+req+ " for "+cr);
 			Set v = (Set) allRequestsByClientRequest.get(cr);
@@ -176,9 +184,15 @@ abstract class ClientRequestSchedulerBase {
 				if(!dontComplain)
 					Logger.error(this, "No HashSet registered for "+cr+" for "+req);
 			} else {
+				if(persistent())
+					container.activate(v, 1);
 				boolean removed = v.remove(req);
 				if(v.isEmpty())
 					allRequestsByClientRequest.remove(cr);
+				else {
+					if(persistent())
+						container.deactivate(v, 1);
+				}
 				if(logMINOR) Logger.minor(this, (removed ? "" : "Not ") + "Removed "+req+" from HashSet for "+cr+" which now has "+v.size()+" elements");
 			}
 	}
