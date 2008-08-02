@@ -563,7 +563,7 @@ public class PeerManager {
 	 * @return An array of the current locations (as doubles) of all
 	 * our connected peers or double[0] if Node.shallWePublishOurPeersLocation() is false
 	 */
-	public double[] getPeerLocationDoubles(boolean pruneBackedOffedPeers) {
+	public double[] getPeerLocationDoubles(boolean pruneBackedOffPeers) {
 		double[] locs;
 		if(!node.shallWePublishOurPeersLocation())
 			return new double[0];
@@ -575,7 +575,7 @@ public class PeerManager {
 		int x = 0;
 		for(int i = 0; i < conns.length; i++) {
 			if(conns[i].isRoutable()) {
-				if(!pruneBackedOffedPeers || !conns[i].shouldBeExcludedFromPeerList()) {
+				if(!pruneBackedOffPeers || !conns[i].shouldBeExcludedFromPeerList()) {
 					locs[x++] = conns[i].getLocation();
 				}
 			}
