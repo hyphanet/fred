@@ -776,6 +776,9 @@ public class NodeUpdateManager {
 		return revocationChecker.getRevocationDNFCounter();
 	}
 
+	/**
+	 * What version is the node currently running?
+	 */
 	public int getMainVersion() {
 		return Version.buildNumber();
 	}
