@@ -211,7 +211,7 @@ public class UpdateOverMandatoryManager {
 		
 		long now = System.currentTimeMillis();
 		long whenToTakeOverTheNormalUpdater = updateManager.getStartedFetchingNextMainJarTimestamp() + GRACE_TIME;
-		final boolean isOutdated = updateManager.node.isOudated();
+		boolean isOutdated = updateManager.node.isOudated();
 		// if the new build is self-mandatory or if the "normal" updater has been trying to update for more than one hour
 		Logger.normal(this, "We received a valid UOMAnnounce : (isOutdated="+isOutdated+" version="+mainJarVersion +" whenToTakeOverTheNormalUpdater="+TimeUtil.formatTime(whenToTakeOverTheNormalUpdater-now)+')');
 		if(mainJarVersion > Version.buildNumber() && mainJarFileLength > 0 &&
@@ -249,7 +249,7 @@ public class UpdateOverMandatoryManager {
 						if(updateManager.isBlown()) return;
 						if(!updateManager.isEnabled()) return;
 						if(updateManager.hasNewMainJar()) return;
-						if(!isOutdated) {
+						if(!updateManager.node.isOudated()) {
 							Logger.error(this, "The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN!");
 							System.out.println("The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN!");
 						}
