@@ -85,10 +85,11 @@ abstract class ClientRequestSchedulerBase {
 			allRequestsByClientRequest.put(req.getClientRequest(), v);
 		}
 		v.add(req);
+		int vSize = v.size();
 		if(persistent())
 			container.deactivate(v, 1);
 		addToGrabArray(prio, retryCount, fixRetryCount(retryCount), req.getClient(), req.getClientRequest(), req, random, container);
-		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio+", retrycount="+retryCount+" v.size()="+v.size());
+		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio+", retrycount="+retryCount+" v.size()="+vSize);
 	}
 	
 	synchronized void addToGrabArray(short priorityClass, int retryCount, int rc, Object client, ClientRequester cr, SendableRequest req, RandomSource random, ObjectContainer container) {
@@ -187,13 +188,14 @@ abstract class ClientRequestSchedulerBase {
 				if(persistent())
 					container.activate(v, 1);
 				boolean removed = v.remove(req);
+				int vSize = v.size();
 				if(v.isEmpty())
 					allRequestsByClientRequest.remove(cr);
 				else {
 					if(persistent())
 						container.deactivate(v, 1);
 				}
-				if(logMINOR) Logger.minor(this, (removed ? "" : "Not ") + "Removed "+req+" from HashSet for "+cr+" which now has "+v.size()+" elements");
+				if(logMINOR) Logger.minor(this, (removed ? "" : "Not ") + "Removed "+req+" from HashSet for "+cr+" which now has "+vSize+" elements");
 			}
 	}
 
