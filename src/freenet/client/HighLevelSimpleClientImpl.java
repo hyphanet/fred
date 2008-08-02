@@ -138,7 +138,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	
 	public void fetch(FreenetURI uri, long maxSize, Object context, ClientCallback callback, FetchContext fctx) throws FetchException {
 		if(uri == null) throw new NullPointerException();
-		ClientGetter get = new ClientGetter(callback, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, this, null, null);
+		ClientGetter get = new ClientGetter(callback, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, context, null, null);
 		get.start();
 	}
 	
