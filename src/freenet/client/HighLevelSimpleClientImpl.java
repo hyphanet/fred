@@ -136,6 +136,12 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		return fw.waitForCompletion();
 	}
 	
+	public void fetch(FreenetURI uri, long maxSize, Object context, ClientCallback callback, FetchContext fctx) throws FetchException {
+		if(uri == null) throw new NullPointerException();
+		ClientGetter get = new ClientGetter(callback, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, this, null, null);
+		get.start();
+	}
+	
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint) throws InsertException {
 		return insert(insert, getCHKOnly, filenameHint, false);
 	}

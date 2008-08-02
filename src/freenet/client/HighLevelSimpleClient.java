@@ -6,6 +6,7 @@ package freenet.client;
 import java.util.HashMap;
 import java.util.Set;
 
+import freenet.client.async.ClientCallback;
 import freenet.client.events.ClientEventListener;
 import freenet.keys.FreenetURI;
 
@@ -36,6 +37,11 @@ public interface HighLevelSimpleClient {
 	 * Blocking fetch of a URI with a configurable max-size and context object.
 	 */
 	public FetchResult fetch(FreenetURI uri, long maxSize, Object context) throws FetchException;
+	
+	/**
+	 * Non-blocking fetch of a URI with a configurable max-size, context object, callback and context.
+	 */
+	public void fetch(FreenetURI uri, long maxSize, Object context, ClientCallback callback, FetchContext fctx) throws FetchException;
 	
 	/**
 	 * Blocking insert.
