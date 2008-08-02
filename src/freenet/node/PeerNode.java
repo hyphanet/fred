@@ -1916,6 +1916,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					messagesTellDisconnected = (MessageItem[]) messagesToSendNow.toArray(new MessageItem[messagesToSendNow.size()]);
 					messagesToSendNow.clear();
 				}
+				this.offeredMainJarVersion = 0;
 			} // else it's a rekey
 			if(unverified) {
 				if(unverifiedTracker != null) {
@@ -3989,5 +3990,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	
 	public void incrementNumberOfSelections() {
 		numberOfSelections++;
+	}
+
+	private long offeredMainJarVersion;
+	
+	public void setMainJarOfferedVersion(long mainJarVersion) {
+		offeredMainJarVersion = mainJarVersion;
+	}
+	
+	public long getMainJarOfferedVersion() {
+		return offeredMainJarVersion;
 	}
 }

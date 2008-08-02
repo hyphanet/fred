@@ -216,6 +216,7 @@ public class UpdateOverMandatoryManager {
 		Logger.normal(this, "We received a valid UOMAnnounce : (isOutdated="+isOutdated+" version="+mainJarVersion +" whenToTakeOverTheNormalUpdater="+TimeUtil.formatTime(whenToTakeOverTheNormalUpdater-now)+')');
 		if(mainJarVersion > Version.buildNumber() && mainJarFileLength > 0 &&
 				mainJarVersion > updateManager.newMainJarVersion()) {
+			source.setMainJarOfferedVersion(mainJarVersion);
 			// Offer is valid.
 			if((isOutdated) || (whenToTakeOverTheNormalUpdater > 0 && whenToTakeOverTheNormalUpdater < now)) {
 				// Take up the offer, subject to limits on number of simultaneous downloads.
@@ -265,6 +266,13 @@ public class UpdateOverMandatoryManager {
 
 	private void sendUOMRequestMain(final PeerNode source, boolean addOnFail) {
 		synchronized(this) {
+			long offeredVersion = source.getMainJarOfferedVersion();
+			if(offeredVersion < updateManager.newMainJarVersion()) {
+				if(offeredVersion <= 0)
+					Logger.error(this, "Not sending UOM request to "+source+" because it hasn't offered anything!");
+				if(logMINOR) Logger.minor(this, "Not sending UOM request to "+source+" because we already have its offered version "+offeredVersion);
+				return;
+			}
 			if(updateManager.getMainVersion() >= updateManager.newMainJarVersion()) return;
 			if(nodesAskedSendMainJar.contains(source)) {
 				if(logMINOR) Logger.minor(this, "Recently asked node "+source+" so not re-asking yet.");
