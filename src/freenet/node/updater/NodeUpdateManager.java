@@ -734,6 +734,12 @@ public class NodeUpdateManager {
 		return hasNewExtJar;
 	}
 
+	/**
+	 * What version has been fetched?
+	 * 
+	 * This includes jar's fetched via UOM, because the UOM code feeds
+	 * its results through the mainUpdater.
+	 */
 	public int newMainJarVersion() {
 		if(mainUpdater == null) return -1;
 		return mainUpdater.getFetchedVersion();
