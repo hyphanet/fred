@@ -1091,8 +1091,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			}
 		} else {
 			String s = "Testnet mode DISABLED. You may have some level of anonymity. :)\n"+
-				"Note that this version of Freenet is still a very early alpha, and may well have numerous bugs and design flaws.\n"+
-				"In particular: YOU ARE WIDE OPEN TO YOUR IMMEDIATE PEERS! They can eavesdrop on your requests with relatively little difficulty at present (correlation attacks etc).";
+				"Note that Freenet 0.7 is still under intense development, and is by no means feature complete, especially "+
+				"in the area of security: There are known design flaws and there are bugs we haven't found out about yet. "+
+				"Smart attackers can probably compromise your anonymity! This is easiest if they are directly connected to " +
+				"you, but (especially on opennet) they can probably find you given time even if they are not.\n\n"+
+				"USE FREENET AT YOUR OWN RISK. THERE IS ABSOLUTELY NO WARRANTY FOR FREENET.";
 			Logger.normal(this, s);
 			System.err.println(s);
 			testnetEnabled = false;
