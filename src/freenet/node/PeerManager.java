@@ -575,7 +575,7 @@ public class PeerManager {
 		int x = 0;
 		for(int i = 0; i < conns.length; i++) {
 			if(conns[i].isRoutable()) {
-				if(!conns[i].shouldBeExcludedFromPeerList()) {
+				if(!pruneBackedOffedPeers || !conns[i].shouldBeExcludedFromPeerList()) {
 					locs[x++] = conns[i].getLocation();
 				}
 			}
