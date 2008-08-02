@@ -270,7 +270,9 @@ public class UpdateOverMandatoryManager {
 			if(offeredVersion < updateManager.newMainJarVersion()) {
 				if(offeredVersion <= 0)
 					Logger.error(this, "Not sending UOM request to "+source+" because it hasn't offered anything!");
-				if(logMINOR) Logger.minor(this, "Not sending UOM request to "+source+" because we already have its offered version "+offeredVersion);
+				else {
+					if(logMINOR) Logger.minor(this, "Not sending UOM request to "+source+" because we already have its offered version "+offeredVersion);
+				}
 				return;
 			}
 			if(updateManager.getMainVersion() >= updateManager.newMainJarVersion()) return;
