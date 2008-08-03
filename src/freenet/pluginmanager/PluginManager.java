@@ -351,6 +351,7 @@ public class PluginManager {
 		} else {
 			pluginFile = new File(pluginDirectory, pluginSpecification.substring(lastSlash + 1));
 		}
+		if(logDEBUG) Logger.minor(this, "Delete plugin - plugname: " + pluginSpecification + "filename: " + pluginFile.getAbsolutePath() , new Exception("debug"));
 		if (pluginFile.exists()) {
 			pluginFile.delete();
 		}
