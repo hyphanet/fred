@@ -30,7 +30,7 @@ public class PluginDownLoaderOfficial extends PluginDownLoaderURL {
 
 	@Override
 	String getPluginName(String source) throws PluginNotFoundException {
-		return source;
+		return source + ".jar";
 	}
 
 	@Override
