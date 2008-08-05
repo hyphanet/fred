@@ -1795,9 +1795,9 @@ public class PeerManager {
 	public int countSeednodes() {
 		int count = 0;
 		for(PeerNode peer : myPeers) {
-			if(peer.isRealConnection())
-				continue;
-			count++;
+			if(peer instanceof SeedServerPeerNode || 
+					peer instanceof SeedClientPeerNode)
+				count++;
 		}
 		return count;
 	}
