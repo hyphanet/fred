@@ -727,6 +727,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		/* FIXME: this may throw if e.g. we ran out of disk space last time. 
 		 * We need to back it up and auto-recover. */
 		/* Client-server mode. Refresh objects if you have a long-lived container! */
+		/* On my db4o test node with lots of downloads, and several days old, com.db4o.internal.freespace.FreeSlotNode
+		 * used 73MB out of the 128MB limit (117MB used). This memory was not reclaimed despite constant garbage collection.
+		 * This is unacceptable! */
 		Db4o.configure().freespace().useBTreeSystem();
 		Db4o.configure().objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("key").indexed(true);
 		Db4o.configure().objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("keyAsBytes").indexed(true);
