@@ -155,6 +155,13 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		put.start(false);
 		return pw.waitForCompletion();
 	}
+	
+	public void insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientCallback cb) throws InsertException {
+		ClientPutter put = new ClientPutter(cb, insert.getData(), insert.desiredURI, insert.clientMetadata, 
+				ctx, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, priorityClass, 
+				getCHKOnly, isMetadata, this, null, filenameHint, false);
+		put.start(false);
+	}
 
 	public FreenetURI insertRedirect(FreenetURI insertURI, FreenetURI targetURI) throws InsertException {
 		Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, new ClientMetadata());

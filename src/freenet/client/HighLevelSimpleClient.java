@@ -51,6 +51,11 @@ public interface HighLevelSimpleClient {
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint) throws InsertException;
 
 	/**
+	 * Non-blocking insert.
+	 */
+	public void insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientCallback cb) throws InsertException;
+	
+	/**
 	 * Blocking insert of a redirect.
 	 */
 	public FreenetURI insertRedirect(FreenetURI insertURI, FreenetURI target) throws InsertException;
