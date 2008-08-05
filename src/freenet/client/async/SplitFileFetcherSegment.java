@@ -504,7 +504,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 	
 	/** This is after any retries and therefore is either out-of-retries or fatal 
 	 * @param container */
-	public synchronized void onFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context) {
+	public void onFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(this, 1);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
