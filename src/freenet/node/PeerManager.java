@@ -1013,7 +1013,6 @@ public class PeerManager {
 		for(int i = 0; i < peers.length; i++) {
 			PeerNode pn = peers[i];
 			status[i] = pn.getStatus(true).toString();
-			Version.seenVersion(pn.getVersion());
 		}
 		Arrays.sort(status);
 		for(int i = 0; i < status.length; i++) {
