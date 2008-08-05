@@ -14,6 +14,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Random;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -73,21 +74,23 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private final int routeKeyLength;
 	private final int fullKeyLength;
 	private final int dataBlockLength;
+	private final Random random;
 	private final Node node;
 	
 	private long storeSize;
 	private int generation;
 	private int flags;
 
-	public static SaltedHashFreenetStore construct(File baseDir, String name, StoreCallback callback, Node node,
-	        long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook)
+	public static SaltedHashFreenetStore construct(File baseDir, String name, StoreCallback callback, Random random,
+	        Node node, long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook)
 	        throws IOException {
-		return new SaltedHashFreenetStore(baseDir, name, callback, node, maxKeys, bloomFilterSize, bloomCounting,
+		return new SaltedHashFreenetStore(baseDir, name, callback, random, node, maxKeys, bloomFilterSize,
+		        bloomCounting,
 		        shutdownHook);
 	}
 
-	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback callback, Node node, long maxKeys,
-	        int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook)
+	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback callback, Random random, Node node,
+	        long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook)
 	        throws IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
@@ -102,6 +105,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		fullKeyLength = callback.fullKeyLength();
 		dataBlockLength = callback.dataLength();
 
+		this.random = random;
 		this.node = node;
 		storeSize = maxKeys;
 		this.bloomFilterSize = bloomFilterSize;
@@ -472,7 +476,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		private ByteBuffer toMetaDataBuffer() {
 			ByteBuffer out = ByteBuffer.allocate(METADATA_LENGTH);
-			cipherManager.encrypt(this, node.random);
+			cipherManager.encrypt(this, random);
 
 			out.put(getDigestedRoutingKey());
 			out.put(dataEncryptIV);
@@ -685,7 +689,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * </ul>
 	 */
 	private void writeEntry(Entry entry, long offset) throws IOException {
-		cipherManager.encrypt(entry, node.random);
+		cipherManager.encrypt(entry, random);
 
 		ByteBuffer bf = entry.toMetaDataBuffer();
 		do {
@@ -785,7 +789,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		if (!configFile.exists()) {
 			// create new
 			byte[] newsalt = new byte[0x10];
-			node.random.nextBytes(newsalt);
+			random.nextBytes(newsalt);
 			cipherManager = new CipherManager(newsalt);
 
 			writeConfigFile();
@@ -894,7 +898,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			super.run();
 			
 			try {
-				while (node.clientCore == null && !shutdown) {
+				while (node != null && node.clientCore == null && !shutdown) {
 					Thread.sleep(1000);
 				}	
 				Thread.sleep((int)(CLEANER_PERIOD / 2 + CLEANER_PERIOD * Math.random()));
@@ -903,6 +907,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			if (shutdown)
 				return;
 
+			if (node != null)
 			node.clientCore.alerts.register(new UserAlert() {
 				public String anchor() {
 					return "store-cleaner-" + name;
