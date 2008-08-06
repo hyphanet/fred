@@ -161,6 +161,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			 */
 			if((OpennetManager.MAX_PEERS_FOR_SCALING < locs.length) && (source.isOpennet())) {
 				Logger.error(this, "We received "+locs.length+ " locations from "+source.toString()+"! That should *NOT* happen!");
+				source.forceDisconnect(true);
 				return true;
 			} else {
 				// We are on darknet and we trust our peers OR we are on opennet
