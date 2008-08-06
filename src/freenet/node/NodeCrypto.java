@@ -368,6 +368,7 @@ public class NodeCrypto {
 
 	private byte[] myCompressedRef(boolean setup, boolean heavySetup, boolean forARK) {
 		SimpleFieldSet fs = exportPublicFieldSet(setup, heavySetup, forARK);
+		// TODO: we should change that to ((setup || heavySetup) && !forARK) when all the nodes have the new code
 		boolean shouldStripGroup = heavySetup && Global.DSAgroupBigA.equals(cryptoGroup);
 		if(shouldStripGroup)
 			fs.removeSubset("dsaGroup");
@@ -385,19 +386,18 @@ public class NodeCrypto {
 		}
 		
 		byte[] buf = baos.toByteArray();
-		byte[] obuf = new byte[buf.length + 1 + (shouldStripGroup ? 4 : 0)];
+		if(buf.length >= 4096)
+			throw new IllegalStateException("We are attempting to send a "+buf.length+" bytes big reference!");
+		byte[] obuf = new byte[buf.length + 1 + (shouldStripGroup ? 1 : 0)];
 		int offset = 0;
 		if(shouldStripGroup) {
-			obuf[offset++] = (byte) (0x02); // compressed noderef - group
+			obuf[offset++] = 0x3; // compressed noderef - group
 			int dsaGroupIndex = Global.GROUP_INDEX_BIG_A;
 			if(logMINOR)
 				Logger.minor(this, "We are stripping the group from the reference as it's a known group (groupIndex="+dsaGroupIndex+')');
 			obuf[offset++] = (byte)(dsaGroupIndex & 0xff);
-			obuf[offset++] = (byte)(dsaGroupIndex >>> 8 & 0xff);
-			obuf[offset++] = (byte)(dsaGroupIndex >>> 16 & 0xff);
-			obuf[offset++] = (byte)(dsaGroupIndex >>> 24 & 0xff);
 		} else
-			obuf[offset++] = 1 & 0xff; // compressed noderef
+			obuf[offset++] = 0x01; // compressed noderef
 		System.arraycopy(buf, 0, obuf, offset, buf.length);
 		if(logMINOR) 
 			Logger.minor(this, "myCompressedRef("+setup+","+heavySetup+") returning "+obuf.length+" bytes");

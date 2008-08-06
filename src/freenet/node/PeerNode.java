@@ -2259,14 +2259,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		int firstByte = data[offset];
 		offset++;
 		length--;
-		if((firstByte & 2) == 2) {
-			int groupIndex = Fields.bytesToInt(data, offset);
-			offset += 4;
-			length -= 4;
+		if((firstByte & 0x2) == 2) {
+			int groupIndex = (data[offset] & 0xff);
+			offset++;
+			length--;
 			group = Global.getGroup(groupIndex);
 			if(group == null) throw new FSParseException("Unknown group number "+groupIndex);
 			if(logMINOR)
 				Logger.minor(PeerNode.class, "DSAGroup set to "+group.fingerprintToString()+ " using the group-index "+groupIndex);
+			System.out.println("group");
 		}
 		// Is it compressed?
 		if((firstByte & 1) == 1) {
