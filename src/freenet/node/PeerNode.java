@@ -2256,6 +2256,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			length -= 4;
 			group = Global.getGroup(groupIndex);
 			if(group == null) throw new FSParseException("Unknown group number "+groupIndex);
+			if(logMINOR)
+				Logger.minor(PeerNode.class, "DSAGroup set to "+group.fingerprintToString()+ " using the group-index "+groupIndex);
 		}
 		// Is it compressed?
 		if((firstByte & 1) == 1) {
@@ -2285,7 +2287,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 		}
 		if(logMINOR)
-			Logger.minor(PeerNode.class, "Reference: " + new String(data, offset, length) + '(' + length + ')');
+			Logger.minor(PeerNode.class, "Reference: " + HexUtil.bytesToHex(data, offset, length) + '(' + length + ')');
+
 		// Now decode it
 		ByteArrayInputStream bais = new ByteArrayInputStream(data, offset, length);
 		InputStreamReader isr;
@@ -2297,8 +2300,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		BufferedReader br = new BufferedReader(isr);
 		try {
 			SimpleFieldSet fs = new SimpleFieldSet(br, false, true);
-			if(group != null)
-				fs.putAllOverwrite(group.asFieldSet());
+			if(group != null) {
+				SimpleFieldSet sfs = new SimpleFieldSet(true);
+				sfs.put("dsaGroup", group.asFieldSet());
+				fs.putAllOverwrite(sfs);
+			}
 			return fs;
 		} catch(IOException e) {
 			FSParseException ex = new FSParseException("Impossible: " + e);
