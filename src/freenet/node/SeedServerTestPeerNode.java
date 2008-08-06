@@ -34,6 +34,8 @@ public class SeedServerTestPeerNode extends SeedServerPeerNode {
 		NEVER_CONNECTED,
 		// Connected but no packets received yet
 		CONNECTED_NO_PACKETS_RECEIVED,
+		// Connected but TOO_OLD
+		CONNECTED_TOO_OLD,
 		// Connected and received packets
 		CONNECTED_SUCCESS,
 		// Connected but timed out after no packets received
@@ -58,6 +60,8 @@ public class SeedServerTestPeerNode extends SeedServerPeerNode {
 		if(isConnected()) {
 			if(lastReceivedDataPacketTime <= 0)
 				return FATE.CONNECTED_NO_PACKETS_RECEIVED;
+			else if(this.isUnroutableOlderVersion())
+				return FATE.CONNECTED_TOO_OLD;
 			else
 				return FATE.CONNECTED_SUCCESS;
 		}
