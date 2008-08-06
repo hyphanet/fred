@@ -2267,33 +2267,23 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(group == null) throw new FSParseException("Unknown group number "+groupIndex);
 			if(logMINOR)
 				Logger.minor(PeerNode.class, "DSAGroup set to "+group.fingerprintToString()+ " using the group-index "+groupIndex);
-			System.out.println("group");
 		}
 		// Is it compressed?
 		if((firstByte & 1) == 1) {
-			// Gzipped
-			Inflater i = new Inflater();
-			i.setInput(data, offset, length);
-			byte[] output = new byte[4096];
-			int outputPointer = 0;
-			while(true) {
-				try {
-					int x = i.inflate(output, outputPointer, output.length - outputPointer);
-					if(x == output.length - outputPointer) {
-						// More to decompress!
-						byte[] newOutput = new byte[output.length * 2];
-						System.arraycopy(output, 0, newOutput, 0, output.length);
-						continue;
-					} else {
-						// Finished
-						data = output;
-						offset = 0;
-						length = outputPointer + x;
-						break;
-					}
-				} catch(DataFormatException e) {
-					throw new FSParseException("Invalid compressed data");
-				}
+			try {
+				// Gzipped
+				Inflater i = new Inflater();
+				i.setInput(data, offset, length);
+				// We shouldn't ever need a 4096 bytes long ref!
+				byte[] output = new byte[4096];
+				length = i.inflate(output, 0, output.length);
+				// Finished
+				data = output;
+				offset = 0;
+				if(logMINOR)
+					Logger.minor(PeerNode.class, "We have decompressed a "+length+" bytes big reference.");
+			} catch(DataFormatException e) {
+				throw new FSParseException("Invalid compressed data");
 			}
 		}
 		if(logMINOR)
