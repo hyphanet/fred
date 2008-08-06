@@ -215,11 +215,12 @@ public class UpdateOverMandatoryManager {
 		if(started > 0) whenToTakeOverTheNormalUpdater = started + GRACE_TIME;
 		boolean isOutdated = updateManager.node.isOudated();
 		// if the new build is self-mandatory or if the "normal" updater has been trying to update for more than one hour
-		Logger.normal(this, "We received a valid UOMAnnounce : (isOutdated="+isOutdated+" version="+mainJarVersion +" whenToTakeOverTheNormalUpdater="+TimeUtil.formatTime(whenToTakeOverTheNormalUpdater-now)+')');
+		Logger.normal(this, "We received a valid UOMAnnounce : (isOutdated="+isOutdated+" version="+mainJarVersion +" whenToTakeOverTheNormalUpdater="+TimeUtil.formatTime(whenToTakeOverTheNormalUpdater-now)+") file length "+mainJarFileLength+" updateManager version "+updateManager.newMainJarVersion());
 		if(mainJarVersion > Version.buildNumber() && mainJarFileLength > 0 &&
 				mainJarVersion > updateManager.newMainJarVersion()) {
 			source.setMainJarOfferedVersion(mainJarVersion);
 			// Offer is valid.
+			if(logMINOR) Logger.minor(this, "Offer is valid");
 			if((isOutdated) || (whenToTakeOverTheNormalUpdater > 0 && whenToTakeOverTheNormalUpdater < now)) {
 				// Take up the offer, subject to limits on number of simultaneous downloads.
 				// If we have fetches running already, then sendUOMRequestMain() will add the offer to nodesOfferedMainJar,
@@ -227,7 +228,8 @@ public class UpdateOverMandatoryManager {
 					if(!isOutdated) {
 						Logger.error(this, "The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN! (1)");
 						System.out.println("The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN! (1)");
-					}
+					} else
+						if(logMINOR) Logger.minor(this, "Fetching via UOM as our build is deprecated");
 					// Fetch it
 					try {
 						FreenetURI mainJarURI = new FreenetURI(jarKey).setSuggestedEdition(mainJarVersion);
@@ -267,6 +269,8 @@ public class UpdateOverMandatoryManager {
 	}
 
 	private void sendUOMRequestMain(final PeerNode source, boolean addOnFail) {
+		if(logMINOR)
+			Logger.minor(this, "sendUOMRequestMain("+source+","+addOnFail+")");
 		synchronized(this) {
 			long offeredVersion = source.getMainJarOfferedVersion();
 			if(offeredVersion < updateManager.newMainJarVersion()) {
@@ -277,7 +281,10 @@ public class UpdateOverMandatoryManager {
 				}
 				return;
 			}
-			if(updateManager.getMainVersion() >= updateManager.newMainJarVersion()) return;
+			if(updateManager.getMainVersion() >= offeredVersion) {
+				if(logMINOR) Logger.minor(this, "Not fetching from "+source+" because current jar version "+updateManager.getMainVersion()+" is more recent than "+source.getMainJarOfferedVersion());
+				return;
+			}
 			if(nodesAskedSendMainJar.contains(source)) {
 				if(logMINOR) Logger.minor(this, "Recently asked node "+source+" so not re-asking yet.");
 				return;
