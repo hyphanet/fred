@@ -441,7 +441,11 @@ public class Announcer {
 	}
 
 	public void sendAnnouncement(final SeedServerPeerNode seed) {
-		if(!node.isOpennetEnabled()) return;
+		if(!node.isOpennetEnabled()) {
+			if(logMINOR)
+				Logger.minor(this, "Not announcing to "+seed+" because opennet is disabled");
+			return;
+		}
 		System.out.println("Announcement to "+seed.userToString()+" starting...");
 		if(logMINOR)
 			Logger.minor(this, "Announcement to "+seed.userToString()+" starting...");
