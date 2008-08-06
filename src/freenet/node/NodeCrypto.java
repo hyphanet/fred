@@ -366,10 +366,13 @@ public class NodeCrypto {
 		}
 	}
 
+	public static boolean DISABLE_GROUP_STRIP = false;
+	
 	private byte[] myCompressedRef(boolean setup, boolean heavySetup, boolean forARK) {
 		SimpleFieldSet fs = exportPublicFieldSet(setup, heavySetup, forARK);
 		// TODO: we should change that to ((setup || heavySetup) && !forARK) when all the nodes have the new code
 		boolean shouldStripGroup = heavySetup && Global.DSAgroupBigA.equals(cryptoGroup);
+		if(DISABLE_GROUP_STRIP) shouldStripGroup = false;
 		if(shouldStripGroup)
 			fs.removeSubset("dsaGroup");
 		
