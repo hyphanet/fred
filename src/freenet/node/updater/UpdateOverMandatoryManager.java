@@ -211,8 +211,9 @@ public class UpdateOverMandatoryManager {
 		
 		long now = System.currentTimeMillis();
 		long started = updateManager.getStartedFetchingNextMainJarTimestamp();
-		long whenToTakeOverTheNormalUpdater = -1;
+		long whenToTakeOverTheNormalUpdater;
 		if(started > 0) whenToTakeOverTheNormalUpdater = started + GRACE_TIME;
+		else whenToTakeOverTheNormalUpdater = System.currentTimeMillis() + GRACE_TIME;
 		boolean isOutdated = updateManager.node.isOudated();
 		// if the new build is self-mandatory or if the "normal" updater has been trying to update for more than one hour
 		Logger.normal(this, "We received a valid UOMAnnounce : (isOutdated="+isOutdated+" version="+mainJarVersion +" whenToTakeOverTheNormalUpdater="+TimeUtil.formatTime(whenToTakeOverTheNormalUpdater-now)+") file length "+mainJarFileLength+" updateManager version "+updateManager.newMainJarVersion());
@@ -221,7 +222,7 @@ public class UpdateOverMandatoryManager {
 			source.setMainJarOfferedVersion(mainJarVersion);
 			// Offer is valid.
 			if(logMINOR) Logger.minor(this, "Offer is valid");
-			if((isOutdated) || (whenToTakeOverTheNormalUpdater > 0 && whenToTakeOverTheNormalUpdater < now)) {
+			if((isOutdated) || whenToTakeOverTheNormalUpdater < now) {
 				// Take up the offer, subject to limits on number of simultaneous downloads.
 				// If we have fetches running already, then sendUOMRequestMain() will add the offer to nodesOfferedMainJar,
 				// so that if all our fetches fail, we can fetch from this node.
