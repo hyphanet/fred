@@ -420,14 +420,24 @@ public class Announcer {
 			announcedToIPs.add(addrs[i]);
 	}
 
+	/**
+	 * Have we already announced to this node?
+	 * Return true if the node has new non-local addresses we haven't announced to.
+	 * Return false if the node has non-local addresses we have announced to.
+	 * Return true if the node has no non-local addresses.
+	 * @param addrs
+	 * @return
+	 */
 	private synchronized boolean newAnnouncedIPs(InetAddress[] addrs) {
+		boolean hasNonLocalAddresses = false;
 		for(int i=0;i<addrs.length;i++) {
 			if(!IPUtil.isValidAddress(addrs[i], false))
 				continue;
+			hasNonLocalAddresses = true;
 			if(!announcedToIPs.contains(addrs[i]))
 				return true;
 		}
-		return false;
+		return !hasNonLocalAddresses;
 	}
 
 	public void sendAnnouncement(final SeedServerPeerNode seed) {
