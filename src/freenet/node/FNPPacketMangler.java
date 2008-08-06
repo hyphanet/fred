@@ -976,7 +976,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		
 		// At this point we know it's from the peer, so we can report a packet received.
-		pn.receivedPacket(true);
+		pn.receivedPacket(true, false);
 		
 		sendJFKMessage3(1, 2, 3, nonceInitiator, nonceResponder, hisExponential, authenticator, pn, replyTo, unknownInitiator, setupType);
 
@@ -1153,7 +1153,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		
 		// At this point we know it's from the peer, so we can report a packet received.
-		pn.receivedPacket(true);
+		pn.receivedPacket(true, false);
 		
 		// Send reply
 		sendJFKMessage4(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential, 
@@ -1954,8 +1954,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			tracker.destForgotPacket(realSeqNo);
 		}
 
-		tracker.pn.receivedPacket(false); // Must keep the connection open, even if it's an ack packet only and on an incompatible connection - we may want to do a UOM transfer e.g.
-
+		tracker.pn.receivedPacket(false, true); // Must keep the connection open, even if it's an ack packet only and on an incompatible connection - we may want to do a UOM transfer e.g.
+//		System.err.println(tracker.pn.getIdentityString()+" : received packet");
+		
 		// No sequence number == no messages
 
 		if((seqNumber != -1) && tracker.alreadyReceived(seqNumber)) {
@@ -2586,6 +2587,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// pn.getPeer() cannot be null
 		try {
 			sendPacket(output, kt.pn.getPeer(), kt.pn, alreadyReportedBytes);
+//			System.err.println(kt.pn.getIdentityString()+" : sent packet length "+output.length);
 		} catch (LocalAddressException e) {
 			Logger.error(this, "Tried to send data packet to local address: "+kt.pn.getPeer()+" for "+kt.pn.allowLocalAddresses());
 		}

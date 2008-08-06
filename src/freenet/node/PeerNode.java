@@ -143,6 +143,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private long timeLastSentPacket;
 	/** When did we last receive a packet? */
 	private long timeLastReceivedPacket;
+	/** When did we last receive a non-auth packet? */
+	private long timeLastReceivedDataPacket;
 	/** When was isConnected() last true? */
 	private long timeLastConnected;
 	/** When was isRoutingCompatible() last true? */
@@ -1105,6 +1107,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public synchronized long lastReceivedPacketTime() {
 		return timeLastReceivedPacket;
 	}
+	
+	public synchronized long lastReceivedDataPacketTime() {
+		return timeLastReceivedDataPacket;
+	}
 
 	public synchronized long timeLastConnected() {
 		return timeLastConnected;
@@ -1765,8 +1771,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @throws NotConnectedException 
 	* @param dontLog If true, don't log an error or throw an exception if we are not connected. This
 	* can be used in handshaking when the connection hasn't been verified yet.
+	* @param dataPacket If this is a real packet, as opposed to a handshake packet.
 	*/
-	void receivedPacket(boolean dontLog) {
+	void receivedPacket(boolean dontLog, boolean dataPacket) {
 		synchronized(this) {
 			if((!isConnected) && (!dontLog)) {
 				// Don't log if we are disconnecting, because receiving packets during disconnecting is normal.
@@ -1785,6 +1792,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			timeLastReceivedPacket = now;
+			if(dataPacket)
+				timeLastReceivedDataPacket = now;
 		}
 	}
 
@@ -1976,7 +1985,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			" old: " + previousTracker + " unverified: " + unverifiedTracker + " bootID: " + thisBootID + " for " + shortToString());
 
 		// Received a packet
-		receivedPacket(unverified);
+		receivedPacket(unverified, false);
 
 		setPeerNodeStatus(now);
 		

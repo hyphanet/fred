@@ -3139,8 +3139,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	/** 
 	 * Connect this node to another node (for purposes of testing) 
 	 */
-	public void connectToSeednode(SeedServerPeerNode node) throws OpennetDisabledException, FSParseException, PeerParseException, ReferenceSignatureVerificationException {
-		peers.addPeer(createNewSeedServerTestPeerNode(node.exportFieldSet()),false,false);
+	public void connectToSeednode(SeedServerTestPeerNode node) throws OpennetDisabledException, FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		peers.addPeer(node,false,false);
 	}
 	public void connect(Node node) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		peers.connect(node.darknetCrypto.exportPublicFieldSet(), darknetCrypto.packetMangler);

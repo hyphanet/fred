@@ -15,6 +15,7 @@ import freenet.node.NodeStarter;
 import freenet.node.OpennetDisabledException;
 import freenet.node.SeedServerPeerNode;
 import freenet.node.SeedServerTestPeerNode;
+import freenet.node.SeedServerTestPeerNode.FATE;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
@@ -23,6 +24,8 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import java.io.File;
 import java.io.IOException;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.Vector;
 
 /**
@@ -61,7 +64,8 @@ public class SeednodePingTest extends RealNodeTest {
 	Thread.sleep(8000);
 	
 	int pingID = 0;
-	while(true) {
+	long deadline = System.currentTimeMillis() + 5*60*1000;
+	while(System.currentTimeMillis() < deadline) {
 		int countConnectedSeednodes = 0;
 		for(SeedServerPeerNode seednode : node.peers.getConnectedSeedServerPeersVector(null)) {
 			try {
@@ -86,8 +90,24 @@ public class SeednodePingTest extends RealNodeTest {
 				System.out.println(seednode.getIdentityString() + " is not connected "+seednode.getHandshakeCount());
 			}
 		}
+		Map<FATE, Integer> totals = new EnumMap(SeedServerTestPeerNode.FATE.class);
+		for(SeedServerTestPeerNode seednode : seedNodes) {
+			FATE fate = seednode.getFate();
+			Integer x = totals.get(fate);
+			if(x == null)
+				totals.put(fate, 1);
+			else
+				totals.put(fate, x+1);
+			System.out.println(seednode.getIdentityString() + " : "+fate+ " : "+seednode.getPeerNodeStatusString());
+		}
+		System.out.println("TOTALS:");
+		for(FATE fate : totals.keySet()) {
+			System.out.println(fate + " : "+totals.get(fate));
+		}
 		System.out.println("################## ("+node.peers.countConnectedPeers()+") "+countConnectedSeednodes+'/'+node.peers.countSeednodes());
 		Thread.sleep(5000);
 	}
+    System.out.println("Completed seednodes scan.");
+    System.exit(0);
     }
 }
