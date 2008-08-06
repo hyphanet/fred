@@ -210,7 +210,9 @@ public class UpdateOverMandatoryManager {
 		if(!updateManager.isEnabled()) return true; // Don't care if not enabled, except for the revocation URI
 		
 		long now = System.currentTimeMillis();
-		long whenToTakeOverTheNormalUpdater = updateManager.getStartedFetchingNextMainJarTimestamp() + GRACE_TIME;
+		long started = updateManager.getStartedFetchingNextMainJarTimestamp();
+		long whenToTakeOverTheNormalUpdater = -1;
+		if(started > 0) whenToTakeOverTheNormalUpdater = started + GRACE_TIME;
 		boolean isOutdated = updateManager.node.isOudated();
 		// if the new build is self-mandatory or if the "normal" updater has been trying to update for more than one hour
 		Logger.normal(this, "We received a valid UOMAnnounce : (isOutdated="+isOutdated+" version="+mainJarVersion +" whenToTakeOverTheNormalUpdater="+TimeUtil.formatTime(whenToTakeOverTheNormalUpdater-now)+')');
@@ -223,8 +225,8 @@ public class UpdateOverMandatoryManager {
 				// If we have fetches running already, then sendUOMRequestMain() will add the offer to nodesOfferedMainJar,
 				// so that if all our fetches fail, we can fetch from this node.
 					if(!isOutdated) {
-						Logger.error(this, "The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN!");
-						System.out.println("The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN!");
+						Logger.error(this, "The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN! (1)");
+						System.out.println("The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN! (1)");
 					}
 					// Fetch it
 					try {
@@ -251,13 +253,13 @@ public class UpdateOverMandatoryManager {
 						if(!updateManager.isEnabled()) return;
 						if(updateManager.hasNewMainJar()) return;
 						if(!updateManager.node.isOudated()) {
-							Logger.error(this, "The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN!");
-							System.out.println("The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN!");
+							Logger.error(this, "The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN! (2)");
+							System.out.println("The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN! (2)");
 						}
 						maybeRequestMainJar();
 					}
 					
-				}, REQUEST_MAIN_JAR_TIMEOUT+1);
+				}, whenToTakeOverTheNormalUpdater - now);
 			}
 		}
 		
