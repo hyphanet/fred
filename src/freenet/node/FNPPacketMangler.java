@@ -314,7 +314,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			}
 		}
 		if(node.wantAnonAuth()) {
-			if(tryProcessAuthAnon(buf, offset, length, peer, now)) return;
+			if(tryProcessAuthAnon(buf, offset, length, peer)) return;
 		}
 		if(LOG_UNMATCHABLE_ERROR)
 			System.err.println("Unmatchable packet from "+peer+" on "+node.getDarknetPortNumber());
@@ -400,7 +400,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param now The time at which the packet was received
 	 * @return True if we handled a negotiation packet, false otherwise.
 	 */
-	private boolean tryProcessAuthAnon(byte[] buf, int offset, int length, Peer peer, long now) {
+	private boolean tryProcessAuthAnon(byte[] buf, int offset, int length, Peer peer) {
 		BlockCipher authKey = crypto.getAnonSetupCipher();
 		// Does the packet match IV E( H(data) data ) ?
 		PCFBMode pcfb = PCFBMode.create(authKey);
