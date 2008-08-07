@@ -151,6 +151,8 @@ class SingleFileInserter implements ClientPutState {
 	void onCompressedInner(CompressionOutput output, ObjectContainer container, ClientContext context) throws InsertException {
 		if(container != null) {
 			container.activate(block, 2);
+			container.activate(parent, 1);
+			container.activate(cb, 1);
 		}
 		long origSize = block.getData().size();
 		Bucket bestCompressedData = output.data;
@@ -204,8 +206,11 @@ class SingleFileInserter implements ClientPutState {
 				bi.schedule(container, context);
 				cb.onBlockSetFinished(this, container, context);
 				started = true;
-				if(persistent)
+				if(persistent) {
 					container.set(this);
+					container.deactivate(cb, 1);
+					container.deactivate(parent, 1);
+				}
 				return;
 			}
 		}
@@ -247,8 +252,11 @@ class SingleFileInserter implements ClientPutState {
 				cb.onBlockSetFinished(this, container, context);
 			}
 			started = true;
-			if(persistent)
+			if(persistent) {
 				container.set(this);
+				container.deactivate(cb, 1);
+				container.deactivate(parent, 1);
+			}
 			return;
 		}
 		// Otherwise the file is too big to fit into one block
@@ -270,8 +278,11 @@ class SingleFileInserter implements ClientPutState {
 			if(earlyEncode) sfi.forceEncode(container, context);
 		}
 		started = true;
-		if(persistent)
+		if(persistent) {
 			container.set(this);
+			container.deactivate(cb, 1);
+			container.deactivate(parent, 1);
+		}
 	}
 	
 	private void tryCompress(ObjectContainer container, ClientContext context) throws InsertException {
