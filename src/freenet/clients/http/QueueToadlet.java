@@ -591,6 +591,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 
 		short lowestQueuedPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
 		
+		long totalQueuedDownloadSize = 0;
+		long totalQueuedUploadSize = 0;
+		
 		for(int i=0;i<reqs.length;i++) {
 			ClientRequest req = reqs[i];
 			if(req instanceof ClientGet) {
@@ -610,6 +613,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 					if(prio < lowestQueuedPrio)
 						lowestQueuedPrio = prio;
 					uncompletedDownload.add(cg);
+					long size = cg.getDataSize(container);
+					if(size > 0)
+						totalQueuedDownloadSize += size;
 				}
 			} else if(req instanceof ClientPut) {
 				ClientPut cp = (ClientPut) req;
@@ -623,6 +629,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 						lowestQueuedPrio = prio;
 					uncompletedUpload.add(cp);
 				}
+				long size = cp.getDataSize();
+				if(size > 0)
+					totalQueuedUploadSize += size;
 			} else if(req instanceof ClientPutDir) {
 				ClientPutDir cp = (ClientPutDir) req;
 				if(cp.hasSucceeded()) {
@@ -635,8 +644,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 						lowestQueuedPrio = prio;
 					uncompletedDirUpload.add(cp);
 				}
+				long size = cp.getTotalDataSize();
+				if(size > 0)
+					totalQueuedUploadSize += size;
 			}
 		}
+		System.err.println("Total queued downloads: "+SizeUtil.formatSize(totalQueuedDownloadSize));
+		System.err.println("Total queued uploads: "+SizeUtil.formatSize(totalQueuedUploadSize));
 		
 		Comparator jobComparator = new Comparator() {
 			public int compare(Object first, Object second) {
