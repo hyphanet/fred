@@ -6,6 +6,7 @@ package freenet.client;
 import java.util.HashMap;
 import java.util.Set;
 
+import freenet.client.async.ClientCallback;
 import freenet.client.events.ClientEventListener;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
@@ -39,12 +40,22 @@ public interface HighLevelSimpleClient {
 	public FetchResult fetch(FreenetURI uri, long maxSize, RequestClient context) throws FetchException;
 	
 	/**
+	 * Non-blocking fetch of a URI with a configurable max-size, context object, callback and context.
+	 */
+	public void fetch(FreenetURI uri, long maxSize, RequestClient context, ClientCallback callback, FetchContext fctx) throws FetchException;
+	
+	/**
 	 * Blocking insert.
 	 * @param filenameHint If set, insert a single-file manifest containing only this file, under the given filename.
 	 * @throws InsertException If there is an error inserting the data
 	 */
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint) throws InsertException;
 
+	/**
+	 * Non-blocking insert.
+	 */
+	public void insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientCallback cb) throws InsertException;
+	
 	/**
 	 * Blocking insert of a redirect.
 	 */

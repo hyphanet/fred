@@ -16,8 +16,10 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 import freenet.l10n.L10n;
+import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.api.HTTPRequest;
 import freenet.support.io.FileUtil;
 
 /** Simple class to output standard heads and tail for web interface pages. 
@@ -25,6 +27,8 @@ import freenet.support.io.FileUtil;
 public final class PageMaker {
 	
 	public static final String DEFAULT_THEME = "clean";
+	public static final int MODE_SIMPLE = 1;
+	public static final int MODE_ADVANCED = 2;
 	private String theme;
 	private File override;
 	private final List navigationLinkTexts = new ArrayList();
@@ -257,5 +261,36 @@ public final class PageMaker {
 		}
 		
 		return result;
+	}
+	
+	protected int drawModeSelectionArray(NodeClientCore core, HTTPRequest req, HTMLNode contentNode) {
+		// Mode can be changed by a link, not just by the default
+		
+		int mode = core.isAdvancedModeEnabled() ? MODE_ADVANCED : MODE_SIMPLE;
+		
+		if(req.isParameterSet("mode")) {
+			mode = req.getIntParam("mode", mode);
+		}
+		
+		// FIXME style this properly
+		HTMLNode table = contentNode.addChild("table", "border", "1");
+		HTMLNode row = table.addChild("tr");
+		HTMLNode cell = row.addChild("td");
+		
+		if(mode != MODE_SIMPLE)
+			cell.addChild("a", new String[] { "href", "title" }, new String[] { "?mode=1", l10n("modeSimpleTooltip") }, l10n("modeSimple"));
+		else
+			cell.addChild("b", "title", l10n("modeSimpleTooltip"), l10n("modeSimple"));
+		cell = row.addChild("td");
+		if(mode != MODE_ADVANCED)
+			cell.addChild("a", new String[] { "href", "title" }, new String[] { "?mode=2", l10n("modeAdvancedTooltip") }, l10n("modeAdvanced"));
+		else
+			cell.addChild("b", "title", l10n("modeAdvancedTooltip"), l10n("modeAdvanced"));
+		
+		return mode;
+	}
+	
+	private static final String l10n(String string) {
+		return L10n.getString("PageMaker." + string);
 	}
 }

@@ -816,7 +816,7 @@ public class FileLoggerHook extends LoggerHook {
 		sb.append('\n');
 
 		for(int j=0;j<20 && e != null;j++) {
-				
+
 			sb.append(e.toString());
 			
 			StackTraceElement[] trace = e.getStackTrace();

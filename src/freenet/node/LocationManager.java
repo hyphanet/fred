@@ -9,8 +9,6 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.text.DateFormat;
 import java.util.Date;
-import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -113,7 +111,7 @@ public class LocationManager implements ByteCounter {
     public synchronized double getLocation() {
         return loc;
     }
-
+    
     /**
      * @param l
      */
@@ -202,7 +200,7 @@ public class LocationManager implements ByteCounter {
                                 }
                                 if(myFlag) {
                                     setLocation(node.random.nextDouble());
-                                    announceLocChange(true, true);
+                                    announceLocChange(true, true, true);
                                     node.writeNodeFile();
                                 }
                             } finally {
@@ -384,7 +382,7 @@ public class LocationManager implements ByteCounter {
                 setLocation(hisLoc);
                 if(logMINOR) Logger.minor(this, "Swapped: "+myLoc+" <-> "+hisLoc+" - "+uid);
                 swaps++;
-                announceLocChange(false, false);
+                announceLocChange(true, false, false);
                 node.writeNodeFile();
             } else {
             	if(logMINOR) Logger.minor(this, "Didn't swap: "+myLoc+" <-> "+hisLoc+" - "+uid);
@@ -396,7 +394,7 @@ public class LocationManager implements ByteCounter {
             // Randomise our location every 2*SWAP_RESET swap attempts, whichever way it went.
             if(node.random.nextInt(SWAP_RESET) == 0) {
                 setLocation(node.random.nextDouble());
-                announceLocChange(true, false);
+                announceLocChange(true, true, false);
                 node.writeNodeFile();
             }
 
@@ -578,7 +576,7 @@ public class LocationManager implements ByteCounter {
                     setLocation(hisLoc);
                     if(logMINOR) Logger.minor(this, "Swapped: "+myLoc+" <-> "+hisLoc+" - "+uid);
                     swaps++;
-                    announceLocChange(false, false);
+                    announceLocChange(true, false, false);
                     node.writeNodeFile();
                 } else {
                 	if(logMINOR) Logger.minor(this, "Didn't swap: "+myLoc+" <-> "+hisLoc+" - "+uid);
@@ -590,7 +588,7 @@ public class LocationManager implements ByteCounter {
                 // Randomise our location every 2*SWAP_RESET swap attempts, whichever way it went.
                 if(node.random.nextInt(SWAP_RESET) == 0) {
                     setLocation(node.random.nextDouble());
-                    announceLocChange(true, false);
+                    announceLocChange(true, true, false);
                     node.writeNodeFile();
                 }
 
@@ -608,10 +606,15 @@ public class LocationManager implements ByteCounter {
     /**
      * Tell all connected peers that our location has changed
      */
-    private void announceLocChange(boolean randomReset, boolean fromDupLocation) {
-        Message msg = DMT.createFNPLocChangeNotification(getLocation());
+    protected void announceLocChange() {
+	    announceLocChange(false, false, false);
+    }
+    
+    private void announceLocChange(boolean log, boolean randomReset, boolean fromDupLocation) {
+        Message msg = DMT.createFNPLocChangeNotificationNew(getLocation(), node.peers.getPeerLocationDoubles(true));
         node.peers.localBroadcast(msg, false, true, this);
-        recordLocChange(randomReset, fromDupLocation);
+	if(log)
+		recordLocChange(randomReset, fromDupLocation);
     }
     
     private void recordLocChange(final boolean randomReset, final boolean fromDupLocation) {

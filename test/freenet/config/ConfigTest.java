@@ -15,8 +15,7 @@
  */
 package freenet.config;
 
-import freenet.config.Config;
-import freenet.config.SubConfig;
+import freenet.utils.UTFUtil;
 import junit.framework.TestCase;
 
 /**
@@ -44,7 +43,12 @@ public class ConfigTest extends TestCase {
 
 	public void testRegister() {
 		/* test if we can register */
-		assertNotNull(new SubConfig("testing1%Ή~#{[|`^@ιθ&η", conf));
+		StringBuffer sb = new StringBuffer();
+		for(int i=0; i< UTFUtil.PRINTABLE_ASCII.length; i++)
+			sb.append(UTFUtil.PRINTABLE_ASCII[i]);
+		for(int i=0; i< UTFUtil.STRESSED_UTF.length; i++)
+			sb.append(UTFUtil.STRESSED_UTF[i]);
+		assertNotNull(new SubConfig(sb.toString(), conf));
 		
 		/* test if it prevents multiple registrations */
 		try{
@@ -65,5 +69,4 @@ public class ConfigTest extends TestCase {
 	public void testGet() {
 		assertSame(sc, conf.get("testing"));
 	}
-
 }

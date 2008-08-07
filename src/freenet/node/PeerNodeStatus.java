@@ -30,6 +30,7 @@ public class PeerNodeStatus {
 	private final String statusCSSName;
 
 	private final double location;
+	private final double[] peersLocation;
 
 	private final String version;
 
@@ -92,6 +93,8 @@ public class PeerNodeStatus {
 	private final long resendBytesSent;
 	
 	private final int reportedUptimePercentage;
+	
+	private final long numberOfSelections;
 
 	PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
 		if(Logger.shouldLog(Logger.MINOR, this)) {
@@ -105,10 +108,12 @@ public class PeerNodeStatus {
 			peerAddress = p.getFreenetAddress().toString();
 			peerPort = p.getPort();
 		}
+		this.numberOfSelections = peerNode.getNumberOfSelections();
 		this.statusValue = peerNode.getPeerNodeStatus();
 		this.statusName = peerNode.getPeerNodeStatusString();
 		this.statusCSSName = peerNode.getPeerNodeStatusCSSClassName();
 		this.location = peerNode.getLocation();
+		this.peersLocation = peerNode.getPeersLocation();
 		this.version = peerNode.getVersion();
 		this.simpleVersion = peerNode.getSimpleVersion();
 		this.routingBackoffLength = peerNode.getRoutingBackoffLength();
@@ -248,6 +253,10 @@ public class PeerNodeStatus {
 		return location;
 	}
 
+	public double[] getPeersLocation() {
+		return peersLocation;
+	}
+	
 	/**
 	 * @return the peerAddress
 	 */
@@ -387,5 +396,8 @@ public class PeerNodeStatus {
 	public int getReportedUptimePercentage() {
 		return reportedUptimePercentage;
 	}
-	
+
+	public long getNumberOfSelections() {
+		return numberOfSelections;
+	}
 }

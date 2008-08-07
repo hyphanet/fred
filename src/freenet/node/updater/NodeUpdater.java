@@ -25,6 +25,7 @@ import freenet.node.RequestStarter;
 import freenet.node.Ticker;
 import freenet.node.Version;
 import freenet.support.Logger;
+import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 
@@ -96,14 +97,15 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 		if(found <= availableVersion){
 			return;
 		}
-			Logger.minor(this, "Updating availableVersion from "+availableVersion+" to "+found+" and queueing an update");
+			Logger.minor(this, "Updating availableVersion from " + availableVersion + " to " + found + " and queueing an update");
 			this.availableVersion = found;
 		}
 			ticker.queueTimedJob(new Runnable() {
+
 				public void run() {
 					maybeUpdate();
 				}
-			}, 60*1000); // leave some time in case we get later editions
+			}, 60 * 1000); // leave some time in case we get later editions
 			manager.onStartFetching(extUpdate);
 	}
 
@@ -115,7 +117,7 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 			if(logMINOR)
 				Logger.minor(this, "maybeUpdate: isFetching="+isFetching+", isRunning="+isRunning+", availableVersion="+availableVersion);
 			if(isFetching || (!isRunning)) return;
-			if(availableVersion == fetchedVersion) return;
+			if(availableVersion <= fetchedVersion) return;
 			fetchingVersion = availableVersion;
 			
 			if(availableVersion > currentVersion) {
@@ -188,9 +190,13 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 	void onSuccess(FetchResult result, ClientGetter state, File tempBlobFile, int fetchedVersion) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(this) {
-			if(fetchedVersion < this.fetchedVersion) {
+			if(fetchedVersion <= this.fetchedVersion) {
 				tempBlobFile.delete();
-				result.asBucket().free();
+				if(result != null) {
+					Bucket toFree = result.asBucket();
+					if(toFree != null)
+						toFree.free();
+				}
 				return;
 			}
 			if(result == null || result.asBucket() == null || result.asBucket().size() == 0) {
@@ -272,10 +278,6 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state, ObjectContainer container) {
 		// Impossible
-	}
-
-	public synchronized  boolean isRunning(){
-		return isRunning;
 	}
 	
 	/** Called before kill(). Don't do anything that will involve taking locks. */

@@ -53,6 +53,14 @@ public class NodeStats implements Persistable {
 	 * block send time.
 	 */
 	public static final int MAX_INTERREQUEST_TIME = 10*1000;
+	/** Locations of incoming requests */
+	private final int[] incomingRequestsByLoc = new int[10];
+	private int incomingRequestsAccounted = 0;
+	/** Locations of outgoing requests */
+	private final int[] outgoingLocalRequestByLoc = new int[10];
+	private int outgoingLocalRequestsAccounted = 0;
+	private final int[] outgoingRequestByLoc = new int[10];
+	private int outgoingRequestsAccounted = 0;
 	
 	private final Node node;
 	private MemoryChecker myMemoryChecker;
@@ -178,7 +186,7 @@ public class NodeStats implements Persistable {
 	/** PeerManagerUserAlert stats update interval (milliseconds) */
 	private static final long peerManagerUserAlertStatsUpdateInterval = 1000;  // 1 second
 	
-	NodeStats(Node node, int sortOrder, SubConfig statsConfig, SimpleFieldSet oldThrottleFS, int obwLimit, int ibwLimit, File nodeDir) throws NodeInitException {
+	NodeStats(Node node, int sortOrder, SubConfig statsConfig, int obwLimit, int ibwLimit, File nodeDir) throws NodeInitException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.node = node;
 		this.peers = node.peers;
@@ -269,10 +277,6 @@ public class NodeStats implements Persistable {
 				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.ps, nodeDir);
 
 		SimpleFieldSet throttleFS = persister.read();
-		
-		if(throttleFS == null)
-			throttleFS = oldThrottleFS;
-
 		if(logMINOR) Logger.minor(this, "Read throttleFS:\n"+throttleFS);
 		
 		// Guesstimates. Hopefully well over the reality.
@@ -1673,4 +1677,60 @@ public class NodeStats implements Persistable {
 		if(logMINOR) Logger.minor(this, "Successful receives: "+blockTransferPSuccess.currentValue()+" count="+blockTransferPSuccess.countReports());
 	}
 	
+	public void reportIncomingRequestLocation(double loc) {
+		assert((loc > 0) && (loc < 1.0));
+		
+		synchronized(incomingRequestsByLoc) {
+			incomingRequestsByLoc[(int)Math.floor(loc*incomingRequestsByLoc.length)]++;
+			incomingRequestsAccounted++;
+		}
+	}
+	
+	public int[] getIncomingRequestLocation(int[] retval) {
+		int[] result = new int[incomingRequestsByLoc.length];
+		synchronized(incomingRequestsByLoc) {
+			System.arraycopy(incomingRequestsByLoc, 0, result, 0, incomingRequestsByLoc.length);
+			retval[0] = incomingRequestsAccounted;
+		}
+		
+		return result;
+	}
+	
+	public void reportOutgoingLocalRequestLocation(double loc) {
+		assert((loc > 0) && (loc < 1.0));
+		
+		synchronized(outgoingLocalRequestByLoc) {
+			outgoingLocalRequestByLoc[(int)Math.floor(loc*outgoingLocalRequestByLoc.length)]++;
+			outgoingLocalRequestsAccounted++;
+		}
+	}
+	
+	public int[] getOutgoingLocalRequestLocation(int[] retval) {
+		int[] result = new int[outgoingLocalRequestByLoc.length];
+		synchronized(outgoingLocalRequestByLoc) {
+			System.arraycopy(outgoingLocalRequestByLoc, 0, result, 0, outgoingLocalRequestByLoc.length);
+			retval[0] = outgoingLocalRequestsAccounted;
+		}
+		
+		return result;
+	}
+	
+	public void reportOutgoingRequestLocation(double loc) {
+		assert((loc > 0) && (loc < 1.0));
+		
+		synchronized(outgoingRequestByLoc) {
+			outgoingRequestByLoc[(int)Math.floor(loc*outgoingRequestByLoc.length)]++;
+			outgoingRequestsAccounted++;
+		}
+	}
+	
+	public int[] getOutgoingRequestLocation(int[] retval) {
+		int[] result = new int[outgoingRequestByLoc.length];
+		synchronized(outgoingRequestByLoc) {
+			System.arraycopy(outgoingRequestByLoc, 0, result, 0, outgoingRequestByLoc.length);
+			retval[0] = outgoingRequestsAccounted;
+		}
+		
+		return result;
+	}
 }

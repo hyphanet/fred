@@ -11,7 +11,7 @@ import freenet.support.SimpleFieldSet;
 public class PersistentConfig extends Config {
 
 	protected SimpleFieldSet origConfigFileContents;
-	protected boolean finishedInit;
+	protected volatile boolean finishedInit;
 
 	public PersistentConfig(SimpleFieldSet initialContents) {
 		this.origConfigFileContents = initialContents;

@@ -4,19 +4,19 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
-
-import com.db4o.ObjectContainer;
-
-import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequester;
-import freenet.client.async.DBJob;
 import freenet.keys.FreenetURI;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
-import freenet.support.io.NativeThread;
 import freenet.support.io.SerializableToFieldSetBucket;
+
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
+import freenet.client.async.DBJob;
+import freenet.support.io.NativeThread;
 
 /**
  * A request process carried out by the node for an FCP client.

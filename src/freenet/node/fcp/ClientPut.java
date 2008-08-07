@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
+import java.util.Arrays;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
@@ -33,8 +34,6 @@ import freenet.support.api.Bucket;
 import freenet.support.io.CannotCreateFromFieldSetException;
 import freenet.support.io.FileBucket;
 import freenet.support.io.SerializableToFieldSetBucketUtil;
-
-import java.util.Arrays;
 
 import com.db4o.ObjectContainer;
 
@@ -181,6 +180,9 @@ public class ClientPut extends ClientPutBase {
 		}
 		if(mimeType == null && origFilename != null) {
 			mimeType = DefaultMIMETypes.guessMIMEType(origFilename.getName(), true);
+		}
+		if ((mimeType == null) && (targetFilename != null)) {
+			mimeType = DefaultMIMETypes.guessMIMEType(targetFilename, true);
 		}
 		if(mimeType == null) {
 			mimeType = DefaultMIMETypes.guessMIMEType(identifier, true);

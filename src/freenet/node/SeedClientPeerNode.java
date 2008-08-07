@@ -92,8 +92,14 @@ public class SeedClientPeerNode extends PeerNode {
 		if(!isConnected()) {
 			// SeedClientPeerNode's always start off unverified.
 			// If it doesn't manage to connect in 60 seconds, dump it.
-			if(System.currentTimeMillis() - lastReceivedPacketTime() > 60*1000)
+			// However, we don't want to be dumped *before* we connect,
+			// so we need to check that first.
+			// Synchronize to avoid messy races.
+			synchronized(this) {
+				if(timeLastConnectionCompleted() > 0 &&
+						System.currentTimeMillis() - lastReceivedPacketTime() > 60*1000)
 				return true;
+			}
 		}
 		return false;
 	}

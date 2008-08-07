@@ -22,6 +22,7 @@ import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.compress.Compressor;
+import freenet.support.io.BucketChainBucketFactory;
 import freenet.support.io.BucketTools;
 
 /**
@@ -307,7 +308,7 @@ class SingleFileInserter implements ClientPutState {
 		
 		boolean tryCompress = (origSize > blockSize) && (!ctx.dontCompress) && (!dontCompress);
 		if(tryCompress) {
-			InsertCompressor.start(container, context, this, origData, oneBlockCompressedSize, context.getBucketFactory(persistent), persistent);
+			InsertCompressor.start(container, context, this, origData, oneBlockCompressedSize, new BucketChainBucketFactory(context.getBucketFactory(persistent), CHKBlock.DATA_LENGTH), persistent);
 		} else {
 			CompressionOutput output = new CompressionOutput(data, null);
 			onCompressed(output, container, context);

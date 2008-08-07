@@ -52,9 +52,9 @@ public class NodeUpdateManager {
 	
 	boolean wasEnabledOnStartup;
 	/** Is auto-update enabled? */
-	boolean isAutoUpdateAllowed;
+	volatile boolean isAutoUpdateAllowed;
 	/** Has the user given the go-ahead? */
-	boolean armed;
+	volatile boolean armed;
 	/** Should we check for freenet-ext.jar updates? 
 	 * Normally set only when our freenet-ext.jar is known to be out of date. */
 	final boolean shouldUpdateExt;
@@ -67,13 +67,13 @@ public class NodeUpdateManager {
 	
 	final RevocationChecker revocationChecker;
 	private String revocationMessage;
-	private boolean hasBeenBlown;
-	private boolean peersSayBlown;
+	private volatile boolean hasBeenBlown;
+	private volatile boolean peersSayBlown;
 	
 	/** Is there a new main jar ready to deploy? */
-	private boolean hasNewMainJar;
+	private volatile boolean hasNewMainJar;
 	/** Is there a new ext jar ready to deploy? */
-	private boolean hasNewExtJar;
+	private volatile boolean hasNewExtJar;
 	/** If another main jar is being fetched, when did the fetch start? */
 	private long startedFetchingNextMainJar;
 	/** If another ext jar is being fetched, when did the fetch start? */
@@ -88,6 +88,7 @@ public class NodeUpdateManager {
 	public final UpdateOverMandatoryManager uom;
 	
 	private boolean logMINOR;
+	private boolean disabledThisSession;
 	
 	public NodeUpdateManager(Node node, Config config) throws InvalidConfigValueException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -200,13 +201,8 @@ public class NodeUpdateManager {
 	/**
 	 * Is auto-update enabled?
 	 */
-	public boolean isEnabled() {
-		NodeUpdater updater;
-		synchronized(this) {
-			updater = mainUpdater;
-			if(updater == null) return false;
-		}
-		return updater.isRunning();
+	public synchronized boolean isEnabled() {
+		return (mainUpdater != null);
 	}
 
 	/**
@@ -222,7 +218,7 @@ public class NodeUpdateManager {
 		}
 		NodeUpdater main = null, ext = null;
 		synchronized(this) {
-			boolean enabled = (mainUpdater != null && mainUpdater.isRunning());
+			boolean enabled = (mainUpdater != null);
 			if(enabled == enable) return;
 			if(!enable) {
 				// Kill it
@@ -293,9 +289,8 @@ public class NodeUpdateManager {
 				updateURI = uri;
 				updater = mainUpdater;
 			}
+			if(updater == null) return;
 		}
-		if(updater == null) return;
-		if(updater.isRunning()) return;
 		updater.onChangeURI(uri);
 	}
 
@@ -319,7 +314,7 @@ public class NodeUpdateManager {
 	/**
 	 * @return Is auto-update currently enabled?
 	 */
-	public synchronized boolean isAutoUpdateAllowed() {
+	public boolean isAutoUpdateAllowed() {
 		return isAutoUpdateAllowed;
 	}
 
@@ -386,6 +381,12 @@ public class NodeUpdateManager {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		try {
 			synchronized(this) {
+				if(disabledThisSession) {
+					String msg = "Not deploying update because disabled for this session (bad java version??)";
+					Logger.error(this, msg);
+					System.err.println(msg);
+					return;
+				}
 				if(hasBeenBlown) {
 					String msg = "Trying to update but key has been blown! Not updating, message was "+revocationMessage;
 					Logger.error(this, msg);
@@ -700,9 +701,7 @@ public class NodeUpdateManager {
 	}
 	
 	public void arm() {
-		synchronized(this) {
-			armed = true;
-		}
+		armed = true;
 		deployOffThread(0);
 	}
 	
@@ -727,14 +726,20 @@ public class NodeUpdateManager {
 		return hasBeenBlown;
 	}
 	
-	public synchronized boolean hasNewMainJar() {
+	public boolean hasNewMainJar() {
 		return hasNewMainJar;
 	}
 
-	public synchronized boolean hasNewExtJar() {
+	public boolean hasNewExtJar() {
 		return hasNewExtJar;
 	}
 
+	/**
+	 * What version has been fetched?
+	 * 
+	 * This includes jar's fetched via UOM, because the UOM code feeds
+	 * its results through the mainUpdater.
+	 */
 	public int newMainJarVersion() {
 		if(mainUpdater == null) return -1;
 		return mainUpdater.getFetchedVersion();
@@ -771,6 +776,9 @@ public class NodeUpdateManager {
 		return revocationChecker.getRevocationDNFCounter();
 	}
 
+	/**
+	 * What version is the node currently running?
+	 */
 	public int getMainVersion() {
 		return Version.buildNumber();
 	}
@@ -904,5 +912,12 @@ public class NodeUpdateManager {
 		}
 		
 	};
+
+	public void disableThisSession() {
+		disabledThisSession = true;
+	}
 	
+	protected long getStartedFetchingNextMainJarTimestamp() {
+		return startedFetchingNextMainJar;
+	}
 }

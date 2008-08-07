@@ -1,6 +1,4 @@
-/*
- * Freenet 0.7 node.
- */
+/* Freenet 0.7 node. */
 package freenet.node;
 
 import java.io.BufferedReader;
@@ -50,6 +48,7 @@ import freenet.config.LongOption;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
 import freenet.crypt.DSAPublicKey;
+import freenet.crypt.DiffieHellman;
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
 import freenet.crypt.Yarrow;
@@ -114,7 +113,6 @@ import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
-import freenet.support.OOMHook;
 import freenet.support.PooledExecutor;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
@@ -128,6 +126,7 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.HostnameSyntaxException;
+import java.io.FileFilter;
 
 /**
  * @author amphibian
@@ -205,7 +204,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private static class L10nCallback implements StringCallback, EnumerableOptionCallback {
 		
 		public String get() {
-			return L10n.getSelectedLanguage();
+			return L10n.mapLanguageNameToLongName(L10n.getSelectedLanguage());
 		}
 		
 		public void set(String val) throws InvalidConfigValueException {
@@ -222,7 +221,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 		
 		public String[] getPossibleValues() {
-			return L10n.AVAILABLE_LANGUAGES;
+			String[] result = new String[L10n.AVAILABLE_LANGUAGES.length];
+			for(int i=0; i<L10n.AVAILABLE_LANGUAGES.length; i++)
+				result[i] = L10n.AVAILABLE_LANGUAGES[i][1];
+			return result;
 		}
 	}
 	
@@ -407,6 +409,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	private final NodeCryptoConfig opennetCryptoConfig;
 	private OpennetManager opennet;
+	private volatile boolean isAllowedToConnectToSeednodes;
 	private int maxOpennetPeers;
 	private boolean acceptSeedConnections;
 	private boolean passOpennetRefsThroughDarknet;
@@ -431,6 +434,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	final boolean enablePerNodeFailureTables;
 	final boolean enableULPRDataPropagation;
 	final boolean enableSwapping;
+	private volatile boolean publishOurPeersLocation;
+	private volatile boolean routeAccordingToOurPeersLocation;
 	boolean enableSwapQueueing;
 	boolean enablePacketCoalescing;
 	public static final short DEFAULT_MAX_HTL = (short)10;
@@ -501,6 +506,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * we are a sink we ignore nodes which have less uptime (percentage) than this parameter.
 	 */
 	private static final int MIN_UPTIME_STORE_KEY = 40;
+	
+	private volatile boolean isPRNGReady = false;
 	
 	/**
 	 * Read all storable settings (identity etc) from the node file.
@@ -625,11 +632,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * @param config The Config object for this node.
 	 * @param random The random number generator for this node. Passed in because we may want
 	 * to use a non-secure RNG for e.g. one-JVM live-code simulations. Should be a Yarrow in
-	 * a production node.
+	 * a production node. Yarrow will be used if that parameter is null
+	 * @param weakRandom The fast random number generator the node will use. If null a MT
+	 * instance will be used, seeded from the secure PRNG.
 	 * @param the loggingHandler
 	 * @throws NodeInitException If the node initialization fails.
 	 */
-	 Node(PersistentConfig config, RandomSource random, LoggingConfigHandler lc, NodeStarter ns, Executor executor) throws NodeInitException {
+	 Node(PersistentConfig config, RandomSource r, RandomSource weakRandom, LoggingConfigHandler lc, NodeStarter ns, Executor executor) throws NodeInitException {
 		// Easy stuff
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		String tmp = "Initializing Node using Freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vendor")+" JVM version "+System.getProperty("java.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
@@ -641,16 +650,30 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		if(logConfigHandler != lc)
 			logConfigHandler=lc;
 		startupTime = System.currentTimeMillis();
-		// Will be set up properly afterwards
-		L10n.setLanguage(L10n.FALLBACK_DEFAULT);
 		SimpleFieldSet oldConfig = config.getSimpleFieldSet();
 		// Setup node-specific configuration
 		SubConfig nodeConfig = new SubConfig("node", config);
+		
 		int sortOrder = 0;
+		
+		// l10n stuffs
+		nodeConfig.register("l10n", Locale.getDefault().getLanguage().toLowerCase(), sortOrder++, false, true, 
+				"Node.l10nLanguage",
+				"Node.l10nLanguageLong",
+				new L10nCallback());
+		
+		try {
+			L10n.setLanguage(nodeConfig.getString("l10n"));
+		} catch (MissingResourceException e) {
+			try {
+				L10n.setLanguage(nodeConfig.getOption("l10n").getDefault());
+			} catch (MissingResourceException e1) {
+				L10n.setLanguage(L10n.FALLBACK_DEFAULT);
+			}
+		}
 		
 		// FProxy config needs to be here too
 		SubConfig fproxyConfig = new SubConfig("fproxy", config);
-
 		try {
 			toadlets = new SimpleToadletServer(fproxyConfig, new ArrayBucketFactory(), executor);
 			fproxyConfig.finishedInitialization();
@@ -665,14 +688,55 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			e4.printStackTrace();
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e4);
 		}
-		
+
+		// Setup RNG if needed : DO NOT USE IT BEFORE THAT POINT!
+		if(r == null) {
+			final NativeThread entropyGatheringThread = new NativeThread(new Runnable() {
+
+				private void recurse(File f) {
+					if(isPRNGReady)
+						return;
+					File[] subDirs = f.listFiles(new FileFilter() {
+
+						public boolean accept(File pathname) {
+							return pathname.exists() && pathname.canRead() && pathname.isDirectory();
+						}
+					});
+
+
+					// @see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=5086412
+					if(subDirs != null) 
+						for(File currentDir : subDirs)
+							recurse(currentDir);
+				}
+
+				public void run() {
+					for(File root : File.listRoots()) {
+						if(isPRNGReady)
+							return;
+						recurse(root);
+					}
+				}
+			}, "Entropy Gathering Thread", NativeThread.MIN_PRIORITY, true);
+
+			entropyGatheringThread.start();
+			this.random = new Yarrow();
+			DiffieHellman.init(random);
+			
+		} else // if it's not null it's because we are running in the simulator
+			this.random = r;
+		isPRNGReady = true;
+		toadlets.getStartupToadlet().setIsPRNGReady();
+		if(weakRandom == null) {
+			byte buffer[] = new byte[16];
+			random.nextBytes(buffer);
+			this.fastWeakRandom = new MersenneTwister(buffer);
+		}else
+			this.fastWeakRandom = weakRandom;
+
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		recentlyCompletedIDs = new LRUQueue();
 		this.config = config;
-		this.random = random;
-		byte buffer[] = new byte[16];
-		random.nextBytes(buffer);
-		this.fastWeakRandom = new MersenneTwister(buffer);
 		cachedPubKeys = new LRUHashtable();
 		lm = new LocationManager(random, this);
 
@@ -939,6 +1003,30 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		});
 		enableSwapping = nodeConfig.getBoolean("enableSwapping");
 		
+		nodeConfig.register("publishOurPeersLocation", false, sortOrder++, true, false, "Node.publishOurPeersLocation", "Node.publishOurPeersLocationLong", new BooleanCallback() {
+
+			public boolean get() {
+				return publishOurPeersLocation;
+			}
+
+			public void set(boolean val) throws InvalidConfigValueException {
+				publishOurPeersLocation = val;
+			}
+		});
+		publishOurPeersLocation = nodeConfig.getBoolean("publishOurPeersLocation");
+		
+		nodeConfig.register("routeAccordingToOurPeersLocation", false, sortOrder++, true, false, "Node.routeAccordingToOurPeersLocation", "Node.routeAccordingToOurPeersLocationLong", new BooleanCallback() {
+
+			public boolean get() {
+				return routeAccordingToOurPeersLocation;
+			}
+
+			public void set(boolean val) throws InvalidConfigValueException {
+				routeAccordingToOurPeersLocation = val;
+			}
+		});
+		routeAccordingToOurPeersLocation = nodeConfig.getBoolean("routeAccordingToOurPeersLocation");
+		
 		nodeConfig.register("enableSwapQueueing", true, sortOrder++, true, false, "Node.enableSwapQueueing", "Node.enableSwapQueueingLong", new BooleanCallback() {
 			public boolean get() {
 				return enableSwapQueueing;
@@ -1157,6 +1245,21 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// Opennet
 		
 		final SubConfig opennetConfig = new SubConfig("node.opennet", config);
+		opennetConfig.register("connectToSeednodes", true, 0, true, false, "Node.withAnnouncement", "Node.withAnnouncementLong", new BooleanCallback() {
+			public boolean get() {
+				return isAllowedToConnectToSeednodes;
+			}
+			public void set(boolean val) throws InvalidConfigValueException {
+				if(val == get()) return;
+				synchronized(Node.this) {
+					if(opennet != null)
+						throw new InvalidConfigValueException("Can't change that setting on the fly when opennet is already active!");
+					else
+						isAllowedToConnectToSeednodes = val;
+				}
+			}
+		});
+		isAllowedToConnectToSeednodes = opennetConfig.getBoolean("connectToSeednodes");
 		
 		// Can be enabled on the fly
 		opennetConfig.register("enabled", false, 0, false, true, "Node.opennetEnabled", "Node.opennetEnabledLong", new BooleanCallback() {
@@ -1171,7 +1274,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 					if(val == (opennet != null)) return;
 					if(val) {
 						try {
-							o = opennet = new OpennetManager(Node.this, opennetCryptoConfig, System.currentTimeMillis());
+							o = opennet = new OpennetManager(Node.this, opennetCryptoConfig, System.currentTimeMillis(), isAllowedToConnectToSeednodes);
 						} catch (NodeInitException e) {
 							opennet = null;
 							throw new InvalidConfigValueException(e.getMessage());
@@ -1185,8 +1288,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				else o.stop(true);
 				ipDetector.ipDetectorManager.notifyPortChange(getPublicInterfacePorts());
 			}
-		});
-		
+		});		
 		boolean opennetEnabled = opennetConfig.getBoolean("enabled");
 		
 		opennetConfig.register("maxOpennetPeers", "20", 1, true, false, "Node.maxOpennetPeers",
@@ -1211,7 +1313,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		opennetCryptoConfig = new NodeCryptoConfig(opennetConfig, 2 /* 0 = enabled */, true);
 		
 		if(opennetEnabled) {
-			opennet = new OpennetManager(this, opennetCryptoConfig, System.currentTimeMillis());
+			opennet = new OpennetManager(this, opennetCryptoConfig, System.currentTimeMillis(), isAllowedToConnectToSeednodes);
 			// Will be started later
 		} else {
 			opennet = null;
@@ -1628,25 +1730,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			this.storeEnvironment = null;
 		}
 		
-		// FIXME back compatibility
-		SimpleFieldSet oldThrottleFS = null;
-		File oldThrottle = new File("throttle.dat");
-		String oldThrottleName = nodeConfig.getRawOption("throttleFile");
-		if(oldThrottleName != null)
-			oldThrottle = new File(oldThrottleName);
-		if(oldThrottle.exists() && (!new File("node-throttle.dat").exists()) && lastVersion < 1021) {
-			// Migrate from old throttle file to new node- and client- throttle files
-			try {
-				oldThrottleFS = SimpleFieldSet.readFrom(new File("throttle.dat"), false, true);
-			} catch (IOException e) {
-				// Ignore
-			}
-			oldThrottle.delete();
-		}
+		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), obwLimit, ibwLimit, nodeDir);
 		
-		nodeStats = new NodeStats(this, sortOrder, new SubConfig("node.load", config), oldThrottleFS, obwLimit, ibwLimit, nodeDir);
-		
-		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldThrottleFS == null ? null : oldThrottleFS.subset("RequestStarters"), oldConfig, fproxyConfig, toadlets, db);
+		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, db);
 
 		netid = new NetworkIDManager(this);
 		 
@@ -1663,23 +1749,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		});
 		
 		disableHangCheckers = nodeConfig.getBoolean("disableHangCheckers");
-		
-		// l10n stuffs
-		nodeConfig.register("l10n", Locale.getDefault().getLanguage().toLowerCase(), sortOrder++, false, true, 
-				"Node.l10nLanguage",
-				"Node.l10nLanguageLong",
-				new L10nCallback());
-		
-		try {
-			L10n.setLanguage(nodeConfig.getString("l10n"));
-		} catch (MissingResourceException e) {
-			try {
-				L10n.setLanguage(nodeConfig.getOption("l10n").getDefault());
-			} catch (MissingResourceException e1) {
-				L10n.setLanguage(L10n.FALLBACK_DEFAULT);
-			}
-		}
-		
+				
 		nodeConfig.finishedInitialization();
 		writeNodeFile();
 		
@@ -1813,6 +1883,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		String osVersion = System.getProperty("os.version");
 		
 		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM version: "+jvmVersion+", OS name: "+osName+", OS version: "+osVersion);
+		
+		if(jvmVersion.startsWith("1.4")) {
+			System.err.println("Java 1.4 will not be supported for much longer, PLEASE UPGRADE!");
+			nodeUpdater.disableThisSession();
+			clientCore.alerts.register(new SimpleUserAlert(false, l10n("java14Title"), l10n("java14Text"), l10n("java14ShortText"), UserAlert.ERROR));
+		}
 		
 		if(jvmVendor.startsWith("Sun ")) {
 			// Sun bugs
@@ -2713,6 +2789,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		synchronized(cachedPubKeys) {
 			DSAPublicKey key2 = (DSAPublicKey) cachedPubKeys.get(w);
 			if((key2 != null) && !key2.equals(key)) {
+				// FIXME is this test really needed?
+				// SHA-256 inside synchronized{} is a bad idea
 				MessageDigest md256 = SHA256.getMessageDigest();
 				try {
 				byte[] hashCheck = md256.digest(key.asBytes());
@@ -2883,6 +2961,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			return true;
 		}
 		return false;
+	}
+	
+	public synchronized boolean isOudated() {
+		return (buildOldAgeUserAlert.lastGoodVersion > 0);
 	}
 	
 	/**
@@ -3163,6 +3245,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	/** 
 	 * Connect this node to another node (for purposes of testing) 
 	 */
+	public void connectToSeednode(SeedServerTestPeerNode node) throws OpennetDisabledException, FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		peers.addPeer(node,false,false);
+	}
 	public void connect(Node node) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		peers.connect(node.darknetCrypto.exportPublicFieldSet(), darknetCrypto.packetMangler);
 	}
@@ -3218,6 +3303,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public OpennetPeerNode createNewOpennetNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException {
 		if(opennet == null) throw new OpennetDisabledException("Opennet is not currently enabled");
 		return new OpennetPeerNode(fs, this, opennet.crypto, opennet, peers, false, opennet.crypto.packetMangler);
+	}
+	
+	public SeedServerTestPeerNode createNewSeedServerTestPeerNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException {		
+		if(opennet == null) throw new OpennetDisabledException("Opennet is not currently enabled");
+		return new SeedServerTestPeerNode(fs, this, opennet.crypto, peers, true, opennet.crypto.packetMangler);
 	}
 	
 	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
@@ -3419,5 +3509,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 	public void setDispatcherHook(NodeDispatcherCallback cb) {
 		this.dispatcher.setHook(cb);
+	}
+	
+	public boolean shallWePublishOurPeersLocation() {
+		return publishOurPeersLocation;
+	}
+	
+	public boolean shallWeRouteAccordingToOurPeersLocation() {
+		return routeAccordingToOurPeersLocation;
 	}
 }

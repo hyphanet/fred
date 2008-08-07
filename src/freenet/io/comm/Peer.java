@@ -20,12 +20,12 @@
 package freenet.io.comm;
 
 import java.io.DataInput;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
+import freenet.io.WritableToDataOutputStream;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPUtil;
 
@@ -35,7 +35,7 @@ import freenet.support.transport.ip.IPUtil;
  * To change the template for this generated type comment go to Window - Preferences - Java - Code Generation - Code and
  * Comments
  */
-public class Peer {
+public class Peer implements WritableToDataOutputStream {
 
     public static class LocalAddressException extends Exception {
     	private static final long serialVersionUID = -1;

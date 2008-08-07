@@ -283,7 +283,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 						binaryBlob ? returnBucket : null);
 
 		if(finished && succeeded)
-				allDataPending = new AllDataMessage(returnBucket, identifier, global, startupTime, completionTime);
+			allDataPending = new AllDataMessage(returnBucket, identifier, global, startupTime, completionTime);
 	}
 
 	/**

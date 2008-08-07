@@ -132,7 +132,7 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 							if(complain)
 								Logger.normal(this, "Not found: "+getter+" for "+key+" removing ("+getsLength+" getters)");
 							return false; // not here
-						}
+						} // else is a contradiction, let it get an ArrayIndexOutOfBounds.
 					}
 					if(gets[j] == null) continue;
 					if(gets[j].isCancelled(container)) continue;

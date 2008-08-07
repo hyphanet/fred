@@ -25,13 +25,16 @@ public class LibraryLoader {
 		} else if(System.getProperty("os.arch").toLowerCase().matches("(ppc)")) {
 			arch = "ppc";
 		} else {
+			// We want to try the i386 libraries if the architecture is unknown
+			// Wrappers MUST fallback to "plain java" implementation if loading native libraries fails
 			arch = "i386";
 		}
 		
 		return arch;
 	}
 	
-	public static void loadNative(String path, String libraryName) {
+	public static boolean loadNative(String path, String libraryName) {
+		boolean success = false;
 		final boolean isWindows = File.pathSeparatorChar == ';';
 		final String prefix = (isWindows ? ".dll" : ((System.getProperty("os.name")).toLowerCase().startsWith("mac") ? ".jnilib" : ".so"));
 		final String libraryNameWithPrefix = (isWindows ? "" : "lib") + libraryName;
@@ -43,6 +46,7 @@ public class LibraryLoader {
 		if (nativeLib.exists()) {
 			System.out.println("Attempting to load the NativeThread library ["+libraryName+']');
 			System.loadLibrary(libraryName);
+			success = true;
 		} else {
 			try {
 				// Get the resource
@@ -68,10 +72,13 @@ public class LibraryLoader {
 				// Finally, load the dll
 				System.out.println("Attempting to load the "+libraryName+" library ["+resource+']');
 				System.load(temporaryLib.getPath());
+				success = true;
 			} catch(Throwable e) {
 				System.err.println("Caught the following exception attempting to load "+resourceName);
 				e.printStackTrace();
 			}
 		}
+
+		return success;
 	}
 }

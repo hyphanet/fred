@@ -24,9 +24,6 @@ import freenet.support.io.FileUtil;
 *
 * TODO: Maybe base64 the override file ?
 *
-* comment(mario): for www interface we might detect locale from http requests?
-* for other access (telnet) using system locale would probably be good, but
-* it would be nice to have a command to switch locale on the fly.
 */
 public class L10n {
 	public static final String CLASS_NAME = "L10n";
@@ -35,8 +32,22 @@ public class L10n {
 	public static final String OVERRIDE_SUFFIX = ".override" + SUFFIX;
 	
 	public static final String FALLBACK_DEFAULT = "en";
-	public static final String[] AVAILABLE_LANGUAGES = { "en", "es", "da", "de", "fi", "fr", "it", "no", "pl", "se",
-	        "zh-cn", "zh-tw", "unlisted" };
+	/** @see http://www.omniglot.com/language/names.htm */
+	public static final String[][] AVAILABLE_LANGUAGES = {
+		new String[] { "en", "English", "eng" },
+		new String[] { "es", "Español", "spa" },
+		new String[] { "da", "Dansk", "dan" },
+		new String[] { "de", "Deutsch", "deu" },
+		new String[] { "fi", "Suomi", "fin" },
+		new String[] { "fr", "Français", "fra" },
+		new String[] { "it", "Italiano", "ita" },
+		new String[] { "no", "Norsk", "nor" },
+		new String[] { "pl", "Polski", "pol" },
+		new String[] { "se", "Svenska", "svk" },
+	        new String[] { "zh-cn", "中文(简体)", "chn" },
+		new String[] { "zh-tw", "中文(繁體)", "zh-tw" },
+		new String[] { "unlisted", "unlisted", "unlisted"},
+	};
 	private final String selectedLanguage;
 	
 	private static SimpleFieldSet currentTranslation = null;
@@ -47,8 +58,8 @@ public class L10n {
 	private static final Object sync = new Object();
 
 	L10n(String selected) {
-		selectedLanguage = selected;
-		File tmpFile = new File(L10n.PREFIX + selected + L10n.OVERRIDE_SUFFIX);
+		selectedLanguage = mapLanguageNameToShortCode(selected);
+		File tmpFile = new File(L10n.PREFIX + selectedLanguage + L10n.OVERRIDE_SUFFIX);
 		
 		try {
 			if(tmpFile.exists() && tmpFile.canRead() && tmpFile.length() > 0) {
@@ -83,26 +94,15 @@ public class L10n {
 	* @throws MissingResourceException
 	*/
 	public static void setLanguage(String selectedLanguage) throws MissingResourceException {
+		selectedLanguage = mapLanguageNameToLongName(selectedLanguage);
 		synchronized (sync) {
-			for(int i=0; i<AVAILABLE_LANGUAGES.length; i++){
-				if(selectedLanguage.equalsIgnoreCase(AVAILABLE_LANGUAGES[i])){		
-					selectedLanguage = AVAILABLE_LANGUAGES[i];
-					Logger.normal(CLASS_NAME, "Changing the current language to : " + selectedLanguage);
-
-					currentClass = new L10n(selectedLanguage);	
-
-					if(currentTranslation == null) {
-						currentClass = new L10n(FALLBACK_DEFAULT);	
-						throw new MissingResourceException("Unable to load the translation file for "+selectedLanguage, "l10n", selectedLanguage);
-					}
-
-					return;
-				}
+			Logger.normal(CLASS_NAME, "Changing the current language to : " + selectedLanguage);
+			currentClass = new L10n(selectedLanguage);
+			if(currentClass == null) {
+				currentClass = new L10n(FALLBACK_DEFAULT);
+				Logger.error(CLASS_NAME, "The requested translation is not available!" + selectedLanguage);
+				throw new MissingResourceException("The requested translation (" + selectedLanguage + ") hasn't been found!", CLASS_NAME, selectedLanguage);
 			}
-
-			currentClass = new L10n(FALLBACK_DEFAULT);
-			Logger.error(CLASS_NAME, "The requested translation is not available!" + selectedLanguage);
-			throw new MissingResourceException("The requested translation ("+selectedLanguage+") hasn't been found!", CLASS_NAME, selectedLanguage);
 		}
 	}
 	
@@ -116,7 +116,7 @@ public class L10n {
 			
 			// If there is no need to keep it in the override, remove it...
 			// unless the original/default is the same as the translation
-			if(("".equals(value) || L10n.getString(key).equals(value)) && !L10n.getDefaultString(key).equals(value)) {
+			if (("".equals(value)) || (value.equals(currentTranslation.get(key)))) {
 				translationOverride.removeValue(key);
 			} else {
 				value = value.replaceAll("(\r|\n|\t)+", "");
@@ -313,8 +313,10 @@ public class L10n {
 	*/
 	public static String getSelectedLanguage() {
 		synchronized (sync) {
-			if(currentClass == null) return null;
-			return currentClass.selectedLanguage;	
+			if((currentClass == null) || (currentClass.selectedLanguage == null))
+				return FALLBACK_DEFAULT;
+			else
+				return currentClass.selectedLanguage;	
 		}
 	}
 	
@@ -325,6 +327,12 @@ public class L10n {
 	* @return the Properties object or null if not found
 	*/
 	public static SimpleFieldSet loadTranslation(String name) {
+		String shortCountryCode = mapLanguageNameToShortCode(name);
+		if(shortCountryCode == null) { 
+			Logger.error("L10n", "Can't map "+name+" to a country code!");
+			return null;
+		} else
+			name = shortCountryCode;
 		name = PREFIX.replace ('.', '/').concat(PREFIX.concat(name.concat(SUFFIX)));
 		
 		SimpleFieldSet result = null;
@@ -344,6 +352,42 @@ public class L10n {
 		}
 		
 		return result;
+	}
+	
+	/**
+	 * Map a full string language name to the corresponding country short code
+	 * 
+	 * @param The name to look for
+	 * @return The two letters short code OR null if not found
+	 */
+	public static String mapLanguageNameToShortCode(String name) {
+		for(int i=0; i<AVAILABLE_LANGUAGES.length; i++) {
+			String currentShortCode = AVAILABLE_LANGUAGES[i][0];
+			String currentLongName = AVAILABLE_LANGUAGES[i][1];
+			String currentCountryCodeName = AVAILABLE_LANGUAGES[i][2];
+			
+			if(currentShortCode.equalsIgnoreCase(name) || currentLongName.equalsIgnoreCase(name) ||	currentCountryCodeName.equalsIgnoreCase(name))
+				return currentShortCode;
+		}
+		return null;
+	}
+
+	/**
+	 * Map a language identifier to its corresponding long name
+	 * 
+	 * @param The name to look for
+	 * @return The full text language name OR null if not found
+	 */
+	public static String mapLanguageNameToLongName(String name) {
+		for(int i=0; i<AVAILABLE_LANGUAGES.length; i++) {
+			String currentShortCode = AVAILABLE_LANGUAGES[i][0];
+			String currentLongName = AVAILABLE_LANGUAGES[i][1];
+			String currentCountryCodeName = AVAILABLE_LANGUAGES[i][2];
+			
+			if(currentShortCode.equalsIgnoreCase(name) || currentLongName.equalsIgnoreCase(name) ||	currentCountryCodeName.equalsIgnoreCase(name))
+				return currentLongName;
+		}
+		return null;
 	}
 
 	public static boolean isOverridden(String key) {

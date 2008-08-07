@@ -60,6 +60,8 @@ public class PersistentGet extends FCPMessage {
 		fs.putSingle("URI", uri.toString(false, false));
 		fs.put("Verbosity", verbosity);
 		fs.putSingle("ReturnType", ClientGetMessage.returnTypeString(returnType));
+		fs.putSingle("Persistence", ClientRequest.persistenceTypeString(persistenceType));
+		// FIXME PersistenceType is backward compatibility cruft, everything else uses Persistence
 		fs.putSingle("PersistenceType", ClientRequest.persistenceTypeString(persistenceType));
 		if(returnType == ClientGetMessage.RETURN_TYPE_DISK) {
 			fs.putSingle("Filename", targetFile.getAbsolutePath());

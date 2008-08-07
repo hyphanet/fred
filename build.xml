@@ -3,7 +3,10 @@
 
 <project name="Freenet" default="dist" basedir=".">
 	<description>
-		This file builds freenet...
+		This file builds Freenet: What is Freenet?
+
+		Freenet is free software which lets you publish and obtain information on the Internet without fear of censorship. To achieve this freedom, the network is entirely decentralized and publishers and consumers of information are anonymous. Without anonymity there can never be true freedom of speech, and without decentralization the network would be vulnerable to attack.
+
 		Possible targets: compile, dist (default), clean
 	</description>
 
@@ -72,8 +75,7 @@
 
 		<!-- Create the build directory structure used by compile -->
 
-		<!-- FIXME: remove the debug and replace with optimize -->
-		<javac srcdir="${src}" destdir="${build}" debug="on" optimize="on" source="1.4">
+		<javac srcdir="${src}" destdir="${build}" debug="on" optimize="on" source="1.5">
 			<classpath>
 				<pathelement location="${freenet-ext.location}"/>
 				<pathelement location="gnu-crypto.jar"/>
@@ -107,8 +109,6 @@
 	<target name="dist" depends="compile,unit"
 		description="generate the distribution" >
 		<!-- Create the distribution directory -->
-		<!--<mkdir dir="."/>-->
-		<!-- Put everything in ${build} into the freenet-${DSTAMP}.jar file -->
 		<jar jarfile="${lib}/freenet-cvs-snapshot.jar" basedir="${build}">
 			<manifest>
 				<attribute name="Main-Class" value="freenet/node/Node"/>
@@ -127,8 +127,8 @@
 
 	<!-- ================================================== -->
 
-	<target name="unit-build" depends="compile" if="junit.present">
-		<javac srcdir="${test}" destdir="${build-test}" debug="on" optimize="on" source="1.4">
+	<target name="unit-build" depends="compile" if="junit.present" unless="skip_tests">
+		<javac srcdir="${test}" destdir="${build-test}" debug="on" optimize="on" source="1.5">
 			<classpath>
 				<pathelement path="${build}"/>
 				<pathelement location="${freenet-ext.location}"/>
@@ -139,7 +139,7 @@
 		</javac>
 	</target>
 
-	<target name="unit" depends="unit-build" if="junit.present">
+	<target name="unit" depends="unit-build" if="junit.present" unless="skip_tests">
 		<junit printsummary="yes" fork="yes" haltonfailure="yes">
 			<classpath>
 				<pathelement path="${build}"/>

@@ -13,7 +13,8 @@ import freenet.keys.Key;
 
 public interface RequestScheduler {
 
-	/** Tell the scheduler that a request from a specific RandomGrabArray succeeded.
+	/**
+	 * Tell the scheduler that a request from a specific RandomGrabArray succeeded.
 	 * Definition of "succeeded" will vary, but the point is most schedulers will run another
 	 * request from the parentGrabArray in the near future on the theory that if one works,
 	 * another may also work. Also, delete the ChosenRequest if it is persistent. 

@@ -106,7 +106,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		while(true) {
 			// Allow 5 minutes before we start killing requests due to not connecting.
 			OpennetManager om;
-			if(core.node.peers.countConnectedPeers() == 0 && (om = core.node.getOpennet()) != null &&
+			if(core.node.peers.countConnectedPeers() < 3 && (om = core.node.getOpennet()) != null &&
 					System.currentTimeMillis() - om.getCreationTime() < 5*60*1000) {
 				try {
 					synchronized(this) {
@@ -270,6 +270,9 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		public void run() {
 			try {
 		    freenet.support.Logger.OSThread.logPID(this);
+		    // FIXME ? key is not known for inserts here
+		    if (key != null)
+		    	stats.reportOutgoingLocalRequestLocation(key.toNormalizedDouble());
 		    if(!req.send(core, sched)) {
 				if(!((!req.isPersistent()) && req.request.isCancelled(null)))
 					Logger.error(this, "run() not able to send a request on "+req);

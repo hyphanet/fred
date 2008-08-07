@@ -63,6 +63,7 @@ public class ConnectivityToadlet extends Toadlet {
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
+		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, request, contentNode);
 
 		// Add connection type box.
 		
@@ -84,7 +85,7 @@ public class ConnectivityToadlet extends Toadlet {
 			row.addChild("td", AddressTracker.statusString(tracker.getPortForwardStatus()));
 		}
 		
-		if(node.isAdvancedModeEnabled()) {
+		if(mode >= PageMaker.MODE_ADVANCED) {
 		
 		// One box per port
 		

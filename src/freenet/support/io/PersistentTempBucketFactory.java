@@ -17,6 +17,7 @@ import freenet.crypt.RandomSource;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import java.io.FileFilter;
 
 /**
  * Handles persistent temp files. These are used for e.g. persistent downloads.
@@ -44,7 +45,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	
 	private final long nodeDBHandle;
 
-	public PersistentTempBucketFactory(File dir, String prefix, RandomSource strongPRNG, Random weakPRNG, long nodeDBHandle) throws IOException {
+	public PersistentTempBucketFactory(File dir, final String prefix, RandomSource strongPRNG, Random weakPRNG, long nodeDBHandle) throws IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.strongPRNG = strongPRNG;
 		this.nodeDBHandle = nodeDBHandle;
@@ -59,24 +60,24 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		if(!dir.isDirectory())
 			throw new IOException("Directory is not a directory: "+dir);
 		originalFiles = new HashSet();
-		File[] files = dir.listFiles();
-		if((files != null) && (files.length > 0)) {
-			for(int i=0;i<files.length;i++) {
-				File f = files[i];
-				String name = f.getName();
-				if(f.isDirectory()) continue;
-				if(!f.exists()) continue;
-				if(!name.startsWith(prefix)) {
-			        if(Logger.shouldLog(Logger.MINOR, this))
-			        	Logger.minor(this, "Ignoring "+name);
-					continue;
-				}
-				f = FileUtil.getCanonicalFile(f);
-				if(logMINOR)
-					Logger.minor(this, "Found "+f);
-				originalFiles.add(f);
+		File[] files = dir.listFiles(new FileFilter() {
+
+			public boolean accept(File pathname) {
+				if(!pathname.exists() || pathname.isDirectory())
+					return false;
+				String name = pathname.getName();
+				if(name.startsWith(prefix))
+					return true;
+				return false;
 			}
+		});
+		for(File f : files) {
+			f = FileUtil.getCanonicalFile(f);
+			if(logMINOR)
+				Logger.minor(this, "Found " + f);
+			originalFiles.add(f);
 		}
+		
 		bucketsToFree = new LinkedList();
 	}
 	

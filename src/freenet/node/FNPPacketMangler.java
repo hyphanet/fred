@@ -1,4 +1,3 @@
-
 /* This code is part of Freenet. It is distributed under the GNU General
  * Public License, version 2 (or at your option any later version). See
  * http://www.gnu.org/ for further details of the GPL. */
@@ -315,7 +314,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			}
 		}
 		if(node.wantAnonAuth()) {
-			if(tryProcessAuthAnon(buf, offset, length, peer, now)) return;
+			if(tryProcessAuthAnon(buf, offset, length, peer)) return;
 		}
 		if(LOG_UNMATCHABLE_ERROR)
 			System.err.println("Unmatchable packet from "+peer+" on "+node.getDarknetPortNumber());
@@ -340,7 +339,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		int ivLength = pcfb.lengthIV();
 		int digestLength = HASH_LENGTH;
 		if(length < digestLength + ivLength + 4) {
-			if(logMINOR) Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 4));
+			if(logMINOR) {
+				if(buf.length < length)
+					Logger.debug(this, "The packet is smaller than the decrypted size: it's probably the wrong tracker ("+buf.length+'<'+length+')');
+				else
+					Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 4));
+			}
 			return false;
 		}
 		// IV at the beginning
@@ -396,7 +400,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param now The time at which the packet was received
 	 * @return True if we handled a negotiation packet, false otherwise.
 	 */
-	private boolean tryProcessAuthAnon(byte[] buf, int offset, int length, Peer peer, long now) {
+	private boolean tryProcessAuthAnon(byte[] buf, int offset, int length, Peer peer) {
 		BlockCipher authKey = crypto.getAnonSetupCipher();
 		// Does the packet match IV E( H(data) data ) ?
 		PCFBMode pcfb = PCFBMode.create(authKey);
@@ -593,8 +597,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			processJFKMessage2(payload, 4, pn, replyTo, true, setupType);
 		} else if(packetType == 3) {
 			// Phase 4
-			if(!processJFKMessage4(payload, 4, pn, replyTo, false, true, setupType, true))
-				processJFKMessage4(payload, 4, pn, replyTo, false, true, setupType, false);
+			processJFKMessage4(payload, 4, pn, replyTo, false, true, setupType);
 		} else {
 			Logger.error(this, "Invalid phase "+packetType+" for anonymous-initiator (we are the responder)");
 		}
@@ -696,8 +699,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				 * using the same keys as in the previous message.
 				 * The signature is non-message recovering
 				 */
-				if(!processJFKMessage4(payload, 3, pn, replyTo, oldOpennetPeer, false, -1, true))
-					processJFKMessage4(payload, 3, pn, replyTo, oldOpennetPeer, false, -1, false);
+				processJFKMessage4(payload, 3, pn, replyTo, oldOpennetPeer, false, -1);
 			}
 		} else {
 			Logger.error(this, "Decrypted auth packet but unknown negotiation type "+negType+" from "+replyTo+" possibly from "+pn);
@@ -950,7 +952,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// We don't except such a message;
 		if(myNi == null) {
 			if(shouldLogErrorInHandshake(t1))
-				Logger.normal(this, "We received an unexpected JFK(2) message from "+pn.getPeer());
+				Logger.normal(this, "We received an unexpected JFK(2) message from "+pn.getPeer()+" (time since added: "+pn.timeSinceAddedOrRestarted()+" time last receive:"+pn.lastReceivedPacketTime()+')');
 			return;
 		} else if(!Arrays.equals(myNi, nonceInitiator)){
 			if(logMINOR)
@@ -974,7 +976,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		
 		// At this point we know it's from the peer, so we can report a packet received.
-		pn.receivedPacket(true);
+		pn.receivedPacket(true, false);
 		
 		sendJFKMessage3(1, 2, 3, nonceInitiator, nonceResponder, hisExponential, authenticator, pn, replyTo, unknownInitiator, setupType);
 
@@ -1151,7 +1153,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		
 		// At this point we know it's from the peer, so we can report a packet received.
-		pn.receivedPacket(true);
+		pn.receivedPacket(true, false);
 		
 		// Send reply
 		sendJFKMessage4(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential, 
@@ -1239,7 +1241,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param pn The PeerNode we are talking to. Cannot be null as we are the initiator.
 	 * @param replyTo The Peer we are replying to.
 	 */
-	private boolean processJFKMessage4(byte[] payload, int inputOffset, PeerNode pn, Peer replyTo, boolean oldOpennetPeer, boolean unknownInitiator, int setupType, boolean bothNoderefs)
+	private boolean processJFKMessage4(byte[] payload, int inputOffset, PeerNode pn, Peer replyTo, boolean oldOpennetPeer, boolean unknownInitiator, int setupType)
 	{
 		final long t1 = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(4) message, processing it - "+pn.getPeer());
@@ -1253,26 +1255,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		BlockCipher c = null;
 		try { c = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
 		
-		if(bothNoderefs && pn.jfkMyRef == null) {
-			if(node.getUptime() < 60*1000) {
-				Logger.normal(this, "Avoiding NPE: got JFK(4) but no pn.jfkMyRef on "+pn);
-				return false;
-			} else {
-				Logger.error(this, "Got JFK(4) but no pn.jfkMyRef on "+pn);
-				return false;
-			}
-		}
 		final int expectedLength =
 			HASH_LENGTH + // HMAC of the cyphertext
 			(c.getBlockSize() >> 3) + // IV
 			Node.SIGNATURE_PARAMETER_LENGTH * 2 + // the signature
-			(bothNoderefs ? pn.jfkMyRef.length : 0) + // my reference
 			8+ // bootID
 			1; // znoderefR
 
 		if(payload.length - inputOffset < expectedLength + 3) {
-			if(!bothNoderefs)
-				Logger.error(this, "Packet too short from "+pn.getPeer()+": "+payload.length+" after decryption in JFK(4), should be "+(expectedLength + 3));
+			Logger.error(this, "Packet too short from "+pn.getPeer()+": "+payload.length+" after decryption in JFK(4), should be "+(expectedLength + 3));
 			return false;
 		}
 		byte[] jfkBuffer = pn.getJFKBuffer();
@@ -1317,11 +1308,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] data = new byte[decypheredPayload.length - decypheredPayloadOffset];
 		System.arraycopy(decypheredPayload, decypheredPayloadOffset, data, 0, decypheredPayload.length - decypheredPayloadOffset);
 		long bootID = Fields.bytesToLong(data);
-		if(data.length - (bothNoderefs ? pn.jfkMyRef.length : 0) - 8 < 0) {
-			Logger.error(this, "No space for hisRef: bothNoderefs="+bothNoderefs+" data.length="+data.length+" myRef.length="+(pn.jfkMyRef==null?0:pn.jfkMyRef.length)+" orig data length "+(payload.length-inputOffset));
+		if(data.length - 8 < 0) {
+			Logger.error(this, "No space for hisRef: data.length="+data.length+" myRef.length="+(pn.jfkMyRef==null?0:pn.jfkMyRef.length)+" orig data length "+(payload.length-inputOffset));
 			return false;
 		}
-		byte[] hisRef = new byte[data.length - (bothNoderefs ? pn.jfkMyRef.length : 0) - 8];
+		byte[] hisRef = new byte[data.length - 8];
 		System.arraycopy(data, 8, hisRef, 0, hisRef.length);
 		
 		// verify the signature
@@ -1339,10 +1330,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		byte[] messageHash = SHA256.digest(locallyGeneratedText);
 		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, messageHash), false)) {
 			String error = "The signature verification has failed!! JFK(4) -"+pn.getPeer()+" message hash "+HexUtil.bytesToHex(messageHash)+" length "+locallyGeneratedText.length+" hisRef "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" myRef "+pn.jfkMyRef.length+" hash "+Fields.hashCode(pn.jfkMyRef)+" boot ID "+bootID;
-			if(bothNoderefs)
-				Logger.normal(this, error);
-			else
-				Logger.error(this, error);
+			Logger.error(this, error);
 			return false;
 		}
 		
@@ -1966,8 +1954,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			tracker.destForgotPacket(realSeqNo);
 		}
 
-		tracker.pn.receivedPacket(false); // Must keep the connection open, even if it's an ack packet only and on an incompatible connection - we may want to do a UOM transfer e.g.
-
+		tracker.pn.receivedPacket(false, true); // Must keep the connection open, even if it's an ack packet only and on an incompatible connection - we may want to do a UOM transfer e.g.
+//		System.err.println(tracker.pn.getIdentityString()+" : received packet");
+		
 		// No sequence number == no messages
 
 		if((seqNumber != -1) && tracker.alreadyReceived(seqNumber)) {
@@ -2598,6 +2587,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// pn.getPeer() cannot be null
 		try {
 			sendPacket(output, kt.pn.getPeer(), kt.pn, alreadyReportedBytes);
+//			System.err.println(kt.pn.getIdentityString()+" : sent packet length "+output.length);
 		} catch (LocalAddressException e) {
 			Logger.error(this, "Tried to send data packet to local address: "+kt.pn.getPeer()+" for "+kt.pn.allowLocalAddresses());
 		}
@@ -2828,20 +2818,24 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @return True if we reset the transient key and therefore the authenticator cache.
 	 */
 	private boolean maybeResetTransientKey() {
+		long now = System.currentTimeMillis();
+		boolean isCacheTooBig = true;
 		synchronized (authenticatorCache) {
-			long now = System.currentTimeMillis();
 			if(authenticatorCache.size() < AUTHENTICATOR_CACHE_SIZE) {
+				isCacheTooBig = false;
 				if(now - timeLastReset < TRANSIENT_KEY_REKEYING_MIN_INTERVAL)
 					return false;
 			}
+			timeLastReset = now;
+
 			node.random.nextBytes(transientKey);
 			
 			// reset the authenticator cache
 			authenticatorCache.clear();
-			
-			timeLastReset = now;
 		}
-		node.getTicker().queueTimedJob(transientKeyRekeyer, TRANSIENT_KEY_REKEYING_MIN_INTERVAL);
+		if(logMINOR)
+			Logger.minor(this, "Reset the JFK transitent key because "+(isCacheTooBig ? ("the cache's capacity is exeeded ("+authenticatorCache.size()+')') : "it's time to rekey") + this);
+		node.getTicker().queueTimedJob(transientKeyRekeyer, "JFKmaybeResetTransitentKey "+now, TRANSIENT_KEY_REKEYING_MIN_INTERVAL, false);
 		Logger.normal(this, "JFK's TransientKey has been changed and the message cache flushed.");
 		return true;
 	}

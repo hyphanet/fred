@@ -127,17 +127,18 @@ public class UserAlertManager implements Comparator {
 	 * /alerts/[ anchor pointing to the real alert].
 	 */
 	public HTMLNode createAlertsShort(String title, boolean advancedMode, boolean drawDumpEventsForm) {
-		UserAlert[] alerts = getAlerts();
+		UserAlert[] currentAlerts = getAlerts();
 		short maxLevel = Short.MAX_VALUE;
 		int events = 0;
-		for(int i=0;i<alerts.length;i++) {
-			boolean isValid = alerts[i].isValid();
-			short level = alerts[i].getPriorityClass();
-			if(isValid) {
-				if(level < maxLevel) maxLevel = level;
-				if(alerts[i].isEventNotification()) events++;
-			}
+		for(int i=0;i<currentAlerts.length;i++) {
+			if (!currentAlerts[i].isValid())
+				continue;
+			short level = currentAlerts[i].getPriorityClass();
+			if(level < maxLevel) maxLevel = level;
+			if(currentAlerts[i].isEventNotification()) events++;
 		}
+		if(maxLevel == Short.MAX_VALUE)
+			return new HTMLNode("#", "");
 		if(events < 2) drawDumpEventsForm = false;
 		HTMLNode boxNode = new HTMLNode("div", "class", "infobox infobox-"+getAlertLevelName(maxLevel)+" infobox-summary-status-box");
 		boxNode.addChild("div", "class", "infobox-header infobox summary-status-header", title);
@@ -146,26 +147,23 @@ public class UserAlertManager implements Comparator {
 			contentNode.addChild("p", "class", "click-for-more", l10n("clickForMore"));
 		HTMLNode alertsNode = contentNode.addChild("ul", "class", "alert-summary");
 		int totalNumber = 0;
-		for (int i = 0; i < alerts.length; i++) {
-			UserAlert alert = alerts[i];
+		for (int i = 0; i < currentAlerts.length; i++) {
+			UserAlert alert = currentAlerts[i];
 			if (!alert.isValid())
 				continue;
 			HTMLNode listItem = alertsNode.addChild("li", "class", "alert-summary-text-"+getAlertLevelName(alert.getPriorityClass()));
 			listItem.addChild("a", "href", "/alerts/#"+alert.anchor(), alert.getShortText());
 			totalNumber++;
 		}
-		if (totalNumber == 0) {
-			return new HTMLNode("#", "");
-		}
 		if(drawDumpEventsForm) {
 			HTMLNode dumpFormNode = contentNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("div");
 			dumpFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 			StringBuffer sb = new StringBuffer();
-			for(int i=0;i<alerts.length;i++) {
-				if(!alerts[i].isEventNotification()) continue;
+			for(int i=0;i<currentAlerts.length;i++) {
+				if(!currentAlerts[i].isEventNotification()) continue;
 				if(sb.length() != 0)
 					sb.append(",");
-				sb.append(alerts[i].anchor());
+				sb.append(currentAlerts[i].anchor());
 			}
 			dumpFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "events", sb.toString() });
 			dumpFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dismiss-events", l10n("dumpEventsButton") });

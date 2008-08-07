@@ -63,7 +63,7 @@ public class Serializer {
 			throw new IOException("Boolean is non boolean value: "+bool);
 		} else if (type.equals(Byte.class)) {
 			int b = dis.readByte();
-			return new Byte((byte)b);
+			return new Byte((byte) b);
 		} else if (type.equals(Short.class)) {
 			return new Short(dis.readShort());
 		} else if (type.equals(Integer.class)) {
@@ -102,20 +102,21 @@ public class Serializer {
 		}
 	}
 
-	public static void writeToDataOutputStream(Object object, DataOutputStream dos, PeerContext ctx) throws IOException {
+	public static void writeToDataOutputStream(Object object, DataOutputStream dos, PeerContext ctx) throws IOException {	
 		Class type = object.getClass();
-		if (type.equals(Boolean.class)) {
+		if (type.equals(Long.class)) {
+			dos.writeLong(((Long) object).longValue());
+		} else if (type.equals(Boolean.class)) {
 			dos.write(((Boolean) object).booleanValue() ? 1 : 0);
-		} else if (type.equals(Byte.class)) {
-			dos.write(((Byte) object).byteValue());
-		} else if (type.equals(Short.class)) {
-			dos.writeShort(((Short) object).shortValue());
 		} else if (type.equals(Integer.class)) {
 			dos.writeInt(((Integer) object).intValue());
-		} else if (type.equals(Long.class)) {
-			dos.writeLong(((Long) object).longValue());
+		} else if (type.equals(Short.class)) {
+			dos.writeShort(((Short) object).shortValue());
 		} else if (type.equals(Double.class)) {
 		    dos.writeDouble(((Double) object).doubleValue());
+		} else if (WritableToDataOutputStream.class.isAssignableFrom(type)) {
+			WritableToDataOutputStream b = (WritableToDataOutputStream) object;
+			b.writeToDataOutputStream(dos);
 		} else if (type.equals(String.class)) {
 			String s = (String) object;
 			dos.writeInt(s.length());
@@ -130,11 +131,8 @@ public class Serializer {
 					writeToDataOutputStream(i.next(), dos, ctx);
 				}
 			}
-		} else if (type.equals(Peer.class)) {
-			((Peer)object).writeToDataOutputStream(dos);
-		} else if (WritableToDataOutputStream.class.isAssignableFrom(type)) {
-			WritableToDataOutputStream b = (WritableToDataOutputStream) object;
-			b.writeToDataOutputStream(dos);
+		} else if (type.equals(Byte.class)) {
+			dos.write(((Byte) object).byteValue());
 		} else {
 			throw new RuntimeException("Unrecognised field type: " + type);
 		}

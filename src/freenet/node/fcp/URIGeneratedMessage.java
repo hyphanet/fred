@@ -13,16 +13,19 @@ public class URIGeneratedMessage extends FCPMessage {
 
 	private final FreenetURI uri;
 	private final String identifier;
+	private final boolean global;
 	
-	public URIGeneratedMessage(FreenetURI uri, String identifier) {
+	public URIGeneratedMessage(FreenetURI uri, String identifier, boolean global) {
 		this.uri = uri;
 		this.identifier = identifier;
+		this.global = global;
 	}
 
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("URI", uri.toString());
 		fs.putSingle("Identifier", identifier);
+		fs.put("Global", global);
 		return fs;
 	}
 
