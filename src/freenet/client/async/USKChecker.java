@@ -61,7 +61,7 @@ class USKChecker extends BaseSingleFileFetcher {
 			canRetry = true;
 		}
 
-		if(canRetry && retry(sched)) return;
+		if(canRetry && retry(sched, ctx.executor)) return;
 		
 		// Ran out of retries.
 		unregister(false);

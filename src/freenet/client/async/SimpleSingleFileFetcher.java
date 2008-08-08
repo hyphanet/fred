@@ -94,7 +94,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 			forceFatal = true;
 		}
 		if(!(e.isFatal() || forceFatal) ) {
-			if(retry(sched)) {
+			if(retry(sched, ctx.executor)) {
 				if(logMINOR) Logger.minor(this, "Retrying");
 				return;
 			}
