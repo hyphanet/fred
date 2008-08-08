@@ -55,7 +55,7 @@ public final class FProxyToadlet extends Toadlet {
 	// ?force= links become invalid after 2 hours.
 	private static final long FORCE_GRAIN_INTERVAL = 60*60*1000;
 	/** Maximum size for transparent pass-through, should be a config option */
-	static final long MAX_LENGTH = 2*1024*1024; // 2MB
+	static int MAX_LENGTH = 2*1024*1024; // 2MB
 	
 	static final URI welcome;
 	static {

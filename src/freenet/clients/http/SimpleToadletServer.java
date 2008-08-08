@@ -94,6 +94,18 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			throw new InvalidConfigValueException("Cannot change SSL on the fly, please restart freenet");
 		}
 	}
+	
+	class FProxyPassthruMaxSize implements IntCallback {
+		
+		public int get() {
+			return FProxyToadlet.MAX_LENGTH;
+		}
+		
+		public void set(int val) throws InvalidConfigValueException {
+			if(val == get()) return;
+			FProxyToadlet.MAX_LENGTH = val;
+		}
+	}
 
 	class FProxyPortCallback implements IntCallback {
 		
@@ -394,6 +406,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 					}
 		});
 		enableInlinePrefetch = fproxyConfig.getBoolean("enableInlinePrefetch");
+		
+		fproxyConfig.register("passthroughMaxSize", 2*1024*1024, configItemOrder++, true, false, "SimpleToadletServer.passthroughMaxSize", "SimpleToadletServer.passthroughMaxSizeLong", new FProxyPassthruMaxSize());
+		FProxyToadlet.MAX_LENGTH = fproxyConfig.getInt("passthroughMaxSize");
 		
 		fproxyConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "SimpleToadletServer.allowedHosts", "SimpleToadletServer.allowedHostsLong",
 				new FProxyAllowedHostsCallback());
