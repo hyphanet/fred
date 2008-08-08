@@ -38,6 +38,8 @@ import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.FileUtil;
 import freenet.support.io.Closer;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * @author amphibian
@@ -79,8 +81,13 @@ public class PeerManager {
 	private long nextRoutableConnectionStatsUpdateTime = -1;
 	/** routableConnectionStats update interval (milliseconds) */
 	private static final long routableConnectionStatsUpdateInterval = 7 * 1000;  // 7 seconds
-	/** number of samples we have to do stats on peer-selection */
-	private long numberOfSelectionSamples = 0;
+	
+	/**
+	 * Track the number of times a PeerNode has been selected by the routing algorithm
+	 * @see PeerNode.numberOfSelections
+	 */
+	private SortedSet<Long> numberOfSelectionSamples = new TreeSet<Long>();
+	private final Object numberOfSelectionSamplesSync = new Object();
 	
 	public static final int PEER_NODE_STATUS_CONNECTED = 1;
 	public static final int PEER_NODE_STATUS_ROUTING_BACKED_OFF = 2;
@@ -991,10 +998,8 @@ public class PeerManager {
 				//Add the location which we did not pick, if it exists.
 				if(closestNotBackedOff != null && closestBackedOff != null)
 					addUnpickedLocsTo.add(new Double(closestBackedOff.getLocation()));
-
-			//TODO: synchronize! ; store the stats here instead of into PeerNode?
-			best.incrementNumberOfSelections();
-			numberOfSelectionSamples++;
+					
+			incrementSelectionSamples(now, best);
 		}
 		
 		return best;
@@ -1824,7 +1829,19 @@ public class PeerManager {
 		return null;
 	}
 	
-	public long getNumberOfSelectionSamples() {
-		return numberOfSelectionSamples;
+	public SortedSet<Long> getNumberOfSelectionSamples() {
+		synchronized (numberOfSelectionSamplesSync) {
+			return new TreeSet<Long>(numberOfSelectionSamples);
+		}
+	}
+		
+	private void incrementSelectionSamples(long now, PeerNode pn) {
+		// TODO: reimplement with a bit field to spare memory
+		synchronized (numberOfSelectionSamplesSync) {
+			if(numberOfSelectionSamples.size() > PeerNode.SELECTION_MAX_SAMPLES * OpennetManager.MAX_PEERS_FOR_SCALING)
+				numberOfSelectionSamples = numberOfSelectionSamples.tailSet(now - PeerNode.SELECTION_SAMPLING_PERIOD);
+			numberOfSelectionSamples.add(now);
+			pn.incrementNumberOfSelections(now);
+		}
 	}
 }

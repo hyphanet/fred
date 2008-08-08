@@ -74,7 +74,8 @@ import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPUtil;
-import java.util.Collection;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * @author amphibian
@@ -151,8 +152,20 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private long timeLastRoutable;
 	/** Time added or restarted (reset on startup unlike peerAddedTime) */
 	private long timeAddedOrRestarted;
-	/** Number of time that peer has been selected by the routing algorithm */
-	private long numberOfSelections = 0;
+	
+	/**
+	 * Track the number of times this PeerNode has been selected by
+	 * the routing algorithm over a given period of time
+	 */
+	private SortedSet<Long> numberOfSelections = new TreeSet<Long>();
+	private final Object numberOfSelectionsSync = new Object();
+	// 5mins; yes it's alchemy!
+	public static final int SELECTION_SAMPLING_PERIOD = 5 * 60 * 1000;
+	// 30%; yes it's alchemy too! and probably *way* too high to serve any purpose
+	public static final int SELECTION_PERCENTAGE_WARNING = 30;
+	// Should be good enough provided we don't get selected more than 10 times per/sec
+	// Lower the following value if you want to spare memory... or better switch from a TreeSet to a bit field.
+	public static final int SELECTION_MAX_SAMPLES = 10 * SELECTION_SAMPLING_PERIOD / 1000; 
 	
 	/** Are we connected? If not, we need to start trying to
 	* handshake.
@@ -3990,12 +4003,19 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return (short)(((int)uptime) & 0xFF);
 	}
 	
-	public long getNumberOfSelections() {
-		return numberOfSelections;
+	public SortedSet<Long> getNumberOfSelections() {
+		synchronized(numberOfSelectionsSync) {
+			return new TreeSet<Long>(numberOfSelections);
+		}
 	}
 	
-	public void incrementNumberOfSelections() {
-		numberOfSelections++;
+	public void incrementNumberOfSelections(long time) {
+		// TODO: reimplement with a bit field to spare memory
+		synchronized(numberOfSelectionsSync) {
+			if(numberOfSelections.size() > SELECTION_MAX_SAMPLES)
+				numberOfSelections = numberOfSelections.tailSet(time - SELECTION_SAMPLING_PERIOD);
+			numberOfSelections.add(time);
+		}
 	}
 
 	private long offeredMainJarVersion;

@@ -8,6 +8,7 @@ import java.util.Map;
 import freenet.io.comm.Peer;
 import freenet.io.xfer.PacketThrottle;
 import freenet.support.Logger;
+import java.util.SortedSet;
 
 /**
  * Contains various status information for a {@link PeerNode}. Used e.g. in
@@ -94,7 +95,7 @@ public class PeerNodeStatus {
 	
 	private final int reportedUptimePercentage;
 	
-	private final long numberOfSelections;
+	private final SortedSet<Long> numberOfSelections;
 
 	PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
 		if(Logger.shouldLog(Logger.MINOR, this)) {
@@ -397,7 +398,7 @@ public class PeerNodeStatus {
 		return reportedUptimePercentage;
 	}
 
-	public long getNumberOfSelections() {
+	public SortedSet<Long> getNumberOfSelections() {
 		return numberOfSelections;
 	}
 }
