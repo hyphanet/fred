@@ -525,8 +525,10 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 						i + dataBlocks.length, getCHKOnly, false, false,
 						parent.token, container, context, persistent);
 				checkBlockInserters[i].schedule(container, context);
-				container.deactivate(checkBlockInserters[i], 1);
-				container.deactivate(checkBlocks[i], 1);
+				if(persistent) {
+					container.deactivate(checkBlockInserters[i], 1);
+					container.deactivate(checkBlocks[i], 1);
+				}
 			}
 		} catch (Throwable t) {
 			Logger.error(this, "Caught " + t + " while encoding " + this, t);
