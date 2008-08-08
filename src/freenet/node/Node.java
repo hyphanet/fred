@@ -2072,16 +2072,14 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	}
 	
 	void addTransferringRequestHandler(long id) {
-		Long l = new Long(id);
 		synchronized(transferringRequestHandlers) {
-			transferringRequestHandlers.add(l);
+			transferringRequestHandlers.add(id);
 		}
 	}
 	
 	void removeTransferringRequestHandler(long id) {
-		Long l = new Long(id);
 		synchronized(transferringRequestHandlers) {
-			transferringRequestHandlers.remove(l);
+			transferringRequestHandlers.remove(id);
 		}
 	}
 
@@ -2416,9 +2414,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	}
 	
 	public boolean lockUID(long uid, boolean ssk, boolean insert, boolean offerReply, boolean local) {
-		Long l = new Long(uid);
 		synchronized(runningUIDs) {
-			if(!runningUIDs.add(l)) {
+			if(!runningUIDs.add(uid)) {
 				// Already present.
 				return false;
 			}
@@ -2427,23 +2424,22 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		HashSet set = getUIDTracker(ssk, insert, offerReply, local);
 		synchronized(set) {
 			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+set.size());
-			set.add(l);
+			set.add(uid);
 			if(logMINOR) Logger.minor(this, "Locked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+set.size());
 		}
 		return true;
 	}
 	
 	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local) {
-		Long l = new Long(uid);
 		completed(uid);
 		HashSet set = getUIDTracker(ssk, insert, offerReply, local);
 		synchronized(set) {
 			if(logMINOR) Logger.minor(this, "Unlocking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+", local="+local+" size="+set.size());
-			set.remove(l);
+			set.remove(uid);
 			if(logMINOR) Logger.minor(this, "Unlocked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+", local="+local+" size="+set.size());
 		}
 		synchronized(runningUIDs) {
-			if(!runningUIDs.remove(l) && !canFail)
+			if(!runningUIDs.remove(uid) && !canFail)
 				throw new IllegalStateException("Could not unlock "+uid+ '!');
 		}
 	}
@@ -2626,7 +2622,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 */
 	public boolean recentlyCompleted(long id) {
 		synchronized (recentlyCompletedIDs) {
-			return recentlyCompletedIDs.contains(new Long(id));
+			return recentlyCompletedIDs.contains(id);
 		}
 	}
 	
@@ -2635,7 +2631,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 */
 	void completed(long id) {
 		synchronized (recentlyCompletedIDs) {
-			recentlyCompletedIDs.push(new Long(id));
+			recentlyCompletedIDs.push(id);
 			while(recentlyCompletedIDs.size() > MAX_RECENTLY_COMPLETED_IDS)
 				recentlyCompletedIDs.pop();
 		}

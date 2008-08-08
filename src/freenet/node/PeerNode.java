@@ -2985,9 +2985,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(this) {
 			count = (Long) localNodeSentMessageTypes.get(messageSpecName);
 			if(count == null)
-				count = new Long(1);
+				count = 1L;
 			else
-				count = new Long(count.longValue() + 1);
+				count = count.longValue() + 1;
 			localNodeSentMessageTypes.put(messageSpecName, count);
 		}
 	}
@@ -3001,9 +3001,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(localNodeReceivedMessageTypes) {
 			count = (Long) localNodeReceivedMessageTypes.get(messageSpecName);
 			if(count == null)
-				count = new Long(1);
+				count = 1L;
 			else
-				count = new Long(count.longValue() + 1);
+				count = count.longValue() + 1;
 			localNodeReceivedMessageTypes.put(messageSpecName, count);
 		}
 	}
