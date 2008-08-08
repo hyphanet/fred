@@ -9,8 +9,18 @@ import java.util.TreeSet;
 /**
  * Variant on LRUHashtable which provides an efficient how-many-since-time-T operation.
  */
-public class TimeSortedHashtable {
-
+public class TimeSortedHashtable implements Cloneable {
+	
+	public TimeSortedHashtable() {
+		this.elements = new TreeSet(new MyComparator());
+		this.valueToElement = new HashMap();
+	}
+	
+	private TimeSortedHashtable(TimeSortedHashtable c) {
+		this.elements = new TreeSet(c.elements);
+		this.valueToElement = new HashMap(c.valueToElement);
+	}
+	
 	private static class Element {
 		
 		Element(long t, Comparable v) {
@@ -54,9 +64,13 @@ public class TimeSortedHashtable {
 		
 	}
 	
-    private final TreeSet elements = new TreeSet(new MyComparator());
-    private final HashMap valueToElement = new HashMap();
+    private final TreeSet elements;
+    private final HashMap valueToElement;
 
+    public TimeSortedHashtable clone() {
+	    return new TimeSortedHashtable(this);
+    }
+    
     public final void push(Comparable value) {
     	push(value, System.currentTimeMillis());
     }
