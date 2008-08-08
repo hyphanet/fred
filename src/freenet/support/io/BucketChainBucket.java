@@ -67,7 +67,7 @@ public class BucketChainBucket implements Bucket {
 	public InputStream getInputStream() throws IOException {
 		synchronized(this) {
 			if(freed) throw new IOException("Freed");
-		}
+			if(buckets.size() == 0) return new NullInputStream();
 		return new InputStream() {
 
 			private int bucketNo = 0;
@@ -163,6 +163,7 @@ public class BucketChainBucket implements Bucket {
 			}
 			
 		};
+		}
 	}
 
 	protected synchronized InputStream getBucketInputStream(int i) throws IOException {
