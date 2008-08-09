@@ -274,6 +274,8 @@ class SingleFileInserter implements ClientPutState {
 			SplitHandler sh = new SplitHandler();
 			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData, persistent, container, context);
 			sh.sfi = sfi;
+			if(persistent)
+				container.set(sh);
 			cb.onTransition(this, sh, container);
 			sfi.start(container, context);
 			if(earlyEncode) sfi.forceEncode(container, context);
