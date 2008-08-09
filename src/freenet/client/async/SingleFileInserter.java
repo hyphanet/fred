@@ -431,6 +431,9 @@ class SingleFileInserter implements ClientPutState {
 		}
 
 		public synchronized void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
+			if(persistent) { // FIXME debug-point
+				if(logMINOR) Logger.minor(this, "Transition: "+oldState+" -> "+newState);
+			}
 			if(oldState == sfi)
 				sfi = newState;
 			if(oldState == metadataPutter)
@@ -519,7 +522,7 @@ class SingleFileInserter implements ClientPutState {
 					Logger.error(this, "Got metadata for metadata");
 					e = new InsertException(InsertException.INTERNAL_ERROR, "Did not expect to get metadata for metadata inserter", null);
 				} else if(state != sfi) {
-					Logger.error(this, "Got metadata from unknown state "+state+" sfi="+sfi+" metadataPutter="+metadataPutter+" on "+this, new Exception("debug"));
+					Logger.error(this, "Got metadata from unknown state "+state+" sfi="+sfi+" metadataPutter="+metadataPutter+" on "+this+" persistent="+persistent, new Exception("debug"));
 					e = new InsertException(InsertException.INTERNAL_ERROR, "Got metadata from unknown state", null);
 				} else {
 					// Already started metadata putter ? (in which case we've got the metadata twice)
@@ -633,6 +636,8 @@ class SingleFileInserter implements ClientPutState {
 		}
 
 		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
+			if(persistent) // FIXME debug-point
+				if(logMINOR) Logger.minor(this, "onEncode() for "+this+" : "+state+" : "+key);
 			synchronized(this) {
 				if(state != metadataPutter) return;
 			}
@@ -640,6 +645,8 @@ class SingleFileInserter implements ClientPutState {
 		}
 
 		public void cancel(ObjectContainer container, ClientContext context) {
+			if(persistent) // FIXME debug-point
+				if(logMINOR) Logger.minor(this, "Cancelling "+this);
 			ClientPutState oldSFI = null;
 			ClientPutState oldMetadataPutter = null;
 			synchronized(this) {
@@ -666,6 +673,8 @@ class SingleFileInserter implements ClientPutState {
 		}
 
 		public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
+			if(persistent) // FIXME debug-point
+				if(logMINOR) Logger.minor(this, "onBlockSetFinished() for "+state+" on "+this);
 			synchronized(this) {
 				if(state == sfi)
 					splitInsertSetBlocks = true;
@@ -707,6 +716,9 @@ class SingleFileInserter implements ClientPutState {
 
 		public void onFetchable(ClientPutState state, ObjectContainer container) {
 
+			if(persistent) // FIXME debug-point
+				if(logMINOR) Logger.minor(this, "onFetchable on "+this);
+			
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 
 			if(logMINOR) Logger.minor(this, "onFetchable("+state+ ')');
@@ -746,6 +758,8 @@ class SingleFileInserter implements ClientPutState {
 		}
 		
 		private void startMetadata(ObjectContainer container, ClientContext context) {
+			if(persistent) // FIXME debug-point
+				if(logMINOR) Logger.minor(this, "startMetadata() on "+this);
 			try {
 				ClientPutState putter;
 				ClientPutState splitInserter;
