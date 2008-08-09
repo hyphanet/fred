@@ -95,7 +95,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/* How often shall we generate a new exponential and add it to the FIFO? */
 	public final static int DH_GENERATION_INTERVAL = 30000; // 30sec
 	/* How big is the FIFO? */
-	public final static int DH_CONTEXT_BUFFER_SIZE = 10;
+	public final static int DH_CONTEXT_BUFFER_SIZE = 20;
 	/*
 	* The FIFO itself
 	* Get a lock on dhContextFIFO before touching it!
@@ -2833,10 +2833,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			// reset the authenticator cache
 			authenticatorCache.clear();
 		}
-		if(logMINOR)
-			Logger.minor(this, "Reset the JFK transitent key because "+(isCacheTooBig ? ("the cache's capacity is exeeded ("+authenticatorCache.size()+')') : "it's time to rekey") + this);
 		node.getTicker().queueTimedJob(transientKeyRekeyer, "JFKmaybeResetTransitentKey "+now, TRANSIENT_KEY_REKEYING_MIN_INTERVAL, false);
-		Logger.normal(this, "JFK's TransientKey has been changed and the message cache flushed.");
+		Logger.normal(this, "JFK's TransientKey has been changed and the message cache flushed because "+(isCacheTooBig ? ("the cache is oversized ("+authenticatorCache.size()+')') : "it's time to rekey")+ " on " + this);
 		return true;
 	}
 
