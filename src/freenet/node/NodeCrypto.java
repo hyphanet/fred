@@ -32,6 +32,7 @@ import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.support.Base64;
 import freenet.support.Fields;
+import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -365,8 +366,16 @@ public class NodeCrypto {
 		}
 	}
 
+	public static boolean DISABLE_GROUP_STRIP = false;
+	
 	private byte[] myCompressedRef(boolean setup, boolean heavySetup, boolean forARK) {
 		SimpleFieldSet fs = exportPublicFieldSet(setup, heavySetup, forARK);
+		// TODO: we should change that to ((setup || heavySetup) && !forARK) when all the nodes have the new code
+		boolean shouldStripGroup = heavySetup && Global.DSAgroupBigA.equals(cryptoGroup);
+		if(DISABLE_GROUP_STRIP) shouldStripGroup = false;
+		if(shouldStripGroup)
+			fs.removeSubset("dsaGroup");
+		
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		DeflaterOutputStream gis;
 		gis = new DeflaterOutputStream(baos);
@@ -380,9 +389,19 @@ public class NodeCrypto {
 		}
 		
 		byte[] buf = baos.toByteArray();
-		byte[] obuf = new byte[buf.length + 1];
-		obuf[0] = 1;
-		System.arraycopy(buf, 0, obuf, 1, buf.length);
+		if(buf.length >= 4096)
+			throw new IllegalStateException("We are attempting to send a "+buf.length+" bytes big reference!");
+		byte[] obuf = new byte[buf.length + 1 + (shouldStripGroup ? 1 : 0)];
+		int offset = 0;
+		if(shouldStripGroup) {
+			obuf[offset++] = 0x3; // compressed noderef - group
+			int dsaGroupIndex = Global.GROUP_INDEX_BIG_A;
+			if(logMINOR)
+				Logger.minor(this, "We are stripping the group from the reference as it's a known group (groupIndex="+dsaGroupIndex+')');
+			obuf[offset++] = (byte)(dsaGroupIndex & 0xff);
+		} else
+			obuf[offset++] = 0x01; // compressed noderef
+		System.arraycopy(buf, 0, obuf, offset, buf.length);
 		if(logMINOR) 
 			Logger.minor(this, "myCompressedRef("+setup+","+heavySetup+") returning "+obuf.length+" bytes");
 		return obuf;

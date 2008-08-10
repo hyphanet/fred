@@ -21,6 +21,7 @@ import freenet.node.RequestStarter;
 import freenet.node.Ticker;
 import freenet.node.Version;
 import freenet.support.Logger;
+import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 
@@ -81,16 +82,20 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		}
 	}
 	
-	public synchronized void onFoundEdition(long l, USK key){
+	public void onFoundEdition(long l, USK key){
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Found edition "+l);
 		System.err.println("Found "+(extUpdate?"freenet-ext.jar " : "")+"update edition "+l);
+		synchronized(this) {
 		if(!isRunning) return;
 		int found = (int)key.suggestedEdition;
 		
-		if(found > availableVersion) {
+		if(found <= availableVersion){
+			return;
+		}
 			Logger.minor(this, "Updating availableVersion from " + availableVersion + " to " + found + " and queueing an update");
 			this.availableVersion = found;
+		}
 			ticker.queueTimedJob(new Runnable() {
 
 				public void run() {
@@ -99,7 +104,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			}, 60 * 1000); // leave some time in case we get later editions
 			// LOCKING: Always take the NodeUpdater lock *BEFORE* the NodeUpdateManager lock
 			manager.onStartFetching(extUpdate);
-		}
 	}
 
 	public void maybeUpdate(){
@@ -110,7 +114,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			if(logMINOR)
 				Logger.minor(this, "maybeUpdate: isFetching="+isFetching+", isRunning="+isRunning+", availableVersion="+availableVersion);
 			if(isFetching || (!isRunning)) return;
-			if(availableVersion == fetchedVersion) return;
+			if(availableVersion <= fetchedVersion) return;
 			fetchingVersion = availableVersion;
 			
 			if(availableVersion > currentVersion) {
@@ -183,9 +187,13 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	void onSuccess(FetchResult result, ClientGetter state, File tempBlobFile, int fetchedVersion) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(this) {
-			if(fetchedVersion < this.fetchedVersion) {
+			if(fetchedVersion <= this.fetchedVersion) {
 				tempBlobFile.delete();
-				result.asBucket().free();
+				if(result != null) {
+					Bucket toFree = result.asBucket();
+					if(toFree != null)
+						toFree.free();
+				}
 				return;
 			}
 			if(result == null || result.asBucket() == null || result.asBucket().size() == 0) {

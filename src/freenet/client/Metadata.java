@@ -15,8 +15,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Map.Entry;
-
+import java.util.Set;
 import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
 import freenet.keys.FreenetURI;
@@ -644,6 +643,22 @@ public class Metadata implements Cloneable {
 	public Metadata getDefaultDocument() throws MetadataParseException {
 		return getDocument("");
 	}
+	
+	/**
+     * Get all documents in the manifest (ignores default doc).
+     * @throws MetadataParseException
+     */
+    public HashMap<String, Metadata> getDocuments() {
+    	HashMap<String, Metadata> docs = new HashMap<String, Metadata>();
+        Set s = manifestEntries.keySet();
+        Iterator i = s.iterator();
+        while (i.hasNext()) {
+        	String st = (String) i.next();
+        	if (st.length()>1)
+        		docs.put(st, (Metadata) manifestEntries.get(st));
+        }
+        return docs;
+    }
 
 	/**
 	 * Does the metadata point to a single URI?

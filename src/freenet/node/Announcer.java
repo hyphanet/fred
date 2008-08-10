@@ -110,7 +110,7 @@ public class Announcer {
 		boolean announceNow = false;
 		if(logMINOR)
 			Logger.minor(this, "Connecting some seednodes...");
-		Vector/*<SimpleFieldSet>*/ seeds = readSeednodes();
+		Vector/*<SimpleFieldSet>*/ seeds = Announcer.readSeednodes(node.nodeDir);
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			if(now - timeAddedSeeds < MIN_ADDED_SEEDS_INTERVAL) return;
@@ -212,10 +212,8 @@ public class Announcer {
 		return count;
 	}
 
-	private Vector readSeednodes() {
-		if(logMINOR)
-			Logger.minor(this, "Reading seednodes");
-		File file = new File(node.nodeDir, "seednodes.fref");
+	public static Vector readSeednodes(File nodeDir) {
+		File file = new File(nodeDir, "seednodes.fref");
 		Vector list = new Vector();
 		FileInputStream fis = null;
 		try {
@@ -316,9 +314,7 @@ public class Announcer {
 						if(runningAnnouncements > 0) return;
 					}
 					if(enoughPeers()) {
-						Vector seeds = node.peers.getConnectedSeedServerPeersVector(null);
-						for(int i=0;i<seeds.size();i++) {
-							SeedServerPeerNode pn = (SeedServerPeerNode) seeds.get(i);
+						for(SeedServerPeerNode pn : node.peers.getConnectedSeedServerPeersVector(null)) {
 							node.peers.disconnect(pn, true, true);
 						}
 						// Re-check every minute. Something bad might happen (e.g. cpu starvation), causing us to have to reseed.
@@ -375,14 +371,14 @@ public class Announcer {
 				return;
 			}
 			// Now find a node to announce to
-			Vector seeds = node.peers.getConnectedSeedServerPeersVector(announcedToIdentities);
+			Vector<SeedServerPeerNode> seeds = node.peers.getConnectedSeedServerPeersVector(announcedToIdentities);
 			while(sentAnnouncements < WANT_ANNOUNCEMENTS) {
 				if(seeds.isEmpty()) {
 					if(logMINOR)
 						Logger.minor(this, "No more seednodes, announcedTo = "+announcedToIdentities.size());
 					break;
 				}
-				final SeedServerPeerNode seed = (SeedServerPeerNode) seeds.remove(node.random.nextInt(seeds.size()));
+				final SeedServerPeerNode seed = seeds.remove(node.random.nextInt(seeds.size()));
 				InetAddress[] addrs = seed.getInetAddresses();
 				if(!newAnnouncedIPs(addrs)) {
 					if(logMINOR)
@@ -424,18 +420,32 @@ public class Announcer {
 			announcedToIPs.add(addrs[i]);
 	}
 
+	/**
+	 * Have we already announced to this node?
+	 * Return true if the node has new non-local addresses we haven't announced to.
+	 * Return false if the node has non-local addresses we have announced to.
+	 * Return true if the node has no non-local addresses.
+	 * @param addrs
+	 * @return
+	 */
 	private synchronized boolean newAnnouncedIPs(InetAddress[] addrs) {
+		boolean hasNonLocalAddresses = false;
 		for(int i=0;i<addrs.length;i++) {
 			if(!IPUtil.isValidAddress(addrs[i], false))
 				continue;
+			hasNonLocalAddresses = true;
 			if(!announcedToIPs.contains(addrs[i]))
 				return true;
 		}
-		return false;
+		return !hasNonLocalAddresses;
 	}
 
 	public void sendAnnouncement(final SeedServerPeerNode seed) {
-		if(!node.isOpennetEnabled()) return;
+		if(!node.isOpennetEnabled()) {
+			if(logMINOR)
+				Logger.minor(this, "Not announcing to "+seed+" because opennet is disabled");
+			return;
+		}
 		System.out.println("Announcement to "+seed.userToString()+" starting...");
 		if(logMINOR)
 			Logger.minor(this, "Announcement to "+seed.userToString()+" starting...");

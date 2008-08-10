@@ -15,8 +15,6 @@
  */
 package freenet.config;
 
-import freenet.config.Config;
-import freenet.config.SubConfig;
 import freenet.utils.UTFUtil;
 import junit.framework.TestCase;
 
@@ -71,5 +69,4 @@ public class ConfigTest extends TestCase {
 	public void testGet() {
 		assertSame(sc, conf.get("testing"));
 	}
-
 }

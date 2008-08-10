@@ -143,12 +143,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private long timeLastSentPacket;
 	/** When did we last receive a packet? */
 	private long timeLastReceivedPacket;
+	/** When did we last receive a non-auth packet? */
+	private long timeLastReceivedDataPacket;
 	/** When was isConnected() last true? */
 	private long timeLastConnected;
 	/** When was isRoutingCompatible() last true? */
 	private long timeLastRoutable;
 	/** Time added or restarted (reset on startup unlike peerAddedTime) */
 	private long timeAddedOrRestarted;
+	/** Number of time that peer has been selected by the routing algorithm */
+	private long numberOfSelections = 0;
+	
 	/** Are we connected? If not, we need to start trying to
 	* handshake.
 	*/
@@ -1102,6 +1107,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public synchronized long lastReceivedPacketTime() {
 		return timeLastReceivedPacket;
 	}
+	
+	public synchronized long lastReceivedDataPacketTime() {
+		return timeLastReceivedDataPacket;
+	}
 
 	public synchronized long timeLastConnected() {
 		return timeLastConnected;
@@ -1168,7 +1177,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	*/
 	public boolean disconnected(boolean dumpMessageQueue, boolean dumpTrackers) {
 		final long now = System.currentTimeMillis();
-		Logger.normal(this, "Disconnected " + this);
+		Logger.normal(this, "Disconnected " + this, new Exception("debug"));
 		node.usm.onDisconnect(this);
 		node.failureTable.onDisconnect(this);
 		node.peers.disconnected(this);
@@ -1492,7 +1501,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	*/
 	public boolean ping(int pingID) throws NotConnectedException {
 		Message ping = DMT.createFNPPing(pingID);
-		node.usm.send(this, ping, null);
+		node.usm.send(this, ping, node.dispatcher.pingCounter);
 		Message msg;
 		try {
 			msg = node.usm.waitFor(MessageFilter.create().setTimeout(2000).setType(DMT.FNPPong).setField(DMT.PING_SEQNO, pingID), null);
@@ -1762,8 +1771,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @throws NotConnectedException 
 	* @param dontLog If true, don't log an error or throw an exception if we are not connected. This
 	* can be used in handshaking when the connection hasn't been verified yet.
+	* @param dataPacket If this is a real packet, as opposed to a handshake packet.
 	*/
-	void receivedPacket(boolean dontLog) {
+	void receivedPacket(boolean dontLog, boolean dataPacket) {
 		synchronized(this) {
 			if((!isConnected) && (!dontLog)) {
 				// Don't log if we are disconnecting, because receiving packets during disconnecting is normal.
@@ -1782,6 +1792,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			timeLastReceivedPacket = now;
+			if(dataPacket)
+				timeLastReceivedDataPacket = now;
 		}
 	}
 
@@ -1913,6 +1925,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					messagesTellDisconnected = (MessageItem[]) messagesToSendNow.toArray(new MessageItem[messagesToSendNow.size()]);
 					messagesToSendNow.clear();
 				}
+				this.offeredMainJarVersion = 0;
 			} // else it's a rekey
 			if(unverified) {
 				if(unverifiedTracker != null) {
@@ -1972,7 +1985,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			" old: " + previousTracker + " unverified: " + unverifiedTracker + " bootID: " + thisBootID + " for " + shortToString());
 
 		// Received a packet
-		receivedPacket(unverified);
+		receivedPacket(unverified, false);
 
 		setPeerNodeStatus(now);
 		
@@ -2246,42 +2259,36 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		int firstByte = data[offset];
 		offset++;
 		length--;
-		if((firstByte & 2) == 2) {
-			int groupIndex = Fields.bytesToInt(data, offset);
-			offset += 4;
-			length -= 4;
+		if((firstByte & 0x2) == 2) {
+			int groupIndex = (data[offset] & 0xff);
+			offset++;
+			length--;
 			group = Global.getGroup(groupIndex);
 			if(group == null) throw new FSParseException("Unknown group number "+groupIndex);
+			if(logMINOR)
+				Logger.minor(PeerNode.class, "DSAGroup set to "+group.fingerprintToString()+ " using the group-index "+groupIndex);
 		}
 		// Is it compressed?
 		if((firstByte & 1) == 1) {
-			// Gzipped
-			Inflater i = new Inflater();
-			i.setInput(data, offset, length);
-			byte[] output = new byte[4096];
-			int outputPointer = 0;
-			while(true) {
-				try {
-					int x = i.inflate(output, outputPointer, output.length - outputPointer);
-					if(x == output.length - outputPointer) {
-						// More to decompress!
-						byte[] newOutput = new byte[output.length * 2];
-						System.arraycopy(output, 0, newOutput, 0, output.length);
-						continue;
-					} else {
-						// Finished
-						data = output;
-						offset = 0;
-						length = outputPointer + x;
-						break;
-					}
-				} catch(DataFormatException e) {
-					throw new FSParseException("Invalid compressed data");
-				}
+			try {
+				// Gzipped
+				Inflater i = new Inflater();
+				i.setInput(data, offset, length);
+				// We shouldn't ever need a 4096 bytes long ref!
+				byte[] output = new byte[4096];
+				length = i.inflate(output, 0, output.length);
+				// Finished
+				data = output;
+				offset = 0;
+				if(logMINOR)
+					Logger.minor(PeerNode.class, "We have decompressed a "+length+" bytes big reference.");
+			} catch(DataFormatException e) {
+				throw new FSParseException("Invalid compressed data");
 			}
 		}
 		if(logMINOR)
-			Logger.minor(PeerNode.class, "Reference: " + new String(data, offset, length) + '(' + length + ')');
+			Logger.minor(PeerNode.class, "Reference: " + HexUtil.bytesToHex(data, offset, length) + '(' + length + ')');
+
 		// Now decode it
 		ByteArrayInputStream bais = new ByteArrayInputStream(data, offset, length);
 		InputStreamReader isr;
@@ -2293,8 +2300,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		BufferedReader br = new BufferedReader(isr);
 		try {
 			SimpleFieldSet fs = new SimpleFieldSet(br, false, true);
-			if(group != null)
-				fs.putAllOverwrite(group.asFieldSet());
+			if(group != null) {
+				SimpleFieldSet sfs = new SimpleFieldSet(true);
+				sfs.put("dsaGroup", group.asFieldSet());
+				fs.putAllOverwrite(sfs);
+			}
 			return fs;
 		} catch(IOException e) {
 			FSParseException ex = new FSParseException("Impossible: " + e);
@@ -3978,5 +3988,23 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	
 	public short getUptime() {
 		return (short)(((int)uptime) & 0xFF);
+	}
+	
+	public long getNumberOfSelections() {
+		return numberOfSelections;
+	}
+	
+	public void incrementNumberOfSelections() {
+		numberOfSelections++;
+	}
+
+	private long offeredMainJarVersion;
+	
+	public void setMainJarOfferedVersion(long mainJarVersion) {
+		offeredMainJarVersion = mainJarVersion;
+	}
+	
+	public long getMainJarOfferedVersion() {
+		return offeredMainJarVersion;
 	}
 }

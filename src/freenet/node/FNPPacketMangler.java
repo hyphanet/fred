@@ -314,7 +314,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			}
 		}
 		if(node.wantAnonAuth()) {
-			if(tryProcessAuthAnon(buf, offset, length, peer, now)) return;
+			if(tryProcessAuthAnon(buf, offset, length, peer)) return;
 		}
 		if(LOG_UNMATCHABLE_ERROR)
 			System.err.println("Unmatchable packet from "+peer+" on "+node.getDarknetPortNumber());
@@ -339,7 +339,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		int ivLength = pcfb.lengthIV();
 		int digestLength = HASH_LENGTH;
 		if(length < digestLength + ivLength + 4) {
-			if(logMINOR) Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 4));
+			if(logMINOR) {
+				if(buf.length < length)
+					Logger.debug(this, "The packet is smaller than the decrypted size: it's probably the wrong tracker ("+buf.length+'<'+length+')');
+				else
+					Logger.minor(this, "Too short: "+length+" should be at least "+(digestLength + ivLength + 4));
+			}
 			return false;
 		}
 		// IV at the beginning
@@ -395,7 +400,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param now The time at which the packet was received
 	 * @return True if we handled a negotiation packet, false otherwise.
 	 */
-	private boolean tryProcessAuthAnon(byte[] buf, int offset, int length, Peer peer, long now) {
+	private boolean tryProcessAuthAnon(byte[] buf, int offset, int length, Peer peer) {
 		BlockCipher authKey = crypto.getAnonSetupCipher();
 		// Does the packet match IV E( H(data) data ) ?
 		PCFBMode pcfb = PCFBMode.create(authKey);
@@ -971,7 +976,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		
 		// At this point we know it's from the peer, so we can report a packet received.
-		pn.receivedPacket(true);
+		pn.receivedPacket(true, false);
 		
 		sendJFKMessage3(1, 2, 3, nonceInitiator, nonceResponder, hisExponential, authenticator, pn, replyTo, unknownInitiator, setupType);
 
@@ -1148,7 +1153,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		
 		// At this point we know it's from the peer, so we can report a packet received.
-		pn.receivedPacket(true);
+		pn.receivedPacket(true, false);
 		
 		// Send reply
 		sendJFKMessage4(1, 2, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential, 
@@ -1949,8 +1954,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			tracker.destForgotPacket(realSeqNo);
 		}
 
-		tracker.pn.receivedPacket(false); // Must keep the connection open, even if it's an ack packet only and on an incompatible connection - we may want to do a UOM transfer e.g.
-
+		tracker.pn.receivedPacket(false, true); // Must keep the connection open, even if it's an ack packet only and on an incompatible connection - we may want to do a UOM transfer e.g.
+//		System.err.println(tracker.pn.getIdentityString()+" : received packet");
+		
 		// No sequence number == no messages
 
 		if((seqNumber != -1) && tracker.alreadyReceived(seqNumber)) {
@@ -2581,6 +2587,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// pn.getPeer() cannot be null
 		try {
 			sendPacket(output, kt.pn.getPeer(), kt.pn, alreadyReportedBytes);
+//			System.err.println(kt.pn.getIdentityString()+" : sent packet length "+output.length);
 		} catch (LocalAddressException e) {
 			Logger.error(this, "Tried to send data packet to local address: "+kt.pn.getPeer()+" for "+kt.pn.allowLocalAddresses());
 		}

@@ -79,6 +79,9 @@ public class PeerManager {
 	private long nextRoutableConnectionStatsUpdateTime = -1;
 	/** routableConnectionStats update interval (milliseconds) */
 	private static final long routableConnectionStatsUpdateInterval = 7 * 1000;  // 7 seconds
+	/** number of samples we have to do stats on peer-selection */
+	private long numberOfSelectionSamples = 0;
+	
 	public static final int PEER_NODE_STATUS_CONNECTED = 1;
 	public static final int PEER_NODE_STATUS_ROUTING_BACKED_OFF = 2;
 	public static final int PEER_NODE_STATUS_TOO_NEW = 3;
@@ -560,7 +563,7 @@ public class PeerManager {
 	 * @return An array of the current locations (as doubles) of all
 	 * our connected peers or double[0] if Node.shallWePublishOurPeersLocation() is false
 	 */
-	public double[] getPeerLocationDoubles(boolean pruneBackedOffedPeers) {
+	public double[] getPeerLocationDoubles(boolean pruneBackedOffPeers) {
 		double[] locs;
 		if(!node.shallWePublishOurPeersLocation())
 			return new double[0];
@@ -572,7 +575,7 @@ public class PeerManager {
 		int x = 0;
 		for(int i = 0; i < conns.length; i++) {
 			if(conns[i].isRoutable()) {
-				if(!conns[i].shouldBeExcludedFromPeerList()) {
+				if(!pruneBackedOffPeers || !conns[i].shouldBeExcludedFromPeerList()) {
 					locs[x++] = conns[i].getLocation();
 				}
 			}
@@ -955,7 +958,7 @@ public class PeerManager {
 
 		PeerNode best = closestNotBackedOff;
 
-		if(best == null)
+		if(best == null) {
 			if(leastRecentlyTimedOut != null) {
 				// FIXME downgrade to DEBUG
 				best = leastRecentlyTimedOut;
@@ -970,10 +973,12 @@ public class PeerManager {
 				if(logMINOR)
 					Logger.minor(this, "Using least recently failed in-timeout-period backed-off peer for key: " + best.shortToString() + " for " + key);
 			}
+		}
 
-		//racy... getLocation() could have changed
-		if(calculateMisrouting)
-			if(best != null) {
+		// DO NOT PUT A ELSE HERE: we need to re-check the value!
+		if(best != null) {
+			//racy... getLocation() could have changed
+			if(calculateMisrouting) {
 				node.nodeStats.routingMissDistance.report(Location.distance(best, closest.getLocation()));
 				int numberOfConnected = getPeerNodeStatusSize(PEER_NODE_STATUS_CONNECTED, false);
 				int numberOfRoutingBackedOff = getPeerNodeStatusSize(PEER_NODE_STATUS_ROUTING_BACKED_OFF, false);
@@ -981,12 +986,17 @@ public class PeerManager {
 					node.nodeStats.backedOffPercent.report((double) numberOfRoutingBackedOff / (double) (numberOfRoutingBackedOff + numberOfConnected));
 			}
 
-		//racy... getLocation() could have changed
-		if(best != null && addUnpickedLocsTo != null)
-			//Add the location which we did not pick, if it exists.
-			if(closestNotBackedOff != null && closestBackedOff != null)
-				addUnpickedLocsTo.add(new Double(closestBackedOff.getLocation()));
+			//racy... getLocation() could have changed
+			if(addUnpickedLocsTo != null)
+				//Add the location which we did not pick, if it exists.
+				if(closestNotBackedOff != null && closestBackedOff != null)
+					addUnpickedLocsTo.add(new Double(closestBackedOff.getLocation()));
 
+			//TODO: synchronize! ; store the stats here instead of into PeerNode?
+			best.incrementNumberOfSelections();
+			numberOfSelectionSamples++;
+		}
+		
 		return best;
 	}
 
@@ -1003,7 +1013,6 @@ public class PeerManager {
 		for(int i = 0; i < peers.length; i++) {
 			PeerNode pn = peers[i];
 			status[i] = pn.getStatus(true).toString();
-			Version.seenVersion(pn.getVersion());
 		}
 		Arrays.sort(status);
 		for(int i = 0; i < status.length; i++) {
@@ -1575,13 +1584,13 @@ public class PeerManager {
 		return (DarknetPeerNode[]) v.toArray(new DarknetPeerNode[v.size()]);
 	}
 
-	public Vector getConnectedSeedServerPeersVector(HashSet exclude) {
+	public Vector<SeedServerPeerNode> getConnectedSeedServerPeersVector(HashSet exclude) {
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = myPeers;
 		}
 		// FIXME optimise! Maybe maintain as a separate list?
-		Vector v = new Vector(myPeers.length);
+		Vector<SeedServerPeerNode> v = new Vector<SeedServerPeerNode>(myPeers.length);
 		for(int i = 0; i < peers.length; i++) {
 			if(peers[i] instanceof SeedServerPeerNode) {
 				if(exclude != null && exclude.contains(peers[i].getIdentity())) {
@@ -1594,7 +1603,7 @@ public class PeerManager {
 						Logger.minor(this, "Not including in getConnectedSeedServerPeersVector() as disconnected: " + peers[i].userToString());
 					continue;
 				}
-				v.add(peers[i]);
+				v.add((SeedServerPeerNode)peers[i]);
 			}
 		}
 		return v;
@@ -1781,6 +1790,16 @@ public class PeerManager {
 		}
 		return count;
 	}
+	
+	public int countSeednodes() {
+		int count = 0;
+		for(PeerNode peer : myPeers) {
+			if(peer instanceof SeedServerPeerNode || 
+					peer instanceof SeedClientPeerNode)
+				count++;
+		}
+		return count;
+	}
 
 	public int countBackedOffPeers() {
 		PeerNode[] peers = myPeers;
@@ -1803,5 +1822,9 @@ public class PeerManager {
 				return peers[i];
 		}
 		return null;
+	}
+	
+	public long getNumberOfSelectionSamples() {
+		return numberOfSelectionSamples;
 	}
 }

@@ -815,7 +815,7 @@ public class FileLoggerHook extends LoggerHook {
 		}
 		sb.append('\n');
 
-		if (e != null) {
+		for(int j=0;j<20 && e != null;j++) {
 
 			sb.append(e.toString());
 			
@@ -833,6 +833,10 @@ public class FileLoggerHook extends LoggerHook {
 					sb.append('\n');
 				}
 			}
+			
+			Throwable cause = e.getCause();
+			if(cause != e) e = cause;
+			else break;
 		}
 
 		logString(sb.toString().getBytes());

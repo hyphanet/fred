@@ -32,8 +32,8 @@ public class ContentFilterTest extends TestCase {
 	// @see bug #710
 	private static final String ANCHOR_TEST = "<a href=\"#test\" />";
 	// @see bug #2451
-	private static final String POUNT_CHARACTER_ENCODING_TEST = "<a href=\"/CHK@nvrrZF-qG7gInnxb2PUFNcNfgmdg2QHFQUsJGUzvUdE,nzsrkOSwJDP5lMod~kNDChDh96f1vIqGejOcMZpmIq0,AAEC--8/Ward Churchill - [2001] In a Pig's Eye - CD 2 - 07 - #1 Security Threat.ogg\" />";
-	private static final String POUNT_CHARACTER_ENCODING_TEST_RESULT = "<a href=\"/CHK@nvrrZF-qG7gInnxb2PUFNcNfgmdg2QHFQUsJGUzvUdE,nzsrkOSwJDP5lMod~kNDChDh96f1vIqGejOcMZpmIq0,AAEC--8/Ward%20Churchill%20-%20%5b2001%5d%20In%20a%20Pig%27s%20Eye%20-%20CD%202%20-%2007%20-%20%231%20Security%20Threat.ogg\" />";
+	private static final String POUNT_CHARACTER_ENCODING_TEST = "<a href=\"/CHK@DUiGC5D1ZsnFpH07WGkNVDujNlxhtgGxXBKrMT-9Rkw,~GrAWp02o9YylpxL1Fr4fPDozWmebhGv4qUoFlrxnY4,AAIC--8/Testing - [blah] Apostrophe' - gratuitous #1 AND CAPITAL LETTERS!!!!.ogg\" />";
+	private static final String POUNT_CHARACTER_ENCODING_TEST_RESULT = "<a href=\"/CHK@DUiGC5D1ZsnFpH07WGkNVDujNlxhtgGxXBKrMT-9Rkw,~GrAWp02o9YylpxL1Fr4fPDozWmebhGv4qUoFlrxnY4,AAIC--8/Testing%20-%20%5bblah%5d%20Apostrophe%27%20-%20gratuitous%20%231%20AND%20CAPITAL%20LETTERS%21%21%21%21.ogg\" />";
 	// @see bug #2297
 	private static final String PREVENT_FPROXY_ACCESS = "<a href=\""+BASE_URI+"\"/>";
 	private static final String WHITELIST_STATIC_CONTENT = "<a href=\"/static/themes/clean/theme.css\" />";

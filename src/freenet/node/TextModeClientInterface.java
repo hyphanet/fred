@@ -899,14 +899,24 @@ public class TextModeClientInterface implements Runnable {
         	} else {
         		probeAll(Fields.parseInt(uline, NodeDispatcher.PROBE_TYPE_RESETTING_HTL));
         	}
-        } else if(uline.startsWith("PLUGLOAD:")) {
-        	if (line.substring("PLUGLOAD:".length()).trim().equals("?")) {
-        		outsb.append("  PLUGLOAD: pluginName         - Load official plugin from freenetproject.org\r\n");
-        		outsb.append("  PLUGLOAD: file://<filename>  - Load plugin from file\r\n");
-        		outsb.append("  PLUGLOAD: http://...         - Load plugin from online file\r\n");
+        } else if(uline.startsWith("PLUGLOAD")) {
+        	if(uline.startsWith("PLUGLOAD:O:")) {
+        		String name = line.substring("PLUGLOAD:O:".length()).trim();
+        		n.pluginManager.startPluginOfficial(name, true);
+        	} else if(uline.startsWith("PLUGLOAD:F:")) {
+        		String name = line.substring("PLUGLOAD:F:".length()).trim();
+        		n.pluginManager.startPluginFile(name, true);
+        	} else if(uline.startsWith("PLUGLOAD:U:")) {
+        		String name = line.substring("PLUGLOAD:U:".length()).trim();
+        		n.pluginManager.startPluginURL(name, true);
+        	} else if(uline.startsWith("PLUGLOAD:K:")) {
+        		String name = line.substring("PLUGLOAD:K:".length()).trim();
+        		n.pluginManager.startPluginFreenet(name, true);
         	} else {
-        		String name = line.substring("PLUGLOAD:".length()).trim();
-        		n.pluginManager.startPlugin(name, true);
+        		outsb.append("  PLUGLOAD:O: pluginName         - Load official plugin from freenetproject.org\r\n");
+        		outsb.append("  PLUGLOAD:F: file://<filename>  - Load plugin from file\r\n");
+        		outsb.append("  PLUGLOAD:U: http://...         - Load plugin from online file\r\n");
+        		outsb.append("  PLUGLOAD:K: freenet key        - Load plugin from freenet uri\r\n");
         	}
         } else if(uline.startsWith("PLUGLIST")) {
         	outsb.append(n.pluginManager.dumpPlugins());

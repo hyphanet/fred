@@ -567,7 +567,7 @@ public class KeyTracker {
      * @throws UpdatableSortedLinkedListKilledException 
      */
     private void removeAckRequest(int seqNo) throws UpdatableSortedLinkedListKilledException {
-        QueuedAckRequest qr = (QueuedAckRequest)ackRequestQueue.removeByKey(Integer.valueOf(seqNo));
+        QueuedAckRequest qr = (QueuedAckRequest)ackRequestQueue.removeByKey(seqNo);
     	if(qr != null) qr.onAcked();
     	else
     		Logger.normal(this, "Removing ack request twice? Null on "+seqNo+" from "+pn.getPeer()+" ("+TimeUtil.formatTime((int) pn.averagePingTime(), 2, true)+" ping avg)");
@@ -584,7 +584,7 @@ public class KeyTracker {
         	if(resendData.length > Node.PACKET_SIZE)
         		pn.getThrottle().notifyOfPacketLost();
             synchronized(packetsToResend) {
-                packetsToResend.add(Integer.valueOf(seqNumber));
+                packetsToResend.add(seqNumber);
             }
             pn.node.ps.wakeUp();
         } else {

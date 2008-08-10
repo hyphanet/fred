@@ -109,7 +109,7 @@ public final class FProxyToadlet extends Toadlet {
 		
 	}
 
-	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras, String referrer, boolean downloadLink, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras, String referrer, boolean downloadLink, ToadletContext ctx, NodeClientCore core) throws ToadletContextClosedException, IOException {
 		if(Logger.shouldLog(Logger.MINOR, FProxyToadlet.class))
 			Logger.minor(FProxyToadlet.class, "handleDownload(data.size="+data.size()+", mimeType="+mimeType+", requestedMimeType="+requestedMimeType+", forceDownload="+forceDownload+", basePath="+basePath+", key="+key);
 		String extrasNoMime = extras; // extras will not include MIME type to start with - REDFLAG maybe it should be an array
@@ -224,6 +224,11 @@ public final class FProxyToadlet extends Toadlet {
 			HTMLNode option = optionList.addChild("li");
 			L10n.addL10nSubstitution(option, "FProxyToadlet.openAsText", new String[] { "link", "/link" }, new String[] { "<a href=\""+basePath+key.toString()+"?type=text/plain"+extrasNoMime+"\">", "</a>" });
 			// FIXME: is this safe? See bug #131
+			
+			if((mimeType.equals("application/x-freenet-index")) && (core.node.pluginManager.isPluginLoaded("plugins.ThawIndexBrowser.ThawIndexBrowser"))) {
+				option = optionList.addChild("li");
+				L10n.addL10nSubstitution(option, "FProxyToadlet.openAsThawIndex", new String[] { "link", "/link" }, new String[] { "<a href=\""+basePath + "plugins/plugins.ThawIndexBrowser.ThawIndexBrowser/?key=" + key.toString() + "\">", "</a>" });
+			}
 			option = optionList.addChild("li");
 			L10n.addL10nSubstitution(option, "FProxyToadlet.openForceDisk", new String[] { "link", "/link" }, new String[] { "<a href=\""+basePath+key.toString()+"?forcedownload"+extras+"\">", "</a>" });
 			if(!(mimeType.equals("application/octet-stream") || mimeType.equals("application/x-msdownload"))) {
@@ -436,7 +441,8 @@ public final class FProxyToadlet extends Toadlet {
 			
 			String referer = sanitizeReferer(ctx);
 			
-			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key, maxSize != MAX_LENGTH ? "&max-size="+maxSize : "", referer, true, ctx);
+			
+			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key, maxSize != MAX_LENGTH ? "&max-size="+maxSize : "", referer, true, ctx, core);
 			
 		} catch (FetchException e) {
 			String msg = e.getMessage();

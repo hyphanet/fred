@@ -46,6 +46,7 @@ import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SizeUtil;
+import freenet.support.TimeUtil;
 import freenet.support.io.FileBucket;
 import freenet.support.io.RandomAccessFileWrapper;
 import java.io.FileFilter;
@@ -77,6 +78,8 @@ public class UpdateOverMandatoryManager {
 	static final int MAX_NODES_SENDING_MAIN_JAR = 2;
 	/** Maximum time between asking for the main jar and it starting to transfer */
 	static final int REQUEST_MAIN_JAR_TIMEOUT = 60*1000;
+	//** Grace time before we use UoM to update */
+	public static final int GRACE_TIME = 60*60*1000; // 1h
 	private boolean logMINOR;
 	
 	private UserAlert alert;
@@ -206,29 +209,83 @@ public class UpdateOverMandatoryManager {
 		
 		if(!updateManager.isEnabled()) return true; // Don't care if not enabled, except for the revocation URI
 		
+		long now = System.currentTimeMillis();
+		long started = updateManager.getStartedFetchingNextMainJarTimestamp();
+		long whenToTakeOverTheNormalUpdater;
+		if(started > 0) whenToTakeOverTheNormalUpdater = started + GRACE_TIME;
+		else whenToTakeOverTheNormalUpdater = System.currentTimeMillis() + GRACE_TIME;
+		boolean isOutdated = updateManager.node.isOudated();
+		// if the new build is self-mandatory or if the "normal" updater has been trying to update for more than one hour
+		Logger.normal(this, "We received a valid UOMAnnounce : (isOutdated="+isOutdated+" version="+mainJarVersion +" whenToTakeOverTheNormalUpdater="+TimeUtil.formatTime(whenToTakeOverTheNormalUpdater-now)+") file length "+mainJarFileLength+" updateManager version "+updateManager.newMainJarVersion());
 		if(mainJarVersion > Version.buildNumber() && mainJarFileLength > 0 &&
 				mainJarVersion > updateManager.newMainJarVersion()) {
-			// Fetch it
-			try {
-				FreenetURI mainJarURI = new FreenetURI(jarKey).setSuggestedEdition(mainJarVersion);
-				if(mainJarURI.equals(updateManager.updateURI.setSuggestedEdition(mainJarVersion))) {
-					sendUOMRequestMain(source, true);
-				} else {
-					System.err.println("Node "+source.userToString()+" offered us a new main jar (version "+mainJarVersion+") but his key was different to ours:\n"+
-							"our key: "+updateManager.updateURI+"\nhis key:"+mainJarURI);
+			source.setMainJarOfferedVersion(mainJarVersion);
+			// Offer is valid.
+			if(logMINOR) Logger.minor(this, "Offer is valid");
+			if((isOutdated) || whenToTakeOverTheNormalUpdater < now) {
+				// Take up the offer, subject to limits on number of simultaneous downloads.
+				// If we have fetches running already, then sendUOMRequestMain() will add the offer to nodesOfferedMainJar,
+				// so that if all our fetches fail, we can fetch from this node.
+					if(!isOutdated) {
+						Logger.error(this, "The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN! (1)");
+						System.out.println("The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN! (1)");
+					} else
+						if(logMINOR) Logger.minor(this, "Fetching via UOM as our build is deprecated");
+					// Fetch it
+					try {
+						FreenetURI mainJarURI = new FreenetURI(jarKey).setSuggestedEdition(mainJarVersion);
+						if(mainJarURI.equals(updateManager.updateURI.setSuggestedEdition(mainJarVersion)))
+							sendUOMRequestMain(source, true);
+						else
+							System.err.println("Node " + source.userToString() + " offered us a new main jar (version " + mainJarVersion + ") but his key was different to ours:\n" +
+									"our key: " + updateManager.updateURI + "\nhis key:" + mainJarURI);
+					} catch(MalformedURLException e) {
+						// Should maybe be a useralert?
+						Logger.error(this, "Node " + source + " sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: " + revocationKey + " : " + e, e);
+						System.err.println("Node " + source.userToString() + " sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: " + revocationKey + " : " + e);
+					}
+			} else {
+				// Don't take up the offer. Add to nodesOfferedMainJar, so that we know where to fetch it from when we need it.
+				synchronized(this) {
+					nodesOfferedMainJar.add(source);
 				}
-			} catch (MalformedURLException e) {
-				// Should maybe be a useralert?
-				Logger.error(this, "Node "+source+" sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: "+revocationKey+" : "+e, e);
-				System.err.println("Node "+source.userToString()+" sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: "+revocationKey+" : "+e);
+				updateManager.node.getTicker().queueTimedJob(new Runnable() {
+					
+					public void run() {
+						if(updateManager.isBlown()) return;
+						if(!updateManager.isEnabled()) return;
+						if(updateManager.hasNewMainJar()) return;
+						if(!updateManager.node.isOudated()) {
+							Logger.error(this, "The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN! (2)");
+							System.out.println("The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN! (2)");
+						}
+						maybeRequestMainJar();
+					}
+					
+				}, whenToTakeOverTheNormalUpdater - now);
 			}
 		}
 		
 		return true;
 	}
 
-	protected void sendUOMRequestMain(final PeerNode source, boolean addOnFail) {
+	private void sendUOMRequestMain(final PeerNode source, boolean addOnFail) {
+		if(logMINOR)
+			Logger.minor(this, "sendUOMRequestMain("+source+","+addOnFail+")");
 		synchronized(this) {
+			long offeredVersion = source.getMainJarOfferedVersion();
+			if(offeredVersion < updateManager.newMainJarVersion()) {
+				if(offeredVersion <= 0)
+					Logger.error(this, "Not sending UOM request to "+source+" because it hasn't offered anything!");
+				else {
+					if(logMINOR) Logger.minor(this, "Not sending UOM request to "+source+" because we already have its offered version "+offeredVersion);
+				}
+				return;
+			}
+			if(updateManager.getMainVersion() >= offeredVersion) {
+				if(logMINOR) Logger.minor(this, "Not fetching from "+source+" because current jar version "+updateManager.getMainVersion()+" is more recent than "+source.getMainJarOfferedVersion());
+				return;
+			}
 			if(nodesAskedSendMainJar.contains(source)) {
 				if(logMINOR) Logger.minor(this, "Recently asked node "+source+" so not re-asking yet.");
 				return;
@@ -320,7 +377,7 @@ public class UpdateOverMandatoryManager {
 		updateManager.node.clientCore.alerts.register(alert);
 	}
 
-	class PeersSayKeyBlownAlert extends AbstractUserAlert {
+	private class PeersSayKeyBlownAlert extends AbstractUserAlert {
 
 		public PeersSayKeyBlownAlert() {
 			super(false, null, null, null, null, UserAlert.CRITICAL_ERROR, true, null, false, null);

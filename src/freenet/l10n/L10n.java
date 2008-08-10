@@ -59,7 +59,7 @@ public class L10n {
 
 	L10n(String selected) {
 		selectedLanguage = mapLanguageNameToShortCode(selected);
-		File tmpFile = new File(L10n.PREFIX + selected + L10n.OVERRIDE_SUFFIX);
+		File tmpFile = new File(L10n.PREFIX + selectedLanguage + L10n.OVERRIDE_SUFFIX);
 		
 		try {
 			if(tmpFile.exists() && tmpFile.canRead() && tmpFile.length() > 0) {
@@ -116,7 +116,7 @@ public class L10n {
 			
 			// If there is no need to keep it in the override, remove it...
 			// unless the original/default is the same as the translation
-			if(("".equals(value) || L10n.getString(key).equals(value)) && !L10n.getDefaultString(key).equals(value)) {
+			if (("".equals(value)) || (value.equals(currentTranslation.get(key)))) {
 				translationOverride.removeValue(key);
 			} else {
 				value = value.replaceAll("(\r|\n|\t)+", "");

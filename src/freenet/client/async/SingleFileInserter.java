@@ -21,6 +21,7 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
+import freenet.support.io.BucketChainBucketFactory;
 import freenet.support.io.BucketTools;
 
 /**
@@ -170,7 +171,7 @@ class SingleFileInserter implements ClientPutState {
 						ctx.eventProducer.produceEvent(new StartedCompressionEvent(i));
 					Compressor comp = Compressor.getCompressionAlgorithmByDifficulty(i);
 					Bucket result;
-					result = comp.compress(origData, ctx.persistentBucketFactory, origData.size());
+					result = comp.compress(origData, new BucketChainBucketFactory(ctx.persistentBucketFactory, CHKBlock.DATA_LENGTH), origData.size());
 					if(result.size() < oneBlockCompressedSize) {
 						bestCodec = comp;
 						if(bestCompressedData != null)

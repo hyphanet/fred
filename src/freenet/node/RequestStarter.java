@@ -254,6 +254,9 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 		public void run() {
 			try {
 		    freenet.support.Logger.OSThread.logPID(this);
+		    // FIXME ? key is not known for inserts here
+		    if (key != null)
+		    	stats.reportOutgoingLocalRequestLocation(key.toNormalizedDouble());
 			if(!req.send(core, sched, keyNum)) {
 				if(!req.isCancelled())
 					Logger.error(this, "run() not able to send a request on "+req);

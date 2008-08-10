@@ -389,6 +389,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	private final NodeCryptoConfig opennetCryptoConfig;
 	private OpennetManager opennet;
+	private volatile boolean isAllowedToConnectToSeednodes;
 	private int maxOpennetPeers;
 	private boolean acceptSeedConnections;
 	private boolean passOpennetRefsThroughDarknet;
@@ -612,10 +613,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * @param random The random number generator for this node. Passed in because we may want
 	 * to use a non-secure RNG for e.g. one-JVM live-code simulations. Should be a Yarrow in
 	 * a production node. Yarrow will be used if that parameter is null
+	 * @param weakRandom The fast random number generator the node will use. If null a MT
+	 * instance will be used, seeded from the secure PRNG.
 	 * @param the loggingHandler
 	 * @throws NodeInitException If the node initialization fails.
 	 */
-	 Node(PersistentConfig config, RandomSource r, LoggingConfigHandler lc, NodeStarter ns, Executor executor) throws NodeInitException {
+	 Node(PersistentConfig config, RandomSource r, RandomSource weakRandom, LoggingConfigHandler lc, NodeStarter ns, Executor executor) throws NodeInitException {
 		// Easy stuff
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		String tmp = "Initializing Node using Freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vendor")+" JVM version "+System.getProperty("java.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
@@ -680,8 +683,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						}
 					});
 
-					for(File currentDir : subDirs)
-						recurse(currentDir);
+
+					// @see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=5086412
+					if(subDirs != null) 
+						for(File currentDir : subDirs)
+							recurse(currentDir);
 				}
 
 				public void run() {
@@ -696,13 +702,17 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			entropyGatheringThread.start();
 			this.random = new Yarrow();
 			DiffieHellman.init(random);
+			
 		} else // if it's not null it's because we are running in the simulator
 			this.random = r;
 		isPRNGReady = true;
 		toadlets.getStartupToadlet().setIsPRNGReady();
-		byte buffer[] = new byte[16];
-		random.nextBytes(buffer);
-		this.fastWeakRandom = new MersenneTwister(buffer);
+		if(weakRandom == null) {
+			byte buffer[] = new byte[16];
+			random.nextBytes(buffer);
+			this.fastWeakRandom = new MersenneTwister(buffer);
+		}else
+			this.fastWeakRandom = weakRandom;
 
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		recentlyCompletedIDs = new LRUQueue();
@@ -1131,6 +1141,21 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// Opennet
 		
 		final SubConfig opennetConfig = new SubConfig("node.opennet", config);
+		opennetConfig.register("connectToSeednodes", true, 0, true, false, "Node.withAnnouncement", "Node.withAnnouncementLong", new BooleanCallback() {
+			public boolean get() {
+				return isAllowedToConnectToSeednodes;
+			}
+			public void set(boolean val) throws InvalidConfigValueException {
+				if(val == get()) return;
+				synchronized(Node.this) {
+					if(opennet != null)
+						throw new InvalidConfigValueException("Can't change that setting on the fly when opennet is already active!");
+					else
+						isAllowedToConnectToSeednodes = val;
+				}
+			}
+		});
+		isAllowedToConnectToSeednodes = opennetConfig.getBoolean("connectToSeednodes");
 		
 		// Can be enabled on the fly
 		opennetConfig.register("enabled", false, 0, false, true, "Node.opennetEnabled", "Node.opennetEnabledLong", new BooleanCallback() {
@@ -1145,7 +1170,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 					if(val == (opennet != null)) return;
 					if(val) {
 						try {
-							o = opennet = new OpennetManager(Node.this, opennetCryptoConfig, System.currentTimeMillis());
+							o = opennet = new OpennetManager(Node.this, opennetCryptoConfig, System.currentTimeMillis(), isAllowedToConnectToSeednodes);
 						} catch (NodeInitException e) {
 							opennet = null;
 							throw new InvalidConfigValueException(e.getMessage());
@@ -1159,8 +1184,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				else o.stop(true);
 				ipDetector.ipDetectorManager.notifyPortChange(getPublicInterfacePorts());
 			}
-		});
-		
+		});		
 		boolean opennetEnabled = opennetConfig.getBoolean("enabled");
 		
 		opennetConfig.register("maxOpennetPeers", "20", 1, true, false, "Node.maxOpennetPeers",
@@ -1185,7 +1209,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		opennetCryptoConfig = new NodeCryptoConfig(opennetConfig, 2 /* 0 = enabled */, true);
 		
 		if(opennetEnabled) {
-			opennet = new OpennetManager(this, opennetCryptoConfig, System.currentTimeMillis());
+			opennet = new OpennetManager(this, opennetCryptoConfig, System.currentTimeMillis(), isAllowedToConnectToSeednodes);
 			// Will be started later
 		} else {
 			opennet = null;
@@ -2899,6 +2923,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		return false;
 	}
 	
+	public synchronized boolean isOudated() {
+		return (buildOldAgeUserAlert.lastGoodVersion > 0);
+	}
+	
 	/**
 	 * Handle a received node to node message
 	 */
@@ -3177,6 +3205,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	/** 
 	 * Connect this node to another node (for purposes of testing) 
 	 */
+	public void connectToSeednode(SeedServerTestPeerNode node) throws OpennetDisabledException, FSParseException, PeerParseException, ReferenceSignatureVerificationException {
+		peers.addPeer(node,false,false);
+	}
 	public void connect(Node node) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		peers.connect(node.darknetCrypto.exportPublicFieldSet(), darknetCrypto.packetMangler);
 	}
@@ -3232,6 +3263,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public OpennetPeerNode createNewOpennetNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException {
 		if(opennet == null) throw new OpennetDisabledException("Opennet is not currently enabled");
 		return new OpennetPeerNode(fs, this, opennet.crypto, opennet, peers, false, opennet.crypto.packetMangler);
+	}
+	
+	public SeedServerTestPeerNode createNewSeedServerTestPeerNode(SimpleFieldSet fs) throws FSParseException, OpennetDisabledException, PeerParseException, ReferenceSignatureVerificationException {		
+		if(opennet == null) throw new OpennetDisabledException("Opennet is not currently enabled");
+		return new SeedServerTestPeerNode(fs, this, opennet.crypto, peers, true, opennet.crypto.packetMangler);
 	}
 	
 	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
