@@ -42,6 +42,10 @@ public abstract class StoreCallback {
 		this.store = store;
 	}
 	
+	public FreenetStore getStore() {
+		return store;
+	}
+	
 	// Reconstruction
 	
 	/** Construct a StorableBlock from the data, headers, and optionally routing key or full key.

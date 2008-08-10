@@ -30,9 +30,9 @@ import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.keys.KeyVerifyException;
 import freenet.l10n.L10n;
-import freenet.node.Node;
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.node.useralerts.UserAlert;
+import freenet.node.useralerts.UserAlertManager;
 import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
 import freenet.store.StorableBlock;
@@ -75,23 +75,21 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private final int fullKeyLength;
 	private final int dataBlockLength;
 	private final Random random;
-	private final Node node;
+	private UserAlertManager userAlertManager;
 	
 	private long storeSize;
 	private int generation;
 	private int flags;
 
 	public static SaltedHashFreenetStore construct(File baseDir, String name, StoreCallback callback, Random random,
-	        Node node, long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook)
+	        long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook)
 	        throws IOException {
-		return new SaltedHashFreenetStore(baseDir, name, callback, random, node, maxKeys, bloomFilterSize,
-		        bloomCounting,
+		return new SaltedHashFreenetStore(baseDir, name, callback, random, maxKeys, bloomFilterSize, bloomCounting,
 		        shutdownHook);
 	}
 
-	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback callback, Random random, Node node,
-	        long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook)
-	        throws IOException {
+	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback callback, Random random, long maxKeys,
+	        int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook) throws IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 
@@ -106,7 +104,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		dataBlockLength = callback.dataLength();
 
 		this.random = random;
-		this.node = node;
 		storeSize = maxKeys;
 		this.bloomFilterSize = bloomFilterSize;
 
@@ -141,6 +138,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		shutdownHook.addEarlyJob(new Thread(new ShutdownDB()));
 
 		cleanerThread = new Cleaner();
+		cleanerStatusUserAlert = new CleanerStatusUserAlert(cleanerThread);
 
 		// finish all resizing before continue
 		if (prevStoreSize != 0 && cleanerGlobalLock.tryLock()) {
@@ -857,7 +855,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private Condition cleanerCondition = cleanerLock.newCondition();
 	private static Lock cleanerGlobalLock = new ReentrantLock(); // global across all datastore
 	private Cleaner cleanerThread;
-
+	private CleanerStatusUserAlert cleanerStatusUserAlert;
+	
 	private final Entry NOT_MODIFIED = new Entry();
 
 	private interface BatchProcessor {
@@ -898,89 +897,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			super.run();
 			
 			try {
-				while (node != null && node.clientCore == null && !shutdown) {
-					Thread.sleep(1000);
-				}	
 				Thread.sleep((int)(CLEANER_PERIOD / 2 + CLEANER_PERIOD * Math.random()));
 			} catch (InterruptedException e){}
 			
 			if (shutdown)
 				return;
-
-			if (node != null)
-			node.clientCore.alerts.register(new UserAlert() {
-				public String anchor() {
-					return "store-cleaner-" + name;
-				}
-
-				public String dismissButtonText() {
-					return L10n.getString("UserAlert.hide");
-				}
-
-				public HTMLNode getHTMLText() {
-					return new HTMLNode("#", getText());
-				}
-
-				public short getPriorityClass() {
-					return UserAlert.MINOR;
-				}
-
-				public String getShortText() {
-					if (isResizing)
-						return L10n.getString("SaltedHashFreenetStore.shortResizeProgress", //
-					        new String[] { "name", "processed", "total" },// 
-						        new String[] { name, (entriesTotal - entriesLeft) + "", entriesTotal + "" });
-					else
-						return L10n.getString("SaltedHashFreenetStore.shortRebuildProgress", //
-						        new String[] { "name", "processed", "total" },// 
-						        new String[] { name, (entriesTotal - entriesLeft) + "", entriesTotal + "" });
-				}
-
-				public String getText() {
-					if (isResizing)
-						return L10n.getString("SaltedHashFreenetStore.longResizeProgress", //
-						        new String[] { "name", "processed", "total" },// 
-						        new String[] { name, (entriesTotal - entriesLeft) + "", entriesTotal + "" });
-					else
-						return L10n.getString("SaltedHashFreenetStore.longRebuildProgress", //
-						        new String[] { "name", "processed", "total" },// 
-						        new String[] { name, (entriesTotal - entriesLeft) + "", entriesTotal + "" });
-				}
-
-				public String getTitle() {
-					return L10n.getString("SaltedHashFreenetStore.cleanerAlertTitle", //
-					        new String[] { "name" }, //
-					        new String[] { name });
-				}
-
-				public Object getUserIdentifier() {
-					return null;
-				}
-
-				public boolean isValid() {
-					return isRebuilding || isResizing;
-				}
-				
-				public void isValid(boolean validity) {
-					// Ignore
-				}
-
-				public void onDismiss() {
-					// Ignore
-				}
-
-				public boolean shouldUnregisterOnDismiss() {
-					return true;
-				}
-
-				public boolean userCanDismiss() {
-					return false;
-				}
-
-				public boolean isEventNotification() {
-					return false;
-				}
-			});
 			
 			int loop = 0;
 			while (!shutdown) {
@@ -1418,6 +1339,95 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				unlockDigestedKey(entry.getDigestedRoutingKey(), false, lockMap);
 			}
 		}
+	}
+
+	private final class CleanerStatusUserAlert implements UserAlert {
+		private Cleaner cleaner;
+
+		private CleanerStatusUserAlert(Cleaner cleaner) {
+			this.cleaner = cleaner;
+		}
+
+		public String anchor() {
+			return "store-cleaner-" + name;
+		}
+
+		public String dismissButtonText() {
+			return L10n.getString("UserAlert.hide");
+		}
+
+		public HTMLNode getHTMLText() {
+			return new HTMLNode("#", getText());
+		}
+
+		public short getPriorityClass() {
+			return UserAlert.MINOR;
+		}
+
+		public String getShortText() {
+			if (cleaner.isResizing)
+				return L10n.getString("SaltedHashFreenetStore.shortResizeProgress", //
+				        new String[] { "name", "processed", "total" },// 
+				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
+				                cleaner.entriesTotal + "" });
+			else
+				return L10n.getString("SaltedHashFreenetStore.shortRebuildProgress", //
+				        new String[] { "name", "processed", "total" },// 
+				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
+				                cleaner.entriesTotal + "" });
+		}
+
+		public String getText() {
+			if (cleaner.isResizing)
+				return L10n.getString("SaltedHashFreenetStore.longResizeProgress", //
+				        new String[] { "name", "processed", "total" },// 
+				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
+				                cleaner.entriesTotal + "" });
+			else
+				return L10n.getString("SaltedHashFreenetStore.longRebuildProgress", //
+				        new String[] { "name", "processed", "total" },// 
+				        new String[] { name, (cleaner.entriesTotal - cleaner.entriesLeft) + "",
+				                cleaner.entriesTotal + "" });
+		}
+
+		public String getTitle() {
+			return L10n.getString("SaltedHashFreenetStore.cleanerAlertTitle", //
+			        new String[] { "name" }, //
+			        new String[] { name });
+		}
+
+		public Object getUserIdentifier() {
+			return null;
+		}
+
+		public boolean isValid() {
+			return cleaner.isRebuilding || cleaner.isResizing;
+		}
+
+		public void isValid(boolean validity) {
+			// Ignore
+		}
+
+		public void onDismiss() {
+			// Ignore
+		}
+
+		public boolean shouldUnregisterOnDismiss() {
+			return true;
+		}
+
+		public boolean userCanDismiss() {
+			return false;
+		}
+
+		public boolean isEventNotification() {
+			return false;
+		}
+	}
+	
+	public void setUserAlertManager(UserAlertManager userAlertManager) {
+		if (cleanerStatusUserAlert != null)
+			userAlertManager.register(cleanerStatusUserAlert);
 	}
 
 	public void setMaxKeys(long newStoreSize, boolean shrinkNow) throws IOException {

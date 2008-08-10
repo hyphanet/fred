@@ -3,6 +3,7 @@ package freenet.node;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -119,7 +120,6 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.HostnameSyntaxException;
-import java.io.FileFilter;
 
 /**
  * @author amphibian
@@ -1434,32 +1434,32 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				System.out.println("Initializing CHK Datastore (" + maxStoreKeys + " keys)");
 				chkDatastore = new CHKStore();
 				SaltedHashFreenetStore chkDataFS = SaltedHashFreenetStore.construct(storeDir, "CHK-store",
-				        chkDatastore, random, this, maxStoreKeys, 0x4800000, true, shutdownHook);
+				        chkDatastore, random, maxStoreKeys, 0x4800000, true, shutdownHook);
 				Logger.normal(this, "Initializing CHK Datacache");
 				System.out.println("Initializing CHK Datacache (" + maxCacheKeys + ':' + maxCacheKeys + " keys)");
 				chkDatacache = new CHKStore();
 				SaltedHashFreenetStore chkCacheFS = SaltedHashFreenetStore.construct(storeDir, "CHK-cache",
-				        chkDatacache, random, this, maxCacheKeys, 0x4800000, true, shutdownHook);
+				        chkDatacache, random, maxCacheKeys, 0x4800000, true, shutdownHook);
 				Logger.normal(this, "Initializing pubKey Datastore");
 				System.out.println("Initializing pubKey Datastore");
 				pubKeyDatastore = new PubkeyStore();
 				SaltedHashFreenetStore pubkeyDataFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-store",
-				        pubKeyDatastore, random, this, maxStoreKeys, 0x4800000, true, shutdownHook);
+				        pubKeyDatastore, random, maxStoreKeys, 0x4800000, true, shutdownHook);
 				Logger.normal(this, "Initializing pubKey Datacache");
 				System.out.println("Initializing pubKey Datacache (" + maxCacheKeys + " keys)");
 				pubKeyDatacache = new PubkeyStore();
 				SaltedHashFreenetStore pubkeyCacheFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-cache",
-				        pubKeyDatacache, random, this, maxCacheKeys, 0x4800000, true, shutdownHook);
+				        pubKeyDatacache, random, maxCacheKeys, 0x4800000, true, shutdownHook);
 				Logger.normal(this, "Initializing SSK Datastore");
 				System.out.println("Initializing SSK Datastore");
 				sskDatastore = new SSKStore(this);
 				SaltedHashFreenetStore sskDataFS = SaltedHashFreenetStore.construct(storeDir, "SSK-store",
-				        sskDatastore, random, this, maxStoreKeys, 0x4800000, true, shutdownHook);
+				        sskDatastore, random, maxStoreKeys, 0x4800000, true, shutdownHook);
 				Logger.normal(this, "Initializing SSK Datacache");
 				System.out.println("Initializing SSK Datacache (" + maxCacheKeys + " keys)");
 				sskDatacache = new SSKStore(this);
 				SaltedHashFreenetStore sskCacheFS = SaltedHashFreenetStore.construct(storeDir, "SSK-cache",
-				        sskDatacache, random, this, maxCacheKeys, 0x4800000, true, shutdownHook);
+				        sskDatacache, random, maxCacheKeys, 0x4800000, true, shutdownHook);
 				
 				File migrationFile = new File(storeDir, "migrated");
 				if (!migrationFile.exists()) {
@@ -1695,7 +1695,16 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets);
 
 		netid = new NetworkIDManager(this);
-		 
+		
+		if (storeType.equals("salt-hash")) {
+			((SaltedHashFreenetStore) chkDatastore.getStore()).setUserAlertManager(clientCore.alerts);
+			((SaltedHashFreenetStore) chkDatacache.getStore()).setUserAlertManager(clientCore.alerts);
+			((SaltedHashFreenetStore) pubKeyDatastore.getStore()).setUserAlertManager(clientCore.alerts);
+			((SaltedHashFreenetStore) pubKeyDatacache.getStore()).setUserAlertManager(clientCore.alerts);
+			((SaltedHashFreenetStore) sskDatastore.getStore()).setUserAlertManager(clientCore.alerts);
+			((SaltedHashFreenetStore) sskDatacache.getStore()).setUserAlertManager(clientCore.alerts);
+		}
+		
 		nodeConfig.register("disableHangCheckers", false, sortOrder++, true, false, "Node.disableHangCheckers", "Node.disableHangCheckersLong", new BooleanCallback() {
 
 			public boolean get() {
