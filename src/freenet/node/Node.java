@@ -178,7 +178,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 
 		public void set(String val) throws InvalidConfigValueException {
-			throw new InvalidConfigValueException("Store type cannot be changed on the fly");
+			// need restart to effect
+			config.get("node").set("storeType", val);
 		}
 
 		public String[] getPossibleValues() {
