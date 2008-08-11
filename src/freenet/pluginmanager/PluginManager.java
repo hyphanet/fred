@@ -271,6 +271,9 @@ public class PluginManager {
 		if(pi.isPortForwardPlugin()) {
 			node.ipDetector.registerPortForwardPlugin((FredPluginPortForward) plug);
 		}
+		if(pi.isBandwidthIndicator()) {
+			node.ipDetector.registerBandwidthIndicatorPlugin((FredPluginBandwidthIndicator) plug);
+		}
 	}
 
 	/**

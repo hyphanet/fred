@@ -18,6 +18,7 @@ import freenet.node.useralerts.InvalidAddressOverrideUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.DetectedIP;
+import freenet.pluginmanager.FredPluginBandwidthIndicator;
 import freenet.pluginmanager.FredPluginIPDetector;
 import freenet.pluginmanager.FredPluginPortForward;
 import freenet.support.HTMLNode;
@@ -525,6 +526,18 @@ public class NodeIPDetector {
 	public void unregisterPortForwardPlugin(FredPluginPortForward forward) {
 		ipDetectorManager.unregisterPortForwardPlugin(forward);
 	}
+	
+	//TODO: ugly: deal with multiple instances properly
+	public synchronized void registerBandwidthIndicatorPlugin(FredPluginBandwidthIndicator indicator) {
+		bandwidthIndicator = indicator;
+	}
+	public synchronized void unregisterBandwidthIndicatorPlugin(FredPluginBandwidthIndicator indicator) {
+		bandwidthIndicator = null;
+	}
+	public synchronized FredPluginBandwidthIndicator getBandwidthIndicator() {
+		return bandwidthIndicator;
+	}
+	private FredPluginBandwidthIndicator bandwidthIndicator;
 	
 	boolean hasValidAddressOverride() {
 		synchronized(this) {

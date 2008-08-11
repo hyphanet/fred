@@ -11,31 +11,32 @@ public class PluginInfoWrapper {
 	// Parameters to make the object OTP
 	private boolean fedPluginThread = false;
 	// Public since only PluginHandler will know about it
-	private String className;
+	private final String className;
 	private Thread thread;
-	private long start;
-	private String threadName;
+	private final long start;
+	private final String threadName;
 	final FredPlugin plug;
-	private boolean isPproxyPlugin;
-	private boolean isThreadlessPlugin;
-	private boolean isIPDetectorPlugin;
-	private boolean isPortForwardPlugin;
-	private boolean isMultiplePlugin;
-	private boolean isFCPPlugin;
-	private boolean isVersionedPlugin;
-	private String filename;
-	private HashSet toadletLinks=new HashSet();
-	private boolean stopping = false;
-	private boolean unregistered = false;
+	private final boolean isPproxyPlugin;
+	private final boolean isThreadlessPlugin;
+	private final boolean isIPDetectorPlugin;
+	private final boolean isBandwidthIndicator;
+	private final boolean isPortForwardPlugin;
+	private final boolean isMultiplePlugin;
+	private final boolean isFCPPlugin;
+	private final boolean isVersionedPlugin;
+	private final String filename;
+	private HashSet toadletLinks = new HashSet();
+	private volatile boolean stopping = false;
+	private volatile boolean unregistered = false;
 	
 	public PluginInfoWrapper(FredPlugin plug, String filename) {
 		this.plug = plug;
-		if (fedPluginThread) return;
 		className = plug.getClass().toString();
 		this.filename = filename;
 		threadName = 'p' + className.replaceAll("^class ", "") + '_' + hashCode();
 		start = System.currentTimeMillis();
 		fedPluginThread = true;
+		isBandwidthIndicator = (plug instanceof FredPluginBandwidthIndicator);
 		isPproxyPlugin = (plug instanceof FredPluginHTTP);
 		isThreadlessPlugin = (plug instanceof FredPluginThreadless);
 		isIPDetectorPlugin = (plug instanceof FredPluginIPDetector);
@@ -52,6 +53,7 @@ public class PluginInfoWrapper {
 		thread.setName(threadName);
 	}
 	
+	@Override
 	public String toString() {
 		return "ID: \"" +threadName + "\", Name: "+ className +", Started: " + (new Date(start)).toString();
 	}
@@ -143,6 +145,8 @@ public class PluginInfoWrapper {
 			manager.node.ipDetector.unregisterIPDetectorPlugin((FredPluginIPDetector)plug);
 		if(isPortForwardPlugin)
 			manager.node.ipDetector.unregisterPortForwardPlugin((FredPluginPortForward)plug);
+		if(isBandwidthIndicator)
+			manager.node.ipDetector.unregisterBandwidthIndicatorPlugin((FredPluginBandwidthIndicator)plug);
 	}
 
 	public boolean isPproxyPlugin() {
@@ -151,6 +155,10 @@ public class PluginInfoWrapper {
 
 	public String getFilename() {
 		return filename;
+	}
+	
+	public boolean isBandwidthIndicator() {
+		return isBandwidthIndicator;
 	}
 
 	public boolean isThreadlessPlugin() {

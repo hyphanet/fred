@@ -15,6 +15,7 @@ import freenet.config.WrapperConfig;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.pluginmanager.FredPluginBandwidthIndicator;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -101,7 +102,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			nnameForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
-		} else if(currentStep == WIZARD_STEP.BANDWIDTH) {
+		} else if(currentStep == WIZARD_STEP.BANDWIDTH) {				
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step3Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
@@ -114,6 +115,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "bwForm");
 			HTMLNode result = bandwidthForm.addChild("select", "name", "bw");
 			
+			// don't forget to update handlePost too if you change that!
 			result.addChild("option", "value", "8K", l10n("bwlimitLowerSpeed"));
 			// Special case for 128kbps to increase performance at the cost of some link degradation. Above that we use 50% of the limit.
 			result.addChild("option", "value", "12K", "512+/128 kbps");
@@ -307,17 +309,28 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			} catch (InvalidConfigValueException e) {
 				Logger.error(this, "Should not happen, please report!" + e, e);
 			}
-			super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step="+WIZARD_STEP.BANDWIDTH);
+			
+			// Attempt to skip one step if possible
+			FredPluginBandwidthIndicator bwIndicator = core.node.ipDetector.getBandwidthIndicator();
+			int upstreamBWLimit = (bwIndicator != null ? bwIndicator.getUpstramMaxBitRate() : -1);
+			if((bwIndicator != null) && (upstreamBWLimit > 0)) {
+				Logger.normal(this, "The node has a bandwidthIndicator: it has reported "+upstreamBWLimit+ "... we will use that value and skip the bandwidth selection step of the wizard.");
+				if(upstreamBWLimit < 128000)
+					_setUpstreamBandwidthLimit("8K");
+				else if(upstreamBWLimit < 256000)
+					_setUpstreamBandwidthLimit("12K");
+				else if(upstreamBWLimit < 512000)
+					_setUpstreamBandwidthLimit("32K");
+				else if(upstreamBWLimit < 1024000)
+					_setUpstreamBandwidthLimit("64K");
+				else
+					_setUpstreamBandwidthLimit("1000K");
+				super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step="+WIZARD_STEP.DATASTORE_SIZE);
+			} else
+				super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step="+WIZARD_STEP.BANDWIDTH);
 			return;
 		} else if(request.isPartSet("bwF")) {
-			String selectedUploadSpeed =request.getPartAsString("bw", 6);
-			
-			try {
-				config.get("node").set("outputBandwidthLimit", selectedUploadSpeed);
-				Logger.normal(this, "The outputBandwidthLimit has been set to "+ selectedUploadSpeed);
-			} catch (InvalidConfigValueException e) {
-				Logger.error(this, "Should not happen, please report!" + e, e);
-			}
+			_setUpstreamBandwidthLimit(request.getPartAsString("bw", 6));
 			super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step="+WIZARD_STEP.DATASTORE_SIZE);
 			return;
 		} else if(request.isPartSet("dsF")) {
@@ -352,5 +365,14 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 	public String supportedMethods() {
 		return "GET, POST";
+	}
+	
+	private void _setUpstreamBandwidthLimit(String selectedUploadSpeed) {
+		try {
+			config.get("node").set("outputBandwidthLimit", selectedUploadSpeed);
+			Logger.normal(this, "The outputBandwidthLimit has been set to " + selectedUploadSpeed);
+		} catch(InvalidConfigValueException e) {
+			Logger.error(this, "Should not happen, please report!" + e, e);
+		}
 	}
 }
