@@ -6,16 +6,12 @@ package freenet.pluginmanager;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,7 +41,6 @@ import freenet.support.JarClassLoader;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.StringArrCallback;
-import freenet.support.api.StringCallback;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
@@ -60,16 +55,13 @@ public class PluginManager {
 	 * TODO: Synchronize
 	 *
 	 */
-
-	private String configFile;
-	private String installDir;
 	
 	private final HashMap toadletList;
 
 	/* All currently starting plugins. */
-	private final Set/* <PluginProgress> */startingPlugins = new HashSet/* <PluginProgress> */();
+	private final Set<PluginProgress> startingPlugins = new HashSet<PluginProgress>();
 
-	private final Vector/* <PluginInfoWrapper> */pluginWrappers;
+	private final Vector<PluginInfoWrapper> pluginWrappers;
 	final Node node;
 	private final NodeClientCore core;
 	SubConfig pmconfig;
@@ -412,7 +404,7 @@ public class PluginManager {
 		StringBuffer out= new StringBuffer();
 		synchronized (pluginWrappers) {
 			for(int i=0;i<pluginWrappers.size();i++) {
-				PluginInfoWrapper pi = (PluginInfoWrapper) pluginWrappers.get(i);
+				PluginInfoWrapper pi = pluginWrappers.get(i);
 				out.append(pi.toString());
 				out.append('\n');
 			}
@@ -424,7 +416,7 @@ public class PluginManager {
 		HashSet out = new HashSet();
 		synchronized (pluginWrappers) {
 			for(int i=0;i<pluginWrappers.size();i++) {
-				PluginInfoWrapper pi = (PluginInfoWrapper) pluginWrappers.get(i);
+				PluginInfoWrapper pi = pluginWrappers.get(i);
 				out.add(pi);
 			}
 		}
@@ -439,7 +431,7 @@ public class PluginManager {
 	public PluginInfoWrapper getFCPPluginInfo(String plugname) {
 		synchronized (pluginWrappers) {
 			for(int i=0;i<pluginWrappers.size();i++) {
-				PluginInfoWrapper pi = (PluginInfoWrapper) pluginWrappers.get(i);
+				PluginInfoWrapper pi = pluginWrappers.get(i);
 				if (pi.getPluginClassName().equals(plugname))
 					return pi;
 			}
@@ -455,7 +447,7 @@ public class PluginManager {
 	public FredPluginFCP getFCPPlugin(String plugname) {
 		synchronized (pluginWrappers) {
 			for(int i=0;i<pluginWrappers.size();i++) {
-				PluginInfoWrapper pi = (PluginInfoWrapper) pluginWrappers.get(i);
+				PluginInfoWrapper pi = pluginWrappers.get(i);
 				if (pi.isFCPPlugin() && pi.getPluginClassName().equals(plugname))
 					return (FredPluginFCP) pi.plug;
 			}
@@ -471,7 +463,7 @@ public class PluginManager {
 	public boolean isPluginLoaded(String plugname) {
 		synchronized (pluginWrappers) {
 			for(int i=0;i<pluginWrappers.size();i++) {
-				PluginInfoWrapper pi = (PluginInfoWrapper) pluginWrappers.get(i);
+				PluginInfoWrapper pi = pluginWrappers.get(i);
 				if (pi.getPluginClassName().equals(plugname))
 					return true;
 			}
@@ -514,7 +506,7 @@ public class PluginManager {
 		boolean found = false;
 		synchronized (pluginWrappers) {
 			for(int i=0;i<pluginWrappers.size() && !found;i++) {
-				pi = (PluginInfoWrapper) pluginWrappers.get(i);
+				pi = pluginWrappers.get(i);
 				if (pi.getThreadName().equals(name)) {
 					found = true;
 					break;
@@ -531,7 +523,7 @@ public class PluginManager {
 		boolean found = false;
 		synchronized (pluginWrappers) {
 			for(int i=0;i<pluginWrappers.size() && !found;i++) {
-				pi = (PluginInfoWrapper) pluginWrappers.get(i);
+				pi = pluginWrappers.get(i);
 				if (pi.plug == plugin) {
 					found = true;
 				}
@@ -859,7 +851,7 @@ public class PluginManager {
 		 * 
 		 * @return The name of a constant, or the plugin progress
 		 */
-		/* @Override */
+		@Override
 		public String toString() {
 			if (this == DOWNLOADING) {
 				return "downloading";
