@@ -5,7 +5,6 @@ package freenet.config;
 
 import freenet.l10n.L10n;
 import freenet.support.Fields;
-import freenet.support.SizeUtil;
 import freenet.support.api.IntCallback;
 
 /** Integer config variable */
@@ -29,7 +28,7 @@ public class IntOption extends Option {
 	public IntOption(SubConfig conf, String optionName, String defaultValueString,
 			int sortOrder, boolean expert, boolean forceWrite, String shortDesc, String longDesc, IntCallback cb) {
 		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DATA_TYPE_NUMBER);
-		this.defaultValue = Fields.parseSIInt(defaultValueString);
+		this.defaultValue = Fields.parseInt(defaultValueString);
 		this.cb = cb;
 		this.currentValue = defaultValue;
 		this.cachedStringValue = defaultValueString;
@@ -51,8 +50,7 @@ public class IntOption extends Option {
 	public void setValue(String val) throws InvalidConfigValueException {
 		int x;
 		try{
-			// FIXME: don't strip, parse properly!
-			x = Fields.parseSIInt(SizeUtil.stripBytesEtc(val));
+			x = Fields.parseInt(val);
 		} catch (NumberFormatException e) {
 			throw new InvalidConfigValueException(l10n("parseError", "val", val));
 		}
@@ -64,7 +62,7 @@ public class IntOption extends Option {
 	public void setInitialValue(String val) throws InvalidConfigValueException {
 		int x;
 		try{
-			x = Fields.parseSIInt(val);
+			x = Fields.parseInt(val);
 		} catch (NumberFormatException e) {
 			throw new InvalidConfigValueException(l10n("parseError", "val", val));
 		}

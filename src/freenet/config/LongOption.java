@@ -29,7 +29,7 @@ public class LongOption extends Option {
 	public LongOption(SubConfig conf, String optionName, String defaultValueString, 
 			int sortOrder, boolean expert, boolean forceWrite, String shortDesc, String longDesc, LongCallback cb) {
 		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DATA_TYPE_NUMBER);
-		this.defaultValue = Fields.parseSILong(defaultValueString);
+		this.defaultValue = Fields.parseLong(defaultValueString);
 		this.cb = cb;
 		this.currentValue = defaultValue;
 		this.cachedStringValue = defaultValueString;
@@ -51,8 +51,7 @@ public class LongOption extends Option {
 	public void setValue(String val) throws InvalidConfigValueException {
 		long x;
 		try{
-			// FIXME: don't strip, parse properly!
-			x = Fields.parseSILong(SizeUtil.stripBytesEtc(val));
+			x = Fields.parseLong(val);
 		}catch (NumberFormatException e) {
 			throw new InvalidConfigValueException(l10n("parseError", "val", val));
 		}
@@ -72,7 +71,7 @@ public class LongOption extends Option {
 	public void setInitialValue(String val) throws InvalidConfigValueException {
 		long x;
 		try{
-			x = Fields.parseSILong(val);
+			x = Fields.parseLong(val);
 		}catch (NumberFormatException e) {
 			throw new InvalidConfigValueException(l10n("parseError", "val", val));
 		}

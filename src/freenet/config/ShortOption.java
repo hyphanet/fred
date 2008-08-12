@@ -29,7 +29,7 @@ public class ShortOption extends Option {
 	public void setValue(String val) throws InvalidConfigValueException {
 		short x;
 		try{
-			x= Fields.parseSIShort(val);
+			x= Fields.parseShort(val);
 		} catch (NumberFormatException e) {
 			throw new InvalidConfigValueException(l10n("unrecognisedShort", "val", val));
 		}
@@ -44,7 +44,7 @@ public class ShortOption extends Option {
 	public void setInitialValue(String val) throws InvalidConfigValueException {
 		short x;
 		try{
-			x = Fields.parseSIShort(val);
+			x = Fields.parseShort(val);
 		} catch (NumberFormatException e) {
 			throw new InvalidConfigValueException(l10n("unrecognisedShort", "val", val));
 		}

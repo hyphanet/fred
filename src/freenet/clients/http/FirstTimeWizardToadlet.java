@@ -168,14 +168,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			} else {
 				if(freeSpace / 10 > 1024*1024*1024) {
 					// If 10GB+ free, default to 10% of available disk space.
-					String size = SizeUtil.formatSize(freeSpace/10);
-					String shortSize = SizeUtil.stripBytesEtc(size);
-					result.addChild("option", new String[] { "value", "selected" }, new String[] { shortSize, "selected" }, size+" "+l10n("tenPercentDisk"));
+					String shortSize = SizeUtil.formatSize(freeSpace/10);
+					result.addChild("option", new String[] { "value", "selected" }, new String[] { shortSize, "selected" }, shortSize+" "+l10n("tenPercentDisk"));
 					if(freeSpace / 20 > 1024*1024*1024) {
 						// If 20GB+ free, also offer 5% of available disk space.
-						size = SizeUtil.formatSize(freeSpace/20);
-						shortSize = SizeUtil.stripBytesEtc(size);
-						result.addChild("option", "value", shortSize, size+" "+l10n("fivePercentDisk"));
+						shortSize = SizeUtil.formatSize(freeSpace/20);
+						result.addChild("option", "value", shortSize, shortSize+" "+l10n("fivePercentDisk"));
 					}
 					result.addChild("option", "value", "1G", "1GiB");
 				} else if(freeSpace < 1024*1024*1024) {
@@ -322,7 +320,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				int downstreamBWLimit = bwIndicator.getDownstreamMaxBitRate();
 				if(downstreamBWLimit > 0) {
 					bytes = (downstreamBWLimit / 8) - 1;
-					String downstreamBWLimitString = SizeUtil.stripBytesEtc(SizeUtil.formatSize(bytes * 2/3));
+					String downstreamBWLimitString = SizeUtil.formatSize(bytes * 2/3);
 					_setDownstreamBandwidthLimit(downstreamBWLimitString);
 					Logger.normal(this, "The node has a bandwidthIndicator: it has reported downstream="+downstreamBWLimit+ "bits/sec... we will use "+ downstreamBWLimitString +" and skip the bandwidth selection step of the wizard.");
 				}

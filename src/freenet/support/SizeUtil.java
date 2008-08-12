@@ -43,20 +43,4 @@ public class SizeUtil {
 			return o;
 		}
 	}
-
-	public static String stripBytesEtc(String size) {
-		if(size.length() > 0 && size.charAt(size.length()-1) == 'B')
-			size = size.substring(0, size.length()-1);
-		if(size.length() > 0 && size.charAt(size.length()-1) == 'i')
-			size = size.substring(0, size.length()-1);
-		if(size.indexOf(' ') != -1) {
-			StringBuffer sb = new StringBuffer(size.length()-1);
-			for(int i=0;i<size.length();i++) {
-				char c = size.charAt(i);
-				if(c != ' ') sb.append(c);
-			}
-			size = sb.toString();
-		}
-		return size;
-	}
 }
