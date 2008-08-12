@@ -152,7 +152,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 					Long lFreeSpace = (Long) m.invoke(dir, new Object[0]);
 					if(lFreeSpace != null) {
 						freeSpace = lFreeSpace.longValue();
-						System.err.println("Found free space on node's partition: "+freeSpace+" on "+dir+" = "+SizeUtil.formatSize(freeSpace));
+						System.err.println("Found free space on node's partition: on "+dir+" = "+SizeUtil.formatSize(freeSpace));
 					}
 				}
 			} catch (NoSuchMethodException e) {
