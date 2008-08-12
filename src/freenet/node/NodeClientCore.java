@@ -83,6 +83,7 @@ public class NodeClientCore implements Persistable {
 	private File[] uploadAllowedDirs;
 	private boolean uploadAllowedEverywhere;
 	final FilenameGenerator tempFilenameGenerator;
+	private boolean encryptTempBucketFactory;
 	public final BucketFactory tempBucketFactory;
 	public final Node node;
 	final NodeStats nodeStats;
@@ -195,7 +196,19 @@ public class NodeClientCore implements Persistable {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
 		}
 
-		tempBucketFactory = new PaddedEphemerallyEncryptedBucketFactory(new TempBucketFactory(tempFilenameGenerator), random, node.fastWeakRandom, 1024);
+		nodeConfig.register("encryptTempBuckets", true, sortOrder++, true, false, "NodeClientCore.encryptTempBuckets", "NodeClientCore.encryptTempBucketsLong", new BooleanCallback() {
+
+			public boolean get() {
+				return encryptTempBucketFactory;
+			}
+
+			public void set(boolean val) throws InvalidConfigValueException {
+				throw new UnsupportedOperationException("Can't be changed on the fly!");
+			}
+		});
+		BucketFactory _tempBucketFactory = new TempBucketFactory(tempFilenameGenerator);
+		encryptTempBucketFactory = nodeConfig.getBoolean("encryptTempBuckets");
+		tempBucketFactory = (encryptTempBucketFactory ? new PaddedEphemerallyEncryptedBucketFactory(_tempBucketFactory, random, node.fastWeakRandom, 1024) : _tempBucketFactory);
 
 		// Downloads directory
 
