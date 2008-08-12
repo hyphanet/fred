@@ -84,6 +84,7 @@ public class NodeClientCore implements Persistable {
 	private boolean uploadAllowedEverywhere;
 	final FilenameGenerator tempFilenameGenerator;
 	private boolean encryptTempBucketFactory;
+	/** Might not be encrypted depending on @see encryptTempBucketFactory */
 	public final BucketFactory tempBucketFactory;
 	public final Node node;
 	final NodeStats nodeStats;
