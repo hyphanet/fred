@@ -21,7 +21,7 @@ public class DiffieHellman {
 	 * When the number of precalculations falls below this threshold generation
 	 * starts up to make more.
 	 */
-	private static final int PRECALC_RESUME = FNPPacketMangler.DH_CONTEXT_BUFFER_SIZE / 2;
+	private static final int PRECALC_RESUME = FNPPacketMangler.DH_CONTEXT_BUFFER_SIZE;
 
 	/** Maximum number of precalculations to create. */
 	private static final int PRECALC_MAX = FNPPacketMangler.DH_CONTEXT_BUFFER_SIZE * 2;
@@ -50,7 +50,7 @@ public class DiffieHellman {
 	private static class PrecalcBufferFill extends NativeThread {
 
 		public PrecalcBufferFill() {
-			super("Diffie-Hellman-Precalc", NativeThread.LOW_PRIORITY, false);
+			super("Diffie-Hellman-Precalc", NativeThread.MIN_PRIORITY, false);
 			setDaemon(true);
 		}
 
