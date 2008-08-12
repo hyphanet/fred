@@ -313,7 +313,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		if(logMINOR) Logger.minor(this, "removeFirst()");
 		boolean tryOfferedKeys = offeredKeys != null && (!notTransient) && random.nextBoolean();
 		int choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys, fuzz, random, offeredKeys, schedTransient, transientOnly, maxPrio, container);
-		if(choosenPriorityClass == -1 && offeredKeys != null && (!tryOfferedKeys)) {
+		if(choosenPriorityClass == -1 && offeredKeys != null && (!tryOfferedKeys) && (!notTransient)) {
 			tryOfferedKeys = true;
 			choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys, fuzz, random, offeredKeys, schedTransient, transientOnly, maxPrio, container);
 		}
@@ -684,7 +684,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		synchronized(keysFetching) {
 			boolean retval = keysFetching.add(key);
 			if(!retval) {
-				Logger.error(this, "Already in keysFetching: "+key);
+				Logger.normal(this, "Already in keysFetching: "+key);
 			} else {
 				if(logMINOR)
 					Logger.minor(this, "Added to keysFetching: "+key);
