@@ -10,7 +10,6 @@ import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.node.Announcer;
 import freenet.node.FSParseException;
 import freenet.node.Node;
-import freenet.node.NodeCrypto;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.node.OpennetDisabledException;
@@ -39,7 +38,6 @@ public class SeednodePingTest extends RealNodeTest {
         // Create one node
         Executor executor = new PooledExecutor();
 	Node node = NodeStarter.createTestNode(5000, 5001, "seednode-pingtest", true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, false, false, false, false, false, false, 0, false, false);
-	NodeCrypto.DISABLE_GROUP_STRIP = true;
 	// Connect & ping
 	Vector<SeedServerTestPeerNode> seedNodes = new Vector<SeedServerTestPeerNode>();
 	Vector<SimpleFieldSet> seedNodesAsSFS = Announcer.readSeednodes(new File("/tmp/"));

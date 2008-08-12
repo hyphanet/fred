@@ -32,7 +32,6 @@ import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.support.Base64;
 import freenet.support.Fields;
-import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -366,13 +365,9 @@ public class NodeCrypto {
 		}
 	}
 
-	public static boolean DISABLE_GROUP_STRIP = false;
-	
 	private byte[] myCompressedRef(boolean setup, boolean heavySetup, boolean forARK) {
 		SimpleFieldSet fs = exportPublicFieldSet(setup, heavySetup, forARK);
-		// TODO: we should change that to ((setup || heavySetup) && !forARK) when all the nodes have the new code
-		boolean shouldStripGroup = heavySetup && Global.DSAgroupBigA.equals(cryptoGroup);
-		if(DISABLE_GROUP_STRIP) shouldStripGroup = false;
+		boolean shouldStripGroup = ((setup || heavySetup) && !forARK) && Global.DSAgroupBigA.equals(cryptoGroup);
 		if(shouldStripGroup)
 			fs.removeSubset("dsaGroup");
 		

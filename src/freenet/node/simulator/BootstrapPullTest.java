@@ -17,7 +17,6 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
-import freenet.node.NodeCrypto;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.support.Logger;
@@ -71,7 +70,6 @@ public class BootstrapPullTest {
         FileInputStream fis = new FileInputStream(seednodes);
         FileUtil.writeTo(fis, new File(secondInnerDir, "seednodes.fref"));
         fis.close();
-        NodeCrypto.DISABLE_GROUP_STRIP = true;
         
         // Create the test data
         System.out.println("Creating test data.");

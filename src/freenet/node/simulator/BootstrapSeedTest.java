@@ -6,7 +6,6 @@ import java.io.IOException;
 
 import freenet.crypt.RandomSource;
 import freenet.node.Node;
-import freenet.node.NodeCrypto;
 import freenet.node.NodeInitException;
 import freenet.node.NodeStarter;
 import freenet.support.Executor;
@@ -44,7 +43,6 @@ public class BootstrapSeedTest {
         FileUtil.writeTo(fis, new File(innerDir, "seednodes.fref"));
         fis.close();
         // Create one node
-        NodeCrypto.DISABLE_GROUP_STRIP = true;
         Executor executor = new PooledExecutor();
         Node node = NodeStarter.createTestNode(5000, 5001, "bootstrap-test", true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true);
         //NodeCrypto.DISABLE_GROUP_STRIP = true;
