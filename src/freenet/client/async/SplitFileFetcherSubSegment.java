@@ -781,12 +781,13 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		ArrayList<PersistentChosenBlock> blocks = new ArrayList<PersistentChosenBlock>();
 		for(int i=0;i<blockNumbers.length;i++) {
 			ClientKey key = segment.getBlockKey(blockNumbers[i], container);
-			Key k = key.getNodeKey();
 			if(key == null) {
 				if(logMINOR)
 					Logger.minor(this, "Block "+blockNumbers[i]+" is null, maybe race condition");
 				continue;
 			}
+			Key k = key.getNodeKey();
+			container.activate(k, 5);
 			PersistentChosenBlock block = new PersistentChosenBlock(false, request, blockNumbers[i], k, key, sched);
 			blocks.add(block);
 		}
