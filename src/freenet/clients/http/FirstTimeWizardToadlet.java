@@ -314,12 +314,18 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			FredPluginBandwidthIndicator bwIndicator = core.node.ipDetector.getBandwidthIndicator();
 			int upstreamBWLimit = (bwIndicator != null ? bwIndicator.getUpstramMaxBitRate() : -1);
 			if((bwIndicator != null) && (upstreamBWLimit > 0)) {
-				Logger.normal(this, "The node has a bandwidthIndicator: it has reported "+upstreamBWLimit+ "... we will use that value and skip the bandwidth selection step of the wizard.");
-				int bytes = upstreamBWLimit / 8;
-				if(bytes < 16384)
-					_setUpstreamBandwidthLimit("8K");
-				else
-					_setUpstreamBandwidthLimit(Integer.toString(bytes/2));
+				int bytes = (upstreamBWLimit / 8) - 1;
+				String upstreamBWLimitString = (bytes < 16384 ? "8K" : SizeUtil.formatSize(bytes / 2));
+				_setUpstreamBandwidthLimit(upstreamBWLimitString);
+				Logger.normal(this, "The node has a bandwidthIndicator: it has reported upstream="+upstreamBWLimit+ "bits/sec... we will use "+ upstreamBWLimitString +" and skip the bandwidth selection step of the wizard.");
+				
+				int downstreamBWLimit = bwIndicator.getDownstreamMaxBitRate();
+				if(downstreamBWLimit > 0) {
+					bytes = (downstreamBWLimit / 8) - 1;
+					String downstreamBWLimitString = SizeUtil.formatSize(bytes * 2/3);
+					_setDownstreamBandwidthLimit(downstreamBWLimitString);
+					Logger.normal(this, "The node has a bandwidthIndicator: it has reported downstream="+downstreamBWLimit+ "bits/sec... we will use "+ downstreamBWLimitString +" and skip the bandwidth selection step of the wizard.");
+				}
 				super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step="+WIZARD_STEP.DATASTORE_SIZE);
 			} else
 				super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step="+WIZARD_STEP.BANDWIDTH);
@@ -366,6 +372,15 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		try {
 			config.get("node").set("outputBandwidthLimit", selectedUploadSpeed);
 			Logger.normal(this, "The outputBandwidthLimit has been set to " + selectedUploadSpeed);
+		} catch(InvalidConfigValueException e) {
+			Logger.error(this, "Should not happen, please report!" + e, e);
+		}
+	}
+	
+	private void _setDownstreamBandwidthLimit(String selectedDownloadSpeed) {
+		try {
+			config.get("node").set("inputBandwidthLimit", selectedDownloadSpeed);
+			Logger.normal(this, "The inputBandwidthLimit has been set to " + selectedDownloadSpeed);
 		} catch(InvalidConfigValueException e) {
 			Logger.error(this, "Should not happen, please report!" + e, e);
 		}
