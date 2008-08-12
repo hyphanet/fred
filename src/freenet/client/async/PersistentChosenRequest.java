@@ -69,11 +69,14 @@ public class PersistentChosenRequest {
 		blocksFinished = new ArrayList<PersistentChosenBlock>();
 		this.scheduler = sched;
 		// Fill up blocksNotStarted
-		container.activate(req, 1);
+		boolean reqActive = container.ext().isActive(req);
+		if(!reqActive)
+			container.activate(req, 1);
 		blocksNotStarted.addAll(req.makeBlocks(this, sched, container, context));
-		container.deactivate(req, 1);
-		size = blocksNotStarted.size();
 		sender = req.getSender(container, context);
+		if(!reqActive)
+			container.deactivate(req, 1);
+		size = blocksNotStarted.size();
 	}
 
 	void onFinished(PersistentChosenBlock block, ClientContext context) {
