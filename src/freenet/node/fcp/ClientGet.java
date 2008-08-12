@@ -105,7 +105,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			tempFile = null;
 			try {
 				if(persistenceType == PERSIST_FOREVER)
-					ret = client.server.core.persistentTempBucketFactory.makeEncryptedBucket();
+					ret = client.server.core.persistentTempBucketFactory.makeBucket(-1);
 				else
 					ret = fctx.bucketFactory.makeBucket(-1);
 			} catch (IOException e) {
@@ -174,7 +174,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			tempFile = null;
 			try {
 				if(persistenceType == PERSIST_FOREVER)
-					ret = client.server.core.persistentTempBucketFactory.makeEncryptedBucket();
+					ret = client.server.core.persistentTempBucketFactory.makeBucket(-1);
 				else
 					ret = fctx.bucketFactory.makeBucket(-1);
 			} catch (IOException e) {
@@ -269,7 +269,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				try {
 					// Create a new temp bucket
 					if(persistenceType == PERSIST_FOREVER)
-						ret = client.server.core.persistentTempBucketFactory.makeEncryptedBucket();
+						ret = client.server.core.persistentTempBucketFactory.makeBucket(-1);
 					else
 						ret = fctx.bucketFactory.makeBucket(-1);
 				} catch (IOException e1) {

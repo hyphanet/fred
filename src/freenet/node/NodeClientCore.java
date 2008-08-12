@@ -60,7 +60,6 @@ import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NativeThread;
 import freenet.support.io.PaddedEphemerallyEncryptedBucketFactory;
-import freenet.support.io.PersistentEncryptedTempBucketFactory;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.TempBucketFactory;
 
@@ -85,7 +84,6 @@ public class NodeClientCore implements Persistable {
 	final FilenameGenerator tempFilenameGenerator;
 	public final PaddedEphemerallyEncryptedBucketFactory tempBucketFactory;
 	public final PersistentTempBucketFactory persistentTempBucketFactory;
-	public final PersistentEncryptedTempBucketFactory persistentEncryptedTempBucketFactory;
 	public final Node node;
 	final NodeStats nodeStats;
 	public final RandomSource random;
@@ -173,6 +171,18 @@ public class NodeClientCore implements Persistable {
 		}
 
 		// Persistent temp files
+		nodeConfig.register("encryptPersistentTempBuckets", true, sortOrder++, true, false, "NodeClientCore.encryptPersistentTempBuckets", "NodeClientCore.encryptPersistentTempBucketsLong", new BooleanCallback() {
+
+			public boolean get() {
+				return (persistentTempBucketFactory == null ? true : persistentTempBucketFactory.isEncrypting());
+			}
+
+			public void set(boolean val) throws InvalidConfigValueException {
+				if((val == get()) || (persistentTempBucketFactory == null)) return;
+				persistentTempBucketFactory.setEncryption(val);
+			}
+		});
+		
 		nodeConfig.register("persistentTempDir", new File(nodeDir, "persistent-temp-" + portNumber).toString(), sortOrder++, true, false, "NodeClientCore.persistentTempDir", "NodeClientCore.persistentTempDirLong",
 			new StringCallback() {
 
@@ -188,8 +198,7 @@ public class NodeClientCore implements Persistable {
 				}
 			});
 		try {
-			persistentTempBucketFactory = new PersistentTempBucketFactory(new File(nodeConfig.getString("persistentTempDir")), "freenet-temp-", random, node.fastWeakRandom);
-			persistentEncryptedTempBucketFactory = new PersistentEncryptedTempBucketFactory(persistentTempBucketFactory);
+			persistentTempBucketFactory = new PersistentTempBucketFactory(new File(nodeConfig.getString("persistentTempDir")), "freenet-temp-", random, node.fastWeakRandom, nodeConfig.getBoolean("encryptPersistentTempBuckets"));
 		} catch(IOException e2) {
 			String msg = "Could not find or create persistent temporary directory";
 			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);

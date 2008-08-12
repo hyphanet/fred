@@ -54,7 +54,6 @@ import freenet.support.api.HTTPUploadedFile;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
-import java.util.StringTokenizer;
 
 public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 
@@ -319,7 +318,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				else
 					fnam = null;
 				/* copy bucket data */
-				Bucket copiedBucket = core.persistentEncryptedTempBucketFactory.makeBucket(file.getData().size());
+				Bucket copiedBucket = core.persistentTempBucketFactory.makeBucket(file.getData().size());
 				BucketTools.copy(file.getData(), copiedBucket);
 				try {
 					ClientPut clientPut = new ClientPut(fcp.getGlobalClient(), insertURI, identifier, Integer.MAX_VALUE, RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS, ClientRequest.PERSIST_FOREVER, null, false, !compress, -1, ClientPutMessage.UPLOAD_FROM_DIRECT, null, file.getContentType(), copiedBucket, null, fnam, false);

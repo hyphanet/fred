@@ -42,12 +42,15 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	
 	/** Buckets to free */
 	private LinkedList bucketsToFree;
+	
+	private volatile boolean encrypt;
 
-	public PersistentTempBucketFactory(File dir, final String prefix, RandomSource strongPRNG, Random weakPRNG) throws IOException {
+	public PersistentTempBucketFactory(File dir, final String prefix, RandomSource strongPRNG, Random weakPRNG, boolean encrypt) throws IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.dir = dir;
 		this.strongPRNG = strongPRNG;
 		this.weakPRNG = weakPRNG;
+		this.encrypt = encrypt;
 		this.fg = new FilenameGenerator(weakPRNG, false, dir, prefix);
 		if(!dir.exists()) {
 			dir.mkdir();
@@ -104,18 +107,10 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		originalFiles = null;
 	}
 
-	private Bucket makeRawBucket(long size) throws IOException {
-		return new PersistentTempFileBucket(fg.makeRandomFilename(), fg);
-	}
-
 	public Bucket makeBucket(long size) throws IOException {
-		Bucket b = makeRawBucket(size);
-		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(b, 1024, strongPRNG, weakPRNG));
-	}
-	
-	public Bucket makeEncryptedBucket() throws IOException {
-		Bucket b = makeRawBucket(-1);
-		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(b, 1024, strongPRNG, weakPRNG));
+		PersistentTempFileBucket rawBucket = new PersistentTempFileBucket(fg.makeRandomFilename(), fg);
+		Bucket maybeEncryptedBucket = (encrypt ? new PaddedEphemerallyEncryptedBucket(rawBucket, 1024, strongPRNG, weakPRNG) : rawBucket);
+		return new DelayedFreeBucket(this, maybeEncryptedBucket);
 	}
 
 	/**
@@ -150,5 +145,12 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	public long getID(File file) {
 		return fg.getID(file);
 	}
+	
+	public boolean isEncrypting() {
+		return encrypt;
+	}
 
+	public void setEncryption(boolean encrypt) {
+		this.encrypt = encrypt;
+	}
 }
