@@ -5,6 +5,7 @@ package freenet.config;
 
 import freenet.l10n.L10n;
 import freenet.support.Fields;
+import freenet.support.SizeUtil;
 import freenet.support.api.IntCallback;
 
 /** Integer config variable */
@@ -50,7 +51,8 @@ public class IntOption extends Option {
 	public void setValue(String val) throws InvalidConfigValueException {
 		int x;
 		try{
-			x = Fields.parseSIInt(val);
+			// FIXME: don't strip, parse properly!
+			x = Fields.parseSIInt(SizeUtil.stripBytesEtc(val));
 		} catch (NumberFormatException e) {
 			throw new InvalidConfigValueException(l10n("parseError", "val", val));
 		}

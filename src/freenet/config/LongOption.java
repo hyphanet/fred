@@ -5,6 +5,7 @@ package freenet.config;
 
 import freenet.l10n.L10n;
 import freenet.support.Fields;
+import freenet.support.SizeUtil;
 import freenet.support.api.LongCallback;
 
 /** Long config variable */
@@ -50,7 +51,8 @@ public class LongOption extends Option {
 	public void setValue(String val) throws InvalidConfigValueException {
 		long x;
 		try{
-			x = Fields.parseSILong(val);
+			// FIXME: don't strip, parse properly!
+			x = Fields.parseSILong(SizeUtil.stripBytesEtc(val));
 		}catch (NumberFormatException e) {
 			throw new InvalidConfigValueException(l10n("parseError", "val", val));
 		}

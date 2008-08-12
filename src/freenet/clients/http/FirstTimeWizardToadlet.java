@@ -315,14 +315,14 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			int upstreamBWLimit = (bwIndicator != null ? bwIndicator.getUpstramMaxBitRate() : -1);
 			if((bwIndicator != null) && (upstreamBWLimit > 0)) {
 				int bytes = (upstreamBWLimit / 8) - 1;
-				String upstreamBWLimitString = (bytes < 16384 ? "8K" : SizeUtil.formatSize(Math.round(bytes / 2)));
+				String upstreamBWLimitString = (bytes < 16384 ? "8K" : SizeUtil.formatSize(bytes / 2));
 				_setUpstreamBandwidthLimit(upstreamBWLimitString);
 				Logger.normal(this, "The node has a bandwidthIndicator: it has reported upstream="+upstreamBWLimit+ "bits/sec... we will use "+ upstreamBWLimitString +" and skip the bandwidth selection step of the wizard.");
 				
 				int downstreamBWLimit = bwIndicator.getDownstreamMaxBitRate();
 				if(downstreamBWLimit > 0) {
 					bytes = (downstreamBWLimit / 8) - 1;
-					String downstreamBWLimitString = SizeUtil.formatSize(Math.round(bytes * 2/3));
+					String downstreamBWLimitString = SizeUtil.stripBytesEtc(SizeUtil.formatSize(bytes * 2/3));
 					_setDownstreamBandwidthLimit(downstreamBWLimitString);
 					Logger.normal(this, "The node has a bandwidthIndicator: it has reported downstream="+downstreamBWLimit+ "bits/sec... we will use "+ downstreamBWLimitString +" and skip the bandwidth selection step of the wizard.");
 				}
