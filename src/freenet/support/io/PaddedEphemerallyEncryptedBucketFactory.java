@@ -17,15 +17,29 @@ public class PaddedEphemerallyEncryptedBucketFactory implements BucketFactory {
 	final RandomSource strongPRNG;
 	final Random weakPRNG;
 	final int minSize;
+	private volatile boolean reallyEncrypt;
 	
-	public PaddedEphemerallyEncryptedBucketFactory(BucketFactory factory, RandomSource strongPRNG, Random weakPRNG, int minSize) {
+	public PaddedEphemerallyEncryptedBucketFactory(BucketFactory factory, RandomSource strongPRNG, Random weakPRNG, int minSize, boolean reallyEncrypt) {
 		baseFactory = factory;
 		this.minSize = minSize;
 		this.strongPRNG = strongPRNG;
 		this.weakPRNG = weakPRNG;
+		this.reallyEncrypt = reallyEncrypt;
 	}
 
 	public Bucket makeBucket(long size) throws IOException {
-		return new PaddedEphemerallyEncryptedBucket(baseFactory.makeBucket(size), minSize, strongPRNG, weakPRNG);
+		Bucket realBucket = baseFactory.makeBucket(size);
+		if(!reallyEncrypt)
+			return realBucket;
+		else
+			return new PaddedEphemerallyEncryptedBucket(realBucket, minSize, strongPRNG, weakPRNG);
+	}
+	
+	public void setEncryption(boolean value) {
+		reallyEncrypt = value;
+	}
+	
+	public boolean isEncrypting() {
+		return reallyEncrypt;
 	}
 }

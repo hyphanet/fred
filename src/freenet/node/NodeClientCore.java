@@ -83,15 +83,13 @@ public class NodeClientCore implements Persistable {
 	private File[] uploadAllowedDirs;
 	private boolean uploadAllowedEverywhere;
 	final FilenameGenerator tempFilenameGenerator;
-	private boolean encryptTempBucketFactory;
-	/** Might not be encrypted depending on @see encryptTempBucketFactory */
-	public final BucketFactory tempBucketFactory;
+	public final PaddedEphemerallyEncryptedBucketFactory tempBucketFactory;
+	public final PersistentTempBucketFactory persistentTempBucketFactory;
+	public final PersistentEncryptedTempBucketFactory persistentEncryptedTempBucketFactory;
 	public final Node node;
 	final NodeStats nodeStats;
 	public final RandomSource random;
 	final File tempDir;	// Persistent temporary buckets
-	public final PersistentTempBucketFactory persistentTempBucketFactory;
-	public final PersistentEncryptedTempBucketFactory persistentEncryptedTempBucketFactory;
 	public final UserAlertManager alerts;
 	final TextModeClientInterfaceServer tmci;
 	TextModeClientInterface directTMCI;
@@ -200,16 +198,16 @@ public class NodeClientCore implements Persistable {
 		nodeConfig.register("encryptTempBuckets", true, sortOrder++, true, false, "NodeClientCore.encryptTempBuckets", "NodeClientCore.encryptTempBucketsLong", new BooleanCallback() {
 
 			public boolean get() {
-				return encryptTempBucketFactory;
+				return (tempBucketFactory == null ? true : tempBucketFactory.isEncrypting());
 			}
 
 			public void set(boolean val) throws InvalidConfigValueException {
-				throw new UnsupportedOperationException("Can't be changed on the fly!");
+				if((val == get()) || (tempBucketFactory == null)) return;
+				tempBucketFactory.setEncryption(val);
 			}
 		});
 		BucketFactory _tempBucketFactory = new TempBucketFactory(tempFilenameGenerator);
-		encryptTempBucketFactory = nodeConfig.getBoolean("encryptTempBuckets");
-		tempBucketFactory = (encryptTempBucketFactory ? new PaddedEphemerallyEncryptedBucketFactory(_tempBucketFactory, random, node.fastWeakRandom, 1024) : _tempBucketFactory);
+		tempBucketFactory = new PaddedEphemerallyEncryptedBucketFactory(_tempBucketFactory, random, node.fastWeakRandom, 1024, nodeConfig.getBoolean("encryptTempBuckets"));
 
 		// Downloads directory
 
