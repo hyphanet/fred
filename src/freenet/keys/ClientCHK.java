@@ -40,7 +40,7 @@ public class ClientCHK extends ClientKey {
     private ClientCHK(ClientCHK key) {
     	this.routingKey = new byte[key.routingKey.length];
     	System.arraycopy(key.routingKey, 0, routingKey, 0, key.routingKey.length);
-    	this.nodeKey = (NodeCHK) key.nodeKey.cloneKey();
+    	this.nodeKey = null;
     	this.cryptoKey = new byte[key.cryptoKey.length];
     	System.arraycopy(key.cryptoKey, 0, cryptoKey, 0, key.cryptoKey.length);
     	this.controlDocument = key.controlDocument;

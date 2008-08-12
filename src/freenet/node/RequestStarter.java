@@ -3,11 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.util.LinkedList;
-
 import com.db4o.ObjectContainer;
 
-import freenet.client.async.ChosenRequest;
+import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
 import freenet.keys.Key;
 import freenet.support.Logger;
@@ -53,9 +51,6 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		return !((prio < MAXIMUM_PRIORITY_CLASS) || (prio > MINIMUM_PRIORITY_CLASS));
 	}
 	
-	/** Queue of requests to run. Added to by jobs on the database thread. */
-	private LinkedList queue;
-	
 	final BaseRequestThrottle throttle;
 	final TokenBucket inputBucket;
 	final TokenBucket outputBucket;
@@ -84,10 +79,10 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 
 	void setScheduler(RequestScheduler sched) {
 		this.sched = sched;
-		queue = sched.getRequestStarterQueue();
 	}
 	
 	void start() {
+		sched.start(core);
 		core.getExecutor().execute(this, name);
 		sched.queueFillRequestStarterQueue();
 	}
@@ -99,7 +94,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	}
 	
 	void realRun() {
-		ChosenRequest req = null;
+		ChosenBlock req = null;
 		sentRequestTime = System.currentTimeMillis();
 		// The last time at which we sent a request or decided not to
 		long cycleTime = sentRequestTime;
@@ -121,10 +116,10 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			sched.moveKeysFromCooldownQueue();
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(req == null) {
-				req = getRequest(logMINOR);
+				req = sched.grabRequest();
 			}
 			if(req != null) {
-				if(logMINOR) Logger.minor(this, "Running "+req+" priority "+req.prio);
+				if(logMINOR) Logger.minor(this, "Running "+req+" priority "+req.getPriority());
 				// Wait
 				long delay = throttle.getDelay();
 				if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
@@ -161,7 +156,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 				// Always take the lock on RequestStarter first. AFAICS we don't synchronize on RequestStarter anywhere else.
 				// Nested locks here prevent extra latency when there is a race, and therefore allow us to sleep indefinitely
 				synchronized(this) {
-					req = getRequest(logMINOR);
+					req = sched.grabRequest();
 					if(req == null) {
 						try {
 							wait(100*1000); // as close to indefinite as I'm comfortable with! Toad
@@ -174,7 +169,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 			if(req == null) continue;
 			if(!startRequest(req, logMINOR)) {
 				// Don't log if it's a cancelled transient request.
-				if(!((!req.isPersistent()) && req.request.isCancelled(null)))
+				if(!((!req.isPersistent()) && req.isCancelled()))
 					Logger.normal(this, "No requests to start on "+req);
 			}
 			req = null;
@@ -182,64 +177,12 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		}
 	}
 
-	/**
-	 * Pull a request from the from-the-database-thread queue. Then ask for a higher priority non-persistent request.
-	 * If there isn't one, use the one we just pulled; if there is one, put it back on the queue.
-	 * 
-	 * Obviously, there will be a slightly higher latency for the database queue; for example, when adding a new 
-	 * higher priority persistent request, we have a queue-length penalty before starting to request it. We also
-	 * have a significant penalty from all the database access (even if the request itself is cached, the database
-	 * thread is probably doing other things so we have to wait for that to finish).
-	 * @return
-	 */
-	private ChosenRequest getRequest(boolean logMINOR) {
-		boolean usedReq = true;
-		ChosenRequest req = null;
-		while(true) {
-			synchronized(queue) {
-				if(queue.isEmpty()) break;
-				req = (ChosenRequest) queue.removeFirst();
-			}
-			if((!req.isPersistent()) && req.request.isCancelled(null)) continue;
-			break;
-		}
-		ChosenRequest betterReq = sched.getBetterNonPersistentRequest(req);
-		if(req != null) {
-			if(betterReq != null) {
-				if(logMINOR)
-					Logger.minor(this, "Not using "+req+" in favour of "+betterReq);
-				synchronized(queue) {
-					queue.addFirst(req);
-					queue.remove(betterReq);
-				}
-				req = null;
-				usedReq = false;
-			}
-		}
-		if(req == null) {
-			usedReq = false;
-			req = betterReq;
-		}
-		if(usedReq || req == null)
-			sched.queueFillRequestStarterQueue();
-		if(req == null && logMINOR) Logger.minor(this, "No requests found");
-		if(req != null && !this.isInsert) {
-			if(!sched.addToFetching(req.key)) {
-				sched.requeue(req);
-				Logger.error(this, "Skipping request as duplicate: "+req);
-				req = null;
-			}
-		}
-		return req;
-	}
-
-	private boolean startRequest(ChosenRequest req, boolean logMINOR) {
-		if((!req.isPersistent()) && req.request.isCancelled(null)) {
+	private boolean startRequest(ChosenBlock req, boolean logMINOR) {
+		if((!req.isPersistent()) && req.isCancelled()) {
 			sched.removeFetchingKey(req.key);
-			sched.removeChosenRequest(req);
 			return false;
 		}
-		if(logMINOR) Logger.minor(this, "Running request "+req+" priority "+req.prio);
+		if(logMINOR) Logger.minor(this, "Running request "+req+" priority "+req.getPriority());
 		core.getExecutor().execute(new SenderThread(req, req.key), "RequestStarter$SenderThread for "+req);
 		return true;
 	}
@@ -259,10 +202,10 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	
 	private class SenderThread implements Runnable {
 
-		private final ChosenRequest req;
+		private final ChosenBlock req;
 		private final Key key;
 		
-		public SenderThread(ChosenRequest req, Key key) {
+		public SenderThread(ChosenBlock req, Key key) {
 			this.req = req;
 			this.key = key;
 		}
@@ -274,18 +217,13 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 		    if (key != null)
 		    	stats.reportOutgoingLocalRequestLocation(key.toNormalizedDouble());
 		    if(!req.send(core, sched)) {
-				if(!((!req.isPersistent()) && req.request.isCancelled(null)))
+				if(!((!req.isPersistent()) && req.isCancelled()))
 					Logger.error(this, "run() not able to send a request on "+req);
 				else
 					Logger.normal(this, "run() not able to send a request on "+req+" - request was cancelled");
 			}
 			if(Logger.shouldLog(Logger.MINOR, this)) 
 				Logger.minor(this, "Finished "+req);
-			} catch (Throwable t) {
-				// Remove it if something is thrown.
-				// But normally send(), callFailure() or callSuccess() will remove it.
-				Logger.error(this, "Caught "+t, t);
-				sched.removeChosenRequest(req);
 			} finally {
 				sched.removeFetchingKey(key);
 			}
@@ -300,6 +238,10 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	}
 
 	public boolean exclude(RandomGrabArrayItem item, ObjectContainer container, ClientContext context) {
+		if(sched.isRunningRequest((SendableRequest)item)) {
+			Logger.normal(this, "Excluding already-running request: "+item);
+			return true;
+		}
 		if(isInsert) return false;
 		if(!(item instanceof BaseSendableGet)) {
 			Logger.error(this, "On a request scheduler, exclude() called with "+item, new Exception("error"));

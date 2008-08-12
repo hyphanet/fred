@@ -21,6 +21,7 @@ import freenet.keys.ClientKeyBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.Key;
 import freenet.node.RequestClient;
+import freenet.node.RequestScheduler;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
@@ -60,7 +61,7 @@ public class ClientGetter extends BaseClientGetter {
 	 * write the data directly to the bucket, or copy it and free the original temporary bucket. Preferably the
 	 * former, obviously!
 	 */
-	public ClientGetter(ClientCallback client, ClientRequestScheduler chkSched, ClientRequestScheduler sskSched,
+	public ClientGetter(ClientCallback client, RequestScheduler chkSched, RequestScheduler sskSched,
 			    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, Bucket binaryBlobBucket) {
 		super(priorityClass, clientContext);
 		this.clientCallback = client;
@@ -145,8 +146,10 @@ public class ClientGetter extends BaseClientGetter {
 			try {
 				if(Logger.shouldLog(Logger.MINOR, this))
 					Logger.minor(this, "Copying - returnBucket not respected by client.async");
-				if(persistent())
+				if(persistent()) {
 					container.activate(from, 5);
+					container.activate(returnBucket, 5);
+				}
 				BucketTools.copy(from, to);
 				from.free();
 				if(persistent())

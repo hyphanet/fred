@@ -3,12 +3,16 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.List;
+
 import com.db4o.ObjectContainer;
 
-import freenet.client.async.ChosenRequest;
+import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
+import freenet.client.async.PersistentChosenBlock;
+import freenet.client.async.PersistentChosenRequest;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientKey;
 import freenet.keys.KeyBlock;
@@ -72,22 +76,28 @@ public class SimpleSendableInsert extends SendableInsert {
 		return 0;
 	}
 
-	public boolean send(NodeClientCore core, RequestScheduler sched, ChosenRequest req) {
-		// Ignore keyNum, key, since this is a single block
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		try {
-			if(logMINOR) Logger.minor(this, "Starting request: "+this);
-			core.realPut(block, shouldCache());
-		} catch (LowLevelPutException e) {
-			sched.callFailure(this, e, req.token, NativeThread.NORM_PRIORITY, req, false);
-			if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
-			return true;
-		} finally {
-			finished = true;
-		}
-		if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
-		sched.callSuccess(this, req.token, NativeThread.NORM_PRIORITY, req, false);
-		return true;
+	@Override
+	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
+		return new SendableRequestSender() {
+
+			public boolean send(NodeClientCore core, RequestScheduler sched, ClientContext context, ChosenBlock req) {
+				// Ignore keyNum, key, since this is a single block
+				boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				try {
+					if(logMINOR) Logger.minor(this, "Starting request: "+this);
+					core.realPut(block, shouldCache());
+				} catch (LowLevelPutException e) {
+					onFailure(e, req.token, null, context);
+					if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
+					return true;
+				} finally {
+					finished = true;
+				}
+				if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
+				onSuccess(req.token, null, context);
+				return true;
+			}
+		};
 	}
 
 	public RequestClient getClient() {
@@ -145,5 +155,11 @@ public class SimpleSendableInsert extends SendableInsert {
 
 	public boolean isSSK() {
 		return block instanceof SSKBlock;
+	}
+
+	@Override
+	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+		// Transient-only so no makeBlocks().
+		throw new UnsupportedOperationException();
 	}
 }

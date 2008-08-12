@@ -6,7 +6,7 @@ package freenet.node;
 import java.util.LinkedList;
 
 import freenet.client.FECQueue;
-import freenet.client.async.ChosenRequest;
+import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
@@ -20,7 +20,7 @@ public interface RequestScheduler {
 	 * another may also work. Also, delete the ChosenRequest if it is persistent. 
 	 * @param req The request we ran, which must be deleted.
 	 * */
-	public void succeeded(BaseSendableGet get, ChosenRequest req);
+	public void succeeded(BaseSendableGet get, ChosenBlock req);
 
 	/**
 	 * After a key has been requested a few times, it is added to the cooldown queue for
@@ -49,34 +49,26 @@ public interface RequestScheduler {
 
 	public void queueFillRequestStarterQueue();
 
-	public LinkedList getRequestStarterQueue();
-
-	public ChosenRequest getBetterNonPersistentRequest(ChosenRequest req);
-
 	public KeysFetchingLocally fetchingKeys();
 
 	public void removeFetchingKey(Key key);
 	
-	public void removeChosenRequest(ChosenRequest req);
-
-	/** Call onFailure() on the database thread, then delete the PersistentChosenRequest. For a non-persistent request, 
-	 * just call onFailure() immediately. */
-	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, int prio, ChosenRequest req, boolean persistent);
+	public void callFailure(SendableGet get, LowLevelGetException e, int prio, boolean persistent);
 	
-	/** Call onFailure() on the database thread, then delete the PersistentChosenRequest. For a non-persistent request, 
-	 * just call onFailure() immediately. */
-	public void callFailure(final SendableInsert put, final LowLevelPutException e, final Object keyNum, int prio, ChosenRequest req, boolean persistent);
-
-	/** Call onSuccess() on the database thread, then delete the PersistentChosenRequest. For a non-persistent request, 
-	 * just call onFailure() immediately. */
-	public void callSuccess(final SendableInsert put, final Object keyNum, int prio, ChosenRequest req, boolean persistent);
-
+	public void callFailure(SendableInsert insert, LowLevelPutException exception, int prio, boolean persistent);
+	
 	public FECQueue getFECQueue();
 
 	public ClientContext getContext();
 	
 	public boolean addToFetching(Key key);
 
-	public void requeue(ChosenRequest req);
-	
+	public ChosenBlock grabRequest();
+
+	public void removeRunningRequest(SendableRequest request);
+
+	public abstract boolean isRunningRequest(SendableRequest request);
+
+	public void start(NodeClientCore core);
+
 }

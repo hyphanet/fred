@@ -1,6 +1,8 @@
 package freenet.client.async;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Vector;
 
 import com.db4o.ObjectContainer;
@@ -21,6 +23,7 @@ import freenet.node.BulkCallFailureItem;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
 import freenet.node.RequestClient;
+import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
 import freenet.node.SupportsBulkCallFailure;
 import freenet.support.Logger;
@@ -229,11 +232,17 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	public void onFailure(BulkCallFailureItem[] items, ObjectContainer container, ClientContext context) {
 		FetchException[] fetchExceptions = new FetchException[items.length];
 		int countFatal = 0;
+		if(persistent) {
+			container.activate(blockNums, 2);
+		}
 		for(int i=0;i<items.length;i++) {
 			fetchExceptions[i] = translateException(items[i].e);
 			if(fetchExceptions[i].isFatal()) countFatal++;
+			removeBlockNum(((Integer)items[i].token).intValue(), container, true);
 		}
 		if(persistent) {
+			container.set(blockNums);
+			container.deactivate(blockNums, 2);
 			container.activate(segment, 1);
 			container.activate(parent, 1);
 			container.activate(segment.errors, 1);
@@ -335,6 +344,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		} else {
 			segment.onNonFatalFailure(e, ((Integer)token).intValue(), this, container, context);
 		}
+		removeBlockNum(((Integer)token).intValue(), container, false);
 		if(persistent) {
 			container.deactivate(segment, 1);
 			container.deactivate(parent, 1);
@@ -532,7 +542,10 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 
 	}
 	
-	public void add(int blockNo, boolean dontSchedule, ObjectContainer container, ClientContext context, boolean dontComplainOnDupes) {
+	/**
+	 * @return True if the caller should schedule.
+	 */
+	public boolean add(int blockNo, boolean dontSchedule, ObjectContainer container, ClientContext context, boolean dontComplainOnDupes) {
 		if(persistent) {
 //			container.activate(segment, 1);
 			container.activate(blockNums, 1);
@@ -554,7 +567,6 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			} else {
 				blockNums.add(i);
 			}
-			if(dontSchedule) schedule = false;
 			/**
 			 * Race condition:
 			 * 
@@ -575,8 +587,11 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 		if(persistent)
 			container.set(blockNums);
-		if(schedule)
+		if(schedule) {
+			if(dontSchedule) return true;
 			context.getChkFetchScheduler().register(null, new SendableGet[] { this }, false, persistent, true, null, null);
+		}
+		return false;
 	}
 
 	public String toString() {
@@ -729,9 +744,9 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		getScheduler(context).register(firstTime ? segment : null, new SendableGet[] { this }, regmeOnly, persistent, true, segment.blockFetchContext.blocks, null);
 	}
 
-	public boolean removeBlockNum(int blockNum, ObjectContainer container) {
+	public boolean removeBlockNum(int blockNum, ObjectContainer container, boolean callerActivatesAndSets) {
 		if(logMINOR) Logger.minor(this, "Removing block "+blockNum+" from "+this);
-		if(persistent)
+		if(persistent && !callerActivatesAndSets)
 			container.activate(blockNums, 2);
 		boolean found = false;
 		synchronized(segment) {
@@ -746,11 +761,41 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				}
 			}
 		}
-		if(persistent) {
+		if(persistent && !callerActivatesAndSets) {
 			container.set(blockNums);
 			container.deactivate(blockNums, 2);
 		}
 		return found;
+	}
+
+	@Override
+	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(segment, 1);
+			container.activate(blockNums, 1);
+		}
+		Integer[] blockNumbers;
+		synchronized(this) {
+			blockNumbers = (Integer[]) blockNums.toArray(new Integer[blockNums.size()]);
+		}
+		ArrayList<PersistentChosenBlock> blocks = new ArrayList<PersistentChosenBlock>();
+		for(int i=0;i<blockNumbers.length;i++) {
+			ClientKey key = segment.getBlockKey(blockNumbers[i], container);
+			Key k = key.getNodeKey();
+			if(key == null) {
+				if(logMINOR)
+					Logger.minor(this, "Block "+blockNumbers[i]+" is null, maybe race condition");
+				continue;
+			}
+			PersistentChosenBlock block = new PersistentChosenBlock(false, request, blockNumbers[i], k, key, sched);
+			blocks.add(block);
+		}
+		blocks.trimToSize();
+		if(persistent) {
+			container.deactivate(segment, 1);
+			container.deactivate(blockNums, 1);
+		}
+		return blocks;
 	}
 
 }

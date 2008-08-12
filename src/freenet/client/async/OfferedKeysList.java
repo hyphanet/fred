@@ -4,6 +4,7 @@
 package freenet.client.async;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Vector;
 
 import com.db4o.ObjectContainer;
@@ -15,6 +16,7 @@ import freenet.node.KeysFetchingLocally;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
+import freenet.node.SendableRequestSender;
 import freenet.node.NodeClientCore.SimpleRequestSenderCompletionListener;
 import freenet.support.Logger;
 
@@ -140,24 +142,31 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		return 0; // All keys have equal chance even if they've been tried before.
 	}
 
-	public void internalError(Object keyNum, Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
+	public void internalError(Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
 		Logger.error(this, "Internal error: "+t, t);
 	}
 	
-	public boolean send(NodeClientCore node, RequestScheduler sched, ChosenRequest req) {
-		Key key = (Key) req.token;
-		// Have to cache it in order to propagate it; FIXME
-		// Don't let a node force us to start a real request for a specific key.
-		// We check the datastore, take up offers if any (on a short timeout), and then quit if we still haven't fetched the data.
-		// Obviously this may have a marginal impact on load but it should only be marginal.
-		core.asyncGet(key, true, true, new SimpleRequestSenderCompletionListener() {
+	@Override
+	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
+		return new SendableRequestSender() {
 
-			public void completed(boolean success) {
-				// Ignore
+			public boolean send(NodeClientCore core, RequestScheduler sched, ClientContext context, ChosenBlock req) {
+				Key key = (Key) req.token;
+				// Have to cache it in order to propagate it; FIXME
+				// Don't let a node force us to start a real request for a specific key.
+				// We check the datastore, take up offers if any (on a short timeout), and then quit if we still haven't fetched the data.
+				// Obviously this may have a marginal impact on load but it should only be marginal.
+				core.asyncGet(key, true, true, new SimpleRequestSenderCompletionListener() {
+
+					public void completed(boolean success) {
+						// Ignore
+					}
+					
+				});
+				return true;
 			}
 			
-		});
-		return true;
+		};
 	}
 
 	public boolean canRemove(ObjectContainer container) {
@@ -183,6 +192,11 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 
 	public boolean isSSK() {
 		return isSSK;
+	}
+
+	@Override
+	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+		throw new UnsupportedOperationException("Transient only");
 	}
 
 }

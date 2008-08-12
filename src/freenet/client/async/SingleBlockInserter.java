@@ -6,6 +6,8 @@ package freenet.client.async;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.net.MalformedURLException;
+import java.util.Collections;
+import java.util.List;
 
 import com.db4o.ObjectContainer;
 
@@ -25,6 +27,7 @@ import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableInsert;
+import freenet.node.SendableRequestSender;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -342,25 +345,32 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return finished;
 	}
 	
-	public boolean send(NodeClientCore core, RequestScheduler sched, ChosenRequest req) {
-		// Ignore keyNum, key, since we're only sending one block.
-		try {
-			if(logMINOR) Logger.minor(this, "Starting request: "+this);
-			ClientKeyBlock b = (ClientKeyBlock) req.token;
-			if(b != null)
-				core.realPut(b, req.cacheLocalRequests);
-			else {
-				Logger.error(this, "Asked to send empty block on "+this, new Exception("error"));
-				return false;
+	@Override
+	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
+		return new SendableRequestSender() {
+
+			public boolean send(NodeClientCore core, RequestScheduler sched, ClientContext context, ChosenBlock req) {
+				// Ignore keyNum, key, since we're only sending one block.
+				try {
+					if(logMINOR) Logger.minor(this, "Starting request: "+this);
+					ClientKeyBlock b = (ClientKeyBlock) req.token;
+					if(b != null)
+						core.realPut(b, req.cacheLocalRequests);
+					else {
+						Logger.error(this, "Asked to send empty block on "+this, new Exception("error"));
+						return false;
+					}
+				} catch (LowLevelPutException e) {
+					req.onFailure(e, context);
+					if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
+					return true;
+				}
+				if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
+				req.onInsertSuccess(context);
+				return true;
 			}
-		} catch (LowLevelPutException e) {
-			sched.callFailure((SendableInsert) this, e, req.token, NativeThread.NORM_PRIORITY, req, req.isPersistent());
-			if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
-			return true;
-		}
-		if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
-		sched.callSuccess(this, req.token, NativeThread.NORM_PRIORITY, req, req.isPersistent());
-		return true;
+			
+		};
 	}
 
 	public RequestClient getClient() {
@@ -411,6 +421,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(finished) return null;
 		// Ignore KeysFetchingLocally, it's for requests.
 		return getBlock(container, context, false);
+	}
+
+	@Override
+	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+		PersistentChosenBlock block = new PersistentChosenBlock(true, request, getBlock(container, context, false), null, null, sched);
+		return Collections.singletonList(block);
 	}
 
 }

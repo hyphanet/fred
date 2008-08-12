@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.util.Collections;
+import java.util.List;
+
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
@@ -91,7 +94,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements GotKe
 		if((retryCount <= maxRetries) || (maxRetries == -1)) {
 			if(persistent)
 				container.set(this);
-			if(retryCount % ClientRequestScheduler.COOLDOWN_RETRIES == 0) {
+			if(retryCount % RequestScheduler.COOLDOWN_RETRIES == 0) {
 				// Add to cooldown queue. Don't reschedule yet.
 				long now = System.currentTimeMillis();
 				if(cooldownWakeupTime > now)
@@ -252,6 +255,15 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements GotKe
 				container.activate(key, 5);
 			return new Key[] { key.getNodeKey() };
 		}
+	}
+
+	@Override
+	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
+		if(persistent)
+			container.activate(key, 5);
+		ClientKey ckey = key.cloneKey();
+		PersistentChosenBlock block = new PersistentChosenBlock(false, request, keys[0], ckey.getNodeKey(), ckey, sched);
+		return Collections.singletonList(block);
 	}
 
 }

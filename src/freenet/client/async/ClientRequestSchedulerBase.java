@@ -12,6 +12,7 @@ import com.db4o.ObjectContainer;
 import freenet.crypt.RandomSource;
 import freenet.keys.Key;
 import freenet.node.BaseSendableGet;
+import freenet.node.RequestScheduler;
 import freenet.node.RequestStarter;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
@@ -51,6 +52,7 @@ abstract class ClientRequestSchedulerBase {
 	protected final SortedVectorByNumber[] priorities;
 	protected final Map allRequestsByClientRequest;
 	protected final List /* <BaseSendableGet> */ recentSuccesses;
+	protected transient ClientRequestScheduler sched;
 
 	abstract boolean persistent();
 	
@@ -90,6 +92,8 @@ abstract class ClientRequestSchedulerBase {
 			container.deactivate(v, 1);
 		addToGrabArray(prio, retryCount, fixRetryCount(retryCount), req.getClient(), req.getClientRequest(), req, random, container);
 		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio+", retrycount="+retryCount+" v.size()="+vSize);
+		if(req.persistent())
+			sched.maybeAddToStarterQueue(req, container);
 	}
 	
 	synchronized void addToGrabArray(short priorityClass, int retryCount, int rc, Object client, ClientRequester cr, SendableRequest req, RandomSource random, ObjectContainer container) {
@@ -139,7 +143,7 @@ abstract class ClientRequestSchedulerBase {
 		return Math.max(0, retryCount-MIN_RETRY_COUNT);
 	}
 
-	public void reregisterAll(ClientRequester request, RandomSource random, ClientRequestScheduler lock, ObjectContainer container, ClientContext context) {
+	public void reregisterAll(ClientRequester request, RandomSource random, RequestScheduler lock, ObjectContainer container, ClientContext context) {
 		SendableRequest[] reqs;
 		synchronized(lock) {
 			Set h = (Set) allRequestsByClientRequest.get(request);

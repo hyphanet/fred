@@ -16,6 +16,7 @@ import com.db4o.query.Query;
 import com.db4o.types.Db4oList;
 import com.db4o.types.Db4oMap;
 
+import freenet.client.FetchContext;
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
@@ -47,7 +48,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	/** Identifier in the database for the node we are attached to */
 	private final long nodeDBHandle;
 	final PersistentCooldownQueue persistentCooldownQueue;
-	private transient ClientRequestScheduler sched;
 	private transient long initTime;
 	
 	/**
@@ -106,6 +106,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		} else {
 			this.persistentCooldownQueue = null;
 		}
+
 	}
 
 	private void onStarted(ObjectContainer container, long cooldownTime, ClientRequestScheduler sched, ClientContext context) {
@@ -119,13 +120,13 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		if(!isInsertScheduler) {
 			persistentCooldownQueue.setCooldownTime(cooldownTime);
 		}
+		this.sched = sched;
+		this.initTime = System.currentTimeMillis();
+		// We DO NOT want to rerun the query after consuming the initial set...
 		if(!isInsertScheduler)
 			keysFetching = new HashSet();
 		else
 			keysFetching = null;
-		this.sched = sched;
-		this.initTime = System.currentTimeMillis();
-		// We DO NOT want to rerun the query after consuming the initial set...
 		preRegisterMeRunner = new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
@@ -211,43 +212,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		runner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);
 	}
 	
-	void fillStarterQueue(ObjectContainer container) {
-		ObjectSet results = container.query(new Predicate() {
-			public boolean match(PersistentChosenRequest req) {
-				if(req.core != ClientRequestSchedulerCore.this) return false;
-				return true;
-			}
-		});
-		int count = 0;
-		while(results.hasNext()) {
-			count++;
-			PersistentChosenRequest req = (PersistentChosenRequest) results.next();
-			container.activate(req, 2);
-			container.activate(req.key, 5);
-			container.activate(req.ckey, 5);
-			if(req.request == null) {
-				container.delete(req);
-				Logger.error(this, "Deleting bogus PersistentChosenRequest");
-				continue;
-			}
-			container.activate(req.request, 1);
-			container.activate(req.request.getClientRequest(), 1);
-			if(req.token != null)
-				container.activate(req.token, 5);
-			if(req.request.isCancelled(container)) {
-				container.delete(req);
-				continue;
-			}
-			if(logMINOR)
-				Logger.minor(this, "Adding old request: "+req);
-			sched.addToStarterQueue(req);
-		}
-//		if(count > ClientRequestScheduler.MAX_STARTER_QUEUE_SIZE)
-			Logger.error(this, "Added "+count+" requests to the starter queue, size now "+sched.starterQueueSize());
-//		else
-//			Logger.normal(this, "Added "+count+" requests to the starter queue, size now "+sched.starterQueueSize());
-	}
-	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
 	
 	private int removeFirstAccordingToPriorities(boolean tryOfferedKeys, int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, short maxPrio, ObjectContainer container){
@@ -288,11 +252,11 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	// We prevent a number of race conditions (e.g. adding a retry count and then another 
 	// thread removes it cos its empty) ... and in addToGrabArray etc we already sync on this.
 	// The worry is ... is there any nested locking outside of the hierarchy?
-	ChosenRequest removeFirst(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
+	ChosenBlock removeFirst(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
 		SendableRequest req = removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, transientOnly, notTransient, maxPrio, retryCount, context, container);
 		if(isInsertScheduler && req instanceof SendableGet) {
 			IllegalStateException e = new IllegalStateException("removeFirstInner returned a SendableGet on an insert scheduler!!");
-			req.internalError(null, e, sched, container, context, req.persistent());
+			req.internalError(e, sched, container, context, req.persistent());
 			throw e;
 		}
 		return maybeMakeChosenRequest(req, container, context);
@@ -300,7 +264,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	
 	private int ctr;
 	
-	public ChosenRequest maybeMakeChosenRequest(SendableRequest req, ObjectContainer container, ClientContext context) {
+	public ChosenBlock maybeMakeChosenRequest(SendableRequest req, ObjectContainer container, ClientContext context) {
 		if(req == null) return null;
 		if(req.isEmpty(container) || req.isCancelled(container)) return null;
 		Object token = req.chooseKey(this, req.persistent() ? container : null, context);
@@ -319,26 +283,27 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				else
 					ckey = null;
 			}
-			ChosenRequest ret;
-			if(req.persistent()) {
-				container.activate(key, 5);
-				container.activate(ckey, 5);
-				container.activate(req.getClientRequest(), 1);
-				if(key != null && key.getRoutingKey() == null)
-					throw new NullPointerException();
-				ret = new PersistentChosenRequest(this, req, token, key == null ? null : key.cloneKey(), 
-						ckey == null ? null : ckey.cloneKey(), req.getPriorityClass(container), container);
-				container.set(ret);
-				if(logMINOR)
-					Logger.minor(this, "Storing "+ret+" for "+req);
-				container.deactivate(key, 5);
-				container.deactivate(ckey, 5);
-				container.deactivate(req.getClientRequest(), 1);
+			ChosenBlock ret;
+			assert(!req.persistent());
+			if(key != null && key.getRoutingKey() == null)
+				throw new NullPointerException();
+			boolean localRequestOnly;
+			boolean cacheLocalRequests;
+			boolean ignoreStore;
+			if(req instanceof SendableGet) {
+				SendableGet sg = (SendableGet) req;
+				FetchContext ctx = sg.getContext();
+				if(container != null)
+					container.activate(ctx, 1);
+				localRequestOnly = ctx.localRequestOnly;
+				cacheLocalRequests = ctx.cacheLocalRequests;
+				ignoreStore = ctx.ignoreStore;
 			} else {
-				if(key != null && key.getRoutingKey() == null)
-					throw new NullPointerException();
-				ret = new ChosenRequest(req, token, key, ckey, req.getPriorityClass(container), null);
+				localRequestOnly = false;
+				cacheLocalRequests = false;
+				ignoreStore = false;
 			}
+			ret = new TransientChosenBlock(req, token, key, ckey, localRequestOnly, cacheLocalRequests, ignoreStore, sched);
 			return ret;
 		}
 	}
@@ -346,9 +311,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	SendableRequest removeFirstInner(int fuzz, RandomSource random, OfferedKeysList[] offeredKeys, RequestStarter starter, ClientRequestSchedulerNonPersistent schedTransient, boolean transientOnly, boolean notTransient, short maxPrio, int retryCount, ClientContext context, ObjectContainer container) {
 		// Priorities start at 0
 		if(logMINOR) Logger.minor(this, "removeFirst()");
-		boolean tryOfferedKeys = offeredKeys != null && random.nextBoolean();
+		boolean tryOfferedKeys = offeredKeys != null && (!notTransient) && random.nextBoolean();
 		int choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys, fuzz, random, offeredKeys, schedTransient, transientOnly, maxPrio, container);
-		if(choosenPriorityClass == -1 && offeredKeys != null && !tryOfferedKeys) {
+		if(choosenPriorityClass == -1 && offeredKeys != null && (!tryOfferedKeys)) {
 			tryOfferedKeys = true;
 			choosenPriorityClass = removeFirstAccordingToPriorities(tryOfferedKeys, fuzz, random, offeredKeys, schedTransient, transientOnly, maxPrio, container);
 		}
@@ -669,7 +634,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					// Cancel the request, and commit so it isn't tried again.
 					if(reg.getters != null) {
 						for(int k=0;k<reg.getters.length;k++)
-							reg.getters[k].internalError(null, t, sched, container, context, true);
+							reg.getters[k].internalError(t, sched, container, context, true);
 					}
 				}
 				if(reg.listener != null)
@@ -745,21 +710,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		}
 	}
 		
-	public void removeChosenRequest(final ChosenRequest req) {
-		int prio = NativeThread.NORM_PRIORITY+1;
-		assert(prio < ClientRequestScheduler.TRIP_PENDING_PRIORITY);
-		if(req != null && req.isPersistent()) {
-		sched.clientContext.jobRunner.queue(new DBJob() {
-			public void run(ObjectContainer container, ClientContext context) {
-				container.delete(req);
-			}
-			public String toString() {
-				return "Delete "+req;
-			}
-		}, prio, false);
-		}
-	}
-
 	protected Set makeSetForAllRequestsByClientRequest(ObjectContainer container) {
 		return new Db4oSet(container, 1);
 	}

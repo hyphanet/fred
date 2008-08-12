@@ -16,6 +16,7 @@ import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
+import freenet.node.RequestScheduler;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
@@ -55,7 +56,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * @param targetFilename If set, create a one-file manifest containing this filename pointing to this file.
 	 */
 	public ClientPutter(ClientCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
-			ClientRequestScheduler chkScheduler, ClientRequestScheduler sskScheduler, short priorityClass, boolean getCHKOnly, 
+			RequestScheduler chkScheduler, RequestScheduler sskScheduler, short priorityClass, boolean getCHKOnly, 
 			boolean isMetadata, RequestClient clientContext, SimpleFieldSet stored, String targetFilename, boolean binaryBlob) {
 		super(priorityClass, clientContext);
 		this.cm = cm;

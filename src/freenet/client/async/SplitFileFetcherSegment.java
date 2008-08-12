@@ -5,6 +5,7 @@ package freenet.client.async;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.HashSet;
 import java.util.Vector;
 
 import com.db4o.ObjectContainer;
@@ -562,9 +563,11 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		}
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		RequestScheduler sched = context.getFetchScheduler(false);
-		boolean set = onNonFatalFailure(e, blockNo, seg, container, context, sched, maxTries);
-		if(persistent && set)
-			container.set(this);
+		SplitFileFetcherSubSegment sub = onNonFatalFailure(e, blockNo, seg, container, context, sched, maxTries);
+		if(sub != null) {
+			sub.schedule(container, context, false, false);
+			if(persistent && sub != seg) container.deactivate(sub, 1);
+		}
 	}
 	
 	public void onNonFatalFailure(FetchException[] failures, int[] blockNos, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context) {
@@ -574,17 +577,28 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		int maxTries = blockFetchContext.maxNonSplitfileRetries;
 		RequestScheduler sched = context.getFetchScheduler(false);
 		boolean set = false;
-		for(int i=0;i<failures.length;i++)
-			if(onNonFatalFailure(failures[i], blockNos[i], seg, container, context, sched, maxTries))
-				set = true;
-		if(persistent && set)
-			container.set(this);
+		HashSet<SplitFileFetcherSubSegment> toSchedule = null;
+		for(int i=0;i<failures.length;i++) {
+			SplitFileFetcherSubSegment sub = 
+				onNonFatalFailure(failures[i], blockNos[i], seg, container, context, sched, maxTries);
+			if(sub != null) {
+				if(toSchedule == null)
+					toSchedule = new HashSet<SplitFileFetcherSubSegment>();
+				toSchedule.add(sub);
+			}
+		}
+		if(toSchedule != null && !toSchedule.isEmpty()) {
+			for(SplitFileFetcherSubSegment sub : toSchedule) {
+				sub.schedule(container, context, false, false);
+				if(persistent && sub != seg) container.deactivate(sub, 1);
+			}
+		}
 	}
 	
 	/**
 	 * Caller must set(this) iff returns true.
 	 */
-	private boolean onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context, RequestScheduler sched, int maxTries) {
+	private SplitFileFetcherSubSegment onNonFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg, ObjectContainer container, ClientContext context, RequestScheduler sched, int maxTries) {
 		if(logMINOR) Logger.minor(this, "Calling onNonFatalFailure for block "+blockNo+" on "+this+" from "+seg);
 		int tries;
 		boolean failed = false;
@@ -592,7 +606,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		ClientCHK key;
 		SplitFileFetcherSubSegment sub = null;
 		synchronized(this) {
-			if(isFinished(container)) return false;
+			if(isFinished(container)) return null;
 			if(blockNo < dataKeys.length) {
 				key = dataKeys[blockNo];
 				if(persistent)
@@ -601,7 +615,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 				if(tries > maxTries && maxTries >= 0) failed = true;
 				else {
 					sub = getSubSegment(tries, container, false, seg);
-					if(tries % ClientRequestScheduler.COOLDOWN_RETRIES == 0) {
+					if(tries % RequestScheduler.COOLDOWN_RETRIES == 0) {
 						long now = System.currentTimeMillis();
 						if(dataCooldownTimes[blockNo] > now)
 							Logger.error(this, "Already on the cooldown queue! for "+this+" data block no "+blockNo, new Exception("error"));
@@ -619,7 +633,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 				if(tries > maxTries && maxTries >= 0) failed = true;
 				else {
 					sub = getSubSegment(tries, container, false, seg);
-					if(tries % ClientRequestScheduler.COOLDOWN_RETRIES == 0) {
+					if(tries % RequestScheduler.COOLDOWN_RETRIES == 0) {
 						long now = System.currentTimeMillis();
 						if(checkCooldownTimes[checkNo] > now)
 							Logger.error(this, "Already on the cooldown queue! for "+this+" check block no "+blockNo, new Exception("error"));
@@ -637,23 +651,27 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			onFatalFailure(e, blockNo, seg, container, context);
 			if(logMINOR)
 				Logger.minor(this, "Not retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries);
-			return false;
+			return null;
 		}
+		boolean mustSchedule = false;
 		if(cooldown) {
 			// Registered to cooldown queue
 			if(logMINOR)
 				Logger.minor(this, "Added to cooldown queue: "+key+" for "+this+" was on segment "+seg+" now registered to "+sub);
 		} else {
 			// If we are here we are going to retry
-			sub.add(blockNo, false, container, context, false);
+			mustSchedule = sub.add(blockNo, true, container, context, false);
 			if(logMINOR)
 				Logger.minor(this, "Retrying block "+blockNo+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
 		}
 		if(persistent) {
-			if(sub != null && sub != seg) container.deactivate(sub, 1);
+			container.set(this);
 			container.deactivate(key, 5);
 		}
-		return true;
+		if(mustSchedule) 
+			return sub;
+		else
+			return null;
 	}
 	
 	private SplitFileFetcherSubSegment getSubSegment(int retryCount, ObjectContainer container, boolean noCreate, SplitFileFetcherSubSegment dontDeactivate) {
@@ -743,14 +761,15 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			if(logMINOR)
 				Logger.minor(this, "scheduling "+seg+" : "+seg.blockNums);
 			
-			seg.schedule(container, context, true, regmeOnly);
-			if(persistent)
-				container.deactivate(seg, 1);
 			synchronized(this) {
 				scheduled = true;
 			}
 			if(persistent)
 				container.set(this);
+			// Schedule(true) will deactivate me, so we need to do it after storing scheduled.
+			seg.schedule(container, context, true, regmeOnly);
+			if(persistent)
+				container.deactivate(seg, 1);
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t+" scheduling "+this, t);
 			fail(new FetchException(FetchException.INTERNAL_ERROR, t), container, context, true);
@@ -1106,7 +1125,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		if(persistent)
 			container.activate(seg, 1);
 		if(seg != null) {
-			seg.removeBlockNum(blockNum, container);
+			seg.removeBlockNum(blockNum, container, false);
 			seg.possiblyRemoveFromParent(container, context);
 		}
 		for(int i=0;i<subSegments.size();i++) {
@@ -1114,7 +1133,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			if(checkSeg == seg) continue;
 			if(persistent)
 				container.activate(checkSeg, 1);
-			if(checkSeg.removeBlockNum(blockNum, container))
+			if(checkSeg.removeBlockNum(blockNum, container, false))
 				Logger.error(this, "Block number "+blockNum+" was registered to wrong subsegment "+checkSeg+" should be "+seg);
 			if(persistent)
 				container.deactivate(checkSeg, 1);

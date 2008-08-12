@@ -38,6 +38,7 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 	
 	ClientRequestSchedulerNonPersistent(ClientRequestScheduler sched, boolean forInserts, boolean forSSKs) {
 		super(forInserts, forSSKs, new HashMap(), new LinkedList());
+		this.sched = sched;
 		recentSuccesses = new LinkedList();
 		if(forInserts)
 			pendingKeys = null;

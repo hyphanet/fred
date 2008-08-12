@@ -6,14 +6,12 @@ package freenet.node;
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
-import freenet.client.async.ChosenRequest;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
-import freenet.support.Logger;
 import freenet.support.io.NativeThread;
 
 /**
@@ -55,50 +53,12 @@ public abstract class SendableGet extends BaseSendableGet {
 		this.parent = parent;
 	}
 	
-	/** Do the request, blocking. Called by RequestStarter. 
-	 * Also responsible for deleting it.
-	 * @return True if a request was executed. False if caller should try to find another request, and remove
-	 * this one from the queue. */
-	public boolean send(NodeClientCore core, final RequestScheduler sched, ChosenRequest req) {
-		Object keyNum = req.token;
-		ClientKey key = req.ckey;
-		if(key == null) {
-			Logger.error(this, "Key is null in send(): keyNum = "+keyNum+" for "+this);
-			return false;
-		}
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Sending get for key "+keyNum+" : "+key);
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if((!req.isPersistent()) && isCancelled(null)) {
-			if(logMINOR) Logger.minor(this, "Cancelled: "+this);
-			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.CANCELLED), keyNum, NativeThread.NORM_PRIORITY+1, req, req.isPersistent());
-			return false;
-		}
-		try {
-			try {
-				core.realGetKey(key, req.localRequestOnly, req.cacheLocalRequests, req.ignoreStore);
-			} catch (final LowLevelGetException e) {
-				sched.callFailure(this, e, keyNum, NativeThread.NORM_PRIORITY+1, req, req.isPersistent());
-				return true;
-			} catch (Throwable t) {
-				Logger.error(this, "Caught "+t, t);
-				sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, NativeThread.NORM_PRIORITY+1, req, req.isPersistent());
-				return true;
-			}
-			// We must remove the request even in this case.
-			// On other paths, callFailure() will do the removal.
-			sched.removeChosenRequest(req);
-			// Don't call onSuccess(), it will be called for us by backdoor coalescing.
-			sched.succeeded(this, req);
-			
-		} catch (Throwable t) {
-			Logger.error(this, "Caught "+t, t);
-			sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR), keyNum, NativeThread.NORM_PRIORITY+1, req, req.isPersistent());
-			return true;
-		}
-		return true;
+	static final SendableGetRequestSender sender = new SendableGetRequestSender();
+	
+	public SendableRequestSender getSender(ObjectContainer container, ClientContext context) {
+		return sender;
 	}
-
+	
 	public ClientRequestScheduler getScheduler(ClientContext context) {
 		if(isSSK())
 			return context.getSskFetchScheduler();
@@ -119,8 +79,11 @@ public abstract class SendableGet extends BaseSendableGet {
 	/** Reset the cooldown times when the request is reregistered. */
 	public abstract void resetCooldownTimes(ObjectContainer container);
 
-	public void internalError(final Object keyNum, final Throwable t, final RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
-		sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), keyNum, NativeThread.MAX_PRIORITY, null, persistent);
+	/**
+	 * An internal error occurred, effecting this SendableGet, independantly of any ChosenBlock's.
+	 */
+	public void internalError(final Throwable t, final RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
+		sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), NativeThread.MAX_PRIORITY, persistent);
 	}
 
 	/**

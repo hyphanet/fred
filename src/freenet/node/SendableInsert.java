@@ -6,6 +6,7 @@ package freenet.node;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
+import freenet.support.io.NativeThread;
 
 /**
  * Callback interface for a low level insert, which is immediately sendable. These
@@ -25,8 +26,8 @@ public abstract class SendableInsert extends SendableRequest {
 	/** Called when we don't! */
 	public abstract void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context);
 
-	public void internalError(Object keyNum, Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
-		onFailure(new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, t.getMessage(), t), keyNum, container, context);
+	public void internalError(Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
+		sched.callFailure(this, new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, t.getMessage(), t), NativeThread.MAX_PRIORITY, persistent);
 	}
 
 }

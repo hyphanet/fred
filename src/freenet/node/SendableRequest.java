@@ -1,11 +1,15 @@
 package freenet.node;
 
+import java.util.List;
+
 import com.db4o.ObjectContainer;
 
-import freenet.client.async.ChosenRequest;
+import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.ClientRequester;
+import freenet.client.async.PersistentChosenBlock;
+import freenet.client.async.PersistentChosenRequest;
 import freenet.support.Logger;
 import freenet.support.RandomGrabArray;
 import freenet.support.RandomGrabArrayItem;
@@ -54,18 +58,14 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	 * currently running, on the cooldown queue etc. */
 	public abstract Object[] sendableKeys(ObjectContainer container);
 
-	/** ONLY called by RequestStarter. Start the actual request using the NodeClientCore
-	 * provided, and the key and key number earlier got from chooseKey(). 
-	 * The request itself may have been removed from the overall queue already. For 
-	 * persistent requests, the callbacks will be called on the database thread, and we 
-	 * will delete the PersistentChosenRequest from there before committing.
-	 * @param sched The scheduler this request has just been grabbed from.
-	 * @param keyNum The key number that was fed into getKeyObject().
-	 * @param key The key returned from grabKey().
-	 * @param ckey The client key for decoding, if available (mandatory for SendableGet, null otherwise).
-	 * @return True if a request was sent, false otherwise (in which case the request will
-	 * be removed if it hasn't already been). */
-	public abstract boolean send(NodeClientCore node, RequestScheduler sched, ChosenRequest request);
+	/**
+	 * Get or create a SendableRequestSender for this object. This is a non-persistent
+	 * object used to send the requests. @see SendableGet.getSender().
+	 * @param container A database handle may be necessary for creating it.
+	 * @param context A client context may also be necessary.
+	 * @return
+	 */
+	public abstract SendableRequestSender getSender(ObjectContainer container, ClientContext context);
 	
 	/** If true, the request has been cancelled, or has completed, either way it need not
 	 * be registered any more. isEmpty() on the other hand means there are no queued blocks.
@@ -127,6 +127,10 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	public abstract boolean isSSK();
 	
 	/** Requeue after an internal error */
-	public abstract void internalError(Object keyNum, Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent);
+	public abstract void internalError(Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent);
+
+	/** Construct a full set of ChosenBlock's for a persistent request. These are transient, so we will need to clone keys
+	 * etc. */
+	public abstract List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context);
 
 }

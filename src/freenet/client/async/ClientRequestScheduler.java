@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 
@@ -17,7 +18,6 @@ import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.node.BaseSendableGet;
-import freenet.node.BulkCallFailureItem;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.LowLevelGetException;
 import freenet.node.LowLevelPutException;
@@ -28,7 +28,6 @@ import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
-import freenet.node.SupportsBulkCallFailure;
 import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.api.StringCallback;
@@ -116,8 +115,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		this.selectorContainer = node.db;
 		schedCore = ClientRequestSchedulerCore.create(node, forInserts, forSSKs, selectorContainer, COOLDOWN_PERIOD, core.clientDatabaseExecutor, this, context);
 		schedTransient = new ClientRequestSchedulerNonPersistent(this, forInserts, forSSKs);
-		schedCore.fillStarterQueue(selectorContainer);
-		schedCore.start(core);
 		persistentCooldownQueue = schedCore.persistentCooldownQueue;
 		this.databaseExecutor = core.clientDatabaseExecutor;
 		this.datastoreCheckerExecutor = core.datastoreCheckerExecutor;
@@ -146,6 +143,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 			transientCooldownQueue = null;
 		jobRunner = clientContext.jobRunner;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+	}
+	
+	public void start(NodeClientCore core) {
+		schedCore.start(core);
+		queueFillRequestStarterQueue();
 	}
 	
 	/** Called by the  config. Callback
@@ -412,11 +414,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		finishRegister(getters, persistent, false, anyValid, regme);
 	}
 	
-	/** If enabled, if the queue is less than 25% full, attempt to add newly 
-	 * registered requests directly to it, storing a PersistentChosenRequest and 
-	 * bypassing registration on the queue. Risky optimisation. */
-	static final boolean TRY_DIRECT = true;
-
 	private void finishRegister(final SendableGet[] getters, boolean persistent, boolean onDatabaseThread, final boolean anyValid, final RegisterMe reg) {
 		if(isInsertScheduler && getters != null) {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
@@ -424,7 +421,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				for(int i=0;i<getters.length;i++) {
 					if(persistent)
 						selectorContainer.activate(getters[i], 1);
-					getters[i].internalError(null, e, this, selectorContainer, clientContext, persistent);
+					getters[i].internalError(e, this, selectorContainer, clientContext, persistent);
 					if(persistent)
 						selectorContainer.deactivate(getters[i], 1);
 				}
@@ -439,56 +436,20 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				if(persistent)
 					selectorContainer.activate(getters, 1);
-				boolean tryDirect = false;
-				if(anyValid && TRY_DIRECT) {
-					synchronized(starterQueue) {
-						tryDirect = starterQueue.size() < MAX_STARTER_QUEUE_SIZE * 1 / 4;
-					}
-					if(tryDirect) {
-						for(int i=0;i<getters.length;i++) {
-							SendableGet getter = getters[i];
-							if(persistent)
-								selectorContainer.activate(getter, 1);
-							while(true) {
-								PersistentChosenRequest cr = (PersistentChosenRequest) schedCore.maybeMakeChosenRequest(getter, selectorContainer, clientContext);
-								if(cr == null) {
-									if(!(getter.isEmpty(selectorContainer) || getter.isCancelled(selectorContainer)))
-										// Still needs to be registered
-										tryDirect = false;
-									break;
-								}
-								synchronized(starterQueue) {
-									if(logMINOR) Logger.minor(this, "Adding directly to queue: "+cr);
-									starterQueue.add(cr);
-									if(starterQueue.size() >= MAX_STARTER_QUEUE_SIZE) {
-										if(!(getter.isEmpty(selectorContainer) || getter.isCancelled(selectorContainer)))
-											// Still stuff to register.
-											tryDirect = false;
-										break;
-									}
-								}
-							}
-							if(persistent)
-								selectorContainer.deactivate(getter, 1);
-						}
-					}
-				}
 				if(logMINOR)
 					Logger.minor(this, "finishRegister() for "+getters);
 				if(anyValid) {
-					if(!tryDirect) {
-						boolean wereAnyValid = false;
-						for(int i=0;i<getters.length;i++) {
-							SendableGet getter = getters[i];
-							selectorContainer.activate(getters[i], 1);
-							if(!(getter.isCancelled(selectorContainer) || getter.isEmpty(selectorContainer))) {
-								wereAnyValid = true;
-								schedCore.innerRegister(getter, random, selectorContainer);
-							}
+					boolean wereAnyValid = false;
+					for(int i=0;i<getters.length;i++) {
+						SendableGet getter = getters[i];
+						selectorContainer.activate(getters[i], 1);
+						if(!(getter.isCancelled(selectorContainer) || getter.isEmpty(selectorContainer))) {
+							wereAnyValid = true;
+							schedCore.innerRegister(getter, random, selectorContainer);
 						}
-						if(!wereAnyValid) {
-							Logger.normal(this, "No requests valid: "+getters);
-						}
+					}
+					if(!wereAnyValid) {
+						Logger.normal(this, "No requests valid: "+getters);
 					}
 				}
 				if(reg != null)
@@ -549,30 +510,49 @@ public class ClientRequestScheduler implements RequestScheduler {
 			schedTransient.addPendingKey(key.getNodeKey(), getter, null);
 	}
 	
-	private synchronized ChosenRequest removeFirst(ObjectContainer container, boolean transientOnly, boolean notTransient) {
-		if(!databaseExecutor.onThread()) {
-			throw new IllegalStateException("Not on database thread!");
-		}
+	public ChosenBlock getBetterNonPersistentRequest(short prio, int retryCount) {
 		short fuzz = -1;
 		if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
 			fuzz = -1;
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;	
-		// schedCore juggles both
-		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, transientOnly, notTransient, Short.MAX_VALUE, Integer.MAX_VALUE, clientContext, container);
-	}
-
-	public ChosenRequest getBetterNonPersistentRequest(ChosenRequest req) {
-		short fuzz = -1;
-		if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
-			fuzz = -1;
-		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
-			fuzz = 0;	
-		if(req == null)
-			return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, false, Short.MAX_VALUE, Integer.MAX_VALUE, clientContext, null);
-		short prio = req.prio;
-		int retryCount = req.request.getRetryCount();
 		return schedCore.removeFirst(fuzz, random, offeredKeys, starter, schedTransient, true, false, prio, retryCount, clientContext, null);
+	}
+	
+	/**
+	 * All the persistent SendableRequest's currently running (either actually in flight, just chosen,
+	 * awaiting the callbacks being executed etc). Note that this is an ArrayList because we *must*
+	 * compare by pointer: these objects may well implement hashCode() etc for use by other code, but 
+	 * if they are deactivated, they will be unreliable. Fortunately, this will be fairly small most
+	 * of the time, since a single SendableRequest might include 256 actual requests.
+	 * 
+	 * SYNCHRONIZATION: Synched on starterQueue.
+	 */
+	private final transient ArrayList<SendableRequest> runningPersistentRequests = new ArrayList<SendableRequest> ();
+	
+	public void removeRunningRequest(SendableRequest request) {
+		synchronized(starterQueue) {
+			for(int i=0;i<runningPersistentRequests.size();i++) {
+				if(runningPersistentRequests.get(i) == request) {
+					runningPersistentRequests.remove(i);
+					i--;
+				}
+			}
+		}
+	}
+	
+	public boolean isRunningRequest(SendableRequest request) {
+		synchronized(starterQueue) {
+			for(int i=0;i<runningPersistentRequests.size();i++) {
+				if(runningPersistentRequests.get(i) == request)
+					return true;
+			}
+		}
+		return false;
+	}
+	
+	void startingRequest(SendableRequest request) {
+		runningPersistentRequests.add(request);
 	}
 	
 	/** The maximum number of requests that we will keep on the in-RAM request
@@ -586,31 +566,73 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * something odd is happening.. (e.g. leaking PersistentChosenRequest's). */
 	static final int WARNING_STARTER_QUEUE_SIZE = 300;
 	
-	/**
-	 * Normally this will only contain PersistentChosenRequest's, however in the
-	 * case of coalescing keys, we will put ChosenRequest's back onto it as well.
-	 */
-	private transient LinkedList starterQueue = new LinkedList();
+	private transient LinkedList<PersistentChosenRequest> starterQueue = new LinkedList<PersistentChosenRequest>();
 	
-	public LinkedList getRequestStarterQueue() {
-		return starterQueue;
+	/** Length of the starter queue in requests. */
+	private transient int starterQueueLength;
+	
+	/**
+	 * Called by RequestStarter to find a request to run.
+	 */
+	public ChosenBlock grabRequest() {
+		while(true) {
+			PersistentChosenRequest reqGroup;
+			synchronized(starterQueue) {
+				reqGroup = starterQueue.isEmpty() ? null : starterQueue.getFirst();
+			}
+			if(reqGroup != null) {
+				// Try to find a better non-persistent request
+				ChosenBlock better = getBetterNonPersistentRequest(reqGroup.prio, reqGroup.retryCount);
+				if(better != null) return better;
+			}
+			if(reqGroup == null) {
+				queueFillRequestStarterQueue();
+				return getBetterNonPersistentRequest(Short.MAX_VALUE, Integer.MAX_VALUE);
+			}
+			ChosenBlock block;
+			int length = starterQueueLength;
+			synchronized(starterQueue) {
+				block = reqGroup.grabNotStarted(clientContext.fastWeakRandom);
+				if(block == null) {
+					for(int i=0;i<starterQueue.size();i++) {
+						if(starterQueue.get(i) == reqGroup) {
+							starterQueue.remove(i);
+							i--;
+						}
+					}
+					continue;
+				}
+				starterQueueLength--;
+			}
+			if(length < MAX_STARTER_QUEUE_SIZE)
+				queueFillRequestStarterQueue();
+			return block;
+		}
 	}
 	
 	public void queueFillRequestStarterQueue() {
 		synchronized(starterQueue) {
-			if(starterQueue.size() > MAX_STARTER_QUEUE_SIZE / 2)
+			if(starterQueueLength > MAX_STARTER_QUEUE_SIZE / 2)
 				return;
 		}
 		jobRunner.queue(requestStarterQueueFiller, NativeThread.MAX_PRIORITY, true);
 	}
 
-	void addToStarterQueue(ChosenRequest req) {
+	/**
+	 * @param request
+	 * @param container
+	 * @return True if the queue is now full/over-full.
+	 */
+	boolean addToStarterQueue(SendableRequest request, ObjectContainer container) {
+		container.activate(request, 1);
+		PersistentChosenRequest chosen = new PersistentChosenRequest(request, request.getPriorityClass(container), request.getRetryCount(), container, ClientRequestScheduler.this, clientContext);
+		container.deactivate(request, 1);
 		synchronized(starterQueue) {
-			if(starterQueue.contains(req)) {
-				Logger.error(this, "Not re-adding: "+req);
-				return;
-			}
-			starterQueue.add(req);
+			// Since we pass in runningPersistentRequests, we don't need to check whether it is already in the starterQueue.
+			starterQueue.add(chosen);
+			starterQueueLength += chosen.sizeNotStarted();
+			runningPersistentRequests.add(request);
+			return starterQueueLength < MAX_STARTER_QUEUE_SIZE;
 		}
 	}
 	
@@ -626,65 +648,116 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private DBJob requestStarterQueueFiller = new DBJob() {
 		public void run(ObjectContainer container, ClientContext context) {
 			if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
-			ChosenRequest req = null;
+			short fuzz = -1;
+			if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
+				fuzz = -1;
+			else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
+				fuzz = 0;	
 			synchronized(starterQueue) {
-				int size = starterQueue.size();
-				if(logMINOR) Logger.minor(this, "Queue size: "+size+" SSK="+isSSKScheduler+" insert="+isInsertScheduler);
-				if(size > MAX_STARTER_QUEUE_SIZE * 3 / 4) {
+				// Recompute starterQueueLength
+				int length = 0;
+				for(PersistentChosenRequest req : starterQueue)
+					length += req.sizeNotStarted();
+				if(length != starterQueueLength) {
+					Logger.error(this, "Correcting starterQueueLength from "+starterQueueLength+" to "+length);
+					starterQueueLength = length;
+				}
+				if(logMINOR) Logger.minor(this, "Queue size: "+length+" SSK="+isSSKScheduler+" insert="+isInsertScheduler);
+				if(starterQueueLength > MAX_STARTER_QUEUE_SIZE * 3 / 4) {
 					return;
 				}
-				if(size >= MAX_STARTER_QUEUE_SIZE) {
-					if(size >= WARNING_STARTER_QUEUE_SIZE)
+				if(starterQueueLength >= MAX_STARTER_QUEUE_SIZE) {
+					if(starterQueueLength >= WARNING_STARTER_QUEUE_SIZE)
 						Logger.error(this, "Queue already full: "+starterQueue.size());
 					return;
 				}
 			}
-			SendableRequest lastReq = null;
-			int sameKey = 0;
+			
 			while(true) {
-				req = null;
-				if(lastReq != null && sameKey < MAX_CONSECUTIVE_SAME_REQ &&
-						lastReq.getParentGrabArray() != null) {
-					req = schedCore.maybeMakeChosenRequest(lastReq, container, context);
-					sameKey++;
-				}
-				if(req == null) {
-					req = removeFirst(container, false, true);
-					if(sameKey > 1)
-						Logger.normal(this, "Selected "+sameKey+" requests from same SendableRequest: "+lastReq);
-					sameKey = 0;
-				}
-				if(req == null) {
-					if(lastReq != null) {
-						container.deactivate(lastReq, 1);
-					}
-					return;
-				}
-				lastReq = req.request;
-				if(logMINOR) Logger.minor(this, "Activating key");
-				container.activate(req.key, 5);
-				container.activate(req.ckey, 5);
-				container.activate(req.request, 1);
-				container.activate(req.request.getClientRequest(), 1);
-				if(logMINOR) Logger.minor(this, "Activated");
-				synchronized(starterQueue) {
-					if(req != null) {
-						starterQueue.add(req);
-						if(logMINOR)
-							Logger.minor(this, "Added to starterQueue: "+req+" size now "+starterQueue.size());
-						req = null;
-					}
-					if(starterQueue.size() >= MAX_STARTER_QUEUE_SIZE) {
-						if(lastReq != null) {
-							container.deactivate(lastReq, 1);
-						}
-						return;
-					}
-				}
+				SendableRequest request = schedCore.removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, false, true, Short.MAX_VALUE, Integer.MAX_VALUE, context, container);
+				if(request == null) return;
+				boolean full = addToStarterQueue(request, container);
+				starter.wakeUp();
+				if(full) return;
+				return;
 			}
 		}
 	};
 	
+	/**
+	 * Compare a recently registered SendableRequest to what is already on the
+	 * starter queue. If it is better, kick out stuff from the queue until we
+	 * are just over the limit.
+	 * @param req
+	 * @param container
+	 */
+	public void maybeAddToStarterQueue(SendableRequest req, ObjectContainer container) {
+		short prio = req.getPriorityClass(container);
+		int retryCount = req.getRetryCount();
+		synchronized(starterQueue) {
+			boolean allBetter = true;
+			for(PersistentChosenRequest old : starterQueue) {
+				if(old.prio < prio)
+					allBetter = false;
+				else if(old.prio == prio && old.retryCount <= retryCount)
+					allBetter = false;
+			}
+			if(allBetter && !starterQueue.isEmpty()) return;
+		}
+		addToStarterQueue(req, container);
+		trimStarterQueue(container);
+	}
+	
+	private void trimStarterQueue(ObjectContainer container) {
+		ArrayList<PersistentChosenRequest> dumped = null;
+		synchronized(starterQueue) {
+			while(starterQueueLength > MAX_STARTER_QUEUE_SIZE) {
+				// Find the lowest priority/retry count request.
+				// If we can dump it without going below the limit, then do so.
+				// If we can't, return.
+				PersistentChosenRequest worst = null;
+				short worstPrio = -1;
+				int worstRetryCount = -1;
+				int worstIndex = -1;
+				if(starterQueue.isEmpty()) {
+					if(starterQueueLength != 0) {
+						Logger.error(this, "Starter queue empty but starterQueueLength is "+starterQueueLength);
+						starterQueueLength = 0;
+					}
+					break;
+				}
+				for(int i=0;i<starterQueue.size();i++) {
+					PersistentChosenRequest req = starterQueue.get(i);
+					short prio = req.prio;
+					int retryCount = req.retryCount;
+					if(prio > worstPrio ||
+							(prio == worstPrio && retryCount > worstRetryCount)) {
+						worstPrio = prio;
+						worstRetryCount = retryCount;
+						worst = req;
+						worstIndex = i;
+						continue;
+					}
+				}
+				int lengthAfter = starterQueueLength - worst.sizeNotStarted();
+				if(lengthAfter >= MAX_STARTER_QUEUE_SIZE) {
+					if(dumped == null)
+						dumped = new ArrayList<PersistentChosenRequest>(2);
+					dumped.add(worst);
+					starterQueue.remove(worstIndex);
+					if(lengthAfter == MAX_STARTER_QUEUE_SIZE) break;
+				} else {
+					// Can't remove any more.
+					break;
+				}
+			}
+		}
+		if(dumped == null) return;
+		for(PersistentChosenRequest req : dumped) {
+			req.onDumped(schedCore, container);
+		}
+	}
+
 	public void removePendingKey(final GotKeyListener getter, final boolean complain, final Key key, ObjectContainer container) {
 		if(!getter.persistent()) {
 			boolean dropped = schedTransient.removePendingKey(getter, complain, key, container);
@@ -764,14 +837,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 */
 	static final short TRIP_PENDING_PRIORITY = NativeThread.HIGH_PRIORITY-1;
 	
-	public synchronized void succeeded(final BaseSendableGet succeeded, final ChosenRequest req) {
+	public synchronized void succeeded(final BaseSendableGet succeeded, final ChosenBlock req) {
 		if(req.isPersistent()) {
 			jobRunner.queue(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
 					container.activate(succeeded, 1);
 					schedCore.succeeded(succeeded, container);
-					container.delete((PersistentChosenRequest)req);
 					container.deactivate(succeeded, 1);
 				}
 				
@@ -993,152 +1065,40 @@ public class ClientRequestScheduler implements RequestScheduler {
 		schedCore.removeFetchingKey(key);
 	}
 	
-	public void removeChosenRequest(ChosenRequest req) {
-		schedCore.removeChosenRequest(req);
-	}
-
 	/**
 	 * Map from SendableGet implementing SupportsBulkCallFailure to BulkCallFailureItem[].
 	 */
 	private transient HashMap bulkFailureLookupItems = new HashMap();
 	private transient HashMap bulkFailureLookupJob = new HashMap();
-	
-	private class BulkCaller implements DBJob {
-		
-		private final SupportsBulkCallFailure getter;
-		
-		BulkCaller(SupportsBulkCallFailure getter) {
-			this.getter = getter;
-			if(getter == null) throw new NullPointerException();
-		}
 
-		public void run(ObjectContainer container, ClientContext context) {
-			BulkCallFailureItem[] items;
-			container.activate(getter, 1);
-			synchronized(ClientRequestScheduler.this) {
-				items = (BulkCallFailureItem[]) bulkFailureLookupItems.get(getter);
-				bulkFailureLookupItems.remove(getter);
-				bulkFailureLookupJob.remove(getter);
-			}
-			if(items != null && items.length > 0) {
-				if(logMINOR) Logger.minor(this, "Calling non-fatal failure in bulk for "+items.length+" items for "+getter);
-				getter.onFailure(items, container, context);
-				for(int i=0;i<items.length;i++)
-					if(items[i] != null)
-						container.delete(items[i].req);
-			} else
-				Logger.normal(this, "Calling non-fatal failure in bulk for "+getter+" but no items to run for "+getter);
-			container.deactivate(getter, 1);
-		}
-		
-		public boolean equals(Object o) {
-			if(o instanceof BulkCaller) {
-				return ((BulkCaller)o).getter == getter;
-			} else return false;
-		}
-	}
-	
-	public void callFailure(final SendableGet get, final LowLevelGetException e, final Object keyNum, final int prio, final ChosenRequest req, boolean persistent) {
+	public void callFailure(final SendableGet get, final LowLevelGetException e, int prio, boolean persistent) {
 		if(!persistent) {
-			get.onFailure(e, keyNum, null, clientContext);
-			return;
-		}
-		if(get instanceof SupportsBulkCallFailure) {
-			// Getter MUST BE ACTIVATED for us to use it as a key.
-			// The below job doesn't write anything, so it will run fast.
+			get.onFailure(e, null, null, clientContext);
+		} else {
 			jobRunner.queue(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
-					container.activate(get, 1);
-					if(logMINOR)
-						Logger.minor(this, "Calling bulk failure for "+get);
-					SupportsBulkCallFailure getter = (SupportsBulkCallFailure) get;
-					BulkCallFailureItem item = new BulkCallFailureItem(e, keyNum, (PersistentChosenRequest) req);
-					BulkCaller caller = null;
-					synchronized(this) {
-						BulkCallFailureItem[] items = (BulkCallFailureItem[]) bulkFailureLookupItems.get(get);
-						if(items == null) {
-							bulkFailureLookupItems.put(getter, new BulkCallFailureItem[] { item } );
-						} else {
-							BulkCallFailureItem[] newItems = new BulkCallFailureItem[items.length+1];
-							System.arraycopy(items, 0, newItems, 0, items.length);
-							newItems[items.length] = item;
-							bulkFailureLookupItems.put(getter, newItems);
-						}
-						caller = (BulkCaller) bulkFailureLookupJob.get(getter);
-						if(caller == null) {
-							caller = new BulkCaller(getter);
-							bulkFailureLookupJob.put(getter, caller);
-						} else
-							caller = null;
-						
-					}
-					if(caller != null)
-						jobRunner.queue(caller, prio, true);
-					else {
-						if(logMINOR)
-							Logger.minor(this, "Not calling bulk failure for "+get);
-					}
-					container.deactivate(get, 1);
+					get.onFailure(e, null, container, clientContext);
 				}
 				
-			}, NativeThread.HIGH_PRIORITY, false);
-			return;
+			}, prio, false);
 		}
-		jobRunner.queue(new DBJob() {
-
-			public void run(ObjectContainer container, ClientContext context) {
-				container.activate(get, 1);
-				if(logMINOR)
-					Logger.minor(this, "callFailure() on "+get+" : "+e);
-				get.onFailure(e, keyNum, selectorContainer, clientContext);
-				if(logMINOR)
-					Logger.minor(this, "Deleting "+req);
-				selectorContainer.delete((PersistentChosenRequest)req);
-				container.deactivate(get, 1);
-			}
-			
-		}, prio, false);
 	}
 	
-	public void callFailure(final SendableInsert put, final LowLevelPutException e, final Object keyNum, int prio, final ChosenRequest req, boolean persistent) {
+	public void callFailure(final SendableInsert insert, final LowLevelPutException e, int prio, boolean persistent) {
 		if(!persistent) {
-			put.onFailure(e, keyNum, null, clientContext);
-			return;
+			insert.onFailure(e, null, null, clientContext);
+		} else {
+			jobRunner.queue(new DBJob() {
+
+				public void run(ObjectContainer container, ClientContext context) {
+					insert.onFailure(e, null, container, context);
+				}
+				
+			}, prio, false);
 		}
-		jobRunner.queue(new DBJob() {
-
-			public void run(ObjectContainer container, ClientContext context) {
-				container.activate(put, 1);
-				put.onFailure(e, keyNum, selectorContainer, clientContext);
-				if(logMINOR)
-					Logger.minor(this, "Deleting "+req);
-				selectorContainer.delete((PersistentChosenRequest)req);
-				container.deactivate(put, 1);
-			}
-			
-		}, NativeThread.NORM_PRIORITY, false);
 	}
-
-	public void callSuccess(final SendableInsert put, final Object keyNum, int prio, final ChosenRequest req, boolean persistent) {
-		if(!persistent) {
-			put.onSuccess(keyNum, null, clientContext);
-			return;
-		}
-		jobRunner.queue(new DBJob() {
-
-			public void run(ObjectContainer container, ClientContext context) {
-				container.activate(put, 1);
-				put.onSuccess(keyNum, selectorContainer, clientContext);
-				if(logMINOR)
-					Logger.minor(this, "Deleting "+req);
-				selectorContainer.delete((PersistentChosenRequest)req);
-				container.deactivate(put, 1);
-			}
-			
-		}, NativeThread.NORM_PRIORITY+1, false);
-	}
-
+	
 	public FECQueue getFECQueue() {
 		return clientContext.fecQueue;
 	}
@@ -1154,29 +1114,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return schedCore.addToFetching(key);
 	}
 
-	public void requeue(final ChosenRequest req) {
-		if(req.isPersistent()) {
-			this.clientContext.jobRunner.queue(new DBJob() {
-
-				public void run(ObjectContainer container, ClientContext context) {
-					container.activate(req.request, 1);
-					if(logMINOR)
-						Logger.minor(this, "Requeueing "+req);
-					if(req.request.isCancelled(container)) {
-						container.delete(req);
-						return;
-					}
-					container.deactivate(req.request, 1);
-					addToStarterQueue(req);
-				}
-				
-			}, NativeThread.HIGH_PRIORITY, false);
-		} else {
-			if(req.request.isCancelled(null)) return;
-			addToStarterQueue(req);
-		}
-	}
-	
 	public long countPersistentQueuedRequests(ObjectContainer container) {
 		return schedCore.countQueuedRequests(container);
 	}
@@ -1197,6 +1134,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		else
 			schedTransient.removeFromAllRequestsByClientRequest(get, clientRequest, dontComplain, null);
 	}
-	
+
 	
 }
