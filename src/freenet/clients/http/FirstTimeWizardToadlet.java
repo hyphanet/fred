@@ -315,16 +315,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			int upstreamBWLimit = (bwIndicator != null ? bwIndicator.getUpstramMaxBitRate() : -1);
 			if((bwIndicator != null) && (upstreamBWLimit > 0)) {
 				Logger.normal(this, "The node has a bandwidthIndicator: it has reported "+upstreamBWLimit+ "... we will use that value and skip the bandwidth selection step of the wizard.");
-				if(upstreamBWLimit < 128000)
+				int bytes = upstreamBWLimit / 8;
+				if(bytes < 16384)
 					_setUpstreamBandwidthLimit("8K");
-				else if(upstreamBWLimit < 256000)
-					_setUpstreamBandwidthLimit("12K");
-				else if(upstreamBWLimit < 512000)
-					_setUpstreamBandwidthLimit("32K");
-				else if(upstreamBWLimit < 1024000)
-					_setUpstreamBandwidthLimit("64K");
 				else
-					_setUpstreamBandwidthLimit("1000K");
+					_setUpstreamBandwidthLimit(Integer.toString(bytes/2));
 				super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step="+WIZARD_STEP.DATASTORE_SIZE);
 			} else
 				super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step="+WIZARD_STEP.BANDWIDTH);
