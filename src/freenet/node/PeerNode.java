@@ -1620,24 +1620,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 		}
 	}
-
-	/**
-	* Update the Location to a new value.
-	* @deprecated
-	*/
-	public void updateLocation(double newLoc) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
-		if(newLoc < 0.0 || newLoc > 1.0) {
-			Logger.error(this, "Invalid location update for " + this+ " ("+newLoc+')', new Exception("error"));
-			// Ignore it
-			return;
-		}
-		synchronized(this) {
-			currentLocation = newLoc;
-			locSetTime = System.currentTimeMillis();
-		}
-		node.peers.writePeers();
-	}
 	
 	public void updateLocation(double newLoc, double[] newLocs) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
@@ -2122,14 +2104,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* Send any high level messages that need to be sent on connect.
 	*/
 	protected void sendInitialMessages() {
-		Message locMsg = ((getVersionNumber() > 1153) ?
-			DMT.createFNPLocChangeNotificationNew(node.lm.getLocation(), node.peers.getPeerLocationDoubles(true)) :
-			DMT.createFNPLocChangeNotification(node.lm.getLocation()));
+		Message locMsg = DMT.createFNPLocChangeNotificationNew(node.lm.getLocation(), node.peers.getPeerLocationDoubles(true));
 		Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
 		Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
 		Message packetsMsg = createSentPacketsMessage();
-		Message dRouting = DMT.createRoutingStatus(!disableRoutingHasBeenSetLocally);
-		Message uptime = DMT.createFNPUptime((byte)(int)(100*node.uptime.getUptime()));
+		Message dRoutingMsg = DMT.createRoutingStatus(!disableRoutingHasBeenSetLocally);
+		Message uptimeMsg = DMT.createFNPUptime((byte)(int)(100*node.uptime.getUptime()));
 
 		try {
 			if(isRealConnection())
@@ -2137,8 +2117,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			sendAsync(ipMsg, null, 0, node.nodeStats.initialMessagesCtr);
 			sendAsync(timeMsg, null, 0, node.nodeStats.initialMessagesCtr);
 			sendAsync(packetsMsg, null, 0, node.nodeStats.initialMessagesCtr);
-			sendAsync(dRouting, null, 0, node.nodeStats.initialMessagesCtr);
-			sendAsync(uptime, null, 0, node.nodeStats.initialMessagesCtr);
+			sendAsync(dRoutingMsg, null, 0, node.nodeStats.initialMessagesCtr);
+			sendAsync(uptimeMsg, null, 0, node.nodeStats.initialMessagesCtr);
 		} catch(NotConnectedException e) {
 			Logger.error(this, "Completed handshake with " + getPeer() + " but disconnected (" + isConnected + ':' + currentTracker + "!!!: " + e, e);
 		}
