@@ -71,6 +71,10 @@ public class TempBucketFactory implements BucketFactory {
 		bytesInUse -= size;
 	}
 	
+	public synchronized long getRamUsed() {
+		return bytesInUse;
+	}
+	
 	public synchronized void setMaxRamUsed(long size) {
 		maxRamUsed = size;
 	}
