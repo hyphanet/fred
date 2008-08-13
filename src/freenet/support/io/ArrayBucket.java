@@ -20,8 +20,6 @@ public class ArrayBucket implements Bucket {
 	private final ArrayList data;
 	private final String name;
 	private volatile boolean readOnly;
-	private OutputStream os = null;
-	private InputStream is = null;
 
 	public ArrayBucket() {
 		this("ArrayBucket");
@@ -39,15 +37,11 @@ public class ArrayBucket implements Bucket {
 
 	public synchronized OutputStream getOutputStream() throws IOException {
 		if(readOnly) throw new IOException("Read only");
-		if(os == null)
-			os = new ArrayBucketOutputStream();
-		return os;
+		return new ArrayBucketOutputStream();
 	}
 
 	public synchronized InputStream getInputStream() {
-		if(is == null)
-			is = new ArrayBucketInputStream();
-		return is;
+		return new ArrayBucketInputStream();
 	}
 
 	@Override
