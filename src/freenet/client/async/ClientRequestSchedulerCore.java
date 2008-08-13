@@ -431,7 +431,14 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					schedTransient.innerRegister(req, random, container);
 				continue; // Try the next one on this retry count.
 			}
+			
 			// Check recentSuccesses
+			/** FIXME:
+			 * This does not make sense with selecting a whole SendableRequest
+			 * at a time, so turn it off. However, what would make sense would 
+			 * be to have recentSuccesses be a list of ClientRequester's instead, 
+			 * like we do on trunk. */
+			if(!req.persistent()) {
 			List recent = req.persistent() ? recentSuccesses : schedTransient.recentSuccesses;
 			SendableRequest altReq = null;
 			if(!recent.isEmpty()) {
@@ -462,6 +469,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
 				recent.add(altReq);
 			}
+			}
+			
 			// Now we have chosen a request.
 			if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" ("+chosenTracker.getNumber()+", prio "+
 					req.getPriorityClass(container)+", retries "+req.getRetryCount()+", client "+req.getClient()+", client-req "+req.getClientRequest()+ ')');
