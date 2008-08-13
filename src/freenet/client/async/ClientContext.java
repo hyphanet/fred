@@ -15,6 +15,7 @@ import freenet.crypt.RandomSource;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarterGroup;
+import freenet.node.Ticker;
 import freenet.support.Executor;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.NativeThread;
@@ -43,6 +44,7 @@ public class ClientContext {
 	public transient final USKManager uskManager;
 	public transient final Random fastWeakRandom;
 	public transient final long bootID;
+	public transient final Ticker ticker;
 
 	public ClientContext(NodeClientCore core) {
 		this.bootID = core.node.bootID;
@@ -58,6 +60,7 @@ public class ClientContext {
 		this.healingQueue = core.getHealingQueue();
 		this.uskManager = core.uskManager;
 		fastWeakRandom = core.node.fastWeakRandom;
+		this.ticker = core.getTicker();
 	}
 	
 	public void init(RequestStarterGroup starters) {
