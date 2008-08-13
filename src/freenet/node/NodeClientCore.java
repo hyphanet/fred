@@ -53,13 +53,12 @@ import freenet.support.SerialExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
-import freenet.support.api.BucketFactory;
+import freenet.support.api.LongCallback;
 import freenet.support.api.StringArrCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NativeThread;
-import freenet.support.io.PaddedEphemerallyEncryptedBucketFactory;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.TempBucketFactory;
 
@@ -82,7 +81,7 @@ public class NodeClientCore implements Persistable {
 	private File[] uploadAllowedDirs;
 	private boolean uploadAllowedEverywhere;
 	final FilenameGenerator tempFilenameGenerator;
-	public final PaddedEphemerallyEncryptedBucketFactory tempBucketFactory;
+	public final TempBucketFactory tempBucketFactory;
 	public final PersistentTempBucketFactory persistentTempBucketFactory;
 	public final Node node;
 	final NodeStats nodeStats;
@@ -204,6 +203,29 @@ public class NodeClientCore implements Persistable {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
 		}
 
+		nodeConfig.register("maxRAMBucketSize", "32KiB", sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
+
+			public long get() {
+				return (tempBucketFactory == null ? 0 : tempBucketFactory.getMaxRAMBucketSize());
+			}
+
+			public void set(long val) throws InvalidConfigValueException {
+				if((val == get()) || (tempBucketFactory == null)) return;
+				tempBucketFactory.setMaxRAMBucketSize(val);
+			}
+		});
+		nodeConfig.register("RAMBucketPoolSize", "10MiB", sortOrder++, true, false, "NodeClientCore.ramBucketPoolSize", "NodeClientCore.ramBucketPoolSizeLong", new LongCallback() {
+
+			public long get() {
+				return (tempBucketFactory == null ? 0 : tempBucketFactory.getMaxRamUsed());
+			}
+
+			public void set(long val) throws InvalidConfigValueException {
+				if((val == get()) || (tempBucketFactory == null)) return;
+				tempBucketFactory.setMaxRamUsed(val);
+			}
+		});
+			
 		nodeConfig.register("encryptTempBuckets", true, sortOrder++, true, false, "NodeClientCore.encryptTempBuckets", "NodeClientCore.encryptTempBucketsLong", new BooleanCallback() {
 
 			public boolean get() {
@@ -215,8 +237,7 @@ public class NodeClientCore implements Persistable {
 				tempBucketFactory.setEncryption(val);
 			}
 		});
-		BucketFactory _tempBucketFactory = new TempBucketFactory(tempFilenameGenerator);
-		tempBucketFactory = new PaddedEphemerallyEncryptedBucketFactory(_tempBucketFactory, random, node.fastWeakRandom, 1024, nodeConfig.getBoolean("encryptTempBuckets"));
+		tempBucketFactory = new TempBucketFactory(tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), random, node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"));
 
 		// Downloads directory
 
