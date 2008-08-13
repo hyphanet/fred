@@ -568,9 +568,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	private transient LinkedList<PersistentChosenRequest> starterQueue = new LinkedList<PersistentChosenRequest>();
 	
-	/** Length of the starter queue in requests. */
-	private transient int starterQueueLength;
-	
 	/**
 	 * Called by RequestStarter to find a request to run.
 	 */
@@ -590,7 +587,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				return getBetterNonPersistentRequest(Short.MAX_VALUE, Integer.MAX_VALUE);
 			}
 			ChosenBlock block;
-			int length = starterQueueLength;
+			int finalLength = 0;
 			synchronized(starterQueue) {
 				block = reqGroup.grabNotStarted(clientContext.fastWeakRandom);
 				if(block == null) {
@@ -598,13 +595,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 						if(starterQueue.get(i) == reqGroup) {
 							starterQueue.remove(i);
 							i--;
+						} else {
+							finalLength += starterQueue.get(i).sizeNotStarted();
 						}
 					}
 					continue;
 				}
-				starterQueueLength--;
 			}
-			if(length < MAX_STARTER_QUEUE_SIZE)
+			if(finalLength < MAX_STARTER_QUEUE_SIZE)
 				queueFillRequestStarterQueue();
 			if(logMINOR)
 				Logger.minor(this, "grabRequest() returning "+block);
@@ -613,11 +611,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	public void queueFillRequestStarterQueue() {
-		synchronized(starterQueue) {
-			if(starterQueueLength > MAX_STARTER_QUEUE_SIZE / 2)
-				return;
-		}
+		if(starterQueueLength() > MAX_STARTER_QUEUE_SIZE / 2)
+			return;
 		jobRunner.queue(requestStarterQueueFiller, NativeThread.MAX_PRIORITY, true);
+	}
+
+	private int starterQueueLength() {
+		int length = 0;
+		synchronized(starterQueue) {
+			for(PersistentChosenRequest request : starterQueue)
+				length += request.sizeNotStarted();
+		}
+		return length;
 	}
 
 	/**
@@ -632,9 +637,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		synchronized(starterQueue) {
 			// Since we pass in runningPersistentRequests, we don't need to check whether it is already in the starterQueue.
 			starterQueue.add(chosen);
-			starterQueueLength += chosen.sizeNotStarted();
+			int length = starterQueueLength();
+			length += chosen.sizeNotStarted();
 			runningPersistentRequests.add(request);
-			return starterQueueLength < MAX_STARTER_QUEUE_SIZE;
+			return length < MAX_STARTER_QUEUE_SIZE;
 		}
 	}
 	
@@ -660,17 +666,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 				int length = 0;
 				for(PersistentChosenRequest req : starterQueue)
 					length += req.sizeNotStarted();
-				if(length != starterQueueLength) {
-					Logger.error(this, "Correcting starterQueueLength from "+starterQueueLength+" to "+length);
-					starterQueueLength = length;
-				}
 				if(logMINOR) Logger.minor(this, "Queue size: "+length+" SSK="+isSSKScheduler+" insert="+isInsertScheduler);
-				if(starterQueueLength > MAX_STARTER_QUEUE_SIZE * 3 / 4) {
+				if(length >= MAX_STARTER_QUEUE_SIZE) {
+					if(length >= WARNING_STARTER_QUEUE_SIZE)
+						Logger.error(this, "Queue already full: "+starterQueue.size());
 					return;
 				}
-				if(starterQueueLength >= MAX_STARTER_QUEUE_SIZE) {
-					if(starterQueueLength >= WARNING_STARTER_QUEUE_SIZE)
-						Logger.error(this, "Queue already full: "+starterQueue.size());
+				if(length > MAX_STARTER_QUEUE_SIZE * 3 / 4) {
 					return;
 				}
 			}
@@ -713,7 +715,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private void trimStarterQueue(ObjectContainer container) {
 		ArrayList<PersistentChosenRequest> dumped = null;
 		synchronized(starterQueue) {
-			while(starterQueueLength > MAX_STARTER_QUEUE_SIZE) {
+			int length = starterQueueLength();
+			while(length > MAX_STARTER_QUEUE_SIZE) {
 				// Find the lowest priority/retry count request.
 				// If we can dump it without going below the limit, then do so.
 				// If we can't, return.
@@ -721,27 +724,28 @@ public class ClientRequestScheduler implements RequestScheduler {
 				short worstPrio = -1;
 				int worstRetryCount = -1;
 				int worstIndex = -1;
+				int worstLength = -1;
 				if(starterQueue.isEmpty()) {
-					if(starterQueueLength != 0) {
-						Logger.error(this, "Starter queue empty but starterQueueLength is "+starterQueueLength);
-						starterQueueLength = 0;
-					}
 					break;
 				}
+				length = 0;
 				for(int i=0;i<starterQueue.size();i++) {
 					PersistentChosenRequest req = starterQueue.get(i);
 					short prio = req.prio;
 					int retryCount = req.retryCount;
+					int size = req.sizeNotStarted();
+					length += size;
 					if(prio > worstPrio ||
 							(prio == worstPrio && retryCount > worstRetryCount)) {
 						worstPrio = prio;
 						worstRetryCount = retryCount;
 						worst = req;
 						worstIndex = i;
+						worstLength = size;
 						continue;
 					}
 				}
-				int lengthAfter = starterQueueLength - worst.sizeNotStarted();
+				int lengthAfter = length - worstLength;
 				if(lengthAfter >= MAX_STARTER_QUEUE_SIZE) {
 					if(dumped == null)
 						dumped = new ArrayList<PersistentChosenRequest>(2);
