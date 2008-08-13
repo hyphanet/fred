@@ -114,7 +114,7 @@ public class TempBucketFactory implements BucketFactory {
 		boolean isARAMBucket = false;
 		
 		synchronized(this) {
-			if((size > 0) && (size < maxRAMBucketSize) && (bytesInUse < maxRamUsed)) {
+			if((size > 0) && (size <= maxRAMBucketSize) && (bytesInUse <= maxRamUsed)) {
 				bytesInUse += size;
 				isARAMBucket = true;
 			}
