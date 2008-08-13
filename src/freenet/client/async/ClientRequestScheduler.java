@@ -485,6 +485,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}, NativeThread.NORM_PRIORITY+1, false);
 			}
 		} else {
+			if(!anyValid) return;
 			// Register immediately.
 			for(int i=0;i<getters.length;i++)
 				schedTransient.innerRegister(getters[i], random, null);
@@ -594,6 +595,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 					for(int i=0;i<starterQueue.size();i++) {
 						if(starterQueue.get(i) == reqGroup) {
 							starterQueue.remove(i);
+							if(logMINOR)
+								Logger.minor(this, "Removed "+reqGroup+" from starter queue because is empty");
 							i--;
 						} else {
 							finalLength += starterQueue.get(i).sizeNotStarted();
@@ -605,7 +608,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(finalLength < MAX_STARTER_QUEUE_SIZE)
 				queueFillRequestStarterQueue();
 			if(logMINOR)
-				Logger.minor(this, "grabRequest() returning "+block);
+				Logger.minor(this, "grabRequest() returning "+block+" for "+reqGroup);
 			return block;
 		}
 	}
@@ -631,8 +634,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * @return True if the queue is now full/over-full.
 	 */
 	boolean addToStarterQueue(SendableRequest request, ObjectContainer container) {
+		if(logMINOR)
+			Logger.minor(this, "Adding to starter queue: "+request);
 		container.activate(request, 1);
 		PersistentChosenRequest chosen = new PersistentChosenRequest(request, request.getPriorityClass(container), request.getRetryCount(), container, ClientRequestScheduler.this, clientContext);
+		if(logMINOR)
+			Logger.minor(this, "Created PCR: "+chosen);
 		container.deactivate(request, 1);
 		synchronized(starterQueue) {
 			// Since we pass in runningPersistentRequests, we don't need to check whether it is already in the starterQueue.
@@ -1125,9 +1132,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	public boolean isQueueAlmostEmpty() {
-		synchronized(starterQueue) {
-			return this.starterQueue.size() < MAX_STARTER_QUEUE_SIZE / 4;
-		}
+		return starterQueueSize() < MAX_STARTER_QUEUE_SIZE / 4;
 	}
 	
 	public boolean isInsertScheduler() {
