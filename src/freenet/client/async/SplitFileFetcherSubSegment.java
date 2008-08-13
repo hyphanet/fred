@@ -2,6 +2,7 @@ package freenet.client.async;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
 
@@ -768,6 +769,18 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		return found;
 	}
 
+	public void removeBlockNums(int[] blockNos, ObjectContainer container) {
+		if(persistent)
+			container.activate(blockNums, 2);
+		boolean store = false;
+		for(int i=0;i<blockNos.length;i++)
+			store |= removeBlockNum(blockNos[i], container, true);
+		if(persistent) {
+			if(store) container.set(blockNums);
+			container.deactivate(blockNums, 2);
+		}
+	}
+
 	@Override
 	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
 		if(persistent) {
@@ -779,16 +792,24 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			blockNumbers = (Integer[]) blockNums.toArray(new Integer[blockNums.size()]);
 		}
 		ArrayList<PersistentChosenBlock> blocks = new ArrayList<PersistentChosenBlock>();
+		Arrays.sort(blockNumbers);
+		int prevBlockNumber = -1;
 		for(int i=0;i<blockNumbers.length;i++) {
-			ClientKey key = segment.getBlockKey(blockNumbers[i], container);
+			int blockNumber = blockNumbers[i];
+			if(blockNumber == prevBlockNumber) {
+				Logger.error(this, "Duplicate block number in makeBlocks() in "+this+": two copies of "+blockNumber);
+				continue;
+			}
+			prevBlockNumber = blockNumber;
+			ClientKey key = segment.getBlockKey(blockNumber, container).cloneKey();
 			if(key == null) {
 				if(logMINOR)
-					Logger.minor(this, "Block "+blockNumbers[i]+" is null, maybe race condition");
+					Logger.minor(this, "Block "+blockNumber+" is null, maybe race condition");
 				continue;
 			}
 			Key k = key.getNodeKey();
-			container.activate(k, 5);
-			PersistentChosenBlock block = new PersistentChosenBlock(false, request, blockNumbers[i], k, key, sched);
+			PersistentChosenBlock block = new PersistentChosenBlock(false, request, blockNumber, k, key, sched);
+			if(logMINOR) Logger.minor(this, "Created block "+block+" for block number "+blockNumber+" on "+this);
 			blocks.add(block);
 		}
 		blocks.trimToSize();
