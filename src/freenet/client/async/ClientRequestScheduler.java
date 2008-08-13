@@ -606,6 +606,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 			if(length < MAX_STARTER_QUEUE_SIZE)
 				queueFillRequestStarterQueue();
+			if(logMINOR)
+				Logger.minor(this, "grabRequest() returning "+block);
 			return block;
 		}
 	}
