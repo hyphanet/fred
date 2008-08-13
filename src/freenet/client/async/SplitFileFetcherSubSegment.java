@@ -801,12 +801,13 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				continue;
 			}
 			prevBlockNumber = blockNumber;
-			ClientKey key = segment.getBlockKey(blockNumber, container).cloneKey();
+			ClientKey key = segment.getBlockKey(blockNumber, container);
 			if(key == null) {
 				if(logMINOR)
 					Logger.minor(this, "Block "+blockNumber+" is null, maybe race condition");
 				continue;
 			}
+			key = key.cloneKey();
 			Key k = key.getNodeKey();
 			PersistentChosenBlock block = new PersistentChosenBlock(false, request, blockNumber, k, key, sched);
 			if(logMINOR) Logger.minor(this, "Created block "+block+" for block number "+blockNumber+" on "+this);
