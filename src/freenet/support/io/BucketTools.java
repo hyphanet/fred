@@ -420,7 +420,7 @@ public class BucketTools {
 				x += thisCycle;
 			}
 			if(b.size() != blockLength)
-				throw new IllegalStateException();
+				throw new IllegalStateException("The bucket's size is "+b.size()+" whereas it should be "+blockLength+'!');
 			return b;
 		} finally { os.close(); }
 	}
