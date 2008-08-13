@@ -36,6 +36,7 @@ public class PersistentChosenBlock extends ChosenBlock {
 		super(token, key, ckey, parent.localRequestOnly, parent.cacheLocalRequests, parent.ignoreStore, sched);
 		this.isInsert = isInsert;
 		this.parent = parent;
+		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Created "+this+" for "+parent+" ckey="+ckey);
 	}
 	
 	@Override
