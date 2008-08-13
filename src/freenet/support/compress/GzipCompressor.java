@@ -16,7 +16,7 @@ import freenet.support.api.BucketFactory;
 public class GzipCompressor extends Compressor {
 
 	public Bucket compress(Bucket data, BucketFactory bf, long maxLength) throws IOException, CompressionOutputSizeException {
-		Bucket output = bf.makeBucket(-1);
+		Bucket output = bf.makeBucket(maxLength);
 		InputStream is = null;
 		OutputStream os = null;
 		GZIPOutputStream gos = null;
@@ -53,7 +53,7 @@ public class GzipCompressor extends Compressor {
 		if(preferred != null)
 			output = preferred;
 		else
-			output = bf.makeBucket(-1);
+			output = bf.makeBucket(maxLength);
 		InputStream is = data.getInputStream();
 		OutputStream os = output.getOutputStream();
 		decompress(is, os, maxLength, maxCheckSizeLength);
