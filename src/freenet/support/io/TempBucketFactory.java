@@ -49,7 +49,7 @@ public class TempBucketFactory implements BucketFactory {
 	 *                If it is not possible to create a temp bucket due to an
 	 *                I/O error
 	 */
-	public TempFileBucket makeBucket(long size, float factor, long increment)
+	public Bucket makeBucket(long size, float factor, long increment)
 		throws IOException {
 		long id = filenameGenerator.makeRandomFilename();
 

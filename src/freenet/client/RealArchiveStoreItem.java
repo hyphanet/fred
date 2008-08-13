@@ -3,16 +3,12 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import java.io.File;
-
 import freenet.keys.FreenetURI;
 import freenet.support.api.Bucket;
-import freenet.support.io.FileUtil;
 import freenet.support.io.MultiReaderBucket;
 
 class RealArchiveStoreItem extends ArchiveStoreItem {
 
-	private final File myFilename;
 	private final MultiReaderBucket mb;
 	private final Bucket bucket;
 	private final long spaceUsed;
@@ -24,13 +20,12 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 	 * @param temp The TempStoreElement currently storing the data.
 	 * @param manager The parent ArchiveManager within which this item is stored.
 	 */
-	RealArchiveStoreItem(ArchiveStoreContext ctx, FreenetURI key2, String realName, TempStoreElement temp) {
+	RealArchiveStoreItem(ArchiveStoreContext ctx, FreenetURI key2, String realName, Bucket bucket) {
 		super(new ArchiveKey(key2, realName), ctx);
-		mb = new MultiReaderBucket(temp.bucket);
+		mb = new MultiReaderBucket(bucket);
 		this.bucket = mb.getReaderBucket();
-		temp.underBucket.setReadOnly();
-		this.myFilename = temp.underBucket.getFile();
-		spaceUsed = FileUtil.estimateUsage(myFilename, temp.underBucket.size());
+		bucket.setReadOnly();
+		spaceUsed = bucket.size();
 	}
 
 	/**
@@ -54,6 +49,7 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 		return spaceUsed;
 	}
 	
+	@Override
 	void innerClose() {
 		bucket.free();
 	}
