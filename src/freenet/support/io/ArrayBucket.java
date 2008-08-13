@@ -40,7 +40,7 @@ public class ArrayBucket implements Bucket {
 	public synchronized OutputStream getOutputStream() throws IOException {
 		if(readOnly) throw new IOException("Read only");
 		if(os == null)
-			new ArrayBucketOutputStream();
+			os = new ArrayBucketOutputStream();
 		return os;
 	}
 
