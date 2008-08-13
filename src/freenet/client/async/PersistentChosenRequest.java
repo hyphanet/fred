@@ -209,6 +209,8 @@ public class PersistentChosenRequest {
 	}
 
 	public void onDumped(ClientRequestSchedulerCore core, ObjectContainer container) {
+		if(logMINOR)
+			Logger.minor(this, "Dumping "+this);
 		ArrayList<PersistentChosenBlock> oldNotStarted;
 		boolean wasStarted;
 		synchronized(this) {
