@@ -36,7 +36,6 @@ public class TempBucketFactory implements BucketFactory {
 	}
 	
 	private final FilenameGenerator filenameGenerator;
-	private final ArrayBucketFactory arrayBucketFactory;
 	private long bytesInUse = 0;
 	
 	public final static long defaultIncrement = 4096;
@@ -53,7 +52,6 @@ public class TempBucketFactory implements BucketFactory {
 	// Storage accounting disabled by default.
 	public TempBucketFactory(FilenameGenerator filenameGenerator, long maxBucketSizeKeptInRam, long maxRamUsed, RandomSource strongPRNG, Random weakPRNG, boolean reallyEncrypt) {
 		this.filenameGenerator = filenameGenerator;
-		this.arrayBucketFactory = new ArrayBucketFactory();
 		this.maxRamUsed = maxRamUsed;
 		this.maxRAMBucketSize = maxBucketSizeKeptInRam;
 		this.strongPRNG = strongPRNG;

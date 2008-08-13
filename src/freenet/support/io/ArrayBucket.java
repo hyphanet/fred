@@ -46,6 +46,7 @@ public class ArrayBucket implements Bucket {
 		return new ArrayBucketInputStream();
 	}
 
+	@Override
 	public String toString() {
 		StringBuffer s = new StringBuffer(250);
 		for (Iterator i = data.iterator(); i.hasNext();) {
@@ -83,11 +84,23 @@ public class ArrayBucket implements Bucket {
 		public ArrayBucketOutputStream() {
 			super();
 		}
+		
+		@Override
+		public synchronized void write(byte b[], int off, int len) {
+			if(readOnly) throw new IllegalStateException("Read only");
+			super.write(b, off, len);
+		}
+		
+		@Override
+		public synchronized void write(int b) {
+			if(readOnly) throw new IllegalStateException("Read only");
+			super.write(b);
+		}
 
+		@Override
 		public void close() throws IOException {
 			data.add(super.toByteArray());
 			if(readOnly) throw new IOException("Read only");
-			// FIXME maybe we should throw on write instead? :)
 		}
 	}
 
@@ -121,10 +134,12 @@ public class ArrayBucket implements Bucket {
 			}
 		}
 
+		@Override
 		public int read(byte[] b) {
 			return priv_read(b, 0, b.length);
 		}
 
+		@Override
 		public int read(byte[] b, int off, int len) {
 			return priv_read(b, off, len);
 		}
@@ -146,6 +161,7 @@ public class ArrayBucket implements Bucket {
 			}
 		}
 
+		@Override
 		public int available() {
 			if (in == null) {
 				if (i.hasNext()) {
