@@ -712,6 +712,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	}
 
 	public void removeFetchingKey(final Key key) {
+		if(logMINOR)
+			Logger.minor(this, "Removing from keysFetching: "+key);
 		if(key != null) {
 			synchronized(keysFetching) {
 				keysFetching.remove(key);
