@@ -105,9 +105,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			tempFile = null;
 			try {
 				if(persistenceType == PERSIST_FOREVER)
-					ret = client.server.core.persistentTempBucketFactory.makeBucket(-1);
+					ret = client.server.core.persistentTempBucketFactory.makeBucket(maxOutputLength);
 				else
-					ret = fctx.bucketFactory.makeBucket(-1);
+					ret = fctx.bucketFactory.makeBucket(maxOutputLength);
 			} catch (IOException e) {
 				Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
 				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), null);
@@ -174,9 +174,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			tempFile = null;
 			try {
 				if(persistenceType == PERSIST_FOREVER)
-					ret = client.server.core.persistentTempBucketFactory.makeBucket(-1);
+					ret = client.server.core.persistentTempBucketFactory.makeBucket(fctx.maxOutputLength);
 				else
-					ret = fctx.bucketFactory.makeBucket(-1);
+					ret = fctx.bucketFactory.makeBucket(fctx.maxOutputLength);
 			} catch (IOException e) {
 				Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
 				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), null);
@@ -269,9 +269,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				try {
 					// Create a new temp bucket
 					if(persistenceType == PERSIST_FOREVER)
-						ret = client.server.core.persistentTempBucketFactory.makeBucket(-1);
+						ret = client.server.core.persistentTempBucketFactory.makeBucket(fctx.maxOutputLength);
 					else
-						ret = fctx.bucketFactory.makeBucket(-1);
+						ret = fctx.bucketFactory.makeBucket(fctx.maxOutputLength);
 				} catch (IOException e1) {
 					Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
 					onFailure(new FetchException(FetchException.BUCKET_ERROR, e), null);

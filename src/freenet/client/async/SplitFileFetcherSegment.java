@@ -227,7 +227,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 					}
 				}
 			}
-			decodedData = fetchContext.bucketFactory.makeBucket(-1);
+			decodedData = fetchContext.bucketFactory.makeBucket(maxBlockLength * dataBuckets.length);
 			if(logMINOR) Logger.minor(this, "Copying data from data blocks");
 			OutputStream os = decodedData.getOutputStream();
 			for(int i=0;i<dataBuckets.length;i++) {
