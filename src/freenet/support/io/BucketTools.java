@@ -288,6 +288,7 @@ public class BucketTools {
 				if(bytes <= 0) {
 					if(truncateLength == Long.MAX_VALUE)
 						break;
+					new IOException().printStackTrace();
 					throw new IOException("Could not move required quantity of data in copyTo: "+bytes+" (moved "+moved+" of "+truncateLength+"): unable to read from "+is);
 				}
 				os.write(buf, 0, bytes);
@@ -419,9 +420,11 @@ public class BucketTools {
 				os.write(buf, 0, thisCycle);
 				x += thisCycle;
 			}
+			os.close();
+			os = null;
 			if(b.size() != blockLength)
 				throw new IllegalStateException("The bucket's size is "+b.size()+" whereas it should be "+blockLength+'!');
 			return b;
-		} finally { os.close(); }
+		} finally { Closer.close(os); }
 	}
 }

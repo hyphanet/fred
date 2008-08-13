@@ -17,7 +17,7 @@ import freenet.support.api.Bucket;
  */
 public class ArrayBucket implements Bucket {
 
-	private final ArrayList data;
+	private final ArrayList<byte[]> data;
 	private final String name;
 	private volatile boolean readOnly;
 
@@ -31,7 +31,7 @@ public class ArrayBucket implements Bucket {
 	}
 
 	ArrayBucket(String name) {
-		data = new ArrayList();
+		data = new ArrayList<byte[]>();
 		this.name = name;
 	}
 
@@ -65,12 +65,12 @@ public class ArrayBucket implements Bucket {
 	}
 
 	public synchronized long size() {
-		long size = 0;
-		for (Iterator i = data.iterator(); i.hasNext();) {
-			byte[] b = (byte[]) i.next();
-			size += b.length;
-		}
-		return size;
+		long currentSize = 0;
+		
+		for(byte[] buf : data)
+			currentSize += buf.length;
+		
+		return currentSize;
 	}
 
 	public String getName() {
@@ -78,6 +78,7 @@ public class ArrayBucket implements Bucket {
 	}
 
 	private class ArrayBucketOutputStream extends ByteArrayOutputStream {
+		boolean hasBeenClosed = false;
 		
 		public ArrayBucketOutputStream() {
 			super();
@@ -97,6 +98,8 @@ public class ArrayBucket implements Bucket {
 
 		@Override
 		public synchronized void close() throws IOException {
+			if(hasBeenClosed) return;
+			hasBeenClosed = true;
 			data.add(super.toByteArray());
 			if(readOnly) throw new IOException("Read only");
 		}
