@@ -3,6 +3,7 @@ package freenet.node;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -118,7 +119,6 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.HostnameSyntaxException;
-import java.io.FileFilter;
 
 /**
  * @author amphibian
@@ -132,7 +132,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private static TimeSkewDetectedUserAlert timeSkewDetectedUserAlert;
 	private final static ClockProblemDetectedUserAlert clockProblemDetectedUserAlert = new ClockProblemDetectedUserAlert();
 	
-	public class NodeNameCallback implements StringCallback {
+	public class NodeNameCallback extends StringCallback  {
 		GetPubkey node;
 	
 		NodeNameCallback(GetPubkey n) {
@@ -170,7 +170,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 	}
 	
-	private class StoreTypeCallback implements StringCallback, EnumerableOptionCallback {
+	private class StoreTypeCallback extends StringCallback implements EnumerableOptionCallback {
 
 		public String get() {
 			return storeType;
@@ -190,10 +190,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		public void setPossibleValues(String[] val) {
 			throw new UnsupportedOperationException();
 		}
-		
+
+		public boolean isReadOnly() {
+			return true;
+		}
 	}
 	
-	private static class L10nCallback implements StringCallback, EnumerableOptionCallback {
+	private static class L10nCallback extends StringCallback implements EnumerableOptionCallback {
 		
 		public String get() {
 			return L10n.mapLanguageNameToLongName(L10n.getSelectedLanguage());
@@ -754,6 +757,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						// Don't translate the below as very few users will use it.
 						throw new InvalidConfigValueException("Moving node directory on the fly not supported at present");
 					}
+					public boolean isReadOnly() {
+				        return true;
+			        }
 		});
 		
 		nodeDir = new File(nodeConfig.getString("nodeDir"));
@@ -858,7 +864,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			public void set(boolean val) throws InvalidConfigValueException {
 				throw new InvalidConfigValueException("Cannot change on the fly");
 			}
-			
+
+			public boolean isReadOnly() {
+				        return true;
+			        }			
 		});
 		enableARKs = nodeConfig.getBoolean("enableARKs");
 		
@@ -871,7 +880,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			public void set(boolean val) throws InvalidConfigValueException {
 				throw new InvalidConfigValueException("Cannot change on the fly");
 			}
-			
+
+			public boolean isReadOnly() {
+				        return true;
+			      }			
 		});
 		enablePerNodeFailureTables = nodeConfig.getBoolean("enablePerNodeFailureTables");
 		
@@ -884,7 +896,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			public void set(boolean val) throws InvalidConfigValueException {
 				throw new InvalidConfigValueException("Cannot change on the fly");
 			}
-			
+
+			public boolean isReadOnly() {
+				        return true;
+			        }			
 		});
 		enableULPRDataPropagation = nodeConfig.getBoolean("enableULPRDataPropagation");
 		
@@ -897,7 +912,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			public void set(boolean val) throws InvalidConfigValueException {
 				throw new InvalidConfigValueException("Cannot change on the fly");
 			}
-			
+
+			public boolean isReadOnly() {
+				        return true;
+			        }			
 		});
 		enableSwapping = nodeConfig.getBoolean("enableSwapping");
 		
@@ -1152,6 +1170,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						isAllowedToConnectToSeednodes = val;
 				}
 			}
+
+			public boolean isReadOnly() {
+				        return opennet != null;
+			        }
 		});
 		isAllowedToConnectToSeednodes = opennetConfig.getBoolean("connectToSeednodes");
 		
@@ -1259,6 +1281,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						// FIXME
 						throw new InvalidConfigValueException("Moving extra peer data directory on the fly not supported at present");
 					}
+					public boolean isReadOnly() {
+				        return true;
+			        }
 		});
 		extraPeerDataDir = new File(nodeConfig.getString("extraPeerDataDir"));
 		if(!((extraPeerDataDir.exists() && extraPeerDataDir.isDirectory()) || (extraPeerDataDir.mkdir()))) {
@@ -1354,6 +1379,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						// FIXME
 						throw new InvalidConfigValueException("Moving datastore on the fly not supported at present");
 					}
+					public boolean isReadOnly() {
+				        return true;
+			        }
 		});
 
 		final String suffix = "-" + getDarknetPortNumber();
@@ -1639,7 +1667,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			public void set(boolean val) throws InvalidConfigValueException {
 				disableHangCheckers = val;
 			}
-			
 		});
 		
 		disableHangCheckers = nodeConfig.getBoolean("disableHangCheckers");

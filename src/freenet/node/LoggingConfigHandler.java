@@ -23,7 +23,7 @@ import freenet.support.api.LongCallback;
 import freenet.support.api.StringCallback;
 
 public class LoggingConfigHandler {
-	private static class PriorityCallback implements StringCallback, EnumerableOptionCallback {
+	private static class PriorityCallback extends StringCallback implements EnumerableOptionCallback {
 		private final String[] possibleValues = new String[]{ "ERROR", "NORMAL", "MINOR", "DEBUG" };
 
 		public String get() {
@@ -45,7 +45,7 @@ public class LoggingConfigHandler {
 
 		public void setPossibleValues(String[] val) {
 			throw new NullPointerException("Should not happen!");
-		}
+		 }
 	}
 
 	protected static final String LOG_PREFIX = "freenet";

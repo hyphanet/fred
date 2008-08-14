@@ -10,12 +10,12 @@ import freenet.config.InvalidConfigValueException;
  * A callback to be called when a config value of integer type changes.
  * Also reports the current value.
  */
-public interface BooleanCallback extends ConfigCallback {
+public abstract class BooleanCallback extends ConfigCallback {
 	
 	/**
 	 * Get the current, used value of the config variable.
 	 */
-	boolean get();
+	public abstract boolean get();
 	
 	/**
 	 * Set the config variable to a new value.
@@ -23,6 +23,6 @@ public interface BooleanCallback extends ConfigCallback {
 	 * @throws InvalidConfigOptionException If the new value is invalid for 
 	 * this particular option.
 	 */
-	void set(boolean val) throws InvalidConfigValueException;
+	public abstract void set(boolean val) throws InvalidConfigValueException;
 
 }

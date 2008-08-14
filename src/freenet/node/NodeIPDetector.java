@@ -373,7 +373,6 @@ public class NodeIPDetector {
 				}
 				redetectAddress();
 			}
-			
 		});
 		
 		hasValidAddressOverride = true;
@@ -420,7 +419,6 @@ public class NodeIPDetector {
 				}
 				redetectAddress();
 			}
-			
 		});
 		
 		String ipHintString = nodeConfig.getString("tempIPAddressHint");
@@ -448,7 +446,6 @@ public class NodeIPDetector {
 				lastIPAddress = null;
 				ipDetector.clearCached();
 			}
-			
 		});
 		
 		includeLocalAddressesInNoderefs = nodeConfig.getBoolean("includeLocalAddressesInNoderefs");

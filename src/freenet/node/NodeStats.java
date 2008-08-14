@@ -270,7 +270,6 @@ public class NodeStats implements Persistable {
 					ignoreLocalVsRemoteBandwidthLiability = val;
 				}
 			}
-			
 		});
 
 		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false, 

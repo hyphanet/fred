@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.config;
 
-public interface ConfigCallback {
-	/** Nothing usefull here */
+public abstract class ConfigCallback {
+	public boolean isReadOnly() {
+		return false;
+	} 
 }

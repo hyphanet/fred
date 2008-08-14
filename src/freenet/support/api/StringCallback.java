@@ -7,12 +7,12 @@ import freenet.config.ConfigCallback;
 import freenet.config.InvalidConfigValueException;
 
 /** Callback (getter/setter) for a string config variable */
-public interface StringCallback extends ConfigCallback {
+public abstract class StringCallback extends ConfigCallback {
 	
 	/**
 	 * Get the current, used value of the config variable.
 	 */
-	String get();
+	public abstract String get();
 
 	/**
 	 * Set the config variable to a new value.
@@ -20,6 +20,6 @@ public interface StringCallback extends ConfigCallback {
 	 * @throws InvalidConfigOptionException If the new value is invalid for 
 	 * this particular option.
 	 */
-	void set(String val) throws InvalidConfigValueException;
+	public abstract void set(String val) throws InvalidConfigValueException;
 	
 }

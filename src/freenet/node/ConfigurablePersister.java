@@ -22,7 +22,6 @@ public class ConfigurablePersister extends Persister {
 			public void set(String val) throws InvalidConfigValueException {
 				setThrottles(val);
 			}
-			
 		});
 		
 		String throttleFile = nodeConfig.getString(optionName);

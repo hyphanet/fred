@@ -127,6 +127,10 @@ public class PluginManager {
 				// FIXME
 				throw new InvalidConfigValueException(L10n.getString("PluginManager.cannotSetOnceLoaded"));
 			}
+
+			        public boolean isReadOnly() {
+				        return true;
+			        }
 		});
 
 		String fns[] = pmconfig.getStringArr("loadplugin");

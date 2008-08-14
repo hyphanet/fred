@@ -80,7 +80,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	static boolean isPanicButtonToBeShown;
 	public static final int DEFAULT_FPROXY_PORT = 8888;
 	
-	class FProxySSLCallback implements BooleanCallback {
+	class FProxySSLCallback extends BooleanCallback  {
 		
 		public boolean get() {
 			return ssl;
@@ -93,9 +93,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			ssl = val;
 			throw new InvalidConfigValueException("Cannot change SSL on the fly, please restart freenet");
 		}
+		public boolean isReadOnly() {
+			return true;
+		}
 	}
 	
-	class FProxyPassthruMaxSize implements IntCallback {
+	class FProxyPassthruMaxSize extends IntCallback  {
 		
 		public int get() {
 			return FProxyToadlet.MAX_LENGTH;
@@ -107,7 +110,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 
-	class FProxyPortCallback implements IntCallback {
+	class FProxyPortCallback extends IntCallback  {
 		
 		public int get() {
 			return port;
@@ -118,9 +121,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				throw new InvalidConfigValueException(L10n.getString("cannotChangePortOnTheFly"));
 			// FIXME
 		}
+		public boolean isReadOnly() {
+			return true;
+		}
 	}
 	
-	class FProxyBindtoCallback implements StringCallback {
+	class FProxyBindtoCallback extends StringCallback  {
 		
 		public String get() {
 			return bindTo;
@@ -141,7 +147,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	class FProxyAllowedHostsCallback implements StringCallback {
+	class FProxyAllowedHostsCallback extends StringCallback  {
 	
 		public String get() {
 			return networkInterface.getAllowedHosts();
@@ -152,10 +158,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				networkInterface.setAllowedHosts(allowedHosts);
 			}
 		}
-		
 	}
 	
-	class FProxyCSSNameCallback implements StringCallback, EnumerableOptionCallback {
+	class FProxyCSSNameCallback extends StringCallback implements EnumerableOptionCallback {
 		
 		public String get() {
 			return cssName;
@@ -177,7 +182,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	class FProxyCSSOverrideCallback implements StringCallback {
+	class FProxyCSSOverrideCallback extends StringCallback  {
 
 		public String get() {
 			return (cssOverride == null ? "" : cssOverride.toString());
@@ -199,7 +204,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	class FProxyEnabledCallback implements BooleanCallback {
+	class FProxyEnabledCallback extends BooleanCallback  {
 		
 		public boolean get() {
 			synchronized(SimpleToadletServer.this) {
@@ -241,7 +246,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	private static class FProxyAdvancedModeEnabledCallback implements BooleanCallback {
+	private static class FProxyAdvancedModeEnabledCallback extends BooleanCallback  {
 		
 		private final SimpleToadletServer ts;
 		
@@ -259,7 +264,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	private static class FProxyJavascriptEnabledCallback implements BooleanCallback {
+	private static class FProxyJavascriptEnabledCallback extends BooleanCallback  {
 		
 		private final SimpleToadletServer ts;
 		

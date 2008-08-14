@@ -804,7 +804,7 @@ public class NodeUpdateManager {
 
 	// Config callbacks
 	
-	class UpdaterEnabledCallback implements BooleanCallback {
+	class UpdaterEnabledCallback extends BooleanCallback  {
 		
 		public boolean get() {
 			return isEnabled();
@@ -815,7 +815,7 @@ public class NodeUpdateManager {
 		}
 	}
 	
-	class AutoUpdateAllowedCallback implements BooleanCallback {
+	class AutoUpdateAllowedCallback extends BooleanCallback  {
 		
 		public boolean get() {
 			return isAutoUpdateAllowed();
@@ -826,7 +826,7 @@ public class NodeUpdateManager {
 		}
 	}
 
-	class UpdateURICallback implements StringCallback {
+	class UpdateURICallback extends StringCallback  {
 
 		boolean isExt;
 		
@@ -847,10 +847,9 @@ public class NodeUpdateManager {
 			}
 			setURI(isExt, uri);
 		}
-
 	}
 
-	public class UpdateRevocationURICallback implements StringCallback {
+	public class UpdateRevocationURICallback extends StringCallback  {
 
 		public String get() {
 			return getRevocationURI().toString(false, false);
@@ -865,7 +864,6 @@ public class NodeUpdateManager {
 			}
 			setRevocationURI(uri);
 		}
-		
 	}
 
 	/** Called when a peer indicates in its UOMAnnounce that it has fetched the revocation key

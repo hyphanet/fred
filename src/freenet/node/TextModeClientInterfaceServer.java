@@ -103,7 +103,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 	}
 
     
-    static class TMCIEnabledCallback implements BooleanCallback {
+    static class TMCIEnabledCallback extends BooleanCallback  {
     	
     	final NodeClientCore core;
     	
@@ -120,9 +120,12 @@ public class TextModeClientInterfaceServer implements Runnable {
     		// FIXME implement - see bug #122
     		throw new InvalidConfigValueException("Cannot be updated on the fly");
     	}
+		public boolean isReadOnly() {
+			return true;
+		}
     }
 
-    static class TMCISSLCallback implements BooleanCallback {
+    static class TMCISSLCallback extends BooleanCallback  {
     	
     	public boolean get() {
     		return ssl;
@@ -136,9 +139,12 @@ public class TextModeClientInterfaceServer implements Runnable {
     		ssl = val;
     		throw new InvalidConfigValueException("Cannot change SSL on the fly, please restart freenet");
     	}
+		public boolean isReadOnly() {
+			return true;
+		}
     }
 
-    static class TMCIDirectEnabledCallback implements BooleanCallback {
+    static class TMCIDirectEnabledCallback extends BooleanCallback  {
     	
     	final NodeClientCore core;
     	
@@ -155,9 +161,12 @@ public class TextModeClientInterfaceServer implements Runnable {
     		// FIXME implement - see bug #122
     		throw new InvalidConfigValueException("Cannot be updated on the fly");
     	}
+		public boolean isReadOnly() {
+			return true;
+		}
     }
     
-    static class TMCIBindtoCallback implements StringCallback {
+    static class TMCIBindtoCallback extends StringCallback  {
     	
     	final NodeClientCore core;
     	
@@ -183,7 +192,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     	}
     }
     
-    static class TMCIAllowedHostsCallback implements StringCallback {
+    static class TMCIAllowedHostsCallback extends StringCallback  {
 
     	private final NodeClientCore core;
     	
@@ -208,10 +217,9 @@ public class TextModeClientInterfaceServer implements Runnable {
 					throw new InvalidConfigValueException("Setting allowedHosts for TMCI (console) server when TMCI is disabled");
 			}
 		}
-    	
     }
 
-    static class TCMIPortNumberCallback implements IntCallback{
+    static class TCMIPortNumberCallback extends IntCallback {
     	
     	final NodeClientCore core;
     	

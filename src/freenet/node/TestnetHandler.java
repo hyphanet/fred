@@ -208,7 +208,7 @@ public class TestnetHandler implements Runnable {
 
 	}
 
-	private static class TestnetEnabledCallback implements BooleanCallback {
+	private static class TestnetEnabledCallback extends BooleanCallback  {
 
 		final Node node;
 		
@@ -224,11 +224,14 @@ public class TestnetHandler implements Runnable {
 			if(node.testnetEnabled == val) return;
 			throw new InvalidConfigValueException(L10n.getString("TestnetHandler.cannotEnableDisableOnTheFly"));
 		}
-		
+
+		public boolean isReadOnly() {
+			return true;
+		}
 	}
 
 	
-	static class TestnetPortNumberCallback implements IntCallback {
+	static class TestnetPortNumberCallback extends IntCallback  {
 		Node node;
 		
 		TestnetPortNumberCallback(Node n){

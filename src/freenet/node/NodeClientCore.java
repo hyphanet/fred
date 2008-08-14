@@ -154,6 +154,9 @@ public class NodeClientCore implements Persistable {
 					// FIXME
 					throw new InvalidConfigValueException(l10n("movingTempDirOnTheFlyNotSupported"));
 				}
+				public boolean isReadOnly() {
+				        return true;
+			        }
 			});
 
 		tempDir = new File(nodeConfig.getString("tempDir"));
@@ -195,6 +198,9 @@ public class NodeClientCore implements Persistable {
 					// FIXME
 					throw new InvalidConfigValueException("Moving persistent temp directory on the fly not supported at present");
 				}
+				public boolean isReadOnly() {
+				        return true;
+			        }
 			});
 		try {
 			persistentTempBucketFactory = new PersistentTempBucketFactory(new File(nodeConfig.getString("persistentTempDir")), "freenet-temp-", random, node.fastWeakRandom, nodeConfig.getBoolean("encryptPersistentTempBuckets"));
