@@ -277,7 +277,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	 */
 	public int[] getUDPPortsNotForwarded() {
 		OpennetManager om = node.getOpennet();
-		int darknetStatus = node.darknetCrypto.getDetectedConnectivityStatus();
+		int darknetStatus = (node.peers.anyDarknetPeers() ? node.darknetCrypto.getDetectedConnectivityStatus() : AddressTracker.MAYBE_PORT_FORWARDED);
 		int opennetStatus = om == null ? AddressTracker.DONT_KNOW : om.crypto.getDetectedConnectivityStatus();
 		if(om == null || opennetStatus > AddressTracker.DONT_KNOW) {
 			if(darknetStatus > AddressTracker.DONT_KNOW) {
@@ -286,7 +286,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				return new int[] { (darknetStatus < AddressTracker.DONT_KNOW ? -1 : 1) * node.getDarknetPortNumber() };
 			}
 		} else {
-			if(node.peers.anyDarknetPeers() && darknetStatus > AddressTracker.DONT_KNOW) {
+			if(darknetStatus > AddressTracker.DONT_KNOW) {
 				return new int[] { (opennetStatus < AddressTracker.DONT_KNOW ? -1 : 1 ) * om.crypto.portNumber };
 			} else {
 				return new int[] { ((darknetStatus < AddressTracker.DONT_KNOW) ? -1 : 1 ) * node.getDarknetPortNumber(), 
