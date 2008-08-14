@@ -154,9 +154,6 @@ public class NodeClientCore implements Persistable {
 					// FIXME
 					throw new InvalidConfigValueException(l10n("movingTempDirOnTheFlyNotSupported"));
 				}
-				public boolean isReadOnly() {
-				        return true;
-			        }
 			});
 
 		tempDir = new File(nodeConfig.getString("tempDir"));
@@ -183,9 +180,6 @@ public class NodeClientCore implements Persistable {
 				if((val == get()) || (persistentTempBucketFactory == null)) return;
 				persistentTempBucketFactory.setEncryption(val);
 			}
-			public boolean isReadOnly() {
-				        return false;
-			        }
 		});
 		
 		nodeConfig.register("persistentTempDir", new File(nodeDir, "persistent-temp-" + portNumber).toString(), sortOrder++, true, false, "NodeClientCore.persistentTempDir", "NodeClientCore.persistentTempDirLong",
@@ -201,9 +195,6 @@ public class NodeClientCore implements Persistable {
 					// FIXME
 					throw new InvalidConfigValueException("Moving persistent temp directory on the fly not supported at present");
 				}
-				public boolean isReadOnly() {
-				        return true;
-			        }
 			});
 		try {
 			persistentTempBucketFactory = new PersistentTempBucketFactory(new File(nodeConfig.getString("persistentTempDir")), "freenet-temp-", random, node.fastWeakRandom, nodeConfig.getBoolean("encryptPersistentTempBuckets"));
@@ -222,9 +213,6 @@ public class NodeClientCore implements Persistable {
 				if((val == get()) || (tempBucketFactory == null)) return;
 				tempBucketFactory.setMaxRAMBucketSize(val);
 			}
-			public boolean isReadOnly() {
-				        return false;
-			        }
 		});
 		nodeConfig.register("RAMBucketPoolSize", "10MiB", sortOrder++, true, false, "NodeClientCore.ramBucketPoolSize", "NodeClientCore.ramBucketPoolSizeLong", new LongCallback() {
 
@@ -236,9 +224,6 @@ public class NodeClientCore implements Persistable {
 				if((val == get()) || (tempBucketFactory == null)) return;
 				tempBucketFactory.setMaxRamUsed(val);
 			}
-			public boolean isReadOnly() {
-				        return false;
-			        }
 		});
 			
 		nodeConfig.register("encryptTempBuckets", true, sortOrder++, true, false, "NodeClientCore.encryptTempBuckets", "NodeClientCore.encryptTempBucketsLong", new BooleanCallback() {
@@ -251,9 +236,6 @@ public class NodeClientCore implements Persistable {
 				if((val == get()) || (tempBucketFactory == null)) return;
 				tempBucketFactory.setEncryption(val);
 			}
-			public boolean isReadOnly() {
-				        return false;
-			        }
 		});
 		tempBucketFactory = new TempBucketFactory(tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), random, node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"));
 
@@ -274,9 +256,6 @@ public class NodeClientCore implements Persistable {
 					throw new InvalidConfigValueException(l10n("couldNotFindOrCreateDir"));
 				downloadDir = new File(val);
 			}
-			public boolean isReadOnly() {
-				        return false;
-			        }
 		});
 
 		String val = nodeConfig.getString("downloadsDir");
@@ -306,9 +285,6 @@ public class NodeClientCore implements Persistable {
 				public void set(String[] val) throws InvalidConfigValueException {
 					setDownloadAllowedDirs(val);
 				}
-				public boolean isReadOnly() {
-				        return false;
-			        }
 			});
 		setDownloadAllowedDirs(nodeConfig.getStringArr("downloadAllowedDirs"));
 
@@ -330,9 +306,6 @@ public class NodeClientCore implements Persistable {
 				public void set(String[] val) throws InvalidConfigValueException {
 					setUploadAllowedDirs(val);
 				}
-				public boolean isReadOnly() {
-				        return false;
-			        }
 			});
 		setUploadAllowedDirs(nodeConfig.getStringArr("uploadAllowedDirs"));
 
@@ -358,9 +331,6 @@ public class NodeClientCore implements Persistable {
 					lazyResume = val;
 				}
 			}
-			public boolean isReadOnly() {
-				        return false;
-			        }
 		});
 
 		lazyResume = nodeConfig.getBoolean("lazyResume");
@@ -377,9 +347,6 @@ public class NodeClientCore implements Persistable {
 					throw new InvalidConfigValueException(l10n("maxUSKFetchersMustBeGreaterThanZero"));
 				maxBackgroundUSKFetchers = uskFetch;
 			}
-			public boolean isReadOnly() {
-				        return false;
-			        }
 		});
 
 		maxBackgroundUSKFetchers = nodeConfig.getInt("maxBackgroundUSKFetchers");

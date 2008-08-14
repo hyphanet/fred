@@ -813,9 +813,6 @@ public class NodeUpdateManager {
 		public void set(boolean val) throws InvalidConfigValueException {
 			enable(val);
 		}
-		public boolean isReadOnly() {
-			return false;
-		}
 	}
 	
 	class AutoUpdateAllowedCallback implements BooleanCallback {
@@ -826,9 +823,6 @@ public class NodeUpdateManager {
 		
 		public void set(boolean val) throws InvalidConfigValueException {
 			setAutoUpdateAllowed(val);
-		}
-		public boolean isReadOnly() {
-			return false;
 		}
 	}
 
@@ -854,9 +848,6 @@ public class NodeUpdateManager {
 			setURI(isExt, uri);
 		}
 
-		public boolean isReadOnly() {
-			return false;
-		}
 	}
 
 	public class UpdateRevocationURICallback implements StringCallback {
@@ -874,10 +865,7 @@ public class NodeUpdateManager {
 			}
 			setRevocationURI(uri);
 		}
-
-		public boolean isReadOnly() {
-			return false;
-		}
+		
 	}
 
 	/** Called when a peer indicates in its UOMAnnounce that it has fetched the revocation key

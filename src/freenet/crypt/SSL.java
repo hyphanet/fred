@@ -15,6 +15,7 @@
  */
 package freenet.crypt;
 
+import com.sleepycat.je.utilint.NotImplementedYetException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -23,18 +24,16 @@ import java.net.ServerSocket;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
-
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-
-import com.sleepycat.je.utilint.NotImplementedYetException;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.StringCallback;
+
 import freenet.support.io.Closer;
 
 public class SSL {
@@ -88,10 +87,6 @@ public class SSL {
 						}
 					}
 				}
-
-			        public boolean isReadOnly() {
-				        return false;
-			        }
 			});
 
 		sslConfig.register("sslKeyStore", "datastore/certs", configItemOrder++, true, true, "SSL.keyStore", "SSL.keyStoreLong",
@@ -114,10 +109,6 @@ public class SSL {
 						}
 					}
 				}
-
-			        public boolean isReadOnly() {
-				        return false;
-			        }
 			});
 
 		sslConfig.register("sslKeyStorePass", "freenet", configItemOrder++, true, true, "SSL.keyStorePass", "SSL.keyStorePassLong",
@@ -140,10 +131,6 @@ public class SSL {
 						}
 					}
 				}
-
-			        public boolean isReadOnly() {
-				        return false;
-			        }
 			});
 
 		sslConfig.register("sslKeyPass", "freenet", configItemOrder++, true, true, "SSL.keyPass", "SSL.keyPassLong",
@@ -169,10 +156,6 @@ public class SSL {
 						}
 					}
 				}
-
-			        public boolean isReadOnly() {
-				        return false;
-			        }
 			});
 
 		sslConfig.register("sslVersion", "SSLv3", configItemOrder++, true, true, "SSL.version", "SSL.versionLong",
@@ -195,10 +178,6 @@ public class SSL {
 						}
 					}
 				}
-
-			        public boolean isReadOnly() {
-				        return false;
-			        }
 			});
 
 		enable = sslConfig.getBoolean("sslEnable");

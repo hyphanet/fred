@@ -221,10 +221,6 @@ public class NodeStats implements Persistable {
 							throw new InvalidConfigValueException(l10n("valueTooLow"));
 						threadLimit = val;
 					}
-
-			        public boolean isReadOnly() {
-				        return false;
-			        }
 		});
 		threadLimit = statsConfig.getInt("threadLimit");
 		
@@ -239,10 +235,6 @@ public class NodeStats implements Persistable {
 						Logger.normal(this, "Changing aggressiveGCModificator to "+val);
 						aggressiveGCModificator = val;
 					}
-
-			        public boolean isReadOnly() {
-				        return false;
-			        }
 		});
 		aggressiveGCModificator = statsConfig.getInt("aggressiveGC");
 		
@@ -261,10 +253,6 @@ public class NodeStats implements Persistable {
 						else
 							myMemoryChecker.terminate();
 					}
-
-			        public boolean isReadOnly() {
-				        return false;
-			        }
 		});
 		if(statsConfig.getBoolean("memoryChecker"))
 			myMemoryChecker.start();
@@ -282,9 +270,7 @@ public class NodeStats implements Persistable {
 					ignoreLocalVsRemoteBandwidthLiability = val;
 				}
 			}
-			public boolean isReadOnly() {
-				        return false;
-			        }
+			
 		});
 
 		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false, 

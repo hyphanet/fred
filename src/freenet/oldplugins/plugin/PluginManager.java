@@ -84,10 +84,6 @@ public class PluginManager {
 			public void set(String[] val) throws InvalidConfigValueException {
 				throw new InvalidConfigValueException(L10n.getString("PluginManager.cannotSetOnceLoaded"));
 			};
-
-			        public boolean isReadOnly() {
-				        return true;
-			        }
 		});
 
 		String[] loadedPluginNames = config.getStringArr("loadedPlugins");

@@ -4,5 +4,5 @@
 package freenet.config;
 
 public interface ConfigCallback {
-	boolean isReadOnly(); 
+	/** Nothing usefull here */
 }

@@ -16,7 +16,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Vector;
 import java.util.WeakHashMap;
 import java.util.zip.GZIPInputStream;
@@ -50,6 +49,7 @@ import freenet.support.api.LongCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
+import java.util.LinkedList;
 
 /**
  * FCP server process.
@@ -210,10 +210,6 @@ public class FCPServer implements Runnable {
 				throw new InvalidConfigValueException("Cannot change FCP port number on the fly");
 			}
 		}
-
-		public boolean isReadOnly() {
-			return true;
-		}
 	}
 	
 	static class FCPEnabledCallback implements BooleanCallback{
@@ -233,10 +229,6 @@ public class FCPServer implements Runnable {
 				throw new InvalidConfigValueException(l10n("cannotStartOrStopOnTheFly"));
 			}
 		}
-
-		public boolean isReadOnly() {
-			return true;
-		}
 	}
 
 	static class FCPSSLCallback implements BooleanCallback{
@@ -252,10 +244,6 @@ public class FCPServer implements Runnable {
 			}
 			ssl = val;
 			throw new InvalidConfigValueException("Cannot change SSL on the fly, please restart freenet");
-		}
-
-		public boolean isReadOnly() {
-			return true;
 		}
 	}
 
@@ -287,10 +275,6 @@ public class FCPServer implements Runnable {
 				}
 			}
 		}
-
-		public boolean isReadOnly() {
-			return false;
-		}
 	}
 	
 	static class FCPAllowedHostsCallback implements StringCallback {
@@ -313,13 +297,11 @@ public class FCPServer implements Runnable {
 				node.getFCPServer().networkInterface.setAllowedHosts(val);
 			}
 		}
-
-		public boolean isReadOnly() {
-			return false;
-		}		
+		
 	}
 
 	static class FCPAllowedHostsFullAccessCallback implements StringCallback {
+
 		private final NodeClientCore node;
 		
 		public FCPAllowedHostsFullAccessCallback(NodeClientCore node) {
@@ -334,10 +316,6 @@ public class FCPServer implements Runnable {
 			if (!val.equals(get())) {
 				node.getFCPServer().allowedHostsFullAccess.setAllowedHosts(val);
 			}
-		}
-
-		public boolean isReadOnly() {
-			return false;
 		}
 		
 	}
@@ -354,10 +332,6 @@ public class FCPServer implements Runnable {
 			if(server.persistentDownloadsEnabled() != set)
 				server.setPersistentDownloadsEnabled(set);
 		}
-
-		public boolean isReadOnly() {
-			return false;
-		}
 		
 	}
 
@@ -373,10 +347,6 @@ public class FCPServer implements Runnable {
 			File f = new File(val);
 			if(f.equals(server.persistentDownloadsFile)) return;
 			server.setPersistentDownloadsFile(f);
-		}
-
-		public boolean isReadOnly() {
-			return false;
 		}
 	}
 
@@ -397,10 +367,6 @@ public class FCPServer implements Runnable {
 				}
 			}
 		}
-
-		public boolean isReadOnly() {
-			return false;
-		}
 	}
 	
 	static class AssumeDDADownloadIsAllowedCallback implements BooleanCallback{
@@ -414,10 +380,6 @@ public class FCPServer implements Runnable {
 			if(val == get()) return;
 			server.assumeDownloadDDAIsAllowed = val;
 		}
-
-		public boolean isReadOnly() {
-			return false;
-		}
 	}
 	
 	static class AssumeDDAUploadIsAllowedCallback implements BooleanCallback{
@@ -430,10 +392,6 @@ public class FCPServer implements Runnable {
 		public void set(boolean val) throws InvalidConfigValueException {
 			if(val == get()) return;
 			server.assumeUploadDDAIsAllowed = val;
-		}
-
-		public boolean isReadOnly() {
-			return false;
 		}
 	}
 
