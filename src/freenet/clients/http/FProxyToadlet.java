@@ -94,6 +94,7 @@ public final class FProxyToadlet extends Toadlet {
 		return "GET";
 	}
 
+	@Override
 	public void handlePost(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String ks = uri.getPath();
 		
@@ -319,9 +320,10 @@ public final class FProxyToadlet extends Toadlet {
 		return false;
 	}
 
+	@Override
 	public void handleGet(URI uri, HTTPRequest httprequest, ToadletContext ctx) 
 			throws ToadletContextClosedException, IOException, RedirectException {
-		//String ks = uri.toString();
+
 		String ks = uri.getPath();
 		
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -662,9 +664,6 @@ public final class FProxyToadlet extends Toadlet {
 		
 		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node, bookmarks);
 		server.register(welcometoadlet, "/welcome/", true, false);
-		
-		PluginToadlet pluginToadlet = new PluginToadlet(client, node.pluginManager2, core);
-		server.register(pluginToadlet, "/plugin/", true, true);
 		
 		ConfigToadlet configtoadlet = new ConfigToadlet(client, config, node, core);
 		server.register(configtoadlet, "/config/", true, "FProxyToadlet.configTitle", "FProxyToadlet.config", true, null);

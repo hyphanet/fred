@@ -215,10 +215,10 @@ public class SubConfig implements Comparable<SubConfig> {
 			Logger.minor(this, "Prefix="+prefix);
 		for(int i=0;i<entries.length;i++) {
 			Map.Entry<String, Option> entry = entries[i];
-			String key = (String) entry.getKey();
-			Option o = (Option) entry.getValue();
-//			if(logMINOR)
-//				Logger.minor(this, "Key="+key+" value="+o.getValueString()+" default="+o.isDefault());
+			String key = entry.getKey();
+			Option o = entry.getValue();
+			if(logMINOR)
+				Logger.minor(this, "Key="+key+" value="+o.getValueString()+" default="+o.isDefault());
 			if (configRequestType == Config.RequestType.CURRENT_SETTINGS && (!withDefaults) && o.isDefault()
 			        && (!o.forceWrite)) {
 				if(logMINOR)
