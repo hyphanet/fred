@@ -38,6 +38,7 @@ import freenet.config.EnumerableOptionCallback;
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.LongOption;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
 import freenet.crypt.DSAPublicKey;
@@ -1093,7 +1094,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				try {
 					logConfigHandler.setMaxZippedLogFiles(TESTNET_MIN_MAX_ZIPPED_LOGFILES_STRING);
 				} catch (InvalidConfigValueException e) {
-					throw new Error("Impossible: "+e);
+					throw new Error("Impossible: " + e, e);
+				} catch (NodeNeedRestartException e) {
+					throw new Error("Impossible: " + e, e);
 				}
 			}
 		} else {
@@ -3147,7 +3150,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 	}
 
-	public void setName(String key) throws InvalidConfigValueException {
+	public void setName(String key) throws InvalidConfigValueException, NodeNeedRestartException {
 		 config.get("node").getOption("name").setValue(key);
 	}
 

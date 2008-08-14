@@ -11,6 +11,7 @@ import java.net.URI;
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.WrapperConfig;
 import freenet.l10n.L10n;
 import freenet.node.Node;
@@ -292,8 +293,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			try {
 				config.get("node.opennet").set("enabled", enable);
 			} catch (InvalidConfigValueException e) {
-				Logger.error(this, "Should not happen setting opennet.enabled="+enable+" please repot: "+e, e);
+				Logger.error(this, "Should not happen setting opennet.enabled=" + enable + " please report: " + e, e);
 				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.OPENNET);
+				return;
+			} catch (NodeNeedRestartException e) {
+				Logger.error(this, "Should not happen setting opennet.enabled=" + enable + " please report: " + e, e);
+				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL + "?step=" + WIZARD_STEP.OPENNET);
 				return;
 			}
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.NAME_SELECTION);
@@ -306,6 +311,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				Logger.normal(this, "The node name has been set to "+ selectedNName);
 			} catch (InvalidConfigValueException e) {
 				Logger.error(this, "Should not happen, please report!" + e, e);
+			} catch (NodeNeedRestartException e) {
+				Logger.error(this, "Should not happen, please report: " + e, e);
+				return;
 			}
 			
 			// Attempt to skip one step if possible
@@ -340,6 +348,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				Logger.normal(this, "The storeSize has been set to "+ selectedStoreSize);
 			} catch (InvalidConfigValueException e) {
 				Logger.error(this, "Should not happen, please report!" + e, e);
+			} catch (NodeNeedRestartException e) {
+				Logger.error(this, "Should not happen, please report!" + e, e);
 			}
 			boolean canDoStepSix = WrapperConfig.canChangeProperties();
 			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step="+(canDoStepSix?WIZARD_STEP.MEMORY:WIZARD_STEP.CONGRATZ));
@@ -372,6 +382,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			Logger.normal(this, "The outputBandwidthLimit has been set to " + selectedUploadSpeed);
 		} catch(InvalidConfigValueException e) {
 			Logger.error(this, "Should not happen, please report!" + e, e);
+		} catch (NodeNeedRestartException e) {
+			Logger.error(this, "Should not happen, please report!" + e, e);
 		}
 	}
 	
@@ -380,6 +392,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			config.get("node").set("inputBandwidthLimit", selectedDownloadSpeed);
 			Logger.normal(this, "The inputBandwidthLimit has been set to " + selectedDownloadSpeed);
 		} catch(InvalidConfigValueException e) {
+			Logger.error(this, "Should not happen, please report!" + e, e);
+		} catch (NodeNeedRestartException e) {
 			Logger.error(this, "Should not happen, please report!" + e, e);
 		}
 	}

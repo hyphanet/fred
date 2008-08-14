@@ -8,6 +8,7 @@ import java.io.IOException;
 
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.OptionFormatException;
 import freenet.config.SubConfig;
 import freenet.support.Executor;
@@ -239,6 +240,10 @@ public class LoggingConfigHandler {
 			} catch (InvalidConfigValueException e2) {
 				System.err.println("Invalid config value for logger.priority in config file: "+config.getString("priority"));
 				// Leave it at the default.
+			} catch (NodeNeedRestartException e) {
+				// impossible
+				System.err.println("impossible NodeNeedRestartException for logger.priority in config file: "
+				        + config.getString("priority"));
 			}
 			FileLoggerHook hook;
 			try {
@@ -346,7 +351,8 @@ public class LoggingConfigHandler {
 		return maxZippedLogsSize;
 	}
 
-	public void setMaxZippedLogFiles(String maxSizeAsString) throws InvalidConfigValueException {
+	public void setMaxZippedLogFiles(String maxSizeAsString) throws InvalidConfigValueException,
+	        NodeNeedRestartException {
 		config.set("maxZippedLogsSize", maxSizeAsString);
 	}
 	

@@ -185,6 +185,11 @@ public class SubConfig implements Comparable<SubConfig> {
 					String msg = "Invalid config value: "+prefix+SimpleFieldSet.MULTI_LEVEL_CHAR+key+" = "+val+" : error: "+e;
 					Logger.error(this, msg, e);
 					System.err.println(msg); // might be about logging?
+				} catch (NodeNeedRestartException e) {
+					// Impossible
+					String msg = "Impossible: " + prefix + SimpleFieldSet.MULTI_LEVEL_CHAR + key + " = " + val
+					        + " : error: " + e;
+					Logger.error(this, msg, e);
 				}
 			}
 		}
@@ -257,19 +262,21 @@ public class SubConfig implements Comparable<SubConfig> {
 
 	/**
 	 * Force an option to be updated even if it hasn't changed.
-	 * @throws InvalidConfigValueException 
+	 * 
+	 * @throws InvalidConfigValueException
+	 * @throws NodeNeedRestartException
 	 */
-	public void forceUpdate(String optionName) throws InvalidConfigValueException {
+	public void forceUpdate(String optionName) throws InvalidConfigValueException, NodeNeedRestartException {
 		Option o = map.get(optionName);
 		o.forceUpdate();
 	}
 
-	public void set(String name, String value) throws InvalidConfigValueException {
+	public void set(String name, String value) throws InvalidConfigValueException, NodeNeedRestartException {
 		Option o = map.get(name);
 		o.setValue(value);
 	}
 
-	public void set(String name, boolean value) throws InvalidConfigValueException {
+	public void set(String name, boolean value) throws InvalidConfigValueException, NodeNeedRestartException {
 		BooleanOption o = (BooleanOption) map.get(name);
 		o.set(value);
 	}

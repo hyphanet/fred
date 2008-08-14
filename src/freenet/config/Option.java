@@ -51,18 +51,22 @@ public abstract class Option<T, C extends ConfigCallback<T>> {
 	 * Set this option's current value to a string. Will call the callback. Does not care whether
 	 * the value of the option has changed.
 	 */
-	public final void setValue(String val) throws InvalidConfigValueException {
+	public final void setValue(String val) throws InvalidConfigValueException, NodeNeedRestartException {
 		T x = parseString(val);
 		set(x);
-		currentValue = x;
 	}
 
 	protected abstract T parseString(String val) throws InvalidConfigValueException; 
 	protected abstract String toString(T val);
 
-	protected final void set(T val) throws InvalidConfigValueException {
-		cb.set(val);
-		currentValue = val;
+	protected final void set(T val) throws InvalidConfigValueException, NodeNeedRestartException {
+		try {
+			cb.set(val);
+			currentValue = val;
+		} catch (NodeNeedRestartException e) {
+			currentValue = val;
+			throw e;
+		}
 	}
 	
 	/**
@@ -84,7 +88,7 @@ public abstract class Option<T, C extends ConfigCallback<T>> {
 	/**
 	 * Call the callback with the current value of the option.
 	 */
-	public void forceUpdate() throws InvalidConfigValueException {
+	public void forceUpdate() throws InvalidConfigValueException, NodeNeedRestartException {
 		setValue(getValueString());
 	}
 	

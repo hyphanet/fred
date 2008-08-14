@@ -13,6 +13,7 @@ import freenet.config.Config;
 import freenet.config.ConfigCallback;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.config.WrapperConfig;
@@ -59,6 +60,7 @@ public class ConfigToadlet extends Toadlet {
 		}
 		
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		boolean needRestart = false;
 		
 		for(int i=0; i<sc.length ; i++){
 			Option[] o = sc[i].getOptions();
@@ -78,6 +80,8 @@ public class ConfigToadlet extends Toadlet {
 							o[j].setValue(value);
 						} catch (InvalidConfigValueException e) {
 							errbuf.append(o[j].getName()).append(' ').append(e.getMessage()).append('\n');
+						} catch (NodeNeedRestartException e) {
+							needRestart = true;
 						} catch (Exception e){
                             errbuf.append(o[j].getName()).append(' ').append(e).append('\n');
 							Logger.error(this, "Caught "+e, e);
@@ -103,7 +107,24 @@ public class ConfigToadlet extends Toadlet {
 		
 		if (errbuf.length() == 0) {
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-success", l10n("appliedTitle")));
-			ctx.getPageMaker().getContentNode(infobox).addChild("#", l10n("appliedSuccess"));
+			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
+			content.addChild("#", l10n("appliedSuccess"));
+			
+			if (needRestart && node.isUsingWrapper()) {
+				content.addChild("br");
+				content.addChild("#", l10n("needRestart"));
+				content.addChild("br");
+				HTMLNode restartForm = content.addChild("form",//
+				        new String[] { "action", "method" }, new String[] { "/", "get" }//
+				        ).addChild("div");
+				restartForm.addChild("input",//
+				        new String[] { "type", "name" },//
+				        new String[] { "hidden", "restart" });
+				restartForm.addChild("input", //
+				        new String[] { "type", "name", "value" },//
+				        new String[] { "submit", "restart2",//
+				                l10n("restartNode") });
+			}
 		} else {
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", l10n("appliedFailureTitle")));
 			HTMLNode content = ctx.getPageMaker().getContentNode(infobox).addChild("div", "class", "infobox-content");
