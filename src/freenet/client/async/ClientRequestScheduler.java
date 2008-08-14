@@ -76,6 +76,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		public void setPossibleValues(String[] val) {
 			throw new NullPointerException("Should not happen!");
 		}
+
+		public boolean isReadOnly() {
+			return false;
+		}
 	}
 	
 	/**

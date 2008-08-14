@@ -35,6 +35,10 @@ public class SymlinkerToadlet extends Toadlet {
 				// FIXME
 				throw new InvalidConfigValueException("Cannot set the plugins that's loaded.");
 			}
+
+			        public boolean isReadOnly() {
+				        return true;
+			        }
 		});
 		
 		String fns[] = tslconfig.getStringArr("symlinks");

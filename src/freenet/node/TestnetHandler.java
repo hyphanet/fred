@@ -224,7 +224,10 @@ public class TestnetHandler implements Runnable {
 			if(node.testnetEnabled == val) return;
 			throw new InvalidConfigValueException(L10n.getString("TestnetHandler.cannotEnableDisableOnTheFly"));
 		}
-		
+
+		public boolean isReadOnly() {
+			return true;
+		}
 	}
 
 	
@@ -242,6 +245,9 @@ public class TestnetHandler implements Runnable {
 		public void set(int val) throws InvalidConfigValueException {
 			if(val == get()) return;
 			node.testnetHandler.rebind(val);
+		}
+		public boolean isReadOnly() {
+			return false;
 		}
 	}	
 	

@@ -120,6 +120,9 @@ public class TextModeClientInterfaceServer implements Runnable {
     		// FIXME implement - see bug #122
     		throw new InvalidConfigValueException("Cannot be updated on the fly");
     	}
+		public boolean isReadOnly() {
+			return true;
+		}
     }
 
     static class TMCISSLCallback implements BooleanCallback {
@@ -136,6 +139,9 @@ public class TextModeClientInterfaceServer implements Runnable {
     		ssl = val;
     		throw new InvalidConfigValueException("Cannot change SSL on the fly, please restart freenet");
     	}
+		public boolean isReadOnly() {
+			return true;
+		}
     }
 
     static class TMCIDirectEnabledCallback implements BooleanCallback {
@@ -155,6 +161,9 @@ public class TextModeClientInterfaceServer implements Runnable {
     		// FIXME implement - see bug #122
     		throw new InvalidConfigValueException("Cannot be updated on the fly");
     	}
+		public boolean isReadOnly() {
+			return true;
+		}
     }
     
     static class TMCIBindtoCallback implements StringCallback {
@@ -181,6 +190,9 @@ public class TextModeClientInterfaceServer implements Runnable {
 			throw new InvalidConfigValueException("could not change bind to!");
 		}
     	}
+		public boolean isReadOnly() {
+			return false;
+		}
     }
     
     static class TMCIAllowedHostsCallback implements StringCallback {
@@ -208,7 +220,10 @@ public class TextModeClientInterfaceServer implements Runnable {
 					throw new InvalidConfigValueException("Setting allowedHosts for TMCI (console) server when TMCI is disabled");
 			}
 		}
-    	
+
+		public boolean isReadOnly() {
+			return false;
+		}
     }
 
     static class TCMIPortNumberCallback implements IntCallback{
@@ -231,6 +246,10 @@ public class TextModeClientInterfaceServer implements Runnable {
     		if(val == get()) return;
     		core.getTextModeClientInterface().setPort(val);
     	}
+
+		public boolean isReadOnly() {
+			return false;
+		}
     }
 
     /**

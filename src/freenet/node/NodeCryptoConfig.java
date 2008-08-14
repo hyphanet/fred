@@ -73,6 +73,9 @@ public class NodeCryptoConfig {
 					portNumber = val;
 				}
 			}
+			public boolean isReadOnly() {
+				        return true;
+			        }		
 		});
 		
 		try{
@@ -112,6 +115,9 @@ public class NodeCryptoConfig {
 						}
 						crypto.onSetDropProbability(val);
 					}
+					public boolean isReadOnly() {
+				        return false;
+			        }		
 			
 		});
 		dropProbability = config.getInt("testingDropPacketsEvery"); 
@@ -130,6 +136,10 @@ public class NodeCryptoConfig {
 							oneConnectionPerAddress = val;
 						}
 					}
+
+					public boolean isReadOnly() {
+				        return false;
+			        }
 			
 		});
 		oneConnectionPerAddress = config.getBoolean("oneConnectionPerIP");
@@ -148,6 +158,9 @@ public class NodeCryptoConfig {
 							alwaysAllowLocalAddresses = val;
 						}
 					}
+					public boolean isReadOnly() {
+				        return false;
+			        }			
 		});
 		alwaysAllowLocalAddresses = config.getBoolean("alwaysAllowLocalAddresses");
 		
@@ -160,6 +173,9 @@ public class NodeCryptoConfig {
 			public void set(boolean val) throws InvalidConfigValueException {
 				assumeNATed = val;
 			}
+			public boolean isReadOnly() {
+				        return false;
+			        }		
 		});
 		assumeNATed = config.getBoolean("assumeNATed");
 	}
@@ -198,6 +214,9 @@ public class NodeCryptoConfig {
 			if(val.equals(get())) return;
 			// FIXME why not? Can't we use freenet.io.NetworkInterface like everywhere else, just adapt it for UDP?
 			throw new InvalidConfigValueException("Cannot be updated on the fly");
+		}
+		public boolean isReadOnly() {
+			return true;
 		}
 	}
 

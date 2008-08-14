@@ -45,6 +45,10 @@ public class LoggingConfigHandler {
 
 		public void setPossibleValues(String[] val) {
 			throw new NullPointerException("Should not happen!");
+		 }
+
+		public boolean isReadOnly() {
+			return false;
 		}
 	}
 
@@ -74,6 +78,10 @@ public class LoggingConfigHandler {
 						} else 
 							enableLogger();
 					}
+					
+					public boolean isReadOnly() {
+				        return false;
+			        }
     	});
     	
     	boolean loggingEnabled = loggingConfig.getBoolean("enabled");
@@ -99,6 +107,10 @@ public class LoggingConfigHandler {
 							new Deleter(logDir).start();
 						}
 					}
+
+					public boolean isReadOnly() {
+				        return false;
+			        }
     	});
     	
     	logDir = new File(config.getString("dirname"));
@@ -120,6 +132,9 @@ public class LoggingConfigHandler {
 							fileLoggerHook.setMaxOldLogsSize(val);
 						}
 					}
+					public boolean isReadOnly() {
+				        return false;
+			        }
     	});
     	
     	maxZippedLogsSize = config.getLong("maxZippedLogsSize");
@@ -150,6 +165,10 @@ public class LoggingConfigHandler {
 							throw new InvalidConfigValueException(e.getMessage());
 						}
 					}
+
+					public boolean isReadOnly() {
+				        return false;
+			        }
     		
     	});
     	
@@ -172,6 +191,10 @@ public class LoggingConfigHandler {
 						}
 						logRotateInterval = val;
 					}
+
+					public boolean isReadOnly() {
+				        return false;
+			        }
     	});
     	
     	logRotateInterval = config.getString("interval");
@@ -189,6 +212,9 @@ public class LoggingConfigHandler {
 						if(fileLoggerHook != null)
 							fileLoggerHook.setMaxListBytes(val);
 					}
+					public boolean isReadOnly() {
+				        return false;
+			        }
     	});
     	
     	maxCachedLogBytes = config.getLong("maxCachedBytes");
@@ -206,6 +232,9 @@ public class LoggingConfigHandler {
 						if(fileLoggerHook != null)
 							fileLoggerHook.setMaxListLength(val);
 					}
+					public boolean isReadOnly() {
+				        return false;
+			        }
     	});
     	
     	maxCachedLogLines = config.getInt("maxCachedLines");

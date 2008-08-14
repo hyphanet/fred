@@ -3,6 +3,7 @@ package freenet.node;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -118,7 +119,6 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.HostnameSyntaxException;
-import java.io.FileFilter;
 
 /**
  * @author amphibian
@@ -168,6 +168,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			// has been unregistered ... see #1595
 			get();
 		}
+		public boolean isReadOnly() {
+			return false;
+		}
 	}
 	
 	private class StoreTypeCallback implements StringCallback, EnumerableOptionCallback {
@@ -190,7 +193,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		public void setPossibleValues(String[] val) {
 			throw new UnsupportedOperationException();
 		}
-		
+
+		public boolean isReadOnly() {
+			return true;
+		}
 	}
 	
 	private static class L10nCallback implements StringCallback, EnumerableOptionCallback {
@@ -217,6 +223,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			for(int i=0; i<L10n.AVAILABLE_LANGUAGES.length; i++)
 				result[i] = L10n.AVAILABLE_LANGUAGES[i][1];
 			return result;
+		}
+		public boolean isReadOnly() {
+			return false;
 		}
 	}
 	
@@ -754,6 +763,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						// Don't translate the below as very few users will use it.
 						throw new InvalidConfigValueException("Moving node directory on the fly not supported at present");
 					}
+					public boolean isReadOnly() {
+				        return true;
+			        }
 		});
 		
 		nodeDir = new File(nodeConfig.getString("nodeDir"));
@@ -816,6 +828,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 					public void set(boolean val) throws InvalidConfigValueException {
 						disableProbabilisticHTLs = val;
 					}
+
+					public boolean isReadOnly() {
+				        return false;
+			        }
 			
 		});
 		
@@ -831,6 +847,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						if(maxHTL < 0) throw new InvalidConfigValueException("Impossible max HTL");
 						maxHTL = val;
 					}
+
+			        public boolean isReadOnly() {
+				        return false;
+			        }
 		});
 		
 		maxHTL = nodeConfig.getShort("maxHTL");
@@ -858,7 +878,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			public void set(boolean val) throws InvalidConfigValueException {
 				throw new InvalidConfigValueException("Cannot change on the fly");
 			}
-			
+
+			public boolean isReadOnly() {
+				        return true;
+			        }			
 		});
 		enableARKs = nodeConfig.getBoolean("enableARKs");
 		
@@ -871,7 +894,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			public void set(boolean val) throws InvalidConfigValueException {
 				throw new InvalidConfigValueException("Cannot change on the fly");
 			}
-			
+
+			public boolean isReadOnly() {
+				        return true;
+			      }			
 		});
 		enablePerNodeFailureTables = nodeConfig.getBoolean("enablePerNodeFailureTables");
 		
@@ -884,7 +910,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			public void set(boolean val) throws InvalidConfigValueException {
 				throw new InvalidConfigValueException("Cannot change on the fly");
 			}
-			
+
+			public boolean isReadOnly() {
+				        return true;
+			        }			
 		});
 		enableULPRDataPropagation = nodeConfig.getBoolean("enableULPRDataPropagation");
 		
@@ -897,7 +926,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			public void set(boolean val) throws InvalidConfigValueException {
 				throw new InvalidConfigValueException("Cannot change on the fly");
 			}
-			
+
+			public boolean isReadOnly() {
+				        return true;
+			        }			
 		});
 		enableSwapping = nodeConfig.getBoolean("enableSwapping");
 		
@@ -910,6 +942,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			public void set(boolean val) throws InvalidConfigValueException {
 				publishOurPeersLocation = val;
 			}
+
+			public boolean isReadOnly() {
+				        return false;
+			        }
 		});
 		publishOurPeersLocation = nodeConfig.getBoolean("publishOurPeersLocation");
 		
@@ -922,6 +958,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			public void set(boolean val) throws InvalidConfigValueException {
 				routeAccordingToOurPeersLocation = val;
 			}
+
+			public boolean isReadOnly() {
+				        return false;
+			        }
 		});
 		routeAccordingToOurPeersLocation = nodeConfig.getBoolean("routeAccordingToOurPeersLocation");
 		
@@ -933,6 +973,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			public void set(boolean val) throws InvalidConfigValueException {
 				enableSwapQueueing = val;
 			}
+
+			public boolean isReadOnly() {
+				        return false;
+			        }
 			
 		});
 		enableSwapQueueing = nodeConfig.getBoolean("enableSwapQueueing");
@@ -945,6 +989,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			public void set(boolean val) throws InvalidConfigValueException {
 				enablePacketCoalescing = val;
 			}
+
+			public boolean isReadOnly() {
+				        return false;
+			        }
 			
 		});
 		enablePacketCoalescing = nodeConfig.getBoolean("enablePacketCoalescing");
@@ -998,6 +1046,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						outputThrottle.changeNanosAndBucketSize((1000L * 1000L * 1000L) / obwLimit, obwLimit/2);
 						nodeStats.setOutputLimit(obwLimit);
 					}
+
+			        public boolean isReadOnly() {
+				        return false;
+			        }
 		});
 		
 		int obwLimit = nodeConfig.getInt("outputBandwidthLimit");
@@ -1028,6 +1080,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						}
 						nodeStats.setInputLimit(ibwLimit);
 					}
+
+			        public boolean isReadOnly() {
+				        return false;
+			        }
 		});
 		
 		int ibwLimit = nodeConfig.getInt("inputBandwidthLimit");
@@ -1047,6 +1103,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			public void set(boolean val) throws InvalidConfigValueException {
 				throttleLocalData = val;
 			}
+
+			public boolean isReadOnly() {
+				        return false;
+			        }
 			
 		});
 		
@@ -1152,6 +1212,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						isAllowedToConnectToSeednodes = val;
 				}
 			}
+
+			public boolean isReadOnly() {
+				        return opennet != null;
+			        }
 		});
 		isAllowedToConnectToSeednodes = opennetConfig.getBoolean("connectToSeednodes");
 		
@@ -1182,6 +1246,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				else o.stop(true);
 				ipDetector.ipDetectorManager.notifyPortChange(getPublicInterfacePorts());
 			}
+			public boolean isReadOnly() {
+				        return false;
+			        }
 		});		
 		boolean opennetEnabled = opennetConfig.getBoolean("enabled");
 		
@@ -1195,6 +1262,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						if(inputMaxOpennetPeers > 20) throw new InvalidConfigValueException(l10n("maxOpennetPeersMustBeTwentyOrLess"));
 						maxOpennetPeers = inputMaxOpennetPeers;
 						}
+					public boolean isReadOnly() {
+				        return false;
+			        }
 					}
 		);
 		
@@ -1222,6 +1292,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			public void set(boolean val) throws InvalidConfigValueException {
 				acceptSeedConnections = val;
 			}
+
+			public boolean isReadOnly() {
+				        return false;
+			        }
 			
 		});
 		
@@ -1243,6 +1317,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 							passOpennetRefsThroughDarknet = val;
 						}
 					}
+					public boolean isReadOnly() {
+				        return false;
+			        }
 			
 		});
 
@@ -1259,6 +1336,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						// FIXME
 						throw new InvalidConfigValueException("Moving extra peer data directory on the fly not supported at present");
 					}
+					public boolean isReadOnly() {
+				        return true;
+			        }
 		});
 		extraPeerDataDir = new File(nodeConfig.getString("extraPeerDataDir"));
 		if(!((extraPeerDataDir.exists() && extraPeerDataDir.isDirectory()) || (extraPeerDataDir.mkdir()))) {
@@ -1287,6 +1367,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 							storeForceBigShrinks = val;
 						}
 					}
+					public boolean isReadOnly() {
+				        return false;
+			        }
 			
 		});
 		
@@ -1334,6 +1417,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						nodeStats.avgStoreLocation.changeMaxReports((int)maxStoreKeys);
 						nodeStats.avgCacheLocation.changeMaxReports((int)maxCacheKeys);
 					}
+					public boolean isReadOnly() {
+				        return false;
+			        }
 		});
 		
 		maxTotalDatastoreSize = nodeConfig.getLong("storeSize");
@@ -1354,6 +1440,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						// FIXME
 						throw new InvalidConfigValueException("Moving datastore on the fly not supported at present");
 					}
+					public boolean isReadOnly() {
+				        return true;
+			        }
 		});
 
 		final String suffix = "-" + getDarknetPortNumber();
@@ -1527,6 +1616,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				}
 				databaseMaxMemory = val;
 			}
+
+				        public boolean isReadOnly() {
+					        return false;
+				        }
 			
 		});
 
@@ -1639,7 +1732,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			public void set(boolean val) throws InvalidConfigValueException {
 				disableHangCheckers = val;
 			}
-			
+
+			public boolean isReadOnly() {
+				        return false;
+			        }
 		});
 		
 		disableHangCheckers = nodeConfig.getBoolean("disableHangCheckers");
