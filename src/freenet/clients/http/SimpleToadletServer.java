@@ -42,6 +42,7 @@ import freenet.support.StringArray;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.IntCallback;
+import freenet.support.api.LongCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.ArrayBucketFactory;
 
@@ -93,18 +94,19 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			ssl = val;
 			throw new InvalidConfigValueException("Cannot change SSL on the fly, please restart freenet");
 		}
+		@Override
 		public boolean isReadOnly() {
 			return true;
 		}
 	}
 	
-	class FProxyPassthruMaxSize extends IntCallback  {
+	class FProxyPassthruMaxSize extends LongCallback  {
 		
-		public Integer get() {
+		public Long get() {
 			return FProxyToadlet.MAX_LENGTH;
 		}
 		
-		public void set(Integer val) throws InvalidConfigValueException {
+		public void set(Long val) throws InvalidConfigValueException {
 			if(val == get()) return;
 			FProxyToadlet.MAX_LENGTH = val;
 		}
@@ -121,6 +123,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				throw new InvalidConfigValueException(L10n.getString("cannotChangePortOnTheFly"));
 			// FIXME
 		}
+		@Override
 		public boolean isReadOnly() {
 			return true;
 		}
@@ -412,8 +415,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		});
 		enableInlinePrefetch = fproxyConfig.getBoolean("enableInlinePrefetch");
 		
-		fproxyConfig.register("passthroughMaxSize", 2*1024*1024, configItemOrder++, true, false, "SimpleToadletServer.passthroughMaxSize", "SimpleToadletServer.passthroughMaxSizeLong", new FProxyPassthruMaxSize());
-		FProxyToadlet.MAX_LENGTH = fproxyConfig.getInt("passthroughMaxSize");
+		fproxyConfig.register("passthroughMaxSize", 2L*1024*1024, configItemOrder++, true, false, "SimpleToadletServer.passthroughMaxSize", "SimpleToadletServer.passthroughMaxSizeLong", new FProxyPassthruMaxSize());
+		FProxyToadlet.MAX_LENGTH = fproxyConfig.getLong("passthroughMaxSize");
 		
 		fproxyConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "SimpleToadletServer.allowedHosts", "SimpleToadletServer.allowedHostsLong",
 				new FProxyAllowedHostsCallback());

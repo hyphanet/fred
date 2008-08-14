@@ -10,7 +10,7 @@ public class SizeUtil {
 		return formatSize(sz, false);
 	}
 
-	public static String formatSize(boolean withoutSpace, long sz) {
+	public static String formatSizeWithoutSpace(long sz) {
 		String[] result = _formatSize(sz);
 		return result[0].concat(result[1]);
 	}

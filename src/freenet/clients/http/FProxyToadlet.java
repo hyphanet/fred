@@ -55,7 +55,7 @@ public final class FProxyToadlet extends Toadlet {
 	// ?force= links become invalid after 2 hours.
 	private static final long FORCE_GRAIN_INTERVAL = 60*60*1000;
 	/** Maximum size for transparent pass-through, should be a config option */
-	static int MAX_LENGTH = 2*1024*1024; // 2MB
+	static long MAX_LENGTH = 2*1024*1024; // 2MB
 	
 	static final URI welcome;
 	static {
@@ -444,7 +444,7 @@ public final class FProxyToadlet extends Toadlet {
 			String referer = sanitizeReferer(ctx);
 			
 			
-			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key, maxSize != MAX_LENGTH ? "&max-size="+maxSize : "", referer, true, ctx, core);
+			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key, maxSize != MAX_LENGTH ? "&max-size="+SizeUtil.formatSizeWithoutSpace(maxSize) : "", referer, true, ctx, core);
 			
 		} catch (FetchException e) {
 			String msg = e.getMessage();
@@ -572,7 +572,7 @@ public final class FProxyToadlet extends Toadlet {
 			fileInformationList.addChild("li", l10n("sizeUnknown"));
 		}
 		if(mime != null) {
-			fileInformationList.addChild("li", L10n.getString("FProxyToadlet."+(finalized ? "mimeType" : "expectedMimeType"), new String[] { "mime" }, new String[] { mime }));;
+			fileInformationList.addChild("li", L10n.getString("FProxyToadlet."+(finalized ? "mimeType" : "expectedMimeType"), new String[] { "mime" }, new String[] { mime }));
 		} else {
 			fileInformationList.addChild("li", l10n("unknownMIMEType"));
 		}
