@@ -172,20 +172,24 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	}
 	
 	private class StoreTypeCallback extends StringCallback implements EnumerableOptionCallback {
+		private String cachedStoreType;
 
 		public String get() {
-			return storeType;
+			if (cachedStoreType == null)
+				cachedStoreType = storeType;
+			return cachedStoreType;
 		}
 
-		public void set(String val) throws InvalidConfigValueException {
-			throw new InvalidConfigValueException("Store type cannot be changed on the fly");
+		public void set(String val) throws InvalidConfigValueException, NodeNeedRestartException {
+			if (val.equals(storeType))
+				return;
+
+			cachedStoreType = val;
+			throw new NodeNeedRestartException("Store type cannot be changed on the fly");
 		}
 
 		public String[] getPossibleValues() {
-			return new String[] {
-					"bdb-index",
-					"ram"
-			};
+			return new String[] { "bdb-index", "ram" };
 		}
 
 		public void setPossibleValues(String[] val) {
@@ -193,7 +197,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 
 		public boolean isReadOnly() {
-			return true;
+			return false;
 		}
 	}
 	
