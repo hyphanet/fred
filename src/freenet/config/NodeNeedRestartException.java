@@ -10,8 +10,7 @@ package freenet.config;
  * it merely means that there are no immediately detectable problems with 
  * it.
  */
-public class NodeNeedRestartException extends Exception {
-	private static final long serialVersionUID = -1;
+public class NodeNeedRestartException extends ConfigException {
 
 	public NodeNeedRestartException(String msg) {
 		super(msg);
