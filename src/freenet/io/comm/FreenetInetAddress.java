@@ -141,7 +141,7 @@ public class FreenetInetAddress {
         AddressIdentifier.AddressType addressType = AddressIdentifier.getAddressType(host);
         boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
         if(logDEBUG) Logger.debug(this, "Address type of '"+host+"' appears to be '"+addressType+ '\'');
-        if(!addressType.toString().equals("Other")) {
+        if(addressType != AddressIdentifier.AddressType.OTHER) {
             try {
                 addr = InetAddress.getByName(host);
             } catch (UnknownHostException e) {
