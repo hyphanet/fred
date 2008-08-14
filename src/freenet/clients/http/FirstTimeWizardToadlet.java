@@ -10,6 +10,7 @@ import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
+import freenet.config.ConfigException;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.WrapperConfig;
@@ -101,7 +102,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			nnameForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
-		} else if(currentStep == WIZARD_STEP.BANDWIDTH) {				
+		} else if(currentStep == WIZARD_STEP.BANDWIDTH) {
+			// Attempt to skip one step if possible
+			if(canAutoconfigureBandwidth()){
+				super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step="+WIZARD_STEP.DATASTORE_SIZE);
+				return;
+			}
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step3Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
@@ -202,6 +208,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		} else if(currentStep == WIZARD_STEP.MEMORY) {
+			if(!WrapperConfig.canChangeProperties()) {
+				super.writeTemporaryRedirect(ctx, "step6", TOADLET_URL+"?step="+WIZARD_STEP.CONGRATZ);
+				return;
+			}
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step6Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
@@ -314,25 +324,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				return;
 			}
 			
-			// Attempt to skip one step if possible
-			FredPluginBandwidthIndicator bwIndicator = core.node.ipDetector.getBandwidthIndicator();
-			int upstreamBWLimit = (bwIndicator != null ? bwIndicator.getUpstramMaxBitRate() : -1);
-			if((bwIndicator != null) && (upstreamBWLimit > 0)) {
-				int bytes = (upstreamBWLimit / 8) - 1;
-				String upstreamBWLimitString = (bytes < 16384 ? "8K" : SizeUtil.formatSize(bytes / 2));
-				_setUpstreamBandwidthLimit(upstreamBWLimitString);
-				Logger.normal(this, "The node has a bandwidthIndicator: it has reported upstream="+upstreamBWLimit+ "bits/sec... we will use "+ upstreamBWLimitString +" and skip the bandwidth selection step of the wizard.");
-				
-				int downstreamBWLimit = bwIndicator.getDownstreamMaxBitRate();
-				if(downstreamBWLimit > 0) {
-					bytes = (downstreamBWLimit / 8) - 1;
-					String downstreamBWLimitString = SizeUtil.formatSize(bytes * 2/3);
-					_setDownstreamBandwidthLimit(downstreamBWLimitString);
-					Logger.normal(this, "The node has a bandwidthIndicator: it has reported downstream="+downstreamBWLimit+ "bits/sec... we will use "+ downstreamBWLimitString +" and skip the bandwidth selection step of the wizard.");
-				}
-				super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step="+WIZARD_STEP.DATASTORE_SIZE);
-			} else
-				super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step="+WIZARD_STEP.BANDWIDTH);
+			super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step="+WIZARD_STEP.BANDWIDTH);
 			return;
 		} else if(request.isPartSet("bwF")) {
 			_setUpstreamBandwidthLimit(request.getPartAsString("bw", 6));
@@ -349,8 +341,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			} catch (NodeNeedRestartException e) {
 				Logger.error(this, "Should not happen, please report!" + e, e);
 			}
-			boolean canDoStepSix = WrapperConfig.canChangeProperties();
-			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step="+(canDoStepSix?WIZARD_STEP.MEMORY:WIZARD_STEP.CONGRATZ));
+			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step="+WIZARD_STEP.MEMORY);
 			return;
 		} else if(request.isPartSet("memoryF")) {
 			String selectedMemorySize = request.getPartAsString("memoryF", 6);
@@ -359,7 +350,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			if(memorySize >= 0) {
 				WrapperConfig.setWrapperProperty("wrapper.java.maxmemory", selectedMemorySize);
 			}
-			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step="+WIZARD_STEP.CONGRATZ);
+			super.writeTemporaryRedirect(ctx, "step6", TOADLET_URL+"?step="+WIZARD_STEP.CONGRATZ);
 			return;
 		}
 		
@@ -378,9 +369,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		try {
 			config.get("node").set("outputBandwidthLimit", selectedUploadSpeed);
 			Logger.normal(this, "The outputBandwidthLimit has been set to " + selectedUploadSpeed);
-		} catch(InvalidConfigValueException e) {
-			Logger.error(this, "Should not happen, please report!" + e, e);
-		} catch (NodeNeedRestartException e) {
+		} catch (ConfigException e) {
 			Logger.error(this, "Should not happen, please report!" + e, e);
 		}
 	}
@@ -389,10 +378,33 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		try {
 			config.get("node").set("inputBandwidthLimit", selectedDownloadSpeed);
 			Logger.normal(this, "The inputBandwidthLimit has been set to " + selectedDownloadSpeed);
-		} catch(InvalidConfigValueException e) {
-			Logger.error(this, "Should not happen, please report!" + e, e);
-		} catch (NodeNeedRestartException e) {
+		} catch(ConfigException e) {
 			Logger.error(this, "Should not happen, please report!" + e, e);
 		}
+	}
+	
+	private boolean canAutoconfigureBandwidth() {
+		FredPluginBandwidthIndicator bwIndicator = core.node.ipDetector.getBandwidthIndicator();
+		if(bwIndicator == null)
+			return false;
+		
+		int downstreamBWLimit = bwIndicator.getDownstreamMaxBitRate();
+		if(downstreamBWLimit > 0) {
+			int bytes = (downstreamBWLimit / 8) - 1;
+			String downstreamBWLimitString = SizeUtil.formatSize(bytes * 2 / 3);
+			_setDownstreamBandwidthLimit(downstreamBWLimitString);
+			Logger.normal(this, "The node has a bandwidthIndicator: it has reported downstream=" + downstreamBWLimit + "bits/sec... we will use " + downstreamBWLimitString + " and skip the bandwidth selection step of the wizard.");
+		}
+		
+		// We don't mind if the downstreamBWLimit couldn't be set, but upstreamBWLimit is important
+		int upstreamBWLimit = bwIndicator.getUpstramMaxBitRate();
+		if(upstreamBWLimit > 0) {
+			int bytes = (upstreamBWLimit / 8) - 1;
+			String upstreamBWLimitString = (bytes < 16384 ? "8K" : SizeUtil.formatSize(bytes / 2));
+			_setUpstreamBandwidthLimit(upstreamBWLimitString);
+			Logger.normal(this, "The node has a bandwidthIndicator: it has reported upstream=" + upstreamBWLimit + "bits/sec... we will use " + upstreamBWLimitString + " and skip the bandwidth selection step of the wizard.");
+			return true;
+		}else
+			return false;
 	}
 }
