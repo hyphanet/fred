@@ -78,9 +78,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			opennetDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "enableOpennet", "true" }, l10n("opennetYes"));
 			opennetDiv.addChild("br");
 			opennetDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "enableOpennet", "false" }, l10n("opennetNo"));
-			HTMLNode para = opennetForm.addChild("p");
-			para.addChild("b", l10n("warningTitle")+' ');
-			L10n.addL10nSubstitution(para, "FirstTimeWizardToadlet.opennetWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 			opennetForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "opennetF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			opennetForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
