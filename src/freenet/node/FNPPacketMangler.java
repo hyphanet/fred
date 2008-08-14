@@ -1634,10 +1634,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	private void sendAuthPacket(byte[] output, BlockCipher cipher, PeerNode pn, Peer replyTo, boolean anonAuth) {
 		int length = output.length;
-		// FIXME shorten seednode phase 3/4 so it's within the limit
-//		if(length > sock.getMaxPacketSize()) {
-//			throw new IllegalStateException("Cannot send auth packet: too long: "+length);
-//		}
+		if(length > sock.getMaxPacketSize()) {
+			throw new IllegalStateException("Cannot send auth packet: too long: "+length);
+		}
 		PCFBMode pcfb = PCFBMode.create(cipher);
 		byte[] iv = new byte[pcfb.lengthIV()];
 		node.random.nextBytes(iv);
