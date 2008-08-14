@@ -43,7 +43,6 @@ import freenet.support.ByteArrayWrapper;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
-import freenet.support.StringArray;
 import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
 import freenet.support.io.NativeThread;
@@ -2076,7 +2075,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				alreadyReported[x] = mi.alreadyReportedBytes;
 				x++;
 				if(mi.cb != null) callbacksCount += mi.cb.length;
-				if(logMINOR) Logger.minor(this, "Sending: "+mi+" length "+data.length+" cb "+ StringArray.toString(mi.cb)+" reported "+mi.alreadyReportedBytes);
+				if(logMINOR) Logger.minor(this, "Sending: "+mi+" length "+data.length+" cb "+ Arrays.toString(mi.cb)+" reported "+mi.alreadyReportedBytes);
 				length += (data.length + 2);
 			}
 		}
@@ -2293,7 +2292,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(logMINOR) {
 			String log = "processOutgoingPreformatted("+Fields.hashCode(buf)+", "+offset+ ',' +length+ ',' +tracker+ ',' +packetNumber+ ',';
 			if(callbacks == null) log += "null";
-			else log += ""+callbacks.length+StringArray.toString(callbacks); // FIXME too verbose?
+			else log += ""+callbacks.length+Arrays.toString(callbacks); // FIXME too verbose?
 			Logger.minor(this, log);
 		}
 		if((tracker == null) || (!tracker.pn.isConnected())) {

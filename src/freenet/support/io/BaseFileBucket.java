@@ -14,8 +14,8 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
-import freenet.support.StringArray;
 import freenet.support.api.Bucket;
+import java.util.Arrays;
 
 public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBucket {
 
@@ -392,7 +392,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		}
 		
 		if(toClose != null) {
-			Logger.error(this, "Streams open free()ing "+this+" : "+StringArray.toString(toClose), new Exception("debug"));
+			Logger.error(this, "Streams open free()ing "+this+" : "+Arrays.toString(toClose), new Exception("debug"));
 			for(int i=0;i<toClose.length;i++) {
 				try {
 					if(toClose[i] instanceof FileBucketOutputStream) {
@@ -419,6 +419,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		}
 	}
 	
+	@Override
 	public synchronized String toString() {
 		return super.toString()+ ':' +getFile().getPath()+":streams="+(streams == null ? 0 : streams.size());
 	}

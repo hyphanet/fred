@@ -38,7 +38,6 @@ import freenet.support.Executor;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
-import freenet.support.StringArray;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.IntCallback;
@@ -181,7 +180,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 		
 		public String[] getPossibleValues() {
-			return StringArray.toArray(pageMaker.getThemes().toArray());
+			return pageMaker.getThemes().toArray(new String[0]);
 		}
 	}
 	

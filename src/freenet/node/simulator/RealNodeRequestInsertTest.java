@@ -24,7 +24,6 @@ import freenet.node.NodeStarter;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
-import freenet.support.StringArray;
 import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.FileUtil;
@@ -209,7 +208,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 if(totalRunningUIDsAlt != 0)
                 	System.err.println("Still running UIDs (alt): "+totalRunningUIDsAlt);
                 if(!runningUIDsList.isEmpty()) {
-                	System.err.println("List of running UIDs: "+StringArray.toString(runningUIDsList.toArray()));
+                	System.err.println("List of running UIDs: "+Arrays.toString(runningUIDsList.toArray()));
                 }
             } catch (Throwable t) {
                 Logger.error(RealNodeRequestInsertTest.class, "Caught "+t, t);
