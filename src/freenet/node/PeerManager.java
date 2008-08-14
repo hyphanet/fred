@@ -1224,6 +1224,17 @@ public class PeerManager {
 		}
 		return false;
 	}
+	
+	public boolean anyDarknetPeers() {
+		PeerNode[] conns;
+		synchronized(this) {
+			conns = connectedPeers;
+		}
+		for(PeerNode p : conns)
+			if(p.isDarknet())
+				return true;
+		return false;
+	}
 
 	/**
 	 * Ask each PeerNode to read in it's extra peer data
