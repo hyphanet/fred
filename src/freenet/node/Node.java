@@ -184,6 +184,16 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			if (val.equals(storeType))
 				return;
 
+			boolean found = false;
+			for (String p : getPossibleValues()) {
+				if (p.equals(val)) {
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				throw new InvalidConfigValueException("Invalid store type");
+			
 			cachedStoreType = val;
 			throw new NodeNeedRestartException("Store type cannot be changed on the fly");
 		}
@@ -194,10 +204,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 		public void setPossibleValues(String[] val) {
 			throw new UnsupportedOperationException();
-		}
-
-		public boolean isReadOnly() {
-			return false;
 		}
 	}
 	
