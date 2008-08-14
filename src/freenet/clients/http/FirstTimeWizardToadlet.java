@@ -86,6 +86,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		} else if(currentStep == WIZARD_STEP.NAME_SELECTION) {
+			// Attempt to skip one step if possible: opennet nodes don't need a name
+			if(Boolean.valueOf(request.getParam("opennet"))) {
+				super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step="+WIZARD_STEP.BANDWIDTH);
+				return;
+			}
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step2Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
@@ -134,6 +139,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		} else if(currentStep == WIZARD_STEP.DATASTORE_SIZE) {
+			// Attempt to skip one step if possible
+			if(canAutoconfigureDatastoreSize()) {
+				super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step="+WIZARD_STEP.MEMORY);
+				return;
+			}
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step4Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
@@ -145,55 +155,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			bandwidthInfoboxContent.addChild("#", l10n("datastoreSizeLong"));
 			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "dsForm");
 			HTMLNode result = bandwidthForm.addChild("select", "name", "ds");
-			
-			// Use JNI to find out the free space on this partition.
 
-			long freeSpace = -1;
-			File dir = FileUtil.getCanonicalFile(core.node.getNodeDir());
-			try {
-				Class c = dir.getClass();
-				Method m = c.getDeclaredMethod("getFreeSpace", new Class[0]);
-				if(m != null) {
-					Long lFreeSpace = (Long) m.invoke(dir, new Object[0]);
-					if(lFreeSpace != null) {
-						freeSpace = lFreeSpace.longValue();
-						System.err.println("Found free space on node's partition: on "+dir+" = "+SizeUtil.formatSize(freeSpace));
-					}
-				}
-			} catch (NoSuchMethodException e) {
-				// Ignore
-				freeSpace = -1;
-			} catch (Throwable t) {
-				System.err.println("Trying to access 1.6 getFreeSpace(), caught "+t);
-				freeSpace = -1;
-			}
-			
-			if(freeSpace <= 0) {
-				result.addChild("option", new String[] { "value", "selected" }, new String[] { "1G", "selected" }, "1GiB");
-			} else {
-				if(freeSpace / 10 > 1024*1024*1024) {
-					// If 10GB+ free, default to 10% of available disk space.
-					String shortSize = SizeUtil.formatSize(freeSpace/10);
-					result.addChild("option", new String[] { "value", "selected" }, new String[] { shortSize, "selected" }, shortSize+" "+l10n("tenPercentDisk"));
-					if(freeSpace / 20 > 1024*1024*1024) {
-						// If 20GB+ free, also offer 5% of available disk space.
-						shortSize = SizeUtil.formatSize(freeSpace/20);
-						result.addChild("option", "value", shortSize, shortSize+" "+l10n("fivePercentDisk"));
-					}
-					result.addChild("option", "value", "1G", "1GiB");
-				} else if(freeSpace < 1024*1024*1024) {
-					// If less than 1GB free, default to 256MB and also offer 512MB.
-					result.addChild("option", new String[] { "value", "selected" }, new String[] { "256M", "selected" }, "256MiB");
-					result.addChild("option", "value", "512M", "512MiB");
-				} else if(freeSpace < 5*1024*1024*1024) {
-					// If less than 5GB free, default to 512MB
-					result.addChild("option", new String[] { "value", "selected" }, new String[] { "512M", "selected" }, "512MiB");						
-					result.addChild("option", "value", "1G", "1GiB");
-				} else {
-					// If unknown, or 5-10GB free, default to 1GB.
-					result.addChild("option", new String[] { "value", "selected" }, new String[] { "1G", "selected" }, "1GiB");
-				}
-			}
 			result.addChild("option", "value", "2G", "2GiB");
 			result.addChild("option", "value", "3G", "3GiB");
 			result.addChild("option", "value", "5G", "5GiB");
@@ -208,6 +170,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		} else if(currentStep == WIZARD_STEP.MEMORY) {
+			// FIXME: Get rid of it when the db4o branch is merged or auto-detect it (be careful of classpath's bug @see <freenet.Node>)
+			// Attempt to skip one step if possible
 			if(!WrapperConfig.canChangeProperties()) {
 				super.writeTemporaryRedirect(ctx, "step6", TOADLET_URL+"?step="+WIZARD_STEP.CONGRATZ);
 				return;
@@ -309,21 +273,16 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL + "?step=" + WIZARD_STEP.OPENNET);
 				return;
 			}
-			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.NAME_SELECTION);
+			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.NAME_SELECTION+"&opennet="+enable);
 			return;
 		} else if(request.isPartSet("nnameF")) {
 			String selectedNName = request.getPartAsString("nname", 128);
-			
 			try {
 				config.get("node").set("name", selectedNName);
 				Logger.normal(this, "The node name has been set to "+ selectedNName);
-			} catch (InvalidConfigValueException e) {
+			} catch (ConfigException e) {
 				Logger.error(this, "Should not happen, please report!" + e, e);
-			} catch (NodeNeedRestartException e) {
-				Logger.error(this, "Should not happen, please report: " + e, e);
-				return;
 			}
-			
 			super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step="+WIZARD_STEP.BANDWIDTH);
 			return;
 		} else if(request.isPartSet("bwF")) {
@@ -331,16 +290,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step="+WIZARD_STEP.DATASTORE_SIZE);
 			return;
 		} else if(request.isPartSet("dsF")) {
-			String selectedStoreSize =request.getPartAsString("ds", 6);
-			
-			try {
-				config.get("node").set("storeSize", selectedStoreSize);
-				Logger.normal(this, "The storeSize has been set to "+ selectedStoreSize);
-			} catch (InvalidConfigValueException e) {
-				Logger.error(this, "Should not happen, please report!" + e, e);
-			} catch (NodeNeedRestartException e) {
-				Logger.error(this, "Should not happen, please report!" + e, e);
-			}
+			_setDatastoreSize(request.getPartAsString("ds", 6));
 			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step="+WIZARD_STEP.MEMORY);
 			return;
 		} else if(request.isPartSet("memoryF")) {
@@ -363,6 +313,15 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 	public String supportedMethods() {
 		return "GET, POST";
+	}
+	
+	private void _setDatastoreSize(String selectedStoreSize) {
+		try {
+			config.get("node").set("storeSize", selectedStoreSize);
+			Logger.normal(this, "The storeSize has been set to " + selectedStoreSize);
+		} catch(ConfigException e) {
+			Logger.error(this, "Should not happen, please report!" + e, e);
+		}
 	}
 	
 	private void _setUpstreamBandwidthLimit(String selectedUploadSpeed) {
@@ -406,5 +365,48 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return true;
 		}else
 			return false;
+	}
+	
+	private boolean canAutoconfigureDatastoreSize() {
+		// Use JNI to find out the free space on this partition.
+		long freeSpace = -1;
+		File dir = FileUtil.getCanonicalFile(core.node.getNodeDir());
+		try {
+			Class c = dir.getClass();
+			Method m = c.getDeclaredMethod("getFreeSpace", new Class[0]);
+			if(m != null) {
+				Long lFreeSpace = (Long) m.invoke(dir, new Object[0]);
+				if(lFreeSpace != null) {
+					freeSpace = lFreeSpace.longValue();
+					System.err.println("Found free space on node's partition: on " + dir + " = " + SizeUtil.formatSize(freeSpace));
+				}
+			}
+		} catch(NoSuchMethodException e) {
+			// Ignore
+			freeSpace = -1;
+		} catch(Throwable t) {
+			System.err.println("Trying to access 1.6 getFreeSpace(), caught " + t);
+			freeSpace = -1;
+		}
+		
+		if(freeSpace <= 0)
+			return false;
+		else {
+			String shortSize = null;
+			if(freeSpace / 20 > 1024 * 1024 * 1024) {
+				// If 20GB+ free, 5% of available disk space.
+				shortSize = SizeUtil.formatSize(freeSpace / 20);
+			}else if(freeSpace / 10 > 1024 * 1024 * 1024) {
+				// If 10GB+ free, 10% of available disk space.
+				shortSize = SizeUtil.formatSize(freeSpace / 10);
+			}else if(freeSpace / 5 > 1024 * 1024 * 1024) {
+				// If 5GB+ free, default to 512MB
+				shortSize = "512MB";
+			}else
+				shortSize = "256MB";
+			
+			_setDatastoreSize(shortSize);
+			return true;
+		}
 	}
 }
