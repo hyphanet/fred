@@ -175,11 +175,11 @@ public class NodeClientCore implements Persistable {
 		// Persistent temp files
 		nodeConfig.register("encryptPersistentTempBuckets", true, sortOrder++, true, false, "NodeClientCore.encryptPersistentTempBuckets", "NodeClientCore.encryptPersistentTempBucketsLong", new BooleanCallback() {
 
-			public boolean get() {
+			public Boolean get() {
 				return (persistentTempBucketFactory == null ? true : persistentTempBucketFactory.isEncrypting());
 			}
 
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				if((val == get()) || (persistentTempBucketFactory == null)) return;
 				persistentTempBucketFactory.setEncryption(val);
 			}
@@ -211,22 +211,22 @@ public class NodeClientCore implements Persistable {
 
 		nodeConfig.register("maxRAMBucketSize", "32KiB", sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
 
-			public long get() {
+			public Long get() {
 				return (tempBucketFactory == null ? 0 : tempBucketFactory.getMaxRAMBucketSize());
 			}
 
-			public void set(long val) throws InvalidConfigValueException {
+			public void set(Long val) throws InvalidConfigValueException {
 				if((val == get()) || (tempBucketFactory == null)) return;
 				tempBucketFactory.setMaxRAMBucketSize(val);
 			}
 		});
 		nodeConfig.register("RAMBucketPoolSize", "10MiB", sortOrder++, true, false, "NodeClientCore.ramBucketPoolSize", "NodeClientCore.ramBucketPoolSizeLong", new LongCallback() {
 
-			public long get() {
+			public Long get() {
 				return (tempBucketFactory == null ? 0 : tempBucketFactory.getMaxRamUsed());
 			}
 
-			public void set(long val) throws InvalidConfigValueException {
+			public void set(Long val) throws InvalidConfigValueException {
 				if((val == get()) || (tempBucketFactory == null)) return;
 				tempBucketFactory.setMaxRamUsed(val);
 			}
@@ -234,11 +234,11 @@ public class NodeClientCore implements Persistable {
 			
 		nodeConfig.register("encryptTempBuckets", true, sortOrder++, true, false, "NodeClientCore.encryptTempBuckets", "NodeClientCore.encryptTempBucketsLong", new BooleanCallback() {
 
-			public boolean get() {
+			public Boolean get() {
 				return (tempBucketFactory == null ? true : tempBucketFactory.isEncrypting());
 			}
 
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				if((val == get()) || (tempBucketFactory == null)) return;
 				tempBucketFactory.setEncryption(val);
 			}
@@ -328,11 +328,11 @@ public class NodeClientCore implements Persistable {
 		nodeConfig.register("lazyResume", false, sortOrder++, true, false, "NodeClientCore.lazyResume",
 			"NodeClientCore.lazyResumeLong", new BooleanCallback() {
 
-			public boolean get() {
+			public Boolean get() {
 				return lazyResume;
 			}
 
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				synchronized(NodeClientCore.this) {
 					lazyResume = val;
 				}
@@ -344,11 +344,11 @@ public class NodeClientCore implements Persistable {
 		nodeConfig.register("maxBackgroundUSKFetchers", "64", sortOrder++, true, false, "NodeClientCore.maxUSKFetchers",
 			"NodeClientCore.maxUSKFetchersLong", new IntCallback() {
 
-			public int get() {
+			public Integer get() {
 				return maxBackgroundUSKFetchers;
 			}
 
-			public void set(int uskFetch) throws InvalidConfigValueException {
+			public void set(Integer uskFetch) throws InvalidConfigValueException {
 				if(uskFetch <= 0)
 					throw new InvalidConfigValueException(l10n("maxUSKFetchersMustBeGreaterThanZero"));
 				maxBackgroundUSKFetchers = uskFetch;

@@ -201,11 +201,11 @@ public class FCPServer implements Runnable {
 			this.node = node;
 		}
 		
-		public int get() {
+		public Integer get() {
 			return node.getFCPServer().port;
 		}
 
-		public void set(int val) throws InvalidConfigValueException {
+		public void set(Integer val) throws InvalidConfigValueException {
 			if(val != get()) {
 				throw new InvalidConfigValueException("Cannot change FCP port number on the fly");
 			}
@@ -224,11 +224,11 @@ public class FCPServer implements Runnable {
 			this.node = node;
 		}
 		
-		public boolean get() {
+		public Boolean get() {
 			return node.getFCPServer().enabled;
 		}
 //TODO: Allow it
-		public void set(boolean val) throws InvalidConfigValueException {
+		public void set(Boolean val) throws InvalidConfigValueException {
 			if(val != get()) {
 				throw new InvalidConfigValueException(l10n("cannotStartOrStopOnTheFly"));
 			}
@@ -241,11 +241,11 @@ public class FCPServer implements Runnable {
 
 	static class FCPSSLCallback extends BooleanCallback {
 
-		public boolean get() {
+		public Boolean get() {
 			return ssl;
 		}
 
-		public void set(boolean val) throws InvalidConfigValueException {
+		public void set(Boolean val) throws InvalidConfigValueException {
     		if(val == get()) return;
 			if(!SSL.available()) {
 				throw new InvalidConfigValueException("Enable SSL support before use ssl with FCP");
@@ -334,11 +334,11 @@ public class FCPServer implements Runnable {
 		
 		FCPServer server;
 		
-		public boolean get() {
+		public Boolean get() {
 			return server.persistentDownloadsEnabled();
 		}
 		
-		public void set(boolean set) {
+		public void set(Boolean set) {
 			if(server.persistentDownloadsEnabled() != set)
 				server.setPersistentDownloadsEnabled(set);
 		}
@@ -364,11 +364,11 @@ public class FCPServer implements Runnable {
 		
 		FCPServer server;
 		
-		public long get() {
+		public Long get() {
 			return server.persistenceInterval;
 		}
 		
-		public void set(long value) {
+		public void set(Long value) {
 			server.persistenceInterval = value;
 			FCPServerPersister p = server.persister;
 			if(p != null) {
@@ -382,11 +382,11 @@ public class FCPServer implements Runnable {
 	static class AssumeDDADownloadIsAllowedCallback extends BooleanCallback {
 		FCPServer server;
 
-		public boolean get() {
+		public Boolean get() {
 			return server.assumeDownloadDDAIsAllowed;
 		}
 		
-		public void set(boolean val) throws InvalidConfigValueException {
+		public void set(Boolean val) throws InvalidConfigValueException {
 			if(val == get()) return;
 			server.assumeDownloadDDAIsAllowed = val;
 		}
@@ -395,11 +395,11 @@ public class FCPServer implements Runnable {
 	static class AssumeDDAUploadIsAllowedCallback extends BooleanCallback {
 		FCPServer server;
 
-		public boolean get() {
+		public Boolean get() {
 			return server.assumeUploadDDAIsAllowed;
 		}
 		
-		public void set(boolean val) throws InvalidConfigValueException {
+		public void set(Boolean val) throws InvalidConfigValueException {
 			if(val == get()) return;
 			server.assumeUploadDDAIsAllowed = val;
 		}

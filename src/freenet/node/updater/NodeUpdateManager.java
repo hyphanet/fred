@@ -806,22 +806,22 @@ public class NodeUpdateManager {
 	
 	class UpdaterEnabledCallback extends BooleanCallback  {
 		
-		public boolean get() {
+		public Boolean get() {
 			return isEnabled();
 		}
 		
-		public void set(boolean val) throws InvalidConfigValueException {
+		public void set(Boolean val) throws InvalidConfigValueException {
 			enable(val);
 		}
 	}
 	
 	class AutoUpdateAllowedCallback extends BooleanCallback  {
 		
-		public boolean get() {
+		public Boolean get() {
 			return isAutoUpdateAllowed();
 		}
 		
-		public void set(boolean val) throws InvalidConfigValueException {
+		public void set(Boolean val) throws InvalidConfigValueException {
 			setAutoUpdateAllowed(val);
 		}
 	}

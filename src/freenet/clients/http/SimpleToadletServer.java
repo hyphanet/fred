@@ -82,10 +82,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	class FProxySSLCallback extends BooleanCallback  {
 		
-		public boolean get() {
+		public Boolean get() {
 			return ssl;
 		}
-		public void set(boolean val) throws InvalidConfigValueException {
+		public void set(Boolean val) throws InvalidConfigValueException {
 			if(val == get()) return;
 			if(!SSL.available()) {
 				throw new InvalidConfigValueException("Enable SSL support before use ssl with Fproxy");
@@ -100,11 +100,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	class FProxyPassthruMaxSize extends IntCallback  {
 		
-		public int get() {
+		public Integer get() {
 			return FProxyToadlet.MAX_LENGTH;
 		}
 		
-		public void set(int val) throws InvalidConfigValueException {
+		public void set(Integer val) throws InvalidConfigValueException {
 			if(val == get()) return;
 			FProxyToadlet.MAX_LENGTH = val;
 		}
@@ -112,11 +112,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	class FProxyPortCallback extends IntCallback  {
 		
-		public int get() {
+		public Integer get() {
 			return port;
 		}
 		
-		public void set(int newPort) throws InvalidConfigValueException {
+		public void set(Integer newPort) throws InvalidConfigValueException {
 			if(port != newPort)
 				throw new InvalidConfigValueException(L10n.getString("cannotChangePortOnTheFly"));
 			// FIXME
@@ -206,12 +206,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	class FProxyEnabledCallback extends BooleanCallback  {
 		
-		public boolean get() {
+		public Boolean get() {
 			synchronized(SimpleToadletServer.this) {
 				return myThread != null;
 			}
 		}
-		public void set(boolean val) throws InvalidConfigValueException {
+		public void set(Boolean val) throws InvalidConfigValueException {
 			if(val == get()) return;
 			synchronized(SimpleToadletServer.this) {
 				if(val) {
@@ -254,11 +254,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			this.ts = ts;
 		}
 		
-		public boolean get() {
+		public Boolean get() {
 			return ts.isAdvancedModeEnabled();
 		}
 		
-		public void set(boolean val) throws InvalidConfigValueException {
+		public void set(Boolean val) throws InvalidConfigValueException {
 			if(val == get()) return;
 				ts.enableAdvancedMode(val);
 		}
@@ -272,11 +272,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			this.ts = ts;
 		}
 		
-		public boolean get() {
+		public Boolean get() {
 			return ts.isFProxyJavascriptEnabled();
 		}
 		
-		public void set(boolean val) throws InvalidConfigValueException {
+		public void set(Boolean val) throws InvalidConfigValueException {
 			if(val == get()) return;
 				ts.enableFProxyJavascript(val);
 		}
@@ -357,11 +357,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyJavascriptEnabledCallback(this));
 		fproxyConfig.register("showPanicButton", false, configItemOrder++, true, true, "SimpleToadletServer.panicButton", "SimpleToadletServer.panicButtonLong",
 				new BooleanCallback(){
-				public boolean get(){
+				public Boolean get() {
 					return SimpleToadletServer.isPanicButtonToBeShown;
 				}
 			
-				public void set(boolean value){
+				public void set(Boolean value) {
 					if(value == SimpleToadletServer.isPanicButtonToBeShown) return;
 					else	SimpleToadletServer.isPanicButtonToBeShown = value;
 				}
@@ -375,13 +375,13 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		fproxyConfig.register("enablePersistentConnections", false, configItemOrder++, true, false, "SimpleToadletServer.enablePersistentConnections", "SimpleToadletServer.enablePersistentConnectionsLong",
 				new BooleanCallback() {
 
-					public boolean get() {
+					public Boolean get() {
 						synchronized(SimpleToadletServer.this) {
 							return enablePersistentConnections;
 						}
 					}
 
-					public void set(boolean val) throws InvalidConfigValueException {
+					public void set(Boolean val) throws InvalidConfigValueException {
 						synchronized(SimpleToadletServer.this) {
 							enablePersistentConnections = val;
 						}
@@ -398,13 +398,13 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		fproxyConfig.register("enableInlinePrefetch", false, configItemOrder++, true, false, "SimpleToadletServer.enableInlinePrefetch", "SimpleToadletServer.enableInlinePrefetchLong",
 				new BooleanCallback() {
 
-					public boolean get() {
+					public Boolean get() {
 						synchronized(SimpleToadletServer.this) {
 							return enableInlinePrefetch;
 						}
 					}
 
-					public void set(boolean val) throws InvalidConfigValueException {
+					public void set(Boolean val) throws InvalidConfigValueException {
 						synchronized(SimpleToadletServer.this) {
 							enableInlinePrefetch = val;
 						}
@@ -433,10 +433,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		allowedFullAccess = new AllowedHosts(fproxyConfig.getString("allowedHostsFullAccess"));
 		fproxyConfig.register("doRobots", false, configItemOrder++, true, false, "SimpleToadletServer.doRobots", "SimpleToadletServer.doRobotsLong",
 				new BooleanCallback() {
-					public boolean get() {
+					public Boolean get() {
 						return doRobots;
 					}
-					public void set(boolean val) throws InvalidConfigValueException {
+					public void set(Boolean val) throws InvalidConfigValueException {
 						doRobots = val;
 					}
 		});

@@ -50,14 +50,14 @@ public class NodeCryptoConfig {
 	NodeCryptoConfig(SubConfig config, int sortOrder, boolean onePerIP) throws NodeInitException {
 		
 		config.register("listenPort", -1 /* means random */, sortOrder++, true, true, "Node.port", "Node.portLong",	new IntCallback() {
-			public int get() {
+			public Integer get() {
 				synchronized(NodeCryptoConfig.class) {
 					if(crypto != null)
 						portNumber = crypto.portNumber;
 					return portNumber;
 				}
 			}
-			public void set(int val) throws InvalidConfigValueException {
+			public void set(Integer val) throws InvalidConfigValueException {
 				
 				if(portNumber < -1 || portNumber == 0 || portNumber > 65535) {
 					throw new InvalidConfigValueException("Invalid port number");
@@ -100,13 +100,13 @@ public class NodeCryptoConfig {
 		config.register("testingDropPacketsEvery", 0, sortOrder++, true, false, "Node.dropPacketEvery", "Node.dropPacketEveryLong",
 				new IntCallback() {
 
-					public int get() {
+					public Integer get() {
 						synchronized(NodeCryptoConfig.this) {
 							return dropProbability;
 						}
 					}
 
-					public void set(int val) throws InvalidConfigValueException {
+					public void set(Integer val) throws InvalidConfigValueException {
 						if(val < 0) throw new InvalidConfigValueException("testingDropPacketsEvery must not be negative");
 						synchronized(NodeCryptoConfig.this) {
 							if(val == dropProbability) return;
@@ -122,13 +122,13 @@ public class NodeCryptoConfig {
 		config.register("oneConnectionPerIP", onePerIP, sortOrder++, true, false, "Node.oneConnectionPerIP", "Node.oneConnectionPerIPLong",
 				new BooleanCallback() {
 
-					public boolean get() {
+					public Boolean get() {
 						synchronized(NodeCryptoConfig.this) {
 							return oneConnectionPerAddress;
 						}
 					}
 
-					public void set(boolean val) throws InvalidConfigValueException {
+					public void set(Boolean val) throws InvalidConfigValueException {
 						synchronized(NodeCryptoConfig.this) {
 							oneConnectionPerAddress = val;
 						}
@@ -140,13 +140,13 @@ public class NodeCryptoConfig {
 		config.register("alwaysAllowLocalAddresses", false, sortOrder++, true, false, "Node.alwaysAllowLocalAddresses", "Node.alwaysAllowLocalAddressesLong",
 				new BooleanCallback() {
 
-					public boolean get() {
+					public Boolean get() {
 						synchronized(NodeCryptoConfig.this) {
 							return alwaysAllowLocalAddresses;
 						}
 					}
 
-					public void set(boolean val) throws InvalidConfigValueException {
+					public void set(Boolean val) throws InvalidConfigValueException {
 						synchronized(NodeCryptoConfig.this) {
 							alwaysAllowLocalAddresses = val;
 						}
@@ -156,11 +156,11 @@ public class NodeCryptoConfig {
 		
 		config.register("assumeNATed", true, sortOrder++, true, true, "Node.assumeNATed", "Node.assumeNATedLong", new BooleanCallback() {
 
-			public boolean get() {
+			public Boolean get() {
 				return assumeNATed;
 			}
 
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				assumeNATed = val;
 			}		
 		});

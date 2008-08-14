@@ -64,10 +64,10 @@ public class LoggingConfigHandler {
     	
     	loggingConfig.register("enabled", true, 1, true, false, "LogConfigHandler.enabled", "LogConfigHandler.enabledLong",
     			new BooleanCallback() {
-					public boolean get() {
+					public Boolean get() {
 						return fileLoggerHook != null;
 					}
-					public void set(boolean val) throws InvalidConfigValueException {
+					public void set(Boolean val) throws InvalidConfigValueException {
 						if(val == (fileLoggerHook != null)) return;
 						if(!val) {
 							disableLogger();
@@ -110,11 +110,12 @@ public class LoggingConfigHandler {
     	
     	config.register("maxZippedLogsSize", "128M", 3, true, true, "LogConfigHandler.maxZippedLogsSize", "LogConfigHandler.maxZippedLogsSizeLong",
     			new LongCallback() {
-					public long get() {
+					public Long get() {
 						return maxZippedLogsSize;
 					}
-					public void set(long val) throws InvalidConfigValueException {
-						if(val < 0) val = 0;
+					public void set(Long val) throws InvalidConfigValueException {
+						if (val < 0)
+					        val = 0L;
 						maxZippedLogsSize = val;
 						if(fileLoggerHook != null) {
 							fileLoggerHook.setMaxOldLogsSize(val);
@@ -179,11 +180,12 @@ public class LoggingConfigHandler {
     	// max cached bytes in RAM
     	config.register("maxCachedBytes", "10M", 6, true, false, "LogConfigHandler.maxCachedBytes", "LogConfigHandler.maxCachedBytesLong", 
     			new LongCallback() {
-					public long get() {
+					public Long get() {
 						return maxCachedLogBytes;
 					}
-					public void set(long val) throws InvalidConfigValueException {
-						if(val < 0) val = 0;
+					public void set(Long val) throws InvalidConfigValueException {
+						if (val < 0)
+					        val = 0L;
 						if(val == maxCachedLogBytes) return;
 						maxCachedLogBytes = val;
 						if(fileLoggerHook != null)
@@ -196,10 +198,10 @@ public class LoggingConfigHandler {
     	// max cached lines in RAM
     	config.register("maxCachedLines", "100k", 7, true, false, "LogConfigHandler.maxCachedLines", "LogConfigHandler.maxCachedLinesLong",
     			new IntCallback() {
-					public int get() {
+					public Integer get() {
 						return maxCachedLogLines;
 					}
-					public void set(int val) throws InvalidConfigValueException {
+					public void set(Integer val) throws InvalidConfigValueException {
 						if(val < 0) val = 0;
 						if(val == maxCachedLogLines) return;
 						maxCachedLogLines = val;

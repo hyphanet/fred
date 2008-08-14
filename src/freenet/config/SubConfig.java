@@ -62,12 +62,12 @@ public class SubConfig implements Comparable<SubConfig> {
 	
 	public void register(String optionName, int defaultValue, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, IntCallback cb) {
-		register(new IntOption(this, optionName, defaultValue, null, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
+		register(new IntOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 	
 	public void register(String optionName, long defaultValue, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, LongCallback cb) {
-		register(new LongOption(this, optionName, defaultValue, null, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
+		register(new LongOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 	
 	public void register(String optionName, String defaultValueString, int sortOrder,

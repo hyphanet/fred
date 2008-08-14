@@ -6,8 +6,7 @@ package freenet.config;
 /**
  * A config option.
  */
-public abstract class Option {
-
+public abstract class Option<T, C extends ConfigCallback<T>> {
 	/** The parent SubConfig object */
 	protected final SubConfig config;
 	/** The option name */
@@ -23,7 +22,10 @@ public abstract class Option {
 	/** Long description of value e.g. "The TCP port to listen for FCP connections on" */
 	protected final String longDesc;
 	/** The configCallback associated to the Option */
-	protected final ConfigCallback cb;
+	protected final C cb;
+	
+	protected T defaultValue;
+	protected T currentValue;
 	
 	public static enum DataType {
 		STRING, NUMBER, BOOLEAN, STRING_ARRAY
@@ -32,7 +34,7 @@ public abstract class Option {
 	/** Data type : used to make it possible to make user inputs more friendly in FCP apps */
 	final DataType dataType;
 	
-	Option(SubConfig config, String name, ConfigCallback cb, int sortOrder, boolean expert, boolean forceWrite,
+	Option(SubConfig config, String name, C cb, int sortOrder, boolean expert, boolean forceWrite,
 	        String shortDesc, String longDesc, DataType dataType) {
 		this.config = config;
 		this.name = name;
@@ -46,22 +48,38 @@ public abstract class Option {
 	}
 
 	/**
-	 * Set this option's current value to a string. Will call the callback. Does not care 
-	 * whether the value of the option has changed.
+	 * Set this option's current value to a string. Will call the callback. Does not care whether
+	 * the value of the option has changed.
 	 */
-	public abstract void setValue(String val) throws InvalidConfigValueException;
+	public final void setValue(String val) throws InvalidConfigValueException {
+		T x = parseString(val);
+		set(x);
+		currentValue = x;
+	}
 
+	protected abstract T parseString(String val) throws InvalidConfigValueException; 
+	protected abstract String toString(T val);
+
+	protected final void set(T val) throws InvalidConfigValueException {
+		cb.set(val);
+		currentValue = val;
+	}
+	
 	/**
 	 * Get the current value of the option as a string.
 	 */
-	public abstract String getValueString();
+	public final String getValueString() {
+		return toString(currentValue);
+	}
 
 	/** Set to a value from the config file; this is not passed on to the callback, as we
 	 * expect the client-side initialization to check the value. The callback is not valid
 	 * until the client calls finishedInitialization().
 	 * @throws InvalidConfigValueException 
 	 */
-	public abstract void setInitialValue(String val) throws InvalidConfigValueException;
+	public final void setInitialValue(String val) throws InvalidConfigValueException {
+		currentValue = parseString(val);
+	}
 
 	/**
 	 * Call the callback with the current value of the option.
@@ -113,16 +131,37 @@ public abstract class Option {
 	}
 
 	/**
+	 * Get the current value. This is the value in use if we have finished initialization, otherwise
+	 * it is the value set at startup (possibly the default).
+	 */
+	public final T getValue() {
+		if (config.hasFinishedInitialization())
+			return currentValue = cb.get();
+		else
+			return currentValue;
+	}
+	
+	/**
 	 * Is this option set to the default?
 	 */
-	public abstract boolean isDefault();
-	
-	/** Set to the default. Don't use after completed initialization, as this does not call the callback. FIXME fix this? */
-	public abstract void setDefault();
-	
-	public abstract String getDefault();
+	public boolean isDefault() {
+		getValue();
+		return (currentValue == null ? false : currentValue.equals(defaultValue));
+	}
 
-	public ConfigCallback getCallback() {
+	/**
+	 * Set to the default. Don't use after completed initialization, as this does not call the
+	 * callback.
+	 */
+	public final void setDefault() {
+		currentValue = defaultValue;
+	}
+	
+	public final String getDefault() {
+		return toString(defaultValue);
+	}
+
+	public final C getCallback() {
 		return cb;
 	}
 }

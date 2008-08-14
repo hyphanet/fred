@@ -4,22 +4,7 @@
 package freenet.support.api;
 
 import freenet.config.ConfigCallback;
-import freenet.config.InvalidConfigValueException;
 
 /** Callback (getter/setter) for a string config variable */
-public abstract class StringArrCallback extends ConfigCallback {
-	
-	/**
-	 * Get the current, used value of the config variable.
-	 */
-	public abstract String[] get();
-
-	/**
-	 * Set the config variable to a new value.
-	 * @param val The new value.
-	 * @throws InvalidConfigOptionException If the new value is invalid for 
-	 * this particular option.
-	 */
-	public abstract void set(String[] val) throws InvalidConfigValueException;
-	
+public abstract class StringArrCallback extends ConfigCallback<String[]> {
 }

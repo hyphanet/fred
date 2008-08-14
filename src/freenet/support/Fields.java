@@ -684,6 +684,60 @@ public abstract class Fields {
 		return res;
 	}
 
+	public static String longToString(long val) {
+		String[] u = { "k", "K", "m", "M", "g", "G", "t", "T", "p", "P", "e", "E" };
+		String ret = Long.toString(val);
+
+		if (val <= 0)
+			return ret;
+
+		for (int i = MULTIPLES.length - 1; i >= 0; i--) {
+			if (val > MULTIPLES[i] && val % MULTIPLES[i] == 0) {
+				ret = (val / MULTIPLES[i]) + u[i];
+				if (!u[i].toLowerCase().equals(u[i]))
+					ret += "iB";
+				break;
+			}
+		}
+		return ret;
+	}
+
+	public static String intToString(int val) {
+		String[] u = { "k", "K", "m", "M", "g", "G", "t", "T", "p", "P", "e", "E" };
+		String ret = Integer.toString(val);
+
+		if (val <= 0)
+			return ret;
+
+		for (int i = MULTIPLES.length - 1; i >= 0; i--) {
+			if (val > MULTIPLES[i] && val % MULTIPLES[i] == 0) {
+				ret = (val / MULTIPLES[i]) + u[i];
+				if (!u[i].toLowerCase().equals(u[i]))
+					ret += "iB";
+				break;
+			}
+		}
+		return ret;
+	}
+
+	public static String shortToString(short val) {
+		String[] u = { "k", "K", "m", "M", "g", "G", "t", "T", "p", "P", "e", "E" };
+		String ret = Short.toString(val);
+
+		if (val <= 0)
+			return ret;
+		
+		for (int i = MULTIPLES.length - 1; i >= 0; i--) {
+			if (val > MULTIPLES[i] && val % MULTIPLES[i] == 0) {
+				ret = (val / MULTIPLES[i]) + u[i];
+				if (!u[i].toLowerCase().equals(u[i]))
+					ret += "iB";
+				break;
+			}
+		}
+		return ret;
+	}
+
 	public static double[] bytesToDoubles(byte[] data, int offset, int length) {
 		long[] longs = bytesToLongs(data, offset, length);
 		double[] doubles = new double[longs.length];

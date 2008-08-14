@@ -6,65 +6,25 @@ package freenet.config;
 import freenet.l10n.L10n;
 import freenet.support.api.BooleanCallback;
 
-public class BooleanOption extends Option {
-	
-	final boolean defaultValue;
-	final BooleanCallback cb;
-	private boolean currentValue;
-	
+public class BooleanOption extends Option<Boolean, BooleanCallback> {
 	public BooleanOption(SubConfig conf, String optionName, boolean defaultValue, int sortOrder, 
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, BooleanCallback cb) {
 		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DataType.BOOLEAN);
 		this.defaultValue = defaultValue;
-		this.cb = cb;
 		this.currentValue = defaultValue;
 	}
 
-	/** Get the current value. This is the value in use if we have finished
-	 * initialization, otherwise it is the value set at startup (possibly the default). */
-	public boolean getValue() {
-		if(config.hasFinishedInitialization())
-			return currentValue = cb.get();
-		else return currentValue;
-	}
-
-	public void setValue(String val) throws InvalidConfigValueException {
+	public Boolean parseString(String val) throws InvalidConfigValueException {
 		if(val.equalsIgnoreCase("true") || val.equalsIgnoreCase("yes")) {
-			set(true);
+			return true;
 		} else if(val.equalsIgnoreCase("false") || val.equalsIgnoreCase("no")) {
-			set(false);
-		} else
-			throw new OptionFormatException(L10n.getString("BooleanOption.parseError", "val", val));
-	}
-	
-	public void set(boolean b) throws InvalidConfigValueException {
-		cb.set(b);
-		currentValue = b;
-	}
-	
-	public String getValueString() {
-		return Boolean.toString(getValue());
-	}
-
-	public void setInitialValue(String val) throws InvalidConfigValueException {
-		if(val.equalsIgnoreCase("true") || val.equalsIgnoreCase("yes")) {
-			currentValue = true;
-		} else if(val.equalsIgnoreCase("false") || val.equalsIgnoreCase("no")) {
-			currentValue = false;
+			return false;
 		} else
 			throw new OptionFormatException(L10n.getString("BooleanOption.parseError", "val", val));
 	}
 
-	public boolean isDefault() {
-		getValue();
-		return currentValue == defaultValue;
-	}
-	
-	public String getDefault() {
-		return Boolean.toString(defaultValue);
-	}
-
-	public void setDefault() {
-		currentValue = defaultValue;
+	@Override
+	protected String toString(Boolean val) {
+		return val.toString();
 	}
 }

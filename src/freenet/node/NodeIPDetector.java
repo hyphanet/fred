@@ -437,11 +437,11 @@ public class NodeIPDetector {
 		
 		nodeConfig.register("includeLocalAddressesInNoderefs", false, sortOrder++, true, false, "NodeIPDectector.inclLocalAddress", "NodeIPDectector.inclLocalAddressLong", new BooleanCallback() {
 
-			public boolean get() {
+			public Boolean get() {
 				return includeLocalAddressesInNoderefs;
 			}
 
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				includeLocalAddressesInNoderefs = val;
 				lastIPAddress = null;
 				ipDetector.clearCached();

@@ -66,11 +66,11 @@ public class SSL {
 		sslConfig.register("sslEnable", false, configItemOrder++, true, true, "SSL.enable", "SSL.enableLong",
 			new BooleanCallback() {
 
-				public boolean get() {
+				public Boolean get() {
 					return enable;
 				}
 
-				public void set(boolean newValue) throws InvalidConfigValueException {
+				public void set(Boolean newValue) throws InvalidConfigValueException {
 					if(newValue != get()) {
 						enable = newValue;
 						if(enable)

@@ -111,11 +111,11 @@ public class TextModeClientInterfaceServer implements Runnable {
     		this.core = core;
     	}
     	
-    	public boolean get() {
+    	public Boolean get() {
     		return core.getTextModeClientInterface() != null;
     	}
     	
-    	public void set(boolean val) throws InvalidConfigValueException {
+    	public void set(Boolean val) throws InvalidConfigValueException {
     		if(val == get()) return;
     		// FIXME implement - see bug #122
     		throw new InvalidConfigValueException("Cannot be updated on the fly");
@@ -127,11 +127,11 @@ public class TextModeClientInterfaceServer implements Runnable {
 
     static class TMCISSLCallback extends BooleanCallback  {
     	
-    	public boolean get() {
+    	public Boolean get() {
     		return ssl;
     	}
     	
-    	public void set(boolean val) throws InvalidConfigValueException {
+    	public void set(Boolean val) throws InvalidConfigValueException {
     		if(val == get()) return;
 			if(!SSL.available()) {
 				throw new InvalidConfigValueException("Enable SSL support before use ssl with TMCI");
@@ -152,11 +152,11 @@ public class TextModeClientInterfaceServer implements Runnable {
     		this.core = core;
     	}
     	
-    	public boolean get() {
+    	public Boolean get() {
     		return core.getDirectTMCI() != null;
     	}
     	
-    	public void set(boolean val) throws InvalidConfigValueException {
+    	public void set(Boolean val) throws InvalidConfigValueException {
     		if(val == get()) return;
     		// FIXME implement - see bug #122
     		throw new InvalidConfigValueException("Cannot be updated on the fly");
@@ -227,7 +227,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     		this.core = core;
     	}
     	
-    	public int get() {
+    	public Integer get() {
     		if(core.getTextModeClientInterface()!=null)
     			return core.getTextModeClientInterface().port;
     		else
@@ -235,7 +235,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     	}
     	
     	// TODO: implement it
-    	public void set(int val) throws InvalidConfigValueException {
+    	public void set(Integer val) throws InvalidConfigValueException {
     		if(val == get()) return;
     		core.getTextModeClientInterface().setPort(val);
     	}
