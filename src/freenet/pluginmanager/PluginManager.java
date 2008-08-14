@@ -15,7 +15,6 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.Vector;
@@ -116,7 +115,7 @@ public class PluginManager {
 //		installDir = pmconfig.getString("installdir");
 
 		// Start plugins in the config
-		pmconfig.register("loadplugin", null, 9, true, false, "PluginManager.loadedOnStartup", "PluginManager.loadedOnStartupLong",
+		pmconfig.register("loadplugin", null, 0, true, false, "PluginManager.loadedOnStartup", "PluginManager.loadedOnStartupLong",
 			new StringArrCallback() {
 
 				public String[] get() {
@@ -129,6 +128,7 @@ public class PluginManager {
 					throw new InvalidConfigValueException(L10n.getString("PluginManager.cannotSetOnceLoaded"));
 				}
 
+			@Override
 				public boolean isReadOnly() {
 					return true;
 				}
@@ -143,21 +143,15 @@ public class PluginManager {
 	}
 
 	private String[] getConfigLoadString() {
-		try {
-			Iterator it = getPlugins().iterator();
-
-			Vector v = new Vector();
-
-			while(it.hasNext()) {
-				PluginInfoWrapper pluginInfoWrapper = (PluginInfoWrapper) it.next();
-				v.add(pluginInfoWrapper.getFilename());
+		Vector<String> v = new Vector<String>();
+		
+		synchronized(pluginWrappers) {
+			for(PluginInfoWrapper pi : pluginWrappers) {
+				v.add(pi.getFilename());
 			}
-
-			return (String[]) v.toArray(new String[v.size()]);
-		} catch(NullPointerException e) {
-			Logger.error(this, "error while loading plugins: disabling them:" + e);
-			return new String[0];
 		}
+		
+		return v.toArray(new String[v.size()]);
 	}
 
 	/**
