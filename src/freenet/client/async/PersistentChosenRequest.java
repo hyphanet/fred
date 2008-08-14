@@ -4,12 +4,14 @@
 package freenet.client.async;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import java.util.Vector;
 
 import com.db4o.ObjectContainer;
 
 import freenet.client.FetchContext;
+import freenet.keys.Key;
 import freenet.node.BulkCallFailureItem;
 import freenet.node.LowLevelGetException;
 import freenet.node.RequestScheduler;
@@ -72,7 +74,13 @@ public class PersistentChosenRequest {
 		boolean reqActive = container.ext().isActive(req);
 		if(!reqActive)
 			container.activate(req, 1);
-		blocksNotStarted.addAll(req.makeBlocks(this, sched, container, context));
+		List<PersistentChosenBlock> candidates = req.makeBlocks(this, sched, container, context);
+		for(PersistentChosenBlock block : candidates) {
+			Key key = block.key;
+			if(key != null && sched.hasFetchingKey(key))
+				continue;
+			blocksNotStarted.add(block);
+		}
 		sender = req.getSender(container, context);
 		if(!reqActive)
 			container.deactivate(req, 1);
@@ -84,7 +92,7 @@ public class PersistentChosenRequest {
 			public void run() {
 				synchronized(PersistentChosenRequest.this) {
 					if(finished) return;
-					Logger.error(this, "Still not finished after timeout: "+this);
+					Logger.error(this, "Still not finished after timeout: "+PersistentChosenRequest.this);
 				}
 			}
 			
@@ -194,14 +202,20 @@ public class PersistentChosenRequest {
 		scheduler.removeRunningRequest(request);
 	}
 
-	public synchronized ChosenBlock grabNotStarted(Random random) {
-		int size = blocksNotStarted.size();
-		if(size == 0) return null;
-		PersistentChosenBlock ret;
-		if(size == 1) ret = blocksNotStarted.remove(0);
-		else ret = blocksNotStarted.remove(random.nextInt(size));
-		blocksStarted.add(ret);
-		return ret;
+	public synchronized ChosenBlock grabNotStarted(Random random, RequestScheduler sched) {
+		while(true) {
+			int size = blocksNotStarted.size();
+			if(size == 0) return null;
+			PersistentChosenBlock ret;
+			if(size == 1) ret = blocksNotStarted.remove(0);
+			else ret = blocksNotStarted.remove(random.nextInt(size));
+			Key key = ret.key;
+			if(key != null && sched.hasFetchingKey(key))
+				// Already fetching; remove from list.
+				continue;
+			blocksStarted.add(ret);
+			return ret;
+		}
 	}
 
 	public synchronized int sizeNotStarted() {
@@ -211,19 +225,27 @@ public class PersistentChosenRequest {
 	public void onDumped(ClientRequestSchedulerCore core, ObjectContainer container) {
 		if(logMINOR)
 			Logger.minor(this, "Dumping "+this);
-		ArrayList<PersistentChosenBlock> oldNotStarted;
 		boolean wasStarted;
 		synchronized(this) {
-			oldNotStarted = (ArrayList<PersistentChosenBlock>) blocksNotStarted.clone();
 			blocksNotStarted.clear();
 			wasStarted = !blocksStarted.isEmpty();
-		}
-		for(PersistentChosenBlock block : oldNotStarted) {
-			block.removeFromFetching(core);
 		}
 		if(!wasStarted) {
 			if(logMINOR) Logger.minor(this, "Finishing immediately in onDumped() as nothing pending: "+this);
 			finish(container, core.sched.clientContext, true);
+		}
+	}
+
+	public synchronized void pruneDuplicates(ClientRequestScheduler sched) {
+		for(int i=0;i<blocksNotStarted.size();i++) {
+			PersistentChosenBlock block = blocksNotStarted.get(i);
+			Key key = block.key;
+			if(key == null) continue;
+			if(sched.hasFetchingKey(key)) {
+				blocksNotStarted.remove(i);
+				if(logMINOR) Logger.minor(this, "Pruned duplicate "+block+" from "+this);
+				i--;
+			}
 		}
 	}
 }

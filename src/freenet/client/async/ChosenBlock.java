@@ -32,12 +32,6 @@ public abstract class ChosenBlock {
 		this.localRequestOnly = localRequestOnly;
 		this.cacheLocalRequests = cacheLocalRequests;
 		this.ignoreStore = ignoreStore;
-		// Ignore return value. Not our problem at this point.
-		// It won't have been scheduled if there were *no* valid blocks...
-		// it's possible, but very unlikely, that some blocks are scheduled
-		// and some are not.
-		if(key != null)
-			sched.addToFetching(key);
 	}
 
 	public abstract boolean isPersistent();
@@ -66,8 +60,4 @@ public abstract class ChosenBlock {
 	}
 	
 	public abstract SendableRequestSender getSender(ClientContext context);
-	
-	public void removeFromFetching(ClientRequestSchedulerCore core) {
-		core.removeFetchingKey(key);
-	}
 }

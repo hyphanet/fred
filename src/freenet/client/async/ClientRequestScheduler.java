@@ -574,9 +574,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 */
 	public ChosenBlock grabRequest() {
 		while(true) {
-			PersistentChosenRequest reqGroup;
+			PersistentChosenRequest reqGroup = null;
 			synchronized(starterQueue) {
-				reqGroup = starterQueue.isEmpty() ? null : starterQueue.getFirst();
+				short bestPriority = Short.MAX_VALUE;
+				int bestRetryCount = Integer.MAX_VALUE;
+				for(PersistentChosenRequest req : starterQueue) {
+					if(req.prio < bestPriority || 
+							(req.prio == bestPriority && req.retryCount < bestRetryCount)) {
+						bestPriority = req.prio;
+						bestRetryCount = req.retryCount;
+						reqGroup = req;
+					}
+				}
 			}
 			if(reqGroup != null) {
 				// Try to find a better non-persistent request
@@ -590,7 +599,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			ChosenBlock block;
 			int finalLength = 0;
 			synchronized(starterQueue) {
-				block = reqGroup.grabNotStarted(clientContext.fastWeakRandom);
+				block = reqGroup.grabNotStarted(clientContext.fastWeakRandom, this);
 				if(block == null) {
 					for(int i=0;i<starterQueue.size();i++) {
 						if(starterQueue.get(i) == reqGroup) {
@@ -671,8 +680,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 			synchronized(starterQueue) {
 				// Recompute starterQueueLength
 				int length = 0;
-				for(PersistentChosenRequest req : starterQueue)
+				for(PersistentChosenRequest req : starterQueue) {
+					req.pruneDuplicates(ClientRequestScheduler.this);
 					length += req.sizeNotStarted();
+				}
 				if(logMINOR) Logger.minor(this, "Queue size: "+length+" SSK="+isSSKScheduler+" insert="+isInsertScheduler);
 				if(length >= MAX_STARTER_QUEUE_SIZE) {
 					if(length >= WARNING_STARTER_QUEUE_SIZE)
@@ -1125,6 +1136,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 */
 	public boolean addToFetching(Key key) {
 		return schedCore.addToFetching(key);
+	}
+	
+	public boolean hasFetchingKey(Key key) {
+		return schedCore.hasKey(key);
 	}
 
 	public long countPersistentQueuedRequests(ObjectContainer container) {
