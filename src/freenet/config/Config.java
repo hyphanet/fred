@@ -14,10 +14,10 @@ public class Config {
 		CURRENT_SETTINGS, DEFAULT_SETTINGS, SORT_ORDER, EXPERT_FLAG, FORCE_WRITE_FLAG, SHORT_DESCRIPTION, LONG_DESCRIPTION, DATA_TYPE
 	};
 
-	protected final LinkedHashMap configsByPrefix;
+	protected final LinkedHashMap<String, SubConfig> configsByPrefix;
 	
 	public Config() {
-		configsByPrefix = new LinkedHashMap();
+		configsByPrefix = new LinkedHashMap<String, SubConfig>();
 	}
 	
 	public void register(SubConfig sc) {
@@ -45,10 +45,10 @@ public class Config {
 
 	/** Fetch all the SubConfig's. Used by user-facing config thingies. */
 	public synchronized SubConfig[] getConfigs() {
-		return (SubConfig[]) configsByPrefix.values().toArray(new SubConfig[configsByPrefix.size()]);
+		return configsByPrefix.values().toArray(new SubConfig[configsByPrefix.size()]);
 	}
 	
 	public synchronized SubConfig get(String subConfig){
-		return (SubConfig)configsByPrefix.get(subConfig);
+		return configsByPrefix.get(subConfig);
 	}
 }

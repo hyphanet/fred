@@ -22,9 +22,9 @@ import freenet.support.api.StringCallback;
 /**
  * A specific configuration block.
  */
-public class SubConfig implements Comparable {
+public class SubConfig implements Comparable<SubConfig> {
 	
-	private final LinkedHashMap map;
+	private final LinkedHashMap<String, Option> map;
 	public final Config config;
 	final String prefix;
 	private boolean hasInitialized;
@@ -32,7 +32,7 @@ public class SubConfig implements Comparable {
 	public SubConfig(String prefix, Config config) {
 		this.config = config;
 		this.prefix = prefix;
-		map = new LinkedHashMap();
+		map = new LinkedHashMap<String, Option>();
 		hasInitialized = false;
 		config.register(this);
 	}
@@ -42,11 +42,11 @@ public class SubConfig implements Comparable {
 	 * Used by e.g. webconfig.
 	 */
 	public synchronized Option[] getOptions() {
-		return (Option[]) map.values().toArray(new Option[map.size()]);
+		return map.values().toArray(new Option[map.size()]);
 	}
 	
 	public synchronized Option getOption(String option){
-		return (Option)map.get(option);
+		return map.get(option);
 	}
 	
 	public void register(Option o) {
@@ -171,12 +171,12 @@ public class SubConfig implements Comparable {
 	 * Set options from a SimpleFieldSet. Once we process an option, we must remove it.
 	 */
 	public void setOptions(SimpleFieldSet sfs) {
-		Set entrySet = map.entrySet();
-		Iterator i = entrySet.iterator();
+		Set<Map.Entry<String, Option>> entrySet = map.entrySet();
+		Iterator<Entry<String, Option>> i = entrySet.iterator();
 		while(i.hasNext()) {
-			Map.Entry entry = (Map.Entry) i.next();
-			String key = (String) entry.getKey();
-			Option o = (Option) entry.getValue();
+			Entry<String, Option> entry = i.next();
+			String key = entry.getKey();
+			Option o = entry.getValue();
 			String val = sfs.get(key);
 			if(val != null) {
 				try {
@@ -198,18 +198,18 @@ public class SubConfig implements Comparable {
 		return exportFieldSet(Config.RequestType.CURRENT_SETTINGS, withDefaults);
 	}
 
-	public SimpleFieldSet exportFieldSet(Config.RequestType configRequestType, boolean withDefaults) {
+    public SimpleFieldSet exportFieldSet(Config.RequestType configRequestType, boolean withDefaults) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		// FIXME is any locking at all necessary here? After it has finished init, it's constant...
-		Map.Entry[] entries;
+		Map.Entry<String, Option>[] entries;
 		synchronized(this) {
-			entries = (Entry[]) map.entrySet().toArray(new Map.Entry[map.size()]);
+			entries = map.entrySet().toArray(new Map.Entry[map.size()]);
 		}
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Prefix="+prefix);
 		for(int i=0;i<entries.length;i++) {
-			Map.Entry entry = (Map.Entry) entries[i];
+			Map.Entry<String, Option> entry = entries[i];
 			String key = (String) entry.getKey();
 			Option o = (Option) entry.getValue();
 //			if(logMINOR)
@@ -260,12 +260,12 @@ public class SubConfig implements Comparable {
 	 * @throws InvalidConfigValueException 
 	 */
 	public void forceUpdate(String optionName) throws InvalidConfigValueException {
-		Option o = (Option) map.get(optionName);
+		Option o = map.get(optionName);
 		o.forceUpdate();
 	}
 
 	public void set(String name, String value) throws InvalidConfigValueException {
-		Option o = (Option) map.get(name);
+		Option o = map.get(name);
 		o.setValue(value);
 	}
 
@@ -282,7 +282,7 @@ public class SubConfig implements Comparable {
 	 * @param value The value of the option.
 	 */
 	public void fixOldDefault(String name, String value) {
-		Option o = (Option) map.get(name);
+		Option o = map.get(name);
 		if(o.getValueString().equals(value))
 			o.setDefault();
 	}
@@ -295,7 +295,7 @@ public class SubConfig implements Comparable {
 	 * @param value The value of the option.
 	 */
 	public void fixOldDefaultRegex(String name, String value) {
-		Option o = (Option) map.get(name);
+		Option o = map.get(name);
 		if(o.getValueString().matches(value))
 			o.setDefault();
 	}
@@ -304,15 +304,11 @@ public class SubConfig implements Comparable {
 		return prefix;
 	}
 	
-	public int compareTo(Object o){
-		if((o == null) || !(o instanceof SubConfig)) return 0;
-		else{
-			SubConfig second = (SubConfig) o;
-			if(this.getPrefix().compareTo(second.getPrefix())>0)
-				return 1;
-			else
-				return -1;
-		}
+	public int compareTo(SubConfig second) {
+		if (this.getPrefix().compareTo(second.getPrefix()) > 0)
+			return 1;
+		else
+			return -1;
 	}
 
 	public String getRawOption(String name) {
