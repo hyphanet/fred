@@ -67,7 +67,7 @@ public class StringArrOption extends Option<String[], StringArrCallback> {
 	}
 
 	public boolean isDefault() {
-		getValueString();
+		getValue();
 		return currentValue == null ? false : Arrays.equals(currentValue, defaultValue);
 	}
 }
