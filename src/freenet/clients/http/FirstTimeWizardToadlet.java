@@ -27,8 +27,6 @@ import freenet.support.io.FileUtil;
 /**
  * A first time wizard aimed to ease the configuration of the node.
  * 
- * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
- * 
  * TODO: a choose your CSS step?
  */
 public class FirstTimeWizardToadlet extends Toadlet {
