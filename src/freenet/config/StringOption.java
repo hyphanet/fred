@@ -13,7 +13,7 @@ public class StringOption extends Option {
 	
 	public StringOption(SubConfig conf, String optionName, String defaultValue, int sortOrder, 
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, StringCallback cb) {
-		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DATA_TYPE_STRING);
+		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DataType.STRING);
 		this.defaultValue = defaultValue;
 		this.cb = cb;
 		this.currentValue = defaultValue;

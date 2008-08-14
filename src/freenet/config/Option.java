@@ -25,15 +25,15 @@ public abstract class Option {
 	/** The configCallback associated to the Option */
 	protected final ConfigCallback cb;
 	
-	public final static int DATA_TYPE_STRING = 0;
-	public final static int DATA_TYPE_NUMBER = 1;
-	public final static int DATA_TYPE_BOOLEAN = 2;
-	public final static int DATA_TYPE_STRING_ARRAY = 3;
+	public static enum DataType {
+		STRING, NUMBER, BOOLEAN, STRING_ARRAY
+	};
 	
 	/** Data type : used to make it possible to make user inputs more friendly in FCP apps */
-	final int dataType;
+	final DataType dataType;
 	
-	Option(SubConfig config, String name, ConfigCallback cb, int sortOrder, boolean expert, boolean forceWrite, String shortDesc, String longDesc, int dataType) {
+	Option(SubConfig config, String name, ConfigCallback cb, int sortOrder, boolean expert, boolean forceWrite,
+	        String shortDesc, String longDesc, DataType dataType) {
 		this.config = config;
 		this.name = name;
 		this.cb = cb;
@@ -94,16 +94,20 @@ public abstract class Option {
 		return sortOrder;
 	}
 	
-	public int getDataType() {
+	public DataType getDataType() {
 		return dataType;
 	}
 	
 	public String getDataTypeStr() {
 		switch(dataType) {
-		case(DATA_TYPE_STRING): return "string";
-		case(DATA_TYPE_NUMBER): return "number";
-		case(DATA_TYPE_BOOLEAN): return "boolean";
-		case(DATA_TYPE_STRING_ARRAY): return "stringArray";
+		case STRING:
+			return "string";
+		case NUMBER:
+			return "number";
+		case BOOLEAN:
+			return "boolean";
+		case STRING_ARRAY:
+			return "stringArray";
 		default: return null;
 		}
 	}

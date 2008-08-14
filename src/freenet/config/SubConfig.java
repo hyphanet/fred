@@ -3,8 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.config;
 
-import java.util.LinkedHashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
@@ -195,10 +195,10 @@ public class SubConfig implements Comparable {
 	}
 
 	public SimpleFieldSet exportFieldSet(boolean withDefaults) {
-		return exportFieldSet(Config.CONFIG_REQUEST_TYPE_CURRENT_SETTINGS, withDefaults);
+		return exportFieldSet(Config.RequestType.CURRENT_SETTINGS, withDefaults);
 	}
 
-	public SimpleFieldSet exportFieldSet(int configRequestType, boolean withDefaults) {
+	public SimpleFieldSet exportFieldSet(Config.RequestType configRequestType, boolean withDefaults) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		// FIXME is any locking at all necessary here? After it has finished init, it's constant...
 		Map.Entry[] entries;
@@ -214,34 +214,35 @@ public class SubConfig implements Comparable {
 			Option o = (Option) entry.getValue();
 //			if(logMINOR)
 //				Logger.minor(this, "Key="+key+" value="+o.getValueString()+" default="+o.isDefault());
-			if(configRequestType == Config.CONFIG_REQUEST_TYPE_CURRENT_SETTINGS && (!withDefaults) && o.isDefault() && (!o.forceWrite)) {
+			if (configRequestType == Config.RequestType.CURRENT_SETTINGS && (!withDefaults) && o.isDefault()
+			        && (!o.forceWrite)) {
 				if(logMINOR)
 					Logger.minor(this, "Skipping "+key+" - "+o.isDefault());
 				continue;
 			}
 			switch (configRequestType) {
-				case Config.CONFIG_REQUEST_TYPE_CURRENT_SETTINGS:
+				case CURRENT_SETTINGS:
 					fs.putSingle(key, o.getValueString());
 					break;
-				case Config.CONFIG_REQUEST_TYPE_DEFAULT_SETTINGS:
+				case DEFAULT_SETTINGS:
 					fs.putSingle(key, o.getDefault());
 					break;
-				case Config.CONFIG_REQUEST_TYPE_SORT_ORDER:
+				case SORT_ORDER:
 					fs.put(key, o.getSortOrder());
 					break;
-				case Config.CONFIG_REQUEST_TYPE_EXPERT_FLAG:
+				case EXPERT_FLAG:
 					fs.put(key, o.isExpert());
 					break;
-				case Config.CONFIG_REQUEST_TYPE_FORCE_WRITE_FLAG:
+				case FORCE_WRITE_FLAG:
 					fs.put(key, o.isForcedWrite());
 					break;
-				case Config.CONFIG_REQUEST_TYPE_SHORT_DESCRIPTION:
+				case SHORT_DESCRIPTION:
 					fs.putSingle(key, L10n.getString(o.getShortDesc()));
 					break;
-				case Config.CONFIG_REQUEST_TYPE_LONG_DESCRIPTION:
+				case LONG_DESCRIPTION:
 					fs.putSingle(key, L10n.getString(o.getLongDesc()));
 					break;
-				case Config.CONFIG_REQUEST_TYPE_DATA_TYPE:
+				case DATA_TYPE:
 					fs.putSingle(key, o.getDataTypeStr());
 					break;
 				default:

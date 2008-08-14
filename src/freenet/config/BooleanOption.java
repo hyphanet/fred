@@ -14,7 +14,7 @@ public class BooleanOption extends Option {
 	
 	public BooleanOption(SubConfig conf, String optionName, boolean defaultValue, int sortOrder, 
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, BooleanCallback cb) {
-		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DATA_TYPE_BOOLEAN);
+		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DataType.BOOLEAN);
 		this.defaultValue = defaultValue;
 		this.cb = cb;
 		this.currentValue = defaultValue;

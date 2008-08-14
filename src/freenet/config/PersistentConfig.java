@@ -36,10 +36,10 @@ public class PersistentConfig extends Config {
 	}
 	
 	public SimpleFieldSet exportFieldSet(boolean withDefaults) {
-		return exportFieldSet(Config.CONFIG_REQUEST_TYPE_CURRENT_SETTINGS, withDefaults);
+		return exportFieldSet(Config.RequestType.CURRENT_SETTINGS, withDefaults);
 	}
 	
-	public SimpleFieldSet exportFieldSet(int configRequestType, boolean withDefaults) {
+	public SimpleFieldSet exportFieldSet(Config.RequestType configRequestType, boolean withDefaults) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		SubConfig[] configs;
 		synchronized(this) {

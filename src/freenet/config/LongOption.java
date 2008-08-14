@@ -5,7 +5,6 @@ package freenet.config;
 
 import freenet.l10n.L10n;
 import freenet.support.Fields;
-import freenet.support.SizeUtil;
 import freenet.support.api.LongCallback;
 
 /** Long config variable */
@@ -19,7 +18,7 @@ public class LongOption extends Option {
 
 	public LongOption(SubConfig conf, String optionName, long defaultValue, String defaultValueString, 
 			int sortOrder, boolean expert, boolean forceWrite, String shortDesc, String longDesc, LongCallback cb) {
-		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DATA_TYPE_NUMBER);
+		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DataType.NUMBER);
 		this.defaultValue = defaultValue;
 		this.cb = cb;
 		this.currentValue = defaultValue;
@@ -28,7 +27,7 @@ public class LongOption extends Option {
 	
 	public LongOption(SubConfig conf, String optionName, String defaultValueString, 
 			int sortOrder, boolean expert, boolean forceWrite, String shortDesc, String longDesc, LongCallback cb) {
-		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DATA_TYPE_NUMBER);
+		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DataType.NUMBER);
 		this.defaultValue = Fields.parseLong(defaultValueString);
 		this.cb = cb;
 		this.currentValue = defaultValue;
