@@ -10,6 +10,7 @@ import java.util.Arrays;
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.BooleanOption;
 import freenet.config.Config;
+import freenet.config.ConfigCallback;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.Option;
@@ -198,12 +199,23 @@ public class ConfigToadlet extends Toadlet {
 						continue; 
 					}
 					
-					if(o[j].getCallback() instanceof EnumerableOptionCallback)
-						configItemValueNode.addChild(addComboBox((EnumerableOptionCallback)o[j].getCallback(), sc[i], configName));
-					else if(o[j].getCallback() instanceof BooleanCallback)
-						configItemValueNode.addChild(addBooleanComboBox(((BooleanOption)o[j]).getValue(), sc[i], configName));
+					ConfigCallback callback = o[j].getCallback();
+					if(callback instanceof EnumerableOptionCallback)
+						configItemValueNode.addChild(addComboBox((EnumerableOptionCallback) callback, sc[i],
+						        configName, callback.isReadOnly()));
+					else if(callback instanceof BooleanCallback)
+						configItemValueNode.addChild(addBooleanComboBox(((BooleanOption) o[j]).getValue(), sc[i],
+						        configName, callback.isReadOnly()));
+					else if (callback.isReadOnly())
+						configItemValueNode.addChild("input", //
+						        new String[] { "type", "class", "disabled", "alt", "name", "value" }, //
+						        new String[] { "text", "config", "disabled", o[j].getShortDesc(),
+						                sc[i].getPrefix() + '.' + configName, o[j].getValueString() });
 					else
-						configItemValueNode.addChild("input", new String[] { "type", "class", "alt", "name", "value" }, new String[] { "text", "config", o[j].getShortDesc(), sc[i].getPrefix() + '.' + configName, o[j].getValueString() });
+						configItemValueNode.addChild("input",//
+						        new String[] { "type", "class", "alt", "name", "value" }, //
+						        new String[] { "text", "config", o[j].getShortDesc(),
+						                sc[i].getPrefix() + '.' + configName, o[j].getValueString() });
 
 					configItemNode.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode(o[j].getLongDesc()));
 				}
@@ -226,8 +238,15 @@ public class ConfigToadlet extends Toadlet {
 		return "GET, POST";
 	}
 	
-	private HTMLNode addComboBox(EnumerableOptionCallback o, SubConfig sc, String name) {
-		HTMLNode result = new HTMLNode("select", "name", sc.getPrefix() + '.' + name);
+	private HTMLNode addComboBox(EnumerableOptionCallback o, SubConfig sc, String name, boolean disabled) {
+		HTMLNode result;
+		if (disabled)
+			result = new HTMLNode("select", //
+			        new String[] { "name", "disabled" }, //
+			        new String[] { sc.getPrefix() + '.' + name, "disabled" });
+		else
+			result = new HTMLNode("select", "name", sc.getPrefix() + '.' + name);
+		
 		String[] possibleValues = o.getPossibleValues();
 		for(int i=0; i<possibleValues.length; i++) {
 			if(possibleValues[i].equals(o.get()))
@@ -239,17 +258,23 @@ public class ConfigToadlet extends Toadlet {
 		return result;
 	}
 	
-	private HTMLNode addBooleanComboBox(boolean value, SubConfig sc, String name) {
-		HTMLNode result = new HTMLNode("select", "name", sc.getPrefix() + '.' + name);
-		
-		if(value) {
-			result.addChild("option", new String[] { "value", "selected" }, new String[] {
-					"true", "selected" }, l10n("true"));
+	private HTMLNode addBooleanComboBox(boolean value, SubConfig sc, String name, boolean disabled) {
+		HTMLNode result;
+		if (disabled)
+			result = new HTMLNode("select", //
+			        new String[] { "name", "disabled" }, //
+			        new String[] { sc.getPrefix() + '.' + name, "disabled" });
+		else
+			result = new HTMLNode("select", "name", sc.getPrefix() + '.' + name);
+
+		if (value) {
+			result.addChild("option", new String[] { "value", "selected" }, new String[] { "true", "selected" },
+			        l10n("true"));
 			result.addChild("option", "value", "false", l10n("false"));
 		} else {
 			result.addChild("option", "value", "true", l10n("true"));
-			result.addChild("option", new String[] { "value", "selected" }, new String[] {
-					"false", "selected" }, l10n("false"));
+			result.addChild("option", new String[] { "value", "selected" }, new String[] { "false", "selected" },
+			        l10n("false"));
 		}
 		
 		return result;
