@@ -29,7 +29,7 @@ import freenet.support.io.FileUtil;
  * 
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
  * 
- * TODO: a choose your CSS step ?
+ * TODO: a choose your CSS step?
  */
 public class FirstTimeWizardToadlet extends Toadlet {
 	private final NodeClientCore core;
