@@ -193,7 +193,7 @@ public class SimpleFieldSet {
     }
 
     private static final String[] split(String string) {
-    	if(string == null) return new String[0];
+    	if(string == null) return EMPTY_STRING_ARRAY;
     	return string.split(String.valueOf(MULTI_VALUE_CHAR)); // slower???
 //    	int index = string.indexOf(';');
 //    	if(index == -1) return null;
@@ -212,7 +212,7 @@ public class SimpleFieldSet {
 	}
 
     private static final String unsplit(String[] strings) {
-    	StringBuffer sb = new StringBuffer();
+    	StringBuilder sb = new StringBuilder();
     	for(int i=0;i<strings.length;i++) {
     		if(i != 0) sb.append(MULTI_VALUE_CHAR);
     		sb.append(strings[i]);
