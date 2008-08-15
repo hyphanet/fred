@@ -27,14 +27,15 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 		if(maxLength < bufferSize)
 			bufferSize = maxLength + 1; // Buffer too big, shrink it (add 1 for the optional \r)
 
-		if(!markSupported())
+		//if(!markSupported())
+		if(true)
 			return readLineWithoutMarking(maxLength, bufferSize, utf);
-
+		
 		byte[] buf = new byte[Math.max(Math.min(128, maxLength), Math.min(1024, bufferSize))];
 		int ctr = 0;
 		while(true) {
 			mark(maxLength);
-			int x = read(buf, ctr, buf.length - ctr);
+			int x = read(buf, ctr, buf.length - ctr -1);
 			if(x == -1) {
 				if(ctr == 0)
 					return null;
