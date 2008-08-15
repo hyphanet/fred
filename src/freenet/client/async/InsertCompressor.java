@@ -229,14 +229,14 @@ public class InsertCompressor {
 
 	public static void load(ObjectContainer container, ClientContext context) {
 		final long handle = context.nodeDBHandle;
-		ObjectSet results = container.query(new Predicate() {
+		ObjectSet<InsertCompressor> results = container.query(new Predicate<InsertCompressor>() {
 			public boolean match(InsertCompressor comp) {
 				if(comp.nodeDBHandle == handle) return true;
 				return false;
 			}
 		});
 		while(results.hasNext()) {
-			InsertCompressor comp = (InsertCompressor) results.next();
+			InsertCompressor comp = results.next();
 			if(!container.ext().isActive(comp)) {
 				Logger.error(InsertCompressor.class, "InsertCompressor not activated by query?!?!");
 				container.activate(comp, 1);

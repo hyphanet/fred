@@ -12,17 +12,15 @@ import com.db4o.query.Predicate;
 public class USKManagerPersistent {
 	
 	static void init(USKManager manager, ObjectContainer container, final ClientContext context) {
-		ObjectSet set = container.query(new Predicate() {
+		ObjectSet<USKFetcherTag> set = container.query(new Predicate<USKFetcherTag>() {
 			public boolean match(USKFetcherTag tag) {
 				if(tag.nodeDBHandle != context.nodeDBHandle) return false;
 				if(tag.isFinished()) return false;
 				return true;
 			}
 		});
-		while(set.hasNext()) {
-			USKFetcherTag tag = (USKFetcherTag) set.next();
-			tag.start(manager, context);
-		}
+		while(set.hasNext())
+			set.next().start(manager, context);
 	}
 
 }

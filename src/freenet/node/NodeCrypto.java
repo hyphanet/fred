@@ -538,14 +538,14 @@ public class NodeCrypto {
 
 	public long getNodeHandle(ObjectContainer setupContainer) {
 		// Ignore warnings, this is db4o magic.
-		ObjectSet result = setupContainer.query(new Predicate() {
+		ObjectSet<HandlePortTuple> result = setupContainer.query(new Predicate<HandlePortTuple>() {
 			public boolean match(HandlePortTuple tuple) {
 				return tuple.portNumber == portNumber;
 			}
 		});
 		long handle;
 		if(result.hasNext()) {
-			handle = ((HandlePortTuple)result.next()).handle;
+			handle = result.next().handle;
 			System.err.println("Retrieved database handle for node on port "+portNumber+": "+handle);
 			return handle;
 		} else {

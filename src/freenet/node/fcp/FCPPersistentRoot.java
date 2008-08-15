@@ -27,7 +27,7 @@ public class FCPPersistentRoot {
 	}
 
 	public static FCPPersistentRoot create(final long nodeDBHandle, ObjectContainer container) {
-		ObjectSet set = container.query(new Predicate() {
+		ObjectSet<FCPPersistentRoot> set = container.query(new Predicate<FCPPersistentRoot>() {
 			public boolean match(FCPPersistentRoot root) {
 				return root.nodeDBHandle == nodeDBHandle;
 			}
@@ -35,7 +35,7 @@ public class FCPPersistentRoot {
 		System.err.println("Count of roots: "+set.size());
 		if(set.hasNext()) {
 			System.err.println("Loaded FCP persistent root.");
-			FCPPersistentRoot root = (FCPPersistentRoot) set.next();
+			FCPPersistentRoot root = set.next();
 			container.activate(root, 2);
 			root.globalForeverClient.init(container);
 			return root;

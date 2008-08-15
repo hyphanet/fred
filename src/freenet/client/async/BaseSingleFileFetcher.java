@@ -100,8 +100,12 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements GotKe
 				if(cooldownWakeupTime > now)
 					Logger.error(this, "Already on the cooldown queue for "+this, new Exception("error"));
 				else {
+					if(persistent)
+						container.activate(key, 5);
 					RequestScheduler sched = context.getFetchScheduler(key instanceof ClientSSK);
 					cooldownWakeupTime = sched.queueCooldown(key, this);
+					if(persistent)
+						container.deactivate(key, 5);
 				}
 				return true; // We will retry, just not yet. See requeueAfterCooldown(Key).
 			} else {

@@ -48,14 +48,14 @@ public class FECQueue implements OOMHook {
 	private final long nodeDBHandle;
 
 	public static FECQueue create(final long nodeDBHandle, ObjectContainer container) {
-		ObjectSet result = container.query(new Predicate() {
+		ObjectSet<FECQueue> result = container.query(new Predicate<FECQueue>() {
 			public boolean match(FECQueue queue) {
 				if(queue.nodeDBHandle == nodeDBHandle) return true;
 				return false;
 			}
 		});
 		if(result.hasNext()) {
-			FECQueue queue = (FECQueue) result.next();
+			FECQueue queue = result.next();
 			container.activate(queue, 1);
 			return queue;
 		} else {

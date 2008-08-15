@@ -177,13 +177,13 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 
 	/** Called from ArchiveManager.init() */
 	static void init(ObjectContainer container, ClientContext context, final long nodeDBHandle) {
-		ObjectSet set = container.query(new Predicate() {
+		ObjectSet<ArchiveExtractTag> set = container.query(new Predicate<ArchiveExtractTag>() {
 			public boolean match(ArchiveExtractTag tag) {
 				return tag.nodeDBHandle == nodeDBHandle;
 			}
 		});
 		while(set.hasNext()) {
-			ArchiveExtractTag tag = (ArchiveExtractTag) set.next();
+			ArchiveExtractTag tag = set.next();
 			tag.activateForExecution(container);
 			runPersistentOffThread(tag, context, context.archiveManager, context.persistentBucketFactory);
 		}

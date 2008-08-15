@@ -164,14 +164,14 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	}
 
 	public static PersistentTempBucketFactory load(File dir, String prefix, RandomSource random, Random fastWeakRandom, ObjectContainer container, final long nodeDBHandle) throws IOException {
-		ObjectSet results = container.query(new Predicate() {
+		ObjectSet<PersistentTempBucketFactory> results = container.query(new Predicate<PersistentTempBucketFactory>() {
 			public boolean match(PersistentTempBucketFactory factory) {
 				if(factory.nodeDBHandle == nodeDBHandle) return true;
 				return false;
 			}
 		});
 		if(results.hasNext()) {
-			PersistentTempBucketFactory factory = (PersistentTempBucketFactory) results.next();
+			PersistentTempBucketFactory factory = results.next();
 			container.activate(factory, 5);
 			factory.init(dir, prefix, random, fastWeakRandom);
 			return factory;

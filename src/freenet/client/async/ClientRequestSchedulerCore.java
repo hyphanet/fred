@@ -72,7 +72,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	 */
 	public static ClientRequestSchedulerCore create(Node node, final boolean forInserts, final boolean forSSKs, ObjectContainer selectorContainer, long cooldownTime, PrioritizedSerialExecutor databaseExecutor, ClientRequestScheduler sched, ClientContext context) {
 		final long nodeDBHandle = node.nodeDBHandle;
-		ObjectSet results = selectorContainer.query(new Predicate() {
+		ObjectSet<ClientRequestSchedulerCore> results = selectorContainer.query(new Predicate<ClientRequestSchedulerCore>() {
 			public boolean match(ClientRequestSchedulerCore core) {
 				if(core.nodeDBHandle != nodeDBHandle) return false;
 				if(core.isInsertScheduler != forInserts) return false;
@@ -82,7 +82,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		});
 		ClientRequestSchedulerCore core;
 		if(results.hasNext()) {
-			core = (ClientRequestSchedulerCore) (results.next());
+			core = results.next();
 			selectorContainer.activate(core, 2);
 			System.err.println("Loaded core...");
 			if(core.nodeDBHandle != nodeDBHandle) throw new IllegalStateException("Wrong nodeDBHandle");
