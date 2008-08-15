@@ -181,9 +181,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 
 		public void set(String val) throws InvalidConfigValueException, NodeNeedRestartException {
-			if (val.equals(storeType))
-				return;
-
 			boolean found = false;
 			for (String p : getPossibleValues()) {
 				if (p.equals(val)) {
