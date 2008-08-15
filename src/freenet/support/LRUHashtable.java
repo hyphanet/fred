@@ -3,7 +3,7 @@ package freenet.support;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
-public class LRUHashtable {
+public class LRUHashtable<K, V> {
 
     /*
      * I've just converted this to using the DLList and Hashtable
@@ -12,8 +12,8 @@ public class LRUHashtable {
      * push is by far the most done operation, this should be an
      * overall improvement.
      */
-    private final DoublyLinkedListImpl list = new DoublyLinkedListImpl();
-    private final Hashtable hash = new Hashtable();
+    private final DoublyLinkedListImpl<V> list = new DoublyLinkedListImpl<V>();
+    private final Hashtable<K, QItem<K, V>> hash = new Hashtable<K, QItem<K, V>>();
     
     /**
      *       push()ing an object that is already in
@@ -21,10 +21,10 @@ public class LRUHashtable {
      *       recently used position, but doesn't add
      *       a duplicate entry in the queue.
      */
-    public final synchronized void push(Object key, Object value) {
-        QItem insert = (QItem)hash.get(key);
+    public final synchronized void push(K key, V value) {
+        QItem<K,V> insert = hash.get(key);
         if (insert == null) {
-            insert = new QItem(key, value);
+            insert = new QItem<K, V>(key, value);
             hash.put(key,insert);
         } else {
         	insert.value = value;
@@ -41,7 +41,7 @@ public class LRUHashtable {
      */
     public final synchronized Object popKey() {
         if ( list.size() > 0 ) {
-            return ((QItem)hash.remove(((QItem)list.pop()).obj)).obj;
+            return (	hash.remove(((QItem) list.pop()).obj)).obj;
         } else {
             return null;
         }
@@ -52,7 +52,7 @@ public class LRUHashtable {
      */
     public final synchronized Object popValue() {
         if ( list.size() > 0 ) {
-            return ((QItem)hash.remove(((QItem)list.pop()).obj)).value;
+            return (	hash.remove(((QItem) list.pop()).obj)).value;
         } else {
             return null;
         }
@@ -60,7 +60,7 @@ public class LRUHashtable {
     
 	public final synchronized Object peekValue() {
         if ( list.size() > 0 ) {
-            return ((QItem)hash.get(((QItem)list.tail()).obj)).value;
+            return (	hash.get(((QItem) list.tail()).obj)).value;
         } else {
             return null;
         }
@@ -70,8 +70,8 @@ public class LRUHashtable {
         return list.size();
     }
     
-    public final synchronized boolean removeKey(Object key) {
-	QItem i = (QItem)(hash.remove(key));
+    public final synchronized boolean removeKey(K key) {
+	QItem<K,V> i = (hash.remove(key));
 	if(i != null) {
 	    list.remove(i);
 	    return true;
@@ -85,7 +85,7 @@ public class LRUHashtable {
      * @param obj Object to match
      * @return true if this queue contains obj.
      */
-    public final synchronized boolean containsKey(Object key) {
+    public final synchronized boolean containsKey(K key) {
         return hash.containsKey(key);
     }
     
@@ -93,8 +93,8 @@ public class LRUHashtable {
      * Note that this does not automatically promote the key. You have
      * to do that by hand with push(key, value).
      */
-    public final synchronized Object get(Object key) {
-    	QItem q = (QItem) hash.get(key);
+    public final synchronized V get(K key) {
+    	QItem<K,V> q = hash.get(key);
     	if(q == null) return null;
     	return q.value;
     }
@@ -131,15 +131,16 @@ public class LRUHashtable {
         }
     }
 
-    private static class QItem extends DoublyLinkedListImpl.Item {
-        public Object obj;
-        public Object value;
+    public static class QItem<K, V> extends DoublyLinkedListImpl.Item<V> {
+        public K obj;
+        public V value;
 
-        public QItem(Object key, Object val) {
+        public QItem(K key, V val) {
             this.obj = key;
             this.value = val;
         }
         
+		@Override
         public String toString() {
         	return super.toString()+": "+obj+ ' ' +value;
         }
@@ -155,8 +156,8 @@ public class LRUHashtable {
 	 * @param entries
 	 * @return
 	 */
-	public synchronized void valuesToArray(Object[] entries) {
-		Enumeration values = values();
+	public synchronized void valuesToArray(V[] entries) {
+		Enumeration<V> values = values();
 		int i=0;
 		while(values.hasMoreElements())
 			entries[i++] = values.nextElement();
