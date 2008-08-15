@@ -718,13 +718,19 @@ public class ClientRequestScheduler implements RequestScheduler {
 		int retryCount = req.getRetryCount();
 		synchronized(starterQueue) {
 			boolean allBetter = true;
+			boolean betterThanSome = false;
+			int size = 0;
 			for(PersistentChosenRequest old : starterQueue) {
+				size += old.sizeNotStarted();
 				if(old.prio < prio)
 					allBetter = false;
 				else if(old.prio == prio && old.retryCount <= retryCount)
 					allBetter = false;
+				if(old.prio > prio || old.prio == prio && old.prio > retryCount)
+					betterThanSome = true;
 			}
 			if(allBetter && !starterQueue.isEmpty()) return;
+			if(size >= MAX_STARTER_QUEUE_SIZE && !betterThanSome) return;
 		}
 		addToStarterQueue(req, container);
 		trimStarterQueue(container);
