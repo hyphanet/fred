@@ -20,6 +20,8 @@ import freenet.config.WrapperConfig;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.useralerts.AbstractUserAlert;
+import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
@@ -34,7 +36,64 @@ public class ConfigToadlet extends Toadlet {
 	private final Config config;
 	private final NodeClientCore core;
 	private final Node node;
-	
+	private boolean needRestart = false;
+	private NeedRestartUserAlert needRestartUserAlert;
+
+	private class NeedRestartUserAlert extends AbstractUserAlert {
+		@Override
+		public String getTitle() {
+			return l10n("needRestartTitle");
+		}
+
+		@Override
+		public String getText() {
+			return getHTMLText().toString();
+		}
+
+		@Override
+		public String getShortText() {
+			return l10n("needRestartShort");
+		}
+
+		@Override
+		public HTMLNode getHTMLText() {
+			HTMLNode alertNode = new HTMLNode("div");
+			alertNode.addChild("#", l10n("needRestart"));
+
+			if (node.isUsingWrapper()) {
+				alertNode.addChild("br");
+				HTMLNode restartForm = alertNode.addChild("form", //
+						new String[] { "action", "method" },//
+				        new String[] { "/", "get" });
+				restartForm.addChild("div");
+				restartForm.addChild("input",//
+						new String[] { "type", "name" },//
+						new String[] { "hidden", "restart" });
+				restartForm.addChild("input", //
+						new String[] { "type", "name", "value" },//
+						new String[] { "submit", "restart2",//
+				                l10n("restartNode") });
+			}
+
+			return alertNode;
+		}
+
+		@Override
+		public short getPriorityClass() {
+			return UserAlert.WARNING;
+		}
+
+		@Override
+		public boolean isValid() {
+			return needRestart;
+		}
+
+		@Override
+		public boolean userCanDismiss() {
+			return false;
+		}
+	}
+
 	ConfigToadlet(HighLevelSimpleClient client, Config conf, Node node, NodeClientCore core) {
 		super(client);
 		config=conf;
@@ -42,7 +101,9 @@ public class ConfigToadlet extends Toadlet {
 		this.node = node;
 	}
 
-	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	
+	@Override
+    public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		StringBuffer errbuf = new StringBuffer();
 		SubConfig[] sc = config.getConfigs();
 		
@@ -60,7 +121,6 @@ public class ConfigToadlet extends Toadlet {
 		}
 		
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		boolean needRestart = false;
 		
 		for(int i=0; i<sc.length ; i++){
 			Option[] o = sc[i].getOptions();
@@ -71,7 +131,7 @@ public class ConfigToadlet extends Toadlet {
 				configName=o[j].getName();
 				if(logMINOR) Logger.minor(this, "Setting "+prefix+ '.' +configName);
 				
-				// we ignore unreconized parameters 
+				// we ignore unreconized parameters
 				if(request.isPartSet(prefix+ '.' +configName)) {
 					String value = request.getPartAsString(prefix+ '.' +configName, MAX_PARAM_VALUE_SIZE);
 					if(!(o[j].getValueString().equals(value))){
@@ -110,20 +170,28 @@ public class ConfigToadlet extends Toadlet {
 			HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
 			content.addChild("#", l10n("appliedSuccess"));
 			
-			if (needRestart && node.isUsingWrapper()) {
+			if (needRestart) {
 				content.addChild("br");
 				content.addChild("#", l10n("needRestart"));
-				content.addChild("br");
-				HTMLNode restartForm = content.addChild("form",//
-				        new String[] { "action", "method" }, new String[] { "/", "get" }//
-				        ).addChild("div");
-				restartForm.addChild("input",//
-				        new String[] { "type", "name" },//
-				        new String[] { "hidden", "restart" });
-				restartForm.addChild("input", //
-				        new String[] { "type", "name", "value" },//
-				        new String[] { "submit", "restart2",//
-				                l10n("restartNode") });
+
+				if (node.isUsingWrapper()) {
+					content.addChild("br");
+					HTMLNode restartForm = content.addChild("form",//
+					        new String[] { "action", "method" }, new String[] { "/", "get" }//
+					        ).addChild("div");
+					restartForm.addChild("input",//
+					        new String[] { "type", "name" },//
+					        new String[] { "hidden", "restart" });
+					restartForm.addChild("input", //
+					        new String[] { "type", "name", "value" },//
+					        new String[] { "submit", "restart2",//
+					                l10n("restartNode") });
+				}
+				
+				if (needRestartUserAlert == null) {
+					needRestartUserAlert = new NeedRestartUserAlert();
+					node.clientCore.alerts.register(needRestartUserAlert);
+				}
 			}
 		} else {
 			HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-error", l10n("appliedFailureTitle")));
@@ -147,7 +215,8 @@ public class ConfigToadlet extends Toadlet {
 		return L10n.getString("ConfigToadlet." + string);
 	}
 
-	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+	@Override
+    public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
@@ -193,7 +262,7 @@ public class ConfigToadlet extends Toadlet {
 			String defaultValue = "128";
 			String curValue = WrapperConfig.getWrapperProperty(configName);
 			item.addChild("span", new String[]{ "class", "title", "style" },
-					new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { defaultValue }), 
+					new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { defaultValue }),
 					"cursor: help;" }).addChild(L10n.getHTMLNode("WrapperConfig."+configName+".short"));
 			item.addChild("span", "class", "config").addChild("input", new String[] { "type", "class", "name", "value" }, new String[] { "text", "config", configName, curValue });
 			item.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode("WrapperConfig."+configName+".long"));
@@ -212,12 +281,12 @@ public class ConfigToadlet extends Toadlet {
 					
 					HTMLNode configItemNode = configGroupUlNode.addChild("li");
 					configItemNode.addChild("span", new String[]{ "class", "title", "style" },
-							new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o[j].getDefault() }) + (mode >= PageMaker.MODE_ADVANCED ? " ["+sc[i].getPrefix() + '.' + o[j].getName() + ']' : ""), 
+							new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o[j].getDefault() }) + (mode >= PageMaker.MODE_ADVANCED ? " ["+sc[i].getPrefix() + '.' + o[j].getName() + ']' : ""),
 							"cursor: help;" }).addChild(L10n.getHTMLNode(o[j].getShortDesc()));
 					HTMLNode configItemValueNode = configItemNode.addChild("span", "class", "config");
 					if(o[j].getValueString() == null){
 						Logger.error(this, sc[i].getPrefix() + configName + "has returned null from config!);");
-						continue; 
+						continue;
 					}
 					
 					ConfigCallback callback = o[j].getCallback();
@@ -255,7 +324,8 @@ public class ConfigToadlet extends Toadlet {
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 	
-	public String supportedMethods() {
+	@Override
+    public String supportedMethods() {
 		return "GET, POST";
 	}
 	
