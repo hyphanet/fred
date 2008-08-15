@@ -3984,8 +3984,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 	
 	public SortedSet<Long> getNumberOfSelections() {
+		// FIXME: returning a copy is not an option: find a smarter way of dealing with the synchronization
 		synchronized(numberOfSelectionsSync) {
-			return new TreeSet<Long>(numberOfSelections);
+			return numberOfSelections;
 		}
 	}
 	
