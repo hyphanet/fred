@@ -1,6 +1,7 @@
 package freenet.node.fcp;
 
 import java.io.BufferedOutputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -16,7 +17,7 @@ import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 
-public class FCPConnectionHandler {
+public class FCPConnectionHandler implements Closeable {
 	private static final class DirectoryAccess {
 		final boolean canWrite;
 		final boolean canRead;

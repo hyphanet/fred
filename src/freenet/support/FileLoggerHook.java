@@ -1,6 +1,7 @@
 package freenet.support;
 
 import java.io.BufferedOutputStream;
+import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -32,7 +33,7 @@ import freenet.support.io.FileUtil;
  * 
  * @author oskar
  */
-public class FileLoggerHook extends LoggerHook {
+public class FileLoggerHook extends LoggerHook implements Closeable {
 
 	/** Verbosity types */
 	public static final int DATE = 1,

@@ -3,13 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 /**
  * Trivial random access file base interface.
  * @author toad
  */
-public interface RandomAccessThing {
+public interface RandomAccessThing extends Closeable {
 
 	public long size() throws IOException;
 	
