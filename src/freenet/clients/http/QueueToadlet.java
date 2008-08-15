@@ -763,6 +763,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			navigationContent.addChild("li").addChild("a", "href", "#uncompletedDirUpload", L10n.getString("QueueToadlet.DUinProgress", new String[]{ "size" }, new String[]{ String.valueOf(uncompletedDirUpload.size()) }));
 			includeNavigationBar = true;
 		}
+		if (totalQueuedDownloadSize > 0) {
+			navigationContent.addChild("li", L10n.getString("QueueToadlet.totalQueuedDownloads", "size", SizeUtil.formatSize(totalQueuedDownloadSize)));
+			includeNavigationBar = true;
+		}
+		if (totalQueuedUploadSize > 0) {
+			navigationContent.addChild("li", L10n.getString("QueueToadlet.totalQueuedUploads", "size", SizeUtil.formatSize(totalQueuedUploadSize)));
+			includeNavigationBar = true;
+		}
 
 		if (includeNavigationBar) {
 			contentNode.addChild(navigationBar);
