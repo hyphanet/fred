@@ -159,7 +159,6 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	
 	private void realRun(DatagramPacket packet) {
 		// Single receiving thread
-		logDEBUG = Logger.shouldLog(Logger.MINOR, this);
 		boolean gotPacket = getPacket(packet);
 		long now = System.currentTimeMillis();
 		if (gotPacket) {
