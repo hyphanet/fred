@@ -34,7 +34,7 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 		int ctr = 0;
 		while(true) {
 			mark(maxLength);
-			int x = read(buf, ctr, buf.length);
+			int x = read(buf, ctr, buf.length - ctr);
 			if(x == -1) {
 				if(ctr == 0)
 					return null;
