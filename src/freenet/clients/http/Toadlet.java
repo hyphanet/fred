@@ -82,7 +82,7 @@ public abstract class Toadlet {
 		MultiValueTable hdrtbl = new MultiValueTable();
 		hdrtbl.put("Allow", this.supportedMethods());
 
-		StringBuffer pageBuffer = new StringBuffer();
+		StringBuilder pageBuffer = new StringBuilder();
 		pageNode.generate(pageBuffer);
 		toadletContext.sendReplyHeaders(405, "Operation not Supported", hdrtbl, "text/html; charset=utf-8", pageBuffer.length());
 		toadletContext.writeData(pageBuffer.toString().getBytes("UTF-8"));

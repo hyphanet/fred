@@ -19,9 +19,9 @@ public class HTMLNode implements XMLCharacterClasses {
 
 	private final String content;
 
-	private final Map attributes = new HashMap();
+	private final Map<String, String> attributes = new HashMap<String, String>();
 
-	protected final List children = new ArrayList();
+	protected final List<HTMLNode> children = new ArrayList<HTMLNode>();
 
 	public HTMLNode(String name) {
 		this(name, null);
@@ -83,12 +83,12 @@ public class HTMLNode implements XMLCharacterClasses {
 		attributes.put(attributeName, attributeValue);
 	}
 
-	public Map getAttributes() {
+	public Map<String, String> getAttributes() {
 		return Collections.unmodifiableMap(attributes);
 	}
 
 	public String getAttribute(String attributeName) {
-		return (String) attributes.get(attributeName);
+		return attributes.get(attributeName);
 	}
 
 	public HTMLNode addChild(HTMLNode childNode) {
@@ -142,11 +142,11 @@ public class HTMLNode implements XMLCharacterClasses {
 	 *         "real" tag could be found
 	 */
 	public String getFirstTag() {
-		if (!name.equals("#")) {
+		if (!"#".equals(name)) {
 			return name;
 		}
 		for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
-			HTMLNode childNode = (HTMLNode) children.get(childIndex);
+			HTMLNode childNode = children.get(childIndex);
 			String tag = childNode.getFirstTag();
 			if (tag != null) {
 				return tag;
@@ -156,24 +156,24 @@ public class HTMLNode implements XMLCharacterClasses {
 	}
 
 	public String generate() {
-		StringBuffer tagBuffer = new StringBuffer();
+		StringBuilder tagBuffer = new StringBuilder();
 		return generate(tagBuffer).toString();
 	}
 
-	public StringBuffer generate(StringBuffer tagBuffer) {
-		if (name.equals("#") && (content != null)) {
+	public StringBuilder generate(StringBuilder tagBuffer) {
+		if ("#".equals(name) && (content != null)) {
 			HTMLEncoder.encodeToBuffer(content, tagBuffer);
 			return tagBuffer;
 		}
 		// Perhaps this should be something else, but since I don't know if '#' was not just arbitrary chosen, I'll just pick '%'
 		// This allows non-encoded text to be appended to the tag buffer
-		if (name.equals("%")) {
+		if ("%".equals(name)) {
 			tagBuffer.append(content);
 			return tagBuffer;
 		}
-		if (name.equals("#")) {
+		if ("#".equals(name)) {
 			for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
-				HTMLNode childNode = (HTMLNode) children.get(childIndex);
+				HTMLNode childNode = children.get(childIndex);
 				childNode.generate(tagBuffer);
 			}
 			return tagBuffer;
@@ -188,7 +188,7 @@ public class HTMLNode implements XMLCharacterClasses {
 			HTMLEncoder.encodeToBuffer(attributeName, tagBuffer);
 			tagBuffer.append("=\"");
 			HTMLEncoder.encodeToBuffer(attributeValue, tagBuffer);
-			tagBuffer.append('"');;
+			tagBuffer.append('"');
 		}
 		if (children.size() == 0) {
 			if (name.equals("textarea") || name.equals("div") || name.equals("a")) {
@@ -202,7 +202,7 @@ public class HTMLNode implements XMLCharacterClasses {
 				tagBuffer.append('\n');
 			}
 			for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
-				HTMLNode childNode = (HTMLNode) children.get(childIndex);
+				HTMLNode childNode = children.get(childIndex);
 				childNode.generate(tagBuffer);
 			}
 			tagBuffer.append("</").append(name).append('>');
@@ -236,12 +236,13 @@ public class HTMLNode implements XMLCharacterClasses {
 		/**
 		 * @see freenet.support.HTMLNode#generate(java.lang.StringBuffer)
 		 */
-		public StringBuffer generate(StringBuffer tagBuffer) {
+		@Override
+		public StringBuilder generate(StringBuilder tagBuffer) {
 			tagBuffer.append("<!DOCTYPE ").append(name).append(" PUBLIC \"").append(systemUri).append("\">\n");
 			//TODO A meaningful exception should be raised 
 			// when trying to call the method for a HTMLDoctype 
 			// with number of child != 1 
-			return ((HTMLNode) children.get(0)).generate(tagBuffer);
+			return children.get(0).generate(tagBuffer);
 		}
 
 	}
