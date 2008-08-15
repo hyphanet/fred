@@ -11,13 +11,13 @@ public class GlobalProbe implements Runnable {
 	double lastLocation = 0.0;
 	long lastTime;
 	int lastHops;
-	boolean doneSomething = false;
+	private boolean doneSomething = false;
 	final ProbeCallback cb;
 	final Node node;
 	int ctr;
 	final int probeType;
 	
-	GlobalProbe(Node n, int probeType) {
+	public GlobalProbe(Node n, int probeType) {
 		this.node = n;
 		this.probeType = probeType;
     	cb = new ProbeCallback() {
@@ -100,13 +100,11 @@ public class GlobalProbe implements Runnable {
 	private void output(double loc, int hops) {
 		double estimatedNodes = ((double) (ctr+1)) / loc;
 		Logger.error(this, "LOCATION "+ctr+": " + loc+" - estimated nodes: "+estimatedNodes+" ("+hops+" hops)");
-		System.out.println("LOCATION "+ctr+": " + loc+" - estimated nodes: "+estimatedNodes+" ("+hops+" hops)");
+		System.err.println("LOCATION "+ctr+": " + loc+" - estimated nodes: "+estimatedNodes+" ("+hops+" hops)");
 	}
 
 	private void error(String string) {
 		Logger.error(this, string);
-		System.out.println("GlobalProbe error: "+string);
+		System.err.println("GlobalProbe error: "+string);
 	}
-	
-
 }
