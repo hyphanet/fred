@@ -6,7 +6,7 @@ package freenet.config;
 import freenet.l10n.L10n;
 import freenet.support.api.BooleanCallback;
 
-public class BooleanOption extends Option<Boolean, BooleanCallback> {
+public class BooleanOption extends Option<Boolean> {
 	public BooleanOption(SubConfig conf, String optionName, boolean defaultValue, int sortOrder, 
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, BooleanCallback cb) {
 		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DataType.BOOLEAN);

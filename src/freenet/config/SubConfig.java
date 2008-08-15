@@ -24,7 +24,7 @@ import freenet.support.api.StringCallback;
  */
 public class SubConfig implements Comparable<SubConfig> {
 	
-	private final LinkedHashMap<String, Option> map;
+	private final LinkedHashMap<String, Option<?>> map;
 	public final Config config;
 	final String prefix;
 	private boolean hasInitialized;
@@ -32,7 +32,7 @@ public class SubConfig implements Comparable<SubConfig> {
 	public SubConfig(String prefix, Config config) {
 		this.config = config;
 		this.prefix = prefix;
-		map = new LinkedHashMap<String, Option>();
+		map = new LinkedHashMap<String, Option<?>>();
 		hasInitialized = false;
 		config.register(this);
 	}
@@ -41,15 +41,15 @@ public class SubConfig implements Comparable<SubConfig> {
 	 * Return all the options registered. Each includes its name.
 	 * Used by e.g. webconfig.
 	 */
-	public synchronized Option[] getOptions() {
+	public synchronized Option<?>[] getOptions() {
 		return map.values().toArray(new Option[map.size()]);
 	}
 	
-	public synchronized Option getOption(String option){
+	public synchronized Option<?> getOption(String option) {
 		return map.get(option);
 	}
 	
-	public void register(Option o) {
+	public void register(Option<?> o) {
 		synchronized(this) {
 			if(o.name.indexOf(SimpleFieldSet.MULTI_LEVEL_CHAR) != -1)
 				throw new IllegalArgumentException("Option names must not contain "+SimpleFieldSet.MULTI_LEVEL_CHAR);
@@ -171,12 +171,12 @@ public class SubConfig implements Comparable<SubConfig> {
 	 * Set options from a SimpleFieldSet. Once we process an option, we must remove it.
 	 */
 	public void setOptions(SimpleFieldSet sfs) {
-		Set<Map.Entry<String, Option>> entrySet = map.entrySet();
-		Iterator<Entry<String, Option>> i = entrySet.iterator();
+		Set<Map.Entry<String, Option<?>>> entrySet = map.entrySet();
+		Iterator<Entry<String, Option<?>>> i = entrySet.iterator();
 		while(i.hasNext()) {
-			Entry<String, Option> entry = i.next();
+			Entry<String, Option<?>> entry = i.next();
 			String key = entry.getKey();
-			Option o = entry.getValue();
+			Option<?> o = entry.getValue();
 			String val = sfs.get(key);
 			if(val != null) {
 				try {
@@ -205,18 +205,19 @@ public class SubConfig implements Comparable<SubConfig> {
 
     public SimpleFieldSet exportFieldSet(Config.RequestType configRequestType, boolean withDefaults) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
+		@SuppressWarnings("unchecked")
+		Map.Entry<String, Option<?>>[] entries = new Map.Entry[map.size()];
 		// FIXME is any locking at all necessary here? After it has finished init, it's constant...
-		Map.Entry<String, Option>[] entries;
 		synchronized(this) {
-			entries = map.entrySet().toArray(new Map.Entry[map.size()]);
+			entries = map.entrySet().toArray(entries);
 		}
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Prefix="+prefix);
 		for(int i=0;i<entries.length;i++) {
-			Map.Entry<String, Option> entry = entries[i];
+			Map.Entry<String, Option<?>> entry = entries[i];
 			String key = entry.getKey();
-			Option o = entry.getValue();
+			Option<?> o = entry.getValue();
 			if(logMINOR)
 				Logger.minor(this, "Key="+key+" value="+o.getValueString()+" default="+o.isDefault());
 			if (configRequestType == Config.RequestType.CURRENT_SETTINGS && (!withDefaults) && o.isDefault()
@@ -267,12 +268,12 @@ public class SubConfig implements Comparable<SubConfig> {
 	 * @throws NodeNeedRestartException
 	 */
 	public void forceUpdate(String optionName) throws InvalidConfigValueException, NodeNeedRestartException {
-		Option o = map.get(optionName);
+		Option<?> o = map.get(optionName);
 		o.forceUpdate();
 	}
 
 	public void set(String name, String value) throws InvalidConfigValueException, NodeNeedRestartException {
-		Option o = map.get(name);
+		Option<?> o = map.get(name);
 		o.setValue(value);
 	}
 
@@ -289,7 +290,7 @@ public class SubConfig implements Comparable<SubConfig> {
 	 * @param value The value of the option.
 	 */
 	public void fixOldDefault(String name, String value) {
-		Option o = map.get(name);
+		Option<?> o = map.get(name);
 		if(o.getValueString().equals(value))
 			o.setDefault();
 	}
@@ -302,7 +303,7 @@ public class SubConfig implements Comparable<SubConfig> {
 	 * @param value The value of the option.
 	 */
 	public void fixOldDefaultRegex(String name, String value) {
-		Option o = map.get(name);
+		Option<?> o = map.get(name);
 		if(o.getValueString().matches(value))
 			o.setDefault();
 	}

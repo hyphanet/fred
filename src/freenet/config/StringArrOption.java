@@ -8,7 +8,7 @@ import freenet.support.URLEncodedFormatException;
 import freenet.support.URLEncoder;
 import freenet.support.api.StringArrCallback;
 
-public class StringArrOption extends Option<String[], StringArrCallback> {
+public class StringArrOption extends Option<String[]> {
     public static final String delimiter = ";";
 	
 	public StringArrOption(SubConfig conf, String optionName, String[] defaultValue, int sortOrder, 

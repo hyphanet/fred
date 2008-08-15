@@ -4,7 +4,7 @@ import freenet.l10n.L10n;
 import freenet.support.Fields;
 import freenet.support.api.ShortCallback;
 
-public class ShortOption extends Option<Short, ShortCallback> {
+public class ShortOption extends Option<Short> {
 	public ShortOption(SubConfig conf, String optionName, short defaultValue, int sortOrder, 
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, ShortCallback cb) {
 		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DataType.NUMBER);

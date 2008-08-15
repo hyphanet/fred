@@ -8,7 +8,7 @@ import freenet.support.Fields;
 import freenet.support.api.LongCallback;
 
 /** Long config variable */
-public class LongOption extends Option<Long, LongCallback> {
+public class LongOption extends Option<Long> {
 	public LongOption(SubConfig conf, String optionName, String defaultValueString, int sortOrder, boolean expert,
 	        boolean forceWrite, String shortDesc, String longDesc, LongCallback cb) {
 		this(conf, optionName, Fields.parseLong(defaultValueString), sortOrder, expert, forceWrite, shortDesc,

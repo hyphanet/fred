@@ -123,7 +123,7 @@ public class ConfigToadlet extends Toadlet {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
 		for(int i=0; i<sc.length ; i++){
-			Option[] o = sc[i].getOptions();
+			Option<?>[] o = sc[i].getOptions();
 			String prefix = sc[i].getPrefix();
 			String configName;
 			
@@ -271,7 +271,7 @@ public class ConfigToadlet extends Toadlet {
 		for(int i=0; i<sc.length;i++){
 			short displayedConfigElements = 0;
 			
-			Option[] o = sc[i].getOptions();
+			Option<?>[] o = sc[i].getOptions();
 			HTMLNode configGroupUlNode = new HTMLNode("ul", "class", "config");
 			
 			for(int j=0; j<o.length; j++){
@@ -289,7 +289,7 @@ public class ConfigToadlet extends Toadlet {
 						continue;
 					}
 					
-					ConfigCallback callback = o[j].getCallback();
+					ConfigCallback<?> callback = o[j].getCallback();
 					if(callback instanceof EnumerableOptionCallback)
 						configItemValueNode.addChild(addComboBox((EnumerableOptionCallback) callback, sc[i],
 						        configName, callback.isReadOnly()));

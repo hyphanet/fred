@@ -8,7 +8,7 @@ import freenet.support.Fields;
 import freenet.support.api.IntCallback;
 
 /** Integer config variable */
-public class IntOption extends Option<Integer, IntCallback> {
+public class IntOption extends Option<Integer> {
 	public IntOption(SubConfig conf, String optionName, String defaultValueString, int sortOrder, boolean expert,
 	        boolean forceWrite, String shortDesc, String longDesc, IntCallback cb) {
 		this(conf, optionName, Fields.parseInt(defaultValueString), sortOrder, expert, forceWrite, shortDesc, longDesc,

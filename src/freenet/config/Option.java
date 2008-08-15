@@ -3,10 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.config;
 
+
 /**
  * A config option.
  */
-public abstract class Option<T, C extends ConfigCallback<T>> {
+public abstract class Option<T> {
 	/** The parent SubConfig object */
 	protected final SubConfig config;
 	/** The option name */
@@ -22,7 +23,7 @@ public abstract class Option<T, C extends ConfigCallback<T>> {
 	/** Long description of value e.g. "The TCP port to listen for FCP connections on" */
 	protected final String longDesc;
 	/** The configCallback associated to the Option */
-	protected final C cb;
+	protected final ConfigCallback<T> cb;
 	
 	protected T defaultValue;
 	protected T currentValue;
@@ -34,7 +35,7 @@ public abstract class Option<T, C extends ConfigCallback<T>> {
 	/** Data type : used to make it possible to make user inputs more friendly in FCP apps */
 	final DataType dataType;
 	
-	Option(SubConfig config, String name, C cb, int sortOrder, boolean expert, boolean forceWrite,
+	Option(SubConfig config, String name, ConfigCallback<T> cb, int sortOrder, boolean expert, boolean forceWrite,
 	        String shortDesc, String longDesc, DataType dataType) {
 		this.config = config;
 		this.name = name;
@@ -165,7 +166,7 @@ public abstract class Option<T, C extends ConfigCallback<T>> {
 		return toString(defaultValue);
 	}
 
-	public final C getCallback() {
+	public final ConfigCallback<T> getCallback() {
 		return cb;
 	}
 }
