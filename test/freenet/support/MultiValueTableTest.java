@@ -63,8 +63,8 @@ public class MultiValueTableTest extends TestCase {
 	 * @param valuesNumber number of objects to create
 	 * @return the sample List
 	 */
-	private List fillSampleValuesList(int valuesNumber) {
-		List sampleValues = new LinkedList();
+	private List<Object> fillSampleValuesList(int valuesNumber) {
+		List<Object> sampleValues = new LinkedList<Object>();
 		for(int i=0; i<valuesNumber;i++)
 			sampleValues.add(new Object());
 		return sampleValues;

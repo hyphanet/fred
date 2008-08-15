@@ -32,7 +32,7 @@ public class ByteArrayWrapperTest extends TestCase {
 		assertFalse(wrapper2.equals(wrapper3));
 		assertFalse(wrapper1.equals(new String()));
 		
-		Map map = new HashMap();
+		Map<ByteArrayWrapper, ByteArrayWrapper> map = new HashMap<ByteArrayWrapper, ByteArrayWrapper>();
 		
 		map.put(wrapper1, wrapper1);
 		map.put(wrapper2, wrapper2); // should clobber 1 by hashcode
