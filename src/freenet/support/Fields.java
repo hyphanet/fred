@@ -60,6 +60,15 @@ public abstract class Fields {
 			'y',
 			'z' };
 
+	private static final long[] MULTIPLES = {
+		1000,						1l << 10,
+		1000 * 1000,			 		1l << 20,
+		1000l * 1000l * 1000l,				1l << 30,
+		1000l * 1000l * 1000l * 1000l,			1l << 40,
+		1000l * 1000l * 1000l * 1000l * 1000,		1l << 50,
+		1000l * 1000l * 1000l * 1000l * 1000l * 1000l, 	1l << 60
+	};
+	
 	/**
 	 * Converts a hex string into a long. Long.parseLong(hex, 16) assumes the
 	 * input is nonnegative unless there is a preceding minus sign. This method
@@ -597,23 +606,20 @@ public abstract class Fields {
 	}
 	
     /**
-     * Parse a human-readable string possibly including SI units into a short.
+     * Parse a human-readable string possibly including SI and ICE units into a short.
 	 * @throws NumberFormatException
 	 *             if the string is not parseable
 	 */
-	public static short parseSIShort(String s) throws NumberFormatException {
+	public static short parseShort(String s) throws NumberFormatException {
+		s = s.replaceFirst("(i)*B$", "");
 		short res = 1;
 		int x = s.length() - 1;
 		int idx;
 		try {
-			long[] l =
-				{
-					1000,
-					1 << 10 };
 			while ((x >= 0)
 				&& ((idx = "kK".indexOf(s.charAt(x))) != -1)) {
 				x--;
-				res *= l[idx];
+				res *= MULTIPLES[idx];
 			}
 			res *= Double.parseDouble(s.substring(0, x + 1));
 		} catch (ArithmeticException e) {
@@ -624,27 +630,20 @@ public abstract class Fields {
 	}
 
 	/**
-	 * Parse a human-readable string possibly including SI units into an integer.
+	 * Parse a human-readable string possibly including SI and ICE units into an integer.
 	 * @throws NumberFormatException
 	 *             if the string is not parseable
 	 */
-	public static int parseSIInt(String s) throws NumberFormatException {
+	public static int parseInt(String s) throws NumberFormatException {
+		s = s.replaceFirst("(i)*B$", "");
 		int res = 1;
 		int x = s.length() - 1;
 		int idx;
 		try {
-			long[] l =
-				{
-					1000,
-					1 << 10,
-					1000 * 1000,
-					1 << 20,
-					1000 * 1000 * 1000,
-					1 << 30 };
 			while ((x >= 0)
 				&& ((idx = "kKmMgG".indexOf(s.charAt(x))) != -1)) {
 				x--;
-				res *= l[idx];
+				res *= MULTIPLES[idx];
 			}
 			res *= Double.parseDouble(s.substring(0, x + 1));
 		} catch (ArithmeticException e) {
@@ -655,33 +654,20 @@ public abstract class Fields {
 	}
 	
 	/**
-	 * Parse a human-readable string possibly including SI units into a long.
+	 * Parse a human-readable string possibly including SI and ICE units into a long.
 	 * @throws NumberFormatException
 	 *             if the string is not parseable
 	 */
-	public static long parseSILong(String s) throws NumberFormatException {
+	public static long parseLong(String s) throws NumberFormatException {
+		s = s.replaceFirst("(i)*B$", "");
 		long res = 1;
 		int x = s.length() - 1;
 		int idx;
 		try {
-			long[] l =
-				{
-					1000,
-					1 << 10,
-					1000 * 1000,
-					1 << 20,
-					1000l * 1000l * 1000l,
-					1l << 30,
-					1000l * 1000l * 1000l * 1000l,
-					1l << 40,
-					1000l * 1000l * 1000l * 1000l * 1000,
-					1l << 50,
-					1000l * 1000l * 1000l * 1000l * 1000l * 1000l,
-					1l << 60 };
 			while ((x >= 0)
 				&& ((idx = "kKmMgGtTpPeE".indexOf(s.charAt(x))) != -1)) {
 				x--;
-				res *= l[idx];
+				res *= MULTIPLES[idx];
 			}
 			String multiplier = s.substring(0, x + 1).trim();
 			if(multiplier.indexOf('.') > -1 || multiplier.indexOf('E') > -1) {
@@ -696,6 +682,60 @@ public abstract class Fields {
 			throw new NumberFormatException(e.getMessage());
 		}
 		return res;
+	}
+
+	public static String longToString(long val) {
+		String[] u = { "k", "K", "m", "M", "g", "G", "t", "T", "p", "P", "e", "E" };
+		String ret = Long.toString(val);
+
+		if (val <= 0)
+			return ret;
+
+		for (int i = MULTIPLES.length - 1; i >= 0; i--) {
+			if (val > MULTIPLES[i] && val % MULTIPLES[i] == 0) {
+				ret = (val / MULTIPLES[i]) + u[i];
+				if (!u[i].toLowerCase().equals(u[i]))
+					ret += "iB";
+				break;
+			}
+		}
+		return ret;
+	}
+
+	public static String intToString(int val) {
+		String[] u = { "k", "K", "m", "M", "g", "G", "t", "T", "p", "P", "e", "E" };
+		String ret = Integer.toString(val);
+
+		if (val <= 0)
+			return ret;
+
+		for (int i = MULTIPLES.length - 1; i >= 0; i--) {
+			if (val > MULTIPLES[i] && val % MULTIPLES[i] == 0) {
+				ret = (val / MULTIPLES[i]) + u[i];
+				if (!u[i].toLowerCase().equals(u[i]))
+					ret += "iB";
+				break;
+			}
+		}
+		return ret;
+	}
+
+	public static String shortToString(short val) {
+		String[] u = { "k", "K", "m", "M", "g", "G", "t", "T", "p", "P", "e", "E" };
+		String ret = Short.toString(val);
+
+		if (val <= 0)
+			return ret;
+		
+		for (int i = MULTIPLES.length - 1; i >= 0; i--) {
+			if (val > MULTIPLES[i] && val % MULTIPLES[i] == 0) {
+				ret = (val / MULTIPLES[i]) + u[i];
+				if (!u[i].toLowerCase().equals(u[i]))
+					ret += "iB";
+				break;
+			}
+		}
+		return ret;
 	}
 
 	public static double[] bytesToDoubles(byte[] data, int offset, int length) {

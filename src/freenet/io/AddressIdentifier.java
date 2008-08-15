@@ -46,23 +46,9 @@ public class AddressIdentifier {
 		ipv6PatternWithPercentScopeID = Pattern.compile(ipv6AddressRegex + percentScopeIDRegex);
 		ipv6ISATAPPattern = Pattern.compile(ipv6ISATAPAddressRegex);
 	}
-
-	public static class AddressType {
-
-		public static final AddressType OTHER = new AddressType("Other");
-		public static final AddressType IPv4 = new AddressType("IPv4");
-		public static final AddressType IPv6 = new AddressType("IPv6");
-
-		private final String name;
-
-		private AddressType(String name) {
-			this.name = name;
-		}
-
-		public String toString() {
-			return name;
-		}
-
+	
+	public enum AddressType {
+		OTHER, IPv4, IPv6;
 	}
 
 	/**

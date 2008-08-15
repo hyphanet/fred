@@ -3,12 +3,15 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
@@ -35,7 +38,29 @@ public class PluginDownLoaderOfficial extends PluginDownLoaderURL {
 
 	@Override
 	String getSHA1sum() throws PluginNotFoundException {
-		return null;
+		try {
+			URL sha1url = new URL(getSource().toString()+".sha1");
+			URLConnection urlConnection = sha1url.openConnection();
+			urlConnection.setUseCaches(false);
+			urlConnection.setAllowUserInteraction(false);
+			
+			InputStream is = openConnectionCheckRedirects(urlConnection);
+			ByteArrayOutputStream bos = new ByteArrayOutputStream();
+		
+			byte[] buffer = new byte[1024];
+			int read;
+		
+			while ((read = is.read(buffer)) != -1) {
+				bos.write(buffer, 0, read);
+			}
+			
+			return new String(bos.toByteArray()).split(" ")[0];
+	
+		} catch (MalformedURLException e) {
+			throw new PluginNotFoundException("impossible: "+e,e);
+		} catch (IOException e) {
+			throw new PluginNotFoundException("Error while fetching sha1 for plugin: "+e,e);
+		}
 	}
 
 	@Override

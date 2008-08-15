@@ -48,8 +48,6 @@ public class UptimeEstimator implements Runnable {
 	/** We write to disk every 5 minutes. The offset is derived from the node's identity. */
 	private long timeOffset;
 	
-	private final DecimalFormat fix1p2 = new DecimalFormat("0.00");
-
 	public UptimeEstimator(File nodeDir, Ticker ticker, byte[] bs) {
 		this.ticker = ticker;
 		logFile = new File(nodeDir, "uptime.dat");
@@ -67,7 +65,7 @@ public class UptimeEstimator implements Runnable {
 		readData(prevFile, base);
 		readData(logFile, base);
 		schedule(System.currentTimeMillis());
-		System.out.println("Created uptime estimator, time offset is "+timeOffset+" uptime at startup is "+fix1p2.format(getUptime())+'%');
+		System.out.println("Created uptime estimator, time offset is "+timeOffset+" uptime at startup is "+new DecimalFormat("0.00").format(getUptime())+'%');
 	}
 	
 	private void readData(File file, int base) {

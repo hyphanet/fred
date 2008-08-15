@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import freenet.support.Fields;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
@@ -619,7 +620,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		}
 		String value = this.getParameterValue(name);
 		try {
-			return Long.parseLong(value);
+			return Fields.parseLong(value);
 		} catch (NumberFormatException e) {
 			return defaultValue;
 		}

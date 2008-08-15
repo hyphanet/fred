@@ -24,12 +24,12 @@ import freenet.support.io.FileUtil;
  */
 public class WrapperConfig {
 
-	private static HashMap overrides = new HashMap();
+	private static HashMap<String, String> overrides = new HashMap<String, String>();
 	
 	public static String getWrapperProperty(String name) {
 		synchronized(WrapperConfig.class) {
 			if(overrides.containsKey(name))
-				return (String) overrides.get(name);
+				return overrides.get(name);
 		}
 		return WrapperManager.getProperties().getProperty(name, null);
 	}

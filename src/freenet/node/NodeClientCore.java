@@ -53,14 +53,12 @@ import freenet.support.SerialExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
-import freenet.support.api.BucketFactory;
+import freenet.support.api.LongCallback;
 import freenet.support.api.StringArrCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NativeThread;
-import freenet.support.io.PaddedEphemerallyEncryptedBucketFactory;
-import freenet.support.io.PersistentEncryptedTempBucketFactory;
 import freenet.support.io.PersistentTempBucketFactory;
 import freenet.support.io.TempBucketFactory;
 
@@ -83,13 +81,12 @@ public class NodeClientCore implements Persistable {
 	private File[] uploadAllowedDirs;
 	private boolean uploadAllowedEverywhere;
 	final FilenameGenerator tempFilenameGenerator;
-	public final BucketFactory tempBucketFactory;
+	public final TempBucketFactory tempBucketFactory;
+	public final PersistentTempBucketFactory persistentTempBucketFactory;
 	public final Node node;
 	final NodeStats nodeStats;
 	public final RandomSource random;
 	final File tempDir;	// Persistent temporary buckets
-	public final PersistentTempBucketFactory persistentTempBucketFactory;
-	public final PersistentEncryptedTempBucketFactory persistentEncryptedTempBucketFactory;
 	public final UserAlertManager alerts;
 	final TextModeClientInterfaceServer tmci;
 	TextModeClientInterface directTMCI;
@@ -157,6 +154,9 @@ public class NodeClientCore implements Persistable {
 					// FIXME
 					throw new InvalidConfigValueException(l10n("movingTempDirOnTheFlyNotSupported"));
 				}
+				public boolean isReadOnly() {
+				        return true;
+			        }
 			});
 
 		tempDir = new File(nodeConfig.getString("tempDir"));
@@ -173,6 +173,18 @@ public class NodeClientCore implements Persistable {
 		}
 
 		// Persistent temp files
+		nodeConfig.register("encryptPersistentTempBuckets", true, sortOrder++, true, false, "NodeClientCore.encryptPersistentTempBuckets", "NodeClientCore.encryptPersistentTempBucketsLong", new BooleanCallback() {
+
+			public Boolean get() {
+				return (persistentTempBucketFactory == null ? true : persistentTempBucketFactory.isEncrypting());
+			}
+
+			public void set(Boolean val) throws InvalidConfigValueException {
+				if((val == get()) || (persistentTempBucketFactory == null)) return;
+				persistentTempBucketFactory.setEncryption(val);
+			}
+		});
+		
 		nodeConfig.register("persistentTempDir", new File(nodeDir, "persistent-temp-" + portNumber).toString(), sortOrder++, true, false, "NodeClientCore.persistentTempDir", "NodeClientCore.persistentTempDirLong",
 			new StringCallback() {
 
@@ -186,16 +198,52 @@ public class NodeClientCore implements Persistable {
 					// FIXME
 					throw new InvalidConfigValueException("Moving persistent temp directory on the fly not supported at present");
 				}
+				public boolean isReadOnly() {
+				        return true;
+			        }
 			});
 		try {
-			persistentTempBucketFactory = new PersistentTempBucketFactory(new File(nodeConfig.getString("persistentTempDir")), "freenet-temp-", random, node.fastWeakRandom);
-			persistentEncryptedTempBucketFactory = new PersistentEncryptedTempBucketFactory(persistentTempBucketFactory);
+			persistentTempBucketFactory = new PersistentTempBucketFactory(new File(nodeConfig.getString("persistentTempDir")), "freenet-temp-", random, node.fastWeakRandom, nodeConfig.getBoolean("encryptPersistentTempBuckets"));
 		} catch(IOException e2) {
 			String msg = "Could not find or create persistent temporary directory";
 			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
 		}
 
-		tempBucketFactory = new PaddedEphemerallyEncryptedBucketFactory(new TempBucketFactory(tempFilenameGenerator), random, node.fastWeakRandom, 1024);
+		nodeConfig.register("maxRAMBucketSize", "128KiB", sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
+
+			public Long get() {
+				return (tempBucketFactory == null ? 0 : tempBucketFactory.getMaxRAMBucketSize());
+			}
+
+			public void set(Long val) throws InvalidConfigValueException {
+				if((val == get()) || (tempBucketFactory == null)) return;
+				tempBucketFactory.setMaxRAMBucketSize(val);
+			}
+		});
+		nodeConfig.register("RAMBucketPoolSize", "10MiB", sortOrder++, true, false, "NodeClientCore.ramBucketPoolSize", "NodeClientCore.ramBucketPoolSizeLong", new LongCallback() {
+
+			public Long get() {
+				return (tempBucketFactory == null ? 0 : tempBucketFactory.getMaxRamUsed());
+			}
+
+			public void set(Long val) throws InvalidConfigValueException {
+				if((val == get()) || (tempBucketFactory == null)) return;
+				tempBucketFactory.setMaxRamUsed(val);
+			}
+		});
+			
+		nodeConfig.register("encryptTempBuckets", true, sortOrder++, true, false, "NodeClientCore.encryptTempBuckets", "NodeClientCore.encryptTempBucketsLong", new BooleanCallback() {
+
+			public Boolean get() {
+				return (tempBucketFactory == null ? true : tempBucketFactory.isEncrypting());
+			}
+
+			public void set(Boolean val) throws InvalidConfigValueException {
+				if((val == get()) || (tempBucketFactory == null)) return;
+				tempBucketFactory.setEncryption(val);
+			}
+		});
+		tempBucketFactory = new TempBucketFactory(tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), random, node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"));
 
 		// Downloads directory
 
@@ -267,7 +315,7 @@ public class NodeClientCore implements Persistable {
 			});
 		setUploadAllowedDirs(nodeConfig.getStringArr("uploadAllowedDirs"));
 
-		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, random, node.fastWeakRandom, tempFilenameGenerator);
+		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, tempBucketFactory);
 		Logger.normal(this, "Initializing USK Manager");
 		System.out.println("Initializing USK Manager");
 		uskManager = new USKManager(this);
@@ -280,11 +328,11 @@ public class NodeClientCore implements Persistable {
 		nodeConfig.register("lazyResume", false, sortOrder++, true, false, "NodeClientCore.lazyResume",
 			"NodeClientCore.lazyResumeLong", new BooleanCallback() {
 
-			public boolean get() {
+			public Boolean get() {
 				return lazyResume;
 			}
 
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				synchronized(NodeClientCore.this) {
 					lazyResume = val;
 				}
@@ -296,11 +344,11 @@ public class NodeClientCore implements Persistable {
 		nodeConfig.register("maxBackgroundUSKFetchers", "64", sortOrder++, true, false, "NodeClientCore.maxUSKFetchers",
 			"NodeClientCore.maxUSKFetchersLong", new IntCallback() {
 
-			public int get() {
+			public Integer get() {
 				return maxBackgroundUSKFetchers;
 			}
 
-			public void set(int uskFetch) throws InvalidConfigValueException {
+			public void set(Integer uskFetch) throws InvalidConfigValueException {
 				if(uskFetch <= 0)
 					throw new InvalidConfigValueException(l10n("maxUSKFetchersMustBeGreaterThanZero"));
 				maxBackgroundUSKFetchers = uskFetch;

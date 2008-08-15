@@ -18,6 +18,7 @@ import freenet.node.useralerts.InvalidAddressOverrideUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.pluginmanager.DetectedIP;
+import freenet.pluginmanager.FredPluginBandwidthIndicator;
 import freenet.pluginmanager.FredPluginIPDetector;
 import freenet.pluginmanager.FredPluginPortForward;
 import freenet.support.HTMLNode;
@@ -372,7 +373,6 @@ public class NodeIPDetector {
 				}
 				redetectAddress();
 			}
-			
 		});
 		
 		hasValidAddressOverride = true;
@@ -419,7 +419,6 @@ public class NodeIPDetector {
 				}
 				redetectAddress();
 			}
-			
 		});
 		
 		String ipHintString = nodeConfig.getString("tempIPAddressHint");
@@ -438,16 +437,15 @@ public class NodeIPDetector {
 		
 		nodeConfig.register("includeLocalAddressesInNoderefs", false, sortOrder++, true, false, "NodeIPDectector.inclLocalAddress", "NodeIPDectector.inclLocalAddressLong", new BooleanCallback() {
 
-			public boolean get() {
+			public Boolean get() {
 				return includeLocalAddressesInNoderefs;
 			}
 
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				includeLocalAddressesInNoderefs = val;
 				lastIPAddress = null;
 				ipDetector.clearCached();
 			}
-			
 		});
 		
 		includeLocalAddressesInNoderefs = nodeConfig.getBoolean("includeLocalAddressesInNoderefs");
@@ -525,6 +523,18 @@ public class NodeIPDetector {
 	public void unregisterPortForwardPlugin(FredPluginPortForward forward) {
 		ipDetectorManager.unregisterPortForwardPlugin(forward);
 	}
+	
+	//TODO: ugly: deal with multiple instances properly
+	public synchronized void registerBandwidthIndicatorPlugin(FredPluginBandwidthIndicator indicator) {
+		bandwidthIndicator = indicator;
+	}
+	public synchronized void unregisterBandwidthIndicatorPlugin(FredPluginBandwidthIndicator indicator) {
+		bandwidthIndicator = null;
+	}
+	public synchronized FredPluginBandwidthIndicator getBandwidthIndicator() {
+		return bandwidthIndicator;
+	}
+	private FredPluginBandwidthIndicator bandwidthIndicator;
 	
 	boolean hasValidAddressOverride() {
 		synchronized(this) {

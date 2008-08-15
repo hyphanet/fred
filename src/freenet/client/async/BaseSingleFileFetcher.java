@@ -12,6 +12,7 @@ import freenet.keys.KeyVerifyException;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
+import freenet.support.Executor;
 import freenet.support.Logger;
 
 public abstract class BaseSingleFileFetcher extends SendableGet {
@@ -64,9 +65,12 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return key instanceof ClientSSK;
 	}
 
-	/** Try again - returns true if we can retry 
-	 * @param sched */
-	protected boolean retry(RequestScheduler sched) {
+	/**
+	 * Try again - returns true if we can retry 
+	 * @param sched
+	 * @param the executor we will use to run the retry off-thread
+	 */
+	protected boolean retry(RequestScheduler sched, Executor exec) {
 		retryCount++;
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+retryCount+ ')');
@@ -79,11 +83,14 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 					Logger.error(this, "Already on the cooldown queue for "+this, new Exception("error"));
 				else
 				cooldownWakeupTime = sched.queueCooldown(key, this);
-				return true; // We will retry, just not yet. See requeueAfterCooldown(Key).
 			} else {
+				exec.execute(new Runnable() {
+					public void run() {
 				schedule();
 			}
-			return true;
+				}, "Retry executor for "+sched.toString());
+		}
+			return true; // We will retry in any case, maybe not just not yet. See requeueAfterCooldown(Key).
 		}
 		return false;
 	}

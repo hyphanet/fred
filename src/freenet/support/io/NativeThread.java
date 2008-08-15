@@ -4,7 +4,6 @@
 
 package freenet.support.io;
 
-import java.io.File;
 import freenet.node.NodeStarter;
 import freenet.support.LibraryLoader;
 import freenet.support.Logger;
@@ -93,6 +92,7 @@ public class NativeThread extends Thread {
 	 */
 	private static native int getLinuxPriority();	
 	
+	@Override
 	public void run() {
 		if(!setNativePriority(currentPriority))
 			System.err.println("setNativePriority("+currentPriority+") has failed!");

@@ -16,6 +16,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Vector;
 import java.util.WeakHashMap;
 import java.util.zip.GZIPInputStream;
@@ -49,7 +50,6 @@ import freenet.support.api.LongCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
-import java.util.LinkedList;
 
 /**
  * FCP server process.
@@ -193,7 +193,7 @@ public class FCPServer implements Runnable {
 		ch.start();
 	}
 
-	static class FCPPortNumberCallback implements IntCallback {
+	static class FCPPortNumberCallback extends IntCallback  {
 
 		private final NodeClientCore node;
 		
@@ -201,18 +201,22 @@ public class FCPServer implements Runnable {
 			this.node = node;
 		}
 		
-		public int get() {
+		public Integer get() {
 			return node.getFCPServer().port;
 		}
 
-		public void set(int val) throws InvalidConfigValueException {
+		public void set(Integer val) throws InvalidConfigValueException {
 			if(val != get()) {
 				throw new InvalidConfigValueException("Cannot change FCP port number on the fly");
 			}
 		}
+
+		public boolean isReadOnly() {
+			return true;
+		}
 	}
 	
-	static class FCPEnabledCallback implements BooleanCallback{
+	static class FCPEnabledCallback extends BooleanCallback {
 
 		final NodeClientCore node;
 		
@@ -220,24 +224,28 @@ public class FCPServer implements Runnable {
 			this.node = node;
 		}
 		
-		public boolean get() {
+		public Boolean get() {
 			return node.getFCPServer().enabled;
 		}
 //TODO: Allow it
-		public void set(boolean val) throws InvalidConfigValueException {
+		public void set(Boolean val) throws InvalidConfigValueException {
 			if(val != get()) {
 				throw new InvalidConfigValueException(l10n("cannotStartOrStopOnTheFly"));
 			}
 		}
+
+		public boolean isReadOnly() {
+			return true;
+		}
 	}
 
-	static class FCPSSLCallback implements BooleanCallback{
+	static class FCPSSLCallback extends BooleanCallback {
 
-		public boolean get() {
+		public Boolean get() {
 			return ssl;
 		}
 
-		public void set(boolean val) throws InvalidConfigValueException {
+		public void set(Boolean val) throws InvalidConfigValueException {
     		if(val == get()) return;
 			if(!SSL.available()) {
 				throw new InvalidConfigValueException("Enable SSL support before use ssl with FCP");
@@ -245,12 +253,16 @@ public class FCPServer implements Runnable {
 			ssl = val;
 			throw new InvalidConfigValueException("Cannot change SSL on the fly, please restart freenet");
 		}
+
+		public boolean isReadOnly() {
+			return true;
+		}
 	}
 
 	// FIXME: Consider moving everything except enabled into constructor
 	// Actually we could move enabled in too with an exception???
 	
-	static class FCPBindtoCallback implements StringCallback{
+	static class FCPBindtoCallback extends StringCallback {
 
 		final NodeClientCore node;
 		
@@ -277,7 +289,7 @@ public class FCPServer implements Runnable {
 		}
 	}
 	
-	static class FCPAllowedHostsCallback implements StringCallback {
+	static class FCPAllowedHostsCallback extends StringCallback  {
 
 		private final NodeClientCore node;
 		
@@ -296,12 +308,10 @@ public class FCPServer implements Runnable {
 			if (!val.equals(get())) {
 				node.getFCPServer().networkInterface.setAllowedHosts(val);
 			}
-		}
-		
+		}		
 	}
 
-	static class FCPAllowedHostsFullAccessCallback implements StringCallback {
-
+	static class FCPAllowedHostsFullAccessCallback extends StringCallback  {
 		private final NodeClientCore node;
 		
 		public FCPAllowedHostsFullAccessCallback(NodeClientCore node) {
@@ -320,22 +330,22 @@ public class FCPServer implements Runnable {
 		
 	}
 
-	static class PersistentDownloadsEnabledCallback implements BooleanCallback {
+	static class PersistentDownloadsEnabledCallback extends BooleanCallback  {
 		
 		FCPServer server;
 		
-		public boolean get() {
+		public Boolean get() {
 			return server.persistentDownloadsEnabled();
 		}
 		
-		public void set(boolean set) {
+		public void set(Boolean set) {
 			if(server.persistentDownloadsEnabled() != set)
 				server.setPersistentDownloadsEnabled(set);
 		}
 		
 	}
 
-	static class PersistentDownloadsFileCallback implements StringCallback {
+	static class PersistentDownloadsFileCallback extends StringCallback  {
 		
 		FCPServer server;
 		
@@ -350,15 +360,15 @@ public class FCPServer implements Runnable {
 		}
 	}
 
-	static class PersistentDownloadsIntervalCallback implements LongCallback {
+	static class PersistentDownloadsIntervalCallback extends LongCallback  {
 		
 		FCPServer server;
 		
-		public long get() {
+		public Long get() {
 			return server.persistenceInterval;
 		}
 		
-		public void set(long value) {
+		public void set(Long value) {
 			server.persistenceInterval = value;
 			FCPServerPersister p = server.persister;
 			if(p != null) {
@@ -369,27 +379,27 @@ public class FCPServer implements Runnable {
 		}
 	}
 	
-	static class AssumeDDADownloadIsAllowedCallback implements BooleanCallback{
+	static class AssumeDDADownloadIsAllowedCallback extends BooleanCallback {
 		FCPServer server;
 
-		public boolean get() {
+		public Boolean get() {
 			return server.assumeDownloadDDAIsAllowed;
 		}
 		
-		public void set(boolean val) throws InvalidConfigValueException {
+		public void set(Boolean val) throws InvalidConfigValueException {
 			if(val == get()) return;
 			server.assumeDownloadDDAIsAllowed = val;
 		}
 	}
 	
-	static class AssumeDDAUploadIsAllowedCallback implements BooleanCallback{
+	static class AssumeDDAUploadIsAllowedCallback extends BooleanCallback {
 		FCPServer server;
 
-		public boolean get() {
+		public Boolean get() {
 			return server.assumeUploadDDAIsAllowed;
 		}
 		
-		public void set(boolean val) throws InvalidConfigValueException {
+		public void set(Boolean val) throws InvalidConfigValueException {
 			if(val == get()) return;
 			server.assumeUploadDDAIsAllowed = val;
 		}

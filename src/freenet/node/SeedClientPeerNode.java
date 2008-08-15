@@ -100,6 +100,10 @@ public class SeedClientPeerNode extends PeerNode {
 						System.currentTimeMillis() - lastReceivedPacketTime() > 60*1000)
 				return true;
 			}
+		} else {
+			// Disconnect after an hour in any event.
+			if(System.currentTimeMillis() - timeLastConnectionCompleted() > 60*60*1000)
+				return true;
 		}
 		return false;
 	}

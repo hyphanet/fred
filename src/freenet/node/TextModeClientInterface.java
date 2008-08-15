@@ -45,12 +45,12 @@ import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
-import freenet.support.StringArray;
 import freenet.support.api.Bucket;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
+import java.util.Arrays;
 
 /**
  * @author amphibian
@@ -860,7 +860,7 @@ public class TextModeClientInterface implements Runnable {
 				}
 
 				public void onTrace(long uid, double target, double nearest, double best, short htl, short counter, double location, long nodeUID, double[] peerLocs, long[] peerUIDs, double[] locsNotVisited, short forkCount, short linearCounter, String reason, long prevUID) {
-					String msg = "Probe trace: UID="+uid+" target="+target+" nearest="+nearest+" best="+best+" htl="+htl+" counter="+counter+" linear="+linearCounter+" location="+location+"node UID="+nodeUID+" prev UID="+prevUID+" peer locs="+StringArray.toString(peerLocs)+" peer UIDs="+StringArray.toString(peerUIDs)+" locs not visited = "+StringArray.toString(locsNotVisited)+" forks: "+forkCount+" reason="+reason+'\n';
+					String msg = "Probe trace: UID="+uid+" target="+target+" nearest="+nearest+" best="+best+" htl="+htl+" counter="+counter+" linear="+linearCounter+" location="+location+"node UID="+nodeUID+" prev UID="+prevUID+" peer locs="+Arrays.toString(peerLocs)+" peer UIDs="+Arrays.toString(peerUIDs)+" locs not visited = "+Arrays.toString(locsNotVisited)+" forks: "+forkCount+" reason="+reason+'\n';
 					try {
 						out.write(msg.getBytes());
 						out.flush();

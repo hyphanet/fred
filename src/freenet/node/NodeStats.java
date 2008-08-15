@@ -212,10 +212,10 @@ public class NodeStats implements Persistable {
 
 		statsConfig.register("threadLimit", 500, sortOrder++, true, true, "NodeStat.threadLimit", "NodeStat.threadLimitLong",
 				new IntCallback() {
-					public int get() {
+					public Integer get() {
 						return threadLimit;
 					}
-					public void set(int val) throws InvalidConfigValueException {
+					public void set(Integer val) throws InvalidConfigValueException {
 						if(val == get()) return;
 						if(val < 100)
 							throw new InvalidConfigValueException(l10n("valueTooLow"));
@@ -227,10 +227,10 @@ public class NodeStats implements Persistable {
 		// Yes it could be in seconds insteed of multiples of 0.12, but we don't want people to play with it :)
 		statsConfig.register("aggressiveGC", aggressiveGCModificator, sortOrder++, true, false, "NodeStat.aggressiveGC", "NodeStat.aggressiveGCLong",
 				new IntCallback() {
-					public int get() {
+					public Integer get() {
 						return aggressiveGCModificator;
 					}
-					public void set(int val) throws InvalidConfigValueException {
+					public void set(Integer val) throws InvalidConfigValueException {
 						if(val == get()) return;
 						Logger.normal(this, "Changing aggressiveGCModificator to "+val);
 						aggressiveGCModificator = val;
@@ -241,11 +241,11 @@ public class NodeStats implements Persistable {
 		myMemoryChecker = new MemoryChecker(node.ps, aggressiveGCModificator);
 		statsConfig.register("memoryChecker", true, sortOrder++, true, false, "NodeStat.memCheck", "NodeStat.memCheckLong", 
 				new BooleanCallback(){
-					public boolean get() {
+					public Boolean get() {
 						return myMemoryChecker.isRunning();
 					}
 
-					public void set(boolean val) throws InvalidConfigValueException {
+					public void set(Boolean val) throws InvalidConfigValueException {
 						if(val == get()) return;
 						
 						if(val)
@@ -259,18 +259,17 @@ public class NodeStats implements Persistable {
 		
 		statsConfig.register("ignoreLocalVsRemoteBandwidthLiability", false, sortOrder++, true, false, "NodeStat.ignoreLocalVsRemoteBandwidthLiability", "NodeStat.ignoreLocalVsRemoteBandwidthLiabilityLong", new BooleanCallback() {
 
-			public boolean get() {
+			public Boolean get() {
 				synchronized(NodeStats.this) {
 					return ignoreLocalVsRemoteBandwidthLiability;
 				}
 			}
 
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				synchronized(NodeStats.this) {
 					ignoreLocalVsRemoteBandwidthLiability = val;
 				}
 			}
-			
 		});
 
 		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false, 

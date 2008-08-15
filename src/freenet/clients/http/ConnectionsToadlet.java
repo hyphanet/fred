@@ -120,7 +120,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				long total2 = secondNode.getTotalInputBytes()+secondNode.getTotalOutputBytes();
 				return compareLongs(total1, total2);
 			}else if(sortBy.equals("selection_percentage")){
-				return compareLongs(firstNode.getNumberOfSelections(), secondNode.getNumberOfSelections());
+				long sinceWhen = System.currentTimeMillis() - PeerNode.SELECTION_SAMPLING_PERIOD;
+				return compareInts(firstNode.getNumberOfSelections().headSet(sinceWhen).size(), secondNode.getNumberOfSelections().headSet(sinceWhen).size());
 			}else if(sortBy.equals("time_delta")){
 				return compareLongs(firstNode.getClockDelta(), secondNode.getClockDelta());
 			}else if(sortBy.equals(("uptime"))){
@@ -418,9 +419,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 					}
 				}
 				
-				long numberOfSelectionSamples = peers.getNumberOfSelectionSamples();
-				for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {
-					
+				int numberOfSelectionSamples = peers.getNumberOfSelectionSamples().tailSet(now - PeerNode.SELECTION_SAMPLING_PERIOD).size();
+				for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {					
 					PeerNodeStatus peerNodeStatus = peerNodeStatuses[peerIndex];
 					drawRow(peerTable, peerNodeStatus, mode >= PageMaker.MODE_ADVANCED, fProxyJavascriptEnabled, now, path, enablePeerActions, endCols, drawMessageTypes, numberOfSelectionSamples);
 					
@@ -693,9 +693,11 @@ public abstract class ConnectionsToadlet extends Toadlet {
 
 	abstract protected SimpleFieldSet getNoderef();
 
-	private void drawRow(HTMLNode peerTable, PeerNodeStatus peerNodeStatus, boolean advancedModeEnabled, boolean fProxyJavascriptEnabled, long now, String path, boolean enablePeerActions, SimpleColumn[] endCols, boolean drawMessageTypes, long numberOfSelectionSamples) {
-		HTMLNode peerRow = peerTable.addChild("tr");
-
+	private void drawRow(HTMLNode peerTable, PeerNodeStatus peerNodeStatus, boolean advancedModeEnabled, boolean fProxyJavascriptEnabled, long now, String path, boolean enablePeerActions, SimpleColumn[] endCols, boolean drawMessageTypes, int numberOfSelectionSamples) {
+		int peerSelectionCount = peerNodeStatus.getNumberOfSelections().tailSet(now - PeerNode.SELECTION_SAMPLING_PERIOD).size();
+		int peerSelectionPercentage = (numberOfSelectionSamples > 0 ? (peerSelectionCount*100/numberOfSelectionSamples) : 0);
+		HTMLNode peerRow = peerTable.addChild("tr", "class", "darknet_connections_"+(peerSelectionPercentage > PeerNode.SELECTION_PERCENTAGE_WARNING ? "warning" : "normal"));
+		
 		if(enablePeerActions) {
 			// check box column
 			peerRow.addChild("td", "class", "peer-marker").addChild("input", new String[] { "type", "name" }, new String[] { "checkbox", "node_" + peerNodeStatus.hashCode() });
@@ -775,7 +777,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			// percent of time connected column
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", fix1.format(peerNodeStatus.getPercentTimeRoutableConnection()));
 			// selection stats
-			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", (numberOfSelectionSamples > 0 ? ((peerNodeStatus.getNumberOfSelections()*100/numberOfSelectionSamples)+"%") : "N/A"));
+			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", (numberOfSelectionSamples > 0 ? (peerSelectionPercentage+"%") : "N/A"));
 			// total traffic column
 			peerRow.addChild("td", "class", "peer-idle" /* FIXME */).addChild("#", SizeUtil.formatSize(peerNodeStatus.getTotalInputBytes())+" / "+SizeUtil.formatSize(peerNodeStatus.getTotalOutputBytes())+"/"+SizeUtil.formatSize(peerNodeStatus.getResendBytesSent()));
 			// congestion control

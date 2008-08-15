@@ -378,6 +378,10 @@ tr.messagetypes {
 	text-align: center;
 }
 
+tr.darknet_connections_warning {
+	background-color: #ffff00;
+}
+
 table.sentmessagetypes {
 	display: inline;
 }

@@ -393,6 +393,8 @@ public class NodeStarter implements WrapperListener {
 		configFS.put("node.opennet.oneConnectionPerIP", false);
 		configFS.put("node.opennet.assumeNATed", true);
 		configFS.put("node.opennet.connectToSeednodes", connectToSeednodes);
+		configFS.put("node.encryptTempBuckets", false);
+		configFS.put("node.encryptPersistentTempBuckets", false);
 		
 		PersistentConfig config = new PersistentConfig(configFS);
 

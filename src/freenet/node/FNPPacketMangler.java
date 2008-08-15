@@ -43,7 +43,6 @@ import freenet.support.ByteArrayWrapper;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
-import freenet.support.StringArray;
 import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
 import freenet.support.io.NativeThread;
@@ -95,7 +94,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/* How often shall we generate a new exponential and add it to the FIFO? */
 	public final static int DH_GENERATION_INTERVAL = 30000; // 30sec
 	/* How big is the FIFO? */
-	public final static int DH_CONTEXT_BUFFER_SIZE = 10;
+	public final static int DH_CONTEXT_BUFFER_SIZE = 20;
 	/*
 	* The FIFO itself
 	* Get a lock on dhContextFIFO before touching it!
@@ -1634,10 +1633,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	private void sendAuthPacket(byte[] output, BlockCipher cipher, PeerNode pn, Peer replyTo, boolean anonAuth) {
 		int length = output.length;
-		// FIXME shorten seednode phase 3/4 so it's within the limit
-//		if(length > sock.getMaxPacketSize()) {
-//			throw new IllegalStateException("Cannot send auth packet: too long: "+length);
-//		}
+		if(length > sock.getMaxPacketSize()) {
+			throw new IllegalStateException("Cannot send auth packet: too long: "+length);
+		}
 		PCFBMode pcfb = PCFBMode.create(cipher);
 		byte[] iv = new byte[pcfb.lengthIV()];
 		node.random.nextBytes(iv);
@@ -2077,7 +2075,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				alreadyReported[x] = mi.alreadyReportedBytes;
 				x++;
 				if(mi.cb != null) callbacksCount += mi.cb.length;
-				if(logMINOR) Logger.minor(this, "Sending: "+mi+" length "+data.length+" cb "+ StringArray.toString(mi.cb)+" reported "+mi.alreadyReportedBytes);
+				if(logMINOR) Logger.minor(this, "Sending: "+mi+" length "+data.length+" cb "+ Arrays.toString(mi.cb)+" reported "+mi.alreadyReportedBytes);
 				length += (data.length + 2);
 			}
 		}
@@ -2294,7 +2292,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(logMINOR) {
 			String log = "processOutgoingPreformatted("+Fields.hashCode(buf)+", "+offset+ ',' +length+ ',' +tracker+ ',' +packetNumber+ ',';
 			if(callbacks == null) log += "null";
-			else log += ""+callbacks.length+StringArray.toString(callbacks); // FIXME too verbose?
+			else log += ""+callbacks.length+Arrays.toString(callbacks); // FIXME too verbose?
 			Logger.minor(this, log);
 		}
 		if((tracker == null) || (!tracker.pn.isConnected())) {
@@ -2833,10 +2831,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			// reset the authenticator cache
 			authenticatorCache.clear();
 		}
-		if(logMINOR)
-			Logger.minor(this, "Reset the JFK transitent key because "+(isCacheTooBig ? ("the cache's capacity is exeeded ("+authenticatorCache.size()+')') : "it's time to rekey") + this);
 		node.getTicker().queueTimedJob(transientKeyRekeyer, "JFKmaybeResetTransitentKey "+now, TRANSIENT_KEY_REKEYING_MIN_INTERVAL, false);
-		Logger.normal(this, "JFK's TransientKey has been changed and the message cache flushed.");
+		Logger.normal(this, "JFK's TransientKey has been changed and the message cache flushed because "+(isCacheTooBig ? ("the cache is oversized ("+authenticatorCache.size()+')') : "it's time to rekey")+ " on " + this);
 		return true;
 	}
 

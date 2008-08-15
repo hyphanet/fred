@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
@@ -13,17 +12,13 @@ import java.util.Iterator;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.MutableBoolean;
 import freenet.support.api.Bucket;
+import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
-import freenet.support.io.FilenameGenerator;
-import freenet.support.io.PaddedEphemerallyEncryptedBucket;
-import freenet.support.io.TempFileBucket;
-import java.util.Random;
 
 /**
  * Cache of recently decoded archives:
@@ -38,9 +33,7 @@ public class ArchiveManager {
 
 	public static final String METADATA_NAME = ".metadata";
 	private static boolean logMINOR;
-	
-	final RandomSource strongPRNG;
-	final Random weakPRNG;
+
 	final long maxArchiveSize;
 	final long maxArchivedFileSize;
 	
@@ -57,8 +50,8 @@ public class ArchiveManager {
 	private long cachedData;
 	/** Map from ArchiveKey to ArchiveStoreElement */
 	private final LRUHashtable storedData;
-	/** Filename generator */
-	private final FilenameGenerator filenameGenerator;
+	/** Bucket Factory */
+	private final BucketFactory tempBucketFactory;
 
 	/**
 	 * Create an ArchiveManager.
@@ -75,7 +68,7 @@ public class ArchiveManager {
 	 * @param random A cryptographicaly secure random source
 	 * @param weakRandom A weak and cheap random source
 	 */
-	public ArchiveManager(int maxHandlers, long maxCachedData, long maxArchiveSize, long maxArchivedFileSize, int maxCachedElements, RandomSource random, Random weakRandom, FilenameGenerator filenameGenerator) {
+	public ArchiveManager(int maxHandlers, long maxCachedData, long maxArchiveSize, long maxArchivedFileSize, int maxCachedElements, BucketFactory tempBucketFactory) {
 		maxArchiveHandlers = maxHandlers;
 		archiveHandlers = new LRUHashtable();
 		this.maxCachedElements = maxCachedElements;
@@ -83,9 +76,7 @@ public class ArchiveManager {
 		storedData = new LRUHashtable();
 		this.maxArchiveSize = maxArchiveSize;
 		this.maxArchivedFileSize = maxArchivedFileSize;
-		this.strongPRNG = random;
-		this.weakPRNG = weakRandom;
-		this.filenameGenerator = filenameGenerator;
+		this.tempBucketFactory = tempBucketFactory;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
@@ -238,8 +229,7 @@ outer:		while(true) {
 				} else {
 					// Read the element
 					long realLen = 0;
-					TempStoreElement temp = makeTempStoreBucket(size);
-					Bucket output = temp.bucket;
+					Bucket output = tempBucketFactory.makeBucket(size);
 					OutputStream out = output.getOutputStream();
 
 					int readBytes;
@@ -249,7 +239,7 @@ outer:		while(true) {
 						if(readBytes > maxArchivedFileSize) {
 							addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize);
 							out.close();
-							temp.close();
+							output.free();
 							continue outer;
 						}
 					}
@@ -257,7 +247,7 @@ outer:		while(true) {
 					out.close();
 					if(name.equals(".metadata"))
 						gotMetadata = true;
-					addStoreElement(ctx, key, name, temp, gotElement, element, callback);
+					addStoreElement(ctx, key, name, output, gotElement, element, callback);
 					names.add(name);
 					trimStoredData();
 				}
@@ -313,18 +303,19 @@ outer:		while(true) {
 			addToDirectory(dir, name, "");
 		}
 		Metadata metadata = new Metadata(dir, "");
-		TempStoreElement element = makeTempStoreBucket(-1);
 		int x = 0;
+		Bucket bucket = null;
 		while(true) {
 			try {
+				bucket = tempBucketFactory.makeBucket(Metadata.MAX_SPLITFILE_PARAMS_LENGTH);
 				byte[] buf = metadata.writeToByteArray();
-				OutputStream os = element.bucket.getOutputStream();
+				OutputStream os = bucket.getOutputStream();
 				os.write(buf);
 				os.close();
-				return addStoreElement(ctx, key, ".metadata", element, gotElement, element2, callback);
+				return addStoreElement(ctx, key, ".metadata", bucket, gotElement, element2, callback);
 			} catch (MetadataUnresolvedException e) {
 				try {
-					x = resolve(e, x, element, ctx, key, gotElement, element2, callback);
+					x = resolve(e, x, bucket, ctx, key, gotElement, element2, callback);
 				} catch (IOException e1) {
 					throw new ArchiveFailureException("Failed to create metadata: "+e1, e1);
 				}
@@ -335,17 +326,17 @@ outer:		while(true) {
 		}
 	}
 	
-	private int resolve(MetadataUnresolvedException e, int x, TempStoreElement element, ArchiveStoreContext ctx, FreenetURI key, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback) throws IOException, ArchiveFailureException {
+	private int resolve(MetadataUnresolvedException e, int x, Bucket bucket, ArchiveStoreContext ctx, FreenetURI key, MutableBoolean gotElement, String element2, ArchiveExtractCallback callback) throws IOException, ArchiveFailureException {
 		Metadata[] m = e.mustResolve;
 		for(int i=0;i<m.length;i++) {
 			try {
 				byte[] buf = m[i].writeToByteArray();
-				OutputStream os = element.bucket.getOutputStream();
+				OutputStream os = bucket.getOutputStream();
 				os.write(buf);
 				os.close();
-				addStoreElement(ctx, key, ".metadata-"+(x++), element, gotElement, element2, callback);
+				addStoreElement(ctx, key, ".metadata-"+(x++), bucket, gotElement, element2, callback);
 			} catch (MetadataUnresolvedException e1) {
-				x = resolve(e, x, element, ctx, key, gotElement, element2, callback);
+				x = resolve(e, x, bucket, ctx, key, gotElement, element2, callback);
 			}
 		}
 		return x;
@@ -413,7 +404,7 @@ outer:		while(true) {
 	 * @throws ArchiveFailureException If a failure occurred resulting in the data not being readable. Only happens if
 	 * callback != null.
 	 */
-	private ArchiveStoreItem addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, TempStoreElement temp, MutableBoolean gotElement, String callbackName, ArchiveExtractCallback callback) throws ArchiveFailureException {
+	private ArchiveStoreItem addStoreElement(ArchiveStoreContext ctx, FreenetURI key, String name, Bucket temp, MutableBoolean gotElement, String callbackName, ArchiveExtractCallback callback) throws ArchiveFailureException {
 		RealArchiveStoreItem element = new RealArchiveStoreItem(ctx, key, name, temp);
 		if(logMINOR) Logger.minor(this, "Adding store element: "+element+" ( "+key+ ' ' +name+" size "+element.spaceUsed()+" )");
 		ArchiveStoreItem oldItem;
@@ -462,23 +453,6 @@ outer:		while(true) {
 			item.close();
 		}
 		}
-	}
-
-	/** 
-	 * Create a file Bucket in the store directory, encrypted using an ethereal key.
-	 * This is not yet associated with a name, so will be deleted when it goes out
-	 * of scope. Not counted towards allocated data as will be short-lived and will not
-	 * go over the maximum size. Will obviously keep its key when we move it to main.
-	 */
-	private TempStoreElement makeTempStoreBucket(long size) {
-		long id = filenameGenerator.makeRandomFilename();
-		File myFile = filenameGenerator.getFilename(id);
-		TempFileBucket fb = new TempFileBucket(id, filenameGenerator);
-		
-		byte[] cipherKey = new byte[32];
-		strongPRNG.nextBytes(cipherKey);
-		PaddedEphemerallyEncryptedBucket encryptedBucket = new PaddedEphemerallyEncryptedBucket(fb, 1024, strongPRNG, weakPRNG);
-		return new TempStoreElement(myFile, fb, encryptedBucket);
 	}
 
 	/**

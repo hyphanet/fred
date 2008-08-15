@@ -4,8 +4,6 @@ import freenet.node.FSParseException;
 import freenet.support.SimpleFieldSet;
 import java.util.Vector;
 
-import freenet.support.StringArray;
-
 public class BookmarkCategory extends Bookmark {
     public static final String NAME = "BookmarkCategory";
 
@@ -112,13 +110,13 @@ public class BookmarkCategory extends Bookmark {
     }
 
     public String[] toStrings() {
-        return StringArray.toArray(toStrings("").toArray());
+        return toStrings("").toArray(new String[0]);
     }
 
     // Iternal use only
 
-    private Vector toStrings(String prefix) {
-        Vector strings = new Vector();
+    private Vector<String> toStrings(String prefix) {
+        Vector<String> strings = new Vector<String>();
         BookmarkItems items = getItems();
         BookmarkCategories subCategories = getSubCategories();
         prefix += this.name + "/";

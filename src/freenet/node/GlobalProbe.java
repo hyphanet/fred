@@ -4,7 +4,7 @@
 package freenet.node;
 
 import freenet.support.Logger;
-import freenet.support.StringArray;
+import java.util.Arrays;
 
 public class GlobalProbe implements Runnable {
 
@@ -33,7 +33,7 @@ public class GlobalProbe implements Runnable {
 			}
 
 			public void onTrace(long uid, double target, double nearest, double best, short htl, short counter, double location, long nodeUID, double[] peerLocs, long[] peerUIDs, double[] locsNotVisited, short forkCount, short linearCount, String reason, long prevUID) {
-				String msg = "Probe trace: UID="+uid+" target="+target+" nearest="+nearest+" best="+best+" htl="+htl+" counter="+counter+" location="+location+" node UID="+nodeUID+" prev UID="+prevUID+" peers="+NodeDispatcher.peersUIDsToString(peerUIDs, peerLocs)+" locs not visited: "+StringArray.toString(locsNotVisited)+" fork count: "+forkCount+" linear count: "+linearCount+" from "+reason;
+				String msg = "Probe trace: UID="+uid+" target="+target+" nearest="+nearest+" best="+best+" htl="+htl+" counter="+counter+" location="+location+" node UID="+nodeUID+" prev UID="+prevUID+" peers="+NodeDispatcher.peersUIDsToString(peerUIDs, peerLocs)+" locs not visited: "+Arrays.toString(locsNotVisited)+" fork count: "+forkCount+" linear count: "+linearCount+" from "+reason;
 				Logger.normal(this, msg);
 			}
 

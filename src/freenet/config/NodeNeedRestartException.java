@@ -10,9 +10,10 @@ package freenet.config;
  * it merely means that there are no immediately detectable problems with 
  * it.
  */
-public class InvalidConfigValueException extends ConfigException {
+public class NodeNeedRestartException extends ConfigException {
 
-	public InvalidConfigValueException(String msg) {
+	public NodeNeedRestartException(String msg) {
 		super(msg);
 	}
+
 }

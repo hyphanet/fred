@@ -38,10 +38,10 @@ import freenet.support.Executor;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
-import freenet.support.StringArray;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.IntCallback;
+import freenet.support.api.LongCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.ArrayBucketFactory;
 
@@ -80,12 +80,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	static boolean isPanicButtonToBeShown;
 	public static final int DEFAULT_FPROXY_PORT = 8888;
 	
-	class FProxySSLCallback implements BooleanCallback {
+	class FProxySSLCallback extends BooleanCallback  {
 		
-		public boolean get() {
+		public Boolean get() {
 			return ssl;
 		}
-		public void set(boolean val) throws InvalidConfigValueException {
+		public void set(Boolean val) throws InvalidConfigValueException {
 			if(val == get()) return;
 			if(!SSL.available()) {
 				throw new InvalidConfigValueException("Enable SSL support before use ssl with Fproxy");
@@ -93,22 +93,42 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			ssl = val;
 			throw new InvalidConfigValueException("Cannot change SSL on the fly, please restart freenet");
 		}
+		@Override
+		public boolean isReadOnly() {
+			return true;
+		}
+	}
+	
+	class FProxyPassthruMaxSize extends LongCallback  {
+		
+		public Long get() {
+			return FProxyToadlet.MAX_LENGTH;
+		}
+		
+		public void set(Long val) throws InvalidConfigValueException {
+			if(val == get()) return;
+			FProxyToadlet.MAX_LENGTH = val;
+		}
 	}
 
-	class FProxyPortCallback implements IntCallback {
+	class FProxyPortCallback extends IntCallback  {
 		
-		public int get() {
+		public Integer get() {
 			return port;
 		}
 		
-		public void set(int newPort) throws InvalidConfigValueException {
+		public void set(Integer newPort) throws InvalidConfigValueException {
 			if(port != newPort)
 				throw new InvalidConfigValueException(L10n.getString("cannotChangePortOnTheFly"));
 			// FIXME
 		}
+		@Override
+		public boolean isReadOnly() {
+			return true;
+		}
 	}
 	
-	class FProxyBindtoCallback implements StringCallback {
+	class FProxyBindtoCallback extends StringCallback  {
 		
 		public String get() {
 			return bindTo;
@@ -129,7 +149,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	class FProxyAllowedHostsCallback implements StringCallback {
+	class FProxyAllowedHostsCallback extends StringCallback  {
 	
 		public String get() {
 			return networkInterface.getAllowedHosts();
@@ -140,10 +160,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				networkInterface.setAllowedHosts(allowedHosts);
 			}
 		}
-		
 	}
 	
-	class FProxyCSSNameCallback implements StringCallback, EnumerableOptionCallback {
+	class FProxyCSSNameCallback extends StringCallback implements EnumerableOptionCallback {
 		
 		public String get() {
 			return cssName;
@@ -161,11 +180,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 		
 		public String[] getPossibleValues() {
-			return StringArray.toArray(pageMaker.getThemes().toArray());
+			return pageMaker.getThemes().toArray(new String[0]);
 		}
 	}
 	
-	class FProxyCSSOverrideCallback implements StringCallback {
+	class FProxyCSSOverrideCallback extends StringCallback  {
 
 		public String get() {
 			return (cssOverride == null ? "" : cssOverride.toString());
@@ -187,14 +206,14 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	class FProxyEnabledCallback implements BooleanCallback {
+	class FProxyEnabledCallback extends BooleanCallback  {
 		
-		public boolean get() {
+		public Boolean get() {
 			synchronized(SimpleToadletServer.this) {
 				return myThread != null;
 			}
 		}
-		public void set(boolean val) throws InvalidConfigValueException {
+		public void set(Boolean val) throws InvalidConfigValueException {
 			if(val == get()) return;
 			synchronized(SimpleToadletServer.this) {
 				if(val) {
@@ -229,7 +248,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	private static class FProxyAdvancedModeEnabledCallback implements BooleanCallback {
+	private static class FProxyAdvancedModeEnabledCallback extends BooleanCallback  {
 		
 		private final SimpleToadletServer ts;
 		
@@ -237,17 +256,17 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			this.ts = ts;
 		}
 		
-		public boolean get() {
+		public Boolean get() {
 			return ts.isAdvancedModeEnabled();
 		}
 		
-		public void set(boolean val) throws InvalidConfigValueException {
+		public void set(Boolean val) throws InvalidConfigValueException {
 			if(val == get()) return;
 				ts.enableAdvancedMode(val);
 		}
 	}
 	
-	private static class FProxyJavascriptEnabledCallback implements BooleanCallback {
+	private static class FProxyJavascriptEnabledCallback extends BooleanCallback  {
 		
 		private final SimpleToadletServer ts;
 		
@@ -255,11 +274,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			this.ts = ts;
 		}
 		
-		public boolean get() {
+		public Boolean get() {
 			return ts.isFProxyJavascriptEnabled();
 		}
 		
-		public void set(boolean val) throws InvalidConfigValueException {
+		public void set(Boolean val) throws InvalidConfigValueException {
 			if(val == get()) return;
 				ts.enableFProxyJavascript(val);
 		}
@@ -340,11 +359,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyJavascriptEnabledCallback(this));
 		fproxyConfig.register("showPanicButton", false, configItemOrder++, true, true, "SimpleToadletServer.panicButton", "SimpleToadletServer.panicButtonLong",
 				new BooleanCallback(){
-				public boolean get(){
+				public Boolean get() {
 					return SimpleToadletServer.isPanicButtonToBeShown;
 				}
 			
-				public void set(boolean value){
+				public void set(Boolean value) {
 					if(value == SimpleToadletServer.isPanicButtonToBeShown) return;
 					else	SimpleToadletServer.isPanicButtonToBeShown = value;
 				}
@@ -358,13 +377,13 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		fproxyConfig.register("enablePersistentConnections", false, configItemOrder++, true, false, "SimpleToadletServer.enablePersistentConnections", "SimpleToadletServer.enablePersistentConnectionsLong",
 				new BooleanCallback() {
 
-					public boolean get() {
+					public Boolean get() {
 						synchronized(SimpleToadletServer.this) {
 							return enablePersistentConnections;
 						}
 					}
 
-					public void set(boolean val) throws InvalidConfigValueException {
+					public void set(Boolean val) throws InvalidConfigValueException {
 						synchronized(SimpleToadletServer.this) {
 							enablePersistentConnections = val;
 						}
@@ -381,19 +400,22 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		fproxyConfig.register("enableInlinePrefetch", false, configItemOrder++, true, false, "SimpleToadletServer.enableInlinePrefetch", "SimpleToadletServer.enableInlinePrefetchLong",
 				new BooleanCallback() {
 
-					public boolean get() {
+					public Boolean get() {
 						synchronized(SimpleToadletServer.this) {
 							return enableInlinePrefetch;
 						}
 					}
 
-					public void set(boolean val) throws InvalidConfigValueException {
+					public void set(Boolean val) throws InvalidConfigValueException {
 						synchronized(SimpleToadletServer.this) {
 							enableInlinePrefetch = val;
 						}
 					}
 		});
 		enableInlinePrefetch = fproxyConfig.getBoolean("enableInlinePrefetch");
+		
+		fproxyConfig.register("passthroughMaxSize", 2L*1024*1024, configItemOrder++, true, false, "SimpleToadletServer.passthroughMaxSize", "SimpleToadletServer.passthroughMaxSizeLong", new FProxyPassthruMaxSize());
+		FProxyToadlet.MAX_LENGTH = fproxyConfig.getLong("passthroughMaxSize");
 		
 		fproxyConfig.register("allowedHosts", "127.0.0.1,0:0:0:0:0:0:0:1", configItemOrder++, true, true, "SimpleToadletServer.allowedHosts", "SimpleToadletServer.allowedHostsLong",
 				new FProxyAllowedHostsCallback());
@@ -413,10 +435,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		allowedFullAccess = new AllowedHosts(fproxyConfig.getString("allowedHostsFullAccess"));
 		fproxyConfig.register("doRobots", false, configItemOrder++, true, false, "SimpleToadletServer.doRobots", "SimpleToadletServer.doRobotsLong",
 				new BooleanCallback() {
-					public boolean get() {
+					public Boolean get() {
 						return doRobots;
 					}
-					public void set(boolean val) throws InvalidConfigValueException {
+					public void set(Boolean val) throws InvalidConfigValueException {
 						doRobots = val;
 					}
 		});

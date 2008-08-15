@@ -17,6 +17,7 @@ public class MeaningfulNodeNameUserAlert extends AbstractUserAlert {
 		this.node = n;
 	}
 	
+	@Override
 	public String getTitle() {
 		return l10n("noNodeNickTitle");
 	}
@@ -25,14 +26,17 @@ public class MeaningfulNodeNameUserAlert extends AbstractUserAlert {
 		return L10n.getString("MeaningfulNodeNameUserAlert."+key);
 	}
 
+	@Override
 	public String getText() {
 		return l10n("noNodeNick");
 	}
 	
+	@Override
 	public String getShortText() {
 		return l10n("noNodeNickShort");
 	}
 
+	@Override
 	public HTMLNode getHTMLText() {
 		SubConfig sc = node.config.get("node");
 		Option o = sc.getOption("name");
@@ -55,4 +59,8 @@ public class MeaningfulNodeNameUserAlert extends AbstractUserAlert {
 		return alertNode;
 	}
 
+	@Override
+	public boolean isValid() {
+		return node.peers.anyDarknetPeers();
+	}
 }

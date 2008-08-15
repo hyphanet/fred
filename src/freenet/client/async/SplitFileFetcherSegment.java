@@ -227,7 +227,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 					}
 				}
 			}
-			decodedData = fetchContext.bucketFactory.makeBucket(-1);
+			decodedData = fetchContext.bucketFactory.makeBucket(maxBlockLength * dataBuckets.length);
 			if(logMINOR) Logger.minor(this, "Copying data from data blocks");
 			OutputStream os = decodedData.getOutputStream();
 			for(int i=0;i<dataBuckets.length;i++) {
@@ -261,7 +261,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 
 		// Encode any check blocks we don't have
 		if(codec != null) {
-			codec.addToQueue(new FECJob(codec, dataBuckets, checkBuckets, 32768, fetchContext.bucketFactory, this, false));
+			codec.addToQueue(new FECJob(codec, dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, fetchContext.bucketFactory, this, false));
 		}
 	}
 

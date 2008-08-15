@@ -98,7 +98,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		curMaxTempLength = Long.MAX_VALUE;
 		curMaxMetadataLength = 1024 * 1024;
 		this.cacheLocalRequests = cacheLocalRequests;
-		this.persistentBucketFactory = node.persistentEncryptedTempBucketFactory;
+		this.persistentBucketFactory = node.persistentTempBucketFactory;
 		this.healingQueue = node.getHealingQueue();
 		this.blockEncoder = node.backgroundBlockEncoder;
 	}

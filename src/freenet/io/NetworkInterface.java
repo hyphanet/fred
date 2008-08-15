@@ -138,6 +138,7 @@ public class NetworkInterface {
 			InetSocketAddress addr = null;
 			try {
 				addr = new InetSocketAddress((String) bindToTokenList.get(serverSocketIndex), port);
+				serverSocket.setReuseAddress(true);
 				serverSocket.bind(addr);
 			} catch (SocketException e) {
 				if(ignoreUnbindableIP6 && addr != null && addr.getAddress() instanceof Inet6Address)

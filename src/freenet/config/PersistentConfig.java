@@ -36,15 +36,15 @@ public class PersistentConfig extends Config {
 	}
 	
 	public SimpleFieldSet exportFieldSet(boolean withDefaults) {
-		return exportFieldSet(Config.CONFIG_REQUEST_TYPE_CURRENT_SETTINGS, withDefaults);
+		return exportFieldSet(Config.RequestType.CURRENT_SETTINGS, withDefaults);
 	}
 	
-	public SimpleFieldSet exportFieldSet(int configRequestType, boolean withDefaults) {
+	public SimpleFieldSet exportFieldSet(Config.RequestType configRequestType, boolean withDefaults) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		SubConfig[] configs;
 		synchronized(this) {
 			// FIXME maybe keep a cache of this?
-			configs = (SubConfig[]) configsByPrefix.values().toArray(new SubConfig[configsByPrefix.size()]);
+			configs = configsByPrefix.values().toArray(new SubConfig[configsByPrefix.size()]);
 		}
 		SubConfig current;
 		for(int i=0;i<configs.length;i++) {

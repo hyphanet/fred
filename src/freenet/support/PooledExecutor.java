@@ -16,9 +16,9 @@ import java.util.ArrayList;
 public class PooledExecutor implements Executor {
 
 	/** All threads running or waiting */
-	private final ArrayList[] runningThreads /* <MyThread> */ = new ArrayList[NativeThread.JAVA_PRIORITY_RANGE + 1];
+	private final ArrayList<MyThread>[] runningThreads = new ArrayList[NativeThread.JAVA_PRIORITY_RANGE + 1];
 	/** Threads waiting for a job */
-	private final ArrayList[] waitingThreads /* <MyThread> */ = new ArrayList[runningThreads.length];
+	private final ArrayList<MyThread>[] waitingThreads = new ArrayList[runningThreads.length];
 	long[] threadCounter = new long[runningThreads.length];
 	private long jobCount;
 	private long jobMisses;
@@ -64,7 +64,7 @@ public class PooledExecutor implements Executor {
 			synchronized(this) {
 				jobCount++;
 				if(!waitingThreads[prio - 1].isEmpty()) {
-					t = (MyThread) waitingThreads[prio - 1].remove(waitingThreads[prio - 1].size() - 1);
+					t = waitingThreads[prio - 1].remove(waitingThreads[prio - 1].size() - 1);
 					if(logMINOR)
 						Logger.minor(this, "Reusing thread " + t);
 				} else {
@@ -140,6 +140,7 @@ public class PooledExecutor implements Executor {
 			threadNo = threadCounter;
 		}
 
+		@Override
 		public void run() {
 			super.run();
 			long ranJobs = 0;
