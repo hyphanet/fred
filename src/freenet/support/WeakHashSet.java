@@ -5,50 +5,60 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.WeakHashMap;
 
-public class WeakHashSet extends AbstractSet {
-	private final WeakHashMap map;
+public class WeakHashSet<E> extends AbstractSet<E> {
+	private final WeakHashMap<E, Object> map;
 	
 	public WeakHashSet() {
-		map = new WeakHashMap();
+		map = new WeakHashMap<E, Object>();
 	}
 
-	public boolean add(Object key) {
+	@Override
+    public boolean add(E key) {
 		return map.put(key, null) == null;
 	}
 
-	public void clear() {
+	@Override
+    public void clear() {
 		map.clear();
 	}
 
-	public boolean contains(Object key) {
+	@Override
+    public boolean contains(Object key) {
 		return map.containsKey(key);
 	}
 
-	public boolean containsAll(Collection arg0) {
+	@Override
+    public boolean containsAll(Collection<?> arg0) {
 		return map.keySet().containsAll(arg0);
 	}
 
-	public boolean isEmpty() {
+	@Override
+    public boolean isEmpty() {
 		return map.isEmpty();
 	}
 
-	public Iterator iterator() {
+	@Override
+    public Iterator<E> iterator() {
 		return map.keySet().iterator();
 	}
 
-	public boolean remove(Object key) {
+	@Override
+    public boolean remove(Object key) {
 		return map.remove(key) != null;
 	}
 
-	public int size() {
+	@Override
+    public int size() {
 		return map.size();
 	}
 
-	public Object[] toArray() {
+	@Override
+    public Object[] toArray() {
 		return map.keySet().toArray();
 	}
 
-	public Object[] toArray(Object[] arg0) {
+	@Override
+    public <T> T[] toArray(T[] arg0) {
 		return map.keySet().toArray(arg0);
 	}
 }
