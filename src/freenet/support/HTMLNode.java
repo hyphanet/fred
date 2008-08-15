@@ -161,21 +161,22 @@ public class HTMLNode implements XMLCharacterClasses {
 	}
 
 	public StringBuilder generate(StringBuilder tagBuffer) {
-		if ("#".equals(name) && (content != null)) {
-			HTMLEncoder.encodeToBuffer(content, tagBuffer);
+		if("#".equals(name)) {
+			if(content != null) {
+				HTMLEncoder.encodeToBuffer(content, tagBuffer);
+				return tagBuffer;
+			}
+			
+			for(int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
+				HTMLNode childNode = children.get(childIndex);
+				childNode.generate(tagBuffer);
+			}
 			return tagBuffer;
 		}
 		// Perhaps this should be something else, but since I don't know if '#' was not just arbitrary chosen, I'll just pick '%'
 		// This allows non-encoded text to be appended to the tag buffer
 		if ("%".equals(name)) {
 			tagBuffer.append(content);
-			return tagBuffer;
-		}
-		if ("#".equals(name)) {
-			for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
-				HTMLNode childNode = children.get(childIndex);
-				childNode.generate(tagBuffer);
-			}
 			return tagBuffer;
 		}
 		tagBuffer.append('<').append(name);
