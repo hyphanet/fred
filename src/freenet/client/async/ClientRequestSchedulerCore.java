@@ -551,11 +551,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	
 	class RegisterMeRunner implements DBJob {
 
-		@Override
-		public String toString() {
-			return "DBJob";
-		}
-		
 		public void run(ObjectContainer container, ClientContext context) {
 			if(sched.databaseExecutor.getQueueSize(NativeThread.NORM_PRIORITY) > 100) {
 				// If the queue isn't empty, reschedule at NORM-1
