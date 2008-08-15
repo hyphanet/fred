@@ -61,7 +61,7 @@ public class HTMLNode implements XMLCharacterClasses {
 			}
 		}
 		this.name = name.toLowerCase(Locale.ENGLISH);
-		if (content != null && !name.equals("#") && !name.equals("%")) {
+		if (content != null && !("#").equals(name)&& !("%").equals(name)) {
 			addChild(new HTMLNode("#", content));
 			this.content = null;
 		} else
@@ -192,14 +192,14 @@ public class HTMLNode implements XMLCharacterClasses {
 			tagBuffer.append('"');
 		}
 		if (children.size() == 0) {
-			if (name.equals("textarea") || name.equals("div") || name.equals("a")) {
-                tagBuffer.append("></").append(name).append('>');
+			if ("textarea".equals(name) || ("div").equals(name) || ("a").equals(name)) {
+				tagBuffer.append("></").append(name).append('>');
 			} else {
 				tagBuffer.append(" />");
 			}
 		} else {
 			tagBuffer.append('>');
-			if(name.equals("div") || name.equals("form") || name.equals("input") || name.equals("script") || name.equals("table") || name.equals("tr") || name.equals("td")) {
+			if(("div").equals(name) || ("form").equals(name) || ("input").equals(name) || ("script").equals(name) || ("table").equals(name) || ("tr").equals(name) || ("td").equals(name)) {
 				tagBuffer.append('\n');
 			}
 			for (int childIndex = 0, childCount = children.size(); childIndex < childCount; childIndex++) {
@@ -207,7 +207,7 @@ public class HTMLNode implements XMLCharacterClasses {
 				childNode.generate(tagBuffer);
 			}
 			tagBuffer.append("</").append(name).append('>');
-			if(name.equals("div") || name.equals("form") || name.equals("input") || name.equals("li") || name.equals("option") || name.equals("script") || name.equals("table") || name.equals("tr") || name.equals("td")) {
+			if(("div").equals(name)|| ("form").equals(name)|| ("input").equals(name)|| ("li").equals(name)|| ("option").equals(name)|| ("script").equals(name)|| ("table").equals(name)|| ("tr").equals(name)|| ("td").equals(name)) {
 				tagBuffer.append('\n');
 			}
 		}
