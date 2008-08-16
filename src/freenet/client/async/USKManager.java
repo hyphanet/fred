@@ -10,7 +10,7 @@ import freenet.client.FetchContext;
 import freenet.keys.USK;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
-import freenet.node.Ticker;
+import freenet.support.Executor;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 
@@ -42,7 +42,7 @@ public class USKManager {
 	final ClientRequestScheduler chkRequestScheduler;
 	final ClientRequestScheduler sskRequestScheduler;
 	
-	final Ticker ticker;
+	final Executor executor;
 
 	
 	public USKManager(NodeClientCore core) {
@@ -57,7 +57,7 @@ public class USKManager {
 		checkersByUSK = new HashMap();
 		backgroundFetchersByClearUSK = new HashMap();
 		temporaryBackgroundFetchersLRU = new LRUQueue();
-		ticker = core.getTicker();
+		executor = core.getExecutor();
 	}
 
 	/**
@@ -152,13 +152,13 @@ public class USKManager {
 		}
 		if(callbacks != null) {
 			// Run off-thread, because of locking, and because client callbacks may take some time
-			ticker.queueTimedJob(new Runnable() {
-				public void run() {
-					USK usk = origUSK.copy(number);
-					for(int i=0;i<callbacks.length;i++)
-						callbacks[i].onFoundEdition(number, usk);
-				}
-			}, 0);
+			final USK usk = origUSK.copy(number);
+			for(final USKCallback callback : callbacks)
+				executor.execute(new Runnable() {
+					public void run() {
+						callback.onFoundEdition(number, usk);
+					}
+				}, "USKManager callback executor for " +callback);
 		}
 	}
 	
@@ -204,11 +204,11 @@ public class USKManager {
 			cb.onFoundEdition(curEd, origUSK.copy(curEd));
 		final USKFetcher fetcher = sched;
 		if(fetcher != null) {
-			ticker.queueTimedJob(new Runnable() {
+			executor.execute(new Runnable() {
 				public void run() {
 					fetcher.schedule();
 				}
-			}, 0);
+			}, "USKManager.schedule for "+fetcher);
 		}
 	}
 	
