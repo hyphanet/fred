@@ -24,18 +24,17 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 	 * @param utf If true, read as UTF-8, if false, read as ISO-8859-1.
 	 */
 	public String readLine(int maxLength, int bufferSize, boolean utf) throws IOException {
-		if(maxLength < bufferSize)
+		if(maxLength <= bufferSize)
 			bufferSize = maxLength + 1; // Buffer too big, shrink it (add 1 for the optional \r)
 
-		//if(!markSupported())
-		if(true)
+		if(!markSupported())
 			return readLineWithoutMarking(maxLength, bufferSize, utf);
 		
 		byte[] buf = new byte[Math.max(Math.min(128, maxLength), Math.min(1024, bufferSize))];
 		int ctr = 0;
+		mark((maxLength+1)*2); // Might be more than maxLengh if we use utf8
 		while(true) {
-			mark(maxLength);
-			int x = read(buf, ctr, buf.length - ctr -1);
+			int x = read(buf, ctr, buf.length - ctr);
 			if(x == -1) {
 				if(ctr == 0)
 					return null;
@@ -46,23 +45,21 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 				if(ctr >= maxLength)
 					throw new TooLongException();
 				if(buf[ctr] == '\n') {
-					boolean removeCR = false;
 					String toReturn = "";
 					if(ctr != 0) {
-						if(buf[ctr - 1] == '\r') {
-							ctr--;
-							removeCR = true;
-						}
-						toReturn = new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1");
+						boolean removeCR = (buf[ctr - 1] == '\r');
+						toReturn = new String(buf, 0, (removeCR ? ctr - 1 : ctr), utf ? "UTF-8" : "ISO-8859-1");
 					}
 					reset();
-					skip(ctr + (removeCR ? 2 : 1));
+					skip(ctr + 1);
 					return toReturn;
 				}
 			}
-			byte[] newBuf = new byte[Math.min(buf.length * 2, maxLength)];
-			System.arraycopy(buf, 0, newBuf, 0, buf.length);
-			buf = newBuf;
+			if(x > 0) {
+				byte[] newBuf = new byte[Math.min(buf.length * 2, maxLength)];
+				System.arraycopy(buf, 0, newBuf, 0, buf.length);
+				buf = newBuf;
+			}
 		}
 	}
 
