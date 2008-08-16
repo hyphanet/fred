@@ -136,10 +136,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		return fw.waitForCompletion();
 	}
 	
-	public void fetch(FreenetURI uri, long maxSize, Object context, ClientCallback callback, FetchContext fctx) throws FetchException {
+	public ClientGetter fetch(FreenetURI uri, long maxSize, Object context, ClientCallback callback, FetchContext fctx) throws FetchException {
 		if(uri == null) throw new NullPointerException();
 		ClientGetter get = new ClientGetter(callback, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, context, null, null);
 		get.start();
+		return get;
 	}
 	
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint) throws InsertException {
@@ -156,11 +157,12 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 		return pw.waitForCompletion();
 	}
 	
-	public void insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientCallback cb) throws InsertException {
+	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientCallback cb) throws InsertException {
 		ClientPutter put = new ClientPutter(cb, insert.getData(), insert.desiredURI, insert.clientMetadata, 
 				ctx, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, priorityClass, 
 				getCHKOnly, isMetadata, this, null, filenameHint, false);
 		put.start(false);
+		return put;
 	}
 
 	public FreenetURI insertRedirect(FreenetURI insertURI, FreenetURI targetURI) throws InsertException {
