@@ -104,7 +104,7 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
      * {@inheritDoc}
      * @see #forwardElements()
      */
-    public final Enumeration<DoublyLinkedList.Item<T>> elements() {
+    public final Enumeration<T> elements() {
         return forwardElements();
     }
 
@@ -354,14 +354,14 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
     /**
      * @return  an Enumeration of list elements from head to tail
      */
-    private Enumeration<DoublyLinkedList.Item<T>> forwardElements() {
+    private Enumeration<T> forwardElements() {
         return new ForwardWalker();
     }
 
     /**
      * @return  an Enumeration of list elements from tail to head
      */
-    protected Enumeration<DoublyLinkedList.Item<T>> reverseElements() {
+    protected Enumeration<T> reverseElements() {
         return new ReverseWalker();
     }
 
