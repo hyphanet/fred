@@ -988,7 +988,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* PeerManager in e.g. verified.
 	*/
 	public boolean isRoutable() {
-		//FIXME: isConnected() is redundant if 'isRoutable', right? ... currentLocation>1.0 is impossible.
 		return isConnected() && isRoutingCompatible() &&
 			!(currentLocation < 0.0 || currentLocation > 1.0);
 	}
