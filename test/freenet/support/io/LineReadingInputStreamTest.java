@@ -95,7 +95,12 @@ public class LineReadingInputStreamTest extends TestCase {
 		LineReadingInputStream lris1 = new LineReadingInputStream(bis1);
 		LineReadingInputStream lris2 = new LineReadingInputStream(bis2);
 		
-		while(bis1.available() > 0 || bis2.available() > 0)
-			assertEquals(lris2.readLine(MAX_LENGTH, BUFFER_SIZE, true), lris1.readLineWithoutMarking(MAX_LENGTH, BUFFER_SIZE, true));
+		while(bis1.available() > 0 || bis2.available() > 0) {
+			String stringWithoutMark =lris2.readLineWithoutMarking(MAX_LENGTH*2, BUFFER_SIZE, true);
+			String stringWithMark = lris1.readLine(MAX_LENGTH*2, BUFFER_SIZE, true);
+			assertEquals(stringWithMark, stringWithoutMark);
+		}
+		assertNull(lris1.readLine(MAX_LENGTH, BUFFER_SIZE, true));
+		assertNull(lris2.readLineWithoutMarking(MAX_LENGTH, BUFFER_SIZE, true));
 	}
 }
