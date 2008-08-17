@@ -28,18 +28,6 @@ public class LineReadingInputStreamTest extends TestCase {
 	public static final int MAX_LENGTH = 128;
 	public static final int BUFFER_SIZE = 128;
 	
-	public class MockInputStream extends InputStream {
-		public MockInputStream() {}
-
-		public int read() {
-			return -1;
-		}
-		
-		public int read(byte[] data, int offset, int len) {
-			return len;
-		}
-	}
-	
 	public void testReadLineWithoutMarking() throws Exception {
 		// try utf8
 		InputStream is = new ByteArrayInputStream(STRESSED_LINE.getBytes("utf-8"));
