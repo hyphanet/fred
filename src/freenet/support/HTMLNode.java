@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class HTMLNode implements XMLCharacterClasses {
@@ -44,9 +43,7 @@ public class HTMLNode implements XMLCharacterClasses {
 	}
 
 	public HTMLNode(String name, String[] attributeNames, String[] attributeValues, String content) {
-		
-		Matcher nameMatcher = namePattern.matcher(name);
-		if ((name == null) || (!"#".equals(name) && !"%".equals(name) && !nameMatcher.matches())) {
+		if ((name == null) || (!"#".equals(name) && !"%".equals(name) && !namePattern.matcher(name).matches())) {
 			throw new IllegalArgumentException("element name is not legal");
 		}
 		if ((attributeNames != null) && (attributeValues != null)) {
