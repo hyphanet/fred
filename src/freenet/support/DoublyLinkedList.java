@@ -6,36 +6,36 @@ import java.util.Enumeration;
  * Framework for managing a doubly linked list.
  * @author tavin
  */
-public interface DoublyLinkedList {
-    public abstract Object clone();
+public interface DoublyLinkedList<T> {
+    public abstract DoublyLinkedList<T> clone();
 
     /**
      * List element
      */
-    public interface Item {
+    public interface Item<T> {
 		/**
 		 * Get next {@link Item}. May or may not return
 		 * <code>null</code> if this is the last <code>Item</code>.
 		 * 
 		 * @see DoublyLinkedList#hasNext()
 		 */
-        Item getNext();
+        DoublyLinkedList.Item<T> getNext();
         /** Set next {@link Item} */
-        Item setNext(Item i);
+        DoublyLinkedList.Item<T> setNext(DoublyLinkedList.Item<T> i);
         /**
 	 * Get previous {@link Item}. May or may not return <code>null</code>
 	 * if this is the first <code>Item</code>.
 	 * 
 	 * @see DoublyLinkedList#hasNext()
 	 */
-        Item getPrev();
+        Item<T> getPrev();
         /** Get previous {@link Item} */
-        Item setPrev(Item i);
+        Item<T> setPrev(DoublyLinkedList.Item<T> i);
         
         /** Return the contained list. <strong>For sanity checking only.</strong> */
-        DoublyLinkedList getParent();
+        DoublyLinkedList<T> getParent();
         /** Set the contained list. <strong>For sanity checking only.</strong>*/
-        DoublyLinkedList setParent(DoublyLinkedList l);
+        DoublyLinkedList<T> setParent(DoublyLinkedList<T> l);
     }
     
     /** Clear this list */
@@ -61,11 +61,11 @@ public interface DoublyLinkedList {
     /**
      * Puts the item before the first item.
      */
-    void unshift(Item i);
+    void unshift(DoublyLinkedList.Item<T> i);
     /**
      * Put all items in the specified list before the first item.
      */
-    void unshift(DoublyLinkedList l);
+    void unshift(DoublyLinkedList<T> l);
     /**
      * Removes and returns the first item.
      */
@@ -73,16 +73,16 @@ public interface DoublyLinkedList {
     /**
      * Remove <tt>n</tt> elements from head and return them as a <code>DoublyLinkedList</code>.
      */
-    DoublyLinkedList shift(int n);
+    DoublyLinkedList<T> shift(int n);
 
     /**
      * Puts the item after the last item.
      */
-    void push(Item i);
+    void push(DoublyLinkedList.Item<T> i);
     /**
      * Puts all items in the specified list after the last item.
      */
-    void push(DoublyLinkedList l);
+    void push(DoublyLinkedList<T> l);
     /**
      * Removes and returns the last item.
      */
@@ -93,34 +93,34 @@ public interface DoublyLinkedList {
     DoublyLinkedList pop(int n);
 
     /** @return <code>true</code> if <code>i</code> has next item. (ie. not the last item); <code>false</code> otherwise */ 
-    boolean hasNext(Item i);
+    boolean hasNext(DoublyLinkedList.Item<T> i);
     /** @return <code>true</code> if <code>i</code> has previous item. (ie. not the first item); <code>false</code> otherwise */
-    boolean hasPrev(Item i);
+    boolean hasPrev(DoublyLinkedList.Item<T> i);
 
     /** @return next item of <code>i</code>. If this is the last element, return <code>null</code> */
-    Item next(Item i);
+    Item next(DoublyLinkedList.Item<T> i);
     /** @return previous item of <code>i</code>. If this is the first element, return <code>null</code> */
-    Item prev(Item i);
+    Item prev(DoublyLinkedList.Item<T> i);
     /** Remove and return a element 
      * @return  this item, or <code>null</code> if the item was not in the list
      */
-    Item remove(Item i);
+    Item remove(DoublyLinkedList.Item<T> i);
     /**
      * Inserts item <code>j</code> before item <code>i</code>.
      */
-    void insertPrev(Item i, Item j);
+    void insertPrev(DoublyLinkedList.Item<T> i, DoublyLinkedList.Item<T> j);
     /**
      * Inserts the entire {@link DoublyLinkedList} <code>l</code> before item <code>i</code>.
      */
-    void insertPrev(Item i, DoublyLinkedList l);  
+    void insertPrev(DoublyLinkedList.Item<T> i, DoublyLinkedList<T> l);  
     /**
      * Inserts item <code>j</code> after item <code>i</code.
      */
-    void insertNext(Item i, Item j);    
+    void insertNext(DoublyLinkedList.Item<T> i, DoublyLinkedList.Item<T> j);    
     /**
      * Inserts the entire {@link DoublyLinkedList} <code>l</code> after item <code>i</code>.
      */
-    void insertNext(Item i, DoublyLinkedList l);
+    void insertNext(DoublyLinkedList.Item<T> i, DoublyLinkedList<T> l);
 }
 
 

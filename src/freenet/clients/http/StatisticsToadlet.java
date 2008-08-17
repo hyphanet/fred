@@ -1118,6 +1118,7 @@ public class StatisticsToadlet extends Toadlet {
 			strength = 1 - ((double) age / MAX_CIRCLE_AGE_THRESHOLD );
 			histogramIndex = (int) (Math.floor(location.doubleValue() * HISTOGRAM_LENGTH));
 			histogram[histogramIndex]++;
+			
 			nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(location.doubleValue(), false, strength), "connected" }, "x");
 		}
 		nodeCircleInfoboxContent.addChild("span", new String[] { "style", "class" }, new String[] { generatePeerCircleStyleString(myLocation, true, 1.0), "me" }, "x");
@@ -1127,9 +1128,10 @@ public class StatisticsToadlet extends Toadlet {
 			nodeHistogramLegendCell = nodeHistogramLegendTableRow.addChild("td");
 			nodeHistogramGraphCell = nodeHistogramGraphTableRow.addChild("td", "style", "height: 100px;");
 			nodeHistogramLegendCell.addChild("div", "class", "histogramLabel").addChild("#", fix1p1.format(((double) i) / HISTOGRAM_LENGTH ));
-			//
 			histogramPercent = ((double) histogram[ i ] ) / nodeCount;
-			nodeHistogramGraphCell.addChild("div", new String[] { "class", "style" }, new String[] { "histogramConnected", "height: " + fix3pctUS.format(histogramPercent) + "; width: 100%;" }, "\u00a0");
+			
+			// Don't use HTMLNode here to speed things up
+			nodeHistogramGraphCell.addChild("%", "<div class=\"histogramConnected\" style=\"height: " + fix3pctUS.format(histogramPercent) + "; width: 100%;\">\u00a0</div>");
 		}
 	}
 	

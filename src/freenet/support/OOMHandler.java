@@ -8,8 +8,6 @@ import java.util.Set;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
-import freenet.support.Logger;
-
 /**
  * Do this processing as a standard response to an OutOfMemoryError
  */
@@ -25,7 +23,7 @@ public class OOMHandler {
 	/**
 	 * List of {@link OOMHook}s
 	 */
-	private static Set oomHooks = new WeakHashSet();
+	private static Set<OOMHook> oomHooks = new WeakHashSet<OOMHook>();
 	
 	public static void addOOMHook(OOMHook hook) {
 		synchronized (oomHooks) {
@@ -41,9 +39,9 @@ public class OOMHandler {
 		System.runFinalization();
 
 		// iterate all oom hooks
-		Iterator it = oomHooks.iterator();
+		Iterator<OOMHook> it = oomHooks.iterator();
 		while (it.hasNext()) {
-			OOMHook hook = ((OOMHook) it.next());
+			OOMHook hook = it.next();
 			if (hook != null) {
 				try {
 					hook.handleLowMemory();
@@ -77,9 +75,9 @@ public class OOMHandler {
 			System.runFinalization();
 
 			// iterate all oom hooks
-			Iterator it = oomHooks.iterator();
+			Iterator<OOMHook> it = oomHooks.iterator();
 			while (it.hasNext()) {
-				OOMHook hook = ((OOMHook) it.next());
+				OOMHook hook = it.next();
 				if (hook != null) {
 					try {
 						hook.handleOutOfMemory();

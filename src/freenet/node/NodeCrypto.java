@@ -352,9 +352,8 @@ public class NodeCrypto {
 			BigInteger m = new BigInteger(1, SHA256.digest(ref));
 			if(logMINOR) Logger.minor(this, "m = "+m.toString(16));
 			DSASignature _signature = DSA.sign(cryptoGroup, privKey, m, random);
-			// FIXME remove this ... eventually
-			if(!DSA.verify(pubKey, _signature, m, false))
-				Logger.error(this, "Signature failed!");
+			if(logMINOR && !DSA.verify(pubKey, _signature, m, false))
+				throw new NodeInitException(NodeInitException.EXIT_EXCEPTION_TO_DEBUG, mySignedReference);
 			return _signature;
 		} catch(UnsupportedEncodingException e){
 			//duh ?

@@ -988,7 +988,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* PeerManager in e.g. verified.
 	*/
 	public boolean isRoutable() {
-		//FIXME: isConnected() is redundant if 'isRoutable', right? ... currentLocation>1.0 is impossible.
 		return isConnected() && isRoutingCompatible() &&
 			!(currentLocation < 0.0 || currentLocation > 1.0);
 	}
@@ -3984,8 +3983,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 	
 	public SortedSet<Long> getNumberOfSelections() {
+		// FIXME: returning a copy is not an option: find a smarter way of dealing with the synchronization
 		synchronized(numberOfSelectionsSync) {
-			return new TreeSet<Long>(numberOfSelections);
+			return numberOfSelections;
 		}
 	}
 	

@@ -16,6 +16,7 @@
 
 package freenet.io;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -40,7 +41,7 @@ import freenet.support.Logger;
  * @author David Roden &lt;droden@gmail.com&gt;
  * @version $Id$
  */
-public class NetworkInterface {
+public class NetworkInterface implements Closeable {
     
         public static final String DEFAULT_BIND_TO = "127.0.0.1,0:0:0:0:0:0:0:1";
         

@@ -290,7 +290,7 @@ public class L10n {
 	private static String quoteReplacement(String s) {
 		if ((s.indexOf('\\') == -1) && (s.indexOf('$') == -1))
 			return s;
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for (int i=0; i<s.length(); i++) {
 			char c = s.charAt(i);
 			if (c == '\\') {

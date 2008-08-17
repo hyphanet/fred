@@ -209,7 +209,7 @@ public class NodeClientCore implements Persistable {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
 		}
 
-		nodeConfig.register("maxRAMBucketSize", "128KiB", sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
+		nodeConfig.register("maxRAMBucketSize", "32KiB", sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
 
 			public Long get() {
 				return (tempBucketFactory == null ? 0 : tempBucketFactory.getMaxRAMBucketSize());

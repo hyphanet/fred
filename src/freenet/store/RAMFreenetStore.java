@@ -17,7 +17,7 @@ public class RAMFreenetStore implements FreenetStore {
 		byte[] fullKey;
 	}
 	
-	private final LRUHashtable blocksByRoutingKey;
+	private final LRUHashtable<ByteArrayWrapper, Block> blocksByRoutingKey;
 	
 	private final StoreCallback callback;
 	
@@ -29,7 +29,7 @@ public class RAMFreenetStore implements FreenetStore {
 	
 	public RAMFreenetStore(StoreCallback callback, int maxKeys) {
 		this.callback = callback;
-		this.blocksByRoutingKey = new LRUHashtable();
+		this.blocksByRoutingKey = new LRUHashtable<ByteArrayWrapper, Block>();
 		this.maxKeys = maxKeys;
 		callback.setStore(this);
 	}
@@ -37,7 +37,7 @@ public class RAMFreenetStore implements FreenetStore {
 	public synchronized StorableBlock fetch(byte[] routingKey, byte[] fullKey,
 			boolean dontPromote) throws IOException {
 		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
-		Block block = (Block) blocksByRoutingKey.get(key);
+		Block block = blocksByRoutingKey.get(key);
 		if(block == null) {
 			misses++;
 			return null;
@@ -77,7 +77,7 @@ public class RAMFreenetStore implements FreenetStore {
 			KeyCollisionException {
 		writes++;
 		ByteArrayWrapper key = new ByteArrayWrapper(routingkey);
-		Block oldBlock = (Block) blocksByRoutingKey.get(key);
+		Block oldBlock = blocksByRoutingKey.get(key);
 		boolean storeFullKeys = callback.storeFullKeys();
 		if(oldBlock != null) {
 			if(callback.collisionPossible()) {

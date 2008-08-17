@@ -18,12 +18,8 @@
 
 package freenet.support.io;
 
+import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.io.Writer;
-import java.util.jar.JarFile;
 import java.util.zip.ZipFile;
 
 /**
@@ -36,77 +32,16 @@ import java.util.zip.ZipFile;
  * @version $Id$
  */
 public class Closer {
-
 	/**
-	 * Closes the given output stream.
+	 * Closes the given stream.
 	 * 
 	 * @param outputStream
 	 *            The output stream to close
 	 */
-	public static void close(OutputStream outputStream) {
-		if (outputStream != null) {
+	public static void close(Closeable closable) {
+		if (closable != null) {
 			try {
-				outputStream.close();
-			} catch (IOException ioe1) {
-			}
-		}
-	}
-
-	/**
-	 * Closes the given input stream.
-	 * 
-	 * @param inputStream
-	 *            The input stream to close
-	 */
-	public static void close(InputStream inputStream) {
-		if (inputStream != null) {
-			try {
-				inputStream.close();
-			} catch (IOException ioe1) {
-			}
-		}
-	}
-
-	/**
-	 * Closes the given writer.
-	 * 
-	 * @param writer
-	 *            The writer to close
-	 */
-	public static void close(Writer writer) {
-		if (writer != null) {
-			try {
-				writer.close();
-			} catch (IOException ioe1) {
-			}
-		}
-	}
-
-	/**
-	 * Closes the given reader.
-	 * 
-	 * @param reader
-	 *            The reader to close
-	 */
-	public static void close(Reader reader) {
-		if (reader != null) {
-			try {
-				reader.close();
-			} catch (IOException ioe1) {
-			}
-		}
-	}
-
-	/**
-	 * Closes the given jar file.
-	 * 
-	 * @param jarFile
-	 *            The jar file to close
-	 */
-	public static void close(JarFile jarFile) {
-		if (jarFile != null) {
-			try {
-				jarFile.close();
+				closable.close();
 			} catch (IOException e) {
 			}
 		}
