@@ -190,7 +190,9 @@ public class HTMLNode implements XMLCharacterClasses {
 		}
 		if (children.size() == 0) {
 			if ("textarea".equals(name) || ("div").equals(name) || ("a").equals(name)) {
-				tagBuffer.append("></").append(name).append('>');
+				tagBuffer.append("></");
+				tagBuffer.append(name);
+				tagBuffer.append('>');
 			} else {
 				tagBuffer.append(" />");
 			}
@@ -203,7 +205,9 @@ public class HTMLNode implements XMLCharacterClasses {
 				HTMLNode childNode = children.get(childIndex);
 				childNode.generate(tagBuffer);
 			}
-			tagBuffer.append("</").append(name).append('>');
+			tagBuffer.append("</");
+			tagBuffer.append(name);
+			tagBuffer.append('>');
 			if(("div").equals(name)|| ("form").equals(name)|| ("input").equals(name)|| ("li").equals(name)|| ("option").equals(name)|| ("script").equals(name)|| ("table").equals(name)|| ("tr").equals(name)|| ("td").equals(name)) {
 				tagBuffer.append('\n');
 			}
