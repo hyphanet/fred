@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
 import freenet.crypt.RandomSource;
@@ -6,32 +9,77 @@ import java.io.IOException;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
-/*
- * This code is part of FProxy, an HTTP proxy server for Freenet. It is
- * distributed under the GNU Public Licence (GPL) version 2. See
- * http://www.gnu.org/ for further details of the GPL.
- */
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Random;
 
 /**
  * Temporary Bucket Factory
- * 
- * @author giannij
  */
 public class TempBucketFactory implements BucketFactory {
+	public class TempBucket implements Bucket {
+		private Bucket currentBucket;
+		
+		public TempBucket(Bucket cur) {
+			this.currentBucket = cur;
+		}
+		
+		public final void migrateToFileBucket() throws IOException {
+			RAMBucket ramBucket = null;
+			synchronized(this) {
+				if(!isRAMBucket())
+					return;
+
+				ramBucket = (RAMBucket) currentBucket;
+				TempFileBucket tempFB = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator);
+				BucketTools.copy(currentBucket, tempFB);
+				currentBucket = tempFB;
+			}
+			ramBucket.free();
+		}
+		
+		public final synchronized boolean isRAMBucket() {
+			return (currentBucket instanceof RAMBucket);
+		}
+
+		public synchronized OutputStream getOutputStream() throws IOException {
+			return currentBucket.getOutputStream();
+		}
+
+		public synchronized InputStream getInputStream() throws IOException {
+			return currentBucket.getInputStream();
+		}
+
+		public synchronized String getName() {
+			return currentBucket.getName();
+		}
+
+		public synchronized long size() {
+			return currentBucket.size();
+		}
+
+		public synchronized boolean isReadOnly() {
+			return currentBucket.isReadOnly();
+		}
+
+		public synchronized void setReadOnly() {
+			currentBucket.setReadOnly();
+		}
+
+		public synchronized void free() {
+			currentBucket.free();
+		}
+	}
 
 	private class RAMBucket extends ArrayBucket {
-		private final long size;
-		
 		public RAMBucket(long size) {
-			super("RAMBucket");
-			this.size = size;
+			super("RAMBucket", size);
 		}
 		
 		@Override
 		public void free() {
 			super.free();
-			_hasFreed(size);
+			_hasFreed(size());
 		}
 	}
 	
@@ -45,8 +93,8 @@ public class TempBucketFactory implements BucketFactory {
 	public long maxRAMBucketSize;
 	public long maxRamUsed;
 
-	final RandomSource strongPRNG;
-	final Random weakPRNG;
+	private final RandomSource strongPRNG;
+	private final Random weakPRNG;
 	private volatile boolean reallyEncrypt;
 
 	// Storage accounting disabled by default.
@@ -111,7 +159,7 @@ public class TempBucketFactory implements BucketFactory {
 	 *                If it is not possible to create a temp bucket due to an
 	 *                I/O error
 	 */
-	public Bucket makeBucket(long size, float factor, long increment) throws IOException {
+	public TempBucket makeBucket(long size, float factor, long increment) throws IOException {
 		Bucket realBucket = null;
 		boolean isARAMBucket = false;
 		
@@ -122,8 +170,11 @@ public class TempBucketFactory implements BucketFactory {
 			}
 		}
 		
+		// Do we want a RAMBucket or a FileBucket?
 		realBucket = (isARAMBucket ? new RAMBucket(size) : new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator));
+		// Do we want it to be encrypted?
+		realBucket = (!reallyEncrypt ? realBucket : new PaddedEphemerallyEncryptedBucket(realBucket, 1024, strongPRNG, weakPRNG));
 		
-		return (!reallyEncrypt ? realBucket : new PaddedEphemerallyEncryptedBucket(realBucket, 1024, strongPRNG, weakPRNG));
+		return new TempBucket(realBucket);
 	}
 }
