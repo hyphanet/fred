@@ -123,6 +123,8 @@ public abstract class Key implements WritableToDataOutputStream {
     }
     
     static Bucket decompress(boolean isCompressed, byte[] output, int outputLength, BucketFactory bf, int maxLength, short compressionAlgorithm, boolean shortLength) throws CHKDecodeException, IOException {
+	    if(maxLength < 0)
+		    throw new IllegalArgumentException("maxlength="+maxLength);
         if(isCompressed) {
         	if(Logger.shouldLog(Logger.MINOR, Key.class))
         		Logger.minor(Key.class, "Decompressing "+output.length+" bytes in decode with codec "+compressionAlgorithm);
