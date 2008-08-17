@@ -42,7 +42,7 @@ public class KeyTracker {
     public final PeerNode pn;
     
     /** Are we the secondary key? */
-    private boolean isDeprecated;
+    private volatile boolean isDeprecated;
     
     /** Cipher to both encrypt outgoing packets with and decrypt
      * incoming ones. */
@@ -150,6 +150,7 @@ public class KeyTracker {
     }
     
     /** toString() - don't leak the key unless asked to */
+	@Override
     public String toString() {
         return super.toString()+" for "+pn.shortToString();
     }
@@ -190,6 +191,7 @@ public class KeyTracker {
          * and can trigger an otherwise empty packet to be sent. */
         long urgentTime;
         
+		@Override
         public String toString() {
             return super.toString()+": packet "+packetNumber+" urgent@"+urgentTime+ '(' +(System.currentTimeMillis()-urgentTime)+ ')';
         }
@@ -305,6 +307,7 @@ public class KeyTracker {
             super(packetNumber);
         }
         
+		@Override
         void sent() throws UpdatableSortedLinkedListKilledException {
             synchronized(resendRequestQueue) {
                 super.sent();
@@ -337,6 +340,7 @@ public class KeyTracker {
             }
         }
         
+		@Override
         void sent() throws UpdatableSortedLinkedListKilledException {
             synchronized(ackRequestQueue) {
                 super.sent();
@@ -405,7 +409,7 @@ public class KeyTracker {
      * @throws UpdatableSortedLinkedListKilledException 
      */
     private void removeResendRequest(int seqNumber) throws UpdatableSortedLinkedListKilledException {
-    	resendRequestQueue.removeByKey(new Integer(seqNumber));
+    	resendRequestQueue.removeByKey(seqNumber);
     }
 
     /**
@@ -588,7 +592,6 @@ public class KeyTracker {
             }
             pn.node.ps.wakeUp();
         } else {
-        	synchronized(this) {
         		String msg = "Asking me to resend packet "+seqNumber+
         			" which we haven't sent yet or which they have already acked (next="+nextPacketNumber+ ')';
         		// Might just be late, but could indicate something serious.
@@ -598,7 +601,6 @@ public class KeyTracker {
         		} else {
         			Logger.normal(this, msg);
         		}
-        	}
         }
     }
 
@@ -650,17 +652,19 @@ public class KeyTracker {
      * This is normal if we are the secondary key.
      * @param seqNumber The packet number lost.
      */
-    public synchronized void destForgotPacket(int seqNumber) {
+    public void destForgotPacket(int seqNumber) {
         if(isDeprecated) {
             Logger.normal(this, "Destination forgot packet: "+seqNumber);
         } else {
             Logger.error(this, "Destination forgot packet: "+seqNumber);
         }
+	synchronized(this) {
         try {
 			removeResendRequest(seqNumber);
 		} catch (UpdatableSortedLinkedListKilledException e) {
 			// Ignore
 		}
+	}
     }
 
     /**
