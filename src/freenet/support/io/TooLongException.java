@@ -9,4 +9,7 @@ import java.io.IOException;
 public class TooLongException extends IOException {
 	private static final long serialVersionUID = -1;
 
+	TooLongException(String s) {
+		super(s);
+	}
 }

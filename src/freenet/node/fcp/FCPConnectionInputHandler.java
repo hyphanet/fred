@@ -14,6 +14,7 @@ import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.Closer;
 import freenet.support.io.LineReadingInputStream;
+import freenet.support.io.TooLongException;
 
 public class FCPConnectionInputHandler implements Runnable {
 
@@ -31,6 +32,8 @@ public class FCPConnectionInputHandler implements Runnable {
 	    freenet.support.Logger.OSThread.logPID(this);
 		try {
 			realRun();
+		} catch (TooLongException e) {
+			Logger.normal(this, "Caught"+e.getMessage(),e);
 		} catch (IOException e) {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Caught "+e, e);
