@@ -43,8 +43,6 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 			}
 			// REDFLAG this is definitely safe with the above charsets, it may not be safe with some wierd ones. 
 			for(; ctr < buf.length; ctr++) {
-				if(ctr >= maxLength)
-					throw new TooLongException("We reached maxLength="+maxLength+ " parsing\n "+HexUtil.bytesToHex(buf, 0, ctr) + "\n" + new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1"));
 				if(buf[ctr] == '\n') {
 					String toReturn = "";
 					if(ctr != 0) {
@@ -55,6 +53,8 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 					skip(ctr + 1);
 					return toReturn;
 				}
+				if(ctr >= maxLength)
+					throw new TooLongException("We reached maxLength="+maxLength+ " parsing\n "+HexUtil.bytesToHex(buf, 0, ctr) + "\n" + new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1"));
 			}
 			if(x > 0) {
 				byte[] newBuf = new byte[Math.min(buf.length * 2, maxLength)];
