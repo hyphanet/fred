@@ -96,7 +96,7 @@ public class ArrayBucket implements Bucket {
 		public synchronized void write(byte b[], int off, int len) {
 			if(readOnly) throw new IllegalStateException("Read only");
 			long sizeIfWritten = size + len;
-			if(maxSize > -1 && maxSize < sizeIfWritten) // FIXME: should be IOE but how to do it?
+			if(logDEBUG && maxSize > -1 && maxSize < sizeIfWritten) // FIXME: should be IOE but how to do it?
 				throw new IllegalArgumentException("The maxSize of the bucket is "+maxSize+
 					" and writing "+len+ " bytes to it would make it oversize!");
 			super.write(b, off, len);
@@ -107,7 +107,7 @@ public class ArrayBucket implements Bucket {
 		public synchronized void write(int b) {
 			if(readOnly) throw new IllegalStateException("Read only");
 			long sizeIfWritten = size + 1;
-			if(maxSize > -1 && maxSize < sizeIfWritten) // FIXME: should be IOE but how to do it?
+			if(logDEBUG && maxSize > -1 && maxSize < sizeIfWritten) // FIXME: should be IOE but how to do it?
 				throw new IllegalArgumentException("The maxSize of the bucket is "+maxSize+
 					" and writing 1 byte to it would make it oversize!");
 			super.write(b);
