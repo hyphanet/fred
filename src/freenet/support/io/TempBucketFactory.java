@@ -74,6 +74,7 @@ public class TempBucketFactory implements BucketFactory {
 	private class RAMBucket extends ArrayBucket {
 		public RAMBucket(long size) {
 			super("RAMBucket", size);
+			_hasTaken(size);
 		}
 		
 		@Override
@@ -115,7 +116,11 @@ public class TempBucketFactory implements BucketFactory {
 		return makeBucket(size, factor, defaultIncrement);
 	}
 	
-	protected synchronized void _hasFreed(long size) {
+	private synchronized void _hasTaken(long size) {
+		bytesInUse += size;
+	}
+	
+	private synchronized void _hasFreed(long size) {
 		bytesInUse -= size;
 	}
 	
@@ -161,17 +166,16 @@ public class TempBucketFactory implements BucketFactory {
 	 */
 	public TempBucket makeBucket(long size, float factor, long increment) throws IOException {
 		Bucket realBucket = null;
-		boolean isARAMBucket = false;
+		boolean useRAMBucket = false;
 		
 		synchronized(this) {
 			if((size > 0) && (size <= maxRAMBucketSize) && (bytesInUse <= maxRamUsed)) {
-				bytesInUse += size;
-				isARAMBucket = true;
+				useRAMBucket = true;
 			}
 		}
 		
 		// Do we want a RAMBucket or a FileBucket?
-		realBucket = (isARAMBucket ? new RAMBucket(size) : new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator));
+		realBucket = (useRAMBucket ? new RAMBucket(size) : new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator));
 		// Do we want it to be encrypted?
 		realBucket = (!reallyEncrypt ? realBucket : new PaddedEphemerallyEncryptedBucket(realBucket, 1024, strongPRNG, weakPRNG));
 		
