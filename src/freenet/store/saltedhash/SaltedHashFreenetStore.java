@@ -1428,6 +1428,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	public void setUserAlertManager(UserAlertManager userAlertManager) {
 		if (cleanerStatusUserAlert != null)
 			userAlertManager.register(cleanerStatusUserAlert);
+		// TODO change useralertmanager? is this a valid case?
+		this.userAlertManager = userAlertManager;
 	}
 
 	public void setMaxKeys(long newStoreSize, boolean shrinkNow) throws IOException {
