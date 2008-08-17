@@ -1,5 +1,6 @@
 package freenet.support.io;
 
+import freenet.support.Logger;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -23,6 +24,8 @@ public class ArrayBucket implements Bucket {
 	private final long maxSize;
 	private long size;
 	
+	private static boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, ArrayBucket.class);
+	
 	public ArrayBucket(long maxSize) {
 		this("ArrayBucket", maxSize);
 	}
@@ -33,7 +36,7 @@ public class ArrayBucket implements Bucket {
 	}
 
 	public ArrayBucket(byte[] initdata, long maxSize) {
-		this("ArrayBucket", -1);
+		this("ArrayBucket", maxSize);
 		data.add(initdata);
 	}
 
@@ -41,6 +44,8 @@ public class ArrayBucket implements Bucket {
 		data = new ArrayList<byte[]>();
 		this.name = name;
 		this.maxSize = maxSize;
+		if(logDEBUG && maxSize < 0)
+			Logger.minor(this, "Has been called with maxSize<0 !", new NullPointerException());
 	}
 
 	public synchronized OutputStream getOutputStream() throws IOException {
@@ -91,7 +96,7 @@ public class ArrayBucket implements Bucket {
 		public synchronized void write(byte b[], int off, int len) {
 			if(readOnly) throw new IllegalStateException("Read only");
 			long sizeIfWritten = size + len;
-			if(maxSize > -1 && maxSize < sizeIfWritten)
+			if(maxSize > -1 && maxSize < sizeIfWritten) // FIXME: should be IOE but how to do it?
 				throw new IllegalArgumentException("The maxSize of the bucket is "+maxSize+
 					" and writing "+len+ " bytes to it would make it oversize!");
 			super.write(b, off, len);
@@ -102,7 +107,7 @@ public class ArrayBucket implements Bucket {
 		public synchronized void write(int b) {
 			if(readOnly) throw new IllegalStateException("Read only");
 			long sizeIfWritten = size + 1;
-			if(maxSize > -1 && maxSize < sizeIfWritten)
+			if(maxSize > -1 && maxSize < sizeIfWritten) // FIXME: should be IOE but how to do it?
 				throw new IllegalArgumentException("The maxSize of the bucket is "+maxSize+
 					" and writing 1 byte to it would make it oversize!");
 			super.write(b);
