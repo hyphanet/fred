@@ -55,6 +55,11 @@ public class LineReadingInputStreamTest extends TestCase {
 			instance.readLineWithoutMarking(LENGTH_CHECKING_LINE_LF - 1, BUFFER_SIZE, true);
 			fail();
 		} catch (TooLongException e) {}
+		
+		// Same test shouldn't throw
+		is = new ByteArrayInputStream(LENGTH_CHECKING_LINE.getBytes());
+		instance = new LineReadingInputStream(is);
+		assertEquals(LENGTH_CHECKING_LINE.substring(0, LENGTH_CHECKING_LINE_LF), instance.readLineWithoutMarking(LENGTH_CHECKING_LINE_LF, BUFFER_SIZE, true));
 	}
 	
 	public void testReadLine() throws Exception {
@@ -85,6 +90,11 @@ public class LineReadingInputStreamTest extends TestCase {
 			instance.readLine(LENGTH_CHECKING_LINE_LF - 1, BUFFER_SIZE, true);
 			fail();
 		} catch (TooLongException e) {}
+		
+		// Same test shouldn't throw
+		is = new ByteArrayInputStream(LENGTH_CHECKING_LINE.getBytes());
+		instance = new LineReadingInputStream(is);
+		assertEquals(LENGTH_CHECKING_LINE.substring(0, LENGTH_CHECKING_LINE_LF), instance.readLine(LENGTH_CHECKING_LINE_LF, BUFFER_SIZE, true));
 	}
 
 	public void testBothImplementation() throws Exception {
