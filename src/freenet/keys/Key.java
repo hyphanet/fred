@@ -136,7 +136,7 @@ public abstract class Key implements WritableToDataOutputStream {
             	len = ((((((output[0] & 0xff) << 8) + (output[1] & 0xff)) << 8) + (output[2] & 0xff)) << 8) +
             		(output[3] & 0xff);
             if(len > maxLength)
-                throw new TooBigException("Invalid precompressed size: "+len);
+                throw new TooBigException("Invalid precompressed size: "+len + " maxlength="+maxLength);
             Compressor decompressor = Compressor.getCompressionAlgorithmByMetadataID(compressionAlgorithm);
             Bucket inputBucket = new SimpleReadOnlyArrayBucket(output, shortLength?2:4, outputLength-(shortLength?2:4));
             try {
