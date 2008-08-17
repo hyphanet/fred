@@ -33,11 +33,10 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 		
 		byte[] buf = new byte[Math.max(Math.min(128, maxLength), Math.min(1024, bufferSize))];
 		int ctr = 0;
-		mark((maxLength+1)*2); // Might be more than maxLengh if we use utf8
+		mark(Integer.MAX_VALUE); // Might be more than maxLengh if we use utf8
 		while(true) {
-			int x = read(buf, ctr, buf.length - ctr);
-			if(x == 0) continue;
-			else if(x == -1) {
+			int x = read(buf, ctr, Math.max(1, buf.length - ctr));
+			if(x == -1) {
 				if(ctr == 0)
 					return null;
 				return new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1");
@@ -57,11 +56,9 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 				if(ctr >= maxLength)
 					throw new TooLongException("We reached maxLength="+maxLength+ " parsing\n "+HexUtil.bytesToHex(buf, 0, ctr) + "\n" + new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1"));
 			}
-			if(x > 0) {
-				byte[] newBuf = new byte[Math.min(buf.length * 2, maxLength)];
-				System.arraycopy(buf, 0, newBuf, 0, buf.length);
-				buf = newBuf;
-			}
+			byte[] newBuf = new byte[Math.min(buf.length * 2, maxLength)];
+			System.arraycopy(buf, 0, newBuf, 0, buf.length);
+			buf = newBuf;
 		}
 	}
 
