@@ -42,7 +42,8 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 				return new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1");
 			}
 			// REDFLAG this is definitely safe with the above charsets, it may not be safe with some wierd ones. 
-			for(; ctr < buf.length; ctr++) {
+			int end = ctr + x;
+			for(; ctr < end; ctr++) {
 				if(buf[ctr] == '\n') {
 					String toReturn = "";
 					if(ctr != 0) {
