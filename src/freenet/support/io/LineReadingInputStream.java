@@ -36,7 +36,8 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 		mark((maxLength+1)*2); // Might be more than maxLengh if we use utf8
 		while(true) {
 			int x = read(buf, ctr, buf.length - ctr);
-			if(x == -1) {
+			if(x == 0) continue;
+			else if(x == -1) {
 				if(ctr == 0)
 					return null;
 				return new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1");
