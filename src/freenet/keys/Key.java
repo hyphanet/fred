@@ -113,16 +113,18 @@ public abstract class Key implements WritableToDataOutputStream {
     
     public abstract short getType();
     
+	@Override
     public int hashCode() {
         return hash;
     }
     
+	@Override
     public boolean equals(Object o){
     	if(o == null || !(o instanceof Key)) return false;
     	return Arrays.equals(routingKey, ((Key)o).routingKey);
     }
     
-    static Bucket decompress(boolean isCompressed, byte[] output, int outputLength, BucketFactory bf, int maxLength, short compressionAlgorithm, boolean shortLength) throws CHKDecodeException, IOException {
+    static Bucket decompress(boolean isCompressed, byte[] output, int outputLength, BucketFactory bf, long maxLength, short compressionAlgorithm, boolean shortLength) throws CHKDecodeException, IOException {
 	    if(maxLength < 0)
 		    throw new IllegalArgumentException("maxlength="+maxLength);
         if(isCompressed) {
