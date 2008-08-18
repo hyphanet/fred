@@ -24,7 +24,7 @@ public class ArrayBucket implements Bucket {
 	private final long maxSize;
 	private long size;
 	
-	private static boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, ArrayBucket.class);
+	private static boolean logDEBUG = false;
 	
 	public ArrayBucket(long maxSize) {
 		this("ArrayBucket", maxSize);
