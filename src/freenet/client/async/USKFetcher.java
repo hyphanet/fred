@@ -546,13 +546,10 @@ public class USKFetcher implements ClientGetState {
 	}
 	
 	public void removeSubscriber(USKCallback cb) {
-		boolean kill = false;
 		synchronized(this) {
 			subscribers.remove(cb);
-			if(!(subscribers.isEmpty() && killOnLoseSubscribers)) kill = true;
 		}
 		updatePriorities();
-		if(kill) cancel();
 	}
 
 	public synchronized boolean hasLastData() {
