@@ -411,7 +411,9 @@ public class KeyTracker {
 	 * @throws UpdatableSortedLinkedListKilledException 
 	 */
 	private void removeResendRequest(int seqNumber) throws UpdatableSortedLinkedListKilledException {
-		resendRequestQueue.removeByKey(seqNumber);
+		synchronized(resendRequestQueue) {
+			resendRequestQueue.removeByKey(seqNumber);
+		}
 	}
 
 	/**
@@ -486,14 +488,18 @@ public class KeyTracker {
 	 * Is an ack request queued for this packet number?
 	 */
 	private boolean queuedAckRequest(int packetNumber) {
-		return ackRequestQueue.containsKey(new Integer(packetNumber));
+		synchronized(ackRequestQueue) {
+			return ackRequestQueue.containsKey(packetNumber);
+		}
 	}
 
 	/**
 	 * Is a resend request queued for this packet number?
 	 */
 	private boolean queuedResendRequest(int packetNumber) {
-		return resendRequestQueue.containsKey(new Integer(packetNumber));
+		synchronized(resendRequestQueue) {
+			return resendRequestQueue.containsKey(packetNumber);
+		}
 	}
 
 	/**
@@ -579,7 +585,11 @@ public class KeyTracker {
 	 * @throws UpdatableSortedLinkedListKilledException 
 	 */
 	private void removeAckRequest(int seqNo) throws UpdatableSortedLinkedListKilledException {
-		QueuedAckRequest qr = (QueuedAckRequest) ackRequestQueue.removeByKey(seqNo);
+		QueuedAckRequest qr = null;
+		
+		synchronized(ackRequestQueue) {
+			qr = (QueuedAckRequest) ackRequestQueue.removeByKey(seqNo);
+		}
 		if(qr != null)
 			qr.onAcked();
 		else
@@ -941,8 +951,12 @@ public class KeyTracker {
 		synchronized(ackQueue) {
 			ackQueue.clear();
 		}
-		resendRequestQueue.kill();
-		ackRequestQueue.kill();
+		synchronized(resendRequestQueue) {
+			resendRequestQueue.kill();
+		}
+		synchronized(ackRequestQueue) {
+			ackRequestQueue.kill();
+		}
 		synchronized(packetsToResend) {
 			packetsToResend.clear();
 		}
@@ -1046,7 +1060,9 @@ public class KeyTracker {
 	}
 
 	public int countAckRequests() {
-		return ackRequestQueue.size();
+		synchronized(ackRequestQueue) {
+			return ackRequestQueue.size();
+		}
 	}
 
 	public int countResendRequests() {

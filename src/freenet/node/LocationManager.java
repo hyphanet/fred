@@ -1284,7 +1284,7 @@ public class LocationManager implements ByteCounter {
     
     private static final long MAX_AGE = 7*24*60*60*1000;
     
-    private final TimeSortedHashtable knownLocs = new TimeSortedHashtable();
+    private final TimeSortedHashtable<Double> knownLocs = new TimeSortedHashtable<Double>();
     
     void registerLocationLink(double d, double t) {
     	if(logMINOR) Logger.minor(this, "Known Link: "+d+ ' ' +t);
@@ -1297,15 +1297,14 @@ public class LocationManager implements ByteCounter {
     
     void registerKnownLocation(double d) {
     	if(logMINOR) Logger.minor(this, "Known Location: "+d);
-        Double dd = new Double(d);
         long now = System.currentTimeMillis();
         
         synchronized(knownLocs) {
-        	Logger.minor(this, "Adding location "+dd+" knownLocs size "+knownLocs.size());
-        	knownLocs.push(dd, now);
-        	Logger.minor(this, "Added location "+dd+" knownLocs size "+knownLocs.size());
+        	Logger.minor(this, "Adding location "+d+" knownLocs size "+knownLocs.size());
+        	knownLocs.push(d, now);
+        	Logger.minor(this, "Added location "+d+" knownLocs size "+knownLocs.size());
         	knownLocs.removeBefore(now - MAX_AGE);
-        	Logger.minor(this, "Added and pruned location "+dd+" knownLocs size "+knownLocs.size());
+        	Logger.minor(this, "Added and pruned location "+d+" knownLocs size "+knownLocs.size());
         }
 		if(logMINOR) Logger.minor(this, "Estimated net size(session): "+knownLocs.size());
     }
