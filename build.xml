@@ -157,7 +157,7 @@
 
 			<batchtest fork="yes">
 				<fileset dir="${build-test}">
-					<include name="**/*.class"/>
+					<include name="**/*Test.class"/>
 				</fileset>
 			</batchtest>
 			<sysproperty key="benchmark" value="${benchmark}" />
