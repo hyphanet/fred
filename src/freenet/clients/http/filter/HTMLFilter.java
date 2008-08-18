@@ -49,7 +49,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		if(logMINOR) Logger.minor(this, "readFilter(): charset="+charset);
 		InputStream strm = bucket.getInputStream();
 		BufferedInputStream bis = new BufferedInputStream(strm, 4096);
-		Bucket temp = bf.makeBucket(-1);
+		Bucket temp = bf.makeBucket(bucket.size());
 		OutputStream os = temp.getOutputStream();
 		BufferedOutputStream bos = new BufferedOutputStream(os, 4096);
 		Reader r = null;
