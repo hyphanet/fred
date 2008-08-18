@@ -34,7 +34,8 @@ public class ArchiveManager {
 	public static final String METADATA_NAME = ".metadata";
 	private static boolean logMINOR;
 
-	final long maxArchiveSize;
+	private long maxArchiveSize;
+
 	final long maxArchivedFileSize;
 	
 	// ArchiveHandler's
@@ -199,7 +200,7 @@ public class ArchiveManager {
 			ctx.setLastHash(realHash);
 		}
 		if(data.size() > maxArchiveSize)
-			throw new ArchiveFailureException("Archive too big");
+			throw new ArchiveFailureException("Archive too big ("+data.size()+" > "+maxArchiveSize+")!");
 		if(archiveType != Metadata.ARCHIVE_ZIP)
 			throw new ArchiveFailureException("Unknown or unsupported archive algorithm "+archiveType);
 		
@@ -470,5 +471,13 @@ outer:		while(true) {
 		if(type.equals("application/zip") || type.equals("application/x-zip"))
 			return Metadata.ARCHIVE_ZIP;
 		else throw new IllegalArgumentException(); 
+	}
+	
+	public synchronized long getMaxArchiveSize() {
+		return maxArchiveSize;
+	}
+
+	public synchronized void setMaxArchiveSize(long maxArchiveSize) {
+		this.maxArchiveSize = maxArchiveSize;
 	}
 }

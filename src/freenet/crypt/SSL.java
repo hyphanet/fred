@@ -28,8 +28,6 @@ import javax.net.ServerSocketFactory;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 
-import com.sleepycat.je.utilint.NotImplementedYetException;
-
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.support.Logger;
@@ -217,7 +215,7 @@ public class SSL {
 				fis = new FileInputStream(keyStore);
 				keystore.load(fis, keyStorePass.toCharArray());
 			} catch(FileNotFoundException fnfe) {
-				throw new NotImplementedYetException();
+				throw new UnsupportedOperationException("Not implemented yet!");
 //				//If keystore not exist, create keystore and server certificat
 //				keystore.load(null, keyStorePass.toCharArray());
 //				CertAndKeyGen keypair = new CertAndKeyGen("DSA", "SHA1WithDSA");

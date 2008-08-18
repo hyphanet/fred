@@ -4,7 +4,6 @@
 package freenet.node;
 
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,7 +13,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
-import java.io.Writer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1068,6 +1066,7 @@ public class PeerManager {
 		return sb.toString();
 	}
 	private final Object writePeersSync = new Object();
+	private final Object writePeerFileSync = new Object();
 
 	void writePeers() {
 		node.ps.queueTimedJob(new Runnable() {
@@ -1077,16 +1076,74 @@ public class PeerManager {
 			}
 		}, 0);
 	}
+	
+	protected StringBuilder getDarknetPeersString() {
+		StringBuilder sb = new StringBuilder();
+		PeerNode[] peers;
+		synchronized(this) {
+			peers = myPeers;
+		}
+		for(PeerNode pn : peers) {
+			if(pn instanceof DarknetPeerNode)
+				sb.append(pn.exportDiskFieldSet());
+		}
+		
+		return sb;
+	}
+	
+	protected StringBuilder getOpennetPeersString() {
+		StringBuilder sb = new StringBuilder();
+		PeerNode[] peers;
+		synchronized(this) {
+			peers = myPeers;
+		}
+		for(PeerNode pn : peers) {
+			if(pn instanceof OpennetPeerNode)
+				sb.append(pn.exportDiskFieldSet());
+		}
+		
+		return sb;
+	}
+	
+	protected StringBuilder getOldOpennetPeersString(OpennetManager om) {
+		StringBuilder sb = new StringBuilder();
+		PeerNode[] peers;
+		synchronized(this) {
+			peers = om.getOldPeers();
+		}
+		for(PeerNode pn : peers) {
+			if(pn instanceof OpennetPeerNode)
+				sb.append(pn.exportDiskFieldSet());
+		}
+		
+		return sb;
+	}
 
 	private void writePeersInner() {
+		StringBuilder darknet = null;
+		StringBuilder opennet = null;
+		StringBuilder oldOpennetPeers = null;
+		String oldOpennetPeersFilename = null;
+		
 		synchronized(writePeersSync) {
 			if(darkFilename != null)
-				writePeersInner(darkFilename, getDarknetPeers());
+				darknet = getDarknetPeersString();
 			OpennetManager om = node.getOpennet();
 			if(om != null) {
 				if(openFilename != null)
-					writePeersInner(openFilename, getOpennetPeers());
-				writePeersInner(om.getOldPeersFilename(), om.getOldPeers());
+					opennet = getOpennetPeersString();
+				oldOpennetPeersFilename = om.getOldPeersFilename();
+				oldOpennetPeers = getOldOpennetPeersString(om);
+			}
+		}
+		
+		synchronized(writePeerFileSync) {
+			if(darknet != null)
+				writePeersInner(darkFilename, darknet);
+			if(oldOpennetPeers != null) {
+				if(opennet != null)
+					writePeersInner(openFilename, opennet);
+				writePeersInner(oldOpennetPeersFilename, oldOpennetPeers);
 			}
 		}
 	}
@@ -1094,8 +1151,8 @@ public class PeerManager {
 	/**
 	 * Write the peers file to disk
 	 */
-	private void writePeersInner(String filename, PeerNode[] peers) {
-		synchronized(writePeersSync) {
+	private void writePeersInner(String filename, StringBuilder sb) {
+		synchronized(writePeerFileSync) {
 			FileOutputStream fos = null;
 			String f = filename + ".bak";
 			try {
@@ -1112,13 +1169,11 @@ public class PeerManager {
 				Closer.close(w);
 				throw new Error("Impossible: JVM doesn't support UTF-8: " + e2, e2);
 			}
-			BufferedWriter bw = new BufferedWriter(w);
 			try {
-				boolean succeeded = writePeers(bw, peers);
-				bw.close();
-				bw = null;
-				if(!succeeded)
-					return;
+				w.write(sb.toString());
+				w.flush();
+				w.close();
+				w = null;
 
 				File fnam = new File(filename);
 				FileUtil.renameTo(new File(f), fnam);
@@ -1131,36 +1186,10 @@ public class PeerManager {
 				Logger.error(this, "Cannot write file: " + e, e);
 				return; // don't overwrite old file!
 			} finally {
-				Closer.close(bw);
+				Closer.close(w);
 				Closer.close(fos);
 			}
 		}
-	}
-
-	public boolean writePeers(Writer bw) {
-		if(!writePeers(bw, getDarknetPeers()))
-			return false;
-		if(!writePeers(bw, getOpennetPeers()))
-			return false;
-		return true;
-	}
-
-	public boolean writePeers(Writer bw, PeerNode[] peers) {
-		for(int i = 0; i < peers.length; i++) {
-			try {
-				peers[i].write(bw);
-				bw.flush();
-			} catch(IOException e) {
-				try {
-					bw.close();
-				} catch(IOException e1) {
-					Logger.error(this, "Cannot close file!: " + e1, e1);
-				}
-				Logger.error(this, "Cannot write peers to disk: " + e, e);
-				return false;
-			}
-		}
-		return true;
 	}
 
 	/**

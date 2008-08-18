@@ -1,5 +1,6 @@
 package freenet.support.io;
 
+import freenet.support.Logger;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -11,28 +12,40 @@ import java.util.Iterator;
 import freenet.support.api.Bucket;
 
 /**
- * A bucket that stores data in the memory.
- * 
- * @author oskar
+ * A bucket that stores data in RAM
  */
 public class ArrayBucket implements Bucket {
 
 	private final ArrayList<byte[]> data;
 	private final String name;
 	private volatile boolean readOnly;
-
-	public ArrayBucket() {
-		this("ArrayBucket");
+	
+	/** The maximum size of the bucket; -1 means no maxSize */
+	private final long maxSize;
+	private long size;
+	
+	private static boolean logDEBUG = false;
+	
+	public ArrayBucket(long maxSize) {
+		this("ArrayBucket", maxSize);
+	}
+	
+	public ArrayBucket(byte[] finalData) {
+		this(finalData, finalData.length);
+		setReadOnly();
 	}
 
-	public ArrayBucket(byte[] initdata) {
-		this("ArrayBucket");
+	public ArrayBucket(byte[] initdata, long maxSize) {
+		this("ArrayBucket", maxSize);
 		data.add(initdata);
 	}
 
-	ArrayBucket(String name) {
+	ArrayBucket(String name, long maxSize) {
 		data = new ArrayList<byte[]>();
 		this.name = name;
+		this.maxSize = maxSize;
+		if(logDEBUG && maxSize < 0)
+			Logger.minor(this, "Has been called with maxSize<0 !", new NullPointerException());
 	}
 
 	public synchronized OutputStream getOutputStream() throws IOException {
@@ -65,12 +78,7 @@ public class ArrayBucket implements Bucket {
 	}
 
 	public synchronized long size() {
-		long currentSize = 0;
-		
-		for(byte[] buf : data)
-			currentSize += buf.length;
-		
-		return currentSize;
+		return size;
 	}
 
 	public String getName() {
@@ -87,13 +95,23 @@ public class ArrayBucket implements Bucket {
 		@Override
 		public synchronized void write(byte b[], int off, int len) {
 			if(readOnly) throw new IllegalStateException("Read only");
+			long sizeIfWritten = size + len;
+			if(logDEBUG && maxSize > -1 && maxSize < sizeIfWritten) // FIXME: should be IOE but how to do it?
+				throw new IllegalArgumentException("The maxSize of the bucket is "+maxSize+
+					" and writing "+len+ " bytes to it would make it oversize!");
 			super.write(b, off, len);
+			size = sizeIfWritten;
 		}
 		
 		@Override
 		public synchronized void write(int b) {
 			if(readOnly) throw new IllegalStateException("Read only");
+			long sizeIfWritten = size + 1;
+			if(logDEBUG && maxSize > -1 && maxSize < sizeIfWritten) // FIXME: should be IOE but how to do it?
+				throw new IllegalArgumentException("The maxSize of the bucket is "+maxSize+
+					" and writing 1 byte to it would make it oversize!");
 			super.write(b);
+			size = sizeIfWritten;
 		}
 
 		@Override
@@ -126,12 +144,12 @@ public class ArrayBucket implements Bucket {
 					return -1;
 				}
 			}
-			int i = in.read();
-			if (i == -1) {
+			int x = in.read();
+			if (x == -1) {
 				in = null;
 				return priv_read();
 			} else {
-				return i;
+				return x;
 			}
 		}
 
@@ -153,12 +171,12 @@ public class ArrayBucket implements Bucket {
 					return -1;
 				}
 			}
-			int i = in.read(b, off, len);
-			if (i == -1) {
+			int x = in.read(b, off, len);
+			if (x == -1) {
 				in = null;
 				return priv_read(b, off, len);
 			} else {
-				return i;
+				return x;
 			}
 		}
 
@@ -185,14 +203,16 @@ public class ArrayBucket implements Bucket {
 	}
 
 	public synchronized void free() {
+		readOnly = true;
 		data.clear();
+		size = 0;
 		// Not much else we can do.
 	}
 
 	public synchronized byte[] toByteArray() {
 		long sz = size();
-		int size = (int)sz;
-		byte[] buf = new byte[size];
+		int bufSize = (int)sz;
+		byte[] buf = new byte[bufSize];
 		int index = 0;
 		for(Iterator i=data.iterator();i.hasNext();) {
 			byte[] obuf = (byte[]) i.next();

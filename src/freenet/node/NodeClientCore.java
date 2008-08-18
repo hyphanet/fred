@@ -1,5 +1,6 @@
 package freenet.node;
 
+import freenet.config.NodeNeedRestartException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -101,7 +102,6 @@ public class NodeClientCore implements Persistable {
 	public static int maxBackgroundUSKFetchers;	// Client stuff that needs to be configged - FIXME
 	static final int MAX_ARCHIVE_HANDLERS = 200; // don't take up much RAM... FIXME
 	static final long MAX_CACHED_ARCHIVE_DATA = 32 * 1024 * 1024; // make a fixed fraction of the store by default? FIXME
-	static final long MAX_ARCHIVE_SIZE = 2 * 1024 * 1024; // ??? FIXME
 	static final long MAX_ARCHIVED_FILE_SIZE = 1024 * 1024; // arbitrary... FIXME
 	static final int MAX_CACHED_ELEMENTS = 256 * 1024; // equally arbitrary! FIXME hopefully we can cache many of these though
 	private UserAlert startingUpAlert;
@@ -315,7 +315,21 @@ public class NodeClientCore implements Persistable {
 			});
 		setUploadAllowedDirs(nodeConfig.getStringArr("uploadAllowedDirs"));
 
-		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVE_SIZE, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, tempBucketFactory);
+		nodeConfig.register("maxArchiveSize", "5MiB", sortOrder++, true, false, "NodeClientCore.maxArchiveSize", "NodeClientCore.maxArchiveSizeLong", new LongCallback() {
+
+			@Override
+			public Long get() {
+				return archiveManager.getMaxArchiveSize();
+			}
+
+			@Override
+			public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
+				if(val == get()) return;
+				archiveManager.setMaxArchiveSize(val);
+			}
+		});
+		
+		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, nodeConfig.getLong("maxArchiveSize"), MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, tempBucketFactory);
 		Logger.normal(this, "Initializing USK Manager");
 		System.out.println("Initializing USK Manager");
 		uskManager = new USKManager(this);

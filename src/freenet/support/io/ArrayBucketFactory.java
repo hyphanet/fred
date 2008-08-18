@@ -11,11 +11,11 @@ import freenet.support.api.BucketFactory;
 public class ArrayBucketFactory implements BucketFactory {
 
 	public Bucket makeBucket(long size) throws IOException {
-		return new ArrayBucket();
+		return new ArrayBucket(size);
 	}
 
 	public void freeBucket(Bucket b) throws IOException {
-		// Do nothing
+		b.free();
 	}
 
 }
