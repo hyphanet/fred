@@ -6,31 +6,31 @@ import java.util.Enumeration;
  * Framework for managing a doubly linked list.
  * @author tavin
  */
-public interface DoublyLinkedList<T extends DoublyLinkedList.Item<T>> {
+public interface DoublyLinkedList<T> {
     public abstract DoublyLinkedList<T> clone();
 
     /**
      * List element
      */
-    public interface Item<T extends Item<T>> {
+    public interface Item<T> {
 		/**
 		 * Get next {@link Item}. May or may not return
 		 * <code>null</code> if this is the last <code>Item</code>.
 		 * 
 		 * @see DoublyLinkedList#hasNext()
 		 */
-        T getNext();
+        DoublyLinkedList.Item<T> getNext();
         /** Set next {@link Item} */
-        T setNext(T i);
+        DoublyLinkedList.Item<T> setNext(DoublyLinkedList.Item<T> i);
         /**
 	 * Get previous {@link Item}. May or may not return <code>null</code>
 	 * if this is the first <code>Item</code>.
 	 * 
 	 * @see DoublyLinkedList#hasNext()
 	 */
-        T getPrev();
+        Item<T> getPrev();
         /** Get previous {@link Item} */
-        T setPrev(T i);
+        Item<T> setPrev(DoublyLinkedList.Item<T> i);
         
         /** Return the contained list. <strong>For sanity checking only.</strong> */
         DoublyLinkedList<T> getParent();
@@ -45,23 +45,23 @@ public interface DoublyLinkedList<T extends DoublyLinkedList.Item<T>> {
     /** Check if this list is empty. @return <code>true</code> if this list is empty, <code>false</code> otherwise. */
     boolean isEmpty();
     /** Get a {@link Enumeration} of {@link DoublyLinkedList.Item}. */
-    Enumeration<T> elements();   // for consistency w/ typical Java API
+    Enumeration elements();   // for consistency w/ typical Java API
 
     /**
      * Returns the first item.
      * @return  the item at the head of the list, or <code>null</code> if empty
      */
-    T head();
+    Item head();
     /**
      * Returns the last item.
      * @return  the item at the tail of the list, or <code>null</code> if empty
      */
-    T tail();
+    Item tail();
 
     /**
      * Puts the item before the first item.
      */
-    void unshift(T i);
+    void unshift(DoublyLinkedList.Item<T> i);
     /**
      * Put all items in the specified list before the first item.
      */
@@ -69,7 +69,7 @@ public interface DoublyLinkedList<T extends DoublyLinkedList.Item<T>> {
     /**
      * Removes and returns the first item.
      */
-    T shift();
+    Item shift();
     /**
      * Remove <tt>n</tt> elements from head and return them as a <code>DoublyLinkedList</code>.
      */
@@ -78,7 +78,7 @@ public interface DoublyLinkedList<T extends DoublyLinkedList.Item<T>> {
     /**
      * Puts the item after the last item.
      */
-    void push(T i);
+    void push(DoublyLinkedList.Item<T> i);
     /**
      * Puts all items in the specified list after the last item.
      */
@@ -86,41 +86,41 @@ public interface DoublyLinkedList<T extends DoublyLinkedList.Item<T>> {
     /**
      * Removes and returns the last item.
      */
-    T pop();
+    Item pop();
     /**
      * Remove <tt>n</tt> elements from tail and return them as a <code>DoublyLinkedList</code>.
      */
     DoublyLinkedList pop(int n);
 
-    /** @return <code>true</code> if <code>i</code> has next item. (ie. not the last item); <code>false</code> otherwise */
-    boolean hasNext(T i);
+    /** @return <code>true</code> if <code>i</code> has next item. (ie. not the last item); <code>false</code> otherwise */ 
+    boolean hasNext(DoublyLinkedList.Item<T> i);
     /** @return <code>true</code> if <code>i</code> has previous item. (ie. not the first item); <code>false</code> otherwise */
-    boolean hasPrev(T i);
+    boolean hasPrev(DoublyLinkedList.Item<T> i);
 
     /** @return next item of <code>i</code>. If this is the last element, return <code>null</code> */
-    T next(T i);
+    Item next(DoublyLinkedList.Item<T> i);
     /** @return previous item of <code>i</code>. If this is the first element, return <code>null</code> */
-    T prev(T i);
-    /** Remove and return a element
+    Item prev(DoublyLinkedList.Item<T> i);
+    /** Remove and return a element 
      * @return  this item, or <code>null</code> if the item was not in the list
      */
-    T remove(T i);
+    Item remove(DoublyLinkedList.Item<T> i);
     /**
      * Inserts item <code>j</code> before item <code>i</code>.
      */
-    void insertPrev(T i, T j);
+    void insertPrev(DoublyLinkedList.Item<T> i, DoublyLinkedList.Item<T> j);
     /**
      * Inserts the entire {@link DoublyLinkedList} <code>l</code> before item <code>i</code>.
      */
-    void insertPrev(T i, DoublyLinkedList<T> l);
+    void insertPrev(DoublyLinkedList.Item<T> i, DoublyLinkedList<T> l);  
     /**
      * Inserts item <code>j</code> after item <code>i</code.
      */
-    void insertNext(T i, T j);
+    void insertNext(DoublyLinkedList.Item<T> i, DoublyLinkedList.Item<T> j);    
     /**
      * Inserts the entire {@link DoublyLinkedList} <code>l</code> after item <code>i</code>.
      */
-    void insertNext(T i, DoublyLinkedList<T> l);
+    void insertNext(DoublyLinkedList.Item<T> i, DoublyLinkedList<T> l);
 }
 
 
