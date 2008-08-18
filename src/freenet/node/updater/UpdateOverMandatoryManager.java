@@ -383,6 +383,7 @@ public class UpdateOverMandatoryManager {
 			super(false, null, null, null, null, UserAlert.CRITICAL_ERROR, true, null, false, null);
 		}
 		
+		@Override
 		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
 			
@@ -434,6 +435,7 @@ public class UpdateOverMandatoryManager {
 			return L10n.getString("PeersSayKeyBlownAlert."+key, pattern, value);
 		}
 		
+		@Override
 		public String getText() {
 			StringBuffer sb = new StringBuffer();
 			sb.append(l10n("intro")).append("\n\n");
@@ -477,14 +479,17 @@ public class UpdateOverMandatoryManager {
 			return sb.toString();
 		}
 
+		@Override
 		public String getTitle() {
 			return l10n("titleWithCount", "count", Integer.toString(nodesSayKeyRevoked.size()));
 		}
 
+		@Override
 		public void isValid(boolean validity) {
 			// Do nothing
 		}
 
+		@Override
 		public String getShortText() {
 			return l10n("short");
 		}
@@ -603,6 +608,7 @@ public class UpdateOverMandatoryManager {
 						Logger.minor(this, "Message sent, data soon");
 				}
 				
+				@Override
 				public String toString() {
 					return super.toString() + "("+uid+":"+source.getPeer()+")";
 				}
@@ -977,6 +983,7 @@ public class UpdateOverMandatoryManager {
 						Logger.minor(this, "Message sent, data soon");
 				}
 				
+				@Override
 				public String toString() {
 					return super.toString() + "("+uid+":"+source.getPeer()+")";
 				}
