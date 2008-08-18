@@ -79,7 +79,7 @@ public class UpdateOverMandatoryManager {
 	/** Maximum time between asking for the main jar and it starting to transfer */
 	static final int REQUEST_MAIN_JAR_TIMEOUT = 60*1000;
 	//** Grace time before we use UoM to update */
-	public static final int GRACE_TIME = 60*60*1000; // 1h
+	public static final int GRACE_TIME = 3*60*60*1000; // 3h
 	private boolean logMINOR;
 	
 	private UserAlert alert;
@@ -227,8 +227,8 @@ public class UpdateOverMandatoryManager {
 				// If we have fetches running already, then sendUOMRequestMain() will add the offer to nodesOfferedMainJar,
 				// so that if all our fetches fail, we can fetch from this node.
 					if(!isOutdated) {
-						Logger.error(this, "The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN! (1)");
-						System.out.println("The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN! (1)");
+						Logger.error(this, "The update process seems to have been stuck for over three hours; let's switch to UoM! SHOULD NOT HAPPEN! (1)");
+						System.out.println("The update process seems to have been stuck for over three hours; let's switch to UoM! SHOULD NOT HAPPEN! (1)");
 					} else
 						if(logMINOR) Logger.minor(this, "Fetching via UOM as our build is deprecated");
 					// Fetch it
