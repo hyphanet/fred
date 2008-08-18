@@ -9,37 +9,35 @@ import java.util.TreeSet;
 /**
  * Variant on LRUHashtable which provides an efficient how-many-since-time-T operation.
  */
-public class TimeSortedHashtable implements Cloneable {
-	
+public class TimeSortedHashtable<T extends Comparable> implements Cloneable {
 	public TimeSortedHashtable() {
-		this.elements = new TreeSet(new MyComparator());
-		this.valueToElement = new HashMap();
+		this.elements = new TreeSet<Comparable>(new MyComparator());
+		this.valueToElement = new HashMap<T, Element<T>>();
 	}
 	
-	private TimeSortedHashtable(TimeSortedHashtable c) {
-		this.elements = new TreeSet(c.elements);
-		this.valueToElement = new HashMap(c.valueToElement);
+	private TimeSortedHashtable(TimeSortedHashtable<T> c) {
+		this.elements = new TreeSet<Comparable>(c.elements);
+		this.valueToElement = new HashMap<T, Element<T>>(c.valueToElement);
 	}
 	
-	private static class Element {
+	private static class Element<T extends Comparable> implements Comparable<Element<T>> {
 		
-		Element(long t, Comparable v) {
+		Element(long t, T v) {
 			time = t;
 			value = v;
 		}
 		
 		long time;
-		final Comparable value;
+		final T value;
 		
-		public int compareTo(Object o) {
-			Element e = (Element) o;
-			if(time > e.time) return 1;
-			if(time < e.time) return -1;
-			return value.compareTo(e.value);
+		public int compareTo(Element<T> o) {
+			if(time > o.time) return 1;
+			if(time < o.time) return -1;
+			return value.compareTo(o.value);
 		}
 	}
 
-	private static class MyComparator implements Comparator {
+	private static class MyComparator implements Comparator /* <Long || Element<T>> */{
 
 		public int compare(Object arg0, Object arg1) {
 			if(arg0 instanceof Long && arg1 instanceof Long) return ((Long)arg0).compareTo((Long)arg1);
@@ -64,14 +62,14 @@ public class TimeSortedHashtable implements Cloneable {
 		
 	}
 	
-    private final TreeSet elements;
-    private final HashMap valueToElement;
+    private final TreeSet<Comparable> /* <Long || Element<T>> */elements;
+	private final HashMap<T, Element<T>> valueToElement;
 
-    public TimeSortedHashtable clone() {
-	    return new TimeSortedHashtable(this);
+    public TimeSortedHashtable<T> clone() {
+		return new TimeSortedHashtable<T>(this);
     }
     
-    public final void push(Comparable value) {
+    public final void push(T value) {
     	push(value, System.currentTimeMillis());
     }
     
@@ -82,14 +80,13 @@ public class TimeSortedHashtable implements Cloneable {
      *       a duplicate entry in the queue.
      * @param now 
      */
-    public final synchronized void push(Comparable value, long now) {
-
+    public final synchronized void push(T value, long now) {
     	assert(elements.size() == valueToElement.size());
     	
-    	Element e = (Element) valueToElement.get(value);
+    	Element<T> e = valueToElement.get(value);
     	
     	if(e == null) {
-    		e = new Element(now, value);
+    		e = new Element<T>(now, value);
     		elements.add(e);
     		valueToElement.put(value, e);
     	} else {
@@ -105,10 +102,10 @@ public class TimeSortedHashtable implements Cloneable {
      * Remove and return the least recently pushed value.
      * @return Least recently pushed value.
      */
-    public final synchronized Comparable popValue() {
+    public final synchronized T popValue() {
     	assert(elements.size() == valueToElement.size());
     	
-    	Element e = (Element) elements.first();
+    	Element<T> e = (Element<T>) elements.first();
     	valueToElement.remove(e.value);
     	elements.remove(e);
     	
@@ -116,24 +113,24 @@ public class TimeSortedHashtable implements Cloneable {
     	return e.value;
     }
     
-	public final synchronized Object peekValue() {
-    	return ((Element) elements.first()).value;
+	public final synchronized T peekValue() {
+		return ((Element<T>) elements.first()).value;
 	}
     
     public final int size() {
         return elements.size();
     }
     
-    public final synchronized boolean removeValue(Comparable value) {
+    public final synchronized boolean removeValue(T value) {
     	assert(elements.size() == valueToElement.size());
-    	Element e = (Element) valueToElement.remove(value);
+    	Element<T> e = valueToElement.remove(value);
     	if(e == null) return false;
     	elements.remove(e);
     	assert(elements.size() == valueToElement.size());
     	return true;
     }
     
-    public final synchronized boolean containsValue(Comparable key) {
+    public final synchronized boolean containsValue(T key) {
     	return valueToElement.containsKey(key);
     }
     
@@ -141,8 +138,8 @@ public class TimeSortedHashtable implements Cloneable {
      * Note that this does not automatically promote the key. You have
      * to do that by hand with push(key, value).
      */
-    public final synchronized long getTime(Object value) {
-    	Element e = (Element) valueToElement.remove(value);
+    public final synchronized long getTime(T value) {
+		Element<T> e = valueToElement.remove(value);
     	if(e == null) return -1;
     	return e.time;
     }
@@ -151,14 +148,12 @@ public class TimeSortedHashtable implements Cloneable {
      * @return The set of times after the given time.
      */
     public final synchronized Long[] timesAfter(long t) {
-    	Long time = new Long(t);
-    	
-    	Set s = elements.tailSet(time);
+    	Set<Comparable> s = elements.tailSet(t);
     	
     	Long[] times = new Long[s.size()];
     	int x = 0;
-    	for(Iterator i = s.iterator();i.hasNext();) {
-    		times[x++] = new Long(((Element)i.next()).time);
+    	for(Iterator<Comparable> i = s.iterator();i.hasNext();) {
+    		times[x++] = ((Element<T>) i.next()).time;
     	}
     	
     	return times;
@@ -167,23 +162,19 @@ public class TimeSortedHashtable implements Cloneable {
     /**
      * @return The set of values after the given time.
      */
-    public final synchronized Comparable[] valuesAfter(long t, Comparable[] values) {
-    	Long time = new Long(t);
-    	
-    	Set s = elements.tailSet(time);
+    public final synchronized <E extends Comparable> E[] valuesAfter(long t, E[] values) {
+    	Set<Comparable> s = elements.tailSet(t);
     	
     	int x = 0;
-    	for(Iterator i = s.iterator();i.hasNext();) {
-    		values[x++] = ((Element)i.next()).value;
+    	for(Iterator<Comparable> i = s.iterator();i.hasNext();) {
+    		values[x++] = (E) ((Element<T>) i.next()).value;
     	}
     	
     	return values;
     }
 
 	public synchronized int countValuesAfter(long t) {
-    	Long time = new Long(t);
-    	
-    	Set s = elements.tailSet(time);
+    	Set<Comparable> s = elements.tailSet(t);
     	
     	return s.size();
 	}
@@ -193,12 +184,10 @@ public class TimeSortedHashtable implements Cloneable {
      */
 	public final synchronized void removeBefore(long t) {
     	assert(elements.size() == valueToElement.size());
+    	Set<Comparable> s = elements.headSet(t);
     	
-    	Long time = new Long(t);
-    	Set s = elements.headSet(time);
-    	
-    	for(Iterator i = s.iterator();i.hasNext();) {
-    		Element e = (Element) i.next();
+    	for(Iterator<Comparable> i = s.iterator();i.hasNext();) {
+    		Element<T> e = (Element<T>) i.next();
     		valueToElement.remove(e.value);
     		i.remove();
     	}
@@ -206,8 +195,7 @@ public class TimeSortedHashtable implements Cloneable {
     	assert(elements.size() == valueToElement.size());
 	}
 
-	public final synchronized Object[] pairsAfter(long timestamp, Comparable[] valuesArray) {
+	public final synchronized <E extends Comparable> Object[] pairsAfter(long timestamp, E[] valuesArray) {
 		return new Object[] { valuesAfter(timestamp, valuesArray), timesAfter(timestamp) };
 	}
-
 }
