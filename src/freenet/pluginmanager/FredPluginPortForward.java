@@ -16,6 +16,6 @@ public interface FredPluginPortForward {
 	 * @param cb Callback to be called with success/failure of each forward. Some
 	 * plugins may return a probabilistic success e.g. with UP&P.
 	 */
-	public void onChangePublicPorts(Set/*<ForwardPort>*/ ports, ForwardPortCallback cb);
+	public void onChangePublicPorts(Set<ForwardPort> ports, ForwardPortCallback cb);
 	
 }
