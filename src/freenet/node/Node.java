@@ -207,7 +207,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private static class L10nCallback extends StringCallback implements EnumerableOptionCallback {
 		
 		public String get() {
-			return L10n.getSelectedLanguage().getFullName();
+			return L10n.getSelectedLanguage().fullName;
 		}
 		
 		public void set(String val) throws InvalidConfigValueException {
@@ -653,7 +653,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			try {
 				L10n.setLanguage(nodeConfig.getOption("l10n").getDefault());
 			} catch (MissingResourceException e1) {
-				L10n.setLanguage(L10n.LANGUAGE.ENGLISH.getShortCode());
+				L10n.setLanguage(L10n.LANGUAGE.ENGLISH.shortCode);
 			}
 		}
 		

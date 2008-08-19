@@ -47,9 +47,9 @@ public class L10n {
 		CHINESE_TAIWAN("zh-tw", "中文(繁體)", "zh-tw"),
 		UNLISTED("unlisted", "unlisted", "unlisted");
 		
-		private final String shortCode;
-		private final String fullName;
-		private final String isoCode;
+		public final String shortCode;
+		public final String fullName;
+		public final String isoCode;
 		
 		private LANGUAGE(String shortCode, String fullName, String isoCode) {
 			this.shortCode = shortCode;
@@ -58,32 +58,20 @@ public class L10n {
 		}
 
 		LANGUAGE(LANGUAGE l) {
-			this(l.getShortCode(), l.getFullName(), l.getISOCode());
+			this(l.shortCode, l.fullName, l.isoCode);
 		}
 		
 		public static LANGUAGE mapToLanguage(String whatever) throws MissingResourceException {
 			for(LANGUAGE currentLanguage : LANGUAGE.values()) {
-				if(currentLanguage.getShortCode().equalsIgnoreCase(whatever) ||
-				   currentLanguage.getShortCode().equalsIgnoreCase(whatever) ||
-				   currentLanguage.getISOCode().equalsIgnoreCase(whatever) ||
+				if(currentLanguage.shortCode.equalsIgnoreCase(whatever) ||
+				   currentLanguage.fullName.equalsIgnoreCase(whatever) ||
+				   currentLanguage.isoCode.equalsIgnoreCase(whatever) ||
 				   currentLanguage.toString().equalsIgnoreCase(whatever))
 				{
 					return currentLanguage;
 				}
 			}
 			return null;
-		}
-		
-		public String getFullName() {
-			return fullName;
-		}
-		
-		public String getShortCode() {
-			return shortCode;
-		}
-		
-		public String getISOCode() {
-			return isoCode;
 		}
 		
 		public String getL10nFilename() {
@@ -98,7 +86,7 @@ public class L10n {
 			LANGUAGE[] allValues = values();
 			String[] result = new String[allValues.length];
 			for(int i=0; i<allValues.length; i++)
-				result[i] = allValues[i].getFullName();
+				result[i] = allValues[i].fullName;
 			
 			return result;
 		}
