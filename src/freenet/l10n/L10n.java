@@ -61,7 +61,7 @@ public class L10n {
 			this(l.shortCode, l.fullName, l.isoCode);
 		}
 		
-		public static LANGUAGE mapToLanguage(String whatever) throws MissingResourceException {
+		public static LANGUAGE mapToLanguage(String whatever) {
 			for(LANGUAGE currentLanguage : LANGUAGE.values()) {
 				if(currentLanguage.shortCode.equalsIgnoreCase(whatever) ||
 				   currentLanguage.fullName.equalsIgnoreCase(whatever) ||
@@ -145,7 +145,7 @@ public class L10n {
 			Logger.normal(CLASS_NAME, "Changing the current language to : " + selectedLanguage);
 			L10n oldClass = currentClass;
 			LANGUAGE lang = LANGUAGE.mapToLanguage(selectedLanguage);
-			if(currentClass == null) {
+			if(lang == null) {
 				currentClass = (oldClass != null ? oldClass : new L10n(LANGUAGE.getDefault()));
 				Logger.error(CLASS_NAME, "The requested translation is not available!" + selectedLanguage);
 				throw new MissingResourceException("The requested translation (" + selectedLanguage + ") hasn't been found!", CLASS_NAME, selectedLanguage);
