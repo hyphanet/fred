@@ -62,7 +62,7 @@ public class PrioritizedSerialExecutor implements Executor {
 					long start = System.currentTimeMillis();
 					job.run();
 					long end = System.currentTimeMillis();
-					if(Logger.shouldLog(Logger.MINOR, this))
+					if(Logger.shouldLog(Logger.MINOR, this)) {
 						Logger.minor(this, "Job "+job+" took "+(end-start)+"ms");
 					synchronized(timeByJobClasses) {
 						String name = job.toString();
@@ -86,6 +86,7 @@ public class PrioritizedSerialExecutor implements Executor {
 								lastDumped = System.currentTimeMillis();
 							}
 						}
+					}
 					}
 				} catch (Throwable t) {
 					Logger.error(this, "Caught "+t, t);
