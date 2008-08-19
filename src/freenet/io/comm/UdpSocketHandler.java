@@ -303,7 +303,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		}
 		node.executor.execute(this, "UdpSocketHandler for port "+listenPort);
 		if(!disableHangChecker) {
-			node.executor.execute(new USMChecker(), "UdpSockerHandler watchdog");
+			node.executor.execute(new USMChecker(), "UdpSocketHandler watchdog");
 		}
 	}
 	
