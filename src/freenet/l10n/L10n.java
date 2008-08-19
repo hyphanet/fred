@@ -53,7 +53,7 @@ public class L10n {
 		private final String fullName;
 		private final String isoCode;
 		
-		LANGUAGE(String shortCode, String fullName, String isoCode) {
+		private LANGUAGE(String shortCode, String fullName, String isoCode) {
 			this.shortCode = shortCode;
 			this.fullName = fullName;
 			this.isoCode = isoCode;
@@ -88,11 +88,11 @@ public class L10n {
 			return isoCode;
 		}
 		
-		protected String getL10nFilename() {
+		private String getL10nFilename() {
 			return PREFIX.replace ('.', '/').concat(PREFIX.concat(shortCode.concat(SUFFIX)));
 		}
 		
-		protected String getL10nOverrideFilename() {
+		private String getL10nOverrideFilename() {
 			return L10n.PREFIX + shortCode + L10n.OVERRIDE_SUFFIX;
 		}
 		
