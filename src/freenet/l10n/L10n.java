@@ -27,9 +27,9 @@ import freenet.support.io.FileUtil;
 */
 public class L10n {
 	public static final String CLASS_NAME = "L10n";
-	public static final String PREFIX = "freenet.l10n.";
-	public static final String SUFFIX = ".properties";
-	public static final String OVERRIDE_SUFFIX = ".override" + SUFFIX;
+	private static final String PREFIX = "freenet.l10n.";
+	private static final String SUFFIX = ".properties";
+	private static final String OVERRIDE_SUFFIX = ".override" + SUFFIX;
 	
 	public static final LANGUAGE FALLBACK_DEFAULT = LANGUAGE.ENGLISH;
 	
@@ -182,7 +182,7 @@ public class L10n {
 				
 				// Set the value of the override
 				translationOverride.putOverwrite(key, value);
-				Logger.normal("L10n", "Got a new translation key: set the Override!");
+				Logger.normal(CLASS_NAME, "Got a new translation key: set the Override!");
 			}
 
 			// Save the file to disk
@@ -198,15 +198,15 @@ public class L10n {
 			// We don't set deleteOnExit on it : if the save operation fails, we want a backup
 			// FIXME: REDFLAG: not symlink-race proof!
 			File tempFile = new File(finalFile.getParentFile(), finalFile.getName()+".bak");
-			Logger.minor("L10n", "The temporary filename is : " + tempFile);
+			Logger.minor(CLASS_NAME, "The temporary filename is : " + tempFile);
 			
 			fos = new FileOutputStream(tempFile);
                         L10n.translationOverride.writeTo(fos);
 			
 			FileUtil.renameTo(tempFile, finalFile);
-			Logger.normal("L10n", "Override file saved successfully!");
+			Logger.normal(CLASS_NAME, "Override file saved successfully!");
 		} catch (IOException e) {
-			Logger.error("L10n", "Error while saving the translation override: "+ e.getMessage(), e);
+			Logger.error(CLASS_NAME, "Error while saving the translation override: "+ e.getMessage(), e);
 		} finally {
 			Closer.close(fos);
 		}
@@ -397,7 +397,7 @@ public class L10n {
 			if(in != null)
 				result = SimpleFieldSet.readFrom(in, false, false);
 		} catch (Exception e) {
-			Logger.error("L10n", "Error while loading the l10n file from " + lang.getL10nFilename() + " :" + e.getMessage(), e);
+			Logger.error(CLASS_NAME, "Error while loading the l10n file from " + lang.getL10nFilename() + " :" + e.getMessage(), e);
 			result = null;
 		} finally {
 			Closer.close(in);
