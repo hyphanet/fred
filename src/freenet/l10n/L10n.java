@@ -27,9 +27,6 @@ import freenet.support.io.FileUtil;
 */
 public class L10n {
 	public static final String CLASS_NAME = "L10n";
-	private static final String PREFIX = "freenet.l10n.";
-	private static final String SUFFIX = ".properties";
-	private static final String OVERRIDE_SUFFIX = ".override" + SUFFIX;
 	
 	/** @see http://www.omniglot.com/language/names.htm */
 	public enum LANGUAGE {
@@ -57,8 +54,8 @@ public class L10n {
 			this.shortCode = shortCode;
 			this.fullName = fullName;
 			this.isoCode = isoCode;
-			this.l10nFilename = PREFIX.replace ('.', '/').concat(PREFIX.concat(shortCode.concat(SUFFIX)));
-			this.l10nOverrideFilename = L10n.PREFIX + shortCode + L10n.OVERRIDE_SUFFIX;
+			this.l10nFilename = "freenet/l10n/freenet.l10n."+shortCode+".properties";
+			this.l10nOverrideFilename = "freenet.l10n."+shortCode+".override.properties";
 		}
 
 		LANGUAGE(LANGUAGE l) {
