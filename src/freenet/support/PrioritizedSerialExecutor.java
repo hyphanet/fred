@@ -10,12 +10,12 @@ import freenet.support.io.NativeThread;
 
 public class PrioritizedSerialExecutor implements Executor {
 	
-	private final LinkedList[] jobs;
+	private final LinkedList<Runnable>[] jobs;
 	private final int priority;
 	private final int defaultPriority;
 	private boolean waiting;
 	private final boolean invertOrder;
-	private final Map timeByJobClasses = new HashMap();
+	private final Map<String, Long> timeByJobClasses = new HashMap<String, Long>();
 	
 	private String name;
 	private Executor realExecutor;
@@ -69,7 +69,7 @@ public class PrioritizedSerialExecutor implements Executor {
 						String name = job.toString();
 						if(name.indexOf('@') > 0)
 							name = name.substring(0, name.indexOf('@'));
-						Long l = (Long) timeByJobClasses.get(name);
+						Long l = timeByJobClasses.get(name);
 						if(l != null) {
 							l = new Long(l.longValue() + (end-start));
 						} else {
@@ -129,7 +129,7 @@ public class PrioritizedSerialExecutor implements Executor {
 	public PrioritizedSerialExecutor(int priority, int internalPriorityCount, int defaultPriority, boolean invertOrder) {
 		jobs = new LinkedList[internalPriorityCount];
 		for(int i=0;i<jobs.length;i++)
-			jobs[i] = new LinkedList();
+			jobs[i] = new LinkedList<Runnable>();
 		this.priority = priority;
 		this.defaultPriority = defaultPriority;
 		this.invertOrder = invertOrder;
