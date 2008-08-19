@@ -315,7 +315,7 @@ public class NodeClientCore implements Persistable {
 			});
 		setUploadAllowedDirs(nodeConfig.getStringArr("uploadAllowedDirs"));
 
-		nodeConfig.register("maxArchiveSize", "5MiB", sortOrder++, true, false, "NodeClientCore.maxArchiveSize", "NodeClientCore.maxArchiveSizeLong", new LongCallback() {
+		nodeConfig.register("maxArchiveSize", "2MiB", sortOrder++, true, false, "NodeClientCore.maxArchiveSize", "NodeClientCore.maxArchiveSizeLong", new LongCallback() {
 
 			@Override
 			public Long get() {
