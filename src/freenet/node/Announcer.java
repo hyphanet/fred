@@ -242,7 +242,7 @@ public class Announcer {
 	}
 	
 	private long timeGotEnoughPeers = -1;
-	
+	private final Object timeGotEnoughPeersLock = new Object();
 	private boolean killedAnnouncementTooOld;
 	
 	/** @return True if we have enough peers that we don't need to announce. */
@@ -254,7 +254,7 @@ public class Announcer {
 		if(opennetCount >= target) {
 			if(logMINOR)
 				Logger.minor(this, "We have enough opennet peers: "+opennetCount+" > "+target+" since "+(System.currentTimeMillis()-timeGotEnoughPeers)+" ms");
-			synchronized(this) {
+			synchronized(timeGotEnoughPeersLock) {
 				if(timeGotEnoughPeers <= 0)
 					timeGotEnoughPeers = System.currentTimeMillis();
 			}
@@ -278,7 +278,7 @@ public class Announcer {
 			}
 				
 		}
-		synchronized(this) {
+		synchronized(timeGotEnoughPeersLock) {
 			timeGotEnoughPeers = -1;
 		}
 		return false;
@@ -288,8 +288,10 @@ public class Announcer {
 	 * Get the earliest time at which we had enough opennet peers. This is reset when we drop
 	 * below the threshold.
 	 */
-	synchronized long timeGotEnoughPeers() {
-		return timeGotEnoughPeers;
+	long timeGotEnoughPeers() {
+		synchronized(timeGotEnoughPeersLock) {
+			return timeGotEnoughPeers;
+		}
 	}
 
 	private boolean ignoreIPUndetected;
