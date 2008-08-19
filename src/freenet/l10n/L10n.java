@@ -31,8 +31,6 @@ public class L10n {
 	private static final String SUFFIX = ".properties";
 	private static final String OVERRIDE_SUFFIX = ".override" + SUFFIX;
 	
-	public static final LANGUAGE FALLBACK_DEFAULT = LANGUAGE.ENGLISH;
-	
 	/** @see http://www.omniglot.com/language/names.htm */
 	public enum LANGUAGE {
 		ENGLISH("en", "English", "eng"),
@@ -88,11 +86,11 @@ public class L10n {
 			return isoCode;
 		}
 		
-		private String getL10nFilename() {
+		public String getL10nFilename() {
 			return PREFIX.replace ('.', '/').concat(PREFIX.concat(shortCode.concat(SUFFIX)));
 		}
 		
-		private String getL10nOverrideFilename() {
+		public String getL10nOverrideFilename() {
 			return L10n.PREFIX + shortCode + L10n.OVERRIDE_SUFFIX;
 		}
 		
@@ -103,6 +101,10 @@ public class L10n {
 				result[i] = allValues[i].getFullName();
 			
 			return result;
+		}
+		
+		public static LANGUAGE getDefault() {
+			return ENGLISH;
 		}
 	}
 	
@@ -156,7 +158,7 @@ public class L10n {
 			L10n oldClass = currentClass;
 			LANGUAGE lang = LANGUAGE.mapToLanguage(selectedLanguage);
 			if(currentClass == null) {
-				currentClass = (oldClass != null ? oldClass : new L10n(FALLBACK_DEFAULT));
+				currentClass = (oldClass != null ? oldClass : new L10n(LANGUAGE.getDefault()));
 				Logger.error(CLASS_NAME, "The requested translation is not available!" + selectedLanguage);
 				throw new MissingResourceException("The requested translation (" + selectedLanguage + ") hasn't been found!", CLASS_NAME, selectedLanguage);
 			} else
@@ -242,7 +244,7 @@ public class L10n {
 	public static SimpleFieldSet getDefaultLanguageTranslation() {
 		synchronized (sync) {
 			if(fallbackTranslation == null)
-				fallbackTranslation = loadTranslation(FALLBACK_DEFAULT);
+				fallbackTranslation = loadTranslation(LANGUAGE.getDefault());
 				
 			return new SimpleFieldSet(fallbackTranslation);	
 		}
@@ -314,7 +316,7 @@ public class L10n {
 		// We instanciate it only if necessary
 		synchronized (sync) {
 			if(fallbackTranslation == null)
-				fallbackTranslation = loadTranslation(FALLBACK_DEFAULT);
+				fallbackTranslation = loadTranslation(LANGUAGE.getDefault());
 			
 			result = fallbackTranslation.get(key);	
 		}
@@ -374,7 +376,7 @@ public class L10n {
 	public static LANGUAGE getSelectedLanguage() {
 		synchronized (sync) {
 			if((currentClass == null) || (currentClass.selectedLanguage == null))
-				return FALLBACK_DEFAULT;
+				return LANGUAGE.getDefault();
 			else
 				return currentClass.selectedLanguage;	
 		}
