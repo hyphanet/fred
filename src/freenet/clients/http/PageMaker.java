@@ -17,6 +17,7 @@ import java.util.jar.JarFile;
 
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
+import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
@@ -41,16 +42,26 @@ public final class PageMaker {
 	
 	/** Cache for themes read from the JAR file. */
 	private List jarThemesCache = null;
+	private final FredPluginL10n plugin; 
+	private final boolean pluginMode;
+	
+	public PageMaker(FredPluginL10n plug, String t) {
+		setTheme(t);
+		plugin = plug;
+		pluginMode = true;
+	}
 	
 	public PageMaker(String t) {
 		setTheme(t);
+		plugin = null;
+		pluginMode = false;
 	}
 	
 	void setOverride(File f) {
 		this.override = f;
 	}
 	
-	void setTheme(String theme) {
+	public void setTheme(String theme) {
 		if (theme == null) {
 			this.theme = DEFAULT_THEME;
 		} else {
@@ -63,6 +74,7 @@ public final class PageMaker {
 	}
         	
 	public void addNavigationLink(String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
+		if (pluginMode && (plugin == null)) throw new IllegalStateException("You need to implement FredPluginL10n to do so.");
 		navigationLinkTexts.add(name);
 		if(!fullOnly)
 			navigationLinkTextsNonFull.add(name);
@@ -122,7 +134,10 @@ public final class PageMaker {
 				String navigationTitle = (String) navigationLinkTitles.get(navigationLink);
 				String navigationPath = (String) navigationLinks.get(navigationLink);
 				HTMLNode listItem = navbarUl.addChild("li");
-				listItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, L10n.getString(navigationTitle) }, L10n.getString(navigationLink));
+				if (plugin != null)
+					listItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, plugin.getString(navigationTitle) }, plugin.getString(navigationLink));
+				else
+					listItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, L10n.getString(navigationTitle) }, L10n.getString(navigationLink));
 			}
 		}
 		HTMLNode contentDiv = pageDiv.addChild("div", "id", "content");
