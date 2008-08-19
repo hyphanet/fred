@@ -37,6 +37,7 @@ public class PrioritizedSerialExecutor implements Executor {
 			long lastDumped = System.currentTimeMillis();
 			current = Thread.currentThread();
 			while(true) {
+				boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 				Runnable job = null;
 				synchronized(jobs) {
 					job = checkQueue();
@@ -57,12 +58,12 @@ public class PrioritizedSerialExecutor implements Executor {
 					}
 				}
 				try {
-					if(Logger.shouldLog(Logger.MINOR, this))
+					if(logMINOR)
 						Logger.minor(this, "Running job "+job);
 					long start = System.currentTimeMillis();
 					job.run();
 					long end = System.currentTimeMillis();
-					if(Logger.shouldLog(Logger.MINOR, this)) {
+					if(logMINOR) {
 						Logger.minor(this, "Job "+job+" took "+(end-start)+"ms");
 					synchronized(timeByJobClasses) {
 						String name = job.toString();
@@ -75,7 +76,7 @@ public class PrioritizedSerialExecutor implements Executor {
 							l = new Long(end-start);
 						}
 						timeByJobClasses.put(name, l);
-						if(Logger.shouldLog(Logger.MINOR, this)) {
+						if(logMINOR) {
 							Logger.minor(this, "Total for class "+name+" : "+l);
 							if(System.currentTimeMillis() > (lastDumped + 60*1000)) {
 								Iterator i = timeByJobClasses.entrySet().iterator();
