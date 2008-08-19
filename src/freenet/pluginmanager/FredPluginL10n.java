@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import freenet.l10n.L10n.LANGUAGE;
+
 /**
  * Interface that has to be implemented for plugins that wants to use
  * PageMaker.addNavigationLink(..) 
@@ -13,5 +15,5 @@ public interface FredPluginL10n {
 
 	public String getString(String key);
 	
-	public void setLanguage(String newLanguage);
+	public void setLanguage(LANGUAGE newLanguage);
 }
