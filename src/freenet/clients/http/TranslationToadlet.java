@@ -48,7 +48,7 @@ public class TranslationToadlet extends Toadlet {
 			}
 			byte[] data = sfs.toOrderedString().getBytes("UTF-8");
 			MultiValueTable head = new MultiValueTable();
-			head.put("Content-Disposition", "attachment; filename=\"" + L10n.getSelectedLanguage().getL10nOverrideFilename()+ '"');
+			head.put("Content-Disposition", "attachment; filename=\"" + L10n.getSelectedLanguage().l10nOverrideFilename+ '"');
 			ctx.sendReplyHeaders(200, "Found", head, "text/plain; charset=utf-8", data.length);
 			ctx.writeData(data);
 			return;

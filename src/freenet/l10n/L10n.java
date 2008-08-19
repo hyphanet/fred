@@ -50,11 +50,15 @@ public class L10n {
 		public final String shortCode;
 		public final String fullName;
 		public final String isoCode;
+		public final String l10nFilename;
+		public final String l10nOverrideFilename;
 		
 		private LANGUAGE(String shortCode, String fullName, String isoCode) {
 			this.shortCode = shortCode;
 			this.fullName = fullName;
 			this.isoCode = isoCode;
+			this.l10nFilename = PREFIX.replace ('.', '/').concat(PREFIX.concat(shortCode.concat(SUFFIX)));
+			this.l10nOverrideFilename = L10n.PREFIX + shortCode + L10n.OVERRIDE_SUFFIX;
 		}
 
 		LANGUAGE(LANGUAGE l) {
@@ -72,14 +76,6 @@ public class L10n {
 				}
 			}
 			return null;
-		}
-		
-		public String getL10nFilename() {
-			return PREFIX.replace ('.', '/').concat(PREFIX.concat(shortCode.concat(SUFFIX)));
-		}
-		
-		public String getL10nOverrideFilename() {
-			return L10n.PREFIX + shortCode + L10n.OVERRIDE_SUFFIX;
 		}
 		
 		public static String[] valuesWithFullNames() {
@@ -108,7 +104,7 @@ public class L10n {
 	L10n(LANGUAGE selected) {		
 		selectedLanguage = selected;
 		try {
-			File tmpFile = new File(selected.getL10nOverrideFilename());
+			File tmpFile = new File(selected.l10nOverrideFilename);
 			if(tmpFile.exists() && tmpFile.canRead() && tmpFile.length() > 0) {
 				Logger.normal(this, "Override file detected : let's try to load it");
 				translationOverride = SimpleFieldSet.readFrom(tmpFile, false, false);
@@ -182,7 +178,7 @@ public class L10n {
 	
 	private static void _saveTranslationFile() {
 		FileOutputStream fos = null;
-		File finalFile = new File(getSelectedLanguage().getL10nOverrideFilename());
+		File finalFile = new File(getSelectedLanguage().l10nOverrideFilename);
 		
 		try {
 			// We don't set deleteOnExit on it : if the save operation fails, we want a backup
@@ -383,11 +379,11 @@ public class L10n {
 			ClassLoader loader = ClassLoader.getSystemClassLoader();
 			
 			// Returns null on lookup failures:
-			in = loader.getResourceAsStream(lang.getL10nFilename());
+			in = loader.getResourceAsStream(lang.l10nFilename);
 			if(in != null)
 				result = SimpleFieldSet.readFrom(in, false, false);
 		} catch (Exception e) {
-			Logger.error(CLASS_NAME, "Error while loading the l10n file from " + lang.getL10nFilename() + " :" + e.getMessage(), e);
+			Logger.error(CLASS_NAME, "Error while loading the l10n file from " + lang.l10nFilename + " :" + e.getMessage(), e);
 			result = null;
 		} finally {
 			Closer.close(in);
