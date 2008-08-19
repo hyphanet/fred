@@ -1,0 +1,17 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
+package freenet.pluginmanager;
+
+/**
+ * Interface that has to be implemented for plugins that wants to use
+ * PageMaker.addNavigationLink(..) 
+ * 
+ * @author saces
+ */
+public interface FredPluginL10n {
+
+	public String getString(String key);
+	
+	public void setLanguage(String newLanguage);
+}
