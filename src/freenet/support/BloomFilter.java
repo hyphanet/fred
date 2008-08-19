@@ -30,7 +30,7 @@ public abstract class BloomFilter {
 	
 	protected BloomFilter(int length, int k) {
 		if (length % 8 != 0)
-			throw new IllegalArgumentException();
+			length -= length % 8;
 
 		this.length = length;
 		this.k = k;
