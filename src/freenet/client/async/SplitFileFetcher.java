@@ -301,8 +301,10 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		} catch (IOException e) {
 			throw new FetchException(FetchException.BUCKET_ERROR, "Unable to write Bloom filters for splitfile");
 		}
-		for(int i=0;i<segments.length;i++) {
-			segments[i].deactivateKeys(container);
+		if(persistent) {
+			for(int i=0;i<segments.length;i++) {
+				segments[i].deactivateKeys(container);
+			}
 		}
 	}
 
