@@ -14,16 +14,16 @@ import freenet.support.io.NativeThread;
 public class BackgroundBlockEncoder implements PrioRunnable {
 
 	// Minimize memory usage at the cost of having to encode from the end
-	private final ArrayList<SoftReference<SingleBlockInserter>> queue;
+	private final ArrayList queue;
 	
 	public BackgroundBlockEncoder() {
-		queue = new ArrayList<SoftReference<SingleBlockInserter>>();
+		queue = new ArrayList();
 	}
 	
 	public void queue(SingleBlockInserter sbi) {
 		if(sbi.isCancelled()) return;
 		if(sbi.resultingURI != null) return;
-		SoftReference<SingleBlockInserter> ref = new SoftReference<SingleBlockInserter>(sbi);
+		SoftReference ref = new SoftReference(sbi);
 		synchronized(this) {
 			queue.add(ref);
 			Logger.minor(this, "Queueing encode of "+sbi);
@@ -39,7 +39,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 				if(inserter.isCancelled()) continue;
 				if(inserter.resultingURI != null) continue;
 				Logger.minor(this, "Queueing encode of "+inserter);
-				SoftReference<SingleBlockInserter> ref = new SoftReference<SingleBlockInserter>(inserter);
+				SoftReference ref = new SoftReference(inserter);
 				queue.add(ref);
 			}
 			notifyAll();
@@ -59,8 +59,8 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 					}
 				}
 				while(!queue.isEmpty()) {
-					SoftReference<SingleBlockInserter> ref = queue.remove(queue.size()-1);
-					sbi = ref.get();
+					SoftReference ref = (SoftReference) queue.remove(queue.size()-1);
+					sbi = (SingleBlockInserter) ref.get();
 					if(sbi != null) break;
 				}
 			}
