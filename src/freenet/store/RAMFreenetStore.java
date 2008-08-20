@@ -125,4 +125,9 @@ public class RAMFreenetStore implements FreenetStore {
 	public long getBloomFalsePositive() {
 		return -1;
 	}
+	
+	public boolean probablyInStore(byte[] routingKey) {
+		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
+		return blocksByRoutingKey.get(key) != null;
+	}
 }

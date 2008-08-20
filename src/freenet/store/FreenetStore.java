@@ -55,4 +55,12 @@ public interface FreenetStore {
 	public long keyCount();
 
 	public long getBloomFalsePositive();
+	
+	/**
+	 * Check if a routing key probably
+	 * 
+	 * @param routingkey
+	 * @return <code>false</code> <b>only</b> if the key does not exist in store.
+	 */
+	public boolean probablyInStore(byte[] routingKey);
 }
