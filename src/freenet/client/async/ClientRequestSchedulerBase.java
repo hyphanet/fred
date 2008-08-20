@@ -60,7 +60,7 @@ abstract class ClientRequestSchedulerBase {
 	protected final List /* <BaseSendableGet> */ recentSuccesses;
 	protected transient ClientRequestScheduler sched;
 	/** Transient even for persistent scheduler. */
-	protected transient final Set<KeyListener> keyListeners;
+	protected transient Set<KeyListener> keyListeners;
 
 	abstract boolean persistent();
 	
@@ -322,5 +322,9 @@ abstract class ClientRequestSchedulerBase {
 	}
 	
 	protected abstract Set makeSetForAllRequestsByClientRequest(ObjectContainer container);
+
+	public void onStarted() {
+		keyListeners = new HashSet<KeyListener>();
+	}
 
 }

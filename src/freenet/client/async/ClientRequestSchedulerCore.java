@@ -114,6 +114,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	}
 
 	private void onStarted(ObjectContainer container, long cooldownTime, ClientRequestScheduler sched, ClientContext context) {
+		super.onStarted();
 		System.err.println("insert scheduler: "+isInsertScheduler);
 		if(allRequestsByClientRequest == null)
 			System.err.println("allRequestsByClientRequest is null");
