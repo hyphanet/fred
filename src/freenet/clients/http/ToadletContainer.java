@@ -7,6 +7,7 @@ import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+import freenet.clients.http.PageMaker.THEME;
 import freenet.support.HTMLNode;
 import freenet.support.api.BucketFactory;
 
@@ -31,7 +32,7 @@ public interface ToadletContainer {
 	/**
 	 * Get the name of the theme to be used by all the Toadlets
 	 */
-	public String getCSSName();
+	public THEME getTheme();
 	
 	/**
 	 * Get the form password
