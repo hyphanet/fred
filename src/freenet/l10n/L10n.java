@@ -44,9 +44,13 @@ public class L10n {
 		CHINESE_TAIWAN("zh-tw", "中文(繁體)", "zh-tw"),
 		UNLISTED("unlisted", "unlisted", "unlisted");
 		
+		/** The identifier we use internally : MUST BE UNIQUE! */
 		public final String shortCode;
+		/** The identifier shown to the user */
 		public final String fullName;
+		/** The mapping with the installer's l10n (@see bug #2424); MUST BE UNIQUE! */
 		public final String isoCode;
+		
 		public final String l10nFilename;
 		public final String l10nOverrideFilename;
 		
