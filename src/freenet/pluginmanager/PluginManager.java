@@ -25,10 +25,12 @@ import java.util.jar.Manifest;
 import java.util.zip.ZipException;
 
 import freenet.client.HighLevelSimpleClient;
+import freenet.clients.http.PageMaker.THEME;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
+import freenet.l10n.L10n.LANGUAGE;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestStarter;
@@ -38,10 +40,12 @@ import freenet.node.useralerts.UserAlert;
 import freenet.support.HexUtil;
 import freenet.support.JarClassLoader;
 import freenet.support.Logger;
+import freenet.support.SerialExecutor;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.StringArrCallback;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
+import freenet.support.io.NativeThread;
 
 public class PluginManager {
 
@@ -65,9 +69,14 @@ public class PluginManager {
 	private boolean logMINOR;
 	private boolean logDEBUG;
 	private final HighLevelSimpleClient client;
+	
+	private static PluginManager selfinstance = null;
+
+	private THEME fproxyTheme;
+	
+	private final SerialExecutor executor;
 
 	public PluginManager(Node node) {
-
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		// config 
@@ -85,7 +94,10 @@ public class PluginManager {
 
 		client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true);
 
-
+		// callback executor
+		executor = new SerialExecutor(NativeThread.NORM_PRIORITY);
+		executor.start(node.executor, "PM callback executor");
+		
 		pmconfig = new SubConfig("pluginmanager", node.config);
 //		pmconfig.register("configfile", "fplugins.ini", 9, true, true, "PluginConfig.configFile", "PluginConfig.configFileLong",
 //				new StringCallback() {
@@ -140,6 +152,9 @@ public class PluginManager {
 				startPluginAuto(name, false);
 
 		pmconfig.finishedInitialization();
+		
+		fproxyTheme = THEME.themeFromName(node.config.get("fproxy").getString("css"));
+		selfinstance = this;
 	}
 
 	private String[] getConfigLoadString() {
@@ -204,7 +219,7 @@ public class PluginManager {
 	}
 
 	public void startPluginFreenet(final String filename, boolean store) {
-		realStartPlugin(new PluginDownLoaderFreenet(client), filename, true);
+		realStartPlugin(new PluginDownLoaderFreenet(client), filename, store);
 	}
 
 	private void realStartPlugin(final PluginDownLoader pdl, final String filename, final boolean store) {
@@ -222,7 +237,7 @@ public class PluginManager {
 				try {
 					plug = loadPlugin(pdl, filename);
 					pluginProgress.setProgress(PluginProgress.STARTING);
-					PluginInfoWrapper pi = PluginHandler.startPlugin(PluginManager.this, filename, plug, new PluginRespirator(node, PluginManager.this));
+					PluginInfoWrapper pi = PluginHandler.startPlugin(PluginManager.this, filename, plug, new PluginRespirator(node, PluginManager.this, plug));
 					synchronized(pluginWrappers) {
 						pluginWrappers.add(pi);
 					}
@@ -844,5 +859,53 @@ public class PluginManager {
 				return "starting";
 			return "PluginProgress[name=" + name + ",startingTime=" + startingTime + ",progress=" + pluginProgress + "]";
 		}
+	}
+
+	public void setFProxyTheme(final THEME cssName) {
+		//if (fproxyTheme.equals(cssName)) return;
+		fproxyTheme = cssName;
+		synchronized(pluginWrappers) {
+			for(PluginInfoWrapper pi: pluginWrappers) {
+				pi.pr.getPageMaker().setTheme(cssName);
+				if(pi.isThemedPlugin()) {
+					final FredPluginThemed plug = (FredPluginThemed)(pi.plug);
+					executor.execute(new Runnable() {
+						public void run() {
+							try {
+								plug.setTheme(cssName);
+							} catch (Throwable t) {
+								Logger.error(this, "Cought Trowable in Callback", t);
+							}
+						}}, "Callback");
+				}
+			}
+		}
+	}
+
+	public static void setLanguage(LANGUAGE lang) {
+		if (selfinstance == null) return;
+		selfinstance.setPluginLanguage(lang);
+	}
+
+	private void setPluginLanguage(final LANGUAGE lang) {
+		synchronized(pluginWrappers) {
+			for(PluginInfoWrapper pi: pluginWrappers) {
+				if(pi.isL10nPlugin()) {
+					final FredPluginL10n plug = (FredPluginL10n)(pi.plug);
+					executor.execute(new Runnable() {
+						public void run() {
+							try {
+								plug.setLanguage(lang);
+							} catch (Throwable t) {
+								Logger.error(this, "Cought Trowable in Callback", t);
+							}
+						}}, "Callback");
+				}
+			}
+		}
+	}
+
+	public THEME getFProxyTheme() {
+		return fproxyTheme;
 	}
 }

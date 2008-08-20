@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.pluginmanager;
 
+import freenet.clients.http.PageMaker.THEME;
+
 /**
  * Interface that has to be implemented for plugins that wants to use
  * nodes html look (css theme) but not PageMaker.<br /> 
@@ -14,6 +16,6 @@ package freenet.pluginmanager;
  */
 public interface FredPluginThemed {
 
-	public void setTheme(String theme);
+	public void setTheme(THEME theme);
 
 }

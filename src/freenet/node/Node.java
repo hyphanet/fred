@@ -217,6 +217,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			} catch (MissingResourceException e) {
 				throw new InvalidConfigValueException(e.getLocalizedMessage());
 			}
+			PluginManager.setLanguage(L10n.getSelectedLanguage());
 		}
 		
 		public void setPossibleValues(String[] val) {
