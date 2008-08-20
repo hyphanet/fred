@@ -78,7 +78,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			if(finished) return;
 			fetcher = context.uskManager.getFetcherForInsertDontSchedule(pubUSK, parent.priorityClass, this, parent.getClient(), container, context);
 		}
-		fetcher.schedule(container, context, false);
+		fetcher.schedule(container, context);
 	}
 
 	public void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean lastContentWasMetadata, short codec, byte[] hisData) {

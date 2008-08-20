@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
@@ -19,6 +20,8 @@ import freenet.client.MetadataParseException;
 import freenet.keys.CHKBlock;
 import freenet.keys.ClientCHK;
 import freenet.keys.NodeCHK;
+import freenet.node.SendableGet;
+import freenet.support.BloomFilter;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -30,7 +33,7 @@ import freenet.support.compress.Compressor;
  * Fetch a splitfile, decompress it if need be, and return it to the GetCompletionCallback.
  * Most of the work is done by the segments, and we do not need a thread.
  */
-public class SplitFileFetcher implements ClientGetState {
+public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 
 	final FetchContext fetchContext;
 	final ArchiveContext archiveContext;
@@ -60,6 +63,7 @@ public class SplitFileFetcher implements ClientGetState {
 	private boolean finished;
 	private long token;
 	final boolean persistent;
+	private FetchException otherFailure;
 	
 	// A persistent hashCode is helpful in debugging, and also means we can put
 	// these objects into sets etc when we need to.
@@ -69,6 +73,42 @@ public class SplitFileFetcher implements ClientGetState {
 	public int hashCode() {
 		return hashCode;
 	}
+	
+	// Bloom filter stuff
+	/** The main bloom filter, which includes every key in the segment, is stored
+	 * in this file. It is a counting filter and is updated when a key is found. */
+	File mainBloomFile;
+	/** The per-segment bloom filters are kept in this (slightly larger) file,
+	 * appended one after the next. */
+	File altBloomFile;
+	/** Size of the main Bloom filter in bytes. */
+	final int mainBloomFilterSizeBytes;
+	/** Default mainBloomElementsPerKey. False positives is approx 
+	 * 0.6185^[this number], so 19 gives us 0.01% false positives, which should
+	 * be acceptable even if there are thousands of splitfiles on the queue. */
+	static final int DEFAULT_MAIN_BLOOM_ELEMENTS_PER_KEY = 19;
+	/** Number of hashes for the main filter. */
+	final int mainBloomK;
+	/** What proportion of false positives is acceptable for the per-segment
+	 * Bloom filters? This is divided by the number of segments, so it is (roughly)
+	 * an overall probability of any false positive given that we reach the 
+	 * per-segment filters. IMHO 1 in 100 is adequate. */
+	static final double ACCEPTABLE_BLOOM_FALSE_POSITIVES_ALL_SEGMENTS = 0.01;
+	/** Size of per-segment bloom filter in bytes. This is calculated from the
+	 * above constant and the number of segments, and rounded up. */
+	final int perSegmentBloomFilterSizeBytes;
+	/** Number of hashes for the per-segment bloom filters. */
+	final int perSegmentK;
+	private int keyCount;
+	/** Salt used in the secondary Bloom filters if the primary matches. 
+	 * The primary Bloom filters use the already-salted saltedKey. */
+	private final byte[] localSalt;
+	/** Reference set on the first call to makeKeyListener().
+	 * NOTE: db4o DOES NOT clear transient variables on deactivation.
+	 * So as long as this is paged in (i.e. there is a reference to it, i.e. the
+	 * KeyListener), it will remain valid, once it is set by the first call
+	 * during resuming. */
+	private transient SplitFileFetcherKeyListener tempListener;
 	
 	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent2,
 			FetchContext newCtx, ArrayList decompressors2, ClientMetadata clientMetadata, 
@@ -84,6 +124,8 @@ public class SplitFileFetcher implements ClientGetState {
 		this.cb = rcb;
 		this.recursionLevel = recursionLevel + 1;
 		this.parent = parent2;
+		localSalt = new byte[32];
+		context.random.nextBytes(localSalt);
 		if(parent2.isCancelled())
 			throw new FetchException(FetchException.CANCELLED);
 		overrideLength = metadata.dataLength();
@@ -160,7 +202,7 @@ public class SplitFileFetcher implements ClientGetState {
 			if(splitfileCheckBlocks.length > 0)
 				System.arraycopy(splitfileCheckBlocks, 0, newSplitfileCheckBlocks, 0, splitfileCheckBlocks.length);
 			segments[0] = new SplitFileFetcherSegment(splitfileType, newSplitfileDataBlocks, newSplitfileCheckBlocks, 
-					this, archiveContext, fetchContext, maxTempLength, recursionLevel, parent);
+					this, archiveContext, fetchContext, maxTempLength, recursionLevel, parent, 0);
 			if(persistent) {
 				container.set(segments[0]);
 				segments[0].deactivateKeys(container);
@@ -182,7 +224,7 @@ public class SplitFileFetcher implements ClientGetState {
 				dataBlocksPtr += copyDataBlocks;
 				checkBlocksPtr += copyCheckBlocks;
 				segments[i] = new SplitFileFetcherSegment(splitfileType, dataBlocks, checkBlocks, this, archiveContext, 
-						fetchContext, maxTempLength, recursionLevel+1, parent);
+						fetchContext, maxTempLength, recursionLevel+1, parent, i);
 				if(persistent) {
 					container.set(segments[i]);
 					segments[i].deactivateKeys(container);
@@ -198,6 +240,71 @@ public class SplitFileFetcher implements ClientGetState {
 		parent.addBlocks(splitfileDataBlocks.length + splitfileCheckBlocks.length, container);
 		parent.addMustSucceedBlocks(splitfileDataBlocks.length, container);
 		parent.notifyClients(container, context);
+		
+		// Setup bloom parameters.
+		if(persistent) {
+			// FIXME: Should this be encrypted? It's protected to some degree by the salt...
+			// Since it isn't encrypted, it's likely to be very sparse; we should name
+			// it appropriately...
+			try {
+				mainBloomFile = context.fg.makeRandomFile();
+				altBloomFile = context.fg.makeRandomFile();
+			} catch (IOException e) {
+				throw new FetchException(FetchException.BUCKET_ERROR, "Unable to create Bloom filter files", e);
+			}
+		} else {
+			// Not persistent, keep purely in RAM.
+			mainBloomFile = null;
+			altBloomFile = null;
+		}
+		int mainElementsPerKey = DEFAULT_MAIN_BLOOM_ELEMENTS_PER_KEY;
+		int origSize = splitfileDataBlocks.length + splitfileCheckBlocks.length;
+		mainBloomK = (int) (mainElementsPerKey * 0.7);
+		long elementsLong = origSize * mainElementsPerKey;
+		// REDFLAG: SIZE LIMIT: 3.36TB limit!
+		if(elementsLong > Integer.MAX_VALUE)
+			throw new FetchException(FetchException.TOO_BIG, "Cannot fetch splitfiles with more than "+(Integer.MAX_VALUE/mainElementsPerKey)+" keys! (approx 3.3TB)");
+		int mainSizeBits = (int)elementsLong; // counting filter
+		if((mainSizeBits & 7) != 0)
+			mainSizeBits += (8 - (mainSizeBits & 7));
+		mainBloomFilterSizeBytes = mainSizeBits / 8 * 2; // counting filter
+		double acceptableFalsePositives = ACCEPTABLE_BLOOM_FALSE_POSITIVES_ALL_SEGMENTS / segments.length;
+		int perSegmentBitsPerKey = (int) Math.ceil(Math.log(acceptableFalsePositives) / Math.log(0.6185));
+		int segBlocks = blocksPerSegment + checkBlocksPerSegment;
+		if(segBlocks < origSize)
+			segBlocks = origSize;
+		int perSegmentSize = perSegmentBitsPerKey * segBlocks;
+		if((perSegmentSize & 7) != 0)
+			perSegmentSize += (8 - (perSegmentSize & 7));
+		perSegmentBloomFilterSizeBytes = perSegmentSize / 8;
+		perSegmentK = BloomFilter.optimialK(perSegmentSize, blocksPerSegment + checkBlocksPerSegment);
+		keyCount = origSize;
+		// Now create it.
+		Logger.error(this, "Creating block filter for "+this+": keys="+(splitfileDataBlocks.length+splitfileCheckBlocks.length)+" main bloom size "+mainBloomFilterSizeBytes+" bytes, K="+mainBloomK+", filename="+mainBloomFile+" alt bloom filter: segments: "+segments.length+" each is "+perSegmentBloomFilterSizeBytes+" bytes k="+perSegmentK);
+		try {
+			tempListener = new SplitFileFetcherKeyListener(this, keyCount, mainBloomFile, altBloomFile, mainBloomFilterSizeBytes, mainBloomK, !fetchContext.cacheLocalRequests, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, true);
+			
+			// Now add the keys
+			int dataKeysIndex = 0;
+			int checkKeysIndex = 0;
+			int segNo = 0;
+			while(dataKeysIndex < splitfileDataBlocks.length) {
+				int dataKeysEnd = dataKeysIndex + blocksPerSegment;
+				int checkKeysEnd = checkKeysIndex + checkBlocksPerSegment;
+				dataKeysEnd = Math.min(dataKeysEnd, splitfileDataBlocks.length);
+				checkKeysEnd = Math.min(checkKeysEnd, splitfileCheckBlocks.length);
+				for(int j=dataKeysIndex;j<dataKeysEnd;j++)
+					tempListener.addKey(splitfileDataBlocks[j].getNodeKey(), segNo, context);
+				for(int j=checkKeysIndex;j<checkKeysEnd;j++)
+					tempListener.addKey(splitfileCheckBlocks[j].getNodeKey(), segNo, context);
+				segNo++;
+				dataKeysIndex = dataKeysEnd;
+				checkKeysIndex = checkKeysEnd;
+			}
+			tempListener.writeFilters();
+		} catch (IOException e) {
+			throw new FetchException(FetchException.BUCKET_ERROR, "Unable to write Bloom filters for splitfile");
+		}
 	}
 
 	/** Return the final status of the fetch. Throws an exception, or returns a 
@@ -303,8 +410,10 @@ public class SplitFileFetcher implements ClientGetState {
 		if(persistent) {
 			container.activate(cb, 1);
 		}
+		context.getChkFetchScheduler().removePendingKeys(this, true);
 		try {
 			synchronized(this) {
+				if(otherFailure != null) throw otherFailure;
 				if(finished) {
 					Logger.error(this, "Was already finished");
 					return;
@@ -350,22 +459,23 @@ public class SplitFileFetcher implements ClientGetState {
 		}
 	}
 
-	public void schedule(ObjectContainer container, ClientContext context, boolean regmeOnly) {
+	public void schedule(ObjectContainer container, ClientContext context) throws KeyListenerConstructionException {
 		if(persistent)
 			container.activate(this, 1);
-		if(segments.length > 1)
-			regmeOnly = true;
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Scheduling "+this);
+		SendableGet[] getters = new SendableGet[segments.length];
 		for(int i=0;i<segments.length;i++) {
 			if(logMINOR)
 				Logger.minor(this, "Scheduling segment "+i+" : "+segments[i]);
 			if(persistent)
 				container.activate(segments[i], 1);
-			segments[i].schedule(container, context, regmeOnly);
+			getters[i] = segments[i].schedule(container, context);
 			if(persistent)
 				container.deactivate(segments[i], 1);
 		}
+		BlockSet blocks = fetchContext.blocks;
+		context.getChkFetchScheduler().register(this, getters, persistent, true, blocks, false);
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
@@ -383,6 +493,66 @@ public class SplitFileFetcher implements ClientGetState {
 
 	public long getToken() {
 		return token;
+	}
+
+	/**
+	 * Make our SplitFileFetcherKeyListener. Returns the one we created in the
+	 * constructor if possible, otherwise makes a new one. We must have already
+	 * constructed one at some point, maybe before a restart.
+	 * @throws FetchException 
+	 */
+	public KeyListener makeKeyListener(ObjectContainer container, ClientContext context) throws KeyListenerConstructionException {
+		synchronized(this) {
+			if(tempListener != null) {
+				// Recently constructed
+				return tempListener;
+			}
+			try {
+				tempListener =
+					new SplitFileFetcherKeyListener(this, keyCount, mainBloomFile, altBloomFile, mainBloomFilterSizeBytes, mainBloomK, !fetchContext.cacheLocalRequests, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, false);
+			} catch (IOException e) {
+				Logger.error(this, "Unable to read Bloom filter for "+this+" attempting to reconstruct...");
+				mainBloomFile.delete();
+				altBloomFile.delete();
+				try {
+					mainBloomFile = context.fg.makeRandomFile();
+					altBloomFile = context.fg.makeRandomFile();
+				} catch (IOException e1) {
+					throw new KeyListenerConstructionException(new FetchException(FetchException.BUCKET_ERROR, "Unable to create Bloom filter files in reconstruction", e1));
+				}
+
+				try {
+					tempListener = 
+						new SplitFileFetcherKeyListener(this, keyCount, mainBloomFile, altBloomFile, mainBloomFilterSizeBytes, mainBloomK, !fetchContext.cacheLocalRequests, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, true);
+				} catch (IOException e1) {
+					throw new KeyListenerConstructionException(new FetchException(FetchException.BUCKET_ERROR, "Unable to reconstruct Bloom filters: "+e1, e1));
+				}
+			}
+			return tempListener;
+		}
+	}
+
+	public synchronized boolean isCancelled(ObjectContainer container) {
+		return finished;
+	}
+
+	public SplitFileFetcherSegment getSegment(int i) {
+		return segments[i];
+	}
+
+	public void removeMyPendingKeys(SplitFileFetcherSegment segment, ObjectContainer container, ClientContext context) {
+		keyCount = tempListener.killSegment(segment, container, context);
+	}
+
+	void setKeyCount(int keyCount2, ObjectContainer container) {
+		this.keyCount = keyCount2;
+		if(persistent)
+			container.set(this);
+	}
+
+	public void onFailed(KeyListenerConstructionException e, ObjectContainer container, ClientContext context) {
+		otherFailure = e.getFetchException();
+		cancel(container, context);
 	}
 
 }

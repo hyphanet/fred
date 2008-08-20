@@ -18,6 +18,7 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.ClientRequestScheduler;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
+import freenet.client.async.DatastoreChecker;
 import freenet.client.async.HealingQueue;
 import freenet.client.async.InsertCompressor;
 import freenet.client.async.SimpleHealingQueue;
@@ -95,7 +96,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	private boolean downloadAllowedEverywhere;
 	private File[] uploadAllowedDirs;
 	private boolean uploadAllowedEverywhere;
-	final FilenameGenerator tempFilenameGenerator;
+	public final FilenameGenerator tempFilenameGenerator;
 	public final BucketFactory tempBucketFactory;
 	public final Node node;
 	final NodeStats nodeStats;
@@ -124,11 +125,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	 * Note that the priorities are thread priorities, not request priorities.
 	 */
 	public transient final PrioritizedSerialExecutor clientDatabaseExecutor;
-	/**
-	 * Whenever a new request is added, we have to check the datastore. We funnel all such access
-	 * through this thread. Note that the priorities are request priorities, not thread priorities.
-	 */
-	public transient final PrioritizedSerialExecutor datastoreCheckerExecutor;
+	public final DatastoreChecker storeChecker;
 	
 	public transient final ClientContext clientContext;
 	
@@ -150,7 +147,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		fecQueue = FECQueue.create(node.nodeDBHandle, container);
 		this.backgroundBlockEncoder = new BackgroundBlockEncoder();
 		clientDatabaseExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, NativeThread.MAX_PRIORITY+1, NativeThread.NORM_PRIORITY, true);
-		datastoreCheckerExecutor = new PrioritizedSerialExecutor(NativeThread.NORM_PRIORITY, RequestStarter.NUMBER_OF_PRIORITY_CLASSES, 0, false);
+		storeChecker = new DatastoreChecker(node);
 		byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
 		this.formPassword = Base64.encode(pwdBuf);
@@ -234,6 +231,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 						!Node.DONT_CACHE_LOCAL_REQUESTS), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
 		clientContext = new ClientContext(this);
+		storeChecker.setContext(clientContext);
 		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext);
 		clientContext.init(requestStarters);
 		InsertCompressor.load(container, clientContext);
@@ -437,7 +435,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		}, NativeThread.NORM_PRIORITY, false);
 		persister.start();
 		
-		datastoreCheckerExecutor.start(node.executor, "Datastore checker");
+		storeChecker.start(node.executor, "Datastore checker");
 		clientDatabaseExecutor.start(node.executor, "Client database access thread");
 		if(fcpServer != null)
 			fcpServer.maybeStart();

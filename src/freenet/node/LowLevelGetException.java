@@ -62,7 +62,7 @@ public class LowLevelGetException extends Exception {
 	/** Failure code */
 	public final int code;
 	
-	LowLevelGetException(int code, String message, Throwable t) {
+	public LowLevelGetException(int code, String message, Throwable t) {
 		super(message, t);
 		this.code = code;
 	}

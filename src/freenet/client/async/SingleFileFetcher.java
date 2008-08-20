@@ -520,11 +520,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					f.addDecompressor(codec);
 				}
 				parent.onTransition(this, f, container);
-				f.schedule(container, context, false);
 				if(persistent) {
 					container.set(metaStrings);
-					container.set(this);
+					container.set(this); // Store *before* scheduling to avoid activation problems.
 				}
+				f.schedule(container, context);
 				// All done! No longer our problem!
 				metadata = null; // Get rid just in case we stick around somehow.
 				return;
@@ -605,7 +605,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, parent, ctx, 
 						decompressors, clientMetadata, actx, recursionLevel, returnBucket, token, container, context);
 				parent.onTransition(this, sf, container);
-				sf.schedule(container, context, false);
+				try {
+					sf.schedule(container, context);
+				} catch (KeyListenerConstructionException e) {
+					onFailure(e.getFetchException(), false, container, context);
+					return;
+				}
 				if(persistent) container.deactivate(sf, 1);
 				rcb.onBlockSetFinished(this, container, context);
 				// Clear our own metadata, we won't need it any more.
@@ -936,7 +941,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(l == usk.suggestedEdition) {
 					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, clientMetadata, key, metaStrings, key.getURI().addMetaStrings(metaStrings),
 							0, ctx, actx, null, null, maxRetries, recursionLevel+1, dontTellClientGet, token, false, returnBucket, true, container, context);
-					sf.schedule(container, context, false);
+					sf.schedule(container, context);
 				} else {
 					cb.onFailure(new FetchException(FetchException.PERMANENT_REDIRECT, newUSK.getURI().addMetaStrings(metaStrings)), null, container, context);
 				}

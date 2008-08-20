@@ -18,6 +18,7 @@ import freenet.node.RequestStarterGroup;
 import freenet.node.Ticker;
 import freenet.support.Executor;
 import freenet.support.api.BucketFactory;
+import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NativeThread;
 
 /**
@@ -45,6 +46,7 @@ public class ClientContext {
 	public transient final Random fastWeakRandom;
 	public transient final long bootID;
 	public transient final Ticker ticker;
+	public transient final FilenameGenerator fg;
 
 	public ClientContext(NodeClientCore core) {
 		this.bootID = core.node.bootID;
@@ -61,6 +63,7 @@ public class ClientContext {
 		this.uskManager = core.uskManager;
 		fastWeakRandom = core.node.fastWeakRandom;
 		this.ticker = core.getTicker();
+		fg = core.tempFilenameGenerator;
 	}
 	
 	public void init(RequestStarterGroup starters) {

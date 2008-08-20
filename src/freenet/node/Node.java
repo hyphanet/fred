@@ -112,6 +112,7 @@ import freenet.support.ImmutableByteArrayWrapper;
 import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
+import freenet.support.NullObject;
 import freenet.support.OOMHandler;
 import freenet.support.PooledExecutor;
 import freenet.support.ShortBuffer;
@@ -801,14 +802,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		Db4o.configure().objectClass(freenet.client.async.RegisterMe.class).objectField("core").indexed(true);
 		Db4o.configure().objectClass(freenet.client.async.RegisterMe.class).objectField("key").indexed(true);
 		Db4o.configure().objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("time").indexed(true);
-		Db4o.configure().objectClass(freenet.client.async.PendingKeyItem.class).objectField("key").indexed(true);
-		Db4o.configure().objectClass(freenet.client.async.PendingKeyItem.class).objectField("fullKeyAsBytes").indexed(true);
 		Db4o.configure().objectClass(freenet.client.FECJob.class).objectField("priority").indexed(true);
 		Db4o.configure().objectClass(freenet.client.FECJob.class).objectField("addedTime").indexed(true);
 		Db4o.configure().objectClass(freenet.client.FECJob.class).objectField("queue").indexed(true);
-		Db4o.configure().objectClass(freenet.client.async.PendingKeyItem.class).objectField("nodeDBHandle").indexed(true);
 		Db4o.configure().objectClass(freenet.client.async.InsertCompressor.class).objectField("nodeDBHandle").indexed(true);
 		Db4o.configure().objectClass(freenet.node.fcp.FCPClient.class).objectField("name").indexed(true);
+		Db4o.configure().objectClass(freenet.client.async.DatastoreCheckerItem.class).objectField("prio").indexed(true);
 		/** Maybe we want a different query evaluation mode?
 		 * At the moment, a big splitfile insert will result in one SingleBlockInserter
 		 * for every key, which means one RegisterMe for each ... this results in a long pause

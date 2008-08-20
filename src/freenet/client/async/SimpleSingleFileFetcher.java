@@ -166,4 +166,8 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		return token;
 	}
 
+	public void onFailed(KeyListenerConstructionException e, ObjectContainer container, ClientContext context) {
+		onFailure(e.getFetchException(), false, container, context);
+	}
+
 }

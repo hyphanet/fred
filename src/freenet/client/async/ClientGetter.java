@@ -114,11 +114,13 @@ public class ClientGetter extends BaseClientGetter {
 						return false;
 					}
 				}
-				currentState.schedule(container, context, false);
+				currentState.schedule(container, context);
 			}
 			if(cancelled) cancel();
 		} catch (MalformedURLException e) {
 			throw new FetchException(FetchException.INVALID_URI, e);
+		} catch (KeyListenerConstructionException e) {
+			onFailure(e.getFetchException(), currentState, container, context);
 		}
 		if(persistent()) {
 			container.set(this);

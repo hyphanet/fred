@@ -538,7 +538,11 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			container.set(blockNums);
 		if(schedule) {
 			// Only need to register once for all the blocks.
-			context.getChkFetchScheduler().register(null, new SendableGet[] { this }, false, persistent, true, null, null);
+			try {
+				context.getChkFetchScheduler().register(null, new SendableGet[] { this }, persistent, true, null, true);
+			} catch (KeyListenerConstructionException e) {
+				Logger.error(this, "Impossible: "+e+" on "+this, e);
+			}
 		}
 
 	}
@@ -590,7 +594,11 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			container.set(blockNums);
 		if(schedule) {
 			if(dontSchedule) return true;
-			context.getChkFetchScheduler().register(null, new SendableGet[] { this }, false, persistent, true, null, null);
+			try {
+				context.getChkFetchScheduler().register(null, new SendableGet[] { this }, persistent, true, null, true);
+			} catch (KeyListenerConstructionException e) {
+				Logger.error(this, "Impossible: "+e+" on "+this, e);
+			}
 		}
 		return false;
 	}
@@ -741,8 +749,12 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 	}
 
-	public void schedule(ObjectContainer container, ClientContext context, boolean firstTime, boolean regmeOnly) {
-		getScheduler(context).register(firstTime ? segment : null, new SendableGet[] { this }, regmeOnly, persistent, true, segment.blockFetchContext.blocks, null);
+	public void reschedule(ObjectContainer container, ClientContext context) {
+		try {
+			getScheduler(context).register(null, new SendableGet[] { this }, persistent, true, segment.blockFetchContext.blocks, true);
+		} catch (KeyListenerConstructionException e) {
+			Logger.error(this, "Impossible: "+e+" on "+this, e);
+		}
 	}
 
 	public boolean removeBlockNum(int blockNum, ObjectContainer container, boolean callerActivatesAndSets) {
@@ -819,6 +831,13 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			container.deactivate(blockNums, 1);
 		}
 		return blocks;
+	}
+
+	@Override
+	public Key[] listKeys(ObjectContainer container) {
+		if(persistent)
+			container.activate(segment, 1);
+		return segment.listKeys(container);
 	}
 
 }

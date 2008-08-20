@@ -81,6 +81,13 @@ public class FilenameGenerator {
 	public File getFilename(long id) {
 		return new File(tmpDir, prefix + Long.toHexString(id));
 	}
+	
+	public File makeRandomFile() throws IOException {
+		while(true) {
+			File file = getFilename(makeRandomFilename());
+			if(file.createNewFile()) return file;
+		}
+	}
 
 	public boolean matches(File file) {
 		return getID(file) != -1;

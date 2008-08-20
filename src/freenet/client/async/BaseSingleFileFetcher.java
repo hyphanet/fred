@@ -20,7 +20,7 @@ import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
 import freenet.support.Logger;
 
-public abstract class BaseSingleFileFetcher extends SendableGet implements GotKeyListener {
+public abstract class BaseSingleFileFetcher extends SendableGet implements HasKeyListener {
 
 	final ClientKey key;
 	protected boolean cancelled;
@@ -109,7 +109,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements GotKe
 				}
 				return true; // We will retry, just not yet. See requeueAfterCooldown(Key).
 			} else {
-				schedule(container, context, false);
+				reschedule(container, context);
 			}
 			return true;
 		}
@@ -151,7 +151,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements GotKe
 	 * Call unregister(container) if you only want to remove from the queue.
 	 */
 	public void unregisterAll(ObjectContainer container, ClientContext context) {
-		getScheduler(context).removePendingKey(this, false, key.getNodeKey(), container);
+		getScheduler(context).removePendingKeys(this, false);
 		super.unregister(container, context);
 	}
 
@@ -238,13 +238,25 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements GotKe
 		}
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Requeueing after cooldown "+key+" for "+this);
-		schedule(container, context, false);
+		reschedule(container, context);
 		if(persistent)
 			container.deactivate(this.key, 5);
 	}
 
-	public void schedule(ObjectContainer container, ClientContext context, boolean delayed) {
-		getScheduler(context).register(this, new SendableGet[] { this }, delayed, persistent, true, ctx.blocks, null);
+	public void schedule(ObjectContainer container, ClientContext context) {
+		try {
+			getScheduler(context).register(this, new SendableGet[] { this }, persistent, true, ctx.blocks, false);
+		} catch (KeyListenerConstructionException e) {
+			Logger.error(this, "Impossible: "+e+" on "+this, e);
+		}
+	}
+	
+	public void reschedule(ObjectContainer container, ClientContext context) {
+		try {
+			getScheduler(context).register(null, new SendableGet[] { this }, persistent, true, ctx.blocks, true);
+		} catch (KeyListenerConstructionException e) {
+			Logger.error(this, "Impossible: "+e+" on "+this, e);
+		}
 	}
 	
 	public SendableGet getRequest(Key key, ObjectContainer container) {
@@ -270,4 +282,19 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements GotKe
 		return Collections.singletonList(block);
 	}
 
+	public KeyListener makeKeyListener(ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(key, 5);
+			container.activate(parent, 1);
+			container.activate(ctx, 1);
+		}
+		KeyListener ret = new SingleKeyListener(key.getNodeKey().cloneKey(), this, !ctx.cacheLocalRequests, parent.getPriorityClass(), persistent);
+		if(persistent) {
+			container.deactivate(key, 5);
+			container.deactivate(parent, 1);
+			container.deactivate(ctx, 1);
+		}
+		return ret;
+	}
+	
 }

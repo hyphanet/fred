@@ -20,6 +20,7 @@ import freenet.client.FetchContext;
 import freenet.crypt.RandomSource;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
+import freenet.keys.KeyBlock;
 import freenet.node.BaseSendableGet;
 import freenet.node.KeysFetchingLocally;
 import freenet.node.Node;
@@ -60,6 +61,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	 * LOCKING: Always lock this LAST.
 	 */
 	private transient HashSet keysFetching;
+	
+	public final byte[] globalSalt;
 	
 	/**
 	 * Fetch a ClientRequestSchedulerCore from the database, or create a new one.
@@ -106,7 +109,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		} else {
 			this.persistentCooldownQueue = null;
 		}
-
+		globalSalt = new byte[32];
+		node.random.nextBytes(globalSalt);
 	}
 
 	private void onStarted(ObjectContainer container, long cooldownTime, ClientRequestScheduler sched, ClientContext context) {
@@ -200,8 +204,24 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			
 		};
 		registerMeRunner = new RegisterMeRunner();
+		loadKeyListeners(container, context);
 	}
 	
+	private void loadKeyListeners(final ObjectContainer container, ClientContext context) {
+		ObjectSet<HasKeyListener> results =
+			container.query(HasKeyListener.class);
+		for(HasKeyListener l : results) {
+			try {
+				if(l.isCancelled(container)) continue;
+				addPendingKeys(l.makeKeyListener(container, context));
+			} catch (KeyListenerConstructionException e) {
+				System.err.println("FAILED TO LOAD REQUEST BLOOM FILTERS:");
+				e.printStackTrace();
+				Logger.error(this, "FAILED TO LOAD REQUEST BLOOM FILTERS: "+e, e);
+			}
+		}
+	}
+
 	private transient DBJob preRegisterMeRunner;
 	
 	void start(DBJobRunner runner) {
@@ -614,45 +634,10 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				long endNext = System.currentTimeMillis();
 				if(logMINOR)
 					Logger.minor(this, "RegisterMe: next() took "+(endNext-startNext));
-				if(reg.getters != null) {
-					boolean allKilled = true;
-					for(int j=0;j<reg.getters.length;j++) {
-						container.activate(reg.getters[j], 2);
-						if(!reg.getters[j].isCancelled(container))
-							allKilled = false;
-					}
-					if(reg.listener != null) {
-						if(!reg.listener.isCancelled(container))
-							allKilled = false;
-					}
-					if(allKilled) {
-						if(logMINOR)
-							Logger.minor(this, "Not registering as all SendableGet's already cancelled");
-						continue;
-					}
-				}
 				
 				if(logMINOR)
-					Logger.minor(this, "Running RegisterMe "+reg+" for "+reg.listener+" and "+reg.getters+" and "+reg.nonGetRequest+" : "+reg.key.addedTime+" : "+reg.key.priority);
+					Logger.minor(this, "Running RegisterMe "+reg+" for "+reg.nonGetRequest+" : "+reg.key.addedTime+" : "+reg.key.priority);
 				// Don't need to activate, fields should exist? FIXME
-				if(reg.listener != null || reg.getters != null) {
-				try {
-					sched.register(reg.listener, reg.getters, false, true, true, reg.blocks, reg);
-				} catch (Throwable t) {
-					Logger.error(this, "Caught "+t+" running RegisterMeRunner", t);
-					// Cancel the request, and commit so it isn't tried again.
-					if(reg.getters != null) {
-						for(int k=0;k<reg.getters.length;k++)
-							reg.getters[k].internalError(t, sched, container, context, true);
-					}
-				}
-				if(reg.listener != null)
-					container.deactivate(reg.listener, 1);
-				if(reg.getters != null) {
-					for(int j=0;j<reg.getters.length;j++)
-						container.deactivate(reg.getters[j], 1);
-				}
-				}
 				if(reg.nonGetRequest != null) {
 					container.activate(reg.nonGetRequest, 1);
 					if(reg.nonGetRequest.isCancelled(container)) {
@@ -723,172 +708,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		
 	protected Set makeSetForAllRequestsByClientRequest(ObjectContainer container) {
 		return new Db4oSet(container, 1);
-	}
-
-	private ObjectSet queryForKey(final Key key, ObjectContainer container) {
-		final String pks = HexUtil.bytesToHex(key.getFullKey());
-		long startTime = System.currentTimeMillis();
-		// Can db4o handle this???
-		// Apparently not. Diagnostics say it's not optimised. Which is annoying,
-		// since it can quite clearly be turned into 2 simple constraints and
-		// one evaluation... :(
-		// FIXME maybe db4o 7.2 can handle this???
-//		ObjectSet ret = container.query(new Predicate() {
-//			public boolean match(PendingKeyItem item) {
-//				if(!pks.equals(item.fullKeyAsBytes)) return false;
-//				if(item.nodeDBHandle != nodeDBHandle) return false;
-//				if(!key.equals(item.key)) return false;
-//				return true;
-//			}
-//		});
-		Query query = container.query();
-		query.constrain(PendingKeyItem.class);
-		query.descend("fullKeyAsBytes").constrain(pks).and(query.descend("nodeDBHandle").constrain(new Long(nodeDBHandle)));
-		Evaluation eval = new Evaluation() {
-
-			public void evaluate(Candidate candidate) {
-				PendingKeyItem item = (PendingKeyItem) candidate.getObject();
-				Key k = item.key;
-				candidate.objectContainer().activate(k, 5);
-				if(k.equals(key))
-					candidate.include(true);
-				else {
-					candidate.include(false);
-				}
-			}
-			
-		};
-		query.constrain(eval);
-		ObjectSet ret = query.execute();
-		long endTime = System.currentTimeMillis();
-		if(endTime - startTime > 1000)
-			Logger.error(this, "Query took "+(endTime - startTime)+"ms for "+((key instanceof freenet.keys.NodeSSK) ? "SSK" : "CHK"));
-		else if(logMINOR)
-			Logger.minor(this, "Query took "+(endTime - startTime)+"ms for "+((key instanceof freenet.keys.NodeSSK) ? "SSK" : "CHK"));
-		return ret;
-	}
-	
-	public long countQueuedRequests(ObjectContainer container) {
-//		ObjectSet pending = container.query(new Predicate() {
-//			public boolean match(PendingKeyItem item) {
-//				if(item.nodeDBHandle == nodeDBHandle) return true;
-//				return false;
-//			}
-//		});
-//		return pending.size();
-		// If we just ask for the set of all PendingKeyItem's, we can
-		// filter them manually, and the query doesn't need to allocate any
-		// significant amount of RAM - it just remembers to return the class 
-		// index.
-		ObjectSet pending = container.query(PendingKeyItem.class);
-		long total = 0;
-		while(pending.hasNext()) {
-			PendingKeyItem item = (PendingKeyItem) pending.next();
-			if(item.nodeDBHandle != nodeDBHandle) {
-				container.deactivate(item, 1);
-				continue;
-			}
-			container.deactivate(item, 1);
-			total++;
-		}
-		return total;
-	}
-
-	protected boolean inPendingKeys(GotKeyListener req, final Key key, ObjectContainer container) {
-		ObjectSet pending = queryForKey(key, container);
-		if(pending.hasNext()) {
-			PendingKeyItem item = (PendingKeyItem) pending.next();
-			return item.hasGetter(req);
-		}
-		Logger.error(this, "Key not in pendingKeys at all");
-//		Key copy = key.cloneKey();
-//		addPendingKey(copy, req, container);
-//		container.commit();
-//		pending = container.query(new Predicate() {
-//			public boolean match(PendingKeyItem item) {
-//				if(!key.equals(item.key)) return false;
-//				if(item.nodeDBHandle != nodeDBHandle) return false;
-//				return true;
-//			}
-//		});
-//		if(!pending.hasNext()) {
-//			Logger.error(this, "INDEXES BROKEN!!!");
-//		} else {
-//			PendingKeyItem item = (PendingKeyItem) (pending.next());
-//			Key k = item.key;
-//			container.delete(item);
-//			Logger.error(this, "Indexes work");
-//		}
-		return false;
-	}
-
-	public GotKeyListener[] getClientsForPendingKey(final Key key, ObjectContainer container) {
-		ObjectSet pending = queryForKey(key, container);
-		if(pending.hasNext()) {
-			PendingKeyItem item = (PendingKeyItem) pending.next();
-			return item.getters();
-		}
-		return null;
-	}
-
-	public boolean anyWantKey(final Key key, ObjectContainer container) {
-		ObjectSet pending = queryForKey(key, container);
-		return pending.hasNext();
-	}
-
-	public GotKeyListener[] removePendingKey(final Key key, ObjectContainer container) {
-		ObjectSet pending = queryForKey(key, container);
-		if(pending.hasNext()) {
-			PendingKeyItem item = (PendingKeyItem) pending.next();
-			GotKeyListener[] getters = item.getters();
-			container.delete(item);
-			return getters;
-		}
-		return null;
-	}
-
-	public boolean removePendingKey(GotKeyListener getter, boolean complain, final Key key, ObjectContainer container) {
-		ObjectSet pending = queryForKey(key, container);
-		if(pending.hasNext()) {
-			PendingKeyItem item = (PendingKeyItem) pending.next();
-			boolean ret = item.removeGetter(getter);
-			if(item.isEmpty()) {
-				container.delete(item);
-			} else {
-				container.set(item);
-			}
-			return ret;
-		}
-		return false;
-	}
-
-	protected void addPendingKey(final Key key, GotKeyListener getter, ObjectContainer container) {
-		if(logMINOR)
-			Logger.minor(this, "Adding pending key for "+key+" for "+getter);
-		long startTime = System.currentTimeMillis();
-//		Query query = container.query();
-//		query.constrain(PendingKeyItem.class);
-//		query.descend("key").constrain(key);
-//		query.descend("nodeDBHandle").constrain(new Long(nodeDBHandle));
-//		ObjectSet pending = query.execute();
-		
-		// Native version seems to be faster, at least for a few thousand items...
-		// I'm not sure whether it's using the index though, we may need to reconsider for larger queues... FIXME
-		
-		ObjectSet pending = queryForKey(key, container);
-		long endTime = System.currentTimeMillis();
-		if(endTime - startTime > 1000)
-			Logger.error(this, "Query took "+(endTime - startTime)+"ms for "+((key instanceof freenet.keys.NodeSSK) ? "SSK" : "CHK"));
-		else if(logMINOR)
-			Logger.minor(this, "Query took "+(endTime - startTime)+"ms for "+((key instanceof freenet.keys.NodeSSK) ? "SSK" : "CHK"));
-		if(pending.hasNext()) {
-			PendingKeyItem item = (PendingKeyItem) pending.next();
-			item.addGetter(getter);
-			container.set(item);
-		} else {
-			PendingKeyItem item = new PendingKeyItem(key, getter, nodeDBHandle);
-			container.set(item);
-		}
 	}
 
 	public void rerunRegisterMeRunner(DBJobRunner runner) {

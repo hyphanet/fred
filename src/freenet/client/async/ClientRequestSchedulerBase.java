@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -11,9 +14,12 @@ import com.db4o.ObjectContainer;
 
 import freenet.crypt.RandomSource;
 import freenet.keys.Key;
+import freenet.keys.KeyBlock;
+import freenet.keys.NodeSSK;
 import freenet.node.BaseSendableGet;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarter;
+import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.support.Logger;
@@ -53,6 +59,8 @@ abstract class ClientRequestSchedulerBase {
 	protected final Map allRequestsByClientRequest;
 	protected final List /* <BaseSendableGet> */ recentSuccesses;
 	protected transient ClientRequestScheduler sched;
+	/** Transient even for persistent scheduler. */
+	protected transient final Set<KeyListener> keyListeners;
 
 	abstract boolean persistent();
 	
@@ -61,6 +69,7 @@ abstract class ClientRequestSchedulerBase {
 		this.isSSKScheduler = forSSKs;
 		this.allRequestsByClientRequest = allRequestsByClientRequest;
 		this.recentSuccesses = recentSuccesses;
+		keyListeners = new HashSet<KeyListener>();
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequestSchedulerBase.class);
 	}
@@ -203,53 +212,114 @@ abstract class ClientRequestSchedulerBase {
 			}
 	}
 
-	/**
-	 * Keys must already be activated.
-	 * @param getter
-	 * @param keyTokens
-	 * @param container
-	 */
-	public void addPendingKeys(GotKeyListener getter, Key[] keyTokens, ObjectContainer container) {
-		if(persistent())
-			container.activate(getter, 1);
-		Key prevTok = null;
-		for(int i=0;i<keyTokens.length;i++) {
-			Key key = keyTokens[i];
-			if(i != 0 && (prevTok == key || (prevTok != null && key != null && prevTok.equals(key)))) {
-				Logger.error(this, "Ignoring duplicate token");
-				continue;
-			}
-			addPendingKey(key, getter, container);
-		}
+	public synchronized void addPendingKeys(KeyListener listener) {
+		keyListeners.add(listener);
 	}
 	
-	public short getKeyPrio(Key key, short priority, ObjectContainer container) {
-		GotKeyListener[] getters = getClientsForPendingKey(key, container);
-		if(getters == null) return priority;
-		for(int i=0;i<getters.length;i++) {
-			if(persistent())
-				container.activate(getters[i], 1);
-			short prio = getters[i].getPriorityClass(container);
+	public synchronized boolean removePendingKeys(KeyListener listener) {
+		boolean ret = keyListeners.remove(listener);
+		listener.onRemove();
+		return ret;
+	}
+	
+	public synchronized boolean removePendingKeys(HasKeyListener hasListener) {
+		boolean found = false;
+		for(Iterator<KeyListener> i = keyListeners.iterator();i.hasNext();) {
+			KeyListener listener = i.next();
+			if(listener.getHasKeyListener() == hasListener) {
+				found = true;
+				i.remove();
+				listener.onRemove();
+			}
+		}
+		return found;
+	}
+	
+	public short getKeyPrio(Key key, short priority, ObjectContainer container, ClientContext context) {
+		byte[] saltedKey = ((key instanceof NodeSSK) ? context.getSskFetchScheduler() : context.getChkFetchScheduler()).saltKey(key);
+		ArrayList<KeyListener> matches = null;
+		synchronized(this) {
+			for(KeyListener listener : keyListeners) {
+				if(!listener.probablyWantKey(key, saltedKey)) continue;
+				if(matches == null) matches = new ArrayList<KeyListener> ();
+				matches.add(listener);
+			}
+		}
+		if(matches == null) return priority;
+		for(KeyListener listener : matches) {
+			short prio = listener.definitelyWantKey(key, saltedKey, container, sched.clientContext);
+			if(prio == -1) continue;
 			if(prio < priority) priority = prio;
-			if(persistent())
-				container.deactivate(getters[i], 1);
 		}
 		return priority;
 	}
 	
-	public abstract long countQueuedRequests(ObjectContainer container);
+	public synchronized long countQueuedRequests(ObjectContainer container) {
+		long count = 0;
+		for(KeyListener listener : keyListeners)
+			count += listener.countKeys();
+		return count;
+	}
 	
-	protected abstract boolean inPendingKeys(GotKeyListener req, Key key, ObjectContainer container);
+	public boolean anyWantKey(Key key, ObjectContainer container, ClientContext context) {
+		byte[] saltedKey = ((key instanceof NodeSSK) ? context.getSskFetchScheduler() : context.getChkFetchScheduler()).saltKey(key);
+		ArrayList<KeyListener> matches = null;
+		synchronized(this) {
+			for(KeyListener listener : keyListeners) {
+				if(!listener.probablyWantKey(key, saltedKey)) continue;
+				if(matches == null) matches = new ArrayList<KeyListener> ();
+				matches.add(listener);
+			}
+		}
+		if(matches != null) {
+			for(KeyListener listener : matches) {
+				if(listener.definitelyWantKey(key, saltedKey, container, sched.clientContext) >= 0)
+					return true;
+			}
+		}
+		return false;
+	}
 	
-	public abstract GotKeyListener[] getClientsForPendingKey(Key key, ObjectContainer container);
+	public synchronized boolean anyProbablyWantKey(Key key, ClientContext context) {
+		byte[] saltedKey = ((key instanceof NodeSSK) ? context.getSskFetchScheduler() : context.getChkFetchScheduler()).saltKey(key);
+		for(KeyListener listener : keyListeners) {
+			if(listener.probablyWantKey(key, saltedKey))
+				return true;
+		}
+		return false;
+	}
 	
-	public abstract boolean anyWantKey(Key key, ObjectContainer container);
-	
-	public abstract GotKeyListener[] removePendingKey(Key key, ObjectContainer container);
-	
-	public abstract boolean removePendingKey(GotKeyListener getter, boolean complain, Key key, ObjectContainer container);
-	
-	abstract void addPendingKey(Key key, GotKeyListener getter, ObjectContainer container);
+	public void tripPendingKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
+		byte[] saltedKey = ((key instanceof NodeSSK) ? context.getSskFetchScheduler() : context.getChkFetchScheduler()).saltKey(key);
+		ArrayList<KeyListener> matches = null;
+		synchronized(this) {
+			for(KeyListener listener : keyListeners) {
+				if(!listener.probablyWantKey(key, saltedKey)) continue;
+				if(matches == null) matches = new ArrayList<KeyListener> ();
+				matches.add(listener);
+			}
+		}
+		if(matches != null) {
+			for(KeyListener listener : matches)
+				listener.handleBlock(key, saltedKey, block, container, context);
+		}
+	}
+
+	public SendableGet[] requestsForKey(Key key, ObjectContainer container, ClientContext context) {
+		ArrayList<SendableGet> list = null;
+		byte[] saltedKey = ((key instanceof NodeSSK) ? context.getSskFetchScheduler() : context.getChkFetchScheduler()).saltKey(key);
+		synchronized(this) {
+		for(KeyListener listener : keyListeners) {
+			if(!listener.probablyWantKey(key, saltedKey)) continue;
+			SendableGet[] reqs = listener.getRequestsForKey(key, saltedKey, container, context);
+			if(reqs == null) continue;
+			if(list != null) list = new ArrayList<SendableGet>();
+			for(int i=0;i<reqs.length;i++) list.add(reqs[i]);
+		}
+		}
+		if(list == null) return null;
+		else return list.toArray(new SendableGet[list.size()]);
+	}
 	
 	protected abstract Set makeSetForAllRequestsByClientRequest(ObjectContainer container);
 

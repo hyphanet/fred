@@ -44,7 +44,7 @@ import freenet.support.io.BucketTools;
  * A single segment within a SplitFileFetcher.
  * This in turn controls a large number of SplitFileFetcherSubSegment's, which are registered on the ClientRequestScheduler.
  */
-public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
+public class SplitFileFetcherSegment implements FECCallback {
 
 	private static volatile boolean logMINOR;
 	final short splitfileType;
@@ -80,6 +80,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 	private boolean finishing;
 	private boolean scheduled;
 	private final boolean persistent;
+	final int segNum;
 	
 	// A persistent hashCode is helpful in debugging, and also means we can put
 	// these objects into sets etc when we need to.
@@ -92,8 +93,9 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 	
 	private FECCodec codec;
 	
-	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext fetchContext, long maxTempLength, int recursionLevel, ClientRequester requester) throws MetadataParseException, FetchException {
+	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext fetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum) throws MetadataParseException, FetchException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		this.segNum = segNum;
 		this.hashCode = super.hashCode();
 		this.persistent = fetcher.persistent;
 		this.parentFetcher = fetcher;
@@ -257,7 +259,11 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		}
 		parent.completedBlock(dontNotify, container, context);
 		if(decodeNow) {
-			context.getChkFetchScheduler().removePendingKeys(this, true);
+			if(persistent)
+				container.activate(parentFetcher, 1);
+			parentFetcher.removeMyPendingKeys(this, container, context);
+			if(persistent)
+				container.deactivate(parentFetcher, 1);
 			removeSubSegments(container, context);
 			decode(container, context);
 		}
@@ -513,10 +519,6 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		if(logMINOR) Logger.minor(this, "Permanently failed block: "+blockNo+" on "+this+" : "+e, e);
 		boolean allFailed;
 		// Since we can't keep the key, we need to unregister for it at this point to avoid a memory leak
-		NodeCHK key = getBlockNodeKey(blockNo, container);
-		if(key != null)
-			// don't complain as may already have been removed e.g. if we have a decode error in onGotKey; don't NPE for same reason
-			context.getChkFetchScheduler().removePendingKey(this, false, key, container);
 		synchronized(this) {
 			if(isFinishing(container)) return; // this failure is now irrelevant, and cleanup will occur on the decoder thread
 			if(blockNo < dataKeys.length) {
@@ -567,7 +569,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		seg.removeBlockNum(blockNo, container, false);
 		SplitFileFetcherSubSegment sub = onNonFatalFailure(e, blockNo, seg, container, context, sched, maxTries);
 		if(sub != null) {
-			sub.schedule(container, context, false, false);
+			sub.reschedule(container, context);
 			if(persistent && sub != seg) container.deactivate(sub, 1);
 		}
 	}
@@ -591,7 +593,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		}
 		if(toSchedule != null && !toSchedule.isEmpty()) {
 			for(SplitFileFetcherSubSegment sub : toSchedule) {
-				sub.schedule(container, context, false, false);
+				sub.reschedule(container, context);
 				if(persistent && sub != seg) container.deactivate(sub, 1);
 			}
 		}
@@ -739,7 +741,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 				checkBuckets[i] = null;
 			}
 		}
-		context.getChkFetchScheduler().removePendingKeys(this, true);
+		parentFetcher.removeMyPendingKeys(this, container, context);
 		removeSubSegments(container, context);
 		if(persistent) {
 			container.set(this);
@@ -750,7 +752,7 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			container.deactivate(parentFetcher, 1);
 	}
 
-	public void schedule(ObjectContainer container, ClientContext context, boolean regmeOnly) {
+	public SplitFileFetcherSubSegment schedule(ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);
 		}
@@ -768,13 +770,13 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			}
 			if(persistent)
 				container.set(this);
-			// Schedule(true) will deactivate me, so we need to do it after storing scheduled.
-			seg.schedule(container, context, true, regmeOnly);
 			if(persistent)
 				container.deactivate(seg, 1);
+			return seg;
 		} catch (Throwable t) {
 			Logger.error(this, "Caught "+t+" scheduling "+this, t);
 			fail(new FetchException(FetchException.INTERNAL_ERROR, t), container, context, true);
+			return null;
 		}
 	}
 
@@ -946,14 +948,14 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 					container.activate(sub, 1);
 				RandomGrabArray rga = sub.getParentGrabArray();
 				if(sub.getParentGrabArray() == null) {
-					sub.schedule(container, context, false, false);
+					sub.reschedule(container, context);
 				} else {
 //					if(logMINOR) {
 						if(persistent)
 							container.activate(rga, 1);
 						if(!rga.contains(sub, container)) {
 							Logger.error(this, "Sub-segment has RGA but isn't registered to it!!: "+sub+" for "+rga);
-							sub.schedule(container, context, false, false);
+							sub.reschedule(container, context);
 						}
 						if(persistent)
 							container.deactivate(rga, 1);
@@ -1117,9 +1119,12 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 		return (Key[]) v.toArray(new Key[v.size()]);
 	}
 
-	public void onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
+	/**
+	 * @return True if we fetched a block.
+	 */
+	public boolean onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
 		int blockNum = this.getBlockNumber(key, container);
-		if(blockNum < 0) return;
+		if(blockNum < 0) return false;
 		ClientCHK ckey = this.getBlockKey(blockNum, container);
 		ClientCHKBlock cb;
 		int retryCount = getBlockRetryCount(blockNum);
@@ -1146,15 +1151,17 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			cb = new ClientCHKBlock((CHKBlock)block, ckey);
 		} catch (CHKVerifyException e) {
 			this.onFatalFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e), blockNum, null, container, context);
-			return;
+			return false;
 		}
 		Bucket data = extract(cb, blockNum, container, context);
-		if(data == null) return;
+		if(data == null) return false;
 		
 		if(!cb.isMetadata()) {
 			this.onSuccess(data, blockNum, cb, container, context);
+			return true;
 		} else {
 			this.onFatalFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), blockNum, null, container, context);
+			return true;
 		}
 	}
 	
@@ -1200,5 +1207,9 @@ public class SplitFileFetcherSegment implements FECCallback, GotKeyListener {
 			container.deactivate(dataKeys[i], 1);
 		for(int i=0;i<checkKeys.length;i++)
 			container.deactivate(checkKeys[i], 1);
+	}
+
+	public SplitFileFetcherSubSegment getSubSegmentFor(int blockNum, ObjectContainer container) {
+		return getSubSegment(getBlockRetryCount(blockNum), container, false, null);
 	}
 }

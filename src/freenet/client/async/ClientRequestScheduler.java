@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -10,10 +11,12 @@ import java.util.LinkedList;
 import com.db4o.ObjectContainer;
 
 import freenet.client.FECQueue;
+import freenet.client.FetchException;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
+import freenet.crypt.SHA256;
 import freenet.keys.ClientKey;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
@@ -100,7 +103,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private final CooldownQueue transientCooldownQueue;
 	private final CooldownQueue persistentCooldownQueue;
 	final PrioritizedSerialExecutor databaseExecutor;
-	final PrioritizedSerialExecutor datastoreCheckerExecutor;
+	final DatastoreChecker datastoreChecker;
 	public final ClientContext clientContext;
 	final DBJobRunner jobRunner;
 	
@@ -117,7 +120,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		schedTransient = new ClientRequestSchedulerNonPersistent(this, forInserts, forSSKs);
 		persistentCooldownQueue = schedCore.persistentCooldownQueue;
 		this.databaseExecutor = core.clientDatabaseExecutor;
-		this.datastoreCheckerExecutor = core.datastoreCheckerExecutor;
+		this.datastoreChecker = core.storeChecker;
 		this.starter = starter;
 		this.random = random;
 		this.node = node;
@@ -174,7 +177,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					boolean queueFull = jobRunner.getQueueSize(NativeThread.NORM_PRIORITY) >= QUEUE_THRESHOLD;
 					if(!queueFull)
 						bootID = this.node.bootID;
-					final RegisterMe regme = new RegisterMe(null, null, req, req.getPriorityClass(selectorContainer), schedCore, null, bootID);
+					final RegisterMe regme = new RegisterMe(req, req.getPriorityClass(selectorContainer), schedCore, null, bootID);
 					selectorContainer.set(regme);
 					if(logMINOR)
 						Logger.minor(this, "Added insert RegisterMe: "+regme);
@@ -217,40 +220,41 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * @param listener Listeners for specific keys. Can be null if the listener
 	 * is already registered e.g. most of the time with SplitFileFetcher*.
 	 * @param getters The actual requests to register to the request sender queue.
-	 * @param registerOffThread If true, create and store a RegisterMe to ensure
-	 * that the request is registered, but then schedule a job to complete it
-	 * after this job completes. Reduces the latency impact of scheduling a big
-	 * splitfile dramatically.
 	 * @param persistent True if the request is persistent.
 	 * @param onDatabaseThread True if we are running on the database thread.
 	 * NOTE: delayedStoreCheck/probablyNotInStore is unnecessary because we only
 	 * register the listener once.
+	 * @throws FetchException 
 	 */
-	public void register(final GotKeyListener listener, final SendableGet[] getters, boolean registerOffThread, final boolean persistent, boolean onDatabaseThread, final BlockSet blocks, final RegisterMe oldReg) {
+	public void register(final HasKeyListener hasListener, final SendableGet[] getters, final boolean persistent, boolean onDatabaseThread, final BlockSet blocks, final boolean noCheckStore) throws KeyListenerConstructionException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
-			Logger.minor(this, "register("+persistent+","+listener+","+getters+","+registerOffThread);
+			Logger.minor(this, "register("+persistent+","+hasListener+","+getters);
 		if(isInsertScheduler) {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
 			throw e;
 		}
 		if(persistent) {
 			if(onDatabaseThread) {
-				innerRegister(listener, getters, registerOffThread, persistent, blocks, oldReg);
+				innerRegister(hasListener, getters, blocks, noCheckStore);
 			} else {
 				jobRunner.queue(new DBJob() {
 
 					public void run(ObjectContainer container, ClientContext context) {
 						// registerOffThread would be pointless because this is a separate job.
-						if(listener != null)
-							container.activate(listener, 1);
+						if(hasListener != null)
+							container.activate(hasListener, 1);
 						if(getters != null) {
 							for(int i=0;i<getters.length;i++)
 								container.activate(getters[i], 1);
 						}
-						innerRegister(listener, getters, false, persistent, blocks, oldReg);
-						if(listener != null)
-							container.deactivate(listener, 1);
+						try {
+							innerRegister(hasListener, getters, blocks, noCheckStore);
+						} catch (KeyListenerConstructionException e) {
+							Logger.error(this, "Registration failed to create Bloom filters: "+e+" on "+hasListener, e);
+						}
+						if(hasListener != null)
+							container.deactivate(hasListener, 1);
 						if(getters != null) {
 							for(int i=0;i<getters.length;i++)
 								container.deactivate(getters[i], 1);
@@ -260,161 +264,61 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}, NativeThread.NORM_PRIORITY, false);
 			}
 		} else {
-			if(listener != null) {
-				final Key[] keys = listener.listKeys(null);
-				schedTransient.addPendingKeys(listener, keys, null);
-				short prio = listener.getPriorityClass(null);
-				final boolean dontCache = listener.dontCache(null);
-				for(int i=0;i<keys.length;i++) {
-					if(keys[i].getRoutingKey() == null)
-						throw new NullPointerException();
-				}
-				datastoreCheckerExecutor.execute(new Runnable() {
-
-					public void run() {
-						// Check the store, then queue the requests to the main queue.
-						registerCheckStore(getters, false, keys, null, blocks, dontCache);
-					}
-					
-				}, prio, "Checking datastore");
+			final KeyListener listener;
+			if(hasListener != null) {
+				listener = hasListener.makeKeyListener(selectorContainer, clientContext);
+				schedTransient.addPendingKeys(listener);
+			} else
+				listener = null;
+			if(getters != null && !noCheckStore) {
+				for(SendableGet getter : getters)
+					datastoreChecker.queueTransientRequest(getter, blocks);
 			} else {
-				this.finishRegister(getters, persistent, false, true, null);
+				boolean anyValid = false;
+				for(int i=0;i<getters.length;i++) {
+					if(!(getters[i].isCancelled(null) || getters[i].isEmpty(null)))
+						anyValid = true;
+				}
+				finishRegister(getters, false, onDatabaseThread, anyValid, null);
 			}
 		}
 	}
 	
 	
-	private void innerRegister(final GotKeyListener listener, final SendableGet[] getters, boolean registerOffThread, boolean persistent, final BlockSet blocks, RegisterMe reg) {
+	private void innerRegister(final HasKeyListener hasListener, final SendableGet[] getters, final BlockSet blocks, boolean noCheckStore) throws KeyListenerConstructionException {
+		final KeyListener listener;
+		if(hasListener != null) {
+			listener = hasListener.makeKeyListener(selectorContainer, clientContext);
+			schedCore.addPendingKeys(listener);
+			selectorContainer.set(hasListener);
+		} else
+			listener = null;
+		
 		if(isInsertScheduler) {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
 			throw e;
 		}
-		if(listener != null) {
-			if(registerOffThread) {
-				short prio = listener.getPriorityClass(selectorContainer);
-				boolean queueFull = false;
-				if(reg == null) {
-					long bootID = 0;
-					queueFull = jobRunner.getQueueSize(NativeThread.NORM_PRIORITY) >= QUEUE_THRESHOLD;
-					if(!queueFull)
-						bootID = this.node.bootID;
-
-					reg = new RegisterMe(listener, getters, null, prio, schedCore, blocks, bootID);
-					selectorContainer.set(reg);
-				}
-				final RegisterMe regme = reg;
-				if(logMINOR) Logger.minor(this, "Added regme: "+regme);
-				if(!queueFull) {
-				jobRunner.queue(new DBJob() {
-
-					public void run(ObjectContainer container, ClientContext context) {
-						if(listener != null)
-							container.activate(listener, 1);
-						if(getters != null) {
-							for(int i=0;i<getters.length;i++)
-								container.activate(getters[i], 1);
-						}
-						register(listener, getters, false, true, true, blocks, regme);
-						if(listener != null)
-							container.deactivate(listener, 1);
-						if(getters != null) {
-							for(int i=0;i<getters.length;i++)
-								container.deactivate(getters[i], 1);
-						}
-					}
-					
-				}, NativeThread.NORM_PRIORITY, false);
-				} else {
-					schedCore.rerunRegisterMeRunner(jobRunner);
-				}
-				return;
-			} else {
-				short prio = listener.getPriorityClass(selectorContainer);
-				final Key[] keys = listener.listKeys(selectorContainer);
-				for(int i=0;i<keys.length;i++) {
-					selectorContainer.activate(keys[i], 5);
-					if(keys[i].getRoutingKey() == null)
-						throw new NullPointerException();
-				}
-				schedCore.addPendingKeys(listener, keys, selectorContainer);
-				if(reg == null && getters != null) {
-					reg = new RegisterMe(null, getters, null, prio, schedCore, blocks, node.bootID);
-					selectorContainer.set(reg);
-					if(logMINOR) Logger.minor(this, "Added regme: "+reg);
-				} else {
-					if(reg != null)
-						selectorContainer.delete(reg);
-					reg = null; // Nothing to finish registering.
-				}
-				final RegisterMe regme = reg;
-				// Check the datastore before proceding.
-				for(int i=0;i<keys.length;i++) {
-					Key oldKey = keys[i];
-					keys[i] = oldKey.cloneKey();
-					selectorContainer.deactivate(oldKey, 5);
-				}
-				final boolean dontCache = listener.dontCache(selectorContainer);
-				datastoreCheckerExecutor.execute(new Runnable() {
-
-					public void run() {
-						// Check the store, then queue the requests to the main queue.
-						registerCheckStore(getters, true, keys, regme, blocks, dontCache);
-					}
-					
-				}, prio, "Checking datastore");
-				selectorContainer.deactivate(listener, 1);
-				if(getters != null) {
-					for(int i=0;i<getters.length;i++)
-						selectorContainer.deactivate(getters[i], 1);
-				}
-
+		if(!noCheckStore) {
+			// Check the datastore before proceding.
+			for(SendableGet getter : getters)
+				datastoreChecker.queuePersistentRequest(getter, blocks, selectorContainer);
+			selectorContainer.deactivate(listener, 1);
+			if(getters != null) {
+				for(int i=0;i<getters.length;i++)
+					selectorContainer.deactivate(getters[i], 1);
 			}
 		} else {
-			// The listener is already registered.
-			// Ignore registerOffThread for now.
+			// We have already checked the datastore, this is a retry, the listener hasn't been unregistered.
 			short prio = RequestStarter.MINIMUM_PRIORITY_CLASS;
 			for(int i=0;i<getters.length;i++) {
 				short p = getters[i].getPriorityClass(selectorContainer);
 				if(p < prio) prio = p;
 			}
-			this.finishRegister(getters, persistent, true, true, null);
+			this.finishRegister(getters, true, true, true, null);
 		}
 	}
 
-	protected void registerCheckStore(SendableGet[] getters, boolean persistent, 
-			Key[] keys, RegisterMe regme, BlockSet extraBlocks, boolean dontCache) {
-		if(isInsertScheduler && getters != null) {
-			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
-			throw e;
-		}
-		boolean anyValid = false;
-		for(int i=0;i<keys.length;i++) {
-			Key key = keys[i];
-			KeyBlock block = null;
-			if(key == null) {
-				if(logMINOR) Logger.minor(this, "No key at "+i);
-				continue;
-			} else {
-				if(extraBlocks != null)
-					block = extraBlocks.get(key);
-				if(block == null)
-					block = node.fetch(key, dontCache);
-				if(block != null) {
-					if(logMINOR)
-						Logger.minor(this, "Got "+block);
-				}
-			}
-			if(block != null) {
-				if(logMINOR) Logger.minor(this, "Found key");
-				tripPendingKey(block);
-			} else {
-				anyValid = true;
-			}
-		}
-		finishRegister(getters, persistent, false, anyValid, regme);
-	}
-	
-	private void finishRegister(final SendableGet[] getters, boolean persistent, boolean onDatabaseThread, final boolean anyValid, final RegisterMe reg) {
+	void finishRegister(final SendableGet[] getters, boolean persistent, boolean onDatabaseThread, final boolean anyValid, final DatastoreCheckerItem reg) {
 		if(isInsertScheduler && getters != null) {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
 			if(onDatabaseThread || !persistent) {
@@ -501,16 +405,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		requestStarterQueueFiller.run(container, context);
 	}
 
-	void addPendingKey(final ClientKey key, final GotKeyListener getter) {
-		if(getter.persistent()) {
-			if(!databaseExecutor.onThread()) {
-				throw new IllegalStateException("Not on database thread!");
-			}
-			schedCore.addPendingKey(key.getNodeKey(), getter, selectorContainer);
-		} else
-			schedTransient.addPendingKey(key.getNodeKey(), getter, null);
-	}
-	
 	public ChosenBlock getBetterNonPersistentRequest(short prio, int retryCount) {
 		short fuzz = -1;
 		if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
@@ -788,65 +682,30 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 
-	public void removePendingKey(final GotKeyListener getter, final boolean complain, final Key key, ObjectContainer container) {
-		if(!getter.persistent()) {
-			boolean dropped = schedTransient.removePendingKey(getter, complain, key, container);
-			if(dropped && offeredKeys != null && !node.peersWantKey(key)) {
-				for(int i=0;i<offeredKeys.length;i++)
-					offeredKeys[i].remove(key);
-			}
-			if(transientCooldownQueue != null) {
-				SendableGet cooldownGetter = getter.getRequest(key, container);
-				if(cooldownGetter != null)
-					transientCooldownQueue.removeKey(key, cooldownGetter, cooldownGetter.getCooldownWakeupByKey(key, null), null);
-			}
-		} else if(container != null) {
-			// We are on the database thread already.
-			schedCore.removePendingKey(getter, complain, key, container);
-			if(persistentCooldownQueue != null) {
-				SendableGet cooldownGetter = getter.getRequest(key, container);
-				container.activate(cooldownGetter, 1);
-				persistentCooldownQueue.removeKey(key, cooldownGetter, cooldownGetter.getCooldownWakeupByKey(key, container), container);
-				container.deactivate(cooldownGetter, 1);
-			}
-		} else {
-			jobRunner.queue(new DBJob() {
-
-				public void run(ObjectContainer container, ClientContext context) {
-					container.activate(getter, 1);
-					schedCore.removePendingKey(getter, complain, key, container);
-					if(persistentCooldownQueue != null) {
-						SendableGet cooldownGetter = getter.getRequest(key, container);
-						container.activate(cooldownGetter, 1);
-						persistentCooldownQueue.removeKey(key, cooldownGetter, cooldownGetter.getCooldownWakeupByKey(key, container), container);
-						container.deactivate(cooldownGetter, 1);
-					}
-				}
-				
-			}, NativeThread.NORM_PRIORITY, false);
-		}
-	}
-	
 	/**
 	 * Remove a SendableGet from the list of getters we maintain for each key, indicating that we are no longer interested
 	 * in that key.
 	 * @param getter
 	 * @param complain
 	 */
-	public void removePendingKeys(GotKeyListener getter, boolean complain) {
-		ObjectContainer container;
-		if(getter.persistent()) {
-			container = selectorContainer;
-			if(!databaseExecutor.onThread()) {
-				throw new IllegalStateException("Not on database thread!");
-			}
-		} else {
-			container = null;
-		}
-		Key[] keys = getter.listKeys(container);
-		for(int i=0;i<keys.length;i++) {
-			removePendingKey(getter, complain, keys[i], container);
-		}
+	public void removePendingKeys(KeyListener getter, boolean complain) {
+		boolean found = schedTransient.removePendingKeys(getter);
+		found |= schedCore.removePendingKeys(getter);
+		if(complain && !found)
+			Logger.error(this, "Listener not found when removing: "+getter);
+	}
+
+	/**
+	 * Remove a SendableGet from the list of getters we maintain for each key, indicating that we are no longer interested
+	 * in that key.
+	 * @param getter
+	 * @param complain
+	 */
+	public void removePendingKeys(HasKeyListener getter, boolean complain) {
+		boolean found = schedTransient.removePendingKeys(getter);
+		found |= schedCore.removePendingKeys(getter);
+		if(complain && !found)
+			Logger.error(this, "Listener not found when removing: "+getter);
 	}
 
 	public void reregisterAll(final ClientRequester request, ObjectContainer container) {
@@ -886,77 +745,22 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void tripPendingKey(final KeyBlock block) {
 		if(logMINOR) Logger.minor(this, "tripPendingKey("+block.getKey()+")");
 		
-		// First the transient stuff
-		
 		if(offeredKeys != null) {
 			for(int i=0;i<offeredKeys.length;i++) {
 				offeredKeys[i].remove(block.getKey());
 			}
 		}
 		final Key key = block.getKey();
-		final GotKeyListener[] transientGets = schedTransient.removePendingKey(key, null);
-		if(transientGets != null && transientGets.length > 0) {
-			node.executor.execute(new Runnable() {
-				public void run() {
-					if(logMINOR) Logger.minor(this, "Running "+transientGets.length+" callbacks off-thread for "+block.getKey());
-					for(int i=0;i<transientGets.length;i++) {
-						try {
-							if(logMINOR) Logger.minor(this, "Calling tripPendingKey() callback for "+transientGets[i]+" for "+key);
-							transientGets[i].onGotKey(key, block, null, clientContext);
-						} catch (Throwable t) {
-							Logger.error(this, "Caught "+t+" running tripPendingKey() callback "+transientGets[i]+" for "+key, t);
-						}
-					}
-				}
-			}, "Running off-thread callbacks for "+block.getKey());
-			if(transientCooldownQueue != null) {
-				for(int i=0;i<transientGets.length;i++) {
-					GotKeyListener got = transientGets[i];
-					SendableGet req = got.getRequest(key, null);
-					if(req == null) continue;
-					transientCooldownQueue.removeKey(key, req, req.getCooldownWakeupByKey(key, null), null);
-				}
-			}
-		}
-		
-		// Now the persistent stuff
-		
-		jobRunner.queue(new DBJob() {
+		schedTransient.tripPendingKey(key, block, null, clientContext);
+		if(schedCore.anyProbablyWantKey(key, clientContext)) {
+			jobRunner.queue(new DBJob() {
 
-			public void run(ObjectContainer container, ClientContext context) {
-				// FIXME is this necessary? the key is probably non-persistent, no?
-				container.activate(key, 5);
-				if(logMINOR) Logger.minor(this, "tripPendingKey for "+key);
-				final GotKeyListener[] gets = schedCore.removePendingKey(key, container);
-				if(gets == null) return;
-				if(persistentCooldownQueue != null) {
-					for(int i=0;i<gets.length;i++) {
-						GotKeyListener got = gets[i];
-						container.activate(got, 1);
-						SendableGet req = got.getRequest(key, container);
-						container.activate(req, 1);
-						if(req == null) continue;
-						persistentCooldownQueue.removeKey(key, req, req.getCooldownWakeupByKey(key, container), container);
-						container.deactivate(req, 1);
-					}
+				public void run(ObjectContainer container, ClientContext context) {
+					if(logMINOR) Logger.minor(this, "tripPendingKey for "+key);
+					schedCore.tripPendingKey(key, block, container, clientContext);
 				}
-				// Call the callbacks on the database executor thread, because the first thing
-				// they will need to do is access the database to decide whether they need to
-				// decode, and if so to find the key to decode with.
-				for(int i=0;i<gets.length;i++) {
-					try {
-						if(logMINOR) Logger.minor(this, "Calling tripPendingKey() callback for "+gets[i]+" for "+key);
-						container.activate(gets[i], 1);
-						gets[i].onGotKey(key, block, container, context);
-						container.deactivate(gets[i], 1);
-					} catch (Throwable t) {
-						Logger.error(this, "Caught "+t+" running tripPendingKey() callback "+gets[i]+" for "+key, t);
-					}
-				}
-				if(logMINOR) Logger.minor(this, "Finished running tripPendingKey() callbacks");
-			}
-			
-		}, TRIP_PENDING_PRIORITY, false);
+			}, TRIP_PENDING_PRIORITY, false);
+		}
 		
 	}
 
@@ -969,7 +773,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			// FIXME what priority???
 			priority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 		}
-		priority = schedTransient.getKeyPrio(key, priority, null);
+		priority = schedTransient.getKeyPrio(key, priority, null, clientContext);
 		if(priority < Short.MAX_VALUE) {
 			offeredKeys[priority].queueKey(key);
 			starter.wakeUp();
@@ -981,7 +785,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 
 			public void run(ObjectContainer container, ClientContext context) {
 				// Don't activate/deactivate the key, because it's not persistent in the first place!!
-				short priority = schedCore.getKeyPrio(key, oldPrio, container);
+				short priority = schedCore.getKeyPrio(key, oldPrio, container, context);
 				if(priority >= oldPrio) return; // already on list at >= priority
 				offeredKeys[priority].queueKey(key.cloneKey());
 				starter.wakeUp();
@@ -1027,6 +831,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 		 * Only go around once. We will be called again. If there are keys to move, then RequestStarter will not
 		 * sleep, because it will start them. Then it will come back here. If we are off-thread i.e. on the database
 		 * thread, then we will wake it up if we find keys... and we'll be scheduled again.
+		 * 
+		 * FIXME: I think we need to restore all the listeners for a single key 
+		 * simultaneously to avoid some kind of race condition? Or could we just
+		 * restore the one request on the queue? Maybe it's just a misguided
+		 * optimisation? IIRC we had some severe problems when we didn't have 
+		 * this, related to requests somehow being lost altogether... Is it 
+		 * essential? We can save a query if it's not... Is this about requests
+		 * or about keys? Should we limit all requests across any 
+		 * SendableRequest's to 3 every half hour for a specific key? Probably 
+		 * yes...? In which case, can the cooldown queue be entirely in RAM,
+		 * and would it be useful for it to be? Less disk, more RAM... for fast
+		 * nodes with little RAM it would be bad...
 		 */
 		final int MAX_KEYS = 20;
 		Key[] keys = queue.removeKeyBefore(now, container, MAX_KEYS);
@@ -1036,46 +852,19 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(persistent)
 				container.activate(key, 5);
 			if(logMINOR) Logger.minor(this, "Restoring key: "+key);
-			GotKeyListener[] gets = schedCore.getClientsForPendingKey(key, container);
-			GotKeyListener[] transientGets = schedTransient.getClientsForPendingKey(key, null);
-			if(gets == null && transientGets == null) {
+			SendableGet[] reqs = schedCore.requestsForKey(key, container, clientContext);
+			SendableGet[] transientReqs = schedTransient.requestsForKey(key, container, clientContext);
+			if(reqs == null && transientReqs == null) {
 				// Not an error as this can happen due to race conditions etc.
 				if(logMINOR) Logger.minor(this, "Restoring key but no keys queued?? for "+key);
-				continue;
-			} else {
-				if(gets != null) {
-					if(logMINOR) Logger.minor(this, "Restoring keys for persistent jobs...");
-					for(int i=0;i<gets.length;i++) {
-						if(persistent)
-							container.activate(gets[i], 1);
-						GotKeyListener got = gets[i];
-						SendableGet req = got.getRequest(key, container);
-						if(persistent)
-							container.activate(req, 1);
-						if(req == null) {
-							Logger.error(this, "No request for listener "+got+" while requeueing "+key);
-						} else {
-							req.requeueAfterCooldown(key, now, container, clientContext);
-						}
-						if(persistent) {
-							container.deactivate(gets[i], 1);
-							container.deactivate(req, 1);
-						}
-					}
-				}
-				if(transientGets != null) {
-					if(transientGets != null) {
-						if(logMINOR) Logger.minor(this, "Restoring keys for transient jobs...");
-						for(int i=0;i<transientGets.length;i++) {
-							GotKeyListener got = transientGets[i];
-							SendableGet req = got.getRequest(key, null);
-							if(req == null) {
-								Logger.error(this, "No request for listener "+got+" while requeueing "+key);
-							}
-							req.requeueAfterCooldown(key, now, container, clientContext);
-						}
-					}
-				}
+			}
+			if(reqs != null) {
+				for(int i=0;i<reqs.length;i++)
+					reqs[i].requeueAfterCooldown(key, now, container, clientContext);
+			}
+			if(transientReqs != null) {
+				for(int i=0;i<reqs.length;i++)
+					transientReqs[i].requeueAfterCooldown(key, now, container, clientContext);
 			}
 			if(persistent)
 				container.deactivate(key, 5);
@@ -1167,5 +956,13 @@ public class ClientRequestScheduler implements RequestScheduler {
 			schedTransient.removeFromAllRequestsByClientRequest(get, clientRequest, dontComplain, null);
 	}
 
+	public byte[] saltKey(Key key) {
+		MessageDigest md = SHA256.getMessageDigest();
+		md.update(key.getRoutingKey());
+		md.update(schedCore.globalSalt);
+		byte[] ret = md.digest();
+		SHA256.returnMessageDigest(md);
+		return ret;
+	}
 	
 }

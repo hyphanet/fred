@@ -159,7 +159,7 @@ public class USKFetcher implements ClientGetState {
 				if(logMINOR)
 					Logger.minor(this, "Checker == null in schedule() for "+this, new Exception("debug"));
 			} else
-				checker.schedule(container, context, false);
+				checker.schedule(container, context);
 		}
 		
 		public String toString() {
@@ -469,17 +469,17 @@ public class USKFetcher implements ClientGetState {
 	public void schedule(long delay, ObjectContainer container, final ClientContext context) {
 		assert(container == null);
 		if (delay<=0) {
-			schedule(container, context, false);
+			schedule(container, context);
 		} else {
 			uskManager.ticker.queueTimedJob(new Runnable() {
 				public void run() {
-					USKFetcher.this.schedule(null, context, false);
+					USKFetcher.this.schedule(null, context);
 				}
 			}, delay);
 		}
 	}
     
-	public void schedule(ObjectContainer container, ClientContext context, boolean regmeOnly) {
+	public void schedule(ObjectContainer container, ClientContext context) {
 		USKAttempt[] attempts;
 		long lookedUp = uskManager.lookup(origUSK);
 		synchronized(this) {
