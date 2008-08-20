@@ -81,7 +81,7 @@ public final class PageMaker {
 		pluginMode = true;
 	}
 	
-	public PageMaker(THEME t) {
+	protected PageMaker(THEME t) {
 		setTheme(t);
 		plugin = null;
 		pluginMode = false;
