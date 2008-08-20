@@ -1676,7 +1676,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		configLock.readLock().lock();
 		try {
 			if (!checkBloom)
-				return false;
+				return true;
 			return bloomFilter.checkFilter(cipherManager.getDigestedKey(routingKey));
 		} finally {
 			configLock.readLock().unlock();
