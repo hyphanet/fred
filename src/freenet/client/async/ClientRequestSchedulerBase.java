@@ -300,8 +300,9 @@ abstract class ClientRequestSchedulerBase {
 			}
 		}
 		if(matches != null) {
-			for(KeyListener listener : matches)
+			for(KeyListener listener : matches) {
 				listener.handleBlock(key, saltedKey, block, container, context);
+			}
 		}
 	}
 

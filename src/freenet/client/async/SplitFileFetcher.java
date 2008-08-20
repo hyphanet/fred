@@ -205,8 +205,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					this, archiveContext, fetchContext, maxTempLength, recursionLevel, parent, 0);
 			if(persistent) {
 				container.set(segments[0]);
-				segments[0].deactivateKeys(container);
-				container.deactivate(segments[0], 1);
 			}
 		} else {
 			int dataBlocksPtr = 0;
@@ -227,8 +225,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 						fetchContext, maxTempLength, recursionLevel+1, parent, i);
 				if(persistent) {
 					container.set(segments[i]);
-					segments[i].deactivateKeys(container);
-					container.deactivate(segments[i], 1);
 				}
 			}
 			if(dataBlocksPtr != splitfileDataBlocks.length)
@@ -304,6 +300,9 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			tempListener.writeFilters();
 		} catch (IOException e) {
 			throw new FetchException(FetchException.BUCKET_ERROR, "Unable to write Bloom filters for splitfile");
+		}
+		for(int i=0;i<segments.length;i++) {
+			segments[i].deactivateKeys(container);
 		}
 	}
 

@@ -36,6 +36,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 
 	protected BaseSingleFileFetcher(ClientKey key, int maxRetries, FetchContext ctx, ClientRequester parent) {
 		super(parent);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Creating BaseSingleFileFetcher for "+key);
 		retryCount = 0;
 		this.maxRetries = maxRetries;
 		this.key = key;
@@ -188,10 +190,19 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		}
 		synchronized(this) {
 			chosen = true;
+			if(finished) {
+				if(Logger.shouldLog(Logger.MINOR, this))
+					Logger.minor(this, "onGotKey() called twice on "+this, new Exception("debug"));
+				return;
+			}
 			finished = true;
 			if(persistent)
 				container.set(this);
 			if(isCancelled(container)) return;
+			if(key == null)
+				throw new NullPointerException();
+			if(this.key == null)
+				throw new NullPointerException("Key is null on "+this);
 			if(!key.equals(this.key.getNodeKey())) {
 				Logger.normal(this, "Got sent key "+key+" but want "+this.key+" for "+this);
 				return;
@@ -244,6 +255,11 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(ctx, 1);
+			if(ctx.blocks != null)
+				container.activate(ctx.blocks, 5);
+		}
 		try {
 			getScheduler(context).register(this, new SendableGet[] { this }, persistent, true, ctx.blocks, false);
 		} catch (KeyListenerConstructionException e) {
@@ -252,6 +268,11 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 	
 	public void reschedule(ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			container.activate(ctx, 1);
+			if(ctx.blocks != null)
+				container.activate(ctx.blocks, 5);
+		}
 		try {
 			getScheduler(context).register(null, new SendableGet[] { this }, persistent, true, ctx.blocks, true);
 		} catch (KeyListenerConstructionException e) {

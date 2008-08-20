@@ -102,6 +102,9 @@ public class ClientGetter extends BaseClientGetter {
 						returnBucket, true, container, context);
 			}
 			if(cancelled) cancel();
+			// schedule() may deactivate stuff, so store it now.
+			if(persistent())
+				container.set(currentState);
 			if(currentState != null && !finished) {
 				if(binaryBlobBucket != null) {
 					try {

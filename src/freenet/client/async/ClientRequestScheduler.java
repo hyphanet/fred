@@ -294,19 +294,27 @@ public class ClientRequestScheduler implements RequestScheduler {
 		} else
 			listener = null;
 		
+		// Avoid NPEs due to deactivation.
+		if(getters != null) {
+			for(SendableGet getter : getters) {
+				selectorContainer.activate(getter, 1);
+				selectorContainer.set(getter);
+			}
+		}
+		
 		if(isInsertScheduler) {
 			IllegalStateException e = new IllegalStateException("finishRegister on an insert scheduler");
 			throw e;
 		}
 		if(!noCheckStore) {
 			// Check the datastore before proceding.
-			for(SendableGet getter : getters)
+			for(SendableGet getter : getters) {
+				selectorContainer.activate(getter, 1);
 				datastoreChecker.queuePersistentRequest(getter, blocks, selectorContainer);
-			selectorContainer.deactivate(listener, 1);
-			if(getters != null) {
-				for(int i=0;i<getters.length;i++)
-					selectorContainer.deactivate(getters[i], 1);
+				selectorContainer.deactivate(getter, 1);
 			}
+			selectorContainer.deactivate(listener, 1);
+			
 		} else {
 			// We have already checked the datastore, this is a retry, the listener hasn't been unregistered.
 			short prio = RequestStarter.MINIMUM_PRIORITY_CLASS;

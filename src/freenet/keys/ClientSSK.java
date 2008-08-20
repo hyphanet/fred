@@ -92,6 +92,8 @@ public class ClientSSK extends ClientKey {
 		} finally {
 			SHA256.returnMessageDigest(md);
 		}
+		if(ehDocname == null)
+			throw new NullPointerException();
 	}
 	
 	public ClientSSK(FreenetURI origURI) throws MalformedURLException {
@@ -131,6 +133,10 @@ public class ClientSSK extends ClientKey {
 
 	public Key getNodeKey() {
 		try {
+			if(ehDocname == null)
+				throw new NullPointerException();
+			if(pubKeyHash == null)
+				throw new NullPointerException();
 			return new NodeSSK(pubKeyHash, ehDocname, pubKey, cryptoAlgorithm);
 		} catch (SSKVerifyException e) {
 			IllegalStateException x = new IllegalStateException("Have already verified and yet it fails!: "+e);

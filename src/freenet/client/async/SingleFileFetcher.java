@@ -522,7 +522,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				parent.onTransition(this, f, container);
 				if(persistent) {
 					container.set(metaStrings);
-					container.set(this); // Store *before* scheduling to avoid activation problems.
+					container.set(f); // Store *before* scheduling to avoid activation problems.
+					container.set(this);
 				}
 				f.schedule(container, context);
 				// All done! No longer our problem!
@@ -604,6 +605,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				
 				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, parent, ctx, 
 						decompressors, clientMetadata, actx, recursionLevel, returnBucket, token, container, context);
+				if(persistent)
+					container.set(sf); // Avoid problems caused by storing a deactivated sf
 				parent.onTransition(this, sf, container);
 				try {
 					sf.schedule(container, context);
