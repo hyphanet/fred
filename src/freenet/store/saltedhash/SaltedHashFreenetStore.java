@@ -1671,4 +1671,15 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			e.printStackTrace();
 		}
 	}
+
+	public boolean probablyInStore(byte[] routingKey) {
+		configLock.readLock().lock();
+		try {
+			if (!checkBloom)
+				return false;
+			return bloomFilter.checkFilter(cipherManager.getDigestedKey(routingKey));
+		} finally {
+			configLock.readLock().unlock();
+		}
+    }
 }
