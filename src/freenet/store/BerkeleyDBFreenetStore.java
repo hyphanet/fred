@@ -37,7 +37,6 @@ import com.sleepycat.je.log.LogFileNotFoundException;
 
 import freenet.crypt.RandomSource;
 import freenet.keys.KeyVerifyException;
-import freenet.node.NodeInitException;
 import freenet.node.SemiOrderedShutdownHook;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -2303,4 +2302,27 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
     	envConfig.setConfigParam("je.env.backgroundSleepInterval", "10000" /* microseconds */); // 10ms
         return envConfig;
     }
+
+    public boolean probablyInStore(byte[] routingKey) {
+    	DatabaseEntry routingkeyDBE = new DatabaseEntry(routingKey);
+		DatabaseEntry blockDBE = new DatabaseEntry();
+		synchronized (this) {
+			if (closed)
+				return false;
+		}
+
+    	Cursor c = null;
+		try {
+			return keysDB.get(null, routingkeyDBE, blockDBE, LockMode.READ_UNCOMMITTED) == OperationStatus.SUCCESS;
+		} catch (DatabaseException e) {
+			return false;
+		} finally {
+			try {
+				if (c != null)
+					c.close();
+			} catch (DatabaseException e) {
+				// ignore
+			}
+		}
+	}
 }
