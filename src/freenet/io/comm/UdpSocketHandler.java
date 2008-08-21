@@ -192,7 +192,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 				Logger.error(this, "Caught " + t + " from "
 						+ lowLevelFilter, t);
 			}
-		} else if(logDEBUG) Logger.minor(this, "No packet received");
+		} else if(logDEBUG) Logger.debug(this, "No packet received");
 	}
 	
     private static final int MAX_RECEIVE_SIZE = 1500;
