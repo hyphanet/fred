@@ -214,11 +214,15 @@ abstract class ClientRequestSchedulerBase {
 
 	public synchronized void addPendingKeys(KeyListener listener) {
 		keyListeners.add(listener);
+		System.out.println("Added pending keys to "+this+" : size now "+keyListeners.size()+" : "+listener);
+		Logger.normal(this, "Added pending keys to "+this+" : size now "+keyListeners.size()+" : "+listener);
 	}
 	
 	public synchronized boolean removePendingKeys(KeyListener listener) {
 		boolean ret = keyListeners.remove(listener);
 		listener.onRemove();
+		System.out.println("Removed pending keys from "+this+" : size now "+keyListeners.size()+" : "+listener);
+		Logger.normal(this, "Removed pending keys from "+this+" : size now "+keyListeners.size()+" : "+listener);
 		return ret;
 	}
 	
@@ -230,6 +234,8 @@ abstract class ClientRequestSchedulerBase {
 				found = true;
 				i.remove();
 				listener.onRemove();
+				System.out.println("Removed pending keys from "+this+" : size now "+keyListeners.size()+" : "+listener);
+				Logger.normal(this, "Removed pending keys from "+this+" : size now "+keyListeners.size()+" : "+listener);
 			}
 		}
 		return found;
@@ -302,6 +308,12 @@ abstract class ClientRequestSchedulerBase {
 		if(matches != null) {
 			for(KeyListener listener : matches) {
 				listener.handleBlock(key, saltedKey, block, container, context);
+				if(listener.isEmpty()) {
+					synchronized(this) {
+						keyListeners.remove(listener);
+					}
+					listener.onRemove();
+				}
 			}
 		}
 	}
@@ -314,7 +326,7 @@ abstract class ClientRequestSchedulerBase {
 			if(!listener.probablyWantKey(key, saltedKey)) continue;
 			SendableGet[] reqs = listener.getRequestsForKey(key, saltedKey, container, context);
 			if(reqs == null) continue;
-			if(list != null) list = new ArrayList<SendableGet>();
+			if(list == null) list = new ArrayList<SendableGet>();
 			for(int i=0;i<reqs.length;i++) list.add(reqs[i]);
 		}
 		}
@@ -326,6 +338,19 @@ abstract class ClientRequestSchedulerBase {
 
 	public void onStarted() {
 		keyListeners = new HashSet<KeyListener>();
+	}
+	
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		sb.append(super.toString());
+		sb.append(':');
+		if(isInsertScheduler)
+			sb.append("insert:");
+		if(isSSKScheduler)
+			sb.append("SSK");
+		else
+			sb.append("CHK");
+		return sb.toString();
 	}
 
 }
