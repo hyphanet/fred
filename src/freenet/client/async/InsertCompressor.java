@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
-import com.db4o.query.Predicate;
+import com.db4o.query.Query;
 
 import freenet.client.InsertException;
 import freenet.keys.NodeCHK;
@@ -229,12 +229,10 @@ public class InsertCompressor {
 
 	public static void load(ObjectContainer container, ClientContext context) {
 		final long handle = context.nodeDBHandle;
-		ObjectSet<InsertCompressor> results = container.query(new Predicate<InsertCompressor>() {
-			public boolean match(InsertCompressor comp) {
-				if(comp.nodeDBHandle == handle) return true;
-				return false;
-			}
-		});
+		Query query = container.query();
+		query.constrain(InsertCompressor.class);
+		query.descend("nodeDBHandle").constrain(handle);
+		ObjectSet<InsertCompressor> results = query.execute();
 		while(results.hasNext()) {
 			InsertCompressor comp = results.next();
 			if(!container.ext().isActive(comp)) {
