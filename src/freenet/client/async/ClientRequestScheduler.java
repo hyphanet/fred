@@ -871,7 +871,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					reqs[i].requeueAfterCooldown(key, now, container, clientContext);
 			}
 			if(transientReqs != null) {
-				for(int i=0;i<reqs.length;i++)
+				for(int i=0;i<transientReqs.length;i++)
 					transientReqs[i].requeueAfterCooldown(key, now, container, clientContext);
 			}
 			if(persistent)
