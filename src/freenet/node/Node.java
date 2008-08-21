@@ -299,8 +299,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	/** Datastore directory */
 	private final File storeDir;
 	
+	/** Datastore properties */
 	private final String storeType;
 	private final int storeBloomFilterSize;
+	private final boolean storeBloomFilterCounting;
 
 	/** The number of bytes per key total in all the different datastores. All the datastores
 	 * are always the same size in number of keys. */
@@ -1346,6 +1348,28 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		        });
 
 		storeBloomFilterSize = nodeConfig.getInt("storeBloomFilterSize");
+
+		nodeConfig.register("storeBloomFilterCounting", true, sortOrder++, true, false,
+		        "Node.storeBloomFilterCounting", "Node.storeBloomFilterCountingLong", new BooleanCallback() {
+			        private Boolean cachedBloomFilterCounting;
+
+			        public Boolean get() {
+				        if (cachedBloomFilterCounting == null)
+					        cachedBloomFilterCounting = storeBloomFilterCounting;
+				        return cachedBloomFilterCounting;
+			        }
+
+			        public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				        cachedBloomFilterCounting = val;
+				        throw new NodeNeedRestartException("Store bloom filter type cannot be changed on the fly");
+			        }
+
+			        public boolean isReadOnly() {
+				        return !("salt-hash".equals(storeType));
+			        }
+		        });
+
+		storeBloomFilterCounting = nodeConfig.getBoolean("storeBloomFilterCounting");
 		
 		nodeConfig.register("storeType", "bdb-index", sortOrder++, true, false, "Node.storeType", "Node.storeTypeLong", new StoreTypeCallback());
 		
@@ -1431,36 +1455,45 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			storeEnvironment = null;
 			envMutableConfig = null;
 			try {
+				int bloomFilterSizeInBits = storeBloomFilterCounting ? storeBloomFilterSize / 6 * 4
+				        : storeBloomFilterSize / 6 * 8;
+				
 				Logger.normal(this, "Initializing CHK Datastore");
 				System.out.println("Initializing CHK Datastore (" + maxStoreKeys + " keys)");
 				chkDatastore = new CHKStore();
 				SaltedHashFreenetStore chkDataFS = SaltedHashFreenetStore.construct(storeDir, "CHK-store",
-				        chkDatastore, random, maxStoreKeys, storeBloomFilterSize / 6 * 4, true, shutdownHook);
+				        chkDatastore, random, maxStoreKeys, bloomFilterSizeInBits, storeBloomFilterCounting,
+				        shutdownHook);
 				Logger.normal(this, "Initializing CHK Datacache");
 				System.out.println("Initializing CHK Datacache (" + maxCacheKeys + ':' + maxCacheKeys + " keys)");
 				chkDatacache = new CHKStore();
 				SaltedHashFreenetStore chkCacheFS = SaltedHashFreenetStore.construct(storeDir, "CHK-cache",
-				        chkDatacache, random, maxCacheKeys, storeBloomFilterSize / 6 * 4, true, shutdownHook);
+				        chkDatacache, random, maxCacheKeys, bloomFilterSizeInBits, storeBloomFilterCounting,
+				        shutdownHook);
 				Logger.normal(this, "Initializing pubKey Datastore");
 				System.out.println("Initializing pubKey Datastore");
 				pubKeyDatastore = new PubkeyStore();
 				SaltedHashFreenetStore pubkeyDataFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-store",
-				        pubKeyDatastore, random, maxStoreKeys, storeBloomFilterSize / 6 * 4, true, shutdownHook);
+				        pubKeyDatastore, random, maxStoreKeys, bloomFilterSizeInBits, storeBloomFilterCounting,
+				        shutdownHook);
 				Logger.normal(this, "Initializing pubKey Datacache");
 				System.out.println("Initializing pubKey Datacache (" + maxCacheKeys + " keys)");
 				pubKeyDatacache = new PubkeyStore();
 				SaltedHashFreenetStore pubkeyCacheFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-cache",
-				        pubKeyDatacache, random, maxCacheKeys, storeBloomFilterSize / 6 * 4, true, shutdownHook);
+				        pubKeyDatacache, random, maxCacheKeys, bloomFilterSizeInBits, storeBloomFilterCounting,
+				        shutdownHook);
 				Logger.normal(this, "Initializing SSK Datastore");
 				System.out.println("Initializing SSK Datastore");
 				sskDatastore = new SSKStore(this);
 				SaltedHashFreenetStore sskDataFS = SaltedHashFreenetStore.construct(storeDir, "SSK-store",
-				        sskDatastore, random, maxStoreKeys, storeBloomFilterSize / 6 * 4, true, shutdownHook);
+				        sskDatastore, random, maxStoreKeys, bloomFilterSizeInBits, storeBloomFilterCounting,
+				        shutdownHook);
 				Logger.normal(this, "Initializing SSK Datacache");
 				System.out.println("Initializing SSK Datacache (" + maxCacheKeys + " keys)");
 				sskDatacache = new SSKStore(this);
 				SaltedHashFreenetStore sskCacheFS = SaltedHashFreenetStore.construct(storeDir, "SSK-cache",
-				        sskDatacache, random, maxCacheKeys, storeBloomFilterSize / 6 * 4, true, shutdownHook);
+				        sskDatacache, random, maxCacheKeys, bloomFilterSizeInBits, storeBloomFilterCounting,
+				        shutdownHook);
 				
 				File migrationFile = new File(storeDir, "migrated");
 				if (!migrationFile.exists()) {
