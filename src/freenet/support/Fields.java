@@ -69,6 +69,10 @@ public abstract class Fields {
 		1000l * 1000l * 1000l * 1000l * 1000l * 1000l, 	1l << 60
 	};
 	
+	private static final String[] MULTIPLES_2 = {
+		"k", "K", "m", "M", "g", "G", "t", "T", "p", "P", "e", "E"
+	};
+	
 	/**
 	 * Converts a hex string into a long. Long.parseLong(hex, 16) assumes the
 	 * input is nonnegative unless there is a preceding minus sign. This method
@@ -685,7 +689,6 @@ public abstract class Fields {
 	}
 
 	public static String longToString(long val) {
-		String[] u = { "k", "K", "m", "M", "g", "G", "t", "T", "p", "P", "e", "E" };
 		String ret = Long.toString(val);
 
 		if (val <= 0)
@@ -693,8 +696,8 @@ public abstract class Fields {
 
 		for (int i = MULTIPLES.length - 1; i >= 0; i--) {
 			if (val > MULTIPLES[i] && val % MULTIPLES[i] == 0) {
-				ret = (val / MULTIPLES[i]) + u[i];
-				if (!u[i].toLowerCase().equals(u[i]))
+				ret = (val / MULTIPLES[i]) + MULTIPLES_2[i];
+				if (!MULTIPLES_2[i].toLowerCase().equals(MULTIPLES_2[i]))
 					ret += "iB";
 				break;
 			}
@@ -703,7 +706,6 @@ public abstract class Fields {
 	}
 
 	public static String intToString(int val) {
-		String[] u = { "k", "K", "m", "M", "g", "G", "t", "T", "p", "P", "e", "E" };
 		String ret = Integer.toString(val);
 
 		if (val <= 0)
@@ -711,8 +713,8 @@ public abstract class Fields {
 
 		for (int i = MULTIPLES.length - 1; i >= 0; i--) {
 			if (val > MULTIPLES[i] && val % MULTIPLES[i] == 0) {
-				ret = (val / MULTIPLES[i]) + u[i];
-				if (!u[i].toLowerCase().equals(u[i]))
+				ret = (val / MULTIPLES[i]) + MULTIPLES_2[i];
+				if (!MULTIPLES_2[i].toLowerCase().equals(MULTIPLES_2[i]))
 					ret += "iB";
 				break;
 			}
@@ -721,7 +723,6 @@ public abstract class Fields {
 	}
 
 	public static String shortToString(short val) {
-		String[] u = { "k", "K", "m", "M", "g", "G", "t", "T", "p", "P", "e", "E" };
 		String ret = Short.toString(val);
 
 		if (val <= 0)
@@ -729,8 +730,8 @@ public abstract class Fields {
 		
 		for (int i = MULTIPLES.length - 1; i >= 0; i--) {
 			if (val > MULTIPLES[i] && val % MULTIPLES[i] == 0) {
-				ret = (val / MULTIPLES[i]) + u[i];
-				if (!u[i].toLowerCase().equals(u[i]))
+				ret = (val / MULTIPLES[i]) + MULTIPLES_2[i];
+				if (!MULTIPLES_2[i].toLowerCase().equals(MULTIPLES_2[i]))
 					ret += "iB";
 				break;
 			}
