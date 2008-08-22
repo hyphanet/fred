@@ -33,7 +33,7 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 		
 		byte[] buf = new byte[Math.max(Math.min(128, maxLength), Math.min(1024, bufferSize))];
 		int ctr = 0;
-		mark(Integer.MAX_VALUE); // Might be more than maxLengh if we use utf8
+		mark(maxLength + 2); // in case we have both a \r and a \n
 		while(true) {
 			int x = read(buf, ctr, buf.length - ctr);
 			if(x == -1) {
