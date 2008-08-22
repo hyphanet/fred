@@ -74,7 +74,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		private final boolean persistent;
 		
 		public void start(ObjectContainer container, ClientContext context) throws InsertException {
-			if((origSFI == null) && (metadata != null)) return;
+			if((origSFI == null) || (metadata != null))
+				return;
 			if(persistent)
 				container.activate(origSFI, 1);
 			origSFI.start(null, container, context);
