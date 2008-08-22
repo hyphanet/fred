@@ -16,6 +16,7 @@ import java.util.LinkedList;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
+import freenet.client.InsertException;
 import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
@@ -25,7 +26,6 @@ import freenet.support.URLDecoder;
 import freenet.support.URLEncodedFormatException;
 import freenet.support.URLEncoder;
 import freenet.support.io.FileUtil;
-import freenet.client.InsertException;
 
 /**
  * Note that the metadata pairs below are not presently supported. They are supported
@@ -442,10 +442,12 @@ public class FreenetURI implements Cloneable {
 	 */
 	public FreenetURI popMetaString() {
 		String[] newMetaStr = null;
-		final int metaStrLength = metaStr.length;
-		if((metaStr != null) && (metaStrLength > 1)) {
-			newMetaStr = new String[metaStrLength - 1];
-			System.arraycopy(metaStr, 1, newMetaStr, 0, newMetaStr.length);
+		if (metaStr != null) {
+			final int metaStrLength = metaStr.length;
+			if (metaStrLength > 1) {
+				newMetaStr = new String[metaStrLength - 1];
+				System.arraycopy(metaStr, 1, newMetaStr, 0, newMetaStr.length);
+			}
 		}
 		return setMetaString(newMetaStr);
 	}
