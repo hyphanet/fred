@@ -68,7 +68,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		private final Bucket data;
 		
 		public void start() throws InsertException {
-			if((origSFI == null) && (metadata != null)) return;
+			if ((origSFI == null) || (metadata != null))
+				return;
 			origSFI.start(null);
 			origSFI = null;
 		}
