@@ -2311,18 +2311,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				return false;
 		}
 
-    	Cursor c = null;
 		try {
 			return keysDB.get(null, routingkeyDBE, blockDBE, LockMode.READ_UNCOMMITTED) == OperationStatus.SUCCESS;
 		} catch (DatabaseException e) {
 			return false;
-		} finally {
-			try {
-				if (c != null)
-					c.close();
-			} catch (DatabaseException e) {
-				// ignore
-			}
-		}
+		} 
 	}
 }
