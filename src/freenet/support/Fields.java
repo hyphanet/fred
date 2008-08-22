@@ -195,7 +195,7 @@ public abstract class Fields {
 	}
 
 	public static final String textList(String[] ls, char ch) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < ls.length; i++) {
 			sb.append(ls[i]);
 			if (i != ls.length - 1)
@@ -216,7 +216,7 @@ public abstract class Fields {
 
 	public static final String numberList(long[] ls) {
 		char[] numberBuf = new char[64];
-		StringBuffer listBuf = new StringBuffer(ls.length * 18);
+		StringBuilder listBuf = new StringBuilder(ls.length * 18);
 		for (int i = 0; i < ls.length; i++) {
 
 			// Convert the number into a string in a fixed size buffer.
@@ -251,7 +251,7 @@ public abstract class Fields {
 
 		if ((date.charAt(0) == '-') || (date.charAt(0) == '+')) {
 			// Relative date
-			StringBuffer sb = new StringBuffer(10);
+			StringBuilder sb = new StringBuilder(10);
 			for (int x = 1; x < date.length(); x++) {
 				char c = date.charAt(x);
 				if (Character.isDigit(c)) {
@@ -464,7 +464,7 @@ public abstract class Fields {
      * @return
      */
     public static String commaList(Object[] addr) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < addr.length; i++) {
 			sb.append(addr[i]);
 			if (i != addr.length - 1)
