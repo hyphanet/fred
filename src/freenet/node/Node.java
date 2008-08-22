@@ -806,12 +806,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			oldBootID = -1;
 			// If we have an error in reading, *or in writing*, we don't reliably know the last boot ID.
 		} finally {
-			try {
-				if(raf != null)
-					raf.close();
-			} catch (IOException e) {
-				// Ignore
-			}
+			Closer.close(raf);
 		}
 		lastBootID = oldBootID;
 		
