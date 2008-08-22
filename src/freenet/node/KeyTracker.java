@@ -327,13 +327,9 @@ public class KeyTracker {
 			return now + activeDelay;
 		}
 
-		QueuedAckRequest(int packetNumber, boolean sendSoon) {
+		QueuedAckRequest(int packetNumber) {
 			super(packetNumber);
-			this.createdTime = System.currentTimeMillis();
-			if(sendSoon) {
-				activeTime -= activeDelay;
-				urgentTime -= activeDelay;
-			}
+			this.createdTime = System.currentTimeMillis();			
 		}
 
 		@Override
@@ -479,7 +475,7 @@ public class KeyTracker {
 			}
 			if(logMINOR)
 				Logger.minor(this, "Queueing ack request for " + packetNumber + " on " + this);
-			QueuedAckRequest qrr = new QueuedAckRequest(packetNumber, false);
+			QueuedAckRequest qrr = new QueuedAckRequest(packetNumber);
 			ackRequestQueue.add(qrr);
 		}
 	}
