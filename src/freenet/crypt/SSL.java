@@ -69,7 +69,7 @@ public class SSL {
 				}
 
 				public void set(Boolean newValue) throws InvalidConfigValueException {
-					if(newValue != get()) {
+					if (!get().equals(newValue)) {
 						enable = newValue;
 						if(enable)
 							try {

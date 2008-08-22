@@ -1,6 +1,5 @@
 package freenet.node;
 
-import freenet.config.NodeNeedRestartException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -22,6 +21,7 @@ import freenet.clients.http.filter.FoundURICallback;
 import freenet.clients.http.filter.GenericReadFilterCallback;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.io.xfer.AbortedException;
@@ -180,7 +180,8 @@ public class NodeClientCore implements Persistable {
 			}
 
 			public void set(Boolean val) throws InvalidConfigValueException {
-				if((val == get()) || (persistentTempBucketFactory == null)) return;
+				if (get().equals(val) || (persistentTempBucketFactory == null))
+					        return;
 				persistentTempBucketFactory.setEncryption(val);
 			}
 		});
@@ -216,7 +217,8 @@ public class NodeClientCore implements Persistable {
 			}
 
 			public void set(Long val) throws InvalidConfigValueException {
-				if((val == get()) || (tempBucketFactory == null)) return;
+				if (get().equals(val) || (tempBucketFactory == null))
+					        return;
 				tempBucketFactory.setMaxRAMBucketSize(val);
 			}
 		});
@@ -227,7 +229,8 @@ public class NodeClientCore implements Persistable {
 			}
 
 			public void set(Long val) throws InvalidConfigValueException {
-				if((val == get()) || (tempBucketFactory == null)) return;
+				if (get().equals(val) || (tempBucketFactory == null))
+					        return;
 				tempBucketFactory.setMaxRamUsed(val);
 			}
 		});
@@ -239,7 +242,8 @@ public class NodeClientCore implements Persistable {
 			}
 
 			public void set(Boolean val) throws InvalidConfigValueException {
-				if((val == get()) || (tempBucketFactory == null)) return;
+				if (get().equals(val) || (tempBucketFactory == null))
+					        return;
 				tempBucketFactory.setEncryption(val);
 			}
 		});
@@ -324,7 +328,8 @@ public class NodeClientCore implements Persistable {
 
 			@Override
 			public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
-				if(val == get()) return;
+				if (get().equals(val))
+					        return;
 				archiveManager.setMaxArchiveSize(val);
 			}
 		});

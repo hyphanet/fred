@@ -87,7 +87,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			return ssl;
 		}
 		public void set(Boolean val) throws InvalidConfigValueException {
-			if(val == get()) return;
+			if (get().equals(val))
+				return;
 			if(!SSL.available()) {
 				throw new InvalidConfigValueException("Enable SSL support before use ssl with Fproxy");
 			}
@@ -107,7 +108,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 		
 		public void set(Long val) throws InvalidConfigValueException {
-			if(val == get()) return;
+			if (get().equals(val))
+				return;
 			FProxyToadlet.MAX_LENGTH = val;
 		}
 	}
@@ -217,7 +219,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			}
 		}
 		public void set(Boolean val) throws InvalidConfigValueException {
-			if(val == get()) return;
+			if (get().equals(val))
+				return;
 			synchronized(SimpleToadletServer.this) {
 				if(val) {
 					// Start it
@@ -264,7 +267,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 		
 		public void set(Boolean val) throws InvalidConfigValueException {
-			if(val == get()) return;
+			if (get().equals(val))
+				return;
 				ts.enableAdvancedMode(val);
 		}
 	}
@@ -282,7 +286,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 		
 		public void set(Boolean val) throws InvalidConfigValueException {
-			if(val == get()) return;
+			if (get().equals(val))
+				return;
 				ts.enableFProxyJavascript(val);
 		}
 	}

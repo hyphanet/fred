@@ -243,7 +243,8 @@ public class TestnetHandler implements Runnable {
 		}
 		
 		public void set(Integer val) throws InvalidConfigValueException {
-			if(val == get()) return;
+			if (get().equals(val))
+				return;
 			node.testnetHandler.rebind(val);
 		}
 	}	
