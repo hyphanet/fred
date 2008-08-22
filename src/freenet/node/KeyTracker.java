@@ -220,7 +220,6 @@ public class KeyTracker {
 		 * Constraint: urgentTime is always greater than activeTime.
 		 */
 		long activeTime;
-		final Integer packetNumberAsInteger;
 
 		void sent() throws UpdatableSortedLinkedListKilledException {
 			long now = System.currentTimeMillis();
@@ -232,7 +231,6 @@ public class KeyTracker {
 
 		BaseQueuedResend(int packetNumber) {
 			this.packetNumber = packetNumber;
-			packetNumberAsInteger = new Integer(packetNumber);
 			long now = System.currentTimeMillis();
 			activeTime = initialActiveTime(now);
 			urgentTime = activeTime + urgentDelay();
@@ -278,7 +276,7 @@ public class KeyTracker {
 		}
 
 		public Object indexValue() {
-			return packetNumberAsInteger;
+			return packetNumber;
 		}
 		private DoublyLinkedList parent;
 

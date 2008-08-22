@@ -141,31 +141,31 @@ public class BucketTools {
 	}
 
 	public final static int[] nullIndices(Bucket[] array) {
-		List list = new ArrayList();
+		List<Integer> list = new ArrayList();
 		for (int i = 0; i < array.length; i++) {
 			if (array[i] == null) {
-				list.add(new Integer(i));
+				list.add(i);
 			}
 		}
 
 		int[] ret = new int[list.size()];
 		for (int i = 0; i < list.size(); i++) {
-			ret[i] = ((Integer) list.get(i)).intValue();
+			ret[i] = list.get(i);
 		}
 		return ret;
 	}
 
 	public final static int[] nonNullIndices(Bucket[] array) {
-		List list = new ArrayList();
+		List<Integer> list = new ArrayList();
 		for (int i = 0; i < array.length; i++) {
 			if (array[i] != null) {
-				list.add(new Integer(i));
+				list.add(i);
 			}
 		}
 
 		int[] ret = new int[list.size()];
 		for (int i = 0; i < list.size(); i++) {
-			ret[i] = ((Integer) list.get(i)).intValue();
+			ret[i] = list.get(i);
 		}
 		return ret;
 	}

@@ -497,7 +497,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 					maybeQuickShrink(true);
 					return;
 				}
-				Integer blockNum = new Integer((int)storeBlock.offset);
+				Integer blockNum = (int) storeBlock.offset;
 				//Long seqNum = new Long(storeBlock.recentlyUsed);
 				//System.out.println("#"+x+" seq "+seqNum+": block "+blockNum);
 				if(blockNum.longValue() >= realSize) {
