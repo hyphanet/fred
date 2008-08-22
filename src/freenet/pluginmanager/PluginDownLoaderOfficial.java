@@ -84,7 +84,12 @@ public class PluginDownLoaderOfficial extends PluginDownLoaderURL {
 				Certificate cert = (Certificate) it.next();
 				ks.setCertificateEntry(cert.getPublicKey().toString(), cert);
 			}
-			ks.store(new FileOutputStream(TMP_KEYSTORE), new char[0]);
+			FileOutputStream tmpFOS = new FileOutputStream(TMP_KEYSTORE);
+			try {
+				ks.store(tmpFOS, new char[0]);
+			} finally {
+				Closer.close(tmpFOS);
+			}
 			System.out.println("The CA has been imported into the trustStore");
 		} catch(Exception e) {
 			System.err.println("Error while handling the CA :" + e.getMessage());
