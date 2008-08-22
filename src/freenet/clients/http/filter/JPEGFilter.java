@@ -420,7 +420,7 @@ public class JPEGFilter implements ContentDataFilter {
 
 	private void assertHeader(DataInputStream dis, byte[] expected) throws IOException {
 		byte[] read = new byte[expected.length];
-		dis.read(read);
+		dis.readFully(read);
 		if(!Arrays.equals(read, expected))
 			throwError("Invalid header", "The file does not start with a valid JPEG (JFIF) header.");
 	}
