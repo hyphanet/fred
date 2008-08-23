@@ -654,7 +654,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			try {
 				L10n.setLanguage(nodeConfig.getOption("l10n").getDefault());
 			} catch (MissingResourceException e1) {
-				L10n.setLanguage(L10n.LANGUAGE.ENGLISH.shortCode);
+				L10n.setLanguage(L10n.LANGUAGE.getDefault().shortCode);
 			}
 		}
 		
