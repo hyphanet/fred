@@ -329,6 +329,7 @@ public class USKFetcher implements ClientGetState {
 				data = null;
 			} catch (IOException e) {
 				data = null;
+				Logger.error(this, "An IOE occured while decoding: "+e.getMessage(),e);
 			}
 		}
 		synchronized(this) {
