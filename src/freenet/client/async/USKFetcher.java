@@ -286,8 +286,13 @@ public class USKFetcher implements ClientGetState {
 				completed = true;
 				cb = callbacks.toArray(new USKFetcherCallback[callbacks.size()]);
 			}
-			for(int i=0;i<cb.length;i++)
-				cb[i].onFoundEdition(ed, origUSK.copy(ed));
+			for(int i=0;i<cb.length;i++) {
+				try {
+					cb[i].onFoundEdition(ed, origUSK.copy(ed));
+				} catch (Exception e) {
+					Logger.error(this, "An exception occured while dealing with a callback:"+cb[i].toString()+"\n"+e.getMessage(),e);
+				}
+			}
 		}
 	}
 
@@ -520,18 +525,18 @@ public class USKFetcher implements ClientGetState {
 		// take locks...
 		short normalPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
 		short progressPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
-		USKCallback[] callbacks;
+		USKCallback[] localCallbacks;
 		synchronized(this) {
-			callbacks = subscribers.toArray(new USKCallback[subscribers.size()]);
+			localCallbacks = subscribers.toArray(new USKCallback[subscribers.size()]);
 		}
-		if(callbacks.length == 0) {
+		if(localCallbacks.length == 0) {
 			normalPollPriority = DEFAULT_NORMAL_POLL_PRIORITY;
 			progressPollPriority = DEFAULT_PROGRESS_POLL_PRIORITY;
 			return;
 		}
 		
-		for(int i=0;i<callbacks.length;i++) {
-			USKCallback cb = callbacks[i];
+		for(int i=0;i<localCallbacks.length;i++) {
+			USKCallback cb = localCallbacks[i];
 			short prio = cb.getPollingPriorityNormal();
 			if(prio < normalPrio) normalPrio = prio;
 			prio = cb.getPollingPriorityProgress();
