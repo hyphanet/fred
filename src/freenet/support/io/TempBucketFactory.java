@@ -67,6 +67,7 @@ public class TempBucketFactory implements BucketFactory {
 		private InputStream is = null;
 		private volatile boolean shouldResetOS = false;
 		private volatile boolean shouldResetIS = false;
+		public final Object sync = new Object();
 		public final long creationTime;
 		
 		public TempBucket(long now, Bucket cur) {
@@ -79,7 +80,7 @@ public class TempBucketFactory implements BucketFactory {
 		/** A blocking method to force-migrate from a RAMBucket to a FileBucket */
 		private final void migrateToFileBucket() throws IOException {
 			Bucket toMigrate = null;
-			synchronized(currentBucket) {
+			synchronized(sync) {
 				if(!isRAMBucket())
 					// Nothing to migrate! We don't want to switch back to ram, do we?					
 					return;
@@ -106,13 +107,13 @@ public class TempBucketFactory implements BucketFactory {
 		}
 		
 		public final boolean isRAMBucket() {
-			synchronized(currentBucket) {
+			synchronized(sync) {
 				return (currentBucket instanceof ArrayBucket);
 			}
 		}
 
 		public OutputStream getOutputStream() throws IOException {
-			synchronized(currentBucket) {
+			synchronized(sync) {
 				shouldResetOS = true;
 				return new TempBucketOutputStream();
 			}
@@ -155,7 +156,7 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public final void write(int b) throws IOException {
-				synchronized(currentBucket) {
+				synchronized(sync) {
 					long futurSize = currentSize + 1;
 					_maybeMigrateRamBucket(futurSize);
 					_maybeResetOutputStream();
@@ -168,7 +169,7 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public final void write(byte b[], int off, int len) throws IOException {
-				synchronized(currentBucket) {
+				synchronized(sync) {
 					long futurSize = currentSize + len;
 					_maybeMigrateRamBucket(futurSize);
 					_maybeResetOutputStream();
@@ -181,7 +182,7 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public final void flush() throws IOException {
-				synchronized(currentBucket) {
+				synchronized(sync) {
 					_maybeMigrateRamBucket(currentSize);
 					_maybeResetOutputStream();
 					currentOS.flush();
@@ -190,7 +191,7 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public final void close() throws IOException {
-				synchronized(currentBucket) {
+				synchronized(sync) {
 					_maybeMigrateRamBucket(currentSize);
 					_maybeResetOutputStream();
 					if(currentOS != null) {
@@ -222,7 +223,7 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public final int read() throws IOException {
-				synchronized(currentBucket) {
+				synchronized(sync) {
 					_maybeResetInputStream();
 					int toReturn = currentIS.read();
 					if(toReturn > -1)
@@ -238,7 +239,7 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public int read(byte b[], int off, int len) throws IOException {
-				synchronized(currentBucket) {
+				synchronized(sync) {
 					_maybeResetInputStream();
 					int toReturn = currentIS.read(b, off, len);
 					if(toReturn > -1)
@@ -249,7 +250,7 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public long skip(long n) throws IOException {
-				synchronized(currentBucket) {
+				synchronized(sync) {
 					_maybeResetInputStream();
 					long skipped = currentIS.skip(n);
 					index += skipped;
@@ -259,7 +260,7 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public int available() throws IOException {
-				synchronized(currentBucket) {
+				synchronized(sync) {
 					_maybeResetInputStream();
 					return currentIS.available();
 				}
@@ -267,7 +268,7 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public void mark(int readlimit) {
-				synchronized(currentBucket) {
+				synchronized(sync) {
 					try {
 						_maybeResetInputStream();
 					} catch (IOException e) {
@@ -280,7 +281,7 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public void reset() throws IOException {
-				synchronized(currentBucket) {
+				synchronized(sync) {
 					_maybeResetInputStream();
 					currentIS.reset();
 					index = mark;
@@ -289,7 +290,7 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public boolean markSupported() {
-				synchronized(currentBucket) {
+				synchronized(sync) {
 					try {
 						_maybeResetInputStream();
 					} catch (IOException e) {
@@ -301,7 +302,7 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public final void close() throws IOException {
-				synchronized(currentBucket) {
+				synchronized(sync) {
 					_maybeResetInputStream();
 					Closer.close(currentIS);
 				}
@@ -309,31 +310,31 @@ public class TempBucketFactory implements BucketFactory {
 		}
 
 		public String getName() {
-			synchronized(currentBucket) {
+			synchronized(sync) {
 				return currentBucket.getName();
 			}
 		}
 
 		public long size() {
-			synchronized(currentBucket) {
+			synchronized(sync) {
 				return currentSize;
 			}
 		}
 
 		public boolean isReadOnly() {
-			synchronized(currentBucket) {
+			synchronized(sync) {
 				return currentBucket.isReadOnly();
 			}
 		}
 
 		public void setReadOnly() {
-			synchronized(currentBucket) {
+			synchronized(sync) {
 				currentBucket.setReadOnly();
 			}
 		}
 
 		public void free() {
-			synchronized(currentBucket) {
+			synchronized(sync) {
 				if(isRAMBucket())
 					_hasFreed(currentSize);
 				currentBucket.free();
