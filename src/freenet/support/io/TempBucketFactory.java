@@ -18,7 +18,7 @@ import java.io.OutputStream;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
-import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Temporary Bucket Factory
@@ -446,7 +446,7 @@ public class TempBucketFactory implements BucketFactory {
 		}
 	}
 	
-	private final Queue<TempBucket> ramBucketQueue = new LinkedBlockingDeque<TempBucket>();
+	private final Queue<TempBucket> ramBucketQueue = new LinkedBlockingQueue<TempBucket>();
 	
 	private Bucket _makeFileBucket() {
 		Bucket fileBucket = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator);
