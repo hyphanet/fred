@@ -200,10 +200,8 @@ public class BucketTools {
 			dis = new DataInputStream(is);
 			dis.readFully(data);
 		} finally {
-			if(dis != null)
-				dis.close();
-			else
-				is.close();
+			Closer.close(dis);
+			Closer.close(is);
 		}
 		return data;
 	}
