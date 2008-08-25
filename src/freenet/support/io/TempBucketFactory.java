@@ -193,7 +193,10 @@ public class TempBucketFactory implements BucketFactory {
 				synchronized(currentBucket) {
 					_maybeMigrateRamBucket(currentSize);
 					_maybeResetOutputStream();
-					Closer.close(currentOS);
+					if(currentOS != null) {
+						currentOS.flush();
+						Closer.close(currentOS);
+					}
 				}
 			}
 		}
@@ -223,6 +226,22 @@ public class TempBucketFactory implements BucketFactory {
 					int toReturn = currentIS.read();
 					if(toReturn > -1)
 						index++;
+					return toReturn;
+				}
+			}
+			
+			@Override
+			public int read(byte b[]) throws IOException {
+				return read(b, 0, b.length);
+			}
+			
+			@Override
+			public int read(byte b[], int off, int len) throws IOException {
+				synchronized(currentBucket) {
+					_maybeResetInputStream();
+					int toReturn = currentIS.read(b, off, len);
+					if(toReturn > -1)
+						index += len;
 					return toReturn;
 				}
 			}
