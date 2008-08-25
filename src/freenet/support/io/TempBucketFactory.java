@@ -129,7 +129,7 @@ public class TempBucketFactory implements BucketFactory {
 					if(futureSize > maxRAMBucketSize * RAMBUCKET_CONVERSION_FACTOR) {
 						isOversized = true;
 						shouldMigrate = true;
-					} else if (futureSize + bytesInUse > maxRamUsed)
+					} else if ((futureSize - currentSize) + bytesInUse > maxRamUsed)
 						shouldMigrate = true;
 					
 					if(shouldMigrate) {
