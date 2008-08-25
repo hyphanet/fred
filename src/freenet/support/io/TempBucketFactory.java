@@ -65,6 +65,7 @@ public class TempBucketFactory implements BucketFactory {
 		private long currentSize;
 		private OutputStream os = null;
 		private InputStream is = null;
+		private short osIndex;
 		private volatile boolean shouldResetOS = false;
 		private volatile boolean shouldResetIS = false;
 		public final Object sync = new Object();
@@ -75,6 +76,7 @@ public class TempBucketFactory implements BucketFactory {
 				throw new NullPointerException();
 			this.currentBucket = cur;
 			this.creationTime = now;
+			this.osIndex = 0;
 		}
 		
 		/** A blocking method to force-migrate from a RAMBucket to a FileBucket */
@@ -115,14 +117,22 @@ public class TempBucketFactory implements BucketFactory {
 		public OutputStream getOutputStream() throws IOException {
 			synchronized(sync) {
 				shouldResetOS = true;
-				return new TempBucketOutputStream();
+				return new TempBucketOutputStream(++osIndex);
 			}
 		}
 
 		private class TempBucketOutputStream extends OutputStream {
 			private OutputStream currentOS;
+			private final short idx;
+			
+			TempBucketOutputStream(short idx) {
+				this.idx = idx;
+			}
 			
 			private void _maybeMigrateRamBucket(long futureSize) throws IOException {
+				if(idx != osIndex)
+					throw new IOException("Should use the new OutputStream!");
+				
 				if(isRAMBucket()) {
 					boolean shouldMigrate = false;
 					boolean isOversized = false;
@@ -204,15 +214,23 @@ public class TempBucketFactory implements BucketFactory {
 
 		public synchronized InputStream getInputStream() throws IOException {
 			shouldResetIS = true;
-			return new TempBucketInputStream();
+			return new TempBucketInputStream(osIndex);
 		}
 		
 		private class TempBucketInputStream extends InputStream {
 			private InputStream currentIS;
 			private long index = 0;
 			private long mark = 0;
+			private final short idx;
+			
+			TempBucketInputStream(short idx) {
+				this.idx = idx;
+			}
 			
 			private void _maybeResetInputStream() throws IOException {
+				if(idx != osIndex)
+					throw new IOException("Should use the new InputStream!");
+				
 				if(shouldResetIS) {
 					Closer.close(currentIS);
 					currentIS = (is == null ? currentBucket.getInputStream() : is);
