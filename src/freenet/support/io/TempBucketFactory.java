@@ -127,7 +127,7 @@ public class TempBucketFactory implements BucketFactory {
 						shouldMigrate = true;
 					
 					if(shouldMigrate) {
-						os.close();
+						Closer.close(os);
 						if(logMINOR) {
 							if(isOversized)
 								Logger.minor(this, "The bucket is over "+SizeUtil.formatSize(maxRAMBucketSize*RAMBUCKET_CONVERSION_FACTOR)+": we will force-migrate it to disk.");
@@ -187,7 +187,7 @@ public class TempBucketFactory implements BucketFactory {
 				synchronized(currentBucket) {
 					_maybeMigrateRamBucket(currentSize);
 					_maybeResetOutputStream();
-					os.close();
+					Closer.close(os);
 				}
 			}
 		}
