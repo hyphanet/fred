@@ -322,9 +322,9 @@ public class TempBucketFactory implements BucketFactory {
 
 		public void free() {
 			synchronized(sync) {
+				currentBucket.free();
 				if(isRAMBucket())
 					_hasFreed(currentSize);
-				currentBucket.free();
 			}
 		}
 	}
