@@ -151,6 +151,16 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			}
 		}
 		
+		// Override this or FOS will use write(int)
+		@Override
+		public void write(byte[] buf) throws IOException {
+			if(closed)
+				throw new IOException("Already closed!");
+			if(streamNumber != lastOutputStream)
+				throw new IllegalStateException("Writing to old stream in "+getName());
+			write(buf, 0, buf.length);
+		}
+		
 		@Override
 		public void write(byte[] buf, int offset, int length) throws IOException {
 			if(closed) throw new IOException("Already closed!");
