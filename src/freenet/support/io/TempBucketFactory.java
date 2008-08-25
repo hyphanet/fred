@@ -85,6 +85,8 @@ public class TempBucketFactory implements BucketFactory {
 				toMigrate = currentBucket;
 				Bucket tempFB = _makeFileBucket();
 				BucketTools.copy(currentBucket, tempFB);
+				if(toMigrate.isReadOnly())
+					tempFB.setReadOnly();
 				currentBucket = tempFB;
 				// We need streams to be reset to point to the new bucket
 				shouldResetOS = true;
