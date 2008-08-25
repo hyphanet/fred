@@ -222,6 +222,54 @@ public class TempBucketFactory implements BucketFactory {
 			}
 			
 			@Override
+			public long skip(long n) throws IOException {
+				synchronized(currentBucket) {
+					_maybeResetInputStream();
+					return is.skip(n);
+				}
+			}
+			
+			@Override
+			public int available() throws IOException {
+				synchronized(currentBucket) {
+					_maybeResetInputStream();
+					return is.available();
+				}
+			}
+			
+			@Override
+			public void mark(int readlimit) {
+				synchronized(currentBucket) {
+					try {
+						_maybeResetInputStream();
+					} catch (IOException e) {
+						Logger.error(this, "IOE:"+e.getMessage(),e);
+					}
+					is.mark(readlimit);
+				}
+			}
+			
+			@Override
+			public void reset() throws IOException {
+				synchronized(currentBucket) {
+					_maybeResetInputStream();
+					is.reset();
+				}				
+			}
+			
+			@Override
+			public boolean markSupported() {
+				synchronized(currentBucket) {
+					try {
+						_maybeResetInputStream();
+					} catch (IOException e) {
+						Logger.error(this, "IOE:"+e.getMessage(),e);
+					}
+					return is.markSupported();
+				}
+			}
+			
+			@Override
 			public final void close() throws IOException {
 				synchronized(currentBucket) {
 					_maybeResetInputStream();
