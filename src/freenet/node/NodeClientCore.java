@@ -154,6 +154,8 @@ public class NodeClientCore implements Persistable {
 					// FIXME
 					throw new InvalidConfigValueException(l10n("movingTempDirOnTheFlyNotSupported"));
 				}
+				
+				@Override
 				public boolean isReadOnly() {
 				        return true;
 			        }
@@ -199,6 +201,8 @@ public class NodeClientCore implements Persistable {
 					// FIXME
 					throw new InvalidConfigValueException("Moving persistent temp directory on the fly not supported at present");
 				}
+				
+				@Override
 				public boolean isReadOnly() {
 				        return true;
 			        }
@@ -210,7 +214,7 @@ public class NodeClientCore implements Persistable {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
 		}
 
-		nodeConfig.register("maxRAMBucketSize", "32KiB", sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
+		nodeConfig.register("maxRAMBucketSize", "128KiB", sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
 
 			public Long get() {
 				return (tempBucketFactory == null ? 0 : tempBucketFactory.getMaxRAMBucketSize());
@@ -247,7 +251,7 @@ public class NodeClientCore implements Persistable {
 				tempBucketFactory.setEncryption(val);
 			}
 		});
-		tempBucketFactory = new TempBucketFactory(tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), random, node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"));
+		tempBucketFactory = new TempBucketFactory(node.executor, tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), random, node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"));
 
 		// Downloads directory
 
