@@ -148,7 +148,7 @@ public class TempBucketFactory implements BucketFactory {
 			}
 			
 			@Override
-			public void write(int b) throws IOException {
+			public final void write(int b) throws IOException {
 				synchronized(currentBucket) {
 					long futurSize = currentSize + 1;
 					_maybeMigrateRamBucket(futurSize);
@@ -161,7 +161,7 @@ public class TempBucketFactory implements BucketFactory {
 			}
 			
 			@Override
-			public void write(byte b[], int off, int len) throws IOException {
+			public final void write(byte b[], int off, int len) throws IOException {
 				synchronized(currentBucket) {
 					long futurSize = currentSize + len;
 					_maybeMigrateRamBucket(futurSize);
@@ -174,7 +174,7 @@ public class TempBucketFactory implements BucketFactory {
 			}
 			
 			@Override
-			public void flush() throws IOException {
+			public final void flush() throws IOException {
 				synchronized(currentBucket) {
 					_maybeMigrateRamBucket(currentSize);
 					_maybeResetOutputStream();
@@ -183,7 +183,7 @@ public class TempBucketFactory implements BucketFactory {
 			}
 			
 			@Override
-			public void close() throws IOException {
+			public final void close() throws IOException {
 				synchronized(currentBucket) {
 					_maybeMigrateRamBucket(currentSize);
 					_maybeResetOutputStream();
@@ -199,25 +199,30 @@ public class TempBucketFactory implements BucketFactory {
 		
 		private class TempBucketInputStream extends InputStream {
 			private InputStream is;
+			private long index = 0;
 			
 			private void _maybeResetInputStream() throws IOException {
 				if(shouldResetIS) {
 					Closer.close(is);
 					is = currentBucket.getInputStream();
+					is.skip(index);
 					shouldResetIS = false;
 				}
 			}
 			
 			@Override
-			public int read() throws IOException {
+			public final int read() throws IOException {
 				synchronized(currentBucket) {
 					_maybeResetInputStream();
-					return is.read();
+					int toReturn = is.read();
+					if(toReturn > -1)
+						index++;
+					return toReturn;
 				}
 			}
 			
 			@Override
-			public void close() throws IOException {
+			public final void close() throws IOException {
 				synchronized(currentBucket) {
 					_maybeResetInputStream();
 					Closer.close(is);
