@@ -294,6 +294,7 @@ public class BucketTools {
 			}
 		} finally {
 			is.close();
+			os.flush();
 		}
 	}
 
