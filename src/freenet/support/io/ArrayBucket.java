@@ -209,7 +209,6 @@ public class ArrayBucket implements Bucket {
 	public synchronized void free() {
 		readOnly = true;
 		data.clear();
-		size = 0;
 		// Not much else we can do.
 	}
 
