@@ -94,7 +94,7 @@ public class TempBucketFactory implements BucketFactory {
 					os.close();
 				}
 				os = tempFB.getOutputStream();
-				BucketTools.copyTo(tempFB, os, currentSize);
+				BucketTools.copyTo(toMigrate, os, currentSize);
 				if(toMigrate.isReadOnly())
 					tempFB.setReadOnly();
 				currentBucket = tempFB;
