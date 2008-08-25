@@ -13,7 +13,6 @@ import java.io.IOException;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
-import java.io.BufferedOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.LinkedList;
@@ -65,7 +64,6 @@ public class TempBucketFactory implements BucketFactory {
 		private Bucket currentBucket;
 		private long currentSize;
 		private OutputStream os = null;
-		private InputStream is = null;
 		private short osIndex;
 		private volatile boolean shouldResetOS = false;
 		private volatile boolean shouldResetIS = false;
@@ -91,7 +89,6 @@ public class TempBucketFactory implements BucketFactory {
 				toMigrate = currentBucket;
 				Bucket tempFB = _makeFileBucket();
 				os = tempFB.getOutputStream();
-				is = tempFB.getInputStream();
 				BucketTools.copyTo(tempFB, os, currentSize);
 				if(toMigrate.isReadOnly())
 					tempFB.setReadOnly();
@@ -233,7 +230,7 @@ public class TempBucketFactory implements BucketFactory {
 				
 				if(shouldResetIS) {
 					Closer.close(currentIS);
-					currentIS = (is == null ? currentBucket.getInputStream() : is);
+					currentIS = currentBucket.getInputStream();
 					currentIS.skip(index);
 					shouldResetIS = false;
 				}
