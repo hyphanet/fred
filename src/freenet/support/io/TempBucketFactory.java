@@ -99,10 +99,10 @@ public class TempBucketFactory implements BucketFactory {
 			if(logMINOR)
 				Logger.minor(this, "We have migrated "+toMigrate.hashCode());
 			
-			// Might have changed already so we can't rely on currentSize!
-			_hasFreed(toMigrate.size());
 			// We can free it on-thread as it's a rambucket
 			toMigrate.free();
+			// Might have changed already so we can't rely on currentSize!
+			_hasFreed(toMigrate.size());
 		}
 		
 		public final boolean isRAMBucket() {
