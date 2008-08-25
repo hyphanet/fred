@@ -220,7 +220,7 @@ public class TempBucketFactory implements BucketFactory {
 			public void close() throws IOException {
 				synchronized(currentBucket) {
 					_maybeResetInputStream();
-					is.close();
+					Closer.close(is);
 				}
 			}
 		}
