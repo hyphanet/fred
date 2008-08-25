@@ -178,11 +178,11 @@ public class TempBucketFactory implements BucketFactory {
 			@Override
 			public final void write(byte b[], int off, int len) throws IOException {
 				synchronized(sync) {
-					long futurSize = currentSize + len;
-					_maybeMigrateRamBucket(futurSize);
+					long futureSize = currentSize + len;
+					_maybeMigrateRamBucket(futureSize);
 					_maybeResetOutputStream();
 					currentOS.write(b, off, len);
-					currentSize = futurSize;
+					currentSize = futureSize;
 					if(isRAMBucket()) // We need to re-check because it might have changed!
 						_hasTaken(len);
 				}
