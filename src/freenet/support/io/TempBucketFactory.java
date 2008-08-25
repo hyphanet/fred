@@ -250,7 +250,9 @@ public class TempBucketFactory implements BucketFactory {
 			public long skip(long n) throws IOException {
 				synchronized(currentBucket) {
 					_maybeResetInputStream();
-					return currentIS.skip(n);
+					long skipped = currentIS.skip(n);
+					index += skipped;
+					return skipped;
 				}
 			}
 			
