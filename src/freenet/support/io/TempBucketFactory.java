@@ -286,7 +286,7 @@ public class TempBucketFactory implements BucketFactory {
 
 		public long size() {
 			synchronized(currentBucket) {
-				return currentBucket.size();
+				return currentSize;
 			}
 		}
 
