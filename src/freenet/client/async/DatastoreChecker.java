@@ -290,6 +290,28 @@ public class DatastoreChecker implements PrioRunnable {
 		DatastoreCheckerItem item = null;
 		BlockSet blocks = null;
 		short priority = -1;
+		// If the queue is too large, don't check any more blocks. It is possible
+		// that we can check the datastore faster than we can handle the resulting
+		// blocks, this will cause OOM.
+		int queueSize = context.jobRunner.getQueueSize(ClientRequestScheduler.TRIP_PENDING_PRIORITY);
+		if(queueSize > 500) {
+			// If the queue is over 500, don't run the datastore checker at all.
+			// It's entirely possible that looking up blocks in the store will
+			// make the situation first, because a key which is queued for a
+			// non-persistent request may also be used by a persistent one.
+			
+			// FIXME consider setting a flag to not only only check transient
+			// requests, but also check whether the keys are in the persistent
+			// bloom filters first, and if they are not check them.
+			try {
+				Thread.sleep(10*1000);
+			} catch (InterruptedException e) {
+				// Ignore
+			}
+			return;
+		}
+		// If it's over 100, don't check blocks from persistent requests.
+		boolean notPersistent = queueSize > 100;
 		synchronized(this) {
 			while(true) {
 				for(short prio = 0;prio<transientKeys.length;prio++) {
@@ -301,7 +323,7 @@ public class DatastoreChecker implements PrioRunnable {
 						blocks = transientBlockSets[prio].remove(0);
 						priority = prio;
 						break;
-					} else if(!persistentGetters[prio].isEmpty()) {
+					} else if((!notPersistent) && (!persistentGetters[prio].isEmpty())) {
 						keys = persistentKeys[prio].remove(0);
 						getter = persistentGetters[prio].remove(0);
 						persistent = true;
