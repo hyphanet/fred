@@ -209,6 +209,7 @@ public class TempBucketFactory implements BucketFactory {
 		private class TempBucketInputStream extends InputStream {
 			private InputStream currentIS;
 			private long index = 0;
+			private long mark = 0;
 			
 			private void _maybeResetInputStream() throws IOException {
 				if(shouldResetIS) {
@@ -273,6 +274,7 @@ public class TempBucketFactory implements BucketFactory {
 						Logger.error(this, "IOE:"+e.getMessage(),e);
 					}
 					currentIS.mark(readlimit);
+					mark = index;
 				}
 			}
 			
@@ -281,7 +283,8 @@ public class TempBucketFactory implements BucketFactory {
 				synchronized(currentBucket) {
 					_maybeResetInputStream();
 					currentIS.reset();
-				}				
+					index = mark;
+				}		
 			}
 			
 			@Override
