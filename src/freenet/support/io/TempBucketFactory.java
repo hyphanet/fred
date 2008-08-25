@@ -13,6 +13,7 @@ import java.io.IOException;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
+import java.io.BufferedOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.LinkedList;
@@ -277,14 +278,7 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public boolean markSupported() {
-				synchronized(sync) {
-					try {
-						_maybeResetInputStream();
-					} catch (IOException e) {
-						Logger.error(this, "IOE:"+e.getMessage(),e);
-					}
-					return currentIS.markSupported();
-				}
+				return false;
 			}
 			
 			@Override
