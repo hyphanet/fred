@@ -220,7 +220,6 @@ public class TempBucketFactory implements BucketFactory {
 		private class TempBucketInputStream extends InputStream {
 			private InputStream currentIS;
 			private long index = 0;
-			private long mark = 0;
 			private final short idx;
 			
 			TempBucketInputStream(short idx) {
@@ -274,36 +273,6 @@ public class TempBucketFactory implements BucketFactory {
 					index += skipped;
 					return skipped;
 				}
-			}
-			
-			@Override
-			public int available() throws IOException {
-				synchronized(sync) {
-					_maybeResetInputStream();
-					return currentIS.available();
-				}
-			}
-			
-			@Override
-			public void mark(int readlimit) {
-				synchronized(sync) {
-					try {
-						_maybeResetInputStream();
-					} catch (IOException e) {
-						Logger.error(this, "IOE:"+e.getMessage(),e);
-					}
-					currentIS.mark(readlimit);
-					mark = index;
-				}
-			}
-			
-			@Override
-			public void reset() throws IOException {
-				synchronized(sync) {
-					_maybeResetInputStream();
-					currentIS.reset();
-					index = mark;
-				}		
 			}
 			
 			@Override
