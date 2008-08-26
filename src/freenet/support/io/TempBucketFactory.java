@@ -204,7 +204,7 @@ public class TempBucketFactory implements BucketFactory {
 			private InputStream currentIS;
 			/** Keep a link to the current OutputStream to know when to reset the stream */
 			private OutputStream currentOS;
-			/** Keep a counter to know where we are on the stream (usefull when we have to reset and skip) */
+			/** Keep a counter to know where we are on the stream (useful when we have to reset and skip) */
 			private long index = 0;
 			/** Will change if a new OutputStream is openned: used to detect deprecation */
 			private final short idx;
