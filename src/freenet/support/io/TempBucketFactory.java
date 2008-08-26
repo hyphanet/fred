@@ -96,7 +96,8 @@ public class TempBucketFactory implements BucketFactory {
 				// Update the global link so that all streams will be reset
 				// DO NOT INCREMENT THE osIndex HERE!
 				os = tempFB.getOutputStream();
-				BucketTools.copyTo(toMigrate, os, currentSize);
+				if(currentSize > 0)
+					BucketTools.copyTo(toMigrate, os, currentSize);
 				if(toMigrate.isReadOnly())
 					tempFB.setReadOnly();
 				currentBucket = tempFB;
