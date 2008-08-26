@@ -197,6 +197,8 @@ public class TempBucketFactory implements BucketFactory {
 		}
 
 		public synchronized InputStream getInputStream() throws IOException {
+			if(os == null)
+				throw new IOException("No OutputStream has been openned! Why would you want an InputStream then?");
 			return new TempBucketInputStream(osIndex);
 		}
 		
