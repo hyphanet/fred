@@ -69,7 +69,6 @@ public class TempBucketFactory implements BucketFactory {
 		private OutputStream os = null;
 		/** An identifier used to know when to deprecate the InputStreams */
 		private short osIndex;
-		public final Object sync = new Object();
 		/** A timestamp used to evaluate the age of the bucket and maybe consider it for a migration */
 		public final long creationTime;
 		
@@ -84,7 +83,7 @@ public class TempBucketFactory implements BucketFactory {
 		/** A blocking method to force-migrate from a RAMBucket to a FileBucket */
 		private final void migrateToFileBucket() throws IOException {
 			Bucket toMigrate = null;
-			synchronized(sync) {
+			synchronized(this) {
 				if(!isRAMBucket())
 					// Nothing to migrate! We don't want to switch back to ram, do we?					
 					return;
@@ -113,18 +112,14 @@ public class TempBucketFactory implements BucketFactory {
 			_hasFreed(toMigrate.size());
 		}
 		
-		public final boolean isRAMBucket() {
-			synchronized(sync) {
-				return (currentBucket instanceof ArrayBucket);
-			}
+		public synchronized final boolean isRAMBucket() {
+			return (currentBucket instanceof ArrayBucket);
 		}
 
-		public OutputStream getOutputStream() throws IOException {
-			synchronized(sync) {
-				if(os != null)
-					throw new IOException("Only one OutputStream per bucket!");
-				return new TempBucketOutputStream(++osIndex);
-			}
+		public synchronized OutputStream getOutputStream() throws IOException {
+			if(os != null)
+				throw new IOException("Only one OutputStream per bucket!");
+			return new TempBucketOutputStream(++osIndex);
 		}
 
 		private class TempBucketOutputStream extends OutputStream {
@@ -160,7 +155,7 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public final void write(int b) throws IOException {
-				synchronized(sync) {
+				synchronized(TempBucket.this) {
 					long futureSize = currentSize + 1;
 					_maybeMigrateRamBucket(futureSize);
 					os.write(b);
@@ -172,7 +167,7 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public final void write(byte b[], int off, int len) throws IOException {
-				synchronized(sync) {
+				synchronized(TempBucket.this) {
 					long futureSize = currentSize + len;
 					_maybeMigrateRamBucket(futureSize);
 					os.write(b, off, len);
@@ -184,7 +179,7 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public final void flush() throws IOException {
-				synchronized(sync) {
+				synchronized(TempBucket.this) {
 					_maybeMigrateRamBucket(currentSize);
 					os.flush();
 				}
@@ -192,7 +187,7 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public final void close() throws IOException {
-				synchronized(sync) {
+				synchronized(TempBucket.this) {
 					_maybeMigrateRamBucket(currentSize);
 					os.flush();
 					os.close();
@@ -235,7 +230,7 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public final int read() throws IOException {
-				synchronized(sync) {
+				synchronized(TempBucket.this) {
 					_maybeResetInputStream();
 					int toReturn = currentIS.read();
 					if(toReturn > -1)
@@ -246,12 +241,14 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public int read(byte b[]) throws IOException {
-				return read(b, 0, b.length);
+				synchronized(TempBucket.this) {
+					return read(b, 0, b.length);
+				}
 			}
 			
 			@Override
 			public int read(byte b[], int off, int len) throws IOException {
-				synchronized(sync) {
+				synchronized(TempBucket.this) {
 					_maybeResetInputStream();
 					int toReturn = currentIS.read(b, off, len);
 					if(toReturn > 0)
@@ -262,7 +259,7 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public long skip(long n) throws IOException {
-				synchronized(sync) {
+				synchronized(TempBucket.this) {
 					_maybeResetInputStream();
 					long skipped = currentIS.skip(n);
 					index += skipped;
@@ -277,43 +274,33 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public final void close() throws IOException {
-				synchronized(sync) {
+				synchronized(TempBucket.this) {
 					_maybeResetInputStream();
 					Closer.close(currentIS);
 				}
 			}
 		}
 
-		public String getName() {
-			synchronized(sync) {
-				return currentBucket.getName();
-			}
+		public synchronized String getName() {
+			return currentBucket.getName();
 		}
 
-		public long size() {
-			synchronized(sync) {
-				return currentSize;
-			}
+		public synchronized long size() {
+			return currentSize;
 		}
 
-		public boolean isReadOnly() {
-			synchronized(sync) {
-				return currentBucket.isReadOnly();
-			}
+		public synchronized boolean isReadOnly() {
+			return currentBucket.isReadOnly();
 		}
 
-		public void setReadOnly() {
-			synchronized(sync) {
-				currentBucket.setReadOnly();
-			}
+		public synchronized void setReadOnly() {
+			currentBucket.setReadOnly();
 		}
 
-		public void free() {
-			synchronized(sync) {
-				currentBucket.free();
-				if(isRAMBucket())
-					_hasFreed(currentSize);
-			}
+		public synchronized void free() {
+			currentBucket.free();
+			if(isRAMBucket())
+				_hasFreed(currentSize);
 		}
 	}
 	
