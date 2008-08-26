@@ -67,16 +67,6 @@ public class ArrayBucket implements Bucket {
 		return s.toString();
 	}
 
-	public synchronized void read(InputStream in) throws IOException {
-		OutputStream out = new ArrayBucketOutputStream();
-		int i;
-		byte[] b = new byte[8 * 1024];
-		while((i = in.read(b)) != -1) {
-			out.write(b, 0, i);
-		}
-		out.close();
-	}
-
 	public synchronized long size() {
 		return size;
 	}
