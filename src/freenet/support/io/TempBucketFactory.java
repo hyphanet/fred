@@ -135,10 +135,10 @@ public class TempBucketFactory implements BucketFactory {
 					boolean shouldMigrate = false;
 					boolean isOversized = false;
 					
-					if(futureSize > maxRAMBucketSize * RAMBUCKET_CONVERSION_FACTOR) {
+					if(futureSize >= Math.min(Integer.MAX_VALUE, maxRAMBucketSize * RAMBUCKET_CONVERSION_FACTOR)) {
 						isOversized = true;
 						shouldMigrate = true;
-					} else if ((futureSize - currentSize) + bytesInUse > maxRamUsed)
+					} else if ((futureSize - currentSize) + bytesInUse >= maxRamUsed)
 						shouldMigrate = true;
 					
 					if(shouldMigrate) {
