@@ -123,9 +123,9 @@ public class ArrayBucket implements Bucket {
 				if(hasBeenClosed)
 					return;
 				hasBeenClosed = true;
-				data.add(super.toByteArray());
 				if(readOnly)
 					throw new IOException("Read only");
+				data.add(super.toByteArray());
 			}
 		}
 	}
