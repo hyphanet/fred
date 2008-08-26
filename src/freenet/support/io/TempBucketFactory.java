@@ -87,7 +87,6 @@ public class TempBucketFactory implements BucketFactory {
 				if(!isRAMBucket())
 					// Nothing to migrate! We don't want to switch back to ram, do we?					
 					return;
-
 				toMigrate = currentBucket;
 				Bucket tempFB = _makeFileBucket();
 				if(os != null) {
@@ -233,7 +232,7 @@ public class TempBucketFactory implements BucketFactory {
 				synchronized(TempBucket.this) {
 					_maybeResetInputStream();
 					int toReturn = currentIS.read();
-					if(toReturn > -1)
+					if(toReturn != -1)
 						index++;
 					return toReturn;
 				}
@@ -252,7 +251,7 @@ public class TempBucketFactory implements BucketFactory {
 					_maybeResetInputStream();
 					int toReturn = currentIS.read(b, off, len);
 					if(toReturn > 0)
-						index += len;
+						index += toReturn;
 					return toReturn;
 				}
 			}
