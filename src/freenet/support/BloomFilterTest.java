@@ -29,12 +29,23 @@ public class BloomFilterTest {
 		System.out.println("Size in elements: "+size);
 		System.out.println("Key count: "+keyCount);
 		System.out.println("False positives should be: "+Math.pow(0.6185, ratio));
-		BloomFilter filter = new BinaryBloomFilter(size, k);
+		BloomFilter filter = new CountingBloomFilter(size, k);
+		int detected = 0;
 		for(int i=0;i<keyCount;i++) {
 			byte[] buf = new byte[32];
 			mt.nextBytes(buf);
 			filter.addKey(buf);
+			if(filter.checkFilter(buf)) {
+				detected++;
+			}
 		}
+		if(detected < keyCount) {
+			System.err.println("FAILED TO DETECT KEY:");
+			System.err.println("Key count: "+keyCount);
+			System.err.println("Detected keys: "+detected);
+			System.exit(2);
+		} else
+			System.out.println("Detected keys: "+detected);
 		int countNegatives = 0;
 		int countFalsePositives = 0;
 		int count = 0;
