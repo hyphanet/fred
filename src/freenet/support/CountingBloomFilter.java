@@ -46,21 +46,21 @@ public class CountingBloomFilter extends BloomFilter {
 
 	public CountingBloomFilter(int length, int k, byte[] buffer) {
 		super(length, k);
-		assert(buffer.length == length / 8 * 2);
+		assert(buffer.length == length / 4);
 		filter = ByteBuffer.wrap(buffer);
 	}
 
 	@Override
-	protected boolean getBit(int offset) {
-		byte b = filter.get(offset / 8 * 2);
+	public boolean getBit(int offset) {
+		byte b = filter.get(offset / 4);
 		byte v = (byte) ((b >>> offset % 4 * 2) & 3);
 
 		return v != 0;
 	}
 
 	@Override
-	protected void setBit(int offset) {
-		byte b = filter.get(offset / 8 * 2);
+	public void setBit(int offset) {
+		byte b = filter.get(offset / 4);
 		byte v = (byte) ((b >>> offset % 4 * 2) & 3);
 
 		if (v == 3)
@@ -73,8 +73,8 @@ public class CountingBloomFilter extends BloomFilter {
 	}
 
 	@Override
-	protected void unsetBit(int offset) {
-		byte b = filter.get(offset / 8 * 2);
+	public void unsetBit(int offset) {
+		byte b = filter.get(offset / 4);
 		byte v = (byte) ((b >>> offset % 4 * 2) & 3);
 
 		if (v == 0 || v == 3)
