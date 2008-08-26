@@ -42,7 +42,7 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		FreenetURI uri = key.getSSK(l).getURI();
 		try {
 			SingleFileFetcher getter =
-				(SingleFileFetcher) SingleFileFetcher.create(this, this, new ClientMetadata(), uri, ctx, new ArchiveContext(ctx.maxArchiveLevels), 
+				(SingleFileFetcher) SingleFileFetcher.create(this, this, new ClientMetadata(), uri, ctx, new ArchiveContext(ctx.maxTempLength, ctx.maxArchiveLevels), 
 						ctx.maxNonSplitfileRetries, 0, true, l, true, null, false);
 			getter.schedule();
 		} catch (MalformedURLException e) {
