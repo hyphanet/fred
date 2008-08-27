@@ -97,6 +97,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	private File[] uploadAllowedDirs;
 	private boolean uploadAllowedEverywhere;
 	public final FilenameGenerator tempFilenameGenerator;
+	public final FilenameGenerator persistentFilenameGenerator;
 	public final BucketFactory tempBucketFactory;
 	public final Node node;
 	final NodeStats nodeStats;
@@ -218,6 +219,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			persistentTempBucketFactory = PersistentTempBucketFactory.load(dir, prefix, random, node.fastWeakRandom, container, node.nodeDBHandle);
 			persistentTempBucketFactory.init(dir, prefix, random, node.fastWeakRandom);
 			persistentEncryptedTempBucketFactory = PersistentEncryptedTempBucketFactory.load(persistentTempBucketFactory, container);
+			persistentFilenameGenerator = persistentTempBucketFactory.fg;
 		} catch(IOException e2) {
 			String msg = "Could not find or create persistent temporary directory";
 			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
