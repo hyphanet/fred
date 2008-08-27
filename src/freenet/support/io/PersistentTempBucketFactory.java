@@ -34,7 +34,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	private HashSet originalFiles;
 	
 	/** Filename generator */
-	private final FilenameGenerator fg;
+	public final FilenameGenerator fg;
 	
 	/** Random number generator */
 	private transient RandomSource strongPRNG;
