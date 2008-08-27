@@ -210,7 +210,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		for(HasKeyListener l : results) {
 			try {
 				if(l.isCancelled(container)) continue;
-				addPendingKeys(l.makeKeyListener(container, context));
+				KeyListener listener = l.makeKeyListener(container, context);
+				if(listener != null)
+					addPendingKeys(listener);
 			} catch (KeyListenerConstructionException e) {
 				System.err.println("FAILED TO LOAD REQUEST BLOOM FILTERS:");
 				e.printStackTrace();
