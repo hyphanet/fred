@@ -835,9 +835,16 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 
 	@Override
 	public Key[] listKeys(ObjectContainer container) {
-		if(persistent)
-			container.activate(segment, 1);
-		return segment.listKeys(container);
+		boolean activated = false;
+		if(persistent) {
+			activated = container.ext().isActive(segment);
+			if(!activated)
+				container.activate(segment, 1);
+		}
+		Key[] keys = segment.listKeys(container);
+		if(persistent && !activated)
+			container.deactivate(segment, 1);
+		return keys;
 	}
 
 }
