@@ -47,6 +47,7 @@ public class ClientContext {
 	public transient final long bootID;
 	public transient final Ticker ticker;
 	public transient final FilenameGenerator fg;
+	public transient final FilenameGenerator persistentFG;
 
 	public ClientContext(NodeClientCore core) {
 		this.bootID = core.node.bootID;
@@ -64,6 +65,7 @@ public class ClientContext {
 		fastWeakRandom = core.node.fastWeakRandom;
 		this.ticker = core.getTicker();
 		fg = core.tempFilenameGenerator;
+		persistentFG = core.persistentFilenameGenerator;
 	}
 	
 	public void init(RequestStarterGroup starters) {
