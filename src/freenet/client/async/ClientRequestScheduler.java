@@ -601,9 +601,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 				SendableRequest request = schedCore.removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, false, true, Short.MAX_VALUE, Integer.MAX_VALUE, context, container);
 				if(request == null) return;
 				boolean full = addToStarterQueue(request, container);
+				container.deactivate(request, 1);
 				starter.wakeUp();
 				if(full) return;
-				return;
 			}
 		}
 	};
@@ -691,8 +691,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	/**
-	 * Remove a SendableGet from the list of getters we maintain for each key, indicating that we are no longer interested
-	 * in that key.
+	 * Remove a KeyListener from the list of KeyListeners.
 	 * @param getter
 	 * @param complain
 	 */
@@ -704,8 +703,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 
 	/**
-	 * Remove a SendableGet from the list of getters we maintain for each key, indicating that we are no longer interested
-	 * in that key.
+	 * Remove a KeyListener from the list of KeyListeners.
 	 * @param getter
 	 * @param complain
 	 */
@@ -768,8 +766,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					schedCore.tripPendingKey(key, block, container, clientContext);
 				}
 			}, TRIP_PENDING_PRIORITY, false);
-		}
-		
+		} else schedCore.countNegative();
 	}
 
 	/** If we want the offered key, or if force is enabled, queue it */
@@ -867,8 +864,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(logMINOR) Logger.minor(this, "Restoring key but no keys queued?? for "+key);
 			}
 			if(reqs != null) {
-				for(int i=0;i<reqs.length;i++)
+				for(int i=0;i<reqs.length;i++) {
+					container.activate(reqs[i], 1);
 					reqs[i].requeueAfterCooldown(key, now, container, clientContext);
+					container.deactivate(reqs[i], 1);
+				}
 			}
 			if(transientReqs != null) {
 				for(int i=0;i<transientReqs.length;i++)
@@ -905,7 +905,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 			jobRunner.queue(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
+					container.activate(get, 1);
 					get.onFailure(e, null, container, clientContext);
+					container.deactivate(get, 1);
 				}
 				
 			}, prio, false);
@@ -919,7 +921,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 			jobRunner.queue(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
+					container.activate(insert, 1);
 					insert.onFailure(e, null, container, context);
+					container.deactivate(insert, 1);
 				}
 				
 			}, prio, false);

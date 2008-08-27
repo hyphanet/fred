@@ -76,11 +76,12 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 	 * @throws IOException 
 	 */
 	public SplitFileFetcherKeyListener(SplitFileFetcher parent, int keyCount, File bloomFile, File altBloomFile, int mainBloomSizeBytes, int mainBloomK, boolean dontCache, byte[] localSalt, int segments, int segmentFilterSizeBytes, int segmentBloomK, boolean persistent, boolean newFilter) throws IOException {
+		System.err.println("Persistent = "+persistent);
 		fetcher = parent;
 		this.persistent = persistent;
 		this.keyCount = keyCount;
-		this.mainBloomFile = persistent ? new File(bloomFile.getPath()) : null;
-		this.altBloomFile = persistent ? new File(altBloomFile.getPath()) : null;
+		this.mainBloomFile = bloomFile;
+		this.altBloomFile = altBloomFile;
 		this.dontCache = dontCache;
 		assert(localSalt.length == 32);
 		if(persistent) {
@@ -118,6 +119,8 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			dis.readFully(segmentsFilterBuffer);
 			dis.close();
 		}
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Created "+this+" for "+fetcher);
 	}
 
 	public long countKeys() {
@@ -132,6 +135,8 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		byte[] saltedKey = context.getChkFetchScheduler().saltKey(key);
 		filter.addKey(saltedKey);
 		segmentFilters[segNo].addKey(localSaltKey(key));
+		if(!segmentFilters[segNo].checkFilter(localSaltKey(key)))
+			Logger.error(this, "Key added but not in filter: "+key+" on "+this);
 	}
 
 	private byte[] localSaltKey(Key key) {
@@ -152,7 +157,21 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		// Caller has already called probablyWantKey(), so don't do it again.
 		byte[] salted = localSaltKey(key);
 		for(int i=0;i<segmentFilters.length;i++) {
-			if(segmentFilters[i].checkFilter(salted)) return prio;
+			if(segmentFilters[i].checkFilter(salted)) {
+				if(persistent)
+					container.activate(fetcher, 1);
+				SplitFileFetcherSegment segment = fetcher.getSegment(i);
+				if(persistent)
+					container.deactivate(fetcher, 1);
+				if(persistent)
+					container.activate(segment, 1);
+				boolean found = segment.getBlockNumber(key, container) >= 0;
+				if(!found)
+					Logger.error(this, "Found block in primary and segment bloom filters but segment doesn't want it: "+segment+" on "+this);
+				if(persistent)
+					container.deactivate(segment, 1);
+				if(found) return prio;
+			}
 		}
 		return -1;
 	}
@@ -162,28 +181,35 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		// Caller has already called probablyWantKey(), so don't do it again.
 		boolean found = false;
 		byte[] salted = localSaltKey(key);
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR)
+			Logger.minor(this, "handleBlock("+key+") on "+this);
 		for(int i=0;i<segmentFilters.length;i++) {
-			if(segmentFilters[i].checkFilter(salted)) {
+			boolean match;
+			synchronized(this) {
+				match = segmentFilters[i].checkFilter(salted);
+			}
+			if(match) {
 				if(persistent)
 					container.activate(fetcher, 1);
 				SplitFileFetcherSegment segment = fetcher.getSegment(i);
 				if(persistent)
 					container.activate(segment, 1);
+				if(logMINOR)
+					Logger.minor(this, "Key may be in segment "+segment);
 				if(segment.onGotKey(key, block, container, context)) {
 					keyCount--;
 					synchronized(this) {
 						filter.removeKey(saltedKey);
 					}
 					// Update the persistent keyCount.
-					if(persistent)
-						container.activate(fetcher, 1);
 					fetcher.setKeyCount(keyCount, container);
-					if(persistent)
-						container.deactivate(fetcher, 1);
 					found = true;
 				}
 				if(persistent)
 					container.deactivate(segment, 1);
+				if(persistent)
+					container.deactivate(fetcher, 1);
 			}
 		}
 		return found;
@@ -211,10 +237,16 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 				if(persistent)
 					container.activate(fetcher, 1);
 				SplitFileFetcherSegment segment = fetcher.getSegment(i);
+				if(persistent)
+					container.deactivate(fetcher, 1);
+				if(persistent)
+					container.activate(segment, 1);
 				int blockNum = segment.getBlockNumber(key, container);
 				if(blockNum >= 0) {
 					ret.add(segment.getSubSegmentFor(blockNum, container));
 				}
+				if(persistent)
+					container.deactivate(segment, 1);
 			}
 		}
 		return ret.toArray(new SendableGet[ret.size()]);
@@ -248,6 +280,8 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		int segNo = segment.segNum;
 		segmentFilters[segNo].unsetAll();
 		Key[] removeKeys = segment.listKeys(container);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Removing segment from bloom filter: "+segment+" keys: "+removeKeys.length);
 		for(int i=0;i<removeKeys.length;i++) {
 			byte[] salted = context.getChkFetchScheduler().saltKey(removeKeys[i]);
 			if(filter.checkFilter(salted)) {
