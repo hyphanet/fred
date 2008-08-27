@@ -245,7 +245,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			} else {
 				fetchedBlocks++;
 				if(logMINOR) Logger.minor(this, "Fetched "+fetchedBlocks+" blocks in onSuccess("+blockNo+")");
-				decodeNow = (fetchedBlocks >= minFetched);
+				decodeNow = (!startedDecode) && (fetchedBlocks >= minFetched);
 				if(decodeNow) {
 					startedDecode = true;
 					finishing = true;
