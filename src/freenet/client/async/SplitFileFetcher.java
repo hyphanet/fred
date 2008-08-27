@@ -266,6 +266,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			if(persistent) {
 				container.set(segments[0]);
 				segments[0].deactivateKeys(container);
+				container.deactivate(segments[0], 1);
 			}
 		} else {
 			int dataBlocksPtr = 0;
@@ -280,8 +281,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					System.arraycopy(splitfileDataBlocks, dataBlocksPtr, dataBlocks, 0, copyDataBlocks);
 				if(copyCheckBlocks > 0)
 					System.arraycopy(splitfileCheckBlocks, checkBlocksPtr, checkBlocks, 0, copyCheckBlocks);
-				dataBlocksPtr += copyDataBlocks;
-				checkBlocksPtr += copyCheckBlocks;
 				segments[i] = new SplitFileFetcherSegment(splitfileType, dataBlocks, checkBlocks, this, archiveContext, 
 						fetchContext, maxTempLength, recursionLevel+1, parent, i);
 				for(int j=0;j<dataBlocks.length;j++)
@@ -291,7 +290,14 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				if(persistent) {
 					container.set(segments[i]);
 					segments[i].deactivateKeys(container);
+					container.deactivate(segments[i], 1);
+					for(int x=dataBlocksPtr;x<dataBlocksPtr+copyDataBlocks;x++)
+						splitfileDataBlocks[x] = null;
+					for(int x=checkBlocksPtr;x<checkBlocksPtr+copyCheckBlocks;x++)
+						splitfileCheckBlocks[x] = null;
 				}
+				dataBlocksPtr += copyDataBlocks;
+				checkBlocksPtr += copyCheckBlocks;
 			}
 			if(dataBlocksPtr != splitfileDataBlocks.length)
 				throw new FetchException(FetchException.INVALID_METADATA, "Unable to allocate all data blocks to segments - buggy or malicious inserter");
