@@ -295,7 +295,11 @@ abstract class ClientRequestSchedulerBase {
 		return false;
 	}
 	
-	public void tripPendingKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
+	private long persistentTruePositives;
+	private long persistentFalsePositives;
+	private long persistentNegatives;
+	
+	public boolean tripPendingKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
 		byte[] saltedKey = ((key instanceof NodeSSK) ? context.getSskFetchScheduler() : context.getChkFetchScheduler()).saltKey(key);
 		ArrayList<KeyListener> matches = null;
 		synchronized(this) {
@@ -305,9 +309,11 @@ abstract class ClientRequestSchedulerBase {
 				matches.add(listener);
 			}
 		}
+		boolean ret = false;
 		if(matches != null) {
 			for(KeyListener listener : matches) {
-				listener.handleBlock(key, saltedKey, block, container, context);
+				if(listener.handleBlock(key, saltedKey, block, container, context))
+					ret = true;
 				if(listener.isEmpty()) {
 					synchronized(this) {
 						keyListeners.remove(listener);
@@ -315,7 +321,62 @@ abstract class ClientRequestSchedulerBase {
 					listener.onRemove();
 				}
 			}
+		} else return false;
+		if(ret) {
+			// True positive
+			synchronized(this) {
+				persistentTruePositives++;
+				logFalsePositives("hit");
+			}
+		} else {
+			synchronized(this) {
+				persistentFalsePositives++;
+				logFalsePositives("false");
+			}
 		}
+		return ret;
+	}
+	
+	synchronized void countNegative() {
+		persistentNegatives++;
+		if(persistentNegatives % 32 == 0)
+			logFalsePositives("neg");
+	}
+	
+	private synchronized void logFalsePositives(String phase) {
+		long totalPositives = persistentFalsePositives + persistentTruePositives;
+		double percent;
+		if(totalPositives > 0)
+			percent = ((double) persistentFalsePositives) / totalPositives;
+		else
+			percent = 0;
+		if(!(percent > 2 || logMINOR)) return;
+		StringBuilder buf = new StringBuilder();
+		if(persistent())
+			buf.append("Persistent ");
+		else
+			buf.append("Transient ");
+		buf.append("false positives ");
+		buf.append(phase);
+		buf.append(": ");
+		
+		if(totalPositives != 0) {
+			buf.append(percent);
+			buf.append("% ");
+		}
+		buf.append("(false=");
+		buf.append(persistentFalsePositives);
+		buf.append(" true=");
+		buf.append(persistentTruePositives);
+		buf.append(" negatives=");
+		buf.append(persistentNegatives);
+		buf.append(')');
+		if(percent > 10)
+			Logger.error(this, buf.toString());
+		else if(percent > 2)
+			Logger.normal(this, buf.toString());
+		else
+			Logger.minor(this, buf.toString());
 	}
 
 	public SendableGet[] requestsForKey(Key key, ObjectContainer container, ClientContext context) {
