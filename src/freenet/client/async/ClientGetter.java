@@ -231,6 +231,8 @@ public class ClientGetter extends BaseClientGetter {
 			if(persistent())
 				container.activate(s, 1);
 			s.cancel(container, context);
+			if(persistent())
+				container.deactivate(s, 1);
 		}
 	}
 

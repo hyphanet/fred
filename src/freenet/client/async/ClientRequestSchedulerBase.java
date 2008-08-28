@@ -101,7 +101,7 @@ abstract class ClientRequestSchedulerBase {
 			container.deactivate(v, 1);
 		addToGrabArray(prio, retryCount, fixRetryCount(retryCount), req.getClient(), req.getClientRequest(), req, random, container);
 		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio+", retrycount="+retryCount+" v.size()="+vSize);
-		if(req.persistent())
+		if(persistent())
 			sched.maybeAddToStarterQueue(req, container);
 	}
 	

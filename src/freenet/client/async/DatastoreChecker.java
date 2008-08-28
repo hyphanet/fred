@@ -381,13 +381,18 @@ public class DatastoreChecker implements PrioRunnable {
 			context.jobRunner.queue(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
-					scheduler.finishRegister(new SendableGet[] { get }, true, true, valid, it);
+					if(container.ext().isActive(get)) {
+						Logger.error(this, "ALREADY ACTIVATED: "+get);
+					}
+					container.activate(get, 1);
+					scheduler.finishRegister(new SendableGet[] { get }, true, true, container, valid, it);
+					container.deactivate(get, 1);
 					loader.run(container, context);
 				}
 				
 			}, NativeThread.NORM_PRIORITY, false);
 		} else {
-			sched.finishRegister(new SendableGet[] { getter }, false, false, anyValid, item);
+			sched.finishRegister(new SendableGet[] { getter }, false, false, null, anyValid, item);
 		}
 	}
 	

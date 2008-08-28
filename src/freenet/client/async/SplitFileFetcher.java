@@ -491,7 +491,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				container.deactivate(segments[i], 1);
 		}
 		BlockSet blocks = fetchContext.blocks;
-		context.getChkFetchScheduler().register(this, getters, persistent, true, blocks, false);
+		context.getChkFetchScheduler().register(this, getters, persistent, true, container, blocks, false);
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {

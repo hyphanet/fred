@@ -141,6 +141,8 @@ public class PersistentChosenRequest {
 	}
 
 	private void finish(ObjectContainer container, ClientContext context, boolean dumping) {
+		if(container.ext().isActive(request))
+			Logger.error(this, "ALREADY ACTIVATED: "+request);
 		container.activate(request, 1);
 		Logger.normal(this, "Finishing "+this+" for "+request);
 		// Call all the callbacks.
@@ -149,6 +151,7 @@ public class PersistentChosenRequest {
 			if(finished) {
 				if(blocksFinished.isEmpty()) {
 					// Okay...
+					container.deactivate(request, 1);
 					return;
 				} else {
 					Logger.error(this, "Finished but blocksFinished not empty on "+this, new Exception("debug"));
@@ -163,6 +166,7 @@ public class PersistentChosenRequest {
 				Logger.error(this, "No finished blocks in finish() on "+this);
 			else if(logMINOR)
 				Logger.minor(this, "No finished blocks in finish() on "+this);
+			container.deactivate(request, 1);
 			return;
 		}
 		if(request instanceof SendableGet) {
@@ -200,6 +204,7 @@ public class PersistentChosenRequest {
 			}
 		}
 		scheduler.removeRunningRequest(request);
+		container.deactivate(request, 1);
 	}
 
 	public synchronized ChosenBlock grabNotStarted(Random random, RequestScheduler sched) {

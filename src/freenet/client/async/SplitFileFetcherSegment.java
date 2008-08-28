@@ -387,8 +387,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 			return;
 		}
 
-		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
+		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT) {
+			if(persistent) {
+				container.deactivate(parentFetcher, 1);
+				container.deactivate(parent, 1);
+				container.deactivate(context, 1);
+			}
 			return;
+		}
 		
 		// Now heal
 
@@ -624,7 +630,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 						if(dataCooldownTimes[blockNo] > now)
 							Logger.error(this, "Already on the cooldown queue! for "+this+" data block no "+blockNo, new Exception("error"));
 						else
-							dataCooldownTimes[blockNo] = sched.queueCooldown(key, sub);
+							dataCooldownTimes[blockNo] = sched.queueCooldown(key, sub, container);
 						cooldown = true;
 					}
 				}
@@ -642,7 +648,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 						if(checkCooldownTimes[checkNo] > now)
 							Logger.error(this, "Already on the cooldown queue! for "+this+" check block no "+blockNo, new Exception("error"));
 						else
-							checkCooldownTimes[checkNo] = sched.queueCooldown(key, sub);
+							checkCooldownTimes[checkNo] = sched.queueCooldown(key, sub, container);
 						cooldown = true;
 					}
 				}
@@ -741,12 +747,12 @@ public class SplitFileFetcherSegment implements FECCallback {
 				checkBuckets[i] = null;
 			}
 		}
-		parentFetcher.removeMyPendingKeys(this, container, context);
 		removeSubSegments(container, context);
 		if(persistent) {
 			container.set(this);
 			container.activate(parentFetcher, 1);
 		}
+		parentFetcher.removeMyPendingKeys(this, container, context);
 		parentFetcher.segmentFinished(this, container, context);
 		if(persistent && !dontDeactivateParent)
 			container.deactivate(parentFetcher, 1);

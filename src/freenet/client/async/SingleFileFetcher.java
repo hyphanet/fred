@@ -612,6 +612,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					sf.schedule(container, context);
 				} catch (KeyListenerConstructionException e) {
 					onFailure(e.getFetchException(), false, container, context);
+					if(persistent) container.deactivate(sf, 1);
 					return;
 				}
 				if(persistent) container.deactivate(sf, 1);
@@ -671,6 +672,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(!context.jobRunner.onDatabaseThread())
 				context.jobRunner.queue(new DBJob() {
 					public void run(ObjectContainer container, ClientContext context) {
+						if(container.ext().isActive(SingleFileFetcher.this))
+							Logger.error(this, "ALREADY ACTIVE in SFF callback: "+SingleFileFetcher.this);
 						container.activate(SingleFileFetcher.this, 1);
 						innerWrapHandleMetadata(notFinalizedSize, container, context);
 						container.deactivate(SingleFileFetcher.this, 1);

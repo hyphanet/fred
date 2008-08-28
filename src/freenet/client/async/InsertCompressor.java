@@ -105,6 +105,8 @@ public class InsertCompressor {
 					context.jobRunner.queue(new DBJob() {
 
 						public void run(ObjectContainer container, ClientContext context) {
+							if(container.ext().isActive(inserter))
+								Logger.error(this, "ALREADY ACTIVE in start compression callback: "+inserter);
 							container.activate(inserter, 1);
 							inserter.onStartCompression(phase, container, context);
 							container.deactivate(inserter, 1);
@@ -148,6 +150,8 @@ public class InsertCompressor {
 				context.jobRunner.queue(new DBJob() {
 					
 					public void run(ObjectContainer container, ClientContext context) {
+						if(container.ext().isActive(inserter))
+							Logger.error(this, "ALREADY ACTIVE in compressed callback: "+inserter);
 						container.activate(inserter, 1);
 						inserter.onCompressed(output, container, context);
 						container.deactivate(inserter, 1);
@@ -175,6 +179,8 @@ public class InsertCompressor {
 				context.jobRunner.queue(new DBJob() {
 					
 					public void run(ObjectContainer container, ClientContext context) {
+						if(container.ext().isActive(inserter))
+							Logger.error(this, "ALREADY ACTIVE in compress failure callback: "+inserter);
 						container.activate(inserter, 1);
 						container.activate(inserter.cb, 1);
 						inserter.cb.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), inserter, container, context);
@@ -193,6 +199,8 @@ public class InsertCompressor {
 				context.jobRunner.queue(new DBJob() {
 					
 					public void run(ObjectContainer container, ClientContext context) {
+						if(container.ext().isActive(inserter))
+							Logger.error(this, "ALREADY ACTIVE in compress size callback: "+inserter);
 						container.activate(inserter, 1);
 						container.activate(inserter.cb, 1);
 						inserter.cb.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), inserter, container, context);

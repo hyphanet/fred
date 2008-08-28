@@ -208,6 +208,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		ObjectSet<HasKeyListener> results =
 			container.query(HasKeyListener.class);
 		for(HasKeyListener l : results) {
+			container.activate(l, 1);
 			try {
 				if(l.isCancelled(container)) continue;
 				KeyListener listener = l.makeKeyListener(container, context);
@@ -218,6 +219,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				e.printStackTrace();
 				Logger.error(this, "FAILED TO LOAD REQUEST BLOOM FILTERS: "+e, e);
 			}
+			container.deactivate(l, 1);
 		}
 	}
 
@@ -644,7 +646,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					} else {
 						if(logMINOR)
 							Logger.minor(this, "Registering RegisterMe for insert: "+reg.nonGetRequest);
-						sched.registerInsert(reg.nonGetRequest, true, false);
+						sched.registerInsert(reg.nonGetRequest, true, false, container);
 					}
 					container.delete(reg);
 					container.deactivate(reg.nonGetRequest, 1);

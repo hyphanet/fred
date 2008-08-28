@@ -194,11 +194,14 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			container.activate(segment, 1);
 		}
 		boolean hasSet = false;
+		boolean retval = false;
 		synchronized(segment) {
 			for(int i=0;i<10;i++) {
 				Object ret;
 				int x;
-				if(blockNums.isEmpty()) return false;
+				if(blockNums.isEmpty()) {
+					break;
+				}
 				x = context.random.nextInt(blockNums.size());
 				ret = (Integer) blockNums.get(x);
 				Key key = segment.getBlockNodeKey(((Integer)ret).intValue(), container);
@@ -218,10 +221,15 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				if(keys.hasKey(key)) {
 					continue;
 				}
-				return true;
+				retval = true;
+				break;
 			}
-			return false;
 		}
+		if(persistent) {
+			container.deactivate(blockNums, 5);
+			container.deactivate(segment, 1);
+		}
+		return retval;
 	}
 	
 	public boolean ignoreStore() {
@@ -539,7 +547,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		if(schedule) {
 			// Only need to register once for all the blocks.
 			try {
-				context.getChkFetchScheduler().register(null, new SendableGet[] { this }, persistent, true, null, true);
+				context.getChkFetchScheduler().register(null, new SendableGet[] { this }, persistent, true, container, null, true);
 			} catch (KeyListenerConstructionException e) {
 				Logger.error(this, "Impossible: "+e+" on "+this, e);
 			}
@@ -595,7 +603,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		if(schedule) {
 			if(dontSchedule) return true;
 			try {
-				context.getChkFetchScheduler().register(null, new SendableGet[] { this }, persistent, true, null, true);
+				context.getChkFetchScheduler().register(null, new SendableGet[] { this }, persistent, true, container, null, true);
 			} catch (KeyListenerConstructionException e) {
 				Logger.error(this, "Impossible: "+e+" on "+this, e);
 			}
@@ -604,7 +612,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 
 	public String toString() {
-		return super.toString()+":"+retryCount+"/"+segment+'('+(blockNums == null ? "null" : String.valueOf(blockNums.size()))+')'; 
+		return super.toString()+":"+retryCount+"/"+segment+'('+(blockNums == null ? "null" : String.valueOf(blockNums.size()))+"),tempid="+objectHash(); 
 	}
 
 	public void possiblyRemoveFromParent(ObjectContainer container, ClientContext context) {
@@ -751,7 +759,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 
 	public void reschedule(ObjectContainer container, ClientContext context) {
 		try {
-			getScheduler(context).register(null, new SendableGet[] { this }, persistent, true, segment.blockFetchContext.blocks, true);
+			getScheduler(context).register(null, new SendableGet[] { this }, persistent, true, container, segment.blockFetchContext.blocks, true);
 		} catch (KeyListenerConstructionException e) {
 			Logger.error(this, "Impossible: "+e+" on "+this, e);
 		}
@@ -847,4 +855,11 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		return keys;
 	}
 
+	public int objectHash() {
+		return super.hashCode();
+	}
+	
+	public void objectOnActivate(ObjectContainer container) {
+		Logger.minor(this, "ACTIVATING: "+this, new Exception("debug"));
+	}
 }

@@ -5,6 +5,8 @@ package freenet.node;
 
 import java.util.LinkedList;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.FECQueue;
 import freenet.client.async.ChosenBlock;
 import freenet.client.async.ClientContext;
@@ -30,7 +32,7 @@ public interface RequestScheduler {
 	 * @param key The key to be added.
 	 * @return The time at which the key will leave the cooldown queue.
 	 */
-	long queueCooldown(ClientKey key, SendableGet getter);
+	long queueCooldown(ClientKey key, SendableGet getter, ObjectContainer container);
 
 	/**
 	 * Remove keys from the cooldown queue who have now served their time and can be requested 

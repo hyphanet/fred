@@ -105,7 +105,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 					if(persistent)
 						container.activate(key, 5);
 					RequestScheduler sched = context.getFetchScheduler(key instanceof ClientSSK);
-					cooldownWakeupTime = sched.queueCooldown(key, this);
+					cooldownWakeupTime = sched.queueCooldown(key, this, container);
 					if(persistent)
 						container.deactivate(key, 5);
 				}
@@ -261,7 +261,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				container.activate(ctx.blocks, 5);
 		}
 		try {
-			getScheduler(context).register(this, new SendableGet[] { this }, persistent, true, ctx.blocks, false);
+			getScheduler(context).register(this, new SendableGet[] { this }, persistent, true, container, ctx.blocks, false);
 		} catch (KeyListenerConstructionException e) {
 			Logger.error(this, "Impossible: "+e+" on "+this, e);
 		}
@@ -274,7 +274,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 				container.activate(ctx.blocks, 5);
 		}
 		try {
-			getScheduler(context).register(null, new SendableGet[] { this }, persistent, true, ctx.blocks, true);
+			getScheduler(context).register(null, new SendableGet[] { this }, persistent, true, container, ctx.blocks, true);
 		} catch (KeyListenerConstructionException e) {
 			Logger.error(this, "Impossible: "+e+" on "+this, e);
 		}

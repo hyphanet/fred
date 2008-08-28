@@ -111,7 +111,7 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		ClientRequester cr = getClientRequest();
 		if(persistent)
 			container.activate(cr, 1);
-		getScheduler(context).removeFromAllRequestsByClientRequest(cr, this, true);
+		getScheduler(context).removeFromAllRequestsByClientRequest(cr, this, true, container);
 		// FIXME should we deactivate??
 		//if(persistent) container.deactivate(cr, 1);
 	}
