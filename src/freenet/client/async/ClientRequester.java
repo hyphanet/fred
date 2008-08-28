@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.keys.FreenetURI;
 import freenet.node.RequestClient;
+import freenet.node.SendableRequest;
 import freenet.support.Logger;
 
 /** A high level client request. A request (either fetch or put) started
@@ -22,6 +23,7 @@ public abstract class ClientRequester {
 	protected short priorityClass;
 	protected boolean cancelled;
 	protected final RequestClient client;
+	protected final SendableRequestSet requests;
 
 	public short getPriorityClass() {
 		return priorityClass;
@@ -33,6 +35,7 @@ public abstract class ClientRequester {
 		if(client == null)
 			throw new NullPointerException();
 		hashCode = super.hashCode(); // the old object id will do fine, as long as we ensure it doesn't change!
+		requests = persistent() ? new PersistentSendableRequestSet() : new TransientSendableRequestSet();
 	}
 
 	synchronized void cancel() {
@@ -166,6 +169,27 @@ public abstract class ClientRequester {
 	
 	public void objectOnActivate(ObjectContainer container) {
 		container.activate(client, 1);
+	}
+
+	public void addToRequests(SendableRequest req, ObjectContainer container) {
+		container.activate(requests, 1);
+		requests.addRequest(req, container);
+		container.deactivate(requests, 1);
+	}
+
+	public SendableRequest[] getSendableRequests(ObjectContainer container) {
+		container.activate(requests, 1);
+		SendableRequest[] reqs = requests.listRequests(container);
+		container.deactivate(requests, 1);
+		return reqs;
+	}
+
+	public void removeFromRequests(SendableRequest req, ObjectContainer container, boolean dontComplain) {
+		container.activate(requests, 1);
+		if(!requests.removeRequest(req, container) && !dontComplain) {
+			Logger.error(this, "Not in request list for "+this+": "+req);
+		}
+		container.deactivate(requests, 1);
 	}
 
 }

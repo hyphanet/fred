@@ -12,6 +12,7 @@ import java.util.Set;
 import com.db4o.ObjectContainer;
 
 import freenet.keys.Key;
+import freenet.node.SendableRequest;
 import freenet.support.Logger;
 
 /**
@@ -36,8 +37,11 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 	 * itself. */
 	protected final Map /* <Key, SendableGet[]> */ pendingKeys;
 	
+	protected final Map allRequestsByClientRequest;
+	
 	ClientRequestSchedulerNonPersistent(ClientRequestScheduler sched, boolean forInserts, boolean forSSKs) {
-		super(forInserts, forSSKs, new HashMap(), new LinkedList());
+		super(forInserts, forSSKs, new LinkedList());
+		allRequestsByClientRequest = new HashMap();
 		this.sched = sched;
 		recentSuccesses = new LinkedList();
 		if(forInserts)
@@ -65,5 +69,4 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 		else return 0;
 	}
 	
-
 }

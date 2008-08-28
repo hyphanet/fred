@@ -98,7 +98,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	}
 
 	ClientRequestSchedulerCore(Node node, boolean forInserts, boolean forSSKs, ObjectContainer selectorContainer, long cooldownTime) {
-		super(forInserts, forSSKs, selectorContainer.ext().collections().newHashMap(32), selectorContainer.ext().collections().newLinkedList());
+		super(forInserts, forSSKs, selectorContainer.ext().collections().newLinkedList());
 		this.nodeDBHandle = node.nodeDBHandle;
 		if(!forInserts) {
 			this.persistentCooldownQueue = new PersistentCooldownQueue();
@@ -112,11 +112,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	private void onStarted(ObjectContainer container, long cooldownTime, ClientRequestScheduler sched, ClientContext context) {
 		super.onStarted();
 		System.err.println("insert scheduler: "+isInsertScheduler);
-		if(allRequestsByClientRequest == null)
-			System.err.println("allRequestsByClientRequest is null");
 		if(recentSuccesses == null)
 			System.err.println("recentSuccesses is null");
-		((Db4oMap)allRequestsByClientRequest).activationDepth(1);
 		((Db4oList)recentSuccesses).activationDepth(1);
 		if(!isInsertScheduler) {
 			persistentCooldownQueue.setCooldownTime(cooldownTime);

@@ -57,7 +57,6 @@ abstract class ClientRequestSchedulerBase {
 	 * To speed up fetching, a RGA or SVBN must only exist if it is non-empty.
 	 */
 	protected final SortedVectorByNumber[] priorities;
-	protected final Map allRequestsByClientRequest;
 	protected final List /* <BaseSendableGet> */ recentSuccesses;
 	protected transient ClientRequestScheduler sched;
 	/** Transient even for persistent scheduler. */
@@ -65,10 +64,9 @@ abstract class ClientRequestSchedulerBase {
 
 	abstract boolean persistent();
 	
-	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs, Map allRequestsByClientRequest, List recentSuccesses) {
+	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs, List recentSuccesses) {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
-		this.allRequestsByClientRequest = allRequestsByClientRequest;
 		this.recentSuccesses = recentSuccesses;
 		keyListeners = new HashSet<KeyListener>();
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
@@ -97,23 +95,9 @@ abstract class ClientRequestSchedulerBase {
 	}
 	
 	protected void addToRequestsByClientRequest(ClientRequester clientRequest, SendableRequest req, ObjectContainer container) {
-		synchronized(sched) {
-		Set v = (Set) allRequestsByClientRequest.get(req.getClientRequest());
-		if(persistent())
-			container.activate(v, 1);
-		if(v == null) {
-			v = makeSetForAllRequestsByClientRequest(container);
-			allRequestsByClientRequest.put(req.getClientRequest(), v);
-		}
-		v.add(req);
-		int vSize = v.size();
-		if(persistent())
-			container.deactivate(v, 1);
-		if(logMINOR)
-			Logger.minor(this, "Added to allRequestsByClientRequest for "+clientRequest+" size now "+v.size());
-		}
+		clientRequest.addToRequests(req, container);
 	}
-
+	
 	synchronized void addToGrabArray(short priorityClass, int retryCount, int rc, RequestClient client, ClientRequester cr, SendableRequest req, RandomSource random, ObjectContainer container) {
 		if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
 			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
@@ -161,6 +145,14 @@ abstract class ClientRequestSchedulerBase {
 		return Math.max(0, retryCount-MIN_RETRY_COUNT);
 	}
 
+	protected SendableRequest[] getSendableRequests(ClientRequester request, ObjectContainer container) {
+		return request.getSendableRequests(container);
+	}
+
+	void removeFromAllRequestsByClientRequest(SendableRequest req, ClientRequester cr, boolean dontComplain, ObjectContainer container) {
+		cr.removeFromRequests(req, container, dontComplain);
+	}
+	
 	public void reregisterAll(ClientRequester request, RandomSource random, RequestScheduler lock, ObjectContainer container, ClientContext context) {
 		SendableRequest[] reqs = getSendableRequests(request, container);
 		if(reqs == null) return;
@@ -177,19 +169,6 @@ abstract class ClientRequestSchedulerBase {
 		}
 	}
 
-	private SendableRequest[] getSendableRequests(ClientRequester request, ObjectContainer container) {
-		synchronized(sched) {
-			Set h = (Set) allRequestsByClientRequest.get(request);
-			if(h == null) return null;
-			if(persistent())
-				container.activate(h, 1);
-			SendableRequest[] reqs = (SendableRequest[]) h.toArray(new SendableRequest[h.size()]);
-			if(persistent())
-				container.deactivate(h, 1);
-			return reqs;
-		}
-	}
-
 	public void succeeded(BaseSendableGet succeeded, ObjectContainer container) {
 		if(isInsertScheduler) return;
 		if(persistent()) {
@@ -201,30 +180,6 @@ abstract class ClientRequestSchedulerBase {
 			recentSuccesses.add(succeeded);
 			while(recentSuccesses.size() > 8)
 				recentSuccesses.remove(0);
-	}
-
-	protected void removeFromAllRequestsByClientRequest(SendableRequest req, ClientRequester cr, boolean dontComplain, ObjectContainer container) {
-		synchronized(sched) {
-		if(logMINOR)
-			Logger.minor(this, "Removing from allRequestsByClientRequest: "+req+ " for "+cr);
-			Set v = (Set) allRequestsByClientRequest.get(cr);
-			if(v == null) {
-				if(!dontComplain)
-					Logger.error(this, "No HashSet registered for "+cr+" for "+req);
-			} else {
-				if(persistent())
-					container.activate(v, 1);
-				boolean removed = v.remove(req);
-				int vSize = v.size();
-				if(v.isEmpty())
-					allRequestsByClientRequest.remove(cr);
-				else {
-					if(persistent())
-						container.deactivate(v, 1);
-				}
-				if(logMINOR) Logger.minor(this, (removed ? "" : "Not ") + "Removed "+req+" from HashSet for "+cr+" which now has "+vSize+" elements");
-			}
-		}
 	}
 
 	public synchronized void addPendingKeys(KeyListener listener) {
