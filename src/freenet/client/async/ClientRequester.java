@@ -172,24 +172,30 @@ public abstract class ClientRequester {
 	}
 
 	public void addToRequests(SendableRequest req, ObjectContainer container) {
-		container.activate(requests, 1);
+		if(persistent())
+			container.activate(requests, 1);
 		requests.addRequest(req, container);
-		container.deactivate(requests, 1);
+		if(persistent())
+			container.deactivate(requests, 1);
 	}
 
 	public SendableRequest[] getSendableRequests(ObjectContainer container) {
-		container.activate(requests, 1);
+		if(persistent())
+			container.activate(requests, 1);
 		SendableRequest[] reqs = requests.listRequests(container);
-		container.deactivate(requests, 1);
+		if(persistent())
+			container.deactivate(requests, 1);
 		return reqs;
 	}
 
 	public void removeFromRequests(SendableRequest req, ObjectContainer container, boolean dontComplain) {
-		container.activate(requests, 1);
+		if(persistent())
+			container.activate(requests, 1);
 		if(!requests.removeRequest(req, container) && !dontComplain) {
 			Logger.error(this, "Not in request list for "+this+": "+req);
 		}
-		container.deactivate(requests, 1);
+		if(persistent())
+			container.deactivate(requests, 1);
 	}
 
 }
