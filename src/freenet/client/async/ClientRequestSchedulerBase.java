@@ -93,7 +93,8 @@ abstract class ClientRequestSchedulerBase {
 	}
 	
 	protected void addToRequestsByClientRequest(ClientRequester clientRequest, SendableRequest req, ObjectContainer container) {
-		clientRequest.addToRequests(req, container);
+		if(clientRequest != null || persistent()) // Client request null is only legal for transient requests
+			clientRequest.addToRequests(req, container);
 	}
 	
 	synchronized void addToGrabArray(short priorityClass, int retryCount, int rc, RequestClient client, ClientRequester cr, SendableRequest req, RandomSource random, ObjectContainer container) {
@@ -144,11 +145,14 @@ abstract class ClientRequestSchedulerBase {
 	}
 
 	protected SendableRequest[] getSendableRequests(ClientRequester request, ObjectContainer container) {
-		return request.getSendableRequests(container);
+		if(request != null || persistent()) // Client request null is only legal for transient requests
+			return request.getSendableRequests(container);
+		else return null;
 	}
 
 	void removeFromAllRequestsByClientRequest(SendableRequest req, ClientRequester cr, boolean dontComplain, ObjectContainer container) {
-		cr.removeFromRequests(req, container, dontComplain);
+		if(cr != null || persistent()) // Client request null is only legal for transient requests
+			cr.removeFromRequests(req, container, dontComplain);
 	}
 	
 	public void reregisterAll(ClientRequester request, RandomSource random, RequestScheduler lock, ObjectContainer container, ClientContext context) {
