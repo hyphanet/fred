@@ -21,7 +21,7 @@ public class BinaryBloomFilter extends BloomFilter {
 	 */
 	protected BinaryBloomFilter(int length, int k) {
 		super(length, k);
-		filter = ByteBuffer.allocate(length / 8);
+		filter = ByteBuffer.allocate(this.length / 8);
 	}
 
 	/**

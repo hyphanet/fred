@@ -21,7 +21,7 @@ public class CountingBloomFilter extends BloomFilter {
 	 */
 	protected CountingBloomFilter(int length, int k) {
 		super(length, k);
-		filter = ByteBuffer.allocate(length / 4);
+		filter = ByteBuffer.allocate(this.length / 4);
 	}
 
 	/**
