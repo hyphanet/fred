@@ -57,17 +57,15 @@ abstract class ClientRequestSchedulerBase {
 	 * To speed up fetching, a RGA or SVBN must only exist if it is non-empty.
 	 */
 	protected final SortedVectorByNumber[] priorities;
-	protected final List /* <BaseSendableGet> */ recentSuccesses;
 	protected transient ClientRequestScheduler sched;
 	/** Transient even for persistent scheduler. */
 	protected transient Set<KeyListener> keyListeners;
 
 	abstract boolean persistent();
 	
-	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs, List recentSuccesses) {
+	protected ClientRequestSchedulerBase(boolean forInserts, boolean forSSKs) {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
-		this.recentSuccesses = recentSuccesses;
 		keyListeners = new HashSet<KeyListener>();
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
 		logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequestSchedulerBase.class);
@@ -170,16 +168,8 @@ abstract class ClientRequestSchedulerBase {
 	}
 
 	public void succeeded(BaseSendableGet succeeded, ObjectContainer container) {
-		if(isInsertScheduler) return;
-		if(persistent()) {
-			container.activate(succeeded, 1);
-		}
-		if(succeeded.isEmpty(container)) return;
-			if(logMINOR)
-				Logger.minor(this, "Recording successful fetch from "+succeeded);
-			recentSuccesses.add(succeeded);
-			while(recentSuccesses.size() > 8)
-				recentSuccesses.remove(0);
+		// Do nothing.
+		// FIXME: Keep a list of recently succeeded ClientRequester's.
 	}
 
 	public synchronized void addPendingKeys(KeyListener listener) {

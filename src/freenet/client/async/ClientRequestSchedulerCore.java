@@ -98,7 +98,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	}
 
 	ClientRequestSchedulerCore(Node node, boolean forInserts, boolean forSSKs, ObjectContainer selectorContainer, long cooldownTime) {
-		super(forInserts, forSSKs, selectorContainer.ext().collections().newLinkedList());
+		super(forInserts, forSSKs);
 		this.nodeDBHandle = node.nodeDBHandle;
 		if(!forInserts) {
 			this.persistentCooldownQueue = new PersistentCooldownQueue();
@@ -112,9 +112,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	private void onStarted(ObjectContainer container, long cooldownTime, ClientRequestScheduler sched, ClientContext context) {
 		super.onStarted();
 		System.err.println("insert scheduler: "+isInsertScheduler);
-		if(recentSuccesses == null)
-			System.err.println("recentSuccesses is null");
-		((Db4oList)recentSuccesses).activationDepth(1);
 		if(!isInsertScheduler) {
 			persistentCooldownQueue.setCooldownTime(cooldownTime);
 		}
@@ -459,7 +456,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			 * be to have recentSuccesses be a list of ClientRequester's instead, 
 			 * like we do on trunk. */
 			if(!req.persistent()) {
-			List recent = req.persistent() ? recentSuccesses : schedTransient.recentSuccesses;
+			List recent = schedTransient.recentSuccesses;
 			SendableRequest altReq = null;
 			if(!recent.isEmpty()) {
 				if(random.nextBoolean()) {
