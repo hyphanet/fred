@@ -33,7 +33,7 @@ public class NodeStarter implements WrapperListener {
 
 	private Node node;
 	private static LoggingConfigHandler logConfigHandler;
-	public final static int RECOMMENDED_EXT_BUILD_NUMBER = 20;
+	public final static int RECOMMENDED_EXT_BUILD_NUMBER = 21;
 	/*
 	(File.separatorChar == '\\') &&
 	(System.getProperty("os.arch").toLowerCase().matches("(i?[x0-9]86_64|amd64)")) ? 6 : 2;
