@@ -437,6 +437,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				// Remove it.
 				SectoredRandomGrabArrayWithObject clientGrabber = (SectoredRandomGrabArrayWithObject) chosenTracker.getGrabber(req.getClient());
 				if(clientGrabber != null) {
+					if(chosenTracker.persistent())
+						container.activate(clientGrabber, 1);
 					RandomGrabArray baseRGA = (RandomGrabArray) clientGrabber.getGrabber(req.getClientRequest());
 					if(baseRGA != null) {
 						baseRGA.remove(req, container);

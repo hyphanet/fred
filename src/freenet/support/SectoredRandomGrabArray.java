@@ -1,10 +1,6 @@
 package freenet.support;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.db4o.ObjectContainer;
-import com.db4o.types.Db4oMap;
 
 import freenet.client.async.ClientContext;
 
@@ -14,18 +10,32 @@ import freenet.client.async.ClientContext;
  */
 public class SectoredRandomGrabArray implements RemoveRandom {
 
-	private final Map grabArraysByClient;
+	/*
+	 * Yes, this is O(n). No, I don't care.
+	 * 
+	 * Using a Db4oMap results in stuff getting reactivated during the commit
+	 * phase, and not deactivated. This makes keeping stuff that shouldn't be
+	 * activated deactivated impossible, resulting in more memory usage. more
+	 * Full GC's, more object churn, and hence more CPU usage. Also Db4oMap is
+	 * deprecated.
+	 * 
+	 * Using a HashMap populated in objectOnActivate() doesn't work either,
+	 * because it ends up comparing deactivated clients with activated ones.
+	 * This will result in NPEs, and unnecessary code complexity to fix them.
+	 * 
+	 * IMHO it's not worth bothering with a hashtable if it's less than 1000
+	 * or so items anyway. If size does become a problem we will need to 
+	 * implement our own activation aware hashtable class, which stores the 
+	 * full hashCode, and matches on == object identity, so that we don't need
+	 * to activate on comparison.
+	 */
 	private RemoveRandomWithObject[] grabArrays;
+	private Object[] grabClients;
 	private final boolean persistent;
 	
 	public SectoredRandomGrabArray(boolean persistent, ObjectContainer container) {
 		this.persistent = persistent;
-		if(persistent) {
-			// FIXME is this too heavyweight? Maybe we should iterate the array or something?
-			grabArraysByClient = container.ext().collections().newHashMap(10);
-			((Db4oMap)grabArraysByClient).activationDepth(1); // FIXME can we get away with 1??
-		} else
-			grabArraysByClient = new HashMap();
+		grabClients = new Object[0];
 		grabArrays = new RemoveRandomWithObject[0];
 	}
 
@@ -35,22 +45,18 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 		if(item.persistent() != persistent) throw new IllegalArgumentException("item.persistent()="+item.persistent()+" but array.persistent="+persistent+" item="+item+" array="+this);
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		RandomGrabArrayWithClient rga;
-		if(!grabArraysByClient.containsKey(client)) {
+		int clientIndex = haveClient(client);
+		if(clientIndex == -1) {
 			if(logMINOR)
 				Logger.minor(this, "Adding new RGAWithClient for "+client+" on "+this+" for "+item);
 			rga = new RandomGrabArrayWithClient(client, persistent, container);
-			RemoveRandomWithObject[] newArrays = new RemoveRandomWithObject[grabArrays.length+1];
-			System.arraycopy(grabArrays, 0, newArrays, 0, grabArrays.length);
-			newArrays[grabArrays.length] = rga;
-			grabArrays = newArrays;
-			grabArraysByClient.put(client, rga);
+			addElement(client, rga);
 			if(persistent) {
 				container.set(rga);
-				container.set(grabArraysByClient);
 				container.set(this);
 			}
 		} else {
-			rga = (RandomGrabArrayWithClient) grabArraysByClient.get(client);
+			rga = (RandomGrabArrayWithClient) grabArrays[clientIndex];
 		}
 		if(logMINOR)
 			Logger.minor(this, "Adding "+item+" to RGA "+rga+" for "+client);
@@ -63,12 +69,34 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			Logger.minor(this, "Size now "+grabArrays.length+" on "+this);
 	}
 
+	private void addElement(Object client, RemoveRandomWithObject rga) {
+		int len = grabArrays.length;
+		RemoveRandomWithObject[] newArrays = new RemoveRandomWithObject[len+1];
+		System.arraycopy(grabArrays, 0, newArrays, 0, len);
+		newArrays[len] = rga;
+		grabArrays = newArrays;
+		
+		Object[] newClients = new Object[len+1];
+		System.arraycopy(grabClients, 0, newClients, 0, len);
+		newClients[len] = client;
+		grabClients = newClients;
+	}
+
+	private synchronized int haveClient(Object client) {
+		for(int i=0;i<grabClients.length;i++) {
+			if(grabClients[i] == client) return i;
+		}
+		return -1;
+	}
+
 	/**
 	 * Get a grabber. This lets us use things other than RandomGrabArrayWithClient's, so don't mix calls
 	 * to add() with calls to getGrabber/addGrabber!
 	 */
 	public synchronized RemoveRandomWithObject getGrabber(Object client) {
-		return (RemoveRandomWithObject) grabArraysByClient.get(client); // auto-activated to depth 1
+		int idx = haveClient(client);
+		if(idx == -1) return null;
+		else return grabArrays[idx];
 	}
 
 	/**
@@ -76,13 +104,10 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 	 * to add() with calls to getGrabber/addGrabber!
 	 */
 	public synchronized void addGrabber(Object client, RemoveRandomWithObject requestGrabber, ObjectContainer container) {
-		grabArraysByClient.put(client, requestGrabber);
-		RemoveRandomWithObject[] newArrays = new RemoveRandomWithObject[grabArrays.length+1];
-		System.arraycopy(grabArrays, 0, newArrays, 0, grabArrays.length);
-		newArrays[grabArrays.length] = requestGrabber;
-		grabArrays = newArrays;
+		if(requestGrabber.getObject() != client)
+			throw new IllegalArgumentException("Client not equal to RemoveRandomWithObject's client: client="+client+" rr="+requestGrabber+" his object="+requestGrabber.getObject());
+		addElement(client, requestGrabber);
 		if(persistent) {
-			container.set(grabArraysByClient);
 			container.set(this);
 		}
 	}
@@ -106,8 +131,8 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 						container.activate(client, 1);
 					if(logMINOR)
 						Logger.minor(this, "Removing only grab array (0) : "+rga+" for "+rga.getObject()+" (is empty)");
-					grabArraysByClient.remove(client);
 					grabArrays = new RemoveRandomWithObject[0];
+					grabClients = new Object[0];
 					if(persistent)
 						container.set(this);
 				}
@@ -128,29 +153,11 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 						Logger.error(this, "NOT ACTIVE!!");
 					if(grabArrays[1-x] == null) {
 						Logger.error(this, "other rga is also null on "+this);
-						if(grabArraysByClient == null) {
-							Logger.error(this, "as is grabArraysByClient");
-							// Let it NPE
-						} else {
-							if(grabArraysByClient.isEmpty()) {
-								Logger.error(this, "grabArraysByClient is also empty");
-								return null;
-							}
-						}
 					} else {
 						RemoveRandomWithObject valid = grabArrays[1-x];
-						if(grabArraysByClient.size() != 1) {
-							Logger.error(this, "Grab arrays by client size should be 1 (since there is 1 non-null), but is "+grabArraysByClient.size());
-							grabArraysByClient.clear();
-							if(persistent)
-								container.activate(valid, 1);
-							Object client = valid.getObject();
-							if(persistent)
-								container.activate(client, 1);
-							grabArraysByClient.put(client, valid);
-						}
 						Logger.error(this, "grabArrays["+(1-x)+"] is valid but ["+x+"] is null, correcting...");
 						grabArrays = new RemoveRandomWithObject[] { grabArrays[1-x] };
+						grabClients = new Object[] { grabClients[1-x] };
 						continue;
 					}
 				}
@@ -162,27 +169,18 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 						container.activate(rga, 1);
 					item = rga.removeRandom(excluding, container, context);
 					if(firstRGA.isEmpty() && rga.isEmpty()) {
-						Object rgaClient = rga.getObject();
-						Object firstClient = firstRGA.getObject();
-						if(persistent) {
-							container.activate(rgaClient, 1);
-							container.activate(firstClient, 1);
-						}
-						grabArraysByClient.remove(rgaClient);
-						grabArraysByClient.remove(firstClient);
+						Object rgaClient = grabClients[x];
+						Object firstClient = grabClients[1-x];
 						grabArrays = new RemoveRandomWithObject[0];
+						grabClients = new Object[0];
 						if(persistent)
 							container.set(this);
 					} else if(firstRGA.isEmpty()) {
 						if(persistent) {
 							container.activate(firstRGA, 1);
 						}
-						Object firstClient = firstRGA.getObject();
-						if(persistent) {
-							container.activate(firstClient, 1);
-						}
-						grabArraysByClient.remove(firstClient);
 						grabArrays = new RemoveRandomWithObject[] { rga };
+						grabClients = new Object[] { grabClients[x] };
 						if(persistent)
 							container.set(this);
 					}
@@ -214,20 +212,11 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			// Just because the item is cancelled does not necessarily mean the whole client is.
 			// E.g. a segment may return cancelled because it is decoding, that doesn't mean
 			// other segments are cancelled. So just go around the loop in that case.
-			final int grabArraysLength = grabArrays.length;
 			if(rga.isEmpty()) {
 				if(logMINOR)
 					Logger.minor(this, "Removing grab array "+x+" : "+rga+" (is empty)");
 				Object client = rga.getObject();
-				if(persistent)
-					container.activate(client, 1);
-				grabArraysByClient.remove(client);
-				RemoveRandomWithObject[] newArray = new RemoveRandomWithObject[grabArraysLength > 1 ? grabArraysLength-1 : 0];
-				if(x > 0)
-					System.arraycopy(grabArrays, 0, newArray, 0, x);
-				if(x < grabArraysLength-1)
-					System.arraycopy(grabArrays, x+1, newArray, x, grabArraysLength - (x+1));
-				grabArrays = newArray;
+				removeElement(x);
 				if(persistent)
 					container.set(this);
 			}
@@ -236,7 +225,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 					// Hmmm...
 					excluded++;
 					if(excluded > MAX_EXCLUDED) {
-						Logger.normal(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArraysLength, new Exception("error"));
+						Logger.normal(this, "Too many sub-arrays are entirely excluded on "+this+" length = "+grabArrays.length, new Exception("error"));
 						if(persistent)
 							container.deactivate(rga, 1);
 						return null;
@@ -251,6 +240,24 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			if(item.isEmpty(container)) continue;
 			return item;
 		}
+	}
+
+	private void removeElement(int x) {
+		final int grabArraysLength = grabArrays.length;
+		int newLen = grabArraysLength > 1 ? grabArraysLength-1 : 0;
+		RemoveRandomWithObject[] newArray = new RemoveRandomWithObject[newLen];
+		if(x > 0)
+			System.arraycopy(grabArrays, 0, newArray, 0, x);
+		if(x < grabArraysLength-1)
+			System.arraycopy(grabArrays, x+1, newArray, x, grabArraysLength - (x+1));
+		grabArrays = newArray;
+		
+		Object[] newClients = new Object[newLen];
+		if(x > 0)
+			System.arraycopy(grabClients, 0, newClients, 0, x);
+		if(x < grabArraysLength-1)
+			System.arraycopy(grabClients, x+1, newClients, x, grabArraysLength - (x+1));
+		grabClients = newClients;
 	}
 
 	public synchronized boolean isEmpty() {
