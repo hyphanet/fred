@@ -468,8 +468,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					altReq = (BaseSendableGet) recent.remove(recent.size()-1);
 				}
 			}
-			if(altReq != null)
-				container.activate(altReq, 1);
 			if(altReq != null && (altReq.isCancelled(container) || altReq.isEmpty(container))) {
 				if(logMINOR)
 					Logger.minor(this, "Ignoring cancelled recently succeeded item "+altReq);
@@ -480,10 +478,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				// Use the recent one instead
 				if(logMINOR)
 					Logger.minor(this, "Recently succeeded req "+altReq+" is better, using that, reregistering chosen "+req);
-				if(req.persistent())
-					innerRegister(req, random, container);
-				else
-					schedTransient.innerRegister(req, random, container);
+				schedTransient.innerRegister(req, random, null);
 				req = altReq;
 			} else if(altReq != null) {
 				// Don't use the recent one
