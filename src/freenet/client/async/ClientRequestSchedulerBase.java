@@ -17,6 +17,7 @@ import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.keys.NodeSSK;
 import freenet.node.BaseSendableGet;
+import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
 import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
@@ -88,6 +89,15 @@ abstract class ClientRequestSchedulerBase {
 		int retryCount = req.getRetryCount();
 		short prio = req.getPriorityClass(container);
 		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+prio+" retry "+retryCount+" for "+req.getClientRequest());
+		addToRequestsByClientRequest(req.getClientRequest(), req, container);
+		addToGrabArray(prio, retryCount, fixRetryCount(retryCount), req.getClient(), req.getClientRequest(), req, random, container);
+		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio+", retrycount="+retryCount);
+		if(persistent())
+			sched.maybeAddToStarterQueue(req, container);
+	}
+	
+	protected void addToRequestsByClientRequest(ClientRequester clientRequest, SendableRequest req, ObjectContainer container) {
+		synchronized(sched) {
 		Set v = (Set) allRequestsByClientRequest.get(req.getClientRequest());
 		if(persistent())
 			container.activate(v, 1);
@@ -99,13 +109,12 @@ abstract class ClientRequestSchedulerBase {
 		int vSize = v.size();
 		if(persistent())
 			container.deactivate(v, 1);
-		addToGrabArray(prio, retryCount, fixRetryCount(retryCount), req.getClient(), req.getClientRequest(), req, random, container);
-		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio+", retrycount="+retryCount+" v.size()="+vSize);
-		if(persistent())
-			sched.maybeAddToStarterQueue(req, container);
+		if(logMINOR)
+			Logger.minor(this, "Added to allRequestsByClientRequest for "+clientRequest+" size now "+v.size());
+		}
 	}
-	
-	synchronized void addToGrabArray(short priorityClass, int retryCount, int rc, Object client, ClientRequester cr, SendableRequest req, RandomSource random, ObjectContainer container) {
+
+	synchronized void addToGrabArray(short priorityClass, int retryCount, int rc, RequestClient client, ClientRequester cr, SendableRequest req, RandomSource random, ObjectContainer container) {
 		if((priorityClass > RequestStarter.MINIMUM_PRIORITY_CLASS) || (priorityClass < RequestStarter.MAXIMUM_PRIORITY_CLASS))
 			throw new IllegalStateException("Invalid priority: "+priorityClass+" - range is "+RequestStarter.MAXIMUM_PRIORITY_CLASS+" (most important) to "+RequestStarter.MINIMUM_PRIORITY_CLASS+" (least important)");
 		// Priority
@@ -153,17 +162,8 @@ abstract class ClientRequestSchedulerBase {
 	}
 
 	public void reregisterAll(ClientRequester request, RandomSource random, RequestScheduler lock, ObjectContainer container, ClientContext context) {
-		SendableRequest[] reqs;
-		synchronized(lock) {
-			Set h = (Set) allRequestsByClientRequest.get(request);
-			if(h == null) return;
-			if(persistent())
-				container.activate(h, 1);
-			reqs = (SendableRequest[]) h.toArray(new SendableRequest[h.size()]);
-			if(persistent())
-				container.deactivate(h, 1);
-		}
-		
+		SendableRequest[] reqs = getSendableRequests(request, container);
+		if(reqs == null) return;
 		for(int i=0;i<reqs.length;i++) {
 			SendableRequest req = reqs[i];
 			if(persistent())
@@ -174,6 +174,19 @@ abstract class ClientRequestSchedulerBase {
 			innerRegister(req, random, container);
 			if(persistent())
 				container.deactivate(req, 1);
+		}
+	}
+
+	private SendableRequest[] getSendableRequests(ClientRequester request, ObjectContainer container) {
+		synchronized(sched) {
+			Set h = (Set) allRequestsByClientRequest.get(request);
+			if(h == null) return null;
+			if(persistent())
+				container.activate(h, 1);
+			SendableRequest[] reqs = (SendableRequest[]) h.toArray(new SendableRequest[h.size()]);
+			if(persistent())
+				container.deactivate(h, 1);
+			return reqs;
 		}
 	}
 
@@ -191,6 +204,7 @@ abstract class ClientRequestSchedulerBase {
 	}
 
 	protected void removeFromAllRequestsByClientRequest(SendableRequest req, ClientRequester cr, boolean dontComplain, ObjectContainer container) {
+		synchronized(sched) {
 		if(logMINOR)
 			Logger.minor(this, "Removing from allRequestsByClientRequest: "+req+ " for "+cr);
 			Set v = (Set) allRequestsByClientRequest.get(cr);
@@ -210,6 +224,7 @@ abstract class ClientRequestSchedulerBase {
 				}
 				if(logMINOR) Logger.minor(this, (removed ? "" : "Not ") + "Removed "+req+" from HashSet for "+cr+" which now has "+vSize+" elements");
 			}
+		}
 	}
 
 	public synchronized void addPendingKeys(KeyListener listener) {
