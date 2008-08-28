@@ -452,9 +452,14 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			// Check recentSuccesses
 			/** FIXME:
 			 * This does not make sense with selecting a whole SendableRequest
-			 * at a time, so turn it off. However, what would make sense would 
-			 * be to have recentSuccesses be a list of ClientRequester's instead, 
-			 * like we do on trunk. */
+			 * at a time (for persistent requests), so turn it off. However, 
+			 * what would make sense would be to have recentSuccesses be a list 
+			 * of ClientRequester's instead. This should improve efficiency.
+			 * We could make it transient even for persistent requests, although
+			 * we'd probably get better results if it wasn't. We cannot use the
+			 * Db4o built-in deprecated activation aware collections, because 
+			 * they reactivate deactivated data in their commit hooks and thus
+			 * cause serious problems. */
 			if(!req.persistent()) {
 			List recent = schedTransient.recentSuccesses;
 			SendableRequest altReq = null;
