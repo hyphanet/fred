@@ -21,7 +21,7 @@ public class CountingBloomFilter extends BloomFilter {
 	 */
 	protected CountingBloomFilter(int length, int k) {
 		super(length, k);
-		filter = ByteBuffer.allocate(length / 8 * 2);
+		filter = ByteBuffer.allocate(length / 4);
 	}
 
 	/**
@@ -35,7 +35,7 @@ public class CountingBloomFilter extends BloomFilter {
 	 */
 	protected CountingBloomFilter(File file, int length, int k) throws IOException {
 		super(length, k);
-		int fileLength = length / 8 * 2;
+		int fileLength = length / 4;
 		if (!file.exists() || file.length() != fileLength)
 			needRebuild = true;
 
@@ -44,17 +44,23 @@ public class CountingBloomFilter extends BloomFilter {
 		filter = raf.getChannel().map(MapMode.READ_WRITE, 0, fileLength).load();
 	}
 
+	public CountingBloomFilter(int length, int k, byte[] buffer) {
+		super(length, k);
+		assert(buffer.length == length / 4);
+		filter = ByteBuffer.wrap(buffer);
+	}
+
 	@Override
-	protected boolean getBit(int offset) {
-		byte b = filter.get(offset / 8 * 2);
+	public boolean getBit(int offset) {
+		byte b = filter.get(offset / 4);
 		byte v = (byte) ((b >>> offset % 4 * 2) & 3);
 
 		return v != 0;
 	}
 
 	@Override
-	protected void setBit(int offset) {
-		byte b = filter.get(offset / 8 * 2);
+	public void setBit(int offset) {
+		byte b = filter.get(offset / 4);
 		byte v = (byte) ((b >>> offset % 4 * 2) & 3);
 
 		if (v == 3)
@@ -63,12 +69,12 @@ public class CountingBloomFilter extends BloomFilter {
 		b &= ~(3 << offset % 4 * 2); // unset bit
 		b |= (v + 1) << offset % 4 * 2; // set bit
 
-		filter.put(offset / 8 * 2, b);
+		filter.put(offset / 4, b);
 	}
 
 	@Override
-	protected void unsetBit(int offset) {
-		byte b = filter.get(offset / 8 * 2);
+	public void unsetBit(int offset) {
+		byte b = filter.get(offset / 4);
 		byte v = (byte) ((b >>> offset % 4 * 2) & 3);
 
 		if (v == 0 || v == 3)
@@ -77,7 +83,7 @@ public class CountingBloomFilter extends BloomFilter {
 		b &= ~(3 << offset % 4 * 2); // unset bit
 		b |= (v - 1) << offset % 4 * 2; // set bit
 
-		filter.put(offset / 8 * 2, b);
+		filter.put(offset / 4, b);
 	}
 
 	@Override
