@@ -895,8 +895,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 			if(reqs != null) {
 				for(int i=0;i<reqs.length;i++) {
-					if(container.ext().isActive(reqs[i]))
-						Logger.error(this, "ALREADY ACTIVE in moveKeysFromCooldownQueue: "+reqs[i]);
+					// Requests may or may not be returned activated from requestsForKey(), so don't check
+					// But do deactivate them once we're done with them.
 					container.activate(reqs[i], 1);
 					reqs[i].requeueAfterCooldown(key, now, container, clientContext);
 					container.deactivate(reqs[i], 1);
