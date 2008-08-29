@@ -426,7 +426,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(codec == null)
 			codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length, context.mainExecutor);
 
-			codec.addToQueue(new FECJob(codec, context.fecQueue, dataBuckets, checkBuckets, 32768, context.getBucketFactory(parentFetcher.parent.persistent()), this, false, parentFetcher.parent.getPriorityClass(), parentFetcher.parent.persistent()),
+			codec.addToQueue(new FECJob(codec, context.fecQueue, dataBuckets, checkBuckets, 32768, context.getBucketFactory(persistent), this, false, parentFetcher.parent.getPriorityClass(), persistent),
 					context.fecQueue, container);
 		if(persistent) {
 			container.deactivate(parentFetcher, 1);
