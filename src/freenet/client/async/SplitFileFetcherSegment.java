@@ -972,7 +972,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(v != null) {
 			for(int i=0;i<v.size();i++) {
 				SplitFileFetcherSubSegment sub = (SplitFileFetcherSubSegment) v.get(i);
-				if(persistent)
+				if(persistent && sub != dontDeactivate)
 					container.activate(sub, 1);
 				RandomGrabArray rga = sub.getParentGrabArray();
 				if(rga == null) {
@@ -989,7 +989,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 							container.deactivate(rga, 1);
 //					}
 				}
-				if(persistent)
+				if(persistent && sub != dontDeactivate)
 					container.deactivate(sub, 1);
 			}
 		}
