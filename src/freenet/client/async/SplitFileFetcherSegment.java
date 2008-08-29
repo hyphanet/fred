@@ -224,7 +224,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 						// We queue a persistent download, we queue a transient.
 						// The transient goes through DatastoreChecker first,
 						// and feeds the block to us. We don't finish, because
-						// we need more blocks. Then the persistent goes through
+						// we need more blocks. Then the persistent goes through 
 						// the DatastoreChecker, and calls us again with the same
 						// block.
 						if(logMINOR)
@@ -1090,17 +1090,29 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 	public boolean haveBlock(int blockNo, ObjectContainer container) {
 		if(blockNo < dataBuckets.length) {
+			boolean wasActive = false;
 			if(dataBuckets[blockNo] == null) return false;
-			if(persistent) container.activate(dataBuckets[blockNo], 1);
+			if(persistent) {
+				wasActive = container.ext().isActive(dataBuckets[blockNo]);
+				if(!wasActive)
+					container.activate(dataBuckets[blockNo], 1);
+			}
 			boolean retval = dataBuckets[blockNo].hasData();
-			if(persistent) container.deactivate(dataBuckets[blockNo], 1);
+			if(persistent && !wasActive)
+				container.deactivate(dataBuckets[blockNo], 1);
 			return retval;
 		} else {
+			boolean wasActive = false;
 			blockNo -= dataBuckets.length;
-			if(checkBuckets[blockNo] != null) return false;
-			if(persistent) container.activate(checkBuckets[blockNo], 1);
+			if(checkBuckets[blockNo] == null) return false;
+			if(persistent) {
+				wasActive = container.ext().isActive(checkBuckets[blockNo]);
+				if(!wasActive)
+					container.activate(checkBuckets[blockNo], 1);
+			}
 			boolean retval = checkBuckets[blockNo].hasData();
-			if(persistent) container.deactivate(checkBuckets[blockNo], 1);
+			if(persistent && !wasActive)
+				container.deactivate(checkBuckets[blockNo], 1);
 			return retval;
 		}
 	}
