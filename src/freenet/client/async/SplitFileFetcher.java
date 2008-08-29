@@ -235,7 +235,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if((perSegmentSize & 7) != 0)
 			perSegmentSize += (8 - (perSegmentSize & 7));
 		perSegmentBloomFilterSizeBytes = perSegmentSize / 8;
-		perSegmentK = BloomFilter.optimialK(perSegmentSize, blocksPerSegment + checkBlocksPerSegment);
+		perSegmentK = BloomFilter.optimialK(perSegmentSize, segBlocks);
 		keyCount = origSize;
 		// Now create it.
 		if(Logger.shouldLog(Logger.MINOR, this))
