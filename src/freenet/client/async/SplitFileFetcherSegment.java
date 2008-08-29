@@ -356,7 +356,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(persistent) {
 				for(int i=0;i<dataBuckets.length;i++) {
 					// The FECCodec won't set them.
-					container.activate(dataBuckets[i], 5);
+					// But they should be active.
 					container.set(dataBuckets[i]);
 				}
 			}
@@ -466,8 +466,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 			for(int i=0;i<checkBuckets.length;i++) {
 				boolean heal = false;
-				if(persistent)
-					container.activate(checkBuckets[i], 1);
+				// Check buckets will already be active because the FEC codec
+				// has been using them.
 				Bucket data = checkBuckets[i].getData();
 				if(data == null) {
 					Logger.error(this, "Check block "+i+" is null on "+this);
