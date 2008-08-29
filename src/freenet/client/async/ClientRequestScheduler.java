@@ -566,15 +566,20 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
-	void removeFromStarterQueue(SendableRequest req) {
+	void removeFromStarterQueue(SendableRequest req, ObjectContainer container) {
+		PersistentChosenRequest dumped = null;
 		synchronized(starterQueue) {
 			for(int i=0;i<starterQueue.size();i++) {
-				if(starterQueue.get(i).request == req) {
+				PersistentChosenRequest pcr = starterQueue.get(i);
+				if(pcr.request == req) {
 					starterQueue.remove(i);
-					i--;
+					dumped = pcr;
+					break;
 				}
 			}
 		}
+		if(dumped != null)
+			dumped.onDumped(schedCore, container);
 	}
 	
 	int starterQueueSize() {
