@@ -643,6 +643,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	}
 
 	private void addDecompressor(Compressor codec) {
+		if(logMINOR)
+			Logger.minor(this, "Adding decompressor: "+codec+" on "+this, new Exception("debug"));
 		decompressors.add(codec);
 	}
 
