@@ -419,6 +419,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			container.activate(cb, 1);
 		}
 		context.getChkFetchScheduler().removePendingKeys(this, true);
+		boolean cbWasActive = true;
 		try {
 			synchronized(this) {
 				if(otherFailure != null) throw otherFailure;
@@ -434,7 +435,9 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				container.set(this);
 				container.activate(decompressors, 5);
 				container.activate(returnBucket, 5);
-				container.activate(cb, 1);
+				cbWasActive = container.ext().isActive(cb);
+				if(!cbWasActive)
+					container.activate(cb, 1);
 				container.activate(fetchContext, 1);
 			}
 			int count = 0;
@@ -473,6 +476,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			Logger.error(this, "Caught "+t, t);
 			cb.onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), this, container, context);
 		}
+		if(!cbWasActive)
+			container.deactivate(cb, 1);
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context) throws KeyListenerConstructionException {
