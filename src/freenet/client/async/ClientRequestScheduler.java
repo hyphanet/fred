@@ -556,14 +556,26 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(logMINOR)
 			Logger.minor(this, "Created PCR: "+chosen);
 		container.deactivate(request, 1);
+		boolean dumpNew = false;
 		synchronized(starterQueue) {
-			// Since we pass in runningPersistentRequests, we don't need to check whether it is already in the starterQueue.
-			starterQueue.add(chosen);
-			int length = starterQueueLength();
-			length += chosen.sizeNotStarted();
-			runningPersistentRequests.add(request);
-			return length < MAX_STARTER_QUEUE_SIZE;
+			for(PersistentChosenRequest req : starterQueue) {
+				if(req.request == request) {
+					Logger.error(this, "Already on starter queue: "+req+" for "+request);
+					dumpNew = true;
+					break;
+				}
+			}
+			if(!dumpNew) {
+				starterQueue.add(chosen);
+				int length = starterQueueLength();
+				length += chosen.sizeNotStarted();
+				runningPersistentRequests.add(request);
+				return length < MAX_STARTER_QUEUE_SIZE;
+			}
 		}
+		if(dumpNew)
+			chosen.onDumped(schedCore, container, false);
+		return false;
 	}
 	
 	void removeFromStarterQueue(SendableRequest req, ObjectContainer container) {
@@ -602,12 +614,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 			synchronized(starterQueue) {
 				// Recompute starterQueueLength
 				int length = 0;
+				PersistentChosenRequest old = null;
 				for(PersistentChosenRequest req : starterQueue) {
+					if(old == req)
+						Logger.error(this, "DUPLICATE CHOSEN REQUESTS ON QUEUE: "+req);
+					if(old != null && old.request == req.request)
+						Logger.error(this, "DUPLICATE REQUEST ON QUEUE: "+old+" vs "+req+" both "+req.request);
 					if(container.ext().isActive(req.request))
 						Logger.error(this, "REQUEST ALREADY ACTIVATED: "+req.request+" for "+req+" while checking request queue in filling request queue");
 					else if(logMINOR)
 						Logger.minor(this, "Not already activated for "+req+" in while checking request queue in filling request queue");
 					req.pruneDuplicates(ClientRequestScheduler.this);
+					old = req;
 					length += req.sizeNotStarted();
 				}
 				if(logMINOR) Logger.minor(this, "Queue size: "+length+" SSK="+isSSKScheduler+" insert="+isInsertScheduler);
@@ -647,14 +665,21 @@ public class ClientRequestScheduler implements RequestScheduler {
 		synchronized(starterQueue) {
 			boolean betterThanSome = false;
 			int size = 0;
+			PersistentChosenRequest prev = null;
 			for(PersistentChosenRequest old : starterQueue) {
+				if(prev == old)
+					Logger.error(this, "ON STARTER QUEUE TWICE: "+prev+" for "+prev.request);
+				if(prev != null && prev.request == old.request)
+					Logger.error(this, "REQUEST ON STARTER QUEUE TWICE: "+prev+" for "+prev.request+" vs "+old+" for "+old.request);
 				if(container.ext().isActive(old.request))
-					Logger.error(this, "REQUEST ALREADY ACTIVATED: "+old.request+" for "+old+" while checking request queue in maybeAddToStarterQueue");
+					Logger.error(this, "REQUEST ALREADY ACTIVATED: "+old.request+" for "+old+" while checking request queue in maybeAddToStarterQueue", new Exception("debug"));
 				else if(logMINOR)
 					Logger.minor(this, "Not already activated for "+req+" in while checking request queue in filling request queue");
 				size += old.sizeNotStarted();
 				if(old.prio > prio || old.prio == prio && old.retryCount > retryCount)
 					betterThanSome = true;
+				if(old.request == req) return;
+				prev = old;
 			}
 			if(size >= MAX_STARTER_QUEUE_SIZE && !betterThanSome) {
 				if(logMINOR)
