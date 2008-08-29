@@ -13,6 +13,13 @@ import java.nio.channels.FileChannel.MapMode;
  * @author sdiz
  */
 public class CountingBloomFilter extends BloomFilter {
+	
+	private boolean warnOnRemoveFromEmpty;
+	
+	public void setWarnOnRemoveFromEmpty() {
+		warnOnRemoveFromEmpty = true;
+	}
+	
 	/**
 	 * Constructor
 	 * 
@@ -77,6 +84,9 @@ public class CountingBloomFilter extends BloomFilter {
 		byte b = filter.get(offset / 4);
 		byte v = (byte) ((b >>> offset % 4 * 2) & 3);
 
+		if (v == 0 && warnOnRemoveFromEmpty)
+			Logger.error(this, "Unsetting bit but already unset - probable double remove, can cause false negatives, is very bad!", new Exception("error"));
+		
 		if (v == 0 || v == 3)
 			return; // overflow / underflow
 
