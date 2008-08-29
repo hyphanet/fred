@@ -250,7 +250,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			if(segmentFilters[i].checkFilter(salted)) {
 				if(persistent) {
 					if(container.ext().isActive(fetcher))
-						Logger.error(this, "ALREADY ACTIVATED: "+fetcher);
+						Logger.error(this, "ALREADY ACTIVATED in getRequestsForKey: "+fetcher);
 					container.activate(fetcher, 1);
 				}
 				SplitFileFetcherSegment segment = fetcher.getSegment(i);
@@ -258,7 +258,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 					container.deactivate(fetcher, 1);
 				if(persistent) {
 					if(container.ext().isActive(segment))
-						Logger.error(this, "ALREADY ACTIVATED: "+segment);
+						Logger.error(this, "ALREADY ACTIVATED in getRequestsForKey: "+segment);
 					container.activate(segment, 1);
 				}
 				int blockNum = segment.getBlockNumber(key, container);
