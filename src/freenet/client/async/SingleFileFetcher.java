@@ -119,8 +119,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		if(recursionLevel > ctx.maxRecursionLevel)
 			throw new FetchException(FetchException.TOO_MUCH_RECURSION);
 		this.thisKey = fetcher.thisKey;
-		// Copy the decompressors. Just because a multi-level metadata splitfile
-		// is compressed, that **doesn't** mean that the data we are eventually
+		// Copy the decompressors. Just because a multi-level metadata splitfile 
+		// is compressed, that **doesn't** mean that the data we are eventually 
 		// going to fetch is!
 		this.decompressors = new ArrayList(fetcher.decompressors);
 		this.uri = fetcher.uri;
@@ -199,11 +199,17 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 		if(!decompressors.isEmpty()) {
 			Bucket data = result.asBucket();
+			boolean tooManyDecompressors = decompressors.size() > 1;
 			while(!decompressors.isEmpty()) {
 				Compressor c = (Compressor) decompressors.remove(decompressors.size()-1);
 				try {
 					long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
-					data = c.decompress(data, context.getBucketFactory(parent.persistent()), maxLen, maxLen * 4, decompressors.isEmpty() ? returnBucket : null);
+					Bucket out;
+					if(tooManyDecompressors)
+						out = null;
+					else
+						out = decompressors.isEmpty() ? returnBucket : null;
+					data = c.decompress(data, context.getBucketFactory(parent.persistent()), maxLen, maxLen * 4, out);
 				} catch (IOException e) {
 					onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
 					return;
@@ -347,21 +353,29 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 								onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
 								return;
 							}
+							if(persistent)
+								container.deactivate(SingleFileFetcher.this, 1);
 						}
 						public void notInArchive(ObjectContainer container, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
 							onFailure(new FetchException(FetchException.INTERNAL_ERROR, "No metadata in container! Cannot happen as ArchiveManager should synthesise some!"), false, container, context);
+							if(persistent)
+								container.deactivate(SingleFileFetcher.this, 1);
 						}
 						public void onFailed(ArchiveRestartException e, ObjectContainer container, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
 							SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
+							if(persistent)
+								container.deactivate(SingleFileFetcher.this, 1);
 						}
 						public void onFailed(ArchiveFailureException e, ObjectContainer container, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
 							SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
+							if(persistent)
+								container.deactivate(SingleFileFetcher.this, 1);
 						}
 					}, container, context); // will result in this function being called again
 					if(persistent) container.set(this);
@@ -432,21 +446,29 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							}
 							// Return the data
 							onSuccess(new FetchResult(clientMetadata, out), container, context);
+							if(persistent)
+								container.deactivate(SingleFileFetcher.this, 1);
 						}
 						public void notInArchive(ObjectContainer container, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
 							onFailure(new FetchException(FetchException.NOT_IN_ARCHIVE), false, container, context);
+							if(persistent)
+								container.deactivate(SingleFileFetcher.this, 1);
 						}
 						public void onFailed(ArchiveRestartException e, ObjectContainer container, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
 							SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
+							if(persistent)
+								container.deactivate(SingleFileFetcher.this, 1);
 						}
 						public void onFailed(ArchiveFailureException e, ObjectContainer container, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
 							SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
+							if(persistent)
+								container.deactivate(SingleFileFetcher.this, 1);
 						}
 					}, container, context);
 					// Will call back into this function when it has been fetched.
@@ -462,6 +484,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(persistent) container.set(this);
 				if(persistent) container.set(f);
 				f.wrapHandleMetadata(true, container, context);
+				if(persistent) container.deactivate(f, 1);
 				return;
 			} else if(metadata.isSingleFileRedirect()) {
 				if(logMINOR) Logger.minor(this, "Is single-file redirect");
@@ -660,11 +683,13 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		newMeta.setSimpleRedirect();
 		final SingleFileFetcher f;
 		f = new SingleFileFetcher(this, newMeta, new ArchiveFetcherCallback(forData, element, callback), new FetchContext(ctx, FetchContext.SET_RETURN_ARCHIVES, true), container, context);
+		if(persistent) container.set(f);
 		if(logMINOR) Logger.minor(this, "fetchArchive(): "+f);
 		// Fetch the archive. The archive fetcher callback will unpack it, and either call the element 
 		// callback, or just go back around handleMetadata() on this, which will see that the data is now
 		// available.
 		f.wrapHandleMetadata(true, container, context);
+		if(persistent) container.deactivate(f, 1);
 	}
 
 	/**
@@ -725,22 +750,21 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// Run directly - we are running on some thread somewhere, don't worry about it.
 				innerSuccess(result, container, context);
 			} else {
+				boolean wasActive;
 				// We are running on the database thread.
 				// Add a tag, unpack on a separate thread, copy the data to a persistent bucket, then schedule on the database thread,
 				// remove the tag, and call the callback.
-				if(persistent) {
+				wasActive = container.ext().isActive(SingleFileFetcher.this);
+				if(!wasActive)
 					container.activate(SingleFileFetcher.this, 1);
-					ah.activateForExecution(container);
-				}
+				ah.activateForExecution(container);
 				ah.extractPersistentOffThread(result.asBucket(), actx, element, callback, container, context);
+				if(!wasActive)
+					container.deactivate(SingleFileFetcher.this, 1);
 			}
 		}
 
 		private void innerSuccess(FetchResult result, ObjectContainer container, ClientContext context) {
-			if(persistent) {
-				container.activate(SingleFileFetcher.this, 1);
-				ah.activateForExecution(container);
-			}
 			try {
 				ah.extractToCache(result.asBucket(), actx, element, callback, context.archiveManager, container, context);
 			} catch (ArchiveFailureException e) {
@@ -755,18 +779,32 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
-			if(persistent)
-				container.activate(SingleFileFetcher.this, 1);
+			boolean wasActive = true;
+			if(persistent) {
+				wasActive = container.ext().isActive(SingleFileFetcher.this);
+				if(!wasActive)
+					container.activate(SingleFileFetcher.this, 1);
+			}
 			// Force fatal as the fetcher is presumed to have made a reasonable effort.
 			SingleFileFetcher.this.onFailure(e, true, container, context);
+			if(wasActive)
+				container.deactivate(SingleFileFetcher.this, 1);
 		}
 
 		public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
+			boolean wasActive = true;
+			if(persistent) {
+				wasActive = container.ext().isActive(SingleFileFetcher.this);
+				if(!wasActive)
+					container.activate(SingleFileFetcher.this, 1);
+			}
 			if(persistent)
 				container.activate(rcb, 1);
 			if(wasFetchingFinalData) {
 				rcb.onBlockSetFinished(SingleFileFetcher.this, container, context);
 			}
+			if(!wasActive)
+				container.deactivate(SingleFileFetcher.this, 1);
 		}
 
 		public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
@@ -798,8 +836,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 		
 		public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
-			if(persistent)
+			boolean wasActive = true;
+			if(persistent) {
+				wasActive = container.ext().isActive(SingleFileFetcher.this);
 				container.activate(SingleFileFetcher.this, 1);
+			}
 			try {
 				Metadata meta = Metadata.construct(result.asBucket());
 				synchronized(SingleFileFetcher.this) {
@@ -807,22 +848,27 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				}
 				if(persistent)
 					container.set(SingleFileFetcher.this);
+				wrapHandleMetadata(true, container, context);
 			} catch (MetadataParseException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, container, context);
-				return;
 			} catch (IOException e) {
 				// Bucket error?
 				SingleFileFetcher.this.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
-				return;
 			}
-			wrapHandleMetadata(true, container, context);
+			if(!wasActive)
+				container.deactivate(SingleFileFetcher.this, 1);
 		}
 		
 		public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
-			if(persistent)
+			boolean wasActive = true;
+			if(persistent) {
+				wasActive = container.ext().isActive(SingleFileFetcher.this);
 				container.activate(SingleFileFetcher.this, 1);
+			}
 			// Pass it on; fetcher is assumed to have retried as appropriate already, so this is fatal.
 			SingleFileFetcher.this.onFailure(e, true, container, context);
+			if(!wasActive)
+				container.deactivate(SingleFileFetcher.this, 1);
 		}
 
 		public void onBlockSetFinished(ClientGetState state, ObjectContainer container, ClientContext context) {
@@ -838,11 +884,19 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		public void onExpectedSize(long size, ObjectContainer container) {
+			boolean wasActive = true;
+			boolean cbWasActive = true;
 			if(persistent) {
+				wasActive = container.ext().isActive(SingleFileFetcher.this);
 				container.activate(SingleFileFetcher.this, 1);
+				cbWasActive = container.ext().isActive(rcb);
 				container.activate(rcb, 1);
 			}
 			rcb.onExpectedSize(size, container);
+			if(!wasActive)
+				container.deactivate(SingleFileFetcher.this, 1);
+			if(!cbWasActive)
+				container.deactivate(rcb, 1);
 		}
 
 		public void onFinalizedMetadata(ObjectContainer container) {
@@ -982,5 +1036,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 	}
-
+	
+	public void objectOnActivate(ObjectContainer container) {
+		Logger.minor(this, "ACTIVATING: "+this, new Exception("debug"));
+	}
+	
 }
