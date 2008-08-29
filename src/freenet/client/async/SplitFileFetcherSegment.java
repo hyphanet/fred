@@ -1137,6 +1137,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 	 * and then "NOT IN BLOOM FILTER" errors, or worse, false negatives.
 	 */
 	public synchronized boolean onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
+		if(finished || startedDecode) {
+			return false;
+		}
 		int blockNum = this.getBlockNumber(key, container);
 		if(blockNum < 0) return false;
 		ClientCHK ckey = this.getBlockKey(blockNum, container);
