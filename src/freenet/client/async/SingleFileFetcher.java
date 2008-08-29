@@ -119,7 +119,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		if(recursionLevel > ctx.maxRecursionLevel)
 			throw new FetchException(FetchException.TOO_MUCH_RECURSION);
 		this.thisKey = fetcher.thisKey;
-		this.decompressors = fetcher.decompressors;
+		// Copy the decompressors. Just because a multi-level metadata splitfile
+		// is compressed, that **doesn't** mean that the data we are eventually
+		// going to fetch is!
+		this.decompressors = new ArrayList(fetcher.decompressors);
 		this.uri = fetcher.uri;
 	}
 
