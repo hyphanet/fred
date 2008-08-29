@@ -2072,7 +2072,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				}
 			} else
 				throw new IllegalStateException("Unknown key type: "+key.getClass());
-			if(chk != null) return chk;
+			if(chk != null) {
+				// Probably somebody waiting for it. Trip it.
+				if(clientCore != null && clientCore.requestStarters != null)
+					clientCore.requestStarters.chkFetchScheduler.tripPendingKey(chk);
+				failureTable.onFound(chk);
+				return chk;
+			}
 		}
 		if(localOnly) return null;
 		if(logMINOR) Logger.minor(this, "Not in store locally");
