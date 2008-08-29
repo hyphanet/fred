@@ -180,14 +180,12 @@ public class PersistentChosenRequest {
 							bulkFailItems = new Vector<BulkCallFailureItem>();
 						bulkFailItems.add(new BulkCallFailureItem(e, block.token));
 					} else {
-						container.activate(request, 1);
 						((SendableGet)request).onFailure(e, block.token, container, context);
 						container.commit(); // db4o is read-committed, so we need to commit here.
 					}
 				}
 			}
 			if(bulkFailItems != null) {
-				container.activate(request, 1);
 				((SupportsBulkCallFailure)request).onFailure(bulkFailItems.toArray(new BulkCallFailureItem[bulkFailItems.size()]), container, context);
 				container.commit(); // db4o is read-committed, so we need to commit here.
 			}
