@@ -975,7 +975,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(persistent)
 					container.activate(sub, 1);
 				RandomGrabArray rga = sub.getParentGrabArray();
-				if(sub.getParentGrabArray() == null) {
+				if(rga == null) {
 					sub.reschedule(container, context);
 				} else {
 //					if(logMINOR) {
