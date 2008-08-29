@@ -134,16 +134,17 @@ public class PersistentChosenRequest {
 		context.jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
-				finish(container, context, false);
+				finish(container, context, false, false);
 			}
 			
 		}, NativeThread.NORM_PRIORITY + 1, false);
 	}
 
-	private void finish(ObjectContainer container, ClientContext context, boolean dumping) {
-		if(container.ext().isActive(request))
-			Logger.error(this, "ALREADY ACTIVATED: "+request);
-		container.activate(request, 1);
+	private void finish(ObjectContainer container, ClientContext context, boolean dumping, boolean alreadyActive) {
+		if((!alreadyActive) && container.ext().isActive(request))
+			Logger.error(this, "ALREADY ACTIVATED: "+request, new Exception("debug"));
+		if(!alreadyActive)
+			container.activate(request, 1);
 		Logger.normal(this, "Finishing "+this+" for "+request);
 		// Call all the callbacks.
 		PersistentChosenBlock[] finishedBlocks;
@@ -151,7 +152,8 @@ public class PersistentChosenRequest {
 			if(finished) {
 				if(blocksFinished.isEmpty()) {
 					// Okay...
-					container.deactivate(request, 1);
+					if(!alreadyActive)
+						container.deactivate(request, 1);
 					return;
 				} else {
 					Logger.error(this, "Finished but blocksFinished not empty on "+this, new Exception("debug"));
@@ -166,7 +168,8 @@ public class PersistentChosenRequest {
 				Logger.error(this, "No finished blocks in finish() on "+this);
 			else if(logMINOR)
 				Logger.minor(this, "No finished blocks in finish() on "+this);
-			container.deactivate(request, 1);
+			if(!alreadyActive)
+				container.deactivate(request, 1);
 			return;
 		}
 		if(request instanceof SendableGet) {
@@ -202,7 +205,8 @@ public class PersistentChosenRequest {
 			}
 		}
 		scheduler.removeRunningRequest(request);
-		container.deactivate(request, 1);
+		if(!alreadyActive)
+			container.deactivate(request, 1);
 	}
 
 	public synchronized ChosenBlock grabNotStarted(Random random, RequestScheduler sched) {
@@ -225,7 +229,7 @@ public class PersistentChosenRequest {
 		return blocksNotStarted.size();
 	}
 
-	public void onDumped(ClientRequestSchedulerCore core, ObjectContainer container) {
+	public void onDumped(ClientRequestSchedulerCore core, ObjectContainer container, boolean reqAlreadyActive) {
 		if(logMINOR)
 			Logger.minor(this, "Dumping "+this);
 		boolean wasStarted;
@@ -235,7 +239,7 @@ public class PersistentChosenRequest {
 		}
 		if(!wasStarted) {
 			if(logMINOR) Logger.minor(this, "Finishing immediately in onDumped() as nothing pending: "+this);
-			finish(container, core.sched.clientContext, true);
+			finish(container, core.sched.clientContext, true, reqAlreadyActive);
 		}
 	}
 

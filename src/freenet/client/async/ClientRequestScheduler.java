@@ -578,7 +578,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return false;
 	}
 	
-	void removeFromStarterQueue(SendableRequest req, ObjectContainer container) {
+	void removeFromStarterQueue(SendableRequest req, ObjectContainer container, boolean reqAlreadyActive) {
 		PersistentChosenRequest dumped = null;
 		synchronized(starterQueue) {
 			for(int i=0;i<starterQueue.size();i++) {
@@ -591,7 +591,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		}
 		if(dumped != null)
-			dumped.onDumped(schedCore, container);
+			dumped.onDumped(schedCore, container, reqAlreadyActive);
 	}
 	
 	int starterQueueSize() {
@@ -739,7 +739,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 		if(dumped == null) return;
 		for(PersistentChosenRequest req : dumped) {
-			req.onDumped(schedCore, container);
+			req.onDumped(schedCore, container, false);
 		}
 	}
 
