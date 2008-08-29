@@ -60,7 +60,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 				throw new FileExistsException(file);
 			
 			if(streams != null && !streams.isEmpty())
-				Logger.error(this, "Streams open on "+this+" while opening an output stream!: "+streams);
+				Logger.error(this, "Streams open on "+this+" while opening an output stream!: "+streams, new Exception("debug"));
 			
 			File tempfile = createFileOnly() ? getTempfile() : file;
 			long streamNumber = ++fileRestartCounter;
