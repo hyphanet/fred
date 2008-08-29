@@ -211,6 +211,12 @@ public class SplitFileFetcherSegment implements FECCallback {
 					Logger.minor(this, "onSuccess() when already finished for "+this);
 				return;
 			}
+			if(startedDecode) {
+				// Much the same.
+				if(logMINOR)
+					Logger.minor(this, "onSuccess() when started decode for "+this);
+				return;
+			}
 			if(blockNo < dataKeys.length) {
 				if(dataKeys[blockNo] == null) {
 					if(!startedDecode) Logger.error(this, "Block already finished: "+blockNo);
