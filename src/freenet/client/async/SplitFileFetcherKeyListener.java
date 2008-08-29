@@ -107,6 +107,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		filterBuffer = new byte[mainBloomSizeBytes];
 		if(newFilter) {
 			filter = new CountingBloomFilter(mainBloomSizeBytes * 8 / 2, mainBloomK, filterBuffer);
+			filter.setWarnOnRemoveFromEmpty();
 		} else {
 			// Read from file.
 			FileInputStream fis = new FileInputStream(bloomFile);
@@ -114,6 +115,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 			dis.readFully(filterBuffer);
 			dis.close();
 			filter = new CountingBloomFilter(mainBloomSizeBytes * 8 / 2, mainBloomK, filterBuffer);
+			filter.setWarnOnRemoveFromEmpty();
 			fis = new FileInputStream(altBloomFile);
 			dis = new DataInputStream(fis);
 			dis.readFully(segmentsFilterBuffer);
@@ -189,7 +191,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		byte[] salted = localSaltKey(key);
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
-			Logger.minor(this, "handleBlock("+key+") on "+this);
+			Logger.minor(this, "handleBlock("+key+") on "+this+" for "+fetcher);
 		for(int i=0;i<segmentFilters.length;i++) {
 			boolean match;
 			synchronized(this) {
@@ -208,7 +210,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 					container.activate(segment, 1);
 				}
 				if(logMINOR)
-					Logger.minor(this, "Key may be in segment "+segment);
+					Logger.minor(this, "Key "+key+" may be in segment "+segment);
 				if(segment.onGotKey(key, block, container, context)) {
 					keyCount--;
 					synchronized(this) {
@@ -301,12 +303,14 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Removing segment from bloom filter: "+segment+" keys: "+removeKeys.length);
 		for(int i=0;i<removeKeys.length;i++) {
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "Removing key from bloom filter: "+removeKeys[i]);
 			byte[] salted = context.getChkFetchScheduler().saltKey(removeKeys[i]);
 			if(filter.checkFilter(salted)) {
 				filter.removeKey(salted);
 			} else
 				// Huh??
-				Logger.error(this, "Removing key "+removeKeys[i]+" from "+segment+" : NOT IN BLOOM FILTER!");
+				Logger.error(this, "Removing key "+removeKeys[i]+" for "+this+" from "+segment+" : NOT IN BLOOM FILTER!");
 		}
 		scheduleWriteFilters(context);
 		return keyCount -= removeKeys.length;
