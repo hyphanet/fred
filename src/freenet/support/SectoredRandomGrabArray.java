@@ -57,6 +57,8 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			}
 		} else {
 			rga = (RandomGrabArrayWithClient) grabArrays[clientIndex];
+			if(persistent)
+				container.activate(rga, 1);
 		}
 		if(logMINOR)
 			Logger.minor(this, "Adding "+item+" to RGA "+rga+" for "+client);
