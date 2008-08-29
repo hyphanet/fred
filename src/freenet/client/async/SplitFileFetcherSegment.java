@@ -219,7 +219,17 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 			if(blockNo < dataKeys.length) {
 				if(dataKeys[blockNo] == null) {
-					if(!startedDecode) Logger.error(this, "Block already finished: "+blockNo);
+					if(!startedDecode) {
+						// This can happen.
+						// We queue a persistent download, we queue a transient.
+						// The transient goes through DatastoreChecker first,
+						// and feeds the block to us. We don't finish, because
+						// we need more blocks. Then the persistent goes through
+						// the DatastoreChecker, and calls us again with the same
+						// block.
+						if(logMINOR)
+							Logger.minor(this, "Block already finished: "+blockNo);
+					}
 					data.free();
 					return;
 				}
@@ -233,7 +243,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 			} else if(blockNo < checkKeys.length + dataKeys.length) {
 				blockNo -= dataKeys.length;
 				if(checkKeys[blockNo] == null) {
-					if(!startedDecode) Logger.error(this, "Check block already finished: "+blockNo);
+					if(!startedDecode) {
+						if(logMINOR)
+							Logger.minor(this, "Check block already finished: "+blockNo);
+					}
 					data.free();
 					return;
 				}
