@@ -566,6 +566,17 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
+	void removeFromStarterQueue(SendableRequest req) {
+		synchronized(starterQueue) {
+			for(int i=0;i<starterQueue.size();i++) {
+				if(starterQueue.get(i).request == req) {
+					starterQueue.remove(i);
+					i--;
+				}
+			}
+		}
+	}
+	
 	int starterQueueSize() {
 		synchronized(starterQueue) {
 			return starterQueue.size();

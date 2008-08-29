@@ -56,7 +56,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	final long[] checkCooldownTimes;
 	final int[] dataRetries;
 	final int[] checkRetries;
-	final Vector subSegments;
+	final Vector<SplitFileFetcherSubSegment> subSegments;
 	final int minFetched;
 	final SplitFileFetcher parentFetcher;
 	final ClientRequester parent;
@@ -189,7 +189,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		return fatallyFailedBlocks;
 	}
 
-	public void onSuccess(Bucket data, int blockNo, ClientKeyBlock block, ObjectContainer container, ClientContext context) {
+	public void onSuccess(Bucket data, int blockNo, ClientKeyBlock block, ObjectContainer container, ClientContext context, SplitFileFetcherSubSegment sub) {
 		if(persistent)
 			container.activate(this, 1);
 		if(data == null) throw new NullPointerException();
@@ -870,6 +870,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(persistent)
 				container.activate(deadSegs[i], 1);
 			deadSegs[i].kill(container, context, true);
+			context.getChkFetchScheduler().removeFromStarterQueue(deadSegs[i]);
+			if(persistent)
+				container.deactivate(deadSegs[i], 1);
 		}
 		if(persistent) {
 			container.set(this);
@@ -1163,7 +1166,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(data == null) return false;
 		
 		if(!cb.isMetadata()) {
-			this.onSuccess(data, blockNum, cb, container, context);
+			this.onSuccess(data, blockNum, cb, container, context, seg);
 			return true;
 		} else {
 			this.onFatalFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), blockNum, null, container, context);

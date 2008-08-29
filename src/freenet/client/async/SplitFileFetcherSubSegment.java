@@ -410,7 +410,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			onFailure(new FetchException(FetchException.CANCELLED), token, container, context);
 			return;
 		}
-		segment.onSuccess(data, blockNo, block, container, context);
+		segment.onSuccess(data, blockNo, block, container, context, this);
 	}
 
 	/** Convert a ClientKeyBlock to a Bucket. If an error occurs, report it via onFailure
