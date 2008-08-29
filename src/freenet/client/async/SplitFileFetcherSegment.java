@@ -1130,8 +1130,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 	/**
 	 * @return True if we fetched a block.
+	 * Hold the lock for the whole duration of this method. If a transient request
+	 * has two copies of onGotKey() run in parallel, we want only one of them to
+	 * return true, otherwise SFFKL will remove the keys from the main bloom
+	 * filter twice, resulting in collateral damage to other overlapping keys,
+	 * and then "NOT IN BLOOM FILTER" errors, or worse, false negatives.
 	 */
-	public boolean onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
+	public synchronized boolean onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
 		int blockNum = this.getBlockNumber(key, container);
 		if(blockNum < 0) return false;
 		ClientCHK ckey = this.getBlockKey(blockNum, container);
