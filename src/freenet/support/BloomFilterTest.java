@@ -14,7 +14,7 @@ public class BloomFilterTest {
 		/**
 		 * Create a Bloom filter. Fill it with random data.
 		 * Request random data from it, show how many true negatives
-		 * and how many false negatives.
+		 * and how many false positives.
 		 */
 		if(args.length != 2) {
 			System.err.println("java "+BloomFilterTest.class.getName()+" <key count> <keys to bloom elements ratio>");
