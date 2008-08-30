@@ -291,6 +291,13 @@ public class TempBucketFactory implements BucketFactory {
 			}
 			
 			@Override
+			public int available() throws IOException {
+				synchronized(TempBucket.this) {
+					return currentIS.available();
+				}
+			}
+			
+			@Override
 			public boolean markSupported() {
 				return false;
 			}
