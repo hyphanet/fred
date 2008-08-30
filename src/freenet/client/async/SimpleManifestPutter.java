@@ -73,7 +73,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				return;
 			}
 			if (metadata != null) {
-				Logger.error(this, "metdata=" + metadata + " on start(), should be impossible", new Exception("debug"));
+				Logger.error(this, "metadata=" + metadata + " on start(), should be impossible", new Exception("debug"));
 				return;
 			}
 			origSFI.start(null);
