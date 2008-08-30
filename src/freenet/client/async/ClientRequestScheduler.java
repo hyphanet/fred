@@ -193,7 +193,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					container.deactivate(req, 1);
 					return;
 				}
-				schedCore.innerRegister(req, random, container);
+				schedCore.innerRegister(req, random, container, null);
 			} else {
 				jobRunner.queue(new DBJob() {
 
@@ -201,14 +201,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 						if(container.ext().isActive(req))
 							Logger.error(this, "ALREADY ACTIVE: "+req+" in off-thread insert register");
 						container.activate(req, 1);
-						schedCore.innerRegister(req, random, container);
+						schedCore.innerRegister(req, random, container, null);
 						container.deactivate(req, 1);
 					}
 					
 				}, NativeThread.NORM_PRIORITY, false);
 			}
 		} else {
-			schedTransient.innerRegister(req, random, null);
+			schedTransient.innerRegister(req, random, null, null);
 		}
 	}
 	
@@ -361,7 +361,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						container.activate(getters[i], 1);
 						if(!(getter.isCancelled(container) || getter.isEmpty(container))) {
 							wereAnyValid = true;
-							schedCore.innerRegister(getter, random, container);
+							schedCore.innerRegister(getter, random, container, getters);
 						}
 					}
 					if(!wereAnyValid) {
@@ -370,7 +370,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				}
 				if(reg != null)
 					container.delete(reg);
-				maybeFillStarterQueue(container, clientContext);
+				maybeFillStarterQueue(container, clientContext, getters);
 				starter.wakeUp();
 			} else {
 				jobRunner.queue(new DBJob() {
@@ -385,7 +385,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 							container.activate(getter, 1);
 							if(!(getter.isCancelled(container) || getter.isEmpty(container))) {
 								wereAnyValid = true;
-								schedCore.innerRegister(getter, random, container);
+								schedCore.innerRegister(getter, random, container, getters);
 							}
 							container.deactivate(getter, 1);
 						}
@@ -394,7 +394,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						}
 						if(reg != null)
 							container.delete(reg);
-						maybeFillStarterQueue(container, context);
+						maybeFillStarterQueue(container, context, getters);
 						starter.wakeUp();
 					}
 					
@@ -404,17 +404,17 @@ public class ClientRequestScheduler implements RequestScheduler {
 			if(!anyValid) return;
 			// Register immediately.
 			for(int i=0;i<getters.length;i++)
-				schedTransient.innerRegister(getters[i], random, null);
+				schedTransient.innerRegister(getters[i], random, null, getters);
 			starter.wakeUp();
 		}
 	}
 
-	private void maybeFillStarterQueue(ObjectContainer container, ClientContext context) {
+	private void maybeFillStarterQueue(ObjectContainer container, ClientContext context, SendableRequest[] mightBeActive) {
 		synchronized(this) {
 			if(starterQueue.size() > MAX_STARTER_QUEUE_SIZE / 2)
 				return;
 		}
-		requestStarterQueueFiller.run(container, context);
+		fillRequestStarterQueue(container, context, mightBeActive);
 	}
 
 	public ChosenBlock getBetterNonPersistentRequest(short prio, int retryCount) {
@@ -605,50 +605,62 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	private DBJob requestStarterQueueFiller = new DBJob() {
 		public void run(ObjectContainer container, ClientContext context) {
-			if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
-			short fuzz = -1;
-			if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
-				fuzz = -1;
-			else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
-				fuzz = 0;	
-			synchronized(starterQueue) {
-				// Recompute starterQueueLength
-				int length = 0;
-				PersistentChosenRequest old = null;
-				for(PersistentChosenRequest req : starterQueue) {
-					if(old == req)
-						Logger.error(this, "DUPLICATE CHOSEN REQUESTS ON QUEUE: "+req);
-					if(old != null && old.request == req.request)
-						Logger.error(this, "DUPLICATE REQUEST ON QUEUE: "+old+" vs "+req+" both "+req.request);
+			fillRequestStarterQueue(container, context, null);
+		}
+	};
+	
+	private void fillRequestStarterQueue(ObjectContainer container, ClientContext context, SendableRequest[] mightBeActive) {
+		if(logMINOR) Logger.minor(this, "Filling request queue... (SSK="+isSSKScheduler+" insert="+isInsertScheduler);
+		short fuzz = -1;
+		if(PRIORITY_SOFT.equals(choosenPriorityScheduler))
+			fuzz = -1;
+		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
+			fuzz = 0;	
+		synchronized(starterQueue) {
+			// Recompute starterQueueLength
+			int length = 0;
+			PersistentChosenRequest old = null;
+			for(PersistentChosenRequest req : starterQueue) {
+				if(old == req)
+					Logger.error(this, "DUPLICATE CHOSEN REQUESTS ON QUEUE: "+req);
+				if(old != null && old.request == req.request)
+					Logger.error(this, "DUPLICATE REQUEST ON QUEUE: "+old+" vs "+req+" both "+req.request);
+				boolean ignoreActive = false;
+				if(mightBeActive != null) {
+					for(SendableRequest tmp : mightBeActive)
+						if(tmp == req.request) ignoreActive = true;
+				}
+				if(!ignoreActive) {
 					if(container.ext().isActive(req.request))
 						Logger.error(this, "REQUEST ALREADY ACTIVATED: "+req.request+" for "+req+" while checking request queue in filling request queue");
 					else if(logMINOR)
 						Logger.minor(this, "Not already activated for "+req+" in while checking request queue in filling request queue");
-					req.pruneDuplicates(ClientRequestScheduler.this);
-					old = req;
-					length += req.sizeNotStarted();
-				}
-				if(logMINOR) Logger.minor(this, "Queue size: "+length+" SSK="+isSSKScheduler+" insert="+isInsertScheduler);
-				if(length >= MAX_STARTER_QUEUE_SIZE) {
-					if(length >= WARNING_STARTER_QUEUE_SIZE)
-						Logger.error(this, "Queue already full: "+starterQueue.size());
-					return;
-				}
-				if(length > MAX_STARTER_QUEUE_SIZE * 3 / 4) {
-					return;
-				}
+				} else if(logMINOR)
+					Logger.minor(this, "Ignoring active because just registered: "+req.request);
+				req.pruneDuplicates(ClientRequestScheduler.this);
+				old = req;
+				length += req.sizeNotStarted();
 			}
-			
-			while(true) {
-				SendableRequest request = schedCore.removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, false, true, Short.MAX_VALUE, Integer.MAX_VALUE, context, container);
-				if(request == null) return;
-				boolean full = addToStarterQueue(request, container);
-				container.deactivate(request, 1);
-				starter.wakeUp();
-				if(full) return;
+			if(logMINOR) Logger.minor(this, "Queue size: "+length+" SSK="+isSSKScheduler+" insert="+isInsertScheduler);
+			if(length >= MAX_STARTER_QUEUE_SIZE) {
+				if(length >= WARNING_STARTER_QUEUE_SIZE)
+					Logger.error(this, "Queue already full: "+starterQueue.size());
+				return;
+			}
+			if(length > MAX_STARTER_QUEUE_SIZE * 3 / 4) {
+				return;
 			}
 		}
-	};
+		
+		while(true) {
+			SendableRequest request = schedCore.removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, false, true, Short.MAX_VALUE, Integer.MAX_VALUE, context, container);
+			if(request == null) return;
+			boolean full = addToStarterQueue(request, container);
+			container.deactivate(request, 1);
+			starter.wakeUp();
+			if(full) return;
+		}
+	}
 	
 	/**
 	 * Compare a recently registered SendableRequest to what is already on the
@@ -657,7 +669,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	 * @param req
 	 * @param container
 	 */
-	public void maybeAddToStarterQueue(SendableRequest req, ObjectContainer container) {
+	public void maybeAddToStarterQueue(SendableRequest req, ObjectContainer container, SendableRequest[] mightBeActive) {
 		short prio = req.getPriorityClass(container);
 		int retryCount = req.getRetryCount();
 		if(logMINOR)
@@ -671,10 +683,18 @@ public class ClientRequestScheduler implements RequestScheduler {
 					Logger.error(this, "ON STARTER QUEUE TWICE: "+prev+" for "+prev.request);
 				if(prev != null && prev.request == old.request)
 					Logger.error(this, "REQUEST ON STARTER QUEUE TWICE: "+prev+" for "+prev.request+" vs "+old+" for "+old.request);
-				if(container.ext().isActive(old.request))
-					Logger.error(this, "REQUEST ALREADY ACTIVATED: "+old.request+" for "+old+" while checking request queue in maybeAddToStarterQueue", new Exception("debug"));
-				else if(logMINOR)
-					Logger.minor(this, "Not already activated for "+old+" in while checking request queue in filling request queue");
+				boolean ignoreActive = false;
+				if(mightBeActive != null) {
+					for(SendableRequest tmp : mightBeActive)
+						if(tmp == old.request) ignoreActive = true;
+				}
+				if(!ignoreActive) {
+					if(container.ext().isActive(old.request))
+						Logger.error(this, "REQUEST ALREADY ACTIVATED: "+old.request+" for "+old+" while checking request queue in maybeAddToStarterQueue for "+req);
+					else if(logMINOR)
+						Logger.minor(this, "Not already activated for "+old+" in while checking request queue in maybeAddToStarterQueue for "+req);
+				} else if(logMINOR)
+					Logger.minor(this, "Ignoring active because just registered: "+old.request+" in maybeAddToStarterQueue for "+req);
 				size += old.sizeNotStarted();
 				if(old.prio > prio || old.prio == prio && old.retryCount > retryCount)
 					betterThanSome = true;

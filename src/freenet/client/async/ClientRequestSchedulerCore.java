@@ -443,9 +443,9 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					Logger.error(this, "Could not find client grabber for client "+req.getClient()+" from "+chosenTracker);
 				}
 				if(req.persistent())
-					innerRegister(req, random, container);
+					innerRegister(req, random, container, null);
 				else
-					schedTransient.innerRegister(req, random, container);
+					schedTransient.innerRegister(req, random, container, null);
 				continue; // Try the next one on this retry count.
 			}
 			
@@ -478,7 +478,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				// Use the recent one instead
 				if(logMINOR)
 					Logger.minor(this, "Recently succeeded req "+altReq+" is better, using that, reregistering chosen "+req);
-				schedTransient.innerRegister(req, random, null);
+				schedTransient.innerRegister(req, random, null, null);
 				req = altReq;
 			} else if(altReq != null) {
 				// Don't use the recent one

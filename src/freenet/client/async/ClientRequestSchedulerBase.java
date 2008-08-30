@@ -71,7 +71,19 @@ abstract class ClientRequestSchedulerBase {
 		logMINOR = Logger.shouldLog(Logger.MINOR, ClientRequestSchedulerBase.class);
 	}
 	
-	void innerRegister(SendableRequest req, RandomSource random, ObjectContainer container) {
+	/**
+	 * @param req
+	 * @param random
+	 * @param container
+	 * @param maybeActive Array of requests, can be null, which are being registered
+	 * in this group. These will be ignored for purposes of checking whether stuff
+	 * is activated when it shouldn't be. It is perfectly okay to have req be a
+	 * member of maybeActive.
+	 * 
+	 * FIXME: Either get rid of the debugging code and therefore get rid of maybeActive,
+	 * or make req a SendableRequest[] and register them all at once.
+	 */
+	void innerRegister(SendableRequest req, RandomSource random, ObjectContainer container, SendableRequest[] maybeActive) {
 		if(isInsertScheduler && req instanceof BaseSendableGet)
 			throw new IllegalArgumentException("Adding a SendableGet to an insert scheduler!!");
 		if((!isInsertScheduler) && req instanceof SendableInsert)
@@ -89,7 +101,7 @@ abstract class ClientRequestSchedulerBase {
 		addToGrabArray(prio, retryCount, fixRetryCount(retryCount), req.getClient(), req.getClientRequest(), req, random, container);
 		if(logMINOR) Logger.minor(this, "Registered "+req+" on prioclass="+prio+", retrycount="+retryCount);
 		if(persistent())
-			sched.maybeAddToStarterQueue(req, container);
+			sched.maybeAddToStarterQueue(req, container, maybeActive);
 	}
 	
 	protected void addToRequestsByClientRequest(ClientRequester clientRequest, SendableRequest req, ObjectContainer container) {
@@ -165,7 +177,7 @@ abstract class ClientRequestSchedulerBase {
 			// Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.
 			req.unregister(container, context);
 			// Then can do innerRegister() (not register()).
-			innerRegister(req, random, container);
+			innerRegister(req, random, container, null);
 			if(persistent())
 				container.deactivate(req, 1);
 		}
