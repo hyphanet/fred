@@ -137,7 +137,7 @@ public class TempBucketFactory implements BucketFactory {
 		}
 
 		public synchronized OutputStream getOutputStream() throws IOException {
-			if(os != null)
+			if(osIndex > 0)
 				throw new IOException("Only one OutputStream per bucket!");
 			return new TempBucketOutputStream(++osIndex);
 		}
@@ -147,7 +147,8 @@ public class TempBucketFactory implements BucketFactory {
 			
 			TempBucketOutputStream(short idx) throws IOException {
 				this.idx = idx;
-				os = currentBucket.getOutputStream();
+				if(os == null)
+					os = currentBucket.getOutputStream();
 			}
 			
 			private void _maybeMigrateRamBucket(long futureSize) throws IOException {
@@ -320,8 +321,8 @@ public class TempBucketFactory implements BucketFactory {
 		}
 
 		public synchronized void free() {
-			closeInputStreams(true);
 			Closer.close(os);
+			closeInputStreams(true);
 			currentBucket.free();
 			if(isRAMBucket())
 				_hasFreed(currentSize);
