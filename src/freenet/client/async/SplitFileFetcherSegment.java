@@ -1167,16 +1167,20 @@ public class SplitFileFetcherSegment implements FECCallback {
 	 * filter twice, resulting in collateral damage to other overlapping keys,
 	 * and then "NOT IN BLOOM FILTER" errors, or worse, false negatives.
 	 */
-	public synchronized boolean onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
+	public boolean onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
+		ClientCHKBlock cb;
+		int blockNum;
+		Bucket data;
+		SplitFileFetcherSubSegment seg;
+		synchronized(this) {
 		if(finished || startedDecode) {
 			return false;
 		}
-		int blockNum = this.getBlockNumber(key, container);
+		blockNum = this.getBlockNumber(key, container);
 		if(blockNum < 0) return false;
 		ClientCHK ckey = this.getBlockKey(blockNum, container);
-		ClientCHKBlock cb;
 		int retryCount = getBlockRetryCount(blockNum);
-		SplitFileFetcherSubSegment seg = this.getSubSegment(retryCount, container, true, null);
+		seg = this.getSubSegment(retryCount, container, true, null);
 		if(persistent)
 			container.activate(seg, 1);
 		if(seg != null) {
@@ -1201,9 +1205,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 			this.onFatalFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e), blockNum, null, container, context);
 			return false;
 		}
-		Bucket data = extract(cb, blockNum, container, context);
+		data = extract(cb, blockNum, container, context);
 		if(data == null) return false;
-		
+		}
 		if(!cb.isMetadata()) {
 			this.onSuccess(data, blockNum, cb, container, context, seg);
 			return true;
