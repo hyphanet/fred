@@ -13,6 +13,7 @@ import java.io.IOException;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
+import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.LinkedList;
@@ -228,7 +229,7 @@ public class TempBucketFactory implements BucketFactory {
 		
 		private class TempBucketInputStream extends InputStream {
 			/** The current InputStream we use from the underlying bucket */
-			private InputStream currentIS;
+			private BufferedInputStream currentIS;
 			/** Keep a link to the current OutputStream to know when to reset the stream */
 			private OutputStream currentOS;
 			/** Keep a counter to know where we are on the stream (useful when we have to reset and skip) */
@@ -238,7 +239,10 @@ public class TempBucketFactory implements BucketFactory {
 			
 			TempBucketInputStream(short idx) throws IOException {
 				this.idx = idx;
-				this.currentIS = currentBucket.getInputStream();
+				// Neither bucket types (ArrayBuckets|TempFileBuckets) do support marks...
+				// So we use a BufferedInputStream which does.
+				// TODO: Obviously we should implement it.
+				this.currentIS = new BufferedInputStream(currentBucket.getInputStream());
 				this.currentOS = os;
 			}
 			
@@ -248,7 +252,7 @@ public class TempBucketFactory implements BucketFactory {
 				
 				if(currentOS != os) {
 					Closer.close(currentIS);
-					currentIS = currentBucket.getInputStream();
+					currentIS = new BufferedInputStream(currentBucket.getInputStream());
 					currentIS.skip(index);
 					currentOS = os;
 				}
@@ -299,7 +303,23 @@ public class TempBucketFactory implements BucketFactory {
 			
 			@Override
 			public boolean markSupported() {
-				return false;
+				synchronized(TempBucket.this) {
+					return currentIS.markSupported();
+				}
+			}
+			
+			@Override
+			public void mark(int readlimit) {
+				synchronized(TempBucket.this) {
+					currentIS.mark(readlimit);
+				}
+			}
+			
+			@Override
+			    public void reset() throws IOException {
+				synchronized(TempBucket.this) {
+					currentIS.reset();
+				}
 			}
 			
 			@Override
