@@ -11,200 +11,152 @@ import java.util.Iterator;
 import freenet.support.api.Bucket;
 
 /**
- * A bucket that stores data in RAM
+ * A bucket that stores data in the memory.
+ * 
+ * FIXME: No synchronization, should there be?
+ * 
+ * @author oskar
  */
 public class ArrayBucket implements Bucket {
 
-	private final ArrayList<byte[]> data;
-	private final String name;
-	private volatile boolean readOnly;
-	private long size;
+	private final ArrayList data;
+	private String name;
+	private boolean readOnly;
 
-	/** Create a new immutable ArrayBucket with the data provided and a name*/
-	public ArrayBucket(String name, byte[] initdata) {
-		this(name);
-		data.add(initdata);
-		this.size = initdata.length;
-		setReadOnly();
-	}
-
-	/** Create a new immutable ArrayBucket with the data provided */
-	public ArrayBucket(byte[] initdata) {
-		this();
-		data.add(initdata);
-		this.size = initdata.length;
-		setReadOnly();
-	}
-
-	/** Create a new array bucket */
 	public ArrayBucket() {
 		this("ArrayBucket");
 	}
 
-	/** Create a new array bucket with the provided name */
+	public ArrayBucket(byte[] initdata) {
+		this("ArrayBucket");
+		data.add(initdata);
+	}
+
 	public ArrayBucket(String name) {
-		data = new ArrayList<byte[]>();
+		data = new ArrayList();
 		this.name = name;
 	}
 
-	public synchronized OutputStream getOutputStream() throws IOException {
-		if(readOnly)
-			throw new IOException("Read only");
+	public OutputStream getOutputStream() throws IOException {
+		if(readOnly) throw new IOException("Read only");
 		return new ArrayBucketOutputStream();
 	}
 
-	public synchronized InputStream getInputStream() {
+	public InputStream getInputStream() {
 		return new ArrayBucketInputStream();
 	}
 
-	@Override
-	public synchronized String toString() {
+	public String toString() {
 		StringBuffer s = new StringBuffer(250);
-		for(Iterator i = data.iterator(); i.hasNext();) {
+		for (Iterator i = data.iterator(); i.hasNext();) {
 			byte[] b = (byte[]) i.next();
 			s.append(new String(b));
 		}
 		return s.toString();
 	}
 
-	public synchronized long size() {
+	public void read(InputStream in) throws IOException {
+		OutputStream out = new ArrayBucketOutputStream();
+		int i;
+		byte[] b = new byte[8 * 1024];
+		while ((i = in.read(b)) != -1) {
+			out.write(b, 0, i);
+		}
+		out.close();
+	}
+
+	public long size() {
+		long size = 0;
+		for (Iterator i = data.iterator(); i.hasNext();) {
+			byte[] b = (byte[]) i.next();
+			size += b.length;
+		}
 		return size;
 	}
 
-	public synchronized String getName() {
+	public String getName() {
 		return name;
 	}
 
 	private class ArrayBucketOutputStream extends ByteArrayOutputStream {
-
-		private boolean hasBeenClosed = false;
-
+		
 		public ArrayBucketOutputStream() {
 			super();
 		}
 
-		@Override
-		public void write(byte b[], int off, int len) {
-			synchronized(ArrayBucket.this) {
-				if(readOnly)
-					throw new IllegalStateException("Read only");
-				if(hasBeenClosed)
-					throw new IllegalStateException("Has been closed!");
-				super.write(b, off, len);
-				size += len;
-			}
-		}
-
-		@Override
-		public void write(int b) {
-			synchronized(ArrayBucket.this) {
-				if(readOnly)
-					throw new IllegalStateException("Read only");
-				if(hasBeenClosed)
-					throw new IllegalStateException("Has been closed!");
-				super.write(b);
-				size++;
-			}
-		}
-
-		@Override
 		public void close() throws IOException {
-			synchronized(ArrayBucket.this) {
-				if(hasBeenClosed)
-					return;
-				hasBeenClosed = true;
-				if(readOnly)
-					throw new IOException("Read only");
-				data.add(super.toByteArray());
-			}
+			data.add(super.toByteArray());
+			if(readOnly) throw new IOException("Read only");
+			// FIXME maybe we should throw on write instead? :)
 		}
 	}
 
 	private class ArrayBucketInputStream extends InputStream {
-
-		private final Iterator<byte[]> i;
+		
+		private Iterator i;
 		private ByteArrayInputStream in;
-		private boolean hasBeenClosed = false;
 
 		public ArrayBucketInputStream() {
 			i = data.iterator();
 		}
 
-		public int read() throws IOException {
-			synchronized(ArrayBucket.this) {
-				return priv_read();
-			}
+		public int read() {
+			return priv_read();
 		}
 
-		private int priv_read() throws IOException {
-			if(hasBeenClosed)
-				throw new IOException("Has been closed!");
-			if(in == null)
-				if(i.hasNext())
-					in = new ByteArrayInputStream(i.next());
-				else
+		private int priv_read() {
+			if (in == null) {
+				if (i.hasNext()) {
+					in = new ByteArrayInputStream((byte[]) i.next());
+				} else {
 					return -1;
-			int x = in.read();
-			if(x == -1) {
+				}
+			}
+			int i = in.read();
+			if (i == -1) {
 				in = null;
 				return priv_read();
-			} else
-				return x;
-		}
-
-		@Override
-		public int read(byte[] b) throws IOException {
-			synchronized(ArrayBucket.this) {
-				return priv_read(b, 0, b.length);
+			} else {
+				return i;
 			}
 		}
 
-		@Override
-		public int read(byte[] b, int off, int len) throws IOException {
-			synchronized(ArrayBucket.this) {
-				return priv_read(b, off, len);
-			}
+		public int read(byte[] b) {
+			return priv_read(b, 0, b.length);
 		}
 
-		private int priv_read(byte[] b, int off, int len) throws IOException {
-			if(hasBeenClosed)
-				throw new IOException("Has been closed!");
-			if(in == null)
-				if(i.hasNext())
-					in = new ByteArrayInputStream(i.next());
-				else
+		public int read(byte[] b, int off, int len) {
+			return priv_read(b, off, len);
+		}
+
+		private int priv_read(byte[] b, int off, int len) {
+			if (in == null) {
+				if (i.hasNext()) {
+					in = new ByteArrayInputStream((byte[]) i.next());
+				} else {
 					return -1;
-			int x = in.read(b, off, len);
-			if(x == -1) {
+				}
+			}
+			int i = in.read(b, off, len);
+			if (i == -1) {
 				in = null;
 				return priv_read(b, off, len);
-			} else
-				return x;
-		}
-
-		@Override
-		public int available() throws IOException {
-			synchronized(ArrayBucket.this) {
-				if(hasBeenClosed)
-					throw new IOException("Has been closed!");
-				if(in == null)
-					if(i.hasNext())
-						in = new ByteArrayInputStream(i.next());
-					else
-						return 0;
-				return in.available();
+			} else {
+				return i;
 			}
 		}
 
-		@Override
-		public void close() throws IOException {
-			synchronized(ArrayBucket.this) {
-				if(hasBeenClosed)
-					return;
-				hasBeenClosed = true;
-				Closer.close(in);
+		public int available() {
+			if (in == null) {
+				if (i.hasNext()) {
+					in = new ByteArrayInputStream((byte[]) i.next());
+				} else {
+					return 0;
+				}
 			}
+			return in.available();
 		}
+
 	}
 
 	public boolean isReadOnly() {
@@ -215,18 +167,18 @@ public class ArrayBucket implements Bucket {
 		readOnly = true;
 	}
 
-	public synchronized void free() {
-		readOnly = true;
+	public void free() {
 		data.clear();
-	// Not much else we can do.
+		// Not much else we can do.
 	}
 
-	public synchronized byte[] toByteArray() {
+	public byte[] toByteArray() {
 		long sz = size();
-		int bufSize = (int) sz;
-		byte[] buf = new byte[bufSize];
+		int size = (int)sz;
+		byte[] buf = new byte[size];
 		int index = 0;
-		for(byte[] obuf : data) {
+		for(Iterator i=data.iterator();i.hasNext();) {
+			byte[] obuf = (byte[]) i.next();
 			System.arraycopy(obuf, 0, buf, index, obuf.length);
 			index += obuf.length;
 		}
