@@ -1208,13 +1208,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			try {
 				seed = new SeedClientPeerNode(ref, node, crypto, node.peers, false, true, crypto.packetMangler);
 			} catch (FSParseException e) {
-				Logger.error(this, "Invalid seednode noderef: "+e, e);
+				Logger.error(this, "Invalid seed client noderef: "+e, e);
 				return null;
 			} catch (PeerParseException e) {
-				Logger.error(this, "Invalid seednode noderef: "+e, e);
+				Logger.error(this, "Invalid seed client noderef: "+e, e);
 				return null;
 			} catch (ReferenceSignatureVerificationException e) {
-				Logger.error(this, "Invalid seednode noderef: "+e, e);
+				Logger.error(this, "Invalid seed client noderef: "+e, e);
 				return null;
 			}
 			if(seed.equals(pn)) {
