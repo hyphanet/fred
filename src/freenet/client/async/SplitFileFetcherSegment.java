@@ -1173,40 +1173,40 @@ public class SplitFileFetcherSegment implements FECCallback {
 		Bucket data;
 		SplitFileFetcherSubSegment seg;
 		synchronized(this) {
-		if(finished || startedDecode) {
-			return false;
-		}
-		blockNum = this.getBlockNumber(key, container);
-		if(blockNum < 0) return false;
-		ClientCHK ckey = this.getBlockKey(blockNum, container);
-		int retryCount = getBlockRetryCount(blockNum);
-		seg = this.getSubSegment(retryCount, container, true, null);
-		if(persistent)
-			container.activate(seg, 1);
-		if(seg != null) {
-			seg.removeBlockNum(blockNum, container, false);
-			seg.possiblyRemoveFromParent(container, context);
-		}
-		for(int i=0;i<subSegments.size();i++) {
-			SplitFileFetcherSubSegment checkSeg = (SplitFileFetcherSubSegment) subSegments.get(i);
-			if(checkSeg == seg) continue;
+			if(finished || startedDecode) {
+				return false;
+			}
+			blockNum = this.getBlockNumber(key, container);
+			if(blockNum < 0) return false;
+			ClientCHK ckey = this.getBlockKey(blockNum, container);
+			int retryCount = getBlockRetryCount(blockNum);
+			seg = this.getSubSegment(retryCount, container, true, null);
 			if(persistent)
-				container.activate(checkSeg, 1);
-			if(checkSeg.removeBlockNum(blockNum, container, false))
-				Logger.error(this, "Block number "+blockNum+" was registered to wrong subsegment "+checkSeg+" should be "+seg);
+				container.activate(seg, 1);
+			if(seg != null) {
+				seg.removeBlockNum(blockNum, container, false);
+				seg.possiblyRemoveFromParent(container, context);
+			}
+			for(int i=0;i<subSegments.size();i++) {
+				SplitFileFetcherSubSegment checkSeg = (SplitFileFetcherSubSegment) subSegments.get(i);
+				if(checkSeg == seg) continue;
+				if(persistent)
+					container.activate(checkSeg, 1);
+				if(checkSeg.removeBlockNum(blockNum, container, false))
+					Logger.error(this, "Block number "+blockNum+" was registered to wrong subsegment "+checkSeg+" should be "+seg);
+				if(persistent)
+					container.deactivate(checkSeg, 1);
+			}
 			if(persistent)
-				container.deactivate(checkSeg, 1);
-		}
-		if(persistent)
-			container.deactivate(seg, 1);
-		try {
-			cb = new ClientCHKBlock((CHKBlock)block, ckey);
-		} catch (CHKVerifyException e) {
-			this.onFatalFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e), blockNum, null, container, context);
-			return false;
-		}
-		data = extract(cb, blockNum, container, context);
-		if(data == null) return false;
+				container.deactivate(seg, 1);
+			try {
+				cb = new ClientCHKBlock((CHKBlock)block, ckey);
+			} catch (CHKVerifyException e) {
+				this.onFatalFailure(new FetchException(FetchException.BLOCK_DECODE_ERROR, e), blockNum, null, container, context);
+				return false;
+			}
+			data = extract(cb, blockNum, container, context);
+			if(data == null) return false;
 		}
 		if(!cb.isMetadata()) {
 			this.onSuccess(data, blockNum, cb, container, context, seg);
