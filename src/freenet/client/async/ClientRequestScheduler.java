@@ -674,7 +674,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(container.ext().isActive(old.request))
 					Logger.error(this, "REQUEST ALREADY ACTIVATED: "+old.request+" for "+old+" while checking request queue in maybeAddToStarterQueue", new Exception("debug"));
 				else if(logMINOR)
-					Logger.minor(this, "Not already activated for "+req+" in while checking request queue in filling request queue");
+					Logger.minor(this, "Not already activated for "+old+" in while checking request queue in filling request queue");
 				size += old.sizeNotStarted();
 				if(old.prio > prio || old.prio == prio && old.retryCount > retryCount)
 					betterThanSome = true;
