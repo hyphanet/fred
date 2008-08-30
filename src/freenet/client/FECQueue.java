@@ -192,7 +192,10 @@ public class FECQueue implements OOMHook {
 							databaseJobRunner.queue(new DBJob() {
 
 								public void run(ObjectContainer container, ClientContext context) {
-									container.activate(job, 2);
+									// Don't activate the job itself.
+									// It MUST already be activated, because it is carrying the status blocks.
+									// The status blocks have been set on the FEC thread but *not stored* because
+									// they can't be stored on the FEC thread.
 									container.activate(job.callback, 1);
 									if(Logger.shouldLog(Logger.MINOR, this))
 										Logger.minor(this, "Running callback for "+job);
