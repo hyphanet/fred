@@ -139,7 +139,7 @@ public abstract class LoggerHook extends Logger {
 
 	public String getDetailedThresholds() {
 		DetailedThreshold[] thresh = detailedThresholds;
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for(int i=0;i<thresh.length;i++) {
 			if(i != 0)
 				sb.append(',');

@@ -132,7 +132,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	}
 
 	public void setInterval(String intervalName) throws IntervalParseException {
-		StringBuffer sb = new StringBuffer(intervalName.length());
+		StringBuilder sb = new StringBuilder(intervalName.length());
 		for(int i=0;i<intervalName.length();i++) {
 			char c = intervalName.charAt(i);
 			if(!Character.isDigit(c)) break;
@@ -175,7 +175,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	}
 
 	protected String getHourLogName(Calendar c, boolean compressed) {
-		StringBuffer buf = new StringBuffer(50);
+		StringBuilder buf = new StringBuilder(50);
 		buf.append(baseFilename).append('-');
 		buf.append(Version.buildNumber());
 		buf.append('-');
@@ -194,7 +194,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		return buf.toString();
 	}
 
-	private StringBuffer pad2digits(StringBuffer buf, int x) {
+	private StringBuilder pad2digits(StringBuilder buf, int x) {
 		String s = Integer.toString(x);
 		if (s.length() == 1) {
 			buf.append('0');
@@ -721,7 +721,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 
 		Vector fmtVec = new Vector(), strVec = new Vector();
 
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 
 		boolean comment = false;
 		for (int i = 0; i < f.length; ++i) {
@@ -732,7 +732,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				if (sb.length() > 0) {
 					strVec.addElement(sb.toString());
 					fmtVec.addElement(new Integer(0));
-					sb = new StringBuffer();
+					sb = new StringBuilder();
 				}
 				fmtVec.addElement(new Integer(type));
 			} else if (f[i] == '\\') {
@@ -776,7 +776,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		if (closed)
 			return;
 		
-		StringBuffer sb = new StringBuffer( e == null ? 512 : 1024 );
+		StringBuilder sb = new StringBuilder( e == null ? 512 : 1024 );
 		int sctr = 0;
 
 		for (int i = 0; i < fmt.length; ++i) {
