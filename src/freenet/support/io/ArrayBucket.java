@@ -85,12 +85,13 @@ public class ArrayBucket implements Bucket {
 			super();
 		}
 
-		public void close() throws IOException {
+		@Override
+		public synchronized void close() throws IOException {
 			if(hasBeenClosed) return;
-			hasBeenClosed = true;
 			data.add(super.toByteArray());
 			if(readOnly) throw new IOException("Read only");
 			// FIXME maybe we should throw on write instead? :)
+			hasBeenClosed = true;
 		}
 	}
 
