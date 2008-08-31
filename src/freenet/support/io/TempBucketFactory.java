@@ -74,6 +74,7 @@ public class TempBucketFactory implements BucketFactory {
 		private short osIndex;
 		/** A timestamp used to evaluate the age of the bucket and maybe consider it for a migration */
 		public final long creationTime;
+		private boolean hasBeenFreed = false;
 		
 		public TempBucket(long now, Bucket cur) {
 			if(cur == null)
@@ -101,7 +102,7 @@ public class TempBucketFactory implements BucketFactory {
 		private final void migrateToFileBucket() throws IOException {
 			Bucket toMigrate = null;
 			synchronized(this) {
-				if(!isRAMBucket())
+				if(!isRAMBucket() || hasBeenFreed)
 					// Nothing to migrate! We don't want to switch back to ram, do we?					
 					return;
 				toMigrate = currentBucket;
@@ -331,11 +332,18 @@ public class TempBucketFactory implements BucketFactory {
 		}
 
 		public synchronized void free() {
+			if(hasBeenFreed) return;
+			hasBeenFreed = true;
+			
 			Closer.close(os);
 			closeInputStreams(true);
 			currentBucket.free();
-			if(isRAMBucket())
+			if(isRAMBucket()) {
 				_hasFreed(currentSize);
+				synchronized(ramBucketQueue) {
+					ramBucketQueue.remove(this);
+				}
+			}
 		}
 	}
 	
