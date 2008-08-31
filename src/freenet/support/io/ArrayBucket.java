@@ -79,12 +79,15 @@ public class ArrayBucket implements Bucket {
 	}
 
 	private class ArrayBucketOutputStream extends ByteArrayOutputStream {
+		private boolean hasBeenClosed = false;
 		
 		public ArrayBucketOutputStream() {
 			super();
 		}
 
 		public void close() throws IOException {
+			if(hasBeenClosed) return;
+			hasBeenClosed = true;
 			data.add(super.toByteArray());
 			if(readOnly) throw new IOException("Read only");
 			// FIXME maybe we should throw on write instead? :)
