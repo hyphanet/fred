@@ -104,7 +104,11 @@ public final class PageMaker {
 	}
         	
 	public void addNavigationLink(String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
-		if (pluginMode && (plugin == null)) throw new IllegalStateException("You need to implement FredPluginL10n to do so.");
+		if (pluginMode && (plugin == null)) {
+			// FIXME invent a check on compile time
+			// log only
+			Logger.error(this, "Deprecated way to use Pagemaker from plugin, your plugin need to implement FredPluginL10n to do so", new Error("FIXME"));
+		}
 		navigationLinkTexts.add(name);
 		if(!fullOnly)
 			navigationLinkTextsNonFull.add(name);
