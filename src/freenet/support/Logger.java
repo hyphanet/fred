@@ -350,7 +350,7 @@ public abstract class Logger {
 
 	public abstract boolean instanceShouldLog(int priority, Class c);
 
-	public synchronized static boolean shouldLog(int priority, Class c) {
+	public static boolean shouldLog(int priority, Class c) {
 		return logger.instanceShouldLog(priority, c);
 	}
 

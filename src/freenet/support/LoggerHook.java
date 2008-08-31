@@ -134,11 +134,16 @@ public abstract class LoggerHook extends Logger {
 		}
 		DetailedThreshold[] newThresholds = new DetailedThreshold[stuff.size()];
 		stuff.toArray(newThresholds);
-		detailedThresholds = newThresholds;
+		synchronized(this) {
+			detailedThresholds = newThresholds;
+		}
 	}
 
 	public String getDetailedThresholds() {
-		DetailedThreshold[] thresh = detailedThresholds;
+		DetailedThreshold[] thresh = null;
+		synchronized(this) {
+			thresh = detailedThresholds;
+		}
 		StringBuilder sb = new StringBuilder();
 		for(int i=0;i<thresh.length;i++) {
 			if(i != 0)
@@ -198,10 +203,11 @@ public abstract class LoggerHook extends Logger {
 		int thresh = threshold;
 		if ((c != null) && (detailedThresholds.length != 0)) {
 			String cname = c.getName();
-			for (int i = 0; i < detailedThresholds.length; i++) {
-				DetailedThreshold dt = detailedThresholds[i];
-				if (cname.startsWith(dt.section)) {
-					thresh = dt.dThreshold;
+			synchronized(this) {
+				for(int i = 0; i < detailedThresholds.length; i++) {
+					DetailedThreshold dt = detailedThresholds[i];
+					if(cname.startsWith(dt.section))
+						thresh = dt.dThreshold;
 				}
 			}
 		}
