@@ -883,8 +883,13 @@ public class PeerManager {
 		int count = 0;
 		
 		Long selectionSamplesTimestamp = now - PeerNode.SELECTION_SAMPLING_PERIOD;
-		int numberOfSelectionsSamples = getNumberOfSelectionSamples().tailSet(selectionSamplesTimestamp).size();
-		boolean enableFOAFMitigationHack = (peers.length >= PeerNode.SELECTION_MIN_PEERS) && (numberOfSelectionsSamples > 0);
+		double[] selectionRates = new double[peers.length];
+		double totalSelectionRate = 0.0;
+		for(int i=0;i<peers.length;i++) {
+			selectionRates[i] = peers[i].selectionRate();
+			totalSelectionRate += selectionRates[i];
+		}
+		boolean enableFOAFMitigationHack = (peers.length >= PeerNode.SELECTION_MIN_PEERS) && (totalSelectionRate > 0.0);
 		for(int i = 0; i < peers.length; i++) {
 			PeerNode p = peers[i];
 			if(routedTo.contains(p)) {
@@ -908,8 +913,8 @@ public class PeerManager {
 				continue;
 			}
 			if(enableFOAFMitigationHack) {
-				int selectionSamples = p.getNumberOfSelections().tailSet(selectionSamplesTimestamp).size();
-				int selectionSamplesPercentage = selectionSamples*100/numberOfSelectionsSamples;
+				double selectionRate = selectionRates[i];
+				double selectionSamplesPercentage = selectionRate / totalSelectionRate;
 				if(PeerNode.SELECTION_PERCENTAGE_WARNING < selectionSamplesPercentage) {
 					if(logMINOR)
 						Logger.minor(this, "Skipping over-selectionned peer(" + selectionSamplesPercentage + "%): " + p.getPeer());

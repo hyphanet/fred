@@ -153,12 +153,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** Time added or restarted (reset on startup unlike peerAddedTime) */
 	private long timeAddedOrRestarted;
 	
-	/**
-	 * Track the number of times this PeerNode has been selected by
-	 * the routing algorithm over a given period of time
-	 */
-	private SortedSet<Long> numberOfSelections = new TreeSet<Long>();
-	private final Object numberOfSelectionsSync = new Object();
+	private long countSelectionsSinceConnected = 0;
 	// 5mins; yes it's alchemy!
 	public static final int SELECTION_SAMPLING_PERIOD = 5 * 60 * 1000;
 	// 30%; yes it's alchemy too! and probably *way* too high to serve any purpose
@@ -1897,6 +1892,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			// Don't reset the uptime if we rekey
 			if(!isConnected) {
 				connectedTime = now;
+				countSelectionsSinceConnected = 0;
 				sentInitialMessages = false;
 			} else
 				wasARekey = true;
@@ -3995,20 +3991,21 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return (short)(((int)uptime) & 0xFF);
 	}
 	
-	public SortedSet<Long> getNumberOfSelections() {
-		// FIXME: returning a copy is not an option: find a smarter way of dealing with the synchronization
-		synchronized(numberOfSelectionsSync) {
-			return numberOfSelections;
-		}
-	}
-	
 	public void incrementNumberOfSelections(long time) {
 		// TODO: reimplement with a bit field to spare memory
-		synchronized(numberOfSelectionsSync) {
-			if(numberOfSelections.size() > SELECTION_MAX_SAMPLES)
-				numberOfSelections = numberOfSelections.tailSet(time - SELECTION_SAMPLING_PERIOD);
-			numberOfSelections.add(time);
+		synchronized(this) {
+			countSelectionsSinceConnected++;
 		}
+	}
+
+	/**
+	 * @return The rate at which this peer has been selected since it connected.
+	 */
+	public synchronized double selectionRate() {
+		long uptime = System.currentTimeMillis() - this.connectedTime;
+		// Avoid bias due to short uptime.
+		if(uptime < 10*1000) return 0.0;
+		return countSelectionsSinceConnected / (double) uptime;
 	}
 
 	private long offeredMainJarVersion;
