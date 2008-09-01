@@ -209,8 +209,7 @@ public abstract class LoggerHook extends Logger {
 		}
 		if ((c != null) && (threshholds.length > 0)) {
 			String cname = c.getName();
-				for(int i = 0; i < threshholds.length; i++) {
-					DetailedThreshold dt = threshholds[i];
+				for(DetailedThreshold dt : threshholds) {
 					if(cname.startsWith(dt.section))
 						thresh = dt.dThreshold;
 				}
