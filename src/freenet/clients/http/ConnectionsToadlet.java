@@ -697,7 +697,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		double selectionRate = peerNodeStatus.getSelectionRate();
 		int peerSelectionPercentage = 0;
 		if(totalSelectionRate > 0)
-			peerSelectionPercentage = (int) (selectionRate * 100 / selectionRate);
+			peerSelectionPercentage = (int) (selectionRate * 100 / totalSelectionRate);
 		HTMLNode peerRow = peerTable.addChild("tr", "class", "darknet_connections_"+(peerSelectionPercentage > PeerNode.SELECTION_PERCENTAGE_WARNING ? "warning" : "normal"));
 		
 		if(enablePeerActions) {
