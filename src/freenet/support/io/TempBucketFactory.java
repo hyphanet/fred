@@ -110,9 +110,8 @@ public class TempBucketFactory implements BucketFactory {
 				Bucket tempFB = _makeFileBucket();
 				if(os != null) {
 					os.flush();
-					os.close();
-				// Update the global link so that all streams will be reset
-				// DO NOT INCREMENT THE osIndex HERE!
+					Closer.close(os);
+					// DO NOT INCREMENT THE osIndex HERE!
 					os = tempFB.getOutputStream();
 					if(currentSize > 0)
 						BucketTools.copyTo(toMigrate, os, currentSize);
