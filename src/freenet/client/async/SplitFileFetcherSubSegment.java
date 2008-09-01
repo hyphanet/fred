@@ -727,6 +727,10 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 		if(persistent) {
 			container.deactivate(segment, 1);
+			if(container.ext().isActive(segment))
+				Logger.error(this, "SEGMENT STILL ACTIVE: "+segment);
+			else
+				if(logMINOR) Logger.minor(this, "Deactivated segment "+segment);
 		}
 	}
 
@@ -857,9 +861,5 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 
 	public int objectHash() {
 		return super.hashCode();
-	}
-	
-	public void objectOnActivate(ObjectContainer container) {
-		Logger.minor(this, "ACTIVATING: "+this, new Exception("debug"));
 	}
 }
