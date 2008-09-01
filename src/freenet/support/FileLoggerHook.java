@@ -731,7 +731,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			if (!comment && (type != 0)) {
 				if (sb.length() > 0) {
 					strVec.addElement(sb.toString());
-					fmtVec.addElement(new Integer(0));
+					fmtVec.addElement((int) 0);
 					sb = new StringBuilder();
 				}
 				fmtVec.addElement(new Integer(type));

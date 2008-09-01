@@ -58,10 +58,9 @@ public class FailureCodeTracker {
 	final HashMap map = new HashMap();
 
 	public synchronized void inc(int k) {
-		Integer key = new Integer(k);
-		Item i = (Item) map.get(key);
+		Item i = (Item) map.get(k);
 		if(i == null)
-			map.put(key, i = new Item());
+			map.put(k, i = new Item());
 		i.x++;
 		total++;
 	}

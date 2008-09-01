@@ -92,16 +92,16 @@ public class ClientRequestScheduler implements RequestScheduler {
 	final boolean isInsertScheduler;
 	final boolean isSSKScheduler;
 	final RandomSource random;
-	private final HashMap allRequestsByClientRequest;
+	private final HashMap<ClientRequester, HashSet<SendableRequest>> allRequestsByClientRequest;
 	private final RequestStarter starter;
 	private final Node node;
 	public final String name;
-	private final LinkedList /* <WeakReference <RandomGrabArray> > */ recentSuccesses = new LinkedList();
+	private final LinkedList<WeakReference<RandomGrabArray>> recentSuccesses = new LinkedList<WeakReference<RandomGrabArray>>();
 	private final RequestCooldownQueue cooldownQueue;
 	/** All pending gets by key. Used to automatically satisfy pending requests when either the key is fetched by
 	 * an overlapping request, or it is fetched by a request from another node. Operations on this are synchronized on
 	 * itself. */
-	private final HashMap /* <Key, SendableGet[]> */ pendingKeys;
+	private final HashMap<Key, Object> pendingKeys;
 	
 	public static final String PRIORITY_NONE = "NONE";
 	public static final String PRIORITY_SOFT = "SOFT";
@@ -167,11 +167,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
-		allRequestsByClientRequest = new HashMap();
+		allRequestsByClientRequest = new HashMap<ClientRequester, HashSet<SendableRequest>>();
 		if(forInserts)
 			pendingKeys = null;
 		else
-			pendingKeys = new HashMap();
+			pendingKeys = new HashMap<Key, Object>();
 		
 		this.name = name;
 		sc.register(name+"_priority_policy", PRIORITY_HARD, name.hashCode(), true, false,
@@ -303,9 +303,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 	private synchronized void innerRegister(SendableRequest req) {
 		if(logMINOR) Logger.minor(this, "Still registering "+req+" at prio "+req.getPriorityClass()+" retry "+req.getRetryCount()+" for "+req.getClientRequest());
 		addToGrabArray(req.getPriorityClass(), req.getRetryCount(), req.getClient(), req.getClientRequest(), req);
-		HashSet v = (HashSet) allRequestsByClientRequest.get(req.getClientRequest());
+		HashSet<SendableRequest> v = allRequestsByClientRequest.get(req.getClientRequest());
 		if(v == null) {
-			v = new HashSet();
+			v = new HashSet<SendableRequest>();
 			allRequestsByClientRequest.put(req.getClientRequest(), v);
 		}
 		v.add(req);
@@ -455,8 +455,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 					synchronized(this) {
 						if(!recentSuccesses.isEmpty()) {
 							if(random.nextBoolean()) {
-								WeakReference ref = (WeakReference) (recentSuccesses.removeLast());
-								altRGA = (RandomGrabArray) ref.get();
+								WeakReference<RandomGrabArray> ref = recentSuccesses.removeLast();
+								altRGA = ref.get();
 							}
 						}
 					}
@@ -472,7 +472,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						} else {
 							if(altReq != null) {
 								synchronized(this) {
-									recentSuccesses.addLast(new WeakReference(altRGA));
+									recentSuccesses.addLast(new WeakReference<RandomGrabArray>(altRGA));
 								}
 								if(logMINOR)
 									Logger.minor(this, "Chosen req "+req+" is better, reregistering recently succeeded "+altReq);
@@ -486,7 +486,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					ClientRequester cr = req.getClientRequest();
 					if(req.canRemove()) {
 						synchronized(this) {
-							HashSet v = (HashSet) allRequestsByClientRequest.get(cr);
+							HashSet<SendableRequest> v = allRequestsByClientRequest.get(cr);
 							if(v == null) {
 								Logger.error(this, "No HashSet registered for "+cr);
 							} else {
@@ -594,9 +594,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 	public void reregisterAll(ClientRequester request) {
 		SendableRequest[] reqs;
 		synchronized(this) {
-			HashSet h = (HashSet) allRequestsByClientRequest.get(request);
+			HashSet<SendableRequest> h = allRequestsByClientRequest.get(request);
 			if(h == null) return;
-			reqs = (SendableRequest[]) h.toArray(new SendableRequest[h.size()]);
+			reqs = h.toArray(new SendableRequest[h.size()]);
 		}
 		
 		for(int i=0;i<reqs.length;i++) {
@@ -617,7 +617,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		synchronized(this) {
 			if(logMINOR)
 				Logger.minor(this, "Recording successful fetch from "+parentGrabArray);
-			recentSuccesses.addFirst(new WeakReference(parentGrabArray));
+			recentSuccesses.addFirst(new WeakReference<RandomGrabArray>(parentGrabArray));
 			while(recentSuccesses.size() > 8)
 				recentSuccesses.removeLast();
 		}

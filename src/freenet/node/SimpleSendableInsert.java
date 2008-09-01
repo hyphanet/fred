@@ -120,16 +120,17 @@ public class SimpleSendableInsert extends SendableInsert {
 
 	public synchronized Object[] allKeys() {
 		if(finished) return new Object[] {};
-		return new Object[] { new Integer(0) };
+		return new Object[] { 0 };
 	}
 
 	public synchronized Object[] sendableKeys() {
 		if(finished) return new Object[] {};
-		return new Object[] { new Integer(0) };
+		return new Object[] { 0 };
 	}
 
 	public synchronized Object chooseKey(KeysFetchingLocally keys) {
 		if(finished) return null;
-		else return new Integer(0);
+		else
+			return 0;
 	}
 }

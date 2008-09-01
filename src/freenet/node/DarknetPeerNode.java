@@ -511,7 +511,7 @@ public class DarknetPeerNode extends PeerNode {
 						node.usm.send(this, n2nm, null);
 						Logger.normal(this, "Sent queued ("+fileNumber+") N2NM to '"+getName()+"': "+n2nm);
 						sendSuccess = true;
-						queuedToSendN2NMExtraPeerDataFileNumbers.remove(new Integer(fileNumber));
+						queuedToSendN2NMExtraPeerDataFileNumbers.remove(fileNumber);
 					}
 					deleteExtraPeerDataFile(fileNumber);
 				} catch (NotConnectedException e) {
@@ -558,7 +558,7 @@ public class DarknetPeerNode extends PeerNode {
 				}
 				nextFileNumber = localFileNumbers[i].intValue() + 1;
 			}
-			extraPeerDataFileNumbers.add(new Integer(nextFileNumber));
+			extraPeerDataFileNumbers.add(nextFileNumber);
 		}
 		FileOutputStream fos;
 		File extraPeerDataFile = new File(extraPeerDataPeerDir.getPath()+File.separator+nextFileNumber);
@@ -613,7 +613,7 @@ public class DarknetPeerNode extends PeerNode {
 	 		return;
 	 	}
 		synchronized(extraPeerDataFileNumbers) {
-			extraPeerDataFileNumbers.remove(new Integer(fileNumber));
+			extraPeerDataFileNumbers.remove(fileNumber);
 		}
 		if(!extraPeerDataFile.delete()) {
 			if(extraPeerDataFile.exists()) {
@@ -724,7 +724,7 @@ public class DarknetPeerNode extends PeerNode {
 	public void queueN2NM(SimpleFieldSet fs) {
 		int fileNumber = writeNewExtraPeerDataFile( fs, Node.EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NM);
 		synchronized(queuedToSendN2NMExtraPeerDataFileNumbers) {
-			queuedToSendN2NMExtraPeerDataFileNumbers.add(new Integer(fileNumber));
+			queuedToSendN2NMExtraPeerDataFileNumbers.add(fileNumber);
 		}
 	}
 
@@ -767,9 +767,9 @@ public class DarknetPeerNode extends PeerNode {
 	// FIXME this should be persistent across node restarts
 
 	/** Files I have offered to this peer */
-	private final HashMap myFileOffersByUID = new HashMap();
+	private final HashMap<Long, FileOffer> myFileOffersByUID = new HashMap<Long, FileOffer>();
 	/** Files this peer has offered to me */
-	private final HashMap hisFileOffersByUID = new HashMap();
+	private final HashMap<Long, FileOffer> hisFileOffersByUID = new HashMap<Long, FileOffer>();
 	
 	private void storeOffers() {
 		// FIXME do something
@@ -870,10 +870,9 @@ public class DarknetPeerNode extends PeerNode {
 		}
 
 		protected void remove() {
-			Long l = new Long(uid);
 			synchronized(DarknetPeerNode.this) {
-				myFileOffersByUID.remove(l);
-				hisFileOffersByUID.remove(l);
+				myFileOffersByUID.remove(uid);
+				hisFileOffersByUID.remove(uid);
 			}
 			data.close();
 		}
@@ -1342,7 +1341,7 @@ public class DarknetPeerNode extends PeerNode {
 		RandomAccessThing data = new RandomAccessFileWrapper(filename, "r");
 		FileOffer fo = new FileOffer(uid, data, fnam, mime, message);
 		synchronized(this) {
-			myFileOffersByUID.put(new Long(uid), fo);
+			myFileOffersByUID.put(uid, fo);
 		}
 		storeOffers();
 		long now = System.currentTimeMillis();
@@ -1406,9 +1405,10 @@ public class DarknetPeerNode extends PeerNode {
 			Logger.error(this, "Could not parse offer: "+e+" on "+this+" :\n"+fs, e);
 			return;
 		}
-		Long u = new Long(offer.uid);
-		synchronized(this) {
-			if(hisFileOffersByUID.containsKey(u)) return; // Ignore re-advertisement
+		Long u = offer.uid;
+		synchronized (this) {
+			if (hisFileOffersByUID.containsKey(u))
+				return; // Ignore re-advertisement
 			hisFileOffersByUID.put(u, offer);
 		}
 		
@@ -1425,7 +1425,7 @@ public class DarknetPeerNode extends PeerNode {
 			Logger.minor(this, "Accepting transfer "+id+" on "+this);
 		FileOffer fo;
 		synchronized(this) {
-			fo = (FileOffer) hisFileOffersByUID.get(new Long(id));
+			fo = hisFileOffersByUID.get(id);
 		}
 		fo.accept();
 	}
@@ -1433,7 +1433,7 @@ public class DarknetPeerNode extends PeerNode {
 	public void rejectTransfer(long id) {
 		FileOffer fo;
 		synchronized(this) {
-			fo = (FileOffer) hisFileOffersByUID.remove(new Long(id));
+			fo = hisFileOffersByUID.remove(id);
 		}
 		fo.reject();
 	}
@@ -1451,10 +1451,9 @@ public class DarknetPeerNode extends PeerNode {
 		}
 		if(logMINOR)
 			Logger.minor(this, "Offer accepted for "+uid);
-		Long u = new Long(uid);
 		FileOffer fo;
 		synchronized(this) {
-			fo = (FileOffer) (myFileOffersByUID.get(u));
+			fo = (myFileOffersByUID.get(uid));
 		}
 		if(fo == null) {
 			Logger.error(this, "No such offer: "+uid);
@@ -1486,7 +1485,7 @@ public class DarknetPeerNode extends PeerNode {
 		
 		FileOffer fo;
 		synchronized(this) {
-			fo = (FileOffer) myFileOffersByUID.remove(new Long(uid));
+			fo = myFileOffersByUID.remove(uid);
 		}
 		fo.onRejected();
 	}
