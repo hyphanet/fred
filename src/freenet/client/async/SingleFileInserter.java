@@ -673,8 +673,6 @@ class SingleFileInserter implements ClientPutState {
 		}
 
 		public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
-			if(persistent) // FIXME debug-point
-				if(logMINOR) Logger.minor(this, "onBlockSetFinished() for "+state+" on "+this);
 			synchronized(this) {
 				if(state == sfi)
 					splitInsertSetBlocks = true;
@@ -685,6 +683,8 @@ class SingleFileInserter implements ClientPutState {
 				if(!(splitInsertSetBlocks && metaInsertSetBlocks)) 
 					return;
 			}
+			if(persistent)
+				container.activate(cb, 1);
 			cb.onBlockSetFinished(this, container, context);
 		}
 
