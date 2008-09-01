@@ -418,11 +418,14 @@ public abstract class ConnectionsToadlet extends Toadlet {
 						header.addChild("span", new String[] { "title", "style" }, new String[] { L10n.getString(col.getExplanationKey()), "border-bottom: 1px dotted; cursor: help;" }, L10n.getString(col.getTitleKey()));
 					}
 				}
-				
-				int numberOfSelectionSamples = peers.getNumberOfSelectionSamples().tailSet(now - PeerNode.SELECTION_SAMPLING_PERIOD).size();
+
+				double totalSelectionRate = 0.0;
+				for(PeerNodeStatus status : peerNodeStatuses) {
+					totalSelectionRate += status.getSelectionRate();
+				}
 				for (int peerIndex = 0, peerCount = peerNodeStatuses.length; peerIndex < peerCount; peerIndex++) {					
 					PeerNodeStatus peerNodeStatus = peerNodeStatuses[peerIndex];
-					drawRow(peerTable, peerNodeStatus, mode >= PageMaker.MODE_ADVANCED, fProxyJavascriptEnabled, now, path, enablePeerActions, endCols, drawMessageTypes, numberOfSelectionSamples);
+					drawRow(peerTable, peerNodeStatus, mode >= PageMaker.MODE_ADVANCED, fProxyJavascriptEnabled, now, path, enablePeerActions, endCols, drawMessageTypes, totalSelectionRate);
 					
 				}
 
