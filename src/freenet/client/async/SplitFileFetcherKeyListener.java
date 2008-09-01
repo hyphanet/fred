@@ -76,7 +76,6 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 	 * @throws IOException 
 	 */
 	public SplitFileFetcherKeyListener(SplitFileFetcher parent, int keyCount, File bloomFile, File altBloomFile, int mainBloomSizeBytes, int mainBloomK, boolean dontCache, byte[] localSalt, int segments, int segmentFilterSizeBytes, int segmentBloomK, boolean persistent, boolean newFilter) throws IOException {
-		System.err.println("Persistent = "+persistent);
 		fetcher = parent;
 		this.persistent = persistent;
 		this.keyCount = keyCount;
