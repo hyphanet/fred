@@ -1,10 +1,10 @@
 package freenet.support;
 
+import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
 import freenet.l10n.L10n;
-import java.util.Iterator;
 
 public abstract class LoggerHook extends Logger {
 
@@ -46,7 +46,7 @@ public abstract class LoggerHook extends Logger {
 	 */
 	public abstract void log(
 			Object o,
-			Class source,
+			Class<?> source,
 			String message,
 			Throwable e,
 			int priority);
@@ -86,13 +86,13 @@ public abstract class LoggerHook extends Logger {
 	 * @param priority The priority of the mesage, one of Logger.ERROR,
 	 *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUG.
 	 */
-	public void log(Class c, String message, int priority) {
+	public void log(Class<?> c, String message, int priority) {
 		if (!instanceShouldLog(priority,c)) return;
 		log(null, c, message, null, priority);
 	}
 
 
-	public void log(Class c, String message, Throwable e, int priority) {
+	public void log(Class<?> c, String message, Throwable e, int priority) {
 		if (!instanceShouldLog(priority, c))
 			return;
 		log(null, c, message, e, priority);
@@ -196,7 +196,7 @@ public abstract class LoggerHook extends Logger {
 		}
 	}
 
-	public boolean instanceShouldLog(int priority, Class c) {
+	public boolean instanceShouldLog(int priority, Class<?> c) {
 		int thresh = threshold;
 		if ((c != null) && (detailedThresholds.size() > 0)) {
 			String cname = c.getName();

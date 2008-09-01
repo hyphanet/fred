@@ -242,7 +242,7 @@ public abstract class Logger {
 		logger.log(o, s, t, DEBUG);
 	}
 
-	public synchronized static void error(Class c, String s) {
+	public synchronized static void error(Class<?> c, String s) {
 		logger.log(c, s, ERROR);
 	}
 
@@ -254,7 +254,7 @@ public abstract class Logger {
 		logger.log(o, s, e, ERROR);
 	}
 
-	public synchronized static void minor(Class c, String s) {
+	public synchronized static void minor(Class<?> c, String s) {
 		logger.log(c, s, MINOR);
 	}
 
@@ -266,7 +266,7 @@ public abstract class Logger {
 		logger.log(o, s, t, MINOR);
 	}
 
-	public synchronized static void minor(Class class1, String string, Throwable t) {
+	public synchronized static void minor(Class<?> class1, String string, Throwable t) {
 		logger.log(class1, string, t, MINOR);
 	}
 
@@ -278,7 +278,7 @@ public abstract class Logger {
 		logger.log(o, s, t, NORMAL);
 	}
 
-	public synchronized static void normal(Class c, String s) {
+	public synchronized static void normal(Class<?> c, String s) {
 		logger.log(c, s, NORMAL);
 	}
 
@@ -303,7 +303,7 @@ public abstract class Logger {
 	 */
 	public abstract void log(
 			Object o,
-			Class source,
+			Class<?> source,
 			String message,
 			Throwable e,
 			int priority);
@@ -335,7 +335,7 @@ public abstract class Logger {
 	 * @param priority The priority of the mesage, one of Logger.ERROR,
 	 *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUG.
 	 */
-	public abstract void log(Class c, String message, int priority);
+	public abstract void log(Class<?> c, String message, int priority);
 
 	/**
 	 * Log a message from static code.
@@ -345,12 +345,12 @@ public abstract class Logger {
 	 * @param priority The priority of the mesage, one of Logger.ERROR,
 	 *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUG.
 	 */
-	public abstract void log(Class c, String message, Throwable e,
+	public abstract void log(Class<?> c, String message, Throwable e,
 			int priority);
 
-	public abstract boolean instanceShouldLog(int priority, Class c);
+	public abstract boolean instanceShouldLog(int priority, Class<?> c);
 
-	public static boolean shouldLog(int priority, Class c) {
+	public static boolean shouldLog(int priority, Class<?> c) {
 		return logger.instanceShouldLog(priority, c);
 	}
 
