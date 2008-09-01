@@ -234,7 +234,6 @@ public final class FProxyToadlet extends Toadlet {
 			L10n.addL10nSubstitution(option, "FProxyToadlet.openForceDisk", new String[] { "link", "/link" }, new String[] { "<a href=\""+basePath+key.toString()+"?forcedownload"+extras+"\">", "</a>" });
 			if(!(mimeType.equals("application/octet-stream") || mimeType.equals("application/x-msdownload"))) {
 				option = optionList.addChild("li");
-				
 				L10n.addL10nSubstitution(option, "FProxyToadlet.openForce", new String[] { "link", "/link", "mime" }, new String[] { "<a href=\""+basePath + key.toString() + "?force=" + getForceValue(key, now)+extras+"\">", "</a>", HTMLEncoder.encode(mimeType)});
 			}
 			if(referrer != null) {
@@ -516,6 +515,12 @@ public final class FProxyToadlet extends Toadlet {
 				infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				
 				HTMLNode optionList = infoboxContent.addChild("ul");
+				
+				if((e.mode == FetchException.NOT_IN_ARCHIVE) && (core.node.pluginManager.isPluginLoaded("plugins.KeyExplorer.KeyExplorer"))) {
+					option = optionList.addChild("li");
+					L10n.addL10nSubstitution(option, "FProxyToadlet.openWithKeyExplorer", new String[] { "link", "/link" }, new String[] { "<a href=\"/plugins/plugins.KeyExplorer.KeyExplorer/?key=" + key.toString() + "\">", "</a>" });
+				}
+				
 				if(!e.isFatal() && ctx.isAllowedFullAccess()) {
 					option = optionList.addChild("li");
 					HTMLNode optionForm = ctx.addFormChild(option, "/queue/", "dnfQueueForm");
