@@ -931,7 +931,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		});
 		publishOurPeersLocation = nodeConfig.getBoolean("publishOurPeersLocation");
 		
-		nodeConfig.register("routeAccordingToOurPeersLocation", true, sortOrder++, true, false, "Node.routeAccordingToOurPeersLocation", "Node.routeAccordingToOurPeersLocationLong", new BooleanCallback() {
+		nodeConfig.register("routeAccordingToOurPeersLocation", Version.lastGoodBuild() >= 1160, sortOrder++, true, false, "Node.routeAccordingToOurPeersLocation", "Node.routeAccordingToOurPeersLocationLong", new BooleanCallback() {
 
 			public Boolean get() {
 				return routeAccordingToOurPeersLocation;
