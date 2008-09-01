@@ -882,9 +882,9 @@ public class PeerManager {
 		long now = System.currentTimeMillis();
 		int count = 0;
 		
-		boolean enableFOAFMitigationHack = peers.length >= PeerNode.SELECTION_MIN_PEERS;
 		Long selectionSamplesTimestamp = now - PeerNode.SELECTION_SAMPLING_PERIOD;
 		int numberOfSelectionsSamples = getNumberOfSelectionSamples().tailSet(selectionSamplesTimestamp).size();
+		boolean enableFOAFMitigationHack = (peers.length >= PeerNode.SELECTION_MIN_PEERS) && (numberOfSelectionsSamples > 0);
 		for(int i = 0; i < peers.length; i++) {
 			PeerNode p = peers[i];
 			if(routedTo.contains(p)) {
