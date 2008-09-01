@@ -245,9 +245,9 @@ public class FCPConnectionHandler {
 						server.core.clientContext.jobRunner.queue(new DBJob() {
 
 							public void run(ObjectContainer container, ClientContext context) {
-								container.set(getter);
 								try {
 									getter.register(container, false, false);
+									container.set(getter);
 								} catch (IdentifierCollisionException e) {
 									Logger.normal(this, "Identifier collision on "+this);
 									FCPMessage msg = new IdentifierCollisionMessage(id, global);
@@ -313,9 +313,9 @@ public class FCPConnectionHandler {
 					server.core.clientContext.jobRunner.queue(new DBJob() {
 
 						public void run(ObjectContainer container, ClientContext context) {
-							container.set(putter);
 							try {
 								putter.register(container, false, false);
+								container.set(putter);
 							} catch (IdentifierCollisionException e) {
 								Logger.normal(this, "Identifier collision on "+this);
 								FCPMessage msg = new IdentifierCollisionMessage(id, global);
@@ -379,9 +379,9 @@ public class FCPConnectionHandler {
 				server.core.clientContext.jobRunner.queue(new DBJob() {
 
 					public void run(ObjectContainer container, ClientContext context) {
-						container.set(putter);
 						try {
 							putter.register(container, false, false);
+							container.set(putter);
 						} catch (IdentifierCollisionException e) {
 							Logger.normal(this, "Identifier collision on "+this);
 							FCPMessage msg = new IdentifierCollisionMessage(id, global);
