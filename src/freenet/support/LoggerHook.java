@@ -1,6 +1,5 @@
 package freenet.support;
 
-import java.util.Iterator;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
@@ -27,7 +26,7 @@ public abstract class LoggerHook extends Logger {
 		this.threshold = priorityOf(thresh);
 	}
 
-	public Vector<DetailedThreshold> detailedThresholds = new Vector<DetailedThreshold>();
+	public DetailedThreshold[] detailedThresholds = new DetailedThreshold[0];
 
 	/**
 	 * Log a message
@@ -118,6 +117,7 @@ public abstract class LoggerHook extends Logger {
 		if ((details == null) || (details.length() == 0))
 			return;
 		StringTokenizer st = new StringTokenizer(details, ",", false);
+		Vector stuff = new Vector();
 		while (st.hasMoreTokens()) {
 			String token = st.nextToken();
 			if (token.length() == 0)
@@ -130,24 +130,27 @@ public abstract class LoggerHook extends Logger {
 			String section = token.substring(0, x);
 			String value = token.substring(x + 1, token.length());
 			int thresh = LoggerHook.priorityOf(value);
-			detailedThresholds.add(new DetailedThreshold(section, thresh));
+			stuff.add(new DetailedThreshold(section, thresh));
+		}
+		DetailedThreshold[] newThresholds = new DetailedThreshold[stuff.size()];
+		stuff.toArray(newThresholds);
+		synchronized(this) {
+			detailedThresholds = newThresholds;
 		}
 	}
 
 	public String getDetailedThresholds() {
+		DetailedThreshold[] thresh = null;
+		synchronized(this) {
+			thresh = detailedThresholds;
+		}
 		StringBuilder sb = new StringBuilder();
-		Iterator<DetailedThreshold> it = detailedThresholds.iterator();
-		
-		boolean first = true;
-		while(it.hasNext()) {
-			DetailedThreshold current = it.next();
-			if(first)
-				first = false;
-			else
+		for(int i=0;i<thresh.length;i++) {
+			if(i != 0)
 				sb.append(',');
-			sb.append(current.section);
+			sb.append(thresh[i].section);
 			sb.append(':');
-			sb.append(LoggerHook.priorityOf(current.dThreshold));
+			sb.append(LoggerHook.priorityOf(thresh[i].dThreshold));
 		}
 		return sb.toString();
 	}
@@ -198,12 +201,11 @@ public abstract class LoggerHook extends Logger {
 
 	public boolean instanceShouldLog(int priority, Class<?> c) {
 		int thresh = threshold;
-		if ((c != null) && (detailedThresholds.size() > 0)) {
+		if ((c != null) && (detailedThresholds.length > 0)) {
 			String cname = c.getName();
 			synchronized(this) {
-				Iterator<DetailedThreshold> it = detailedThresholds.iterator();
-				while(it.hasNext()) {
-					DetailedThreshold dt = it.next();
+				for(int i = 0; i < detailedThresholds.length; i++) {
+					DetailedThreshold dt = detailedThresholds[i];
 					if(cname.startsWith(dt.section))
 						thresh = dt.dThreshold;
 				}
