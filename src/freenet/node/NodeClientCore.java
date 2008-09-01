@@ -21,7 +21,6 @@ import freenet.clients.http.filter.FoundURICallback;
 import freenet.clients.http.filter.GenericReadFilterCallback;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
-import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.io.xfer.AbortedException;
@@ -322,23 +321,8 @@ public class NodeClientCore implements Persistable {
 				}
 			});
 		setUploadAllowedDirs(nodeConfig.getStringArr("uploadAllowedDirs"));
-
-		nodeConfig.register("maxArchiveSize", "2MiB", sortOrder++, true, false, "NodeClientCore.maxArchiveSize", "NodeClientCore.maxArchiveSizeLong", new LongCallback() {
-
-			@Override
-			public Long get() {
-				return archiveManager.getMaxArchiveSize();
-			}
-
-			@Override
-			public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
-				if (get().equals(val))
-					        return;
-				archiveManager.setMaxArchiveSize(val);
-			}
-		});
 		
-		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, nodeConfig.getLong("maxArchiveSize"), MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, tempBucketFactory);
+		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, tempBucketFactory);
 		Logger.normal(this, "Initializing USK Manager");
 		System.out.println("Initializing USK Manager");
 		uskManager = new USKManager(this);
