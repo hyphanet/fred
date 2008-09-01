@@ -1,5 +1,6 @@
 package freenet.support;
 
+import java.util.ArrayList;
 import java.util.StringTokenizer;
 import java.util.Vector;
 
@@ -117,7 +118,7 @@ public abstract class LoggerHook extends Logger {
 		if ((details == null) || (details.length() == 0))
 			return;
 		StringTokenizer st = new StringTokenizer(details, ",", false);
-		Vector stuff = new Vector();
+		ArrayList<DetailedThreshold> stuff = new ArrayList<DetailedThreshold>();
 		while (st.hasMoreTokens()) {
 			String token = st.nextToken();
 			if (token.length() == 0)
