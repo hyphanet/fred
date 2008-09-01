@@ -93,6 +93,7 @@ public class TempBucketFactory implements BucketFactory {
 					else
 						is._maybeResetInputStream();
 				} catch(IOException e) {
+					Closer.close(is);
 					tbis.remove(is);
 				}
 			}
@@ -110,12 +111,12 @@ public class TempBucketFactory implements BucketFactory {
 				if(os != null) {
 					os.flush();
 					os.close();
-				}
 				// Update the global link so that all streams will be reset
 				// DO NOT INCREMENT THE osIndex HERE!
-				os = tempFB.getOutputStream();
-				if(currentSize > 0)
-					BucketTools.copyTo(toMigrate, os, currentSize);
+					os = tempFB.getOutputStream();
+					if(currentSize > 0)
+						BucketTools.copyTo(toMigrate, os, currentSize);
+				}
 				if(toMigrate.isReadOnly())
 					tempFB.setReadOnly();
 				
@@ -230,8 +231,6 @@ public class TempBucketFactory implements BucketFactory {
 		private class TempBucketInputStream extends InputStream {
 			/** The current InputStream we use from the underlying bucket */
 			private InputStream currentIS;
-			/** Keep a link to the current OutputStream to know when to reset the stream */
-			private OutputStream currentOS;
 			/** Keep a counter to know where we are on the stream (useful when we have to reset and skip) */
 			private long index = 0;
 			/** Will change if a new OutputStream is openned: used to detect deprecation */
@@ -240,22 +239,11 @@ public class TempBucketFactory implements BucketFactory {
 			TempBucketInputStream(short idx) throws IOException {
 				this.idx = idx;
 				this.currentIS = currentBucket.getInputStream();
-				this.currentOS = os;
 			}
 			
 			public void _maybeResetInputStream() throws IOException {
 				if(idx != osIndex)
-					throw new IOException("Should use the new InputStream!");
-				
-				if(currentOS != os) {
-					Closer.close(currentIS);
-					currentIS = currentBucket.getInputStream();
-					long toSkip = index;
-					while(toSkip > 0) {
-						toSkip -= currentIS.skip(toSkip);
-					}
-					currentOS = os;
-				}
+					close();
 			}
 			
 			@Override
