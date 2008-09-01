@@ -201,15 +201,15 @@ public abstract class LoggerHook extends Logger {
 	}
 
 	public boolean instanceShouldLog(int priority, Class<?> c) {
-		DetailedThreshold[] threshholds;
+		DetailedThreshold[] thresholds;
 		int thresh;
 		synchronized(this) {
-			threshholds = detailedThresholds;
+			thresholds = detailedThresholds;
 			thresh = threshold;
 		}
-		if ((c != null) && (threshholds.length > 0)) {
+		if ((c != null) && (thresholds.length > 0)) {
 			String cname = c.getName();
-				for(DetailedThreshold dt : threshholds) {
+				for(DetailedThreshold dt : thresholds) {
 					if(cname.startsWith(dt.section))
 						thresh = dt.dThreshold;
 				}
