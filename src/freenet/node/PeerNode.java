@@ -163,6 +163,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public static final int SELECTION_SAMPLING_PERIOD = 5 * 60 * 1000;
 	// 30%; yes it's alchemy too! and probably *way* too high to serve any purpose
 	public static final int SELECTION_PERCENTAGE_WARNING = 30;
+	// Minimum number of routable peers to have for the selection code to have any effect
+	public static final int SELECTION_MIN_PEERS = 5;
 	// Should be good enough provided we don't get selected more than 10 times per/sec
 	// Lower the following value if you want to spare memory... or better switch from a TreeSet to a bit field.
 	public static final int SELECTION_MAX_SAMPLES = 10 * SELECTION_SAMPLING_PERIOD / 1000; 
