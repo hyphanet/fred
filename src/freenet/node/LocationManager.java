@@ -49,11 +49,13 @@ public class LocationManager implements ByteCounter {
             this.item = item;
         }
 
+		@Override
         public void disconnected() {
             super.disconnected();
             removeRecentlyForwardedItem(item);
         }
         
+		@Override
         public void acknowledged() {
             item.successfullyForwarded = true;
         }
@@ -157,7 +159,7 @@ public class LocationManager implements ByteCounter {
                         int sleepTime = getSendSwapInterval();
                         sleepTime *= nextRandom;
                         sleepTime = Math.min(sleepTime, Integer.MAX_VALUE);
-                        long endTime = startTime + (int)sleepTime;
+                        long endTime = startTime + sleepTime;
                         long now = System.currentTimeMillis();
                         long diff = endTime - now;
                         try {
@@ -735,7 +737,7 @@ public class LocationManager implements ByteCounter {
     	if(Math.abs(hisLoc - myLoc) <= Double.MIN_VALUE * 2)
     		return false; // Probably swapping with self
 
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         
         sb.append("my: ").append(myLoc).append(", his: ").append(hisLoc).append(", myFriends: ");
         sb.append(friendLocs.length).append(", hisFriends: ").append(hisFriendLocs.length).append(" mine:\n");
