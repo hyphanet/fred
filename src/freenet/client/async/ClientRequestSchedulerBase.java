@@ -88,6 +88,8 @@ abstract class ClientRequestSchedulerBase {
 			throw new IllegalArgumentException("Adding a SendableGet to an insert scheduler!!");
 		if((!isInsertScheduler) && req instanceof SendableInsert)
 			throw new IllegalArgumentException("Adding a SendableInsert to a request scheduler!!");
+		if(isInsertScheduler != req.isInsert())
+			throw new IllegalArgumentException("Request isInsert="+req.isInsert()+" but my isInsertScheduler="+isInsertScheduler+"!!");
 		if(req.persistent() != persistent())
 			throw new IllegalArgumentException("innerRegister for persistence="+req.persistent()+" but our persistence is "+persistent());
 		if(req.getPriorityClass(container) == 0) {
@@ -156,6 +158,11 @@ abstract class ClientRequestSchedulerBase {
 		return Math.max(0, retryCount-MIN_RETRY_COUNT);
 	}
 
+	/**
+	 * Get SendableRequest's for a given ClientRequester.
+	 * Note that this will return all kinds of requests, so the caller will have
+	 * to filter them according to isInsert and isSSKScheduler.
+	 */
 	protected SendableRequest[] getSendableRequests(ClientRequester request, ObjectContainer container) {
 		if(request != null || persistent()) // Client request null is only legal for transient requests
 			return request.getSendableRequests(container);
@@ -168,12 +175,19 @@ abstract class ClientRequestSchedulerBase {
 	}
 	
 	public void reregisterAll(ClientRequester request, RandomSource random, RequestScheduler lock, ObjectContainer container, ClientContext context) {
+		if(request.persistent() != persistent()) return;
 		SendableRequest[] reqs = getSendableRequests(request, container);
+		
 		if(reqs == null) return;
 		for(int i=0;i<reqs.length;i++) {
 			SendableRequest req = reqs[i];
 			if(persistent())
 				container.activate(req, 1);
+			// FIXME call getSendableRequests() and do the sorting in ClientRequestScheduler.reregisterAll().
+			if(req.isInsert() != isInsertScheduler || req.isSSK() != isSSKScheduler) {
+				container.deactivate(req, 1);
+				continue;
+			}
 			// Unregister from the RGA's, but keep the pendingKeys and cooldown queue data.
 			req.unregister(container, context);
 			// Then can do innerRegister() (not register()).
