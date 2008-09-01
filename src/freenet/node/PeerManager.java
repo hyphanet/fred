@@ -907,12 +907,14 @@ public class PeerManager {
 					Logger.minor(this, "Skipping old version: " + p.getPeer());
 				continue;
 			}
-			int selectionSamples = p.getNumberOfSelections().tailSet(selectionSamplesTimestamp).size();
-			int selectionSamplesPercentage = selectionSamples*100/numberOfSelectionsSamples;
-			if(enableFOAFMitigationHack && (PeerNode.SELECTION_PERCENTAGE_WARNING < selectionSamplesPercentage)) {
-				if(logMINOR)
-					Logger.minor(this, "Skipping over-selectionned peer("+selectionSamplesPercentage+"%): "+p.getPeer());
-				continue;
+			if(enableFOAFMitigationHack) {
+				int selectionSamples = p.getNumberOfSelections().tailSet(selectionSamplesTimestamp).size();
+				int selectionSamplesPercentage = selectionSamples*100/numberOfSelectionsSamples;
+				if(PeerNode.SELECTION_PERCENTAGE_WARNING < selectionSamplesPercentage) {
+					if(logMINOR)
+						Logger.minor(this, "Skipping over-selectionned peer(" + selectionSamplesPercentage + "%): " + p.getPeer());
+					continue;
+				}
 			}
 			
 			long timeout = -1;
