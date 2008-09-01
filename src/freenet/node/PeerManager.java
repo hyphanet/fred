@@ -889,7 +889,9 @@ public class PeerManager {
 			selectionRates[i] = peers[i].selectionRate();
 			totalSelectionRate += selectionRates[i];
 		}
-		boolean enableFOAFMitigationHack = (peers.length >= PeerNode.SELECTION_MIN_PEERS) && (totalSelectionRate > 0.0);
+		boolean enableFOAFMitigationHack = (peers.length >= PeerNode.SELECTION_MIN_PEERS) && (totalSelectionRate > 0.0)
+		// Do not enable until 1160 is mandatory, because we don't want to overload our one or two upgraded peers!
+			&& Version.lastGoodBuild() >= 1160;
 		for(int i = 0; i < peers.length; i++) {
 			PeerNode p = peers[i];
 			if(routedTo.contains(p)) {
