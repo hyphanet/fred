@@ -11,10 +11,10 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
-import java.util.Vector;
 
 import freenet.client.InsertException;
 import freenet.support.Base64;
@@ -267,9 +267,9 @@ public class FreenetURI implements Cloneable {
 			throw new MalformedURLException("Invalid key type: " + keyType);
 
 		// decode metaString
-		Vector sv = null;
+		ArrayList<String> sv = null;
 		int slash2;
-		sv = new Vector();
+		sv = new ArrayList<String>();
 		while((slash2 = URI.lastIndexOf("/")) != -1) {
 			String s;
 			try {
@@ -280,7 +280,7 @@ public class FreenetURI implements Cloneable {
 				throw ue;
 			}
 			if(s != null)
-				sv.addElement(s);
+				sv.add(s);
 			URI = URI.substring(0, slash2);
 		}
 
@@ -295,12 +295,12 @@ public class FreenetURI implements Cloneable {
 
 			if(sv.isEmpty())
 				throw new MalformedURLException("No docname for " + keyType);
-			docName = (String) sv.remove(sv.size() - 1);
+			docName = sv.remove(sv.size() - 1);
 			if(isUSK) {
 				if(sv.isEmpty())
 					throw new MalformedURLException("No suggested edition number for USK");
 				try {
-					suggestedEdition = Long.parseLong((String) sv.remove(sv.size() - 1));
+					suggestedEdition = Long.parseLong(sv.remove(sv.size() - 1));
 				} catch(NumberFormatException e) {
 					MalformedURLException e1 = new MalformedURLException("Invalid suggested edition: " + e);
 					e1.initCause(e);
@@ -321,7 +321,7 @@ public class FreenetURI implements Cloneable {
 		if(!sv.isEmpty()) {
 			metaStr = new String[sv.size()];
 			for(int i = 0; i < metaStr.length; i++) {
-				metaStr[i] = ((String) sv.elementAt(metaStr.length - 1 - i)).intern();
+				metaStr[i] = sv.get(metaStr.length - 1 - i).intern();
 				if(metaStr[i] == null)
 					throw new NullPointerException();
 			}
@@ -501,8 +501,8 @@ public class FreenetURI implements Cloneable {
 		}
 	}
 
-	public FreenetURI addMetaStrings(LinkedList metaStrings) {
-		return addMetaStrings((String[]) metaStrings.toArray(new String[metaStrings.size()]));
+	public FreenetURI addMetaStrings(LinkedList<String> metaStrings) {
+		return addMetaStrings(metaStrings.toArray(new String[metaStrings.size()]));
 	}
 
 	/**
@@ -540,11 +540,11 @@ public class FreenetURI implements Cloneable {
 	}
 
 	public String toString(boolean prefix, boolean pureAscii) {
-		StringBuffer b;
+		StringBuilder b;
 		if(prefix)
-			b = new StringBuffer("freenet:");
+			b = new StringBuilder("freenet:");
 		else
-			b = new StringBuffer();
+			b = new StringBuilder();
 
 		b.append(keyType).append('@');
 
@@ -604,8 +604,8 @@ public class FreenetURI implements Cloneable {
 		return extra;
 	}
 
-	public LinkedList listMetaStrings() {
-		LinkedList l = new LinkedList();
+	public LinkedList<String> listMetaStrings() {
+		LinkedList<String> l = new LinkedList<String>();
 		if(metaStr != null)
 			for(int i = 0; i < metaStr.length; i++)
 				l.addLast(metaStr[i]);
@@ -741,7 +741,7 @@ public class FreenetURI implements Cloneable {
 	public String getPreferredFilename() {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		Logger.minor(this, "Getting preferred filename for " + this);
-		Vector names = new Vector();
+		ArrayList<String> names = new ArrayList<String>();
 		if(keyType != null && (keyType.equals("KSK") || keyType.equals("SSK") || keyType.equals("USK"))) {
 			if(logMINOR)
 				Logger.minor(this, "Adding docName: " + docName);
@@ -755,9 +755,9 @@ public class FreenetURI implements Cloneable {
 					Logger.minor(this, "Adding metaString " + i + ": " + metaStr[i]);
 				names.add(metaStr[i]);
 			}
-		StringBuffer out = new StringBuffer();
+		StringBuilder out = new StringBuilder();
 		for(int i = 0; i < names.size(); i++) {
-			String s = (String) names.get(i);
+			String s = names.get(i);
 			if(logMINOR)
 				Logger.minor(this, "name " + i + " = " + s);
 			s = FileUtil.sanitize(s);
