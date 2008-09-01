@@ -19,9 +19,12 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
 import java.net.ServerSocket;
 import java.security.Key;
 import java.security.KeyStore;
+import java.security.PrivateKey;
 import java.security.cert.Certificate;
 
 import javax.net.ServerSocketFactory;
@@ -215,24 +218,36 @@ public class SSL {
 				fis = new FileInputStream(keyStore);
 				keystore.load(fis, keyStorePass.toCharArray());
 			} catch(FileNotFoundException fnfe) {
-				throw new UnsupportedOperationException("Not implemented yet!");
-//				//If keystore not exist, create keystore and server certificat
-//				keystore.load(null, keyStorePass.toCharArray());
-//				CertAndKeyGen keypair = new CertAndKeyGen("DSA", "SHA1WithDSA");
-//				X500Name x500Name = new X500Name(
-//					"Freenet",
-//					"Freenet",
-//					"Freenet",
-//					"",
-//					"",
-//					"");
-//				keypair.generate(1024);
-//				PrivateKey privKey = keypair.getPrivateKey();
-//				X509Certificate[] chain = new X509Certificate[1];
-//				chain[0] = keypair.getSelfCertificate(x500Name, 1L * 365 * 24 * 60 * 60);
-//				keystore.setKeyEntry("freenet", privKey, keyPass.toCharArray(), chain);
-//				storeKeyStore();
-//				createSSLContext();
+				// If keystore not exist, create keystore and server certificate
+				keystore.load(null, keyStorePass.toCharArray());
+				try {
+					Class certAndKeyGenClazz = Class.forName("sun.security.x509.CertAndKeyGen");
+					Constructor certAndKeyGenCtor = certAndKeyGenClazz.getConstructor(String.class, String.class);
+					Object keypair = certAndKeyGenCtor.newInstance("DSA", "SHA1WithDSA");
+
+					Class x500NameClazz = Class.forName("sun.security.x509.X500Name");
+					Constructor x500NameCtor = x500NameClazz.getConstructor(String.class, String.class, String.class,
+					        String.class, String.class, String.class);
+					Object x500Name = x500NameCtor.newInstance("Freenet", "Freenet", "Freenet", "", "", "");
+					
+					Method certAndKeyGenGenerate = certAndKeyGenClazz.getMethod("generate", int.class);
+					certAndKeyGenGenerate.invoke(keypair, 1024);
+					
+					Method certAndKeyGetPrivateKey = certAndKeyGenClazz.getMethod("getPrivateKey");
+					PrivateKey privKey = (PrivateKey) certAndKeyGetPrivateKey.invoke(keypair);
+
+					Certificate[] chain = new Certificate[1];
+					Method certAndKeyGenGetSelfCertificate = certAndKeyGenClazz.getMethod("getSelfCertificate",
+					        x500NameClazz, long.class);
+					chain[0] = (Certificate) certAndKeyGenGetSelfCertificate.invoke(keypair, x500Name, 1L * 365 * 24
+					        * 60 * 60);
+
+					keystore.setKeyEntry("freenet", privKey, keyPass.toCharArray(), chain);
+					storeKeyStore();
+					createSSLContext();
+				} catch (NoSuchMethodException nsme) {
+					throw new UnsupportedOperationException("The JVM you are using is not supported!", nsme);
+				}
 			} finally {
 				Closer.close(fis);
 			}
