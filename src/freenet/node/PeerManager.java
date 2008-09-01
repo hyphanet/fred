@@ -95,13 +95,6 @@ public class PeerManager {
 		}
 	};
 	
-	/**
-	 * Track the number of times a PeerNode has been selected by the routing algorithm
-	 * @see PeerNode.numberOfSelections
-	 */
-	private SortedSet<Long> numberOfSelectionSamples = new TreeSet<Long>();
-	private final Object numberOfSelectionSamplesSync = new Object();
-	
 	public static final int PEER_NODE_STATUS_CONNECTED = 1;
 	public static final int PEER_NODE_STATUS_ROUTING_BACKED_OFF = 2;
 	public static final int PEER_NODE_STATUS_TOO_NEW = 3;
@@ -1895,19 +1888,8 @@ public class PeerManager {
 		return null;
 	}
 	
-	public SortedSet<Long> getNumberOfSelectionSamples() {
-		synchronized (numberOfSelectionSamplesSync) {
-			return new TreeSet<Long>(numberOfSelectionSamples);
-		}
-	}
-		
 	private void incrementSelectionSamples(long now, PeerNode pn) {
 		// TODO: reimplement with a bit field to spare memory
-		synchronized (numberOfSelectionSamplesSync) {
-			if(numberOfSelectionSamples.size() > PeerNode.SELECTION_MAX_SAMPLES * OpennetManager.MAX_PEERS_FOR_SCALING)
-				numberOfSelectionSamples = numberOfSelectionSamples.tailSet(now - PeerNode.SELECTION_SAMPLING_PERIOD);
-			numberOfSelectionSamples.add(now);
-			pn.incrementNumberOfSelections(now);
-		}
+		pn.incrementNumberOfSelections(now);
 	}
 }
