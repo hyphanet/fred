@@ -919,7 +919,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		});
 		enableSwapping = nodeConfig.getBoolean("enableSwapping");
 		
-		nodeConfig.register("publishOurPeersLocation", false, sortOrder++, true, false, "Node.publishOurPeersLocation", "Node.publishOurPeersLocationLong", new BooleanCallback() {
+		nodeConfig.register("publishOurPeersLocation", true, sortOrder++, true, false, "Node.publishOurPeersLocation", "Node.publishOurPeersLocationLong", new BooleanCallback() {
 
 			public Boolean get() {
 				return publishOurPeersLocation;
@@ -931,7 +931,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		});
 		publishOurPeersLocation = nodeConfig.getBoolean("publishOurPeersLocation");
 		
-		nodeConfig.register("routeAccordingToOurPeersLocation", false, sortOrder++, true, false, "Node.routeAccordingToOurPeersLocation", "Node.routeAccordingToOurPeersLocationLong", new BooleanCallback() {
+		nodeConfig.register("routeAccordingToOurPeersLocation", true, sortOrder++, true, false, "Node.routeAccordingToOurPeersLocation", "Node.routeAccordingToOurPeersLocationLong", new BooleanCallback() {
 
 			public Boolean get() {
 				return routeAccordingToOurPeersLocation;

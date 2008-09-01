@@ -881,6 +881,9 @@ public class PeerManager {
 
 		long now = System.currentTimeMillis();
 		int count = 0;
+		
+		Long selectionSamplesTimestamp = now - PeerNode.SELECTION_SAMPLING_PERIOD;
+		int numberOfSelectionsSamples = getNumberOfSelectionSamples().tailSet(selectionSamplesTimestamp).size();
 		for(int i = 0; i < peers.length; i++) {
 			PeerNode p = peers[i];
 			if(routedTo.contains(p)) {
@@ -903,6 +906,14 @@ public class PeerManager {
 					Logger.minor(this, "Skipping old version: " + p.getPeer());
 				continue;
 			}
+			int selectionSamples = p.getNumberOfSelections().tailSet(selectionSamplesTimestamp).size();
+			int selectionSamplesPercentage = selectionSamples*100/numberOfSelectionsSamples;
+			if(PeerNode.SELECTION_PERCENTAGE_WARNING < selectionSamplesPercentage) {
+				if(logMINOR)
+					Logger.minor(this, "Skipping over-selectionned peer("+selectionSamplesPercentage+"%): "+p.getPeer());
+				continue;
+			}
+			
 			long timeout = -1;
 			if(entry != null)
 				timeout = entry.getTimeoutTime(p);
@@ -912,7 +923,7 @@ public class PeerManager {
 			double diff = Location.distance(loc, target);
 			
 			double[] peersLocation = p.getPeersLocation();
-			if((node.shallWeRouteAccordingToOurPeersLocation()) && (peersLocation != null)) {
+			if((peersLocation != null) && (node.shallWeRouteAccordingToOurPeersLocation())) {
 				for(double l : peersLocation) {
 					double newDiff = Location.distance(l, target);
 					if(newDiff < diff) {
