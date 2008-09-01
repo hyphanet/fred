@@ -101,4 +101,8 @@ public abstract class SendableGet extends BaseSendableGet {
 	 */
 	public abstract void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context);
 
+	public final boolean isInsert() {
+		return false;
+	}
+	
 }

@@ -199,4 +199,9 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		throw new UnsupportedOperationException("Transient only");
 	}
 
+	@Override
+	public boolean isInsert() {
+		return false;
+	}
+
 }

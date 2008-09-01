@@ -30,4 +30,8 @@ public abstract class SendableInsert extends SendableRequest {
 		sched.callFailure(this, new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR, t.getMessage(), t), NativeThread.MAX_PRIORITY, persistent);
 	}
 
+	public final boolean isInsert() {
+		return true;
+	}
+	
 }

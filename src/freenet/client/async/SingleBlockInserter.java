@@ -145,10 +145,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return block;
 	}
 	
-	public boolean isInsert() {
-		return true;
-	}
-
 	public short getPriorityClass(ObjectContainer container) {
 		if(persistent) container.activate(parent, 1);
 		return parent.getPriorityClass(); // Not much point deactivating

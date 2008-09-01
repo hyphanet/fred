@@ -126,6 +126,9 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 	/** Is this an SSK? For purposes of determining which scheduler to use. */
 	public abstract boolean isSSK();
 	
+	/** Is this an insert? For purposes of determining which scheduler to use. */
+	public abstract boolean isInsert();
+	
 	/** Requeue after an internal error */
 	public abstract void internalError(Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent);
 
