@@ -245,7 +245,7 @@ public class FCPConnectionHandler {
 						server.core.clientContext.jobRunner.queue(new DBJob() {
 
 							public void run(ObjectContainer container, ClientContext context) {
-								container.activate(getter, 1);
+								container.set(getter);
 								try {
 									getter.register(container, false, false);
 								} catch (IdentifierCollisionException e) {
@@ -313,7 +313,7 @@ public class FCPConnectionHandler {
 					server.core.clientContext.jobRunner.queue(new DBJob() {
 
 						public void run(ObjectContainer container, ClientContext context) {
-							container.activate(putter, 1);
+							container.set(putter);
 							try {
 								putter.register(container, false, false);
 							} catch (IdentifierCollisionException e) {
@@ -379,7 +379,7 @@ public class FCPConnectionHandler {
 				server.core.clientContext.jobRunner.queue(new DBJob() {
 
 					public void run(ObjectContainer container, ClientContext context) {
-						container.activate(putter, 1);
+						container.set(putter);
 						try {
 							putter.register(container, false, false);
 						} catch (IdentifierCollisionException e) {
