@@ -80,8 +80,7 @@ public class StatisticsToadlet extends Toadlet {
 		peers = node.peers;
 	}
 
-	@Override
-    public String supportedMethods() {
+	public String supportedMethods() {
 		return "GET";
 	}
 
@@ -121,7 +120,7 @@ public class StatisticsToadlet extends Toadlet {
 	}
 
 	@Override
-    public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
+	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
@@ -172,8 +171,8 @@ public class StatisticsToadlet extends Toadlet {
 			contentNode.addChild(core.alerts.createSummary());
 		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, request, contentNode);
 
-		double swaps = node.getSwaps();
-		double noSwaps = node.getNoSwaps();
+		double swaps = (double)node.getSwaps();
+		double noSwaps = (double)node.getNoSwaps();
 
 		HTMLNode overviewTable = contentNode.addChild("table", "class", "column");
 		HTMLNode overviewTableRow = overviewTable.addChild("tr");
@@ -396,9 +395,9 @@ public class StatisticsToadlet extends Toadlet {
 		HTMLNode jvmStatsList = jvmStatsInfoboxContent.addChild("ul");
 
 		Runtime rt = Runtime.getRuntime();
-		float freeMemory = rt.freeMemory();
-		float totalMemory = rt.totalMemory();
-		float maxMemory = rt.maxMemory();
+		float freeMemory = (float) rt.freeMemory();
+		float totalMemory = (float) rt.totalMemory();
+		float maxMemory = (float) rt.maxMemory();
 
 		long usedJavaMem = (long)(totalMemory - freeMemory);
 		long allocatedJavaMem = (long)totalMemory;
@@ -472,8 +471,6 @@ public class StatisticsToadlet extends Toadlet {
 		long storeAccesses = storeHits + storeMisses;
 		long cacheWrites=node.getChkDatacache().writes();
 		long storeWrites=node.getChkDatastore().writes();
-		long cacheFalsePos = node.getChkDatacache().getBloomFalsePositive();
-		long storeFalsePos = node.getChkDatastore().getBloomFalsePositive();
 
 		// REDFLAG Don't show database version because it's not possible to get it accurately.
 		// (It's a public static constant, so it will use the version from compile time of freenet.jar)
@@ -547,11 +544,6 @@ public class StatisticsToadlet extends Toadlet {
 		row.addChild("td", "Write Rate");
 		row.addChild("td", fix1p2.format(1.0*storeWrites/nodeUptimeSeconds)+" /sec");
 		row.addChild("td", fix1p2.format(1.0*cacheWrites/nodeUptimeSeconds)+" /sec");
-		
-		row = storeSizeTable.addChild("tr");
-		row.addChild("td", "False Pos.");
-		row.addChild("td", thousendPoint.format(storeFalsePos));
-		row.addChild("td", thousendPoint.format(cacheFalsePos));
 		
 		// location-based stats
 		double nodeLoc=0.0;
@@ -972,7 +964,7 @@ public class StatisticsToadlet extends Toadlet {
 		int networkSizeEstimateSession = stats.getNetworkSizeEstimate(-1);
 		int networkSizeEstimate24h = 0;
 		int networkSizeEstimate48h = 0;
-		double numberOfRemotePeerLocationsSeenInSwaps = node.getNumberOfRemotePeerLocationsSeenInSwaps();
+		double numberOfRemotePeerLocationsSeenInSwaps = (double)node.getNumberOfRemotePeerLocationsSeenInSwaps();
 
 		if(nodeUptimeSeconds > (24*60*60)) {  // 24 hours
 			networkSizeEstimate24h = stats.getNetworkSizeEstimate(now - (24*60*60*1000));  // 48 hours
@@ -1247,7 +1239,7 @@ public class StatisticsToadlet extends Toadlet {
 			// Make our own peer stand out from the crowd better so we can see it easier
 			offset = -10;
 		} else {
-			offset = (int) ((PEER_CIRCLE_INNER_RADIUS) * (1.0 - strength));
+			offset = (int) (((double) PEER_CIRCLE_INNER_RADIUS) * (1.0 - strength));
 		}
 		double x = PEER_CIRCLE_ADDITIONAL_FREE_SPACE + PEER_CIRCLE_RADIUS + Math.sin(peerLocation) * (PEER_CIRCLE_RADIUS - offset);
 		double y = PEER_CIRCLE_RADIUS - Math.cos(peerLocation) * (PEER_CIRCLE_RADIUS - offset);  // no PEER_CIRCLE_ADDITIONAL_FREE_SPACE for y-disposition
