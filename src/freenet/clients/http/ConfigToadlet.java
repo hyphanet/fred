@@ -20,6 +20,7 @@ import freenet.config.WrapperConfig;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
@@ -215,6 +216,8 @@ public class ConfigToadlet extends Toadlet {
 		return L10n.getString("ConfigToadlet." + string);
 	}
 
+	public static final int MODE_SECURITY_LEVELS = 3;
+	
 	@Override
     public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
@@ -231,7 +234,11 @@ public class ConfigToadlet extends Toadlet {
 		
 		contentNode.addChild(core.alerts.createSummary());
 		
-		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, req, contentNode);
+		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, req, contentNode, MODE_SECURITY_LEVELS, "SecurityLevels.title", "SecurityLevels.tooltip");
+		
+		if(mode == MODE_SECURITY_LEVELS) {
+			drawSecurityLevelsPage(contentNode, ctx);
+		} else {
 		
 		if(mode >= PageMaker.MODE_ADVANCED){
 			HTMLNode navigationBar = ctx.getPageMaker().getInfobox("navbar", l10n("configNavTitle"));
@@ -243,6 +250,7 @@ public class ConfigToadlet extends Toadlet {
 			HTMLNode nextTableCell = navigationTableRow;
 			
 			for(int i=0; i<sc.length;i++){
+				if(sc[i].getPrefix().equals("security-levels")) continue;
 				nextTableCell.addChild("td", "class", "config_navigation").addChild("li").addChild("a", "href", '#' +sc[i].getPrefix(), l10n(sc[i].getPrefix()));
 			}
 			contentNode.addChild(navigationBar);
@@ -271,6 +279,7 @@ public class ConfigToadlet extends Toadlet {
 		for(int i=0; i<sc.length;i++){
 			short displayedConfigElements = 0;
 			
+			if(sc[i].getPrefix().equals("security-levels")) continue;
 			Option<?>[] o = sc[i].getOptions();
 			HTMLNode configGroupUlNode = new HTMLNode("ul", "class", "config");
 			
@@ -321,9 +330,48 @@ public class ConfigToadlet extends Toadlet {
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("apply")});
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  l10n("reset")});
 		
+		}
+		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 	
+	private void drawSecurityLevelsPage(HTMLNode contentNode, ToadletContext ctx) {
+		HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+		infobox.addChild("div", "class", "infobox-header", l10nSec("title"));
+		HTMLNode configNode = infobox.addChild("div", "class", "infobox-content");
+		HTMLNode formNode = ctx.addFormChild(configNode, ".", "configFormSecLevels");
+		// Network security level
+		formNode.addChild("div", "class", "configprefix", l10nSec("networkThreatLevelShort"));
+		HTMLNode ul = formNode.addChild("ul", "class", "config");
+		HTMLNode seclevelGroup = ul.addChild("li");
+		seclevelGroup.addChild("#", l10nSec("networkThreatLevel"));
+		
+		NETWORK_THREAT_LEVEL networkLevel = node.securityLevels.getNetworkThreatLevel();
+		
+		String controlName = "security-levels.networkThreatLevel";
+		for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.values()) {
+			HTMLNode input;
+			if(level == networkLevel) {
+				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "checked", "name" }, new String[] { "radio", "on", controlName });
+			} else {
+				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "name" }, new String[] { "radio", controlName });
+			}
+			input.addChild("b", l10nSec("networkThreatLevel.name."+level));
+			input.addChild("#", ": ");
+			L10n.addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+		}
+		// FIXME implement the rest, it should be very similar to the above.
+		
+		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("apply")});
+		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  l10n("reset")});
+	}
+
+
+	private String l10nSec(String key) {
+		return L10n.getString("SecurityLevels."+key);
+	}
+
+
 	@Override
     public String supportedMethods() {
 		return "GET, POST";

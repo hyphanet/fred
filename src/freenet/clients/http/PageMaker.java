@@ -255,6 +255,10 @@ public final class PageMaker {
 	}
 	
 	protected int drawModeSelectionArray(NodeClientCore core, HTTPRequest req, HTMLNode contentNode) {
+		return drawModeSelectionArray(core, req, contentNode, -1, null, null);
+	}
+	
+	protected int drawModeSelectionArray(NodeClientCore core, HTTPRequest req, HTMLNode contentNode, int alternateMode, String alternateModeTitleKey, String alternateModeTooltipKey) {
 		// Mode can be changed by a link, not just by the default
 		
 		int mode = core.isAdvancedModeEnabled() ? MODE_ADVANCED : MODE_SIMPLE;
@@ -277,6 +281,13 @@ public final class PageMaker {
 			cell.addChild("a", new String[] { "href", "title" }, new String[] { "?mode=2", l10n("modeAdvancedTooltip") }, l10n("modeAdvanced"));
 		else
 			cell.addChild("b", "title", l10n("modeAdvancedTooltip"), l10n("modeAdvanced"));
+		if(alternateMode > -1) {
+			cell = row.addChild("td");
+			if(mode != alternateMode)
+				cell.addChild("a", new String[] { "href", "title" }, new String[] { "?mode="+alternateMode, L10n.getString(alternateModeTooltipKey) }, L10n.getString(alternateModeTitleKey));
+			else
+				cell.addChild("b", "title", L10n.getString(alternateModeTooltipKey), L10n.getString(alternateModeTitleKey));
+		}
 		
 		return mode;
 	}

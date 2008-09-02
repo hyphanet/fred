@@ -471,6 +471,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	/** NodeUpdater **/
 	public final NodeUpdateManager nodeUpdater;
 	
+	public final SecurityLevels securityLevels;
+	
 	// Things that's needed to keep track of
 	public final PluginManager pluginManager;
 	
@@ -752,6 +754,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		runningLocalSSKPutUIDs = new HashSet();
 		runningCHKOfferReplyUIDs = new HashSet();
 		runningSSKOfferReplyUIDs = new HashSet();
+		
+		this.securityLevels = new SecurityLevels(this, config);
 		
 		// Directory for node-related files other than store
 		
