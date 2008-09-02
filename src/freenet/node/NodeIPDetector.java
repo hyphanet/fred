@@ -195,10 +195,16 @@ public class NodeIPDetector {
 		
 		// Try to pick it up from our connections
 		if(node.peers != null) {
-			PeerNode[] peerList = node.peers.connectedPeers;
+			PeerNode[] peerList = node.peers.myPeers;
 			HashMap countsByPeer = new HashMap();
 			// FIXME use a standard mutable int object, we have one somewhere
 			for(int i=0;i<peerList.length;i++) {
+				if(!peerList[i].isConnected()) continue;
+				if(!peerList[i].isRealConnection()) {
+					// Only let seed server connections through.
+					// We have to trust them anyway.
+					if(!(peerList[i] instanceof SeedServerPeerNode)) continue;
+				}
 				Peer p = peerList[i].getRemoteDetectedPeer();
 				if(p == null || p.isNull()) continue;
 				FreenetInetAddress addr = p.getFreenetAddress();
