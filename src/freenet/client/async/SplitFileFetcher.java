@@ -535,6 +535,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			}
 			File main;
 			File alt;
+			boolean cacheLocalRequests;
 			if(persistent) {
 				container.activate(mainBloomFile, 5);
 				container.activate(altBloomFile, 5);
@@ -542,15 +543,19 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				alt = new File(altBloomFile.getPath());
 				container.deactivate(mainBloomFile, 1);
 				container.deactivate(altBloomFile, 1);
+				container.activate(fetchContext, 1);
+				cacheLocalRequests = fetchContext.cacheLocalRequests;
+				container.deactivate(fetchContext, 1);
 			} else {
 				main = null;
 				alt = null;
+				cacheLocalRequests = fetchContext.cacheLocalRequests;
 			}
 			try {
 				if(Logger.shouldLog(Logger.MINOR, this))
 					Logger.minor(this, "Attempting to read Bloom filter for "+this+" main file="+main+" alt file="+alt);
 				tempListener =
-					new SplitFileFetcherKeyListener(this, keyCount, main, alt, mainBloomFilterSizeBytes, mainBloomK, !fetchContext.cacheLocalRequests, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, false);
+					new SplitFileFetcherKeyListener(this, keyCount, main, alt, mainBloomFilterSizeBytes, mainBloomK, !cacheLocalRequests, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, false);
 			} catch (IOException e) {
 				Logger.error(this, "Unable to read Bloom filter for "+this+" attempting to reconstruct...", e);
 				mainBloomFile.delete();
