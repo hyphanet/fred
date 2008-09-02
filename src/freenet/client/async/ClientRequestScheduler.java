@@ -681,7 +681,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		synchronized(pendingKeys) {
 			if(force) {
 				// FIXME what priority???
-				priority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+				priority = RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
 			}
 			Object o = pendingKeys.get(key);
 			if(o == null) {
