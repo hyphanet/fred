@@ -467,10 +467,12 @@ public class Announcer {
 				Logger.normal(this, "Announcement to "+seed.userToString()+" got bogus noderef: "+reason, new Exception("debug"));
 			}
 			public void completed() {
+				boolean announceNow = false;
 				synchronized(Announcer.this) {
 					runningAnnouncements--;
 					Logger.normal(this, "Announcement to "+seed.userToString()+" completed, now running "+runningAnnouncements+" announcements");
-					if(runningAnnouncements == 0) {
+					if(runningAnnouncements == 0 && announcementAddedNodes > 0) {
+						// No point waiting if no nodes have been added!
 						startTime = System.currentTimeMillis() + COOLING_OFF_PERIOD;
 						sentAnnouncements = 0;
 						// Wait for COOLING_OFF_PERIOD before trying again
@@ -481,13 +483,16 @@ public class Announcer {
 							}
 							
 						}, COOLING_OFF_PERIOD);
-					}
+					} else if(runningAnnouncements == 0)
+						announceNow = true;
 				}
 				// If it takes more than COOLING_OFF_PERIOD to disconnect, we might not be able to reannounce to this
 				// node. However, we can't reannounce to it anyway until announcedTo is cleared, which probably will
 				// be more than that period in the future.
 				node.peers.disconnect(seed, true, false);
 				System.out.println("Announcement to "+seed.userToString()+" completed.");
+				if(announceNow)
+					maybeSendAnnouncement();
 			}
 
 			public void nodeFailed(PeerNode pn, String reason) {
