@@ -337,7 +337,7 @@ public class NodeStarter implements WrapperListener {
 		long storeSize, boolean ramStore, boolean enableSwapping, boolean enableARKs,
 		boolean enableULPRs, boolean enablePerNodeFailureTables,
 		boolean enableSwapQueueing, boolean enablePacketCoalescing,
-		int outputBandwidthLimit, boolean enableFOAF, boolean connectToSeednodes) throws NodeInitException {
+		int outputBandwidthLimit, boolean enableFOAF, boolean connectToSeednodes, String ipAddressOverride) throws NodeInitException {
 
 		File baseDir = new File(testName);
 		File portDir = new File(baseDir, Integer.toString(port));
@@ -395,6 +395,8 @@ public class NodeStarter implements WrapperListener {
 		configFS.put("node.opennet.connectToSeednodes", connectToSeednodes);
 		configFS.put("node.encryptTempBuckets", false);
 		configFS.put("node.encryptPersistentTempBuckets", false);
+		if(ipAddressOverride != null)
+			configFS.putSingle("node.ipAddressOverride", ipAddressOverride);
 		
 		PersistentConfig config = new PersistentConfig(configFS);
 

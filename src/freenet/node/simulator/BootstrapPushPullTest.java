@@ -34,6 +34,9 @@ public class BootstrapPushPullTest {
 	public static int EXIT_FETCH_FAILED = 260;
 	
 	public static void main(String[] args) throws InvalidThresholdException, IOException, NodeInitException, InterruptedException {
+		String ipOverride = null;
+		if(args.length > 0)
+			ipOverride = args[0];
         File dir = new File("bootstrap-push-pull-test");
         FileUtil.removeAll(dir);
         RandomSource random = NodeStarter.globalTestInit(dir.getPath(), false, Logger.ERROR, "");
@@ -49,7 +52,7 @@ public class BootstrapPushPullTest {
         fis.close();
         // Create one node
         Executor executor = new PooledExecutor();
-        Node node = NodeStarter.createTestNode(5000, 5001, dir.getPath(), true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true);
+        Node node = NodeStarter.createTestNode(5000, 5001, dir.getPath(), true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);
         //NodeCrypto.DISABLE_GROUP_STRIP = true;
     	//Logger.setupStdoutLogging(Logger.MINOR, "freenet:NORMAL,freenet.node.NodeDispatcher:MINOR,freenet.node.FNPPacketMangler:MINOR");
     	Logger.getChain().setThreshold(Logger.ERROR); // kill logging
@@ -91,7 +94,7 @@ public class BootstrapPushPullTest {
         FileUtil.writeTo(fis, new File(secondInnerDir, "seednodes.fref"));
         fis.close();
         executor = new PooledExecutor();
-        Node secondNode = NodeStarter.createTestNode(5002, 5003, dir.getPath(), true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true);        
+        Node secondNode = NodeStarter.createTestNode(5002, 5003, dir.getPath(), true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);        
         secondNode.start(true);
         waitForTenNodes(secondNode);
         

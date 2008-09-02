@@ -48,7 +48,7 @@ public class SeednodePingTest extends RealNodeTest {
         RandomSource random = NodeStarter.globalTestInit("seednode-pingtest", false, Logger.ERROR, "");
         // Create one node
         Executor executor = new PooledExecutor();
-	Node node = NodeStarter.createTestNode(5000, 5001, "seednode-pingtest", true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, false, false, false, false, false, false, 0, false, false);
+	Node node = NodeStarter.createTestNode(5000, 5001, "seednode-pingtest", true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, false, false, false, false, false, false, 0, false, false, null);
 	// Connect & ping
 	Vector<SeedServerTestPeerNode> seedNodes = new Vector<SeedServerTestPeerNode>();
 	Vector<SimpleFieldSet> seedNodesAsSFS = Announcer.readSeednodes(new File("/tmp/"));
