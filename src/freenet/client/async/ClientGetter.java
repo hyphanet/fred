@@ -68,7 +68,7 @@ public class ClientGetter extends BaseClientGetter {
 		this.uri = uri;
 		this.ctx = ctx;
 		this.finished = false;
-		this.actx = new ArchiveContext(ctx.maxArchiveLevels);
+		this.actx = new ArchiveContext(ctx.maxTempLength, ctx.maxArchiveLevels);
 		this.binaryBlobBucket = binaryBlobBucket;
 		if(binaryBlobBucket != null) {
 			binaryBlobKeysAddedAlready = new HashSet();
@@ -217,6 +217,7 @@ public class ClientGetter extends BaseClientGetter {
 		}
 	}
 
+	@Override
 	public void cancel() {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Cancelling "+this);
@@ -273,6 +274,7 @@ public class ClientGetter extends BaseClientGetter {
 		return start(true, redirect);
 	}
 
+	@Override
 	public String toString() {
 		return super.toString()+ ':' +uri;
 	}

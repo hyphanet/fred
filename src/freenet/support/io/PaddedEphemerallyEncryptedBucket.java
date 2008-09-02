@@ -151,6 +151,17 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			}
 		}
 		
+		// Override this or FOS will use write(int)
+		@Override
+		public void write(byte[] buf) throws IOException {
+			if(closed)
+				throw new IOException("Already closed!");
+			if(streamNumber != lastOutputStream)
+				throw new IllegalStateException("Writing to old stream in "+getName());
+			write(buf, 0, buf.length);
+		}
+		
+		@Override
 		public void write(byte[] buf, int offset, int length) throws IOException {
 			if(closed) throw new IOException("Already closed!");
 			if(streamNumber != lastOutputStream)
@@ -165,14 +176,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			}
 		}
 		
-		// Override this or FOS will use write(int)
-		public void write(byte[] buf) throws IOException {
-			if(closed) throw new IOException("Already closed!");
-			if(streamNumber != lastOutputStream)
-				throw new IllegalStateException("Writing to old stream in "+getName());
-			write(buf, 0, buf.length);
-		}
-		
+		@Override
 		public void close() throws IOException {
 			if(closed) return;
 			try {
@@ -225,11 +229,13 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			return pcfb.decipher(x);
 		}
 		
+		@Override
 		public final int available() {
 			int x = (int)Math.min(dataLength - ptr, Integer.MAX_VALUE);
 			return (x < 0) ? 0 : x;
 		}
 		
+		@Override
 		public int read(byte[] buf, int offset, int length) throws IOException {
 			// FIXME remove debugging
 			if((length+offset > buf.length) || (offset < 0) || (length < 0))
@@ -244,10 +250,12 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			return readBytes;
 		}
 
+		@Override
 		public int read(byte[] buf) throws IOException {
 			return read(buf, 0, buf.length);
 		}
 		
+		@Override
 		public long skip(long bytes) throws IOException {
 			byte[] buf = new byte[(int)Math.min(4096, bytes)];
 			long skipped = 0;
@@ -259,6 +267,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			return skipped;
 		}
 		
+		@Override
 		public void close() throws IOException {
 			in.close();
 		}
@@ -308,6 +317,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		return "Encrypted:"+bucket.getName();
 	}
 
+	@Override
 	public String toString() {
 		return super.toString()+ ':' +bucket.toString();
 	}

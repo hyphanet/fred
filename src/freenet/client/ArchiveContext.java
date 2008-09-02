@@ -17,9 +17,11 @@ public class ArchiveContext {
 
 	HashSet soFar = new HashSet();
 	final int maxArchiveLevels;
+	final long maxArchiveSize;
 	
-	public ArchiveContext(int max) {
+	public ArchiveContext(long maxArchiveSize, int max) {
 		this.maxArchiveLevels = max;
+		this.maxArchiveSize = maxArchiveSize;
 	}
 	
 	/**

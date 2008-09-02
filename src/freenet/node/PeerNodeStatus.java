@@ -95,7 +95,7 @@ public class PeerNodeStatus {
 	
 	private final int reportedUptimePercentage;
 	
-	private final SortedSet<Long> numberOfSelections;
+	private final double selectionRate;
 
 	PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
 		if(Logger.shouldLog(Logger.MINOR, this)) {
@@ -109,7 +109,7 @@ public class PeerNodeStatus {
 			peerAddress = p.getFreenetAddress().toString();
 			peerPort = p.getPort();
 		}
-		this.numberOfSelections = peerNode.getNumberOfSelections();
+		this.selectionRate = peerNode.selectionRate();
 		this.statusValue = peerNode.getPeerNodeStatus();
 		this.statusName = peerNode.getPeerNodeStatusString();
 		this.statusCSSName = peerNode.getPeerNodeStatusCSSClassName();
@@ -398,7 +398,7 @@ public class PeerNodeStatus {
 		return reportedUptimePercentage;
 	}
 
-	public SortedSet<Long> getNumberOfSelections() {
-		return numberOfSelections;
+	public double getSelectionRate() {
+		return selectionRate;
 	}
 }

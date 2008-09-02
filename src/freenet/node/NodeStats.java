@@ -216,7 +216,8 @@ public class NodeStats implements Persistable {
 						return threadLimit;
 					}
 					public void set(Integer val) throws InvalidConfigValueException {
-						if(val == get()) return;
+						if (get().equals(val))
+					        return;
 						if(val < 100)
 							throw new InvalidConfigValueException(l10n("valueTooLow"));
 						threadLimit = val;
@@ -231,7 +232,8 @@ public class NodeStats implements Persistable {
 						return aggressiveGCModificator;
 					}
 					public void set(Integer val) throws InvalidConfigValueException {
-						if(val == get()) return;
+						if (get().equals(val))
+					        return;
 						Logger.normal(this, "Changing aggressiveGCModificator to "+val);
 						aggressiveGCModificator = val;
 					}
@@ -246,7 +248,8 @@ public class NodeStats implements Persistable {
 					}
 
 					public void set(Boolean val) throws InvalidConfigValueException {
-						if(val == get()) return;
+						if (get().equals(val))
+					        return;
 						
 						if(val)
 							myMemoryChecker.start();

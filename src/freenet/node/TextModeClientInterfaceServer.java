@@ -116,7 +116,8 @@ public class TextModeClientInterfaceServer implements Runnable {
     	}
     	
     	public void set(Boolean val) throws InvalidConfigValueException {
-    		if(val == get()) return;
+			if (get().equals(val))
+				return;
     		// FIXME implement - see bug #122
     		throw new InvalidConfigValueException("Cannot be updated on the fly");
     	}
@@ -132,7 +133,8 @@ public class TextModeClientInterfaceServer implements Runnable {
     	}
     	
     	public void set(Boolean val) throws InvalidConfigValueException {
-    		if(val == get()) return;
+			if (get().equals(val))
+				return;
 			if(!SSL.available()) {
 				throw new InvalidConfigValueException("Enable SSL support before use ssl with TMCI");
 			}
@@ -157,7 +159,8 @@ public class TextModeClientInterfaceServer implements Runnable {
     	}
     	
     	public void set(Boolean val) throws InvalidConfigValueException {
-    		if(val == get()) return;
+			if (get().equals(val))
+				return;
     		// FIXME implement - see bug #122
     		throw new InvalidConfigValueException("Cannot be updated on the fly");
     	}
@@ -236,7 +239,8 @@ public class TextModeClientInterfaceServer implements Runnable {
     	
     	// TODO: implement it
     	public void set(Integer val) throws InvalidConfigValueException {
-    		if(val == get()) return;
+			if (get().equals(val))
+				return;
     		core.getTextModeClientInterface().setPort(val);
     	}
     }

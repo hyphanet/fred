@@ -1,6 +1,5 @@
 package freenet.node;
 
-import freenet.config.NodeNeedRestartException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -154,6 +153,8 @@ public class NodeClientCore implements Persistable {
 					// FIXME
 					throw new InvalidConfigValueException(l10n("movingTempDirOnTheFlyNotSupported"));
 				}
+				
+				@Override
 				public boolean isReadOnly() {
 				        return true;
 			        }
@@ -180,7 +181,8 @@ public class NodeClientCore implements Persistable {
 			}
 
 			public void set(Boolean val) throws InvalidConfigValueException {
-				if((val == get()) || (persistentTempBucketFactory == null)) return;
+				if (get().equals(val) || (persistentTempBucketFactory == null))
+					        return;
 				persistentTempBucketFactory.setEncryption(val);
 			}
 		});
@@ -198,6 +200,8 @@ public class NodeClientCore implements Persistable {
 					// FIXME
 					throw new InvalidConfigValueException("Moving persistent temp directory on the fly not supported at present");
 				}
+				
+				@Override
 				public boolean isReadOnly() {
 				        return true;
 			        }
@@ -209,14 +213,15 @@ public class NodeClientCore implements Persistable {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
 		}
 
-		nodeConfig.register("maxRAMBucketSize", "32KiB", sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
+		nodeConfig.register("maxRAMBucketSize", "128KiB", sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
 
 			public Long get() {
 				return (tempBucketFactory == null ? 0 : tempBucketFactory.getMaxRAMBucketSize());
 			}
 
 			public void set(Long val) throws InvalidConfigValueException {
-				if((val == get()) || (tempBucketFactory == null)) return;
+				if (get().equals(val) || (tempBucketFactory == null))
+					        return;
 				tempBucketFactory.setMaxRAMBucketSize(val);
 			}
 		});
@@ -227,7 +232,8 @@ public class NodeClientCore implements Persistable {
 			}
 
 			public void set(Long val) throws InvalidConfigValueException {
-				if((val == get()) || (tempBucketFactory == null)) return;
+				if (get().equals(val) || (tempBucketFactory == null))
+					        return;
 				tempBucketFactory.setMaxRamUsed(val);
 			}
 		});
@@ -239,11 +245,12 @@ public class NodeClientCore implements Persistable {
 			}
 
 			public void set(Boolean val) throws InvalidConfigValueException {
-				if((val == get()) || (tempBucketFactory == null)) return;
+				if (get().equals(val) || (tempBucketFactory == null))
+					        return;
 				tempBucketFactory.setEncryption(val);
 			}
 		});
-		tempBucketFactory = new TempBucketFactory(tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), random, node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"));
+		tempBucketFactory = new TempBucketFactory(node.executor, tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), random, node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"));
 
 		// Downloads directory
 
@@ -314,22 +321,8 @@ public class NodeClientCore implements Persistable {
 				}
 			});
 		setUploadAllowedDirs(nodeConfig.getStringArr("uploadAllowedDirs"));
-
-		nodeConfig.register("maxArchiveSize", "5MiB", sortOrder++, true, false, "NodeClientCore.maxArchiveSize", "NodeClientCore.maxArchiveSizeLong", new LongCallback() {
-
-			@Override
-			public Long get() {
-				return archiveManager.getMaxArchiveSize();
-			}
-
-			@Override
-			public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
-				if(val == get()) return;
-				archiveManager.setMaxArchiveSize(val);
-			}
-		});
 		
-		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, nodeConfig.getLong("maxArchiveSize"), MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, tempBucketFactory);
+		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, tempBucketFactory);
 		Logger.normal(this, "Initializing USK Manager");
 		System.out.println("Initializing USK Manager");
 		uskManager = new USKManager(this);

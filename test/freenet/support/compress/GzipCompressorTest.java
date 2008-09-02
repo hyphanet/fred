@@ -111,7 +111,7 @@ public class GzipCompressorTest extends TestCase {
 	public void testCompressException() {
 		
 		byte[] uncompressedData = UNCOMPRESSED_DATA_1.getBytes();
-		Bucket inBucket = new ArrayBucket(uncompressedData, uncompressedData.length);
+		Bucket inBucket = new ArrayBucket(uncompressedData);
 		BucketFactory factory = new ArrayBucketFactory();
 
 		try {
@@ -133,7 +133,7 @@ public class GzipCompressorTest extends TestCase {
 		
 		byte[] compressedData = doCompress(uncompressedData);
 		
-		Bucket inBucket = new ArrayBucket(compressedData, uncompressedData.length);
+		Bucket inBucket = new ArrayBucket(compressedData);
 		BucketFactory factory = new ArrayBucketFactory();
 
 		try {
@@ -147,7 +147,7 @@ public class GzipCompressorTest extends TestCase {
 	
 	private byte[] doBucketDecompress(byte[] compressedData) {
 
-		Bucket inBucket = new ArrayBucket(compressedData, compressedData.length);
+		Bucket inBucket = new ArrayBucket(compressedData);
 		BucketFactory factory = new ArrayBucketFactory();
 		Bucket outBucket = null;
 
@@ -179,7 +179,7 @@ public class GzipCompressorTest extends TestCase {
 	}
 
 	private byte[] doCompress(byte[] uncompressedData) {
-		Bucket inBucket = new ArrayBucket(uncompressedData, uncompressedData.length);
+		Bucket inBucket = new ArrayBucket(uncompressedData);
 		BucketFactory factory = new ArrayBucketFactory();
 		Bucket outBucket = null;
 

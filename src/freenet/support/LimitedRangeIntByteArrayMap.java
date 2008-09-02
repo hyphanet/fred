@@ -18,7 +18,7 @@ import freenet.io.comm.AsyncMessageCallback;
 public class LimitedRangeIntByteArrayMap {
 
 	private static boolean logMINOR;
-    private final HashMap contents;
+    private final HashMap<Integer, LimitedRangeIntByteArrayMapElement> contents;
     private int minValue;
     private int maxValue;
     private final int maxRange;
@@ -27,7 +27,7 @@ public class LimitedRangeIntByteArrayMap {
     
     public LimitedRangeIntByteArrayMap(int maxRange) {
         this.maxRange = maxRange;
-        contents = new HashMap();
+        contents = new HashMap<Integer, LimitedRangeIntByteArrayMapElement>();
         minValue = -1;
         maxValue = -1;
         flag = false;
@@ -43,32 +43,29 @@ public class LimitedRangeIntByteArrayMap {
     }
     
     public synchronized byte[] get(int index) {
-        Integer i = new Integer(index);
-        LimitedRangeIntByteArrayMapElement wrapper = (LimitedRangeIntByteArrayMapElement) contents.get(i);
+        LimitedRangeIntByteArrayMapElement wrapper = contents.get(index);
         if(wrapper != null)
             return wrapper.data;
         else return null;
     }
     
     public synchronized AsyncMessageCallback[] getCallbacks(int index) {
-        Integer i = new Integer(index);
-        LimitedRangeIntByteArrayMapElement wrapper = (LimitedRangeIntByteArrayMapElement) contents.get(i);
+        LimitedRangeIntByteArrayMapElement wrapper = contents.get(index);
         if(wrapper != null)
             return wrapper.callbacks;
         else return null;
     }
     
     public synchronized long getTime(int index) {
-        Integer i = new Integer(index);
-        LimitedRangeIntByteArrayMapElement wrapper = (LimitedRangeIntByteArrayMapElement) contents.get(i);
+        LimitedRangeIntByteArrayMapElement wrapper = contents.get(index);
         if(wrapper != null)
             return wrapper.createdTime;
         else return -1;
     }
     
 	public short getPriority(int index, short defaultValue) {
-        Integer i = new Integer(index);
-        LimitedRangeIntByteArrayMapElement wrapper = (LimitedRangeIntByteArrayMapElement) contents.get(i);
+        Integer i = index;
+        LimitedRangeIntByteArrayMapElement wrapper = contents.get(i);
         if(wrapper != null)
             return wrapper.priority;
         else return defaultValue;
@@ -78,8 +75,7 @@ public class LimitedRangeIntByteArrayMap {
      * Get the time at which an index was re-added last.
      */
     public synchronized long getReaddedTime(int index) {
-    	Integer i = new Integer(index);
-    	LimitedRangeIntByteArrayMapElement wrapper = (LimitedRangeIntByteArrayMapElement) contents.get(i);
+    	LimitedRangeIntByteArrayMapElement wrapper = contents.get(index);
     	if(wrapper != null)
     		return wrapper.reputTime;
     	else return -1;
@@ -108,10 +104,9 @@ public class LimitedRangeIntByteArrayMap {
             minValue = index;
         }
         if(data == null) throw new NullPointerException();
-        Integer i = new Integer(index);
-        LimitedRangeIntByteArrayMapElement le = (LimitedRangeIntByteArrayMapElement) contents.get(i);
+        LimitedRangeIntByteArrayMapElement le = contents.get(index);
         if(le == null)
-        	contents.put(new Integer(index), new LimitedRangeIntByteArrayMapElement(index, data, callbacks, priority));
+        	contents.put(index, new LimitedRangeIntByteArrayMapElement(index, data, callbacks, priority));
         else
         	le.reput();
         notifyAll();
@@ -166,7 +161,7 @@ public class LimitedRangeIntByteArrayMap {
      */
     public synchronized boolean remove(int index) {
     	if(logMINOR) Logger.minor(this, "Removing "+index+" - min="+minValue+" max="+maxValue);
-        if(contents.remove(new Integer(index)) != null) {
+        if (contents.remove(index) != null) {
             if((index > minValue) && (index < maxValue)) return true;
             if(contents.size() == 0) {
                 minValue = maxValue = -1;

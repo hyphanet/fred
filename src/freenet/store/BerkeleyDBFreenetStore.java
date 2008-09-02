@@ -497,7 +497,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 					maybeQuickShrink(true);
 					return;
 				}
-				Integer blockNum = new Integer((int)storeBlock.offset);
+				Integer blockNum = (int) storeBlock.offset;
 				//Long seqNum = new Long(storeBlock.recentlyUsed);
 				//System.out.println("#"+x+" seq "+seqNum+": block "+blockNum);
 				if(blockNum.longValue() >= realSize) {
@@ -2318,18 +2318,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				return false;
 		}
 
-    	Cursor c = null;
 		try {
 			return keysDB.get(null, routingkeyDBE, blockDBE, LockMode.READ_UNCOMMITTED) == OperationStatus.SUCCESS;
 		} catch (DatabaseException e) {
 			return false;
-		} finally {
-			try {
-				if (c != null)
-					c.close();
-			} catch (DatabaseException e) {
-				// ignore
-			}
-		}
+		} 
 	}
 }

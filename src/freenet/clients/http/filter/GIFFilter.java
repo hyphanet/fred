@@ -41,7 +41,7 @@ public class GIFFilter implements ContentDataFilter {
 		try {
 			// Check the header
 			byte[] headerCheck = new byte[HEADER_SIZE];
-			dis.read(headerCheck);
+			dis.readFully(headerCheck);
 			if((!Arrays.equals(headerCheck, gif87aHeader)) && (!Arrays.equals(headerCheck, gif89aHeader))) {
 				throwHeaderError(l10n("invalidHeaderTitle"), l10n("invalidHeader"));
 			}

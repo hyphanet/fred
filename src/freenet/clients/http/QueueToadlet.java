@@ -1351,10 +1351,6 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				return;
 			}
 			long size = ((ClientPut)req).getDataSize();
-			if(uri == null) {
-				Logger.error(this, "uri is null for "+req+" for "+identifier);
-				return;
-			}
 			String name = uri.getPreferredFilename();
 			String title = l10n("uploadSucceededTitle", "filename", name);
 			HTMLNode text = new HTMLNode("div");

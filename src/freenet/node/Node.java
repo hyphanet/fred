@@ -208,16 +208,17 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private static class L10nCallback extends StringCallback implements EnumerableOptionCallback {
 		
 		public String get() {
-			return L10n.mapLanguageNameToLongName(L10n.getSelectedLanguage());
+			return L10n.getSelectedLanguage().fullName;
 		}
 		
 		public void set(String val) throws InvalidConfigValueException {
-			if(get().equalsIgnoreCase(val)) return;
+			if(val == null || get().equalsIgnoreCase(val)) return;
 			try {
 				L10n.setLanguage(val);
 			} catch (MissingResourceException e) {
 				throw new InvalidConfigValueException(e.getLocalizedMessage());
 			}
+			PluginManager.setLanguage(L10n.getSelectedLanguage());
 		}
 		
 		public void setPossibleValues(String[] val) {
@@ -225,10 +226,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 		
 		public String[] getPossibleValues() {
-			String[] result = new String[L10n.AVAILABLE_LANGUAGES.length];
-			for(int i=0; i<L10n.AVAILABLE_LANGUAGES.length; i++)
-				result[i] = L10n.AVAILABLE_LANGUAGES[i][1];
-			return result;
+			return L10n.LANGUAGE.valuesWithFullNames();
 		}
 	}
 	
@@ -660,7 +658,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			try {
 				L10n.setLanguage(nodeConfig.getOption("l10n").getDefault());
 			} catch (MissingResourceException e1) {
-				L10n.setLanguage(L10n.FALLBACK_DEFAULT);
+				L10n.setLanguage(L10n.LANGUAGE.getDefault().shortCode);
 			}
 		}
 		
@@ -812,12 +810,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			oldBootID = -1;
 			// If we have an error in reading, *or in writing*, we don't reliably know the last boot ID.
 		} finally {
-			try {
-				if(raf != null)
-					raf.close();
-			} catch (IOException e) {
-				// Ignore
-			}
+			Closer.close(raf);
 		}
 		lastBootID = oldBootID;
 		
@@ -930,7 +923,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		});
 		enableSwapping = nodeConfig.getBoolean("enableSwapping");
 		
-		nodeConfig.register("publishOurPeersLocation", false, sortOrder++, true, false, "Node.publishOurPeersLocation", "Node.publishOurPeersLocationLong", new BooleanCallback() {
+		nodeConfig.register("publishOurPeersLocation", true, sortOrder++, true, false, "Node.publishOurPeersLocation", "Node.publishOurPeersLocationLong", new BooleanCallback() {
 
 			public Boolean get() {
 				return publishOurPeersLocation;
@@ -942,7 +935,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		});
 		publishOurPeersLocation = nodeConfig.getBoolean("publishOurPeersLocation");
 		
-		nodeConfig.register("routeAccordingToOurPeersLocation", false, sortOrder++, true, false, "Node.routeAccordingToOurPeersLocation", "Node.routeAccordingToOurPeersLocationLong", new BooleanCallback() {
+		nodeConfig.register("routeAccordingToOurPeersLocation", true, sortOrder++, true, false, "Node.routeAccordingToOurPeersLocation", "Node.routeAccordingToOurPeersLocationLong", new BooleanCallback() {
 
 			public Boolean get() {
 				return routeAccordingToOurPeersLocation;
@@ -1175,7 +1168,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				return isAllowedToConnectToSeednodes;
 			}
 			public void set(Boolean val) throws InvalidConfigValueException {
-				if(val == get()) return;
+				if (get().equals(val))
+					        return;
 				synchronized(Node.this) {
 					if(opennet != null)
 						throw new InvalidConfigValueException("Can't change that setting on the fly when opennet is already active!");
@@ -3507,6 +3501,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	}
 	
 	public boolean shallWeRouteAccordingToOurPeersLocation() {
-		return routeAccordingToOurPeersLocation;
+		return routeAccordingToOurPeersLocation && Version.lastGoodBuild() >= 1160;
 	}
 }

@@ -13,6 +13,7 @@ public class PluginInfoWrapper {
 	private final String className;
 	private Thread thread;
 	private final long start;
+	final PluginRespirator pr;
 	private final String threadName;
 	final FredPlugin plug;
 	private final boolean isPproxyPlugin;
@@ -27,11 +28,14 @@ public class PluginInfoWrapper {
 	private HashSet<String> toadletLinks = new HashSet<String>();
 	private volatile boolean stopping = false;
 	private volatile boolean unregistered = false;
+	private final boolean isThemedPlugin;
+	private final boolean isL10nPlugin;
 	
-	public PluginInfoWrapper(FredPlugin plug, String filename) {
+	public PluginInfoWrapper(PluginRespirator pr, FredPlugin plug, String filename) {
 		this.plug = plug;
 		className = plug.getClass().toString();
 		this.filename = filename;
+		this.pr = pr;
 		threadName = 'p' + className.replaceAll("^class ", "") + '_' + hashCode();
 		start = System.currentTimeMillis();
 		fedPluginThread = true;
@@ -43,6 +47,8 @@ public class PluginInfoWrapper {
 		isMultiplePlugin = (plug instanceof FredPluginMultiple);
 		isFCPPlugin = (plug instanceof FredPluginFCP);
 		isVersionedPlugin = (plug instanceof FredPluginVersioned);
+		isThemedPlugin = (plug instanceof FredPluginThemed);
+		isL10nPlugin = (plug instanceof FredPluginL10n);
 	}
 
 	void setThread(Thread ps) {
@@ -178,6 +184,13 @@ public class PluginInfoWrapper {
 	
 	public boolean isFCPPlugin() {
 		return isFCPPlugin;
+	}
+	
+	public boolean isThemedPlugin() {
+		return isThemedPlugin;
+	}
+	public boolean isL10nPlugin() {
+		return isL10nPlugin;
 	}
 
 	public synchronized boolean isStopping() {

@@ -4,11 +4,9 @@
 package freenet.config;
 
 /**
- * Thrown when the node refuses to set a config variable to a particular
- * value because it is invalid. Just because this is not thrown does not
- * necessarily mean that there are no problems with the value defined,
- * it merely means that there are no immediately detectable problems with 
- * it.
+ * Thrown when the node must be restarted for a config setting to be applied.
+ * The thrower must ensure that the value reaches the config file, even though
+ * it cannot be immediately used.
  */
 public class NodeNeedRestartException extends ConfigException {
 

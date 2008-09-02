@@ -366,7 +366,7 @@ public class NodeCrypto {
 
 	private byte[] myCompressedRef(boolean setup, boolean heavySetup, boolean forARK) {
 		SimpleFieldSet fs = exportPublicFieldSet(setup, heavySetup, forARK);
-		boolean shouldStripGroup = ((setup || heavySetup) && !forARK) && Global.DSAgroupBigA.equals(cryptoGroup);
+		boolean shouldStripGroup = heavySetup && Global.DSAgroupBigA.equals(cryptoGroup);
 		if(shouldStripGroup)
 			fs.removeSubset("dsaGroup");
 		

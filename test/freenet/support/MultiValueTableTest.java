@@ -15,12 +15,12 @@
  */
 package freenet.support;
 
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
-import java.util.Arrays;
 
 import junit.framework.TestCase;
 
@@ -51,7 +51,7 @@ public class MultiValueTableTest extends TestCase {
 		for (int i=0; i<sampleObjects.length;i++) {
 			if (isRandom) 
 				methodValuesNumber = 1+rnd.nextInt(valuesNumber);
-			sampleObjects[i][0] = new Integer(i);
+			sampleObjects[i][0] = i;
 			sampleObjects[i][1] = fillSampleValuesList(methodValuesNumber); }
 		return sampleObjects;
 	}

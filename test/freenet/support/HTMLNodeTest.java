@@ -211,11 +211,11 @@ public class HTMLNodeTest extends TestCase {
 		HTMLNode methodHTMLNode = new HTMLNode(SAMPLE_OKAY_NODE_NAME);
 		methodHTMLNode.addChild(SAMPLE_OKAY_NODE_NAME, 
 				SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE);
-		List childrenList = methodHTMLNode.children;
+		List<HTMLNode> childrenList = methodHTMLNode.children;
 		assertEquals(1,childrenList.size());
 		assertEquals(generateNoContentNodeOutput(SAMPLE_OKAY_NODE_NAME,
 				SAMPLE_OKAY_ATTRIBUTE_NAME,SAMPLE_ATTRIBUTE_VALUE),
-				((HTMLNode)childrenList.get(0)).generate());
+				childrenList.get(0).generate());
 	}
 	
 	/**
@@ -228,12 +228,12 @@ public class HTMLNodeTest extends TestCase {
 		methodHTMLNode.addChild(SAMPLE_OKAY_NODE_NAME, 
 				SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE,
 				SAMPLE_NODE_CONTENT);
-		List childrenList = methodHTMLNode.children;
+		List<HTMLNode> childrenList = methodHTMLNode.children;
 		assertEquals(1,childrenList.size());
 		assertEquals(generateFullNodeOutput(SAMPLE_OKAY_NODE_NAME,
 				SAMPLE_OKAY_ATTRIBUTE_NAME, SAMPLE_ATTRIBUTE_VALUE, 
 				SAMPLE_NODE_CONTENT),
-					((HTMLNode)childrenList.get(0)).generate());
+					childrenList.get(0).generate());
 	}
 	
 	/**
@@ -274,9 +274,9 @@ public class HTMLNodeTest extends TestCase {
 	 * @param attributesValues the attributes values to check
 	 */
 	private void testSingleChildAttributes(HTMLNode aHTMLNode,String[] attibutesNames, String[] attributesValues) {
-		List childrenList = aHTMLNode.children;
+		List<HTMLNode> childrenList = aHTMLNode.children;
 		assertEquals(1,childrenList.size());
-		HTMLNode childHTMLNode = (HTMLNode)childrenList.get(0);
+		HTMLNode childHTMLNode = childrenList.get(0);
 		assertEquals(attibutesNames.length,childHTMLNode.getAttributes().size());
 		for(int i = 0 ; i<attibutesNames.length;i++)
 			assertEquals(attributesValues[i],
@@ -296,7 +296,7 @@ public class HTMLNodeTest extends TestCase {
 		//since the HTMLNode name is not "#", or "%",
 		//the content will be a new child with the "#" name
 		assertEquals(SAMPLE_NODE_CONTENT,
-				((HTMLNode)(methodHTMLNode.children.get(0))).getContent());
+				methodHTMLNode.children.get(0).getContent());
 		assertNull(methodHTMLNode.getContent());
 		
 		methodHTMLNode = new HTMLNode("#",SAMPLE_NODE_CONTENT);

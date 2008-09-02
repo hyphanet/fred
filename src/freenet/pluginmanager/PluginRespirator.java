@@ -14,11 +14,18 @@ public class PluginRespirator {
 	private final HighLevelSimpleClient hlsc;
 	private final Node node;
 	private final PageMaker pageMaker;
+	private final FredPlugin plugin;
+	private final PluginManager pluginManager;
 	
-	public PluginRespirator(Node node, PluginManager pm) {
+	public PluginRespirator(Node node, PluginManager pm, FredPlugin plug) {
 		this.node = node;
 		this.hlsc = node.clientCore.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS);
-		this.pageMaker = new PageMaker("clean");
+		this.plugin = plug;
+		this.pluginManager = pm;
+		if (plugin instanceof FredPluginL10n)
+			pageMaker = new PageMaker((FredPluginL10n)plugin, pluginManager.getFProxyTheme());
+		else
+			pageMaker = new PageMaker(null, pluginManager.getFProxyTheme());
 	}
 	
 	//public HighLevelSimpleClient getHLSimpleClient() throws PluginSecurityException {

@@ -11,7 +11,7 @@ public class SortedVectorByNumber {
 
 	private IntNumberedItem[] data;
 	private int length;
-	private static final Comparator comparator = new SimpleIntNumberedItemComparator(true);
+	private static final Comparator<Object> comparator = new SimpleIntNumberedItemComparator(true);
 	private static final int MIN_SIZE = 4;
 	
 	public SortedVectorByNumber() {
@@ -28,15 +28,15 @@ public class SortedVectorByNumber {
 		return length == 0;
 	}
 
-	public synchronized IntNumberedItem get(int retryCount) {
-		int x = Arrays.binarySearch(data, new Integer(retryCount), comparator);
+	public synchronized IntNumberedItem get(int item) {
+		int x = Arrays.binarySearch(data, item, comparator);
 		if(x >= 0)
 			return data[x];
 		return null;
 	}
 
 	public synchronized void remove(int item) {
-		int x = Arrays.binarySearch(data, new Integer(item), comparator);
+		int x = Arrays.binarySearch(data, item, comparator);
 		if(x >= 0) {
 			if(x < length-1)
 				System.arraycopy(data, x+1, data, x, length-x-1);
@@ -70,7 +70,7 @@ public class SortedVectorByNumber {
 	 * @return True if we added the item.
 	 */
 	public synchronized boolean push(IntNumberedItem grabber) {
-		int x = Arrays.binarySearch(data, new Integer(grabber.getNumber()), comparator);
+		int x = Arrays.binarySearch(data, grabber.getNumber(), comparator);
 		if(x >= 0) return false;
 		// insertion point
 		x = -x-1;
@@ -79,7 +79,7 @@ public class SortedVectorByNumber {
 	}
 	
 	public synchronized void add(IntNumberedItem grabber) {
-		int x = Arrays.binarySearch(data, new Integer(grabber.getNumber()), comparator);
+		int x = Arrays.binarySearch(data, grabber.getNumber(), comparator);
 		if(x >= 0) {
 			if(grabber != data[x])
 				throw new IllegalArgumentException(); // already exists

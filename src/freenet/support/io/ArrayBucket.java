@@ -1,6 +1,5 @@
 package freenet.support.io;
 
-import freenet.support.Logger;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -12,53 +11,42 @@ import java.util.Iterator;
 import freenet.support.api.Bucket;
 
 /**
- * A bucket that stores data in RAM
+ * A bucket that stores data in the memory.
+ * 
+ * FIXME: No synchronization, should there be?
+ * 
+ * @author oskar
  */
 public class ArrayBucket implements Bucket {
 
-	private final ArrayList<byte[]> data;
-	private final String name;
-	private volatile boolean readOnly;
-	
-	/** The maximum size of the bucket; -1 means no maxSize */
-	private final long maxSize;
-	private long size;
-	
-	private static boolean logDEBUG = false;
-	
-	public ArrayBucket(long maxSize) {
-		this("ArrayBucket", maxSize);
-	}
-	
-	public ArrayBucket(byte[] finalData) {
-		this(finalData, finalData.length);
-		setReadOnly();
+	private final ArrayList data;
+	private String name;
+	private boolean readOnly;
+
+	public ArrayBucket() {
+		this("ArrayBucket");
 	}
 
-	public ArrayBucket(byte[] initdata, long maxSize) {
-		this("ArrayBucket", maxSize);
+	public ArrayBucket(byte[] initdata) {
+		this("ArrayBucket");
 		data.add(initdata);
 	}
 
-	ArrayBucket(String name, long maxSize) {
-		data = new ArrayList<byte[]>();
+	public ArrayBucket(String name) {
+		data = new ArrayList();
 		this.name = name;
-		this.maxSize = maxSize;
-		if(logDEBUG && maxSize < 0)
-			Logger.minor(this, "Has been called with maxSize<0 !", new NullPointerException());
 	}
 
-	public synchronized OutputStream getOutputStream() throws IOException {
+	public OutputStream getOutputStream() throws IOException {
 		if(readOnly) throw new IOException("Read only");
 		return new ArrayBucketOutputStream();
 	}
 
-	public synchronized InputStream getInputStream() {
+	public InputStream getInputStream() {
 		return new ArrayBucketInputStream();
 	}
 
-	@Override
-	public synchronized String toString() {
+	public String toString() {
 		StringBuffer s = new StringBuffer(250);
 		for (Iterator i = data.iterator(); i.hasNext();) {
 			byte[] b = (byte[]) i.next();
@@ -67,7 +55,7 @@ public class ArrayBucket implements Bucket {
 		return s.toString();
 	}
 
-	public synchronized void read(InputStream in) throws IOException {
+	public void read(InputStream in) throws IOException {
 		OutputStream out = new ArrayBucketOutputStream();
 		int i;
 		byte[] b = new byte[8 * 1024];
@@ -77,7 +65,12 @@ public class ArrayBucket implements Bucket {
 		out.close();
 	}
 
-	public synchronized long size() {
+	public long size() {
+		long size = 0;
+		for (Iterator i = data.iterator(); i.hasNext();) {
+			byte[] b = (byte[]) i.next();
+			size += b.length;
+		}
 		return size;
 	}
 
@@ -86,40 +79,19 @@ public class ArrayBucket implements Bucket {
 	}
 
 	private class ArrayBucketOutputStream extends ByteArrayOutputStream {
-		boolean hasBeenClosed = false;
+		private boolean hasBeenClosed = false;
 		
 		public ArrayBucketOutputStream() {
 			super();
-		}
-		
-		@Override
-		public synchronized void write(byte b[], int off, int len) {
-			if(readOnly) throw new IllegalStateException("Read only");
-			long sizeIfWritten = size + len;
-			if(logDEBUG && maxSize > -1 && maxSize < sizeIfWritten) // FIXME: should be IOE but how to do it?
-				throw new IllegalArgumentException("The maxSize of the bucket is "+maxSize+
-					" and writing "+len+ " bytes to it would make it oversize!");
-			super.write(b, off, len);
-			size = sizeIfWritten;
-		}
-		
-		@Override
-		public synchronized void write(int b) {
-			if(readOnly) throw new IllegalStateException("Read only");
-			long sizeIfWritten = size + 1;
-			if(logDEBUG && maxSize > -1 && maxSize < sizeIfWritten) // FIXME: should be IOE but how to do it?
-				throw new IllegalArgumentException("The maxSize of the bucket is "+maxSize+
-					" and writing 1 byte to it would make it oversize!");
-			super.write(b);
-			size = sizeIfWritten;
 		}
 
 		@Override
 		public synchronized void close() throws IOException {
 			if(hasBeenClosed) return;
-			hasBeenClosed = true;
 			data.add(super.toByteArray());
 			if(readOnly) throw new IOException("Read only");
+			// FIXME maybe we should throw on write instead? :)
+			hasBeenClosed = true;
 		}
 	}
 
@@ -132,11 +104,11 @@ public class ArrayBucket implements Bucket {
 			i = data.iterator();
 		}
 
-		public synchronized int read() {
+		public int read() {
 			return priv_read();
 		}
 
-		private synchronized int priv_read() {
+		private int priv_read() {
 			if (in == null) {
 				if (i.hasNext()) {
 					in = new ByteArrayInputStream((byte[]) i.next());
@@ -144,26 +116,24 @@ public class ArrayBucket implements Bucket {
 					return -1;
 				}
 			}
-			int x = in.read();
-			if (x == -1) {
+			int i = in.read();
+			if (i == -1) {
 				in = null;
 				return priv_read();
 			} else {
-				return x;
+				return i;
 			}
 		}
 
-		@Override
-		public synchronized int read(byte[] b) {
+		public int read(byte[] b) {
 			return priv_read(b, 0, b.length);
 		}
 
-		@Override
-		public synchronized int read(byte[] b, int off, int len) {
+		public int read(byte[] b, int off, int len) {
 			return priv_read(b, off, len);
 		}
 
-		private synchronized int priv_read(byte[] b, int off, int len) {
+		private int priv_read(byte[] b, int off, int len) {
 			if (in == null) {
 				if (i.hasNext()) {
 					in = new ByteArrayInputStream((byte[]) i.next());
@@ -171,17 +141,16 @@ public class ArrayBucket implements Bucket {
 					return -1;
 				}
 			}
-			int x = in.read(b, off, len);
-			if (x == -1) {
+			int i = in.read(b, off, len);
+			if (i == -1) {
 				in = null;
 				return priv_read(b, off, len);
 			} else {
-				return x;
+				return i;
 			}
 		}
 
-		@Override
-		public synchronized int available() {
+		public int available() {
 			if (in == null) {
 				if (i.hasNext()) {
 					in = new ByteArrayInputStream((byte[]) i.next());
@@ -202,17 +171,15 @@ public class ArrayBucket implements Bucket {
 		readOnly = true;
 	}
 
-	public synchronized void free() {
-		readOnly = true;
+	public void free() {
 		data.clear();
-		size = 0;
 		// Not much else we can do.
 	}
 
-	public synchronized byte[] toByteArray() {
+	public byte[] toByteArray() {
 		long sz = size();
-		int bufSize = (int)sz;
-		byte[] buf = new byte[bufSize];
+		int size = (int)sz;
+		byte[] buf = new byte[size];
 		int index = 0;
 		for(Iterator i=data.iterator();i.hasNext();) {
 			byte[] obuf = (byte[]) i.next();
