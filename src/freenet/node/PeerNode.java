@@ -777,7 +777,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		if(localHandshakeIPs == null)
 			return "null";
-		StringBuffer toOutputString = new StringBuffer(1024);
+		StringBuilder toOutputString = new StringBuilder(1024);
 		boolean needSep = false;
 		toOutputString.append("[ ");
 		for(int i = 0; i < localHandshakeIPs.length; i++) {

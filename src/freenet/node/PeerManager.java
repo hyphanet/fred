@@ -1034,7 +1034,7 @@ public class PeerManager {
 	 * @return Some status information
 	 */
 	public String getStatus() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = myPeers;
@@ -1056,7 +1056,7 @@ public class PeerManager {
 	 * @return TMCI peer list
 	 */
 	public String getTMCIPeerList() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = myPeers;
@@ -1075,7 +1075,7 @@ public class PeerManager {
 	}
 
 	public String getFreevizOutput() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = myPeers;
