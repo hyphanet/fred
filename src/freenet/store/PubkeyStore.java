@@ -14,7 +14,7 @@ public class PubkeyStore extends StoreCallback {
 		return false;
 	}
 
-	StorableBlock construct(byte[] data, byte[] headers, byte[] routingKey,
+	public StorableBlock construct(byte[] data, byte[] headers, byte[] routingKey,
 			byte[] fullKey) throws KeyVerifyException {
 		if(data == null) throw new PubkeyVerifyException("Need data to construct pubkey");
 		try {

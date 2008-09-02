@@ -38,8 +38,12 @@ public abstract class StoreCallback {
 	protected FreenetStore store;
 	
 	/** Called once when first connecting to a FreenetStore. Package-local. */
-	void setStore(FreenetStore store) {
+	public void setStore(FreenetStore store) {
 		this.store = store;
+	}
+	
+	public FreenetStore getStore() {
+		return store;
 	}
 	
 	// Reconstruction
@@ -48,7 +52,8 @@ public abstract class StoreCallback {
 	 * IMPORTANT: Using the full key or routing key is OPTIONAL, and if we don't use them, WE DON'T
 	 * CHECK THEM EITHER! Caller MUST check that the key is the one expected.
 	 * @throws KeyVerifyException */
-	abstract StorableBlock construct(byte[] data, byte[] headers, byte[] routingKey, byte[] fullKey) throws KeyVerifyException;
+	public abstract StorableBlock construct(byte[] data, byte[] headers, byte[] routingKey, byte[] fullKey)
+	        throws KeyVerifyException;
 	
 	public void setMaxKeys(long maxStoreKeys, boolean shrinkNow) throws DatabaseException, IOException {
 		store.setMaxKeys(maxStoreKeys, shrinkNow);
@@ -72,6 +77,10 @@ public abstract class StoreCallback {
 
 	public long keyCount() {
 		return store.keyCount();
+	}
+	
+	public long getBloomFalsePositive() {
+		return store.getBloomFalsePositive();
 	}
 
 	/** Generate a routing key from a full key */

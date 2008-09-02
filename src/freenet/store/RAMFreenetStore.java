@@ -57,7 +57,7 @@ public class RAMFreenetStore implements FreenetStore {
 	}
 
 	public synchronized long getMaxKeys() {
-		return (long) maxKeys;
+		return maxKeys;
 	}
 
 	public synchronized long hits() {
@@ -122,6 +122,10 @@ public class RAMFreenetStore implements FreenetStore {
 		return writes;
 	}
 
+	public long getBloomFalsePositive() {
+		return -1;
+	}
+	
 	public boolean probablyInStore(byte[] routingKey) {
 		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
 		return blocksByRoutingKey.get(key) != null;
