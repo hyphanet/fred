@@ -58,7 +58,7 @@ public class PluginManager {
 	 * TODO: Synchronize
 	 *
 	 */
-	private final HashMap toadletList;
+	private final HashMap<String, FredPlugin> toadletList;
 
 	/* All currently starting plugins. */
 	private final Set<PluginProgress> startingPlugins = new HashSet<PluginProgress>();
@@ -81,8 +81,8 @@ public class PluginManager {
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		// config 
 
-		toadletList = new HashMap();
-		pluginWrappers = new Vector();
+		toadletList = new HashMap<String, FredPlugin>();
+		pluginWrappers = new Vector<PluginInfoWrapper>();
 		this.node = node;
 		this.core = node.clientCore;
 
@@ -130,10 +130,12 @@ public class PluginManager {
 		pmconfig.register("loadplugin", null, 0, true, false, "PluginManager.loadedOnStartup", "PluginManager.loadedOnStartupLong",
 			new StringArrCallback() {
 
+				@Override
 				public String[] get() {
 					return getConfigLoadString();
 				}
 
+				@Override
 				public void set(String[] val) throws InvalidConfigValueException {
 					//if(storeDir.equals(new File(val))) return;
 					// FIXME
@@ -174,9 +176,9 @@ public class PluginManager {
 	 * 
 	 * @return All currently starting plugins
 	 */
-	public Set/* <PluginProgess> */ getStartingPlugins() {
+	public Set<PluginProgress> getStartingPlugins() {
 		synchronized(startingPlugins) {
-			return new HashSet/* <PluginProgress> */(startingPlugins);
+			return new HashSet<PluginProgress>(startingPlugins);
 		}
 	}
 	// try to guess around...
@@ -419,8 +421,8 @@ public class PluginManager {
 		return out.toString();
 	}
 
-	public Set getPlugins() {
-		HashSet out = new HashSet();
+	public Set<PluginInfoWrapper> getPlugins() {
+		HashSet<PluginInfoWrapper> out = new HashSet<PluginInfoWrapper>();
 		synchronized(pluginWrappers) {
 			for(int i = 0; i < pluginWrappers.size(); i++) {
 				PluginInfoWrapper pi = pluginWrappers.get(i);
@@ -481,7 +483,7 @@ public class PluginManager {
 	public String handleHTTPGet(String plugin, HTTPRequest request) throws PluginHTTPException {
 		FredPlugin handler = null;
 		synchronized(toadletList) {
-			handler = (FredPlugin) toadletList.get(plugin);
+			handler = toadletList.get(plugin);
 		}
 		/*if (handler == null)
 		return null;
@@ -496,7 +498,7 @@ public class PluginManager {
 	public String handleHTTPPost(String plugin, HTTPRequest request) throws PluginHTTPException {
 		FredPlugin handler = null;
 		synchronized(toadletList) {
-			handler = (FredPlugin) toadletList.get(plugin);
+			handler = toadletList.get(plugin);
 		}
 		/*if (handler == null)
 		return null;
