@@ -328,7 +328,6 @@ public class SecurityLevels {
 		synchronized(this) {
 			networkThreatLevel = newThreatLevel;
 		}
-		node.config.store();
 	}
 
 	public void setThreatLevel(FRIENDS_THREAT_LEVEL newThreatLevel) {
@@ -336,7 +335,6 @@ public class SecurityLevels {
 		synchronized(this) {
 			friendsThreatLevel = newThreatLevel;
 		}
-		node.config.store();
 	}
 	
 	public void setThreatLevel(PHYSICAL_THREAT_LEVEL newThreatLevel) {
@@ -344,11 +342,14 @@ public class SecurityLevels {
 		synchronized(this) {
 			physicalThreatLevel = newThreatLevel;
 		}
-		node.config.store();
 	}
 
 	public static String localisedName(NETWORK_THREAT_LEVEL newThreatLevel) {
 		return L10n.getString("SecurityLevels.networkThreatLevel.name."+newThreatLevel.name());
+	}
+	
+	public static String localisedName(FRIENDS_THREAT_LEVEL newFriendsLevel) {
+		return L10n.getString("SecurityLevels.friendsThreatLevel.name."+newFriendsLevel.name());
 	}
 
 }

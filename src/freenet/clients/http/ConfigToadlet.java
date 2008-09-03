@@ -123,7 +123,7 @@ public class ConfigToadlet extends Toadlet {
 			HTMLNode content = null;
 			HTMLNode ul = null;
 			HTMLNode formNode = null;
-			boolean addedWarning = false;
+			boolean changedAnything = false;
 			String configName = "security-levels.networkThreatLevel";
 			String confirm = "security-levels.networkThreatLevel.confirm";
 			String tryConfirm = "security-levels.networkThreatLevel.tryConfirm";
@@ -148,14 +148,15 @@ public class ConfigToadlet extends Toadlet {
 							HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 							infoboxContent.addChild(warning);
 							infoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", tryConfirm, "on" });
-							addedWarning = true;
 						} else {
 							// Apply immediately, no confirm needed.
 							node.securityLevels.setThreatLevel(newThreatLevel);
+							changedAnything = true;
 						}
 					} else if(request.isPartSet(confirm)) {
 						// Apply immediately, user confirmed it.
 						node.securityLevels.setThreatLevel(newThreatLevel);
+						changedAnything = true;
 					}
 				}
 			}
@@ -180,18 +181,19 @@ public class ConfigToadlet extends Toadlet {
 
 							seclevelGroup.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", configName, friendsThreatLevel });
 							HTMLNode infobox = seclevelGroup.addChild("div", "class", "infobox infobox-information");
-							infobox.addChild("div", "class", "infobox-header", l10nSec("friendsThreatLevelConfirmTitle", "mode", SecurityLevels.localisedName(newThreatLevel)));
+							infobox.addChild("div", "class", "infobox-header", l10nSec("friendsThreatLevelConfirmTitle", "mode", SecurityLevels.localisedName(newFriendsLevel)));
 							HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 							infoboxContent.addChild(warning);
 							infoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", tryConfirm, "on" });
-							addedWarning = true;
 						} else {
 							// Apply immediately, no confirm needed.
 							node.securityLevels.setThreatLevel(newFriendsLevel);
+							changedAnything = true;
 						}
 					} else if(request.isPartSet(confirm)) {
 						// Apply immediately, user confirmed it.
 						node.securityLevels.setThreatLevel(newFriendsLevel);
+						changedAnything = true;
 					}
 				}
 			}
@@ -205,8 +207,12 @@ public class ConfigToadlet extends Toadlet {
 				if(newPhysicalLevel != node.securityLevels.getPhysicalThreatLevel()) {
 					// No confirmation for changes to physical threat level.
 					node.securityLevels.setThreatLevel(newPhysicalLevel);
+					changedAnything = true;
 				}
 			}
+			
+			if(changedAnything)
+				core.storeConfig();
 			
 			if(pageNode != null) {
 				formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "seclevels", "on" });
