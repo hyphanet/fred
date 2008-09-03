@@ -1287,7 +1287,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			
 		});
 		
-		opennetConfig.register("acceptSeedConnections", true, 2, true, true, "Node.acceptSeedConnectionsShort", "Node.acceptSeedConnections", new BooleanCallback() {
+		opennetConfig.register("acceptSeedConnections", false, 2, true, true, "Node.acceptSeedConnectionsShort", "Node.acceptSeedConnections", new BooleanCallback() {
 
 			public Boolean get() {
 				return acceptSeedConnections;
