@@ -205,7 +205,7 @@ public class NodeCryptoConfig {
 		
 		// Include local IPs in noderef file
 		
-		config.register("includeLocalAddressesInNoderefs", false, sortOrder++, true, false, "NodeIPDectector.inclLocalAddress", "NodeIPDectector.inclLocalAddressLong", new BooleanCallback() {
+		config.register("includeLocalAddressesInNoderefs", !isOpennet, sortOrder++, true, false, "NodeIPDectector.inclLocalAddress", "NodeIPDectector.inclLocalAddressLong", new BooleanCallback() {
 
 			public Boolean get() {
 				return includeLocalAddressesInNoderefs;
