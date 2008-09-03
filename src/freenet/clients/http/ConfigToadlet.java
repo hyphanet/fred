@@ -20,6 +20,7 @@ import freenet.config.WrapperConfig;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.node.SecurityLevels;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -105,9 +106,6 @@ public class ConfigToadlet extends Toadlet {
 	
 	@Override
     public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
-		StringBuffer errbuf = new StringBuffer();
-		SubConfig[] sc = config.getConfigs();
-		
 		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable headers = new MultiValueTable();
@@ -115,6 +113,64 @@ public class ConfigToadlet extends Toadlet {
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		}
+		
+		if(request.isPartSet("seclevels")) {
+			// Handle the security level changes.
+			
+			HTMLNode pageNode = null;
+			HTMLNode content = null;
+			HTMLNode ul = null;
+			HTMLNode formNode = null;
+			boolean addedWarning = false;
+			String configName = "security-levels.networkThreatLevel";
+			String confirm = "security-levels.networkThreatLevel.confirm";
+			String networkThreatLevel = request.getPartAsString(configName, 128);
+			NETWORK_THREAT_LEVEL newThreatLevel = SecurityLevels.parseNetworkThreatLevel(networkThreatLevel);
+			if(newThreatLevel != null) {
+				if(newThreatLevel != node.securityLevels.getNetworkThreatLevel()) {
+					if(!request.isPartSet(confirm)) {
+						HTMLNode warning = node.securityLevels.getConfirmWarning(newThreatLevel, confirm);
+						if(warning != null) {
+							if(pageNode == null) {
+								pageNode = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
+								content = ctx.getPageMaker().getContentNode(pageNode);
+								formNode = ctx.addFormChild(content, ".", "configFormSecLevels");
+								ul = formNode.addChild("ul", "class", "config");
+							}
+							HTMLNode seclevelGroup = ul.addChild("li");
+
+							seclevelGroup.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", configName, networkThreatLevel });
+							HTMLNode infobox = seclevelGroup.addChild("div", "class", "infobox infobox-information");
+							infobox.addChild("div", "class", "infobox-header", l10nSec("networkThreatLevelConfirmTitle", "mode", SecurityLevels.localisedName(newThreatLevel)));
+							HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+							infoboxContent.addChild(warning);
+							addedWarning = true;
+						} else {
+							// Apply immediately, no confirm needed.
+							node.securityLevels.setThreatLevel(newThreatLevel);
+						}
+					} else {
+						// Apply immediately, user confirmed it.
+						node.securityLevels.setThreatLevel(newThreatLevel);
+					}
+				}
+			}
+			if(pageNode != null) {
+				formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "seclevels", "on" });
+				formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("apply")});
+				formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  l10n("reset")});
+				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+				return;
+			} else {
+				MultiValueTable headers = new MultiValueTable();
+				headers.put("Location", "/config/?mode="+MODE_SECURITY_LEVELS);
+				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+				return;
+			}
+		}
+		
+		SubConfig[] sc = config.getConfigs();
+		StringBuffer errbuf = new StringBuffer();
 		
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
@@ -352,9 +408,9 @@ public class ConfigToadlet extends Toadlet {
 		for(NETWORK_THREAT_LEVEL level : NETWORK_THREAT_LEVEL.values()) {
 			HTMLNode input;
 			if(level == networkLevel) {
-				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "checked", "name" }, new String[] { "radio", "on", controlName });
+				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" }, new String[] { "radio", "on", controlName, level.name() });
 			} else {
-				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "name" }, new String[] { "radio", controlName });
+				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
 			}
 			input.addChild("b", l10nSec("networkThreatLevel.name."+level));
 			input.addChild("#", ": ");
@@ -362,6 +418,7 @@ public class ConfigToadlet extends Toadlet {
 		}
 		// FIXME implement the rest, it should be very similar to the above.
 		
+		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "seclevels", "on" });
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("apply")});
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  l10n("reset")});
 	}
@@ -370,7 +427,10 @@ public class ConfigToadlet extends Toadlet {
 	private String l10nSec(String key) {
 		return L10n.getString("SecurityLevels."+key);
 	}
-
+	
+	private String l10nSec(String key, String pattern, String value) {
+		return L10n.getString("SecurityLevels."+key, pattern, value);
+	}
 
 	@Override
     public String supportedMethods() {
