@@ -51,6 +51,9 @@ public class NodeCryptoConfig {
 	 * aggressive handshakes (every 10-30 seconds). */
 	private boolean assumeNATed;
 	
+	/** If true, include local addresses on noderefs */
+	public boolean includeLocalAddressesInNoderefs;
+	
 	NodeCryptoConfig(SubConfig config, int sortOrder, boolean isOpennet, SecurityLevels securityLevels) throws NodeInitException {
 		this.isOpennet = isOpennet;
 		
@@ -199,6 +202,22 @@ public class NodeCryptoConfig {
 			}		
 		});
 		assumeNATed = config.getBoolean("assumeNATed");
+		
+		// Include local IPs in noderef file
+		
+		config.register("includeLocalAddressesInNoderefs", false, sortOrder++, true, false, "NodeIPDectector.inclLocalAddress", "NodeIPDectector.inclLocalAddressLong", new BooleanCallback() {
+
+			public Boolean get() {
+				return includeLocalAddressesInNoderefs;
+			}
+
+			public void set(Boolean val) throws InvalidConfigValueException {
+				includeLocalAddressesInNoderefs = val;
+			}
+		});
+		
+		includeLocalAddressesInNoderefs = config.getBoolean("includeLocalAddressesInNoderefs");
+		
 	}
 
 	/** The number of config options i.e. the amount to increment sortOrder by */
@@ -264,4 +283,9 @@ public class NodeCryptoConfig {
 	public boolean alwaysHandshakeAggressively() {
 		return assumeNATed;
 	}
+	
+	public boolean includeLocalAddressesInNoderefs() {
+		return includeLocalAddressesInNoderefs;
+	}
+
 }

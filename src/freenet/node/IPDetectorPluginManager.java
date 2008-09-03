@@ -423,7 +423,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		PeerNode[] peers = node.getPeerNodes();
 		PeerNode[] conns = node.getConnectedPeers();
 		int peerCount = node.peers.countValidPeers();
-		FreenetInetAddress[] nodeAddrs = detector.getPrimaryIPAddress();
+		FreenetInetAddress[] nodeAddrs = detector.getPrimaryIPAddress(true);
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			if(plugins.length == 0) {

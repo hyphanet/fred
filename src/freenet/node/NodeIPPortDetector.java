@@ -49,7 +49,7 @@ public class NodeIPPortDetector {
 			// he is on a multi-homed box where only one IP can be used for Freenet.
 			return new FreenetInetAddress[] { addr };
 		}
-		return ipDetector.detectPrimaryIPAddress();
+		return ipDetector.detectPrimaryIPAddress(crypto.config.includeLocalAddressesInNoderefs);
 	}
 
 	/**

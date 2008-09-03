@@ -187,9 +187,8 @@ public class IPAddressDetector implements Runnable {
 						// Wildcard address, 0.0.0.0, ignore.
 					} else if(i.isLinkLocalAddress() || i.isLoopbackAddress() ||
 							i.isSiteLocalAddress()) {
-						if(detector.includeLocalAddressesInNoderefs()) {
-							output.add(i);
-						}
+						// Will be filtered out later if necessary.
+						output.add(i);
 					} else if(i.isMulticastAddress()) {
 						// Ignore
 					} else {
