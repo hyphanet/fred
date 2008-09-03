@@ -215,7 +215,15 @@ public class SecurityLevels {
 	public NETWORK_THREAT_LEVEL getNetworkThreatLevel() {
 		return networkThreatLevel;
 	}
+	
+	public FRIENDS_THREAT_LEVEL getFriendsThreatLevel() {
+		return friendsThreatLevel;
+	}
 
+	public PHYSICAL_THREAT_LEVEL getPhysicalThreatLevel() {
+		return physicalThreatLevel;
+	}
+	
 	public static NETWORK_THREAT_LEVEL parseNetworkThreatLevel(String arg) {
 		try {
 			return NETWORK_THREAT_LEVEL.valueOf(arg);
@@ -298,5 +306,5 @@ public class SecurityLevels {
 	public static String localisedName(NETWORK_THREAT_LEVEL newThreatLevel) {
 		return L10n.getString("SecurityLevels.networkThreatLevel.name."+newThreatLevel.name());
 	}
-	
+
 }

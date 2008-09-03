@@ -21,7 +21,9 @@ import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
 import freenet.node.SecurityLevels;
+import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
+import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.UserAlert;
 import freenet.support.HTMLNode;
@@ -418,6 +420,51 @@ public class ConfigToadlet extends Toadlet {
 			input.addChild("#", ": ");
 			L10n.addL10nSubstitution(input, "SecurityLevels.networkThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 		}
+		
+		// Friends security level
+		formNode.addChild("div", "class", "configprefix", l10nSec("friendsThreatLevelShort"));
+		ul = formNode.addChild("ul", "class", "config");
+		seclevelGroup = ul.addChild("li");
+		seclevelGroup.addChild("#", l10nSec("friendsThreatLevel"));
+		
+		FRIENDS_THREAT_LEVEL friendsLevel = node.securityLevels.getFriendsThreatLevel();
+		
+		controlName = "security-levels.friendsThreatLevel";
+		for(FRIENDS_THREAT_LEVEL level : FRIENDS_THREAT_LEVEL.values()) {
+			HTMLNode input;
+			if(level == friendsLevel) {
+				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" }, new String[] { "radio", "on", controlName, level.name() });
+			} else {
+				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
+			}
+			input.addChild("b", l10nSec("friendsThreatLevel.name."+level));
+			input.addChild("#", ": ");
+			L10n.addL10nSubstitution(input, "SecurityLevels.friendsThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+		}
+		
+		// Physical security level
+		formNode.addChild("div", "class", "configprefix", l10nSec("physicalThreatLevelShort"));
+		ul = formNode.addChild("ul", "class", "config");
+		seclevelGroup = ul.addChild("li");
+		seclevelGroup.addChild("#", l10nSec("physicalThreatLevel"));
+		
+		PHYSICAL_THREAT_LEVEL physicalLevel = node.securityLevels.getPhysicalThreatLevel();
+		
+		controlName = "security-levels.physicalThreatLevel";
+		for(PHYSICAL_THREAT_LEVEL level : PHYSICAL_THREAT_LEVEL.values()) {
+			HTMLNode input;
+			if(level == physicalLevel) {
+				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "checked", "name", "value" }, new String[] { "radio", "on", controlName, level.name() });
+			} else {
+				input = seclevelGroup.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", controlName, level.name() });
+			}
+			input.addChild("b", l10nSec("physicalThreatLevel.name."+level));
+			input.addChild("#", ": ");
+			L10n.addL10nSubstitution(input, "SecurityLevels.physicalThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+		}
+		
+		
+		
 		// FIXME implement the rest, it should be very similar to the above.
 		
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "seclevels", "on" });
