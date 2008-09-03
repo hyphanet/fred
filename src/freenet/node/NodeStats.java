@@ -12,6 +12,7 @@ import freenet.crypt.RandomSource;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.l10n.L10n;
+import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -274,7 +275,22 @@ public class NodeStats implements Persistable {
 				}
 			}
 		});
+		
+		// This is a *network* level setting, because it affects the rate at which we initiate local
+		// requests, which could be seen by distant nodes.
+		
+		node.securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
 
+			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
+				if(newLevel == NETWORK_THREAT_LEVEL.MAXIMUM)
+					ignoreLocalVsRemoteBandwidthLiability = true;
+				if(oldLevel == NETWORK_THREAT_LEVEL.MAXIMUM)
+					ignoreLocalVsRemoteBandwidthLiability = false;
+				// Otherwise leave it as it was. It defaults to false.
+			}
+			
+		});
+		
 		persister = new ConfigurablePersister(this, statsConfig, "nodeThrottleFile", "node-throttle.dat", sortOrder++, true, false, 
 				"NodeStat.statsPersister", "NodeStat.statsPersisterLong", node.ps, nodeDir);
 
