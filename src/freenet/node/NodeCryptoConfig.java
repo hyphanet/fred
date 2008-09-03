@@ -8,6 +8,7 @@ import java.net.UnknownHostException;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
+import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
@@ -49,7 +50,7 @@ public class NodeCryptoConfig {
 	 * aggressive handshakes (every 10-30 seconds). */
 	private boolean assumeNATed;
 	
-	NodeCryptoConfig(SubConfig config, int sortOrder, boolean onePerIP, boolean isOpennet) throws NodeInitException {
+	NodeCryptoConfig(SubConfig config, int sortOrder, boolean onePerIP, boolean isOpennet, SecurityLevels securityLevels) throws NodeInitException {
 		this.isOpennet = isOpennet;
 		
 		config.register("listenPort", -1 /* means random */, sortOrder++, true, true, "Node.port", "Node.portLong",	new IntCallback() {
@@ -156,6 +157,19 @@ public class NodeCryptoConfig {
 					}			
 		});
 		alwaysAllowLocalAddresses = config.getBoolean("alwaysAllowLocalAddresses");
+		
+		if(!isOpennet) {
+			securityLevels.addFriendsThreatLevelListener(new SecurityLevelListener<FRIENDS_THREAT_LEVEL>() {
+
+				public void onChange(FRIENDS_THREAT_LEVEL oldLevel, FRIENDS_THREAT_LEVEL newLevel) {
+					if(newLevel == FRIENDS_THREAT_LEVEL.HIGH)
+						alwaysAllowLocalAddresses = false;
+					if(oldLevel == FRIENDS_THREAT_LEVEL.HIGH)
+						alwaysAllowLocalAddresses = false;
+				}
+				
+			});
+		}
 		
 		config.register("assumeNATed", true, sortOrder++, true, true, "Node.assumeNATed", "Node.assumeNATedLong", new BooleanCallback() {
 

@@ -1025,7 +1025,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// @see #191
 		if(oldConfig != null && "-1".equals(oldConfig.get("node.listenPort")))
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_BIND_USM, "Your freenet.ini file is corrupted! 'listenPort=-1'");
-		NodeCryptoConfig darknetConfig = new NodeCryptoConfig(nodeConfig, sortOrder++, false, false);
+		NodeCryptoConfig darknetConfig = new NodeCryptoConfig(nodeConfig, sortOrder++, false, false, securityLevels);
 		sortOrder += NodeCryptoConfig.OPTION_COUNT;
 		
 		darknetCrypto = new NodeCrypto(this, false, darknetConfig, startupTime, enableARKs);
@@ -1283,7 +1283,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			maxOpennetPeers = 20;
 		}
 		
-		opennetCryptoConfig = new NodeCryptoConfig(opennetConfig, 2 /* 0 = enabled */, true, true);
+		opennetCryptoConfig = new NodeCryptoConfig(opennetConfig, 2 /* 0 = enabled */, true, true, securityLevels);
 		
 		if(opennetEnabled) {
 			opennet = new OpennetManager(this, opennetCryptoConfig, System.currentTimeMillis(), isAllowedToConnectToSeednodes);
