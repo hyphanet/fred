@@ -376,6 +376,32 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_FRIENDS);
 				return;
 			}
+			if((newThreatLevel == FRIENDS_THREAT_LEVEL.HIGH)) {
+				if((!request.isPartSet("security-levels.friendsThreatLevel.confirm")) &&
+					(!request.isPartSet("security-levels.friendsThreatLevel.tryConfirm"))) {
+					HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("friendsSecurityPageTitle"), ctx);
+					HTMLNode content = ctx.getPageMaker().getContentNode(pageNode);
+					HTMLNode formNode = ctx.addFormChild(content, ".", "configFormSecLevels");
+					
+					formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "security-levels.friendsThreatLevel", friendsThreatLevel });
+					HTMLNode infobox = formNode.addChild("div", "class", "infobox infobox-information");
+					infobox.addChild("div", "class", "infobox-header", l10nSec("friendsThreatLevelConfirmTitle", "mode", SecurityLevels.localisedName(newThreatLevel)));
+					HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+					HTMLNode p = infoboxContent.addChild("p");
+					L10n.addL10nSubstitution(p, "FirstTimeWizardToadlet.highFriendsThreatLevelWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+					infoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "security-levels.friendsThreatLevel.confirm", "off" }, l10nSec("highFriendsThreatLevelCheckbox"));
+					infoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "security-levels.friendsThreatLevel.tryConfirm", "on" });
+					formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "seclevels", "on" });
+					formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", L10n.getString("ConfigToadlet.apply")});
+					formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  L10n.getString("ConfigToadlet.reset")});
+					writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+					return;
+				} else if((!request.isPartSet("security-levels.friendsThreatLevel.confirm")) &&
+						request.isPartSet("security-levels.friendsThreatLevel.tryConfirm")) {
+					super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_FRIENDS);
+					return;
+				}
+			}
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_PHYSICAL);
 		} else if(request.isPartSet("security-levels.physicalThreatLevel")) {
