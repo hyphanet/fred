@@ -929,6 +929,16 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		});
 		enableSwapping = nodeConfig.getBoolean("enableSwapping");
 		
+		/*
+		 * Publish our peers' locations is enabled, even in MAXIMUM network security and/or HIGH friends security,
+		 * because a node which doesn't publish its peers' locations will get dramatically less traffic.
+		 * 
+		 * Publishing our peers' locations does make us slightly more vulnerable to some attacks, but I don't think
+		 * it's a big difference: swapping reveals the same information, it just doesn't update as quickly. This 
+		 * may help slightly, but probably not dramatically against a clever attacker.
+		 * 
+		 * FIXME review this decision.
+		 */
 		nodeConfig.register("publishOurPeersLocation", true, sortOrder++, true, false, "Node.publishOurPeersLocation", "Node.publishOurPeersLocationLong", new BooleanCallback() {
 
 			public Boolean get() {
