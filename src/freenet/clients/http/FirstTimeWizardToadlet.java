@@ -326,6 +326,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			// FIXME should we have confirmation here???
 			String networkThreatLevel = request.getPartAsString("security-levels.networkThreatLevel", 128);
 			NETWORK_THREAT_LEVEL newThreatLevel = SecurityLevels.parseNetworkThreatLevel(networkThreatLevel);
+			if(newThreatLevel == null) {
+				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_NETWORK);
+				return;
+			}
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_FRIENDS);
 		} else if(request.isPartSet("security-levels.friendsThreatLevel")) {
@@ -334,6 +338,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			// FIXME should we have confirmation here???
 			String friendsThreatLevel = request.getPartAsString("security-levels.friendsThreatLevel", 128);
 			FRIENDS_THREAT_LEVEL newThreatLevel = SecurityLevels.parseFriendsThreatLevel(friendsThreatLevel);
+			if(newThreatLevel == null) {
+				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_FRIENDS);
+				return;
+			}
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_PHYSICAL);
 		} else if(request.isPartSet("security-levels.physicalThreatLevel")) {
@@ -342,6 +350,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			// FIXME should we have confirmation here???
 			String physicalThreatLevel = request.getPartAsString("security-levels.physicalThreatLevel", 128);
 			PHYSICAL_THREAT_LEVEL newThreatLevel = SecurityLevels.parsePhysicalThreatLevel(physicalThreatLevel);
+			if(newThreatLevel == null) {
+				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_PHYSICAL);
+				return;
+			}
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
 			core.storeConfig();
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.NAME_SELECTION+"&opennet="+core.node.isOpennetEnabled());
