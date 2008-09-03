@@ -50,7 +50,7 @@ public class NodeCryptoConfig {
 	 * aggressive handshakes (every 10-30 seconds). */
 	private boolean assumeNATed;
 	
-	NodeCryptoConfig(SubConfig config, int sortOrder, boolean onePerIP, boolean isOpennet, SecurityLevels securityLevels) throws NodeInitException {
+	NodeCryptoConfig(SubConfig config, int sortOrder, boolean isOpennet, SecurityLevels securityLevels) throws NodeInitException {
 		this.isOpennet = isOpennet;
 		
 		config.register("listenPort", -1 /* means random */, sortOrder++, true, true, "Node.port", "Node.portLong",	new IntCallback() {
@@ -123,7 +123,7 @@ public class NodeCryptoConfig {
 		});
 		dropProbability = config.getInt("testingDropPacketsEvery"); 
 		
-		config.register("oneConnectionPerIP", onePerIP, sortOrder++, true, false, "Node.oneConnectionPerIP", "Node.oneConnectionPerIPLong",
+		config.register("oneConnectionPerIP", isOpennet, sortOrder++, true, false, "Node.oneConnectionPerIP", "Node.oneConnectionPerIPLong",
 				new BooleanCallback() {
 
 					public Boolean get() {
