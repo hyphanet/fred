@@ -248,7 +248,12 @@ public class NodeIPDetector {
 					}
 				}
 				if(best != null) {
-					if((bestPopularity > 1) || (detectedAddrs.length == 0)) {
+					boolean hasRealDetectedAddress = false;
+					for(int i=0;i<detectedAddrs.length;i++) {
+						if(IPUtil.isValidAddress(detectedAddrs[i], false))
+							hasRealDetectedAddress = true;
+					}
+					if((bestPopularity > 1) || !hasRealDetectedAddress) {
  						if(!addresses.contains(best)) {
 							Logger.minor(this, "Adding best peer "+best+" ("+bestPopularity+ ')');
 							addresses.add(best);
