@@ -41,6 +41,7 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.L10n;
+import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.FCPServer;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -252,6 +253,28 @@ public class NodeClientCore implements Persistable {
 		});
 		tempBucketFactory = new TempBucketFactory(node.executor, tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), random, node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"));
 
+		node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
+
+			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
+				if(newLevel == PHYSICAL_THREAT_LEVEL.LOW) {
+					if(tempBucketFactory.isEncrypting()) {
+						tempBucketFactory.setEncryption(false);
+					}
+					if(persistentTempBucketFactory.isEncrypting()) {
+						persistentTempBucketFactory.setEncryption(false);
+					}
+				} else { // newLevel == PHYSICAL_THREAT_LEVEL.NORMAL
+					if(!tempBucketFactory.isEncrypting()) {
+						tempBucketFactory.setEncryption(true);
+					}
+					if(!persistentTempBucketFactory.isEncrypting()) {
+						persistentTempBucketFactory.setEncryption(true);
+					}
+				}
+			}
+			
+		});
+		
 		// Downloads directory
 
 		nodeConfig.register("downloadsDir", "downloads", sortOrder++, true, true, "NodeClientCore.downloadDir", "NodeClientCore.downloadDirLong", new StringCallback() {
