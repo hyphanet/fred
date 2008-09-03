@@ -22,6 +22,8 @@ import freenet.support.api.StringCallback;
  */
 public class NodeCryptoConfig {
 
+	private final boolean isOpennet;
+	
 	/** Port number. -1 = choose a random available port number at activation time. */
 	private int portNumber;
 	
@@ -47,7 +49,8 @@ public class NodeCryptoConfig {
 	 * aggressive handshakes (every 10-30 seconds). */
 	private boolean assumeNATed;
 	
-	NodeCryptoConfig(SubConfig config, int sortOrder, boolean onePerIP) throws NodeInitException {
+	NodeCryptoConfig(SubConfig config, int sortOrder, boolean onePerIP, boolean isOpennet) throws NodeInitException {
+		this.isOpennet = isOpennet;
 		
 		config.register("listenPort", -1 /* means random */, sortOrder++, true, true, "Node.port", "Node.portLong",	new IntCallback() {
 			public Integer get() {
@@ -137,7 +140,7 @@ public class NodeCryptoConfig {
 		});
 		oneConnectionPerAddress = config.getBoolean("oneConnectionPerIP");
 		
-		config.register("alwaysAllowLocalAddresses", false, sortOrder++, true, false, "Node.alwaysAllowLocalAddresses", "Node.alwaysAllowLocalAddressesLong",
+		config.register("alwaysAllowLocalAddresses", !isOpennet, sortOrder++, true, false, "Node.alwaysAllowLocalAddresses", "Node.alwaysAllowLocalAddressesLong",
 				new BooleanCallback() {
 
 					public Boolean get() {
