@@ -231,6 +231,22 @@ public class SecurityLevels {
 			return null;
 		}
 	}
+	
+	public static FRIENDS_THREAT_LEVEL parseFriendsThreatLevel(String arg) {
+		try {
+			return FRIENDS_THREAT_LEVEL.valueOf(arg);
+		} catch (IllegalArgumentException e) {
+			return null;
+		}
+	}
+	
+	public static PHYSICAL_THREAT_LEVEL parsePhysicalThreatLevel(String arg) {
+		try {
+			return PHYSICAL_THREAT_LEVEL.valueOf(arg);
+		} catch (IllegalArgumentException e) {
+			return null;
+		}
+	}
 
 	/**
 	 * If changing to the new threat level is a potential problem, warn the user,
@@ -282,6 +298,18 @@ public class SecurityLevels {
 		}
 		return null;
 	}
+	
+	public HTMLNode getConfirmWarning(FRIENDS_THREAT_LEVEL newFriendsLevel, String checkboxName) {
+		if(newFriendsLevel == friendsThreatLevel)
+			return null; // Not going to be changed.
+		if(newFriendsLevel == FRIENDS_THREAT_LEVEL.HIGH) {
+			HTMLNode parent = new HTMLNode("div");
+			parent.addChild("p", l10n("highFriendsThreatLevelWarning"));
+			parent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", checkboxName, "off" }, l10n("highFriendsThreatLevelCheckbox"));
+			return parent;
+		}
+		return null;
+	}
 
 	private String l10n(String string) {
 		return L10n.getString("SecurityLevels."+string);
@@ -299,6 +327,22 @@ public class SecurityLevels {
 		if(newThreatLevel == null) throw new NullPointerException();
 		synchronized(this) {
 			networkThreatLevel = newThreatLevel;
+		}
+		node.config.store();
+	}
+
+	public void setThreatLevel(FRIENDS_THREAT_LEVEL newThreatLevel) {
+		if(newThreatLevel == null) throw new NullPointerException();
+		synchronized(this) {
+			friendsThreatLevel = newThreatLevel;
+		}
+		node.config.store();
+	}
+	
+	public void setThreatLevel(PHYSICAL_THREAT_LEVEL newThreatLevel) {
+		if(newThreatLevel == null) throw new NullPointerException();
+		synchronized(this) {
+			physicalThreatLevel = newThreatLevel;
 		}
 		node.config.store();
 	}
