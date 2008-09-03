@@ -301,6 +301,8 @@ public class SecurityLevels {
 		if(newThreatLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
 			HTMLNode p = parent.addChild("p");
 			L10n.addL10nSubstitution(p, "SecurityLevels.maximumNetworkThreatLevelWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+			p.addChild("#", " ");
+			L10n.addL10nSubstitution(p, "SecurityLevels.maxSecurityYouNeedFriends", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 			parent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", checkboxName, "off" }, l10n("maximumNetworkThreatLevelCheckbox"));
 			return parent;
 		}

@@ -330,6 +330,40 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_NETWORK);
 				return;
 			}
+			if((newThreatLevel == NETWORK_THREAT_LEVEL.MAXIMUM || newThreatLevel == NETWORK_THREAT_LEVEL.HIGH)) {
+				if((!request.isPartSet("security-levels.networkThreatLevel.confirm")) &&
+					(!request.isPartSet("security-levels.networkThreatLevel.tryConfirm"))) {
+					HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("networkSecurityPageTitle"), ctx);
+					HTMLNode content = ctx.getPageMaker().getContentNode(pageNode);
+					HTMLNode formNode = ctx.addFormChild(content, ".", "configFormSecLevels");
+					
+					formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "security-levels.networkThreatLevel", networkThreatLevel });
+					HTMLNode infobox = formNode.addChild("div", "class", "infobox infobox-information");
+					infobox.addChild("div", "class", "infobox-header", l10nSec("networkThreatLevelConfirmTitle", "mode", SecurityLevels.localisedName(newThreatLevel)));
+					HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+					if(newThreatLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
+						HTMLNode p = infoboxContent.addChild("p");
+						L10n.addL10nSubstitution(p, "SecurityLevels.maximumNetworkThreatLevelWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+						p.addChild("#", " ");
+						L10n.addL10nSubstitution(p, "SecurityLevels.maxSecurityYouNeedFriends", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+						infoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "security-levels.networkThreatLevel.confirm", "off" }, l10nSec("maximumNetworkThreatLevelCheckbox"));
+					} else /*if(newThreatLevel == NETWORK_THREAT_LEVEL.HIGH)*/ {
+						HTMLNode p = infoboxContent.addChild("p");
+						L10n.addL10nSubstitution(p, "FirstTimeWizardToadlet.highNetworkThreatLevelWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+						infoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", "security-levels.networkThreatLevel.confirm", "off" }, l10n("highNetworkThreatLevelCheckbox"));
+					}
+					infoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "security-levels.networkThreatLevel.tryConfirm", "on" });
+					formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "seclevels", "on" });
+					formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", L10n.getString("ConfigToadlet.apply")});
+					formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset",  L10n.getString("ConfigToadlet.reset")});
+					writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+					return;
+				} else if((!request.isPartSet("security-levels.networkThreatLevel.confirm")) &&
+						request.isPartSet("security-levels.networkThreatLevel.tryConfirm")) {
+					super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_NETWORK);
+					return;
+				}
+			}
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_FRIENDS);
 		} else if(request.isPartSet("security-levels.friendsThreatLevel")) {
