@@ -182,7 +182,11 @@ public class SecurityLevels {
 	
 	private abstract class MyCallback<T> extends StringCallback implements EnumerableOptionCallback {
 
-		private ArrayList<SecurityLevelListener<T>> listeners;
+		private final ArrayList<SecurityLevelListener<T>> listeners;
+		
+		MyCallback() {
+			listeners = new ArrayList<SecurityLevelListener<T>>();
+		}
 		
 		public void addListener(SecurityLevelListener<T> listener) {
 			if(listeners.contains(listener)) {
@@ -201,6 +205,10 @@ public class SecurityLevels {
 			T oldLevel = getValue();
 			setValue(val);
 			T newLevel = getValue();
+			onSet(oldLevel, newLevel);
+		}
+
+		void onSet(T oldLevel, T newLevel) {
 			for(SecurityLevelListener<T> listener : listeners) {
 				listener.onChange(oldLevel, newLevel);
 			}
@@ -325,23 +333,32 @@ public class SecurityLevels {
 
 	public void setThreatLevel(NETWORK_THREAT_LEVEL newThreatLevel) {
 		if(newThreatLevel == null) throw new NullPointerException();
+		NETWORK_THREAT_LEVEL oldLevel;
 		synchronized(this) {
+			oldLevel = networkThreatLevel;
 			networkThreatLevel = newThreatLevel;
 		}
+		networkThreatLevelCallback.onSet(oldLevel, newThreatLevel);
 	}
 
 	public void setThreatLevel(FRIENDS_THREAT_LEVEL newThreatLevel) {
 		if(newThreatLevel == null) throw new NullPointerException();
+		FRIENDS_THREAT_LEVEL oldLevel;
 		synchronized(this) {
+			oldLevel = friendsThreatLevel;
 			friendsThreatLevel = newThreatLevel;
 		}
+		friendsThreatLevelCallback.onSet(oldLevel, newThreatLevel);
 	}
 	
 	public void setThreatLevel(PHYSICAL_THREAT_LEVEL newThreatLevel) {
 		if(newThreatLevel == null) throw new NullPointerException();
+		PHYSICAL_THREAT_LEVEL oldLevel;
 		synchronized(this) {
+			oldLevel = physicalThreatLevel;
 			physicalThreatLevel = newThreatLevel;
 		}
+		physicalThreatLevelCallback.onSet(oldLevel, newThreatLevel);
 	}
 
 	public static String localisedName(NETWORK_THREAT_LEVEL newThreatLevel) {

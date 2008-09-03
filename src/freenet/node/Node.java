@@ -75,6 +75,7 @@ import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.L10n;
 import freenet.node.NodeDispatcher.NodeDispatcherCallback;
+import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
@@ -86,6 +87,7 @@ import freenet.node.useralerts.OpennetUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.TimeSkewDetectedUserAlert;
 import freenet.node.useralerts.UserAlert;
+import freenet.node.useralerts.UserAlertManager;
 import freenet.pluginmanager.ForwardPort;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
@@ -1245,6 +1247,45 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		} else {
 			opennet = null;
 		}
+		
+		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+
+			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
+				if(newLevel == NETWORK_THREAT_LEVEL.HIGH
+						|| newLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
+					OpennetManager om;
+					synchronized(Node.this) {
+						om = opennet;
+						if(om != null)
+							opennet = null;
+					}
+					if(om != null) {
+						om.stop(true);
+						ipDetector.ipDetectorManager.notifyPortChange(getPublicInterfacePorts());
+					}
+				} else if(newLevel == NETWORK_THREAT_LEVEL.NORMAL
+						|| newLevel == NETWORK_THREAT_LEVEL.LOW) {
+					OpennetManager o = null;
+					synchronized(Node.this) {
+						if(opennet == null) {
+							try {
+								o = opennet = new OpennetManager(Node.this, opennetCryptoConfig, System.currentTimeMillis(), isAllowedToConnectToSeednodes);
+							} catch (NodeInitException e) {
+								opennet = null;
+								Logger.error(this, "UNABLE TO ENABLE OPENNET: "+e, e);
+								clientCore.alerts.register(new SimpleUserAlert(false, l10n("enableOpennetFailedTitle"), l10n("enableOpennetFailed", "message", e.getLocalizedMessage()), l10n("enableOpennetFailed", "message", e.getLocalizedMessage()), UserAlert.ERROR));
+							}
+						}
+					}
+					if(o != null) {
+						o.start();
+						ipDetector.ipDetectorManager.notifyPortChange(getPublicInterfacePorts());
+					}
+				}
+				Node.this.config.store();
+			}
+			
+		});
 		
 		opennetConfig.register("acceptSeedConnections", true, 2, true, true, "Node.acceptSeedConnectionsShort", "Node.acceptSeedConnections", new BooleanCallback() {
 
