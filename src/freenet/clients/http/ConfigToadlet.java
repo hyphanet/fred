@@ -124,11 +124,12 @@ public class ConfigToadlet extends Toadlet {
 			boolean addedWarning = false;
 			String configName = "security-levels.networkThreatLevel";
 			String confirm = "security-levels.networkThreatLevel.confirm";
+			String tryConfirm = "security-levels.networkThreatLevel.tryConfirm";
 			String networkThreatLevel = request.getPartAsString(configName, 128);
 			NETWORK_THREAT_LEVEL newThreatLevel = SecurityLevels.parseNetworkThreatLevel(networkThreatLevel);
 			if(newThreatLevel != null) {
 				if(newThreatLevel != node.securityLevels.getNetworkThreatLevel()) {
-					if(!request.isPartSet(confirm)) {
+					if(!request.isPartSet(confirm) && !request.isPartSet(tryConfirm)) {
 						HTMLNode warning = node.securityLevels.getConfirmWarning(newThreatLevel, confirm);
 						if(warning != null) {
 							if(pageNode == null) {
@@ -144,12 +145,13 @@ public class ConfigToadlet extends Toadlet {
 							infobox.addChild("div", "class", "infobox-header", l10nSec("networkThreatLevelConfirmTitle", "mode", SecurityLevels.localisedName(newThreatLevel)));
 							HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 							infoboxContent.addChild(warning);
+							infoboxContent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", tryConfirm, "on" });
 							addedWarning = true;
 						} else {
 							// Apply immediately, no confirm needed.
 							node.securityLevels.setThreatLevel(newThreatLevel);
 						}
-					} else {
+					} else if(request.isPartSet(confirm)) {
 						// Apply immediately, user confirmed it.
 						node.securityLevels.setThreatLevel(newThreatLevel);
 					}
