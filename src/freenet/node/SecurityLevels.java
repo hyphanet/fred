@@ -4,7 +4,6 @@
 package freenet.node;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
@@ -32,20 +31,21 @@ public class SecurityLevels {
 	private final Node node;
 	
 	public enum NETWORK_THREAT_LEVEL {
-		HIGH, // paranoid, darknet only
+		LOW, // turn off every performance impacting security measure
 		NORMAL, // normal setting, darknet/opennet hybrid
-		LOW // turn off every performance impacting security measure
+		HIGH, // darknet only, normal settings otherwise
+		MAXIMUM, // paranoid - darknet only, turn off FOAF etc etc
 	}
 	
 	public enum FRIENDS_THREAT_LEVEL {
-		HIGH, // Share no/minimal information and take measures to reduce harm if Friends are compromized
+		LOW, // Friends are ultimately trusted
 		NORMAL, // Share some information
-		LOW // Friends are ultimately trusted
+		HIGH, // Share no/minimal information and take measures to reduce harm if Friends are compromized
 	}
 	
 	public enum PHYSICAL_THREAT_LEVEL {
+		LOW, // Don't encrypt temp files etc etc
 		NORMAL, // Encrypt temp files etc etc
-		LOW // Don't encrypt temp files etc etc
 	}
 	
 	NETWORK_THREAT_LEVEL networkThreatLevel;
@@ -234,23 +234,44 @@ public class SecurityLevels {
 		if(newThreatLevel == networkThreatLevel)
 			return null; // Not going to be changed.
 		HTMLNode parent = new HTMLNode("div");
-		if(newThreatLevel == NETWORK_THREAT_LEVEL.HIGH) {
+		if((newThreatLevel == NETWORK_THREAT_LEVEL.HIGH && networkThreatLevel != NETWORK_THREAT_LEVEL.MAXIMUM) || 
+				newThreatLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
 			if(node.peers.getDarknetPeers().length == 0) {
 				parent.addChild("p", l10n("noFriendsWarning"));
+				if(newThreatLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
+					HTMLNode p = parent.addChild("p");
+					L10n.addL10nSubstitution(p, "SecurityLevels.maximumNetworkThreatLevelWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+				}
 				parent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", checkboxName, "off" }, l10n("noFriendsCheckbox"));
+				return parent;
 			} else if(node.peers.countConnectedDarknetPeers() == 0) {
 				parent.addChild("p", l10n("noConnectedFriendsWarning", "added", Integer.toString(node.peers.getDarknetPeers().length)));
+				if(newThreatLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
+					HTMLNode p = parent.addChild("p");
+					L10n.addL10nSubstitution(p, "SecurityLevels.maximumNetworkThreatLevelWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+				}
 				parent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", checkboxName, "off" }, l10n("noConnectedFriendsCheckbox"));
+				return parent;
 			} else if(node.peers.countConnectedDarknetPeers() < 10) {
 				parent.addChild("p", l10n("fewConnectedFriendsWarning", new String[] { "connected", "added" }, new String[] { Integer.toString(node.peers.countConnectedDarknetPeers()), Integer.toString(node.peers.getDarknetPeers().length)}));
+				if(newThreatLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
+					HTMLNode p = parent.addChild("p");
+					L10n.addL10nSubstitution(p, "SecurityLevels.maximumNetworkThreatLevelWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+				}
 				parent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", checkboxName, "off" }, l10n("fewConnectedFriendsCheckbox"));
-			} else return null;
-			return parent;
+				return parent;
+			}
 		} else if(newThreatLevel == NETWORK_THREAT_LEVEL.LOW) {
 			parent.addChild("p", l10n("networkThreatLevelLowWarning"));
 			parent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", checkboxName, "off" }, l10n("networkThreatLevelLowCheckbox"));
 			return parent;
 		} // Don't warn on switching to NORMAL.
+		if(newThreatLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
+			HTMLNode p = parent.addChild("p");
+			L10n.addL10nSubstitution(p, "SecurityLevels.maximumNetworkThreatLevelWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+			parent.addChild("input", new String[] { "type", "name", "value" }, new String[] { "checkbox", checkboxName, "off" }, l10n("maximumNetworkThreatLevelCheckbox"));
+			return parent;
+		}
 		return null;
 	}
 
