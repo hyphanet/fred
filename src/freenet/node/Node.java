@@ -1822,6 +1822,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			((SaltedHashFreenetStore) sskDatacache.getStore()).setUserAlertManager(clientCore.alerts);
 		}
 		
+		securityLevels.registerUserAlert(clientCore.alerts);
+		
 		nodeConfig.register("disableHangCheckers", false, sortOrder++, true, false, "Node.disableHangCheckers", "Node.disableHangCheckersLong", new BooleanCallback() {
 
 			public Boolean get() {
@@ -1934,8 +1936,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		if(!NativeThread.HAS_ENOUGH_NICE_LEVELS)
 			clientCore.alerts.register(new NotEnoughNiceLevelsUserAlert());
-		
-		clientCore.alerts.register(new OpennetUserAlert(this));
 		
 		this.clientCore.start(config);
 		

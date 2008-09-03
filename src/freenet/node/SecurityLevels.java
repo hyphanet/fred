@@ -5,12 +5,15 @@ package freenet.node;
 
 import java.util.ArrayList;
 
+import freenet.clients.http.ConfigToadlet;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
 import freenet.l10n.L10n;
+import freenet.node.useralerts.UserAlert;
+import freenet.node.useralerts.UserAlertManager;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.StringCallback;
@@ -369,6 +372,85 @@ public class SecurityLevels {
 	
 	public static String localisedName(FRIENDS_THREAT_LEVEL newFriendsLevel) {
 		return L10n.getString("SecurityLevels.friendsThreatLevel.name."+newFriendsLevel.name());
+	}
+	
+	public static String localisedName(PHYSICAL_THREAT_LEVEL newPhysicalLevel) {
+		return L10n.getString("SecurityLevels.physicalThreatLevel.name."+newPhysicalLevel.name());
+	}
+
+	public void registerUserAlert(UserAlertManager alerts) {
+		alerts.register(new UserAlert() {
+
+			public String anchor() {
+				return "seclevels";
+			}
+
+			public String dismissButtonText() {
+				return L10n.getString("UserAlert.hide");
+			}
+
+			public HTMLNode getHTMLText() {
+				HTMLNode div = new HTMLNode("div");
+				HTMLNode ul = div.addChild("ul");
+				ul.addChild("li", l10n("userAlertNetworkThreatLevel", "level", localisedName(networkThreatLevel)));
+				ul.addChild("li", l10n("userAlertFriendsThreatLevel", "level", localisedName(friendsThreatLevel)));
+				ul.addChild("li", l10n("userAlertPhysicalThreatLevel", "level", localisedName(physicalThreatLevel)));
+				div.addChild("br");
+				L10n.addL10nSubstitution(div, "SecurityLevels.userAlertExtro",
+						new String[] { "link", "/link" },
+						new String[] { "<a href=\"/config/?mode="+ConfigToadlet.MODE_SECURITY_LEVELS+"\">", "</a>" });
+				return div;
+			}
+
+			public short getPriorityClass() {
+				return UserAlert.WARNING;
+			}
+
+			public String getShortText() {
+				return l10n("userAlertShortText", new String[] { "network", "friends", "physical" },
+						new String[] {
+							localisedName(networkThreatLevel),
+							localisedName(friendsThreatLevel),
+							localisedName(physicalThreatLevel)} );
+			}
+
+			public String getText() {
+				return getHTMLText().getContent();
+			}
+
+			public String getTitle() {
+				return l10n("title");
+			}
+
+			public Object getUserIdentifier() {
+				return null;
+			}
+
+			public boolean isEventNotification() {
+				return false;
+			}
+
+			public boolean isValid() {
+				return true;
+			}
+
+			public void isValid(boolean validity) {
+				// Ignore
+			}
+
+			public void onDismiss() {
+				// Ignore
+			}
+
+			public boolean shouldUnregisterOnDismiss() {
+				return true;
+			}
+
+			public boolean userCanDismiss() {
+				return true;
+			}
+			
+		});
 	}
 
 }
