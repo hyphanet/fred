@@ -3701,6 +3701,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			Logger.error(this, "Packets: "+packetHashes.length+" not found "+notFoundCount+" consecutive not found "+consecutiveNotFound+" longest consecutive not found "+longestConsecutiveNotFound+" ignored due to uptime: "+ignoredUptimeCount+" found: "+found);
 			if(consecutiveNotFound > TRACK_PACKETS / 2) {
 				manyPacketsClaimedSentNotReceived = true;
+				timeManyPacketsClaimedSentNotReceived = now;
 				Logger.error(this, "" + consecutiveNotFound + " consecutive packets not found on " + userToString());
 				SocketHandler handler = outgoingMangler.getSocketHandler();
 				if(handler instanceof PortForwardSensitiveSocketHandler) {
@@ -3713,6 +3714,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 	}
 	private boolean manyPacketsClaimedSentNotReceived = false;
+	
+	private long timeManyPacketsClaimedSentNotReceived;
 
 	synchronized boolean manyPacketsClaimedSentNotReceived() {
 		return manyPacketsClaimedSentNotReceived;

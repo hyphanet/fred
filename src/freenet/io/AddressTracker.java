@@ -56,6 +56,7 @@ public class AddressTracker {
 	private long timeDefinitelyNoPacketsSent;
 	
 	private boolean isBroken;
+	private long brokenTime;
 	
 	public static AddressTracker create(long lastBootID, File nodeDir, int port) {
 		File data = new File(nodeDir, "packets-"+port+".dat");
@@ -230,11 +231,14 @@ public class AddressTracker {
 	
 	public int getPortForwardStatus() {
 		long minGap = getLongestSendReceiveGap(HORIZON);
-		if(isBroken) return DEFINITELY_NATED;
+		
 		if(minGap > DEFINITELY_TUNNEL_LENGTH)
 			return DEFINITELY_PORT_FORWARDED;
 		if(minGap > MAYBE_TUNNEL_LENGTH)
 			return MAYBE_PORT_FORWARDED;
+		// Only take isBroken into account if we're not sure.
+		// Somebody could be playing with us by sending bogus FNPSentPackets...
+		if(isBroken) return DEFINITELY_NATED;
 		return DONT_KNOW;
 	}
 	
@@ -318,5 +322,6 @@ public class AddressTracker {
 
 	public synchronized void setBroken() {
 		isBroken = true;
+		brokenTime = System.currentTimeMillis();
 	}
 }
