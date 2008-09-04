@@ -255,9 +255,10 @@ public class BucketChainBucket implements Bucket {
 	protected OutputStream makeBucketOutputStream(int i) throws IOException {
 		Bucket bucket = bf.makeBucket(bucketSize);
 		buckets.add(bucket);
-		if(buckets.size() != i+1)
-			throw new IllegalStateException("Added bucket, size should be "+(i+1)+" but is "+buckets.size());
-		buckets.set(i, bucket);
+		if (buckets.size() != i + 1)
+			throw new IllegalStateException("Added bucket, size should be " + (i + 1) + " but is " + buckets.size());
+		if (buckets.get(i) != bucket)
+			throw new IllegalStateException("Bucket got replaced. Race condition?");
 		return bucket.getOutputStream();
 	}
 
