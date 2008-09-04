@@ -84,11 +84,9 @@ import freenet.node.useralerts.ClockProblemDetectedUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
 import freenet.node.useralerts.NotEnoughNiceLevelsUserAlert;
-import freenet.node.useralerts.OpennetUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.TimeSkewDetectedUserAlert;
 import freenet.node.useralerts.UserAlert;
-import freenet.node.useralerts.UserAlertManager;
 import freenet.pluginmanager.ForwardPort;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
@@ -346,13 +344,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * everything that passes through this node. */
 	private final PubkeyStore pubKeyDatacache;
 	/** RequestSender's currently running, by KeyHTLPair */
-	private final HashMap requestSenders;
+	private final HashMap<KeyHTLPair, RequestSender> requestSenders;
 	/** RequestSender's currently transferring, by key */
-	private final HashMap transferringRequestSenders;
+	private final HashMap<NodeCHK, RequestSender> transferringRequestSenders;
 	/** UIDs of RequestHandler's currently transferring */
-	private final HashSet transferringRequestHandlers;
+	private final HashSet<Long> transferringRequestHandlers;
 	/** CHKInsertSender's currently running, by KeyHTLPair */
-	private final HashMap insertSenders;
+	private final HashMap<KeyHTLPair, AnyInsertSender> insertSenders;
 	/** FetchContext for ARKs */
 	public final FetchContext arkFetcherContext;
 	
@@ -365,17 +363,17 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public boolean disableHangCheckers;
 	
 	/** HashSet of currently running request UIDs */
-	private final HashSet runningUIDs;
-	private final HashSet runningCHKGetUIDs;
-	private final HashSet runningLocalCHKGetUIDs;
-	private final HashSet runningSSKGetUIDs;
-	private final HashSet runningLocalSSKGetUIDs;
-	private final HashSet runningCHKPutUIDs;
-	private final HashSet runningLocalCHKPutUIDs;
-	private final HashSet runningSSKPutUIDs;
-	private final HashSet runningLocalSSKPutUIDs;
-	private final HashSet runningCHKOfferReplyUIDs;
-	private final HashSet runningSSKOfferReplyUIDs;
+	private final HashSet<Long> runningUIDs;
+	private final HashSet<Long> runningCHKGetUIDs;
+	private final HashSet<Long> runningLocalCHKGetUIDs;
+	private final HashSet<Long> runningSSKGetUIDs;
+	private final HashSet<Long> runningLocalSSKGetUIDs;
+	private final HashSet<Long> runningCHKPutUIDs;
+	private final HashSet<Long> runningLocalCHKPutUIDs;
+	private final HashSet<Long> runningSSKPutUIDs;
+	private final HashSet<Long> runningLocalSSKPutUIDs;
+	private final HashSet<Long> runningCHKOfferReplyUIDs;
+	private final HashSet<Long> runningSSKOfferReplyUIDs;
 	
 	/** Semi-unique ID for swap requests. Used to identify us so that the
 	 * topology can be reconstructed. */
@@ -416,7 +414,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	final NodeDispatcher dispatcher;
 	public final UptimeEstimator uptime;
 	static final int MAX_MEMORY_CACHED_PUBKEYS = 1000;
-	final LRUHashtable cachedPubKeys;
+	final LRUHashtable<ImmutableByteArrayWrapper, DSAPublicKey> cachedPubKeys;
 	final boolean testnetEnabled;
 	final TestnetHandler testnetHandler;
 	public final DoubleTokenBucket outputThrottle;
@@ -732,7 +730,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		recentlyCompletedIDs = new LRUQueue();
 		this.config = config;
-		cachedPubKeys = new LRUHashtable();
+		cachedPubKeys = new LRUHashtable<ImmutableByteArrayWrapper, DSAPublicKey>();
 		lm = new LocationManager(random, this);
 
 		try {
@@ -742,21 +740,21 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			throw new Error(e3);
 		}
 		fLocalhostAddress = new FreenetInetAddress(localhostAddress);
-		requestSenders = new HashMap();
-		transferringRequestSenders = new HashMap();
-		transferringRequestHandlers = new HashSet();
-		insertSenders = new HashMap();
-		runningUIDs = new HashSet();
-		runningCHKGetUIDs = new HashSet();
-		runningLocalCHKGetUIDs = new HashSet();
-		runningSSKGetUIDs = new HashSet();
-		runningLocalSSKGetUIDs = new HashSet();
-		runningCHKPutUIDs = new HashSet();
-		runningLocalCHKPutUIDs = new HashSet();
-		runningSSKPutUIDs = new HashSet();
-		runningLocalSSKPutUIDs = new HashSet();
-		runningCHKOfferReplyUIDs = new HashSet();
-		runningSSKOfferReplyUIDs = new HashSet();
+		requestSenders = new HashMap<KeyHTLPair, RequestSender>();
+		transferringRequestSenders = new HashMap<NodeCHK, RequestSender>();
+		transferringRequestHandlers = new HashSet<Long>();
+		insertSenders = new HashMap<KeyHTLPair, AnyInsertSender>();
+		runningUIDs = new HashSet<Long>();
+		runningCHKGetUIDs = new HashSet<Long>();
+		runningLocalCHKGetUIDs = new HashSet<Long>();
+		runningSSKGetUIDs = new HashSet<Long>();
+		runningLocalSSKGetUIDs = new HashSet<Long>();
+		runningCHKPutUIDs = new HashSet<Long>();
+		runningLocalCHKPutUIDs = new HashSet<Long>();
+		runningSSKPutUIDs = new HashSet<Long>();
+		runningLocalSSKPutUIDs = new HashSet<Long>();
+		runningCHKOfferReplyUIDs = new HashSet<Long>();
+		runningSSKOfferReplyUIDs = new HashSet<Long>();
 		
 		this.securityLevels = new SecurityLevels(this, config);
 		
@@ -2165,7 +2163,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// Transfer coalescing - match key only as HTL irrelevant
 		RequestSender sender = null;
 		synchronized(transferringRequestSenders) {
-			sender = (RequestSender) transferringRequestSenders.get(key);
+			sender = transferringRequestSenders.get(key);
 		}
 		if(sender != null) {
 			if(logMINOR) Logger.minor(this, "Data already being transferred: "+sender);
@@ -2229,7 +2227,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		synchronized(requestSenders) {
 			KeyHTLPair kh = new KeyHTLPair(key, htl, sender.uid);
 			if(requestSenders.containsKey(kh)) {
-				RequestSender rs = (RequestSender) requestSenders.get(kh);
+				RequestSender rs = requestSenders.get(kh);
 				Logger.error(this, "addRequestSender(): KeyHTLPair '"+kh+"' already in requestSenders as "+rs+" and you want to add "+sender);
 				return;
 			}
@@ -2244,7 +2242,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		synchronized(insertSenders) {
 			KeyHTLPair kh = new KeyHTLPair(key, htl, sender.getUID());
 			if(insertSenders.containsKey(kh)) {
-				AnyInsertSender is = (AnyInsertSender) insertSenders.get(kh);
+				AnyInsertSender is = insertSenders.get(kh);
 				Logger.error(this, "addInsertSender(): KeyHTLPair '"+kh+"' already in insertSenders as "+is+" and you want to add "+sender);
 				return;
 			}
@@ -2497,7 +2495,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public void removeInsertSender(Key key, short htl, AnyInsertSender sender) {
 		synchronized(insertSenders) {
 			KeyHTLPair kh = new KeyHTLPair(key, htl, sender.getUID());
-			AnyInsertSender is = (AnyInsertSender) insertSenders.remove(kh);
+			AnyInsertSender is = insertSenders.remove(kh);
 			if(is != sender) {
 				Logger.error(this, "Removed "+is+" should be "+sender+" for "+key+ ',' +htl+" in removeInsertSender");
 			}
@@ -2611,7 +2609,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			}
 		}
 		// If these are switched around, we must remember to remove from both.
-		HashSet set = getUIDTracker(ssk, insert, offerReply, local);
+		HashSet<Long> set = getUIDTracker(ssk, insert, offerReply, local);
 		synchronized(set) {
 			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+set.size());
 			set.add(uid);
@@ -2622,7 +2620,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local) {
 		completed(uid);
-		HashSet set = getUIDTracker(ssk, insert, offerReply, local);
+		HashSet<Long> set = getUIDTracker(ssk, insert, offerReply, local);
 		synchronized(set) {
 			if(logMINOR) Logger.minor(this, "Unlocking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+", local="+local+" size="+set.size());
 			set.remove(uid);
@@ -2634,7 +2632,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 	}
 
-	HashSet getUIDTracker(boolean ssk, boolean insert, boolean offerReply, boolean local) {
+	private HashSet<Long> getUIDTracker(boolean ssk, boolean insert, boolean offerReply, boolean local) {
 		if(ssk) {
 			if(offerReply)
 				return runningSSKOfferReplyUIDs;
@@ -2664,16 +2662,16 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		sb.append("\nInserts: ");
 		AnyInsertSender[] senders;
 		synchronized(insertSenders) {
-			senders = (AnyInsertSender[]) insertSenders.values().toArray(new AnyInsertSender[insertSenders.size()]);
+			senders = insertSenders.values().toArray(new AnyInsertSender[insertSenders.size()]);
 		}
 		int x = senders.length;
 		sb.append(x);
 		if((x < 5) && (x > 0)) {
 			sb.append('\n');
 			// Dump
-			Iterator i = insertSenders.values().iterator();
+			Iterator<AnyInsertSender> i = insertSenders.values().iterator();
 			while(i.hasNext()) {
-				AnyInsertSender s = (AnyInsertSender) i.next();
+				AnyInsertSender s = i.next();
 				sb.append(s.getUID());
 				sb.append(": ");
 				sb.append(s.getStatusString());
@@ -2835,7 +2833,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		if(logMINOR) Logger.minor(this, "Getting pubkey: "+HexUtil.bytesToHex(hash));
 		if(USE_RAM_PUBKEYS_CACHE) {
 			synchronized(cachedPubKeys) {
-				DSAPublicKey key = (DSAPublicKey) cachedPubKeys.get(w);
+				DSAPublicKey key = cachedPubKeys.get(w);
 				if(key != null) {
 					cachedPubKeys.push(w, key);
 					if(logMINOR) Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from cache");
@@ -2867,7 +2865,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		if(logMINOR) Logger.minor(this, "Cache key: "+HexUtil.bytesToHex(hash)+" : "+key);
 		ImmutableByteArrayWrapper w = new ImmutableByteArrayWrapper(hash);
 		synchronized(cachedPubKeys) {
-			DSAPublicKey key2 = (DSAPublicKey) cachedPubKeys.get(w);
+			DSAPublicKey key2 = cachedPubKeys.get(w);
 			if((key2 != null) && !key2.equals(key)) {
 				// FIXME is this test really needed?
 				// SHA-256 inside synchronized{} is a bad idea
@@ -3459,8 +3457,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * ports, not necessarily external - they may be rewritten by the NAT.
 	 * @return A Set of ForwardPort's to be fed to port forward plugins.
 	 */
-	public Set getPublicInterfacePorts() {
-		HashSet set = new HashSet();
+	public Set<ForwardPort> getPublicInterfacePorts() {
+		HashSet<ForwardPort> set = new HashSet<ForwardPort>();
 		// FIXME IPv6 support
 		set.add(new ForwardPort("darknet", false, ForwardPort.PROTOCOL_UDP_IPV4, darknetCrypto.portNumber));
 		if(opennet != null) {
@@ -3548,7 +3546,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 	}
 
-	public void addRunningUIDs(Vector list) {
+	public void addRunningUIDs(Vector<Long> list) {
 		synchronized(runningUIDs) {
 			list.addAll(runningUIDs);
 		}
