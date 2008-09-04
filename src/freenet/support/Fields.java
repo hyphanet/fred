@@ -538,7 +538,7 @@ public abstract class Fields {
 		for(int i = 0; i < ints.length; i++) {
 			int x = 0;
 			for(int j = 3; j >= 0; j--) {
-				int y = (buf[j + offset] & 0xff);
+				int y = (buf[j + offset + i * 4] & 0xff);
 				x = (x << 8) | y;
 			}
 			ints[i] = x;
