@@ -3681,7 +3681,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 							break;
 					}
 				if(match == -1) {
-					long mustHaveBeenUpAt = now - timeDeltas[i] * 2 - 5*1000;
+					long mustHaveBeenUpAt = now - timeDeltas[i] * 2 - 1000;
 					if(this.crypto.socket.getStartTime() > mustHaveBeenUpAt) {
 						ignoredUptimeCount++;
 					} else {
