@@ -547,10 +547,12 @@ public class StatisticsToadlet extends Toadlet {
 		row.addChild("td", fix1p2.format(1.0*storeWrites/nodeUptimeSeconds)+" /sec");
 		row.addChild("td", fix1p2.format(1.0*cacheWrites/nodeUptimeSeconds)+" /sec");
 		
-		row = storeSizeTable.addChild("tr");
-		row.addChild("td", "False Pos.");
-		row.addChild("td", thousendPoint.format(storeFalsePos));
-		row.addChild("td", thousendPoint.format(cacheFalsePos));
+		if (storeFalsePos != -1 || cacheFalsePos != -1) {
+			row = storeSizeTable.addChild("tr");
+			row.addChild("td", "False Pos.");
+			row.addChild("td", thousendPoint.format(storeFalsePos));
+			row.addChild("td", thousendPoint.format(cacheFalsePos));
+		}
 		
 		// location-based stats
 		double nodeLoc=0.0;
