@@ -272,8 +272,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	}
 
 	/**
-	 * Use MAYBE_PORT_FORWARDED as the threshold, because most people either are behind a NAT with
-	 * a low timeout (e.g. a home router), know what they're doing, or can't forward ports anyway.
+	 * Return all the ports that we have reason to believe are not forwarded. E.g. for the user-alert, which only
+	 * shows if what we return is of nonzero length.
 	 */
 	public int[] getUDPPortsNotForwarded() {
 		OpennetManager om = node.getOpennet();
