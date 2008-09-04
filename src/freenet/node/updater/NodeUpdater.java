@@ -349,10 +349,10 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	}
 
 	public short getPollingPriorityNormal() {
-		return RequestStarter.UPDATE_PRIORITY_CLASS;
+		return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 	}
 
 	public short getPollingPriorityProgress() {
-		return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+		return RequestStarter.INTERACTIVE_PRIORITY_CLASS;
 	}
 }
