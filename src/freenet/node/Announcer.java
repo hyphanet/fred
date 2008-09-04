@@ -501,9 +501,6 @@ public class Announcer {
 						announceNow = true;
 					}
 				}
-				if(totalAdded > 0) {
-					om.crypto.socket.getAddressTracker().setPresumedGuiltyAt(System.currentTimeMillis()+60*60*1000);
-				}
 				// If it takes more than COOLING_OFF_PERIOD to disconnect, we might not be able to reannounce to this
 				// node. However, we can't reannounce to it anyway until announcedTo is cleared, which probably will
 				// be more than that period in the future.

@@ -335,7 +335,8 @@ public class AddressTracker {
 	private long timePresumeGuilty = -1;
 	
 	public synchronized void setPresumedGuiltyAt(long l) {
-		timePresumeGuilty = l;
+		if(timePresumeGuilty <= 0)
+			timePresumeGuilty = l;
 	}
 
 	public synchronized void setPresumedInnocent() {
