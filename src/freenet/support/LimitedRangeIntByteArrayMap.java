@@ -104,9 +104,10 @@ public class LimitedRangeIntByteArrayMap {
             minValue = index;
         }
         if(data == null) throw new NullPointerException();
-        LimitedRangeIntByteArrayMapElement le = contents.get(index);
+        Integer idx = index;
+		LimitedRangeIntByteArrayMapElement le = contents.get(idx);
         if(le == null)
-        	contents.put(index, new LimitedRangeIntByteArrayMapElement(index, data, callbacks, priority));
+        	contents.put(idx, new LimitedRangeIntByteArrayMapElement(idx, data, callbacks, priority));
         else
         	le.reput();
         notifyAll();

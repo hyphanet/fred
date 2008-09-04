@@ -870,9 +870,10 @@ public class DarknetPeerNode extends PeerNode {
 		}
 
 		protected void remove() {
+			Long l = uid;
 			synchronized(DarknetPeerNode.this) {
-				myFileOffersByUID.remove(uid);
-				hisFileOffersByUID.remove(uid);
+				myFileOffersByUID.remove(l);
+				hisFileOffersByUID.remove(l);
 			}
 			data.close();
 		}
