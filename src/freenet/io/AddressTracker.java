@@ -238,10 +238,18 @@ public class AddressTracker {
 			return MAYBE_PORT_FORWARDED;
 		// Only take isBroken into account if we're not sure.
 		// Somebody could be playing with us by sending bogus FNPSentPackets...
-		if(isBroken) return DEFINITELY_NATED;
+		synchronized(this) {
+			if(isBroken()) return DEFINITELY_NATED;
+			if(minGap == 0 && timePresumeGuilty > 0 && System.currentTimeMillis() > timePresumeGuilty)
+				return MAYBE_NATED;
+		}
 		return DONT_KNOW;
 	}
 	
+	private boolean isBroken() {
+		return System.currentTimeMillis() - brokenTime < HORIZON;
+	}
+
 	public static String statusString(int status) {
 		switch(status) {
 		case DEFINITELY_PORT_FORWARDED:
@@ -262,7 +270,7 @@ public class AddressTracker {
 	/** Persist the table to disk */
 	public void storeData(long bootID, File nodeDir, int port) {
 		// Don't write to disk if we know we're NATed anyway!
-		if(isBroken) return;
+		if(isBroken()) return;
 		File data = new File(nodeDir, "packets-"+port+".dat");
 		File dataBak = new File(nodeDir, "packets-"+port+".bak");
 		data.delete();
@@ -321,7 +329,16 @@ public class AddressTracker {
 	}
 
 	public synchronized void setBroken() {
-		isBroken = true;
 		brokenTime = System.currentTimeMillis();
+	}
+
+	private long timePresumeGuilty = -1;
+	
+	public synchronized void setPresumedGuiltyAt(long l) {
+		timePresumeGuilty = l;
+	}
+
+	public synchronized void setPresumedInnocent() {
+		timePresumeGuilty = -1;
 	}
 }
