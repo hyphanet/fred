@@ -1464,7 +1464,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public boolean isBurstOnly() {
 		int status = outgoingMangler.getConnectivityStatus();
 		if(status == AddressTracker.DONT_KNOW) return false;
-		if(status == AddressTracker.DEFINITELY_NATED) return false;
+		if(status == AddressTracker.DEFINITELY_NATED || status == AddressTracker.MAYBE_NATED) return false;
 		
 		// For now. FIXME try it with a lower probability when we're sure that the packet-deltas mechanisms works.
 		if(status == AddressTracker.MAYBE_PORT_FORWARDED) return false;

@@ -191,7 +191,8 @@ public class AddressTracker {
 	
 	public static final int DEFINITELY_PORT_FORWARDED = 2;
 	public static final int MAYBE_PORT_FORWARDED = 1;
-	public static final int DEFINITELY_NATED = -1;
+	public static final int MAYBE_NATED = -1;
+	public static final int DEFINITELY_NATED = -2;
 	public static final int DONT_KNOW = 0;
 	
 	/** If the minimum gap is at least this, we might be port forwarded. 
@@ -243,6 +244,8 @@ public class AddressTracker {
 			return "Port forwarded";
 		case MAYBE_PORT_FORWARDED:
 			return "Maybe port forwarded";
+		case MAYBE_NATED:
+			return "Maybe behind NAT";
 		case DEFINITELY_NATED:
 			return "Behind NAT";
 		case DONT_KNOW:
