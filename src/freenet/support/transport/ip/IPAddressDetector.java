@@ -1,15 +1,16 @@
 /* -*- Mode: java; c-basic-indent: 4; tab-width: 4 -*- */
 package freenet.support.transport.ip;
 
-import freenet.io.AddressIdentifier;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.Vector;
+import java.util.List;
 
+import freenet.io.AddressIdentifier;
 import freenet.node.NodeIPDetector;
 import freenet.support.Logger;
 
@@ -67,13 +68,13 @@ public class IPAddressDetector implements Runnable {
 
 	/**
 	 * Execute a checkpoint - detect our internet IP address and log it
-	 * @param preferedAddress An address that for some reason is prefered above others. Might be null
+	 * @param preferedAddress An address that for some reason is preferred above others. Might be null
 	 */
 	protected synchronized void checkpoint() {
 		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
-		Vector addrs = new Vector();
+		List<InetAddress> addrs = new ArrayList<InetAddress>();
 
-		Enumeration interfaces = null;
+		Enumeration<java.net.NetworkInterface> interfaces = null;
 		try {
 			interfaces = java.net.NetworkInterface.getNetworkInterfaces();
 		} catch (SocketException e) {
@@ -87,16 +88,15 @@ public class IPAddressDetector implements Runnable {
 
 		if (!old) {
 			while (interfaces.hasMoreElements()) {
-				java.net.NetworkInterface iface =
-					(java.net.NetworkInterface) (interfaces.nextElement());
+				java.net.NetworkInterface iface = interfaces.nextElement();
 				if (logDEBUG)
 					Logger.debug(
 						this,
 						"Scanning NetworkInterface " + iface.getDisplayName());
-				Enumeration ee = iface.getInetAddresses();
+				Enumeration<InetAddress> ee = iface.getInetAddresses();
 				while (ee.hasMoreElements()) {
 
-					InetAddress addr = (InetAddress) (ee.nextElement());
+					InetAddress addr = ee.nextElement();
 					addrs.add(addr);
 					if (logDEBUG)
 						Logger.debug(
@@ -160,25 +160,28 @@ public class IPAddressDetector implements Runnable {
 		}
 	}
 
-	/** Do something with the list of detected IP addresses.
-	 * @param v Vector of InetAddresses
+	/**
+	 * Do something with the list of detected IP addresses.
+	 * 
+	 * @param addrs
+	 *            Vector of InetAddresses
 	 */
-	protected void onGetAddresses(Vector v) {
-		Vector output = new Vector();
+	protected void onGetAddresses(List<InetAddress> addrs) {
+		List<InetAddress> output = new ArrayList<InetAddress>();
 		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		if (logDEBUG)
 			Logger.debug(
 				this,
-				"onGetAddresses found " + v.size() + " potential addresses)");
-		if (v.size() == 0) {
+				"onGetAddresses found " + addrs.size() + " potential addresses)");
+		if (addrs.size() == 0) {
 			Logger.error(this, "No addresses found!");
 			lastAddressList = null;
 			return;
 		} else {
 //			InetAddress lastNonValidAddress = null;
-			for (int x = 0; x < v.size(); x++) {
-				if (v.elementAt(x) != null) {
-					InetAddress i = (InetAddress) (v.elementAt(x));
+			for (int x = 0; x < addrs.size(); x++) {
+				if (addrs.get(x) != null) {
+					InetAddress i = addrs.get(x);
 					if (logDEBUG)
 						Logger.debug(
 							this,
@@ -200,7 +203,7 @@ public class IPAddressDetector implements Runnable {
 				}
 			}
 		}
-		lastAddressList = (InetAddress[]) output.toArray(new InetAddress[output.size()]);
+		lastAddressList = output.toArray(new InetAddress[output.size()]);
 	}
 
 	public void run() {
