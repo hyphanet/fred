@@ -19,7 +19,9 @@
 
 package freenet.io.comm;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
 
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
@@ -60,12 +62,12 @@ public class MessageType {
 		_specs.remove(new Integer(_name.hashCode()));
 	}
 	
-	public void addLinkedListField(String name, Class parameter) {
+	public void addLinkedListField(String name, Class<?> parameter) {
 		_linkedListTypes.put(name, parameter);
 		addField(name, LinkedList.class);
 	}
 
-	public void addField(String name, Class type) {
+	public void addField(String name, Class<?> type) {
 		_fields.put(name, type);
 		_orderedFields.addLast(name);
 	}
@@ -81,15 +83,15 @@ public class MessageType {
 		if (fieldValue == null) {
 			return false;
 		}
-		Class defClass = (Class)(_fields.get(fieldName));
-		Class valueClass = fieldValue.getClass();
+		Class<?> defClass = (Class<?>) (_fields.get(fieldName));
+		Class<?> valueClass = fieldValue.getClass();
 		if(defClass == valueClass) return true;
 		if(defClass.isAssignableFrom(valueClass)) return true;
 		return false;
 	}
 
-	public Class typeOf(String field) {
-		return (Class) _fields.get(new Integer(field.hashCode()));
+	public Class<?> typeOf(String field) {
+		return (Class<?>) _fields.get(new Integer(field.hashCode()));
 	}
 
 	public boolean equals(Object o) {

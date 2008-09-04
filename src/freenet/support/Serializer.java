@@ -44,7 +44,7 @@ public class Serializer {
     public static final String VERSION = "$Id: Serializer.java,v 1.5 2005/09/15 18:16:04 amphibian Exp $";
 	public static final int MAX_BITARRAY_SIZE = 2048*8;
 
-	public static List readListFromDataInputStream(Class elementType, DataInput dis) throws IOException {
+	public static List readListFromDataInputStream(Class<?> elementType, DataInput dis) throws IOException {
 		LinkedList ret = new LinkedList();
 		int length = dis.readInt();
 		for (int x = 0; x < length; x++) {
@@ -53,7 +53,7 @@ public class Serializer {
 		return ret;
 	}
 
-	public static Object readFromDataInputStream(Class type, DataInput dis) throws IOException {
+	public static Object readFromDataInputStream(Class<?> type, DataInput dis) throws IOException {
 		if (type.equals(Boolean.class)) {
 			int bool = dis.readByte();
 			if (bool==1)
@@ -103,7 +103,7 @@ public class Serializer {
 	}
 
 	public static void writeToDataOutputStream(Object object, DataOutputStream dos, PeerContext ctx) throws IOException {	
-		Class type = object.getClass();
+		Class<?> type = object.getClass();
 		if (type.equals(Long.class)) {
 			dos.writeLong(((Long) object).longValue());
 		} else if (type.equals(Boolean.class)) {

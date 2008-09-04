@@ -11,8 +11,6 @@ import java.net.URI;
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
 import freenet.config.ConfigException;
-import freenet.config.InvalidConfigValueException;
-import freenet.config.NodeNeedRestartException;
 import freenet.config.WrapperConfig;
 import freenet.l10n.L10n;
 import freenet.node.Node;
@@ -514,8 +512,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		long freeSpace = -1;
 		File dir = FileUtil.getCanonicalFile(core.node.getNodeDir());
 		try {
-			Class c = dir.getClass();
-			Method m = c.getDeclaredMethod("getFreeSpace", new Class[0]);
+			Class<? extends File> c = dir.getClass();
+			Method m = c.getDeclaredMethod("getFreeSpace", new Class<?>[0]);
 			if(m != null) {
 				Long lFreeSpace = (Long) m.invoke(dir, new Object[0]);
 				if(lFreeSpace != null) {

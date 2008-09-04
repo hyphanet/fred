@@ -114,7 +114,7 @@ public class JarClassLoader extends ClassLoader {
 	 * 
 	 * @see java.lang.ClassLoader#findClass(java.lang.String)
 	 */
-	protected Class findClass(String name) throws ClassNotFoundException {
+	protected Class<?> findClass(String name) throws ClassNotFoundException {
 		try {
 			String pathName = transformName(name);
 			JarEntry jarEntry = tempJarFile.getJarEntry(pathName);
@@ -126,7 +126,7 @@ public class JarClassLoader extends ClassLoader {
 				classBytesOutputStream.close();
 				jarEntryInputStream.close();
 				byte[] classBytes = classBytesOutputStream.toByteArray();
-				Class clazz = defineClass(name, classBytes, 0, classBytes.length);
+				Class<?> clazz = defineClass(name, classBytes, 0, classBytes.length);
 				return clazz;
 			}
 			throw new ClassNotFoundException("could not find jar entry for class " + name);

@@ -13,6 +13,7 @@ import java.math.BigInteger;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 
+@SuppressWarnings("serial")
 public abstract class CryptoKey implements CryptoElement, Serializable {
 
 	protected static final Digest shactx = SHA1.getInstance();
@@ -24,7 +25,7 @@ public abstract class CryptoKey implements CryptoElement, Serializable {
 		DataInputStream dis = new DataInputStream(i);
 		String type = dis.readUTF();
 		try {
-			Class keyClass = Class.forName(type);
+			Class<?> keyClass = Class.forName(type);
 			Method m =
 				keyClass.getMethod("read", new Class[] { InputStream.class });
 			return (CryptoKey) m.invoke(null, new Object[] { dis });

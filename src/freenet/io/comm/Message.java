@@ -24,7 +24,6 @@ import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -78,10 +77,11 @@ public class Message {
 		try {
 		    for (Iterator i = mspec.getOrderedFields().iterator(); i.hasNext();) {
 		        String name = (String) i.next();
-		        Class type = (Class) mspec.getFields().get(name);
+		        Class<?> type = (Class<?>) mspec.getFields().get(name);
 		        if (type.equals(LinkedList.class)) { // Special handling for LinkedList to deal with element type
 		            m.set(name, Serializer
-					        .readListFromDataInputStream((Class) mspec.getLinkedListTypes().get(name), bb));
+					        .readListFromDataInputStream((Class<?>) mspec.getLinkedListTypes().get(name),
+					        bb));
 		        } else {
 		            m.set(name, Serializer.readFromDataInputStream(type, bb));
 		        }

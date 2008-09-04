@@ -221,13 +221,13 @@ public class SSL {
 				// If keystore not exist, create keystore and server certificate
 				keystore.load(null, keyStorePass.toCharArray());
 				try {
-					Class certAndKeyGenClazz = Class.forName("sun.security.x509.CertAndKeyGen");
-					Constructor certAndKeyGenCtor = certAndKeyGenClazz.getConstructor(String.class, String.class);
+					Class<?> certAndKeyGenClazz = Class.forName("sun.security.x509.CertAndKeyGen");
+					Constructor<?> certAndKeyGenCtor = certAndKeyGenClazz.getConstructor(String.class, String.class);
 					Object keypair = certAndKeyGenCtor.newInstance("DSA", "SHA1WithDSA");
 
-					Class x500NameClazz = Class.forName("sun.security.x509.X500Name");
-					Constructor x500NameCtor = x500NameClazz.getConstructor(String.class, String.class, String.class,
-					        String.class, String.class, String.class);
+					Class<?> x500NameClazz = Class.forName("sun.security.x509.X500Name");
+					Constructor<?> x500NameCtor = x500NameClazz.getConstructor(String.class, String.class,
+					        String.class, String.class, String.class, String.class);
 					Object x500Name = x500NameCtor.newInstance("Freenet", "Freenet", "Freenet", "", "", "");
 					
 					Method certAndKeyGenGenerate = certAndKeyGenClazz.getMethod("generate", int.class);
@@ -245,6 +245,8 @@ public class SSL {
 					keystore.setKeyEntry("freenet", privKey, keyPass.toCharArray(), chain);
 					storeKeyStore();
 					createSSLContext();
+				} catch (ClassNotFoundException cnfe) {
+					throw new UnsupportedOperationException("The JVM you are using is not supported!", cnfe);
 				} catch (NoSuchMethodException nsme) {
 					throw new UnsupportedOperationException("The JVM you are using is not supported!", nsme);
 				}

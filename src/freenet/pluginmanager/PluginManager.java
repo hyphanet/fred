@@ -704,7 +704,7 @@ public class PluginManager {
 
 		try {
 			JarClassLoader jarClassLoader = new JarClassLoader(pluginFile);
-			Class pluginMainClass = jarClassLoader.loadClass(pluginMainClassName);
+			Class<?> pluginMainClass = jarClassLoader.loadClass(pluginMainClassName);
 			Object object = pluginMainClass.newInstance();
 			if(!(object instanceof FredPlugin)) {
 				Logger.error(this, "plugin main class is not a plugin");
