@@ -615,7 +615,7 @@ public class Announcer {
 		}
 
 		public boolean isValid() {
-			return started && (!enoughPeers()) && node.isOpennetEnabled();
+			return (!enoughPeers()) && node.isOpennetEnabled();
 		}
 
 		public void isValid(boolean validity) {
