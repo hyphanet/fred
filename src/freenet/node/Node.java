@@ -97,6 +97,7 @@ import freenet.store.PubkeyStore;
 import freenet.store.RAMFreenetStore;
 import freenet.store.SSKStore;
 import freenet.store.saltedhash.SaltedHashFreenetStore;
+import freenet.support.ByteArrayWrapper;
 import freenet.support.DoubleTokenBucket;
 import freenet.support.Executor;
 import freenet.support.Fields;
@@ -104,7 +105,6 @@ import freenet.support.FileLoggerHook;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
-import freenet.support.ImmutableByteArrayWrapper;
 import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
@@ -414,7 +414,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	final NodeDispatcher dispatcher;
 	public final UptimeEstimator uptime;
 	static final int MAX_MEMORY_CACHED_PUBKEYS = 1000;
-	final LRUHashtable<ImmutableByteArrayWrapper, DSAPublicKey> cachedPubKeys;
+	final LRUHashtable<ByteArrayWrapper, DSAPublicKey> cachedPubKeys;
 	final boolean testnetEnabled;
 	final TestnetHandler testnetHandler;
 	public final DoubleTokenBucket outputThrottle;
@@ -730,7 +730,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		recentlyCompletedIDs = new LRUQueue();
 		this.config = config;
-		cachedPubKeys = new LRUHashtable<ImmutableByteArrayWrapper, DSAPublicKey>();
+		cachedPubKeys = new LRUHashtable<ByteArrayWrapper, DSAPublicKey>();
 		lm = new LocationManager(random, this);
 
 		try {
@@ -2829,7 +2829,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * @see freenet.node.GetPubkey#getKey(byte[])
 	 */
 	public DSAPublicKey getKey(byte[] hash) {
-		ImmutableByteArrayWrapper w = new ImmutableByteArrayWrapper(hash);
+		ByteArrayWrapper w = new ByteArrayWrapper(hash);
 		if(logMINOR) Logger.minor(this, "Getting pubkey: "+HexUtil.bytesToHex(hash));
 		if(USE_RAM_PUBKEYS_CACHE) {
 			synchronized(cachedPubKeys) {
@@ -2863,7 +2863,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 */
 	public void cacheKey(byte[] hash, DSAPublicKey key, boolean deep) {
 		if(logMINOR) Logger.minor(this, "Cache key: "+HexUtil.bytesToHex(hash)+" : "+key);
-		ImmutableByteArrayWrapper w = new ImmutableByteArrayWrapper(hash);
+		ByteArrayWrapper w = new ByteArrayWrapper(hash);
 		synchronized(cachedPubKeys) {
 			DSAPublicKey key2 = cachedPubKeys.get(w);
 			if((key2 != null) && !key2.equals(key)) {
