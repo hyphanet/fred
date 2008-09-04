@@ -51,7 +51,7 @@ public final class FrostMessage {
             String date = DateFun.getExtendedDateFromSqlDate(getSqlDate());
             String time = DateFun.getExtendedTimeFromSqlTime(getSqlTime());
 
-            StringBuffer sb = new StringBuffer(29);
+            StringBuilder sb = new StringBuilder(29);
             sb.append(date).append(" ").append(time);
 
             this.dateAndTime = sb.toString();
@@ -119,7 +119,7 @@ public final class FrostMessage {
     public String getId() {
     	Random rnd = new Random((new Date()).getTime());
 
-    	StringBuffer sb = new StringBuffer();
+    	StringBuilder sb = new StringBuilder();
     	
     	for(int i = 0; i<4; i++) {
     		sb.append(Long.toHexString(rnd.nextLong()).toUpperCase());
@@ -191,12 +191,12 @@ public final class FrostMessage {
     private final String getXml() {
     	if(xml==null)
     	{
-    		String messageContent = new StringBuffer()
+    		String messageContent = new StringBuilder()
     			.append("----- ").append(this.getName()).append(" ----- ")
     			.append(this.getDateStr(true)).append(" - ").append(this.getTimeStr()).append(" -----\n\n")
     			.append(this.getContent()).toString();
     		
-    		StringBuffer sb = new StringBuffer();
+    		StringBuilder sb = new StringBuilder();
     		sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     		sb.append("<FrostMessage>");
     		
@@ -241,7 +241,7 @@ public final class FrostMessage {
         FreenetURI key;
         if (board.isWriteAccessBoard()) {
             key = new FreenetURI(
-            		new StringBuffer()
+            		new StringBuilder()
                     .append(board.getPrivateKey())
                     .append('/')
                     .append(board.getName())
@@ -253,7 +253,7 @@ public final class FrostMessage {
                     .toString());
         } else {
             key = new FreenetURI("KSK",
-            		new StringBuffer()
+            		new StringBuilder()
                     .append("frost|message|")
                     .append(this.getMessageBase())
                     .append('|')

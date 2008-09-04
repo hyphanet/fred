@@ -155,7 +155,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		if(drawDumpEventsForm) {
 			HTMLNode dumpFormNode = contentNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("div");
 			dumpFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			for(int i=0;i<currentAlerts.length;i++) {
 				if(!currentAlerts[i].isEventNotification()) continue;
 				if(sb.length() != 0)
@@ -208,7 +208,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	}
 
 	/**
-	 * Write the alert summary as HTML to a StringBuffer
+	 * Write the alert summary as HTML to a StringBuilder
 	 */
 	public HTMLNode createSummary() {
 		short highestLevel = 99;
@@ -241,7 +241,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		
 		boolean separatorNeeded = false;
 		int messageTypes=0;
-		StringBuffer alertSummaryString = new StringBuffer(1024);
+		StringBuilder alertSummaryString = new StringBuilder(1024);
 		if (numberOfCriticalError != 0) {
 			alertSummaryString.append(l10n("criticalErrorCountLabel")).append(' ').append(numberOfCriticalError);
 			separatorNeeded = true;

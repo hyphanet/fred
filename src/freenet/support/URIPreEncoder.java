@@ -22,7 +22,7 @@ public class URIPreEncoder {
 	public final static String allowedChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-!.~'()*,;:$&+=?/@%";
 
 	public static String encode(String s) {
-		StringBuffer output = new StringBuffer(s.length()*2);
+		StringBuilder output = new StringBuilder(s.length()*2);
 		for(int i=0;i<s.length();i++) {
 			char c = s.charAt(i);
 			if(allowedChars.indexOf(c) >= 0) {

@@ -220,7 +220,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         // Now we should have a good web of subscriptions set up.
         
         int visitedCount = 0;
-        StringBuffer sb = new StringBuffer(3*nodes.length+1);
+        StringBuilder sb = new StringBuilder(3*nodes.length+1);
         boolean first = true;
         for(int i=0;i<visited.length;i++) {
         	if(!visited[i]) continue;

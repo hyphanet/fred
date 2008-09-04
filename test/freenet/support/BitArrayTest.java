@@ -48,10 +48,10 @@ public class BitArrayTest extends TestCase {
 	 * @return the String of toRepeat
 	 */
 	private String createAllOneString(int stringSize, String toRepeat) {
-		StringBuffer methodStringBuffer = new StringBuffer();
+		StringBuilder methodStringBuilder = new StringBuilder();
 		for (int i=0;i<stringSize;i++)
-			methodStringBuffer.append(toRepeat);
-		return methodStringBuffer.toString();
+			methodStringBuilder.append(toRepeat);
+		return methodStringBuilder.toString();
 	}
 
 	/**

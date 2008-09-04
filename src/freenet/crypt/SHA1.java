@@ -343,7 +343,7 @@ public final class SHA1 implements Digest {
      * to the test vectors.
      */
     protected String digout() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 20; i++) {
             char c1, c2;
 

@@ -410,7 +410,7 @@ public class PluginManager {
 	}
 
 	public String dumpPlugins() {
-		StringBuffer out = new StringBuffer();
+		StringBuilder out = new StringBuilder();
 		synchronized(pluginWrappers) {
 			for(int i = 0; i < pluginWrappers.size(); i++) {
 				PluginInfoWrapper pi = pluginWrappers.get(i);

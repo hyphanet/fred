@@ -154,7 +154,7 @@ public class PNGFilter implements ContentDataFilter {
 
 				// Type of the chunk : Should match [a-zA-Z]{4}
 				dis.readFully(lengthBytes);
-				StringBuffer sb = new StringBuffer();
+				StringBuilder sb = new StringBuilder();
 				byte[] chunkTypeBytes = new byte[4];
 				for(int i = 0; i < 4; i++) {
 					char val = (char) lengthBytes[i];

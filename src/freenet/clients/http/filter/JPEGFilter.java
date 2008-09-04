@@ -375,7 +375,7 @@ public class JPEGFilter implements ContentDataFilter {
 	}
 
 	private String readNullTerminatedAsciiString(DataInputStream dis) throws IOException {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		while(true) {
 			int x = dis.read();
 			if(x == -1)

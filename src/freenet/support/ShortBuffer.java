@@ -112,7 +112,7 @@ public class ShortBuffer implements WritableToDataOutputStream {
 		if (this._length > 50) {
 			return "Buffer {"+this._length+ '}';
 		} else {
-			StringBuffer b = new StringBuffer(this._length*3);
+			StringBuilder b = new StringBuilder(this._length*3);
             b.append('{').append(this._length).append(':');
 			for (int x=0; x<this._length; x++) {
 				b.append(byteAt(x));

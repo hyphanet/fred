@@ -19,7 +19,7 @@ public class DiffieHellmanLightContext extends KeyAgreementSchemeContext {
 	public final long lifetime = System.currentTimeMillis();
 
 	public String toString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());
 		sb.append(": myExponent=");
 		sb.append(myExponent.toHexString());

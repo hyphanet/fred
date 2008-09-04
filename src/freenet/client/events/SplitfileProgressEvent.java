@@ -29,7 +29,7 @@ public class SplitfileProgressEvent implements ClientEvent {
 	}
 
 	public String getDescription() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("Completed ");
 		if((minSuccessfulBlocks == 0) && (fetchedBlocks == 0))
 			minSuccessfulBlocks = 1;

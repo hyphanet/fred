@@ -243,7 +243,7 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
 		//Print out the number which are non-zero & display the distinct ones if a few...
 		int size=ids.size();
 		int MAX=6;
-		StringBuffer sb=new StringBuffer(Integer.toString(size)).append("/").append(Integer.toString(targetNum));
+		StringBuilder sb=new StringBuilder(Integer.toString(size)).append("/").append(Integer.toString(targetNum));
 		sb.append(" ids (").append(group).append(") = ");
 		Iterator iter=ids.iterator();
 		for (int i=0; i<=MAX && i<size; i++) {

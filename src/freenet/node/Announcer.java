@@ -548,7 +548,7 @@ public class Announcer {
 		}
 
 		public String getText() {
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			sb.append(l10n("announceAlertIntro"));
 			int status;
 			boolean dontKnowAddress;

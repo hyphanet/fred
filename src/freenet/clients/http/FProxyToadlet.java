@@ -589,7 +589,7 @@ public final class FProxyToadlet extends Toadlet {
 
 	private String getLink(FreenetURI uri, String requestedMimeType, long maxSize, String force, 
 			boolean forceDownload) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("/");
 		sb.append(uri.toACIIString());
 		char c = '?';

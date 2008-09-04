@@ -229,7 +229,7 @@ public class ConfigToadlet extends Toadlet {
 		}
 		
 		SubConfig[] sc = config.getConfigs();
-		StringBuffer errbuf = new StringBuffer();
+		StringBuilder errbuf = new StringBuilder();
 		
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));

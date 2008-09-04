@@ -205,7 +205,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 
 		public String getText() {
 			if(!suggestPortForward) return super.getText();
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			sb.append(super.getText());
 			if(portsNotForwarded.length == 1) {
 				sb.append(l10n("suggestForwardPort", "port", Integer.toString(Math.abs(portsNotForwarded[0]))));

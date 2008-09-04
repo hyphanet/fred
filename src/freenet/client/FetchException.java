@@ -214,7 +214,7 @@ public class FetchException extends Exception {
 	}
 	
 	public String toString() {
-		StringBuffer sb = new StringBuffer(200);
+		StringBuilder sb = new StringBuilder(200);
 		sb.append("FetchException:");
 		sb.append(getShortMessage(mode));
 		sb.append(':');

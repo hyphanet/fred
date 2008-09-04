@@ -852,7 +852,7 @@ public class FCPServer implements Runnable {
 		File f = new File(core.getDownloadDir(), preferredWithExt);
 		File f1 = new File(core.getDownloadDir(), preferredWithExt + ".freenet-tmp");
 		int x = 0;
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for(;f.exists() || f1.exists();sb.setLength(0)) {
 			sb.append(preferred);
 			sb.append('-');

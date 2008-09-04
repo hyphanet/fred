@@ -25,7 +25,7 @@ public class URLEncoder {
 	 * @return      Encoded version of string
 	 */
 	public final static String encode(String URL, String force, boolean ascii) {
-		StringBuffer enc = new StringBuffer(URL.length());
+		StringBuilder enc = new StringBuilder(URL.length());
 		for (int i = 0; i < URL.length(); ++i) {
 			char c = URL.charAt(i);
 			if (((safeURLCharacters.indexOf(c) >= 0) || ((!ascii) && c >= 0200))

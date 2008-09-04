@@ -47,7 +47,7 @@ public class ArrayBucket implements Bucket {
 	}
 
 	public String toString() {
-		StringBuffer s = new StringBuffer(250);
+		StringBuilder s = new StringBuilder(250);
 		for (Iterator i = data.iterator(); i.hasNext();) {
 			byte[] b = (byte[]) i.next();
 			s.append(new String(b));

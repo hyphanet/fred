@@ -2654,7 +2654,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * @return Some status information.
 	 */
 	public String getStatus() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		if (peers != null)
 			sb.append(peers.getStatus());
 		else
@@ -2690,7 +2690,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * @return TMCI peer list
 	 */
 	public String getTMCIPeerList() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		if (peers != null)
 			sb.append(peers.getTMCIPeerList());
 		else
@@ -2782,7 +2782,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * @return Data String for freeviz.
 	 */
 	public String getFreevizOutput() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("\nrequests=");
 		sb.append(getNumRequestSenders());
 		

@@ -66,7 +66,7 @@ public class StringCounter {
 	
 	public String toLongString() {
 		Item[] items = sortedItems(false);
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for(int i=0;i<items.length;i++) {
 			if(i!=0) sb.append('\n');
 			Item it = items[i];

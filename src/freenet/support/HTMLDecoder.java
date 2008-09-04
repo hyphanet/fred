@@ -22,7 +22,7 @@ public class HTMLDecoder {
 		int tmpPos, i;
 
 		int maxPos = s.length();
-		StringBuffer sb = new StringBuffer(maxPos);
+		StringBuilder sb = new StringBuilder(maxPos);
 		int curPos = 0;
 		while (curPos < maxPos) {
 			char c = s.charAt(curPos++);
@@ -131,7 +131,7 @@ public class HTMLDecoder {
 
 	public static String compact(String s) {
 		int maxPos = s.length();
-		StringBuffer sb = new StringBuffer(maxPos);
+		StringBuilder sb = new StringBuilder(maxPos);
 		int curPos = 0;
 		while (curPos < maxPos) {
 			char c = s.charAt(curPos++);

@@ -139,7 +139,7 @@ public class TextModeClientInterface implements Runnable {
 	}
     
 	private void printHeader(OutputStream s) throws IOException {
-    	StringBuffer sb = new StringBuffer();
+    	StringBuilder sb = new StringBuilder();
     	
         sb.append("Trivial Text Mode Client Interface\r\n");
         sb.append("---------------------------------------\r\n");
@@ -205,7 +205,7 @@ public class TextModeClientInterface implements Runnable {
      */
     private boolean processLine(BufferedReader reader, final OutputStream out) throws IOException {
         String line;
-        StringBuffer outsb = new StringBuffer();
+        StringBuilder outsb = new StringBuilder();
         try {
             line = reader.readLine();
         } catch (IOException e) {
@@ -380,25 +380,25 @@ public class TextModeClientInterface implements Runnable {
     	out.flush();
     	return false;
 	} else if(uline.startsWith("SHUTDOWN")) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("Shutting node down.\r\n");
 		out.write(sb.toString().getBytes());
 		out.flush();
 		n.exit("Shutdown from console");
 	} else if(uline.startsWith("RESTART")) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("Restarting the node.\r\n");
 		out.write(sb.toString().getBytes());
 		out.flush();
 		n.getNodeStarter().restart();
 	} else if(uline.startsWith("QUIT") && (core.directTMCI == this)) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("QUIT command not available in console mode.\r\n");
 		out.write(sb.toString().getBytes());
 		out.flush();
 		return false;
         } else if(uline.startsWith("QUIT")) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("Closing connection.\r\n");
 		out.write(sb.toString().getBytes());
 		out.flush();
@@ -419,7 +419,7 @@ public class TextModeClientInterface implements Runnable {
 		while(tg.getParent() != null) tg = tg.getParent();
 		int threadCount = tg.activeCount();
 
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("Used Java memory:\u00a0" + SizeUtil.formatSize(usedJavaMem, true)+"\r\n");
 		sb.append("Allocated Java memory:\u00a0" + SizeUtil.formatSize(allocatedJavaMem, true)+"\r\n");
 		sb.append("Maximum Java memory:\u00a0" + SizeUtil.formatSize(maxJavaMem, true)+"\r\n");
@@ -1029,7 +1029,7 @@ public class TextModeClientInterface implements Runnable {
      * isFieldSet. 
      */
     private String readLines(BufferedReader reader, boolean isFieldSet) {
-        StringBuffer sb = new StringBuffer(1000);
+        StringBuilder sb = new StringBuilder(1000);
         boolean breakflag = false;
         while(true) {
             String line;
@@ -1224,7 +1224,7 @@ public class TextModeClientInterface implements Runnable {
 
     private String sanitize(String fnam) {
     	if(fnam == null) return "";
-        StringBuffer sb = new StringBuffer(fnam.length());
+        StringBuilder sb = new StringBuilder(fnam.length());
         for(int i=0;i<fnam.length();i++) {
             char c = fnam.charAt(i);
             if(Character.isLetterOrDigit(c) || (c == '-') || (c == '.'))

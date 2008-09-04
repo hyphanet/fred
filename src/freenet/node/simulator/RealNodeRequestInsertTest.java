@@ -184,7 +184,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                         System.exit(EXIT_BAD_DATA);
                     }
                 }
-                StringBuffer load = new StringBuffer("Running UIDs for nodes: ");
+                StringBuilder load = new StringBuilder("Running UIDs for nodes: ");
                 int totalRunningUIDs = 0;
                 int totalRunningUIDsAlt = 0;
                 Vector runningUIDsList = new Vector(); // <Long>

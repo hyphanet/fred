@@ -169,7 +169,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 				ClientRequest[] reqs = fcp.getGlobalRequests();
 				if(logMINOR) Logger.minor(this, "Request count: "+reqs.length);
 				
-				StringBuffer failedIdentifiers = new StringBuffer();
+				StringBuilder failedIdentifiers = new StringBuilder();
 				
 				for(int i=0; i<reqs.length ; i++){
 					String identifier = reqs[i].getIdentifier();

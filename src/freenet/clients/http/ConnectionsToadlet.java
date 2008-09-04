@@ -325,7 +325,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			
 			// BEGIN PEER TABLE
 			if(fProxyJavascriptEnabled) {
-				StringBuffer jsBuf = new StringBuffer();
+				StringBuilder jsBuf = new StringBuilder();
 				// FIXME: There's probably some icky Javascript in here (this is the first thing that worked for me); feel free to fix up to Javascript guru standards
 				jsBuf.append( "  function peerNoteChange() {\n" );
 				jsBuf.append( "    var theobj = document.getElementById( \"action\" );\n" );
@@ -518,7 +518,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if(!isOpennet())
 				privateComment = request.getPartAsString("peerPrivateNote", 250).trim();
 			
-			StringBuffer ref = new StringBuffer(1024);
+			StringBuilder ref = new StringBuilder(1024);
 			if (urltext.length() > 0) {
 				// fetch reference from a URL
 				BufferedReader in = null;
@@ -542,13 +542,13 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			} else if (reftext.length() > 0) {
 				// read from post data or file upload
 				// this slightly scary looking regexp chops any extra characters off the beginning or ends of lines and removes extra line breaks
-				ref = new StringBuffer(reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[^\r\n]+?)|(?:End))[ \\t]*(?:\\r?\\n)+", "$1\n"));
+				ref = new StringBuilder(reftext.replaceAll(".*?((?:[\\w,\\.]+\\=[^\r\n]+?)|(?:End))[ \\t]*(?:\\r?\\n)+", "$1\n"));
 			} else {
 				this.sendErrorPage(ctx, 200, l10n("failedToAddNodeTitle"), l10n("noRefOrURL"));
 				request.freeParts();
 				return;
 			}
-			ref = new StringBuffer(ref.toString().trim());
+			ref = new StringBuilder(ref.toString().trim());
 
 			request.freeParts();
 			// we have a node reference in ref

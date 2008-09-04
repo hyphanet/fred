@@ -236,7 +236,7 @@ public class HTMLNode implements XMLCharacterClasses {
 		}
 
 		/**
-		 * @see freenet.support.HTMLNode#generate(java.lang.StringBuffer)
+		 * @see freenet.support.HTMLNode#generate(java.lang.StringBuilder)
 		 */
 		@Override
 		public StringBuilder generate(StringBuilder tagBuffer) {

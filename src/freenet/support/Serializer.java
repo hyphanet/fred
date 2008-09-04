@@ -74,7 +74,7 @@ public class Serializer {
 		    return dis.readDouble();
 		} else if (type.equals(String.class)) {
 			int length = dis.readInt();
-			StringBuffer sb = new StringBuffer(length);
+			StringBuilder sb = new StringBuilder(length);
 			for (int x = 0; x < length; x++) {
 				sb.append(dis.readChar());
 			}

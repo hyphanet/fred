@@ -748,7 +748,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	}
 
 	public static String peersUIDsToString(long[] peerUIDs, double[] peerLocs) {
-		StringBuffer sb = new StringBuffer(peerUIDs.length*23+peerLocs.length*26);
+		StringBuilder sb = new StringBuilder(peerUIDs.length*23+peerLocs.length*26);
 		int min=Math.min(peerUIDs.length, peerLocs.length);
 		for(int i=0;i<min;i++) {
 			double loc = peerLocs[i];

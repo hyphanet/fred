@@ -76,7 +76,7 @@ public class FailureCodeTracker {
 	}
 	
 	public synchronized String toVerboseString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		Collection values = map.keySet();
 		Iterator i = values.iterator();
 		while(i.hasNext()) {
@@ -92,7 +92,7 @@ public class FailureCodeTracker {
 	}
 
 	public synchronized String toString() {
-		StringBuffer sb = new StringBuffer(super.toString());
+		StringBuilder sb = new StringBuilder(super.toString());
 		sb.append(':');
 		if(map.size() == 0) sb.append("empty");
 		else if(map.size() == 1) {
