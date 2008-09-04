@@ -434,12 +434,12 @@ public class NodeStats implements Persistable {
 		long totalSent = total[0];
 		long totalOverhead = getSentOverhead();
 		long uptime = node.getUptime();
-		double sentOverheadPerSecond = ((double)totalOverhead*1000.0) / ((double)uptime);
+		double sentOverheadPerSecond = (totalOverhead*1000.0) / (uptime);
 		/** The fraction of output bytes which are used for requests */
 		double overheadFraction = ((double)(totalSent - totalOverhead)) / totalSent;
 		long timeFirstAnyConnections = peers.timeFirstAnyConnections;
 		long now = System.currentTimeMillis();
-		if(logMINOR) Logger.minor(this, "Output rate: "+((double)totalSent*1000.0)/uptime+" overhead rate "+sentOverheadPerSecond+" non-overhead fraction "+overheadFraction);
+		if(logMINOR) Logger.minor(this, "Output rate: "+(totalSent*1000.0)/uptime+" overhead rate "+sentOverheadPerSecond+" non-overhead fraction "+overheadFraction);
 		if(timeFirstAnyConnections > 0) {
 			long time = now - timeFirstAnyConnections;
 			if(time < DEFAULT_ONLY_PERIOD) {
@@ -470,7 +470,7 @@ public class NodeStats implements Persistable {
 					return ">MAX_PING_TIME ("+TimeUtil.formatTime((long)pingTime, 2, true)+ ')';
 				}
 			} else if(pingTime > SUB_MAX_PING_TIME) {
-				double x = ((double)(pingTime - SUB_MAX_PING_TIME)) / (MAX_PING_TIME - SUB_MAX_PING_TIME);
+				double x = ((pingTime - SUB_MAX_PING_TIME)) / (MAX_PING_TIME - SUB_MAX_PING_TIME);
 				if(hardRandom.nextDouble() < x) {
 					pInstantRejectIncoming.report(1.0);
 					rejected(">SUB_MAX_PING_TIME", isLocal);
@@ -488,7 +488,7 @@ public class NodeStats implements Persistable {
 					return ">MAX_THROTTLE_DELAY ("+TimeUtil.formatTime((long)bwlimitDelayTime, 2, true)+ ')';
 				}
 			} else if(bwlimitDelayTime > SUB_MAX_THROTTLE_DELAY) {
-				double x = ((double)(bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
+				double x = ((bwlimitDelayTime - SUB_MAX_THROTTLE_DELAY)) / (MAX_THROTTLE_DELAY - SUB_MAX_THROTTLE_DELAY);
 				if(hardRandom.nextDouble() < x) {
 					pInstantRejectIncoming.report(1.0);
 					rejected(">SUB_MAX_THROTTLE_DELAY", isLocal);
@@ -904,10 +904,8 @@ public class NodeStats implements Persistable {
 		
 		/* gather connection statistics */
 		DarknetPeerNodeStatus[] peerNodeStatuses = peers.getDarknetPeerNodeStatuses(true);
-		Arrays.sort(peerNodeStatuses, new Comparator() {
-			public int compare(Object first, Object second) {
-				DarknetPeerNodeStatus firstNode = (DarknetPeerNodeStatus) first;
-				DarknetPeerNodeStatus secondNode = (DarknetPeerNodeStatus) second;
+		Arrays.sort(peerNodeStatuses, new Comparator<DarknetPeerNodeStatus>() {
+			public int compare(DarknetPeerNodeStatus firstNode, DarknetPeerNodeStatus secondNode) {
 				int statusDifference = firstNode.getStatusValue() - secondNode.getStatusValue();
 				if (statusDifference != 0) {
 					return statusDifference;
@@ -977,9 +975,9 @@ public class NodeStats implements Persistable {
 			}
 		}
 
-		double swaps = (double)node.getSwaps();
-		double noSwaps = (double)node.getNoSwaps();
-		double numberOfRemotePeerLocationsSeenInSwaps = (double)node.getNumberOfRemotePeerLocationsSeenInSwaps();
+		double swaps = node.getSwaps();
+		double noSwaps = node.getNoSwaps();
+		double numberOfRemotePeerLocationsSeenInSwaps = node.getNumberOfRemotePeerLocationsSeenInSwaps();
 		fs.putSingle("numberOfRemotePeerLocationsSeenInSwaps", Double.toString(numberOfRemotePeerLocationsSeenInSwaps));
 		double avgConnectedPeersPerNode = 0.0;
 		if ((numberOfRemotePeerLocationsSeenInSwaps > 0.0) && ((swaps > 0.0) || (noSwaps > 0.0))) {
@@ -1003,13 +1001,13 @@ public class NodeStats implements Persistable {
 			locationChangePerSwap = locationChangePerSession/swaps;
 		}
 		if ((swaps > 0.0) && (nodeUptimeSeconds >= 60)) {
-			locationChangePerMinute = locationChangePerSession/(double)(nodeUptimeSeconds/60.0);
+			locationChangePerMinute = locationChangePerSession/(nodeUptimeSeconds/60.0);
 		}
 		if ((swaps > 0.0) && (nodeUptimeSeconds >= 60)) {
-			swapsPerMinute = swaps/(double)(nodeUptimeSeconds/60.0);
+			swapsPerMinute = swaps/(nodeUptimeSeconds/60.0);
 		}
 		if ((noSwaps > 0.0) && (nodeUptimeSeconds >= 60)) {
-			noSwapsPerMinute = noSwaps/(double)(nodeUptimeSeconds/60.0);
+			noSwapsPerMinute = noSwaps/(nodeUptimeSeconds/60.0);
 		}
 		if ((swaps > 0.0) && (noSwaps > 0.0)) {
 			swapsPerNoSwaps = swaps/noSwaps;
@@ -1073,9 +1071,9 @@ public class NodeStats implements Persistable {
 		fs.put("avgStoreAccessRate", avgStoreAccessRate);
 
 		Runtime rt = Runtime.getRuntime();
-		float freeMemory = (float) rt.freeMemory();
-		float totalMemory = (float) rt.totalMemory();
-		float maxMemory = (float) rt.maxMemory();
+		float freeMemory = rt.freeMemory();
+		float totalMemory = rt.totalMemory();
+		float maxMemory = rt.maxMemory();
 
 		long usedJavaMem = (long)(totalMemory - freeMemory);
 		long allocatedJavaMem = (long)totalMemory;
@@ -1682,7 +1680,7 @@ public class NodeStats implements Persistable {
 	 */
 	public double getSentOverheadPerSecond() {
 		long uptime = node.getUptime();
-		return ((double)getSentOverhead() * 1000.0) / ((double) uptime);
+		return (getSentOverhead() * 1000.0) / uptime;
 	}
 
 	public synchronized void successfulBlockReceive() {

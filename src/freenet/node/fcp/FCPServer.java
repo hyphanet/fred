@@ -15,9 +15,10 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Vector;
+import java.util.List;
 import java.util.WeakHashMap;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -67,7 +68,7 @@ public class FCPServer implements Runnable {
 	String bindTo;
 	private String allowedHosts;
 	AllowedHosts allowedHostsFullAccess;
-	final WeakHashMap clientsByName;
+	final WeakHashMap<String, FCPClient> clientsByName;
 	final FCPClient globalClient;
 	private boolean enablePersistentDownloads;
 	private File persistentDownloadsFile;
@@ -110,7 +111,7 @@ public class FCPServer implements Runnable {
 		this.core = core;
 		this.assumeDownloadDDAIsAllowed = assumeDDADownloadAllowed;
 		this.assumeUploadDDAIsAllowed = assumeDDAUploadAllowed;
-		clientsByName = new WeakHashMap();
+		clientsByName = new WeakHashMap<String, FCPClient>();
 		
 		// This one is only used to get the default settings. Individual FCP conns
 		// will make their own.
@@ -526,7 +527,7 @@ public class FCPServer implements Runnable {
 	public FCPClient registerClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
 		FCPClient oldClient;
 		synchronized(this) {
-			oldClient = (FCPClient) clientsByName.get(name);
+			oldClient = clientsByName.get(name);
 			if(oldClient == null) {
 				// Create new client
 				FCPClient client = new FCPClient(name, this, handler, false, null);
@@ -758,22 +759,22 @@ public class FCPServer implements Runnable {
 	}
 
 	private ClientRequest[] getPersistentRequests() {
-		Vector v = new Vector();
+		List<ClientRequest> v = new ArrayList<ClientRequest>();
 		synchronized(this) {
-			Iterator i = clientsByName.values().iterator();
+			Iterator<FCPClient> i = clientsByName.values().iterator();
 			while(i.hasNext()) {
-				FCPClient client = (FCPClient) (i.next());
+				FCPClient client = (i.next());
 				client.addPersistentRequests(v, true);
 			}
 			globalClient.addPersistentRequests(v, true);
 		}
-		return (ClientRequest[]) v.toArray(new ClientRequest[v.size()]);
+		return v.toArray(new ClientRequest[v.size()]);
 	}
 
 	public ClientRequest[] getGlobalRequests() {
-		Vector v = new Vector();
+		List<ClientRequest> v = new ArrayList<ClientRequest>();
 		globalClient.addPersistentRequests(v, false);
-		return (ClientRequest[]) v.toArray(new ClientRequest[v.size()]);
+		return v.toArray(new ClientRequest[v.size()]);
 	}
 
 	public void removeGlobalRequest(String identifier) throws MessageInvalidException {
@@ -887,7 +888,7 @@ public class FCPServer implements Runnable {
 		
 		FCPClient[] clients;
 		synchronized(this) {
-			clients = (FCPClient[]) clientsByName.values().toArray(new FCPClient[clientsByName.size()]);
+			clients = clientsByName.values().toArray(new FCPClient[clientsByName.size()]);
 		}
 		
 		for(int i=0;i<clients.length;i++) {

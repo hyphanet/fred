@@ -3,18 +3,18 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
-import freenet.crypt.RandomSource;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Random;
 
+import freenet.crypt.RandomSource;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import java.io.FileFilter;
-import java.util.Random;
 
 /**
  * Handles persistent temp files. These are used for e.g. persistent downloads.
@@ -41,7 +41,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	private final Random weakPRNG;
 	
 	/** Buckets to free */
-	private LinkedList bucketsToFree;
+	private LinkedList<Bucket> bucketsToFree;
 	
 	private volatile boolean encrypt;
 
@@ -122,10 +122,10 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		}
 	}
 
-	public LinkedList grabBucketsToFree() {
+	public LinkedList<Bucket> grabBucketsToFree() {
 		synchronized(this) {
-			LinkedList toFree = bucketsToFree;
-			bucketsToFree = new LinkedList();
+			LinkedList<Bucket> toFree = bucketsToFree;
+			bucketsToFree = new LinkedList<Bucket>();
 			return toFree;
 		}
 	}

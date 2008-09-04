@@ -524,14 +524,14 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
 	}
 
-	final Hashtable routedContexts = new Hashtable();
+	final Hashtable<Long, RoutedContext> routedContexts = new Hashtable<Long, RoutedContext>();
 
 	static class RoutedContext {
 		long createdTime;
 		long accessTime;
 		PeerNode source;
-		final HashSet routedTo;
-		final HashSet notIgnored;
+		final HashSet<PeerNode> routedTo;
+		final HashSet<PeerNode> notIgnored;
 		Message msg;
 		short lastHtl;
 		final byte[] identity;
@@ -539,8 +539,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		RoutedContext(Message msg, PeerNode source, byte[] identity) {
 			createdTime = accessTime = System.currentTimeMillis();
 			this.source = source;
-			routedTo = new HashSet();
-			notIgnored = new HashSet();
+			routedTo = new HashSet<PeerNode>();
+			notIgnored = new HashSet<PeerNode>();
 			this.msg = msg;
 			lastHtl = msg.getShort(DMT.HTL);
 			this.identity = identity;
@@ -557,9 +557,9 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	public void run() {
 		long now=System.currentTimeMillis();
 		synchronized (routedContexts) {
-			Iterator i=routedContexts.values().iterator();
+			Iterator<RoutedContext> i = routedContexts.values().iterator();
 			while (i.hasNext()) {
-				RoutedContext rc = (RoutedContext)i.next();
+				RoutedContext rc = i.next();
 				if (now-rc.createdTime > STALE_CONTEXT) {
 					i.remove();
 				}
@@ -574,7 +574,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	private boolean handleRoutedRejected(Message m) {
 		long id = m.getLong(DMT.UID);
 		Long lid = new Long(id);
-		RoutedContext rc = (RoutedContext) routedContexts.get(lid);
+		RoutedContext rc = routedContexts.get(lid);
 		if(rc == null) {
 			// Gah
 			Logger.error(this, "Unrecognized FNPRoutedRejected");
@@ -617,10 +617,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		byte[] identity = ((ShortBuffer) m.getObject(DMT.NODE_IDENTITY)).getData();
 		if(source != null) htl = source.decrementHTL(htl);
 		RoutedContext ctx;
-		ctx = (RoutedContext)routedContexts.get(lid);
+		ctx = routedContexts.get(lid);
 		if(ctx != null) {
 			try {
-				source.sendAsync(DMT.createFNPRoutedRejected(id, (short)htl), null, 0, nodeStats.routedMessageCtr);
+				source.sendAsync(DMT.createFNPRoutedRejected(id, htl), null, 0, nodeStats.routedMessageCtr);
 			} catch (NotConnectedException e) {
 				if(logMINOR) Logger.minor(this, "Lost connection rejecting "+m);
 			}
@@ -656,7 +656,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		long id = m.getLong(DMT.UID);
 		if(logMINOR) Logger.minor(this, "Got reply: "+m);
 		Long lid = new Long(id);
-		RoutedContext ctx = (RoutedContext) routedContexts.get(lid);
+		RoutedContext ctx = routedContexts.get(lid);
 		if(ctx == null) {
 			Logger.error(this, "Unrecognized routed reply: "+m);
 			return false;

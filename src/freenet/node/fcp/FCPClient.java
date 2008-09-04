@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Vector;
 
 import freenet.client.FetchContext;
@@ -45,7 +46,7 @@ public class FCPClient {
 	/** The current connection handler, if any. */
 	private FCPConnectionHandler currentConnection;
 	/** Currently running persistent requests */
-	private final HashSet runningPersistentRequests;
+	private final HashSet<ClientRequest> runningPersistentRequests;
 	/** Completed unacknowledged persistent requests */
 	private final Vector completedUnackedRequests;
 	/** ClientRequest's by identifier */
@@ -168,17 +169,15 @@ public class FCPClient {
 		return !(runningPersistentRequests.isEmpty() && completedUnackedRequests.isEmpty());
 	}
 
-	public void addPersistentRequests(Vector v, boolean onlyForever) {
+	public void addPersistentRequests(List<ClientRequest> v, boolean onlyForever) {
 		synchronized(this) {
-			Iterator i = runningPersistentRequests.iterator();
+			Iterator<ClientRequest> i = runningPersistentRequests.iterator();
 			while(i.hasNext()) {
 				ClientRequest req = (ClientRequest) i.next();
 				if(req.isPersistentForever() || !onlyForever)
 					v.add(req);
 			}
-			Object[] unacked = completedUnackedRequests.toArray();
-			for(int j=0;j<unacked.length;j++)
-				v.add(unacked[j]);
+			v.addAll(completedUnackedRequests);
 		}
 	}
 
