@@ -3613,8 +3613,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(this) {
 			if(forceDisconnectCalled)
 				return;
-			if(now - this.timeLastConnected < SENT_PACKETS_MAX_TIME_AFTER_CONNECT)
-				return;
+			/*
+			 * I've had some very strange results from seed clients!
+			 * One showed deltas of over 10 minutes... how is that possible? The PN wouldn't reconnect?!
+			 */
+			if(!isRealConnection())
+				return; // The packets wouldn't have been assigned to this PeerNode!
+//			if(now - this.timeLastConnected < SENT_PACKETS_MAX_TIME_AFTER_CONNECT)
+//				return;
 		}
 		long baseTime = m.getLong(DMT.TIME);
 		baseTime += this.clockDelta;
@@ -3629,13 +3635,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			// They are in increasing order
 			// Loop backwards
 			long otime = Long.MAX_VALUE;
-			long[][] sent = getSentPacketTimesHashes();
+			long[][] sent = getRecvPacketTimesHashes();
 			long[] sentTimes = sent[0];
 			long[] sentHashes = sent[1];
 			short sentPtr = (short) (sent.length - 1);
 			short notFoundCount = 0;
 			short consecutiveNotFound = 0;
 			short longestConsecutiveNotFound = 0;
+			short ignoredUptimeCount = 0;
+			short found = 0;
 			//The arrays are constructed from received data, don't throw an ArrayIndexOutOfBoundsException if they are different sizes.
 			int shortestArray=times.length;
 			if (shortestArray > packetHashes.length)
@@ -3673,17 +3681,24 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 							break;
 					}
 				if(match == -1) {
-					// Not found
-					consecutiveNotFound++;
-					notFoundCount++;
+					long mustHaveBeenUpAt = now - timeDeltas[i] * 2 - 5*1000;
+					if(this.crypto.socket.getStartTime() > mustHaveBeenUpAt) {
+						ignoredUptimeCount++;
+					} else {
+						// Not found
+						consecutiveNotFound++;
+						notFoundCount++;
+					}
 				} else {
 					if(consecutiveNotFound > longestConsecutiveNotFound)
 						longestConsecutiveNotFound = consecutiveNotFound;
 					consecutiveNotFound = 0;
+					found++;
 				}
 			}
 			if(consecutiveNotFound > longestConsecutiveNotFound)
 				longestConsecutiveNotFound = consecutiveNotFound;
+			Logger.error(this, "Packets: "+packetHashes.length+" not found "+notFoundCount+" consecutive not found "+consecutiveNotFound+" longest consecutive not found "+longestConsecutiveNotFound+" ignored due to uptime: "+ignoredUptimeCount+" found: "+found);
 			if(consecutiveNotFound > TRACK_PACKETS / 2) {
 				manyPacketsClaimedSentNotReceived = true;
 				Logger.error(this, "" + consecutiveNotFound + " consecutive packets not found on " + userToString());
