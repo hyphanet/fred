@@ -496,8 +496,10 @@ public class Announcer {
 							}
 							
 						}, COOLING_OFF_PERIOD);
-					} else if(runningAnnouncements == 0)
+					} else if(runningAnnouncements == 0) {
+						sentAnnouncements = 0;
 						announceNow = true;
+					}
 				}
 				// If it takes more than COOLING_OFF_PERIOD to disconnect, we might not be able to reannounce to this
 				// node. However, we can't reannounce to it anyway until announcedTo is cleared, which probably will
