@@ -23,9 +23,9 @@ public class PersistentConfig extends Config {
 	public synchronized void finishedInit() {
 		finishedInit = true;
 		if(origConfigFileContents == null) return;
-		Iterator i = origConfigFileContents.keyIterator();
+		Iterator<String> i = origConfigFileContents.keyIterator();
 		while(i.hasNext()) {
-			String key = (String) i.next();
+			String key = i.next();
 			Logger.error(this, "Unknown option: "+key+" (value="+origConfigFileContents.get(key)+ ')');
 		}
 		origConfigFileContents = null;
@@ -55,7 +55,7 @@ public class PersistentConfig extends Config {
 		return fs; 
 	}
 	
-	public void onRegister(SubConfig config, Option o) {
+	public void onRegister(SubConfig config, Option<?> o) {
 		String val, name;
 		synchronized(this) {
 			if(finishedInit)

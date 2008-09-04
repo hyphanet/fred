@@ -8,8 +8,8 @@ package freenet.config;
  * The thrower must ensure that the value reaches the config file, even though
  * it cannot be immediately used.
  */
+@SuppressWarnings("serial")
 public class NodeNeedRestartException extends ConfigException {
-
 	public NodeNeedRestartException(String msg) {
 		super(msg);
 	}
