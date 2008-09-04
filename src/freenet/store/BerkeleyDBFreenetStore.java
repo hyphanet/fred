@@ -2311,7 +2311,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	}
 	
     public boolean probablyInStore(byte[] routingKey) {
-    	DatabaseEntry routingkeyDBE = new DatabaseEntry(routingKey);
+    	return true;
+		/*-
+		DatabaseEntry routingkeyDBE = new DatabaseEntry(routingKey);
 		DatabaseEntry blockDBE = new DatabaseEntry();
 		synchronized (this) {
 			if (closed)
@@ -2323,5 +2325,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 		} catch (DatabaseException e) {
 			return false;
 		} 
+		 */
 	}
 }
