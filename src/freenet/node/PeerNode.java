@@ -3681,7 +3681,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 							break;
 					}
 				if(match == -1) {
-					long mustHaveBeenUpAt = now - timeDeltas[i] * 2 - 1000;
+					long mustHaveBeenUpAt = now - (int)(timeDeltas[i] * 1.1) - 100;
 					if(this.crypto.socket.getStartTime() > mustHaveBeenUpAt) {
 						ignoredUptimeCount++;
 					} else {
@@ -3699,7 +3699,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(consecutiveNotFound > longestConsecutiveNotFound)
 				longestConsecutiveNotFound = consecutiveNotFound;
 			Logger.error(this, "Packets: "+packetHashes.length+" not found "+notFoundCount+" consecutive not found "+consecutiveNotFound+" longest consecutive not found "+longestConsecutiveNotFound+" ignored due to uptime: "+ignoredUptimeCount+" found: "+found);
-			if(consecutiveNotFound > TRACK_PACKETS / 2) {
+			if(longestConsecutiveNotFound > TRACK_PACKETS / 2) {
 				manyPacketsClaimedSentNotReceived = true;
 				timeManyPacketsClaimedSentNotReceived = now;
 				Logger.error(this, "" + consecutiveNotFound + " consecutive packets not found on " + userToString());
