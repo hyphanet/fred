@@ -560,7 +560,7 @@ public abstract class Fields {
 	}
 
 	public static byte[] intsToBytes(int[] ints) {
-		byte[] buf = new byte[ints.length * 8];
+		byte[] buf = new byte[ints.length * 4];
 		for(int i = 0; i < ints.length; i++) {
 			long x = ints[i];
 			for(int j = 0; j < 4; j++) {

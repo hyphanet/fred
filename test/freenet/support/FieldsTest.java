@@ -306,6 +306,7 @@ public class FieldsTest extends TestCase {
 		for(int i = 0; i < inBytes.length; i++) {
 			assertEquals(outBytes[i], inBytes[i]);
 		}
+		assertEquals(outBytes.length, inBytes.length);
 	}
 	
 	public void testLongsToBytes() {
@@ -373,6 +374,7 @@ public class FieldsTest extends TestCase {
 		for(int i = 0; i < inBytes.length; i++) {
 			assertEquals(outBytes[i], inBytes[i]);
 		}
+		assertEquals(outBytes.length, inBytes.length);
 	}
 
 }
