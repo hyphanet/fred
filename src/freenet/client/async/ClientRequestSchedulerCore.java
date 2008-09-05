@@ -5,14 +5,11 @@ package freenet.client.async;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Predicate;
 import com.db4o.query.Query;
-import com.db4o.types.Db4oList;
-import com.db4o.types.Db4oMap;
 
 import freenet.client.FetchContext;
 import freenet.crypt.RandomSource;
@@ -24,7 +21,6 @@ import freenet.node.Node;
 import freenet.node.RequestStarter;
 import freenet.node.SendableGet;
 import freenet.node.SendableRequest;
-import freenet.support.Db4oSet;
 import freenet.support.Logger;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.RandomGrabArray;
