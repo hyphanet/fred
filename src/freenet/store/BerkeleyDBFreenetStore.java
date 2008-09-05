@@ -2309,6 +2309,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	}
 	
     public boolean probablyInStore(byte[] routingKey) {
+    	// This needs to be fast, so that it can be run from any thread.
+    	// Accessing the bdbje database is often slow, involves many disk seeks,
+    	// and can stall for long periods.
     	return true;
 		/*-
 		DatabaseEntry routingkeyDBE = new DatabaseEntry(routingKey);
