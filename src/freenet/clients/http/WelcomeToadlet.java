@@ -569,7 +569,8 @@ public class WelcomeToadlet extends Toadlet {
 
         HTMLNode bookmarkBoxContent = bookmarkBox.addChild("div", "class", "infobox-content");
         HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
-        addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, useragent != null && useragent.toLowerCase().indexOf("khtml") >= 0);
+	String userAgent = useragent.toLowerCase();
+        addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, useragent != null && userAgent.contains("khtml") && !userAgent.contains("chrome"));
 
         // Fetch-a-key box
         HTMLNode fetchKeyBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", l10n("fetchKeyLabel")));
