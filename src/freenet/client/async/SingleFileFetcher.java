@@ -782,7 +782,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			}
 			// Force fatal as the fetcher is presumed to have made a reasonable effort.
 			SingleFileFetcher.this.onFailure(e, true, container, context);
-			if(wasActive)
+			if(!wasActive)
 				container.deactivate(SingleFileFetcher.this, 1);
 		}
 
