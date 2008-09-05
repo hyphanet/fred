@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.SoftReference;
+import java.util.Random;
 
 import freenet.crypt.PCFBMode;
 import freenet.crypt.RandomSource;
@@ -16,7 +17,6 @@ import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
-import java.util.Random;
 
 /**
  * A proxy Bucket which adds:
@@ -28,7 +28,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	private final Bucket bucket;
 	private final int minPaddedSize;
 	private final Random randomSource;
-	private SoftReference /* <Rijndael> */ aesRef;
+	private SoftReference<Rijndael> aesRef;
 	/** The decryption key. */
 	private final byte[] key;
 	private long dataLength;
@@ -176,7 +176,8 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			}
 		}
 		
-		@Override
+        @Override
+		@SuppressWarnings("cast")
 		public void close() throws IOException {
 			if(closed) return;
 			try {
@@ -190,7 +191,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 					byte[] buf = new byte[4096];
 					long writtenPadding = 0;
 					while(writtenPadding < padding) {
-						int left = (int) Math.min((padding - writtenPadding), (long)buf.length);
+						int left = (int) Math.min((long) (padding - writtenPadding), (long) buf.length);
 						randomSource.nextBytes(buf);
 						out.write(buf, 0, left);
 						writtenPadding += left;
@@ -300,7 +301,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	private synchronized Rijndael getRijndael() {
 		Rijndael aes;
 		if(aesRef != null) {
-			aes = (Rijndael) aesRef.get();
+			aes = aesRef.get();
 			if(aes != null) return aes;
 		}
 		try {
@@ -309,7 +310,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			throw new Error(e);
 		}
 		aes.initialize(key);
-		aesRef = new SoftReference(aes);
+		aesRef = new SoftReference<Rijndael>(aes);
 		return aes;
 	}
 

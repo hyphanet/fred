@@ -3,16 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
-import freenet.crypt.RandomSource;
-import freenet.support.Executor;
-import freenet.support.Logger;
-import freenet.support.SizeUtil;
-import freenet.support.TimeUtil;
 import java.io.IOException;
-
-import freenet.support.api.Bucket;
-import freenet.support.api.BucketFactory;
-
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.LinkedList;
@@ -20,6 +11,14 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.Vector;
 import java.util.concurrent.LinkedBlockingQueue;
+
+import freenet.crypt.RandomSource;
+import freenet.support.Executor;
+import freenet.support.Logger;
+import freenet.support.SizeUtil;
+import freenet.support.TimeUtil;
+import freenet.support.api.Bucket;
+import freenet.support.api.BucketFactory;
 
 /**
  * Temporary Bucket Factory
@@ -144,6 +143,7 @@ public class TempBucketFactory implements BucketFactory {
 		}
 
 		private class TempBucketOutputStream extends OutputStream {
+			@SuppressWarnings("unused")
 			private final short idx;
 			
 			TempBucketOutputStream(short idx) throws IOException {

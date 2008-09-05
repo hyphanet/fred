@@ -31,7 +31,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	private final File dir;
 	
 	/** Original contents of directory */
-	private HashSet originalFiles;
+	private HashSet<File> originalFiles;
 	
 	/** Filename generator */
 	private final FilenameGenerator fg;
@@ -60,7 +60,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		}
 		if(!dir.isDirectory())
 			throw new IOException("Directory is not a directory: "+dir);
-		originalFiles = new HashSet();
+		originalFiles = new HashSet<File>();
 		File[] files = dir.listFiles(new FileFilter() {
 
 			public boolean accept(File pathname) {
@@ -79,7 +79,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			originalFiles.add(f);
 		}
 		
-		bucketsToFree = new LinkedList();
+		bucketsToFree = new LinkedList<Bucket>();
 	}
 	
 	public void register(File file) {
@@ -97,9 +97,9 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	 * Deletes any old temp files still unclaimed.
 	 */
 	public synchronized void completedInit() {
-		Iterator i = originalFiles.iterator();
+		Iterator<File> i = originalFiles.iterator();
 		while(i.hasNext()) {
-			File f = (File) (i.next());
+			File f = (i.next());
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Deleting old tempfile "+f);
 			f.delete();

@@ -20,7 +20,7 @@ public class MultiReaderBucket {
 	private final Bucket bucket;
 	
 	// Assume there will be relatively few readers
-	private ArrayList readers;
+	private ArrayList<Bucket> readers;
 	
 	private boolean closed;
 	
@@ -33,7 +33,7 @@ public class MultiReaderBucket {
 		synchronized(this) {
 			if(closed) return null;
 			Bucket d = new ReaderBucket();
-			if(readers == null) readers = new ArrayList();
+			if(readers == null) readers = new ArrayList<Bucket>();
 			readers.add(d);
 			return d;
 		}

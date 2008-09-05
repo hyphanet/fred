@@ -19,7 +19,7 @@ import freenet.support.api.Bucket;
  */
 public class ArrayBucket implements Bucket {
 
-	private final ArrayList data;
+	private final ArrayList<byte[]> data;
 	private String name;
 	private boolean readOnly;
 
@@ -33,7 +33,7 @@ public class ArrayBucket implements Bucket {
 	}
 
 	public ArrayBucket(String name) {
-		data = new ArrayList();
+		data = new ArrayList<byte[]>();
 		this.name = name;
 	}
 
@@ -48,8 +48,7 @@ public class ArrayBucket implements Bucket {
 
 	public String toString() {
 		StringBuilder s = new StringBuilder(250);
-		for (Iterator i = data.iterator(); i.hasNext();) {
-			byte[] b = (byte[]) i.next();
+		for (byte[] b : data) {
 			s.append(new String(b));
 		}
 		return s.toString();
@@ -67,8 +66,7 @@ public class ArrayBucket implements Bucket {
 
 	public long size() {
 		long size = 0;
-		for (Iterator i = data.iterator(); i.hasNext();) {
-			byte[] b = (byte[]) i.next();
+		for (byte[] b : data) {
 			size += b.length;
 		}
 		return size;
@@ -97,7 +95,7 @@ public class ArrayBucket implements Bucket {
 
 	private class ArrayBucketInputStream extends InputStream {
 		
-		private Iterator i;
+		private Iterator<byte[]> i;
 		private ByteArrayInputStream in;
 
 		public ArrayBucketInputStream() {
@@ -111,7 +109,7 @@ public class ArrayBucket implements Bucket {
 		private int priv_read() {
 			if (in == null) {
 				if (i.hasNext()) {
-					in = new ByteArrayInputStream((byte[]) i.next());
+					in = new ByteArrayInputStream(i.next());
 				} else {
 					return -1;
 				}
@@ -136,7 +134,7 @@ public class ArrayBucket implements Bucket {
 		private int priv_read(byte[] b, int off, int len) {
 			if (in == null) {
 				if (i.hasNext()) {
-					in = new ByteArrayInputStream((byte[]) i.next());
+					in = new ByteArrayInputStream(i.next());
 				} else {
 					return -1;
 				}
@@ -153,7 +151,7 @@ public class ArrayBucket implements Bucket {
 		public int available() {
 			if (in == null) {
 				if (i.hasNext()) {
-					in = new ByteArrayInputStream((byte[]) i.next());
+					in = new ByteArrayInputStream(i.next());
 				} else {
 					return 0;
 				}
@@ -181,8 +179,7 @@ public class ArrayBucket implements Bucket {
 		int size = (int)sz;
 		byte[] buf = new byte[size];
 		int index = 0;
-		for(Iterator i=data.iterator();i.hasNext();) {
-			byte[] obuf = (byte[]) i.next();
+		for (byte[] obuf : data) {			
 			System.arraycopy(obuf, 0, buf, index, obuf.length);
 			index += obuf.length;
 		}

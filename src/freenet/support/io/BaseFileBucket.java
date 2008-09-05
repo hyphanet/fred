@@ -7,6 +7,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Arrays;
 import java.util.Vector;
 
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -15,7 +16,6 @@ import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
-import java.util.Arrays;
 
 public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBucket {
 
@@ -28,7 +28,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 	/** Vector of streams (FileBucketInputStream or FileBucketOutputStream) which 
 	 * are open to this file. So we can be sure they are all closed when we free it. 
 	 * Can be null. */
-	private Vector streams;
+	private Vector<Object> streams;
 
 	protected static String tempDir = null;
 
@@ -80,7 +80,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		// BaseFileBucket is a very common object, and often very long lived,
 		// so we need to minimize memory usage even at the cost of frequent allocations.
 		if(streams == null)
-			streams = new Vector(1,1);
+			streams = new Vector<Object>(1, 1);
 		streams.add(stream);
 	}
 	
