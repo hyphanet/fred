@@ -38,10 +38,6 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 		return null;
 	}
 
-	protected Set makeSetForAllRequestsByClientRequest(ObjectContainer ignored) {
-		return new HashSet();
-	}
-	
 	public void succeeded(BaseSendableGet succeeded, ObjectContainer container) {
 		// Do nothing.
 		// FIXME: Keep a list of recently succeeded ClientRequester's.

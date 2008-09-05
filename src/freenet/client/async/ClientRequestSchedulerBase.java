@@ -385,8 +385,6 @@ abstract class ClientRequestSchedulerBase {
 		else return list.toArray(new SendableGet[list.size()]);
 	}
 	
-	protected abstract Set makeSetForAllRequestsByClientRequest(ObjectContainer container);
-
 	public void onStarted() {
 		keyListeners = new HashSet<KeyListener>();
 	}

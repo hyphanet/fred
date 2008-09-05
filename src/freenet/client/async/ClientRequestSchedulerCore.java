@@ -703,10 +703,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 		}
 	}
 		
-	protected Set makeSetForAllRequestsByClientRequest(ObjectContainer container) {
-		return new Db4oSet(container, 1);
-	}
-
 	public void rerunRegisterMeRunner(DBJobRunner runner) {
 		synchronized(this) {
 			shouldReRunRegisterMeRunner = true;
