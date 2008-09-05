@@ -241,6 +241,73 @@ public class FieldsTest extends TestCase {
 		assertTrue(l3.equals(l1)); // should be same due to Fields.longHashcode
 	}	
 	
+	public void testIntsToBytes() {
+		int[] longs = new int[] {};
+		doRoundTripIntsArrayToBytesArray(longs);
+		
+		longs = new int[] {Integer.MIN_VALUE};
+		doRoundTripIntsArrayToBytesArray(longs);
+		
+		longs = new int[] {0, Integer.MAX_VALUE, Integer.MIN_VALUE};
+		doRoundTripIntsArrayToBytesArray(longs);
+		
+		longs = new int[] {33685760, 51511577};
+		doRoundTripIntsArrayToBytesArray(longs);		
+	}
+
+	private void doRoundTripIntsArrayToBytesArray(int[] ints) {
+		byte[] bytes = Fields.intsToBytes(ints);
+		assert(bytes.length == ints.length * 8);
+		
+		int[] outLongs = Fields.bytesToInts(bytes);
+		for(int i = 0; i < ints.length; i++) {
+			assertTrue(outLongs[i] == ints[i]);
+		}
+	}
+	
+	public void testBytesToIntException() {
+		byte[] bytes = new byte[3];
+		try {
+			Fields.bytesToLongs(bytes, 0, bytes.length);
+			fail();
+		}
+		catch(IllegalArgumentException e){
+			// expect this
+		}
+	}
+	
+	public void testBytesToInt() {
+		
+		byte[] bytes = new byte[] { 0, 1, 2, 2 };
+		
+		int outLong = Fields.bytesToInt(bytes, 0);
+		assertEquals(outLong, 33685760);
+		
+		doTestRoundTripBytesArrayToInt(bytes);
+		
+		bytes = new byte[] {};
+		try{
+			doTestRoundTripBytesArrayToInt(bytes);
+			fail();
+		}
+		catch(IllegalArgumentException e) {
+			//expect this
+		}
+		
+		bytes = new byte[] {1, 1, 1, 1};
+		doTestRoundTripBytesArrayToInt(bytes);
+		
+	}
+	
+	private void doTestRoundTripBytesArrayToInt(byte[] inBytes) {
+
+		int outLong = Fields.bytesToInt(inBytes, 0);
+		byte[] outBytes = Fields.intToBytes(outLong);
+		for(int i = 0; i < inBytes.length; i++) {
+			assertEquals(outBytes[i], inBytes[i]);
+		}
+	}
+	
 	public void testLongsToBytes() {
 		long[] longs = new long[] {};
 		doRoundTripLongsArrayToBytesArray(longs);
@@ -307,4 +374,5 @@ public class FieldsTest extends TestCase {
 			assertEquals(outBytes[i], inBytes[i]);
 		}
 	}
+
 }

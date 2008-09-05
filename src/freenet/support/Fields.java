@@ -570,7 +570,16 @@ public abstract class Fields {
 		}
 		return buf;
 	}
-
+	
+	public static byte[] intToBytes(int x) {
+		byte[] buf = new byte[4];
+			for(int j = 0; j < 4; j++) {
+				buf[j] = (byte) x;
+				x >>>= 8;
+			}
+		return buf;
+	}
+	
 	public static long parseLong(String s, long defaultValue) {
 		try {
 			return Long.parseLong(s);
