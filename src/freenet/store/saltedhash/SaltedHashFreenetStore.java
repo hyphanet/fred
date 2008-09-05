@@ -71,10 +71,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private final StoreCallback callback;
 	private final boolean collisionPossible;
 	private final int headerBlockLength;
+	@SuppressWarnings("unused")
 	private final int routeKeyLength;
 	private final int fullKeyLength;
 	private final int dataBlockLength;
 	private final Random random;
+	@SuppressWarnings("unused")
 	private UserAlertManager userAlertManager;
 	
 	private long storeSize;
