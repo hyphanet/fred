@@ -283,14 +283,14 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			if(darknetStatus >= AddressTracker.DONT_KNOW) {
 				return new int[] { };
 			} else {
-				return new int[] { (darknetStatus < AddressTracker.DONT_KNOW ? -1 : 1) * node.getDarknetPortNumber() };
+				return new int[] { (darknetStatus < AddressTracker.MAYBE_NATED ? -1 : 1) * node.getDarknetPortNumber() };
 			}
 		} else {
 			if(darknetStatus >= AddressTracker.DONT_KNOW) {
-				return new int[] { (opennetStatus < AddressTracker.DONT_KNOW ? -1 : 1 ) * om.crypto.portNumber };
+				return new int[] { (opennetStatus < AddressTracker.MAYBE_NATED ? -1 : 1 ) * om.crypto.portNumber };
 			} else {
-				return new int[] { ((darknetStatus < AddressTracker.DONT_KNOW) ? -1 : 1 ) * node.getDarknetPortNumber(), 
-						(opennetStatus < AddressTracker.DONT_KNOW ? -1 : 1 ) * om.crypto.portNumber };
+				return new int[] { ((darknetStatus < AddressTracker.MAYBE_NATED) ? -1 : 1 ) * node.getDarknetPortNumber(), 
+						(opennetStatus < AddressTracker.MAYBE_NATED ? -1 : 1 ) * om.crypto.portNumber };
 			}
 		}
 	}
