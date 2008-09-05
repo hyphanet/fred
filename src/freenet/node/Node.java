@@ -1462,7 +1462,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 		maxTotalKeys = maxTotalDatastoreSize / sizePerKey;
 		
-		nodeConfig.register("storeBloomFilterSize", 0x3600000, sortOrder++, true, false, "Node.storeBloomFilterSize",
+		nodeConfig.register("storeBloomFilterSize", (int) Math.min(maxTotalDatastoreSize / 2048, 268435456), sortOrder++, true, false, "Node.storeBloomFilterSize",
 		        "Node.storeBloomFilterSizeLong", new IntCallback() {
 			        private Integer cachedBloomFilterSize;
 
