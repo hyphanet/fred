@@ -263,6 +263,7 @@ public class FieldsTest extends TestCase {
 		for(int i = 0; i < ints.length; i++) {
 			assertTrue(outLongs[i] == ints[i]);
 		}
+		assertEquals(outLongs.length, ints.length);
 	}
 	
 	public void testBytesToIntException() {
@@ -331,6 +332,7 @@ public class FieldsTest extends TestCase {
 		for(int i = 0; i < longs.length; i++) {
 			assertTrue(outLongs[i] == longs[i]);
 		}
+		assertEquals(outLongs.length, longs.length);
 	}
 	
 	public void testBytesToLongException() {
