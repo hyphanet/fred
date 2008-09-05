@@ -22,7 +22,6 @@ package freenet.support;
 import java.io.DataInput;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -44,8 +43,8 @@ public class Serializer {
     public static final String VERSION = "$Id: Serializer.java,v 1.5 2005/09/15 18:16:04 amphibian Exp $";
 	public static final int MAX_BITARRAY_SIZE = 2048*8;
 
-	public static List readListFromDataInputStream(Class<?> elementType, DataInput dis) throws IOException {
-		LinkedList ret = new LinkedList();
+	public static List<Object> readListFromDataInputStream(Class<?> elementType, DataInput dis) throws IOException {
+		LinkedList<Object> ret = new LinkedList<Object>();
 		int length = dis.readInt();
 		for (int x = 0; x < length; x++) {
 			ret.add(readFromDataInputStream(elementType, dis));
@@ -124,11 +123,11 @@ public class Serializer {
 				dos.writeChar(s.charAt(x));
 			}
 		} else if (type.equals(LinkedList.class)) {
-			LinkedList ll = (LinkedList) object;
+			LinkedList<?> ll = (LinkedList<?>) object;
 			dos.writeInt(ll.size());
 			synchronized (ll) {
-				for (Iterator i = ll.iterator(); i.hasNext();) {
-					writeToDataOutputStream(i.next(), dos, ctx);
+				for (Object o : ll) {
+					writeToDataOutputStream(o, dos, ctx);
 				}
 			}
 		} else if (type.equals(Byte.class)) {

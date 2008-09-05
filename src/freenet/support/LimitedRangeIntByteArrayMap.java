@@ -218,10 +218,10 @@ public class LimitedRangeIntByteArrayMap {
     public synchronized LimitedRangeIntByteArrayMapElement[] grabAll() {
         int len = contents.size();
         LimitedRangeIntByteArrayMapElement[] output = new LimitedRangeIntByteArrayMapElement[len];
-        Iterator i = contents.values().iterator();
+        Iterator<LimitedRangeIntByteArrayMapElement> i = contents.values().iterator();
         int count = 0;
         while(i.hasNext()) {
-            output[count++] = (LimitedRangeIntByteArrayMapElement)i.next();
+            output[count++] = i.next();
         }
         clear();
         return output;

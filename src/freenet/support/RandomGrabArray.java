@@ -19,14 +19,14 @@ public class RandomGrabArray {
 	 * RAM), or rewrite the whole class as a custom hashset maybe based on the classpath 
 	 * HashSet. Note that removeRandom() is *the* common operation, so MUST BE FAST.
 	 */
-	private HashSet contents;
+	private HashSet<RandomGrabArrayItem> contents;
 	private final static int MIN_SIZE = 32;
 
 	public RandomGrabArray(RandomSource rand) {
 		this.reqs = new RandomGrabArrayItem[MIN_SIZE];
 		index = 0;
 		this.rand = rand;
-		contents = new HashSet();
+		contents = new HashSet<RandomGrabArrayItem>();
 	}
 	
 	public void add(RandomGrabArrayItem req) {

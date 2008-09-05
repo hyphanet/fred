@@ -1,6 +1,5 @@
 package freenet.support;
 
-import java.io.BufferedReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;

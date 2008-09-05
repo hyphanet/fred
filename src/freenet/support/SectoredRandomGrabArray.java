@@ -10,13 +10,13 @@ import freenet.crypt.RandomSource;
  */
 public class SectoredRandomGrabArray implements RemoveRandom {
 
-	private final HashMap grabArraysByClient;
+	private final HashMap<Object, RemoveRandomWithObject> grabArraysByClient;
 	private RemoveRandomWithObject[] grabArrays;
 	private final RandomSource rand;
 	
 	public SectoredRandomGrabArray(RandomSource rand) {
 		this.rand = rand;
-		this.grabArraysByClient = new HashMap();
+		this.grabArraysByClient = new HashMap<Object, RemoveRandomWithObject>();
 		grabArrays = new RemoveRandomWithObject[0];
 	}
 
@@ -49,7 +49,7 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 	 * to add() with calls to getGrabber/addGrabber!
 	 */
 	public synchronized RemoveRandomWithObject getGrabber(Object client) {
-		return (RemoveRandomWithObject) grabArraysByClient.get(client);
+		return grabArraysByClient.get(client);
 	}
 
 	/**

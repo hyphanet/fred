@@ -10,7 +10,7 @@ import java.util.Hashtable;
 
 public class Loader {
 
-    static final private Hashtable classes=new Hashtable();
+    static final private Hashtable<String, Class<?>> classes = new Hashtable<String, Class<?>>();
     //  static final public String prefix="freenet.message.";
 
     /**
@@ -18,7 +18,7 @@ public class Loader {
      * @param name The name of the class to load.
      **/
     static public Class<?> load(String name) throws ClassNotFoundException {
-		Class<?> c = (Class<?>) classes.get(name);
+		Class<?> c = classes.get(name);
 	if(c==null) {
 	    c=Class.forName(name);
 	    classes.put(name, c);

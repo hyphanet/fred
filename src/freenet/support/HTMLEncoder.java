@@ -4,7 +4,6 @@
 package freenet.support;
 
 import java.util.HashMap;
-import java.util.Iterator;
 
 /**
  * Originally from com.websiteasp.ox pasckage.
@@ -53,9 +52,9 @@ public class HTMLEncoder {
 			int keyIndex = 0;
 			
 			int max = 0;
-			for(Iterator it = map.keySet().iterator();it.hasNext(); keyIndex++){
-				int val = (int) ((Character)it.next()).charValue();
-				keys[keyIndex] = val;
+			for (Character key : map.keySet()) {
+				int val = key.charValue();
+				keys[keyIndex++] = val;
 				if(val > max) max = val;
 			}
 			
@@ -79,9 +78,7 @@ public class HTMLEncoder {
 			
 			chars = new char[modulo];
 			strings = new String[modulo];
-			Character character;
-			for(Iterator it = map.keySet().iterator();it.hasNext(); keyIndex++){
-				character = ((Character)it.next());
+			for (Character character : map.keySet()) {
 				keyIndex = character.charValue()%modulo;
 				chars[keyIndex] = character.charValue();
 				strings[keyIndex] = map.get(character);
