@@ -153,14 +153,22 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			 * @see http://archives.freenetproject.org/message/20080718.144240.359e16d3.en.html
 			 */
 			if((OpennetManager.MAX_PEERS_FOR_SCALING < locs.length) && (source.isOpennet())) {
-				Logger.error(this, "We received "+locs.length+ " locations from "+source.toString()+"! That should *NOT* happen!");
-				source.forceDisconnect(true);
-				return true;
-			} else {
-				// We are on darknet and we trust our peers OR we are on opennet
-				// and the amount of locations sent to us seems reasonable
-				source.updateLocation(newLoc, locs);
+				if(locs.length > OpennetManager.MAX_PEERS_FOR_SCALING * 2) {
+					// This can't happen by accident
+					Logger.error(this, "We received "+locs.length+ " locations from "+source.toString()+"! That should *NOT* happen! Possible attack!");
+					source.forceDisconnect(true);
+					return true;
+				} else {
+					// A few extra can happen by accident. Just use the first 20.
+					Logger.normal(this, "Too many locations from "+source.toString()+" : "+locs.length+" could be an accident, using the first "+OpennetManager.MAX_PEERS_FOR_SCALING);
+					double[] firstLocs = new double[OpennetManager.MAX_PEERS_FOR_SCALING];
+					System.arraycopy(locs, 0, firstLocs, 0, OpennetManager.MAX_PEERS_FOR_SCALING);
+					locs = firstLocs;
+				}
 			}
+			// We are on darknet and we trust our peers OR we are on opennet
+			// and the amount of locations sent to us seems reasonable
+			source.updateLocation(newLoc, locs);
 			
 			return true;
 		}
