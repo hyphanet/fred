@@ -1408,50 +1408,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			
 		});
 
-		nodeConfig.register("storeBloomFilterSize", 0x3600000, sortOrder++, true, false, "Node.storeBloomFilterSize",
-		        "Node.storeBloomFilterSizeLong", new IntCallback() {
-			        private Integer cachedBloomFilterSize;
-
-			        public Integer get() {
-			        	if (cachedBloomFilterSize == null)
-					        cachedBloomFilterSize = storeBloomFilterSize;
-				        return cachedBloomFilterSize;
-			        }
-
-			        public void set(Integer val) throws InvalidConfigValueException, NodeNeedRestartException {
-				        cachedBloomFilterSize = val;
-				        throw new NodeNeedRestartException("Store bloom filter size cannot be changed on the fly");
-			        }
-
-			        public boolean isReadOnly() {
-				        return !("salt-hash".equals(storeType));
-			        }
-		        });
-
-		storeBloomFilterSize = nodeConfig.getInt("storeBloomFilterSize");
-
-		nodeConfig.register("storeBloomFilterCounting", true, sortOrder++, true, false,
-		        "Node.storeBloomFilterCounting", "Node.storeBloomFilterCountingLong", new BooleanCallback() {
-			        private Boolean cachedBloomFilterCounting;
-
-			        public Boolean get() {
-				        if (cachedBloomFilterCounting == null)
-					        cachedBloomFilterCounting = storeBloomFilterCounting;
-				        return cachedBloomFilterCounting;
-			        }
-
-			        public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
-				        cachedBloomFilterCounting = val;
-				        throw new NodeNeedRestartException("Store bloom filter type cannot be changed on the fly");
-			        }
-
-			        public boolean isReadOnly() {
-				        return !("salt-hash".equals(storeType));
-			        }
-		        });
-
-		storeBloomFilterCounting = nodeConfig.getBoolean("storeBloomFilterCounting");
-		
 		nodeConfig.register("storeType", "bdb-index", sortOrder++, true, false, "Node.storeType", "Node.storeTypeLong", new StoreTypeCallback());
 		
 		storeType = nodeConfig.getString("storeType");
@@ -1505,6 +1461,50 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 
 		maxTotalKeys = maxTotalDatastoreSize / sizePerKey;
+		
+		nodeConfig.register("storeBloomFilterSize", 0x3600000, sortOrder++, true, false, "Node.storeBloomFilterSize",
+		        "Node.storeBloomFilterSizeLong", new IntCallback() {
+			        private Integer cachedBloomFilterSize;
+
+			        public Integer get() {
+			        	if (cachedBloomFilterSize == null)
+					        cachedBloomFilterSize = storeBloomFilterSize;
+				        return cachedBloomFilterSize;
+			        }
+
+			        public void set(Integer val) throws InvalidConfigValueException, NodeNeedRestartException {
+				        cachedBloomFilterSize = val;
+				        throw new NodeNeedRestartException("Store bloom filter size cannot be changed on the fly");
+			        }
+
+			        public boolean isReadOnly() {
+				        return !("salt-hash".equals(storeType));
+			        }
+		        });
+
+		storeBloomFilterSize = nodeConfig.getInt("storeBloomFilterSize");
+
+		nodeConfig.register("storeBloomFilterCounting", true, sortOrder++, true, false,
+		        "Node.storeBloomFilterCounting", "Node.storeBloomFilterCountingLong", new BooleanCallback() {
+			        private Boolean cachedBloomFilterCounting;
+
+			        public Boolean get() {
+				        if (cachedBloomFilterCounting == null)
+					        cachedBloomFilterCounting = storeBloomFilterCounting;
+				        return cachedBloomFilterCounting;
+			        }
+
+			        public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				        cachedBloomFilterCounting = val;
+				        throw new NodeNeedRestartException("Store bloom filter type cannot be changed on the fly");
+			        }
+
+			        public boolean isReadOnly() {
+				        return !("salt-hash".equals(storeType));
+			        }
+		        });
+
+		storeBloomFilterCounting = nodeConfig.getBoolean("storeBloomFilterCounting");
 		
 		nodeConfig.register("storeDir", "datastore", sortOrder++, true, true, "Node.storeDirectory", "Node.storeDirectoryLong", 
 				new StringCallback() {
