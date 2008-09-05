@@ -3,18 +3,14 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import com.db4o.ObjectContainer;
 
-import freenet.keys.Key;
 import freenet.node.BaseSendableGet;
-import freenet.node.SendableRequest;
 import freenet.support.Logger;
 
 /**
@@ -25,21 +21,12 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 	
 	private boolean logMINOR;
 	
-	/** All pending gets by key. Used to automatically satisfy pending requests when either the key is fetched by
-	 * an overlapping request, or it is fetched by a request from another node. Operations on this are synchronized on
-	 * itself. */
-	protected final Map /* <Key, SendableGet[]> */ pendingKeys;
-	
 	protected final List<BaseSendableGet>recentSuccesses;
 	
 	ClientRequestSchedulerNonPersistent(ClientRequestScheduler sched, boolean forInserts, boolean forSSKs) {
 		super(forInserts, forSSKs);
 		this.sched = sched;
 		recentSuccesses = new LinkedList<BaseSendableGet>();
-		if(forInserts)
-			pendingKeys = null;
-		else
-			pendingKeys = new HashMap();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
@@ -55,12 +42,6 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 		return new HashSet();
 	}
 	
-	public long countQueuedRequests(ObjectContainer container) {
-		if(pendingKeys != null)
-			return pendingKeys.size();
-		else return 0;
-	}
-
 	public void succeeded(BaseSendableGet succeeded, ObjectContainer container) {
 		// Do nothing.
 		// FIXME: Keep a list of recently succeeded ClientRequester's.
