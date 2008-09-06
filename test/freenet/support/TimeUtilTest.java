@@ -29,6 +29,7 @@ public class TimeUtilTest extends TestCase {
 	//1w+1d+1h+1m+1s+1ms
 	private long oneForTermLong = 694861001;
 	
+	@Override
 	protected void setUp() throws Exception {
 		Locale.setDefault(Locale.US);
 	}

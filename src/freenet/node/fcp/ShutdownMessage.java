@@ -14,14 +14,17 @@ public class ShutdownMessage extends FCPMessage{
 	public ShutdownMessage() throws MessageInvalidException {
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		return null;
 	}
 
+	@Override
 	public String getName() {
 		return NAME;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		if(!handler.hasFullAccess()) {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Shutdown requires full access", null, false);

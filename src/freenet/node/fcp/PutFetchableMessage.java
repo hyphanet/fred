@@ -19,6 +19,7 @@ public class PutFetchableMessage extends FCPMessage {
 	final boolean global;
 	final FreenetURI uri;
 	
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("Identifier", identifier);
@@ -28,10 +29,12 @@ public class PutFetchableMessage extends FCPMessage {
 		return fs;
 	}
 
+	@Override
 	public String getName() {
 		return "PutFetchable";
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PutFetchable goes from server to client not the other way around", identifier, global);

@@ -108,6 +108,7 @@ public class ShortBuffer implements WritableToDataOutputStream {
 		stream.write(_data, _start, _length);
 	}
 
+	@Override
 	public String toString() {
 		if (this._length > 50) {
 			return "Buffer {"+this._length+ '}';
@@ -122,6 +123,7 @@ public class ShortBuffer implements WritableToDataOutputStream {
 		}
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (this == o) {
 			return true;
@@ -145,6 +147,7 @@ public class ShortBuffer implements WritableToDataOutputStream {
 		return true;
 	}
 
+	@Override
 	public int hashCode() {
 	    return Fields.hashCode(_data) ^ _start ^ (_length << 16);
 	}

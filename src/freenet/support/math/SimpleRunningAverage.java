@@ -20,7 +20,8 @@ public class SimpleRunningAverage implements RunningAverage {
     final double initValue;
     private boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 
-    public final Object clone() {
+    @Override
+	public final Object clone() {
         return new SimpleRunningAverage(this);
     }
     
@@ -86,7 +87,8 @@ public class SimpleRunningAverage implements RunningAverage {
 		return refs[nextSlotPtr];
 	}
 
-    public synchronized String toString() {
+    @Override
+	public synchronized String toString() {
         return super.toString() + ": curLen="+curLen+", ptr="+nextSlotPtr+", total="+
         	total+", average="+total/curLen;
     }

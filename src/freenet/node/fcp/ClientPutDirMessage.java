@@ -117,6 +117,7 @@ public abstract class ClientPutDirMessage extends BaseDataCarryingMessage {
 		earlyEncode = Fields.stringToBool(fs.get("EarlyEncode"), false);
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putSingle("URI", uri.toString());

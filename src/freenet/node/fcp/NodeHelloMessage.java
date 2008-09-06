@@ -30,6 +30,7 @@ public class NodeHelloMessage extends FCPMessage {
 		this.id = id;
 	}
 	
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		// FIXME
@@ -47,10 +48,12 @@ public class NodeHelloMessage extends FCPMessage {
 		return sfs;
 	}
 
+	@Override
 	public String getName() {
 		return NodeHelloMessage.NAME;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "NodeHello goes from server to client not the other way around", null, false);
 	}

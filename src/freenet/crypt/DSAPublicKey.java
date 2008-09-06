@@ -83,6 +83,7 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 		return group.getG();
 	}
 
+	@Override
 	public String keyType() {
 		return "DSA.p";
 	}
@@ -124,6 +125,7 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 	//    BigInteger y=Util.byteArrayToMPI(Util.hexToBytes(field));
 	//    return new DSAPublicKey(group, y);
 	//}
+	@Override
 	public byte[] asBytes() {
 		byte[] groupBytes = group.asBytes();
 		byte[] ybytes = Util.MPIbytes(y);
@@ -149,6 +151,7 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 		return padded;
 	}
 
+	@Override
 	public byte[] fingerprint() {
 		synchronized(this) {
 			if(fingerprint == null)
@@ -163,10 +166,12 @@ public class DSAPublicKey extends CryptoKey implements StorableBlock {
 		return y.equals(o.y) && group.equals(o.group);
 	}
 
+	@Override
 	public int hashCode() {
 		return y.hashCode() ^ group.hashCode();
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if(this == o) // Not necessary, but a very cheap optimization
 			return true;

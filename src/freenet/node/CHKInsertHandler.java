@@ -60,7 +60,8 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         receivedBytes(req.receivedByteCount());
     }
     
-    public String toString() {
+    @Override
+	public String toString() {
         return super.toString()+" for "+uid;
     }
     
@@ -440,7 +441,8 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
             }
         }
 
-        public String toString() {
+        @Override
+		public String toString() {
         	return super.toString()+" for "+uid;
         }
 

@@ -18,7 +18,8 @@ public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLi
         map = new HashMap();
     }
     
-    public synchronized void add(UpdatableSortedLinkedListItem item) throws UpdatableSortedLinkedListKilledException {
+    @Override
+	public synchronized void add(UpdatableSortedLinkedListItem item) throws UpdatableSortedLinkedListKilledException {
         if(!(item instanceof IndexableUpdatableSortedLinkedListItem)) {
             throw new IllegalArgumentException();
         }
@@ -34,7 +35,8 @@ public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLi
         checkList();
     }
     
-    public synchronized UpdatableSortedLinkedListItem remove(UpdatableSortedLinkedListItem item) throws UpdatableSortedLinkedListKilledException {
+    @Override
+	public synchronized UpdatableSortedLinkedListItem remove(UpdatableSortedLinkedListItem item) throws UpdatableSortedLinkedListKilledException {
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
         map.remove(((IndexableUpdatableSortedLinkedListItem)item).indexValue());
         return super.remove(item);
@@ -57,7 +59,8 @@ public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLi
         return item;
     }
     
-    public synchronized void clear() {
+    @Override
+	public synchronized void clear() {
     	map.clear();
     	super.clear();
     }

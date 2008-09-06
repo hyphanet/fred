@@ -10,24 +10,29 @@ package freenet.crypt;
  */
 public class DummyRandomSource extends RandomSource {
 	private static final long serialVersionUID = -1;
-    public int acceptEntropy(EntropySource source, long data, int entropyGuess) {
+    @Override
+	public int acceptEntropy(EntropySource source, long data, int entropyGuess) {
         return 0;
     }
 
-    public int acceptTimerEntropy(EntropySource timer) {
+    @Override
+	public int acceptTimerEntropy(EntropySource timer) {
         return 0;
     }
 
-    public int acceptTimerEntropy(EntropySource fnpTimingSource, double bias) {
+    @Override
+	public int acceptTimerEntropy(EntropySource fnpTimingSource, double bias) {
         return 0;
     }
 
-    public int acceptEntropyBytes(EntropySource myPacketDataSource, byte[] buf,
+    @Override
+	public int acceptEntropyBytes(EntropySource myPacketDataSource, byte[] buf,
             int offset, int length, double bias) {
         return 0;
     }
 
-    public void close() {
+    @Override
+	public void close() {
     }
 
 }

@@ -18,10 +18,12 @@ public class InvalidAddressOverrideUserAlert extends AbstractUserAlert {
 	
 	final Node node;
 	
+	@Override
 	public String getTitle() {
 		return l10n("unknownAddressTitle");
 	}
 
+	@Override
 	public String getText() {
 		return l10n("unknownAddress");
 	}
@@ -30,6 +32,7 @@ public class InvalidAddressOverrideUserAlert extends AbstractUserAlert {
 		return L10n.getString("InvalidAddressOverrideUserAlert."+key);
 	}
 
+	@Override
 	public HTMLNode getHTMLText() {
 		SubConfig sc = node.config.get("node");
 		Option<?> o = sc.getOption("ipAddressOverride");
@@ -49,10 +52,12 @@ public class InvalidAddressOverrideUserAlert extends AbstractUserAlert {
 		return textNode;
 	}
 
+	@Override
 	public short getPriorityClass() {
 		return UserAlert.ERROR;
 	}
 
+	@Override
 	public String getShortText() {
 		return l10n("unknownAddressShort");
 	}

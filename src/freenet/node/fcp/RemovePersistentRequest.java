@@ -24,16 +24,19 @@ public class RemovePersistentRequest extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Must have Identifier", null, global);
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("Identifier", identifier);
 		return fs;
 	}
 
+	@Override
 	public String getName() {
 		return NAME;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		FCPClient client = global ? handler.server.globalClient : handler.getClient();

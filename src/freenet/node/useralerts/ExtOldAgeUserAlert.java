@@ -12,10 +12,12 @@ public class ExtOldAgeUserAlert extends AbstractUserAlert {
 		super(true, null, null, null, null, UserAlert.ERROR, true, L10n.getString("UserAlert.hide"), true, null);
 	}
 	
+	@Override
 	public String getTitle() {
 		return l10n("extTooOldTitle");
 	}
 	
+	@Override
 	public String getText() {
 		return l10n("extTooOld");
 	}
@@ -24,10 +26,12 @@ public class ExtOldAgeUserAlert extends AbstractUserAlert {
 		return L10n.getString("ExtOldAgeUserAlert."+key);
 	}
 
+	@Override
 	public HTMLNode getHTMLText() {
 		return new HTMLNode("div", getText());
 	}
 
+	@Override
 	public String getShortText() {
 		return l10n("extTooOldShort");
 	}

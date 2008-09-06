@@ -40,6 +40,7 @@ public class InsertableUSK extends USK {
 		this.group = group;
 	}
 	
+	@Override
 	public FreenetURI getURI() {
 		return new FreenetURI(pubKeyHash, cryptoKey, null, siteName, suggestedEdition);
 	}

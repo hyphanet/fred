@@ -15,7 +15,8 @@ import freenet.support.Logger;
  */
 public class SendMessageOnErrorCallback implements AsyncMessageCallback {
 
-    public String toString() {
+    @Override
+	public String toString() {
         return super.toString() + ": "+msg+ ' ' +dest;
     }
     

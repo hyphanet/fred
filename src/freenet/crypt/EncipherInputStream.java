@@ -31,12 +31,14 @@ public class EncipherInputStream extends FilterInputStream {
         this(bufSize == 0 ? in : new BufferedInputStream(in, bufSize), ctx);
     }
 
-    public int read() throws IOException {
+    @Override
+	public int read() throws IOException {
         int rv=in.read();
         return (rv==-1 ? -1 : ctx.encipher(rv));
     }
 
-    public int read(byte[] b, int off, int len) throws IOException {
+    @Override
+	public int read(byte[] b, int off, int len) throws IOException {
         int rv=in.read(b, off, len);
         if (rv != -1) ctx.blockEncipher(b, off, rv);
         return rv;

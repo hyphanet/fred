@@ -28,10 +28,12 @@ public class RedirectDirPutFile extends DirPutFile {
 		super.meta = new ClientMetadata();
 	}
 
+	@Override
 	public Bucket getData() {
 		return null;
 	}
 
+	@Override
 	public ManifestElement getElement() {
 		return new ManifestElement(name, targetURI, getMIMEType());
 	}

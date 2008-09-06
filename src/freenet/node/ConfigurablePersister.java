@@ -15,10 +15,12 @@ public class ConfigurablePersister extends Persister {
 		super(t, ps);
 		nodeConfig.register(optionName, new File(baseDir, defaultFilename).toString(), sortOrder, expert, forceWrite, shortDesc, longDesc, new StringCallback() {
 
+			@Override
 			public String get() {
 				return persistTarget.toString();
 			}
 
+			@Override
 			public void set(String val) throws InvalidConfigValueException {
 				setThrottles(val);
 			}

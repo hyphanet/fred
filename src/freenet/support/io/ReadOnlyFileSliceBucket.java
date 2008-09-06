@@ -92,6 +92,7 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 			}
 		}
 
+		@Override
 		public int read() throws IOException {
 			if(ptr >= length)
 				return -1;
@@ -101,6 +102,7 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 			return x;
 		}
 
+		@Override
 		public int read(byte[] buf, int offset, int len) throws IOException {
 			if(ptr >= length)
 				return -1;
@@ -110,10 +112,12 @@ public class ReadOnlyFileSliceBucket implements Bucket, SerializableToFieldSetBu
 			return x;
 		}
 
+		@Override
 		public int read(byte[] buf) throws IOException {
 			return read(buf, 0, buf.length);
 		}
 
+		@Override
 		public void close() throws IOException {
 			f.close();
 		}

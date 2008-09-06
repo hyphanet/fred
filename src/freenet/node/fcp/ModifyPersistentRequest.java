@@ -50,6 +50,7 @@ public class ModifyPersistentRequest extends FCPMessage {
 			priorityClass = -1;
 	}
 	
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("Identifier", identifier);
@@ -60,10 +61,12 @@ public class ModifyPersistentRequest extends FCPMessage {
 		return fs;
 	}
 
+	@Override
 	public String getName() {
 		return NAME;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		FCPClient client = global ? handler.server.globalClient : handler.getClient();

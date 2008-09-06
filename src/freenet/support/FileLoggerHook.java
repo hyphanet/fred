@@ -208,6 +208,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			super("Log File Writer Thread");
 		}
 
+		@Override
 		@SuppressWarnings("fallthrough")
 		public void run() {
 			File currentFilename = null;
@@ -771,6 +772,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		df.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
 
+	@Override
 	public void log(Object o, Class<?> c, String msg, Throwable e, int priority) {
 		if (!instanceShouldLog(priority, c))
 			return;
@@ -916,14 +918,17 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		}
 	}
 
+	@Override
 	public long minFlags() {
 		return 0;
 	}
 
+	@Override
 	public long notFlags() {
 		return INTERNAL;
 	}
 
+	@Override
 	public long anyFlags() {
 		return ((2 * ERROR) - 1) & ~(threshold - 1);
 	}
@@ -933,6 +938,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	}
 
 	class CloserThread extends Thread {
+		@Override
 		public void run() {
 			closed = true;
 		}

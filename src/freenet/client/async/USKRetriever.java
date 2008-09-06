@@ -66,18 +66,22 @@ public class USKRetriever extends BaseClientGetter implements USKCallback {
 		// Ignore
 	}
 
+	@Override
 	public FreenetURI getURI() {
 		return null;
 	}
 
+	@Override
 	public boolean isFinished() {
 		return false;
 	}
 
+	@Override
 	public void notifyClients() {
 		// Ignore for now
 	}
 
+	@Override
 	public void onTransition(ClientGetState oldState, ClientGetState newState) {
 		// Ignore
 	}

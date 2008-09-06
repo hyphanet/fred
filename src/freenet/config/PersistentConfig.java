@@ -20,6 +20,7 @@ public class PersistentConfig extends Config {
 	/**
 	 * Finished initialization. So any remaining options must be invalid.
 	 */
+	@Override
 	public synchronized void finishedInit() {
 		finishedInit = true;
 		if(origConfigFileContents == null) return;
@@ -55,6 +56,7 @@ public class PersistentConfig extends Config {
 		return fs; 
 	}
 	
+	@Override
 	public void onRegister(SubConfig config, Option<?> o) {
 		String val, name;
 		synchronized(this) {

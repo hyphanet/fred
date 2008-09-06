@@ -19,6 +19,7 @@ public class DoubleTokenBucket extends TokenBucket {
 		this.forceGrabLimit = forceGrabLimit;
 	}
 	
+	@Override
 	public synchronized void forceGrab(long tokens) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long maxTokens = grabbedBytesLimiter.partialInstantGrab(tokens);
@@ -33,16 +34,19 @@ public class DoubleTokenBucket extends TokenBucket {
 	 * Change the number of nanos per tick.
 	 * @param nanosPerTick The new number of nanos per tick.
 	 */
+	@Override
 	public synchronized void changeNanosPerTick(long nanosPerTick) {
 		super.changeNanosPerTick(nanosPerTick);
 		grabbedBytesLimiter.changeNanosPerTick((long)(nanosPerTick * forceGrabLimit));
 	}
 	
+	@Override
 	public synchronized void changeBucketSize(long newMax) {
 		super.changeBucketSize(newMax);
 		grabbedBytesLimiter.changeBucketSize((long)(newMax * forceGrabLimit));
 	}
 	
+	@Override
 	public synchronized void changeNanosAndBucketSize(long nanosPerTick, long newMax) {
 		super.changeNanosAndBucketSize(nanosPerTick, newMax);
 		grabbedBytesLimiter.changeNanosAndBucketSize((long)(nanosPerTick * forceGrabLimit),

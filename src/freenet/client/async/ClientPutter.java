@@ -191,6 +191,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		client.onFailure(e, this);
 	}
 
+	@Override
 	public void onMajorProgress() {
 		client.onMajorProgress();
 	}
@@ -204,6 +205,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		client.onGeneratedURI(uri, this);
 	}
 	
+	@Override
 	public void cancel() {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Cancelling "+this, new Exception("debug"));
@@ -219,10 +221,12 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		onFailure(new InsertException(InsertException.CANCELLED), null);
 	}
 	
+	@Override
 	public synchronized boolean isFinished() {
 		return finished || cancelled;
 	}
 
+	@Override
 	public FreenetURI getURI() {
 		return uri;
 	}
@@ -239,6 +243,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		Logger.error(this, "Got metadata on "+this+" from "+state+" (this means the metadata won't be inserted)");
 	}
 	
+	@Override
 	public void notifyClients() {
 		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized));
 	}
@@ -271,6 +276,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		return start(earlyEncode, true);
 	}
 
+	@Override
 	public void onTransition(ClientGetState oldState, ClientGetState newState) {
 		// Ignore, at the moment
 	}

@@ -23,6 +23,7 @@ public class TimeSkewDetectedUserAlert extends AbstractUserAlert {
 		super(false, null, null, null, null, UserAlert.CRITICAL_ERROR, false, L10n.getString("UserAlert.hide"), false, null);
 	}
 	
+	@Override
 	public String getTitle() {
 		return l10n("title");
 	}
@@ -31,14 +32,17 @@ public class TimeSkewDetectedUserAlert extends AbstractUserAlert {
 		return L10n.getString("TimeSkewDetectedUserAlert."+key);
 	}
 
+	@Override
 	public String getText() {
 		return l10n("text");
 	}
 	
+	@Override
 	public String getShortText() {
 		return l10n("shortText");
 	}
 
+	@Override
 	public HTMLNode getHTMLText() {
 		return new HTMLNode("div", getText());
 	}

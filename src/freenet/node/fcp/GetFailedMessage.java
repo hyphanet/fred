@@ -89,6 +89,7 @@ public class GetFailedMessage extends FCPMessage {
 		this.global = Fields.stringToBool(fs.get("Global"), false);
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		return getFieldSet(true);
 	}
@@ -126,10 +127,12 @@ public class GetFailedMessage extends FCPMessage {
 		return sfs;
 	}
 
+	@Override
 	public String getName() {
 		return "GetFailed";
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "GetFailed goes from server to client not the other way around", identifier, global);
 	}

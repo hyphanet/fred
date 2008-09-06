@@ -25,6 +25,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		super(n, core, client);
 	}
 	
+	@Override
 	public String supportedMethods() {
 		return "GET, POST";
 	}
@@ -39,6 +40,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			super(sortBy, reversed);
 		}
 	
+		@Override
 		protected int customCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode, String sortBy) {
 			if(sortBy.equals("name")) {
 				return ((DarknetPeerNodeStatus)firstNode).getName().compareToIgnoreCase(((DarknetPeerNodeStatus)secondNode).getName());
@@ -49,29 +51,35 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		}
 		
 		/** Default comparison, after taking into account status */
+		@Override
 		protected int lastResortCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
 			return ((DarknetPeerNodeStatus)firstNode).getName().compareToIgnoreCase(((DarknetPeerNodeStatus)secondNode).getName());
 		}
 
 	}
 	
+	@Override
 	protected Comparator comparator(String sortBy, boolean reversed) {
 		return new DarknetComparator(sortBy, reversed);
 	}
 		
+	@Override
 	protected boolean hasNameColumn() {
 		return true;
 	}
 	
+	@Override
 	protected void drawNameColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus) {
 		// name column
 		peerRow.addChild("td", "class", "peer-name").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + peerNodeStatus.hashCode(), ((DarknetPeerNodeStatus)peerNodeStatus).getName());
 	}
 
+	@Override
 	protected boolean hasPrivateNoteColumn() {
 		return true;
 	}
 
+	@Override
 	protected void drawPrivateNoteColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus, boolean fProxyJavascriptEnabled) {
 		// private darknet node comment note column
 		DarknetPeerNodeStatus status = (DarknetPeerNodeStatus) peerNodeStatus;
@@ -82,26 +90,32 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		}
 	}
 
+	@Override
 	protected SimpleFieldSet getNoderef() {
 		return node.exportDarknetPublicFieldSet();
 	}
 
+	@Override
 	protected PeerNodeStatus[] getPeerNodeStatuses(boolean noHeavy) {
 		return node.peers.getDarknetPeerNodeStatuses(noHeavy);
 	}
 
+	@Override
 	protected String getPageTitle(String titleCountString, String myName) {
 		return L10n.getString("DarknetConnectionsToadlet.fullTitle", new String[] { "counts", "name" }, new String[] { titleCountString, node.getMyName() } );
 	}
 	
+	@Override
 	protected boolean shouldDrawNoderefBox(boolean advancedModeEnabled) {
 		return true;
 	}
 
+	@Override
 	protected boolean showPeerActionsBox() {
 		return true;
 	}
 
+	@Override
 	protected void drawPeerActionSelectBox(HTMLNode peerForm, boolean advancedModeEnabled) {
 		HTMLNode actionSelect = peerForm.addChild("select", new String[] { "id", "name" }, new String[] { "action", "action" });
 		actionSelect.addChild("option", "value", "", l10n("selectAction"));
@@ -126,14 +140,17 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		peerForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "doAction", l10n("go") });
 	}
 
+	@Override
 	protected String getPeerListTitle() {
 		return l10n("myFriends");
 	}
 
+	@Override
 	protected boolean acceptRefPosts() {
 		return true;
 	}
 
+	@Override
 	protected String defaultRedirectLocation() {
 		return "/friends/"; // FIXME
 	}
@@ -144,6 +161,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	 * @throws ToadletContextClosedException 
 	 * @throws RedirectException 
 	 */
+	@Override
 	protected void handleAltPost(URI uri, HTTPRequest request, ToadletContext ctx, boolean logMINOR) throws ToadletContextClosedException, IOException, RedirectException {
 		if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("send_n2ntm")) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("sendMessageTitle"), ctx);
@@ -397,10 +415,12 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		}
 	}
 
+	@Override
 	protected boolean isOpennet() {
 		return false;
 	}
 
+	@Override
 	SimpleColumn[] endColumnHeaders(boolean advancedMode) {
 		return null;
 	}

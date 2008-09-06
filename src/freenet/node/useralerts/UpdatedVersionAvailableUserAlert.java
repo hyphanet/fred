@@ -17,6 +17,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 		this.updater = updater;
 	}
 	
+	@Override
 	public String getTitle() {
 		return l10n("title");
 	}
@@ -33,6 +34,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 		return L10n.getString("UpdatedVersionAvailableUserAlert."+key, patterns, values);
 	}
 
+	@Override
 	public String getText() {
 		
 		UpdateThingy ut = createUpdateThingy();
@@ -50,6 +52,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 		return sb.toString();
 	}
 	
+	@Override
 	public String getShortText() {
 		if(!updater.isArmed()) {
 			if(updater.canUpdateNow()) {
@@ -71,6 +74,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 		String formText;
 	}
 	
+	@Override
 	public HTMLNode getHTMLText() {
 		
 		UpdateThingy ut = createUpdateThingy();
@@ -141,6 +145,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 		return new UpdateThingy(sb.toString(), null);
 	}
 
+	@Override
 	public short getPriorityClass() {
 		if(updater.inFinalCheck())
 			return UserAlert.WARNING;
@@ -148,11 +153,13 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 			return UserAlert.MINOR;
 	}
 	
+	@Override
 	public boolean isValid() {
 		return updater.isEnabled() && (!updater.isBlown()) && updater.fetchingNewExtJar() || updater.fetchingNewMainJar() ||
 			updater.hasNewExtJar() || updater.hasNewMainJar();
 	}
 	
+	@Override
 	public void isValid(boolean b){
 		// Ignore
 	}

@@ -15,28 +15,32 @@ public class CountedInputStream extends FilterInputStream {
         return count;
     }
 
-    public int read() throws IOException {
+    @Override
+	public int read() throws IOException {
         int ret = super.read();
         if (ret != -1)
             ++count;
         return ret;
     }
 
-    public int read(byte[] buf, int off, int len) throws IOException {
+    @Override
+	public int read(byte[] buf, int off, int len) throws IOException {
         int ret = super.read(buf, off, len);
         if (ret != -1)
             count += ret;
         return ret;
     }
     
-    public int read(byte[] buf) throws IOException {
+    @Override
+	public int read(byte[] buf) throws IOException {
         int ret = super.read(buf);
         if (ret != -1)
             count += ret;
         return ret;
     }
     
-    public long skip(long n) throws IOException {
+    @Override
+	public long skip(long n) throws IOException {
     	long l = in.skip(n);
     	if(l > 0) count += l;
     	return l;

@@ -56,6 +56,7 @@ public class DarknetPeerNodeStatus extends PeerNodeStatus {
 		return privateDarknetCommentNote;
 	}
 
+	@Override
 	public String toString() {
 		return name + ' ' + super.toString();
 	}

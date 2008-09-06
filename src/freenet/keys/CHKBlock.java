@@ -25,7 +25,8 @@ public class CHKBlock implements KeyBlock {
     /* Maximum length of compressed payload */
 	public static final int MAX_COMPRESSED_DATA_LENGTH = DATA_LENGTH - 4;
     
-    public String toString() {
+    @Override
+	public String toString() {
         return super.toString()+": chk="+chk;
     }
     

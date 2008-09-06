@@ -37,7 +37,8 @@ public class ReceivedPacketNumbers {
         int start; // inclusive
         int end;   // inclusive
         
-        public String toString() {
+        @Override
+		public String toString() {
             return "Range:"+start+"->"+end;
         }
     }
@@ -160,7 +161,8 @@ public class ReceivedPacketNumbers {
         return highestSeqNumber;
     }
     
-    public String toString() {
+    @Override
+	public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(super.toString());
         sb.append(": max=");

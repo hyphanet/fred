@@ -73,6 +73,7 @@ public class MultiReaderBucket {
 				is = bucket.getInputStream();
 			}
 			
+			@Override
 			public final int read() throws IOException {
 				synchronized(MultiReaderBucket.this) {
 					if(freed || closed) throw new IOException("Already closed");
@@ -80,6 +81,7 @@ public class MultiReaderBucket {
 				return is.read();
 			}
 			
+			@Override
 			public final int read(byte[] data, int offset, int length) throws IOException {
 				synchronized(MultiReaderBucket.this) {
 					if(freed || closed) throw new IOException("Already closed");
@@ -87,6 +89,7 @@ public class MultiReaderBucket {
 				return is.read(data, offset, length);
 			}
 			
+			@Override
 			public final int read(byte[] data) throws IOException {
 				synchronized(MultiReaderBucket.this) {
 					if(freed || closed) throw new IOException("Already closed");
@@ -94,6 +97,7 @@ public class MultiReaderBucket {
 				return is.read(data);
 			}
 			
+			@Override
 			public final void close() throws IOException {
 				is.close();
 			}
@@ -120,6 +124,7 @@ public class MultiReaderBucket {
 			return bucket.size();
 		}
 		
+		@Override
 		protected void finalize() {
 			free();
 		}

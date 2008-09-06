@@ -143,6 +143,7 @@ public class Peer implements WritableToDataOutputStream {
 		return _port == 0;
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (this == o) {
 			return true;
@@ -214,6 +215,7 @@ public class Peer implements WritableToDataOutputStream {
 		return addr.getHandshakeAddress();
 	}
 	
+	@Override
 	public int hashCode() {
 		return addr.hashCode() + _port;
 	}
@@ -222,6 +224,7 @@ public class Peer implements WritableToDataOutputStream {
 		return _port;
 	}
 
+	@Override
 	public String toString() {
 		return addr.toString() + ':' + _port;
 	}

@@ -46,12 +46,14 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 		}
 	}
 
+	@Override
 	protected boolean deleteOnFinalize() {
 		// Make sure finalize wacks temp file 
 		// if it is not explictly freed.
 		return true;
 	}
 	
+	@Override
 	public SimpleFieldSet toFieldSet() {
 		if(deleteOnFinalize())
 			return null; // Not persistent
@@ -59,14 +61,17 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 		return super.toFieldSet();
 	}
 
+	@Override
 	protected boolean createFileOnly() {
 		return false;
 	}
 
+	@Override
 	protected boolean deleteOnFree() {
 		return true;
 	}
 
+	@Override
 	public File getFile() {
 		return generator.getFilename(filenameID);
 	}
@@ -79,6 +84,7 @@ public class TempFileBucket extends BaseFileBucket implements Bucket, Serializab
 		readOnly = true;
 	}
 
+	@Override
 	protected boolean deleteOnExit() {
 		return true;
 	}

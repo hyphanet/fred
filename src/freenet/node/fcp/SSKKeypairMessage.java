@@ -19,6 +19,7 @@ public class SSKKeypairMessage extends FCPMessage {
 		this.identifier = identifier;
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putSingle("InsertURI", insertURI.toString());
@@ -28,10 +29,12 @@ public class SSKKeypairMessage extends FCPMessage {
 		return sfs;
 	}
 
+	@Override
 	public String getName() {
 		return "SSKKeypair";
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "SSKKeypair goes from server to client not the other way around", identifier, false);
 	}

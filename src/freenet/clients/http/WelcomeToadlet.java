@@ -93,7 +93,8 @@ public class WelcomeToadlet extends Toadlet {
         }
     }
 
-    public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+    @Override
+	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 
         if (!ctx.isAllowedFullAccess()) {
             super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
@@ -430,7 +431,8 @@ public class WelcomeToadlet extends Toadlet {
                 new String[]{"text", name, "30", message});
     }
 
-    public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+    @Override
+	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
         boolean advancedModeOutputEnabled = core.getToadletContainer().isAdvancedModeEnabled();
 
         if (ctx.isAllowedFullAccess()) {
@@ -623,7 +625,8 @@ public class WelcomeToadlet extends Toadlet {
         this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
     }
 
-    public String supportedMethods() {
+    @Override
+	public String supportedMethods() {
         return "GET, POST";
     }
 

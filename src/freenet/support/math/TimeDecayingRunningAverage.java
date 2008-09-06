@@ -27,7 +27,8 @@ public class TimeDecayingRunningAverage implements RunningAverage {
 	private static final long serialVersionUID = -1;
     static final int MAGIC = 0x5ff4ac94;
     
-    public final Object clone() {
+    @Override
+	public final Object clone() {
         return new TimeDecayingRunningAverage(this);
     }
     
@@ -43,7 +44,8 @@ public class TimeDecayingRunningAverage implements RunningAverage {
     boolean logDEBUG;
     private final TimeSkewDetectorCallback timeSkewCallback;
     
-    public String toString() {
+    @Override
+	public String toString() {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 		return super.toString() + ": currentValue="+curValue+", halfLife="+halfLife+

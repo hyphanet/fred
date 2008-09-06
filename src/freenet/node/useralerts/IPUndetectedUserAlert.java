@@ -18,10 +18,12 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 	
 	final Node node;
 	
+	@Override
 	public String getTitle() {
 		return l10n("unknownAddressTitle");
 	}
 
+	@Override
 	public String getText() {
 		if(node.ipDetector.isDetecting())
 			return l10n("detecting");
@@ -41,6 +43,7 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 		return L10n.getString("IPUndetectedUserAlert."+key, patterns, values);
 	}
 
+	@Override
 	public HTMLNode getHTMLText() {
 		SubConfig sc = node.config.get("node");
 		Option<?> o = sc.getOption("tempIPAddressHint");
@@ -85,6 +88,7 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 		}
 	}
 
+	@Override
 	public short getPriorityClass() {
 		if(node.ipDetector.isDetecting())
 			return UserAlert.WARNING;
@@ -92,6 +96,7 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 			return UserAlert.ERROR;
 	}
 
+	@Override
 	public String getShortText() {
 		if(node.ipDetector.isDetecting())
 			return l10n("detectingShort");

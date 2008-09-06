@@ -19,18 +19,21 @@ public class PersistentRequestRemovedMessage extends FCPMessage {
         this.global = global;
     }
 
-    public SimpleFieldSet getFieldSet() {
+    @Override
+	public SimpleFieldSet getFieldSet() {
         SimpleFieldSet fs = new SimpleFieldSet(true);
         fs.putSingle("Identifier", ident);
         if(global) fs.putSingle("Global", "true");
         return fs;
     }
 
-    public String getName() {
+    @Override
+	public String getName() {
         return "PersistentRequestRemoved";
     }
 
-    public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+    @Override
+	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
         throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PersistentRequestRemoved goes from server to client not the other way around", ident, global);
     }
 }

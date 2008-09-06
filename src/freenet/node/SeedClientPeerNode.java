@@ -17,22 +17,27 @@ public class SeedClientPeerNode extends PeerNode {
 		super(fs, node2, crypto, peers, fromLocal, noSig, mangler, true);
 	}
 
+	@Override
 	public PeerNodeStatus getStatus(boolean noHeavy) {
 		return new PeerNodeStatus(this, noHeavy);
 	}
 
+	@Override
 	public boolean isDarknet() {
 		return false;
 	}
 
+	@Override
 	public boolean isOpennet() {
 		return false; // Not exactly
 	}
 
+	@Override
 	public boolean isRealConnection() {
 		return false; // We may be connected to the same node as a seed and as a regular connection.
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if(o == this) return true;
 		// Only equal to seednode of its own type.
@@ -42,52 +47,64 @@ public class SeedClientPeerNode extends PeerNode {
 		} else return false;
 	}
 	
+	@Override
 	public void onSuccess(boolean insert, boolean ssk) {
 		// Ignore
 	}
 	
+	@Override
 	public boolean isRoutingCompatible() {
 		return false;
 	}
 
+	@Override
 	public boolean canAcceptAnnouncements() {
 		return true;
 	}
 
+	@Override
 	public boolean recordStatus() {
 		return false;
 	}
 	
+	@Override
 	public boolean handshakeUnknownInitiator() {
 		return true;
 	}
 
+	@Override
 	public int handshakeSetupType() {
 		return FNPPacketMangler.SETUP_OPENNET_SEEDNODE;
 	}
 	
+	@Override
 	public boolean shouldSendHandshake() {
 		return false;
 	}
 
+	@Override
 	public boolean disconnected(boolean dumpMessageQueue, boolean dumpTrackers) {
 		boolean ret = super.disconnected(dumpMessageQueue, dumpTrackers);
 		node.peers.disconnect(this, false, false);
 		return ret;
 	}
 
+	@Override
 	protected boolean generateIdentityFromPubkey() {
 		return true;
 	}
 
+	@Override
 	protected boolean ignoreLastGoodVersion() {
 		return true;
 	}
 	
+	@Override
 	void startARKFetcher() {
 		// Do not start an ARK fetcher.
 	}
 	
+	@Override
 	public boolean shouldDisconnectAndRemoveNow() {
 		if(!isConnected()) {
 			// SeedClientPeerNode's always start off unverified.

@@ -83,9 +83,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	class FProxySSLCallback extends BooleanCallback  {
 		
+		@Override
 		public Boolean get() {
 			return ssl;
 		}
+		@Override
 		public void set(Boolean val) throws InvalidConfigValueException {
 			if (get().equals(val))
 				return;
@@ -103,10 +105,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	class FProxyPassthruMaxSize extends LongCallback  {
 		
+		@Override
 		public Long get() {
 			return FProxyToadlet.MAX_LENGTH;
 		}
 		
+		@Override
 		public void set(Long val) throws InvalidConfigValueException {
 			if (get().equals(val))
 				return;
@@ -116,10 +120,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 
 	class FProxyPortCallback extends IntCallback  {
 		
+		@Override
 		public Integer get() {
 			return port;
 		}
 		
+		@Override
 		public void set(Integer newPort) throws InvalidConfigValueException {
 			if(port != newPort)
 				throw new InvalidConfigValueException(L10n.getString("cannotChangePortOnTheFly"));
@@ -133,10 +139,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	class FProxyBindtoCallback extends StringCallback  {
 		
+		@Override
 		public String get() {
 			return bindTo;
 		}
 		
+		@Override
 		public void set(String bindTo) throws InvalidConfigValueException {
 			if(!bindTo.equals(get())) {
 				try {
@@ -154,10 +162,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	class FProxyAllowedHostsCallback extends StringCallback  {
 	
+		@Override
 		public String get() {
 			return networkInterface.getAllowedHosts();
 		}
 		
+		@Override
 		public void set(String allowedHosts) {
 			if (!allowedHosts.equals(get())) {
 				networkInterface.setAllowedHosts(allowedHosts);
@@ -167,10 +177,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	class FProxyCSSNameCallback extends StringCallback implements EnumerableOptionCallback {
 		
+		@Override
 		public String get() {
 			return cssTheme.code;
 		}
 		
+		@Override
 		public void set(String CSSName) throws InvalidConfigValueException {
 			if((CSSName.indexOf(':') != -1) || (CSSName.indexOf('/') != -1))
 				throw new InvalidConfigValueException(l10n("illegalCSSName"));
@@ -191,10 +203,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	class FProxyCSSOverrideCallback extends StringCallback  {
 
+		@Override
 		public String get() {
 			return (cssOverride == null ? "" : cssOverride.toString());
 		}
 
+		@Override
 		public void set(String val) throws InvalidConfigValueException {
 			if(core == null) return;
 			if(val.equals(get()) || val.equals(""))
@@ -213,11 +227,13 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	class FProxyEnabledCallback extends BooleanCallback  {
 		
+		@Override
 		public Boolean get() {
 			synchronized(SimpleToadletServer.this) {
 				return myThread != null;
 			}
 		}
+		@Override
 		public void set(Boolean val) throws InvalidConfigValueException {
 			if (get().equals(val))
 				return;
@@ -262,10 +278,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			this.ts = ts;
 		}
 		
+		@Override
 		public Boolean get() {
 			return ts.isAdvancedModeEnabled();
 		}
 		
+		@Override
 		public void set(Boolean val) throws InvalidConfigValueException {
 			if (get().equals(val))
 				return;
@@ -281,10 +299,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			this.ts = ts;
 		}
 		
+		@Override
 		public Boolean get() {
 			return ts.isFProxyJavascriptEnabled();
 		}
 		
+		@Override
 		public void set(Boolean val) throws InvalidConfigValueException {
 			if (get().equals(val))
 				return;
@@ -367,10 +387,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyJavascriptEnabledCallback(this));
 		fproxyConfig.register("showPanicButton", false, configItemOrder++, true, true, "SimpleToadletServer.panicButton", "SimpleToadletServer.panicButtonLong",
 				new BooleanCallback(){
+				@Override
 				public Boolean get() {
 					return SimpleToadletServer.isPanicButtonToBeShown;
 				}
 			
+				@Override
 				public void set(Boolean value) {
 					if(value == SimpleToadletServer.isPanicButtonToBeShown) return;
 					else	SimpleToadletServer.isPanicButtonToBeShown = value;
@@ -385,12 +407,14 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		fproxyConfig.register("enablePersistentConnections", false, configItemOrder++, true, false, "SimpleToadletServer.enablePersistentConnections", "SimpleToadletServer.enablePersistentConnectionsLong",
 				new BooleanCallback() {
 
+					@Override
 					public Boolean get() {
 						synchronized(SimpleToadletServer.this) {
 							return enablePersistentConnections;
 						}
 					}
 
+					@Override
 					public void set(Boolean val) throws InvalidConfigValueException {
 						synchronized(SimpleToadletServer.this) {
 							enablePersistentConnections = val;
@@ -408,12 +432,14 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		fproxyConfig.register("enableInlinePrefetch", false, configItemOrder++, true, false, "SimpleToadletServer.enableInlinePrefetch", "SimpleToadletServer.enableInlinePrefetchLong",
 				new BooleanCallback() {
 
+					@Override
 					public Boolean get() {
 						synchronized(SimpleToadletServer.this) {
 							return enableInlinePrefetch;
 						}
 					}
 
+					@Override
 					public void set(Boolean val) throws InvalidConfigValueException {
 						synchronized(SimpleToadletServer.this) {
 							enableInlinePrefetch = val;
@@ -431,10 +457,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				"SimpleToadletServer.allowedFullAccessLong",
 				new StringCallback() {
 
+					@Override
 					public String get() {
 						return allowedFullAccess.getAllowedHosts();
 					}
 
+					@Override
 					public void set(String val) throws InvalidConfigValueException {
 						allowedFullAccess.setAllowedHosts(val);
 					}
@@ -443,9 +471,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		allowedFullAccess = new AllowedHosts(fproxyConfig.getString("allowedHostsFullAccess"));
 		fproxyConfig.register("doRobots", false, configItemOrder++, true, false, "SimpleToadletServer.doRobots", "SimpleToadletServer.doRobotsLong",
 				new BooleanCallback() {
+					@Override
 					public Boolean get() {
 						return doRobots;
 					}
+					@Override
 					public void set(Boolean val) throws InvalidConfigValueException {
 						doRobots = val;
 					}

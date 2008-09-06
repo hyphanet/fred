@@ -15,6 +15,7 @@ public abstract class Bookmark {
 		name = (s.length() > 0 ? s : L10n.getString("Bookmark.noName"));
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if(o == this)
 			return true;
@@ -27,6 +28,7 @@ public abstract class Bookmark {
 			return false;
 	}
 
+	@Override
 	public int hashCode() {
 		return name.hashCode();
 	}

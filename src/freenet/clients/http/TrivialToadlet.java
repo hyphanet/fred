@@ -13,6 +13,7 @@ public class TrivialToadlet extends Toadlet {
 		super(client);
 	}
 
+	@Override
 	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		String fetched = uri.toString();
 		String encFetched = HTMLEncoder.encode(fetched);
@@ -22,6 +23,7 @@ public class TrivialToadlet extends Toadlet {
 		this.writeHTMLReply(ctx, 200, "OK", reply);
 	}
 	
+	@Override
 	public String supportedMethods() {
 		return "GET";
 	}

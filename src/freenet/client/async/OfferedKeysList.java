@@ -62,16 +62,19 @@ public class OfferedKeysList extends BaseSendableGet {
 		return keys.isEmpty();
 	}
 
+	@Override
 	public Object[] allKeys() {
 		// Not supported.
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public Object[] sendableKeys() {
 		// Not supported.
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public synchronized Object chooseKey(KeysFetchingLocally fetching) {
 		assert(keysList.size() == keys.size());
 		if(keys.size() == 1) {
@@ -98,6 +101,7 @@ public class OfferedKeysList extends BaseSendableGet {
 		return null;
 	}
 
+	@Override
 	public synchronized boolean hasValidKeys(KeysFetchingLocally fetching) {
 		assert(keysList.size() == keys.size());
 		if(keys.size() == 1) {
@@ -117,27 +121,33 @@ public class OfferedKeysList extends BaseSendableGet {
 		return false;
 	}
 
+	@Override
 	public Object getClient() {
 		return this;
 	}
 
+	@Override
 	public ClientRequester getClientRequest() {
 		// FIXME is this safe?
 		return null;
 	}
 
+	@Override
 	public short getPriorityClass() {
 		return priorityClass;
 	}
 
+	@Override
 	public int getRetryCount() {
 		return 0; // All keys have equal chance even if they've been tried before.
 	}
 
+	@Override
 	public void internalError(Object keyNum, Throwable t, RequestScheduler sched) {
 		Logger.error(this, "Internal error: "+t, t);
 	}
 	
+	@Override
 	public boolean send(NodeClientCore node, RequestScheduler sched, Object keyNum) {
 		Key key = (Key) keyNum;
 		// Have to cache it in order to propagate it; FIXME
@@ -158,6 +168,7 @@ public class OfferedKeysList extends BaseSendableGet {
 		return false;
 	}
 
+	@Override
 	public boolean isCancelled() {
 		return false;
 	}
@@ -171,6 +182,7 @@ public class OfferedKeysList extends BaseSendableGet {
 		assert(keysList.size() == keys.size());
 	}
 
+	@Override
 	public Key getNodeKey(Object token) {
 		return (Key) token;
 	}

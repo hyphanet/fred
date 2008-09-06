@@ -41,6 +41,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	final long token;
 	
 	// Translate it, then call the real onFailure
+	@Override
 	public void onFailure(LowLevelGetException e, Object reqTokenIgnored, RequestScheduler sched) {
 		switch(e.code) {
 		case LowLevelGetException.DATA_NOT_FOUND:
@@ -119,6 +120,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		rcb.onSuccess(data, this);
 	}
 
+	@Override
 	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object reqTokenIgnored, RequestScheduler sched) {
 		if(parent instanceof ClientGetter)
 			((ClientGetter)parent).addKeyToBinaryBlob(block);

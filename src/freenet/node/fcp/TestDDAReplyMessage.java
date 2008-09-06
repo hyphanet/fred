@@ -28,6 +28,7 @@ public class TestDDAReplyMessage extends FCPMessage {
 		this.checkJob = job;
 	}
 	
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putSingle(TestDDARequestMessage.DIRECTORY, checkJob.directory.toString());
@@ -44,10 +45,12 @@ public class TestDDAReplyMessage extends FCPMessage {
 		return sfs;
 	}
 
+	@Override
 	public String getName() {
 		return name;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, name + " goes from server to client not the other way around", name, false);
 	}

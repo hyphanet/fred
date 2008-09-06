@@ -315,6 +315,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			allDataPending = new AllDataMessage(returnBucket, identifier, global, startupTime, completionTime);
 	}
 
+	@Override
 	public void start() {
 		try {
 			synchronized(this) {
@@ -341,6 +342,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 	}
 
+	@Override
 	public void onLostConnection() {
 		if(persistenceType == PERSIST_CONNECTION)
 			cancel();
@@ -460,6 +462,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		client.queueClientRequestMessage(msg, VERBOSITY_SPLITFILE_PROGRESS);
 	}
 
+	@Override
 	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData) {
 		if(persistenceType == ClientRequest.PERSIST_CONNECTION) {
 			Logger.error(this, "WTF? persistenceType="+persistenceType, new Exception("error"));
@@ -484,6 +487,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			handler.queue(allDataPending);
 	}
 
+	@Override
 	protected FCPMessage persistentTagMessage() {
 		return new PersistentGet(identifier, uri, verbosity, priorityClass, returnType, persistenceType, targetFile, tempFile, clientToken, client.isGlobalQueue, started, fctx.maxNonSplitfileRetries, binaryBlob, fctx.maxOutputLength);
 	}
@@ -517,6 +521,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		// Ignore
 	}
 
+	@Override
 	public void requestWasRemoved() {
 		// if request is still running, send a GetFailed with code=cancelled
 		if( !finished ) {
@@ -549,6 +554,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 	// This is distinct from the ClientGetMessage code, as later on it will be radically
 	// different (it can store detailed state).
+	@Override
 	public synchronized SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(false); // we will need multi-level later...
 		fs.putSingle("Type", "GET");
@@ -598,15 +604,18 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		return fs;
 	}
 
+	@Override
 	protected ClientRequester getClientRequest() {
 		return getter;
 	}
 
+	@Override
 	protected void freeData() {
 		if(returnBucket != null)
 			returnBucket.free();
 	}
 
+	@Override
 	public boolean hasSucceeded() {
 		return succeeded;
 	}
@@ -643,6 +652,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		return targetFile;
 	}
 
+	@Override
 	public double getSuccessFraction() {
 		if(progressPending != null) {
 			return progressPending.getFraction();
@@ -650,6 +660,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			return -1;
 	}
 
+	@Override
 	public double getTotalBlocks() {
 		if(progressPending != null) {
 			return progressPending.getTotalBlocks();
@@ -657,6 +668,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			return 1;
 	}
 
+	@Override
 	public double getMinBlocks() {
 		if(progressPending != null) {
 			return progressPending.getMinBlocks();
@@ -664,6 +676,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			return 1;
 	}
 
+	@Override
 	public double getFailedBlocks() {
 		if(progressPending != null) {
 			return progressPending.getFailedBlocks();
@@ -671,6 +684,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			return 0;
 	}
 
+	@Override
 	public double getFatalyFailedBlocks() {
 		if(progressPending != null) {
 			return progressPending.getFatalyFailedBlocks();
@@ -678,6 +692,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			return 0;
 	}
 
+	@Override
 	public double getFetchedBlocks() {
 		if(progressPending != null) {
 			return progressPending.getFetchedBlocks();
@@ -685,6 +700,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			return 0;
 	}
 
+	@Override
 	public String getFailureReason() {
 		if(getFailedMessage == null)
 			return null;
@@ -695,6 +711,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	}
 
 
+	@Override
 	public boolean isTotalFinalized() {
 		if(finished && succeeded) return true;
 		if(progressPending == null) return false;
@@ -722,6 +739,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		// Ignore, we don't insert
 	}
 
+	@Override
 	public boolean canRestart() {
 		if(!finished) {
 			Logger.minor(this, "Cannot restart because not finished for "+identifier);
@@ -734,6 +752,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		return getter.canRestart();
 	}
 
+	@Override
 	public boolean restart() {
 		if(!canRestart()) return false;
 		FreenetURI redirect;

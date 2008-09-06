@@ -46,6 +46,7 @@ public class NodeSSK extends Key {
 	public static final int FULL_KEY_LENGTH = 66;
 	public static final int ROUTING_KEY_LENGTH = 32;
 	
+	@Override
 	public String toString() {
 		return super.toString()+":pkh="+HexUtil.bytesToHex(pubKeyHash)+":ehd="+HexUtil.bytesToHex(encryptedHashedDocname);
 	}
@@ -78,6 +79,7 @@ public class NodeSSK extends Key {
 		return key;
 	}
 	
+	@Override
 	public void write(DataOutput _index) throws IOException {
         _index.writeShort(getType());
         _index.write(encryptedHashedDocname);
@@ -99,6 +101,7 @@ public class NodeSSK extends Key {
 		}
     }
 
+	@Override
 	public short getType() {
 		return (short) (0x0200 + (cryptoAlgorithm & 0xff));
 	}
@@ -146,6 +149,7 @@ public class NodeSSK extends Key {
 		}
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if(!(o instanceof NodeSSK)) return false;
 		NodeSSK key = (NodeSSK)o;
@@ -156,16 +160,19 @@ public class NodeSSK extends Key {
 		return true;
 	}
 	
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}
 	
     // Not just the routing key, enough data to reconstruct the key (excluding any pubkey needed)
-    public byte[] getKeyBytes() {
+    @Override
+	public byte[] getKeyBytes() {
     	return encryptedHashedDocname;
     }
     
-    public byte[] getFullKey() {
+    @Override
+	public byte[] getFullKey() {
     	byte[] buf = new byte[FULL_KEY_LENGTH];
     	short type = getType();
     	buf[0] = (byte) (type >> 8);

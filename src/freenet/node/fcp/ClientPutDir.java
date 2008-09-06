@@ -224,6 +224,7 @@ public class ClientPutDir extends ClientPutBase {
 		}
 	}
 
+	@Override
 	public void start() {
 		if(finished) return;
 		if(started) return;
@@ -242,12 +243,14 @@ public class ClientPutDir extends ClientPutBase {
 		}
 	}
 	
+	@Override
 	public void onLostConnection() {
 		if(persistenceType == PERSIST_CONNECTION)
 			cancel();
 		// otherwise ignore
 	}
 	
+	@Override
 	protected void freeData() {
 		freeData(manifestElements);
 	}
@@ -266,10 +269,12 @@ public class ClientPutDir extends ClientPutBase {
 		}
 	}
 
+	@Override
 	protected ClientRequester getClientRequest() {
 		return putter;
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = super.getFieldSet();
 		// Translate manifestElements directly into a fieldset
@@ -316,15 +321,18 @@ public class ClientPutDir extends ClientPutBase {
 		return fs;
 	}
 
+	@Override
 	protected FCPMessage persistentTagMessage() {
 		return new PersistentPutDir(identifier, publicURI, verbosity, priorityClass,
 				persistenceType, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries, wasDiskPut);
 	}
 
+	@Override
 	protected String getTypeName() {
 		return "PUTDIR";
 	}
 
+	@Override
 	public boolean hasSucceeded() {
 		return succeeded;
 	}
@@ -346,6 +354,7 @@ public class ClientPutDir extends ClientPutBase {
 		return totalSize;
 	}
 
+	@Override
 	public boolean canRestart() {
 		if(!finished) {
 			Logger.minor(this, "Cannot restart because not finished for "+identifier);
@@ -358,6 +367,7 @@ public class ClientPutDir extends ClientPutBase {
 		return true;
 	}
 
+	@Override
 	public boolean restart() {
 		if(!canRestart()) return false;
 		setVarsRestart();

@@ -208,6 +208,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 		earlyEncode = Fields.stringToBool(fs.get("EarlyEncode"), false);
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putSingle("URI", uri.toString());
@@ -236,10 +237,12 @@ public class ClientPutMessage extends DataCarryingMessage {
 		return sfs;
 	}
 
+	@Override
 	public String getName() {
 		return NAME;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		handler.startClientPut(this);
@@ -248,16 +251,19 @@ public class ClientPutMessage extends DataCarryingMessage {
 	/**
 	 * Get the length of the trailing field.
 	 */
+	@Override
 	long dataLength() {
 		if(uploadFromType == UPLOAD_FROM_DIRECT)
 			return dataLength;
 		else return -1;
 	}
 
+	@Override
 	String getIdentifier() {
 		return identifier;
 	}
 
+	@Override
 	Bucket createBucket(BucketFactory bf, long length, FCPServer server) throws IOException {
 		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 			return server.core.persistentTempBucketFactory.makeBucket(length);
@@ -279,6 +285,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 		}
 	}
 
+	@Override
 	boolean isGlobal() {
 		return global;
 	}

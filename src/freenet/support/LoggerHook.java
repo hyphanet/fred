@@ -43,6 +43,7 @@ public abstract class LoggerHook extends Logger {
 	 *            The priority of the mesage, one of Logger.ERROR,
 	 *            Logger.NORMAL, Logger.MINOR, or Logger.DEBUG.
 	 */
+	@Override
 	public abstract void log(
 			Object o,
 			Class<?> source,
@@ -57,6 +58,7 @@ public abstract class LoggerHook extends Logger {
 	 * @param priority The priority of the mesage, one of Logger.ERROR,
 	 *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUG.
 	 **/
+	@Override
 	public void log(Object source, String message, int priority) {
 		if (!instanceShouldLog(priority,source)) return;
 		log(source, source == null ? null : source.getClass(), 
@@ -72,6 +74,7 @@ public abstract class LoggerHook extends Logger {
 	 *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUG.
 	 * @see #log(Object o, String message, int priority)
 	 */
+	@Override
 	public void log(Object o, String message, Throwable e, 
 			int priority) {
 		if (!instanceShouldLog(priority,o)) return;
@@ -85,12 +88,14 @@ public abstract class LoggerHook extends Logger {
 	 * @param priority The priority of the mesage, one of Logger.ERROR,
 	 *                 Logger.NORMAL, Logger.MINOR, or Logger.DEBUG.
 	 */
+	@Override
 	public void log(Class<?> c, String message, int priority) {
 		if (!instanceShouldLog(priority,c)) return;
 		log(null, c, message, null, priority);
 	}
 
 
+	@Override
 	public void log(Class<?> c, String message, Throwable e, int priority) {
 		if (!instanceShouldLog(priority, c))
 			return;
@@ -101,18 +106,22 @@ public abstract class LoggerHook extends Logger {
 		return prio >= threshold;
 	}
 
+	@Override
 	public void setThreshold(int thresh) {
 		this.threshold = thresh;
 	}
 
+	@Override
 	public int getThreshold() {
 		return threshold;
 	}
 
+	@Override
 	public void setThreshold(String symbolicThreshold) throws InvalidThresholdException {
 		setThreshold(priorityOf(symbolicThreshold));
 	}
 
+	@Override
 	public void setDetailedThresholds(String details) throws InvalidThresholdException {
 		if ((details == null) || (details.length() == 0))
 			return;
@@ -199,6 +208,7 @@ public abstract class LoggerHook extends Logger {
 		}
 	}
 
+	@Override
 	public boolean instanceShouldLog(int priority, Class<?> c) {
 		DetailedThreshold[] thresholds;
 		int thresh;
@@ -216,6 +226,7 @@ public abstract class LoggerHook extends Logger {
 		return priority >= thresh;
 	}
 
+	@Override
 	public final boolean instanceShouldLog(int prio, Object o) {
 		return instanceShouldLog(prio, o == null ? null : o.getClass());
 	}

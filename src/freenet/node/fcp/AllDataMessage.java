@@ -28,10 +28,12 @@ public class AllDataMessage extends DataCarryingMessage {
 		this.completionTime = completionTime;
 	}
 
+	@Override
 	long dataLength() {
 		return dataLength;
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.put("DataLength", dataLength);
@@ -42,18 +44,22 @@ public class AllDataMessage extends DataCarryingMessage {
 		return fs;
 	}
 
+	@Override
 	public String getName() {
 		return "AllData";
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "AllData goes from server to client not the other way around", identifier, global);
 	}
 
+	@Override
 	String getIdentifier() {
 		return identifier;
 	}
 
+	@Override
 	boolean isGlobal() {
 		return global;
 	}

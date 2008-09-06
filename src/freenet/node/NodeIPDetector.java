@@ -350,11 +350,13 @@ public class NodeIPDetector {
 				"NodeIPDectector.ipOverrideLong", 
 				new StringCallback() {
 
+			@Override
 			public String get() {
 				if(overrideIPAddressString == null) return "";
 				else return overrideIPAddressString;
 			}
 			
+			@Override
 			public void set(String val) throws InvalidConfigValueException {
 				boolean hadValidAddressOverride = hasValidAddressOverride();
 				// FIXME do we need to tell anyone?
@@ -417,10 +419,12 @@ public class NodeIPDetector {
 		
 		nodeConfig.register("tempIPAddressHint", "", sortOrder++, true, false, "NodeIPDectector.tempAddressHint", "NodeIPDectector.tempAddressHintLong", new StringCallback() {
 
+			@Override
 			public String get() {
 				return "";
 			}
 			
+			@Override
 			public void set(String val) throws InvalidConfigValueException {
 				if(val.length() == 0) {
 					return;

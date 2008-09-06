@@ -111,16 +111,19 @@ public class TextModeClientInterfaceServer implements Runnable {
     		this.core = core;
     	}
     	
-    	public Boolean get() {
+    	@Override
+		public Boolean get() {
     		return core.getTextModeClientInterface() != null;
     	}
     	
-    	public void set(Boolean val) throws InvalidConfigValueException {
+    	@Override
+		public void set(Boolean val) throws InvalidConfigValueException {
 			if (get().equals(val))
 				return;
     		// FIXME implement - see bug #122
     		throw new InvalidConfigValueException("Cannot be updated on the fly");
     	}
+		@Override
 		public boolean isReadOnly() {
 			return true;
 		}
@@ -128,11 +131,13 @@ public class TextModeClientInterfaceServer implements Runnable {
 
     static class TMCISSLCallback extends BooleanCallback  {
     	
-    	public Boolean get() {
+    	@Override
+		public Boolean get() {
     		return ssl;
     	}
     	
-    	public void set(Boolean val) throws InvalidConfigValueException {
+    	@Override
+		public void set(Boolean val) throws InvalidConfigValueException {
 			if (get().equals(val))
 				return;
 			if(!SSL.available()) {
@@ -141,6 +146,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     		ssl = val;
     		throw new InvalidConfigValueException("Cannot change SSL on the fly, please restart freenet");
     	}
+		@Override
 		public boolean isReadOnly() {
 			return true;
 		}
@@ -154,16 +160,19 @@ public class TextModeClientInterfaceServer implements Runnable {
     		this.core = core;
     	}
     	
-    	public Boolean get() {
+    	@Override
+		public Boolean get() {
     		return core.getDirectTMCI() != null;
     	}
     	
-    	public void set(Boolean val) throws InvalidConfigValueException {
+    	@Override
+		public void set(Boolean val) throws InvalidConfigValueException {
 			if (get().equals(val))
 				return;
     		// FIXME implement - see bug #122
     		throw new InvalidConfigValueException("Cannot be updated on the fly");
     	}
+		@Override
 		public boolean isReadOnly() {
 			return true;
 		}
@@ -177,14 +186,16 @@ public class TextModeClientInterfaceServer implements Runnable {
     		this.core = core;
     	}
     	
-    	public String get() {
+    	@Override
+		public String get() {
     		if(core.getTextModeClientInterface() != null)
     			return core.getTextModeClientInterface().bindTo;
     		else
     			return NetworkInterface.DEFAULT_BIND_TO;
     	}
     	
-    	public void set(String val) throws InvalidConfigValueException {
+    	@Override
+		public void set(String val) throws InvalidConfigValueException {
     		if(val.equals(get())) return;
 		try {
 			core.getTextModeClientInterface().networkInterface.setBindTo(val, false);
@@ -203,6 +214,7 @@ public class TextModeClientInterfaceServer implements Runnable {
     		this.core = core;
     	}
     	
+		@Override
 		public String get() {
 			if (core.getTextModeClientInterface() != null) {
 				return core.getTextModeClientInterface().allowedHosts;
@@ -210,6 +222,7 @@ public class TextModeClientInterfaceServer implements Runnable {
 			return NetworkInterface.DEFAULT_BIND_TO;
 		}
 
+		@Override
 		public void set(String val) throws InvalidConfigValueException {
 			if (!val.equals(get())) {
 				TextModeClientInterfaceServer server = core.getTextModeClientInterface();
@@ -230,7 +243,8 @@ public class TextModeClientInterfaceServer implements Runnable {
     		this.core = core;
     	}
     	
-    	public Integer get() {
+    	@Override
+		public Integer get() {
     		if(core.getTextModeClientInterface()!=null)
     			return core.getTextModeClientInterface().port;
     		else
@@ -238,7 +252,8 @@ public class TextModeClientInterfaceServer implements Runnable {
     	}
     	
     	// TODO: implement it
-    	public void set(Integer val) throws InvalidConfigValueException {
+    	@Override
+		public void set(Integer val) throws InvalidConfigValueException {
 			if (get().equals(val))
 				return;
     		core.getTextModeClientInterface().setPort(val);

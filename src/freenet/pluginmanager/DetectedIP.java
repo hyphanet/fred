@@ -47,6 +47,7 @@ public class DetectedIP {
 		this.mtu = 1500;
 	}
 	
+	@Override
 	public boolean equals(Object o) {
 		if(!(o instanceof DetectedIP)) {
 			return false;
@@ -55,10 +56,12 @@ public class DetectedIP {
 		return ((d.natType == natType) && d.publicAddress.equals(publicAddress));
 	}
 	
+	@Override
 	public int hashCode() {
 		return publicAddress.hashCode() ^ natType;
 	}
 	
+	@Override
 	public String toString() {
 		return publicAddress.toString()+":"+natType+":"+mtu;
 	}

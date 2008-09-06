@@ -32,7 +32,8 @@ public class PersistentRequestModifiedMessage extends FCPMessage {
         this.clientToken = clientToken;
     }
 
-    public SimpleFieldSet getFieldSet() {
+    @Override
+	public SimpleFieldSet getFieldSet() {
         final SimpleFieldSet fs = new SimpleFieldSet(true);
         fs.putSingle("Identifier", ident);
         if(global) fs.putSingle("Global", "true");
@@ -41,11 +42,13 @@ public class PersistentRequestModifiedMessage extends FCPMessage {
         return fs;
     }
 
-    public String getName() {
+    @Override
+	public String getName() {
         return "PersistentRequestModified";
     }
 
-    public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
+    @Override
+	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
         throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PersistentRequestModified goes from server to client not the other way around", ident, global);
     }
 }

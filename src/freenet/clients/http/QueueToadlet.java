@@ -89,6 +89,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		loadCompletedIdentifiers();
 	}
 	
+	@Override
 	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		
 		if(!core.hasLoadedQueue()) {
@@ -476,6 +477,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		writeHTMLReply(context, 400, "Bad request", pageNode.generate());
 	}
 
+	@Override
 	public void handleGet(URI uri, final HTTPRequest request, ToadletContext ctx) 
 	throws ToadletContextClosedException, IOException, RedirectException {
 		
@@ -1169,6 +1171,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		return table;
 	}
 
+	@Override
 	public String supportedMethods() {
 		return "GET, POST";
 	}
@@ -1327,6 +1330,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					new String[] { "<a href=\"/queue/"+uri.toACIIString()+"\">", "</a>", "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size) } );
 			UserAlert alert = 
 			new SimpleHTMLUserAlert(true, title, title, text, UserAlert.MINOR) {
+				@Override
 				public void onDismiss() {
 					synchronized(completedRequestIdentifiers) {
 						completedRequestIdentifiers.remove(identifier);
@@ -1336,6 +1340,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					}
 					saveCompletedIdentifiersOffThread();
 				}
+				@Override
 				public boolean isEventNotification() {
 					return true;
 				}
@@ -1359,6 +1364,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					new String[] { "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size) } );
 			UserAlert alert = 
 			new SimpleHTMLUserAlert(true, title, title, text, UserAlert.MINOR) {
+				@Override
 				public void onDismiss() {
 					synchronized(completedRequestIdentifiers) {
 						completedRequestIdentifiers.remove(identifier);
@@ -1368,6 +1374,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					}
 					saveCompletedIdentifiersOffThread();
 				}
+				@Override
 				public boolean isEventNotification() {
 					return true;
 				}
@@ -1388,6 +1395,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					new String[] { "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size), Integer.toString(files) } );
 			UserAlert alert = 
 			new SimpleHTMLUserAlert(true, title, title, text, UserAlert.MINOR) {
+				@Override
 				public void onDismiss() {
 					synchronized(completedRequestIdentifiers) {
 						completedRequestIdentifiers.remove(identifier);
@@ -1397,6 +1405,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					}
 					saveCompletedIdentifiersOffThread();
 				}
+				@Override
 				public boolean isEventNotification() {
 					return true;
 				}

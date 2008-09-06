@@ -11,11 +11,13 @@ public class PersistentTempFileBucket extends TempFileBucket {
 		super(id, generator);
 	}
 
+	@Override
 	protected boolean deleteOnFinalize() {
 		// Do not delete on finalize
 		return false;
 	}
 	
+	@Override
 	protected boolean deleteOnExit() {
 		// DO NOT DELETE ON EXIT !!!!
 		return false;
@@ -44,6 +46,7 @@ public class PersistentTempFileBucket extends TempFileBucket {
 		return bucket;
 	}
 	
+	@Override
 	public SimpleFieldSet toFieldSet() {
 		if(deleteOnFinalize()) return null;
 		SimpleFieldSet fs = super.toFieldSet();

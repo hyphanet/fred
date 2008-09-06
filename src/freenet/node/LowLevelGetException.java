@@ -72,6 +72,7 @@ public class LowLevelGetException extends Exception {
 		this.code = reason;
 	}
 	
+	@Override
 	public String toString() {
 		return super.toString()+':'+getMessage(code);
 	}

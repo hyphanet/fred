@@ -49,6 +49,7 @@ public class ThrottleWindowManager {
         	Logger.minor(this, "requestCompleted on "+this);
 	}
 
+	@Override
 	public synchronized String toString() {
 		return  super.toString()+" w: "
 				+ _simulatedWindowSize + ", d:"

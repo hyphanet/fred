@@ -113,10 +113,12 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 
 	static final String NAME = "ClientPutComplexDir";
 	
+	@Override
 	public String getName() {
 		return NAME;
 	}
 
+	@Override
 	long dataLength() {
 		return attachedBytes;
 	}
@@ -125,6 +127,7 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 		return identifier;
 	}
 
+	@Override
 	public void readFrom(InputStream is, BucketFactory bf, FCPServer server) throws IOException, MessageInvalidException {
 		Iterator<DirPutFile> i = filesToRead.iterator();
 		while(i.hasNext()) {
@@ -133,6 +136,7 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 		}
 	}
 
+	@Override
 	protected void writeData(OutputStream os) throws IOException {
 		Iterator<DirPutFile> i = filesToRead.iterator();
 		while(i.hasNext()) {
@@ -141,6 +145,7 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 		}
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		// Convert the hierarchical hashmap's of DirPutFile's to hierarchical hashmap's
 		// of ManifestElement's.

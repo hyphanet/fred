@@ -27,10 +27,12 @@ public class LoggingConfigHandler {
 	private static class PriorityCallback extends StringCallback implements EnumerableOptionCallback {
 		private final String[] possibleValues = new String[]{ "ERROR", "NORMAL", "MINOR", "DEBUG" };
 
+		@Override
 		public String get() {
 			LoggerHookChain chain = Logger.getChain();
 			return LoggerHook.priorityOf(chain.getThreshold());
 		}
+		@Override
 		public void set(String val) throws InvalidConfigValueException {
 			LoggerHookChain chain = Logger.getChain();
 			try {
@@ -65,9 +67,11 @@ public class LoggingConfigHandler {
     	
     	loggingConfig.register("enabled", true, 1, true, false, "LogConfigHandler.enabled", "LogConfigHandler.enabledLong",
     			new BooleanCallback() {
+					@Override
 					public Boolean get() {
 						return fileLoggerHook != null;
 					}
+					@Override
 					public void set(Boolean val) throws InvalidConfigValueException {
 						if(val == (fileLoggerHook != null)) return;
 						if(!val) {
@@ -82,10 +86,12 @@ public class LoggingConfigHandler {
     	loggingConfig.register("dirname", "logs", 2, true, false, "LogConfigHandler.dirName", "LogConfigHandler.dirNameLong", 
     			new StringCallback() {
 
+					@Override
 					public String get() {
 						return logDir.getPath();
 					}
 
+					@Override
 					public void set(String val) throws InvalidConfigValueException {
 						File f = new File(val);
 						if(f.equals(logDir)) return;
@@ -111,9 +117,11 @@ public class LoggingConfigHandler {
     	
     	config.register("maxZippedLogsSize", "128M", 3, true, true, "LogConfigHandler.maxZippedLogsSize", "LogConfigHandler.maxZippedLogsSizeLong",
     			new LongCallback() {
+					@Override
 					public Long get() {
 						return maxZippedLogsSize;
 					}
+					@Override
 					public void set(Long val) throws InvalidConfigValueException {
 						if (val < 0)
 					        val = 0L;
@@ -139,11 +147,13 @@ public class LoggingConfigHandler {
     	config.register("priorityDetail", "", 5, true, false, "LogConfigHandler.detaildPriorityThreshold", "LogConfigHandler.detaildPriorityThresholdLong",
     			new StringCallback() {
 
+					@Override
 					public String get() {
 						LoggerHookChain chain = Logger.getChain();
 						return chain.getDetailedThresholds();
 					}
 
+					@Override
 					public void set(String val) throws InvalidConfigValueException {
 						LoggerHookChain chain = Logger.getChain();
 						try {
@@ -159,10 +169,12 @@ public class LoggingConfigHandler {
     	
     	config.register("interval", "1HOUR", 5, true, false, "LogConfigHandler.rotationInterval", "LogConfigHandler.rotationIntervalLong",
     			new StringCallback() {
+					@Override
 					public String get() {
 						return logRotateInterval;
 					}
 
+					@Override
 					public void set(String val) throws InvalidConfigValueException {
 						if(val.equals(logRotateInterval)) return;
 						if(fileLoggerHook != null) {
@@ -181,9 +193,11 @@ public class LoggingConfigHandler {
     	// max cached bytes in RAM
     	config.register("maxCachedBytes", "10M", 6, true, false, "LogConfigHandler.maxCachedBytes", "LogConfigHandler.maxCachedBytesLong", 
     			new LongCallback() {
+					@Override
 					public Long get() {
 						return maxCachedLogBytes;
 					}
+					@Override
 					public void set(Long val) throws InvalidConfigValueException {
 						if (val < 0)
 					        val = 0L;
@@ -199,9 +213,11 @@ public class LoggingConfigHandler {
     	// max cached lines in RAM
     	config.register("maxCachedLines", "100k", 7, true, false, "LogConfigHandler.maxCachedLines", "LogConfigHandler.maxCachedLinesLong",
     			new IntCallback() {
+					@Override
 					public Integer get() {
 						return maxCachedLogLines;
 					}
+					@Override
 					public void set(Integer val) throws InvalidConfigValueException {
 						if(val < 0) val = 0;
 						if(val == maxCachedLogLines) return;

@@ -39,7 +39,8 @@ public class TrivialRunningAverage implements RunningAverage {
 		return (total + r) / (reports + 1);
 	}
 
-    public Object clone() {
+    @Override
+	public Object clone() {
     	synchronized (this) {
 			return new TrivialRunningAverage(this);
 		}

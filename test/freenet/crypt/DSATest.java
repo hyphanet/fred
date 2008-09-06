@@ -72,11 +72,13 @@ public class DSATest extends TestCase{
         super(testName); 
     }
 
-    protected void setUp() throws Exception {
+    @Override
+	protected void setUp() throws Exception {
         randomSource = new DummyRandomSource();
     }
 
-    protected void tearDown() throws Exception {}
+    @Override
+	protected void tearDown() throws Exception {}
     
     /**
      * Test of verify and sign method consistency using FIPS examples.*/

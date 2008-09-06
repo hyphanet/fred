@@ -102,7 +102,8 @@ public class DSAGroup extends CryptoKey {
     //		writeForWire(out);
     //    }
 
-    public String keyType() {
+    @Override
+	public String keyType() {
         return "DSA.g-" + p.bitLength();
     }
 
@@ -118,7 +119,8 @@ public class DSAGroup extends CryptoKey {
         return g;
     }
 
-    public byte[] fingerprint() {
+    @Override
+	public byte[] fingerprint() {
         BigInteger fp[] = new BigInteger[3];
         fp[0] = p;
         fp[1] = q;
@@ -137,7 +139,8 @@ public class DSAGroup extends CryptoKey {
             this.r = r;
         }
 
-        public void run() {
+        @Override
+		public void run() {
             while (true) {
                 qs.addElement(makePrime(DSAGroup.Q_BIT_LENGTH, 80, r));
                 synchronized (this) {
@@ -178,7 +181,8 @@ public class DSAGroup extends CryptoKey {
         return b.isProbablePrime(80);
     }
 
-    public byte[] asBytes() {
+    @Override
+	public byte[] asBytes() {
         byte[] pb = Util.MPIbytes(p);
         byte[] qb = Util.MPIbytes(q);
         byte[] gb = Util.MPIbytes(g);
@@ -189,7 +193,8 @@ public class DSAGroup extends CryptoKey {
         return tb;
     }
 
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
         if (this == o) // Not necessary, but a very cheap optimization
                 return true;
         return (o instanceof DSAGroup) && p.equals(((DSAGroup) o).p)
@@ -202,7 +207,8 @@ public class DSAGroup extends CryptoKey {
         return p.equals(o.p) && q.equals(o.q) && g.equals(o.g);
     }
 
-    public int hashCode() {
+    @Override
+	public int hashCode() {
         return p.hashCode() ^ q.hashCode() ^ g.hashCode();
     }
     
@@ -227,6 +233,7 @@ public class DSAGroup extends CryptoKey {
 		return dg;
 	}
 	
+	@Override
 	public String toString() {
 		if(this == Global.DSAgroupBigA)
 			return "Global.DSAgroupBigA";

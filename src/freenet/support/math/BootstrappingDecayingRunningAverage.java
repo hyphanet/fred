@@ -24,7 +24,8 @@ public final class BootstrappingDecayingRunningAverage implements
         RunningAverage {
 	
 	private static final long serialVersionUID = -1;
-    public final Object clone() {
+    @Override
+	public final Object clone() {
         return new BootstrappingDecayingRunningAverage(this);
     }
     
@@ -37,7 +38,8 @@ public final class BootstrappingDecayingRunningAverage implements
     private long zeros;
     private long ones;
     
-    public synchronized String toString() {
+    @Override
+	public synchronized String toString() {
         return super.toString() + ": min="+min+", max="+max+", currentValue="+
         	currentValue+", reports="+reports+", maxReports="+maxReports
         	// FIXME

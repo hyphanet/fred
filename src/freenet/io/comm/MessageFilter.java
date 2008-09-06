@@ -240,7 +240,8 @@ public final class MessageFilter {
         return _timeout;
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
     	return super.toString()+":"+_type.getName();
     }
 

@@ -149,6 +149,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	protected boolean isReversed = false;
 	protected final DecimalFormat fix1 = new DecimalFormat("##0.0%");
 	
+	@Override
 	public String supportedMethods() {
 		if(this.acceptRefPosts())
 			return "GET, POST";
@@ -173,6 +174,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		abstract public String getExplanationKey();
 	}
 	
+	@Override
 	public void handleGet(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String path = uri.getPath();
 		if(path.endsWith("myref.fref")) {
@@ -482,6 +484,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	/** Where to redirect to if there is an error */
 	protected abstract String defaultRedirectLocation();
 	
+	@Override
 	public void handlePost(URI uri, final HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		

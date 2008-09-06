@@ -87,6 +87,7 @@ public class MessageItem {
 		return priority;
 	}
 	
+	@Override
 	public String toString() {
 		return super.toString()+":formatted="+formatted+",msg="+msg+",alreadyReported="+alreadyReportedBytes;
 	}

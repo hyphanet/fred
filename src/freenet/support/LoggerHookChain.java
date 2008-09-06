@@ -38,7 +38,8 @@ public class LoggerHookChain extends LoggerHook {
      * one logger receive events from another.
      * @implements LoggerHook.log()
      */
-    public synchronized void log(Object o, Class<?> c, String msg, Throwable e, int priority) {
+    @Override
+	public synchronized void log(Object o, Class<?> c, String msg, Throwable e, int priority) {
         LoggerHook[] myHooks = hooks;
         for(int i=0;i<myHooks.length;i++) {
             myHooks[i].log(o,c,msg,e,priority);
@@ -87,21 +88,25 @@ public class LoggerHookChain extends LoggerHook {
         return hooks;
     }
 
-    public long minFlags()
+    @Override
+	public long minFlags()
     {
     	return 0;
     }
 
-    public long notFlags()
+    @Override
+	public long notFlags()
     {
     	return 0;
     }
 
-    public long anyFlags()
+    @Override
+	public long anyFlags()
     {
     	return ((2*ERROR)-1) & ~(threshold-1);
     }
 
+	@Override
 	public void setDetailedThresholds(String details) throws InvalidThresholdException {
 		super.setDetailedThresholds(details);
 		// No need to tell subordinates, we will do the filtering.
@@ -109,6 +114,7 @@ public class LoggerHookChain extends LoggerHook {
 //		for (int i = 0; i < h.length; i++)
 //			h[i].setDetailedThresholds(details);
 	}
+	@Override
 	public void setThreshold(int thresh) {
 		super.setThreshold(thresh);
 		LoggerHook[] h = getHooks();

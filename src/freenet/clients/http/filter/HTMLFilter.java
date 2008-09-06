@@ -548,6 +548,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			return tv.sanitize(this, pc);
 		}
 
+		@Override
 		public String toString() {
 			if (element == null)
 				return "";
@@ -1318,6 +1319,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 		abstract void processStyle(HTMLParseContext pc);
 
+		@Override
 		Hashtable sanitizeHash(
 			Hashtable h,
 			ParsedTag p,

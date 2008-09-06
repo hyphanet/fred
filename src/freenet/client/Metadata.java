@@ -117,6 +117,7 @@ public class Metadata implements Cloneable {
 
 	ClientMetadata clientMetadata;
 
+	@Override
 	public Object clone() {
 		try {
 			return super.clone();

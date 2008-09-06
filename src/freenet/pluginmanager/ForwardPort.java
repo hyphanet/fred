@@ -30,10 +30,12 @@ public class ForwardPort {
 		hashCode = name.hashCode() | (isIP6 ? 1 : 0) | protocol | portNumber;
 	}
 	
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}
 	
+	@Override
 	public boolean equals(Object o) {
 		if(o == this) return true;
 		if(!(o instanceof ForwardPort)) return false;

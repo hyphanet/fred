@@ -66,7 +66,8 @@ public class TimeSortedHashtable<T extends Comparable> implements Cloneable {
     private final TreeSet<Comparable> /* <Long || Element<T>> */elements;
 	private final HashMap<T, Element<T>> valueToElement;
 
-    public TimeSortedHashtable<T> clone() {
+    @Override
+	public TimeSortedHashtable<T> clone() {
 		return new TimeSortedHashtable<T>(this);
     }
     

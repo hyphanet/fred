@@ -451,6 +451,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		return L10n.getString("FirstTimeWizardToadlet."+key);
 	}
 
+	@Override
 	public String supportedMethods() {
 		return "GET, POST";
 	}

@@ -25,14 +25,17 @@ public class ModifyPeerNote extends FCPMessage {
 		fs.removeValue("Identifier");
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		return new SimpleFieldSet(true);
 	}
 
+	@Override
 	public String getName() {
 		return NAME;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		if(!handler.hasFullAccess()) {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "ModifyPeerNote requires full access", identifier, false);

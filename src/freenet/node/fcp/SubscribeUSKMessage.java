@@ -47,6 +47,7 @@ public class SubscribeUSKMessage extends FCPMessage {
 		this.dontPoll = Fields.stringToBool(fs.get("DontPoll"), false);
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("URI", key.getURI().toString());
@@ -54,10 +55,12 @@ public class SubscribeUSKMessage extends FCPMessage {
 		return fs;
 	}
 
+	@Override
 	public String getName() {
 		return NAME;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		new SubscribeUSK(this, node.clientCore, handler);

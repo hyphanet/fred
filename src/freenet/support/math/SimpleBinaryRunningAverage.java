@@ -18,7 +18,8 @@ import freenet.support.Logger;
 public class SimpleBinaryRunningAverage implements RunningAverage {
 	private static final long serialVersionUID = -1;
 
-    public Object clone() {
+    @Override
+	public Object clone() {
         return new SimpleBinaryRunningAverage(this);
     }
     
@@ -127,6 +128,7 @@ public class SimpleBinaryRunningAverage implements RunningAverage {
 			" total";
 	}
 	
+	@Override
 	public synchronized String toString() {
 		return super.toString() + " ("+extraToString()+ ')' +
 			", init="+defaultValue+", index="+index+", totalReported="+

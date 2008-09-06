@@ -9,6 +9,7 @@ public class SimpleHTMLUserAlert extends AbstractUserAlert {
 		super(canDismiss, title, content.getContent(), shortText, content, type, true, L10n.getString("UserAlert.hide"), true, null);
 	}
 
+	@Override
 	public void isValid(boolean validity) {
 		// Do nothing
 	}

@@ -144,10 +144,12 @@ public class NodeClientCore implements Persistable {
 		nodeConfig.register("tempDir", new File(nodeDir, "temp-" + portNumber).toString(), sortOrder++, true, true, "NodeClientCore.tempDir", "NodeClientCore.tempDirLong",
 			new StringCallback() {
 
+				@Override
 				public String get() {
 					return tempDir.getPath();
 				}
 
+				@Override
 				public void set(String val) throws InvalidConfigValueException {
 					if(tempDir.equals(new File(val)))
 						return;
@@ -177,10 +179,12 @@ public class NodeClientCore implements Persistable {
 		// Persistent temp files
 		nodeConfig.register("encryptPersistentTempBuckets", true, sortOrder++, true, false, "NodeClientCore.encryptPersistentTempBuckets", "NodeClientCore.encryptPersistentTempBucketsLong", new BooleanCallback() {
 
+			@Override
 			public Boolean get() {
 				return (persistentTempBucketFactory == null ? true : persistentTempBucketFactory.isEncrypting());
 			}
 
+			@Override
 			public void set(Boolean val) throws InvalidConfigValueException {
 				if (get().equals(val) || (persistentTempBucketFactory == null))
 					        return;
@@ -191,10 +195,12 @@ public class NodeClientCore implements Persistable {
 		nodeConfig.register("persistentTempDir", new File(nodeDir, "persistent-temp-" + portNumber).toString(), sortOrder++, true, false, "NodeClientCore.persistentTempDir", "NodeClientCore.persistentTempDirLong",
 			new StringCallback() {
 
+				@Override
 				public String get() {
 					return persistentTempBucketFactory.getDir().toString();
 				}
 
+				@Override
 				public void set(String val) throws InvalidConfigValueException {
 					if(get().equals(val))
 						return;
@@ -216,10 +222,12 @@ public class NodeClientCore implements Persistable {
 
 		nodeConfig.register("maxRAMBucketSize", "128KiB", sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
 
+			@Override
 			public Long get() {
 				return (tempBucketFactory == null ? 0 : tempBucketFactory.getMaxRAMBucketSize());
 			}
 
+			@Override
 			public void set(Long val) throws InvalidConfigValueException {
 				if (get().equals(val) || (tempBucketFactory == null))
 					        return;
@@ -228,10 +236,12 @@ public class NodeClientCore implements Persistable {
 		});
 		nodeConfig.register("RAMBucketPoolSize", "10MiB", sortOrder++, true, false, "NodeClientCore.ramBucketPoolSize", "NodeClientCore.ramBucketPoolSizeLong", new LongCallback() {
 
+			@Override
 			public Long get() {
 				return (tempBucketFactory == null ? 0 : tempBucketFactory.getMaxRamUsed());
 			}
 
+			@Override
 			public void set(Long val) throws InvalidConfigValueException {
 				if (get().equals(val) || (tempBucketFactory == null))
 					        return;
@@ -241,10 +251,12 @@ public class NodeClientCore implements Persistable {
 			
 		nodeConfig.register("encryptTempBuckets", true, sortOrder++, true, false, "NodeClientCore.encryptTempBuckets", "NodeClientCore.encryptTempBucketsLong", new BooleanCallback() {
 
+			@Override
 			public Boolean get() {
 				return (tempBucketFactory == null ? true : tempBucketFactory.isEncrypting());
 			}
 
+			@Override
 			public void set(Boolean val) throws InvalidConfigValueException {
 				if (get().equals(val) || (tempBucketFactory == null))
 					        return;
@@ -279,10 +291,12 @@ public class NodeClientCore implements Persistable {
 
 		nodeConfig.register("downloadsDir", "downloads", sortOrder++, true, true, "NodeClientCore.downloadDir", "NodeClientCore.downloadDirLong", new StringCallback() {
 
+			@Override
 			public String get() {
 				return downloadDir.getPath();
 			}
 
+			@Override
 			public void set(String val) throws InvalidConfigValueException {
 				if(downloadDir.equals(new File(val)))
 					return;
@@ -305,6 +319,7 @@ public class NodeClientCore implements Persistable {
 			"NodeClientCore.downloadAllowedDirsLong",
 			new StringArrCallback() {
 
+				@Override
 				public String[] get() {
 					synchronized(NodeClientCore.this) {
 						if(downloadAllowedEverywhere)
@@ -318,6 +333,7 @@ public class NodeClientCore implements Persistable {
 					}
 				}
 
+				@Override
 				public void set(String[] val) throws InvalidConfigValueException {
 					setDownloadAllowedDirs(val);
 				}
@@ -328,6 +344,7 @@ public class NodeClientCore implements Persistable {
 			"NodeClientCore.uploadAllowedDirsLong",
 			new StringArrCallback() {
 
+				@Override
 				public String[] get() {
 					synchronized(NodeClientCore.this) {
 						if(uploadAllowedEverywhere)
@@ -339,6 +356,7 @@ public class NodeClientCore implements Persistable {
 					}
 				}
 
+				@Override
 				public void set(String[] val) throws InvalidConfigValueException {
 					setUploadAllowedDirs(val);
 				}
@@ -358,10 +376,12 @@ public class NodeClientCore implements Persistable {
 		nodeConfig.register("lazyResume", false, sortOrder++, true, false, "NodeClientCore.lazyResume",
 			"NodeClientCore.lazyResumeLong", new BooleanCallback() {
 
+			@Override
 			public Boolean get() {
 				return lazyResume;
 			}
 
+			@Override
 			public void set(Boolean val) throws InvalidConfigValueException {
 				synchronized(NodeClientCore.this) {
 					lazyResume = val;
@@ -374,10 +394,12 @@ public class NodeClientCore implements Persistable {
 		nodeConfig.register("maxBackgroundUSKFetchers", "64", sortOrder++, true, false, "NodeClientCore.maxUSKFetchers",
 			"NodeClientCore.maxUSKFetchersLong", new IntCallback() {
 
+			@Override
 			public Integer get() {
 				return maxBackgroundUSKFetchers;
 			}
 
+			@Override
 			public void set(Integer uskFetch) throws InvalidConfigValueException {
 				if(uskFetch <= 0)
 					throw new InvalidConfigValueException(l10n("maxUSKFetchersMustBeGreaterThanZero"));

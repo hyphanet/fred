@@ -133,7 +133,8 @@ public class BookmarkCategory extends Bookmark {
 
     }
 
-    public SimpleFieldSet getSimpleFieldSet() {
+    @Override
+	public SimpleFieldSet getSimpleFieldSet() {
         SimpleFieldSet sfs = new SimpleFieldSet(true);
 	sfs.putSingle("Name", name);
 	sfs.put("Content", BookmarkManager.toSimpleFieldSet(this));

@@ -43,10 +43,12 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 		dirname = new File(fnam);
 	}
 
+	@Override
 	public String getName() {
 		return NAME;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		if(!handler.server.core.allowUploadFrom(dirname))
@@ -97,6 +99,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
     	return ret;
 	}
 
+	@Override
 	long dataLength() {
 		return 0;
 	}
@@ -105,10 +108,12 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 		return identifier;
 	}
 
+	@Override
 	public void readFrom(InputStream is, BucketFactory bf, FCPServer server) throws IOException, MessageInvalidException {
 		// Do nothing
 	}
 
+	@Override
 	protected void writeData(OutputStream os) throws IOException {
 		// Do nothing
 	}

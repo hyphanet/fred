@@ -17,16 +17,19 @@ public class SeedServerTestPeerNode extends SeedServerPeerNode {
 		super(fs, node2, crypto, peers, fromLocal, mangler);
 	}
 	
+	@Override
 	public SimpleFieldSet exportFieldSet() {
 		SimpleFieldSet sfs = super.exportFieldSet();
 		sfs.putOverwrite("opennet", "true");
 		return sfs;
 	}
 
+	@Override
 	public boolean shouldDisconnectAndRemoveNow() {
 		return false;
 	}
 	
+	@Override
 	protected void sendInitialMessages() {}
 	
 	public enum FATE {
@@ -44,6 +47,7 @@ public class SeedServerTestPeerNode extends SeedServerPeerNode {
 		CONNECTED_DISCONNECTED_UNKNOWN
 	}
 	
+	@Override
 	public void onRemove() {
 		long lastReceivedDataPacketTime = lastReceivedDataPacketTime();
 		if(lastReceivedDataPacketTime <= 0 && timeLastConnectionCompleted() > 0)

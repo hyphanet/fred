@@ -10,10 +10,12 @@ import freenet.support.Logger;
 
 public class PubkeyStore extends StoreCallback {
 
+	@Override
 	public boolean collisionPossible() {
 		return false;
 	}
 
+	@Override
 	public StorableBlock construct(byte[] data, byte[] headers, byte[] routingKey,
 			byte[] fullKey) throws KeyVerifyException {
 		if(data == null) throw new PubkeyVerifyException("Need data to construct pubkey");
@@ -38,30 +40,37 @@ public class PubkeyStore extends StoreCallback {
 		}
 	}
 	
+	@Override
 	public int dataLength() {
 		return DSAPublicKey.PADDED_SIZE;
 	}
 
+	@Override
 	public int fullKeyLength() {
 		return DSAPublicKey.HASH_LENGTH;
 	}
 
+	@Override
 	public int headerLength() {
 		return 0;
 	}
 
+	@Override
 	public int routingKeyLength() {
 		return DSAPublicKey.HASH_LENGTH;
 	}
 
+	@Override
 	public boolean storeFullKeys() {
 		return false;
 	}
 
+	@Override
 	public boolean constructNeedsKey() {
 		return false;
 	}
 
+	@Override
 	public byte[] routingKeyFromFullKey(byte[] keyBuf) {
 		return keyBuf;
 	}

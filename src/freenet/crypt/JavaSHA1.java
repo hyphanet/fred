@@ -11,7 +11,8 @@ class JavaSHA1 implements Digest, Cloneable {
     
     MessageDigest digest;
     
-    public Object clone() throws CloneNotSupportedException {
+    @Override
+	public Object clone() throws CloneNotSupportedException {
 	return new JavaSHA1((MessageDigest)(digest.clone()));
     }
     

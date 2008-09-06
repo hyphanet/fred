@@ -399,6 +399,7 @@ public class Yarrow extends RandomSource {
 	// loop unrolled, cache and operation optimized.
 	// So don't try to simplify it... Thanks. :)
 	// When this was not synchronized, we were getting repeats...
+	@Override
 	protected synchronized int next(int bits) {
 		int[] parameters = bitTable[bits];
 		int offset = getBytes(parameters[0]);
@@ -428,10 +429,12 @@ public class Yarrow extends RandomSource {
 		entropySeen = new Hashtable();
 	}
 
+	@Override
 	public int acceptEntropy(EntropySource source, long data, int entropyGuess) {
 		return acceptEntropy(source, data, entropyGuess, 1.0);
 	}
 
+	@Override
 	public int acceptEntropyBytes(EntropySource source, byte[] buf, int offset,
 		int length, double bias) {
 		int totalRealEntropy = 0;
@@ -575,10 +578,12 @@ public class Yarrow extends RandomSource {
 		return delta & 15;
 	}
 
+	@Override
 	public int acceptTimerEntropy(EntropySource timer) {
 		return acceptTimerEntropy(timer, 1.0);
 	}
 
+	@Override
 	public int acceptTimerEntropy(EntropySource timer, double bias) {
 		long now = System.currentTimeMillis();
 		return acceptEntropy(timer, now - timer.lastVal, 32, bias);
@@ -589,6 +594,7 @@ public class Yarrow extends RandomSource {
 	 * specified number of bits of entropy are available. If estimation isn't
 	 * supported, this method will return immediately.
 	 */
+	@Override
 	public void waitForEntropy(int bits) {
 	}
 	/**
@@ -643,6 +649,7 @@ public class Yarrow extends RandomSource {
 	 * If the RandomSource has any resources it wants to close, it can do so
 	 * when this method is called
 	 */
+	@Override
 	public void close() {
 	}
 

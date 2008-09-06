@@ -125,6 +125,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		}
 	}
 
+	@Override
 	public void onLostConnection() {
 		if(persistenceType == PERSIST_CONNECTION)
 			cancel();
@@ -169,6 +170,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		trySendGeneratedURIMessage(null);
 	}
 
+	@Override
 	public void requestWasRemoved() {
 		// if request is still running, send a PutFailed with code=cancelled
 		if( !finished ) {
@@ -266,6 +268,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			client.queueClientRequestMessage(msg, verbosity);
 	}
 
+	@Override
 	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData) {
 		if(persistenceType == PERSIST_CONNECTION) {
 			Logger.error(this, "WTF? persistenceType="+persistenceType, new Exception("error"));
@@ -292,6 +295,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			trySendFinalMessage(handler);
 	}
 
+	@Override
 	public synchronized SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(false); // we will need multi-level later...
 		fs.putSingle("Type", getTypeName());
@@ -322,6 +326,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 
 	protected abstract String getTypeName();
 
+	@Override
 	public synchronized double getSuccessFraction() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
@@ -332,6 +337,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	}
 
 
+	@Override
 	public synchronized double getTotalBlocks() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
@@ -341,6 +347,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 
+	@Override
 	public synchronized double getMinBlocks() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
@@ -350,6 +357,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 
+	@Override
 	public synchronized double getFailedBlocks() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
@@ -359,6 +367,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 
+	@Override
 	public synchronized double getFatalyFailedBlocks() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
@@ -368,6 +377,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 
+	@Override
 	public synchronized double getFetchedBlocks() {
 		if(progressMessage != null) {
 			if(progressMessage instanceof SimpleProgressMessage)
@@ -377,11 +387,13 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 
+	@Override
 	public synchronized boolean isTotalFinalized() {
 		if(!(progressMessage instanceof SimpleProgressMessage)) return false;
 		else return ((SimpleProgressMessage)progressMessage).isTotalFinalized();
 	}
 
+	@Override
 	public synchronized String getFailureReason() {
 		if(putFailedMessage == null)
 			return null;

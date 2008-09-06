@@ -26,6 +26,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	/** Get a numbered key to fetch. */
 	public abstract ClientKey getKey(Object token);
 	
+	@Override
 	public Key getNodeKey(Object token) {
 		ClientKey key = getKey(token);
 		if(key == null) return null;
@@ -56,6 +57,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	/** Do the request, blocking. Called by RequestStarter. 
 	 * @return True if a request was executed. False if caller should try to find another request, and remove
 	 * this one from the queue. */
+	@Override
 	public boolean send(NodeClientCore core, RequestScheduler sched, Object keyNum) {
 		ClientKey key = getKey(keyNum);
 		if(key == null) {
@@ -125,6 +127,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	/** Reset the cooldown times when the request is reregistered. */
 	public abstract void resetCooldownTimes();
 
+	@Override
 	public final void unregister(boolean staySubscribed) {
 		if(!staySubscribed)
 			getScheduler().removePendingKeys(this, false);
@@ -135,6 +138,7 @@ public abstract class SendableGet extends BaseSendableGet {
 		getScheduler().removePendingKey(this, false, key);
 	}
 
+	@Override
 	public void internalError(Object keyNum, Throwable t, RequestScheduler sched) {
 		onFailure(new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), keyNum, sched);
 	}

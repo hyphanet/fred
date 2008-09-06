@@ -64,6 +64,7 @@ public class BucketChainBucket implements Bucket {
 			private InputStream curBucketStream = getBucketInputStream(0);
 			private long readBytes;
 			
+			@Override
 			public int read() throws IOException {
 				synchronized(BucketChainBucket.this) {
 					if(freed) {
@@ -94,6 +95,7 @@ public class BucketChainBucket implements Bucket {
 				}
 			}
 			
+			@Override
 			public int read(byte[] buf) throws IOException {
 				synchronized(BucketChainBucket.this) {
 					if(freed) {
@@ -105,6 +107,7 @@ public class BucketChainBucket implements Bucket {
 				return read(buf, 0, buf.length);
 			}
 			
+			@Override
 			public int read(byte[] buf, int offset, int length) throws IOException {
 				synchronized(BucketChainBucket.this) {
 					if(freed) {
@@ -136,6 +139,7 @@ public class BucketChainBucket implements Bucket {
 				}
 			}
 			
+			@Override
 			public int available() throws IOException {
 				synchronized(BucketChainBucket.this) {
 					if(freed) {
@@ -147,6 +151,7 @@ public class BucketChainBucket implements Bucket {
 				return (int) Math.min(Integer.MAX_VALUE, size() - readBytes);
 			}
 			
+			@Override
 			public void close() throws IOException {
 				if(curBucketStream != null)
 					curBucketStream.close();
@@ -183,6 +188,7 @@ public class BucketChainBucket implements Bucket {
 			private OutputStream curBucketStream = makeBucketOutputStream(0);
 			private long bucketLength = 0;
 			
+			@Override
 			public void write(int c) throws IOException {
 				synchronized(BucketChainBucket.this) {
 					if(freed) {
@@ -208,10 +214,12 @@ public class BucketChainBucket implements Bucket {
 				}
 			}
 			
+			@Override
 			public void write(byte[] buf) throws IOException {
 				write(buf, 0, buf.length);
 			}
 			
+			@Override
 			public void write(byte[] buf, int offset, int length) throws IOException {
 				synchronized(BucketChainBucket.this) {
 					if(freed) {
@@ -244,6 +252,7 @@ public class BucketChainBucket implements Bucket {
 				}
 			}
 			
+			@Override
 			public void close() throws IOException {
 				if(curBucketStream != null)
 					curBucketStream.close();

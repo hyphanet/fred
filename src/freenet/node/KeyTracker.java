@@ -293,6 +293,7 @@ public class KeyTracker {
 
 	private class QueuedResendRequest extends BaseQueuedResend {
 
+		@Override
 		long initialActiveTime(long now) {
 			return now; // Active immediately; reordering is rare
 		}
@@ -309,6 +310,7 @@ public class KeyTracker {
 			}
 		}
 
+		@Override
 		long urgentDelay() {
 			return PacketSender.MAX_COALESCING_DELAY; // Urgent pretty soon
 		}
@@ -319,6 +321,7 @@ public class KeyTracker {
 		final long createdTime;
 		long activeDelay;
 
+		@Override
 		long initialActiveTime(long now) {
 			// Request an ack after four RTTs
 			activeDelay = twoRTTs();
@@ -348,6 +351,7 @@ public class KeyTracker {
 				Logger.minor(this, "Reported round-trip time of " + TimeUtil.formatTime(t, 2, true) + " on " + pn.getPeer() + " (avg " + TimeUtil.formatTime((long) pn.averagePingTime(), 2, true) + ", #" + packetNumber + ')');
 		}
 
+		@Override
 		long urgentDelay() {
 			return PacketSender.MAX_COALESCING_DELAY;
 		}

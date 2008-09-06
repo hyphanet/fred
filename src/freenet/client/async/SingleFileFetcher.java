@@ -121,6 +121,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 	// Process the completed data. May result in us going to a
 	// splitfile, or another SingleFileFetcher, etc.
+	@Override
 	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched) {
 		this.sched = sched;
 		if(parent instanceof ClientGetter)
@@ -171,6 +172,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 	}
 
+	@Override
 	protected void onSuccess(FetchResult result, RequestScheduler sched) {
 		this.sched = sched;
 		unregister(false);
@@ -681,6 +683,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		
 	}
 	
+	@Override
 	public boolean ignoreStore() {
 		return ctx.ignoreStore;
 	}

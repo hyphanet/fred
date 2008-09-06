@@ -216,15 +216,18 @@ public class TestnetHandler implements Runnable {
 			this.node = node;
 		}
 		
+		@Override
 		public Boolean get() {
 			return node.testnetEnabled;
 		}
 
+		@Override
 		public void set(Boolean val) throws InvalidConfigValueException {
 			if(node.testnetEnabled == val) return;
 			throw new InvalidConfigValueException(L10n.getString("TestnetHandler.cannotEnableDisableOnTheFly"));
 		}
 
+		@Override
 		public boolean isReadOnly() {
 			return true;
 		}
@@ -238,10 +241,12 @@ public class TestnetHandler implements Runnable {
 			this.node = n;
 		}
 		
+		@Override
 		public Integer get() {
 			return node.testnetHandler.getPort();
 		}
 		
+		@Override
 		public void set(Integer val) throws InvalidConfigValueException {
 			if (get().equals(val))
 				return;

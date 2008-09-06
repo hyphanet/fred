@@ -21,18 +21,22 @@ public class UnknownContentTypeException extends UnsafeContentTypeException {
 		return type;
 	}
 
+	@Override
 	public String getHTMLEncodedTitle() {
 		return l10n("title", "type", encodedType);
 	}
 
+	@Override
 	public String getRawTitle() {
 		return l10n("title", "type", type);
 	}
 	
+	@Override
 	public String getExplanation() {
 		return l10n("explanation");
 	}
 	
+	@Override
 	public HTMLNode getHTMLExplanation() {
 		return new HTMLNode("div", l10n("explanation"));
 	}

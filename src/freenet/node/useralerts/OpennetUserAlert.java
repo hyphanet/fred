@@ -13,6 +13,7 @@ public class OpennetUserAlert extends AbstractUserAlert {
 		this.node = node;
 	}
 	
+	@Override
 	public boolean isValid() {
 		return node.isOpennetEnabled() && valid;
 	}

@@ -80,10 +80,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			origSFI = null;
 		}
 		
+		@Override
 		public FreenetURI getURI() {
 			return null;
 		}
 
+		@Override
 		public boolean isFinished() {
 			return SimpleManifestPutter.this.finished || cancelled || SimpleManifestPutter.this.cancelled;
 		}
@@ -136,30 +138,37 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			gotAllMetadata();
 		}
 
+		@Override
 		public void addBlock() {
 			SimpleManifestPutter.this.addBlock();
 		}
 		
+		@Override
 		public void addBlocks(int num) {
 			SimpleManifestPutter.this.addBlocks(num);
 		}
 		
+		@Override
 		public void completedBlock(boolean dontNotify) {
 			SimpleManifestPutter.this.completedBlock(dontNotify);
 		}
 		
+		@Override
 		public void failedBlock() {
 			SimpleManifestPutter.this.failedBlock();
 		}
 		
+		@Override
 		public void fatallyFailedBlock() {
 			SimpleManifestPutter.this.fatallyFailedBlock();
 		}
 		
+		@Override
 		public void addMustSucceedBlocks(int blocks) {
 			SimpleManifestPutter.this.addMustSucceedBlocks(blocks);
 		}
 		
+		@Override
 		public void notifyClients() {
 			// FIXME generate per-filename events???
 		}
@@ -172,6 +181,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			SimpleManifestPutter.this.blockSetFinalized();
 		}
 
+		@Override
 		public void onMajorProgress() {
 			SimpleManifestPutter.this.onMajorProgress();
 		}
@@ -180,6 +190,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			SimpleManifestPutter.this.onFetchable(this);
 		}
 
+		@Override
 		public void onTransition(ClientGetState oldState, ClientGetState newState) {
 			// Ignore
 		}
@@ -335,10 +346,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 
+	@Override
 	public FreenetURI getURI() {
 		return finalURI;
 	}
 
+	@Override
 	public synchronized boolean isFinished() {
 		return finished || cancelled;
 	}
@@ -556,6 +569,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 	
+	@Override
 	public void cancel() {
 		super.cancel();
 		fail(new InsertException(InsertException.CANCELLED));
@@ -613,6 +627,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		// Ignore
 	}
 
+	@Override
 	public void notifyClients() {
 		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized));
 	}
@@ -625,6 +640,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		this.blockSetFinalized();
 	}
 
+	@Override
 	public void blockSetFinalized() {
 		synchronized(this) {
 			if(!metadataBlockSetFinalized) return;
@@ -719,6 +735,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		return totalSize;
 	}
 
+	@Override
 	public void onMajorProgress() {
 		cb.onMajorProgress();
 	}
@@ -747,6 +764,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		cb.onFetchable(this);
 	}
 
+	@Override
 	public void onTransition(ClientGetState oldState, ClientGetState newState) {
 		// Ignore
 	}

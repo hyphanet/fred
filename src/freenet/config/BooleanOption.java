@@ -14,6 +14,7 @@ public class BooleanOption extends Option<Boolean> {
 		this.currentValue = defaultValue;
 	}
 
+	@Override
 	public Boolean parseString(String val) throws InvalidConfigValueException {
 		if(val.equalsIgnoreCase("true") || val.equalsIgnoreCase("yes")) {
 			return true;

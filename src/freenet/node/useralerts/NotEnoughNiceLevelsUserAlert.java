@@ -19,10 +19,12 @@ public class NotEnoughNiceLevelsUserAlert extends AbstractUserAlert {
 		super(true, null, null, null, null, UserAlert.WARNING, true, L10n.getString("UserAlert.hide"), true, null);
 	}
 	
+	@Override
 	public String getTitle() {
 		return L10n.getString("NotEnoughNiceLevelsUserAlert.title");
 	}
 	
+	@Override
 	public String getText() {
 		return L10n.getString("NotEnoughNiceLevelsUserAlert.content",
 			new String[] { "available", "required" },
@@ -32,10 +34,12 @@ public class NotEnoughNiceLevelsUserAlert extends AbstractUserAlert {
 			});
 	}
 	
+	@Override
 	public String getShortText() {
 		return L10n.getString("NotEnoughNiceLevelsUserAlert.short");
 	}
 
+	@Override
 	public HTMLNode getHTMLText() {
 		return new HTMLNode("div", getText());
 	}

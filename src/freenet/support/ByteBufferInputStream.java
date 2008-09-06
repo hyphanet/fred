@@ -28,6 +28,7 @@ public class ByteBufferInputStream extends InputStream implements DataInput {
 		this.buf = buf;
 	}
 
+	@Override
 	public int read() throws IOException {
 		try {
 			return buf.get() & Integer.MAX_VALUE;

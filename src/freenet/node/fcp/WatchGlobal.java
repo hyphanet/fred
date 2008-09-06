@@ -26,6 +26,7 @@ public class WatchGlobal extends FCPMessage {
 			verbosityMask = Integer.MAX_VALUE;
 	}
 	
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.put("Enabled", enabled);
@@ -33,10 +34,12 @@ public class WatchGlobal extends FCPMessage {
 		return fs;
 	}
 
+	@Override
 	public String getName() {
 		return NAME;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		handler.getClient().setWatchGlobal(enabled, verbosityMask);

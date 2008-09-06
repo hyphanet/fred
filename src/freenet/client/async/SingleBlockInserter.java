@@ -129,14 +129,17 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return true;
 	}
 
+	@Override
 	public short getPriorityClass() {
 		return parent.getPriorityClass();
 	}
 
+	@Override
 	public int getRetryCount() {
 		return retries;
 	}
 
+	@Override
 	public void onFailure(LowLevelPutException e, Object keyNum) {
 		if(parent.isCancelled()) {
 			fail(new InsertException(InsertException.CANCELLED));
@@ -254,6 +257,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return resultingURI;
 	}
 
+	@Override
 	public void onSuccess(Object keyNum) {
 		if(logMINOR) Logger.minor(this, "Succeeded ("+this+"): "+token);
 		if(parent.isCancelled()) {
@@ -284,10 +288,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return finished;
 	}
 	
+	@Override
 	public synchronized boolean isCancelled() {
 		return finished;
 	}
 	
+	@Override
 	public boolean send(NodeClientCore core, RequestScheduler sched, Object keyNum) {
 		// Ignore keyNum, key, since we're only sending one block.
 		try {
@@ -318,10 +324,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return true;
 	}
 
+	@Override
 	public Object getClient() {
 		return parent.getClient();
 	}
 
+	@Override
 	public ClientRequester getClientRequest() {
 		return parent;
 	}
@@ -351,6 +359,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return true;
 	}
 
+	@Override
 	public synchronized Object[] sendableKeys() {
 		if(finished)
 			return new Object[] {};
@@ -358,10 +367,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			return new Object[] { new Integer(0) };
 	}
 
+	@Override
 	public synchronized Object[] allKeys() {
 		return sendableKeys();
 	}
 
+	@Override
 	public synchronized Object chooseKey(KeysFetchingLocally ignored) {
 		if(finished) return null;
 		else return new Integer(0);

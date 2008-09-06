@@ -62,7 +62,8 @@ public class SSKBlock implements KeyBlock {
     
     static final short ENCRYPTED_HEADERS_LENGTH = 36;
     
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
     	if(!(o instanceof SSKBlock)) return false;
     	SSKBlock block = (SSKBlock)o;
 
@@ -80,7 +81,8 @@ public class SSKBlock implements KeyBlock {
     	return true;
     }
     
-    public int hashCode(){
+    @Override
+	public int hashCode(){
     	return super.hashCode();
     }
     

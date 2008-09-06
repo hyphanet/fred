@@ -20,16 +20,19 @@ public class GetRequestStatusMessage extends FCPMessage {
 		this.onlyData = Fields.stringToBool(fs.get("OnlyData"), false);
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("Identifier", identifier);
 		return fs;
 	}
 
+	@Override
 	public String getName() {
 		return NAME;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		ClientRequest req;

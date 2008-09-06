@@ -26,11 +26,13 @@ class USKChecker extends BaseSingleFileFetcher {
 		this.cb = cb;
 	}
 	
+	@Override
 	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, RequestScheduler sched) {
 		unregister(false);
 		cb.onSuccess((ClientSSKBlock)block);
 	}
 
+	@Override
 	public void onFailure(LowLevelGetException e, Object token, RequestScheduler sched) {
         if(Logger.shouldLog(Logger.MINOR, this))
         	Logger.minor(this, "onFailure: "+e+" for "+this);
@@ -79,10 +81,12 @@ class USKChecker extends BaseSingleFileFetcher {
 			cb.onNetworkError();
 	}
 
+	@Override
 	public String toString() {
 		return "USKChecker for "+key.getURI()+" for "+cb;
 	}
 
+	@Override
 	public short getPriorityClass() {
 		return cb.getPriority();
 	}

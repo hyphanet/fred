@@ -19,6 +19,7 @@ public class ByteArrayWrapper {
 		hashCode = Fields.hashCode(buf);
 	}
 	
+	@Override
 	public boolean equals(Object o) {
 		if(o instanceof ByteArrayWrapper) {
 			ByteArrayWrapper b = (ByteArrayWrapper) o;
@@ -28,6 +29,7 @@ public class ByteArrayWrapper {
 		return false;
 	}
 	
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}

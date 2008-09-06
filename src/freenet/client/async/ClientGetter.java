@@ -232,14 +232,17 @@ public class ClientGetter extends BaseClientGetter {
 		}
 	}
 
+	@Override
 	public synchronized boolean isFinished() {
 		return finished || cancelled;
 	}
 
+	@Override
 	public FreenetURI getURI() {
 		return uri;
 	}
 
+	@Override
 	public void notifyClients() {
 		ctx.eventProducer.produceEvent(new SplitfileProgressEvent(this.totalBlocks, this.successfulBlocks, this.failedBlocks, this.fatallyFailedBlocks, this.minSuccessBlocks, this.blockSetFinalized));
 	}
@@ -250,6 +253,7 @@ public class ClientGetter extends BaseClientGetter {
 		blockSetFinalized();
 	}
 
+	@Override
 	public void onTransition(ClientGetState oldState, ClientGetState newState) {
 		synchronized(this) {
 			if(currentState == oldState) {

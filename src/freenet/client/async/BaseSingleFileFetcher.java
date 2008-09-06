@@ -36,31 +36,38 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		cooldownWakeupTime = -1;
 	}
 
+	@Override
 	public Object[] allKeys() {
 		return keys;
 	}
 	
+	@Override
 	public Object[] sendableKeys() {
 		return keys;
 	}
 	
+	@Override
 	public Object chooseKey(KeysFetchingLocally fetching) {
 		if(fetching.hasKey(key.getNodeKey())) return null;
 		return keys[0];
 	}
 	
+	@Override
 	public boolean hasValidKeys(KeysFetchingLocally fetching) {
 		return !fetching.hasKey(key.getNodeKey());
 	}
 	
+	@Override
 	public ClientKey getKey(Object token) {
 		return key;
 	}
 	
+	@Override
 	public FetchContext getContext() {
 		return ctx;
 	}
 
+	@Override
 	public boolean isSSK() {
 		return key instanceof ClientSSK;
 	}
@@ -95,18 +102,22 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return false;
 	}
 
+	@Override
 	public int getRetryCount() {
 		return retryCount;
 	}
 
+	@Override
 	public ClientRequester getClientRequest() {
 		return parent;
 	}
 
+	@Override
 	public short getPriorityClass() {
 		return parent.getPriorityClass();
 	}
 
+	@Override
 	public boolean ignoreStore() {
 		return ctx.ignoreStore;
 	}
@@ -118,6 +129,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		super.unregister(false);
 	}
 
+	@Override
 	public synchronized boolean isCancelled() {
 		return cancelled;
 	}
@@ -126,10 +138,12 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return cancelled;
 	}
 	
+	@Override
 	public Object getClient() {
 		return parent.getClient();
 	}
 
+	@Override
 	public boolean dontCache() {
 		return !ctx.cacheLocalRequests;
 	}
@@ -139,6 +153,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 		return true;
 	}
 
+	@Override
 	public void onGotKey(Key key, KeyBlock block, RequestScheduler sched) {
 		synchronized(this) {
 			if(isCancelled()) return;
@@ -156,18 +171,22 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 	}
 	
 
+	@Override
 	public long getCooldownWakeup(Object token) {
 		return cooldownWakeupTime;
 	}
 	
+	@Override
 	public long getCooldownWakeupByKey(Key key) {
 		return cooldownWakeupTime;
 	}
 	
+	@Override
 	public synchronized void resetCooldownTimes() {
 		cooldownWakeupTime = -1;
 	}
 	
+	@Override
 	public void requeueAfterCooldown(Key key, long time) {
 		if(cooldownWakeupTime > time) {
 			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Not requeueing as deadline has not passed yet");

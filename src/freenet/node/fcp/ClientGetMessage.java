@@ -195,6 +195,7 @@ public class ClientGetMessage extends FCPMessage {
 		binaryBlob = Fields.stringToBool(fs.get("BinaryBlob"), false);
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("IgnoreDS", Boolean.toString(ignoreDS));
@@ -213,10 +214,12 @@ public class ClientGetMessage extends FCPMessage {
 		return returnTypeString(returnType);
 	}
 
+	@Override
 	public String getName() {
 		return NAME;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node) {
 		handler.startClientGet(this);
 	}

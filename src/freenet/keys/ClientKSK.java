@@ -23,6 +23,7 @@ public class ClientKSK extends InsertableClientSSK {
 		this.keyword = keyword;
 	}
 
+	@Override
 	public FreenetURI getURI() {
 		return new FreenetURI("KSK", keyword);
 	}

@@ -123,12 +123,14 @@ public class ClientCHK extends ClientKey {
 		return extra;
 	}
 	
-    public String toString() {
+    @Override
+	public String toString() {
         return super.toString()+ ':' +Base64.encode(routingKey)+ ',' +
         	Base64.encode(cryptoKey)+ ',' +compressionAlgorithm+ ',' +controlDocument+
                 ',' +cryptoAlgorithm;
     }
 
+	@Override
 	public Key getNodeKey() {
 		return getNodeCHK();
 	}
@@ -145,7 +147,8 @@ public class ClientCHK extends ClientKey {
     /**
      * @return URI form of this key.
      */
-    public FreenetURI getURI() {
+    @Override
+	public FreenetURI getURI() {
         byte[] extra = getExtra();
         return new FreenetURI("CHK", null, routingKey, cryptoKey, extra);
     }

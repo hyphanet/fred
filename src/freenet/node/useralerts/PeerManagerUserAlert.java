@@ -56,6 +56,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		this.n = n;
 	}
 	
+	@Override
 	public String getTitle() {
 		if(!isOpennetEnabled) {
 			if(peers == 0)
@@ -86,6 +87,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		else throw new IllegalArgumentException("Not valid");
 	}
 	
+	@Override
 	public String getShortText() {
 		return getTitle();
 	}
@@ -102,6 +104,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		return L10n.getString("PeerManagerUserAlert."+key);
 	}
 
+	@Override
 	public String getText() {
 		String s;
 		if(peers == 0 && !isOpennetEnabled) {
@@ -170,6 +173,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		return sb.toString();
 	}
 	
+	@Override
 	public HTMLNode getHTMLText() {
 		HTMLNode alertNode = new HTMLNode("div");
 
@@ -217,6 +221,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		return alertNode;
 	}
 
+	@Override
 	public short getPriorityClass() {
 		if(peers == 0 && !isOpennetEnabled)
 			return UserAlert.CRITICAL_ERROR;
@@ -249,6 +254,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		return ERROR;
 	}
 
+	@Override
 	public boolean isValid() {
 		// only update here so we don't get odd behavior with it fluctuating
 		bwlimitDelayTime = (int) n.getBwlimitDelayTime();

@@ -33,6 +33,7 @@ public class StandardOnionFECCodec extends FECCodec {
 			this.k = k;
 		}
 		
+		@Override
 		public boolean equals(Object o) {
 			if(o instanceof MyKey) {
 				MyKey key = (MyKey)o;
@@ -40,6 +41,7 @@ public class StandardOnionFECCodec extends FECCodec {
 			} else return false;
 		}
 		
+		@Override
 		public int hashCode() {
 			return (n << 16) + k;
 		}
@@ -93,10 +95,12 @@ public class StandardOnionFECCodec extends FECCodec {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
+	@Override
 	public int countCheckBlocks() {
 		return n-k;
 	}
 	
+	@Override
 	public String toString() {
 		return super.toString()+":n="+n+",k="+k;
 	}

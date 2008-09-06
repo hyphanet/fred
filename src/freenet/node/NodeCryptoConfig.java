@@ -58,6 +58,7 @@ public class NodeCryptoConfig {
 		this.isOpennet = isOpennet;
 		
 		config.register("listenPort", -1 /* means random */, sortOrder++, true, true, "Node.port", "Node.portLong",	new IntCallback() {
+			@Override
 			public Integer get() {
 				synchronized(NodeCryptoConfig.class) {
 					if(crypto != null)
@@ -65,6 +66,7 @@ public class NodeCryptoConfig {
 					return portNumber;
 				}
 			}
+			@Override
 			public void set(Integer val) throws InvalidConfigValueException {
 				
 				if(portNumber < -1 || portNumber == 0 || portNumber > 65535) {
@@ -81,6 +83,7 @@ public class NodeCryptoConfig {
 					portNumber = val;
 				}
 			}
+			@Override
 			public boolean isReadOnly() {
 				        return true;
 			        }		
@@ -108,12 +111,14 @@ public class NodeCryptoConfig {
 		config.register("testingDropPacketsEvery", 0, sortOrder++, true, false, "Node.dropPacketEvery", "Node.dropPacketEveryLong",
 				new IntCallback() {
 
+					@Override
 					public Integer get() {
 						synchronized(NodeCryptoConfig.this) {
 							return dropProbability;
 						}
 					}
 
+					@Override
 					public void set(Integer val) throws InvalidConfigValueException {
 						if(val < 0) throw new InvalidConfigValueException("testingDropPacketsEvery must not be negative");
 						synchronized(NodeCryptoConfig.this) {
@@ -130,12 +135,14 @@ public class NodeCryptoConfig {
 		config.register("oneConnectionPerIP", isOpennet, sortOrder++, true, false, "Node.oneConnectionPerIP", "Node.oneConnectionPerIPLong",
 				new BooleanCallback() {
 
+					@Override
 					public Boolean get() {
 						synchronized(NodeCryptoConfig.this) {
 							return oneConnectionPerAddress;
 						}
 					}
 
+					@Override
 					public void set(Boolean val) throws InvalidConfigValueException {
 						synchronized(NodeCryptoConfig.this) {
 							oneConnectionPerAddress = val;
@@ -164,12 +171,14 @@ public class NodeCryptoConfig {
 		config.register("alwaysAllowLocalAddresses", !isOpennet, sortOrder++, true, false, "Node.alwaysAllowLocalAddresses", "Node.alwaysAllowLocalAddressesLong",
 				new BooleanCallback() {
 
+					@Override
 					public Boolean get() {
 						synchronized(NodeCryptoConfig.this) {
 							return alwaysAllowLocalAddresses;
 						}
 					}
 
+					@Override
 					public void set(Boolean val) throws InvalidConfigValueException {
 						synchronized(NodeCryptoConfig.this) {
 							alwaysAllowLocalAddresses = val;
@@ -193,10 +202,12 @@ public class NodeCryptoConfig {
 		
 		config.register("assumeNATed", true, sortOrder++, true, true, "Node.assumeNATed", "Node.assumeNATedLong", new BooleanCallback() {
 
+			@Override
 			public Boolean get() {
 				return assumeNATed;
 			}
 
+			@Override
 			public void set(Boolean val) throws InvalidConfigValueException {
 				assumeNATed = val;
 			}		
@@ -207,10 +218,12 @@ public class NodeCryptoConfig {
 		
 		config.register("includeLocalAddressesInNoderefs", !isOpennet, sortOrder++, true, false, "NodeIPDectector.inclLocalAddress", "NodeIPDectector.inclLocalAddressLong", new BooleanCallback() {
 
+			@Override
 			public Boolean get() {
 				return includeLocalAddressesInNoderefs;
 			}
 
+			@Override
 			public void set(Boolean val) throws InvalidConfigValueException {
 				includeLocalAddressesInNoderefs = val;
 			}
@@ -246,15 +259,18 @@ public class NodeCryptoConfig {
 	
 	class NodeBindtoCallback extends StringCallback  {
 		
+		@Override
 		public String get() {
 			return bindTo.toString();
 		}
 		
+		@Override
 		public void set(String val) throws InvalidConfigValueException {
 			if(val.equals(get())) return;
 			// FIXME why not? Can't we use freenet.io.NetworkInterface like everywhere else, just adapt it for UDP?
 			throw new InvalidConfigValueException("Cannot be updated on the fly");
 		}
+		@Override
 		public boolean isReadOnly() {
 			return true;
 		}

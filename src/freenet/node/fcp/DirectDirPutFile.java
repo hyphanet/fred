@@ -50,6 +50,7 @@ public class DirectDirPutFile extends DirPutFile {
 		BucketTools.copyTo(data, os, length);
 	}
 
+	@Override
 	public Bucket getData() {
 		return data;
 	}

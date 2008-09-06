@@ -360,6 +360,7 @@ public class ClientPut extends ClientPutBase {
 		
 	}
 
+	@Override
 	public void start() {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Starting "+this+" : "+identifier);
@@ -388,12 +389,14 @@ public class ClientPut extends ClientPutBase {
 		}
 	}
 
+	@Override
 	protected void freeData() {
 		if(data == null) return;
 		finishedSize=data.size();
 		data.free();
 	}
 	
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = super.getFieldSet();
 		// This is all fixed, so no need for synchronization.
@@ -422,20 +425,24 @@ public class ClientPut extends ClientPutBase {
 		return fs;
 	}
 
+	@Override
 	protected freenet.client.async.ClientRequester getClientRequest() {
 		return putter;
 	}
 
+	@Override
 	protected FCPMessage persistentTagMessage() {
 		return new PersistentPut(identifier, publicURI, verbosity, priorityClass, uploadFrom, targetURI, 
 				persistenceType, origFilename, clientMetadata.getMIMEType(), client.isGlobalQueue,
 				getDataSize(), clientToken, started, ctx.maxInsertRetries, targetFilename, binaryBlob);
 	}
 
+	@Override
 	protected String getTypeName() {
 		return "PUT";
 	}
 
+	@Override
 	public boolean hasSucceeded() {
 		return succeeded;
 	}
@@ -465,6 +472,7 @@ public class ClientPut extends ClientPutBase {
 		return clientMetadata.getMIMEType();
 	}
 
+	@Override
 	public boolean canRestart() {
 		if(!finished) {
 			Logger.minor(this, "Cannot restart because not finished for "+identifier);
@@ -477,6 +485,7 @@ public class ClientPut extends ClientPutBase {
 		return putter.canRestart();
 	}
 
+	@Override
 	public boolean restart() {
 		if(!canRestart()) return false;
 		setVarsRestart();
