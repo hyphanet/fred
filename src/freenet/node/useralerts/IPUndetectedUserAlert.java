@@ -43,7 +43,7 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 
 	public HTMLNode getHTMLText() {
 		SubConfig sc = node.config.get("node");
-		Option o = sc.getOption("tempIPAddressHint");
+		Option<?> o = sc.getOption("tempIPAddressHint");
 		
 		HTMLNode textNode = new HTMLNode("div");
 		L10n.addL10nSubstitution(textNode, "IPUndetectedUserAlert."+(node.ipDetector.isDetecting() ? "detectingWithConfigLink" : "unknownAddressWithConfigLink"), 

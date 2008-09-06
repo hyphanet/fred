@@ -32,7 +32,7 @@ public class InvalidAddressOverrideUserAlert extends AbstractUserAlert {
 
 	public HTMLNode getHTMLText() {
 		SubConfig sc = node.config.get("node");
-		Option o = sc.getOption("ipAddressOverride");
+		Option<?> o = sc.getOption("ipAddressOverride");
 		
 		HTMLNode textNode = new HTMLNode("div");
 		L10n.addL10nSubstitution(textNode, "InvalidAddressOverrideUserAlert.unknownAddressWithConfigLink", 
