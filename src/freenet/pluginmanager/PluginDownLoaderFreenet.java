@@ -20,6 +20,7 @@ public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
 		this.hlsc = hlsc;
 	}
 
+	@Override
 	public FreenetURI checkSource(String source) throws PluginNotFoundException {
 		try {
 			return new FreenetURI(source);

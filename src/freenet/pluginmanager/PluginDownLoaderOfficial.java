@@ -26,6 +26,7 @@ public class PluginDownLoaderOfficial extends PluginDownLoaderURL {
 	private static final String certurl = "freenet/clients/http/staticfiles/startssl.pem";
 	private static final String certfile = "startssl.pem";
 
+	@Override
 	public URL checkSource(String source) throws PluginNotFoundException {
 		return super.checkSource("https://checksums.freenetproject.org/latest/" +
 		source + ".jar");

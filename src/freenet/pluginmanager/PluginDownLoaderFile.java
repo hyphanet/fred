@@ -10,6 +10,7 @@ import java.io.InputStream;
 
 public class PluginDownLoaderFile extends PluginDownLoader<File> {
 
+	@Override
 	public File checkSource(String source) {
 		return new File(source);
 	}
