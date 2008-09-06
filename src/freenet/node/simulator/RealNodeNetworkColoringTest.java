@@ -142,10 +142,10 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
         RunningAverage aRate = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 500, null);
 		RunningAverage bRate = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 500, null);
 		RunningAverage bridgeRate = new BootstrappingDecayingRunningAverage(0.0, 0.0, 1.0, 500, null);
-		HashSet generalIds=new HashSet();
-		HashSet aIds=new HashSet();
-		HashSet bIds=new HashSet();
-		HashSet bridgeIds=new HashSet();
+		HashSet<Integer> generalIds = new HashSet<Integer>();
+		HashSet<Integer> aIds = new HashSet<Integer>();
+		HashSet<Integer> bIds = new HashSet<Integer>();
+		HashSet<Integer> bridgeIds = new HashSet<Integer>();
         while(true) {
             cycleNumber++;
 			
@@ -239,13 +239,13 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
 		}
     }
 	
-	private static void idReport(String group, HashSet ids, int targetNum) {
+	private static void idReport(String group, HashSet<Integer> ids, int targetNum) {
 		//Print out the number which are non-zero & display the distinct ones if a few...
 		int size=ids.size();
 		int MAX=6;
 		StringBuilder sb=new StringBuilder(Integer.toString(size)).append("/").append(Integer.toString(targetNum));
 		sb.append(" ids (").append(group).append(") = ");
-		Iterator iter=ids.iterator();
+		Iterator<Integer> iter = ids.iterator();
 		for (int i=0; i<=MAX && i<size; i++) {
 			String thisId=iter.next().toString();
 			if (i==0)
