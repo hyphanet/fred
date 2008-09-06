@@ -338,7 +338,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	}
 	
 	/** This is after any retries and therefore is either out-of-retries or fatal */
-	public synchronized void onFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg) {
+	public void onFatalFailure(FetchException e, int blockNo, SplitFileFetcherSubSegment seg) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Permanently failed block: "+blockNo+" on "+this+" : "+e, e);
 		boolean allFailed;
