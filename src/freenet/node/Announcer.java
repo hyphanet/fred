@@ -37,7 +37,7 @@ public class Announcer {
 	private static boolean logMINOR;
 	private final Node node;
 	private final OpennetManager om;
-	private static int status;
+	private int status;
 	private static final int STATUS_LOADING = 0;
 	private static final int STATUS_CONNECTING_SEEDNODES = 1;
 	private static final int STATUS_NO_SEEDNODES = -1;
