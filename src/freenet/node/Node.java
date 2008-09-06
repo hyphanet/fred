@@ -2039,12 +2039,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM version: "+jvmVersion+", OS name: "+osName+", OS version: "+osVersion);
 		
-		if(jvmVersion.startsWith("1.4")) {
-			System.err.println("Java 1.4 will not be supported for much longer, PLEASE UPGRADE!");
-			nodeUpdater.disableThisSession();
-			clientCore.alerts.register(new SimpleUserAlert(false, l10n("java14Title"), l10n("java14Text"), l10n("java14ShortText"), UserAlert.ERROR));
-		}
-		
 		if(jvmVendor.startsWith("Sun ")) {
 			// Sun bugs
 			
