@@ -41,7 +41,7 @@ public class ModifyConfig extends FCPMessage {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
 		for(int i=0; i<sc.length ; i++){
-			Option[] o = sc[i].getOptions();
+			Option<?>[] o = sc[i].getOptions();
 			String prefix = sc[i].getPrefix();
 			String configName;
 			

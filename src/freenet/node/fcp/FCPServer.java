@@ -628,7 +628,7 @@ public class FCPServer implements Runnable {
 		if(logMINOR) Logger.minor(this, "Storing persistent requests");
 		ClientRequest[] persistentRequests = getPersistentRequests();
 		if(logMINOR) Logger.minor(this, "Persistent requests count: "+persistentRequests.length);
-		LinkedList toFree = null;
+		LinkedList<Bucket> toFree = null;
 		try {
 			synchronized(persistenceSync) {
 				toFree = core.persistentTempBucketFactory.grabBucketsToFree();
@@ -650,8 +650,8 @@ public class FCPServer implements Runnable {
 					osw = new OutputStreamWriter(gos, "UTF-8");
 					w = new BufferedWriter(osw);
 					w.write(Integer.toString(persistentRequests.length)+ '\n');
-					for(int i=0;i<persistentRequests.length;i++)
-						persistentRequests[i].write(w);
+					for (ClientRequest persistentRequest : persistentRequests)
+						persistentRequest.write(w);
 					
 					w.flush();
 					w.close();
@@ -670,9 +670,7 @@ public class FCPServer implements Runnable {
 		} finally {
 			if(toFree != null) {
 				long freedBuckets = 0;
-				Iterator it = toFree.iterator();
-				while(it.hasNext()) {
-					Bucket current = (Bucket) it.next();
+				for (Bucket current : toFree) {
 					try {
 						current.free();
 						freedBuckets++;
@@ -891,8 +889,8 @@ public class FCPServer implements Runnable {
 			clients = clientsByName.values().toArray(new FCPClient[clientsByName.size()]);
 		}
 		
-		for(int i=0;i<clients.length;i++) {
-			clients[i].finishStart();
+		for (FCPClient client : clients) {
+			client.finishStart();
 		}
 		
 		if(enablePersistentDownloads)

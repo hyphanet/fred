@@ -4,8 +4,8 @@
 package freenet.node.fcp;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -30,7 +30,7 @@ import freenet.support.io.SerializableToFieldSetBucketUtil;
 
 public class ClientPutDir extends ClientPutBase {
 
-	private final HashMap manifestElements;
+	private final HashMap<String, Object> manifestElements;
 	private SimpleManifestPutter putter;
 	private final String defaultName;
 	private final long totalSize;
@@ -39,7 +39,8 @@ public class ClientPutDir extends ClientPutBase {
 	private final boolean wasDiskPut;
 	
 	public ClientPutDir(FCPConnectionHandler handler, ClientPutDirMessage message, 
-			HashMap manifestElements, boolean wasDiskPut) throws IdentifierCollisionException, MalformedURLException {
+			HashMap<String, Object> manifestElements, boolean wasDiskPut) throws IdentifierCollisionException,
+	        MalformedURLException {
 		super(message.uri, message.identifier, message.verbosity, handler,
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
 				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode);
@@ -91,17 +92,17 @@ public class ClientPutDir extends ClientPutBase {
 		if(logMINOR) Logger.minor(this, "Putting dir "+identifier+" : "+priorityClass);
 	}
 
-	private HashMap makeDiskDirManifest(File dir, String prefix, boolean allowUnreadableFiles) throws FileNotFoundException {
+	private HashMap<String, Object> makeDiskDirManifest(File dir, String prefix, boolean allowUnreadableFiles)
+	        throws FileNotFoundException {
 
-		HashMap map = new HashMap();
+		HashMap<String, Object> map = new HashMap<String, Object>();
 		File[] files = dir.listFiles();
 		
 		if(files == null)
 			throw new IllegalArgumentException("No such directory");
 
-		for(int i=0; i < files.length; i++) {
+		for (File f : files) {
 
-			File f = files[i];
 			if (f.exists() && f.canRead()) {
 				if(f.isFile()) {
 					FileBucket bucket = new FileBucket(f, true, false, false, false, false);
@@ -153,7 +154,7 @@ public class ClientPutDir extends ClientPutBase {
 		// Flattened for disk, sort out afterwards
 		int fileCount = 0;
 		long size = 0;
-		Vector v = new Vector();
+		Vector<ManifestElement> v = new Vector<ManifestElement>();
 		for(int i=0;;i++) {
 			String num = Integer.toString(i);
 			SimpleFieldSet subset = files.subset(num);
@@ -251,12 +252,13 @@ public class ClientPutDir extends ClientPutBase {
 		freeData(manifestElements);
 	}
 	
-	private void freeData(HashMap manifestElements) {
-		Iterator i = manifestElements.values().iterator();
+	@SuppressWarnings("unchecked")
+    private void freeData(HashMap<String, Object> manifestElements) {
+		Iterator<Object> i = manifestElements.values().iterator();
 		while(i.hasNext()) {
 			Object o = i.next();
 			if(o instanceof HashMap)
-				freeData((HashMap)o);
+				freeData((HashMap<String, Object>) o);
 			else {
 				ManifestElement e = (ManifestElement) o;
 				e.freeData();

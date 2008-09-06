@@ -23,18 +23,18 @@ public class FCPClient {
 		this.name = name2;
 		if(name == null) throw new NullPointerException();
 		this.currentConnection = handler;
-		this.runningPersistentRequests = new HashSet();
-		this.completedUnackedRequests = new Vector();
-		this.clientRequestsByIdentifier = new HashMap();
+		this.runningPersistentRequests = new HashSet<ClientRequest>();
+		this.completedUnackedRequests = new Vector<ClientRequest>();
+		this.clientRequestsByIdentifier = new HashMap<String, ClientRequest>();
 		this.server = server;
 		this.core = server.core;
 		this.client = core.makeClient((short)0);
 		this.isGlobalQueue = isGlobalQueue;
 		defaultFetchContext = client.getFetchContext();
 		defaultInsertContext = client.getInsertContext(false);
-		clientsWatching = new LinkedList();
+		clientsWatching = new LinkedList<FCPClient>();
 		watchGlobalVerbosityMask = Integer.MAX_VALUE;
-		toStart = new LinkedList();
+		toStart = new LinkedList<ClientRequest>();
 		lowLevelClient = this;
 		completionCallback = cb;
 	}
@@ -48,9 +48,9 @@ public class FCPClient {
 	/** Currently running persistent requests */
 	private final HashSet<ClientRequest> runningPersistentRequests;
 	/** Completed unacknowledged persistent requests */
-	private final Vector completedUnackedRequests;
+	private final Vector<ClientRequest> completedUnackedRequests;
 	/** ClientRequest's by identifier */
-	private final HashMap clientRequestsByIdentifier;
+	private final HashMap<String, ClientRequest> clientRequestsByIdentifier;
 	/** Client (one FCPClient = one HighLevelSimpleClient = one round-robin slot) */
 	private final HighLevelSimpleClient client;
 	public final FetchContext defaultFetchContext;
@@ -64,8 +64,8 @@ public class FCPClient {
 	/** FCPClients watching us */
 	// FIXME how do we lazily init this without synchronization problems?
 	// We obviously can't synchronize on it when it hasn't been constructed yet...
-	final LinkedList clientsWatching;
-	private final LinkedList toStart;
+	final LinkedList<FCPClient> clientsWatching;
+	private final LinkedList<ClientRequest> toStart;
 	/** Low-level client object, for freenet.client.async. Normally == this. */
 	final Object lowLevelClient;
 	private RequestCompletionCallback completionCallback;
@@ -130,7 +130,7 @@ public class FCPClient {
 			Logger.minor(this, "Registering "+cg.getIdentifier()+(startLater ? " to start later" : ""));
 		synchronized(this) {
 			String ident = cg.getIdentifier();
-			ClientRequest old = (ClientRequest) clientRequestsByIdentifier.get(ident);
+			ClientRequest old = clientRequestsByIdentifier.get(ident);
 			if((old != null) && (old != cg))
 				throw new IdentifierCollisionException();
 			if(cg.hasFinished()) {
@@ -148,7 +148,7 @@ public class FCPClient {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "removeByIdentifier("+identifier+ ',' +kill+ ')');
 		synchronized(this) {
-			req = (ClientRequest) clientRequestsByIdentifier.get(identifier);
+			req = clientRequestsByIdentifier.get(identifier);
 			if(req == null)
 				throw new MessageInvalidException(ProtocolErrorMessage.NO_SUCH_IDENTIFIER, "Not in hash", identifier, isGlobalQueue);
 			else if(!(runningPersistentRequests.remove(req) || completedUnackedRequests.remove(req)))
@@ -173,7 +173,7 @@ public class FCPClient {
 		synchronized(this) {
 			Iterator<ClientRequest> i = runningPersistentRequests.iterator();
 			while(i.hasNext()) {
-				ClientRequest req = (ClientRequest) i.next();
+				ClientRequest req = i.next();
 				if(req.isPersistentForever() || !onlyForever)
 					v.add(req);
 			}
@@ -217,7 +217,7 @@ public class FCPClient {
 		FCPClient[] clients;
 		if(isGlobalQueue) {
 			synchronized(clientsWatching) {
-				clients = (FCPClient[]) clientsWatching.toArray(new FCPClient[clientsWatching.size()]);
+				clients = clientsWatching.toArray(new FCPClient[clientsWatching.size()]);
 			}
 			for(int i=0;i<clients.length;i++)
 				clients[i].queueClientRequestMessage(msg, verbosityLevel);
@@ -239,7 +239,7 @@ public class FCPClient {
 	}
 
 	public synchronized ClientRequest getRequest(String identifier) {
-		return (ClientRequest) clientRequestsByIdentifier.get(identifier);
+		return clientRequestsByIdentifier.get(identifier);
 	}
 
 	/**
@@ -248,7 +248,7 @@ public class FCPClient {
 	public void finishStart() {
 		ClientRequest[] reqs;
 		synchronized(this) {
-			reqs = (ClientRequest[]) toStart.toArray(new ClientRequest[toStart.size()]);
+			reqs = toStart.toArray(new ClientRequest[toStart.size()]);
 		}
 		for(int i=0;i<reqs.length;i++)
 			reqs[i].start();

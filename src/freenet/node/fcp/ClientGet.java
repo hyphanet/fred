@@ -295,8 +295,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 		String[] allowed = fs.getAll("AllowedMIMETypes");
 		if(allowed != null) {
-			fctx.allowedMIMETypes = new HashSet();
-			for(int i=0;i<allowed.length;i++) fctx.allowedMIMETypes.add(allowed[i]);
+			fctx.allowedMIMETypes = new HashSet<String>();
+			for (String a : allowed)
+				fctx.allowedMIMETypes.add(a);
 		}
 
 		getter = new ClientGetter(this, client.core.requestStarters.chkFetchScheduler, 

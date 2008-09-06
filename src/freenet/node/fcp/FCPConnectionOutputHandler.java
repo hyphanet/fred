@@ -14,11 +14,11 @@ import freenet.support.OOMHandler;
 public class FCPConnectionOutputHandler implements Runnable {
 
 	final FCPConnectionHandler handler;
-	final LinkedList outQueue;
+	final LinkedList<FCPMessage> outQueue;
 	
 	public FCPConnectionOutputHandler(FCPConnectionHandler handler) {
 		this.handler = handler;
-		this.outQueue = new LinkedList();
+		this.outQueue = new LinkedList<FCPMessage>();
 	}
 
 	void start() {
@@ -59,7 +59,7 @@ public class FCPConnectionOutputHandler implements Runnable {
 						}
 						continue;
 					}
-					msg = (FCPMessage) outQueue.removeFirst();
+					msg = outQueue.removeFirst();
 					break;
 				}
 			}

@@ -26,16 +26,16 @@ public class PersistentPutDir extends FCPMessage {
 	final short priorityClass;
 	final short persistenceType; 
 	final boolean global;
-	private final HashMap manifestElements;
+	private final HashMap<String, Object> manifestElements;
 	final String defaultName;
 	final String token;
 	final boolean started;
 	final int maxRetries;
 	final boolean wasDiskPut;
 	
-	public PersistentPutDir(String identifier, FreenetURI uri, int verbosity, 
-			short priorityClass, short persistenceType, boolean global,
-			String defaultName, HashMap manifestElements, String token, boolean started, int maxRetries, boolean wasDiskPut) {
+	public PersistentPutDir(String identifier, FreenetURI uri, int verbosity, short priorityClass,
+	        short persistenceType, boolean global, String defaultName, HashMap<String, Object> manifestElements,
+	        String token, boolean started, int maxRetries, boolean wasDiskPut) {
 		this.identifier = identifier;
 		this.uri = uri;
 		this.verbosity = verbosity;
