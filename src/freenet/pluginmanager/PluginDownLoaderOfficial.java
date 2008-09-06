@@ -78,10 +78,10 @@ public class PluginDownLoaderOfficial extends PluginDownLoaderURL {
 			is = getCert();
 
 			CertificateFactory cf = CertificateFactory.getInstance("X.509");
-			Collection c = cf.generateCertificates(is);
-			Iterator it = c.iterator();
+			Collection<? extends Certificate> c = cf.generateCertificates(is);
+			Iterator<? extends Certificate> it = c.iterator();
 			while(it.hasNext()) {
-				Certificate cert = (Certificate) it.next();
+				Certificate cert = it.next();
 				ks.setCertificateEntry(cert.getPublicKey().toString(), cert);
 			}
 			FileOutputStream tmpFOS = new FileOutputStream(TMP_KEYSTORE);

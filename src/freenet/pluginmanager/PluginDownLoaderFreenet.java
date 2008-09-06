@@ -14,13 +14,9 @@ import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 
 public class PluginDownLoaderFreenet extends PluginDownLoader<FreenetURI> {
-	
-	private boolean logMINOR;
-
 	final HighLevelSimpleClient hlsc;
 
 	PluginDownLoaderFreenet(HighLevelSimpleClient hlsc) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.hlsc = hlsc;
 	}
 

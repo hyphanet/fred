@@ -8,6 +8,7 @@ import freenet.support.Logger;
 
 public class PluginInfoWrapper {
 	// Parameters to make the object OTP
+	@SuppressWarnings("unused")
 	private boolean fedPluginThread = false;
 	// Public since only PluginHandler will know about it
 	private final String className;
@@ -89,7 +90,7 @@ public class PluginInfoWrapper {
 	
 	public synchronized boolean addPluginToadletSymlink(String linkfrom){
 		if (toadletLinks.size() < 1)
-			toadletLinks = new HashSet();
+			toadletLinks = new HashSet<String>();
 		return toadletLinks.add(linkfrom);
 	}
 	
