@@ -6,6 +6,7 @@ package freenet.plugin.api;
 /**
  * Base class of exceptions thrown when a plugin fetch fails.
  */
+@SuppressWarnings("serial")
 public abstract class PluginFetchException extends Exception {
 
 }
