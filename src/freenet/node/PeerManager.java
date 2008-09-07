@@ -875,7 +875,6 @@ public class PeerManager {
 		long now = System.currentTimeMillis();
 		int count = 0;
 		
-		Long selectionSamplesTimestamp = now - PeerNode.SELECTION_SAMPLING_PERIOD;
 		double[] selectionRates = new double[peers.length];
 		double totalSelectionRate = 0.0;
 		for(int i=0;i<peers.length;i++) {
