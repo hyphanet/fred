@@ -305,6 +305,8 @@ public class DoublyLinkedListImplTest extends TestCase {
 		((T) list.shift()).assertV(2);
 		((T) list.shift()).assertV(4);
 		((T) list.shift()).assertV(3);
+
+		assertNull(list.remove(new T(-1)));
 	}
 
 	public void testRandomShiftPush() {

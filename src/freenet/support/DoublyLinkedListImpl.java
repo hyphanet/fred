@@ -270,11 +270,8 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
      * {@inheritDoc}
      */
     public DoublyLinkedList.Item<T> remove(DoublyLinkedList.Item<T> i) {
-    	if (i.getParent() == null) return null; // not in list
-    	if(isEmpty()) {
-    		Logger.error(this, "Illegal ERROR: Removing from an empty list!!");
-    		throw new IllegalStateException("Illegal ERROR: Removing from an empty list!!");
-    	}
+    	if (i.getParent() == null || isEmpty())
+			return null; // not in list
     	if (i.getParent() != this)
     		throw new PromiscuousItemException(i, i.getParent());
         DoublyLinkedList.Item<T> next = i.getNext(), prev = i.getPrev();
