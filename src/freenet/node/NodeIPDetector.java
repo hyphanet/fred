@@ -24,7 +24,6 @@ import freenet.pluginmanager.FredPluginIPDetector;
 import freenet.pluginmanager.FredPluginPortForward;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
-import freenet.support.api.BooleanCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPAddressDetector;
@@ -59,7 +58,7 @@ public class NodeIPDetector {
 	private static InvalidAddressOverrideUserAlert invalidAddressOverrideAlert;
 	private boolean hasValidAddressOverride;
 	/** UserAlert shown when we can't detect an IP address */
-	private static IPUndetectedUserAlert primaryIPUndetectedAlert;
+	private IPUndetectedUserAlert primaryIPUndetectedAlert;
 	// FIXME redundant? see lastIPAddress
 	FreenetInetAddress[] lastIP;
 	/** Set when we have grounds to believe that we may be behind a symmetric NAT. */
