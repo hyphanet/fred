@@ -17,12 +17,13 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.nio.charset.MalformedInputException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.Vector;
 
 import freenet.l10n.L10n;
 import freenet.support.HTMLDecoder;
@@ -151,7 +152,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			 */
 			StringBuilder b = new StringBuilder(100);
 			StringBuilder balt = new StringBuilder(4000);
-			Vector<String> splitTag = new Vector<String>();
+			List<String> splitTag = new ArrayList<String>();
 			String currentTag = null;
 			char pprevC = 0;
 			char prevC = 0;
@@ -403,7 +404,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		w.write(sout);
 	}
 
-	void processTag(Vector<String> splitTag, Writer w, HTMLParseContext pc)
+	void processTag(List<String> splitTag, Writer w, HTMLParseContext pc)
 		throws IOException, DataFilterException {
 		// First, check that it is a recognized tag
 		if(logDEBUG) {
@@ -499,7 +500,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			this.endSlash = t.endSlash;
 		}
 
-		public ParsedTag(Vector<String> v) {
+		public ParsedTag(List<String> v) {
 			int len = v.size();
 			if (len == 0) {
 				element = null;
@@ -507,26 +508,26 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				startSlash = endSlash = false;
 				return;
 			}
-			String s = v.elementAt(len - 1);
+			String s = v.get(len - 1);
 			if (((len - 1 != 0) || (s.length() > 1)) && s.endsWith("/")) {
 				s = s.substring(0, s.length() - 1);
-				v.setElementAt(s, len - 1);
+				v.set(len - 1, s);
 				if (s.length() == 0)
 					len--;
 				endSlash = true;
 				// Don't need to set it back because everything is an I-value
 			} else endSlash = false;
-			s = v.elementAt(0);
+			s = v.get(0);
 			if ((s.length() > 1) && s.startsWith("/")) {
 				s = s.substring(1);
-				v.setElementAt(s, 0);
+				v.set(0, s);
 				startSlash = true;
 			} else startSlash = false;
-			element = v.elementAt(0);
+			element = v.get(0);
 			if (len > 1) {
 				unparsedAttrs = new String[len - 1];
 				for (int x = 1; x < len; x++)
-					unparsedAttrs[x - 1] = v.elementAt(x);
+					unparsedAttrs[x - 1] = v.get(x);
 			} else
 				unparsedAttrs = new String[0];
 			if(logDEBUG) Logger.debug(this, "Element = "+element);
