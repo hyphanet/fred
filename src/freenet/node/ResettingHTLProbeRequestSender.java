@@ -101,7 +101,6 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
 		int routeAttempts=0;
 		int rejectOverloads=0;
         HashSet nodesRoutedTo = new HashSet();
-        HashSet nodesNotIgnored = new HashSet();
         while(true) {
             if(logMINOR) Logger.minor(this, "htl="+htl);
             if(htl == 0) {
@@ -113,7 +112,8 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
             
             // Route it
             PeerNode next;
-            next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null, null);
+            next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
+			        null);
             
             if(next == null) {
 				if (logMINOR && rejectOverloads>0)

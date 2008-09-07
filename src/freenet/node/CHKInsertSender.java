@@ -269,7 +269,6 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     
     private void realRun() {
         HashSet nodesRoutedTo = new HashSet();
-        HashSet nodesNotIgnored = new HashSet();
         
         PeerNode next = null;
         while(true) {
@@ -296,7 +295,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
             }
             // Route it
             // Can backtrack, so only route to nodes closer than we are to target.
-            next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null, null);
+            next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
+			        null);
 			
             if(next == null) {
                 // Backtrack

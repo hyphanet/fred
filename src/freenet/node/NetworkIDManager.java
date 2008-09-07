@@ -17,7 +17,6 @@ import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
-
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.math.BootstrappingDecayingRunningAverage;
@@ -157,14 +156,14 @@ public class NetworkIDManager implements Runnable, Comparator {
 				//Not a local match... forward
 				double target=m.getDouble(DMT.TARGET_LOCATION);
 				HashSet routedTo=new HashSet();
-				HashSet notIgnored=new HashSet();
 				while (true) {
 					PeerNode next;
 					
 					if (htl > dawnHtl && routedTo.isEmpty()) {
 						next=node.peers.getRandomPeer(source);
 					} else {
-						next=node.peers.closerPeer(source, routedTo, notIgnored, target, true, node.isAdvancedModeEnabled(), -1, null, null);
+						next = node.peers.closerPeer(source, routedTo, target, true, node.isAdvancedModeEnabled(), -1,
+						        null, null);
 					}
 					
 					if (next==null) {
@@ -440,14 +439,14 @@ public class NetworkIDManager implements Runnable, Comparator {
 			PeerNode target=processing;
 			double randomTarget=node.random.nextDouble();
 			HashSet nodesRoutedTo = new HashSet();
-			PeerNode next = node.peers.closerPeer(target, nodesRoutedTo, null, randomTarget, true, false, -1, null, null);
+			PeerNode next = node.peers.closerPeer(target, nodesRoutedTo, randomTarget, true, false, -1, null, null);
 			while (next!=null && target.isRoutable() && !processingRace) {
 				nodesRoutedTo.add(next);
 				//the order is not that important, but for all connected peers try to ping 'target'
 				blockingUpdatePingRecord(target, next);
 				//Since we are causing traffic to 'target'
 				betweenPingSleep(target);
-				next = node.peers.closerPeer(target, nodesRoutedTo, null, randomTarget, true, false, -1, null, null);
+				next = node.peers.closerPeer(target, nodesRoutedTo, randomTarget, true, false, -1, null, null);
 			}
 		}
 		boolean didAnything;
@@ -576,10 +575,10 @@ public class NetworkIDManager implements Runnable, Comparator {
 	private HashSet getAllConnectedPeers() {
 		double randomTarget=node.random.nextDouble();
 		HashSet connectedPeers = new HashSet();
-		PeerNode next = node.peers.closerPeer(null, connectedPeers, null, randomTarget, true, false, -1, null, null);
+		PeerNode next = node.peers.closerPeer(null, connectedPeers, randomTarget, true, false, -1, null, null);
 		while (next!=null) {
 			connectedPeers.add(next);
-			next = node.peers.closerPeer(null, connectedPeers, null, randomTarget, true, false, -1, null, null);
+			next = node.peers.closerPeer(null, connectedPeers, randomTarget, true, false, -1, null, null);
 		}
 		return connectedPeers;
 	}

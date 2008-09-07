@@ -93,7 +93,6 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		// Now route it.
 		
         HashSet nodesRoutedTo = new HashSet();
-        HashSet nodesNotIgnored = new HashSet();
     	PeerNode next = null;
         while(true) {
             if(logMINOR) Logger.minor(this, "htl="+htl);
@@ -121,7 +120,8 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
             
             if(onlyNode == null) {
             	// Route it
-            	next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null, null);
+            	next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1,
+				        null, null);
             } else {
             	next = onlyNode;
             	if(nodesRoutedTo.contains(onlyNode)) {
