@@ -71,13 +71,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private final StoreCallback callback;
 	private final boolean collisionPossible;
 	private final int headerBlockLength;
-	@SuppressWarnings("unused")
-	private final int routeKeyLength;
 	private final int fullKeyLength;
 	private final int dataBlockLength;
 	private final Random random;
-	@SuppressWarnings("unused")
-	private UserAlertManager userAlertManager;
 	
 	private long storeSize;
 	private int generation;
@@ -100,7 +96,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		this.callback = callback;
 		collisionPossible = callback.collisionPossible();
-		routeKeyLength = callback.routingKeyLength();
 		headerBlockLength = callback.headerLength();
 		fullKeyLength = callback.fullKeyLength();
 		dataBlockLength = callback.dataLength();
@@ -1430,8 +1425,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	public void setUserAlertManager(UserAlertManager userAlertManager) {
 		if (cleanerStatusUserAlert != null)
 			userAlertManager.register(cleanerStatusUserAlert);
-		// TODO change useralertmanager? is this a valid case?
-		this.userAlertManager = userAlertManager;
 	}
 
 	public void setMaxKeys(long newStoreSize, boolean shrinkNow) throws IOException {
