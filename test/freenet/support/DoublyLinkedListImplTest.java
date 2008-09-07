@@ -151,7 +151,7 @@ public class DoublyLinkedListImplTest extends TestCase {
 			tc.assertIsClone();
 		}
 	}
-	
+
 	public void testShiftN() {
 		DoublyLinkedList<T> list = new DoublyLinkedListImpl<T>();
 
@@ -167,11 +167,14 @@ public class DoublyLinkedListImplTest extends TestCase {
 
 		assertEquals("list.size()", 3, list.size());
 		((T) list.shift()).assertV(2);
-		
-		list2 = list.shift(2);
+
+		list2 = list.shift(20);
 		assertTrue("list.isEmpty()", list.isEmpty());
 		((T) list2.shift()).assertV(3);
 		((T) list2.shift()).assertV(4);
+		assertTrue("list2.isEmpty()", list2.isEmpty());
+
+		list2 = list.shift(20);
 		assertTrue("list2.isEmpty()", list2.isEmpty());
 	}
 
@@ -190,20 +193,23 @@ public class DoublyLinkedListImplTest extends TestCase {
 
 		assertEquals("list.size()", 3, list.size());
 		((T) list.pop()).assertV(2);
-		
-		list2 = list.pop(2);
+
+		list2 = list.pop(20);
 		assertTrue("list.isEmpty()", list.isEmpty());
 		((T) list2.pop()).assertV(3);
 		((T) list2.pop()).assertV(4);
 		assertTrue("list2.isEmpty()", list2.isEmpty());
+
+		list2 = list.pop(20);
+		assertTrue("list2.isEmpty()", list2.isEmpty());
 	}
-	
+
 	public void testHeadTail() {
 		DoublyLinkedList<T> list = new DoublyLinkedListImpl<T>();
-		
+
 		assertNull("head() == null", list.head());
 		assertNull("tail() == null", list.tail());
-		
+
 		T[] array = new T[5];
 		for (int i = 0; i < 5; i++) {
 			array[i] = new T(i);
@@ -226,7 +232,7 @@ public class DoublyLinkedListImplTest extends TestCase {
 		assertNull("head() == null", list.head());
 		assertNull("tail() == null", list.tail());
 	}
-	
+
 	public void testIternator() {
 		DoublyLinkedList<T> list = new DoublyLinkedListImpl<T>();
 		T[] array = new T[5];
@@ -278,5 +284,43 @@ public class DoublyLinkedListImplTest extends TestCase {
 			fail("NoSuchElementException");
 		} catch (NoSuchElementException nsee) {
 		}
+	}
+
+	public void testRandomRemovePush() {
+		DoublyLinkedList<T> list = new DoublyLinkedListImpl<T>();
+		T[] array = new T[5];
+
+		for (int i = 0; i < 5; i++) {
+			array[i] = new T(i);
+			list.push(array[i]);
+		}
+
+		assertEquals(list.remove(array[3]), array[3]);
+		list.push(array[3]);
+
+		assertNull(list.remove(new T(-1)));
+
+		((T) list.shift()).assertV(0);
+		((T) list.shift()).assertV(1);
+		((T) list.shift()).assertV(2);
+		((T) list.shift()).assertV(4);
+		((T) list.shift()).assertV(3);
+	}
+
+	public void testRandomShiftPush() {
+		DoublyLinkedList<T> list = new DoublyLinkedListImpl<T>();
+		list.push(new T(0));
+		list.push(new T(1));
+		list.unshift(new T(2));
+		list.push(new T(3));
+		list.unshift(new T(4));
+		list.unshift(new T(5));
+
+		((T) list.shift()).assertV(5);
+		((T) list.pop()).assertV(3);
+		((T) list.pop()).assertV(1);
+		((T) list.pop()).assertV(0);
+		((T) list.shift()).assertV(4);
+		((T) list.shift()).assertV(2);
 	}
 }
