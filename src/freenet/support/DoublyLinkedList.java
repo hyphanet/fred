@@ -63,10 +63,6 @@ public interface DoublyLinkedList<T> {
      */
     void unshift(DoublyLinkedList.Item<T> i);
     /**
-     * Put all items in the specified list before the first item.
-     */
-    void unshift(DoublyLinkedList<T> l);
-    /**
      * Removes and returns the first item.
      */
     Item shift();
@@ -79,10 +75,6 @@ public interface DoublyLinkedList<T> {
      * Puts the item after the last item.
      */
     void push(DoublyLinkedList.Item<T> i);
-    /**
-     * Puts all items in the specified list after the last item.
-     */
-    void push(DoublyLinkedList<T> l);
     /**
      * Removes and returns the last item.
      */
@@ -110,17 +102,9 @@ public interface DoublyLinkedList<T> {
      */
     void insertPrev(DoublyLinkedList.Item<T> i, DoublyLinkedList.Item<T> j);
     /**
-     * Inserts the entire {@link DoublyLinkedList} <code>l</code> before item <code>i</code>.
-     */
-    void insertPrev(DoublyLinkedList.Item<T> i, DoublyLinkedList<T> l);  
-    /**
      * Inserts item <code>j</code> after item <code>i</code.
      */
-    void insertNext(DoublyLinkedList.Item<T> i, DoublyLinkedList.Item<T> j);    
-    /**
-     * Inserts the entire {@link DoublyLinkedList} <code>l</code> after item <code>i</code>.
-     */
-    void insertNext(DoublyLinkedList.Item<T> i, DoublyLinkedList<T> l);
+    void insertNext(DoublyLinkedList.Item<T> i, DoublyLinkedList.Item<T> j); 
 }
 
 
