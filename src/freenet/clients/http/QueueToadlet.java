@@ -229,7 +229,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 					writePermanentRedirect(ctx, "Done", "/queue/");
 					return;
 				}
-				LinkedList success = new LinkedList(), failure = new LinkedList();
+				LinkedList<String> success = new LinkedList<String>(), failure = new LinkedList<String>();
 				
 				for(int i=0; i<keys.length; i++) {
 					String currentKey = keys[i];
@@ -250,14 +250,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 				HTMLNode alertNode = contentNode.addChild(ctx.getPageMaker().getInfobox((displayFailureBox ? "infobox-warning" : "infobox-info"), L10n.getString("QueueToadlet.downloadFiles")));
 				HTMLNode alertContent = ctx.getPageMaker().getContentNode(alertNode);
-				Iterator it;
+				Iterator<String> it;
 				if(displaySuccessBox) {
 					HTMLNode successDiv = alertContent.addChild("ul");
 					successDiv.addChild("#", L10n.getString("QueueToadlet.enqueuedSuccessfully", "number", String.valueOf(success.size())));
 					it = success.iterator();
 					while(it.hasNext()) {
 						HTMLNode line = successDiv.addChild("li");
-						line.addChild("#", (String) it.next());
+						line.addChild("#", it.next());
 					}
 					successDiv.addChild("br");
 				}
@@ -268,7 +268,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 						it = failure.iterator();
 						while(it.hasNext()) {
 							HTMLNode line = failureDiv.addChild("li");
-							line.addChild("#", (String) it.next());
+							line.addChild("#", it.next());
 						}
 					}
 					failureDiv.addChild("br");
@@ -523,18 +523,18 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		PageMaker pageMaker = ctx.getPageMaker();
 		
 		// First, get the queued requests, and separate them into different types.
-		LinkedList completedDownloadToDisk = new LinkedList();
-		LinkedList completedDownloadToTemp = new LinkedList();
-		LinkedList completedUpload = new LinkedList();
-		LinkedList completedDirUpload = new LinkedList();
+		LinkedList<ClientRequest> completedDownloadToDisk = new LinkedList<ClientRequest>();
+		LinkedList<ClientRequest> completedDownloadToTemp = new LinkedList<ClientRequest>();
+		LinkedList<ClientRequest> completedUpload = new LinkedList<ClientRequest>();
+		LinkedList<ClientRequest> completedDirUpload = new LinkedList<ClientRequest>();
 		
-		LinkedList failedDownload = new LinkedList();
-		LinkedList failedUpload = new LinkedList();
-		LinkedList failedDirUpload = new LinkedList();
+		LinkedList<ClientRequest> failedDownload = new LinkedList<ClientRequest>();
+		LinkedList<ClientRequest> failedUpload = new LinkedList<ClientRequest>();
+		LinkedList<ClientRequest> failedDirUpload = new LinkedList<ClientRequest>();
 		
-		LinkedList uncompletedDownload = new LinkedList();
-		LinkedList uncompletedUpload = new LinkedList();
-		LinkedList uncompletedDirUpload = new LinkedList();
+		LinkedList<ClientRequest> uncompletedDownload = new LinkedList<ClientRequest>();
+		LinkedList<ClientRequest> uncompletedUpload = new LinkedList<ClientRequest>();
+		LinkedList<ClientRequest> uncompletedDirUpload = new LinkedList<ClientRequest>();
 		
 		ClientRequest[] reqs = fcp.getGlobalRequests();
 		if(Logger.shouldLog(Logger.MINOR, this))
@@ -604,11 +604,8 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			}
 		}
 		
-		Comparator jobComparator = new Comparator() {
-			public int compare(Object first, Object second) {
-				ClientRequest firstRequest = (ClientRequest) first;
-				ClientRequest secondRequest = (ClientRequest) second;
-
+		Comparator<ClientRequest> jobComparator = new Comparator<ClientRequest>() {
+			public int compare(ClientRequest firstRequest, ClientRequest secondRequest) {
 				int result = 0;
 				boolean isSet = true;
 				
@@ -1077,7 +1074,8 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		return downloadBox;
 	}
 	
-	private HTMLNode createRequestTable(PageMaker pageMaker, ToadletContext ctx, List requests, int[] columns, String[] priorityClasses, boolean advancedModeEnabled, boolean isUpload) {
+	private HTMLNode createRequestTable(PageMaker pageMaker, ToadletContext ctx, List<ClientRequest> requests,
+	        int[] columns, String[] priorityClasses, boolean advancedModeEnabled, boolean isUpload) {
 		HTMLNode table = new HTMLNode("table", "class", "requests");
 		HTMLNode headerRow = table.addChild("tr", "class", "table-header");
 		headerRow.addChild("th");
@@ -1110,8 +1108,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				headerRow.addChild("th", L10n.getString("QueueToadlet.reason"));
 			}
 		}
-		for (Iterator requestItems = requests.iterator(); requestItems.hasNext(); ) {
-			ClientRequest clientRequest = (ClientRequest) requestItems.next();
+		for (ClientRequest clientRequest : requests) {
 			HTMLNode requestRow = table.addChild("tr", "class", "priority" + clientRequest.getPriority());
 			
 			requestRow.addChild(createDeleteCell(pageMaker, clientRequest.getIdentifier(), clientRequest, ctx));
@@ -1179,9 +1176,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 	/**
 	 * List of completed request identifiers which the user hasn't acknowledged yet.
 	 */
-	private final HashSet completedRequestIdentifiers = new HashSet();
+	private final HashSet<String> completedRequestIdentifiers = new HashSet<String>();
 	
-	private final HashMap alertsByIdentifier = new HashMap();
+	private final HashMap<String, UserAlert> alertsByIdentifier = new HashMap<String, UserAlert>();
 	
 	public void notifyFailure(ClientRequest req) {
 		// FIXME do something???
@@ -1211,7 +1208,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		}
 		String[] identifiers;
 		synchronized(completedRequestIdentifiers) {
-			identifiers = (String[]) completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
+			identifiers = completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
 		}
 		for(int i=0;i<identifiers.length;i++) {
 			ClientRequest req = fcp.getGlobalClient().getRequest(identifiers[i]);
@@ -1270,7 +1267,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			bw = new BufferedWriter(osw);
 			String[] identifiers;
 			synchronized(completedRequestIdentifiers) {
-				identifiers = (String[]) completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
+				identifiers = completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
 			}
 			for(int i=0;i<identifiers.length;i++)
 				bw.write(identifiers[i]+'\n');
@@ -1428,7 +1425,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		}
 		UserAlert alert;
 		synchronized(alertsByIdentifier) {
-			alert = (UserAlert) alertsByIdentifier.remove(identifier);
+			alert = alertsByIdentifier.remove(identifier);
 		}
 		core.alerts.unregister(alert);
 		saveCompletedIdentifiersOffThread();
