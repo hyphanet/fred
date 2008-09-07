@@ -49,7 +49,6 @@ import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.PeerParseException;
-import freenet.io.comm.PortForwardSensitiveSocketHandler;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
 import freenet.io.xfer.PacketThrottle;
@@ -65,7 +64,6 @@ import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
-import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
@@ -74,8 +72,6 @@ import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPUtil;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 /**
  * @author amphibian
