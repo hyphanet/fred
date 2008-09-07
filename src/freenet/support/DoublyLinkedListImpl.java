@@ -36,6 +36,13 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
         _tailptr  = _t;
         _headptr.setParent(this);
         _tailptr.setParent(this);
+        
+        DoublyLinkedList.Item i = _headptr;
+        while (i != null ) {
+        	i.setParent(this);
+        	i = i.getNext();
+        }
+        
         this.size = size;
     }
 
