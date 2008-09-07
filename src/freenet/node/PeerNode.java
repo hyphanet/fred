@@ -3723,8 +3723,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 	private boolean manyPacketsClaimedSentNotReceived = false;
 	
-	private long timeManyPacketsClaimedSentNotReceived;
-
 	synchronized boolean manyPacketsClaimedSentNotReceived() {
 		return manyPacketsClaimedSentNotReceived;
 	}
