@@ -15,12 +15,14 @@ public class DoublyLinkedListImplTest extends TestCase {
 			value = v;
 		}
 
+		@Override
 		public T clone() {
 			T c = new T(value);
 			c.isClone = true;
 			return c;
 		}
 
+		@Override
 		public String toString() {
 			if (isClone)
 				return "[" + value + "]";
@@ -38,6 +40,19 @@ public class DoublyLinkedListImplTest extends TestCase {
 
 		public void assertIsNotClone() {
 			assertFalse("isClone", isClone);
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if (o.getClass() != this.getClass())
+				return false;
+			T t = (T) o;
+			return t.value == value && t.isClone == isClone;
+		}
+
+		@Override
+		public int hashCode() {
+			return value;
 		}
 	}
 
@@ -295,10 +310,14 @@ public class DoublyLinkedListImplTest extends TestCase {
 			list.push(array[i]);
 		}
 
-		assertEquals(list.remove(array[3]), array[3]);
+		assertTrue(list.remove(array[3]) == array[3]);
 		list.push(array[3]);
 
+		// Remove non-exist item -> give null
 		assertNull(list.remove(new T(-1)));
+
+		// Remove non-identical (but equal) item -> give null
+		assertNull(list.remove(new T(2)));
 
 		((T) list.shift()).assertV(0);
 		((T) list.shift()).assertV(1);
@@ -324,5 +343,83 @@ public class DoublyLinkedListImplTest extends TestCase {
 		((T) list.pop()).assertV(0);
 		((T) list.shift()).assertV(4);
 		((T) list.shift()).assertV(2);
+	}
+
+	public void testRandomInsert() {
+		DoublyLinkedList<T> list = new DoublyLinkedListImpl<T>();
+		T[] array = new T[5];
+
+		for (int i = 0; i < 5; i++) {
+			array[i] = new T(i);
+			list.push(array[i]);
+		}
+
+		list.insertPrev(array[0], new T(100));
+		list.insertPrev(array[2], new T(102));
+		list.insertNext(array[4], new T(104));
+		list.insertNext(array[4], new T(105));
+
+		DoublyLinkedList<T> list2 = new DoublyLinkedListImpl<T>();
+		T l2 = new T(9999);
+		list2.push(l2);
+		try {
+			// already exist
+			list2.insertNext(l2, l2);
+			fail("PromiscuousItemException");
+		} catch (PromiscuousItemException pie) {
+		}
+		try {
+			// already exist
+			list2.insertNext(l2, l2);
+			fail("PromiscuousItemException");
+		} catch (PromiscuousItemException pie) {
+		}
+		try {
+			// bad position
+			list2.insertPrev(array[3], new T(8888));
+			fail("PromiscuousItemException");
+		} catch (PromiscuousItemException pie) {
+		}
+		try {
+			// bad position
+			list2.insertNext(array[3], new T(8888));
+			fail("PromiscuousItemException");
+		} catch (PromiscuousItemException pie) {
+		}
+		try {
+			// item in other list
+			list2.insertPrev(l2, array[3]);
+			fail("PromiscuousItemException");
+		} catch (PromiscuousItemException pie) {
+		}
+		try {
+			// item in other list
+			list2.insertNext(l2, array[3]);
+			fail("PromiscuousItemException");
+		} catch (PromiscuousItemException pie) {
+		}
+		try {
+			// VirginItemException
+			list2.insertPrev(l2.getPrev(), new T(8888));
+			fail("PromiscuousItemException");
+		} catch (VirginItemException vie) {
+		}
+		try {
+			// VirginItemException
+			list2.insertNext(l2.getNext(), new T(8888));
+			fail("VirginItemException");
+		} catch (VirginItemException vie) {
+		}
+
+		((T) list.shift()).assertV(100);
+		((T) list.shift()).assertV(0);
+		((T) list.shift()).assertV(1);
+		((T) list.shift()).assertV(102);
+		((T) list.shift()).assertV(2);
+		((T) list.shift()).assertV(3);
+		((T) list.shift()).assertV(4);
+		((T) list.shift()).assertV(105);
+		((T) list.shift()).assertV(104);
+
 	}
 }
