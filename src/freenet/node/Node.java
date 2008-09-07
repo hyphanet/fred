@@ -130,9 +130,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 	private static boolean logMINOR;
 	
-	private MeaningfulNodeNameUserAlert nodeNameUserAlert;
-	private BuildOldAgeUserAlert buildOldAgeUserAlert;
-	private TimeSkewDetectedUserAlert timeSkewDetectedUserAlert;
+	private static MeaningfulNodeNameUserAlert nodeNameUserAlert;
+	private static BuildOldAgeUserAlert buildOldAgeUserAlert;
+	private static TimeSkewDetectedUserAlert timeSkewDetectedUserAlert;
 	private final static ClockProblemDetectedUserAlert clockProblemDetectedUserAlert = new ClockProblemDetectedUserAlert();
 	
 	public class NodeNameCallback extends StringCallback  {
