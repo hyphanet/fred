@@ -120,7 +120,6 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				long total2 = secondNode.getTotalInputBytes()+secondNode.getTotalOutputBytes();
 				return compareLongs(total1, total2);
 			}else if(sortBy.equals("selection_percentage")){
-				long sinceWhen = System.currentTimeMillis() - PeerNode.SELECTION_SAMPLING_PERIOD;
 				return Double.compare(firstNode.getSelectionRate(), secondNode.getSelectionRate());
 			}else if(sortBy.equals("time_delta")){
 				return compareLongs(firstNode.getClockDelta(), secondNode.getClockDelta());
