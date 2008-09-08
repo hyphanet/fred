@@ -7,9 +7,6 @@ import freenet.l10n.L10n;
 import freenet.support.Logger;
 
 public class PluginInfoWrapper {
-	// Parameters to make the object OTP
-	@SuppressWarnings("unused")
-	private boolean fedPluginThread = false;
 	// Public since only PluginHandler will know about it
 	private final String className;
 	private Thread thread;
@@ -39,7 +36,6 @@ public class PluginInfoWrapper {
 		this.pr = pr;
 		threadName = 'p' + className.replaceAll("^class ", "") + '_' + hashCode();
 		start = System.currentTimeMillis();
-		fedPluginThread = true;
 		isBandwidthIndicator = (plug instanceof FredPluginBandwidthIndicator);
 		isPproxyPlugin = (plug instanceof FredPluginHTTP);
 		isThreadlessPlugin = (plug instanceof FredPluginThreadless);
