@@ -39,7 +39,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 	
 	//Intervals between connectivity checks and NetworkID reckoning.
 	//Checks for added peers may be delayed up to LONG_PERIOD, so don't make it too long.
-	//Coincedently, LONG_PERIOD is also the interval at which we send out FNPNetworkID reminders.
+	//Coincidentally, LONG_PERIOD is also the interval at which we send out FNPNetworkID reminders.
 	private static final long BETWEEN_PEERS =   2000;
 	private static final long STARTUP_DELAY =  20000;
 	private static final long LONG_PERIOD   = 120000;
@@ -136,7 +136,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 		} else {
 			byte[] nodeIdentity = ((ShortBuffer) m.getObject(DMT.NODE_IDENTITY)).getData();
 			StoredSecret match;
-			//Yes, I know... it looks really weird sync.ing on a separate map...
+			//Yes, I know... it looks really weird sync'ing on a separate map...
 			synchronized (secretsByPeer) {
 				match=(StoredSecret)secretsByUID.get(new Long(uid));
 			}
@@ -845,7 +845,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 					nowTakenIds.add(new Integer(newId));
 				} else if (haveFoundIt) {
 					//lower priority group, it may need to be reset.
-					//???: Should we take this oportunity to always re-examine the consensus? This is a callback, so let's not.
+					//???: Should we take this opportunity to always re-examine the consensus? This is a callback, so let's not.
 					png.setForbiddenIds(nowTakenIds);
 					int oldId=png.networkid;
 					int newId=oldId;
@@ -962,7 +962,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 		 */
 		void setMembers(List a) {
 			synchronized (this) {
-				//more correct to copy, but presently unneccesary.
+				//more correct to copy, but presently unnecessary.
 				members=a;
 			}
 		}
