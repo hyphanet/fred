@@ -17,8 +17,8 @@ import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
 
 /**
- * Content filter for PNG's.
- * This one just verifies that a PNG is valid, and throws if it isn't.
+ * Content filter for GIF's.
+ * This one just verifies that a GIF is valid, and throws if it isn't.
  */
 public class GIFFilter implements ContentDataFilter {
 
