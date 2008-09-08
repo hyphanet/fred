@@ -373,7 +373,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 	//Directional lists of reachability, a "Map of Maps" of peers to pingRecords.
 	//This is asymmetric; so recordsByPeer.get(a).get(b) [i.e. a's reachability through peer b] may not
 	//be nearly the same as recordsByPeer.get(b).get(a) [i.e. b's reachability through peer a].
-	private HashMap recordMapsByPeer=new HashMap();
+	private HashMap<PeerNode, HashMap> recordMapsByPeer = new HashMap();
 	
 	private PingRecord getPingRecord(PeerNode target, PeerNode via) {
 		PingRecord retval;
@@ -407,9 +407,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 		}
 		synchronized (recordMapsByPeer) {
 			recordMapsByPeer.remove(p);
-			Iterator i=recordMapsByPeer.values().iterator();
-			while (i.hasNext()) {
-				HashMap complement=(HashMap)i.next();
+			for (HashMap complement : recordMapsByPeer.values()) {
 				//FIXME: NB: Comparing PeerNodes with PingRecords.
 				complement.values().remove(p);
 			}
@@ -868,7 +866,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 	 A list of peers that we have assigned a network id to, and some logic as to why.
 	 */
 	public class PeerNetworkGroup {
-		List members;
+		List<PeerNode> members;
 		int networkid=NO_NETWORKID;
 		HashSet forbiddenIds;
 		long lastAssign;
@@ -883,15 +881,13 @@ public class NetworkIDManager implements Runnable, Comparator {
 		 @todo should be explicit or weighted towards most-successful (not necessarily just 'consensus')
 		 */
 		int getConsensus(boolean probabilistic) {
-			HashMap h=new HashMap();
+			HashMap<Integer, Integer> h = new HashMap();
 			Integer lastId=new Integer(networkid);
 			synchronized (this) {
-				Iterator i=members.iterator();
 				int totalWitnesses=0;
 				int maxId=networkid;
 				int maxCount=0;
-				while (i.hasNext()) {
-					PeerNode p=(PeerNode)i.next();
+				for (PeerNode p : members) {
 					Integer id=new Integer(p.providedNetworkID);
 					//Reject the advertized id which conflicts with our pre-determined boundaries (which can change)
 					if (forbiddenIds.contains(id))
@@ -925,11 +921,9 @@ public class NetworkIDManager implements Runnable, Comparator {
 				double winningTarget=node.random.nextDouble();
 				if (logMINOR) Logger.minor(this, "winningTarget="+winningTarget+", totalWitnesses="+totalWitnesses+", inc="+incrementPerWitness);
 				double sum=0.0;
-				Iterator entries=h.entrySet().iterator();
-				while (entries.hasNext()) {
-					Map.Entry e=(Map.Entry)entries.next();
-					int id=((Integer)e.getKey()).intValue();
-					int count=((Integer)e.getValue()).intValue();
+				for (Map.Entry<Integer, Integer> e : h.entrySet()) {
+					int id = e.getKey();
+					int count = e.getValue();
 					sum+=count*incrementPerWitness;
 					if (logMINOR) Logger.minor(this, "network "+id+" "+count+" peers, "+sum);
 					if (sum>=winningTarget) {
@@ -944,9 +938,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 			synchronized (this) {
 				this.lastAssign=System.currentTimeMillis();
 				this.networkid=id;
-				Iterator i=members.iterator();
-				while (i.hasNext()) {
-					PeerNode p=(PeerNode)i.next();
+				for (PeerNode p : members) {
 					p.assignedNetworkID=id;
 					p.networkGroup=this;
 					try {
