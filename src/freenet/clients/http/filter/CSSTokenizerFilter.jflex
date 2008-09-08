@@ -11,6 +11,7 @@ import freenet.l10n.L10n;
 // just needs somebody to go over the standard carefully and eliminate everything that isn't sufficiently specific (e.g. matching a '-' on its own).
 // Mostly from http://www.w3.org/TR/REC-CSS2/grammar.html
 
+@SuppressWarnings("fallthrough")
 %%
 
 %{
@@ -96,11 +97,11 @@ import freenet.l10n.L10n;
 				quote = q;
 				s = s.substring(1);
 			} else quote = ' ';
-			StringBuffer buffer = new StringBuffer();
+			StringBuilder buffer = new StringBuilder();
 			int x = 0;
 			boolean justEscaping = false;
 			boolean stillEscaping = false;
-			StringBuffer hexEscape = new StringBuffer();
+			StringBuilder hexEscape = new StringBuilder();
 			while(x < s.length()) {
 				char c = s.charAt(x);
 				x++;
@@ -124,38 +125,16 @@ import freenet.l10n.L10n;
 						// Ignore one whitespace char after an escape
 						int d = Integer.parseInt(hexEscape.toString(),
 									 16);
-						// FIXME once we can use 1.5, use Characters.toChars(int).
-						if(d > 0xFFFF) {
-							String error = 
-								l10n("supplementalCharsNotSupported");
-							logError(error);
-							try {
-								w.write("/* "+error+"*/");
-							} catch (IOException e) {};
-						} else {
-							c = (char)d;
-							buffer.append(c);
-						}
+						buffer.append(new String(Character.toChars(d)));
 						stillEscaping = false;
-						hexEscape = new StringBuffer();
+						hexEscape = new StringBuilder();
 					} else {
 						int d = Integer.parseInt(hexEscape.toString(),
 									 16);
-						// FIXME once we can use 1.5, use Characters.toChars(int).
-						if(d > 0xFFFF) {
-							String error = 
-								l10n("supplementalCharsNotSupported");
-							logError(error);
-							try {
-								w.write("/* "+error+"*/");
-							} catch (IOException e) {};
-						} else {
-							char o = (char)d;
-							buffer.append(o);
-						}
+						buffer.append(new String(Character.toChars(d)));
 						buffer.append(c);
 						stillEscaping = false;
-						hexEscape = new StringBuffer();
+						hexEscape = new StringBuilder();
 					}
 				} else {
 					if(quote != ' ' && c == quote) {
@@ -178,8 +157,9 @@ import freenet.l10n.L10n;
 				suffix = "";
 		}
 		
+		@Override
 		public String toString() {
-			StringBuffer out = new StringBuffer();
+			StringBuilder out = new StringBuilder();
 			if(url) out.append("url(");
 			if(quote != ' ') out.append(quote);
 			out.append(unescapeData());
@@ -190,7 +170,7 @@ import freenet.l10n.L10n;
 		}
 		
 		public String unescapeData() {
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			for(int i=0;i<data.length();i++) {
 				char c = data.charAt(i);
 				if(c == quote || c == '\n') {
@@ -203,7 +183,7 @@ import freenet.l10n.L10n;
 	}
 	
 	String commentEncode(String s) {
-		StringBuffer sb = new StringBuffer(s.length());
+		StringBuilder sb = new StringBuilder(s.length());
 		for(int i=0;i<s.length();i++) {
 			char c = s.charAt(i);
 			if(c == '/')
@@ -344,7 +324,7 @@ MEDIUMS={MEDIUM}(","{W}*{MEDIUM})*
 //"/*"([^*]|[\r\n]|("*"+([^*/]|[\r\n])))*"*"*"/" {
 "/*" ~"*/" {
 	String s = yytext();
-	StringBuffer sb = new StringBuffer(s.length());
+	StringBuilder sb = new StringBuilder(s.length());
 	sb.append("/* ");
 	boolean inPrefix = true;
 	for(int i=2;i<s.length()-2;i++) {
