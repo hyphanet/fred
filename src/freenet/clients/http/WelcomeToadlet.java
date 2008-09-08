@@ -6,7 +6,6 @@ package freenet.clients.http;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.HashSet;
 
 import org.tanukisoftware.wrapper.WrapperManager;
@@ -49,11 +48,6 @@ public class WelcomeToadlet extends Toadlet {
         this.node = node;
         this.core = core;
         this.bookmarkManager = bookmarks;
-        try {
-            manageBookmarksURI = new URI("/welcome/?managebookmarks");
-        } catch (URISyntaxException e) {
-            throw new Error(e);
-        }
     }
 
     void redirectToRoot(ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -62,7 +56,6 @@ public class WelcomeToadlet extends Toadlet {
         ctx.sendReplyHeaders(302, "Found", headers, null, 0);
         return;
     }
-    URI manageBookmarksURI;
 
     private void addCategoryToList(BookmarkCategory cat, HTMLNode list, boolean noActiveLinks) {
         BookmarkItems items = cat.getItems();
