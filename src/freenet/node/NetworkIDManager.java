@@ -645,7 +645,6 @@ public class NetworkIDManager implements Runnable, Comparator {
 		
 		synchronized (transitionLock) {
 			PeerNetworkGroup ourgroup=(PeerNetworkGroup)newNetworkGroups.get(0);
-			ourgroup.ourGroup=true;
 			ourNetworkId=ourgroup.networkid;
 			
 			Logger.error(this, "I am in network: "+ourNetworkId+", and have divided my "+all.size()+" peers into "+newNetworkGroups.size()+" network groups");
@@ -871,7 +870,6 @@ public class NetworkIDManager implements Runnable, Comparator {
 	public class PeerNetworkGroup {
 		List members;
 		int networkid=NO_NETWORKID;
-		boolean ourGroup;
 		HashSet forbiddenIds;
 		long lastAssign;
 		///True if the last call to getConsensus() found only one network id for all members of this group
