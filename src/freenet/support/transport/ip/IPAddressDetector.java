@@ -42,7 +42,6 @@ public class IPAddressDetector implements Runnable {
 		return System.currentTimeMillis() + interval; // We are pretty cheap
 	}
 
-	InetAddress lastInetAddress = null;
 	InetAddress[] lastAddressList = null;
 	long lastDetectedTime = -1;
 
