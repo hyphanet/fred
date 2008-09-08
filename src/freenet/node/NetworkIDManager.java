@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
@@ -58,8 +59,8 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 	private static final int PING_VOLLEYS_PER_NETWORK_RECOMPUTE = 5;
 	
 	//Atomic: Locking for both via secretsByPeer
-	private final HashMap secretsByPeer=new HashMap();
-	private final HashMap secretsByUID=new HashMap();
+	private final HashMap<PeerNode, StoredSecret> secretsByPeer = new HashMap<PeerNode, StoredSecret>();
+	private final HashMap<Long, StoredSecret> secretsByUID = new HashMap<Long, StoredSecret>();
 	
 	//1.0 is disabled, this amounts to a threshold; if connectivity between peers in > this, they get there own group for sure.
 	private static final double MAGIC_LINEAR_GRACE = 0.8;
@@ -138,7 +139,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			StoredSecret match;
 			//Yes, I know... it looks really weird sync'ing on a separate map...
 			synchronized (secretsByPeer) {
-				match=(StoredSecret)secretsByUID.get(new Long(uid));
+				match = secretsByUID.get(uid);
 			}
 			if (match!=null) {
 				//This is the node that the ping intends to reach, we will *not* forward it; but we might not respond positively either.
@@ -155,7 +156,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 				
 				//Not a local match... forward
 				double target=m.getDouble(DMT.TARGET_LOCATION);
-				HashSet routedTo=new HashSet();
+				HashSet<PeerNode> routedTo = new HashSet<PeerNode>();
 				while (true) {
 					PeerNode next;
 					
@@ -238,7 +239,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 	//FIXME: This needs to be wired in.
 	public void onDisconnect(PeerNode pn) {
 		synchronized (secretsByPeer) {
-			StoredSecret s=(StoredSecret)secretsByPeer.get(pn);
+			StoredSecret s = secretsByPeer.get(pn);
 			if (s!=null) {
 				//???: Might it still be valid to respond to secret pings when the neighbor requesting it has disconnected? (super-secret ping?)
 				Logger.normal(this, "Removing on disconnect: "+s);
@@ -249,7 +250,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 	
 	private void addOrReplaceSecret(StoredSecret s) {
 		synchronized (secretsByPeer) {
-			StoredSecret prev=(StoredSecret)secretsByPeer.get(s.peer);
+			StoredSecret prev = secretsByPeer.get(s.peer);
 			if (prev!=null) {
 				if (logMINOR) Logger.minor(this, "Removing on replacement: "+s);
 				removeSecret(prev);
@@ -257,7 +258,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			//Need to remember by peer (so we can remove it on disconnect)
 			//Need to remember by uid (so we can respond quickly to arbitrary requests).
 			secretsByPeer.put(s.peer, s);
-			secretsByUID.put(new Long(s.uid), s);
+			secretsByUID.put(s.uid, s);
 		}
 	}
 	
@@ -362,7 +363,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		}
 		@Override
 		public boolean equals(Object o) {
-			return (o instanceof PeerNode ? via.equals((PeerNode) o) : false);
+			return (o instanceof PeerNode ? via.equals(o) : false);
 		}
 		@Override
 		public int hashCode() {
@@ -373,18 +374,18 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 	//Directional lists of reachability, a "Map of Maps" of peers to pingRecords.
 	//This is asymmetric; so recordsByPeer.get(a).get(b) [i.e. a's reachability through peer b] may not
 	//be nearly the same as recordsByPeer.get(b).get(a) [i.e. b's reachability through peer a].
-	private HashMap<PeerNode, HashMap> recordMapsByPeer = new HashMap();
+	private HashMap<PeerNode, HashMap<PeerNode, PingRecord>> recordMapsByPeer = new HashMap<PeerNode, HashMap<PeerNode, PingRecord>>();
 	
 	private PingRecord getPingRecord(PeerNode target, PeerNode via) {
 		PingRecord retval;
 		synchronized (recordMapsByPeer) {
-			HashMap peerRecords=(HashMap)recordMapsByPeer.get(target);
+			HashMap<PeerNode, PingRecord> peerRecords = recordMapsByPeer.get(target);
 			if (peerRecords==null) {
 				//no record of any pings towards target
-				peerRecords=new HashMap();
+				peerRecords = new HashMap<PeerNode, PingRecord>();
 				recordMapsByPeer.put(target, peerRecords);
 			}
-			retval=(PingRecord)peerRecords.get(via);
+			retval = peerRecords.get(via);
 			if (retval==null) {
 				//no records via this specific peer
 				retval=new PingRecord();
@@ -407,14 +408,14 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		}
 		synchronized (recordMapsByPeer) {
 			recordMapsByPeer.remove(p);
-			for (HashMap complement : recordMapsByPeer.values()) {
+			for (HashMap<PeerNode, PingRecord> complement : recordMapsByPeer.values()) {
 				//FIXME: NB: Comparing PeerNodes with PingRecords.
 				complement.values().remove(p);
 			}
 		}
 	}
 	
-	private List workQueue=new ArrayList();
+	private List<PeerNode> workQueue = new ArrayList<PeerNode>();
 	private PeerNode processing;
 	private boolean processingRace;
 	private int pingVolleysToGo=PING_VOLLEYS_PER_NETWORK_RECOMPUTE;
@@ -431,12 +432,12 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 				return;
 			}
 			if (!workQueue.isEmpty())
-				processing=(PeerNode)workQueue.remove(0);
+				processing = workQueue.remove(0);
 		}
 		if (processing!=null) {
 			PeerNode target=processing;
 			double randomTarget=node.random.nextDouble();
-			HashSet nodesRoutedTo = new HashSet();
+			HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
 			PeerNode next = node.peers.closerPeer(target, nodesRoutedTo, randomTarget, true, false, -1, null, null);
 			while (next!=null && target.isRoutable() && !processingRace) {
 				nodesRoutedTo.add(next);
@@ -562,17 +563,17 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 	}
 	
 	public void checkAllPeers() {
-		Iterator i=getAllConnectedPeers().iterator();
+		Set<PeerNode> set = getAllConnectedPeers();
 		synchronized (workQueue) {
-			while (i.hasNext()) {
-				addWorkToLockedQueue((PeerNode)i.next());
+			for (PeerNode p : set) {
+				addWorkToLockedQueue(p);
 			}
 		}
 	}
 	
-	private HashSet getAllConnectedPeers() {
+	private HashSet<PeerNode> getAllConnectedPeers() {
 		double randomTarget=node.random.nextDouble();
-		HashSet connectedPeers = new HashSet();
+		HashSet<PeerNode> connectedPeers = new HashSet<PeerNode>();
 		PeerNode next = node.peers.closerPeer(null, connectedPeers, randomTarget, true, false, -1, null, null);
 		while (next!=null) {
 			connectedPeers.add(next);
@@ -590,9 +591,10 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 	private void doNetworkIDReckoning(boolean anyPingChanges) {
 		//!!!: This is where the magic separation logic begins.
 		// This may still need a lot of work; e.g. a locking mechanism, considering disconnected peers?
-		List newNetworkGroups=new ArrayList();
-		HashSet all=getAllConnectedPeers();
-		HashSet todo=(HashSet)all.clone();
+		List<PeerNetworkGroup> newNetworkGroups = new ArrayList<PeerNetworkGroup>();
+		HashSet<PeerNode> all = getAllConnectedPeers();
+		@SuppressWarnings("unchecked")
+		HashSet<PeerNode> todo = (HashSet<PeerNode>) all.clone();
 		
 		synchronized (transitionLock) {
 			inTransition=true;
@@ -611,10 +613,10 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			PeerNetworkGroup newGroup = new PeerNetworkGroup();
 			newNetworkGroups.add(newGroup);
 			todo.remove(mostConnected);
-			List members;
+			List<PeerNode> members;
 			if (todo.isEmpty()) {
 				//sad... it looks like this guy gets a group to himself
-				members=new ArrayList();
+				members = new ArrayList<PeerNode>();
 				members.add(mostConnected);
 			} else {
 				//NB: as a side effect, this function will automatically remove the members from 'todo'.
@@ -626,23 +628,21 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		//The groups are broken up, now sort by priority & assign them a network id.
 		Collections.sort(newNetworkGroups, this);
 		
-		HashSet takenNetworkIds=new HashSet();
-		Iterator i=newNetworkGroups.iterator();
+		HashSet<Integer> takenNetworkIds = new HashSet<Integer>();
 		
-		while (i.hasNext()) {
-			PeerNetworkGroup newGroup=(PeerNetworkGroup)i.next();
+		for (PeerNetworkGroup newGroup : newNetworkGroups) {
 			newGroup.setForbiddenIds(takenNetworkIds);
 			
 			int id=newGroup.getConsensus(true);
 			if (id==NO_NETWORKID)
 				id=node.random.nextInt();
 			newGroup.assignNetworkId(id);
-			takenNetworkIds.add(new Integer(id));
+			takenNetworkIds.add(id);
 			if (logMINOR) Logger.minor(this, "net "+id+" has "+newGroup.members.size()+" peers");
 		}
 		
 		synchronized (transitionLock) {
-			PeerNetworkGroup ourgroup=(PeerNetworkGroup)newNetworkGroups.get(0);
+			PeerNetworkGroup ourgroup = newNetworkGroups.get(0);
 			ourNetworkId=ourgroup.networkid;
 			
 			Logger.error(this, "I am in network: "+ourNetworkId+", and have divided my "+all.size()+" peers into "+newNetworkGroups.size()+" network groups");
@@ -657,13 +657,11 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 	}
 	
 	// Returns the 'best-connected' peer in the given set, or null if the set is empty.
-	private PeerNode findMostConnectedPeerInSet(HashSet set, HashSet possibleTargets) {
+	private PeerNode findMostConnectedPeerInSet(HashSet<PeerNode> set, HashSet<PeerNode> possibleTargets) {
 		double max=-1.0;
 		PeerNode theMan=null;
 		
-		Iterator i=set.iterator();
-		while (i.hasNext()) {
-			PeerNode p=(PeerNode)i.next();
+		for (PeerNode p : set) {
 			double value=getPeerNodeConnectedness(p, possibleTargets);
 			if (value>max) {
 				max=value;
@@ -675,12 +673,10 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 	}
 	
 	// Return a double between [0.0-1.0] somehow indicating how "wellconnected" this peer is to all the peers in possibleTargets.
-	private double getPeerNodeConnectedness(PeerNode p, HashSet possibleTargets) {
+	private double getPeerNodeConnectedness(PeerNode p, HashSet<PeerNode> possibleTargets) {
 		double retval=1.0;
 		double totalLossFactor=1.0/possibleTargets.size();
-		Iterator i=possibleTargets.iterator();
-		while (i.hasNext()) {
-			PeerNode target=(PeerNode)i.next();
+		for (PeerNode target : possibleTargets) {
 			PingRecord record=getPingRecord(p, target);
 			double pingAverage=record.average.currentValue();
 			if (pingAverage<totalLossFactor)
@@ -696,7 +692,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 	 * side effect removes those peers from the set passed in. The set includes at-least the
 	 * given peer (will never return an empty list).
 	 */
-	private List xferConnectedPeerSetFor(PeerNode thisPeer, HashSet fromOthers) {
+	private List<PeerNode> xferConnectedPeerSetFor(PeerNode thisPeer, HashSet<PeerNode> fromOthers) {
 		//FIXME: This algorithm needs to be thought about! Maybe some hard thresholds.
 		//       What recently-connected, peers who only have one or two pings so far?
 		/*
@@ -706,10 +702,10 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		       the new forming group as the first peer is connected to the original group.
 		       Why? I don't know...
 		 */
-		List currentGroup=new ArrayList();
+		List<PeerNode> currentGroup = new ArrayList<PeerNode>();
 		currentGroup.add(thisPeer);
 		//HashSet remainder=others.clone();
-		HashSet remainder=fromOthers;
+		HashSet<PeerNode> remainder = fromOthers;
 		double goodConnectivity=getSetwisePingAverage(thisPeer, fromOthers);
 		if (goodConnectivity < FALL_OPEN_MARK) {
 			Logger.normal(this, "falling open with "+fromOthers.size()+" peers left");
@@ -733,7 +729,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		}
 		//Exception! If there is only one left in fromOthers and we have at least a 25% ping average make them be in the same network. This probably means our algorithim is too picky (spliting up into too many groups).
 		if (currentGroup.size()==1 && fromOthers.size()==1) {
-			PeerNode onlyLeft=(PeerNode)fromOthers.iterator().next();
+			PeerNode onlyLeft = fromOthers.iterator().next();
 			double average1=getPingRecord(onlyLeft, thisPeer).average.currentValue();
 			double average2=getPingRecord(thisPeer, onlyLeft).average.currentValue();
 			if (0.5*average1+0.5*average2 > 0.25) {
@@ -745,8 +741,8 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		return currentGroup;
 	}
 	
-	private double getSetwisePingAverage(PeerNode thisPeer, Collection toThesePeers) {
-		Iterator i=toThesePeers.iterator();
+	private double getSetwisePingAverage(PeerNode thisPeer, Collection<PeerNode> toThesePeers) {
+		Iterator<PeerNode> i = toThesePeers.iterator();
 		double accum=0.0;
 		if (!i.hasNext()) { // FIXME this skip the first element, investigate if is this intentional
 			//why yes, we have GREAT connectivity to nobody!
@@ -754,23 +750,23 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			return 1.0;
 		}
 		while (i.hasNext()) {
-			PeerNode other=(PeerNode)i.next();
+			PeerNode other = i.next();
 			accum+=getPingRecord(thisPeer, other).average.currentValue();
 		}
 		return accum/toThesePeers.size();
 	}
 	
-	private PeerNode findBestSetwisePingAverage(HashSet ofThese, Collection towardsThese) {
+	private PeerNode findBestSetwisePingAverage(HashSet<PeerNode> ofThese, Collection<PeerNode> towardsThese) {
 		PeerNode retval=null;
 		double best=-1.0;
-		Iterator i=ofThese.iterator();
+		Iterator<PeerNode> i = ofThese.iterator();
 		if (!i.hasNext()) { // FIXME this skip the first element, investigate if is this intentional
 			//why yes, we have GREAT connectivity to nobody!
 			Logger.error(this, "findBestSetwisePingAverage to nobody?");
 			return null;
 		}
 		while (i.hasNext()) {
-			PeerNode thisOne=(PeerNode)i.next();
+			PeerNode thisOne = i.next();
 			double average=getSetwisePingAverage(thisOne, towardsThese);
 			if (average>best) {
 				retval=thisOne;
@@ -813,10 +809,8 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			//The forbidden ids is already set in this way, but if we decide that one group needs to use the id of a lesser group, we must tell the other group to use a different one; i.e. realign all the previous id's.
 			boolean haveFoundIt=false;
 			PeerNetworkGroup mine=p.networkGroup;
-			Iterator i=networkGroups.iterator();
-			HashSet nowTakenIds=new HashSet();
-			while (i.hasNext()) {
-				PeerNetworkGroup png=(PeerNetworkGroup)i.next();
+			HashSet<Integer> nowTakenIds = new HashSet<Integer>();
+			for (PeerNetworkGroup png : networkGroups) {
 				if (png.equals(mine)) {
 					haveFoundIt=true;
 					//should be the same: png.setForbiddenIds(nowTakenIds);
@@ -842,21 +836,21 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 						}
 					}
 					//to continue means to realign all the remaining forbidden ids.
-					nowTakenIds.add(new Integer(newId));
+					nowTakenIds.add(newId);
 				} else if (haveFoundIt) {
 					//lower priority group, it may need to be reset.
 					//???: Should we take this opportunity to always re-examine the consensus? This is a callback, so let's not.
 					png.setForbiddenIds(nowTakenIds);
 					int oldId=png.networkid;
 					int newId=oldId;
-					if (nowTakenIds.contains(new Integer(oldId))) {
+					if (nowTakenIds.contains(oldId)) {
 						newId=png.getConsensus(true);
 						png.assignNetworkId(newId);
 					}
-					nowTakenIds.add(new Integer(newId));
+					nowTakenIds.add(newId);
 				} else {
 					//higher priority group, remember it's id.
-					nowTakenIds.add(new Integer(png.networkid));
+					nowTakenIds.add(png.networkid);
 				}
 			}
 		}
@@ -868,7 +862,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 	public class PeerNetworkGroup {
 		List<PeerNode> members;
 		int networkid=NO_NETWORKID;
-		HashSet forbiddenIds;
+		HashSet<Integer> forbiddenIds;
 		long lastAssign;
 		///True if the last call to getConsensus() found only one network id for all members of this group
 		boolean unanimous;
@@ -881,25 +875,25 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		 @todo should be explicit or weighted towards most-successful (not necessarily just 'consensus')
 		 */
 		int getConsensus(boolean probabilistic) {
-			HashMap<Integer, Integer> h = new HashMap();
-			Integer lastId=new Integer(networkid);
+			HashMap<Integer, Integer> h = new HashMap<Integer, Integer>();
+			Integer lastId = networkid;
 			synchronized (this) {
 				int totalWitnesses=0;
 				int maxId=networkid;
 				int maxCount=0;
 				for (PeerNode p : members) {
-					Integer id=new Integer(p.providedNetworkID);
+					Integer id = p.providedNetworkID;
 					//Reject the advertized id which conflicts with our pre-determined boundaries (which can change)
 					if (forbiddenIds.contains(id))
 						continue;
-					if (id.intValue()==NO_NETWORKID)
+					if (id == NO_NETWORKID)
 						continue;
 					totalWitnesses++;
 					int count=1;
-					Integer prev=(Integer)h.get(id);
+					Integer prev = h.get(id);
 					if (prev!=null)
 						count=prev.intValue()+1;
-					h.put(id, new Integer(count));
+					h.put(id, count);
 					if (count>maxCount) {
 						maxCount=count;
 						maxId=id.intValue();
@@ -952,15 +946,15 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		/*
 		 makes a copy of the given set of forbidden ids
 		 */
-		void setForbiddenIds(HashSet a) {
+		void setForbiddenIds(HashSet<Integer> a) {
 			synchronized (this) {
-				forbiddenIds=new HashSet(a);
+				forbiddenIds = new HashSet<Integer>(a);
 			}
 		}
 		/*
 		 caveat, holds onto original list
 		 */
-		void setMembers(List a) {
+		void setMembers(List<PeerNode> a) {
 			synchronized (this) {
 				//more correct to copy, but presently unnecessary.
 				members=a;
@@ -972,7 +966,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 	}
 	
 	//List of PeerNetworkGroups ordered by priority
-	List networkGroups=new ArrayList();
+	List<PeerNetworkGroup> networkGroups = new ArrayList<PeerNetworkGroup>();
 	
 	//or zero if we don't know yet
 	public int ourNetworkId = NO_NETWORKID;
