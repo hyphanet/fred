@@ -29,7 +29,7 @@ import freenet.support.math.TrivialRunningAverage;
  * @author robert
  * @created 2008-02-06
  */
-public class NetworkIDManager implements Runnable, Comparator {
+public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.PeerNetworkGroup> {
 	public static boolean disableSecretPings = true;
 	public static boolean disableSecretPinger = true;
 	public static boolean disableSwapSegregation = true;
@@ -997,9 +997,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 	 * Orders PeerNetworkGroups by size largest first. Determines the priority-order in the master list.
 	 * Throws on comparison of non-network-groups or those without members assigned.
 	 */
-	public int compare(Object a1, Object b1) {
-		PeerNetworkGroup a=(PeerNetworkGroup)a1;
-		PeerNetworkGroup b=(PeerNetworkGroup)b1;
+	public int compare(PeerNetworkGroup a, PeerNetworkGroup b) {
 		//since we want largest-first, this is backwards of what it would normally be (a-b).
 		return b.members.size()-a.members.size();
 	}
