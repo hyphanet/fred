@@ -880,7 +880,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 		 As a side effect, unanimous is set if there is only one network id for all peers in this group.
 		 
 		 @param probabilistic if true, may return any id from the set with increased probability towards the greater consensus.
-		 @todo should be explict or weighted towards most-successful (not neccesarily just 'consensus')
+		 @todo should be explict or weighted towards most-successful (not necessarily just 'consensus')
 		 */
 		int getConsensus(boolean probabilistic) {
 			HashMap h=new HashMap();

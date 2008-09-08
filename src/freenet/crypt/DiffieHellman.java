@@ -87,7 +87,7 @@ public class DiffieHellman {
 		precalcThread.start();
 	}
 
-	/** Will ask the precalc thread to refill the buffer if neccessary */
+	/** Will ask the precalc thread to refill the buffer if necessary */
 	private static void askRefill() {
 		// If the buffer size is below the threshold then wake the precalc
 		// thread
