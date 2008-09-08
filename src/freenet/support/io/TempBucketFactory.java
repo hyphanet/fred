@@ -143,11 +143,7 @@ public class TempBucketFactory implements BucketFactory {
 		}
 
 		private class TempBucketOutputStream extends OutputStream {
-			@SuppressWarnings("unused")
-			private final short idx;
-			
 			TempBucketOutputStream(short idx) throws IOException {
-				this.idx = idx;
 				if(os == null)
 					os = currentBucket.getOutputStream();
 			}
