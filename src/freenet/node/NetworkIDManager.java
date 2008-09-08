@@ -748,7 +748,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 	private double getSetwisePingAverage(PeerNode thisPeer, Collection toThesePeers) {
 		Iterator i=toThesePeers.iterator();
 		double accum=0.0;
-		if (!i.hasNext()) {
+		if (!i.hasNext()) { // FIXME this skip the first element, investigate if is this intentional
 			//why yes, we have GREAT connectivity to nobody!
 			Logger.error(this, "getSetwisePingAverage to nobody?");
 			return 1.0;
@@ -764,7 +764,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		PeerNode retval=null;
 		double best=-1.0;
 		Iterator i=ofThese.iterator();
-		if (!i.hasNext()) {
+		if (!i.hasNext()) { // FIXME this skip the first element, investigate if is this intentional
 			//why yes, we have GREAT connectivity to nobody!
 			Logger.error(this, "findBestSetwisePingAverage to nobody?");
 			return null;
