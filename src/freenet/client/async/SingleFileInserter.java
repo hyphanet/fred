@@ -341,7 +341,6 @@ class SingleFileInserter implements ClientPutState {
 		boolean metaInsertSetBlocks;
 		boolean metaInsertStarted;
 		boolean metaFetchable;
-		boolean dataFetchable;
 
 		/**
 		 * Create a SplitHandler from a stored progress SimpleFieldSet.
@@ -640,7 +639,6 @@ class SingleFileInserter implements ClientPutState {
 						Logger.error(this, "onFetchable for unknown state "+state);
 						return;
 					}
-					dataFetchable = true;
 					if(logMINOR) Logger.minor(this, "Data fetchable");
 					if(metaInsertStarted) return;
 				}
