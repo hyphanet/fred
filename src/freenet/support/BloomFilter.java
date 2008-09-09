@@ -29,8 +29,8 @@ public abstract class BloomFilter {
 	}
 	
 	public static BloomFilter createFilter(File file, int length, int k, boolean counting) throws IOException {
-		if (k == 0 || length == 0)
-			return new NullBloomFilter(length, k);
+		//if (k == 0 || length == 0)
+		//	return new NullBloomFilter(length, k);
 		if (counting)
 			return new CountingBloomFilter(file, length, k);
 		else
@@ -147,12 +147,13 @@ public abstract class BloomFilter {
 	 * @param maxKey
 	 * @return optimal K
 	 */
-	// may return 0 if the length is too short
 	public static int optimialK(int filterLength, long maxKey) {
 		long k = Math.round(Math.log(2) * filterLength / maxKey);
 		
 		if (k > 64)
 			k = 64;
+		if (k < 1)
+			k = 1;
 
 		return (int) k;
 	}
