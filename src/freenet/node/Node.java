@@ -1277,7 +1277,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		isAllowedToConnectToSeednodes = opennetConfig.getBoolean("connectToSeednodes");
 		
 		// Can be enabled on the fly
-		opennetConfig.register("enabled", false, 0, false, true, "Node.opennetEnabled", "Node.opennetEnabledLong", new BooleanCallback() {
+		opennetConfig.register("enabled", false, 0, true, true, "Node.opennetEnabled", "Node.opennetEnabledLong", new BooleanCallback() {
 			@Override
 			public Boolean get() {
 				synchronized(Node.this) {
