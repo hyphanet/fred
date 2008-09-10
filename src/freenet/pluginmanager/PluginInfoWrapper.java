@@ -7,7 +7,7 @@ import freenet.l10n.L10n;
 import freenet.support.Logger;
 
 public class PluginInfoWrapper {
-	// Public since only PluginHandler will know about it
+
 	private final String className;
 	private Thread thread;
 	private final long start;
@@ -22,12 +22,13 @@ public class PluginInfoWrapper {
 	private final boolean isMultiplePlugin;
 	private final boolean isFCPPlugin;
 	private final boolean isVersionedPlugin;
+	private final boolean isThemedPlugin;
+	private final boolean isL10nPlugin;
+	private final boolean isUpdatedablePlugin;
 	private final String filename;
 	private HashSet<String> toadletLinks = new HashSet<String>();
 	private volatile boolean stopping = false;
 	private volatile boolean unregistered = false;
-	private final boolean isThemedPlugin;
-	private final boolean isL10nPlugin;
 	
 	public PluginInfoWrapper(PluginRespirator pr, FredPlugin plug, String filename) {
 		this.plug = plug;
@@ -46,6 +47,7 @@ public class PluginInfoWrapper {
 		isVersionedPlugin = (plug instanceof FredPluginVersioned);
 		isThemedPlugin = (plug instanceof FredPluginThemed);
 		isL10nPlugin = (plug instanceof FredPluginL10n);
+		isUpdatedablePlugin = (plug instanceof FredPluginUoF);
 	}
 
 	void setThread(Thread ps) {
@@ -186,8 +188,13 @@ public class PluginInfoWrapper {
 	public boolean isThemedPlugin() {
 		return isThemedPlugin;
 	}
+	
 	public boolean isL10nPlugin() {
 		return isL10nPlugin;
+	}
+	
+	public boolean isUpdatedablePlugin() {
+		return isUpdatedablePlugin;
 	}
 
 	public synchronized boolean isStopping() {
