@@ -306,7 +306,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	/** Datastore properties */
 	private final String storeType;
-	private final int storeBloomFilterSize;
+	private int storeBloomFilterSize;
 	private final boolean storeBloomFilterCounting;
 
 	/** The number of bytes per key total in all the different datastores. All the datastores
