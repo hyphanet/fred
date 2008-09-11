@@ -1521,7 +1521,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 		maxTotalKeys = maxTotalDatastoreSize / sizePerKey;
 		
-		nodeConfig.register("storeBloomFilterSize", (int) Math.min(maxTotalDatastoreSize / 2048, 268435456), sortOrder++, true, false, "Node.storeBloomFilterSize",
+		nodeConfig.register("storeBloomFilterSize", -1, sortOrder++, true, false, "Node.storeBloomFilterSize",
 		        "Node.storeBloomFilterSizeLong", new IntCallback() {
 			        private Integer cachedBloomFilterSize;
 
@@ -1545,6 +1545,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		        });
 
 		storeBloomFilterSize = nodeConfig.getInt("storeBloomFilterSize");
+		if (storeBloomFilterSize == -1) 
+			storeBloomFilterSize = (int) Math.min(maxTotalDatastoreSize / 2048, 268435456);
 
 		nodeConfig.register("storeBloomFilterCounting", true, sortOrder++, true, false,
 		        "Node.storeBloomFilterCounting", "Node.storeBloomFilterCountingLong", new BooleanCallback() {
