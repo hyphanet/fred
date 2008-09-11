@@ -215,6 +215,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "dsForm");
 			HTMLNode result = bandwidthForm.addChild("select", "name", "ds");
 
+			result.addChild("option", "value", "1G", "1GiB");
 			result.addChild("option", "value", "2G", "2GiB");
 			result.addChild("option", "value", "3G", "3GiB");
 			result.addChild("option", "value", "5G", "5GiB");
