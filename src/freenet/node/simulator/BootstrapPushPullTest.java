@@ -32,8 +32,10 @@ public class BootstrapPushPullTest {
 	public static int EXIT_FAILED_TARGET = 258;
 	public static int EXIT_INSERT_FAILED = 259;
 	public static int EXIT_FETCH_FAILED = 260;
+	public static int EXIT_THREW_SOMETHING = 261;
 	
 	public static void main(String[] args) throws InvalidThresholdException, IOException, NodeInitException, InterruptedException {
+		try {
 		String ipOverride = null;
 		if(args.length > 0)
 			ipOverride = args[0];
@@ -113,6 +115,11 @@ public class BootstrapPushPullTest {
 		System.out.println("RESULT: Fetch took "+(endFetchTime-startFetchTime)+"ms ("+TimeUtil.formatTime(endFetchTime-startFetchTime)+") of "+uri+" .");
 		secondNode.park();
 		System.exit(0);
+	    } catch (Throwable t) {
+	    	System.err.println("CAUGHT: "+t);
+	    	t.printStackTrace();
+	    	System.exit(EXIT_THREW_SOMETHING);
+	    }
 	}
 
 	private static void waitForTenNodes(Node node) throws InterruptedException {

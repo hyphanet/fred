@@ -20,6 +20,7 @@ public class BootstrapSeedTest {
 	public static int TARGET_PEERS = 10;
 	public static int EXIT_NO_SEEDNODES = 257;
 	public static int EXIT_FAILED_TARGET = 258;
+	public static int EXIT_THREW_SOMETHING = 259;
 	
 	/**
 	 * @param args
@@ -29,6 +30,7 @@ public class BootstrapSeedTest {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws InvalidThresholdException, NodeInitException, InterruptedException, IOException {
+		try {
 		String ipOverride = null;
 		if(args.length > 0)
 			ipOverride = args[0];
@@ -75,6 +77,11 @@ public class BootstrapSeedTest {
         System.err.println("Failed to reach target peers count "+TARGET_PEERS+" in 5 minutes.");
 		node.park();
         System.exit(EXIT_FAILED_TARGET);
+	    } catch (Throwable t) {
+	    	System.err.println("CAUGHT: "+t);
+	    	t.printStackTrace();
+	    	System.exit(EXIT_THREW_SOMETHING);
+	    }
 	}
 
 }

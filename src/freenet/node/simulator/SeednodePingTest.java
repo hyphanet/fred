@@ -43,6 +43,7 @@ public class SeednodePingTest extends RealNodeTest {
 	static final long COUNT_SUCCESSES_PERIOD = 7*24*60*60*1000; // 1 week
 
     public static void main(String[] args) throws FSParseException, IOException, OpennetDisabledException, PeerParseException, InterruptedException, ReferenceSignatureVerificationException, NodeInitException, InvalidThresholdException {
+    	try {
     	if(args.length == 1)
     		STATUS_DIR = new File(args[0]);
         RandomSource random = NodeStarter.globalTestInit("seednode-pingtest", false, Logger.ERROR, "");
@@ -179,5 +180,10 @@ public class SeednodePingTest extends RealNodeTest {
     }
     node.park();
     System.exit(0);
+    } catch (Throwable t) {
+    	System.err.println("CAUGHT: "+t);
+    	t.printStackTrace();
+    	System.exit(1);
+    }
     }
 }
