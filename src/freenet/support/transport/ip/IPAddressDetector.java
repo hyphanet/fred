@@ -79,7 +79,7 @@ public class IPAddressDetector implements Runnable {
 		} catch (SocketException e) {
 			Logger.error(
 				this,
-				"SocketException trying to detect NetworkInterfaces",
+				"SocketException trying to detect NetworkInterfaces: "+e,
 				e);
 			addrs.add(oldDetect());
 			old = true;
