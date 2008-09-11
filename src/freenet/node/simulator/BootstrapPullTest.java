@@ -55,6 +55,7 @@ public class BootstrapPullTest {
 	 * @throws InterruptedException 
 	 */
 	public static void main(String[] args) throws InvalidThresholdException, IOException, NodeInitException, InterruptedException {
+		Node secondNode = null;
 		try {
 		String ipOverride = null;
 		if(args.length > 0)
@@ -99,7 +100,7 @@ public class BootstrapPullTest {
         FileUtil.writeTo(fis, new File(secondInnerDir, "seednodes.fref"));
         fis.close();
         PooledExecutor executor = new PooledExecutor();
-        Node secondNode = NodeStarter.createTestNode(DARKNET_PORT, OPENNET_PORT, dir.getPath(), true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);        
+        secondNode = NodeStarter.createTestNode(DARKNET_PORT, OPENNET_PORT, dir.getPath(), true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);        
         secondNode.start(true);
         waitForTenNodes(secondNode);
         
@@ -121,6 +122,10 @@ public class BootstrapPullTest {
 	    } catch (Throwable t) {
 	    	System.err.println("CAUGHT: "+t);
 	    	t.printStackTrace();
+	    	try {
+	    		if(secondNode != null)
+	    			secondNode.park();
+	    	} catch (Throwable t1) {};
 	    	System.exit(EXIT_THREW_SOMETHING);
 	    }
 	}

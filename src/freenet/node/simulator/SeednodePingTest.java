@@ -43,13 +43,14 @@ public class SeednodePingTest extends RealNodeTest {
 	static final long COUNT_SUCCESSES_PERIOD = 7*24*60*60*1000; // 1 week
 
     public static void main(String[] args) throws FSParseException, IOException, OpennetDisabledException, PeerParseException, InterruptedException, ReferenceSignatureVerificationException, NodeInitException, InvalidThresholdException {
+    	Node node = null;
     	try {
     	if(args.length == 1)
     		STATUS_DIR = new File(args[0]);
         RandomSource random = NodeStarter.globalTestInit("seednode-pingtest", false, Logger.ERROR, "");
         // Create one node
         Executor executor = new PooledExecutor();
-	Node node = NodeStarter.createTestNode(5000, 5001, "seednode-pingtest", true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, false, false, false, false, false, false, 0, false, false, null);
+	node = NodeStarter.createTestNode(5000, 5001, "seednode-pingtest", true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, false, false, false, false, false, false, 0, false, false, null);
 	// Connect & ping
 	Vector<SeedServerTestPeerNode> seedNodes = new Vector<SeedServerTestPeerNode>();
 	Vector<SimpleFieldSet> seedNodesAsSFS = Announcer.readSeednodes(new File("/tmp/"));
@@ -183,6 +184,10 @@ public class SeednodePingTest extends RealNodeTest {
     } catch (Throwable t) {
     	System.err.println("CAUGHT: "+t);
     	t.printStackTrace();
+    	try {
+    		if(node != null)
+    		node.park();
+    	} catch (Throwable t1) {};
     	System.exit(1);
     }
     }
