@@ -364,6 +364,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			}
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_FRIENDS);
+			return;
 		} else if(request.isPartSet("security-levels.friendsThreatLevel")) {
 			// We don't require a confirmation here, since it's one page at a time, so there's less information to
 			// confuse the user, and we don't know whether the node has friends yet etc.
@@ -402,6 +403,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			}
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_PHYSICAL);
+			return;
 		} else if(request.isPartSet("security-levels.physicalThreatLevel")) {
 			// We don't require a confirmation here, since it's one page at a time, so there's less information to
 			// confuse the user, and we don't know whether the node has friends yet etc.
@@ -415,6 +417,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
 			core.storeConfig();
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.NAME_SELECTION+"&opennet="+core.node.isOpennetEnabled());
+			return;
 		} else if(request.isPartSet("nnameF")) {
 			String selectedNName = request.getPartAsString("nname", 128);
 			try {
