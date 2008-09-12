@@ -14,4 +14,17 @@ code:
 
 The installer creates a firefox profile. If you don't use it, you should have a 
 look at user.js in the firefox_profile directory for some useful settings for 
-browsing Freenet (both for performance and security).
+browsing Freenet (both for performance and security). If you close the Freenet
+browser window *after* you close the main firefox window, Firefox will assume
+you want to open the Freenet profile next time - the solution is to run:
+
+firefox -ProfileManager
+
+And choose which profile you want.
+
+On OS/X and unix-based systems, Freenet will create a cron job to run Freenet 
+on startup. On Windows it creates a user for Freenet to run under, and a service 
+to start it. You should run Freenet as close to 24x7 as possible for good 
+performance. It is however possible to remove the cron job (with the remove cron 
+job script in bin/), or to remove the service (from the services panel in Control 
+Panel).
