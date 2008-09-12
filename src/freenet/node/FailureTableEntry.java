@@ -47,6 +47,11 @@ class FailureTableEntry implements TimedOutNodesList {
 	 * if we receive an offer from that node, we will reject it */
 	static final int MAX_TIME_BETWEEN_REQUEST_AND_OFFER = 60 * 60 * 1000;
 	
+        public static final long[] EMPTY_LONG_ARRAY = new long[0];
+        public static final short[] EMPTY_SHORT_ARRAY = new short[0];
+        public static final double[] EMPTY_DOUBLE_ARRAY = new double[0];
+        public static final WeakReference[] EMPTY_WEAK_REFERENCE = new WeakReference[0];
+        
 	FailureTableEntry(Key key) {
 		this.key = key;
 		if(key == null) throw new NullPointerException();
@@ -55,15 +60,15 @@ class FailureTableEntry implements TimedOutNodesList {
 		creationTime = now;
 		receivedTime = -1;
 		sentTime = -1;
-		requestorNodes = new WeakReference[0];
-		requestorTimes = new long[0];
-		requestorBootIDs = new long[0];
-		requestedNodes = new WeakReference[0];
-		requestedLocs = new double[0];
-		requestedBootIDs = new long[0];
-		requestedTimes = new long[0];
-		requestedTimeouts = new long[0];
-		requestedTimeoutHTLs = new short[0];
+		requestorNodes = EMPTY_WEAK_REFERENCE;
+		requestorTimes = EMPTY_LONG_ARRAY;
+		requestorBootIDs = EMPTY_LONG_ARRAY;
+		requestedNodes = EMPTY_WEAK_REFERENCE;
+		requestedLocs = EMPTY_DOUBLE_ARRAY;
+		requestedBootIDs = EMPTY_LONG_ARRAY;
+		requestedTimes = EMPTY_LONG_ARRAY;
+		requestedTimeouts = EMPTY_LONG_ARRAY;
+		requestedTimeoutHTLs = EMPTY_SHORT_ARRAY;
 	}
 	
 	/**
@@ -338,8 +343,8 @@ class FailureTableEntry implements TimedOutNodesList {
 			anyValid = true;
 		}
 		if(!anyValid) {
-			requestorNodes = new WeakReference[0];
-			requestorTimes = requestorBootIDs = new long[0];
+			requestorNodes = EMPTY_WEAK_REFERENCE;
+			requestorTimes = requestorBootIDs = EMPTY_LONG_ARRAY;
 		}
 		return anyValid;
 	}
@@ -369,8 +374,8 @@ class FailureTableEntry implements TimedOutNodesList {
 			} 
 		}
 		if(!anyValid) {
-			requestorNodes = new WeakReference[0];
-			requestorTimes = requestorBootIDs = new long[0];
+			requestorNodes = EMPTY_WEAK_REFERENCE;
+			requestorTimes = requestorBootIDs = EMPTY_LONG_ARRAY;;
 		}
 		return ret;
 	}
@@ -401,9 +406,9 @@ class FailureTableEntry implements TimedOutNodesList {
 			}
 		}
 		if(!anyValid) {
-			requestedNodes = new WeakReference[0];
-			requestedTimes = requestedBootIDs = requestedTimeouts = new long[0];
-			requestedTimeoutHTLs = new short[0];
+			requestedNodes = EMPTY_WEAK_REFERENCE;
+			requestedTimes = requestedBootIDs = requestedTimeouts = EMPTY_LONG_ARRAY;
+			requestedTimeoutHTLs =EMPTY_SHORT_ARRAY;
 		}
 		return ret;
 	}
