@@ -103,7 +103,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	class FProxyPassthruMaxSize extends LongCallback  {
+	static class FProxyPassthruMaxSize extends LongCallback {
 		
 		@Override
 		public Long get() {
