@@ -170,6 +170,10 @@ public class LocationManager implements ByteCounter {
                         }
                         if(System.currentTimeMillis() >= endTime) break;
                     }
+                    // FIXME shut down the swap initiator thread when swapping is disabled and re-enable it when swapping comes back up.
+                    if(swappingDisabled()) {
+                    	continue;
+                    }
                     // Don't send one if we are locked
                     if(lock()) {
                         if(System.currentTimeMillis() - timeLastSuccessfullySwapped > 30*1000) {
@@ -230,7 +234,22 @@ public class LocationManager implements ByteCounter {
                 "Outgoing swap request handler for port "+node.getDarknetPortNumber());
     }
     
-    public int getSendSwapInterval() {
+    /**
+     * Should we swap? LOCKING: Call without holding locks.
+     * @return
+     */
+    public boolean swappingDisabled() {
+    	// Swapping on opennet nodes, even hybrid nodes, causes significant and unnecessary location churn.
+    	// Simulations show significantly improved performance if all opennet enabled nodes don't participate in swapping.
+    	// FIXME: Investigate the possibility of enabling swapping on hybrid nodes with mostly darknet peers (more simulation needed).
+    	// FIXME: Hybrid nodes with all darknet peeers who haven't upgraded to HIGH.
+    	// Probably we should have a useralert for this to get the user to do the right thing ... but we could auto-detect
+    	// it and start swapping... however, we should not start swapping just because we temporarily have no opennet peers
+    	// on startup.
+    	return node.isOpennetEnabled();
+	}
+
+	public int getSendSwapInterval() {
     	int interval = (int) averageSwapTime.currentValue();
     	if(interval < MIN_SWAP_TIME)
     		interval = MIN_SWAP_TIME;
@@ -896,7 +915,7 @@ public class LocationManager implements ByteCounter {
         	htl = SWAP_MAX_HTL;
         }
         htl--;
-        if(!node.enableSwapping) {
+        if(!node.enableSwapping || htl <= 0 && swappingDisabled()) {
             // Reject
             Message reject = DMT.createFNPSwapRejected(oldID);
             try {
