@@ -273,6 +273,7 @@ public class UpdateOverMandatoryManager {
 	private void sendUOMRequestMain(final PeerNode source, boolean addOnFail) {
 		if(logMINOR)
 			Logger.minor(this, "sendUOMRequestMain("+source+","+addOnFail+")");
+		if(!source.isConnected()) return;
 		synchronized(this) {
 			long offeredVersion = source.getMainJarOfferedVersion();
 			if(offeredVersion < updateManager.newMainJarVersion()) {
@@ -365,6 +366,7 @@ public class UpdateOverMandatoryManager {
 							>= MAX_NODES_SENDING_MAIN_JAR)
 						return;
 					if(nodesSendingMainJar.contains(offers[i])) continue;
+					if(nodesAskedSendMainJar.contains(offers[i])) continue;
 				}
 				sendUOMRequestMain(offers[i], false);
 			}
