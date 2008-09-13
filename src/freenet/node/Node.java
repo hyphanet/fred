@@ -136,10 +136,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private final static ClockProblemDetectedUserAlert clockProblemDetectedUserAlert = new ClockProblemDetectedUserAlert();
 	
 	public class NodeNameCallback extends StringCallback  {
-		GetPubkey node;
-	
-		NodeNameCallback(GetPubkey n) {
-			node=n;
+		NodeNameCallback() {
 		}
 		@Override
 		public String get() {
@@ -1442,7 +1439,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		// Name 	 
 		nodeConfig.register("name", myName, sortOrder++, false, true, "Node.nodeName", "Node.nodeNameLong", 	 
-						new NodeNameCallback(this)); 	 
+						new NodeNameCallback()); 	 
 		myName = nodeConfig.getString("name"); 	 
 
 		// Datastore		
