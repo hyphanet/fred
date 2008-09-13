@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
@@ -59,10 +60,13 @@ public class NodeIPPortDetector {
 	 * differently for each connection, we're stuffed, and we tell the user).
 	 */
 	Peer[] detectPrimaryPeers() {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		Vector addresses = new Vector();
 		FreenetInetAddress[] addrs = detectPrimaryIPAddress();
 		for(int i=0;i<addrs.length;i++) {
 			addresses.add(new Peer(addrs[i], crypto.portNumber));
+			if(logMINOR)
+				Logger.minor(this, "Adding "+addrs[i]);
 		}
 		// Now try to get the rewritten port number from our peers.
 		// Only considering those within this crypto port, this time.
@@ -140,6 +144,8 @@ public class NodeIPPortDetector {
 			}
 		}
 		lastPeers = (Peer[]) addresses.toArray(new Peer[addresses.size()]);
+		if(logMINOR)
+			Logger.minor(this, "Returning for port "+crypto.portNumber+" : "+Arrays.toString(lastPeers));
 		return lastPeers;
 	}
 	
