@@ -52,7 +52,7 @@ public class RealNodeSecretPingTest {
         String wd = "realNodeSecretPingTest";
         new File(wd).mkdir();
         //NOTE: globalTestInit returns in ignored random source
-        NodeStarter.globalTestInit(wd, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeSecretPingTest:normal,freenet.node.NetworkIDManager:normal");
+        NodeStarter.globalTestInit(wd, false, Logger.ERROR, "freenet.node.Location:normal,freenet.node.simulator.RealNodeSecretPingTest:normal,freenet.node.NetworkIDManager:normal", true);
 
         DummyRandomSource random = new DummyRandomSource();
         //DiffieHellman.init(random);

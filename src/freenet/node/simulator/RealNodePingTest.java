@@ -30,7 +30,7 @@ import freenet.support.LoggerHook.InvalidThresholdException;
 public class RealNodePingTest {
 
     public static void main(String[] args) throws FSParseException, PeerParseException, InterruptedException, ReferenceSignatureVerificationException, NodeInitException, InvalidThresholdException {
-        RandomSource random = NodeStarter.globalTestInit("pingtest", false, Logger.ERROR, "");
+        RandomSource random = NodeStarter.globalTestInit("pingtest", false, Logger.ERROR, "", true);
         // Create 2 nodes
         Executor executor = new PooledExecutor();
         Node node1 = NodeStarter.createTestNode(5001, 0, "pingtest", false, false, true, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 65536, true, false, false, false, false, false, true, 0, false, false, null);

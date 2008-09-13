@@ -48,7 +48,7 @@ public class RealNodeRoutingTest extends RealNodeTest {
 		}
 		wd.mkdir();
 		//NOTE: globalTestInit returns in ignored random source
-		NodeStarter.globalTestInit(dir, false, Logger.ERROR, "");
+		NodeStarter.globalTestInit(dir, false, Logger.ERROR, "", true);
 		DummyRandomSource random = new DummyRandomSource();
 		//DiffieHellman.init(random);
 		Node[] nodes = new Node[NUMBER_OF_NODES];

@@ -47,7 +47,7 @@ public class SeednodePingTest extends RealNodeTest {
     	try {
     	if(args.length == 1)
     		STATUS_DIR = new File(args[0]);
-        RandomSource random = NodeStarter.globalTestInit("seednode-pingtest", false, Logger.ERROR, "");
+        RandomSource random = NodeStarter.globalTestInit("seednode-pingtest", false, Logger.ERROR, "", false);
         // Create one node
         Executor executor = new PooledExecutor();
 	node = NodeStarter.createTestNode(5000, 5001, "seednode-pingtest", true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, false, false, false, false, false, false, 0, false, false, null);

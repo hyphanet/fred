@@ -62,7 +62,7 @@ public class BootstrapPullTest {
 			ipOverride = args[0];
         File dir = new File("bootstrap-pull-test");
         FileUtil.removeAll(dir);
-        RandomSource random = NodeStarter.globalTestInit(dir.getPath(), false, Logger.ERROR, "");
+        RandomSource random = NodeStarter.globalTestInit(dir.getPath(), false, Logger.ERROR, "", false);
         byte[] seed = new byte[64];
         random.nextBytes(seed);
         MersenneTwister fastRandom = new MersenneTwister(seed);
