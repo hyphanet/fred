@@ -14,9 +14,12 @@ code:
 
 The installer creates a firefox profile. If you don't use it, you should have a 
 look at user.js in the firefox_profile directory for some useful settings for 
-browsing Freenet (both for performance and security). If you close the Freenet
-browser window *after* you close the main firefox window, Firefox will assume
-you want to open the Freenet profile next time - the solution is to run:
+browsing Freenet (both for performance and security). Occasionally, Firefox can
+decide that the Freenet profile should be the default profile. In the past this
+has happened if you close the Freenet browser window after the main firefox 
+window, but recently (FF2, FF3), we have been unable to reproduce the bug, 
+although we continue to get reports from time to time. Anyway, to fix it, open 
+a command line, cd to where firefox is installed, and type:
 
 firefox -ProfileManager
 
