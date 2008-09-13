@@ -133,6 +133,7 @@ public class NodeIPDetector {
 	   	if(dumpLocalAddresses) {
 	   		ArrayList filtered = new ArrayList(lastIPAddress.length);
 	   		for(int i=0;i<lastIPAddress.length;i++) {
+	   			if(lastIPAddress[i] == null) continue;
 	   			if(IPUtil.isValidAddress(lastIPAddress[i].getAddress(), false))
 	   				filtered.add(lastIPAddress[i]);
 	   		}
