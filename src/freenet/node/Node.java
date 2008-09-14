@@ -2036,13 +2036,14 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// If we are running a Sun or Blackdown JVM, on Linux, and LD_ASSUME_KERNEL is not set, then we are.
 		
 		String jvmVendor = System.getProperty("java.vm.vendor");
+		String jvmSpecVendor = System.getProperty("java.specification.vendor","");
 		String jvmVersion = System.getProperty("java.version");
 		String osName = System.getProperty("os.name");
 		String osVersion = System.getProperty("os.version");
 		
 		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM version: "+jvmVersion+", OS name: "+osName+", OS version: "+osVersion);
 		
-		if(jvmVendor.startsWith("Sun ")) {
+		if(jvmVendor.startsWith("Sun ") || (jvmVendor.startsWith("The FreeBSD Foundation") && jvmSpecVendor.startsWith("Sun "))) {
 			// Sun bugs
 			
 			// Spurious OOMs
