@@ -11,10 +11,16 @@ import freenet.support.SimpleFieldSet;
 public class PersistentConfig extends Config {
 
 	protected SimpleFieldSet origConfigFileContents;
+	protected boolean wasNew;
 	protected volatile boolean finishedInit;
 
 	public PersistentConfig(SimpleFieldSet initialContents) {
 		this.origConfigFileContents = initialContents;
+		wasNew = initialContents == null;
+	}
+	
+	public boolean wasNew() {
+		return wasNew;
 	}
 	
 	/**
