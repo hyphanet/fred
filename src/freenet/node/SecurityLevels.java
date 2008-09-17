@@ -96,7 +96,7 @@ public class SecurityLevels {
 			}
 
 		};
-		myConfig.register("networkThreatLevel", "NORMAL", sortOrder++, false, true, "SecurityLevels.networkThreatLevelShort", "SecurityLevels.networkThreatLevel", networkThreatLevelCallback);
+		myConfig.register("networkThreatLevel", "HIGH", sortOrder++, false, true, "SecurityLevels.networkThreatLevelShort", "SecurityLevels.networkThreatLevel", networkThreatLevelCallback);
 		NETWORK_THREAT_LEVEL netLevel = NETWORK_THREAT_LEVEL.valueOf(myConfig.getString("networkThreatLevel"));
 		if(!config.wasNew()) {
 			networkThreatLevel = netLevel;
