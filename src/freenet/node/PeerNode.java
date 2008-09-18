@@ -4044,6 +4044,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		// Any urgent notifications to send?
 		long urgentTime = getNextUrgentTime();
+		if(urgentTime <= now)
+			mustSend = true;
 		checkTrackerTimeout();
 		
 		// Any packets to resend?
