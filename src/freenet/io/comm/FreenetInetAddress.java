@@ -374,4 +374,8 @@ public class FreenetInetAddress {
 			return new FreenetInetAddress(getAddress());
 		} else return this;
 	}
+
+	public boolean hasHostnameNoIP() {
+		return hostname != null && hostname.length() > 0 && _address == null;
+	}
 }
