@@ -702,6 +702,8 @@ public class KeyTracker {
 		while(true) {
 			try {
 				sentPacketsContents.lock(packetNumber);
+				if(logMINOR)
+					Logger.minor(this, "Locked "+packetNumber);
 				return packetNumber;
 			} catch(InterruptedException e) {
 				synchronized(this) {

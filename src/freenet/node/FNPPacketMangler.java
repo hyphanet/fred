@@ -2147,7 +2147,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			int count = 0;
 			int lastIndex = 0;
 			alreadyReportedBytes = 0;
+			if(logMINOR)
+				Logger.minor(this, "Sending "+messageData.length+" messages");
 			for(int i=0;i<=messageData.length;i++) {
+				if(logMINOR)
+					Logger.minor(this, "Sending message "+i);
 				int thisLength;
 				if(i == messages.length) thisLength = 0;
 				else thisLength = (messageData[i].length + 2);
