@@ -199,7 +199,7 @@ public class PluginManager {
 
 		File[] roots = File.listRoots();
 		for(File f : roots) {
-			if(pluginname.startsWith(f.getName())) {
+			if(pluginname.startsWith(f.getPath())) {
 				startPluginFile(pluginname, store);
 				return;
 			}
