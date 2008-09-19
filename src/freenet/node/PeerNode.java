@@ -1263,9 +1263,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			MessageItem[] output = new MessageItem[size];
 			int ptr = 0;
 			for(int i=0;i<messagesToSendNow.length;i++) {
-				int thisSize = messagesToSendNow[i].size();
-				System.arraycopy(messagesToSendNow[i], 0, output, ptr, thisSize);
-				ptr += thisSize;
+				for(Object item : messagesToSendNow[i])
+					output[ptr++] = (MessageItem) item;
 			}
 			return output;
 		}
