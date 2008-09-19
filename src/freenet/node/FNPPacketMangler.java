@@ -2000,7 +2000,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/* (non-Javadoc)
 	 * @see freenet.node.OutgoingPacketMangler#processOutgoingOrRequeue(freenet.node.MessageItem[], freenet.node.PeerNode, boolean, boolean)
 	 */
-	public void processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn, boolean neverWaitForPacketNumber, boolean dontRequeue) {
+	public void processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn, boolean neverWaitForPacketNumber, boolean dontRequeue, boolean onePacket) {
 		String requeueLogString = "";
 		if(!dontRequeue) {
 			requeueLogString = ", requeueing";
@@ -2190,6 +2190,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 							// Requeue
 							if(!dontRequeue)
 								pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false, "Throwable(3)");
+							return;
+						}
+						if(onePacket) {
+							pn.requeueMessageItems(messages, i, messageData.length - i, true, "Didn't fit in single packet");
 							return;
 						}
 					}

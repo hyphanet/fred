@@ -1054,6 +1054,12 @@ public class KeyTracker {
 			return null;
 		return numbers;
 	}
+	
+	public boolean hasPacketsToResend() {
+		synchronized(packetsToResend) {
+			return !packetsToResend.isEmpty();
+		}
+	}
 
 	public boolean isDeprecated() {
 		return this.isDeprecated;

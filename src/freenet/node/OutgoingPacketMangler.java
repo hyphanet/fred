@@ -24,9 +24,11 @@ public interface OutgoingPacketMangler {
 	 * Build one or more packets and send them, from a whole bunch of messages.
 	 * If any MessageItem's are formatted already, they will be sent as single packets.
 	 * Any packets which cannot be sent will be requeued on the PeerNode.
+	 * @param onePacketOnly If true, we will only send one packet, and will requeue any
+	 * messages that don't fit in that single packet.
 	 */
 	public void processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn,
-			boolean neverWaitForPacketNumber, boolean dontRequeue);
+			boolean neverWaitForPacketNumber, boolean dontRequeue, boolean onePacketOnly);
 
 	/**
 	 * Resend a single packet.
