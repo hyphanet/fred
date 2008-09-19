@@ -43,7 +43,7 @@ public interface OutgoingPacketMangler {
 	 * @return Total size including UDP headers of the sent packet.
 	 */
 	public int processOutgoing(byte[] buf, int offset, int length,
-			KeyTracker tracker, int alreadyReportedBytes, short priority)
+			KeyTracker tracker, short priority)
 			throws KeyChangedException, NotConnectedException,
 			PacketSequenceException, WouldBlockException;
 
@@ -66,7 +66,7 @@ public interface OutgoingPacketMangler {
 	 */
 	public int processOutgoingPreformatted(byte[] buf, int offset, int length,
 			KeyTracker tracker, int packetNumber,
-			AsyncMessageCallback[] callbacks, int alreadyReportedBytes, short priority)
+			AsyncMessageCallback[] callbacks, short priority)
 			throws KeyChangedException, NotConnectedException,
 			PacketSequenceException, WouldBlockException;
 

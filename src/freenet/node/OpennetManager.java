@@ -520,7 +520,7 @@ public class OpennetManager {
 		long xferUID = node.random.nextLong();
 		Message msg2 = isReply ? DMT.createFNPOpennetConnectReplyNew(uid, xferUID, noderef.length, padded.length) :
 			DMT.createFNPOpennetConnectDestinationNew(uid, xferUID, noderef.length, padded.length);
-		peer.sendAsync(msg2, null, 0, ctr);
+		peer.sendAsync(msg2, null, ctr);
 		innerSendOpennetRef(xferUID, padded, peer, ctr);
 	}
 
@@ -551,7 +551,7 @@ public class OpennetManager {
 		long xferUID = node.random.nextLong();
 		Message msg = DMT.createFNPOpennetAnnounceRequest(uid, xferUID, noderef.length, 
 				paddedSize(noderef.length), target, htl);
-		peer.sendAsync(msg, null, 0, ctr);
+		peer.sendAsync(msg, null, ctr);
 		return xferUID;
 	}
 	
@@ -582,7 +582,7 @@ public class OpennetManager {
 		long xferUID = node.random.nextLong();
 		Message msg = DMT.createFNPOpennetAnnounceReply(uid, xferUID, noderef.length, 
 				padded.length);
-		peer.sendAsync(msg, null, 0, ctr);
+		peer.sendAsync(msg, null, ctr);
 		innerSendOpennetRef(xferUID, padded, peer, ctr);
 	}
 	
@@ -664,7 +664,7 @@ public class OpennetManager {
 	public void rejectRef(long uid, PeerNode source, int reason, ByteCounter ctr) {
 		Message msg = DMT.createFNPOpennetNoderefRejected(uid, reason);
 		try {
-			source.sendAsync(msg, null, 0, ctr);
+			source.sendAsync(msg, null, ctr);
 		} catch (NotConnectedException e) {
 			// Ignore
 		}

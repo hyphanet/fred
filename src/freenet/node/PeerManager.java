@@ -517,7 +517,7 @@ public class PeerManager {
 						if(removePeer(pn))
 							writePeers();
 					}
-				}, 0, ctrDisconn);
+				}, ctrDisconn);
 			} catch(NotConnectedException e) {
 				if(pn.isDisconnecting() && removePeer(pn))
 					writePeers();
@@ -723,7 +723,7 @@ public class PeerManager {
 			if(onlyRealConnections && !peers[i].isRealConnection())
 				continue;
 			try {
-				peers[i].sendAsync(msg, null, 0, ctr);
+				peers[i].sendAsync(msg, null, ctr);
 			} catch(NotConnectedException e) {
 				// Ignore
 			}

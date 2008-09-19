@@ -1024,7 +1024,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* relating to this packet (normally set when we have delayed a packet in order to
 	* throttle it).
 	*/
-	public void sendAsync(Message msg, AsyncMessageCallback cb, int alreadyReportedBytes, ByteCounter ctr) throws NotConnectedException {
+	public void sendAsync(Message msg, AsyncMessageCallback cb, ByteCounter ctr) throws NotConnectedException {
 		if(ctr == null)
 			Logger.error(this, "Bytes not logged", new Exception("debug"));
 		if(logMINOR)
@@ -1032,7 +1032,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(!isConnected())
 			throw new NotConnectedException();
 		addToLocalNodeSentMessagesToStatistic(msg);
-		MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[]{cb}, alreadyReportedBytes, ctr, this);
+		MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[]{cb}, ctr, this);
 		long now = System.currentTimeMillis();
 		reportBackoffStatus(now);
 		int x = 0;
@@ -1562,7 +1562,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	*/
 	public void sendSync(Message req, ByteCounter ctr) throws NotConnectedException {
 		SyncMessageCallback cb = new SyncMessageCallback();
-		sendAsync(req, cb, 0, ctr);
+		sendAsync(req, cb, ctr);
 		cb.waitForSend(60 * 1000);
 		if (!cb.done) {
 			Logger.error(this, "Waited too long for a blocking send for " + req + " to " + PeerNode.this, new Exception("error"));
@@ -2119,12 +2119,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		try {
 			if(isRealConnection())
-				sendAsync(locMsg, null, 0, node.nodeStats.initialMessagesCtr);
-			sendAsync(ipMsg, null, 0, node.nodeStats.initialMessagesCtr);
-			sendAsync(timeMsg, null, 0, node.nodeStats.initialMessagesCtr);
-			sendAsync(packetsMsg, null, 0, node.nodeStats.initialMessagesCtr);
-			sendAsync(dRoutingMsg, null, 0, node.nodeStats.initialMessagesCtr);
-			sendAsync(uptimeMsg, null, 0, node.nodeStats.initialMessagesCtr);
+				sendAsync(locMsg, null, node.nodeStats.initialMessagesCtr);
+			sendAsync(ipMsg, null, node.nodeStats.initialMessagesCtr);
+			sendAsync(timeMsg, null, node.nodeStats.initialMessagesCtr);
+			sendAsync(packetsMsg, null, node.nodeStats.initialMessagesCtr);
+			sendAsync(dRoutingMsg, null, node.nodeStats.initialMessagesCtr);
+			sendAsync(uptimeMsg, null, node.nodeStats.initialMessagesCtr);
 		} catch(NotConnectedException e) {
 			Logger.error(this, "Completed handshake with " + getPeer() + " but disconnected (" + isConnected + ':' + currentTracker + "!!!: " + e, e);
 		}
@@ -2163,7 +2163,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private void sendIPAddressMessage() {
 		Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
 		try {
-			sendAsync(ipMsg, null, 0, node.nodeStats.changedIPCtr);
+			sendAsync(ipMsg, null, node.nodeStats.changedIPCtr);
 		} catch(NotConnectedException e) {
 			Logger.normal(this, "Sending IP change message to " + this + " but disconnected: " + e, e);
 		}
@@ -2478,7 +2478,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(t < now || forceSendPrimary) {
 				try {
 					if(logMINOR) Logger.minor(this, "Sending urgent notifications for current tracker on "+shortToString());
-					int size = outgoingMangler.processOutgoing(null, 0, 0, tracker, 0, DMT.PRIORITY_NOW);
+					int size = outgoingMangler.processOutgoing(null, 0, 0, tracker, DMT.PRIORITY_NOW);
 					node.nodeStats.reportNotificationOnlyPacketSent(size);
 				} catch(NotConnectedException e) {
 				// Ignore
@@ -2495,7 +2495,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(t < now)
 				try {
 					if(logMINOR) Logger.minor(this, "Sending urgent notifications for previous tracker on "+shortToString());
-					int size = outgoingMangler.processOutgoing(null, 0, 0, tracker, 0, DMT.PRIORITY_NOW);
+					int size = outgoingMangler.processOutgoing(null, 0, 0, tracker, DMT.PRIORITY_NOW);
 					node.nodeStats.reportNotificationOnlyPacketSent(size);
 				} catch(NotConnectedException e) {
 				// Ignore
@@ -2712,7 +2712,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				Logger.error(this, "No tracker to resend packet " + item.packetNumber + " on");
 				continue;
 			}
-			MessageItem mi = new MessageItem(item.buf, item.callbacks, true, 0, resendByteCounter, item.priority);
+			MessageItem mi = new MessageItem(item.buf, item.callbacks, true, resendByteCounter, item.priority);
 			requeueMessageItems(new MessageItem[]{mi}, 0, 1, true);
 		}
 	}
@@ -3431,7 +3431,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		byte[] authenticator = HMAC.macWithSHA256(node.failureTable.offerAuthenticatorKey, keyBytes, 32);
 		Message msg = DMT.createFNPOfferKey(key, authenticator);
 		try {
-			sendAsync(msg, null, 0, node.nodeStats.sendOffersCtr);
+			sendAsync(msg, null, node.nodeStats.sendOffersCtr);
 		} catch(NotConnectedException e) {
 		// Ignore
 		}
@@ -3873,7 +3873,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			n2nm = DMT.createNodeToNodeMessage(
 					n2nType, fs.toString().getBytes("UTF-8"));
 			try {
-				sendAsync(n2nm, null, 0, node.nodeStats.nodeToNodeCounter);
+				sendAsync(n2nm, null, node.nodeStats.nodeToNodeCounter);
 			} catch (NotConnectedException e) {
 				if(includeSentTime) {
 					fs.removeValue("sentTime");
@@ -3950,7 +3950,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	
 	void sendFNPNetworkID(ByteCounter ctr) throws NotConnectedException {
 		if (assignedNetworkID!=0)
-			sendAsync(DMT.createFNPNetworkID(assignedNetworkID), null, 0, ctr);
+			sendAsync(DMT.createFNPNetworkID(assignedNetworkID), null, ctr);
 	}
 
 	public boolean shouldThrottle() {
@@ -3997,7 +3997,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(logMINOR) Logger.minor(this, "Sending throttled message with timeout "+timeout+" packet size "+packetSize+" to "+shortToString());
 		for(int i=0;i<100;i++) {
 			try {
-				getThrottle().sendThrottledMessage(msg, this, node.outputThrottle, packetSize, ctr, deadline, blockForSend);
+				getThrottle().sendThrottledMessage(msg, this, packetSize, ctr, deadline, blockForSend);
 				return;
 			} catch (ThrottleDeprecatedException e) {
 				// Try with the new throttle. We don't need it, we'll get it from getThrottle().
@@ -4062,7 +4062,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * @param rpiTemp
 	 * @param rpiTemp
 	 */
-	public void maybeSendPacket(long now, Vector rpiTemp, int[] rpiIntTemp) {
+	public boolean maybeSendPacket(long now, Vector rpiTemp, int[] rpiIntTemp) {
 		// If there are any urgent notifications, we must send a packet.
 		boolean mustSend = false;
 		if(mustSendNotificationsNow(now)) {
@@ -4091,23 +4091,23 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					if(logMINOR)
 						Logger.minor(this, "Resending " + item.packetNumber + " to " + item.kt);
 					getOutgoingMangler().resend(item);
-					return;
+					return true;
 				} catch(KeyChangedException e) {
 					Logger.error(this, "Caught " + e + " resending packets to " + kt);
 					requeueResendItems(rpiTemp);
-					return;
+					return false;
 				} catch(NotConnectedException e) {
 					Logger.normal(this, "Caught " + e + " resending packets to " + kt);
 					requeueResendItems(rpiTemp);
-					return;
+					return false;
 				} catch(PacketSequenceException e) {
 					Logger.error(this, "Caught " + e + " - disconnecting", e);
 					// PSE is fairly drastic, something is broken between us, but maybe we can resync
 					forceDisconnect(false); 
-					return;
+					return false;
 				} catch(WouldBlockException e) {
 					Logger.error(this, "Impossible: " + e, e);
-					return;
+					return false;
 				}
 			}
 
@@ -4233,15 +4233,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			// Force packet to have a sequence number.
 			Message m = DMT.createFNPVoid();
 			addToLocalNodeSentMessagesToStatistic(m);
-			messages.add(new MessageItem(m, null, 0, null, this));
+			messages.add(new MessageItem(m, null, null, this));
 		}
 		
-		if(messages.isEmpty()) return;
+		if(messages.isEmpty()) return false;
 		
 		// Send packets, right now, blocking, including any active notifications
 		// Note that processOutgoingOrRequeue will drop messages from the end
 		// if necessary to fit the messages into a single packet.
 		getOutgoingMangler().processOutgoingOrRequeue(messages.toArray(new MessageItem[messages.size()]), this, true, false, true);
-
+		
+		return true;
 	}
 }

@@ -402,7 +402,7 @@ public class FailureTable implements OOMHook {
 			SSKBlock block = node.fetch((NodeSSK)key, false);
 			if(block == null) {
 				// Don't have the key
-				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, 0, senderCounter);
+				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, senderCounter);
 				return;
 			}
 			
@@ -410,7 +410,7 @@ public class FailureTable implements OOMHook {
 			Message headers = DMT.createFNPSSKDataFoundHeaders(uid, block.getRawHeaders());
 			final int dataLength = block.getRawData().length;
 			
-			source.sendAsync(headers, null, 0, senderCounter);
+			source.sendAsync(headers, null, senderCounter);
 			
 			node.executor.execute(new PrioRunnable() {
 
@@ -437,21 +437,21 @@ public class FailureTable implements OOMHook {
 			
 			if(RequestHandler.SEND_OLD_FORMAT_SSK) {
 				Message df = DMT.createFNPSSKDataFound(uid, block.getRawHeaders(), block.getRawData());
-				source.sendAsync(df, null, 0, senderCounter);
+				source.sendAsync(df, null, senderCounter);
 			}
 			if(needPubKey) {
 				Message pk = DMT.createFNPSSKPubKey(uid, block.getPubKey());
-				source.sendAsync(pk, null, 0, senderCounter);
+				source.sendAsync(pk, null, senderCounter);
 			}
 		} else {
 			CHKBlock block = node.fetch((NodeCHK)key, false);
 			if(block == null) {
 				// Don't have the key
-				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, 0, senderCounter);
+				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, senderCounter);
 				return;
 			}
 			Message df = DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
-			source.sendAsync(df, null, 0, senderCounter);
+			source.sendAsync(df, null, senderCounter);
         	PartiallyReceivedBlock prb =
         		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
         	final BlockTransmitter bt =

@@ -86,7 +86,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
         Message accepted = DMT.createFNPSSKAccepted(uid, pubKey == null);
         
         try {
-			source.sendAsync(accepted, null, 0, this);
+			source.sendAsync(accepted, null, this);
 		} catch (NotConnectedException e1) {
 			if(logMINOR) Logger.minor(this, "Lost connection to source");
 			return;
@@ -141,7 +141,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
 					if(logMINOR) Logger.minor(this, "Got pubkey on "+uid+" : "+pubKey);
 					Message confirm = DMT.createFNPSSKPubKeyAccepted(uid);
 					try {
-						source.sendAsync(confirm, null, 0, this);
+						source.sendAsync(confirm, null, this);
 					} catch (NotConnectedException e) {
 						if(logMINOR) Logger.minor(this, "Lost connection to source on "+uid);
 						return;

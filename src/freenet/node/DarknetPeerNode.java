@@ -303,7 +303,7 @@ public class DarknetPeerNode extends PeerNode {
 		if(localRequest) {
 			Message msg = DMT.createRoutingStatus(shouldRoute);
 			try {
-				sendAsync(msg, null, 0, node.nodeStats.setRoutingStatusCtr);
+				sendAsync(msg, null, node.nodeStats.setRoutingStatusCtr);
 			} catch(NotConnectedException e) {
 			// ok
 			}
@@ -1333,7 +1333,7 @@ public class DarknetPeerNode extends PeerNode {
 					Node.N2N_MESSAGE_TYPE_FPROXY, fs
 							.toString().getBytes("UTF-8"));
 			try {
-				sendAsync(n2ntm, null, 0, node.nodeStats.nodeToNodeCounter);
+				sendAsync(n2ntm, null, node.nodeStats.nodeToNodeCounter);
 			} catch (NotConnectedException e) {
 				fs.removeValue("sentTime");
 				queueN2NM(fs);
@@ -1367,7 +1367,7 @@ public class DarknetPeerNode extends PeerNode {
 					Node.N2N_MESSAGE_TYPE_FPROXY, fs
 							.toString().getBytes("UTF-8"));
 			try {
-				sendAsync(n2ntm, null, 0, node.nodeStats.nodeToNodeCounter);
+				sendAsync(n2ntm, null, node.nodeStats.nodeToNodeCounter);
 			} catch (NotConnectedException e) {
 				fs.removeValue("sentTime");
 				queueN2NM(fs);
@@ -1410,7 +1410,7 @@ public class DarknetPeerNode extends PeerNode {
 					Node.N2N_MESSAGE_TYPE_FPROXY, fs
 							.toString().getBytes("UTF-8"));
 			try {
-				sendAsync(n2ntm, null, 0, node.nodeStats.nodeToNodeCounter);
+				sendAsync(n2ntm, null, node.nodeStats.nodeToNodeCounter);
 			} catch (NotConnectedException e) {
 				fs.removeValue("sentTime");
 				queueN2NM(fs);
@@ -1506,7 +1506,7 @@ public class DarknetPeerNode extends PeerNode {
 		if(fo == null) {
 			Logger.error(this, "No such offer: "+uid);
 			try {
-				sendAsync(DMT.createFNPBulkSendAborted(uid), null, 0, node.nodeStats.nodeToNodeCounter);
+				sendAsync(DMT.createFNPBulkSendAborted(uid), null, node.nodeStats.nodeToNodeCounter);
 			} catch (NotConnectedException e) {
 				// Fine by me!
 			}

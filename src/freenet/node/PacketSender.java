@@ -12,6 +12,7 @@ import freenet.io.comm.DMT;
 import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PacketSocketHandler;
+import freenet.io.comm.UdpSocketHandler;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -162,11 +163,16 @@ public class PacketSender implements Runnable, Ticker {
 	public void run() {
 		if(logMINOR) Logger.minor(this, "In PacketSender.run()");
 		freenet.support.Logger.OSThread.logPID(this);
+		/*
+		 * Index of the point in the nodes list at which we sent a packet and then
+		 * ran out of bandwidth. We start the loop from here next time.
+		 */
+		int brokeAt = 0;
 		while(true) {
 			lastReceivedPacketFromAnyNode = lastReportedNoPackets;
 			try {
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				realRun();
+				brokeAt = realRun(brokeAt);
 			} catch(OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("Will retry above failed operation...");
@@ -178,7 +184,7 @@ public class PacketSender implements Runnable, Ticker {
 		}
 	}
 
-	private void realRun() {
+	private int realRun(int brokeAt) {
 		long now = System.currentTimeMillis();
 		lastTimeInSeconds = (int) (now / 1000);
 		PeerManager pm = node.peers;
@@ -200,9 +206,27 @@ public class PacketSender implements Runnable, Ticker {
 		long oldTempNow = now;
 		// Needs to be run very frequently. Maybe change to a regular once per second schedule job?
 		// Maybe not worth it as it is fairly lightweight.
+		// FIXME given the lock contention, maybe it's worth it? What about 
+		// running it on the UdpSocketHandler thread? That would surely be better...?
 		node.lm.removeTooOldQueuedItems();
+		
+		boolean canSendThrottled = false;
+		
+		int MAX_PACKET_SIZE = node.darknetCrypto.socket.getMaxPacketSize();
+		long count = node.outputThrottle.count();
+		if(count > MAX_PACKET_SIZE)
+			canSendThrottled = true;
+		else {
+			long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
+			canSendAt = (canSendAt / (1000*1000)) + (canSendAt % (1000*1000) == 0 ? 0 : 1);
+			if(logMINOR)
+				Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
+			nextActionTime = Math.min(nextActionTime, now + canSendAt);
+		}
+		
+		int newBrokeAt = 0;
 		for(int i = 0; i < nodes.length; i++) {
-			PeerNode pn = nodes[i];
+			PeerNode pn = nodes[i + brokeAt % nodes.length];
 			lastReceivedPacketFromAnyNode =
 				Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
 			pn.maybeOnConnect();
@@ -210,6 +234,8 @@ public class PacketSender implements Runnable, Ticker {
 				// Might as well do it properly.
 				node.peers.disconnect(pn, true, true);
 			}
+			if(pn.shouldThrottle() && !canSendThrottled)
+				continue;
 
 			if(pn.isConnected()) {
 				// Is the node dead?
@@ -230,7 +256,20 @@ public class PacketSender implements Runnable, Ticker {
 					continue;
 				}
 				
-				pn.maybeSendPacket(now, rpiTemp, rpiIntTemp);
+				if(pn.maybeSendPacket(now, rpiTemp, rpiIntTemp) && canSendThrottled) {
+					canSendThrottled = false;
+					count = node.outputThrottle.count();
+					if(count > MAX_PACKET_SIZE)
+						canSendThrottled = true;
+					else {
+						long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
+						canSendAt = (canSendAt / (1000*1000)) + (canSendAt % (1000*1000) == 0 ? 0 : 1);
+						if(logMINOR)
+							Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
+						nextActionTime = Math.min(nextActionTime, now + canSendAt);
+						newBrokeAt = i;
+					}
+				}
 				
 				long urgentTime = pn.getNextUrgentTime(now);
 				// Should spam the logs, unless there is a deadlock
@@ -256,6 +295,7 @@ public class PacketSender implements Runnable, Ticker {
 				Logger.error(this, "tempNow is more than 5 seconds past oldTempNow (" + (tempNow - oldTempNow) + ") in PacketSender working with " + pn.userToString());
 			oldTempNow = tempNow;
 		}
+		brokeAt = newBrokeAt;
 
 		// Consider sending connect requests to our opennet old-peers.
 		// No point if they are NATed, of course... but we don't know whether they are.
@@ -372,6 +412,7 @@ public class PacketSender implements Runnable, Ticker {
 			// because a new packet came in.
 			}
 		}
+		return brokeAt;
 	}
 
 	/** Wake up, and send any queued packets. */

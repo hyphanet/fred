@@ -192,7 +192,7 @@ public class NodeUpdateManager {
 			if((!hasBeenBlown) && (mainUpdater == null || mainUpdater.getFetchedVersion() <= 0)) return;
 		}
 		try {
-			peer.sendAsync(getUOMAnnouncement(), null, 0, ctr);
+			peer.sendAsync(getUOMAnnouncement(), null, ctr);
 		} catch (NotConnectedException e) {
 			// Sad, but ignore it
 		}

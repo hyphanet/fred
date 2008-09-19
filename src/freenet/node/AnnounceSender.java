@@ -83,7 +83,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		boolean hasForwarded = false;
 		if(source != null) {
 			try {
-				source.sendAsync(DMT.createFNPAccepted(uid), null, 0, this);
+				source.sendAsync(DMT.createFNPAccepted(uid), null, this);
 			} catch (NotConnectedException e) {
 				return;
 			}
@@ -414,7 +414,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		Message msg = DMT.createFNPRejectedOverload(uid, true);
 		if(source != null) {
 			try {
-				source.sendAsync(msg, null, 0, this);
+				source.sendAsync(msg, null, this);
 			} catch (NotConnectedException e) {
 				// Ok
 			}
@@ -426,7 +426,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		Message msg = DMT.createFNPRouteNotFound(uid, htl);
 		if(source != null) {
 			try {
-				source.sendAsync(msg, null, 0, this);
+				source.sendAsync(msg, null, this);
 			} catch (NotConnectedException e) {
 				// Ok
 			}
@@ -441,7 +441,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 		Message msg = DMT.createFNPOpennetAnnounceCompleted(uid);
 		if(source != null) {
 			try {
-				source.sendAsync(msg, null, 0, this);
+				source.sendAsync(msg, null, this);
 			} catch (NotConnectedException e) {
 				// Oh well.
 			}
@@ -495,7 +495,7 @@ public class AnnounceSender implements PrioRunnable, ByteCounter {
 
 	private void sendNotWanted() throws NotConnectedException {
 		Message msg = DMT.createFNPOpennetAnnounceNodeNotWanted(uid);
-		source.sendAsync(msg, null, 0, this);
+		source.sendAsync(msg, null, this);
 	}
 
 	private void sendOurRef(PeerNode next, byte[] ref) throws NotConnectedException {

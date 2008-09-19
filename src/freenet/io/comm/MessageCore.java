@@ -502,7 +502,7 @@ public class MessageCore {
 	        Logger.error(this, "Trying to send internal-only message "+m+" of spec "+m.getSpec(), new Exception("debug"));
 	        return;
 	    }
-		destination.sendAsync(m, null, 0, ctr);
+		destination.sendAsync(m, null, ctr);
 	}
 
 	public void setDispatcher(Dispatcher d) {

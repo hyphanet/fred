@@ -148,7 +148,7 @@ public class PacketThrottle {
 		return ((PACKET_SIZE * 1000.0 / getDelay()));
 	}
 	
-	public void sendThrottledMessage(Message msg, PeerContext peer, DoubleTokenBucket overallThrottle, int packetSize, ByteCounter ctr, long deadline, boolean blockForSend) throws NotConnectedException, ThrottleDeprecatedException, WaitedTooLongException, SyncSendWaitedTooLongException {
+	public void sendThrottledMessage(Message msg, PeerContext peer, int packetSize, ByteCounter ctr, long deadline, boolean blockForSend) throws NotConnectedException, ThrottleDeprecatedException, WaitedTooLongException, SyncSendWaitedTooLongException {
 		long start = System.currentTimeMillis();
 		long bootID = peer.getBootID();
 		synchronized(this) {
@@ -230,15 +230,7 @@ public class PacketThrottle {
 			Logger.minor(this, "Congestion control wait time: "+waitTime+" for "+this);
 		MyCallback callback = new MyCallback();
 		try {
-			if(((PeerNode)peer).shouldThrottle()) {
-				if(logMINOR) Logger.minor(this, "Throttling "+peer.shortToString()+" : "+packetSize+" for "+this);
-				long startTime = System.currentTimeMillis();
-				overallThrottle.blockingGrab(packetSize);
-				long delayTime = System.currentTimeMillis() - startTime;
-				((PeerNode)peer).reportThrottledPacketSendTime(delayTime);
-			} else if(logMINOR)
-				Logger.minor(this, "Not throttling "+peer.shortToString()+" for "+this);
-			peer.sendAsync(msg, callback, packetSize, ctr);
+			peer.sendAsync(msg, callback, ctr);
 			ctr.sentPayload(packetSize);
 			if(blockForSend) {
 				synchronized(callback) {

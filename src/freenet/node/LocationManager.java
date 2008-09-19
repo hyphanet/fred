@@ -861,7 +861,7 @@ public class LocationManager implements ByteCounter {
             // Reject
             Message reject = DMT.createFNPSwapRejected(oldID);
             try {
-                pn.sendAsync(reject, null, 0, this);
+                pn.sendAsync(reject, null, this);
             } catch (NotConnectedException e1) {
             	if(logMINOR) Logger.minor(this, "Lost connection rejecting SwapRequest (locked) from "+pn);
             }
@@ -889,7 +889,7 @@ public class LocationManager implements ByteCounter {
             // Reject
             Message reject = DMT.createFNPSwapRejected(oldID);
             try {
-                pn.sendAsync(reject, null, 0, this);
+                pn.sendAsync(reject, null, this);
             } catch (NotConnectedException e) {
             	if(logMINOR) Logger.minor(this, "Lost connection to "+pn+" rejecting SwapRequest");
             }
@@ -901,7 +901,7 @@ public class LocationManager implements ByteCounter {
             // Reject
             Message reject = DMT.createFNPSwapRejected(oldID);
             try {
-                pn.sendAsync(reject, null, 0, this);
+                pn.sendAsync(reject, null, this);
             } catch (NotConnectedException e) {
             	if(logMINOR) Logger.minor(this, "Lost connection rejecting SwapRequest from "+pn);
             }
@@ -919,7 +919,7 @@ public class LocationManager implements ByteCounter {
             // Reject
             Message reject = DMT.createFNPSwapRejected(oldID);
             try {
-                pn.sendAsync(reject, null, 0, this);
+                pn.sendAsync(reject, null, this);
             } catch (NotConnectedException e1) {
             	if(logMINOR) Logger.minor(this, "Lost connection rejecting SwapRequest (locked) from "+pn);
             }
@@ -942,7 +942,7 @@ public class LocationManager implements ByteCounter {
                 	if(logMINOR) Logger.minor(this, "Late reject "+oldID);
                     Message reject = DMT.createFNPSwapRejected(oldID);
                     try {
-                        pn.sendAsync(reject, null, 0, this);
+                        pn.sendAsync(reject, null, this);
                     } catch (NotConnectedException e1) {
                         Logger.normal(this, "Late reject but disconnected from sender: "+pn);
                     }
@@ -956,7 +956,7 @@ public class LocationManager implements ByteCounter {
                     // Forward the request.
                     // Note that we MUST NOT send this blocking as we are on the
                     // receiver thread.
-                    randomPeer.sendAsync(m, new MyCallback(DMT.createFNPSwapRejected(oldID), pn, item), 0, LocationManager.this);
+                    randomPeer.sendAsync(m, new MyCallback(DMT.createFNPSwapRejected(oldID), pn, item), LocationManager.this);
                 } catch (NotConnectedException e) {
                 	if(logMINOR) Logger.minor(this, "Not connected");
                     // Try a different node
@@ -1001,7 +1001,7 @@ public class LocationManager implements ByteCounter {
     		if(logMINOR) Logger.minor(this, "Rejecting "+msg);
             Message rejected = DMT.createFNPSwapRejected(oldID);
             try {
-                pn.sendAsync(rejected, null, 0, this);
+                pn.sendAsync(rejected, null, this);
             } catch (NotConnectedException e1) {
             	if(logMINOR) Logger.minor(this, "Lost connection rejecting SwapRequest (locked) from "+pn);
             }
@@ -1065,7 +1065,7 @@ public class LocationManager implements ByteCounter {
         m.set(DMT.UID, item.incomingID);
         if(logMINOR) Logger.minor(this, "Forwarding SwapReply "+uid+" from "+source+" to "+item.requestSender);
         try {
-            item.requestSender.sendAsync(m, null, 0, this);
+            item.requestSender.sendAsync(m, null, this);
         } catch (NotConnectedException e) {
         	if(logMINOR) Logger.minor(this, "Lost connection forwarding SwapReply "+uid+" to "+item.requestSender);
         }
@@ -1099,7 +1099,7 @@ public class LocationManager implements ByteCounter {
         // Returning to source - use incomingID
         m.set(DMT.UID, item.incomingID);
         try {
-            item.requestSender.sendAsync(m, null, 0, this);
+            item.requestSender.sendAsync(m, null, this);
         } catch (NotConnectedException e) {
         	if(logMINOR) Logger.minor(this, "Lost connection forwarding SwapRejected "+uid+" to "+item.requestSender);
         }
@@ -1125,7 +1125,7 @@ public class LocationManager implements ByteCounter {
         // Sending onwards - use outgoing ID
         m.set(DMT.UID, item.outgoingID);
         try {
-            item.routedTo.sendAsync(m, new SendMessageOnErrorCallback(DMT.createFNPSwapRejected(item.incomingID), item.requestSender, this), 0, this);
+            item.routedTo.sendAsync(m, new SendMessageOnErrorCallback(DMT.createFNPSwapRejected(item.incomingID), item.requestSender, this), this);
         } catch (NotConnectedException e) {
         	if(logMINOR) Logger.minor(this, "Lost connection forwarding SwapCommit "+uid+" to "+item.routedTo);
         }
@@ -1162,7 +1162,7 @@ public class LocationManager implements ByteCounter {
         // Returning to source - use incomingID
         m.set(DMT.UID, item.incomingID);
         try {
-            item.requestSender.sendAsync(m, null, 0, this);
+            item.requestSender.sendAsync(m, null, this);
         } catch (NotConnectedException e) {
             Logger.normal(this, "Lost connection forwarding SwapComplete "+uid+" to "+item.requestSender);
         }
@@ -1278,7 +1278,7 @@ public class LocationManager implements ByteCounter {
             Message msg = DMT.createFNPSwapRejected(item.incomingID);
             if(logMINOR) Logger.minor(this, "Rejecting in lostOrRestartedNode: "+item.incomingID+ " from "+item.requestSender);
             try {
-                item.requestSender.sendAsync(msg, null, 0, this);
+                item.requestSender.sendAsync(msg, null, this);
             } catch (NotConnectedException e1) {
                 Logger.normal(this, "Both sender and receiver disconnected for "+item);
             }

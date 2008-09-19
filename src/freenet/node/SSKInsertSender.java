@@ -170,9 +170,9 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             // Send to next node
             
             try {
-				next.sendAsync(request, null, 0, this);
+				next.sendAsync(request, null, this);
 				if(RequestHandler.SEND_OLD_FORMAT_SSK) {
-					next.sendAsync(req, null, 0, this);
+					next.sendAsync(req, null, this);
 					// Not throttled, so report here.
 					sentPayload(data.length);
 				}
@@ -248,7 +248,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             Message dataMsg = DMT.createFNPSSKInsertRequestData(uid, data);
             
             try {
-				next.sendAsync(headersMsg, null, 0, this);
+				next.sendAsync(headersMsg, null, this);
 				next.sendThrottledMessage(dataMsg, data.length, this, SSKInsertHandler.DATA_INSERT_TIMEOUT, false);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected to "+next);
@@ -265,7 +265,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             if(msg.getBoolean(DMT.NEED_PUB_KEY)) {
             	Message pkMsg = DMT.createFNPSSKPubKey(uid, pubKey);
             	try {
-            		next.sendAsync(pkMsg, null, 0, this);
+            		next.sendAsync(pkMsg, null, this);
             	} catch (NotConnectedException e) {
             		if(logMINOR) Logger.minor(this, "Node disconnected while sending pubkey: "+next);
             		continue;

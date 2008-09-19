@@ -113,9 +113,9 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         		if(source.isConnected() && (startTime > (source.timeLastConnectionCompleted()+Node.HANDSHAKE_TIMEOUT*4)))
         			Logger.error(this, "Did not receive DataInsert on "+uid+" from "+source+" !");
         		Message tooSlow = DMT.createFNPRejectedTimeout(uid);
-        		source.sendAsync(tooSlow, null, 0, this);
+        		source.sendAsync(tooSlow, null, this);
         		Message m = DMT.createFNPInsertTransfersCompleted(uid, true);
-        		source.sendAsync(m, null, 0, this);
+        		source.sendAsync(m, null, this);
         		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
         		br = new BlockReceiver(node.usm, source, uid, prb, this);
         		prb.abort(RetrievalException.NO_DATAINSERT, "No DataInsert");
@@ -384,7 +384,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         }
         if(toSend != null) {
             try {
-                source.sendAsync(toSend, null, 0, this);
+                source.sendAsync(toSend, null, this);
             } catch (NotConnectedException e) {
                 // :(
             	if(logMINOR) Logger.minor(this, "Lost connection in "+this+" when sending FNPDataInsertRejected");

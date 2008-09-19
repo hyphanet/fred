@@ -17,7 +17,6 @@ public class MessageItem {
     final byte[] buf;
     final AsyncMessageCallback[] cb;
     final long submitted;
-    final int alreadyReportedBytes;
     /** If true, the buffer may contain several messages, and is formatted
      * for sending as a single packet.
      */
@@ -25,8 +24,7 @@ public class MessageItem {
     final ByteCounter ctrCallback;
     private final short priority;
     
-    public MessageItem(Message msg2, AsyncMessageCallback[] cb2, int alreadyReportedBytes, ByteCounter ctr, PeerNode pn) {
-    	this.alreadyReportedBytes = alreadyReportedBytes;
+    public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr, PeerNode pn) {
         this.msg = msg2;
         this.cb = cb2;
         formatted = false;
@@ -34,13 +32,9 @@ public class MessageItem {
         this.submitted = System.currentTimeMillis();
         priority = msg2.getSpec().getPriority();
         buf = msg.encodeToPacket(pn);
-        if(buf.length <= alreadyReportedBytes) {
-        	Logger.error(this, "buf.length = "+buf.length+" but alreadyReportedBytes = "+alreadyReportedBytes+" on "+this);
-        }
     }
 
-    public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, int alreadyReportedBytes, ByteCounter ctr, short priority) {
-    	this.alreadyReportedBytes = alreadyReportedBytes;
+    public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, ByteCounter ctr, short priority) {
         this.cb = cb2;
         this.msg = null;
         this.buf = data;
@@ -93,7 +87,7 @@ public class MessageItem {
 	
 	@Override
 	public String toString() {
-		return super.toString()+":formatted="+formatted+",msg="+msg+",alreadyReported="+alreadyReportedBytes;
+		return super.toString()+":formatted="+formatted+",msg="+msg;
 	}
 
 	public void onDisconnect() {

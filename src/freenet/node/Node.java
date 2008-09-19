@@ -99,7 +99,6 @@ import freenet.store.RAMFreenetStore;
 import freenet.store.SSKStore;
 import freenet.store.saltedhash.SaltedHashFreenetStore;
 import freenet.support.ByteArrayWrapper;
-import freenet.support.DoubleTokenBucket;
 import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.FileLoggerHook;
@@ -113,6 +112,7 @@ import freenet.support.OOMHandler;
 import freenet.support.PooledExecutor;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
+import freenet.support.TokenBucket;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
@@ -421,7 +421,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	final LRUHashtable<ByteArrayWrapper, DSAPublicKey> cachedPubKeys;
 	final boolean testnetEnabled;
 	final TestnetHandler testnetHandler;
-	public final DoubleTokenBucket outputThrottle;
+	public final TokenBucket outputThrottle;
 	public boolean throttleLocalData;
 	private int outputBandwidthLimit;
 	private int inputBandwidthLimit;
@@ -1113,7 +1113,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// Add them at a rate determined by the obwLimit.
 		// Maximum forced bytes 80%, in other words, 20% of the bandwidth is reserved for 
 		// block transfers, so we will use that 20% for block transfers even if more than 80% of the limit is used for non-limited data (resends etc).
-		outputThrottle = new DoubleTokenBucket(obwLimit/2, (1000L*1000L*1000L) / obwLimit, obwLimit/2, 0.8);
+		outputThrottle = new TokenBucket(obwLimit/2, (1000L*1000L*1000L) / obwLimit, obwLimit/2);
 		
 		nodeConfig.register("inputBandwidthLimit", "-1", sortOrder++, false, true, "Node.inBWLimit", "Node.inBWLimitLong",	new IntCallback() {
 					@Override

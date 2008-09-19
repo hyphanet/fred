@@ -101,7 +101,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		if (logMINOR) Logger.minor(this, "Storing secret: "+s);
 		addOrReplaceSecret(s); // FIXME - what if the message contain a bogus UID?
 		try {
-			pn.sendAsync(DMT.createFNPAccepted(uid), null, 0, ctr);
+			pn.sendAsync(DMT.createFNPAccepted(uid), null, ctr);
 		} catch (NotConnectedException e) {
 			Logger.error(this, "peer disconnected before storeSecret ack?", e);
 		}
@@ -133,7 +133,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		
 		if (disableSecretPings || node.recentlyCompleted(uid)) {
 			if (logMINOR) Logger.minor(this, "recently complete/loop: "+uid);
-			source.sendAsync(DMT.createFNPRejectedLoop(uid), null, 0, ctr);
+			source.sendAsync(DMT.createFNPRejectedLoop(uid), null, ctr);
 		} else {
 			byte[] nodeIdentity = ((ShortBuffer) m.getObject(DMT.NODE_IDENTITY)).getData();
 			StoredSecret match;
@@ -145,10 +145,10 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 				//This is the node that the ping intends to reach, we will *not* forward it; but we might not respond positively either.
 				//don't set the completed flag, we might reject it from one peer (too short a path) and accept it from another.
 				if (htl > dawnHtl) {
-					source.sendAsync(DMT.createFNPRejectedLoop(uid), null, 0, ctr);
+					source.sendAsync(DMT.createFNPRejectedLoop(uid), null, ctr);
 				} else {
 					if (logMINOR) Logger.minor(this, "Responding to "+source+" with "+match+" from "+match.peer);
-					source.sendAsync(match.getSecretPong(counter+1), null, 0, ctr);
+					source.sendAsync(match.getSecretPong(counter+1), null, ctr);
 				}
 			} else {
 				//Set the completed flag immediately for determining reject loops rather than locking the uid.
@@ -169,7 +169,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 					
 					if (next==null) {
 						//would be rnf... but this is a more exhaustive and lightweight search I suppose.
-						source.sendAsync(DMT.createFNPRejectedLoop(uid), null, 0, ctr);
+						source.sendAsync(DMT.createFNPRejectedLoop(uid), null, ctr);
 						break;
 					}
 					
@@ -177,7 +177,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 					
 					if (htl<=0) {
 						//would be dnf if we were looking for data.
-						source.sendAsync(DMT.createFNPRejectedLoop(uid), null, 0, ctr);
+						source.sendAsync(DMT.createFNPRejectedLoop(uid), null, ctr);
 						break;
 					}
 					
@@ -188,7 +188,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 					counter++;
 					routedTo.add(next);
 					try {
-						next.sendAsync(DMT.createFNPSecretPing(uid, target, htl, dawnHtl, counter, nodeIdentity), null, 0, ctr);
+						next.sendAsync(DMT.createFNPSecretPing(uid, target, htl, dawnHtl, counter, nodeIdentity), null, ctr);
 					} catch (NotConnectedException e) {
 						Logger.normal(this, next+" disconnected before secret-ping-forward");
 						continue;
@@ -218,7 +218,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 							counter=suppliedCounter;
 						long secret=msg.getLong(DMT.SECRET);
 						if (logMINOR) Logger.minor(this, node+" forwarding apparently-successful secretpong response: "+counter+"/"+secret+" from "+next+" to "+source);
-						source.sendAsync(DMT.createFNPSecretPong(uid, counter, secret), null, 0, ctr);
+						source.sendAsync(DMT.createFNPSecretPong(uid, counter, secret), null, ctr);
 						break;
 					}
 					
