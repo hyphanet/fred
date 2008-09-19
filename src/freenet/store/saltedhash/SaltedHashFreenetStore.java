@@ -1002,7 +1002,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						// new size, don't have to relocate
 						if (entry.generation != generation) {
 							// update filter
-							bloomFilter.addKey(entry.getDigestedRoutingKey());
+							bloomFilter.addKeyForked(entry.getDigestedRoutingKey());
 							return entry;
 						} else {
 							return NOT_MODIFIED;
@@ -1103,7 +1103,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 				public Entry process(Entry entry) {
 					if (entry.generation != generation) {
-						bloomFilter.addKey(entry.getDigestedRoutingKey());
+						bloomFilter.addKeyForked(entry.getDigestedRoutingKey());
 						keyCount.incrementAndGet();
 
 						entry.generation = generation;
@@ -1325,7 +1325,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					try {
 						if (isFree(offset)) {
 							writeEntry(entry, offset);
-							bloomFilter.addKey(entry.getDigestedRoutingKey());
+							bloomFilter.addKeyForked(entry.getDigestedRoutingKey());
 							keyCount.incrementAndGet();
 							return true;
 						}

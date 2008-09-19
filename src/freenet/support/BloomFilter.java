@@ -60,6 +60,12 @@ public abstract class BloomFilter {
 			forkedFilter.addKey(key);
 	}
 
+	// add to the forked filter only
+	public void addKeyForked(byte[] key) {
+		if (forkedFilter != null)
+			forkedFilter.addKey(key);
+	}
+
 	public boolean checkFilter(byte[] key) {
 		Random hashes = getHashes(key);
 		lock.readLock().lock();
