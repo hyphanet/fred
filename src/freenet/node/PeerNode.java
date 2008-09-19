@@ -207,7 +207,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	final PeerManager peers;
 	/** MessageItem's to send ASAP. 
 	 * LOCKING: Lock on self, always take that lock last. Sometimes used inside PeerNode.this lock. */
-	private final LinkedList messagesToSendNow;
+	private final LinkedList[] messagesToSendNow;
 	/** When did we last receive a SwapRequest? */
 	private long timeLastReceivedSwapRequest;
 	/** Average interval between SwapRequest's */
@@ -588,7 +588,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		// Not connected yet; need to handshake
 		isConnected = false;
 
-		messagesToSendNow = new LinkedList();
+		messagesToSendNow = new LinkedList[DMT.NUM_PRIORITIES];
+		for(int i=0;i<messagesToSendNow.length;i++)
+			messagesToSendNow[i] = new LinkedList();
 
 		decrementHTLAtMaximum = node.random.nextFloat() < Node.DECREMENT_AT_MAX_PROB;
 		decrementHTLAtMinimum = node.random.nextFloat() < Node.DECREMENT_AT_MIN_PROB;
@@ -1035,12 +1037,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		int x = 0;
 		synchronized(messagesToSendNow) {
 			enqueuePrioritizedMessageItem(item);
-			Iterator i = messagesToSendNow.iterator();
+			for(int p=0;p<messagesToSendNow.length;p++) {
+			Iterator i = messagesToSendNow[p].iterator();
 			for(; i.hasNext();) {
 				MessageItem it = (MessageItem) (i.next());
 				x += it.getLength() + 2;
 				if(x > 1024)
 					break;
+			}
 			}
 		}
 		if(x > 1024 || !node.enablePacketCoalescing) {
@@ -1055,10 +1059,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public long getMessageQueueLengthBytes() {
 		long x = 0;
 		synchronized(messagesToSendNow) {
-			Iterator i = messagesToSendNow.iterator();
+			for(int p=0;p<messagesToSendNow.length;p++) {
+			Iterator i = messagesToSendNow[p].iterator();
 			for(; i.hasNext();) {
 				MessageItem it = (MessageItem) (i.next());
 				x += it.getLength() + 2;
+			}
 			}
 		}
 		return x;
@@ -1067,15 +1073,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private void enqueuePrioritizedMessageItem(MessageItem addMe) {
 		synchronized (messagesToSendNow) {
 			//Assume it goes on the end, both the common case
-			ListIterator i=messagesToSendNow.listIterator(messagesToSendNow.size());
-			while (i.hasPrevious()) {
-				MessageItem here=(MessageItem)i.previous();
-				//Add the item *to the end of the queue*.
-				if(here.getPriority() > addMe.getPriority()) {
-					break;
-				}
-			}
-			i.add(addMe);
+			short prio = addMe.getPriority();
+			messagesToSendNow[prio].addLast(addMe);
 		}
 	}
 	
@@ -1085,16 +1084,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private void pushfrontPrioritizedMessageItem(MessageItem addMe) {
 		synchronized (messagesToSendNow) {
 			//Assume it goes on the front
-			ListIterator i=messagesToSendNow.listIterator();
-			while (i.hasNext()) {
-				MessageItem here=(MessageItem)i.next();
-				//While the item we are adding is a LOWER priority, move on (forwards...)
-				if (addMe.getPriority() <= here.getPriority()) {
-					i.previous();
-					break;
-				}
-			}
-			i.add(addMe);
+			short prio = addMe.getPriority();
+			messagesToSendNow[prio].addFirst(addMe);
 		}
 	}	
 	
@@ -1210,15 +1201,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				timeLastDisconnect = now;
 			}
 			if(dumpMessageQueue) {
-				synchronized(messagesToSendNow) {
-					messagesTellDisconnected = (MessageItem[]) messagesToSendNow.toArray(new MessageItem[messagesToSendNow.size()]);
-					messagesToSendNow.clear();
-				}
+				messagesTellDisconnected = grabQueuedMessageItems();
 			}
 		}
 		if(messagesTellDisconnected != null) {
-			for(int i=0;i<messagesTellDisconnected.length;i++) {
-				messagesTellDisconnected[i].onDisconnect();
+			for(MessageItem mi : messagesTellDisconnected) {
+				mi.onDisconnect();
 			}
 		}
 		if(cur != null) cur.disconnected();
@@ -1233,13 +1221,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				public void run() {
 					if((!PeerNode.this.isConnected()) &&
 							timeLastDisconnect == now) {
-						MessageItem[] messagesTellDisconnected;
-						synchronized(PeerNode.this.messagesToSendNow) {
-							messagesTellDisconnected = (MessageItem[]) messagesToSendNow.toArray(new MessageItem[messagesToSendNow.size()]);
-							PeerNode.this.messagesToSendNow.clear();
-						}
-						for(int i=0;i<messagesTellDisconnected.length;i++) {
-							messagesTellDisconnected[i].onDisconnect();
+						MessageItem[] messagesTellDisconnected = grabQueuedMessageItems();
+						if(messagesTellDisconnected != null) {
+							for(MessageItem mi : messagesTellDisconnected) {
+								mi.onDisconnect();
+							}
 						}
 					}
 
@@ -1270,12 +1256,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	*/
 	public MessageItem[] grabQueuedMessageItems() {
 		synchronized(messagesToSendNow) {
-			if(messagesToSendNow.size() == 0)
-				return null;
-			MessageItem[] messages = new MessageItem[messagesToSendNow.size()];
-			messages = (MessageItem[]) messagesToSendNow.toArray(messages);
-			messagesToSendNow.clear();
-			return messages;
+			int size = 0;
+			for(int i=0;i<messagesToSendNow.length;i++)
+				size += messagesToSendNow[i].size();
+			MessageItem[] output = new MessageItem[size];
+			int ptr = 0;
+			for(int i=0;i<messagesToSendNow.length;i++) {
+				int thisSize = messagesToSendNow[i].size();
+				System.arraycopy(messagesToSendNow[i], 0, output, ptr, thisSize);
+				ptr += thisSize;
+			}
+			return output;
 		}
 	}
 
@@ -1909,10 +1900,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				// Messages do not persist across restarts.
 				// Generally they would be incomprehensible, anything that isn't should be sent as
 				// connection initial messages by maybeOnConnect().
-				synchronized(messagesToSendNow) {
-					messagesTellDisconnected = (MessageItem[]) messagesToSendNow.toArray(new MessageItem[messagesToSendNow.size()]);
-					messagesToSendNow.clear();
-				}
+				messagesTellDisconnected = grabQueuedMessageItems();
 				this.offeredMainJarVersion = 0;
 			} // else it's a rekey
 			if(unverified) {
