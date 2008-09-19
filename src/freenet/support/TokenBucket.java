@@ -89,10 +89,15 @@ public class TokenBucket {
 		if(logMINOR) Logger.minor(this, "Removed tokens, balance now "+current);
 	}
 	
+	public synchronized long count() {
+		return current;
+	}
+	
 	/**
 	 * Get the current number of available tokens.
 	 */
-	public synchronized long count() {
+	public synchronized long getCount() {
+		addTokens();
 		return current;
 	}
 

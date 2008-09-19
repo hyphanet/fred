@@ -213,7 +213,7 @@ public class PacketSender implements Runnable, Ticker {
 		boolean canSendThrottled = false;
 		
 		int MAX_PACKET_SIZE = node.darknetCrypto.socket.getMaxPacketSize();
-		long count = node.outputThrottle.count();
+		long count = node.outputThrottle.getCount();
 		if(count > MAX_PACKET_SIZE)
 			canSendThrottled = true;
 		else {
@@ -258,7 +258,7 @@ public class PacketSender implements Runnable, Ticker {
 				
 				if(pn.maybeSendPacket(now, rpiTemp, rpiIntTemp) && canSendThrottled) {
 					canSendThrottled = false;
-					count = node.outputThrottle.count();
+					count = node.outputThrottle.getCount();
 					if(count > MAX_PACKET_SIZE)
 						canSendThrottled = true;
 					else {
