@@ -1113,7 +1113,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// Add them at a rate determined by the obwLimit.
 		// Maximum forced bytes 80%, in other words, 20% of the bandwidth is reserved for 
 		// block transfers, so we will use that 20% for block transfers even if more than 80% of the limit is used for non-limited data (resends etc).
-		outputThrottle = new TokenBucket(obwLimit/2, (1000L*1000L*1000L) / obwLimit, obwLimit/2);
+		int bucketSize = obwLimit/2;
+		// Must have at least space for ONE PACKET.
+		// FIXME: make compatible with alternate transports.
+		bucketSize = Math.max(bucketSize, 2048);
+		outputThrottle = new TokenBucket(bucketSize, (1000L*1000L*1000L) / obwLimit, obwLimit/2);
 		
 		nodeConfig.register("inputBandwidthLimit", "-1", sortOrder++, false, true, "Node.inBWLimit", "Node.inBWLimitLong",	new IntCallback() {
 					@Override
