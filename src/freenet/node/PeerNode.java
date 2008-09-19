@@ -1073,7 +1073,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				MessageItem here=(MessageItem)i.previous();
 				//Add the item *to the end of the queue*.
 				if(here.getPriority() > addMe.getPriority()) {
-					i.next();
 					break;
 				}
 			}
