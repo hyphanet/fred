@@ -1071,8 +1071,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			ListIterator i=messagesToSendNow.listIterator(messagesToSendNow.size());
 			while (i.hasPrevious()) {
 				MessageItem here=(MessageItem)i.previous();
-				//While the item we are adding is a HIGHER priority, move on (backwards...)
-				if (!(addMe.getPriority() < here.getPriority())) {
+				//Add the item *to the end of the queue*.
+				if(here.getPriority() > addMe.getPriority()) {
 					i.next();
 					break;
 				}
@@ -4039,6 +4039,71 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return offeredMainJarVersion;
 	}
 
+	/**
+	 * Maybe send something. A SINGLE PACKET.
+	 * Don't send everything at once, for two reasons:
+	 * 1. It is possible for a node to have a very long backlog.
+	 * 2. Sometimes sending a packet can take a long time.
+	 * 3. In the near future PacketSender will be responsible for output bandwidth
+	 * throttling.
+	 * So it makes sense to send a single packet and round-robin.
+	 * @param now
+	 * @param rpiTemp
+	 * @param rpiTemp
+	 */
+	public void maybeSendPacket(long now, Vector rpiTemp, int[] rpiIntTemp) {
+		// If there are any urgent notifications, we must send a packet.
+		boolean mustSend = false;
+		if(getNextUrgentTime() < now) {
+			mustSend = true;
+		}
+		// Any packets to resend? If so, resend ONE packet and then return.
+		for(int j = 0; j < 2; j++) {
+			KeyTracker kt;
+			if(j == 0)
+				kt = getCurrentKeyTracker();
+			else if(j == 1)
+				kt = getPreviousKeyTracker();
+			else
+				break; // impossible
+			if(kt == null)
+				continue;
+			int[] tmp = kt.grabResendPackets(rpiTemp, rpiIntTemp);
+			if(tmp == null)
+				continue;
+			rpiIntTemp = tmp;
+			for(int k = 0; k < rpiTemp.size(); k++) {
+				ResendPacketItem item = (ResendPacketItem) rpiTemp.get(k);
+				if(item == null)
+					continue;
+				try {
+					if(logMINOR)
+						Logger.minor(this, "Resending " + item.packetNumber + " to " + item.kt);
+					getOutgoingMangler().resend(item);
+					return;
+				} catch(KeyChangedException e) {
+					Logger.error(this, "Caught " + e + " resending packets to " + kt);
+					requeueResendItems(rpiTemp);
+					return;
+				} catch(NotConnectedException e) {
+					Logger.normal(this, "Caught " + e + " resending packets to " + kt);
+					requeueResendItems(rpiTemp);
+					return;
+				} catch(PacketSequenceException e) {
+					Logger.error(this, "Caught " + e + " - disconnecting", e);
+					// PSE is fairly drastic, something is broken between us, but maybe we can resync
+					forceDisconnect(false); 
+					return;
+				} catch(WouldBlockException e) {
+					Logger.error(this, "Impossible: " + e, e);
+					return;
+				}
+			}
+
+		}
+		// 
+	}
+	
 	public void maybeSendSomething(long now, Vector rpiTemp, int[] rpiIntTemp) {
 		boolean mustSend = false;
 
