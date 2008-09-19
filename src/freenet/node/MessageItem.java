@@ -8,11 +8,13 @@ import freenet.io.comm.ByteCounter;
 import freenet.io.comm.Message;
 import freenet.support.Logger;
 
-/** A queued Message or byte[], and a callback, which may be null. */
+/** A queued byte[], maybe including a Message, and a callback, which may be null.
+ * Note that we always create the byte[] on construction, as almost everywhere 
+ * which uses a MessageItem needs to know its length immediately. */
 public class MessageItem {
     
     final Message msg;
-    byte[] buf;
+    final byte[] buf;
     final AsyncMessageCallback[] cb;
     final long submitted;
     final int alreadyReportedBytes;
@@ -23,15 +25,18 @@ public class MessageItem {
     final ByteCounter ctrCallback;
     private final short priority;
     
-    public MessageItem(Message msg2, AsyncMessageCallback[] cb2, int alreadyReportedBytes, ByteCounter ctr) {
+    public MessageItem(Message msg2, AsyncMessageCallback[] cb2, int alreadyReportedBytes, ByteCounter ctr, PeerNode pn) {
     	this.alreadyReportedBytes = alreadyReportedBytes;
         this.msg = msg2;
         this.cb = cb2;
-        buf = null;
         formatted = false;
         this.ctrCallback = ctr;
         this.submitted = System.currentTimeMillis();
         priority = msg2.getSpec().getPriority();
+        buf = msg.encodeToPacket(pn);
+        if(buf.length <= alreadyReportedBytes) {
+        	Logger.error(this, "buf.length = "+buf.length+" but alreadyReportedBytes = "+alreadyReportedBytes+" on "+this);
+        }
     }
 
     public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, int alreadyReportedBytes, ByteCounter ctr, short priority) {
@@ -50,13 +55,12 @@ public class MessageItem {
     /**
      * Return the data contents of this MessageItem.
      */
-    public byte[] getData(PeerNode pn) {
-        if(buf == null)
-            buf = msg.encodeToPacket(pn);
-        if(buf.length <= alreadyReportedBytes) {
-        	Logger.error(this, "buf.length = "+buf.length+" but alreadyReportedBytes = "+alreadyReportedBytes+" on "+this);
-        }
+    public byte[] getData() {
         return buf;
+    }
+    
+    public int getLength() {
+    	return buf.length;
     }
 
     /**

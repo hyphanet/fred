@@ -2022,11 +2022,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		for(int i=0;i<messageData.length;i++) {
 			MessageItem mi = messages[i];
 			if(logMINOR) Logger.minor(this, "Handling "+(mi.formatted ? "formatted " : "") + 
-					"MessageItem "+mi+" : "+mi.getData(pn).length);
+					"MessageItem "+mi+" : "+mi.getLength());
 			mi_name = (mi.msg == null ? "(not a Message)" : mi.msg.getSpec().getName());
 			if(mi.formatted) {
 				try {
-					byte[] buf = mi.getData(pn);
+					byte[] buf = mi.getData();
 					int packetNumber = kt.allocateOutgoingPacketNumberNeverBlock();
 					int size = processOutgoingPreformatted(buf, 0, buf.length, kt, packetNumber, mi.cb, mi.alreadyReportedBytes, mi.getPriority());
 					//MARK: onSent()
@@ -2065,7 +2065,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 					return;
 				}
 			} else {
-				byte[] data = mi.getData(pn);
+				byte[] data = mi.getData();
 				messageData[x] = data;
 				if(data.length > sock.getMaxPacketSize()) {
 					Logger.error(this, "Message exceeds packet size: "+messages[i]+" size "+data.length+" message "+mi.msg);

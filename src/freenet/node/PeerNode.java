@@ -1029,8 +1029,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(!isConnected())
 			throw new NotConnectedException();
 		addToLocalNodeSentMessagesToStatistic(msg);
-		MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[]{cb}, alreadyReportedBytes, ctr);
-		item.getData(this);
+		MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[]{cb}, alreadyReportedBytes, ctr, this);
 		long now = System.currentTimeMillis();
 		reportBackoffStatus(now);
 		int x = 0;
@@ -1039,7 +1038,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			Iterator i = messagesToSendNow.iterator();
 			for(; i.hasNext();) {
 				MessageItem it = (MessageItem) (i.next());
-				x += it.getData(this).length + 2;
+				x += it.getLength() + 2;
 				if(x > 1024)
 					break;
 			}
@@ -1059,7 +1058,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			Iterator i = messagesToSendNow.iterator();
 			for(; i.hasNext();) {
 				MessageItem it = (MessageItem) (i.next());
-				x += it.getData(this).length + 2;
+				x += it.getLength() + 2;
 			}
 		}
 		return x;
@@ -4164,7 +4163,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			for(int j = 0; j < messages.length; j++) {
 				if(l > messages[j].submitted)
 					l = messages[j].submitted;
-				sz += 2 + /* FIXME only 2? */ messages[j].getData(this).length;
+				sz += 2 + /* FIXME only 2? */ messages[j].getLength();
 			}
 			if(node.enablePacketCoalescing && (l + PacketSender.MAX_COALESCING_DELAY > now) &&
 				(sz < ((PacketSocketHandler) getSocketHandler()).getPacketSendThreshold())) {
@@ -4197,7 +4196,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			// Force packet to have a sequence number.
 			Message m = DMT.createFNPVoid();
 			addToLocalNodeSentMessagesToStatistic(m);
-			getOutgoingMangler().processOutgoingOrRequeue(new MessageItem[]{new MessageItem(m, null, 0, null)}, this, true, true);
+			getOutgoingMangler().processOutgoingOrRequeue(new MessageItem[]{new MessageItem(m, null, 0, null, this)}, this, true, true);
 		}
 	}
 }
