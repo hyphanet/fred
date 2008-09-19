@@ -132,19 +132,21 @@ public class DMT {
 	public static final String UPTIME_PERCENT_48H = "uptimePercent48H";
 	
 	/** Very urgent */
-	public static final short PRIORITY_NOW=-2;
+	public static final short PRIORITY_NOW=0;
 	/** Short timeout, or urgent for other reasons - Accepted, RejectedLoop etc. */
-	public static final short PRIORITY_HIGH=-1; // 
+	public static final short PRIORITY_HIGH=1; // 
 	/** Unspecified e.g. test-only messages. */
-	public static final short PRIORITY_UNSPECIFIED=0;
+	public static final short PRIORITY_UNSPECIFIED=2;
 	/** Long timeout (e.g. DataFound), or moderately urgent. */
-	public static final short PRIORITY_LOW=1; // long timeout, or moderately urgent
+	public static final short PRIORITY_LOW=3; // long timeout, or moderately urgent
 	/**
 	 * Bulk data transfer, bottom of the heap, high level limiting must ensure there is time to send it by 
 	 * not accepting an infeasible number of requests; starvation will cause bwlimitDelayTime to go high and 
 	 * requests to be rejected. That's the ultimate limiter if even output bandwidth liability fails.
 	 */
-	public static final short PRIORITY_BULK_DATA=2; 
+	public static final short PRIORITY_BULK_DATA=4;
+	
+	public static final short NUM_PRIORITIES = 5;
 	
 	// Assimilation
 
