@@ -8,15 +8,9 @@ import java.util.Vector;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
-import freenet.io.comm.DMT;
-import freenet.io.comm.Message;
-import freenet.io.comm.NotConnectedException;
-import freenet.io.comm.PacketSocketHandler;
-import freenet.io.comm.UdpSocketHandler;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
-import freenet.support.WouldBlockException;
 import freenet.support.io.NativeThread;
 
 /**
@@ -226,7 +220,7 @@ public class PacketSender implements Runnable, Ticker {
 		
 		int newBrokeAt = 0;
 		for(int i = 0; i < nodes.length; i++) {
-			PeerNode pn = nodes[i + brokeAt % nodes.length];
+			PeerNode pn = nodes[(i + brokeAt) % nodes.length];
 			lastReceivedPacketFromAnyNode =
 				Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
 			pn.maybeOnConnect();
