@@ -1313,12 +1313,18 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(this) {
 		KeyTracker kt = currentTracker;
 		if(kt != null) {
-			t = Math.min(t, kt.getNextUrgentTime());
+			long next = kt.getNextUrgentTime();
+			t = Math.min(t, next);
+			if(next < now && logMINOR)
+				Logger.minor(this, "Next urgent time from curTracker less than now");
 			if(kt.hasPacketsToResend()) return now;
 		}
 		kt = previousTracker;
 		if(kt != null) {
-			t = Math.min(t, kt.getNextUrgentTime());
+			long next = kt.getNextUrgentTime();
+			t = Math.min(t, next);
+			if(next < now && logMINOR)
+				Logger.minor(this, "Next urgent time from prevTracker less than now");
 			if(kt.hasPacketsToResend()) return now;
 		}
 		}
@@ -1326,6 +1332,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			for(LinkedList list : messagesToSendNow) {
 				if(list.isEmpty()) continue;
 				MessageItem item = (MessageItem) list.getFirst();
+				if(item.submitted + PacketSender.MAX_COALESCING_DELAY < now && logMINOR)
+					Logger.minor(this, "Message queued to send immediately");
 				t = Math.min(t, item.submitted + PacketSender.MAX_COALESCING_DELAY);
 			}
 		}
@@ -2461,7 +2469,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @throws PacketSequenceException If there is an error sending the packet
 	* caused by a sequence inconsistency. 
 	*/
-	public void sendAnyUrgentNotifications(boolean forceSendPrimary) throws PacketSequenceException {
+	public boolean sendAnyUrgentNotifications(boolean forceSendPrimary) throws PacketSequenceException {
+		boolean sent = false;
 		if(logMINOR)
 			Logger.minor(this, "sendAnyUrgentNotifications");
 		long now = System.currentTimeMillis();
@@ -2479,6 +2488,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					if(logMINOR) Logger.minor(this, "Sending urgent notifications for current tracker on "+shortToString());
 					int size = outgoingMangler.processOutgoing(null, 0, 0, tracker, DMT.PRIORITY_NOW);
 					node.nodeStats.reportNotificationOnlyPacketSent(size);
+					sent = true;
 				} catch(NotConnectedException e) {
 				// Ignore
 				} catch(KeyChangedException e) {
@@ -2496,6 +2506,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					if(logMINOR) Logger.minor(this, "Sending urgent notifications for previous tracker on "+shortToString());
 					int size = outgoingMangler.processOutgoing(null, 0, 0, tracker, DMT.PRIORITY_NOW);
 					node.nodeStats.reportNotificationOnlyPacketSent(size);
+					sent = true;
 				} catch(NotConnectedException e) {
 				// Ignore
 				} catch(KeyChangedException e) {
@@ -2504,6 +2515,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					Logger.error(this, "Impossible: " + e, e);
 				}
 		}
+		return sent;
 	}
 	
 	void checkTrackerTimeout() {
@@ -4065,6 +4077,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		// If there are any urgent notifications, we must send a packet.
 		boolean mustSend = false;
 		if(mustSendNotificationsNow(now)) {
+			if(logMINOR)
+				Logger.minor(this, "Sending notification");
 			mustSend = true;
 		}
 		// Any packets to resend? If so, resend ONE packet and then return.
@@ -4235,13 +4249,26 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			messages.add(new MessageItem(m, null, null, this));
 		}
 		
-		if(messages.isEmpty()) return false;
+		if(!messages.isEmpty()) {
+			// Send packets, right now, blocking, including any active notifications
+			// Note that processOutgoingOrRequeue will drop messages from the end
+			// if necessary to fit the messages into a single packet.
+			getOutgoingMangler().processOutgoingOrRequeue(messages.toArray(new MessageItem[messages.size()]), this, true, false, true);
+			return true;
+		} else {
+			if(mustSend) {
+				try {
+					if(sendAnyUrgentNotifications(false))
+						return true;
+				} catch (PacketSequenceException e) {
+					Logger.error(this, "Caught "+e, e);
+					return false;
+				}
+				// Can happen occasionally as a race condition...
+				Logger.normal(this, "No notifications sent despite no messages and mustSend=true for "+this);
+			}
+		}
 		
-		// Send packets, right now, blocking, including any active notifications
-		// Note that processOutgoingOrRequeue will drop messages from the end
-		// if necessary to fit the messages into a single packet.
-		getOutgoingMangler().processOutgoingOrRequeue(messages.toArray(new MessageItem[messages.size()]), this, true, false, true);
-		
-		return true;
+		return false;
 	}
 }
