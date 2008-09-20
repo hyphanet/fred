@@ -42,6 +42,7 @@ import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 
@@ -99,6 +100,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		headerBlockLength = callback.headerLength();
 		fullKeyLength = callback.fullKeyLength();
 		dataBlockLength = callback.dataLength();
+		
+		hdPadding = (int) ((headerBlockLength + dataBlockLength) % 512 == 0 ? 0
+		        : 512 - (headerBlockLength + dataBlockLength) % 512);
 
 		this.random = random;
 		storeSize = maxKeys;
@@ -278,7 +282,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					try {
 						if (!collisionPossible)
 							return;
-						oldEntry.setData(readHeader(oldOffset), readData(oldOffset)); // read from disk
+						oldEntry.setHD(readHD(oldOffset)); // read from disk
 						StorableBlock oldBlock = oldEntry.getStorableBlock(routingKey, fullKey);
 						if (block.equals(oldBlock)) {
 							return; // already in store
@@ -339,14 +343,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private File metaFile;
 	private RandomAccessFile metaRAF;
 	private FileChannel metaFC;
-	// header file
-	private File headerFile;
-	private RandomAccessFile headerRAF;
-	private FileChannel headerFC;
-	// data file
-	private File dataFile;
-	private RandomAccessFile dataRAF;
-	private FileChannel dataFC;
+	// header+data file
+	private File hdFile;
+	private RandomAccessFile hdRAF;
+	private FileChannel hdFC;
+	private final int hdPadding;
 
 	/**
 	 * Data entry
@@ -399,7 +400,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		private Entry() {
 		}
 
-		private Entry(ByteBuffer metaDataBuf, ByteBuffer headerBuf, ByteBuffer dataBuf) {
+		private Entry(ByteBuffer metaDataBuf, ByteBuffer hdBuf) {
 			assert metaDataBuf.remaining() == METADATA_LENGTH;
 
 			digestedRoutingKey = new byte[0x20];
@@ -421,8 +422,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			isEncrypted = true;
 
-			if (headerBuf != null && dataBuf != null)
-				setData(headerBuf, dataBuf);
+			if (hdBuf != null)
+				setHD(hdBuf);
 		}
 
 		/**
@@ -431,16 +432,15 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		 * @param storeBuf
 		 * @param store
 		 */
-		private void setData(ByteBuffer headerBuf, ByteBuffer dataBuf) {
-			assert headerBuf.remaining() == headerBlockLength;
-			assert dataBuf.remaining() == dataBlockLength;
+		private void setHD(ByteBuffer hdBuf) {
+			assert hdBuf.remaining() == headerBlockLength + dataBlockLength + hdPadding;
 			assert isEncrypted;
 
 			header = new byte[headerBlockLength];
-			headerBuf.get(header);
+			hdBuf.get(header);
 
 			data = new byte[dataBlockLength];
-			dataBuf.get(data);
+			hdBuf.get(data);
 		}
 
 		/**
@@ -492,29 +492,17 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			return out;
 		}
 
-		private ByteBuffer toHeaderBuffer() {
+		private ByteBuffer toHDBuffer() {
 			assert isEncrypted; // should have encrypted to get dataEncryptIV in control buffer
+			assert header.length == headerBlockLength;
+			assert data.length == dataBlockLength;
 
-			if (header == null)
+			if (header == null || data == null)
 				return null;
 
-			ByteBuffer out = ByteBuffer.allocate(headerBlockLength);
+			ByteBuffer out = ByteBuffer.allocate(headerBlockLength + dataBlockLength + hdPadding);
 			out.put(header);
-			assert out.remaining() == 0;
-
-			out.position(0);
-			return out;
-		}
-
-		private ByteBuffer toDataBuffer() {
-			assert isEncrypted; // should have encrypted to get dataEncryptIV in control buffer
-
-			if (data == null)
-				return null;
-
-			ByteBuffer out = ByteBuffer.allocate(dataBlockLength);
 			out.put(data);
-			assert out.remaining() == 0;
 
 			out.position(0);
 			return out;
@@ -568,26 +556,75 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 */
 	private boolean openStoreFiles(File baseDir, String name) throws IOException {
 		metaFile = new File(baseDir, name + ".metadata");
-		headerFile = new File(baseDir, name + ".header");
-		dataFile = new File(baseDir, name + ".data");
+		hdFile = new File(baseDir, name + ".hd");
 
-		boolean newStore = !metaFile.exists() || !headerFile.exists() || !dataFile.exists();
+		boolean newStore = !metaFile.exists() || !hdFile.exists();
 		
 		metaRAF = new RandomAccessFile(metaFile, "rw");
 		metaFC = metaRAF.getChannel();
 		metaFC.lock();
 		
-		headerRAF = new RandomAccessFile(headerFile, "rw");
-		headerFC = headerRAF.getChannel();
-		headerFC.lock();
+		hdRAF = new RandomAccessFile(hdFile, "rw");
+		hdFC = hdRAF.getChannel();
+		hdFC.lock();
 
-		dataRAF = new RandomAccessFile(dataFile, "rw");
-		dataFC = dataRAF.getChannel();
-		dataFC.lock();
 
 		long storeFileSize = Math.max(storeSize, prevStoreSize);
 		WrapperManager.signalStarting(10 * 60 * 1000); // 10minutes, for filesystem that support no sparse file.
 		setStoreFileSize(storeFileSize);
+		
+		// XXX migrate from old format
+		{
+			// migrate 
+			File headerFile = new File(baseDir, name + ".header");
+			File dataFile = new File(baseDir, name + ".data");
+
+			if (headerFile.exists() && dataFile.exists()) {
+				System.out.println("Migrating .header/.data -to-> .hd");
+				WrapperManager.signalStarting(7 * 24 * 60 * 60 * 1000); 
+				
+				RandomAccessFile headerRAF = null;
+				RandomAccessFile dataRAF = null;
+				try {
+					cleanerGlobalLock.lock();
+					headerRAF = new RandomAccessFile(headerFile, "rw");
+					dataRAF = new RandomAccessFile(dataFile, "rw");
+					
+					byte[] header = new byte[headerBlockLength];
+					byte[] data = new byte[dataBlockLength];
+					byte[] pad = new byte[hdPadding];
+					
+					long total = dataRAF.length() / dataBlockLength;
+					newStore = false;
+
+					for (long offset = total - 1; offset >= 0; offset--) {
+						if (offset % 1024 == 0)
+							System.out.println(name + ": " + (total - offset) + "/" + total);
+						headerRAF.seek(headerBlockLength * offset);
+						headerRAF.readFully(header);
+						dataRAF.seek(dataBlockLength * offset);
+						dataRAF.readFully(data);
+						
+						hdRAF.seek((headerBlockLength + dataBlockLength + hdPadding) * offset);
+						hdRAF.write(header);
+						hdRAF.write(data);
+						hdRAF.write(pad);
+						
+						headerRAF.setLength(headerBlockLength * offset);
+						dataRAF.setLength(dataBlockLength * offset);
+					}
+				} catch (IOException e) {
+					e.printStackTrace();
+				} finally {
+					cleanerGlobalLock.unlock();
+					Closer.close(headerRAF);
+					Closer.close(dataRAF);
+				}
+				headerFile.delete();
+				dataFile.delete();
+				setStoreFileSize(storeFileSize);
+			}
+		}
 		
 		return newStore;
 	}
@@ -608,7 +645,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		} while (mbf.hasRemaining());
 		mbf.flip();
 
-		Entry entry = new Entry(mbf, null, null);
+		Entry entry = new Entry(mbf, null);
 		entry.curOffset = offset;
 
 		if (routingKey != null) {
@@ -618,9 +655,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				return null;
 
 			if (withData) {
-				ByteBuffer headerBuf = readHeader(offset);
-				ByteBuffer dataBuf = readData(offset);
-				entry.setData(headerBuf, dataBuf);
+				ByteBuffer hdBuf = readHD(offset);
+				entry.setHD(hdBuf);
 				boolean decrypted = cipherManager.decrypt(entry, routingKey);
 				if (!decrypted)
 					return null;
@@ -631,41 +667,25 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	/**
-	 * Read header from disk
+	 * Read header + data from disk
 	 * 
 	 * @param offset
 	 * @throws IOException
 	 */
-	private ByteBuffer readHeader(long offset) throws IOException {
-		ByteBuffer buf = ByteBuffer.allocate(headerBlockLength);
+	private ByteBuffer readHD(long offset) throws IOException {
+		ByteBuffer buf = ByteBuffer.allocate(headerBlockLength + dataBlockLength + hdPadding);
 
+		long pos = (headerBlockLength + dataBlockLength + hdPadding) * offset;
 		do {
-			int status = headerFC.read(buf, headerBlockLength * offset + buf.position());
+			int status = hdFC.read(buf, pos + buf.position());
 			if (status == -1)
 				throw new EOFException();
 		} while (buf.hasRemaining());
 		buf.flip();
+		
 		return buf;
 	}
-
-	/**
-	 * Read data from disk
-	 * 
-	 * @param offset
-	 * @throws IOException
-	 */
-	private ByteBuffer readData(long offset) throws IOException {
-		ByteBuffer buf = ByteBuffer.allocate(dataBlockLength);
-
-		do {
-			int status = dataFC.read(buf, dataBlockLength * offset + buf.position());
-			if (status == -1)
-				throw new EOFException();
-		} while (buf.hasRemaining());
-		buf.flip();
-		return buf;
-	}
-
+	
 	private boolean isFree(long offset) throws IOException {
 		Entry entry = readEntry(offset, null, false);
 		return entry.isFree();
@@ -695,17 +715,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				throw new EOFException();
 		} while (bf.hasRemaining());
 
-		bf = entry.toHeaderBuffer();
+		bf = entry.toHDBuffer();
 		if (bf != null) {
+			long pos = (headerBlockLength + dataBlockLength + hdPadding) * offset;
 			do {
-				int status = headerFC.write(bf, headerBlockLength * offset + bf.position());
-				if (status == -1)
-					throw new EOFException();
-			} while (bf.hasRemaining());
-
-			bf = entry.toDataBuffer();
-			do {
-				int status = dataFC.write(bf, dataBlockLength * offset + bf.position());
+				int status = hdFC.write(bf, pos + bf.position());
 				if (status == -1)
 					throw new EOFException();
 			} while (bf.hasRemaining());
@@ -722,14 +736,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			Logger.error(this, "error flusing store", e);
 		}
 		try {
-			headerFC.force(true);
-			headerFC.close();
-		} catch (Exception e) {
-			Logger.error(this, "error flusing store", e);
-		}
-		try {
-			dataFC.force(true);
-			dataFC.close();
+			hdFC.force(true);
+			hdFC.close();
 		} catch (Exception e) {
 			Logger.error(this, "error flusing store", e);
 		}
@@ -745,8 +753,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private void setStoreFileSize(long storeFileSize) {
 		try {
 			metaRAF.setLength(Entry.METADATA_LENGTH * storeFileSize);
-			headerRAF.setLength(headerBlockLength * storeFileSize);
-			dataRAF.setLength(dataBlockLength * storeFileSize);
+			hdRAF.setLength((headerBlockLength + dataBlockLength + hdPadding) * storeFileSize);
 		} catch (IOException e) {
 			Logger.error(this, "error resizing store file", e);
 		}
@@ -1019,7 +1026,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						bloomFilter.removeKey(entry.getDigestedRoutingKey());
 					}
 					try {
-						entry.setData(readHeader(entry.curOffset), readData(entry.curOffset));
+						entry.setHD(readHD(entry.curOffset));
 						oldEntryList.add(entry);
 						if (oldEntryList.size() > RESIZE_MEMORY_ENTRIES)
 							oldEntryList.remove(0);
@@ -1244,7 +1251,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 						ByteBuffer enBuf = buf.slice();
 						enBuf.limit(Entry.METADATA_LENGTH);
 
-						Entry entry = new Entry(enBuf, null, null);
+						Entry entry = new Entry(enBuf, null);
 						entry.curOffset = offset + j;
 
 						if (entry.isFree())
