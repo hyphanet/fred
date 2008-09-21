@@ -341,11 +341,6 @@ public class ClientPutDir extends ClientPutBase {
 		return generatedURI;
 	}
 
-	public boolean isDirect() {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
 	public int getNumberOfFiles() {
 		return numberOfFiles;
 	}
