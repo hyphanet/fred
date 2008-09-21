@@ -262,8 +262,6 @@ public class ClientGetter extends BaseClientGetter {
 			} else
 				Logger.minor(this, "Ignoring transition: "+oldState+" -> "+newState+" because current = "+currentState);
 		}
-		// TODO Auto-generated method stub
-
 	}
 
 	public boolean canRestart() {

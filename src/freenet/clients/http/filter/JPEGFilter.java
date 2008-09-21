@@ -442,7 +442,6 @@ public class JPEGFilter implements ContentDataFilter {
 	public Bucket writeFilter(Bucket data, BucketFactory bf, String charset,
 			HashMap otherParams, FilterCallback cb) throws DataFilterException,
 			IOException {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

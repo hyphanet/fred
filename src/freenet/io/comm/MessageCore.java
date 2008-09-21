@@ -87,8 +87,6 @@ public class MessageCore {
 				} finally {
 					ticker.queueTimedJob(this, FILTER_REMOVE_TIME);
 				}
-				// TODO Auto-generated method stub
-				
 			}
     		
     	}, FILTER_REMOVE_TIME);
