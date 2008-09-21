@@ -1188,7 +1188,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 					try {
 						if (sleep) 
-							Thread.sleep(500);
+							Thread.sleep(100);
 					} catch (InterruptedException e) {
 						processor.abort();
 						return;
