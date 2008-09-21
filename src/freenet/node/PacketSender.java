@@ -16,15 +16,14 @@ import freenet.support.io.NativeThread;
 /**
  * @author amphibian
  * 
- * Thread that sends a packet whenever:
- * - A packet needs to be resent immediately
- * - Acknowledgements or resend requests need to be sent urgently.
+ *         Thread that sends a packet whenever: - A packet needs to be resent immediately -
+ *         Acknowledgments or resend requests need to be sent urgently.
  */
 public class PacketSender implements Runnable, Ticker {
 
 	private static boolean logMINOR;
 	private static boolean logDEBUG;
-	/** Maximum time we will queue a message for in millseconds */
+	/** Maximum time we will queue a message for in milliseconds */
 	static final int MAX_COALESCING_DELAY = 100;
 	/** If opennet is enabled, and there are fewer than this many connections,
 	 * we MAY attempt to contact old opennet peers (opennet peers we have 
