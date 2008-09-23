@@ -96,20 +96,19 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	private boolean closed;
 	private boolean reallyClosed;
 	
-	public static String getName(boolean isStore, short type) {
+	public static String getName(boolean isStore, StoreType type) {
 		String newDBPrefix = typeName(type)+ '-' +(isStore ? "store" : "cache")+ '-';
 		return newDBPrefix + "CHK";
 	}
 	
-	public static File getFile(boolean isStore, short type, File baseStoreDir, String suffix) {
+	public static File getFile(boolean isStore, StoreType type, File baseStoreDir, String suffix) {
 		String newStoreFileName = typeName(type) + suffix + '.' + (isStore ? "store" : "cache");
 		return new File(baseStoreDir, newStoreFileName);
 	}
 	
-	public static FreenetStore construct(File baseStoreDir, boolean isStore, String suffix,
-			long maxStoreKeys, short type, 
-			Environment storeEnvironment, SemiOrderedShutdownHook storeShutdownHook, File reconstructFile, 
-			StoreCallback callback, RandomSource random) throws DatabaseException, IOException {
+	public static FreenetStore construct(File baseStoreDir, boolean isStore, String suffix, long maxStoreKeys,
+	        StoreType type, Environment storeEnvironment, SemiOrderedShutdownHook storeShutdownHook,
+	        File reconstructFile, StoreCallback callback, RandomSource random) throws DatabaseException, IOException {
 		// Location of new store file
 		String newStoreFileName = typeName(type) + suffix + '.' + (isStore ? "store" : "cache");
 		File newStoreFile = new File(baseStoreDir, newStoreFileName);
@@ -155,15 +154,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 		}
 	}
 
-	private static String typeName(short type) {
-		if(type == TYPE_CHK)
-			return "chk";
-		else if(type == TYPE_SSK)
-			return "ssk";
-		else if(type == TYPE_PUBKEY)
-			return "pubkey";
-		else
-			throw new RuntimeException("No such type: " + type);
+	private static String typeName(StoreType type) {
+		return type.toString().toLowerCase();
 	}
 	
 	/**
