@@ -301,8 +301,8 @@ public class PeerMessageQueue {
 		public void clear() {
 			itemsNoID = null;
 			itemsWithID = null;
-			// TODO Auto-generated method stub
-			
+			itemsIDs = null;
+			itemsByID = null;
 		}
 		
 		
