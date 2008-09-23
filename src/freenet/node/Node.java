@@ -324,8 +324,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private boolean storeForceBigShrinks;
 	
 	/* These are private because must be protected by synchronized(this) */
-	private final Environment storeEnvironment;
-	private final EnvironmentMutableConfig envMutableConfig;
+	private Environment storeEnvironment;
+	private EnvironmentMutableConfig envMutableConfig;
 	private final SemiOrderedShutdownHook shutdownHook;
 	private long databaseMaxMemory;
 	/** The CHK datastore. Long term storage; data should only be inserted here if
@@ -333,20 +333,20 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * insert (because inserts will always reach the most specialized node; if we
 	 * allow requests to store here, then we get pollution by inserts for keys not
 	 * close to our specialization). These conclusions derived from Oskar's simulations. */
-	private final CHKStore chkDatastore;
+	private CHKStore chkDatastore;
 	/** The SSK datastore. See description for chkDatastore. */
-	private final SSKStore sskDatastore;
+	private SSKStore sskDatastore;
 	/** The store of DSAPublicKeys (by hash). See description for chkDatastore. */
-	private final PubkeyStore pubKeyDatastore;
+	private PubkeyStore pubKeyDatastore;
 	/** The CHK datacache. Short term cache which stores everything that passes
 	 * through this node. */
-	private final CHKStore chkDatacache;
+	private CHKStore chkDatacache;
 	/** The SSK datacache. Short term cache which stores everything that passes
 	 * through this node. */
-	private final SSKStore sskDatacache;
+	private SSKStore sskDatacache;
 	/** The public key datacache (by hash). Short term cache which stores 
 	 * everything that passes through this node. */
-	private final PubkeyStore pubKeyDatacache;
+	private PubkeyStore pubKeyDatacache;
 	/** RequestSender's currently running, by KeyHTLPair */
 	private final HashMap<KeyHTLPair, RequestSender> requestSenders;
 	/** RequestSender's currently transferring, by key */
@@ -1605,78 +1605,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		maxCacheKeys = maxTotalKeys - maxStoreKeys;
 		
 		if (storeType.equals("salt-hash")) {
-			storeEnvironment = null;
-			envMutableConfig = null;
-			try {
-				int bloomFilterSizeInM = storeBloomFilterCounting ? storeBloomFilterSize / 6 * 4
-				        : (storeBloomFilterSize + 6) / 6 * 8; // + 6 to make size different, trigger rebuild 
-				
-				Logger.normal(this, "Initializing CHK Datastore");
-				System.out.println("Initializing CHK Datastore (" + maxStoreKeys + " keys)");
-				chkDatastore = new CHKStore();
-				SaltedHashFreenetStore chkDataFS = SaltedHashFreenetStore.construct(storeDir, "CHK-store",
-				        chkDatastore, random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting,
-				        shutdownHook);
-				Logger.normal(this, "Initializing CHK Datacache");
-				System.out.println("Initializing CHK Datacache (" + maxCacheKeys + ':' + maxCacheKeys + " keys)");
-				chkDatacache = new CHKStore();
-				SaltedHashFreenetStore chkCacheFS = SaltedHashFreenetStore.construct(storeDir, "CHK-cache",
-				        chkDatacache, random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting,
-				        shutdownHook);
-				Logger.normal(this, "Initializing pubKey Datastore");
-				System.out.println("Initializing pubKey Datastore");
-				pubKeyDatastore = new PubkeyStore();
-				SaltedHashFreenetStore pubkeyDataFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-store",
-				        pubKeyDatastore, random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting,
-				        shutdownHook);
-				Logger.normal(this, "Initializing pubKey Datacache");
-				System.out.println("Initializing pubKey Datacache (" + maxCacheKeys + " keys)");
-				pubKeyDatacache = new PubkeyStore();
-				SaltedHashFreenetStore pubkeyCacheFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-cache",
-				        pubKeyDatacache, random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting,
-				        shutdownHook);
-				Logger.normal(this, "Initializing SSK Datastore");
-				System.out.println("Initializing SSK Datastore");
-				sskDatastore = new SSKStore(this);
-				SaltedHashFreenetStore sskDataFS = SaltedHashFreenetStore.construct(storeDir, "SSK-store",
-				        sskDatastore, random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting,
-				        shutdownHook);
-				Logger.normal(this, "Initializing SSK Datacache");
-				System.out.println("Initializing SSK Datacache (" + maxCacheKeys + " keys)");
-				sskDatacache = new SSKStore(this);
-				SaltedHashFreenetStore sskCacheFS = SaltedHashFreenetStore.construct(storeDir, "SSK-cache",
-				        sskDatacache, random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting,
-				        shutdownHook);
-				
-				File migrationFile = new File(storeDir, "migrated");
-				if (!migrationFile.exists()) {
-					chkDataFS.migrationFrom(//
-					        new File(storeDir, "chk" + suffix + ".store"), // 
-					        new File(storeDir, "chk" + suffix + ".store.keys"));
-					chkCacheFS.migrationFrom(//
-					        new File(storeDir, "chk" + suffix + ".cache"), // 
-					        new File(storeDir, "chk" + suffix + ".cache.keys"));
-
-					pubkeyDataFS.migrationFrom(//
-					        new File(storeDir, "pubkey" + suffix + ".store"), // 
-					        new File(storeDir, "pubkey" + suffix + ".store.keys"));
-					pubkeyCacheFS.migrationFrom(//
-					        new File(storeDir, "pubkey" + suffix + ".cache"), // 
-					        new File(storeDir, "pubkey" + suffix + ".cache.keys"));
-
-					sskDataFS.migrationFrom(//
-					        new File(storeDir, "ssk" + suffix + ".store"), // 
-					        new File(storeDir, "ssk" + suffix + ".store.keys"));
-					sskCacheFS.migrationFrom(//
-					        new File(storeDir, "ssk" + suffix + ".cache"), // 
-					        new File(storeDir, "ssk" + suffix + ".cache.keys"));
-					migrationFile.createNewFile();
-				}
-			} catch (IOException e) {
-				System.err.println("Could not open store: " + e);
-				e.printStackTrace();
-				throw new NodeInitException(NodeInitException.EXIT_STORE_OTHER, e.getMessage());
-			}
+			initSaltHashFS(suffix);
 		} else if (storeType.equals("bdb-index")) {
 		// Setup datastores
 		
@@ -1948,6 +1877,75 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
 	}
+
+	private void initSaltHashFS(final String suffix) throws NodeInitException {
+	    storeEnvironment = null;
+		envMutableConfig = null;
+		try {
+			int bloomFilterSizeInM = storeBloomFilterCounting ? storeBloomFilterSize / 6 * 4
+			        : (storeBloomFilterSize + 6) / 6 * 8; // + 6 to make size different, trigger rebuild 
+
+			Logger.normal(this, "Initializing CHK Datastore");
+			System.out.println("Initializing CHK Datastore (" + maxStoreKeys + " keys)");
+			chkDatastore = new CHKStore();
+			SaltedHashFreenetStore chkDataFS = SaltedHashFreenetStore.construct(storeDir, "CHK-store", chkDatastore,
+			        random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook);
+			Logger.normal(this, "Initializing CHK Datacache");
+			System.out.println("Initializing CHK Datacache (" + maxCacheKeys + ':' + maxCacheKeys + " keys)");
+			chkDatacache = new CHKStore();
+			SaltedHashFreenetStore chkCacheFS = SaltedHashFreenetStore.construct(storeDir, "CHK-cache", chkDatacache,
+			        random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook);
+			Logger.normal(this, "Initializing pubKey Datastore");
+			System.out.println("Initializing pubKey Datastore");
+			pubKeyDatastore = new PubkeyStore();
+			SaltedHashFreenetStore pubkeyDataFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-store",
+			        pubKeyDatastore, random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook);
+			Logger.normal(this, "Initializing pubKey Datacache");
+			System.out.println("Initializing pubKey Datacache (" + maxCacheKeys + " keys)");
+			pubKeyDatacache = new PubkeyStore();
+			SaltedHashFreenetStore pubkeyCacheFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-cache",
+			        pubKeyDatacache, random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook);
+			Logger.normal(this, "Initializing SSK Datastore");
+			System.out.println("Initializing SSK Datastore");
+			sskDatastore = new SSKStore(this);
+			SaltedHashFreenetStore sskDataFS = SaltedHashFreenetStore.construct(storeDir, "SSK-store", sskDatastore,
+			        random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook);
+			Logger.normal(this, "Initializing SSK Datacache");
+			System.out.println("Initializing SSK Datacache (" + maxCacheKeys + " keys)");
+			sskDatacache = new SSKStore(this);
+			SaltedHashFreenetStore sskCacheFS = SaltedHashFreenetStore.construct(storeDir, "SSK-cache", sskDatacache,
+			        random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook);
+
+			File migrationFile = new File(storeDir, "migrated");
+			if (!migrationFile.exists()) {
+				chkDataFS.migrationFrom(//
+				        new File(storeDir, "chk" + suffix + ".store"), // 
+				        new File(storeDir, "chk" + suffix + ".store.keys"));
+				chkCacheFS.migrationFrom(//
+				        new File(storeDir, "chk" + suffix + ".cache"), // 
+				        new File(storeDir, "chk" + suffix + ".cache.keys"));
+
+				pubkeyDataFS.migrationFrom(//
+				        new File(storeDir, "pubkey" + suffix + ".store"), // 
+				        new File(storeDir, "pubkey" + suffix + ".store.keys"));
+				pubkeyCacheFS.migrationFrom(//
+				        new File(storeDir, "pubkey" + suffix + ".cache"), // 
+				        new File(storeDir, "pubkey" + suffix + ".cache.keys"));
+
+				sskDataFS.migrationFrom(//
+				        new File(storeDir, "ssk" + suffix + ".store"), // 
+				        new File(storeDir, "ssk" + suffix + ".store.keys"));
+				sskCacheFS.migrationFrom(//
+				        new File(storeDir, "ssk" + suffix + ".cache"), // 
+				        new File(storeDir, "ssk" + suffix + ".cache.keys"));
+				migrationFile.createNewFile();
+			}
+		} catch (IOException e) {
+			System.err.println("Could not open store: " + e);
+			e.printStackTrace();
+			throw new NodeInitException(NodeInitException.EXIT_STORE_OTHER, e.getMessage());
+		}
+    }
 
 	public void start(boolean noSwaps) throws NodeInitException {
 		
