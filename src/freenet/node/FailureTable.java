@@ -388,6 +388,9 @@ public class FailureTable implements OOMHook {
 				} catch (NotConnectedException e) {
 					node.unlockUID(uid, isSSK, false, false, true, false);
 					// Too bad.
+				} catch (Throwable t) {
+					node.unlockUID(uid, isSSK, false, false, true, false);
+					Logger.error(this, "Caught "+t+" sending offered key");
 				}
 			}
 		}, "sendOfferedKey");
