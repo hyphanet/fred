@@ -137,10 +137,10 @@ public class PeerMessageQueue {
 					if(item.submitted + PacketSender.MAX_COALESCING_DELAY <= now) {
 						foundNothingUrgent = false;
 						int thisSize = item.getLength();
-						if(size + thisSize > maxSize) {
+						if(size + 2 + thisSize > maxSize) {
 							if(size == minSize) {
 								// Send it anyway, nothing else to send.
-								size += thisSize;
+								size += 2 + thisSize;
 								items.removeFirst();
 								messages.add(item);
 								gotEnough = true;
@@ -149,7 +149,7 @@ public class PeerMessageQueue {
 							gotEnough = true;
 							break; // More items won't fit.
 						}
-						size += thisSize;
+						size += 2 + thisSize;
 						items.removeFirst();
 						messages.add(item);
 					} else {
@@ -187,10 +187,10 @@ public class PeerMessageQueue {
 					MessageItem item = (MessageItem) items.getFirst();
 					foundNothing = false;
 					int thisSize = item.getLength();
-					if(size + thisSize > maxSize) {
+					if(size + 2 + thisSize > maxSize) {
 						if(size == minSize) {
 							// Send it anyway, nothing else to send.
-							size += thisSize;
+							size += 2 + thisSize;
 							items.removeFirst();
 							messages.add(item);
 							gotEnough = true;
@@ -199,7 +199,7 @@ public class PeerMessageQueue {
 						gotEnough = true;
 						break; // More items won't fit.
 					}
-					size += thisSize;
+					size += 2 + thisSize;
 					items.removeFirst();
 					messages.add(item);
 				}
