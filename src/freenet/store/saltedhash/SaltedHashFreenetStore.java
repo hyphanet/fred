@@ -943,7 +943,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					if (_rebuildBloom && prevStoreSize == 0 && cleanerGlobalLock.tryLock()) {
 						try {
 							isRebuilding = true;
-							rebuildBloom(false);
+							rebuildBloom(true);
 						} finally {
 							isRebuilding = false;
 							cleanerGlobalLock.unlock();
