@@ -106,9 +106,9 @@ public class PeerMessageQueue {
 			for(Object o : items) {
 				MessageItem i = (MessageItem) o;
 				int thisSize = i.getLength();
-				if(length + thisSize > maxSize) {
+				if(length + 2 + thisSize > maxSize) {
 					return true;
-				} else length += thisSize;
+				} else length += 2 + thisSize;
 			}
 		}
 		return false;
