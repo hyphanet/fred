@@ -21,6 +21,7 @@ public class PeerMessageQueue {
 	private class PrioQueue {
 		LinkedList<MessageItem> itemsNoID;
 		ArrayList<LinkedList<MessageItem>> itemsWithID;
+		ArrayList<Long> itemsIDs;
 		Map<Long, LinkedList<MessageItem>> itemsByID;
 		// Construct structures lazily, we're protected by the overall synchronized.
 		
@@ -47,6 +48,7 @@ public class PeerMessageQueue {
 				itemsWithID = new ArrayList<LinkedList<MessageItem>>();
 				list = new LinkedList<MessageItem>();
 				itemsWithID.add(list);
+				itemsIDs.add(id);
 				itemsByID.put(id, list);
 			} else {
 				list = itemsByID.get(id);
@@ -54,6 +56,7 @@ public class PeerMessageQueue {
 					list = new LinkedList<MessageItem>();
 					itemsWithID.add(list);
 					itemsByID.put(id, list);
+					itemsIDs.add(id);
 				}
 			}
 			list.addLast(item);
@@ -78,12 +81,14 @@ public class PeerMessageQueue {
 				itemsWithID = new ArrayList<LinkedList<MessageItem>>();
 				list = new LinkedList<MessageItem>();
 				itemsWithID.add(list);
+				itemsIDs.add(id);
 				itemsByID.put(id, list);
 			} else {
 				list = itemsByID.get(id);
 				if(list == null) {
 					list = new LinkedList<MessageItem>();
 					itemsWithID.add(list);
+					itemsIDs.add(id);
 					itemsByID.put(id, list);
 				}
 			}
@@ -163,11 +168,17 @@ public class PeerMessageQueue {
 			for(int i=0;i<lists;i++) {
 				LinkedList<MessageItem> list;
 				int l = (i + roundRobinCounter) % lists;
+				int listNum = -1;
 				if(itemsNoID != null) {
 					if(l == 0) list = itemsNoID;
-					else list = itemsWithID.get(l-1);
-				} else
+					else {
+						listNum = l-1;
+						list = itemsWithID.get(listNum);
+					}
+				} else {
+					listNum = l;
 					list = itemsWithID.get(l);
+				}
 				
 				while(true) {
 					if(list.isEmpty()) continue;
@@ -179,6 +190,15 @@ public class PeerMessageQueue {
 								// Send it anyway, nothing else to send.
 								size += 2 + thisSize;
 								list.removeFirst();
+								if(list.isEmpty()) {
+									if(list == itemsNoID) itemsNoID = null;
+									else {
+										Long id = itemsIDs.get(listNum);
+										itemsWithID.remove(listNum);
+										itemsIDs.remove(listNum);
+										itemsByID.remove(id);
+									}
+								}
 								messages.add(item);
 								roundRobinCounter = i;
 								return size;
@@ -187,6 +207,15 @@ public class PeerMessageQueue {
 						}
 						size += 2 + thisSize;
 						list.removeFirst();
+						if(list.isEmpty()) {
+							if(list == itemsNoID) itemsNoID = null;
+							else {
+								Long id = itemsIDs.get(listNum);
+								itemsWithID.remove(listNum);
+								itemsIDs.remove(listNum);
+								itemsByID.remove(id);
+							}
+						}
 						messages.add(item);
 						roundRobinCounter = i;
 					} else {
@@ -215,11 +244,17 @@ public class PeerMessageQueue {
 			for(int i=0;i<lists;i++) {
 				LinkedList<MessageItem> list;
 				int l = (i + roundRobinCounter) % lists;
+				int listNum = -1;
 				if(itemsNoID != null) {
 					if(l == 0) list = itemsNoID;
-					else list = itemsWithID.get(l-1);
-				} else
+					else {
+						listNum = l-1;
+						list = itemsWithID.get(listNum);
+					}
+				} else {
+					listNum = l;
 					list = itemsWithID.get(l);
+				}
 				
 				while(true) {
 					if(list.isEmpty()) continue;
@@ -230,6 +265,15 @@ public class PeerMessageQueue {
 							// Send it anyway, nothing else to send.
 							size += 2 + thisSize;
 							list.removeFirst();
+							if(list.isEmpty()) {
+								if(list == itemsNoID) itemsNoID = null;
+								else {
+									Long id = itemsIDs.get(listNum);
+									itemsWithID.remove(listNum);
+									itemsIDs.remove(listNum);
+									itemsByID.remove(id);
+								}
+							}
 							messages.add(item);
 							roundRobinCounter = i;
 							return size;
@@ -238,6 +282,15 @@ public class PeerMessageQueue {
 					}
 					size += 2 + thisSize;
 					list.removeFirst();
+					if(list.isEmpty()) {
+						if(list == itemsNoID) itemsNoID = null;
+						else {
+							Long id = itemsIDs.get(listNum);
+							itemsWithID.remove(listNum);
+							itemsIDs.remove(listNum);
+							itemsByID.remove(id);
+						}
+					}
 					messages.add(item);
 					roundRobinCounter = i;
 				}
