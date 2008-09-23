@@ -244,6 +244,13 @@ public class PeerMessageQueue {
 			}
 			return size;
 		}
+
+		public void clear() {
+			itemsNoID = null;
+			itemsWithID = null;
+			// TODO Auto-generated method stub
+			
+		}
 		
 		
 		
@@ -314,6 +321,7 @@ public class PeerMessageQueue {
 		int ptr = 0;
 		for(PrioQueue queue : queuesByPriority) {
 			ptr = queue.addTo(output, ptr);
+			queue.clear();
 		}
 		return output;
 	}
