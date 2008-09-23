@@ -1559,6 +1559,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			} finally {
 				configLock.writeLock().unlock();
 			}
+			System.out.println("Successfully closed store "+name);
 		}
 	}
 
