@@ -105,9 +105,10 @@ public class PeerMessageQueue {
 		for(LinkedList items : queuesByPriority) {
 			for(Object o : items) {
 				MessageItem i = (MessageItem) o;
-				if(length + maxSize > maxSize) {
+				int thisSize = i.getLength();
+				if(length + thisSize > maxSize) {
 					return true;
-				} else length += maxSize;
+				} else length += thisSize;
 			}
 		}
 		return false;
