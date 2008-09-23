@@ -46,6 +46,7 @@ public class PeerMessageQueue {
 			if(itemsByID == null) {
 				itemsByID = new HashMap<Long, LinkedList<MessageItem>>();
 				itemsWithID = new ArrayList<LinkedList<MessageItem>>();
+				itemsIDs = new ArrayList<Long>();
 				list = new LinkedList<MessageItem>();
 				itemsWithID.add(list);
 				itemsIDs.add(id);
@@ -79,6 +80,7 @@ public class PeerMessageQueue {
 			if(itemsByID == null) {
 				itemsByID = new HashMap<Long, LinkedList<MessageItem>>();
 				itemsWithID = new ArrayList<LinkedList<MessageItem>>();
+				itemsIDs = new ArrayList<Long>();
 				list = new LinkedList<MessageItem>();
 				itemsWithID.add(list);
 				itemsIDs.add(id);
@@ -181,7 +183,7 @@ public class PeerMessageQueue {
 				}
 				
 				while(true) {
-					if(list.isEmpty()) continue;
+					if(list.isEmpty()) break;
 					MessageItem item = list.getFirst();
 					if(item.submitted + PacketSender.MAX_COALESCING_DELAY <= now) {
 						int thisSize = item.getLength();
@@ -191,12 +193,16 @@ public class PeerMessageQueue {
 								size += 2 + thisSize;
 								list.removeFirst();
 								if(list.isEmpty()) {
-									if(list == itemsNoID) itemsNoID = null;
+									if(list == itemsNoID) {
+										itemsNoID = null;
+										lists--;
+									}
 									else {
 										Long id = itemsIDs.get(listNum);
 										itemsWithID.remove(listNum);
 										itemsIDs.remove(listNum);
 										itemsByID.remove(id);
+										lists--;
 									}
 								}
 								messages.add(item);
@@ -208,12 +214,15 @@ public class PeerMessageQueue {
 						size += 2 + thisSize;
 						list.removeFirst();
 						if(list.isEmpty()) {
-							if(list == itemsNoID) itemsNoID = null;
-							else {
+							if(list == itemsNoID) {
+								itemsNoID = null;
+								lists--;
+							} else {
 								Long id = itemsIDs.get(listNum);
 								itemsWithID.remove(listNum);
 								itemsIDs.remove(listNum);
 								itemsByID.remove(id);
+								lists--;
 							}
 						}
 						messages.add(item);
@@ -257,7 +266,7 @@ public class PeerMessageQueue {
 				}
 				
 				while(true) {
-					if(list.isEmpty()) continue;
+					if(list.isEmpty()) break;
 					MessageItem item = list.getFirst();
 					int thisSize = item.getLength();
 					if(size + 2 + thisSize > maxSize) {
@@ -266,12 +275,15 @@ public class PeerMessageQueue {
 							size += 2 + thisSize;
 							list.removeFirst();
 							if(list.isEmpty()) {
-								if(list == itemsNoID) itemsNoID = null;
-								else {
+								if(list == itemsNoID) {
+									itemsNoID = null;
+									lists--;
+								} else {
 									Long id = itemsIDs.get(listNum);
 									itemsWithID.remove(listNum);
 									itemsIDs.remove(listNum);
 									itemsByID.remove(id);
+									lists--;
 								}
 							}
 							messages.add(item);
@@ -283,12 +295,15 @@ public class PeerMessageQueue {
 					size += 2 + thisSize;
 					list.removeFirst();
 					if(list.isEmpty()) {
-						if(list == itemsNoID) itemsNoID = null;
-						else {
+						if(list == itemsNoID) {
+							itemsNoID = null;
+							lists--;
+						} else {
 							Long id = itemsIDs.get(listNum);
 							itemsWithID.remove(listNum);
 							itemsIDs.remove(listNum);
 							itemsByID.remove(id);
+							lists--;
 						}
 					}
 					messages.add(item);
@@ -399,7 +414,7 @@ public class PeerMessageQueue {
 		return getNextUrgentTime(Long.MAX_VALUE, now) <= now;
 	}
 
-	public boolean mustSendSize(int minSize, int maxSize) {
+	public synchronized boolean mustSendSize(int minSize, int maxSize) {
 		int length = minSize;
 		for(PrioQueue items : queuesByPriority) {
 			length = items.addSize(length, maxSize);
@@ -420,13 +435,11 @@ public class PeerMessageQueue {
 	 */
 	public synchronized int addUrgentMessages(int size, long now, int minSize, int maxSize, ArrayList<MessageItem> messages) {
 		boolean gotEnough = false;
-		while(!gotEnough) {
-			for(PrioQueue queue : queuesByPriority) {
-				size = queue.addUrgentMessages(size, minSize, maxSize, now, messages);
-				if(size < 0) {
-					size = -size;
-					gotEnough = true;
-				}
+		for(PrioQueue queue : queuesByPriority) {
+			size = queue.addUrgentMessages(size, minSize, maxSize, now, messages);
+			if(size < 0) {
+				size = -size;
+				gotEnough = true;
 			}
 		}
 		if(gotEnough)
@@ -445,15 +458,13 @@ public class PeerMessageQueue {
 	 * @return The new size of the packet, multiplied by -1 iff there are more
 	 * messages but they don't fit.
 	 */
-	public int addNonUrgentMessages(int size, long now, int minSize, int maxSize, ArrayList<MessageItem> messages) {
+	public synchronized int addNonUrgentMessages(int size, long now, int minSize, int maxSize, ArrayList<MessageItem> messages) {
 		boolean gotEnough = false;
-		while(!gotEnough) {
-			for(PrioQueue queue : queuesByPriority) {
-				size = queue.addMessages(size, minSize, maxSize, now, messages);
-				if(size < 0) {
-					size = -size;
-					gotEnough = true;
-				}
+		for(PrioQueue queue : queuesByPriority) {
+			size = queue.addMessages(size, minSize, maxSize, now, messages);
+			if(size < 0) {
+				size = -size;
+				gotEnough = true;
 			}
 		}
 		if(gotEnough)
