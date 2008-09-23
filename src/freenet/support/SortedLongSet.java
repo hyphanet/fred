@@ -158,7 +158,7 @@ public class SortedLongSet {
 	/**
 	 * Clear this set
 	 */
-	public void clear() {
+	public synchronized void clear() {
 		data = new long[MIN_SIZE];
 		for(int i=0;i<data.length;i++)
 			data[i] = Long.MAX_VALUE;
@@ -170,7 +170,7 @@ public class SortedLongSet {
 	 * 
 	 * @return sorted array of all items
 	 */
-	public long[] toArray() {
+	public synchronized long[] toArray() {
 		long[] output = new long[length];
 		System.arraycopy(data, 0, output, 0, length);
 		return output;
