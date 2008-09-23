@@ -1043,8 +1043,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		insertForm.addChild("#", " KSK/SSK/USK \u00a0 ");
 		insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", "key", "KSK@" });
 		if(ctx.isAllowedFullAccess()) {
-			insertForm.addChild("#", " \u00a0 ");
-			insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local", L10n.getString("QueueToadlet.insertFileBrowseLabel") + "..." });
+			insertForm.addChild("br");
+			insertForm.addChild("#", L10n.getString("QueueToadlet.insertFileBrowseLabel")+":");
+			insertForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "insert-local", L10n.getString("QueueToadlet.insertFileBrowseButton") + "..." });
 			insertForm.addChild("br");
 		}
 		insertForm.addChild("#", L10n.getString("QueueToadlet.insertFileLabel") + ": ");
