@@ -208,7 +208,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	final PeerManager peers;
 	/** MessageItem's to send ASAP. 
 	 * LOCKING: Lock on self, always take that lock last. Sometimes used inside PeerNode.this lock. */
-	private final LinkedList[] messagesToSendNow;
+	private final PeerMessageQueue messageQueue;
 	/** When did we last receive a SwapRequest? */
 	private long timeLastReceivedSwapRequest;
 	/** Average interval between SwapRequest's */
@@ -589,10 +589,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		// Not connected yet; need to handshake
 		isConnected = false;
 
-		messagesToSendNow = new LinkedList[DMT.NUM_PRIORITIES];
-		for(int i=0;i<messagesToSendNow.length;i++)
-			messagesToSendNow[i] = new LinkedList();
-
+		messageQueue = new PeerMessageQueue();
+		
 		decrementHTLAtMaximum = node.random.nextFloat() < Node.DECREMENT_AT_MAX_PROB;
 		decrementHTLAtMinimum = node.random.nextFloat() < Node.DECREMENT_AT_MIN_PROB;
 
@@ -1035,19 +1033,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		MessageItem item = new MessageItem(msg, cb == null ? null : new AsyncMessageCallback[]{cb}, ctr, this);
 		long now = System.currentTimeMillis();
 		reportBackoffStatus(now);
-		int x = 0;
-		synchronized(messagesToSendNow) {
-			enqueuePrioritizedMessageItem(item);
-			for(int p=0;p<messagesToSendNow.length;p++) {
-			Iterator i = messagesToSendNow[p].iterator();
-			for(; i.hasNext();) {
-				MessageItem it = (MessageItem) (i.next());
-				x += it.getLength() + 2;
-				if(x > 1024)
-					break;
-			}
-			}
-		}
+		int x = messageQueue.queueAndEstimateSize(item);
 		if(x > 1024 || !node.enablePacketCoalescing) {
 			// If there is a packet's worth to send, wake up the packetsender.
 			node.ps.wakeUp();
@@ -1058,37 +1044,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public long getMessageQueueLengthBytes() {
-		long x = 0;
-		synchronized(messagesToSendNow) {
-			for(int p=0;p<messagesToSendNow.length;p++) {
-			Iterator i = messagesToSendNow[p].iterator();
-			for(; i.hasNext();) {
-				MessageItem it = (MessageItem) (i.next());
-				x += it.getLength() + 2;
-			}
-			}
-		}
-		return x;
+		return messageQueue.getMessageQueueLengthBytes();
 	}
-	
-	private void enqueuePrioritizedMessageItem(MessageItem addMe) {
-		synchronized (messagesToSendNow) {
-			//Assume it goes on the end, both the common case
-			short prio = addMe.getPriority();
-			messagesToSendNow[prio].addLast(addMe);
-		}
-	}
-	
-	/**
-	 * like enqueuePrioritizedMessageItem, but adds it to the front of those in the same priority.
-	 */
-	private void pushfrontPrioritizedMessageItem(MessageItem addMe) {
-		synchronized (messagesToSendNow) {
-			//Assume it goes on the front
-			short prio = addMe.getPriority();
-			messagesToSendNow[prio].addFirst(addMe);
-		}
-	}	
 	
 	/**
 	 * Returns the number of milliseconds that it is estimated to take to transmit the currently queued packets.
@@ -1256,18 +1213,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* Message's.
 	*/
 	public MessageItem[] grabQueuedMessageItems() {
-		synchronized(messagesToSendNow) {
-			int size = 0;
-			for(int i=0;i<messagesToSendNow.length;i++)
-				size += messagesToSendNow[i].size();
-			MessageItem[] output = new MessageItem[size];
-			int ptr = 0;
-			for(int i=0;i<messagesToSendNow.length;i++) {
-				for(Object item : messagesToSendNow[i])
-					output[ptr++] = (MessageItem) item;
-			}
-			return output;
-		}
+		return messageQueue.grabQueuedMessageItems();
 	}
 
 	public void requeueMessageItems(MessageItem[] messages, int offset, int length, boolean dontLog) {
@@ -1296,10 +1242,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				Logger.normal(this, "Requeueing " + messages.length + " messages" + reasonWrapper + " on " + this + rateLimitWrapper);
 			}
 		}
-		synchronized(messagesToSendNow) {
+		synchronized(messageQueue) {
 			for(int i = offset+length-1; i >= offset; i--)
 				if(messages[i] != null)
-					pushfrontPrioritizedMessageItem(messages[i]);
+					messageQueue.pushfrontPrioritizedMessageItem(messages[i]);
 		}
 	}
 
@@ -1328,15 +1274,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(kt.hasPacketsToResend()) return now;
 		}
 		}
-		synchronized(messagesToSendNow) {
-			for(LinkedList list : messagesToSendNow) {
-				if(list.isEmpty()) continue;
-				MessageItem item = (MessageItem) list.getFirst();
-				if(item.submitted + PacketSender.MAX_COALESCING_DELAY < now && logMINOR)
-					Logger.minor(this, "Message queued to send immediately");
-				t = Math.min(t, item.submitted + PacketSender.MAX_COALESCING_DELAY);
-			}
-		}
+		t = messageQueue.getNextUrgentTime(t, now);
 		return t;
 	}
 	
@@ -4140,103 +4078,34 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		
 		ArrayList<MessageItem> messages = new ArrayList<MessageItem>(10);
 		
-		synchronized(messagesToSendNow) {
+		synchronized(messageQueue) {
 			
 			// Any urgent messages to send now?
 			
 			if(!mustSend) {
-				for(int i=0;i<messagesToSendNow.length;i++) {
-					if(!messagesToSendNow[i].isEmpty()) {
-						if(((MessageItem) messagesToSendNow[i].getFirst()).submitted + 
-								PacketSender.MAX_COALESCING_DELAY <= now) {
-							mustSend = true;
-							break;
-						}
-					}
-				}
+				if(messageQueue.mustSendNow(now))
+					mustSend = true;
 			}
 			
 			if(!mustSend) {
 				// What about total length?
-				int length = minSize;
-				for(LinkedList items : messagesToSendNow) {
-					for(Object o : items) {
-						MessageItem i = (MessageItem) o;
-						if(length + maxSize > maxSize) {
-							mustSend = true;
-							break;
-						} else length += maxSize;
-					}
-				}
+				if(messageQueue.mustSendSize(minSize, maxSize))
+					mustSend = true;
 			}
 			
 			if(mustSend) {
 				int size = minSize;
 				boolean gotEnough = false;
-				while(!gotEnough) {
-					// Urgent messages first.
-					boolean foundNothingUrgent = true;
-					for(LinkedList items : messagesToSendNow) {
-						while(!gotEnough) {
-							if(items.isEmpty()) {
-								break;
-							}
-							MessageItem item = (MessageItem) items.getFirst();
-							if(item.submitted + PacketSender.MAX_COALESCING_DELAY <= now) {
-								foundNothingUrgent = false;
-								int thisSize = item.getLength();
-								if(size + thisSize > maxSize) {
-									if(size == minSize) {
-										// Send it anyway, nothing else to send.
-										size += thisSize;
-										items.removeFirst();
-										messages.add(item);
-										gotEnough = true;
-										break;
-									}
-									gotEnough = true;
-									break; // More items won't fit.
-								}
-								size += thisSize;
-								items.removeFirst();
-								messages.add(item);
-							} else {
-								break;
-							}
-						}
-					}
-					if(foundNothingUrgent) break;
+				size = messageQueue.addUrgentMessages(size, now, minSize, maxSize, messages);
+				if(size < 0) {
+					gotEnough = true;
+					size = -size;
 				}
-				
+
 				// Now the not-so-urgent messages.
-				while(!gotEnough) {
-					boolean foundNothing = true;
-					for(LinkedList items : messagesToSendNow) {
-						while(!gotEnough) {
-							if(items.isEmpty()) {
-								break;
-							}
-							MessageItem item = (MessageItem) items.getFirst();
-							foundNothing = false;
-							int thisSize = item.getLength();
-							if(size + thisSize > maxSize) {
-								if(size == minSize) {
-									// Send it anyway, nothing else to send.
-									size += thisSize;
-									items.removeFirst();
-									messages.add(item);
-									gotEnough = true;
-									break;
-								}
-								gotEnough = true;
-								break; // More items won't fit.
-							}
-							size += thisSize;
-							items.removeFirst();
-							messages.add(item);
-						}
-					}
-					if(foundNothing) break;
+				if(!gotEnough) {
+					size = messageQueue.addNonUrgentMessages(size, now, minSize, maxSize, messages);
+					if(size < 0) size = -size;
 				}
 			}
 			
