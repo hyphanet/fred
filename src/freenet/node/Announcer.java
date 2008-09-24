@@ -51,16 +51,16 @@ public class Announcer {
 	/** After we have sent 3 announcements, wait for 30 seconds before sending 3 more if we still have no connections. */
 	static final int COOLING_OFF_PERIOD = 30*1000;
 	/** Identities of nodes we have announced to */
-	private final HashSet announcedToIdentities;
+	private final HashSet<ByteArrayWrapper> announcedToIdentities;
 	/** IPs of nodes we have announced to. Maybe this should be first-two-bytes, but I'm not sure how to do that with IPv6. */
-	private final HashSet announcedToIPs;
+	private final HashSet<InetAddress> announcedToIPs;
 	/** How many nodes to connect to at once? */
 	static final int CONNECT_AT_ONCE = 15;
 	/** Do not announce if there are more than this many opennet peers connected */
 	private static final int MIN_OPENNET_CONNECTED_PEERS = 10;
 	private static final long NOT_ALL_CONNECTED_DELAY = 60*1000;
 	/** Identities of nodes we have tried to connect to */
-	private final HashSet connectedToIdentities;
+	private final HashSet<ByteArrayWrapper> connectedToIdentities;
 	/** Total nodes added by announcement so far */
 	private int announcementAddedNodes;
 	/** Total nodes that didn't want us so far */
@@ -69,9 +69,9 @@ public class Announcer {
 	Announcer(OpennetManager om) {
 		this.om = om;
 		this.node = om.node;
-		announcedToIdentities = new HashSet();
-		announcedToIPs = new HashSet();
-		connectedToIdentities = new HashSet();
+		announcedToIdentities = new HashSet<ByteArrayWrapper>();
+		announcedToIPs = new HashSet<InetAddress>();
+		connectedToIdentities = new HashSet<ByteArrayWrapper>();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
@@ -222,7 +222,7 @@ public class Announcer {
 
 	public static Vector readSeednodes(File nodeDir) {
 		File file = new File(nodeDir, "seednodes.fref");
-		Vector list = new Vector();
+		Vector<SimpleFieldSet> list = new Vector<SimpleFieldSet>();
 		FileInputStream fis = null;
 		try {
 			fis = new FileInputStream(file);
