@@ -574,7 +574,6 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 		long storeFileSize = Math.max(storeSize, prevStoreSize);
 		WrapperManager.signalStarting(10 * 60 * 1000); // 10minutes, for filesystem that support no sparse file.
-		setStoreFileSize(storeFileSize);
 		
 		// XXX migrate from old format
 		{
@@ -628,6 +627,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				setStoreFileSize(storeFileSize);
 			}
 		}
+		
+		setStoreFileSize(storeFileSize);
 		
 		return newStore;
 	}
