@@ -1262,21 +1262,15 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				return isAllowedToConnectToSeednodes;
 			}
 			@Override
-			public void set(Boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
 				if (get().equals(val))
 					        return;
 				synchronized(Node.this) {
+					isAllowedToConnectToSeednodes = val;
 					if(opennet != null)
-						throw new InvalidConfigValueException("Can't change that setting on the fly when opennet is already active!");
-					else
-						isAllowedToConnectToSeednodes = val;
+						throw new NodeNeedRestartException(l10n("connectToSeednodesCannotBeChangedMustDisableOpennetOrReboot"));
 				}
 			}
-
-			@Override
-			public boolean isReadOnly() {
-				        return opennet != null;
-			        }
 		});
 		isAllowedToConnectToSeednodes = opennetConfig.getBoolean("connectToSeednodes");
 		
