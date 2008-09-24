@@ -1133,7 +1133,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		// construct the peernode
 		if(unknownInitiator) {
-			pn = getPeerNodeFromUnknownInitiator(hisRef, setupType, pn);
+			pn = getPeerNodeFromUnknownInitiator(hisRef, setupType, pn, replyTo);
 		}
 		if(pn == null) {
 			if(unknownInitiator)
@@ -1189,7 +1189,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this,"Message3 Processing packet for"+pn.getPeer()+" took "+TimeUtil.formatTime(t2-t1, 3, true));
 	}
 	
-	private PeerNode getPeerNodeFromUnknownInitiator(byte[] hisRef, int setupType, PeerNode pn) {
+	private PeerNode getPeerNodeFromUnknownInitiator(byte[] hisRef, int setupType, PeerNode pn, Peer from) {
 		if(setupType == SETUP_OPENNET_SEEDNODE) {
 			OpennetManager om = node.getOpennet();
 			if(om == null) {
@@ -1207,13 +1207,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			try {
 				seed = new SeedClientPeerNode(ref, node, crypto, node.peers, false, true, crypto.packetMangler);
 			} catch (FSParseException e) {
-				Logger.error(this, "Invalid seed client noderef: "+e, e);
+				Logger.error(this, "Invalid seed client noderef: "+e+" from "+from, e);
 				return null;
 			} catch (PeerParseException e) {
-				Logger.error(this, "Invalid seed client noderef: "+e, e);
+				Logger.error(this, "Invalid seed client noderef: "+e+" from "+from, e);
 				return null;
 			} catch (ReferenceSignatureVerificationException e) {
-				Logger.error(this, "Invalid seed client noderef: "+e, e);
+				Logger.error(this, "Invalid seed client noderef: "+e+" from "+from, e);
 				return null;
 			}
 			if(seed.equals(pn)) {
