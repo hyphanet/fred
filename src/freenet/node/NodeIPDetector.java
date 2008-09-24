@@ -133,9 +133,9 @@ public class NodeIPDetector {
 	   	if(dumpLocalAddresses) {
 	   		ArrayList filtered = new ArrayList(lastIPAddress.length);
 	   		for(int i=0;i<lastIPAddress.length;i++) {
-	   			if(lastIPAddress[i].hasHostnameNoIP()) {
+	   			if(lastIPAddress[i] == null) continue;
+	   			if(lastIPAddress[i].hasHostnameNoIP())
 	   				filtered.add(lastIPAddress[i]);
-	   			} else if(lastIPAddress[i] == null) continue;
 	   			else if(IPUtil.isValidAddress(lastIPAddress[i].getAddress(), false))
 	   				filtered.add(lastIPAddress[i]);
 	   		}
