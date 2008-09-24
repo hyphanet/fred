@@ -134,8 +134,9 @@ public class NodeIPDetector {
 	   		ArrayList filtered = new ArrayList(lastIPAddress.length);
 	   		for(int i=0;i<lastIPAddress.length;i++) {
 	   			if(lastIPAddress[i] == null) continue;
-	   			if(lastIPAddress[i].hasHostnameNoIP())
+	   			if(lastIPAddress[i] == overrideIPAddress && lastIPAddress[i].hasHostnameNoIP())
 	   				filtered.add(lastIPAddress[i]);
+	   			else if(lastIPAddress[i].hasHostnameNoIP()) continue;
 	   			else if(IPUtil.isValidAddress(lastIPAddress[i].getAddress(), false))
 	   				filtered.add(lastIPAddress[i]);
 	   		}
