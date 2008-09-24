@@ -167,7 +167,7 @@ public class NodeIPDetector {
 	 * @param addedValidIP
 	 * @return
 	 */
-	private boolean innerDetect(List addresses) {
+	private boolean innerDetect(List<FreenetInetAddress> addresses) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		boolean addedValidIP = false;
 		InetAddress[] detectedAddrs = ipDetector.getAddress();
@@ -208,7 +208,7 @@ public class NodeIPDetector {
 		// Try to pick it up from our connections
 		if(node.peers != null) {
 			PeerNode[] peerList = node.peers.myPeers;
-			HashMap countsByPeer = new HashMap();
+			HashMap<FreenetInetAddress,Integer> countsByPeer = new HashMap<FreenetInetAddress,Integer>();
 			// FIXME use a standard mutable int object, we have one somewhere
 			for(int i=0;i<peerList.length;i++) {
 				if(!peerList[i].isConnected()) continue;
