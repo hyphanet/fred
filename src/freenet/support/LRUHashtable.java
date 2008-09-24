@@ -12,7 +12,7 @@ public class LRUHashtable<K, V> {
      * push is by far the most done operation, this should be an
      * overall improvement.
      */
-    private final DoublyLinkedListImpl<QItem<K, V>> list = new DoublyLinkedListImpl<QItem<K, V>>();
+    private final DoublyLinkedListImpl<V> list = new DoublyLinkedListImpl<V>();
     private final Hashtable<K, QItem<K, V>> hash = new Hashtable<K, QItem<K, V>>();
     
     /**
@@ -34,12 +34,12 @@ public class LRUHashtable<K, V> {
         	Logger.minor(this, "Pushed "+insert+" ( "+key+ ' ' +value+" )");
 
         list.unshift(insert);
-    }
+    } 
 
     /**
      *  @return Least recently pushed key.
      */
-    public final synchronized K popKey() {
+    public final synchronized Object popKey() {
         if ( list.size() > 0 ) {
             return (	hash.remove(((QItem) list.pop()).obj)).obj;
         } else {
@@ -50,7 +50,7 @@ public class LRUHashtable<K, V> {
     /**
      * @return Least recently pushed value.
      */
-    public final synchronized V popValue() {
+    public final synchronized Object popValue() {
         if ( list.size() > 0 ) {
             return (	hash.remove(((QItem) list.pop()).obj)).value;
         } else {
@@ -58,7 +58,7 @@ public class LRUHashtable<K, V> {
         }
     }
     
-	public final synchronized V peekValue() {
+	public final synchronized Object peekValue() {
         if ( list.size() > 0 ) {
         	if(hash == null) throw new NullPointerException();
         	QItem<K,V> tail = (QItem<K,V>) list.tail();
@@ -114,39 +114,39 @@ public class LRUHashtable<K, V> {
     	return q.value;
     }
     
-    public Enumeration<K> keys() {
+    public Enumeration keys() {
         return new ItemEnumeration();
     }
     
-    public Enumeration<V> values() {
+    public Enumeration values() {
     	return new ValuesEnumeration();
     }
 
-    private class ItemEnumeration implements Enumeration<K> {
-		private Enumeration<QItem<K, V>> source = list.reverseElements();
+    private class ItemEnumeration implements Enumeration {
+        private Enumeration source = list.reverseElements();
        
         public boolean hasMoreElements() {
             return source.hasMoreElements();
         }
 
-        public K nextElement() {
-			return source.nextElement().obj;
+        public Object nextElement() {
+            return ((QItem) source.nextElement()).obj;
         }
     }
 
-    private class ValuesEnumeration implements Enumeration<V> {
-		private Enumeration<QItem<K, V>> source = list.reverseElements();
+    private class ValuesEnumeration implements Enumeration {
+        private Enumeration source = list.reverseElements();
        
         public boolean hasMoreElements() {
             return source.hasMoreElements();
         }
 
-        public V nextElement() {
-			return (source.nextElement()).value;
+        public Object nextElement() {
+            return ((QItem) source.nextElement()).value;
         }
     }
 
-    protected static class QItem<K, V> extends DoublyLinkedListImpl.Item<QItem<K, V>> {
+    public static class QItem<K, V> extends DoublyLinkedListImpl.Item<V> {
         public K obj;
         public V value;
 
@@ -166,7 +166,7 @@ public class LRUHashtable<K, V> {
 	}
 
 	/**
-	 * Note that unlike the java.util versions, this will not reallocate (hence it doesn't return),
+	 * Note that unlike the java.util versions, this will not reallocate (hence it doesn't return), 
 	 * so pass in an appropriately big array, and make sure you hold the lock!
 	 * @param entries
 	 * @return

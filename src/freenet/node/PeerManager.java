@@ -1107,11 +1107,7 @@ public class PeerManager {
 	
 	protected StringBuilder getOldOpennetPeersString(OpennetManager om) {
 		StringBuilder sb = new StringBuilder();
-		PeerNode[] peers;
-		synchronized(this) {
-			peers = om.getOldPeers();
-		}
-		for(PeerNode pn : peers) {
+		for(PeerNode pn : om.getOldPeers()) {
 			if(pn instanceof OpennetPeerNode)
 				sb.append(pn.exportDiskFieldSet());
 		}
