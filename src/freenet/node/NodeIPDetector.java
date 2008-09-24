@@ -99,7 +99,7 @@ public class NodeIPDetector {
 	FreenetInetAddress[] detectPrimaryIPAddress(boolean dumpLocalAddresses) {
 		boolean addedValidIP = false;
 		Logger.minor(this, "Redetecting IPs...");
-		Vector addresses = new Vector();
+		Vector<FreenetInetAddress> addresses = new Vector<FreenetInetAddress>();
 		if(overrideIPAddress != null) {
 			// If the IP is overridden and the override is valid, the override has to be the first element.
 			// overrideIPAddress will be null if the override is invalid
@@ -131,7 +131,7 @@ public class NodeIPDetector {
 	   	}
 	   	lastIPAddress = (FreenetInetAddress[]) addresses.toArray(new FreenetInetAddress[addresses.size()]);
 	   	if(dumpLocalAddresses) {
-	   		ArrayList filtered = new ArrayList(lastIPAddress.length);
+	   		ArrayList<FreenetInetAddress> filtered = new ArrayList<FreenetInetAddress>(lastIPAddress.length);
 	   		for(int i=0;i<lastIPAddress.length;i++) {
 	   			if(lastIPAddress[i] == null) continue;
 	   			if(lastIPAddress[i] == overrideIPAddress && lastIPAddress[i].hasHostnameNoIP())
