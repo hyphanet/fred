@@ -219,7 +219,7 @@ public class PacketSender implements Runnable, Ticker {
 		
 		int newBrokeAt = 0;
 		for(int i = 0; i < nodes.length; i++) {
-			PeerNode pn = nodes[(i + brokeAt) % nodes.length];
+			PeerNode pn = nodes[(i + brokeAt + 1) % nodes.length];
 			lastReceivedPacketFromAnyNode =
 				Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
 			pn.maybeOnConnect();
