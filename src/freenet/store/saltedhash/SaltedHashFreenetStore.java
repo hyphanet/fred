@@ -178,8 +178,17 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		if (logMINOR)
 			Logger.minor(this, "Fetch " + HexUtil.bytesToHex(routingKey) + " for " + callback);
 
-		if (!configLock.readLock().tryLock(10000, TimeUnit.MILLISECONDS))
-			return null;
+		try {
+			int retry = 0;
+			while (!configLock.readLock().tryLock(2, TimeUnit.SECONDS)) {
+				if (shutdown)
+					return null;
+				if (retry++ > 10)
+					throw new IOException("lock timeout (20s)");
+			}
+		} catch(InterruptedException e) {
+			throw new IOException("interrupted: " +e);
+		}
 		try {
 			Map<Long, Condition> lockMap = lockPlainKey(routingKey, true);
 			if (lockMap == null) {
@@ -266,8 +275,17 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		if (logMINOR)
 			Logger.minor(this, "Putting " + HexUtil.bytesToHex(routingKey) + " (" + name + ")");
 
-		if (!configLock.readLock().tryLock(10000, TimeUnit.MILLISECONDS))
-			throw new IOException("can't lock in 10 seconds");
+		try {
+			int retry = 0;
+			while (!configLock.readLock().tryLock(2, TimeUnit.SECONDS)) {
+				if (shutdown)
+					return;
+				if (retry++ > 10)
+					throw new IOException("lock timeout (20s)");
+			}
+		} catch(InterruptedException e) {
+			throw new IOException("interrupted: " +e);
+		}
 		try {
 			Map<Long, Condition> lockMap = lockPlainKey(routingKey, false);
 			if (lockMap == null) {
