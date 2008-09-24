@@ -3,8 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.config;
 
-import java.util.LinkedHashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.Map.Entry;
@@ -22,9 +22,9 @@ import freenet.support.api.StringCallback;
 /**
  * A specific configuration block.
  */
-public class SubConfig implements Comparable {
+public class SubConfig implements Comparable<SubConfig> {
 	
-	private final LinkedHashMap map;
+	private final LinkedHashMap<String, Option<?>> map;
 	public final Config config;
 	final String prefix;
 	private boolean hasInitialized;
@@ -32,7 +32,7 @@ public class SubConfig implements Comparable {
 	public SubConfig(String prefix, Config config) {
 		this.config = config;
 		this.prefix = prefix;
-		map = new LinkedHashMap();
+		map = new LinkedHashMap<String, Option<?>>();
 		hasInitialized = false;
 		config.register(this);
 	}
@@ -41,15 +41,15 @@ public class SubConfig implements Comparable {
 	 * Return all the options registered. Each includes its name.
 	 * Used by e.g. webconfig.
 	 */
-	public synchronized Option[] getOptions() {
-		return (Option[]) map.values().toArray(new Option[map.size()]);
+	public synchronized Option<?>[] getOptions() {
+		return map.values().toArray(new Option[map.size()]);
 	}
 	
-	public synchronized Option getOption(String option){
-		return (Option)map.get(option);
+	public synchronized Option<?> getOption(String option) {
+		return map.get(option);
 	}
 	
-	public void register(Option o) {
+	public void register(Option<?> o) {
 		synchronized(this) {
 			if(o.name.indexOf(SimpleFieldSet.MULTI_LEVEL_CHAR) != -1)
 				throw new IllegalArgumentException("Option names must not contain "+SimpleFieldSet.MULTI_LEVEL_CHAR);
@@ -63,13 +63,13 @@ public class SubConfig implements Comparable {
 	public void register(String optionName, int defaultValue, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, IntCallback cb) {
 		if(cb == null) cb = new NullIntCallback();
-		register(new IntOption(this, optionName, defaultValue, null, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
+		register(new IntOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 	
 	public void register(String optionName, long defaultValue, int sortOrder,
 			boolean expert, boolean forceWrite, String shortDesc, String longDesc, LongCallback cb) {
 		if(cb == null) cb = new NullLongCallback();
-		register(new LongOption(this, optionName, defaultValue, null, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
+		register(new LongOption(this, optionName, defaultValue, sortOrder, expert, forceWrite, shortDesc, longDesc, cb));
 	}
 	
 	public void register(String optionName, String defaultValueString, int sortOrder,
@@ -178,12 +178,12 @@ public class SubConfig implements Comparable {
 	 * Set options from a SimpleFieldSet. Once we process an option, we must remove it.
 	 */
 	public void setOptions(SimpleFieldSet sfs) {
-		Set entrySet = map.entrySet();
-		Iterator i = entrySet.iterator();
+		Set<Map.Entry<String, Option<?>>> entrySet = map.entrySet();
+		Iterator<Entry<String, Option<?>>> i = entrySet.iterator();
 		while(i.hasNext()) {
-			Map.Entry entry = (Map.Entry) i.next();
-			String key = (String) entry.getKey();
-			Option o = (Option) entry.getValue();
+			Entry<String, Option<?>> entry = i.next();
+			String key = entry.getKey();
+			Option<?> o = entry.getValue();
 			String val = sfs.get(key);
 			if(val != null) {
 				try {
@@ -192,6 +192,11 @@ public class SubConfig implements Comparable {
 					String msg = "Invalid config value: "+prefix+SimpleFieldSet.MULTI_LEVEL_CHAR+key+" = "+val+" : error: "+e;
 					Logger.error(this, msg, e);
 					System.err.println(msg); // might be about logging?
+				} catch (NodeNeedRestartException e) {
+					// Impossible
+					String msg = "Impossible: " + prefix + SimpleFieldSet.MULTI_LEVEL_CHAR + key + " = " + val
+					        + " : error: " + e;
+					Logger.error(this, msg, e);
 				}
 			}
 		}
@@ -202,53 +207,55 @@ public class SubConfig implements Comparable {
 	}
 
 	public SimpleFieldSet exportFieldSet(boolean withDefaults) {
-		return exportFieldSet(Config.CONFIG_REQUEST_TYPE_CURRENT_SETTINGS, withDefaults);
+		return exportFieldSet(Config.RequestType.CURRENT_SETTINGS, withDefaults);
 	}
 
-	public SimpleFieldSet exportFieldSet(int configRequestType, boolean withDefaults) {
+    public SimpleFieldSet exportFieldSet(Config.RequestType configRequestType, boolean withDefaults) {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
+		@SuppressWarnings("unchecked")
+		Map.Entry<String, Option<?>>[] entries = new Map.Entry[map.size()];
 		// FIXME is any locking at all necessary here? After it has finished init, it's constant...
-		Map.Entry[] entries;
 		synchronized(this) {
-			entries = (Entry[]) map.entrySet().toArray(new Map.Entry[map.size()]);
+			entries = map.entrySet().toArray(entries);
 		}
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Prefix="+prefix);
 		for(int i=0;i<entries.length;i++) {
-			Map.Entry entry = (Map.Entry) entries[i];
-			String key = (String) entry.getKey();
-			Option o = (Option) entry.getValue();
-//			if(logMINOR)
-//				Logger.minor(this, "Key="+key+" value="+o.getValueString()+" default="+o.isDefault());
-			if(configRequestType == Config.CONFIG_REQUEST_TYPE_CURRENT_SETTINGS && (!withDefaults) && o.isDefault() && (!o.forceWrite)) {
+			Map.Entry<String, Option<?>> entry = entries[i];
+			String key = entry.getKey();
+			Option<?> o = entry.getValue();
+			if(logMINOR)
+				Logger.minor(this, "Key="+key+" value="+o.getValueString()+" default="+o.isDefault());
+			if (configRequestType == Config.RequestType.CURRENT_SETTINGS && (!withDefaults) && o.isDefault()
+			        && (!o.forceWrite)) {
 				if(logMINOR)
 					Logger.minor(this, "Skipping "+key+" - "+o.isDefault());
 				continue;
 			}
 			switch (configRequestType) {
-				case Config.CONFIG_REQUEST_TYPE_CURRENT_SETTINGS:
+				case CURRENT_SETTINGS:
 					fs.putSingle(key, o.getValueString());
 					break;
-				case Config.CONFIG_REQUEST_TYPE_DEFAULT_SETTINGS:
+				case DEFAULT_SETTINGS:
 					fs.putSingle(key, o.getDefault());
 					break;
-				case Config.CONFIG_REQUEST_TYPE_SORT_ORDER:
+				case SORT_ORDER:
 					fs.put(key, o.getSortOrder());
 					break;
-				case Config.CONFIG_REQUEST_TYPE_EXPERT_FLAG:
+				case EXPERT_FLAG:
 					fs.put(key, o.isExpert());
 					break;
-				case Config.CONFIG_REQUEST_TYPE_FORCE_WRITE_FLAG:
+				case FORCE_WRITE_FLAG:
 					fs.put(key, o.isForcedWrite());
 					break;
-				case Config.CONFIG_REQUEST_TYPE_SHORT_DESCRIPTION:
+				case SHORT_DESCRIPTION:
 					fs.putSingle(key, L10n.getString(o.getShortDesc()));
 					break;
-				case Config.CONFIG_REQUEST_TYPE_LONG_DESCRIPTION:
+				case LONG_DESCRIPTION:
 					fs.putSingle(key, L10n.getString(o.getLongDesc()));
 					break;
-				case Config.CONFIG_REQUEST_TYPE_DATA_TYPE:
+				case DATA_TYPE:
 					fs.putSingle(key, o.getDataTypeStr());
 					break;
 				default:
@@ -263,19 +270,21 @@ public class SubConfig implements Comparable {
 
 	/**
 	 * Force an option to be updated even if it hasn't changed.
-	 * @throws InvalidConfigValueException 
+	 * 
+	 * @throws InvalidConfigValueException
+	 * @throws NodeNeedRestartException
 	 */
-	public void forceUpdate(String optionName) throws InvalidConfigValueException {
-		Option o = (Option) map.get(optionName);
+	public void forceUpdate(String optionName) throws InvalidConfigValueException, NodeNeedRestartException {
+		Option<?> o = map.get(optionName);
 		o.forceUpdate();
 	}
 
-	public void set(String name, String value) throws InvalidConfigValueException {
-		Option o = (Option) map.get(name);
+	public void set(String name, String value) throws InvalidConfigValueException, NodeNeedRestartException {
+		Option<?> o = map.get(name);
 		o.setValue(value);
 	}
 
-	public void set(String name, boolean value) throws InvalidConfigValueException {
+	public void set(String name, boolean value) throws InvalidConfigValueException, NodeNeedRestartException {
 		BooleanOption o = (BooleanOption) map.get(name);
 		o.set(value);
 	}
@@ -288,7 +297,7 @@ public class SubConfig implements Comparable {
 	 * @param value The value of the option.
 	 */
 	public void fixOldDefault(String name, String value) {
-		Option o = (Option) map.get(name);
+		Option<?> o = map.get(name);
 		if(o.getValueString().equals(value))
 			o.setDefault();
 	}
@@ -301,7 +310,7 @@ public class SubConfig implements Comparable {
 	 * @param value The value of the option.
 	 */
 	public void fixOldDefaultRegex(String name, String value) {
-		Option o = (Option) map.get(name);
+		Option<?> o = map.get(name);
 		if(o.getValueString().matches(value))
 			o.setDefault();
 	}
@@ -310,15 +319,11 @@ public class SubConfig implements Comparable {
 		return prefix;
 	}
 	
-	public int compareTo(Object o){
-		if((o == null) || !(o instanceof SubConfig)) return 0;
-		else{
-			SubConfig second = (SubConfig) o;
-			if(this.getPrefix().compareTo(second.getPrefix())>0)
-				return 1;
-			else
-				return -1;
-		}
+	public int compareTo(SubConfig second) {
+		if (this.getPrefix().compareTo(second.getPrefix()) > 0)
+			return 1;
+		else
+			return -1;
 	}
 
 	public String getRawOption(String name) {

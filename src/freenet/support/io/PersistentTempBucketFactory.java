@@ -44,12 +44,15 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	private LinkedList bucketsToFree;
 	
 	private final long nodeDBHandle;
+	
+	private volatile boolean encrypt;
 
-	public PersistentTempBucketFactory(File dir, final String prefix, RandomSource strongPRNG, Random weakPRNG, long nodeDBHandle) throws IOException {
+	public PersistentTempBucketFactory(File dir, final String prefix, RandomSource strongPRNG, Random weakPRNG, boolean encrypt, long nodeDBHandle) throws IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.strongPRNG = strongPRNG;
 		this.nodeDBHandle = nodeDBHandle;
 		this.weakPRNG = weakPRNG;
+		this.encrypt = encrypt;
 		this.fg = new FilenameGenerator(weakPRNG, false, dir, prefix);
 		if(!dir.exists()) {
 			dir.mkdir();
@@ -116,18 +119,10 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		originalFiles = null;
 	}
 
-	private Bucket makeRawBucket(long size) throws IOException {
-		return new PersistentTempFileBucket(fg.makeRandomFilename(), fg);
-	}
-
 	public Bucket makeBucket(long size) throws IOException {
-		Bucket b = makeRawBucket(size);
-		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(b, 1024, strongPRNG, weakPRNG));
-	}
-	
-	public Bucket makeEncryptedBucket() throws IOException {
-		Bucket b = makeRawBucket(-1);
-		return new DelayedFreeBucket(this, new PaddedEphemerallyEncryptedBucket(b, 1024, strongPRNG, weakPRNG));
+		PersistentTempFileBucket rawBucket = new PersistentTempFileBucket(fg.makeRandomFilename(), fg);
+		Bucket maybeEncryptedBucket = (encrypt ? new PaddedEphemerallyEncryptedBucket(rawBucket, 1024, strongPRNG, weakPRNG) : rawBucket);
+		return new DelayedFreeBucket(this, maybeEncryptedBucket);
 	}
 
 	/**
@@ -162,8 +157,12 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	public long getID(File file) {
 		return fg.getID(file);
 	}
+	
+	public boolean isEncrypting() {
+		return encrypt;
+	}
 
-	public static PersistentTempBucketFactory load(File dir, String prefix, RandomSource random, Random fastWeakRandom, ObjectContainer container, final long nodeDBHandle) throws IOException {
+	public static PersistentTempBucketFactory load(File dir, String prefix, RandomSource random, Random fastWeakRandom, ObjectContainer container, final long nodeDBHandle, boolean encrypt) throws IOException {
 		ObjectSet<PersistentTempBucketFactory> results = container.query(new Predicate<PersistentTempBucketFactory>() {
 			public boolean match(PersistentTempBucketFactory factory) {
 				if(factory.nodeDBHandle == nodeDBHandle) return true;
@@ -174,9 +173,13 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			PersistentTempBucketFactory factory = results.next();
 			container.activate(factory, 5);
 			factory.init(dir, prefix, random, fastWeakRandom);
+			factory.setEncryption(encrypt);
 			return factory;
 		} else
-			return new PersistentTempBucketFactory(dir, prefix, random, fastWeakRandom, nodeDBHandle);
+			return new PersistentTempBucketFactory(dir, prefix, random, fastWeakRandom, encrypt, nodeDBHandle);
 	}
 
+	public void setEncryption(boolean encrypt) {
+		this.encrypt = encrypt;
+	}
 }

@@ -1,6 +1,5 @@
 package freenet.support;
 
-import java.util.Arrays;
 
 /**
  * Sorted array of long's.

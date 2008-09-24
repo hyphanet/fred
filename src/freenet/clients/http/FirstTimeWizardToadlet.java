@@ -10,11 +10,14 @@ import java.net.URI;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
+import freenet.config.ConfigException;
 import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.WrapperConfig;
 import freenet.l10n.L10n;
 import freenet.node.Node;
 import freenet.node.NodeClientCore;
+import freenet.pluginmanager.FredPluginBandwidthIndicator;
 import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -25,13 +28,21 @@ import freenet.support.io.FileUtil;
 /**
  * A first time wizard aimed to ease the configuration of the node.
  * 
- * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
- * 
- * TODO: a choose your CSS step ?
+ * TODO: a choose your CSS step?
  */
 public class FirstTimeWizardToadlet extends Toadlet {
 	private final NodeClientCore core;
 	private final Config config;
+	
+	private enum WIZARD_STEP {
+		WELCOME,
+		OPENNET,
+		NAME_SELECTION,
+		BANDWIDTH,
+		DATASTORE_SIZE,
+		MEMORY,
+		CONGRATZ;
+	}
 	
 	
 	FirstTimeWizardToadlet(HighLevelSimpleClient client, Node node, NodeClientCore core) {
@@ -42,15 +53,16 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	
 	public static final String TOADLET_URL = "/wizard/";
 	
+	@Override
 	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
 			return;
 		}
 		
-		int currentStep = request.getIntParam("step");
+		WIZARD_STEP currentStep = WIZARD_STEP.valueOf(request.getParam("step", WIZARD_STEP.WELCOME.toString()));
 		
-		if(currentStep == 1) {
+		if(currentStep == WIZARD_STEP.OPENNET) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step1Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
@@ -66,14 +78,16 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			opennetDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "enableOpennet", "true" }, l10n("opennetYes"));
 			opennetDiv.addChild("br");
 			opennetDiv.addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "enableOpennet", "false" }, l10n("opennetNo"));
-			HTMLNode para = opennetForm.addChild("p");
-			para.addChild("b", l10n("warningTitle")+' ');
-			L10n.addL10nSubstitution(para, "FirstTimeWizardToadlet.opennetWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 			opennetForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "opennetF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			opennetForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
-		} else if(currentStep == 2) {
+		} else if(currentStep == WIZARD_STEP.NAME_SELECTION) {
+			// Attempt to skip one step if possible: opennet nodes don't need a name
+			if(Boolean.valueOf(request.getParam("opennet"))) {
+				super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step="+WIZARD_STEP.BANDWIDTH);
+				return;
+			}
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step2Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
@@ -90,7 +104,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			nnameForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
-		} else if(currentStep == 3) {
+		} else if(currentStep == WIZARD_STEP.BANDWIDTH) {
+			// Attempt to skip one step if possible
+			if(canAutoconfigureBandwidth()){
+				super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step="+WIZARD_STEP.DATASTORE_SIZE);
+				return;
+			}
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step3Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
@@ -103,6 +122,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "bwForm");
 			HTMLNode result = bandwidthForm.addChild("select", "name", "bw");
 			
+			// don't forget to update handlePost too if you change that!
 			result.addChild("option", "value", "8K", l10n("bwlimitLowerSpeed"));
 			// Special case for 128kbps to increase performance at the cost of some link degradation. Above that we use 50% of the limit.
 			result.addChild("option", "value", "12K", "512+/128 kbps");
@@ -115,7 +135,12 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
-		} else if(currentStep == 4) {
+		} else if(currentStep == WIZARD_STEP.DATASTORE_SIZE) {
+			// Attempt to skip one step if possible
+			if(canAutoconfigureDatastoreSize()) {
+				super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step="+WIZARD_STEP.MEMORY);
+				return;
+			}
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step4Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
@@ -127,57 +152,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			bandwidthInfoboxContent.addChild("#", l10n("datastoreSizeLong"));
 			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "dsForm");
 			HTMLNode result = bandwidthForm.addChild("select", "name", "ds");
-			
-			// Use JNI to find out the free space on this partition.
 
-			long freeSpace = -1;
-			File dir = FileUtil.getCanonicalFile(core.node.getNodeDir());
-			try {
-				Class c = dir.getClass();
-				Method m = c.getDeclaredMethod("getFreeSpace", new Class[0]);
-				if(m != null) {
-					Long lFreeSpace = (Long) m.invoke(dir, new Object[0]);
-					if(lFreeSpace != null) {
-						freeSpace = lFreeSpace.longValue();
-						System.err.println("Found free space on node's partition: "+freeSpace+" on "+dir+" = "+SizeUtil.formatSize(freeSpace));
-					}
-				}
-			} catch (NoSuchMethodException e) {
-				// Ignore
-				freeSpace = -1;
-			} catch (Throwable t) {
-				System.err.println("Trying to access 1.6 getFreeSpace(), caught "+t);
-				freeSpace = -1;
-			}
-			
-			if(freeSpace <= 0) {
-				result.addChild("option", new String[] { "value", "selected" }, new String[] { "1G", "selected" }, "1GiB");
-			} else {
-				if(freeSpace / 10 > 1024*1024*1024) {
-					// If 10GB+ free, default to 10% of available disk space.
-					String size = SizeUtil.formatSize(freeSpace/10);
-					String shortSize = SizeUtil.stripBytesEtc(size);
-					result.addChild("option", new String[] { "value", "selected" }, new String[] { shortSize, "selected" }, size+" "+l10n("tenPercentDisk"));
-					if(freeSpace / 20 > 1024*1024*1024) {
-						// If 20GB+ free, also offer 5% of available disk space.
-						size = SizeUtil.formatSize(freeSpace/20);
-						shortSize = SizeUtil.stripBytesEtc(size);
-						result.addChild("option", "value", shortSize, size+" "+l10n("fivePercentDisk"));
-					}
-					result.addChild("option", "value", "1G", "1GiB");
-				} else if(freeSpace < 1024*1024*1024) {
-					// If less than 1GB free, default to 256MB and also offer 512MB.
-					result.addChild("option", new String[] { "value", "selected" }, new String[] { "256M", "selected" }, "256MiB");
-					result.addChild("option", "value", "512M", "512MiB");
-				} else if(freeSpace < 5*1024*1024*1024) {
-					// If less than 5GB free, default to 512MB
-					result.addChild("option", new String[] { "value", "selected" }, new String[] { "512M", "selected" }, "512MiB");						
-					result.addChild("option", "value", "1G", "1GiB");
-				} else {
-					// If unknown, or 5-10GB free, default to 1GB.
-					result.addChild("option", new String[] { "value", "selected" }, new String[] { "1G", "selected" }, "1GiB");
-				}
-			}
 			result.addChild("option", "value", "2G", "2GiB");
 			result.addChild("option", "value", "3G", "3GiB");
 			result.addChild("option", "value", "5G", "5GiB");
@@ -191,7 +166,13 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
-		} else if(currentStep == 6) {
+		} else if(currentStep == WIZARD_STEP.MEMORY) {
+			// FIXME: Get rid of it when the db4o branch is merged or auto-detect it (be careful of classpath's bug @see <freenet.Node>)
+			// Attempt to skip one step if possible
+			if(!WrapperConfig.canChangeProperties()) {
+				super.writeTemporaryRedirect(ctx, "step6", TOADLET_URL+"?step="+WIZARD_STEP.CONGRATZ);
+				return;
+			}
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step6Title"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
@@ -215,7 +196,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 
-		}else if(currentStep == 7) {
+		}else if(currentStep == WIZARD_STEP.CONGRATZ) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("step7Title"), true, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
@@ -243,7 +224,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		HTMLNode firstParagraph = welcomeInfoboxContent.addChild("p");
 		firstParagraph.addChild("#", l10n("welcomeInfoboxContent1"));
 		HTMLNode secondParagraph = welcomeInfoboxContent.addChild("p");
-		secondParagraph.addChild("a", "href", "?step=1").addChild("#", L10n.getString("FirstTimeWizardToadlet.clickContinue"));
+		secondParagraph.addChild("a", "href", "?step="+WIZARD_STEP.OPENNET).addChild("#", L10n.getString("FirstTimeWizardToadlet.clickContinue"));
 		
 		HTMLNode thirdParagraph = welcomeInfoboxContent.addChild("p");
 		thirdParagraph.addChild("a", "href", "/").addChild("#", l10n("skipWizard"));
@@ -251,6 +232,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 	
+	@Override
 	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		
 		if(!ctx.isAllowedFullAccess()) {
@@ -274,51 +256,39 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				enable = Fields.stringToBool(isOpennetEnabled);
 			} catch (NumberFormatException e) {
 				Logger.error(this, "Invalid opennetEnabled: "+isOpennetEnabled, e);
-				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step=1");
+				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.OPENNET);
 				return;
 			}
 			try {
 				config.get("node.opennet").set("enabled", enable);
 			} catch (InvalidConfigValueException e) {
-				Logger.error(this, "Should not happen setting opennet.enabled="+enable+" please repot: "+e, e);
-				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step=1");
+				Logger.error(this, "Should not happen setting opennet.enabled=" + enable + " please report: " + e, e);
+				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.OPENNET);
+				return;
+			} catch (NodeNeedRestartException e) {
+				Logger.error(this, "Should not happen setting opennet.enabled=" + enable + " please report: " + e, e);
+				super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL + "?step=" + WIZARD_STEP.OPENNET);
 				return;
 			}
-			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step=2");
+			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.NAME_SELECTION+"&opennet="+enable);
 			return;
 		} else if(request.isPartSet("nnameF")) {
 			String selectedNName = request.getPartAsString("nname", 128);
-			
 			try {
 				config.get("node").set("name", selectedNName);
 				Logger.normal(this, "The node name has been set to "+ selectedNName);
-			} catch (InvalidConfigValueException e) {
+			} catch (ConfigException e) {
 				Logger.error(this, "Should not happen, please report!" + e, e);
 			}
-			super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step=3");
+			super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step="+WIZARD_STEP.BANDWIDTH);
 			return;
 		} else if(request.isPartSet("bwF")) {
-			String selectedUploadSpeed =request.getPartAsString("bw", 6);
-			
-			try {
-				config.get("node").set("outputBandwidthLimit", selectedUploadSpeed);
-				Logger.normal(this, "The outputBandwidthLimit has been set to "+ selectedUploadSpeed);
-			} catch (InvalidConfigValueException e) {
-				Logger.error(this, "Should not happen, please report!" + e, e);
-			}
-			super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step=4");
+			_setUpstreamBandwidthLimit(request.getPartAsString("bw", 6));
+			super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step="+WIZARD_STEP.DATASTORE_SIZE);
 			return;
 		} else if(request.isPartSet("dsF")) {
-			String selectedStoreSize =request.getPartAsString("ds", 6);
-			
-			try {
-				config.get("node").set("storeSize", selectedStoreSize);
-				Logger.normal(this, "The storeSize has been set to "+ selectedStoreSize);
-			} catch (InvalidConfigValueException e) {
-				Logger.error(this, "Should not happen, please report!" + e, e);
-			}
-			boolean canDoStepSix = WrapperConfig.canChangeProperties();
-			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step="+(canDoStepSix?"6":"7"));
+			_setDatastoreSize(request.getPartAsString("ds", 6));
+			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step="+WIZARD_STEP.MEMORY);
 			return;
 		} else if(request.isPartSet("memoryF")) {
 			String selectedMemorySize = request.getPartAsString("memoryF", 6);
@@ -327,7 +297,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			if(memorySize >= 0) {
 				WrapperConfig.setWrapperProperty("wrapper.java.maxmemory", selectedMemorySize);
 			}
-			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step=7");
+			super.writeTemporaryRedirect(ctx, "step6", TOADLET_URL+"?step="+WIZARD_STEP.CONGRATZ);
 			return;
 		}
 		
@@ -340,5 +310,100 @@ public class FirstTimeWizardToadlet extends Toadlet {
 
 	public String supportedMethods() {
 		return "GET, POST";
+	}
+	
+	private void _setDatastoreSize(String selectedStoreSize) {
+		try {
+			config.get("node").set("storeSize", selectedStoreSize);
+			Logger.normal(this, "The storeSize has been set to " + selectedStoreSize);
+		} catch(ConfigException e) {
+			Logger.error(this, "Should not happen, please report!" + e, e);
+		}
+	}
+	
+	private void _setUpstreamBandwidthLimit(String selectedUploadSpeed) {
+		try {
+			config.get("node").set("outputBandwidthLimit", selectedUploadSpeed);
+			Logger.normal(this, "The outputBandwidthLimit has been set to " + selectedUploadSpeed);
+		} catch (ConfigException e) {
+			Logger.error(this, "Should not happen, please report!" + e, e);
+		}
+	}
+	
+	private void _setDownstreamBandwidthLimit(String selectedDownloadSpeed) {
+		try {
+			config.get("node").set("inputBandwidthLimit", selectedDownloadSpeed);
+			Logger.normal(this, "The inputBandwidthLimit has been set to " + selectedDownloadSpeed);
+		} catch(ConfigException e) {
+			Logger.error(this, "Should not happen, please report!" + e, e);
+		}
+	}
+	
+	private boolean canAutoconfigureBandwidth() {
+		FredPluginBandwidthIndicator bwIndicator = core.node.ipDetector.getBandwidthIndicator();
+		if(bwIndicator == null)
+			return false;
+		
+		int downstreamBWLimit = bwIndicator.getDownstreamMaxBitRate();
+		if(downstreamBWLimit > 0) {
+			int bytes = (downstreamBWLimit / 8) - 1;
+			String downstreamBWLimitString = SizeUtil.formatSize(bytes * 2 / 3);
+			_setDownstreamBandwidthLimit(downstreamBWLimitString);
+			Logger.normal(this, "The node has a bandwidthIndicator: it has reported downstream=" + downstreamBWLimit + "bits/sec... we will use " + downstreamBWLimitString + " and skip the bandwidth selection step of the wizard.");
+		}
+		
+		// We don't mind if the downstreamBWLimit couldn't be set, but upstreamBWLimit is important
+		int upstreamBWLimit = bwIndicator.getUpstramMaxBitRate();
+		if(upstreamBWLimit > 0) {
+			int bytes = (upstreamBWLimit / 8) - 1;
+			String upstreamBWLimitString = (bytes < 16384 ? "8K" : SizeUtil.formatSize(bytes / 2));
+			_setUpstreamBandwidthLimit(upstreamBWLimitString);
+			Logger.normal(this, "The node has a bandwidthIndicator: it has reported upstream=" + upstreamBWLimit + "bits/sec... we will use " + upstreamBWLimitString + " and skip the bandwidth selection step of the wizard.");
+			return true;
+		}else
+			return false;
+	}
+	
+	private boolean canAutoconfigureDatastoreSize() {
+		// Use JNI to find out the free space on this partition.
+		long freeSpace = -1;
+		File dir = FileUtil.getCanonicalFile(core.node.getNodeDir());
+		try {
+			Class c = dir.getClass();
+			Method m = c.getDeclaredMethod("getFreeSpace", new Class[0]);
+			if(m != null) {
+				Long lFreeSpace = (Long) m.invoke(dir, new Object[0]);
+				if(lFreeSpace != null) {
+					freeSpace = lFreeSpace.longValue();
+					System.err.println("Found free space on node's partition: on " + dir + " = " + SizeUtil.formatSize(freeSpace));
+				}
+			}
+		} catch(NoSuchMethodException e) {
+			// Ignore
+			freeSpace = -1;
+		} catch(Throwable t) {
+			System.err.println("Trying to access 1.6 getFreeSpace(), caught " + t);
+			freeSpace = -1;
+		}
+		
+		if(freeSpace <= 0)
+			return false;
+		else {
+			String shortSize = null;
+			if(freeSpace / 20 > 1024 * 1024 * 1024) {
+				// If 20GB+ free, 5% of available disk space.
+				shortSize = SizeUtil.formatSize(freeSpace / 20);
+			}else if(freeSpace / 10 > 1024 * 1024 * 1024) {
+				// If 10GB+ free, 10% of available disk space.
+				shortSize = SizeUtil.formatSize(freeSpace / 10);
+			}else if(freeSpace / 5 > 1024 * 1024 * 1024) {
+				// If 5GB+ free, default to 512MB
+				shortSize = "512MB";
+			}else
+				shortSize = "256MB";
+			
+			_setDatastoreSize(shortSize);
+			return true;
+		}
 	}
 }

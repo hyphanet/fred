@@ -8,89 +8,37 @@ import freenet.support.Fields;
 import freenet.support.api.IntCallback;
 
 /** Integer config variable */
-public class IntOption extends Option {
-
-	final int defaultValue;
-	final IntCallback cb;
-	private int currentValue;
-	// Cache it mostly so that we can keep SI units
-	private String cachedStringValue;
+public class IntOption extends Option<Integer> {
+	public IntOption(SubConfig conf, String optionName, String defaultValueString, int sortOrder, boolean expert,
+	        boolean forceWrite, String shortDesc, String longDesc, IntCallback cb) {
+		this(conf, optionName, Fields.parseInt(defaultValueString), sortOrder, expert, forceWrite, shortDesc, longDesc,
+		        cb);
+	}
 	
-	public IntOption(SubConfig conf, String optionName, int defaultValue, String defaultValueString,
-			int sortOrder, boolean expert, boolean forceWrite, String shortDesc, String longDesc, IntCallback cb) {
-		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DATA_TYPE_NUMBER);
+	public IntOption(SubConfig conf, String optionName, Integer defaultValue, int sortOrder, boolean expert,
+	        boolean forceWrite, String shortDesc, String longDesc, IntCallback cb) {
+		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DataType.NUMBER);
 		this.defaultValue = defaultValue;
-		this.cb = cb;
 		this.currentValue = defaultValue;
-		this.cachedStringValue = defaultValueString;
 	}
 
-	public IntOption(SubConfig conf, String optionName, String defaultValueString,
-			int sortOrder, boolean expert, boolean forceWrite, String shortDesc, String longDesc, IntCallback cb) {
-		super(conf, optionName, cb, sortOrder, expert, forceWrite, shortDesc, longDesc, Option.DATA_TYPE_NUMBER);
-		this.defaultValue = Fields.parseSIInt(defaultValueString);
-		this.cb = cb;
-		this.currentValue = defaultValue;
-		this.cachedStringValue = defaultValueString;
-	}
-
-	/** Get the current value. This is the value in use if we have finished
-	 * initialization, otherwise it is the value set at startup (possibly the default). */
-	public int getValue() {
-		if(config.hasFinishedInitialization()) {
-			int val = cb.get();
-			if(currentValue != val) {
-				currentValue = val;
-				cachedStringValue = null;
-			}
-		}
-		return currentValue;
-	}
-
-	public void setValue(String val) throws InvalidConfigValueException {
-		int x;
-		try{
-			x = Fields.parseSIInt(val);
+	@Override
+	protected Integer parseString(String val) throws InvalidConfigValueException {
+		Integer x;
+		try {
+			x = Fields.parseInt(val);
 		} catch (NumberFormatException e) {
 			throw new InvalidConfigValueException(l10n("parseError", "val", val));
 		}
-		cb.set(x);
-		cachedStringValue = val;
-		currentValue = x;
-	}
-	
-	public void setInitialValue(String val) throws InvalidConfigValueException {
-		int x;
-		try{
-			x = Fields.parseSIInt(val);
-		} catch (NumberFormatException e) {
-			throw new InvalidConfigValueException(l10n("parseError", "val", val));
-		}
-		cachedStringValue = val;
-		currentValue = x;
+		return x;
 	}
 
 	private String l10n(String key, String pattern, String value) {
-		return L10n.getString("IntOption."+key, pattern, value);
+		return L10n.getString("IntOption." + key, pattern, value);
 	}
 
-	public String getValueString() {
-		int val = getValue();
-		if(cachedStringValue != null) return cachedStringValue;
-		return Integer.toString(val);
+	@Override
+	protected String toString(Integer val) {
+		return Fields.intToString(val);
 	}
-	
-	public String getDefault(){
-		return Integer.toString(defaultValue);
-	}
-
-	public boolean isDefault() {
-		getValue();
-		return currentValue == defaultValue;
-	}
-	
-	public void setDefault() {
-		currentValue = defaultValue;
-	}
-	
 }

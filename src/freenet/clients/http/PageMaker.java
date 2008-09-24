@@ -202,11 +202,11 @@ public final class PageMaker {
 	 * 
 	 * @return An {@link ArrayList} containing the names of all available themes
 	 */
-	public List getThemes() {
+	public List<String> getThemes() {
 		if (jarThemesCache != null) {
 			return jarThemesCache;
 		}
-		List themes = new ArrayList();
+		List<String> themes = new ArrayList<String>();
 		try {
 			URL url = getClass().getResource("staticfiles/themes/");
 			URLConnection urlConnection = url.openConnection();

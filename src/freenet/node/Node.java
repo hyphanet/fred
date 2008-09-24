@@ -3,6 +3,7 @@ package freenet.node;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -45,6 +46,7 @@ import freenet.config.EnumerableOptionCallback;
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.LongOption;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.PersistentConfig;
 import freenet.config.SubConfig;
 import freenet.crypt.DSAPublicKey;
@@ -127,7 +129,6 @@ import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.transport.ip.HostnameSyntaxException;
-import java.io.FileFilter;
 
 /**
  * @author amphibian
@@ -141,7 +142,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private static TimeSkewDetectedUserAlert timeSkewDetectedUserAlert;
 	private final static ClockProblemDetectedUserAlert clockProblemDetectedUserAlert = new ClockProblemDetectedUserAlert();
 	
-	public class NodeNameCallback implements StringCallback {
+	public class NodeNameCallback extends StringCallback  {
 		GetPubkey node;
 	
 		NodeNameCallback(GetPubkey n) {
@@ -179,30 +180,40 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 	}
 	
-	private class StoreTypeCallback implements StringCallback, EnumerableOptionCallback {
+	private class StoreTypeCallback extends StringCallback implements EnumerableOptionCallback {
+		private String cachedStoreType;
 
 		public String get() {
-			return storeType;
+			if (cachedStoreType == null)
+				cachedStoreType = storeType;
+			return cachedStoreType;
 		}
 
-		public void set(String val) throws InvalidConfigValueException {
-			throw new InvalidConfigValueException("Store type cannot be changed on the fly");
+		public void set(String val) throws InvalidConfigValueException, NodeNeedRestartException {
+			boolean found = false;
+			for (String p : getPossibleValues()) {
+				if (p.equals(val)) {
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+				throw new InvalidConfigValueException("Invalid store type");
+			
+			cachedStoreType = val;
+			throw new NodeNeedRestartException("Store type cannot be changed on the fly");
 		}
 
 		public String[] getPossibleValues() {
-			return new String[] {
-					"bdb-index",
-					"ram"
-			};
+			return new String[] { "bdb-index", "ram" };
 		}
 
 		public void setPossibleValues(String[] val) {
 			throw new UnsupportedOperationException();
 		}
-		
 	}
 	
-	private static class L10nCallback implements StringCallback, EnumerableOptionCallback {
+	private static class L10nCallback extends StringCallback implements EnumerableOptionCallback {
 		
 		public String get() {
 			return L10n.mapLanguageNameToLongName(L10n.getSelectedLanguage());
@@ -483,7 +494,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	// Things that's needed to keep track of
 	public final PluginManager pluginManager;
-	public freenet.oldplugins.plugin.PluginManager pluginManager2;
 	
 	// Helpers
 	public final InetAddress localhostAddress;
@@ -777,6 +787,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						// Don't translate the below as very few users will use it.
 						throw new InvalidConfigValueException("Moving node directory on the fly not supported at present");
 					}
+					public boolean isReadOnly() {
+				        return true;
+			        }
 		});
 		
 		nodeDir = new File(nodeConfig.getString("nodeDir"));
@@ -910,11 +923,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		nodeConfig.register("disableProbabilisticHTLs", false, sortOrder++, true, false, "Node.disablePHTLS", "Node.disablePHTLSLong", 
 				new BooleanCallback() {
 
-					public boolean get() {
+					public Boolean get() {
 						return disableProbabilisticHTLs;
 					}
 
-					public void set(boolean val) throws InvalidConfigValueException {
+					public void set(Boolean val) throws InvalidConfigValueException {
 						disableProbabilisticHTLs = val;
 					}
 			
@@ -924,11 +937,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		nodeConfig.register("maxHTL", DEFAULT_MAX_HTL, sortOrder++, true, false, "Node.maxHTL", "Node.maxHTLLong", new ShortCallback() {
 
-					public short get() {
+					public Short get() {
 						return maxHTL;
 					}
 
-					public void set(short val) throws InvalidConfigValueException {
+					public void set(Short val) throws InvalidConfigValueException {
 						if(maxHTL < 0) throw new InvalidConfigValueException("Impossible max HTL");
 						maxHTL = val;
 					}
@@ -952,63 +965,75 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		nodeConfig.register("enableARKs", true, sortOrder++, true, false, "Node.enableARKs", "Node.enableARKsLong", new BooleanCallback() {
 
-			public boolean get() {
+			public Boolean get() {
 				return enableARKs;
 			}
 
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				throw new InvalidConfigValueException("Cannot change on the fly");
 			}
-			
+
+			public boolean isReadOnly() {
+				        return true;
+			        }			
 		});
 		enableARKs = nodeConfig.getBoolean("enableARKs");
 		
 		nodeConfig.register("enablePerNodeFailureTables", true, sortOrder++, true, false, "Node.enablePerNodeFailureTables", "Node.enablePerNodeFailureTablesLong", new BooleanCallback() {
 
-			public boolean get() {
+			public Boolean get() {
 				return enablePerNodeFailureTables;
 			}
 
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				throw new InvalidConfigValueException("Cannot change on the fly");
 			}
-			
+
+			public boolean isReadOnly() {
+				        return true;
+			      }			
 		});
 		enablePerNodeFailureTables = nodeConfig.getBoolean("enablePerNodeFailureTables");
 		
 		nodeConfig.register("enableULPRDataPropagation", true, sortOrder++, true, false, "Node.enableULPRDataPropagation", "Node.enableULPRDataPropagationLong", new BooleanCallback() {
 
-			public boolean get() {
+			public Boolean get() {
 				return enableULPRDataPropagation;
 			}
 
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				throw new InvalidConfigValueException("Cannot change on the fly");
 			}
-			
+
+			public boolean isReadOnly() {
+				        return true;
+			        }			
 		});
 		enableULPRDataPropagation = nodeConfig.getBoolean("enableULPRDataPropagation");
 		
 		nodeConfig.register("enableSwapping", true, sortOrder++, true, false, "Node.enableSwapping", "Node.enableSwappingLong", new BooleanCallback() {
 			
-			public boolean get() {
+			public Boolean get() {
 				return enableSwapping;
 			}
 
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				throw new InvalidConfigValueException("Cannot change on the fly");
 			}
-			
+
+			public boolean isReadOnly() {
+				        return true;
+			        }			
 		});
 		enableSwapping = nodeConfig.getBoolean("enableSwapping");
 		
 		nodeConfig.register("publishOurPeersLocation", false, sortOrder++, true, false, "Node.publishOurPeersLocation", "Node.publishOurPeersLocationLong", new BooleanCallback() {
 
-			public boolean get() {
+			public Boolean get() {
 				return publishOurPeersLocation;
 			}
 
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				publishOurPeersLocation = val;
 			}
 		});
@@ -1016,22 +1041,22 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		nodeConfig.register("routeAccordingToOurPeersLocation", false, sortOrder++, true, false, "Node.routeAccordingToOurPeersLocation", "Node.routeAccordingToOurPeersLocationLong", new BooleanCallback() {
 
-			public boolean get() {
+			public Boolean get() {
 				return routeAccordingToOurPeersLocation;
 			}
 
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				routeAccordingToOurPeersLocation = val;
 			}
 		});
 		routeAccordingToOurPeersLocation = nodeConfig.getBoolean("routeAccordingToOurPeersLocation");
 		
 		nodeConfig.register("enableSwapQueueing", true, sortOrder++, true, false, "Node.enableSwapQueueing", "Node.enableSwapQueueingLong", new BooleanCallback() {
-			public boolean get() {
+			public Boolean get() {
 				return enableSwapQueueing;
 			}
 
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				enableSwapQueueing = val;
 			}
 			
@@ -1039,11 +1064,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		enableSwapQueueing = nodeConfig.getBoolean("enableSwapQueueing");
 		
 		nodeConfig.register("enablePacketCoalescing", true, sortOrder++, true, false, "Node.enablePacketCoalescing", "Node.enablePacketCoalescingLong", new BooleanCallback() {
-			public boolean get() {
+			public Boolean get() {
 				return enablePacketCoalescing;
 			}
 
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				enablePacketCoalescing = val;
 			}
 			
@@ -1088,11 +1113,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// Bandwidth limit
 
 		nodeConfig.register("outputBandwidthLimit", "15K", sortOrder++, false, true, "Node.outBWLimit", "Node.outBWLimitLong", new IntCallback() {
-					public int get() {
+					public Integer get() {
 						//return BlockTransmitter.getHardBandwidthLimit();
 						return outputBandwidthLimit;
 					}
-					public void set(int obwLimit) throws InvalidConfigValueException {
+					public void set(Integer obwLimit) throws InvalidConfigValueException {
 						if(obwLimit <= 0) throw new InvalidConfigValueException(l10n("bwlimitMustBePositive"));
 						synchronized(Node.this) {
 							outputBandwidthLimit = obwLimit;
@@ -1113,11 +1138,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		outputThrottle = new DoubleTokenBucket(obwLimit/2, (1000L*1000L*1000L) / obwLimit, obwLimit/2, 0.8);
 		
 		nodeConfig.register("inputBandwidthLimit", "-1", sortOrder++, false, true, "Node.inBWLimit", "Node.inBWLimitLong",	new IntCallback() {
-					public int get() {
+					public Integer get() {
 						if(inputLimitDefault) return -1;
 						return inputBandwidthLimit;
 					}
-					public void set(int ibwLimit) throws InvalidConfigValueException {
+					public void set(Integer ibwLimit) throws InvalidConfigValueException {
 						synchronized(Node.this) {
 							if(ibwLimit == -1) {
 								inputLimitDefault = true;
@@ -1142,11 +1167,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		nodeConfig.register("throttleLocalTraffic", false, sortOrder++, true, false, "Node.throttleLocalTraffic", "Node.throttleLocalTrafficLong", new BooleanCallback() {
 
-			public boolean get() {
+			public Boolean get() {
 				return throttleLocalData;
 			}
 
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				throttleLocalData = val;
 			}
 			
@@ -1177,7 +1202,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				try {
 					logConfigHandler.setMaxZippedLogFiles(TESTNET_MIN_MAX_ZIPPED_LOGFILES_STRING);
 				} catch (InvalidConfigValueException e) {
-					throw new Error("Impossible: "+e);
+					throw new Error("Impossible: " + e, e);
+				} catch (NodeNeedRestartException e) {
+					throw new Error("Impossible: " + e, e);
 				}
 			}
 		} else {
@@ -1245,10 +1272,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		final SubConfig opennetConfig = new SubConfig("node.opennet", config);
 		opennetConfig.register("connectToSeednodes", true, 0, true, false, "Node.withAnnouncement", "Node.withAnnouncementLong", new BooleanCallback() {
-			public boolean get() {
+			public Boolean get() {
 				return isAllowedToConnectToSeednodes;
 			}
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				if(val == get()) return;
 				synchronized(Node.this) {
 					if(opennet != null)
@@ -1257,17 +1284,21 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						isAllowedToConnectToSeednodes = val;
 				}
 			}
+
+			public boolean isReadOnly() {
+				        return opennet != null;
+			        }
 		});
 		isAllowedToConnectToSeednodes = opennetConfig.getBoolean("connectToSeednodes");
 		
 		// Can be enabled on the fly
 		opennetConfig.register("enabled", false, 0, false, true, "Node.opennetEnabled", "Node.opennetEnabledLong", new BooleanCallback() {
-			public boolean get() {
+			public Boolean get() {
 				synchronized(Node.this) {
 					return opennet != null;
 				}
 			}
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				OpennetManager o;
 				synchronized(Node.this) {
 					if(val == (opennet != null)) return;
@@ -1292,10 +1323,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		opennetConfig.register("maxOpennetPeers", "20", 1, true, false, "Node.maxOpennetPeers",
 				"Node.maxOpennetPeersLong", new IntCallback() {
-					public int get() {
+					public Integer get() {
 						return maxOpennetPeers;
 					}
-					public void set(int inputMaxOpennetPeers) throws InvalidConfigValueException {
+					public void set(Integer inputMaxOpennetPeers) throws InvalidConfigValueException {
 						if(inputMaxOpennetPeers < 0) throw new InvalidConfigValueException(l10n("mustBePositive"));
 						if(inputMaxOpennetPeers > 20) throw new InvalidConfigValueException(l10n("maxOpennetPeersMustBeTwentyOrLess"));
 						maxOpennetPeers = inputMaxOpennetPeers;
@@ -1320,11 +1351,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		opennetConfig.register("acceptSeedConnections", true, 2, true, true, "Node.acceptSeedConnectionsShort", "Node.acceptSeedConnections", new BooleanCallback() {
 
-			public boolean get() {
+			public Boolean get() {
 				return acceptSeedConnections;
 			}
 
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				acceptSeedConnections = val;
 			}
 			
@@ -1337,13 +1368,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		nodeConfig.register("passOpennetPeersThroughDarknet", true, sortOrder++, true, false, "Node.passOpennetPeersThroughDarknet", "Node.passOpennetPeersThroughDarknetLong",
 				new BooleanCallback() {
 
-					public boolean get() {
+					public Boolean get() {
 						synchronized(Node.this) {
 							return passOpennetRefsThroughDarknet;
 						}
 					}
 
-					public void set(boolean val) throws InvalidConfigValueException {
+					public void set(Boolean val) throws InvalidConfigValueException {
 						synchronized(Node.this) {
 							passOpennetRefsThroughDarknet = val;
 						}
@@ -1364,6 +1395,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						// FIXME
 						throw new InvalidConfigValueException("Moving extra peer data directory on the fly not supported at present");
 					}
+					public boolean isReadOnly() {
+				        return true;
+			        }
 		});
 		extraPeerDataDir = new File(nodeConfig.getString("extraPeerDataDir"));
 		if(!((extraPeerDataDir.exists() && extraPeerDataDir.isDirectory()) || (extraPeerDataDir.mkdir()))) {
@@ -1381,13 +1415,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		nodeConfig.register("storeForceBigShrinks", false, sortOrder++, true, false, "Node.forceBigShrink", "Node.forceBigShrinkLong",
 				new BooleanCallback() {
 
-					public boolean get() {
+					public Boolean get() {
 						synchronized(Node.this) {
 							return storeForceBigShrinks;
 						}
 					}
 
-					public void set(boolean val) throws InvalidConfigValueException {
+					public void set(Boolean val) throws InvalidConfigValueException {
 						synchronized(Node.this) {
 							storeForceBigShrinks = val;
 						}
@@ -1402,11 +1436,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		nodeConfig.register("storeSize", "1G", sortOrder++, false, true, "Node.storeSize", "Node.storeSizeLong", 
 				new LongCallback() {
 
-					public long get() {
+					public Long get() {
 						return maxTotalDatastoreSize;
 					}
 
-					public void set(long storeSize) throws InvalidConfigValueException {
+					public void set(Long storeSize) throws InvalidConfigValueException {
 						if((storeSize < 0) || (storeSize < (32 * 1024 * 1024)))
 							throw new InvalidConfigValueException(l10n("invalidStoreSize"));
 						long newMaxStoreKeys = storeSize / sizePerKey;
@@ -1459,6 +1493,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						// FIXME
 						throw new InvalidConfigValueException("Moving datastore on the fly not supported at present");
 					}
+					public boolean isReadOnly() {
+				        return true;
+			        }
 		});
 
 		final String suffix = "-" + getDarknetPortNumber();
@@ -1610,11 +1647,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		nodeConfig.register("databaseMaxMemory", "20M", sortOrder++, true, false, "Node.databaseMemory", "Node.databaseMemoryLong", 
 				new LongCallback() {
 
-			public long get() {
+			public Long get() {
 				return databaseMaxMemory;
 			}
 
-			public void set(long val) throws InvalidConfigValueException {
+			public void set(Long val) throws InvalidConfigValueException {
 				if(val < 0)
 					throw new InvalidConfigValueException(l10n("mustBePositive"));
 				else {
@@ -1737,14 +1774,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		 
 		nodeConfig.register("disableHangCheckers", false, sortOrder++, true, false, "Node.disableHangCheckers", "Node.disableHangCheckersLong", new BooleanCallback() {
 
-			public boolean get() {
+			public Boolean get() {
 				return disableHangCheckers;
 			}
 
-			public void set(boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException {
 				disableHangCheckers = val;
 			}
-			
 		});
 		
 		disableHangCheckers = nodeConfig.getBoolean("disableHangCheckers");
@@ -1756,8 +1792,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		Logger.normal(this, "Initializing Plugin Manager");
 		System.out.println("Initializing Plugin Manager");
 		pluginManager = new PluginManager(this);
-		pluginManager2 = new freenet.oldplugins.plugin.PluginManager(this);
-		
+
 		FetchContext ctx = clientCore.makeClient((short)0, true).getFetchContext();
 		
 		ctx.allowSplitfiles = false;
@@ -2183,16 +2218,14 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	}
 	
 	void addTransferringRequestHandler(long id) {
-		Long l = new Long(id);
 		synchronized(transferringRequestHandlers) {
-			transferringRequestHandlers.add(l);
+			transferringRequestHandlers.add(id);
 		}
 	}
 	
 	void removeTransferringRequestHandler(long id) {
-		Long l = new Long(id);
 		synchronized(transferringRequestHandlers) {
-			transferringRequestHandlers.remove(l);
+			transferringRequestHandlers.remove(id);
 		}
 	}
 
@@ -2527,9 +2560,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	}
 	
 	public boolean lockUID(long uid, boolean ssk, boolean insert, boolean offerReply, boolean local) {
-		Long l = new Long(uid);
 		synchronized(runningUIDs) {
-			if(!runningUIDs.add(l)) {
+			if(!runningUIDs.add(uid)) {
 				// Already present.
 				return false;
 			}
@@ -2538,23 +2570,22 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		HashSet set = getUIDTracker(ssk, insert, offerReply, local);
 		synchronized(set) {
 			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+set.size());
-			set.add(l);
+			set.add(uid);
 			if(logMINOR) Logger.minor(this, "Locked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+set.size());
 		}
 		return true;
 	}
 	
 	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local) {
-		Long l = new Long(uid);
 		completed(uid);
 		HashSet set = getUIDTracker(ssk, insert, offerReply, local);
 		synchronized(set) {
 			if(logMINOR) Logger.minor(this, "Unlocking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+", local="+local+" size="+set.size());
-			set.remove(l);
+			set.remove(uid);
 			if(logMINOR) Logger.minor(this, "Unlocked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+", local="+local+" size="+set.size());
 		}
 		synchronized(runningUIDs) {
-			if(!runningUIDs.remove(l) && !canFail)
+			if(!runningUIDs.remove(uid) && !canFail)
 				throw new IllegalStateException("Could not unlock "+uid+ '!');
 		}
 	}
@@ -2737,7 +2768,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 */
 	public boolean recentlyCompleted(long id) {
 		synchronized (recentlyCompletedIDs) {
-			return recentlyCompletedIDs.contains(new Long(id));
+			return recentlyCompletedIDs.contains(id);
 		}
 	}
 	
@@ -2746,7 +2777,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 */
 	void completed(long id) {
 		synchronized (recentlyCompletedIDs) {
-			recentlyCompletedIDs.push(new Long(id));
+			recentlyCompletedIDs.push(id);
 			while(recentlyCompletedIDs.size() > MAX_RECENTLY_COMPLETED_IDS)
 				recentlyCompletedIDs.pop();
 		}
@@ -3235,7 +3266,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 	}
 
-	public void setName(String key) throws InvalidConfigValueException {
+	public void setName(String key) throws InvalidConfigValueException, NodeNeedRestartException {
 		 config.get("node").getOption("name").setValue(key);
 	}
 

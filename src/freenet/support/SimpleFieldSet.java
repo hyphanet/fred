@@ -33,8 +33,8 @@ import java.io.OutputStreamWriter;
  */
 public class SimpleFieldSet {
 
-    private final Map values;
-    private Map subsets;
+    private final Map<String, String> values;
+    private Map<String, SimpleFieldSet> subsets;
     private String endMarker;
     private final boolean shortLived;
     static public final char MULTI_LEVEL_CHAR = '.';
@@ -49,7 +49,7 @@ public class SimpleFieldSet {
      * small.
      */
     public SimpleFieldSet(boolean shortLived) {
-        values = new HashMap();
+        values = new HashMap<String, String>();
        	subsets = null;
        	this.shortLived = shortLived;
     }
@@ -71,9 +71,9 @@ public class SimpleFieldSet {
     }
 
     public SimpleFieldSet(SimpleFieldSet sfs){
-    	values = new HashMap(sfs.values);
+    	values = new HashMap<String, String>(sfs.values);
     	if(sfs.subsets != null)
-    		subsets = new HashMap(sfs.subsets);
+    		subsets = new HashMap<String, SimpleFieldSet>(sfs.subsets);
     	this.shortLived = false; // it's been copied!
     	endMarker = sfs.endMarker;
     }
@@ -173,14 +173,14 @@ public class SimpleFieldSet {
     public synchronized String get(String key) {
    		int idx = key.indexOf(MULTI_LEVEL_CHAR);
    		if(idx == -1)
-   			return (String) values.get(key);
+   			return values.get(key);
    		else if(idx == 0)
 			return (subset("") == null) ? null : subset("").get(key.substring(1));
 		else {
    			if(subsets == null) return null;
    			String before = key.substring(0, idx);
    			String after = key.substring(idx+1);
-   			SimpleFieldSet fs = (SimpleFieldSet) (subsets.get(before));
+   			SimpleFieldSet fs = subsets.get(before);
    			if(fs == null) return null;
    			return fs.get(after);
    		}
@@ -193,7 +193,7 @@ public class SimpleFieldSet {
     }
 
     private static final String[] split(String string) {
-    	if(string == null) return new String[0];
+    	if(string == null) return EMPTY_STRING_ARRAY;
     	return string.split(String.valueOf(MULTI_VALUE_CHAR)); // slower???
 //    	int index = string.indexOf(';');
 //    	if(index == -1) return null;
@@ -212,7 +212,7 @@ public class SimpleFieldSet {
 	}
 
     private static final String unsplit(String[] strings) {
-    	StringBuffer sb = new StringBuffer();
+    	StringBuilder sb = new StringBuilder();
     	for(int i=0;i<strings.length;i++) {
     		if(i != 0) sb.append(MULTI_VALUE_CHAR);
     		sb.append(strings[i]);
@@ -227,7 +227,7 @@ public class SimpleFieldSet {
     	Iterator i = fs.values.keySet().iterator();
     	while(i.hasNext()) {
     		String key = (String) i.next();
-    		String hisVal = (String) fs.values.get(key);
+    		String hisVal = fs.values.get(key);
     		values.put(key, hisVal); // overwrite old
     	}
     	if(fs.subsets == null) return;
@@ -235,8 +235,8 @@ public class SimpleFieldSet {
     	i = fs.subsets.keySet().iterator();
     	while(i.hasNext()) {
     		String key = (String) i.next();
-    		SimpleFieldSet hisFS = (SimpleFieldSet) fs.subsets.get(key);
-    		SimpleFieldSet myFS = (SimpleFieldSet) subsets.get(key);
+    		SimpleFieldSet hisFS = fs.subsets.get(key);
+    		SimpleFieldSet myFS = subsets.get(key);
     		if(myFS != null) {
     			myFS.putAllOverwrite(hisFS);
     		} else {
@@ -294,14 +294,14 @@ public class SimpleFieldSet {
 		if(value == null) return true; // valid no-op
 		if(value.indexOf('\n') != -1) throw new IllegalArgumentException("A simplefieldSet can't accept newlines !");
 		if((idx = key.indexOf(MULTI_LEVEL_CHAR)) == -1) {
-			String x = (String) values.get(key);
+			String x = values.get(key);
 			
 			if(!shortLived) key = key.intern();
 			if(x == null || overwrite) {
 				values.put(key, value);
 			} else {
 				if(!allowMultiple) return false;
-				values.put(key, ((String)values.get(key))+ MULTI_VALUE_CHAR +value);
+				values.put(key, (values.get(key))+ MULTI_VALUE_CHAR +value);
 			}
 		} else {
 			String before = key.substring(0, idx);
@@ -309,7 +309,7 @@ public class SimpleFieldSet {
 			SimpleFieldSet fs = null;
 			if(subsets == null)
 				subsets = new HashMap();
-			fs = (SimpleFieldSet) (subsets.get(before));
+			fs = subsets.get(before);
 			if(fs == null) {
 				fs = new SimpleFieldSet(shortLived);
 				if(!shortLived) before = before.intern();
@@ -399,7 +399,7 @@ public class SimpleFieldSet {
 	}
     
     private synchronized void writeToOrdered(Writer w, String prefix, boolean noEndMarker) throws IOException {
-    	String[] keys = (String[]) values.keySet().toArray(new String[values.size()]);
+    	String[] keys = values.keySet().toArray(new String[values.size()]);
     	int i=0;
     
     	// Sort
@@ -410,7 +410,7 @@ public class SimpleFieldSet {
     		w.write(prefix+keys[i]+KEYVALUE_SEPARATOR_CHAR+get(keys[i])+'\n');
     	
     	if(subsets != null) {
-    		String[] orderedPrefixes = (String[]) subsets.keySet().toArray(new String[subsets.size()]);
+    		String[] orderedPrefixes = subsets.keySet().toArray(new String[subsets.size()]);
     		// Sort
     		Arrays.sort(orderedPrefixes);
     		
@@ -429,6 +429,7 @@ public class SimpleFieldSet {
     	}
     }
     
+	@Override
     public String toString() {
         StringWriter sw = new StringWriter();
         try {
@@ -461,10 +462,10 @@ public class SimpleFieldSet {
 		if(subsets == null) return null;
 		int idx = key.indexOf(MULTI_LEVEL_CHAR);
 		if(idx == -1)
-			return (SimpleFieldSet) subsets.get(key);
+			return subsets.get(key);
 		String before = key.substring(0, idx);
 		String after = key.substring(idx+1);
-		SimpleFieldSet fs = (SimpleFieldSet) subsets.get(before);
+		SimpleFieldSet fs = subsets.get(before);
 		if(fs == null) return null;
 		return fs.subset(after);
 	}
@@ -519,7 +520,7 @@ public class SimpleFieldSet {
     				if(subsetIterator == null || !subsetIterator.hasNext()) break;
     				String name = (String) subsetIterator.next();
     				if(name == null) continue;
-    				SimpleFieldSet fs = (SimpleFieldSet) subsets.get(name);
+    				SimpleFieldSet fs = subsets.get(name);
     				if(fs == null) continue;
     				String newPrefix = prefix + name + MULTI_LEVEL_CHAR;
     				subIterator = fs.keyIterator(newPrefix);
@@ -538,7 +539,7 @@ public class SimpleFieldSet {
 					if(subIterator != null) subIterator = null;
 					if(subsetIterator != null && subsetIterator.hasNext()) {
 						String key = (String) subsetIterator.next();
-						SimpleFieldSet fs = (SimpleFieldSet) subsets.get(key);
+						SimpleFieldSet fs = subsets.get(key);
 						String newPrefix = prefix + key + MULTI_LEVEL_CHAR;
 						subIterator = fs.keyIterator(newPrefix);
 					} else
@@ -571,7 +572,7 @@ public class SimpleFieldSet {
 					subIterator = null;
 					if(subsetIterator != null && subsetIterator.hasNext()) {
 						String key = (String) subsetIterator.next();
-						SimpleFieldSet fs = (SimpleFieldSet) subsets.get(key);
+						SimpleFieldSet fs = subsets.get(key);
 						String newPrefix = prefix + key + MULTI_LEVEL_CHAR;
 						subIterator = fs.keyIterator(newPrefix);
 					} else {
@@ -615,7 +616,7 @@ public class SimpleFieldSet {
 			if(subsets == null) return;
 			String before = key.substring(0, idx);
 			String after = key.substring(idx+1);
-			SimpleFieldSet fs = (SimpleFieldSet) (subsets.get(before));
+			SimpleFieldSet fs = subsets.get(before);
 			if(fs == null) {
 				return;
 			}
@@ -646,7 +647,7 @@ public class SimpleFieldSet {
 		} else {
 			String before = key.substring(0, idx);
 			String after = key.substring(idx+1);
-			SimpleFieldSet fs = (SimpleFieldSet) (subsets.get(before));
+			SimpleFieldSet fs = subsets.get(before);
 			if(fs == null) {
 				return;
 			}
@@ -669,7 +670,7 @@ public class SimpleFieldSet {
 	}
 
 	public String[] namesOfDirectSubsets() {
-		return (subsets == null) ? EMPTY_STRING_ARRAY : (String[]) subsets.keySet().toArray(new String[subsets.size()]);
+		return (subsets == null) ? EMPTY_STRING_ARRAY : subsets.keySet().toArray(new String[subsets.size()]);
 	}
 
 	public static SimpleFieldSet readFrom(InputStream is, boolean allowMultiple, boolean shortLived) throws IOException {

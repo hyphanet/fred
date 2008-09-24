@@ -208,7 +208,7 @@ public class TestnetHandler implements Runnable {
 
 	}
 
-	private static class TestnetEnabledCallback implements BooleanCallback {
+	private static class TestnetEnabledCallback extends BooleanCallback  {
 
 		final Node node;
 		
@@ -216,30 +216,33 @@ public class TestnetHandler implements Runnable {
 			this.node = node;
 		}
 		
-		public boolean get() {
+		public Boolean get() {
 			return node.testnetEnabled;
 		}
 
-		public void set(boolean val) throws InvalidConfigValueException {
+		public void set(Boolean val) throws InvalidConfigValueException {
 			if(node.testnetEnabled == val) return;
 			throw new InvalidConfigValueException(L10n.getString("TestnetHandler.cannotEnableDisableOnTheFly"));
 		}
-		
+
+		public boolean isReadOnly() {
+			return true;
+		}
 	}
 
 	
-	static class TestnetPortNumberCallback implements IntCallback {
+	static class TestnetPortNumberCallback extends IntCallback  {
 		Node node;
 		
 		TestnetPortNumberCallback(Node n){
 			this.node = n;
 		}
 		
-		public int get() {
+		public Integer get() {
 			return node.testnetHandler.getPort();
 		}
 		
-		public void set(int val) throws InvalidConfigValueException {
+		public void set(Integer val) throws InvalidConfigValueException {
 			if(val == get()) return;
 			node.testnetHandler.rebind(val);
 		}

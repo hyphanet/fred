@@ -1206,18 +1206,6 @@ public class DMT {
 		msg.set(DATA, new ShortBuffer(buf));
 		return msg;
 	}
-
-	@Deprecated
-	public static final MessageType FNPLocChangeNotification = new MessageType("FNPLocationChangeNotification", PRIORITY_LOW) {{
-		addField(LOCATION, Double.class);
-	}};
-	
-	@Deprecated
-	public static final Message createFNPLocChangeNotification(double newLoc) {
-		Message msg = new Message(FNPLocChangeNotification);
-		msg.set(LOCATION, newLoc);
-		return msg;
-	}
 		
 	public static final MessageType FNPLocChangeNotificationNew = new MessageType("FNPLocationChangeNotification2", PRIORITY_LOW) {{
 		addField(LOCATION, Double.class);

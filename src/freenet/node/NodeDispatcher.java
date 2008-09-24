@@ -143,13 +143,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			// We claim it in any case
 			return true;
-		} else if(source.isRealConnection() && spec == DMT.FNPLocChangeNotification) {
-			double newLoc = m.getDouble(DMT.LOCATION);
-			source.updateLocation(newLoc);
-			// TODO: remove dead code when FNPLocChangeNotificationNew is mandatory
-			if(source.getVersionNumber() > 1153)
-				Logger.error(this, "We received a FNPLocChangeNotification from a recent build: that should *not* happen! ("+source.toString()+')');
-			return true;
 		} else if(source.isRealConnection() && spec == DMT.FNPLocChangeNotificationNew) {
 			double newLoc = m.getDouble(DMT.LOCATION);
 			ShortBuffer buffer = ((ShortBuffer) m.getObject(DMT.PEER_LOCATIONS));

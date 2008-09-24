@@ -2,13 +2,13 @@ package freenet.config;
 
 import freenet.support.api.ShortCallback;
 
-public class NullShortCallback implements ShortCallback {
+public class NullShortCallback extends ShortCallback {
 
-	public short get() {
+	public Short get() {
 		return 0;
 	}
 
-	public void set(short val) throws InvalidConfigValueException {
+	public void set(Short val) throws InvalidConfigValueException {
 		// Ignore
 	}
 

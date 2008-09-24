@@ -8,6 +8,7 @@ import java.io.IOException;
 
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.OptionFormatException;
 import freenet.config.SubConfig;
 import freenet.support.Executor;
@@ -23,7 +24,7 @@ import freenet.support.api.LongCallback;
 import freenet.support.api.StringCallback;
 
 public class LoggingConfigHandler {
-	private static class PriorityCallback implements StringCallback, EnumerableOptionCallback {
+	private static class PriorityCallback extends StringCallback implements EnumerableOptionCallback {
 		private final String[] possibleValues = new String[]{ "ERROR", "NORMAL", "MINOR", "DEBUG" };
 
 		public String get() {
@@ -45,7 +46,7 @@ public class LoggingConfigHandler {
 
 		public void setPossibleValues(String[] val) {
 			throw new NullPointerException("Should not happen!");
-		}
+		 }
 	}
 
 	protected static final String LOG_PREFIX = "freenet";
@@ -64,10 +65,10 @@ public class LoggingConfigHandler {
     	
     	loggingConfig.register("enabled", true, 1, true, false, "LogConfigHandler.enabled", "LogConfigHandler.enabledLong",
     			new BooleanCallback() {
-					public boolean get() {
+					public Boolean get() {
 						return fileLoggerHook != null;
 					}
-					public void set(boolean val) throws InvalidConfigValueException {
+					public void set(Boolean val) throws InvalidConfigValueException {
 						if(val == (fileLoggerHook != null)) return;
 						if(!val) {
 							disableLogger();
@@ -110,11 +111,12 @@ public class LoggingConfigHandler {
     	
     	config.register("maxZippedLogsSize", "128M", 3, true, true, "LogConfigHandler.maxZippedLogsSize", "LogConfigHandler.maxZippedLogsSizeLong",
     			new LongCallback() {
-					public long get() {
+					public Long get() {
 						return maxZippedLogsSize;
 					}
-					public void set(long val) throws InvalidConfigValueException {
-						if(val < 0) val = 0;
+					public void set(Long val) throws InvalidConfigValueException {
+						if (val < 0)
+					        val = 0L;
 						maxZippedLogsSize = val;
 						if(fileLoggerHook != null) {
 							fileLoggerHook.setMaxOldLogsSize(val);
@@ -179,11 +181,12 @@ public class LoggingConfigHandler {
     	// max cached bytes in RAM
     	config.register("maxCachedBytes", "10M", 6, true, false, "LogConfigHandler.maxCachedBytes", "LogConfigHandler.maxCachedBytesLong", 
     			new LongCallback() {
-					public long get() {
+					public Long get() {
 						return maxCachedLogBytes;
 					}
-					public void set(long val) throws InvalidConfigValueException {
-						if(val < 0) val = 0;
+					public void set(Long val) throws InvalidConfigValueException {
+						if (val < 0)
+					        val = 0L;
 						if(val == maxCachedLogBytes) return;
 						maxCachedLogBytes = val;
 						if(fileLoggerHook != null)
@@ -196,10 +199,10 @@ public class LoggingConfigHandler {
     	// max cached lines in RAM
     	config.register("maxCachedLines", "100k", 7, true, false, "LogConfigHandler.maxCachedLines", "LogConfigHandler.maxCachedLinesLong",
     			new IntCallback() {
-					public int get() {
+					public Integer get() {
 						return maxCachedLogLines;
 					}
-					public void set(int val) throws InvalidConfigValueException {
+					public void set(Integer val) throws InvalidConfigValueException {
 						if(val < 0) val = 0;
 						if(val == maxCachedLogLines) return;
 						maxCachedLogLines = val;
@@ -237,6 +240,10 @@ public class LoggingConfigHandler {
 			} catch (InvalidConfigValueException e2) {
 				System.err.println("Invalid config value for logger.priority in config file: "+config.getString("priority"));
 				// Leave it at the default.
+			} catch (NodeNeedRestartException e) {
+				// impossible
+				System.err.println("impossible NodeNeedRestartException for logger.priority in config file: "
+				        + config.getString("priority"));
 			}
 			FileLoggerHook hook;
 			try {
@@ -344,7 +351,8 @@ public class LoggingConfigHandler {
 		return maxZippedLogsSize;
 	}
 
-	public void setMaxZippedLogFiles(String maxSizeAsString) throws InvalidConfigValueException {
+	public void setMaxZippedLogFiles(String maxSizeAsString) throws InvalidConfigValueException,
+	        NodeNeedRestartException {
 		config.set("maxZippedLogsSize", maxSizeAsString);
 	}
 	

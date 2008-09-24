@@ -115,7 +115,7 @@ public abstract class ClientRequest {
 		finished = Fields.stringToBool(fs.get("Finished"), false);
 		global = Fields.stringToBool(fs.get("Global"), false);
 		final String stime = fs.get("StartupTime");
-		this.startupTime = stime == null ? System.currentTimeMillis() : Fields.parseSILong(stime);
+		this.startupTime = stime == null ? System.currentTimeMillis() : Fields.parseLong(stime);
 		completionTime = fs.getLong("CompletionTime", 0);
 		if (finished)
 			started=true;

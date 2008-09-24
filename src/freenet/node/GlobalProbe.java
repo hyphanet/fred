@@ -4,20 +4,20 @@
 package freenet.node;
 
 import freenet.support.Logger;
-import freenet.support.StringArray;
+import java.util.Arrays;
 
 public class GlobalProbe implements Runnable {
 
 	double lastLocation = 0.0;
 	long lastTime;
 	int lastHops;
-	boolean doneSomething = false;
+	private boolean doneSomething = false;
 	final ProbeCallback cb;
 	final Node node;
 	int ctr;
 	final int probeType;
 	
-	GlobalProbe(Node n, int probeType) {
+	public GlobalProbe(Node n, int probeType) {
 		this.node = n;
 		this.probeType = probeType;
     	cb = new ProbeCallback() {
@@ -33,7 +33,7 @@ public class GlobalProbe implements Runnable {
 			}
 
 			public void onTrace(long uid, double target, double nearest, double best, short htl, short counter, double location, long nodeUID, double[] peerLocs, long[] peerUIDs, double[] locsNotVisited, short forkCount, short linearCount, String reason, long prevUID) {
-				String msg = "Probe trace: UID="+uid+" target="+target+" nearest="+nearest+" best="+best+" htl="+htl+" counter="+counter+" location="+location+" node UID="+nodeUID+" prev UID="+prevUID+" peers="+NodeDispatcher.peersUIDsToString(peerUIDs, peerLocs)+" locs not visited: "+StringArray.toString(locsNotVisited)+" fork count: "+forkCount+" linear count: "+linearCount+" from "+reason;
+				String msg = "Probe trace: UID="+uid+" target="+target+" nearest="+nearest+" best="+best+" htl="+htl+" counter="+counter+" location="+location+" node UID="+nodeUID+" prev UID="+prevUID+" peers="+NodeDispatcher.peersUIDsToString(peerUIDs, peerLocs)+" locs not visited: "+Arrays.toString(locsNotVisited)+" fork count: "+forkCount+" linear count: "+linearCount+" from "+reason;
 				Logger.normal(this, msg);
 			}
 
@@ -100,13 +100,11 @@ public class GlobalProbe implements Runnable {
 	private void output(double loc, int hops) {
 		double estimatedNodes = ((double) (ctr+1)) / loc;
 		Logger.error(this, "LOCATION "+ctr+": " + loc+" - estimated nodes: "+estimatedNodes+" ("+hops+" hops)");
-		System.out.println("LOCATION "+ctr+": " + loc+" - estimated nodes: "+estimatedNodes+" ("+hops+" hops)");
+		System.err.println("LOCATION "+ctr+": " + loc+" - estimated nodes: "+estimatedNodes+" ("+hops+" hops)");
 	}
 
 	private void error(String string) {
 		Logger.error(this, string);
-		System.out.println("GlobalProbe error: "+string);
+		System.err.println("GlobalProbe error: "+string);
 	}
-	
-
 }

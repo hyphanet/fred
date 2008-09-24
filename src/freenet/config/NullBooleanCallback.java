@@ -2,13 +2,13 @@ package freenet.config;
 
 import freenet.support.api.BooleanCallback;
 
-public class NullBooleanCallback implements BooleanCallback {
+public class NullBooleanCallback extends BooleanCallback {
 
-	public boolean get() {
+	public Boolean get() {
 		return false;
 	}
 
-	public void set(boolean val) throws InvalidConfigValueException {
+	public void set(Boolean val) throws InvalidConfigValueException {
 		// Ignore
 	}
 

@@ -92,7 +92,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		curMaxTempLength = Long.MAX_VALUE;
 		curMaxMetadataLength = 1024 * 1024;
 		this.cacheLocalRequests = cacheLocalRequests;
-		this.persistentBucketFactory = node.persistentEncryptedTempBucketFactory;
+		this.persistentBucketFactory = node.persistentTempBucketFactory;
 	}
 	
 	public void setMaxLength(long maxLength) {
@@ -128,10 +128,11 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		return fw.waitForCompletion();
 	}
 	
-	public void fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientCallback callback, FetchContext fctx) throws FetchException {
+	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientCallback callback, FetchContext fctx) throws FetchException {
 		if(uri == null) throw new NullPointerException();
 		ClientGetter get = new ClientGetter(callback, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, clientContext, null, null);
 		core.clientContext.start(get);
+		return get;
 	}
 	
 	public FreenetURI insert(InsertBlock insert, boolean getCHKOnly, String filenameHint) throws InsertException {
@@ -148,11 +149,12 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		return pw.waitForCompletion();
 	}
 	
-	public void insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientCallback cb) throws InsertException {
+	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientCallback cb) throws InsertException {
 		ClientPutter put = new ClientPutter(cb, insert.getData(), insert.desiredURI, insert.clientMetadata, 
 				ctx, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, priorityClass, 
 				getCHKOnly, isMetadata, this, null, filenameHint, false);
 		core.clientContext.start(put, false);
+		return put;
 	}
 
 	public FreenetURI insertRedirect(FreenetURI insertURI, FreenetURI targetURI) throws InsertException {

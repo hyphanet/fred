@@ -58,7 +58,7 @@ public class ClientContext {
 		this.backgroundBlockEncoder = core.backgroundBlockEncoder;
 		this.random = core.random;
 		archiveManager = core.archiveManager;
-		this.persistentBucketFactory = core.persistentEncryptedTempBucketFactory;
+		this.persistentBucketFactory = core.persistentTempBucketFactory;
 		this.tempBucketFactory = core.tempBucketFactory;
 		this.healingQueue = core.getHealingQueue();
 		this.uskManager = core.uskManager;

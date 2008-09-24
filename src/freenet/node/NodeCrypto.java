@@ -36,7 +36,6 @@ import freenet.keys.FreenetURI;
 import freenet.keys.InsertableClientSSK;
 import freenet.support.Base64;
 import freenet.support.Fields;
-import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -357,9 +356,8 @@ public class NodeCrypto {
 			BigInteger m = new BigInteger(1, SHA256.digest(ref));
 			if(logMINOR) Logger.minor(this, "m = "+m.toString(16));
 			DSASignature _signature = DSA.sign(cryptoGroup, privKey, m, random);
-			// FIXME remove this ... eventually
-			if(!DSA.verify(pubKey, _signature, m, false))
-				Logger.error(this, "Signature failed!");
+			if(logMINOR && !DSA.verify(pubKey, _signature, m, false))
+				throw new NodeInitException(NodeInitException.EXIT_EXCEPTION_TO_DEBUG, mySignedReference);
 			return _signature;
 		} catch(UnsupportedEncodingException e){
 			//duh ?
@@ -370,13 +368,9 @@ public class NodeCrypto {
 		}
 	}
 
-	public static boolean DISABLE_GROUP_STRIP = false;
-	
 	private byte[] myCompressedRef(boolean setup, boolean heavySetup, boolean forARK) {
 		SimpleFieldSet fs = exportPublicFieldSet(setup, heavySetup, forARK);
-		// TODO: we should change that to ((setup || heavySetup) && !forARK) when all the nodes have the new code
-		boolean shouldStripGroup = heavySetup && Global.DSAgroupBigA.equals(cryptoGroup);
-		if(DISABLE_GROUP_STRIP) shouldStripGroup = false;
+		boolean shouldStripGroup = ((setup || heavySetup) && !forARK) && Global.DSAgroupBigA.equals(cryptoGroup);
 		if(shouldStripGroup)
 			fs.removeSubset("dsaGroup");
 		

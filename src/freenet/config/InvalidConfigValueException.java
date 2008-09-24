@@ -10,11 +10,9 @@ package freenet.config;
  * it merely means that there are no immediately detectable problems with 
  * it.
  */
-public class InvalidConfigValueException extends Exception {
-	private static final long serialVersionUID = -1;
+public class InvalidConfigValueException extends ConfigException {
 
 	public InvalidConfigValueException(String msg) {
 		super(msg);
 	}
-
 }

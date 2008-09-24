@@ -18,16 +18,16 @@ public class HTMLEncoder {
 
 	public static String encode(String s) {
 		int n = s.length();
-		StringBuffer sb = new StringBuffer(n);
+		StringBuilder sb = new StringBuilder(n);
 		encodeToBuffer(n, s, sb);
 		return sb.toString();
 	}
 
-	public static void encodeToBuffer(String s, StringBuffer sb) {
+	public static void encodeToBuffer(String s, StringBuilder sb) {
 		encodeToBuffer(s.length(), s, sb);
 	}
 	
-	private static void encodeToBuffer(int n, String s, StringBuffer sb) {
+	private static void encodeToBuffer(int n, String s, StringBuilder sb) {
 		for (int i = 0; i < n; i++) {
 			char c = s.charAt(i);
 			if(Character.isLetterOrDigit(c)){ //only special characters need checking
@@ -48,7 +48,7 @@ public class HTMLEncoder {
 		private String[] strings;
 		private int modulo = 0;
 		
-		public CharTable(HashMap map){
+		public CharTable(HashMap<Character, String> map){
 			int[] keys = new int[map.size()]; 
 			int keyIndex = 0;
 			
@@ -84,7 +84,7 @@ public class HTMLEncoder {
 				character = ((Character)it.next());
 				keyIndex = character.charValue()%modulo;
 				chars[keyIndex] = character.charValue();
-				strings[keyIndex] = (String) map.get(character);
+				strings[keyIndex] = map.get(character);
 			}
 			if (chars[0] == 0 && strings[0] != null) chars[0] = 1;
 		}

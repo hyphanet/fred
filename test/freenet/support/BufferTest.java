@@ -141,7 +141,7 @@ public class BufferTest extends TestCase {
 		Buffer b2 = new Buffer("Buffer2".getBytes());
 		Buffer b3 = new Buffer("Buffer1".getBytes());
 		
-		Map hashMap = new HashMap();
+		Map<Buffer, Buffer> hashMap = new HashMap<Buffer, Buffer>();
 		
 		hashMap.put(b1, b1); 
 		hashMap.put(b2, b2);

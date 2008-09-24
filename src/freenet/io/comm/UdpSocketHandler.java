@@ -64,6 +64,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 			_sock.setReceiveBufferSize(65536);
 		try {
 			// Exit reasonably quickly
+			_sock.setReuseAddress(true);
 			_sock.setSoTimeout(1000);
 		} catch (SocketException e) {
 			throw new RuntimeException(e);
@@ -158,7 +159,6 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	
 	private void realRun(DatagramPacket packet) {
 		// Single receiving thread
-		logDEBUG = Logger.shouldLog(Logger.MINOR, this);
 		boolean gotPacket = getPacket(packet);
 		long now = System.currentTimeMillis();
 		if (gotPacket) {

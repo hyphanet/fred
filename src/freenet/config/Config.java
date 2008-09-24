@@ -3,26 +3,21 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.config;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 
 /** Global configuration object for a node. SubConfig's register here.
  * Handles writing to a file etc.
  */
 public class Config {
+	public static enum RequestType {
+		CURRENT_SETTINGS, DEFAULT_SETTINGS, SORT_ORDER, EXPERT_FLAG, FORCE_WRITE_FLAG, SHORT_DESCRIPTION, LONG_DESCRIPTION, DATA_TYPE
+	};
 
-    public static final int CONFIG_REQUEST_TYPE_CURRENT_SETTINGS = 1;
-    public static final int CONFIG_REQUEST_TYPE_DEFAULT_SETTINGS = 2;
-    public static final int CONFIG_REQUEST_TYPE_SORT_ORDER = 3;
-    public static final int CONFIG_REQUEST_TYPE_EXPERT_FLAG = 4;
-    public static final int CONFIG_REQUEST_TYPE_FORCE_WRITE_FLAG = 5;
-    public static final int CONFIG_REQUEST_TYPE_SHORT_DESCRIPTION = 6;
-    public static final int CONFIG_REQUEST_TYPE_LONG_DESCRIPTION = 7;
-    public static final int CONFIG_REQUEST_TYPE_DATA_TYPE = 8;
-
-	protected final LinkedHashMap configsByPrefix;
+	protected final LinkedHashMap<String, SubConfig> configsByPrefix;
 	
 	public Config() {
-		configsByPrefix = new LinkedHashMap();
+		configsByPrefix = new LinkedHashMap<String, SubConfig>();
 	}
 	
 	public void register(SubConfig sc) {
@@ -50,10 +45,10 @@ public class Config {
 
 	/** Fetch all the SubConfig's. Used by user-facing config thingies. */
 	public synchronized SubConfig[] getConfigs() {
-		return (SubConfig[]) configsByPrefix.values().toArray(new SubConfig[configsByPrefix.size()]);
+		return configsByPrefix.values().toArray(new SubConfig[configsByPrefix.size()]);
 	}
 	
 	public synchronized SubConfig get(String subConfig){
-		return (SubConfig)configsByPrefix.get(subConfig);
+		return configsByPrefix.get(subConfig);
 	}
 }

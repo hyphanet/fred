@@ -98,12 +98,9 @@ public class FailureTable implements OOMHook {
 		FailureTableEntry entry;
 		synchronized(this) {
 			entry = (FailureTableEntry) entriesByKey.get(key);
-			if(entry == null) {
+			if(entry == null)
 				entry = new FailureTableEntry(key);
-				entriesByKey.push(key, entry);
-			} else {
-				entriesByKey.push(key, entry);
-			}
+			entriesByKey.push(key, entry);
 			trimEntries(now);
 		}
 		entry.failedTo(routedTo, timeout, now, htl);
@@ -115,12 +112,10 @@ public class FailureTable implements OOMHook {
 		FailureTableEntry entry;
 		synchronized(this) {
 			entry = (FailureTableEntry) entriesByKey.get(key);
-			if(entry == null) {
+			if(entry == null)
 				entry = new FailureTableEntry(key);
-				entriesByKey.push(key, entry);
-			} else {
-				entriesByKey.push(key, entry);
-			}
+			entriesByKey.push(key, entry);
+
 			trimEntries(now);
 		}
 		if(routedTo != null)

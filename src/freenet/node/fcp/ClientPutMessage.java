@@ -262,7 +262,7 @@ public class ClientPutMessage extends DataCarryingMessage {
 
 	Bucket createBucket(BucketFactory bf, long length, FCPServer server) throws IOException {
 		if(persistenceType == ClientRequest.PERSIST_FOREVER) {
-			return server.core.persistentTempBucketFactory.makeEncryptedBucket();
+			return server.core.persistentTempBucketFactory.makeBucket(length);
 		} else {
 			return super.createBucket(bf, length, server);
 		}

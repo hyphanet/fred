@@ -74,7 +74,8 @@ import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPUtil;
-import java.util.Collection;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * @author amphibian
@@ -151,8 +152,20 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private long timeLastRoutable;
 	/** Time added or restarted (reset on startup unlike peerAddedTime) */
 	private long timeAddedOrRestarted;
-	/** Number of time that peer has been selected by the routing algorithm */
-	private long numberOfSelections = 0;
+	
+	/**
+	 * Track the number of times this PeerNode has been selected by
+	 * the routing algorithm over a given period of time
+	 */
+	private SortedSet<Long> numberOfSelections = new TreeSet<Long>();
+	private final Object numberOfSelectionsSync = new Object();
+	// 5mins; yes it's alchemy!
+	public static final int SELECTION_SAMPLING_PERIOD = 5 * 60 * 1000;
+	// 30%; yes it's alchemy too! and probably *way* too high to serve any purpose
+	public static final int SELECTION_PERCENTAGE_WARNING = 30;
+	// Should be good enough provided we don't get selected more than 10 times per/sec
+	// Lower the following value if you want to spare memory... or better switch from a TreeSet to a bit field.
+	public static final int SELECTION_MAX_SAMPLES = 10 * SELECTION_SAMPLING_PERIOD / 1000; 
 	
 	/** Are we connected? If not, we need to start trying to
 	* handshake.
@@ -975,7 +988,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* PeerManager in e.g. verified.
 	*/
 	public boolean isRoutable() {
-		//FIXME: isConnected() is redundant if 'isRoutable', right? ... currentLocation>1.0 is impossible.
 		return isConnected() && isRoutingCompatible() &&
 			!(currentLocation < 0.0 || currentLocation > 1.0);
 	}
@@ -1607,24 +1619,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 		}
 	}
-
-	/**
-	* Update the Location to a new value.
-	* @deprecated
-	*/
-	public void updateLocation(double newLoc) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
-		if(newLoc < 0.0 || newLoc > 1.0) {
-			Logger.error(this, "Invalid location update for " + this+ " ("+newLoc+')', new Exception("error"));
-			// Ignore it
-			return;
-		}
-		synchronized(this) {
-			currentLocation = newLoc;
-			locSetTime = System.currentTimeMillis();
-		}
-		node.peers.writePeers();
-	}
 	
 	public void updateLocation(double newLoc, double[] newLocs) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
@@ -2109,14 +2103,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* Send any high level messages that need to be sent on connect.
 	*/
 	protected void sendInitialMessages() {
-		Message locMsg = ((getVersionNumber() > 1153) ?
-			DMT.createFNPLocChangeNotificationNew(node.lm.getLocation(), node.peers.getPeerLocationDoubles(true)) :
-			DMT.createFNPLocChangeNotification(node.lm.getLocation()));
+		Message locMsg = DMT.createFNPLocChangeNotificationNew(node.lm.getLocation(), node.peers.getPeerLocationDoubles(true));
 		Message ipMsg = DMT.createFNPDetectedIPAddress(detectedPeer);
 		Message timeMsg = DMT.createFNPTime(System.currentTimeMillis());
 		Message packetsMsg = createSentPacketsMessage();
-		Message dRouting = DMT.createRoutingStatus(!disableRoutingHasBeenSetLocally);
-		Message uptime = DMT.createFNPUptime((byte)(int)(100*node.uptime.getUptime()));
+		Message dRoutingMsg = DMT.createRoutingStatus(!disableRoutingHasBeenSetLocally);
+		Message uptimeMsg = DMT.createFNPUptime((byte)(int)(100*node.uptime.getUptime()));
 
 		try {
 			if(isRealConnection())
@@ -2124,8 +2116,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			sendAsync(ipMsg, null, 0, node.nodeStats.initialMessagesCtr);
 			sendAsync(timeMsg, null, 0, node.nodeStats.initialMessagesCtr);
 			sendAsync(packetsMsg, null, 0, node.nodeStats.initialMessagesCtr);
-			sendAsync(dRouting, null, 0, node.nodeStats.initialMessagesCtr);
-			sendAsync(uptime, null, 0, node.nodeStats.initialMessagesCtr);
+			sendAsync(dRoutingMsg, null, 0, node.nodeStats.initialMessagesCtr);
+			sendAsync(uptimeMsg, null, 0, node.nodeStats.initialMessagesCtr);
 		} catch(NotConnectedException e) {
 			Logger.error(this, "Completed handshake with " + getPeer() + " but disconnected (" + isConnected + ':' + currentTracker + "!!!: " + e, e);
 		}
@@ -2972,9 +2964,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(this) {
 			count = (Long) localNodeSentMessageTypes.get(messageSpecName);
 			if(count == null)
-				count = new Long(1);
+				count = 1L;
 			else
-				count = new Long(count.longValue() + 1);
+				count = count.longValue() + 1;
 			localNodeSentMessageTypes.put(messageSpecName, count);
 		}
 	}
@@ -2988,9 +2980,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(localNodeReceivedMessageTypes) {
 			count = (Long) localNodeReceivedMessageTypes.get(messageSpecName);
 			if(count == null)
-				count = new Long(1);
+				count = 1L;
 			else
-				count = new Long(count.longValue() + 1);
+				count = count.longValue() + 1;
 			localNodeReceivedMessageTypes.put(messageSpecName, count);
 		}
 	}
@@ -3990,12 +3982,20 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return (short)(((int)uptime) & 0xFF);
 	}
 	
-	public long getNumberOfSelections() {
-		return numberOfSelections;
+	public SortedSet<Long> getNumberOfSelections() {
+		// FIXME: returning a copy is not an option: find a smarter way of dealing with the synchronization
+		synchronized(numberOfSelectionsSync) {
+			return numberOfSelections;
+		}
 	}
 	
-	public void incrementNumberOfSelections() {
-		numberOfSelections++;
+	public void incrementNumberOfSelections(long time) {
+		// TODO: reimplement with a bit field to spare memory
+		synchronized(numberOfSelectionsSync) {
+			if(numberOfSelections.size() > SELECTION_MAX_SAMPLES)
+				numberOfSelections = numberOfSelections.tailSet(time - SELECTION_SAMPLING_PERIOD);
+			numberOfSelections.add(time);
+		}
 	}
 
 	private long offeredMainJarVersion;

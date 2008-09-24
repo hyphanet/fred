@@ -112,9 +112,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			targetFile = null;
 			tempFile = null;
 				if(persistenceType == PERSIST_FOREVER)
-					ret = server.core.persistentTempBucketFactory.makeEncryptedBucket();
+					ret = server.core.persistentTempBucketFactory.makeBucket(maxOutputLength);
 				else
-					ret = server.core.tempBucketFactory.makeBucket(-1);
+					ret = server.core.tempBucketFactory.makeBucket(maxOutputLength);
 		}
 		returnBucket = ret;
 			getter = new ClientGetter(this, server.core.requestStarters.chkFetchScheduler, server.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass,
@@ -164,9 +164,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			tempFile = null;
 			try {
 				if(persistenceType == PERSIST_FOREVER)
-					ret = server.core.persistentTempBucketFactory.makeEncryptedBucket();
+					ret = server.core.persistentTempBucketFactory.makeBucket(fctx.maxOutputLength);
 				else
-					ret = server.core.tempBucketFactory.makeBucket(-1);
+					ret = server.core.tempBucketFactory.makeBucket(fctx.maxOutputLength);
 			} catch (IOException e) {
 				Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
 				getter = null;
@@ -246,9 +246,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				try {
 					// Create a new temp bucket
 					if(persistenceType == PERSIST_FOREVER)
-						ret = server.core.persistentTempBucketFactory.makeEncryptedBucket();
+						ret = server.core.persistentTempBucketFactory.makeBucket(fctx.maxOutputLength);
 					else
-						ret = server.core.tempBucketFactory.makeBucket(-1);
+						ret = server.core.tempBucketFactory.makeBucket(fctx.maxOutputLength);
 				} catch (IOException e1) {
 					Logger.error(this, "Cannot create bucket for temp storage: "+e, e);
 					getter = null;

@@ -373,7 +373,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 					}
 				}
 			}
-			decodedData = context.getBucketFactory(persistent).makeBucket(-1);
+			decodedData = context.getBucketFactory(persistent).makeBucket(maxBlockLength * dataBuckets.length);
 			if(logMINOR) Logger.minor(this, "Copying data from "+dataBuckets.length+" data blocks");
 			OutputStream os = decodedData.getOutputStream();
 			for(int i=0;i<dataBuckets.length;i++) {

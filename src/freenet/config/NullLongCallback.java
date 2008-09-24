@@ -2,13 +2,13 @@ package freenet.config;
 
 import freenet.support.api.LongCallback;
 
-public class NullLongCallback implements LongCallback {
+public class NullLongCallback extends LongCallback {
 
-	public long get() {
-		return 0;
+	public Long get() {
+		return 0L;
 	}
 
-	public void set(long val) throws InvalidConfigValueException {
+	public void set(Long val) throws InvalidConfigValueException {
 		// Ignore
 	}
 

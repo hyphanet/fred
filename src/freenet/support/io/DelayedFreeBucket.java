@@ -22,7 +22,7 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 	Bucket bucket;
 	boolean freed;
 	
-	public DelayedFreeBucket(PersistentTempBucketFactory factory, PaddedEphemerallyEncryptedBucket bucket) {
+	public DelayedFreeBucket(PersistentTempBucketFactory factory, Bucket bucket) {
 		this.factory = factory;
 		this.bucket = bucket;
 		if(bucket == null) throw new NullPointerException();

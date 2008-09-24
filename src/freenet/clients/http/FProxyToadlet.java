@@ -56,7 +56,7 @@ public final class FProxyToadlet extends Toadlet {
 	// ?force= links become invalid after 2 hours.
 	private static final long FORCE_GRAIN_INTERVAL = 60*60*1000;
 	/** Maximum size for transparent pass-through, should be a config option */
-	static final long MAX_LENGTH = 2*1024*1024; // 2MB
+	static long MAX_LENGTH = 2*1024*1024; // 2MB
 	
 	static final URI welcome;
 	static {
@@ -95,6 +95,7 @@ public final class FProxyToadlet extends Toadlet {
 		return "GET";
 	}
 
+	@Override
 	public void handlePost(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String ks = uri.getPath();
 		
@@ -320,9 +321,10 @@ public final class FProxyToadlet extends Toadlet {
 		return false;
 	}
 
+	@Override
 	public void handleGet(URI uri, HTTPRequest httprequest, ToadletContext ctx) 
 			throws ToadletContextClosedException, IOException, RedirectException {
-		//String ks = uri.toString();
+
 		String ks = uri.getPath();
 		
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -446,7 +448,7 @@ public final class FProxyToadlet extends Toadlet {
 			String referer = sanitizeReferer(ctx);
 			
 			
-			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key, maxSize != MAX_LENGTH ? "&max-size="+maxSize : "", referer, true, ctx, core);
+			handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, httprequest.getParam("force", null), httprequest.isParameterSet("forcedownload"), "/", key, maxSize != MAX_LENGTH ? "&max-size="+SizeUtil.formatSizeWithoutSpace(maxSize) : "", referer, true, ctx, core);
 			
 		} catch (FetchException e) {
 			String msg = e.getMessage();
@@ -574,7 +576,7 @@ public final class FProxyToadlet extends Toadlet {
 			fileInformationList.addChild("li", l10n("sizeUnknown"));
 		}
 		if(mime != null) {
-			fileInformationList.addChild("li", L10n.getString("FProxyToadlet."+(finalized ? "mimeType" : "expectedMimeType"), new String[] { "mime" }, new String[] { mime }));;
+			fileInformationList.addChild("li", L10n.getString("FProxyToadlet."+(finalized ? "mimeType" : "expectedMimeType"), new String[] { "mime" }, new String[] { mime }));
 		} else {
 			fileInformationList.addChild("li", l10n("unknownMIMEType"));
 		}
@@ -666,9 +668,6 @@ public final class FProxyToadlet extends Toadlet {
 		
 		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node, bookmarks);
 		server.register(welcometoadlet, "/welcome/", true, false);
-		
-		PluginToadlet pluginToadlet = new PluginToadlet(client, node.pluginManager2, core);
-		server.register(pluginToadlet, "/plugin/", true, true);
 		
 		ConfigToadlet configtoadlet = new ConfigToadlet(client, config, node, core);
 		server.register(configtoadlet, "/config/", true, "FProxyToadlet.configTitle", "FProxyToadlet.config", true, null);

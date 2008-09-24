@@ -2,13 +2,13 @@ package freenet.config;
 
 import freenet.support.api.IntCallback;
 
-public class NullIntCallback implements IntCallback {
+public class NullIntCallback extends IntCallback {
 
-	public int get() {
+	public Integer get() {
 		return 0;
 	}
 
-	public void set(int val) throws InvalidConfigValueException {
+	public void set(Integer val) throws InvalidConfigValueException {
 		// Ignore
 	}
 

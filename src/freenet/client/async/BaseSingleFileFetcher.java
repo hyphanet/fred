@@ -18,6 +18,7 @@ import freenet.node.KeysFetchingLocally;
 import freenet.node.RequestClient;
 import freenet.node.RequestScheduler;
 import freenet.node.SendableGet;
+import freenet.support.Executor;
 import freenet.support.Logger;
 
 public abstract class BaseSingleFileFetcher extends SendableGet implements HasKeyListener {
@@ -109,11 +110,10 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 					if(persistent)
 						container.deactivate(key, 5);
 				}
-				return true; // We will retry, just not yet. See requeueAfterCooldown(Key).
 			} else {
 				reschedule(container, context);
 			}
-			return true;
+			return true; // We will retry in any case, maybe not just not yet. See requeueAfterCooldown(Key).
 		}
 		return false;
 	}

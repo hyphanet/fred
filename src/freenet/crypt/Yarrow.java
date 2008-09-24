@@ -61,14 +61,18 @@ public class Yarrow extends RandomSource {
 	public final File seedfile; //A file to which seed data should be dumped periodically
 
 	public Yarrow() {
-		this("prng.seed", "SHA1", "Rijndael", true);
+		this("prng.seed", "SHA1", "Rijndael", true, true);
+	}
+	
+	public Yarrow(boolean canBlock) {
+		this("prng.seed", "SHA1", "Rijndael", true, canBlock);
 	}
 
-	public Yarrow(String seed, String digest, String cipher, boolean updateSeed) {
-		this(new File(seed), digest, cipher, updateSeed);
+	public Yarrow(String seed, String digest, String cipher, boolean updateSeed, boolean canBlock) {
+		this(new File(seed), digest, cipher, updateSeed, canBlock);
 	}
 
-	public Yarrow(File seed, String digest, String cipher, boolean updateSeed) {
+	public Yarrow(File seed, String digest, String cipher, boolean updateSeed, boolean canBlock) {
 		SecureRandom s;
 		try {
 			s = SecureRandom.getInstance("SHA1PRNG");
@@ -85,7 +89,7 @@ public class Yarrow extends RandomSource {
 			throw new RuntimeException("Cannot initialize Yarrow!: " + e, e);
 		}
 		entropy_init(seed);
-		seedFromExternalStuff(true);
+		seedFromExternalStuff(canBlock);
 		if(updateSeed && !(seed.toString()).equals("/dev/urandom")) //Dont try to update the seedfile if we know that it wont be possible anyways 
 			seedfile = seed;
 		else
@@ -646,7 +650,7 @@ public class Yarrow extends RandomSource {
 	 * Test routine
 	 */
 	public static void main(String[] args) throws Exception {
-		Yarrow r = new Yarrow(new File("/dev/urandom"), "SHA1", "Rijndael", true);
+		Yarrow r = new Yarrow(new File("/dev/urandom"), "SHA1", "Rijndael", true, false);
 
 		byte[] b = new byte[1024];
 

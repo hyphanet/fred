@@ -6,6 +6,7 @@
 
 package freenet.crypt;
 
+import freenet.node.FNPPacketMangler;
 import java.math.BigInteger;
 import java.util.Random;
 import java.util.Stack;
@@ -20,10 +21,10 @@ public class DiffieHellman {
 	 * When the number of precalculations falls below this threshold generation
 	 * starts up to make more.
 	 */
-	private static final int PRECALC_RESUME = 150;
+	private static final int PRECALC_RESUME = FNPPacketMangler.DH_CONTEXT_BUFFER_SIZE;
 
 	/** Maximum number of precalculations to create. */
-	private static final int PRECALC_MAX = 300;
+	private static final int PRECALC_MAX = FNPPacketMangler.DH_CONTEXT_BUFFER_SIZE * 2;
 
 	/**
 	 * How often to wake up and make sure the precalculation buffer is full
@@ -49,7 +50,7 @@ public class DiffieHellman {
 	private static class PrecalcBufferFill extends NativeThread {
 
 		public PrecalcBufferFill() {
-			super("Diffie-Hellman-Precalc", NativeThread.LOW_PRIORITY, false);
+			super("Diffie-Hellman-Precalc", NativeThread.MIN_PRIORITY, false);
 			setDaemon(true);
 		}
 
@@ -119,6 +120,7 @@ public class DiffieHellman {
 			}
 
 		}
+		Logger.normal(DiffieHellman.class, "DiffieHellman had to generate a parameter on thread! (report if that happens often)");
 		return genParams();
 	}
 

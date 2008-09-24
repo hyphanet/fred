@@ -48,7 +48,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	
 	private static boolean logMINOR;
 	
-	public static class PrioritySchedulerCallback implements StringCallback, EnumerableOptionCallback {
+	public static class PrioritySchedulerCallback extends StringCallback implements EnumerableOptionCallback {
 		final ClientRequestScheduler cs;
 		private final String[] possibleValues = new String[]{ ClientRequestScheduler.PRIORITY_HARD, ClientRequestScheduler.PRIORITY_SOFT };
 		

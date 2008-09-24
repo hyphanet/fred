@@ -2,7 +2,7 @@ package freenet.config;
 
 import freenet.support.api.StringCallback;
 
-public class NullStringCallback implements StringCallback {
+public class NullStringCallback extends StringCallback {
 
 	public String get() {
 		return "";

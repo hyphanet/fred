@@ -15,15 +15,13 @@ import freenet.support.api.Bucket;
 /**
  * A bucket that stores data in the memory.
  * 
- * FIXME: No synchronization, should there be?
- * 
  * @author oskar
  */
 public class ArrayBucket implements Bucket {
 
-	private final ArrayList data;
-	private String name;
-	private boolean readOnly;
+	private final ArrayList<byte[]> data;
+	private final String name;
+	private volatile boolean readOnly;
 
 	public ArrayBucket() {
 		this("ArrayBucket");
@@ -35,20 +33,21 @@ public class ArrayBucket implements Bucket {
 	}
 
 	ArrayBucket(String name) {
-		data = new ArrayList();
+		data = new ArrayList<byte[]>();
 		this.name = name;
 	}
 
-	public OutputStream getOutputStream() throws IOException {
+	public synchronized OutputStream getOutputStream() throws IOException {
 		if(readOnly) throw new IOException("Read only");
 		return new ArrayBucketOutputStream();
 	}
 
-	public InputStream getInputStream() {
+	public synchronized InputStream getInputStream() {
 		return new ArrayBucketInputStream();
 	}
 
-	public String toString() {
+	@Override
+	public synchronized String toString() {
 		StringBuffer s = new StringBuffer(250);
 		for (Iterator i = data.iterator(); i.hasNext();) {
 			byte[] b = (byte[]) i.next();
@@ -57,7 +56,7 @@ public class ArrayBucket implements Bucket {
 		return s.toString();
 	}
 
-	public void read(InputStream in) throws IOException {
+	public synchronized void read(InputStream in) throws IOException {
 		OutputStream out = new ArrayBucketOutputStream();
 		int i;
 		byte[] b = new byte[8 * 1024];
@@ -67,13 +66,13 @@ public class ArrayBucket implements Bucket {
 		out.close();
 	}
 
-	public long size() {
-		long size = 0;
-		for (Iterator i = data.iterator(); i.hasNext();) {
-			byte[] b = (byte[]) i.next();
-			size += b.length;
-		}
-		return size;
+	public synchronized long size() {
+		long currentSize = 0;
+		
+		for(byte[] buf : data)
+			currentSize += buf.length;
+		
+		return currentSize;
 	}
 
 	public String getName() {
@@ -81,15 +80,30 @@ public class ArrayBucket implements Bucket {
 	}
 
 	private class ArrayBucketOutputStream extends ByteArrayOutputStream {
+		boolean hasBeenClosed = false;
 		
 		public ArrayBucketOutputStream() {
 			super();
 		}
+		
+		@Override
+		public synchronized void write(byte b[], int off, int len) {
+			if(readOnly) throw new IllegalStateException("Read only");
+			super.write(b, off, len);
+		}
+		
+		@Override
+		public synchronized void write(int b) {
+			if(readOnly) throw new IllegalStateException("Read only");
+			super.write(b);
+		}
 
-		public void close() throws IOException {
+		@Override
+		public synchronized void close() throws IOException {
+			if(hasBeenClosed) return;
+			hasBeenClosed = true;
 			data.add(super.toByteArray());
 			if(readOnly) throw new IOException("Read only");
-			// FIXME maybe we should throw on write instead? :)
 		}
 	}
 
@@ -102,11 +116,11 @@ public class ArrayBucket implements Bucket {
 			i = data.iterator();
 		}
 
-		public int read() {
+		public synchronized int read() {
 			return priv_read();
 		}
 
-		private int priv_read() {
+		private synchronized int priv_read() {
 			if (in == null) {
 				if (i.hasNext()) {
 					in = new ByteArrayInputStream((byte[]) i.next());
@@ -123,15 +137,17 @@ public class ArrayBucket implements Bucket {
 			}
 		}
 
-		public int read(byte[] b) {
+		@Override
+		public synchronized int read(byte[] b) {
 			return priv_read(b, 0, b.length);
 		}
 
-		public int read(byte[] b, int off, int len) {
+		@Override
+		public synchronized int read(byte[] b, int off, int len) {
 			return priv_read(b, off, len);
 		}
 
-		private int priv_read(byte[] b, int off, int len) {
+		private synchronized int priv_read(byte[] b, int off, int len) {
 			if (in == null) {
 				if (i.hasNext()) {
 					in = new ByteArrayInputStream((byte[]) i.next());
@@ -148,7 +164,8 @@ public class ArrayBucket implements Bucket {
 			}
 		}
 
-		public int available() {
+		@Override
+		public synchronized int available() {
 			if (in == null) {
 				if (i.hasNext()) {
 					in = new ByteArrayInputStream((byte[]) i.next());
@@ -169,12 +186,12 @@ public class ArrayBucket implements Bucket {
 		readOnly = true;
 	}
 
-	public void free() {
+	public synchronized void free() {
 		data.clear();
 		// Not much else we can do.
 	}
 
-	public byte[] toByteArray() {
+	public synchronized byte[] toByteArray() {
 		long sz = size();
 		int size = (int)sz;
 		byte[] buf = new byte[size];

@@ -28,7 +28,7 @@ public class PutSuccessfulMessage extends FCPMessage {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("Identifier", identifier);
 		if(global) fs.putSingle("Global", "true");
-		// FIXME debug and remove!
+		// This is useful for simple clients.
 		if(uri != null)
 			fs.putSingle("URI", uri.toString());
 		fs.put("StartupTime", startupTime);

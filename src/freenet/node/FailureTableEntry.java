@@ -8,7 +8,7 @@ import java.util.HashSet;
 
 import freenet.keys.Key;
 import freenet.support.Logger;
-import freenet.support.StringArray;
+import java.util.Arrays;
 
 class FailureTableEntry implements TimedOutNodesList {
 	
@@ -75,7 +75,7 @@ class FailureTableEntry implements TimedOutNodesList {
 	 */
 	public void onFailure(short htl2, PeerNode[] requestors, PeerNode[] requestedFrom, int timeout, long now) {
 		if(logMINOR)
-			Logger.minor(this, "onFailure("+htl2+",requestors="+StringArray.toString(requestors)+",requestedFrom="+StringArray.toString(requestedFrom)+",timeout="+timeout);
+			Logger.minor(this, "onFailure("+htl2+",requestors="+Arrays.toString(requestors)+",requestedFrom="+Arrays.toString(requestedFrom)+",timeout="+timeout);
 		synchronized(this) {
 			if(requestors != null) {
 				for(int i=0;i<requestors.length;i++)
