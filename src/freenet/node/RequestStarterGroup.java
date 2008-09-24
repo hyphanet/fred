@@ -193,7 +193,7 @@ public class RequestStarterGroup {
 	}
 
 	public String statsPageLine(boolean isSSK, boolean isInsert) {
-		StringBuffer sb = new StringBuffer(100);
+		StringBuilder sb = new StringBuilder(100);
 		sb.append(isSSK ? "SSK" : "CHK");
 		sb.append(' ');
 		sb.append(isInsert ? "Insert" : "Request");
@@ -209,7 +209,7 @@ public class RequestStarterGroup {
 	}
 
 	public String diagnosticThrottlesLine(boolean mode) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		if(mode) {
 			sb.append("Request window: ");
 			sb.append(throttleWindowRequest.toString());

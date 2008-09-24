@@ -14,7 +14,7 @@ import java.util.Map;
  */
 public class HTMLDecoder {
 
-	static Map charTable = HTMLEntities.decodeMap;
+	static Map<String, Character> charTable = HTMLEntities.decodeMap;
 	
 	public static String decode(String s) {
 		String t;
@@ -22,7 +22,7 @@ public class HTMLDecoder {
 		int tmpPos, i;
 
 		int maxPos = s.length();
-		StringBuffer sb = new StringBuffer(maxPos);
+		StringBuilder sb = new StringBuilder(maxPos);
 		int curPos = 0;
 		while (curPos < maxPos) {
 			char c = s.charAt(curPos++);
@@ -92,7 +92,7 @@ public class HTMLDecoder {
 							if (!isLetterOrDigit(d)) {
 								if (d == ';') {
 									t = s.substring(curPos, tmpPos - 1);
-									ch = (Character) charTable.get(t);
+									ch = charTable.get(t);
 									if (ch != null) {
 										c = ch.charValue();
 										curPos = tmpPos;
@@ -131,7 +131,7 @@ public class HTMLDecoder {
 
 	public static String compact(String s) {
 		int maxPos = s.length();
-		StringBuffer sb = new StringBuffer(maxPos);
+		StringBuilder sb = new StringBuilder(maxPos);
 		int curPos = 0;
 		while (curPos < maxPos) {
 			char c = s.charAt(curPos++);

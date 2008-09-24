@@ -53,6 +53,8 @@ public interface FreenetStore {
 	public long writes();
 
 	public long keyCount();
+
+	public long getBloomFalsePositive();
 	
 	/**
 	 * Check if a routing key probably

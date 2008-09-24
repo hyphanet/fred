@@ -42,7 +42,7 @@ public class TimeUtil {
     	if (maxTerms > 6 )
         	throw new IllegalArgumentException();
         
-    	StringBuffer sb = new StringBuffer(64);
+    	StringBuilder sb = new StringBuilder(64);
         long l = timeInterval;
         int termCount = 0;
         //

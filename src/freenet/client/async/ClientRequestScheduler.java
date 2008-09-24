@@ -851,7 +851,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		short priority = Short.MAX_VALUE;
 		if(force) {
 			// FIXME what priority???
-			priority = RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+			priority = RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS;
 		}
 		priority = schedTransient.getKeyPrio(key, priority, null, clientContext);
 		if(priority < Short.MAX_VALUE) {

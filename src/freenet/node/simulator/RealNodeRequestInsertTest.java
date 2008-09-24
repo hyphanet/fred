@@ -74,7 +74,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] = 
-            	NodeStarter.createTestNode(5001+i, 0, name, false, true, false, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, 12000, ENABLE_FOAF, false);
+            	NodeStarter.createTestNode(5001+i, 0, name, false, true, false, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 256*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, ENABLE_SWAP_QUEUEING, ENABLE_PACKET_COALESCING, 12000, ENABLE_FOAF, false, null);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         
@@ -184,7 +184,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                         System.exit(EXIT_BAD_DATA);
                     }
                 }
-                StringBuffer load = new StringBuffer("Running UIDs for nodes: ");
+                StringBuilder load = new StringBuilder("Running UIDs for nodes: ");
                 int totalRunningUIDs = 0;
                 int totalRunningUIDsAlt = 0;
                 Vector runningUIDsList = new Vector(); // <Long>

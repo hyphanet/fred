@@ -10,7 +10,7 @@ package freenet.support;
 public class VoidLogger extends Logger
 {
 
-	public void log(Object o, Class source, String message, Throwable e, int priority) {
+	public void log(Object o, Class<?> source, String message, Throwable e, int priority) {
 	}
 
 	public void log(Object source, String message, int priority) {
@@ -19,10 +19,10 @@ public class VoidLogger extends Logger
 	public void log(Object o, String message, Throwable e, int priority) {
 	}
 
-	public void log(Class c, String message, int priority) {
+	public void log(Class<?> c, String message, int priority) {
 	}
 
-	public void log(Class c, String message, Throwable e, int priority) {
+	public void log(Class<?> c, String message, Throwable e, int priority) {
 	}
 
 	public long minFlags() {
@@ -37,7 +37,7 @@ public class VoidLogger extends Logger
 		return 0;
 	}
 
-	public boolean instanceShouldLog(int priority, Class c) {
+	public boolean instanceShouldLog(int priority, Class<?> c) {
 		return false;
 	}
 

@@ -3,10 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
+import java.util.ArrayList;
+
 import freenet.node.PrioRunnable;
 import freenet.node.Ticker;
 import freenet.support.io.NativeThread;
-import java.util.ArrayList;
 
 /**
  * Pooled Executor implementation. Create a thread when we need one, let them die
@@ -16,8 +17,10 @@ import java.util.ArrayList;
 public class PooledExecutor implements Executor {
 
 	/** All threads running or waiting */
+	@SuppressWarnings("unchecked")
 	private final ArrayList<MyThread>[] runningThreads = new ArrayList[NativeThread.JAVA_PRIORITY_RANGE + 1];
 	/** Threads waiting for a job */
+	@SuppressWarnings("unchecked")
 	private final ArrayList<MyThread>[] waitingThreads = new ArrayList[runningThreads.length];
 	long[] threadCounter = new long[runningThreads.length];
 	private long jobCount;
@@ -32,8 +35,8 @@ public class PooledExecutor implements Executor {
 
 	public PooledExecutor() {
 		for(int i = 0; i < runningThreads.length; i++) {
-			runningThreads[i] = new ArrayList();
-			waitingThreads[i] = new ArrayList();
+			runningThreads[i] = new ArrayList<MyThread>();
+			waitingThreads[i] = new ArrayList<MyThread>();
 			threadCounter[i] = 0;
 		}
 	}

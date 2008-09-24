@@ -39,10 +39,12 @@ public class PproxyToadlet extends Toadlet {
 		this.core = core;
 	}
 
+	@Override
 	public String supportedMethods() {
 		return "GET, POST";
 	}
 
+	@Override
 	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx)
 	throws ToadletContextClosedException, IOException {
 
@@ -255,9 +257,9 @@ public class PproxyToadlet extends Toadlet {
 	 *         no plugin was found
 	 */
 	private String getPluginSpecification(PluginManager pluginManager, String pluginThreadName) {
-		Iterator it = pluginManager.getPlugins().iterator();
+		Iterator<PluginInfoWrapper> it = pluginManager.getPlugins().iterator();
 		while (it.hasNext()) {
-			PluginInfoWrapper pi = (PluginInfoWrapper) it.next();
+			PluginInfoWrapper pi = it.next();
 			if (pi.getThreadName().equals(pluginThreadName)) {
 				return pi.getFilename();
 			}
@@ -273,6 +275,7 @@ public class PproxyToadlet extends Toadlet {
 		return L10n.getString("PproxyToadlet."+key);
 	}
 
+	@Override
 	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx)
 	throws ToadletContextClosedException, IOException {
 
@@ -294,7 +297,7 @@ public class PproxyToadlet extends Toadlet {
 					return;
 				}
 
-				Iterator/* <PluginProgress> */loadingPlugins = pm.getStartingPlugins().iterator();
+				Iterator<PluginProgress> loadingPlugins = pm.getStartingPlugins().iterator();
 
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("pluginsWithNodeName", "name", core.getMyName()), ctx);
 				if (loadingPlugins.hasNext()) {
@@ -316,15 +319,15 @@ public class PproxyToadlet extends Toadlet {
 				
 				/* find which plugins have already been loaded. */
 				List<String> availablePlugins = pm.findAvailablePlugins();
-				Iterator/*<PluginInfoWrapper>*/ loadedPlugins = pm.getPlugins().iterator();
+				Iterator<PluginInfoWrapper> loadedPlugins = pm.getPlugins().iterator();
 				while (loadedPlugins.hasNext()) {
-					PluginInfoWrapper pluginInfoWrapper = (PluginInfoWrapper) loadedPlugins.next();
+					PluginInfoWrapper pluginInfoWrapper = loadedPlugins.next();
 					String pluginName = pluginInfoWrapper.getPluginClassName();
 					String shortPluginName = pluginName.substring(pluginName.lastIndexOf('.') + 1);
 					availablePlugins.remove(shortPluginName);
 				}
 				while (loadingPlugins.hasNext()) {
-					PluginProgress pluginProgress = (PluginProgress) loadingPlugins.next();
+					PluginProgress pluginProgress = loadingPlugins.next();
 					String pluginName = pluginProgress.getName();
 					availablePlugins.remove(pluginName);
 				}
@@ -383,7 +386,7 @@ public class PproxyToadlet extends Toadlet {
 	 *            The node to add content to
 	 */
 	private void showStartingPlugins(PluginManager pluginManager, HTMLNode contentNode) {
-		Set/*<PluginProgress>*/ startingPlugins = pluginManager.getStartingPlugins();
+		Set<PluginProgress> startingPlugins = pluginManager.getStartingPlugins();
 		if (!startingPlugins.isEmpty()) {
 			HTMLNode startingPluginsBox = contentNode.addChild("div", "class", "infobox infobox-normal");
 			startingPluginsBox.addChild("div", "class", "infobox-header", l10n("startingPluginsTitle"));
@@ -393,9 +396,9 @@ public class PproxyToadlet extends Toadlet {
 			startingPluginsHeader.addChild("th", l10n("startingPluginName"));
 			startingPluginsHeader.addChild("th", l10n("startingPluginStatus"));
 			startingPluginsHeader.addChild("th", l10n("startingPluginTime"));
-			Iterator/*<PluginProgress>*/ startingPluginsIterator = startingPlugins.iterator();
+			Iterator<PluginProgress> startingPluginsIterator = startingPlugins.iterator();
 			while (startingPluginsIterator.hasNext()) {
-				PluginProgress pluginProgress = (PluginProgress) startingPluginsIterator.next();
+				PluginProgress pluginProgress = startingPluginsIterator.next();
 				HTMLNode startingPluginsRow = startingPluginsTable.addChild("tr");
 				startingPluginsRow.addChild("td", pluginProgress.getName());
 				startingPluginsRow.addChild("td", l10n("startingPluginStatus." + pluginProgress.getProgress().toString()));
@@ -420,9 +423,9 @@ public class PproxyToadlet extends Toadlet {
 			headerRow.addChild("th");
 			headerRow.addChild("th");
 			headerRow.addChild("th");
-			Iterator it = pm.getPlugins().iterator();
+			Iterator<PluginInfoWrapper> it = pm.getPlugins().iterator();
 			while (it.hasNext()) {
-				PluginInfoWrapper pi = (PluginInfoWrapper) it.next();
+				PluginInfoWrapper pi = it.next();
 				HTMLNode pluginRow = pluginTable.addChild("tr");
 				pluginRow.addChild("td", pi.getPluginClassName());
 				pluginRow.addChild("td", pi.getPluginVersion());
@@ -450,7 +453,7 @@ public class PproxyToadlet extends Toadlet {
 		}
 	}
 	
-	private void showOfficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode, List/*<String>*/ availablePlugins) {
+	private void showOfficialPluginLoader(ToadletContext toadletContext, HTMLNode contentNode, List<String> availablePlugins) {
 		/* box for "official" plugins. */
 		HTMLNode addOfficialPluginBox = contentNode.addChild("div", "class", "infobox infobox-normal");
 		addOfficialPluginBox.addChild("div", "class", "infobox-header", l10n("loadOfficialPlugin"));
@@ -461,9 +464,9 @@ public class PproxyToadlet extends Toadlet {
 		addOfficialForm.addChild("p").addChild("b").addChild("font", new String[] { "color" }, new String[] { "red" }, l10n("loadOfficialPluginWarning"));
 		addOfficialForm.addChild("#", (l10n("loadOfficialPluginLabel") + ": "));
 		HTMLNode selectNode = addOfficialForm.addChild("select", "name", "plugin-name");
-		Iterator/*<String>*/ availablePluginIterator = availablePlugins.iterator();
+		Iterator<String> availablePluginIterator = availablePlugins.iterator();
 		while (availablePluginIterator.hasNext()) {
-			String pluginName = (String) availablePluginIterator.next();
+			String pluginName = availablePluginIterator.next();
 			selectNode.addChild("option", "value", pluginName, pluginName);
 		}
 		addOfficialForm.addChild("#", " ");

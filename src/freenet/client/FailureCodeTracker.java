@@ -60,14 +60,16 @@ public class FailureCodeTracker {
 	final HashMap map = new HashMap();
 
 	public synchronized void inc(int k) {
-		Item i = (Item) map.get(k);
+		Integer key = k;
+		Item i = (Item) map.get(key);
 		if(i == null)
-			map.put(k, i = new Item());
+			map.put(key, i = new Item());
 		i.x++;
 		total++;
 	}
 
-	public synchronized void inc(Integer key, int val) {
+	public synchronized void inc(Integer k, int val) {
+		Integer key = k;
 		Item i = (Item) map.get(key);
 		if(i == null)
 			map.put(key, i = new Item());
@@ -76,7 +78,7 @@ public class FailureCodeTracker {
 	}
 	
 	public synchronized String toVerboseString() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		Collection values = map.keySet();
 		Iterator i = values.iterator();
 		while(i.hasNext()) {
@@ -92,7 +94,7 @@ public class FailureCodeTracker {
 	}
 
 	public synchronized String toString() {
-		StringBuffer sb = new StringBuffer(super.toString());
+		StringBuilder sb = new StringBuilder(super.toString());
 		sb.append(':');
 		if(map.size() == 0) sb.append("empty");
 		else if(map.size() == 1) {

@@ -442,7 +442,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		
 		@Override
 		public String getText() {
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			sb.append(l10n("intro")).append("\n\n");
 			PeerNode[][] nodes = getNodesSayBlown();
 			PeerNode[] nodesSayBlownConnected = nodes[0];

@@ -52,7 +52,7 @@ public class AddPeer extends FCPMessage {
 		}
 		String urlString = fs.get("URL");
 		String fileString = fs.get("File");
-		StringBuffer ref = null;
+		StringBuilder ref = null;
 		BufferedReader in;
 		if(urlString != null) {
 			try {
@@ -60,7 +60,7 @@ public class AddPeer extends FCPMessage {
 				URLConnection uc = url.openConnection();
 				// FIXME get charset from uc.getContentType()
 				in = new BufferedReader( new InputStreamReader(uc.getInputStream()));
-				ref = new StringBuffer(1024);
+				ref = new StringBuilder(1024);
 				String line;
 				while((line = in.readLine()) != null) {
 					line = line.trim();
@@ -72,7 +72,7 @@ public class AddPeer extends FCPMessage {
 			} catch (IOException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.URL_PARSE_ERROR, "IO error while retrieving ref URL <"+urlString+">: "+e.getMessage(), identifier, false);
 			}
-			ref = new StringBuffer(ref.toString().trim());
+			ref = new StringBuilder(ref.toString().trim());
 			if(ref == null) {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from URL <"+urlString+ '>', identifier, false);
 			}
@@ -91,7 +91,7 @@ public class AddPeer extends FCPMessage {
 			}
 			try {
 				in = new BufferedReader(new FileReader(f));
-				ref = new StringBuffer(1024);
+				ref = new StringBuilder(1024);
 				String line;
 				while((line = in.readLine()) != null) {
 					line = line.trim();
@@ -103,7 +103,7 @@ public class AddPeer extends FCPMessage {
 			} catch (IOException e) {
 				throw new MessageInvalidException(ProtocolErrorMessage.FILE_PARSE_ERROR, "IO error while retrieving ref file <"+fileString+">: "+e.getMessage(), identifier, false);
 			}
-			ref = new StringBuffer(ref.toString().trim());
+			ref = new StringBuilder(ref.toString().trim());
 			if(ref == null) {
 				throw new MessageInvalidException(ProtocolErrorMessage.REF_PARSE_ERROR, "Error parsing ref from file <"+fileString+ '>', identifier, false);
 			}

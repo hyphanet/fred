@@ -2,6 +2,7 @@ package freenet.node;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -61,8 +62,6 @@ public class NodeIPDetector {
 	private static IPUndetectedUserAlert primaryIPUndetectedAlert;
 	// FIXME redundant? see lastIPAddress
 	FreenetInetAddress[] lastIP;
-	/** If true, include local addresses on noderefs */
-	public boolean includeLocalAddressesInNoderefs;
 	/** Set when we have grounds to believe that we may be behind a symmetric NAT. */
 	boolean maybeSymmetric;
 	private boolean hasDetectedPM;
@@ -97,7 +96,7 @@ public class NodeIPDetector {
 	 * 
 	 * Will warn the user with a UserAlert if we don't have sufficient information.
 	 */
-	FreenetInetAddress[] detectPrimaryIPAddress() {
+	FreenetInetAddress[] detectPrimaryIPAddress(boolean dumpLocalAddresses) {
 		boolean addedValidIP = false;
 		Logger.minor(this, "Redetecting IPs...");
 		Vector addresses = new Vector();
@@ -131,6 +130,14 @@ public class NodeIPDetector {
 	   		hasValidIP = addedValidIP;
 	   	}
 	   	lastIPAddress = (FreenetInetAddress[]) addresses.toArray(new FreenetInetAddress[addresses.size()]);
+	   	if(dumpLocalAddresses) {
+	   		ArrayList filtered = new ArrayList(lastIPAddress.length);
+	   		for(int i=0;i<lastIPAddress.length;i++) {
+	   			if(IPUtil.isValidAddress(lastIPAddress[i].getAddress(), false))
+	   				filtered.add(lastIPAddress[i]);
+	   		}
+	   		return (FreenetInetAddress[]) filtered.toArray(new FreenetInetAddress[filtered.size()]);
+	   	}
 	   	return lastIPAddress;
 	}
 	
@@ -195,10 +202,16 @@ public class NodeIPDetector {
 		
 		// Try to pick it up from our connections
 		if(node.peers != null) {
-			PeerNode[] peerList = node.peers.connectedPeers;
+			PeerNode[] peerList = node.peers.myPeers;
 			HashMap countsByPeer = new HashMap();
 			// FIXME use a standard mutable int object, we have one somewhere
 			for(int i=0;i<peerList.length;i++) {
+				if(!peerList[i].isConnected()) continue;
+				if(!peerList[i].isRealConnection()) {
+					// Only let seed server connections through.
+					// We have to trust them anyway.
+					if(!(peerList[i] instanceof SeedServerPeerNode)) continue;
+				}
 				Peer p = peerList[i].getRemoteDetectedPeer();
 				if(p == null || p.isNull()) continue;
 				FreenetInetAddress addr = p.getFreenetAddress();
@@ -242,7 +255,12 @@ public class NodeIPDetector {
 					}
 				}
 				if(best != null) {
-					if((bestPopularity > 1) || (detectedAddrs.length == 0)) {
+					boolean hasRealDetectedAddress = false;
+					for(int i=0;i<detectedAddrs.length;i++) {
+						if(IPUtil.isValidAddress(detectedAddrs[i], false))
+							hasRealDetectedAddress = true;
+					}
+					if((bestPopularity > 1) || !hasRealDetectedAddress) {
  						if(!addresses.contains(best)) {
 							Logger.minor(this, "Adding best peer "+best+" ("+bestPopularity+ ')');
 							addresses.add(best);
@@ -272,8 +290,8 @@ public class NodeIPDetector {
 		return L10n.getString("NodeIPDetector."+key, pattern, value);
 	}
 
-	FreenetInetAddress[] getPrimaryIPAddress() {
-		if(lastIPAddress == null) return detectPrimaryIPAddress();
+	FreenetInetAddress[] getPrimaryIPAddress(boolean dumpLocal) {
+		if(lastIPAddress == null) return detectPrimaryIPAddress(dumpLocal);
 		return lastIPAddress;
 	}
 	
@@ -310,7 +328,7 @@ public class NodeIPDetector {
 	}
 
 	public void redetectAddress() {
-		FreenetInetAddress[] newIP = detectPrimaryIPAddress();
+		FreenetInetAddress[] newIP = detectPrimaryIPAddress(false);
 		NodeIPPortDetector[] detectors;
 		synchronized(this) {
 			if(Arrays.equals(newIP, lastIP)) return;
@@ -324,10 +342,6 @@ public class NodeIPDetector {
 
 	public void setOldIPAddress(FreenetInetAddress freenetAddress) {
 		this.oldIPAddress = freenetAddress;
-	}
-
-	public boolean includeLocalAddressesInNoderefs() {
-		return includeLocalAddressesInNoderefs;
 	}
 
 	public int registerConfigs(SubConfig nodeConfig, int sortOrder) {
@@ -432,23 +446,6 @@ public class NodeIPDetector {
 				oldIPAddress = null;
 			}
 		}
-		
-		// Include local IPs in noderef file
-		
-		nodeConfig.register("includeLocalAddressesInNoderefs", false, sortOrder++, true, false, "NodeIPDectector.inclLocalAddress", "NodeIPDectector.inclLocalAddressLong", new BooleanCallback() {
-
-			public Boolean get() {
-				return includeLocalAddressesInNoderefs;
-			}
-
-			public void set(Boolean val) throws InvalidConfigValueException {
-				includeLocalAddressesInNoderefs = val;
-				lastIPAddress = null;
-				ipDetector.clearCached();
-			}
-		});
-		
-		includeLocalAddressesInNoderefs = nodeConfig.getBoolean("includeLocalAddressesInNoderefs");
 		
 		return sortOrder;
 	}

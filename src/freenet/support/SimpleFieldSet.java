@@ -1,13 +1,17 @@
 package freenet.support;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
@@ -20,10 +24,6 @@ import java.util.Map;
 import freenet.node.FSParseException;
 import freenet.support.io.Closer;
 import freenet.support.io.LineReader;
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 
 /**
  * @author amphibian
@@ -224,17 +224,17 @@ public class SimpleFieldSet {
      * Put contents of a fieldset, overwrite old values.
      */
     public void putAllOverwrite(SimpleFieldSet fs) {
-    	Iterator i = fs.values.keySet().iterator();
+    	Iterator<String> i = fs.values.keySet().iterator();
     	while(i.hasNext()) {
-    		String key = (String) i.next();
+    		String key = i.next();
     		String hisVal = fs.values.get(key);
     		values.put(key, hisVal); // overwrite old
     	}
     	if(fs.subsets == null) return;
-	if(subsets == null) subsets = new HashMap();
+	if(subsets == null) subsets = new HashMap<String, SimpleFieldSet>();
     	i = fs.subsets.keySet().iterator();
     	while(i.hasNext()) {
-    		String key = (String) i.next();
+    		String key = i.next();
     		SimpleFieldSet hisFS = fs.subsets.get(key);
     		SimpleFieldSet myFS = subsets.get(key);
     		if(myFS != null) {
@@ -308,7 +308,7 @@ public class SimpleFieldSet {
 			String after = key.substring(idx+1);
 			SimpleFieldSet fs = null;
 			if(subsets == null)
-				subsets = new HashMap();
+				subsets = new HashMap<String, SimpleFieldSet>();
 			fs = subsets.get(before);
 			if(fs == null) {
 				fs = new SimpleFieldSet(shortLived);
@@ -365,10 +365,10 @@ public class SimpleFieldSet {
      * @warning keep in mind that a Writer is not necessarily UTF-8!!
      */
     synchronized void writeTo(Writer w, String prefix, boolean noEndMarker) throws IOException {
-    	for(Iterator i = values.entrySet().iterator();i.hasNext();) {
-            Map.Entry entry = (Map.Entry) i.next();
-            String key = (String) entry.getKey();
-            String value = (String) entry.getValue();
+    	for (Iterator<Map.Entry<String, String>> i = values.entrySet().iterator(); i.hasNext();) {
+            Map.Entry<String, String> entry = i.next();
+			String key = entry.getKey();
+			String value = entry.getValue();
             w.write(prefix);
             w.write(key);
             w.write(KEYVALUE_SEPARATOR_CHAR);
@@ -376,10 +376,10 @@ public class SimpleFieldSet {
             w.write('\n');
     	}
     	if(subsets != null) {
-    		for(Iterator i = subsets.entrySet().iterator();i.hasNext();) {
-    			Map.Entry entry = (Map.Entry) i.next();
-    			String key = (String) entry.getKey();
-    			SimpleFieldSet subset = (SimpleFieldSet) entry.getValue();
+    		for (Iterator<Map.Entry<String, SimpleFieldSet>> i = subsets.entrySet().iterator(); i.hasNext();) {
+				Map.Entry<String, SimpleFieldSet> entry = i.next();
+				String key = entry.getKey();
+				SimpleFieldSet subset = entry.getValue();
     			if(subset == null) throw new NullPointerException();
     			subset.writeTo(w, prefix+key+MULTI_LEVEL_CHAR, true);
     		}
@@ -480,7 +480,7 @@ public class SimpleFieldSet {
 		return fs;
 	}
 	
-	public Iterator keyIterator() {
+	public Iterator<String> keyIterator() {
 		return new KeyIterator("");
 	}
 
@@ -488,14 +488,13 @@ public class SimpleFieldSet {
 		return new KeyIterator(prefix);
 	}
         
-        public Iterator toplevelKeyIterator() {
+        public Iterator<String> toplevelKeyIterator() {
             return values.keySet().iterator();
         }
 	
-    public class KeyIterator implements Iterator {
-    	
-    	final Iterator valuesIterator;
-    	final Iterator subsetIterator;
+    public class KeyIterator implements Iterator<String> {    	
+    	final Iterator<String> valuesIterator;
+    	final Iterator<String> subsetIterator;
     	KeyIterator subIterator;
     	String prefix;
     	
@@ -518,7 +517,7 @@ public class SimpleFieldSet {
     			while(true) {
     				if(valuesIterator != null && valuesIterator.hasNext()) break;
     				if(subsetIterator == null || !subsetIterator.hasNext()) break;
-    				String name = (String) subsetIterator.next();
+    				String name = subsetIterator.next();
     				if(name == null) continue;
     				SimpleFieldSet fs = subsets.get(name);
     				if(fs == null) continue;
@@ -538,7 +537,7 @@ public class SimpleFieldSet {
 					if((subIterator != null) && subIterator.hasNext()) return true;
 					if(subIterator != null) subIterator = null;
 					if(subsetIterator != null && subsetIterator.hasNext()) {
-						String key = (String) subsetIterator.next();
+						String key = subsetIterator.next();
 						SimpleFieldSet fs = subsets.get(key);
 						String newPrefix = prefix + key + MULTI_LEVEL_CHAR;
 						subIterator = fs.keyIterator(newPrefix);
@@ -548,7 +547,7 @@ public class SimpleFieldSet {
 			}
 		}
 
-		public final Object next() {
+		public final String next() {
 			return nextKey();
 		}
 		
@@ -563,7 +562,7 @@ public class SimpleFieldSet {
 					if(subIterator != null && subIterator.hasNext()) {
 						// If we have a retval, and we have a next value, return
 						if(ret != null) return ret;
-						ret = (String) subIterator.next();
+						ret = subIterator.next();
 						if(subIterator.hasNext())
 							// If we have a retval, and we have a next value, return
 							if(ret != null) return ret;
@@ -571,7 +570,7 @@ public class SimpleFieldSet {
 					// Otherwise, we need to get a new subIterator (or hasNext() will return false)
 					subIterator = null;
 					if(subsetIterator != null && subsetIterator.hasNext()) {
-						String key = (String) subsetIterator.next();
+						String key = subsetIterator.next();
 						SimpleFieldSet fs = subsets.get(key);
 						String newPrefix = prefix + key + MULTI_LEVEL_CHAR;
 						subIterator = fs.keyIterator(newPrefix);
@@ -601,7 +600,7 @@ public class SimpleFieldSet {
 		if(fs.isEmpty()) // can't just no-op, because caller might add the FS then populate it...
 			throw new IllegalArgumentException("Empty");
 		if(subsets == null)
-			subsets = new HashMap();
+			subsets = new HashMap<String, SimpleFieldSet>();
 		if(subsets.containsKey(key))
 			throw new IllegalArgumentException("Already contains "+key+" but trying to add a SimpleFieldSet!");
 		if(!shortLived) key = key.intern();
@@ -665,7 +664,7 @@ public class SimpleFieldSet {
 		return values.isEmpty() && (subsets == null || subsets.isEmpty());
 	}
 
-	public Iterator directSubsetNameIterator() {
+	public Iterator<String> directSubsetNameIterator() {
 		return (subsets == null) ? null : subsets.keySet().iterator();
 	}
 

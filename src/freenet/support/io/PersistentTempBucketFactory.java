@@ -4,6 +4,7 @@
 package freenet.support.io;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -17,7 +18,6 @@ import freenet.crypt.RandomSource;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import java.io.FileFilter;
 
 /**
  * Handles persistent temp files. These are used for e.g. persistent downloads.
@@ -31,7 +31,7 @@ import java.io.FileFilter;
 public class PersistentTempBucketFactory implements BucketFactory, PersistentFileTracker {
 
 	/** Original contents of directory */
-	private HashSet originalFiles;
+	private HashSet<File> originalFiles;
 	
 	/** Filename generator */
 	public final FilenameGenerator fg;
@@ -41,7 +41,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	private transient Random weakPRNG;
 	
 	/** Buckets to free */
-	private LinkedList bucketsToFree;
+	private LinkedList<Bucket> bucketsToFree;
 	
 	private final long nodeDBHandle;
 	
@@ -62,7 +62,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		}
 		if(!dir.isDirectory())
 			throw new IOException("Directory is not a directory: "+dir);
-		originalFiles = new HashSet();
+		originalFiles = new HashSet<File>();
 		File[] files = dir.listFiles(new FileFilter() {
 
 			public boolean accept(File pathname) {
@@ -81,7 +81,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			originalFiles.add(f);
 		}
 		
-		bucketsToFree = new LinkedList();
+		bucketsToFree = new LinkedList<Bucket>();
 	}
 	
 	public void init(File dir, String prefix, RandomSource strongPRNG, Random weakPRNG) throws IOException {
@@ -109,7 +109,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		// So keep all the temp files for now.
 		// FIXME: tidy up unwanted temp files.
 		
-//		Iterator i = originalFiles.iterator();
+//		Iterator<File> i = originalFiles.iterator();
 //		while(i.hasNext()) {
 //			File f = (File) (i.next());
 //			if(Logger.shouldLog(Logger.MINOR, this))
@@ -134,10 +134,10 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		}
 	}
 
-	public LinkedList grabBucketsToFree() {
+	public LinkedList<Bucket> grabBucketsToFree() {
 		synchronized(this) {
-			LinkedList toFree = bucketsToFree;
-			bucketsToFree = new LinkedList();
+			LinkedList<Bucket> toFree = bucketsToFree;
+			bucketsToFree = new LinkedList<Bucket>();
 			return toFree;
 		}
 	}

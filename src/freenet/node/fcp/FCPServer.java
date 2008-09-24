@@ -11,8 +11,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.Vector;
+import java.util.List;
 import java.util.WeakHashMap;
 import java.util.zip.GZIPInputStream;
 
@@ -71,7 +73,7 @@ public class FCPServer implements Runnable {
 	String bindTo;
 	private String allowedHosts;
 	AllowedHosts allowedHostsFullAccess;
-	final WeakHashMap clientsByName;
+	final WeakHashMap<String, FCPClient> clientsByName;
 	final FCPClient globalRebootClient;
 	final FCPClient globalForeverClient;
 	private boolean enablePersistentDownloads;
@@ -102,7 +104,7 @@ public class FCPServer implements Runnable {
 		this.core = core;
 		this.assumeDownloadDDAIsAllowed = assumeDDADownloadAllowed;
 		this.assumeUploadDDAIsAllowed = assumeDDAUploadAllowed;
-		clientsByName = new WeakHashMap();
+		clientsByName = new WeakHashMap<String, FCPClient>();
 		
 		// This one is only used to get the default settings. Individual FCP conns
 		// will make their own.
@@ -480,7 +482,7 @@ public class FCPServer implements Runnable {
 	public FCPClient registerRebootClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
 		FCPClient oldClient;
 		synchronized(this) {
-			oldClient = (FCPClient) clientsByName.get(name);
+			oldClient = clientsByName.get(name);
 			if(oldClient == null) {
 				// Create new client
 				FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_REBOOT, null, null);
@@ -588,7 +590,7 @@ public class FCPServer implements Runnable {
 	}
 
 	public ClientRequest[] getGlobalRequests(ObjectContainer container) {
-		Vector v = new Vector();
+		List<ClientRequest> v = new ArrayList<ClientRequest>();
 		globalRebootClient.addPersistentRequests(v, false, null);
 		globalForeverClient.addPersistentRequests(v, false, container);
 		return (ClientRequest[]) v.toArray(new ClientRequest[v.size()]);
@@ -844,7 +846,7 @@ public class FCPServer implements Runnable {
 		File f = new File(core.getDownloadDir(), preferredWithExt);
 		File f1 = new File(core.getDownloadDir(), preferredWithExt + ".freenet-tmp");
 		int x = 0;
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for(;f.exists() || f1.exists();sb.setLength(0)) {
 			sb.append(preferred);
 			sb.append('-');
@@ -877,7 +879,7 @@ public class FCPServer implements Runnable {
 		
 		FCPClient[] clients;
 		synchronized(this) {
-			clients = (FCPClient[]) clientsByName.values().toArray(new FCPClient[clientsByName.size()]);
+			clients = clientsByName.values().toArray(new FCPClient[clientsByName.size()]);
 		}
 		
 		for(int i=0;i<clients.length;i++) {

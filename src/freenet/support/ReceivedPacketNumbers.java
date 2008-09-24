@@ -15,13 +15,13 @@ import java.util.ListIterator;
  */
 public class ReceivedPacketNumbers {
 
-    final LinkedList ranges;
+    final LinkedList<Range> ranges;
     int lowestSeqNumber;
     int highestSeqNumber;
     final int horizon;
     
     public ReceivedPacketNumbers(int horizon) {
-        ranges = new LinkedList();
+        ranges = new LinkedList<Range>();
         lowestSeqNumber = -1;
         highestSeqNumber = -1;
         this.horizon = horizon;
@@ -56,20 +56,20 @@ public class ReceivedPacketNumbers {
             ranges.addFirst(r);
             return true;
         } else {
-            ListIterator li = ranges.listIterator();
-            Range r = (Range)li.next();
+            ListIterator<Range> li = ranges.listIterator();
+			Range r = li.next();
             int firstSeq = r.end;
             if(seqNumber - firstSeq > horizon) {
                 // Delete first item
                 li.remove();
-                r = (Range)li.next();
+                r = li.next();
                 lowestSeqNumber = r.start;
             }
             while(true) {
                 if(seqNumber == r.start-1) {
                     r.start--;
                     if(li.hasPrevious()) {
-                        Range r1 = (Range) li.previous();
+                        Range r1 = li.previous();
                         if(r1.end == seqNumber-1) {
                             r.start = r1.start;
                             li.remove();
@@ -99,7 +99,7 @@ public class ReceivedPacketNumbers {
                 if(seqNumber == r.end+1) {
                     r.end++;
                     if(li.hasNext()) {
-                        Range r1 = (Range) li.next();
+                        Range r1 = li.next();
                         if(r1.start == seqNumber+1) {
                             r.end = r1.end;
                             li.remove();
@@ -118,7 +118,7 @@ public class ReceivedPacketNumbers {
                         return true;
                     }
                 }
-                r = (Range) li.next();
+                r = li.next();
             }
         }
     }
@@ -137,10 +137,10 @@ public class ReceivedPacketNumbers {
             return true;
         if(highestSeqNumber - seqNumber > horizon)
             return true; // Assume we have since out of window
-        Iterator i = ranges.iterator();
+        Iterator<Range> i = ranges.iterator();
         Range last = null;
         for(;i.hasNext();) {
-            Range r = (Range)i.next();
+            Range r = i.next();
             if(r.start > r.end) {
                 Logger.error(this, "Bad Range: "+r);
             }
@@ -161,7 +161,7 @@ public class ReceivedPacketNumbers {
     }
     
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(super.toString());
         sb.append(": max=");
         synchronized(this) {
@@ -169,9 +169,9 @@ public class ReceivedPacketNumbers {
 			sb.append(", min=");
 			sb.append(lowestSeqNumber);
 			sb.append(", ranges=");
-            Iterator i = ranges.iterator();
+            Iterator<Range> i = ranges.iterator();
             while(i.hasNext()) {
-                Range r = (Range) i.next();
+                Range r = i.next();
                 sb.append(r.start);
                 sb.append('-');
                 sb.append(r.end);

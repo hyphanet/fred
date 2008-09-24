@@ -218,7 +218,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 			// would be much easier if we had a component-wise constructor for URI that didn't 
 			// re-encode, but at least it works...
 			
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			sb.append(path);
 			if(typeOverride != null) {
 				sb.append("?type=");

@@ -56,6 +56,7 @@ public class AddressTracker {
 	private long timeDefinitelyNoPacketsSent;
 	
 	private boolean isBroken;
+	private long brokenTime;
 	
 	public static AddressTracker create(long lastBootID, File nodeDir, int port) {
 		File data = new File(nodeDir, "packets-"+port+".dat");
@@ -191,7 +192,8 @@ public class AddressTracker {
 	
 	public static final int DEFINITELY_PORT_FORWARDED = 2;
 	public static final int MAYBE_PORT_FORWARDED = 1;
-	public static final int DEFINITELY_NATED = -1;
+	public static final int MAYBE_NATED = -1;
+	public static final int DEFINITELY_NATED = -2;
 	public static final int DONT_KNOW = 0;
 	
 	/** If the minimum gap is at least this, we might be port forwarded. 
@@ -229,20 +231,33 @@ public class AddressTracker {
 	
 	public int getPortForwardStatus() {
 		long minGap = getLongestSendReceiveGap(HORIZON);
-		if(isBroken) return DEFINITELY_NATED;
+		
 		if(minGap > DEFINITELY_TUNNEL_LENGTH)
 			return DEFINITELY_PORT_FORWARDED;
 		if(minGap > MAYBE_TUNNEL_LENGTH)
 			return MAYBE_PORT_FORWARDED;
+		// Only take isBroken into account if we're not sure.
+		// Somebody could be playing with us by sending bogus FNPSentPackets...
+		synchronized(this) {
+			if(isBroken()) return DEFINITELY_NATED;
+			if(minGap == 0 && timePresumeGuilty > 0 && System.currentTimeMillis() > timePresumeGuilty)
+				return MAYBE_NATED;
+		}
 		return DONT_KNOW;
 	}
 	
+	private boolean isBroken() {
+		return System.currentTimeMillis() - brokenTime < HORIZON;
+	}
+
 	public static String statusString(int status) {
 		switch(status) {
 		case DEFINITELY_PORT_FORWARDED:
 			return "Port forwarded";
 		case MAYBE_PORT_FORWARDED:
 			return "Maybe port forwarded";
+		case MAYBE_NATED:
+			return "Maybe behind NAT";
 		case DEFINITELY_NATED:
 			return "Behind NAT";
 		case DONT_KNOW:
@@ -255,7 +270,7 @@ public class AddressTracker {
 	/** Persist the table to disk */
 	public void storeData(long bootID, File nodeDir, int port) {
 		// Don't write to disk if we know we're NATed anyway!
-		if(isBroken) return;
+		if(isBroken()) return;
 		File data = new File(nodeDir, "packets-"+port+".dat");
 		File dataBak = new File(nodeDir, "packets-"+port+".bak");
 		data.delete();
@@ -314,6 +329,17 @@ public class AddressTracker {
 	}
 
 	public synchronized void setBroken() {
-		isBroken = true;
+		brokenTime = System.currentTimeMillis();
+	}
+
+	private long timePresumeGuilty = -1;
+	
+	public synchronized void setPresumedGuiltyAt(long l) {
+		if(timePresumeGuilty <= 0)
+			timePresumeGuilty = l;
+	}
+
+	public synchronized void setPresumedInnocent() {
+		timePresumeGuilty = -1;
 	}
 }

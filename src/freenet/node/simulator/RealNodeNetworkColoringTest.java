@@ -79,21 +79,21 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
         for(int i=0;i<NUMBER_OF_NODES;i++) {
 			allNodes[totalNodes] =
             subnetA[i] = 
-            	NodeStarter.createTestNode(5001+totalNodes, 0, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0, ENABLE_FOAF, false);
+            	NodeStarter.createTestNode(5001+totalNodes, 0, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0, ENABLE_FOAF, false, null);
 			totalNodes++;
             Logger.normal(RealNodeRoutingTest.class, "Created 'A' node "+totalNodes);
         }
         for(int i=0;i<NUMBER_OF_NODES;i++) {
 			allNodes[totalNodes] =
             subnetB[i] = 
-			NodeStarter.createTestNode(5001+totalNodes, 0, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0, ENABLE_FOAF, false);
+			NodeStarter.createTestNode(5001+totalNodes, 0, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0, ENABLE_FOAF, false, null);
 			totalNodes++;
             Logger.normal(RealNodeRoutingTest.class, "Created 'B' node "+totalNodes);
         }
 		for(int i=0;i<BRIDGES;i++) {
 			allNodes[totalNodes] =
             bridges[i] = 
-			NodeStarter.createTestNode(5001+totalNodes, 0, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0,ENABLE_FOAF, false);
+			NodeStarter.createTestNode(5001+totalNodes, 0, wd, false, true, true, MAX_HTL, 0 /* no dropped packets */, random, executor, 500*NUMBER_OF_NODES, storeSize, true, true, false, false, false, false, true, 0,ENABLE_FOAF, false, null);
 			totalNodes++;
             Logger.normal(RealNodeRoutingTest.class, "Created bridge node "+totalNodes);
         }
@@ -243,7 +243,7 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
 		//Print out the number which are non-zero & display the distinct ones if a few...
 		int size=ids.size();
 		int MAX=6;
-		StringBuffer sb=new StringBuffer(Integer.toString(size)).append("/").append(Integer.toString(targetNum));
+		StringBuilder sb=new StringBuilder(Integer.toString(size)).append("/").append(Integer.toString(targetNum));
 		sb.append(" ids (").append(group).append(") = ");
 		Iterator iter=ids.iterator();
 		for (int i=0; i<=MAX && i<size; i++) {

@@ -102,7 +102,7 @@ public class Inet6AddressMatcher implements AddressMatcher {
 	}
 
 	private String convertToString(byte[] addr) {
-		StringBuffer sb = new StringBuffer(4*8+7);
+		StringBuilder sb = new StringBuilder(4*8+7);
 		for(int i=0;i<8;i++) {
 			if(i != 0) sb.append(':');
 			int token = ((addr[i*2] & 0xff) << 8) + (addr[i*2+1] & 0xff);

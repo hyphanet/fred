@@ -148,8 +148,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			 * whitespace -> (1)
 			 * </p>
 			 */
-			StringBuffer b = new StringBuffer(100);
-			StringBuffer balt = new StringBuffer(4000);
+			StringBuilder b = new StringBuilder(100);
+			StringBuilder balt = new StringBuilder(4000);
 			Vector splitTag = new Vector();
 			String currentTag = null;
 			char pprevC = 0;
@@ -356,11 +356,11 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		boolean killStyle = false;
 		int styleScriptRecurseCount = 0;
 		String currentStyleScriptChunk = "";
-		StringBuffer writeAfterTag = new StringBuffer(1024);
+		StringBuilder writeAfterTag = new StringBuilder(1024);
 	}
 
 
-	void saveText(StringBuffer s, String tagName, Writer w, HTMLParseContext pc)
+	void saveText(StringBuilder s, String tagName, Writer w, HTMLParseContext pc)
 		throws IOException {
 		
 		if(pc.noOutput) return;
@@ -386,7 +386,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			pc.currentStyleScriptChunk += style;
 			return; // is parsed and written elsewhere
 		}
-		StringBuffer out = new StringBuffer(s.length()*2);
+		StringBuilder out = new StringBuilder(s.length()*2);
 		for(int i=0;i<s.length();i++) {
 			char c = s.charAt(i);
 			if(c == '<') {
@@ -426,7 +426,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				t.write(w);
 				if (pc.writeAfterTag.length() > 0) {
 					w.write(pc.writeAfterTag.toString());
-					pc.writeAfterTag = new StringBuffer(1024);
+					pc.writeAfterTag = new StringBuilder(1024);
 				}
 			} else
 				pc.writeStyleScriptWithTag = false;
@@ -436,7 +436,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 	}
 
-	void saveComment(StringBuffer s, Writer w, HTMLParseContext pc)
+	void saveComment(StringBuilder s, Writer w, HTMLParseContext pc)
 		throws IOException {
 		if(pc.noOutput) return;
 		if((s.length() > 3) && (s.charAt(0) == '!') && (s.charAt(1) == '-') && (s.charAt(2) == '-')) {
@@ -458,7 +458,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			pc.killTag = false;
 			return;
 		}
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for(int i=0;i<s.length();i++) {
 			char c = s.charAt(i);
 			if(c == '<') {
@@ -551,7 +551,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		public String toString() {
 			if (element == null)
 				return "";
-			StringBuffer sb = new StringBuffer("<");
+			StringBuilder sb = new StringBuilder("<");
 			if (startSlash)
 				sb.append('/');
 			sb.append(element);
@@ -1215,7 +1215,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 					y = (String) o;
 				else
 					y = null;
-				StringBuffer out = new StringBuffer(x);
+				StringBuilder out = new StringBuilder(x);
 				if (y != null)
 					out.append( "=\"" ).append( y ).append( '"' );
 				outAttrs[i++] = out.toString();
@@ -1964,7 +1964,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static String escapeQuotes(String s) {
-		StringBuffer buf = new StringBuffer(s.length());
+		StringBuilder buf = new StringBuilder(s.length());
 		for (int x = 0; x < s.length(); x++) {
 			char c = s.charAt(x);
 			if (c == '\"') {

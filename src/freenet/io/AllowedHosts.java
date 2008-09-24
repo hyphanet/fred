@@ -84,7 +84,7 @@ public class AllowedHosts {
 	}
 
 	public synchronized String getAllowedHosts() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for(int i=0;i<addressMatchers.size();i++) {
 			AddressMatcher matcher = (AddressMatcher) addressMatchers.get(i);
 			if(matcher instanceof EverythingMatcher) return "*";

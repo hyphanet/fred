@@ -37,7 +37,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 		
 		UpdateThingy ut = createUpdateThingy();
 
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		
 		sb.append(ut.firstBit);
 		
@@ -87,7 +87,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 	}
 	
 	private UpdateThingy createUpdateThingy() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append(l10n("notLatest"));
 		sb.append(' ');
 		

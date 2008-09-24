@@ -8,6 +8,8 @@ import java.net.UnknownHostException;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
+import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
+import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.support.Logger;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
@@ -22,6 +24,8 @@ import freenet.support.api.StringCallback;
  */
 public class NodeCryptoConfig {
 
+	private final boolean isOpennet;
+	
 	/** Port number. -1 = choose a random available port number at activation time. */
 	private int portNumber;
 	
@@ -47,7 +51,11 @@ public class NodeCryptoConfig {
 	 * aggressive handshakes (every 10-30 seconds). */
 	private boolean assumeNATed;
 	
-	NodeCryptoConfig(SubConfig config, int sortOrder, boolean onePerIP) throws NodeInitException {
+	/** If true, include local addresses on noderefs */
+	public boolean includeLocalAddressesInNoderefs;
+	
+	NodeCryptoConfig(SubConfig config, int sortOrder, boolean isOpennet, SecurityLevels securityLevels) throws NodeInitException {
+		this.isOpennet = isOpennet;
 		
 		config.register("listenPort", -1 /* means random */, sortOrder++, true, true, "Node.port", "Node.portLong",	new IntCallback() {
 			public Integer get() {
@@ -119,7 +127,7 @@ public class NodeCryptoConfig {
 		});
 		dropProbability = config.getInt("testingDropPacketsEvery"); 
 		
-		config.register("oneConnectionPerIP", onePerIP, sortOrder++, true, false, "Node.oneConnectionPerIP", "Node.oneConnectionPerIPLong",
+		config.register("oneConnectionPerIP", isOpennet, sortOrder++, true, false, "Node.oneConnectionPerIP", "Node.oneConnectionPerIPLong",
 				new BooleanCallback() {
 
 					public Boolean get() {
@@ -137,7 +145,23 @@ public class NodeCryptoConfig {
 		});
 		oneConnectionPerAddress = config.getBoolean("oneConnectionPerIP");
 		
-		config.register("alwaysAllowLocalAddresses", false, sortOrder++, true, false, "Node.alwaysAllowLocalAddresses", "Node.alwaysAllowLocalAddressesLong",
+		if(isOpennet) {
+			securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+
+				public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
+					// Might be useful for nodes on the same NAT etc, so turn it off for LOW. Otherwise is sensible.
+					// It's always off on darknet, since we can reasonably expect to know our peers, even if we are paranoid
+					// about them!
+					if(newLevel == NETWORK_THREAT_LEVEL.LOW)
+						oneConnectionPerAddress = false;
+					if(oldLevel == NETWORK_THREAT_LEVEL.LOW)
+						oneConnectionPerAddress = true;
+				}
+				
+			});
+		}
+		
+		config.register("alwaysAllowLocalAddresses", !isOpennet, sortOrder++, true, false, "Node.alwaysAllowLocalAddresses", "Node.alwaysAllowLocalAddressesLong",
 				new BooleanCallback() {
 
 					public Boolean get() {
@@ -154,6 +178,19 @@ public class NodeCryptoConfig {
 		});
 		alwaysAllowLocalAddresses = config.getBoolean("alwaysAllowLocalAddresses");
 		
+		if(!isOpennet) {
+			securityLevels.addFriendsThreatLevelListener(new SecurityLevelListener<FRIENDS_THREAT_LEVEL>() {
+
+				public void onChange(FRIENDS_THREAT_LEVEL oldLevel, FRIENDS_THREAT_LEVEL newLevel) {
+					if(newLevel == FRIENDS_THREAT_LEVEL.HIGH)
+						alwaysAllowLocalAddresses = false;
+					if(oldLevel == FRIENDS_THREAT_LEVEL.HIGH)
+						alwaysAllowLocalAddresses = false;
+				}
+				
+			});
+		}
+		
 		config.register("assumeNATed", true, sortOrder++, true, true, "Node.assumeNATed", "Node.assumeNATedLong", new BooleanCallback() {
 
 			public Boolean get() {
@@ -165,6 +202,22 @@ public class NodeCryptoConfig {
 			}		
 		});
 		assumeNATed = config.getBoolean("assumeNATed");
+		
+		// Include local IPs in noderef file
+		
+		config.register("includeLocalAddressesInNoderefs", !isOpennet, sortOrder++, true, false, "NodeIPDectector.inclLocalAddress", "NodeIPDectector.inclLocalAddressLong", new BooleanCallback() {
+
+			public Boolean get() {
+				return includeLocalAddressesInNoderefs;
+			}
+
+			public void set(Boolean val) throws InvalidConfigValueException {
+				includeLocalAddressesInNoderefs = val;
+			}
+		});
+		
+		includeLocalAddressesInNoderefs = config.getBoolean("includeLocalAddressesInNoderefs");
+		
 	}
 
 	/** The number of config options i.e. the amount to increment sortOrder by */
@@ -230,4 +283,9 @@ public class NodeCryptoConfig {
 	public boolean alwaysHandshakeAggressively() {
 		return assumeNATed;
 	}
+	
+	public boolean includeLocalAddressesInNoderefs() {
+		return includeLocalAddressesInNoderefs;
+	}
+
 }

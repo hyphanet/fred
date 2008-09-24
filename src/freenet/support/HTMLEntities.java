@@ -17,28 +17,22 @@ package freenet.support;
 
 import java.util.HashMap;
 
-
 /**
- * Class that provides data structures filled with
- * HTML Entities and correspondant char value
+ * Class that provides data structures filled with HTML Entities and correspondent char value
  * 
  * @author Alberto Bacchelli &lt;sback@freenetproject.org&gt;
  */
 public final class HTMLEntities {
-	
+
 	/**
-	 * a Map where the HTML Entity is the
-	 * value and the correspondant char is
-	 * the key
+	 * a Map where the HTML Entity is the value and the correspondent char is the key
 	 */
-	public static final HashMap encodeMap;
-	
+	public static final HashMap<Character, String> encodeMap;
+
 	/**
-	 * a Map where the HTML Entity is the
-	 * key and the correspondant char is
-	 * the value
+	 * a Map where the HTML Entity is the key and the correspondent char is the value
 	 */
-	public static final HashMap decodeMap;
+	public static final HashMap<String, Character> decodeMap;
 	
 	private static final Object[][] charArray = {
 		{new Character((char)0), "#0"},
@@ -315,12 +309,12 @@ public final class HTMLEntities {
 	
 	
 	static {
-		encodeMap = new HashMap();
-		decodeMap = new HashMap();
+		encodeMap = new HashMap<Character, String>();
+		decodeMap = new HashMap<String, Character>();
 		
 		for(int i=0; i<charArray.length; i++) {
-			encodeMap.put(charArray[i][0],charArray[i][1]);
-			decodeMap.put(charArray[i][1],charArray[i][0]);
+			encodeMap.put((Character) charArray[i][0], (String) charArray[i][1]);
+			decodeMap.put((String) charArray[i][1], (Character) charArray[i][0]);
 		}
 		
 	}

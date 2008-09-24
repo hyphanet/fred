@@ -31,7 +31,6 @@ import freenet.clients.http.filter.FoundURICallback;
 import freenet.clients.http.filter.GenericReadFilterCallback;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
-import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.io.xfer.AbortedException;
@@ -52,6 +51,7 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.L10n;
+import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.FCPServer;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -293,6 +293,28 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 						0, 2, 1, 0, 0, new SimpleEventProducer(),
 						!Node.DONT_CACHE_LOCAL_REQUESTS), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
+		node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
+
+			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
+				if(newLevel == PHYSICAL_THREAT_LEVEL.LOW) {
+					if(tempBucketFactory.isEncrypting()) {
+						tempBucketFactory.setEncryption(false);
+					}
+					if(persistentTempBucketFactory.isEncrypting()) {
+						persistentTempBucketFactory.setEncryption(false);
+					}
+				} else { // newLevel == PHYSICAL_THREAT_LEVEL.NORMAL
+					if(!tempBucketFactory.isEncrypting()) {
+						tempBucketFactory.setEncryption(true);
+					}
+					if(!persistentTempBucketFactory.isEncrypting()) {
+						persistentTempBucketFactory.setEncryption(true);
+					}
+				}
+			}
+			
+		});
+		
 		// Downloads directory
 
 		nodeConfig.register("downloadsDir", "downloads", sortOrder++, true, true, "NodeClientCore.downloadDir", "NodeClientCore.downloadDirLong", new StringCallback() {
@@ -362,23 +384,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 				}
 			});
 		setUploadAllowedDirs(nodeConfig.getStringArr("uploadAllowedDirs"));
-
-		nodeConfig.register("maxArchiveSize", "2MiB", sortOrder++, true, false, "NodeClientCore.maxArchiveSize", "NodeClientCore.maxArchiveSizeLong", new LongCallback() {
-
-			@Override
-			public Long get() {
-				return archiveManager.getMaxArchiveSize();
-			}
-
-			@Override
-			public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
-				if (get().equals(val))
-					        return;
-				archiveManager.setMaxArchiveSize(val);
-			}
-		});
 		
-		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, nodeConfig.getLong("maxArchiveSize"), MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, tempBucketFactory);
+		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, tempBucketFactory);
 		Logger.normal(this, "Initializing USK Manager");
 		System.out.println("Initializing USK Manager");
 		uskManager.init(container, clientContext);

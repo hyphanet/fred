@@ -34,7 +34,7 @@ public class HexUtil {
 	public static final String bytesToHex(byte[] bs, int off, int length) {
 		if (bs.length <= off || bs.length < off+length)
 			throw new IllegalArgumentException();
-		StringBuffer sb = new StringBuffer(length * 2);
+		StringBuilder sb = new StringBuilder(length * 2);
 		bytesToHexAppend(bs, off, length, sb);
 		return sb.toString();
 	}
@@ -43,7 +43,7 @@ public class HexUtil {
 		byte[] bs,
 		int off,
 		int length,
-		StringBuffer sb) {
+		StringBuilder sb) {
 		if (bs.length <= off || bs.length < off+length)
 			throw new IllegalArgumentException();
 		sb.ensureCapacity(sb.length() + length * 2);
@@ -117,8 +117,8 @@ public class HexUtil {
 	public final static byte[] bitsToBytes(BitSet ba, int size) {
 		int bytesAlloc = countBytesForBits(size);
 		byte[] b = new byte[bytesAlloc];
-		StringBuffer sb =null;
-		if(logDEBUG) sb = new StringBuffer(8*bytesAlloc); //TODO: Should it be 2*8*bytesAlloc here?
+		StringBuilder sb =null;
+		if(logDEBUG) sb = new StringBuilder(8*bytesAlloc); //TODO: Should it be 2*8*bytesAlloc here?
 		for(int i=0;i<b.length;i++) {
 			short s = 0;
 			for(int j=0;j<8;j++) {

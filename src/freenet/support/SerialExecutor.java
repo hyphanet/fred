@@ -7,7 +7,7 @@ import freenet.support.io.NativeThread;
 
 public class SerialExecutor implements Executor {
 
-	private final LinkedList jobs;
+	private final LinkedList<Runnable> jobs;
 	private final int priority;
 	private boolean waiting;
 	
@@ -41,7 +41,7 @@ public class SerialExecutor implements Executor {
 							return;
 						}
 					}
-					job = (Runnable) jobs.removeFirst();
+					job = jobs.removeFirst();
 				}
 				try {
 					job.run();
@@ -55,7 +55,7 @@ public class SerialExecutor implements Executor {
 	};
 	
 	public SerialExecutor(int priority) {
-		jobs = new LinkedList();
+		jobs = new LinkedList<Runnable>();
 		this.priority = priority;
 	}
 	

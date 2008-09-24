@@ -179,7 +179,7 @@ public class ToadletContextImpl implements ToadletContext {
 			mvt.put("connection", "close");
 		else
 			mvt.put("connection", "keep-alive");
-		StringBuffer buf = new StringBuffer(1024);
+		StringBuilder buf = new StringBuilder(1024);
 		buf.append("HTTP/1.1 ");
 		buf.append(replyCode);
 		buf.append(' ');
@@ -215,7 +215,7 @@ public class ToadletContextImpl implements ToadletContext {
 	 * send something as close to the spec as possible in case of broken clients... 
 	 */
 	private static String fixKey(String key) {
-		StringBuffer sb = new StringBuffer(key.length());
+		StringBuilder sb = new StringBuilder(key.length());
 		char prev = 0;
 		for(int i=0;i<key.length();i++) {
 			char c = key.charAt(i);

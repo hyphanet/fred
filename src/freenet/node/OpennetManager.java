@@ -236,6 +236,7 @@ public class OpennetManager {
 		crypto.stop();
 		if(purge)
 			node.peers.removeOpennetPeers();
+		crypto.socket.getAddressTracker().setPresumedInnocent();
 	}
 
 	public OpennetPeerNode addNewOpennetNode(SimpleFieldSet fs) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {

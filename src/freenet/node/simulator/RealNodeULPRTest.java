@@ -93,7 +93,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         Executor executor = new PooledExecutor();
         for(int i=0;i<NUMBER_OF_NODES;i++) {
             nodes[i] = 
-            	NodeStarter.createTestNode(5000+i, 0, testName, false, true, true, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 1024*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, true, true, 0, ENABLE_FOAF, false);
+            	NodeStarter.createTestNode(5000+i, 0, testName, false, true, true, MAX_HTL, 20 /* 5% */, random, executor, 500*NUMBER_OF_NODES, 1024*1024, true, ENABLE_SWAPPING, false, ENABLE_ULPRS, ENABLE_PER_NODE_FAILURE_TABLES, true, true, 0, ENABLE_FOAF, false, null);
             Logger.normal(RealNodeRoutingTest.class, "Created node "+i);
         }
         SimpleFieldSet refs[] = new SimpleFieldSet[NUMBER_OF_NODES];
@@ -220,7 +220,7 @@ public class RealNodeULPRTest extends RealNodeTest {
         // Now we should have a good web of subscriptions set up.
         
         int visitedCount = 0;
-        StringBuffer sb = new StringBuffer(3*nodes.length+1);
+        StringBuilder sb = new StringBuilder(3*nodes.length+1);
         boolean first = true;
         for(int i=0;i<visited.length;i++) {
         	if(!visited[i]) continue;

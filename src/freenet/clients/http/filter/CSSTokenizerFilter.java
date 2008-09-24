@@ -965,11 +965,11 @@ class CSSTokenizerFilter {
 				quote = q;
 				s = s.substring(1);
 			} else quote = ' ';
-			StringBuffer buffer = new StringBuffer();
+			StringBuilder buffer = new StringBuilder();
 			int x = 0;
 			boolean justEscaping = false;
 			boolean stillEscaping = false;
-			StringBuffer hexEscape = new StringBuffer();
+			StringBuilder hexEscape = new StringBuilder();
 			while(x < s.length()) {
 				char c = s.charAt(x);
 				x++;
@@ -1006,7 +1006,7 @@ class CSSTokenizerFilter {
 							buffer.append(c);
 						}
 						stillEscaping = false;
-						hexEscape = new StringBuffer();
+						hexEscape = new StringBuilder();
 					} else {
 						int d = Integer.parseInt(hexEscape.toString(),
 									 16);
@@ -1024,7 +1024,7 @@ class CSSTokenizerFilter {
 						}
 						buffer.append(c);
 						stillEscaping = false;
-						hexEscape = new StringBuffer();
+						hexEscape = new StringBuilder();
 					}
 				} else {
 					if(quote != ' ' && c == quote) {
@@ -1048,7 +1048,7 @@ class CSSTokenizerFilter {
 		}
 		
 		public String toString() {
-			StringBuffer out = new StringBuffer();
+			StringBuilder out = new StringBuilder();
 			if(url) out.append("url(");
 			if(quote != ' ') out.append(quote);
 			out.append(unescapeData());
@@ -1059,7 +1059,7 @@ class CSSTokenizerFilter {
 		}
 		
 		public String unescapeData() {
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			for(int i=0;i<data.length();i++) {
 				char c = data.charAt(i);
 				if(c == quote || c == '\n') {
@@ -1072,7 +1072,7 @@ class CSSTokenizerFilter {
 	}
 	
 	String commentEncode(String s) {
-		StringBuffer sb = new StringBuffer(s.length());
+		StringBuilder sb = new StringBuilder(s.length());
 		for(int i=0;i<s.length();i++) {
 			char c = s.charAt(i);
 			if(c == '/')
@@ -1566,7 +1566,7 @@ class CSSTokenizerFilter {
         case 55: break;
         case 22: 
           { String s = yytext();
-	StringBuffer sb = new StringBuffer(s.length());
+	StringBuilder sb = new StringBuilder(s.length());
 	sb.append("/* ");
 	boolean inPrefix = true;
 	for(int i=2;i<s.length()-2;i++) {

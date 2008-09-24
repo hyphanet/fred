@@ -16,14 +16,13 @@ import freenet.support.Logger;
 /**
  * Collection of UserAlert's.
  */
-public class UserAlertManager implements Comparator {
-
-	private final HashSet alerts;
+public class UserAlertManager implements Comparator<UserAlert> {
+	private final HashSet<UserAlert> alerts;
 	private final NodeClientCore core;
 
 	public UserAlertManager(NodeClientCore core) {
 		this.core = core;
-		alerts = new LinkedHashSet();
+		alerts = new LinkedHashSet<UserAlert>();
 	}
 
 	public void register(UserAlert alert) {
@@ -67,15 +66,13 @@ public class UserAlertManager implements Comparator {
 	public UserAlert[] getAlerts() {
 		UserAlert[] a;
 		synchronized (alerts) {
-			a = (UserAlert[]) alerts.toArray(new UserAlert[alerts.size()]);
+			a = alerts.toArray(new UserAlert[alerts.size()]);
 		}
 		Arrays.sort(a, this);
 		return a;
 	}
 
-	public int compare(Object arg0, Object arg1) {
-		UserAlert a0 = (UserAlert) arg0;
-		UserAlert a1 = (UserAlert) arg1;
+	public int compare(UserAlert a0, UserAlert a1) {
 		if(a0 == a1) return 0; // common case, also we should be consistent with == even with proxyuseralert's
 		short prio0 = a0.getPriorityClass();
 		short prio1 = a1.getPriorityClass();
@@ -158,7 +155,7 @@ public class UserAlertManager implements Comparator {
 		if(drawDumpEventsForm) {
 			HTMLNode dumpFormNode = contentNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("div");
 			dumpFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			for(int i=0;i<currentAlerts.length;i++) {
 				if(!currentAlerts[i].isEventNotification()) continue;
 				if(sb.length() != 0)
@@ -211,7 +208,7 @@ public class UserAlertManager implements Comparator {
 	}
 
 	/**
-	 * Write the alert summary as HTML to a StringBuffer
+	 * Write the alert summary as HTML to a StringBuilder
 	 */
 	public HTMLNode createSummary() {
 		short highestLevel = 99;
@@ -244,7 +241,7 @@ public class UserAlertManager implements Comparator {
 		
 		boolean separatorNeeded = false;
 		int messageTypes=0;
-		StringBuffer alertSummaryString = new StringBuffer(1024);
+		StringBuilder alertSummaryString = new StringBuilder(1024);
 		if (numberOfCriticalError != 0) {
 			alertSummaryString.append(l10n("criticalErrorCountLabel")).append(' ').append(numberOfCriticalError);
 			separatorNeeded = true;
@@ -298,7 +295,7 @@ public class UserAlertManager implements Comparator {
 		return L10n.getString("UserAlertManager."+key);
 	}
 
-	public void dumpEvents(HashSet toDump) {
+	public void dumpEvents(HashSet<String> toDump) {
 		// An iterator might be faster, but we don't want to call methods on the alert within the lock.
 		UserAlert[] alerts = getAlerts();
 		for(int i=0;i<alerts.length;i++) {

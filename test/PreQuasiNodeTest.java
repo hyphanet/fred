@@ -133,7 +133,7 @@ public class PreQuasiNodeTest {
                     content = line;
                 } else {
                     // Multiple line insert
-                    StringBuffer sb = new StringBuffer(1000);
+                    StringBuilder sb = new StringBuilder(1000);
                     while(true) {
                         line = reader.readLine();
                         if(line.equals(".")) break;

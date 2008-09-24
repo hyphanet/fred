@@ -2,7 +2,7 @@ package freenet.support;
 
 import java.util.Comparator;
 
-public class NumberedItemComparator implements Comparator {
+public class NumberedItemComparator implements Comparator<Object> {
 
 	public NumberedItemComparator(boolean wrap) {
 		this.wrapAround = wrap;

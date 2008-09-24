@@ -218,18 +218,16 @@ public class FCPClient {
 		return !(runningPersistentRequests.isEmpty() && completedUnackedRequests.isEmpty());
 	}
 
-	public void addPersistentRequests(Vector v, boolean onlyForever, ObjectContainer container) {
+	public void addPersistentRequests(List<ClientRequest> v, boolean onlyForever, ObjectContainer container) {
 		assert((persistenceType == ClientRequest.PERSIST_FOREVER) == (container != null));
 		synchronized(this) {
-			Iterator i = runningPersistentRequests.iterator();
+			Iterator<ClientRequest> i = runningPersistentRequests.iterator();
 			while(i.hasNext()) {
 				ClientRequest req = (ClientRequest) i.next();
 				if(req.isPersistentForever() || !onlyForever)
 					v.add(req);
 			}
-			Object[] unacked = completedUnackedRequests.toArray();
-			for(int j=0;j<unacked.length;j++)
-				v.add(unacked[j]);
+			v.addAll(completedUnackedRequests);
 		}
 	}
 

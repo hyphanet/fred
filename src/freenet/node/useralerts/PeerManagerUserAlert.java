@@ -161,7 +161,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 
 	static public String replaceCareful(String text, String find, String replace) {
 		String[] split = text.split(find, -1);
-		StringBuffer sb = new StringBuffer(); // FIXME calculate size
+		StringBuilder sb = new StringBuilder(); // FIXME calculate size
 		for(int i=0;i<split.length;i++) {
 			sb.append(split[i]);
 			if(i < split.length - 1)

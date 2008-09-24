@@ -28,7 +28,7 @@ public class CountingBloomFilter extends BloomFilter {
 	 */
 	public CountingBloomFilter(int length, int k) {
 		super(length, k);
-		filter = ByteBuffer.allocate(length / 8 * 2);
+		filter = ByteBuffer.allocate(this.length / 4);
 	}
 
 	/**
@@ -42,7 +42,7 @@ public class CountingBloomFilter extends BloomFilter {
 	 */
 	protected CountingBloomFilter(File file, int length, int k) throws IOException {
 		super(length, k);
-		int fileLength = length / 8 * 2;
+		int fileLength = length / 4;
 		if (!file.exists() || file.length() != fileLength)
 			needRebuild = true;
 

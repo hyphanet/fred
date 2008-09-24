@@ -95,13 +95,6 @@ public class PeerManager {
 		}
 	};
 	
-	/**
-	 * Track the number of times a PeerNode has been selected by the routing algorithm
-	 * @see PeerNode.numberOfSelections
-	 */
-	private SortedSet<Long> numberOfSelectionSamples = new TreeSet<Long>();
-	private final Object numberOfSelectionSamplesSync = new Object();
-	
 	public static final int PEER_NODE_STATUS_CONNECTED = 1;
 	public static final int PEER_NODE_STATUS_ROUTING_BACKED_OFF = 2;
 	public static final int PEER_NODE_STATUS_TOO_NEW = 3;
@@ -881,6 +874,15 @@ public class PeerManager {
 
 		long now = System.currentTimeMillis();
 		int count = 0;
+		
+		Long selectionSamplesTimestamp = now - PeerNode.SELECTION_SAMPLING_PERIOD;
+		double[] selectionRates = new double[peers.length];
+		double totalSelectionRate = 0.0;
+		for(int i=0;i<peers.length;i++) {
+			selectionRates[i] = peers[i].selectionRate();
+			totalSelectionRate += selectionRates[i];
+		}
+		boolean enableFOAFMitigationHack = (peers.length >= PeerNode.SELECTION_MIN_PEERS) && (totalSelectionRate > 0.0);
 		for(int i = 0; i < peers.length; i++) {
 			PeerNode p = peers[i];
 			if(routedTo.contains(p)) {
@@ -903,6 +905,16 @@ public class PeerManager {
 					Logger.minor(this, "Skipping old version: " + p.getPeer());
 				continue;
 			}
+			if(enableFOAFMitigationHack) {
+				double selectionRate = selectionRates[i];
+				double selectionSamplesPercentage = selectionRate / totalSelectionRate;
+				if(PeerNode.SELECTION_PERCENTAGE_WARNING < selectionSamplesPercentage) {
+					if(logMINOR)
+						Logger.minor(this, "Skipping over-selectionned peer(" + selectionSamplesPercentage + "%): " + p.getPeer());
+					continue;
+				}
+			}
+			
 			long timeout = -1;
 			if(entry != null)
 				timeout = entry.getTimeoutTime(p);
@@ -912,7 +924,7 @@ public class PeerManager {
 			double diff = Location.distance(loc, target);
 			
 			double[] peersLocation = p.getPeersLocation();
-			if((node.shallWeRouteAccordingToOurPeersLocation()) && (peersLocation != null)) {
+			if((peersLocation != null) && (node.shallWeRouteAccordingToOurPeersLocation())) {
 				for(double l : peersLocation) {
 					double newDiff = Location.distance(l, target);
 					if(newDiff < diff) {
@@ -1022,7 +1034,7 @@ public class PeerManager {
 	 * @return Some status information
 	 */
 	public String getStatus() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = myPeers;
@@ -1044,7 +1056,7 @@ public class PeerManager {
 	 * @return TMCI peer list
 	 */
 	public String getTMCIPeerList() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = myPeers;
@@ -1063,7 +1075,7 @@ public class PeerManager {
 	}
 
 	public String getFreevizOutput() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = myPeers;
@@ -1876,19 +1888,8 @@ public class PeerManager {
 		return null;
 	}
 	
-	public SortedSet<Long> getNumberOfSelectionSamples() {
-		synchronized (numberOfSelectionSamplesSync) {
-			return new TreeSet<Long>(numberOfSelectionSamples);
-		}
-	}
-		
 	private void incrementSelectionSamples(long now, PeerNode pn) {
 		// TODO: reimplement with a bit field to spare memory
-		synchronized (numberOfSelectionSamplesSync) {
-			if(numberOfSelectionSamples.size() > PeerNode.SELECTION_MAX_SAMPLES * OpennetManager.MAX_PEERS_FOR_SCALING)
-				numberOfSelectionSamples = numberOfSelectionSamples.tailSet(now - PeerNode.SELECTION_SAMPLING_PERIOD);
-			numberOfSelectionSamples.add(now);
-			pn.incrementNumberOfSelections(now);
-		}
+		pn.incrementNumberOfSelections(now);
 	}
 }

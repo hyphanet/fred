@@ -6,15 +6,14 @@ import java.util.NoSuchElementException;
 /** We kept remaking this everywhere so wtf.
   * @author tavin
   */
-public final class LimitedEnumeration implements Enumeration {
-
-    private Object next;
+public final class LimitedEnumeration<T> implements Enumeration<T> {
+	private T next;
     
     public LimitedEnumeration() {
         next = null;
     }
 
-    public LimitedEnumeration(Object loner) {
+    public LimitedEnumeration(T loner) {
         next = loner;
     }
         
@@ -22,7 +21,7 @@ public final class LimitedEnumeration implements Enumeration {
         return next != null;
     }
     
-    public final Object nextElement() {
+    public final T nextElement() {
         if (next == null) throw new NoSuchElementException();
         try {
             return next;

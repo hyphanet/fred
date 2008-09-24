@@ -86,7 +86,7 @@ public class BitArray implements WritableToDataOutputStream {
 	}
 
 	public String toString() {
-		StringBuffer sb = new StringBuffer(this._size);
+		StringBuilder sb = new StringBuilder(this._size);
 		for (int x=0; x<_size; x++) {
 			if (bitAt(x)) {
 				sb.append('1');

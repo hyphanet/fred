@@ -6,14 +6,14 @@
 
 package freenet.crypt;
 
-import freenet.node.FNPPacketMangler;
 import java.math.BigInteger;
 import java.util.Random;
 import java.util.Stack;
 
+import net.i2p.util.NativeBigInteger;
+import freenet.node.FNPPacketMangler;
 import freenet.support.Logger;
 import freenet.support.io.NativeThread;
-import net.i2p.util.NativeBigInteger;
 
 public class DiffieHellman {
 
@@ -145,7 +145,7 @@ public class DiffieHellman {
 	 * @see http://securitytracker.com/alerts/2005/Aug/1014739.html
 	 * @see http://www.it.iitb.ac.in/~praj/acads/netsec/FinalReport.pdf
 	 */
-	public static boolean checkDHExponentialValidity(Class caller, BigInteger exponential) {
+	public static boolean checkDHExponentialValidity(Class<?> caller, BigInteger exponential) {
 		int onesCount=0, zerosCount=0;
 		
 		// Ensure that we have at least 16 bits of each gender

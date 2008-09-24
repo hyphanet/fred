@@ -13,7 +13,7 @@ import java.util.HashMap;
  */
 public class StringCounter {
 
-	private final HashMap map;
+	private final HashMap<String, Item> map;
 	
 	private static class Item {
 		public Item(String string2) {
@@ -24,11 +24,11 @@ public class StringCounter {
 	}
 	
 	public StringCounter() {
-		map = new HashMap();
+		map = new HashMap<String, Item>();
 	}
 	
 	public synchronized void inc(String string) {
-		Item item = (Item) map.get(string);
+		Item item = map.get(string);
 		if(item == null) {
 			item = new Item(string);
 			item.counter = 1;
@@ -38,21 +38,19 @@ public class StringCounter {
 	}
 	
 	public int get(String string) {
-		Item item = (Item) map.get(string);
+		Item item = map.get(string);
 		if(item == null) return 0;
 		return item.counter;
 	}
 	
 	private synchronized Item[] items() {
-		return (Item[]) map.values().toArray(new Item[map.size()]);
+		return map.values().toArray(new Item[map.size()]);
 	}
 	
 	private synchronized Item[] sortedItems(final boolean ascending) {
 		Item[] items = items();
-		Arrays.sort(items, new Comparator() {
-			public int compare(Object arg0, Object arg1) {
-				Item it0 = (Item)arg0;
-				Item it1 = (Item)arg1;
+		Arrays.sort(items, new Comparator<Item>() {
+			public int compare(Item it0, Item it1) {
 				int ret;
 				if(it0.counter > it1.counter) ret = 1;
 				else if(it0.counter < it1.counter) ret = -1;
@@ -66,7 +64,7 @@ public class StringCounter {
 	
 	public String toLongString() {
 		Item[] items = sortedItems(false);
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for(int i=0;i<items.length;i++) {
 			if(i!=0) sb.append('\n');
 			Item it = items[i];

@@ -153,16 +153,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** Time added or restarted (reset on startup unlike peerAddedTime) */
 	private long timeAddedOrRestarted;
 	
-	/**
-	 * Track the number of times this PeerNode has been selected by
-	 * the routing algorithm over a given period of time
-	 */
-	private SortedSet<Long> numberOfSelections = new TreeSet<Long>();
-	private final Object numberOfSelectionsSync = new Object();
+	private long countSelectionsSinceConnected = 0;
 	// 5mins; yes it's alchemy!
 	public static final int SELECTION_SAMPLING_PERIOD = 5 * 60 * 1000;
 	// 30%; yes it's alchemy too! and probably *way* too high to serve any purpose
 	public static final int SELECTION_PERCENTAGE_WARNING = 30;
+	// Minimum number of routable peers to have for the selection code to have any effect
+	public static final int SELECTION_MIN_PEERS = 5;
 	// Should be good enough provided we don't get selected more than 10 times per/sec
 	// Lower the following value if you want to spare memory... or better switch from a TreeSet to a bit field.
 	public static final int SELECTION_MAX_SAMPLES = 10 * SELECTION_SAMPLING_PERIOD / 1000; 
@@ -780,7 +777,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		if(localHandshakeIPs == null)
 			return "null";
-		StringBuffer toOutputString = new StringBuffer(1024);
+		StringBuilder toOutputString = new StringBuilder(1024);
 		boolean needSep = false;
 		toOutputString.append("[ ");
 		for(int i = 0; i < localHandshakeIPs.length; i++) {
@@ -1467,7 +1464,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public boolean isBurstOnly() {
 		int status = outgoingMangler.getConnectivityStatus();
 		if(status == AddressTracker.DONT_KNOW) return false;
-		if(status == AddressTracker.DEFINITELY_NATED) return false;
+		if(status == AddressTracker.DEFINITELY_NATED || status == AddressTracker.MAYBE_NATED) return false;
 		
 		// For now. FIXME try it with a lower probability when we're sure that the packet-deltas mechanisms works.
 		if(status == AddressTracker.MAYBE_PORT_FORWARDED) return false;
@@ -1895,6 +1892,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			// Don't reset the uptime if we rekey
 			if(!isConnected) {
 				connectedTime = now;
+				countSelectionsSinceConnected = 0;
 				sentInitialMessages = false;
 			} else
 				wasARekey = true;
@@ -3611,95 +3609,118 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * Handle an FNPSentPackets message
 	 */
 	public void handleSentPackets(Message m) {
-		long now = System.currentTimeMillis();
-		synchronized(this) {
-			if(forceDisconnectCalled)
-				return;
-			if(now - this.timeLastConnected < SENT_PACKETS_MAX_TIME_AFTER_CONNECT)
-				return;
-		}
-		long baseTime = m.getLong(DMT.TIME);
-		baseTime += this.clockDelta;
-		// Should be a reasonable approximation now
-		int[] timeDeltas = Fields.bytesToInts(((ShortBuffer) m.getObject(DMT.TIME_DELTAS)).getData());
-		long[] packetHashes = Fields.bytesToLongs(((ShortBuffer) m.getObject(DMT.HASHES)).getData());
-		long[] times = new long[timeDeltas.length];
-		for(int i = 0; i < times.length; i++)
-			times[i] = baseTime - timeDeltas[i];
-		long tolerance = 60 * 1000 + (Math.abs(timeDeltas[0]) / 20); // 1 minute or 5% of full interval
-		synchronized(this) {
-			// They are in increasing order
-			// Loop backwards
-			long otime = Long.MAX_VALUE;
-			long[][] sent = getSentPacketTimesHashes();
-			long[] sentTimes = sent[0];
-			long[] sentHashes = sent[1];
-			short sentPtr = (short) (sent.length - 1);
-			short notFoundCount = 0;
-			short consecutiveNotFound = 0;
-			short longestConsecutiveNotFound = 0;
-			//The arrays are constructed from received data, don't throw an ArrayIndexOutOfBoundsException if they are different sizes.
-			int shortestArray=times.length;
-			if (shortestArray > packetHashes.length)
-				shortestArray = packetHashes.length;
-			for(short i = (short) (shortestArray-1); i >= 0; i--) {	
-				long time = times[i];
-				if(time > otime) {
-					Logger.error(this, "Inconsistent time order: [" + i + "]=" + time + " but [" + (i + 1) + "] is " + otime);
-					return;
-				} else
-					otime = time;
-				long hash = packetHashes[i];
-				// Search for the hash.
-				short match = -1;
-				// First try forwards
-				for(short j = sentPtr; j < sentTimes.length; j++) {
-					long ttime = sentTimes[j];
-					if(sentHashes[j] == hash) {
-						match = j;
-						sentPtr = j;
-						break;
-					}
-					if(ttime - time > tolerance)
-						break;
-				}
-				if(match == -1)
-					for(short j = (short) (sentPtr - 1); j >= 0; j--) {
-						long ttime = sentTimes[j];
-						if(sentHashes[j] == hash) {
-							match = j;
-							sentPtr = j;
-							break;
-						}
-						if(time - ttime > tolerance)
-							break;
-					}
-				if(match == -1) {
-					// Not found
-					consecutiveNotFound++;
-					notFoundCount++;
-				} else {
-					if(consecutiveNotFound > longestConsecutiveNotFound)
-						longestConsecutiveNotFound = consecutiveNotFound;
-					consecutiveNotFound = 0;
-				}
-			}
-			if(consecutiveNotFound > longestConsecutiveNotFound)
-				longestConsecutiveNotFound = consecutiveNotFound;
-			if(consecutiveNotFound > TRACK_PACKETS / 2) {
-				manyPacketsClaimedSentNotReceived = true;
-				Logger.error(this, "" + consecutiveNotFound + " consecutive packets not found on " + userToString());
-				SocketHandler handler = outgoingMangler.getSocketHandler();
-				if(handler instanceof PortForwardSensitiveSocketHandler) {
-					((PortForwardSensitiveSocketHandler) handler).rescanPortForward();
-				}
-			}
-		}
-		if(manyPacketsClaimedSentNotReceived) {
-			outgoingMangler.setPortForwardingBroken();
-		}
+		
+		// IMHO it's impossible to make this work reliably on lossy connections, especially highly saturated upstreams.
+		// If it was possible it would likely involve a lot of work, refactoring, voting between peers, marginal results,
+		// very slow accumulation of data etc.
+		
+//		long now = System.currentTimeMillis();
+//		synchronized(this) {
+//			if(forceDisconnectCalled)
+//				return;
+//			/*
+//			 * I've had some very strange results from seed clients!
+//			 * One showed deltas of over 10 minutes... how is that possible? The PN wouldn't reconnect?!
+//			 */
+//			if(!isRealConnection())
+//				return; // The packets wouldn't have been assigned to this PeerNode!
+////			if(now - this.timeLastConnected < SENT_PACKETS_MAX_TIME_AFTER_CONNECT)
+////				return;
+//		}
+//		long baseTime = m.getLong(DMT.TIME);
+//		baseTime += this.clockDelta;
+//		// Should be a reasonable approximation now
+//		int[] timeDeltas = Fields.bytesToInts(((ShortBuffer) m.getObject(DMT.TIME_DELTAS)).getData());
+//		long[] packetHashes = Fields.bytesToLongs(((ShortBuffer) m.getObject(DMT.HASHES)).getData());
+//		long[] times = new long[timeDeltas.length];
+//		for(int i = 0; i < times.length; i++)
+//			times[i] = baseTime - timeDeltas[i];
+//		long tolerance = 60 * 1000 + (Math.abs(timeDeltas[0]) / 20); // 1 minute or 5% of full interval
+//		synchronized(this) {
+//			// They are in increasing order
+//			// Loop backwards
+//			long otime = Long.MAX_VALUE;
+//			long[][] sent = getRecvPacketTimesHashes();
+//			long[] sentTimes = sent[0];
+//			long[] sentHashes = sent[1];
+//			short sentPtr = (short) (sent.length - 1);
+//			short notFoundCount = 0;
+//			short consecutiveNotFound = 0;
+//			short longestConsecutiveNotFound = 0;
+//			short ignoredUptimeCount = 0;
+//			short found = 0;
+//			//The arrays are constructed from received data, don't throw an ArrayIndexOutOfBoundsException if they are different sizes.
+//			int shortestArray=times.length;
+//			if (shortestArray > packetHashes.length)
+//				shortestArray = packetHashes.length;
+//			for(short i = (short) (shortestArray-1); i >= 0; i--) {	
+//				long time = times[i];
+//				if(time > otime) {
+//					Logger.error(this, "Inconsistent time order: [" + i + "]=" + time + " but [" + (i + 1) + "] is " + otime);
+//					return;
+//				} else
+//					otime = time;
+//				long hash = packetHashes[i];
+//				// Search for the hash.
+//				short match = -1;
+//				// First try forwards
+//				for(short j = sentPtr; j < sentTimes.length; j++) {
+//					long ttime = sentTimes[j];
+//					if(sentHashes[j] == hash) {
+//						match = j;
+//						sentPtr = j;
+//						break;
+//					}
+//					if(ttime - time > tolerance)
+//						break;
+//				}
+//				if(match == -1)
+//					for(short j = (short) (sentPtr - 1); j >= 0; j--) {
+//						long ttime = sentTimes[j];
+//						if(sentHashes[j] == hash) {
+//							match = j;
+//							sentPtr = j;
+//							break;
+//						}
+//						if(time - ttime > tolerance)
+//							break;
+//					}
+//				if(match == -1) {
+//					long mustHaveBeenUpAt = now - (int)(timeDeltas[i] * 1.1) - 100;
+//					if(this.crypto.socket.getStartTime() > mustHaveBeenUpAt) {
+//						ignoredUptimeCount++;
+//					} else {
+//						// Not found
+//						consecutiveNotFound++;
+//						notFoundCount++;
+//					}
+//				} else {
+//					if(consecutiveNotFound > longestConsecutiveNotFound)
+//						longestConsecutiveNotFound = consecutiveNotFound;
+//					consecutiveNotFound = 0;
+//					found++;
+//				}
+//			}
+//			if(consecutiveNotFound > longestConsecutiveNotFound)
+//				longestConsecutiveNotFound = consecutiveNotFound;
+//			Logger.error(this, "Packets: "+packetHashes.length+" not found "+notFoundCount+" consecutive not found "+consecutiveNotFound+" longest consecutive not found "+longestConsecutiveNotFound+" ignored due to uptime: "+ignoredUptimeCount+" found: "+found);
+//			if(longestConsecutiveNotFound > TRACK_PACKETS / 2) {
+//				manyPacketsClaimedSentNotReceived = true;
+//				timeManyPacketsClaimedSentNotReceived = now;
+//				Logger.error(this, "" + consecutiveNotFound + " consecutive packets not found on " + userToString());
+//				SocketHandler handler = outgoingMangler.getSocketHandler();
+//				if(handler instanceof PortForwardSensitiveSocketHandler) {
+//					((PortForwardSensitiveSocketHandler) handler).rescanPortForward();
+//				}
+//			}
+//		}
+//		if(manyPacketsClaimedSentNotReceived) {
+//			outgoingMangler.setPortForwardingBroken();
+//		}
 	}
 	private boolean manyPacketsClaimedSentNotReceived = false;
+	
+	private long timeManyPacketsClaimedSentNotReceived;
 
 	synchronized boolean manyPacketsClaimedSentNotReceived() {
 		return manyPacketsClaimedSentNotReceived;
@@ -3993,20 +4014,21 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return (short)(((int)uptime) & 0xFF);
 	}
 	
-	public SortedSet<Long> getNumberOfSelections() {
-		// FIXME: returning a copy is not an option: find a smarter way of dealing with the synchronization
-		synchronized(numberOfSelectionsSync) {
-			return numberOfSelections;
-		}
-	}
-	
 	public void incrementNumberOfSelections(long time) {
 		// TODO: reimplement with a bit field to spare memory
-		synchronized(numberOfSelectionsSync) {
-			if(numberOfSelections.size() > SELECTION_MAX_SAMPLES)
-				numberOfSelections = numberOfSelections.tailSet(time - SELECTION_SAMPLING_PERIOD);
-			numberOfSelections.add(time);
+		synchronized(this) {
+			countSelectionsSinceConnected++;
 		}
+	}
+
+	/**
+	 * @return The rate at which this peer has been selected since it connected.
+	 */
+	public synchronized double selectionRate() {
+		long uptime = System.currentTimeMillis() - this.connectedTime;
+		// Avoid bias due to short uptime.
+		if(uptime < 10*1000) return 0.0;
+		return countSelectionsSinceConnected / (double) uptime;
 	}
 
 	private long offeredMainJarVersion;

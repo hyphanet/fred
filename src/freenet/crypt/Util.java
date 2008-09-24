@@ -8,14 +8,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Random;
 
+import net.i2p.util.NativeBigInteger;
 import freenet.crypt.ciphers.Rijndael;
 import freenet.support.HexUtil;
 import freenet.support.Loader;
-import java.security.MessageDigest;
-import net.i2p.util.NativeBigInteger;
 
 public class Util {
 
@@ -230,7 +230,7 @@ public class Util {
 		try {
 			return (BlockCipher) Loader.getInstance(
 				"freenet.crypt.ciphers." + name,
-				new Class[] { Integer.class },
+				new Class<?>[] { Integer.class },
 				new Object[] { new Integer(keySize)});
 		} catch (Exception e) {
 			//throw new UnsupportedCipherException(""+e);

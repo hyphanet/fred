@@ -104,9 +104,10 @@ public class LimitedRangeIntByteArrayMap {
             minValue = index;
         }
         if(data == null) throw new NullPointerException();
-        LimitedRangeIntByteArrayMapElement le = contents.get(index);
+        Integer idx = index;
+		LimitedRangeIntByteArrayMapElement le = contents.get(idx);
         if(le == null)
-        	contents.put(index, new LimitedRangeIntByteArrayMapElement(index, data, callbacks, priority));
+        	contents.put(idx, new LimitedRangeIntByteArrayMapElement(idx, data, callbacks, priority));
         else
         	le.reput();
         notifyAll();
@@ -206,10 +207,9 @@ public class LimitedRangeIntByteArrayMap {
     public synchronized byte[][] grabAllBytes() {
         int len = contents.size();
         byte[][] output = new byte[len][];
-        Iterator i = contents.values().iterator();
         int count = 0;
-        while(i.hasNext()) {
-            output[count++] = (byte[])i.next();
+        for (LimitedRangeIntByteArrayMapElement o : contents.values()) {
+			output[count++] = o.data;
         }
         clear();
         return output;
@@ -218,10 +218,10 @@ public class LimitedRangeIntByteArrayMap {
     public synchronized LimitedRangeIntByteArrayMapElement[] grabAll() {
         int len = contents.size();
         LimitedRangeIntByteArrayMapElement[] output = new LimitedRangeIntByteArrayMapElement[len];
-        Iterator i = contents.values().iterator();
+        Iterator<LimitedRangeIntByteArrayMapElement> i = contents.values().iterator();
         int count = 0;
         while(i.hasNext()) {
-            output[count++] = (LimitedRangeIntByteArrayMapElement)i.next();
+            output[count++] = i.next();
         }
         clear();
         return output;

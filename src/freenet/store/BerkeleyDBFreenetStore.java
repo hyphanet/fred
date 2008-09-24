@@ -65,7 +65,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	private final RandomSource random;
 
 	private final Environment environment;
-	private final TupleBinding storeBlockTupleBinding;
+	private final TupleBinding<StoreBlock> storeBlockTupleBinding;
 	private final File fixSecondaryFile;
 	
 	private long blocksInStore = 0;
@@ -445,11 +445,11 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	}
 	
 	private void maybeSlowShrink(boolean dontCheckForHoles, boolean inStartUp) throws DatabaseException, IOException {
-		List wantedKeep = new ArrayList(); // keep; content is wanted, and is in the right place
-		List unwantedIgnore = new ArrayList(); // ignore; content is not wanted, and is not in the right place
-		List wantedMove = new ArrayList(); // content is wanted, but is in the wrong part of the store
-		List unwantedMove = new ArrayList(); // content is not wanted, but is in the part of the store we will keep
-		List alreadyDropped = new ArrayList(); // any blocks past the end which have already been truncated, but which there are still database blocks pointing to
+		List<Integer> wantedKeep = new ArrayList<Integer>(); // keep; content is wanted, and is in the right place
+		List<Integer> unwantedIgnore = new ArrayList<Integer>(); // ignore; content is not wanted, and is not in the right place
+		List<Integer> wantedMove = new ArrayList<Integer>(); // content is wanted, but is in the wrong part of the store
+		List<Integer> unwantedMove = new ArrayList<Integer>(); // content is not wanted, but is in the part of the store we will keep
+		List<Integer> alreadyDropped = new ArrayList<Integer>(); // any blocks past the end which have already been truncated, but which there are still database blocks pointing to
 		
 		Cursor c = null;
 		Transaction t = null;
@@ -486,7 +486,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 			//Logger.minor(this, "Found first key");
 			int x = 0;
 			while(true) {
-				StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
+				StoreBlock storeBlock = storeBlockTupleBinding.entryToObject(blockDBE);
 				long block = storeBlock.offset;
 				if(block > highestBlock) highestBlock = block;
 				if(storeBlock.offset > Integer.MAX_VALUE) {
@@ -547,10 +547,10 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				c.close();
 		}
 		
-		Integer[] wantedKeepNums = (Integer[]) wantedKeep.toArray(new Integer[wantedKeep.size()]);
-		Integer[] unwantedIgnoreNums = (Integer[]) unwantedIgnore.toArray(new Integer[unwantedIgnore.size()]);
-		Integer[] wantedMoveNums = (Integer[]) wantedMove.toArray(new Integer[wantedMove.size()]);
-		Integer[] unwantedMoveNums = (Integer[]) unwantedMove.toArray(new Integer[unwantedMove.size()]);
+		Integer[] wantedKeepNums = wantedKeep.toArray(new Integer[wantedKeep.size()]);
+		Integer[] unwantedIgnoreNums = unwantedIgnore.toArray(new Integer[unwantedIgnore.size()]);
+		Integer[] wantedMoveNums = wantedMove.toArray(new Integer[wantedMove.size()]);
+		Integer[] unwantedMoveNums = unwantedMove.toArray(new Integer[unwantedMove.size()]);
 		long[] freeEarlySlots = freeBlocks.toArray();
 		Arrays.sort(wantedKeepNums);
 		Arrays.sort(unwantedIgnoreNums);
@@ -565,7 +565,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 			if(Arrays.binarySearch(unwantedMoveNums, ii) >= 0) continue;
 			unwantedMove.add(ii);
 		}
-		unwantedMoveNums = (Integer[]) unwantedMove.toArray(new Integer[unwantedMove.size()]);
+		unwantedMoveNums = unwantedMove.toArray(new Integer[unwantedMove.size()]);
 		
 		System.err.println("Keys to keep where they are:     "+wantedKeepNums.length);
 		System.err.println("Keys which will be wiped anyway: "+unwantedIgnoreNums.length);
@@ -586,7 +586,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 			if(alreadyDropped.size() > 0) {
 				System.err.println("Deleting "+alreadyDropped.size()+" blocks beyond the length of the file");
 				for(int i=0;i<alreadyDropped.size();i++) {
-					int unwantedBlock = ((Integer) alreadyDropped.get(i)).intValue();
+					int unwantedBlock = (alreadyDropped.get(i)).intValue();
 					DatabaseEntry unwantedBlockEntry = new DatabaseEntry();
 					LongBinding.longToEntry(unwantedBlock, unwantedBlockEntry);
 					blockNumDB.delete(t, unwantedBlockEntry);
@@ -670,7 +670,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				DatabaseEntry routingKeyDBE = new DatabaseEntry();
 				DatabaseEntry blockDBE = new DatabaseEntry();
 				blockNumDB.get(t, wantedBlockEntry, routingKeyDBE, blockDBE, LockMode.RMW);
-				StoreBlock block = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
+				StoreBlock block = storeBlockTupleBinding.entryToObject(blockDBE);
 				block.offset = unwantedBlock.longValue();
 				storeBlockTupleBinding.objectToEntry(block, blockDBE);
 				keysDB.put(t, routingKeyDBE, blockDBE);
@@ -1205,7 +1205,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				return null;
 			}
 
-			StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
+			StoreBlock storeBlock = storeBlockTupleBinding.entryToObject(blockDBE);
 						
 			StorableBlock block = null;
 			
@@ -1448,7 +1448,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				return false;
 			}
 
-			StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(blockDBE);
+			StoreBlock storeBlock = storeBlockTupleBinding.entryToObject(blockDBE);
 						
 			fcWriteStore(storeBlock.offset, header, data);
 			if (keysRAF != null) {
@@ -1565,7 +1565,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 			DatabaseEntry keyDBE = new DatabaseEntry();
 			DatabaseEntry dataDBE = new DatabaseEntry();
 			c.getFirst(keyDBE,dataDBE,LockMode.RMW);
-			oldStoreBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(dataDBE);
+			oldStoreBlock = storeBlockTupleBinding.entryToObject(dataDBE);
 			c.delete();
 		} finally {
 			c.close();
@@ -1771,16 +1771,16 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	/**
 	* Convert StoreBlock's to the format used by the database
 	*/
-	private class StoreBlockTupleBinding extends TupleBinding {
+	private class StoreBlockTupleBinding extends TupleBinding<StoreBlock> {
 
-		public void objectToEntry(Object object, TupleOutput to)  {
-			StoreBlock myData = (StoreBlock)object;
-
+		@Override
+        public void objectToEntry(StoreBlock myData, TupleOutput to) {
 			to.writeLong(myData.getOffset());
 			to.writeLong(myData.getRecentlyUsed());
 		}
 
-		public Object entryToObject(TupleInput ti) {
+		@Override
+        public StoreBlock entryToObject(TupleInput ti) {
 			long offset = ti.readLong();
 			long lastAccessed = ti.readLong();
 			
@@ -1793,9 +1793,9 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	* Used to create the secondary database sorted on accesstime
 	*/
 	private static class AccessTimeKeyCreator implements SecondaryKeyCreator {
-		private final TupleBinding theBinding;
+		private final TupleBinding<StoreBlock> theBinding;
 		
-		public AccessTimeKeyCreator(TupleBinding theBinding1) {
+		public AccessTimeKeyCreator(TupleBinding<StoreBlock> theBinding1) {
 			theBinding = theBinding1;
 		}
 		
@@ -1804,16 +1804,16 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				DatabaseEntry dataEntry,
 				DatabaseEntry resultEntry) {
 
-			StoreBlock storeblock = (StoreBlock) theBinding.entryToObject(dataEntry);
+			StoreBlock storeblock = theBinding.entryToObject(dataEntry);
 			LongBinding.longToEntry(storeblock.getRecentlyUsed(), resultEntry);
 			return true;
 		}
 	}
 
 	private static class BlockNumberKeyCreator implements SecondaryKeyCreator {
-		private final TupleBinding theBinding;
+		private final TupleBinding<StoreBlock> theBinding;
 		
-		public BlockNumberKeyCreator(TupleBinding theBinding1) {
+		public BlockNumberKeyCreator(TupleBinding<StoreBlock> theBinding1) {
 			theBinding = theBinding1;
 		}
 		
@@ -1822,7 +1822,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				DatabaseEntry dataEntry,
 				DatabaseEntry resultEntry) {
 
-			StoreBlock storeblock = (StoreBlock) theBinding.entryToObject(dataEntry);
+			StoreBlock storeblock = theBinding.entryToObject(dataEntry);
 			LongBinding.longToEntry(storeblock.offset, resultEntry);
 			return true;
 		}
@@ -1830,7 +1830,8 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 	}
 	
 	private class ShutdownHook extends Thread {
-		public void run() {
+		@Override
+        public void run() {
 			System.err.println("Closing database due to shutdown.");
 			close(true);
 		}
@@ -1936,7 +1937,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 			DatabaseEntry keyDBE = new DatabaseEntry();
 			DatabaseEntry dataDBE = new DatabaseEntry();
 			if(c.getLast(keyDBE,dataDBE,null)==OperationStatus.SUCCESS) {
-				StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(dataDBE);
+				StoreBlock storeBlock = storeBlockTupleBinding.entryToObject(dataDBE);
 				return storeBlock.offset + 1;
 			}
 			c.close();
@@ -1968,7 +1969,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 			DatabaseEntry keyDBE = new DatabaseEntry();
 			DatabaseEntry dataDBE = new DatabaseEntry();
 			if(c.getLast(keyDBE,dataDBE,null)==OperationStatus.SUCCESS) {
-				StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(dataDBE);
+				StoreBlock storeBlock = storeBlockTupleBinding.entryToObject(dataDBE);
 				maxRecentlyUsed = storeBlock.getRecentlyUsed();
 			}
 			c.close();
@@ -1997,7 +1998,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 			DatabaseEntry keyDBE = new DatabaseEntry();
 			DatabaseEntry dataDBE = new DatabaseEntry();
 			if(c.getFirst(keyDBE,dataDBE,null)==OperationStatus.SUCCESS) {
-				StoreBlock storeBlock = (StoreBlock) storeBlockTupleBinding.entryToObject(dataDBE);
+				StoreBlock storeBlock = storeBlockTupleBinding.entryToObject(dataDBE);
 				minRecentlyUsed = storeBlock.getRecentlyUsed();
 			}
 			c.close();
@@ -2303,8 +2304,17 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
         return envConfig;
     }
 
+	public long getBloomFalsePositive() {
+		return -1;
+	}
+	
     public boolean probablyInStore(byte[] routingKey) {
-    	DatabaseEntry routingkeyDBE = new DatabaseEntry(routingKey);
+    	// This needs to be fast, so that it can be run from any thread.
+    	// Accessing the bdbje database is often slow, involves many disk seeks,
+    	// and can stall for long periods.
+    	return true;
+		/*-
+		DatabaseEntry routingkeyDBE = new DatabaseEntry(routingKey);
 		DatabaseEntry blockDBE = new DatabaseEntry();
 		synchronized (this) {
 			if (closed)
@@ -2316,5 +2326,6 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 		} catch (DatabaseException e) {
 			return false;
 		} 
+		 */
 	}
 }

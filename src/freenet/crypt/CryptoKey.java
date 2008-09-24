@@ -13,6 +13,7 @@ import java.math.BigInteger;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 
+@SuppressWarnings("serial")
 public abstract class CryptoKey implements CryptoElement, Serializable {
 
 	protected static final Digest shactx = SHA1.getInstance();
@@ -24,7 +25,7 @@ public abstract class CryptoKey implements CryptoElement, Serializable {
 		DataInputStream dis = new DataInputStream(i);
 		String type = dis.readUTF();
 		try {
-			Class keyClass = Class.forName(type);
+			Class<?> keyClass = Class.forName(type);
 			Method m =
 				keyClass.getMethod("read", new Class[] { InputStream.class });
 			return (CryptoKey) m.invoke(null, new Object[] { dis });
@@ -56,13 +57,13 @@ public abstract class CryptoKey implements CryptoElement, Serializable {
 	}
 
 	public String verboseToString() {
-		StringBuffer b = new StringBuffer();
+		StringBuilder b = new StringBuilder();
 		b.append(toString()).append('\t').append(fingerprintToString());
 		return b.toString();
 	}
 
 	public String toString() {
-		StringBuffer b = new StringBuffer(keyType().length() + 1 + 4);
+		StringBuilder b = new StringBuilder(keyType().length() + 1 + 4);
 		b.append(keyType()).append('/');
 		HexUtil.bytesToHexAppend(fingerprint(), 16, 4, b);
 		return b.toString();
@@ -74,7 +75,7 @@ public abstract class CryptoKey implements CryptoElement, Serializable {
 //
 	public String fingerprintToString() {
 		String fphex = HexUtil.bytesToHex(fingerprint());
-		StringBuffer b = new StringBuffer(40 + 10);
+		StringBuilder b = new StringBuilder(40 + 10);
 		b
 			.append(fphex.substring(0, 4))
 			.append(' ')

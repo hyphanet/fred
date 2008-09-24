@@ -133,7 +133,7 @@ public class Inet4AddressMatcher implements AddressMatcher {
 	}
 
 	private String convertToString(int addr) {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		for(int i=0;i<4;i++) {
 			int x = addr >>> 24;
 			addr = addr << 8;

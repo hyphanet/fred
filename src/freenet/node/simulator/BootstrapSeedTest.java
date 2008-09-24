@@ -29,6 +29,9 @@ public class BootstrapSeedTest {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws InvalidThresholdException, NodeInitException, InterruptedException, IOException {
+		String ipOverride = null;
+		if(args.length > 0)
+			ipOverride = args[0];
         File dir = new File("bootstrap-test");
         FileUtil.removeAll(dir);
         RandomSource random = NodeStarter.globalTestInit(dir.getPath(), false, Logger.ERROR, "");
@@ -44,7 +47,7 @@ public class BootstrapSeedTest {
         fis.close();
         // Create one node
         Executor executor = new PooledExecutor();
-        Node node = NodeStarter.createTestNode(5000, 5001, "bootstrap-test", true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true);
+        Node node = NodeStarter.createTestNode(5000, 5001, "bootstrap-test", true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);
         //NodeCrypto.DISABLE_GROUP_STRIP = true;
     	//Logger.setupStdoutLogging(Logger.MINOR, "freenet:NORMAL,freenet.node.NodeDispatcher:MINOR,freenet.node.FNPPacketMangler:MINOR");
     	Logger.getChain().setThreshold(Logger.ERROR); // kill logging

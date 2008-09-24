@@ -16,7 +16,7 @@ public class KnownUnsafeContentTypeException extends UnsafeContentTypeException 
 	}
 
 	public String getExplanation() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("<p><b>");
 		sb.append(type.readDescription);
 		sb.append("</b></p>\n" + "<p>" + l10n("knownUnsafe") + "<ul>");

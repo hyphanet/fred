@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
 import java.util.Random;
+import java.util.Random;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
 
@@ -31,7 +32,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 
 	private final Bucket bucket;
 	private final int minPaddedSize;
-	private transient WeakReference /* <Rijndael> */ aesRef;
+	private transient WeakReference<Rijndael> aesRef;
 	/** The decryption key. */
 	private final byte[] key;
 	private final byte[] randomSeed;
@@ -195,7 +196,8 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			}
 		}
 		
-		@Override
+        @Override
+		@SuppressWarnings("cast")
 		public void close() throws IOException {
 			if(closed) return;
 			try {
@@ -210,7 +212,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 					byte[] buf = new byte[4096];
 					long writtenPadding = 0;
 					while(writtenPadding < padding) {
-						int left = (int) Math.min((padding - writtenPadding), (long)buf.length);
+						int left = (int) Math.min((long) (padding - writtenPadding), (long) buf.length);
 						random.nextBytes(buf);
 						out.write(buf, 0, left);
 						writtenPadding += left;
@@ -320,7 +322,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	private synchronized Rijndael getRijndael() {
 		Rijndael aes;
 		if(aesRef != null) {
-			aes = (Rijndael) aesRef.get();
+			aes = aesRef.get();
 			if(aes != null) return aes;
 		}
 		try {
@@ -329,7 +331,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			throw new Error(e);
 		}
 		aes.initialize(key);
-		aesRef = new WeakReference(aes);
+		aesRef = new WeakReference<Rijndael>(aes);
 		return aes;
 	}
 

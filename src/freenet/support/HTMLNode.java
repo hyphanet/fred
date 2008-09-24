@@ -3,7 +3,6 @@ package freenet.support;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -177,11 +176,10 @@ public class HTMLNode implements XMLCharacterClasses {
 			return tagBuffer;
 		}
 		tagBuffer.append('<').append(name);
-		Set attributeSet = attributes.entrySet();
-		for (Iterator attributeIterator = attributeSet.iterator(); attributeIterator.hasNext();) {
-			Map.Entry attributeEntry = (Map.Entry) attributeIterator.next();
-			String attributeName = (String) attributeEntry.getKey();
-			String attributeValue = (String) attributeEntry.getValue();
+		Set<Map.Entry<String, String>> attributeSet = attributes.entrySet();
+		for (Map.Entry<String, String> attributeEntry : attributeSet) {
+			String attributeName = attributeEntry.getKey();
+			String attributeValue = attributeEntry.getValue();
 			tagBuffer.append(' ');
 			HTMLEncoder.encodeToBuffer(attributeName, tagBuffer);
 			tagBuffer.append("=\"");
@@ -236,7 +234,7 @@ public class HTMLNode implements XMLCharacterClasses {
 		}
 
 		/**
-		 * @see freenet.support.HTMLNode#generate(java.lang.StringBuffer)
+		 * @see freenet.support.HTMLNode#generate(java.lang.StringBuilder)
 		 */
 		@Override
 		public StringBuilder generate(StringBuilder tagBuffer) {

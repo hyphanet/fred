@@ -19,6 +19,15 @@ public abstract class BloomFilter {
 
 	protected ReadWriteLock lock = new ReentrantReadWriteLock();
 
+	public static BloomFilter createFilter(int length, int k, boolean counting) {
+		if (k == 0 || length == 0)
+			return new NullBloomFilter(length, k);
+		if (counting)
+			return new CountingBloomFilter(length, k);
+		else
+			return new BinaryBloomFilter(length, k);
+	}
+	
 	public static BloomFilter createFilter(File file, int length, int k, boolean counting) throws IOException {
 		if (k == 0 || length == 0)
 			return new NullBloomFilter(length, k);
@@ -30,7 +39,7 @@ public abstract class BloomFilter {
 	
 	protected BloomFilter(int length, int k) {
 		if (length % 8 != 0)
-			throw new IllegalArgumentException();
+			length -= length % 8;
 
 		this.length = length;
 		this.k = k;

@@ -92,7 +92,7 @@ final public class FileUtil {
         }
         
 	public static String readUTF(File file, long offset) throws FileNotFoundException, IOException {
-		StringBuffer result = new StringBuffer();
+		StringBuilder result = new StringBuilder();
 		FileInputStream fis = null;
 		BufferedInputStream bis = null;
 		InputStreamReader isr = null;
@@ -234,7 +234,7 @@ final public class FileUtil {
 
         
 	public static String sanitize(String s) {
-		StringBuffer sb = new StringBuffer(s.length());
+		StringBuilder sb = new StringBuilder(s.length());
 		for(int i=0;i<s.length();i++) {
 			char c = s.charAt(i);
 			if((c == '/') || (c == '\\') || (c == '%') || (c == '>') || (c == '<') || (c == ':') || (c == '\'') || (c == '\"'))

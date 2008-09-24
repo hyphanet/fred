@@ -32,6 +32,7 @@ public class TranslationToadlet extends Toadlet {
 		this.core = core;
 	}
 	
+	@Override
 	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
@@ -39,6 +40,7 @@ public class TranslationToadlet extends Toadlet {
 		}
 		
 		boolean showEverything = !request.isParameterSet("toTranslateOnly");
+		
 		
 		if (request.isParameterSet("getOverrideTranlationFile")) {
 			SimpleFieldSet sfs = L10n.getOverrideForCurrentLanguageTranslation();
@@ -86,6 +88,7 @@ public class TranslationToadlet extends Toadlet {
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;				
 		} else if (request.isParameterSet("translate")) {
+			boolean gotoNext = request.isParameterSet("gotoNext");
 			String key = request.getParam("translate");
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("translationUpdateTitle"), true, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
@@ -110,7 +113,7 @@ public class TranslationToadlet extends Toadlet {
 			contentRow.addChild("td", "class", "translation-new").addChild(
 					"textarea",
 					new String[] { "name", "rows", "cols" },
-					new String[] { "trans", "3", "80" },
+					new String[] { "trans", "6", "80" },
 					L10n.getString(key));
 			
 			contentRow.addChild("input", 
@@ -122,6 +125,7 @@ public class TranslationToadlet extends Toadlet {
 					new String[] { "type", "name", "value" }, 
 					new String[] { "submit", "translation_update", l10n("updateTranslationCommand")
 			});
+			updateForm.addChild("input", new String[] { "type", "name" , (gotoNext ? "checked" : "unchecked") } , new String[] { "checkbox", "gotoNext", ""}, l10n("gotoNext"));
 			if(!showEverything)
 				updateForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "toTranslateOnly", key });
 			
@@ -191,6 +195,7 @@ public class TranslationToadlet extends Toadlet {
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 	
+	@Override
 	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		if(!ctx.isAllowedFullAccess()) {
 			super.sendErrorPage(ctx, 403, "Unauthorized", L10n.getString("Toadlet.unauthorized"));
@@ -206,17 +211,33 @@ public class TranslationToadlet extends Toadlet {
 			return;
 		}
 		
+		boolean toTranslateOnly = request.isPartSet("toTranslateOnly");
+		
 		if(request.getPartAsString("translation_update", 32).length() > 0){
 			String key = request.getPartAsString("key", 256);
 			L10n.setOverride(key, new String(BucketTools.toByteArray(request.getPart("trans")), "UTF-8").trim());
 			
-			redirectTo(ctx, TOADLET_URL+"?translation_updated="+key+ (request.isPartSet("toTranslateOnly") ? "&toTranslateOnly" : ""));
+			if("on".equalsIgnoreCase(request.getPartAsString("gotoNext", 7))) {
+				KeyIterator it = DEFAULT_TRANSLATION.keyIterator("");
+				
+				while(it.hasNext()) {
+					String newKey = it.nextKey();
+					boolean isOverriden = L10n.isOverridden(newKey);
+					System.out.println("newkey:"+newKey);
+					if(isOverriden || (L10n.getString(newKey, true) != null))
+						continue;
+					redirectTo(ctx, TOADLET_URL+"?gotoNext&translate="+newKey+ (toTranslateOnly ? "&toTranslateOnly" : ""));
+					return;
+				}
+			}
+			
+			redirectTo(ctx, TOADLET_URL+"?translation_updated="+key+ (toTranslateOnly ? "&toTranslateOnly" : ""));
 			return;
 		} else if(request.getPartAsString("remove_confirmed", 32).length() > 0) {
 			String key = request.getPartAsString("remove_confirm", 256).trim();
 			L10n.setOverride(key, "");
 			
-			redirectTo(ctx, TOADLET_URL+"?translation_updated="+key+ (request.isPartSet("toTranslateOnly") ? "&toTranslateOnly" : ""));
+			redirectTo(ctx, TOADLET_URL+"?translation_updated="+key+ (toTranslateOnly ? "&toTranslateOnly" : ""));
 			return;
 		}else // Shouldn't reach that point!
 			redirectTo(ctx, "/");

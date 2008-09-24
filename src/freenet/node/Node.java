@@ -83,6 +83,8 @@ import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.L10n;
 import freenet.node.NodeDispatcher.NodeDispatcherCallback;
+import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
+import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
@@ -90,7 +92,6 @@ import freenet.node.useralerts.ClockProblemDetectedUserAlert;
 import freenet.node.useralerts.ExtOldAgeUserAlert;
 import freenet.node.useralerts.MeaningfulNodeNameUserAlert;
 import freenet.node.useralerts.NotEnoughNiceLevelsUserAlert;
-import freenet.node.useralerts.OpennetUserAlert;
 import freenet.node.useralerts.SimpleUserAlert;
 import freenet.node.useralerts.TimeSkewDetectedUserAlert;
 import freenet.node.useralerts.UserAlert;
@@ -103,6 +104,8 @@ import freenet.store.KeyCollisionException;
 import freenet.store.PubkeyStore;
 import freenet.store.RAMFreenetStore;
 import freenet.store.SSKStore;
+import freenet.store.saltedhash.SaltedHashFreenetStore;
+import freenet.support.ByteArrayWrapper;
 import freenet.support.DoubleTokenBucket;
 import freenet.support.Executor;
 import freenet.support.Fields;
@@ -110,7 +113,6 @@ import freenet.support.FileLoggerHook;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
-import freenet.support.ImmutableByteArrayWrapper;
 import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
@@ -205,7 +207,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 
 		public String[] getPossibleValues() {
-			return new String[] { "bdb-index", "ram" };
+			return new String[] { "bdb-index", "salt-hash", "ram" };
 		}
 
 		public void setPossibleValues(String[] val) {
@@ -319,7 +321,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	/** Datastore directory */
 	private final File storeDir;
 	
+	/** Datastore properties */
 	private final String storeType;
+	private final int storeBloomFilterSize;
+	private final boolean storeBloomFilterCounting;
 
 	/** The number of bytes per key total in all the different datastores. All the datastores
 	 * are always the same size in number of keys. */
@@ -362,13 +367,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * everything that passes through this node. */
 	private final PubkeyStore pubKeyDatacache;
 	/** RequestSender's currently running, by KeyHTLPair */
-	private final HashMap requestSenders;
+	private final HashMap<KeyHTLPair, RequestSender> requestSenders;
 	/** RequestSender's currently transferring, by key */
-	private final HashMap transferringRequestSenders;
+	private final HashMap<NodeCHK, RequestSender> transferringRequestSenders;
 	/** UIDs of RequestHandler's currently transferring */
-	private final HashSet transferringRequestHandlers;
+	private final HashSet<Long> transferringRequestHandlers;
 	/** CHKInsertSender's currently running, by KeyHTLPair */
-	private final HashMap insertSenders;
+	private final HashMap<KeyHTLPair, AnyInsertSender> insertSenders;
 	/** FetchContext for ARKs */
 	public final FetchContext arkFetcherContext;
 	
@@ -381,17 +386,17 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public boolean disableHangCheckers;
 	
 	/** HashSet of currently running request UIDs */
-	private final HashSet runningUIDs;
-	private final HashSet runningCHKGetUIDs;
-	private final HashSet runningLocalCHKGetUIDs;
-	private final HashSet runningSSKGetUIDs;
-	private final HashSet runningLocalSSKGetUIDs;
-	private final HashSet runningCHKPutUIDs;
-	private final HashSet runningLocalCHKPutUIDs;
-	private final HashSet runningSSKPutUIDs;
-	private final HashSet runningLocalSSKPutUIDs;
-	private final HashSet runningCHKOfferReplyUIDs;
-	private final HashSet runningSSKOfferReplyUIDs;
+	private final HashSet<Long> runningUIDs;
+	private final HashSet<Long> runningCHKGetUIDs;
+	private final HashSet<Long> runningLocalCHKGetUIDs;
+	private final HashSet<Long> runningSSKGetUIDs;
+	private final HashSet<Long> runningLocalSSKGetUIDs;
+	private final HashSet<Long> runningCHKPutUIDs;
+	private final HashSet<Long> runningLocalCHKPutUIDs;
+	private final HashSet<Long> runningSSKPutUIDs;
+	private final HashSet<Long> runningLocalSSKPutUIDs;
+	private final HashSet<Long> runningCHKOfferReplyUIDs;
+	private final HashSet<Long> runningSSKOfferReplyUIDs;
 	
 	/** Semi-unique ID for swap requests. Used to identify us so that the
 	 * topology can be reconstructed. */
@@ -432,7 +437,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	final NodeDispatcher dispatcher;
 	public final UptimeEstimator uptime;
 	static final int MAX_MEMORY_CACHED_PUBKEYS = 1000;
-	final LRUHashtable cachedPubKeys;
+	final LRUHashtable<ByteArrayWrapper, DSAPublicKey> cachedPubKeys;
 	final boolean testnetEnabled;
 	final TestnetHandler testnetHandler;
 	public final DoubleTokenBucket outputThrottle;
@@ -489,6 +494,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	/** NodeUpdater **/
 	public final NodeUpdateManager nodeUpdater;
+	
+	public final SecurityLevels securityLevels;
 	
 	// Things that's needed to keep track of
 	public final PluginManager pluginManager;
@@ -746,7 +753,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		nodeNameUserAlert = new MeaningfulNodeNameUserAlert(this);
 		recentlyCompletedIDs = new LRUQueue();
 		this.config = config;
-		cachedPubKeys = new LRUHashtable();
+		cachedPubKeys = new LRUHashtable<ByteArrayWrapper, DSAPublicKey>();
 		lm = new LocationManager(random, this);
 
 		try {
@@ -756,21 +763,23 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			throw new Error(e3);
 		}
 		fLocalhostAddress = new FreenetInetAddress(localhostAddress);
-		requestSenders = new HashMap();
-		transferringRequestSenders = new HashMap();
-		transferringRequestHandlers = new HashSet();
-		insertSenders = new HashMap();
-		runningUIDs = new HashSet();
-		runningCHKGetUIDs = new HashSet();
-		runningLocalCHKGetUIDs = new HashSet();
-		runningSSKGetUIDs = new HashSet();
-		runningLocalSSKGetUIDs = new HashSet();
-		runningCHKPutUIDs = new HashSet();
-		runningLocalCHKPutUIDs = new HashSet();
-		runningSSKPutUIDs = new HashSet();
-		runningLocalSSKPutUIDs = new HashSet();
-		runningCHKOfferReplyUIDs = new HashSet();
-		runningSSKOfferReplyUIDs = new HashSet();
+		requestSenders = new HashMap<KeyHTLPair, RequestSender>();
+		transferringRequestSenders = new HashMap<NodeCHK, RequestSender>();
+		transferringRequestHandlers = new HashSet<Long>();
+		insertSenders = new HashMap<KeyHTLPair, AnyInsertSender>();
+		runningUIDs = new HashSet<Long>();
+		runningCHKGetUIDs = new HashSet<Long>();
+		runningLocalCHKGetUIDs = new HashSet<Long>();
+		runningSSKGetUIDs = new HashSet<Long>();
+		runningLocalSSKGetUIDs = new HashSet<Long>();
+		runningCHKPutUIDs = new HashSet<Long>();
+		runningLocalCHKPutUIDs = new HashSet<Long>();
+		runningSSKPutUIDs = new HashSet<Long>();
+		runningLocalSSKPutUIDs = new HashSet<Long>();
+		runningCHKOfferReplyUIDs = new HashSet<Long>();
+		runningSSKOfferReplyUIDs = new HashSet<Long>();
+		
+		this.securityLevels = new SecurityLevels(this, config);
 		
 		// Directory for node-related files other than store
 		
@@ -1020,7 +1029,17 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		});
 		enableSwapping = nodeConfig.getBoolean("enableSwapping");
 		
-		nodeConfig.register("publishOurPeersLocation", false, sortOrder++, true, false, "Node.publishOurPeersLocation", "Node.publishOurPeersLocationLong", new BooleanCallback() {
+		/*
+		 * Publish our peers' locations is enabled, even in MAXIMUM network security and/or HIGH friends security,
+		 * because a node which doesn't publish its peers' locations will get dramatically less traffic.
+		 * 
+		 * Publishing our peers' locations does make us slightly more vulnerable to some attacks, but I don't think
+		 * it's a big difference: swapping reveals the same information, it just doesn't update as quickly. This 
+		 * may help slightly, but probably not dramatically against a clever attacker.
+		 * 
+		 * FIXME review this decision.
+		 */
+		nodeConfig.register("publishOurPeersLocation", true, sortOrder++, true, false, "Node.publishOurPeersLocation", "Node.publishOurPeersLocationLong", new BooleanCallback() {
 
 			public Boolean get() {
 				return publishOurPeersLocation;
@@ -1032,7 +1051,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		});
 		publishOurPeersLocation = nodeConfig.getBoolean("publishOurPeersLocation");
 		
-		nodeConfig.register("routeAccordingToOurPeersLocation", false, sortOrder++, true, false, "Node.routeAccordingToOurPeersLocation", "Node.routeAccordingToOurPeersLocationLong", new BooleanCallback() {
+		nodeConfig.register("routeAccordingToOurPeersLocation", true, sortOrder++, true, false, "Node.routeAccordingToOurPeersLocation", "Node.routeAccordingToOurPeersLocationLong", new BooleanCallback() {
 
 			public Boolean get() {
 				return routeAccordingToOurPeersLocation;
@@ -1043,6 +1062,39 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			}
 		});
 		routeAccordingToOurPeersLocation = nodeConfig.getBoolean("routeAccordingToOurPeersLocation");
+		
+		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+
+			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
+				synchronized(Node.this) {
+					boolean wantFOAF = true;
+					if(newLevel == NETWORK_THREAT_LEVEL.MAXIMUM || newLevel == NETWORK_THREAT_LEVEL.HIGH) {
+						// Opennet is disabled.
+						if(securityLevels.friendsThreatLevel == FRIENDS_THREAT_LEVEL.HIGH)
+							wantFOAF = false;
+					}
+					routeAccordingToOurPeersLocation = wantFOAF;
+				}
+			}
+			
+		});
+		
+		securityLevels.addFriendsThreatLevelListener(new SecurityLevelListener<FRIENDS_THREAT_LEVEL>() {
+
+			public void onChange(FRIENDS_THREAT_LEVEL oldLevel, FRIENDS_THREAT_LEVEL newLevel) {
+				synchronized(Node.this) {
+					boolean wantFOAF = true;
+					NETWORK_THREAT_LEVEL networkLevel = securityLevels.networkThreatLevel;
+					if(networkLevel == NETWORK_THREAT_LEVEL.MAXIMUM || networkLevel == NETWORK_THREAT_LEVEL.HIGH) {
+						// Opennet is disabled.
+						if(newLevel == FRIENDS_THREAT_LEVEL.HIGH)
+							wantFOAF = false;
+					}
+					routeAccordingToOurPeersLocation = wantFOAF;
+				}
+			}
+			
+		});
 		
 		nodeConfig.register("enableSwapQueueing", true, sortOrder++, true, false, "Node.enableSwapQueueing", "Node.enableSwapQueueingLong", new BooleanCallback() {
 			public Boolean get() {
@@ -1072,7 +1124,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// @see #191
 		if(oldConfig != null && "-1".equals(oldConfig.get("node.listenPort")))
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_BIND_USM, "Your freenet.ini file is corrupted! 'listenPort=-1'");
-		NodeCryptoConfig darknetConfig = new NodeCryptoConfig(nodeConfig, sortOrder++, false);
+		NodeCryptoConfig darknetConfig = new NodeCryptoConfig(nodeConfig, sortOrder++, false, securityLevels);
 		sortOrder += NodeCryptoConfig.OPTION_COUNT;
 		
 		darknetCrypto = new NodeCrypto(this, false, darknetConfig, startupTime, enableARKs);
@@ -1334,7 +1386,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			maxOpennetPeers = 20;
 		}
 		
-		opennetCryptoConfig = new NodeCryptoConfig(opennetConfig, 2 /* 0 = enabled */, true);
+		opennetCryptoConfig = new NodeCryptoConfig(opennetConfig, 2 /* 0 = enabled */, true, securityLevels);
 		
 		if(opennetEnabled) {
 			opennet = new OpennetManager(this, opennetCryptoConfig, System.currentTimeMillis(), isAllowedToConnectToSeednodes);
@@ -1343,7 +1395,46 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			opennet = null;
 		}
 		
-		opennetConfig.register("acceptSeedConnections", true, 2, true, true, "Node.acceptSeedConnectionsShort", "Node.acceptSeedConnections", new BooleanCallback() {
+		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+
+			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
+				if(newLevel == NETWORK_THREAT_LEVEL.HIGH
+						|| newLevel == NETWORK_THREAT_LEVEL.MAXIMUM) {
+					OpennetManager om;
+					synchronized(Node.this) {
+						om = opennet;
+						if(om != null)
+							opennet = null;
+					}
+					if(om != null) {
+						om.stop(true);
+						ipDetector.ipDetectorManager.notifyPortChange(getPublicInterfacePorts());
+					}
+				} else if(newLevel == NETWORK_THREAT_LEVEL.NORMAL
+						|| newLevel == NETWORK_THREAT_LEVEL.LOW) {
+					OpennetManager o = null;
+					synchronized(Node.this) {
+						if(opennet == null) {
+							try {
+								o = opennet = new OpennetManager(Node.this, opennetCryptoConfig, System.currentTimeMillis(), isAllowedToConnectToSeednodes);
+							} catch (NodeInitException e) {
+								opennet = null;
+								Logger.error(this, "UNABLE TO ENABLE OPENNET: "+e, e);
+								clientCore.alerts.register(new SimpleUserAlert(false, l10n("enableOpennetFailedTitle"), l10n("enableOpennetFailed", "message", e.getLocalizedMessage()), l10n("enableOpennetFailed", "message", e.getLocalizedMessage()), UserAlert.ERROR));
+							}
+						}
+					}
+					if(o != null) {
+						o.start();
+						ipDetector.ipDetectorManager.notifyPortChange(getPublicInterfacePorts());
+					}
+				}
+				Node.this.config.store();
+			}
+			
+		});
+		
+		opennetConfig.register("acceptSeedConnections", false, 2, true, true, "Node.acceptSeedConnectionsShort", "Node.acceptSeedConnections", new BooleanCallback() {
 
 			public Boolean get() {
 				return acceptSeedConnections;
@@ -1404,8 +1495,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						new NodeNameCallback(this)); 	 
 		myName = nodeConfig.getString("name"); 	 
 
-		// Datastore
-		
+		// Datastore		
 		nodeConfig.register("storeForceBigShrinks", false, sortOrder++, true, false, "Node.forceBigShrink", "Node.forceBigShrinkLong",
 				new BooleanCallback() {
 
@@ -1422,7 +1512,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 					}
 			
 		});
-		
+
 		nodeConfig.register("storeType", "bdb-index", sortOrder++, true, false, "Node.storeType", "Node.storeTypeLong", new StoreTypeCallback());
 		
 		storeType = nodeConfig.getString("storeType");
@@ -1477,6 +1567,50 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 		maxTotalKeys = maxTotalDatastoreSize / sizePerKey;
 		
+		nodeConfig.register("storeBloomFilterSize", (int) Math.min(maxTotalDatastoreSize / 2048, 268435456), sortOrder++, true, false, "Node.storeBloomFilterSize",
+		        "Node.storeBloomFilterSizeLong", new IntCallback() {
+			        private Integer cachedBloomFilterSize;
+
+			        public Integer get() {
+			        	if (cachedBloomFilterSize == null)
+					        cachedBloomFilterSize = storeBloomFilterSize;
+				        return cachedBloomFilterSize;
+			        }
+
+			        public void set(Integer val) throws InvalidConfigValueException, NodeNeedRestartException {
+				        cachedBloomFilterSize = val;
+				        throw new NodeNeedRestartException("Store bloom filter size cannot be changed on the fly");
+			        }
+
+			        public boolean isReadOnly() {
+				        return !("salt-hash".equals(storeType));
+			        }
+		        });
+
+		storeBloomFilterSize = nodeConfig.getInt("storeBloomFilterSize");
+
+		nodeConfig.register("storeBloomFilterCounting", true, sortOrder++, true, false,
+		        "Node.storeBloomFilterCounting", "Node.storeBloomFilterCountingLong", new BooleanCallback() {
+			        private Boolean cachedBloomFilterCounting;
+
+			        public Boolean get() {
+				        if (cachedBloomFilterCounting == null)
+					        cachedBloomFilterCounting = storeBloomFilterCounting;
+				        return cachedBloomFilterCounting;
+			        }
+
+			        public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				        cachedBloomFilterCounting = val;
+				        throw new NodeNeedRestartException("Store bloom filter type cannot be changed on the fly");
+			        }
+
+			        public boolean isReadOnly() {
+				        return !("salt-hash".equals(storeType));
+			        }
+		        });
+
+		storeBloomFilterCounting = nodeConfig.getBoolean("storeBloomFilterCounting");
+		
 		nodeConfig.register("storeDir", "datastore", sortOrder++, true, true, "Node.storeDirectory", "Node.storeDirectoryLong", 
 				new StringCallback() {
 					public String get() {
@@ -1503,7 +1637,80 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		maxStoreKeys = maxTotalKeys / 2;
 		maxCacheKeys = maxTotalKeys - maxStoreKeys;
 		
-		if(storeType.equals("bdb-index")) {
+		if (storeType.equals("salt-hash")) {
+			storeEnvironment = null;
+			envMutableConfig = null;
+			try {
+				int bloomFilterSizeInM = storeBloomFilterCounting ? storeBloomFilterSize / 6 * 4
+				        : (storeBloomFilterSize + 6) / 6 * 8; // + 6 to make size different, trigger rebuild 
+				
+				Logger.normal(this, "Initializing CHK Datastore");
+				System.out.println("Initializing CHK Datastore (" + maxStoreKeys + " keys)");
+				chkDatastore = new CHKStore();
+				SaltedHashFreenetStore chkDataFS = SaltedHashFreenetStore.construct(storeDir, "CHK-store",
+				        chkDatastore, random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting,
+				        shutdownHook);
+				Logger.normal(this, "Initializing CHK Datacache");
+				System.out.println("Initializing CHK Datacache (" + maxCacheKeys + ':' + maxCacheKeys + " keys)");
+				chkDatacache = new CHKStore();
+				SaltedHashFreenetStore chkCacheFS = SaltedHashFreenetStore.construct(storeDir, "CHK-cache",
+				        chkDatacache, random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting,
+				        shutdownHook);
+				Logger.normal(this, "Initializing pubKey Datastore");
+				System.out.println("Initializing pubKey Datastore");
+				pubKeyDatastore = new PubkeyStore();
+				SaltedHashFreenetStore pubkeyDataFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-store",
+				        pubKeyDatastore, random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting,
+				        shutdownHook);
+				Logger.normal(this, "Initializing pubKey Datacache");
+				System.out.println("Initializing pubKey Datacache (" + maxCacheKeys + " keys)");
+				pubKeyDatacache = new PubkeyStore();
+				SaltedHashFreenetStore pubkeyCacheFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-cache",
+				        pubKeyDatacache, random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting,
+				        shutdownHook);
+				Logger.normal(this, "Initializing SSK Datastore");
+				System.out.println("Initializing SSK Datastore");
+				sskDatastore = new SSKStore(this);
+				SaltedHashFreenetStore sskDataFS = SaltedHashFreenetStore.construct(storeDir, "SSK-store",
+				        sskDatastore, random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting,
+				        shutdownHook);
+				Logger.normal(this, "Initializing SSK Datacache");
+				System.out.println("Initializing SSK Datacache (" + maxCacheKeys + " keys)");
+				sskDatacache = new SSKStore(this);
+				SaltedHashFreenetStore sskCacheFS = SaltedHashFreenetStore.construct(storeDir, "SSK-cache",
+				        sskDatacache, random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting,
+				        shutdownHook);
+				
+				File migrationFile = new File(storeDir, "migrated");
+				if (!migrationFile.exists()) {
+					chkDataFS.migrationFrom(//
+					        new File(storeDir, "chk" + suffix + ".store"), // 
+					        new File(storeDir, "chk" + suffix + ".store.keys"));
+					chkCacheFS.migrationFrom(//
+					        new File(storeDir, "chk" + suffix + ".cache"), // 
+					        new File(storeDir, "chk" + suffix + ".cache.keys"));
+
+					pubkeyDataFS.migrationFrom(//
+					        new File(storeDir, "pubkey" + suffix + ".store"), // 
+					        new File(storeDir, "pubkey" + suffix + ".store.keys"));
+					pubkeyCacheFS.migrationFrom(//
+					        new File(storeDir, "pubkey" + suffix + ".cache"), // 
+					        new File(storeDir, "pubkey" + suffix + ".cache.keys"));
+
+					sskDataFS.migrationFrom(//
+					        new File(storeDir, "ssk" + suffix + ".store"), // 
+					        new File(storeDir, "ssk" + suffix + ".store.keys"));
+					sskCacheFS.migrationFrom(//
+					        new File(storeDir, "ssk" + suffix + ".cache"), // 
+					        new File(storeDir, "ssk" + suffix + ".cache.keys"));
+					migrationFile.createNewFile();
+				}
+			} catch (IOException e) {
+				System.err.println("Could not open store: " + e);
+				e.printStackTrace();
+				throw new NodeInitException(NodeInitException.EXIT_STORE_OTHER, e.getMessage());
+			}
+		} else if (storeType.equals("bdb-index")) {
 		// Setup datastores
 		
 		EnvironmentConfig envConfig = BerkeleyDBFreenetStore.getBDBConfig();
@@ -1708,7 +1915,18 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		clientCore = new NodeClientCore(this, config, nodeConfig, nodeDir, getDarknetPortNumber(), sortOrder, oldConfig, fproxyConfig, toadlets, db);
 
 		netid = new NetworkIDManager(this);
-		 
+		
+		if (storeType.equals("salt-hash")) {
+			((SaltedHashFreenetStore) chkDatastore.getStore()).setUserAlertManager(clientCore.alerts);
+			((SaltedHashFreenetStore) chkDatacache.getStore()).setUserAlertManager(clientCore.alerts);
+			((SaltedHashFreenetStore) pubKeyDatastore.getStore()).setUserAlertManager(clientCore.alerts);
+			((SaltedHashFreenetStore) pubKeyDatacache.getStore()).setUserAlertManager(clientCore.alerts);
+			((SaltedHashFreenetStore) sskDatastore.getStore()).setUserAlertManager(clientCore.alerts);
+			((SaltedHashFreenetStore) sskDatacache.getStore()).setUserAlertManager(clientCore.alerts);
+		}
+		
+		securityLevels.registerUserAlert(clientCore.alerts);
+		
 		nodeConfig.register("disableHangCheckers", false, sortOrder++, true, false, "Node.disableHangCheckers", "Node.disableHangCheckersLong", new BooleanCallback() {
 
 			public Boolean get() {
@@ -1821,8 +2039,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		if(!NativeThread.HAS_ENOUGH_NICE_LEVELS)
 			clientCore.alerts.register(new NotEnoughNiceLevelsUserAlert());
-		
-		clientCore.alerts.register(new OpennetUserAlert(this));
 		
 		this.clientCore.start(config);
 		
@@ -2058,7 +2274,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// Transfer coalescing - match key only as HTL irrelevant
 		RequestSender sender = null;
 		synchronized(transferringRequestSenders) {
-			sender = (RequestSender) transferringRequestSenders.get(key);
+			sender = transferringRequestSenders.get(key);
 		}
 		if(sender != null) {
 			if(logMINOR) Logger.minor(this, "Data already being transferred: "+sender);
@@ -2122,7 +2338,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		synchronized(requestSenders) {
 			KeyHTLPair kh = new KeyHTLPair(key, htl, sender.uid);
 			if(requestSenders.containsKey(kh)) {
-				RequestSender rs = (RequestSender) requestSenders.get(kh);
+				RequestSender rs = requestSenders.get(kh);
 				Logger.error(this, "addRequestSender(): KeyHTLPair '"+kh+"' already in requestSenders as "+rs+" and you want to add "+sender);
 				return;
 			}
@@ -2137,7 +2353,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		synchronized(insertSenders) {
 			KeyHTLPair kh = new KeyHTLPair(key, htl, sender.getUID());
 			if(insertSenders.containsKey(kh)) {
-				AnyInsertSender is = (AnyInsertSender) insertSenders.get(kh);
+				AnyInsertSender is = insertSenders.get(kh);
 				Logger.error(this, "addInsertSender(): KeyHTLPair '"+kh+"' already in insertSenders as "+is+" and you want to add "+sender);
 				return;
 			}
@@ -2390,7 +2606,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public void removeInsertSender(Key key, short htl, AnyInsertSender sender) {
 		synchronized(insertSenders) {
 			KeyHTLPair kh = new KeyHTLPair(key, htl, sender.getUID());
-			AnyInsertSender is = (AnyInsertSender) insertSenders.remove(kh);
+			AnyInsertSender is = insertSenders.remove(kh);
 			if(is != sender) {
 				Logger.error(this, "Removed "+is+" should be "+sender+" for "+key+ ',' +htl+" in removeInsertSender");
 			}
@@ -2504,7 +2720,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			}
 		}
 		// If these are switched around, we must remember to remove from both.
-		HashSet set = getUIDTracker(ssk, insert, offerReply, local);
+		HashSet<Long> set = getUIDTracker(ssk, insert, offerReply, local);
 		synchronized(set) {
 			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+set.size());
 			set.add(uid);
@@ -2515,7 +2731,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local) {
 		completed(uid);
-		HashSet set = getUIDTracker(ssk, insert, offerReply, local);
+		HashSet<Long> set = getUIDTracker(ssk, insert, offerReply, local);
 		synchronized(set) {
 			if(logMINOR) Logger.minor(this, "Unlocking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+", local="+local+" size="+set.size());
 			set.remove(uid);
@@ -2527,7 +2743,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 	}
 
-	HashSet getUIDTracker(boolean ssk, boolean insert, boolean offerReply, boolean local) {
+	private HashSet<Long> getUIDTracker(boolean ssk, boolean insert, boolean offerReply, boolean local) {
 		if(ssk) {
 			if(offerReply)
 				return runningSSKOfferReplyUIDs;
@@ -2549,7 +2765,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * @return Some status information.
 	 */
 	public String getStatus() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		if (peers != null)
 			sb.append(peers.getStatus());
 		else
@@ -2557,16 +2773,16 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		sb.append("\nInserts: ");
 		AnyInsertSender[] senders;
 		synchronized(insertSenders) {
-			senders = (AnyInsertSender[]) insertSenders.values().toArray(new AnyInsertSender[insertSenders.size()]);
+			senders = insertSenders.values().toArray(new AnyInsertSender[insertSenders.size()]);
 		}
 		int x = senders.length;
 		sb.append(x);
 		if((x < 5) && (x > 0)) {
 			sb.append('\n');
 			// Dump
-			Iterator i = insertSenders.values().iterator();
+			Iterator<AnyInsertSender> i = insertSenders.values().iterator();
 			while(i.hasNext()) {
-				AnyInsertSender s = (AnyInsertSender) i.next();
+				AnyInsertSender s = i.next();
 				sb.append(s.getUID());
 				sb.append(": ");
 				sb.append(s.getStatusString());
@@ -2585,7 +2801,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * @return TMCI peer list
 	 */
 	public String getTMCIPeerList() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		if (peers != null)
 			sb.append(peers.getTMCIPeerList());
 		else
@@ -2677,7 +2893,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * @return Data String for freeviz.
 	 */
 	public String getFreevizOutput() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		sb.append("\nrequests=");
 		sb.append(getNumRequestSenders());
 		
@@ -2724,11 +2940,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * @see freenet.node.GetPubkey#getKey(byte[])
 	 */
 	public DSAPublicKey getKey(byte[] hash) {
-		ImmutableByteArrayWrapper w = new ImmutableByteArrayWrapper(hash);
+		ByteArrayWrapper w = new ByteArrayWrapper(hash);
 		if(logMINOR) Logger.minor(this, "Getting pubkey: "+HexUtil.bytesToHex(hash));
 		if(USE_RAM_PUBKEYS_CACHE) {
 			synchronized(cachedPubKeys) {
-				DSAPublicKey key = (DSAPublicKey) cachedPubKeys.get(w);
+				DSAPublicKey key = cachedPubKeys.get(w);
 				if(key != null) {
 					cachedPubKeys.push(w, key);
 					if(logMINOR) Logger.minor(this, "Got "+HexUtil.bytesToHex(hash)+" from cache");
@@ -2758,9 +2974,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 */
 	public void cacheKey(byte[] hash, DSAPublicKey key, boolean deep) {
 		if(logMINOR) Logger.minor(this, "Cache key: "+HexUtil.bytesToHex(hash)+" : "+key);
-		ImmutableByteArrayWrapper w = new ImmutableByteArrayWrapper(hash);
+		ByteArrayWrapper w = new ByteArrayWrapper(hash);
 		synchronized(cachedPubKeys) {
-			DSAPublicKey key2 = (DSAPublicKey) cachedPubKeys.get(w);
+			DSAPublicKey key2 = cachedPubKeys.get(w);
 			if((key2 != null) && !key2.equals(key)) {
 				// FIXME is this test really needed?
 				// SHA-256 inside synchronized{} is a bad idea
@@ -3352,8 +3568,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * ports, not necessarily external - they may be rewritten by the NAT.
 	 * @return A Set of ForwardPort's to be fed to port forward plugins.
 	 */
-	public Set getPublicInterfacePorts() {
-		HashSet set = new HashSet();
+	public Set<ForwardPort> getPublicInterfacePorts() {
+		HashSet<ForwardPort> set = new HashSet<ForwardPort>();
 		// FIXME IPv6 support
 		set.add(new ForwardPort("darknet", false, ForwardPort.PROTOCOL_UDP_IPV4, darknetCrypto.portNumber));
 		if(opennet != null) {
@@ -3441,7 +3657,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 	}
 
-	public void addRunningUIDs(Vector list) {
+	public void addRunningUIDs(Vector<Long> list) {
 		synchronized(runningUIDs) {
 			list.addAll(runningUIDs);
 		}
@@ -3489,6 +3705,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	}
 	
 	public boolean shallWeRouteAccordingToOurPeersLocation() {
-		return routeAccordingToOurPeersLocation;
+		return routeAccordingToOurPeersLocation && Version.lastGoodBuild() >= 1160;
 	}
 }

@@ -205,7 +205,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 
 		public String getText() {
 			if(!suggestPortForward) return super.getText();
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			sb.append(super.getText());
 			if(portsNotForwarded.length == 1) {
 				sb.append(l10n("suggestForwardPort", "port", Integer.toString(Math.abs(portsNotForwarded[0]))));
@@ -272,25 +272,25 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	}
 
 	/**
-	 * Use MAYBE_PORT_FORWARDED as the threshold, because most people either are behind a NAT with
-	 * a low timeout (e.g. a home router), know what they're doing, or can't forward ports anyway.
+	 * Return all the ports that we have reason to believe are not forwarded. E.g. for the user-alert, which only
+	 * shows if what we return is of nonzero length.
 	 */
 	public int[] getUDPPortsNotForwarded() {
 		OpennetManager om = node.getOpennet();
-		int darknetStatus = (node.peers.anyDarknetPeers() ? node.darknetCrypto.getDetectedConnectivityStatus() : AddressTracker.MAYBE_PORT_FORWARDED);
+		int darknetStatus = (node.peers.anyDarknetPeers() ? node.darknetCrypto.getDetectedConnectivityStatus() : AddressTracker.DONT_KNOW);
 		int opennetStatus = om == null ? AddressTracker.DONT_KNOW : om.crypto.getDetectedConnectivityStatus();
-		if(om == null || opennetStatus > AddressTracker.DONT_KNOW) {
-			if(darknetStatus > AddressTracker.DONT_KNOW) {
+		if(om == null || opennetStatus >= AddressTracker.DONT_KNOW) {
+			if(darknetStatus >= AddressTracker.DONT_KNOW) {
 				return new int[] { };
 			} else {
-				return new int[] { (darknetStatus < AddressTracker.DONT_KNOW ? -1 : 1) * node.getDarknetPortNumber() };
+				return new int[] { (darknetStatus < AddressTracker.MAYBE_NATED ? -1 : 1) * node.getDarknetPortNumber() };
 			}
 		} else {
-			if(darknetStatus > AddressTracker.DONT_KNOW) {
-				return new int[] { (opennetStatus < AddressTracker.DONT_KNOW ? -1 : 1 ) * om.crypto.portNumber };
+			if(darknetStatus >= AddressTracker.DONT_KNOW) {
+				return new int[] { (opennetStatus < AddressTracker.MAYBE_NATED ? -1 : 1 ) * om.crypto.portNumber };
 			} else {
-				return new int[] { ((darknetStatus < AddressTracker.DONT_KNOW) ? -1 : 1 ) * node.getDarknetPortNumber(), 
-						(opennetStatus < AddressTracker.DONT_KNOW ? -1 : 1 ) * om.crypto.portNumber };
+				return new int[] { ((darknetStatus < AddressTracker.MAYBE_NATED) ? -1 : 1 ) * node.getDarknetPortNumber(), 
+						(opennetStatus < AddressTracker.MAYBE_NATED ? -1 : 1 ) * om.crypto.portNumber };
 			}
 		}
 	}
@@ -423,7 +423,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		PeerNode[] peers = node.getPeerNodes();
 		PeerNode[] conns = node.getConnectedPeers();
 		int peerCount = node.peers.countValidPeers();
-		FreenetInetAddress[] nodeAddrs = detector.getPrimaryIPAddress();
+		FreenetInetAddress[] nodeAddrs = detector.getPrimaryIPAddress(true);
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			if(plugins.length == 0) {

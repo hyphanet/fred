@@ -179,7 +179,7 @@ public class SimpleBinaryRunningAverage implements RunningAverage {
     }
 
 	private synchronized void calculateTotalOnesZeros() {
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 		int tones = 0;
 		int tzeros = 0;
 		for(int i=0;i<baSize();i++) {
@@ -199,7 +199,7 @@ public class SimpleBinaryRunningAverage implements RunningAverage {
 	}
 
 	protected String checkOnesZeros() {
-	    StringBuffer sb = new StringBuffer();
+	    StringBuilder sb = new StringBuilder();
 		int tones = 0;
 		int tzeros = 0;
 		for(int i=0;i<baSize();i++) {

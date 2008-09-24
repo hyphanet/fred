@@ -135,7 +135,7 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 					tempBlobFile = 
 						File.createTempFile(blobFilenamePrefix+availableVersion+"-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
 					cg = new ClientGetter(this, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, 
-							URI.setSuggestedEdition(availableVersion), ctx, RequestStarter.UPDATE_PRIORITY_CLASS, 
+							URI.setSuggestedEdition(availableVersion), ctx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
 							this, null, new FileBucket(tempBlobFile, false, false, false, false, false));
 					toStart = cg;
 				}
@@ -352,11 +352,11 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 	}
 
 	public short getPollingPriorityNormal() {
-		return RequestStarter.UPDATE_PRIORITY_CLASS;
+		return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
 	}
 
 	public short getPollingPriorityProgress() {
-		return RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS;
+		return RequestStarter.INTERACTIVE_PRIORITY_CLASS;
 	}
 
 	public boolean persistent() {

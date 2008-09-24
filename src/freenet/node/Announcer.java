@@ -78,7 +78,10 @@ public class Announcer {
 	public void start() {
 		if(!node.isOpennetEnabled()) return;
 		registerAlert();
-		if(node.peers.getDarknetPeers().length + node.peers.getOpennetPeers().length + om.countOldOpennetPeers() == 0) {
+		int darkPeers = node.peers.getDarknetPeers().length;
+		int openPeers = node.peers.getOpennetPeers().length;
+		int oldOpenPeers = om.countOldOpennetPeers();
+		if(darkPeers + openPeers + oldOpenPeers == 0) {
 			// We know opennet is enabled.
 			// We have no peers AT ALL.
 			// So lets connect to a few seednodes, and attempt an announcement.
@@ -88,6 +91,7 @@ public class Announcer {
 			}
 			connectSomeSeednodes();
 		} else {
+			System.out.println("Not attempting immediate announcement: dark peers="+darkPeers+" open peers="+openPeers+" old open peers="+oldOpenPeers+" - will wait 1 minute...");
 			// Wait a minute, then check whether we need to seed.
 			node.getTicker().queueTimedJob(new Runnable() {
 				public void run() {
@@ -302,6 +306,9 @@ public class Announcer {
 	static final int RETRY_DELAY = 60*1000;
 	private boolean started = false;
 	
+	private long toldUserNoIP = -1;
+	private boolean dontKnowOurIPAddress;
+	
 	public void maybeSendAnnouncement() {
 		started = true;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -339,6 +346,11 @@ public class Announcer {
 		}
 		if((!ignoreIPUndetected) && (!node.ipDetector.hasValidIP())) {
 			if(node.ipDetector.ipDetectorManager.hasDetectors()) {
+				if(now - toldUserNoIP > 60*1000)
+					System.out.println("Don't know our IP address, waiting for another 2 minutes...");
+				synchronized(this) {
+					dontKnowOurIPAddress = true;
+				}
 				// Wait a bit
 				node.getTicker().queueTimedJob(new Runnable() {
 					public void run() {
@@ -353,6 +365,7 @@ public class Announcer {
 			}
 		}
 		synchronized(this) {
+			dontKnowOurIPAddress = false;
 			// Double check after taking the lock.
 			if(enoughPeers()) return;
 			// Second, do we have many announcements running?
@@ -467,10 +480,12 @@ public class Announcer {
 				Logger.normal(this, "Announcement to "+seed.userToString()+" got bogus noderef: "+reason, new Exception("debug"));
 			}
 			public void completed() {
+				boolean announceNow = false;
 				synchronized(Announcer.this) {
 					runningAnnouncements--;
 					Logger.normal(this, "Announcement to "+seed.userToString()+" completed, now running "+runningAnnouncements+" announcements");
-					if(runningAnnouncements == 0) {
+					if(runningAnnouncements == 0 && announcementAddedNodes > 0) {
+						// No point waiting if no nodes have been added!
 						startTime = System.currentTimeMillis() + COOLING_OFF_PERIOD;
 						sentAnnouncements = 0;
 						// Wait for COOLING_OFF_PERIOD before trying again
@@ -481,6 +496,9 @@ public class Announcer {
 							}
 							
 						}, COOLING_OFF_PERIOD);
+					} else if(runningAnnouncements == 0) {
+						sentAnnouncements = 0;
+						announceNow = true;
 					}
 				}
 				// If it takes more than COOLING_OFF_PERIOD to disconnect, we might not be able to reannounce to this
@@ -488,6 +506,8 @@ public class Announcer {
 				// be more than that period in the future.
 				node.peers.disconnect(seed, true, false);
 				System.out.println("Announcement to "+seed.userToString()+" completed.");
+				if(announceNow)
+					maybeSendAnnouncement();
 			}
 
 			public void nodeFailed(PeerNode pn, String reason) {
@@ -525,11 +545,13 @@ public class Announcer {
 		}
 
 		public String getText() {
-			StringBuffer sb = new StringBuffer();
+			StringBuilder sb = new StringBuilder();
 			sb.append(l10n("announceAlertIntro"));
 			int status;
+			boolean dontKnowAddress;
 			synchronized(this) {
 				status = Announcer.this.status;
+				dontKnowAddress = dontKnowOurIPAddress;
 			}
 			if(status == STATUS_NO_SEEDNODES) {
 				return l10n("announceAlertNoSeednodes");
@@ -562,16 +584,20 @@ public class Announcer {
 					else
 						disconnectedSeednodes++;
 				}
-				sb.append(l10n("announceDetails", 
-						new String[] { "addedNodes", "refusedNodes", "recentSentAnnouncements", "runningAnnouncements", "connectedSeednodes", "disconnectedSeednodes" },
-						new String[] {
-						Integer.toString(addedNodes),
-						Integer.toString(refusedNodes),
-						Integer.toString(recentSentAnnouncements),
-						Integer.toString(runningAnnouncements),
-						Integer.toString(connectedSeednodes),
-						Integer.toString(disconnectedSeednodes)
-				}));
+				if(dontKnowAddress) {
+					sb.append(l10n("dontKnowAddress"));
+				} else {
+					sb.append(l10n("announceDetails", 
+							new String[] { "addedNodes", "refusedNodes", "recentSentAnnouncements", "runningAnnouncements", "connectedSeednodes", "disconnectedSeednodes" },
+							new String[] {
+							Integer.toString(addedNodes),
+							Integer.toString(refusedNodes),
+							Integer.toString(recentSentAnnouncements),
+							Integer.toString(runningAnnouncements),
+							Integer.toString(connectedSeednodes),
+							Integer.toString(disconnectedSeednodes)
+					}));
+				}
 				if(coolingOffSeconds > 0) {
 					sb.append(' ');
 					sb.append(l10n("coolingOff", "time", Long.toString(coolingOffSeconds)));
@@ -589,7 +615,7 @@ public class Announcer {
 		}
 
 		public boolean isValid() {
-			return started && (!enoughPeers()) && node.isOpennetEnabled();
+			return (!enoughPeers()) && node.isOpennetEnabled();
 		}
 
 		public void isValid(boolean validity) {

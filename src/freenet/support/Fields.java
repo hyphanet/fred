@@ -396,13 +396,8 @@ public abstract class Fields {
 	/**
 	 * Compares byte arrays lexicographically.
 	 */
-	public static final class ByteArrayComparator implements Comparator {
-
-		public final int compare(Object o1, Object o2) {
-			return compare((byte[]) o1, (byte[]) o2);
-		}
-
-		public static final int compare(byte[] o1, byte[] o2) {
+	public static final class ByteArrayComparator implements Comparator<byte[]> {
+		public final int compare(byte[] o1, byte[] o2) {
 			return compareBytes(o1, o2);
 		}
 	}
@@ -538,7 +533,7 @@ public abstract class Fields {
 		for(int i = 0; i < ints.length; i++) {
 			int x = 0;
 			for(int j = 3; j >= 0; j--) {
-				int y = (buf[j + offset] & 0xff);
+				int y = (buf[j + offset + i * 4] & 0xff);
 				x = (x << 8) | y;
 			}
 			ints[i] = x;
@@ -560,7 +555,7 @@ public abstract class Fields {
 	}
 
 	public static byte[] intsToBytes(int[] ints) {
-		byte[] buf = new byte[ints.length * 8];
+		byte[] buf = new byte[ints.length * 4];
 		for(int i = 0; i < ints.length; i++) {
 			long x = ints[i];
 			for(int j = 0; j < 4; j++) {
@@ -570,7 +565,16 @@ public abstract class Fields {
 		}
 		return buf;
 	}
-
+	
+	public static byte[] intToBytes(int x) {
+		byte[] buf = new byte[4];
+			for(int j = 0; j < 4; j++) {
+				buf[j] = (byte) x;
+				x >>>= 8;
+			}
+		return buf;
+	}
+	
 	public static long parseLong(String s, long defaultValue) {
 		try {
 			return Long.parseLong(s);

@@ -111,8 +111,6 @@ public class AddressTrackerItem {
 			startTime = Math.max(startTime, timeDefinitelyNoPacketsReceived);
 		}
 		if(startTime <= 0) return; // No information
-		if(timeLastSentPacket > 0) startTime = timeLastSentPacket;
-		else startTime = timeDefinitelyNoPacketsSent;
 		if(now - startTime > GAP_THRESHOLD) {
 			// Not necessarily a new gap
 			// If no packets sent since last one, just replace it

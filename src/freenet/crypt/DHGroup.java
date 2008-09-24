@@ -30,7 +30,7 @@ public class DHGroup extends CryptoKey {
 	public String toLongString() {
 		String pStr = HexUtil.biToHex(p);
 		String gStr = HexUtil.biToHex(g);
-		StringBuffer b = new StringBuffer(pStr.length() + gStr.length() + 1);
+		StringBuilder b = new StringBuilder(pStr.length() + gStr.length() + 1);
 		b.append(pStr).append(',').append(gStr);
 		return b.toString();
 	}

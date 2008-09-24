@@ -44,6 +44,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 	private final int listenPort;
 	private final String title;
 	private boolean _started;
+	private long startTime;
 	private Thread _thread;
 	private final IOStatisticCollector collector;
 	
@@ -300,6 +301,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		synchronized(this) {
 			if(!_active) return;
 			_started = true;
+			startTime = System.currentTimeMillis();
 		}
 		node.executor.execute(this, "UdpSocketHandler for port "+listenPort);
 		if(!disableHangChecker) {
@@ -440,6 +442,10 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 
 	public int getPriority() {
 		return NativeThread.MAX_PRIORITY;
+	}
+	
+	public long getStartTime() {
+		return startTime;
 	}
 
 }

@@ -494,6 +494,8 @@ public class StatisticsToadlet extends Toadlet {
 		long storeAccesses = storeHits + storeMisses;
 		long cacheWrites=node.getChkDatacache().writes();
 		long storeWrites=node.getChkDatastore().writes();
+		long cacheFalsePos = node.getChkDatacache().getBloomFalsePositive();
+		long storeFalsePos = node.getChkDatastore().getBloomFalsePositive();
 
 		// REDFLAG Don't show database version because it's not possible to get it accurately.
 		// (It's a public static constant, so it will use the version from compile time of freenet.jar)
@@ -567,6 +569,13 @@ public class StatisticsToadlet extends Toadlet {
 		row.addChild("td", "Write Rate");
 		row.addChild("td", fix1p2.format(1.0*storeWrites/nodeUptimeSeconds)+" /sec");
 		row.addChild("td", fix1p2.format(1.0*cacheWrites/nodeUptimeSeconds)+" /sec");
+		
+		if (storeFalsePos != -1 || cacheFalsePos != -1) {
+			row = storeSizeTable.addChild("tr");
+			row.addChild("td", "False Pos.");
+			row.addChild("td", thousendPoint.format(storeFalsePos));
+			row.addChild("td", thousendPoint.format(cacheFalsePos));
+		}
 		
 		// location-based stats
 		double nodeLoc=0.0;

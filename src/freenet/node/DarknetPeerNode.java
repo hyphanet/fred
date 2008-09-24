@@ -870,9 +870,10 @@ public class DarknetPeerNode extends PeerNode {
 		}
 
 		protected void remove() {
+			Long l = uid;
 			synchronized(DarknetPeerNode.this) {
-				myFileOffersByUID.remove(uid);
-				hisFileOffersByUID.remove(uid);
+				myFileOffersByUID.remove(l);
+				hisFileOffersByUID.remove(l);
 			}
 			data.close();
 		}
@@ -954,7 +955,7 @@ public class DarknetPeerNode extends PeerNode {
 				}
 
 				public String getText() {
-					StringBuffer sb = new StringBuffer();
+					StringBuilder sb = new StringBuilder();
 					sb.append(l10n("failedReceiveHeader", new String[] { "filename", "node" },
 							new String[] { filename, getName() }));
 					sb.append('\n');
@@ -1056,7 +1057,7 @@ public class DarknetPeerNode extends PeerNode {
 				}
 
 				public String getText() {
-					StringBuffer sb = new StringBuffer();
+					StringBuilder sb = new StringBuilder();
 					sb.append(l10n("succeededReceiveHeader", new String[] { "filename", "node" },
 							new String[] { filename, getName() }));
 					sb.append('\n');
@@ -1172,7 +1173,7 @@ public class DarknetPeerNode extends PeerNode {
 					return UserAlert.MINOR;
 				}
 				public String getText() {
-					StringBuffer sb = new StringBuffer();
+					StringBuilder sb = new StringBuilder();
 					sb.append(l10n("offeredFileHeader", "name", getName()));
 					sb.append('\n');
 					sb.append(l10n("fileLabel"));

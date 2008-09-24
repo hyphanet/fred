@@ -102,4 +102,8 @@ public class OpennetPeerNode extends PeerNode {
 		return false;
 	}
 
+	protected void onConnect() {
+		opennet.crypto.socket.getAddressTracker().setPresumedGuiltyAt(System.currentTimeMillis()+60*60*1000);
+	}
+	
 }

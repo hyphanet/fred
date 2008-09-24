@@ -47,8 +47,8 @@ public class HTMLEncoderDecoderTest extends TestCase {
 	 * with all possible entity appended
 	 */
 	public void testDecodeAppendedEntities() {
-		StringBuffer toDecode = new StringBuffer();
-		StringBuffer expected = new StringBuffer();
+		StringBuilder toDecode = new StringBuilder();
+		StringBuilder expected = new StringBuilder();
 		for (int i =0; i<UTFUtil.HTML_ENTITIES_UTF.length; i++) {
 			toDecode.append(UTFUtil.HTML_ENTITIES_UTF[i][1]);
 			expected.append(UTFUtil.HTML_ENTITIES_UTF[i][0]);
@@ -83,9 +83,9 @@ public class HTMLEncoderDecoderTest extends TestCase {
 	 * (e.g. tabs,newline,space).
 	 */
 	public void testCompactRepeated(){
-		StringBuffer strBuffer[] = new StringBuffer[6];
+		StringBuilder strBuffer[] = new StringBuilder[6];
 		for (int i = 0; i < strBuffer.length; i++)
-			strBuffer[i] = new StringBuffer();
+			strBuffer[i] = new StringBuilder();
 		
 		for (int i=0;i<100;i++) {
 			//adding different "whitespaces"

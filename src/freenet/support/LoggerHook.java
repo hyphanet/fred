@@ -2,7 +2,6 @@ package freenet.support;
 
 import java.util.ArrayList;
 import java.util.StringTokenizer;
-import java.util.Vector;
 
 import freenet.l10n.L10n;
 

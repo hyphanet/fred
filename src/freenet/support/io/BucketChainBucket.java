@@ -16,7 +16,7 @@ import freenet.support.api.BucketFactory;
 
 public class BucketChainBucket implements Bucket {
 	
-	private final Vector buckets;
+	private final Vector<Bucket> buckets;
 	public final long bucketSize;
 	private long size;
 	private boolean freed;
@@ -25,7 +25,7 @@ public class BucketChainBucket implements Bucket {
 	
 	public BucketChainBucket(long bucketSize, BucketFactory bf) {
 		this.bucketSize = bucketSize;
-		this.buckets = new Vector();
+		this.buckets = new Vector<Bucket>();
 		this.bf = bf;
 		size = 0;
 		freed = false;
@@ -61,7 +61,7 @@ public class BucketChainBucket implements Bucket {
 	}
 
 	public synchronized Bucket[] getBuckets() {
-		return (Bucket[]) buckets.toArray(new Bucket[buckets.size()]);
+		return buckets.toArray(new Bucket[buckets.size()]);
 	}
 
 	public InputStream getInputStream() throws IOException {
@@ -167,7 +167,7 @@ public class BucketChainBucket implements Bucket {
 	}
 
 	protected synchronized InputStream getBucketInputStream(int i) throws IOException {
-		Bucket bucket = (Bucket) buckets.get(i);
+		Bucket bucket = buckets.get(i);
 		if(bucket == null) return null;
 		return bucket.getInputStream();
 	}
@@ -266,9 +266,10 @@ public class BucketChainBucket implements Bucket {
 	protected OutputStream makeBucketOutputStream(int i) throws IOException {
 		Bucket bucket = bf.makeBucket(bucketSize);
 		buckets.add(bucket);
-		if(buckets.size() != i+1)
-			throw new IllegalStateException("Added bucket, size should be "+(i+1)+" but is "+buckets.size());
-		buckets.set(i, bucket);
+		if (buckets.size() != i + 1)
+			throw new IllegalStateException("Added bucket, size should be " + (i + 1) + " but is " + buckets.size());
+		if (buckets.get(i) != bucket)
+			throw new IllegalStateException("Bucket got replaced. Race condition?");
 		return bucket.getOutputStream();
 	}
 

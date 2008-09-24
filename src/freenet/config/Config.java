@@ -39,7 +39,7 @@ public class Config {
 		// Do nothing
 	}
 
-	public void onRegister(SubConfig config, Option o) {
+	public void onRegister(SubConfig config, Option<?> o) {
 		// Do nothing
 	}
 

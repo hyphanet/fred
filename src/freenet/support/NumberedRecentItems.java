@@ -14,7 +14,7 @@ public class NumberedRecentItems {
 
     private NumberedItem[] items;
     private int count;
-    private Comparator myComparator;
+    private Comparator<Object> myComparator;
     /**
      * Create a NumberedRecentItems list.
      * @param maxSize The maximum number of NumberedItems to keep.
