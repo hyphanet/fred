@@ -84,11 +84,9 @@ public class NodeIPPortDetector {
 				if(Logger.shouldLog(Logger.MINOR, this))
 					Logger.minor(this, "Peer "+peerList[i].getPeer()+" thinks we are "+p);
 				if(countsByPeer.containsKey(p)) {
-					Integer count = (Integer) countsByPeer.get(p);
-					Integer newCount = new Integer(count.intValue()+1);
-					countsByPeer.put(p, newCount);
+					countsByPeer.put(p, countsByPeer.get(p) + 1);
 				} else {
-					countsByPeer.put(p, new Integer(1));
+					countsByPeer.put(p, 1);
 				}
 			}
 			if(countsByPeer.size() == 1) {

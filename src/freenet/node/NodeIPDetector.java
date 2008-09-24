@@ -223,11 +223,9 @@ public class NodeIPDetector {
 				if(logMINOR)
 					Logger.minor(this, "Peer "+peerList[i].getPeer()+" thinks we are "+addr);
 				if(countsByPeer.containsKey(addr)) {
-					Integer count = (Integer) countsByPeer.get(addr);
-					Integer newCount = new Integer(count.intValue()+1);
-					countsByPeer.put(addr, newCount);
+					countsByPeer.put(addr, countsByPeer.get(addr) + 1);
 				} else {
-					countsByPeer.put(addr, new Integer(1));
+					countsByPeer.put(addr, 1);
 				}
 			}
 			if(countsByPeer.size() == 1) {
