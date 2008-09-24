@@ -3,10 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Vector;
 
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
@@ -61,7 +61,7 @@ public class NodeIPPortDetector {
 	 */
 	Peer[] detectPrimaryPeers() {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		Vector<Peer> addresses = new Vector<Peer>();
+		ArrayList<Peer> addresses = new ArrayList<Peer>();
 		FreenetInetAddress[] addrs = detectPrimaryIPAddress();
 		for(int i=0;i<addrs.length;i++) {
 			addresses.add(new Peer(addrs[i], crypto.portNumber));
