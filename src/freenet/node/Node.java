@@ -1934,7 +1934,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			pubKeyDatacache = new PubkeyStore();
 			BerkeleyDBFreenetStore.construct(storeDir, false, suffix, maxCacheKeys, StoreType.PUBKEY, 
 					storeEnvironment, shutdownHook, reconstructFile, pubKeyDatacache, random);
-			// FIXME can't auto-fix SSK stores.
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
 			sskDatastore = new SSKStore(this);
