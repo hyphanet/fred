@@ -79,16 +79,18 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private long storeSize;
 	private int generation;
 	private int flags;
+	
+	private boolean preallocate = true;
 
 	public static SaltedHashFreenetStore construct(File baseDir, String name, StoreCallback callback, Random random,
-	        long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook)
+	        long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate)
 	        throws IOException {
 		return new SaltedHashFreenetStore(baseDir, name, callback, random, maxKeys, bloomFilterSize, bloomCounting,
-		        shutdownHook);
+		        shutdownHook, preallocate);
 	}
 
 	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback callback, Random random, long maxKeys,
-	        int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook) throws IOException {
+	        int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate) throws IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 
@@ -107,6 +109,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		this.random = random;
 		storeSize = maxKeys;
 		this.bloomFilterSize = bloomFilterSize;
+		this.preallocate = preallocate;
 
 		lockManager = new LockManager();
 
@@ -746,14 +749,54 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	/**
+	 * Set preallocate storage space
+	 * @param preallocate
+	 */
+	public void setPreallocate(boolean preallocate) {
+		this.preallocate = preallocate;
+	}
+	
+	/**
 	 * Change on disk store file size
 	 * 
 	 * @param storeFileSize
 	 */
 	private void setStoreFileSize(long storeFileSize) {
 		try {
-			metaRAF.setLength(Entry.METADATA_LENGTH * storeFileSize);
-			hdRAF.setLength((headerBlockLength + dataBlockLength + hdPadding) * storeFileSize);
+			long oldMetaLen = metaRAF.length();
+			long oldHdLen = hdRAF.length();
+
+			final long newMetaLen = Entry.METADATA_LENGTH * storeFileSize;
+			final long newHdLen = (headerBlockLength + dataBlockLength + hdPadding) * storeFileSize;
+
+			if (preallocate) {
+				byte[] b = new byte[4096];
+				ByteBuffer bf = ByteBuffer.wrap(b); 
+
+				// start from next 4KB boundary => align to x86 page size
+				if (oldMetaLen % 4096 != 0)
+					oldMetaLen += 4096 - (oldMetaLen % 4096);
+				if (oldHdLen % 4096 != 0)
+					oldHdLen += 4096 - (oldHdLen % 4096);
+
+				// this may write excess the size, the setLength() would fix it
+				while (oldMetaLen < newMetaLen) {
+					// never write random byte to meta data!
+					// this would screw up the isFree() function
+					bf.rewind();
+					metaFC.write(bf, oldMetaLen);
+					oldMetaLen += 4096;
+				}
+				while (oldHdLen < newHdLen) {
+					random.nextBytes(b);
+					bf.rewind();
+					hdFC.write(bf, oldHdLen);
+					oldHdLen += 4096;
+				}
+			}
+
+			metaRAF.setLength(newMetaLen);
+			hdRAF.setLength(newHdLen);
 		} catch (IOException e) {
 			Logger.error(this, "error resizing store file", e);
 		}
@@ -1686,5 +1729,5 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		} finally {
 			configLock.readLock().unlock();
 		}
-    }
+	}
 }

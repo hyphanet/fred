@@ -505,6 +505,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private static final int MIN_UPTIME_STORE_KEY = 40;
 	
 	private volatile boolean isPRNGReady = false;
+
+	private boolean storePreallocate;
 	
 	/**
 	 * Read all storable settings (identity etc) from the node file.
@@ -1604,6 +1606,28 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		maxStoreKeys = maxTotalKeys / 2;
 		maxCacheKeys = maxTotalKeys - maxStoreKeys;
 		
+		nodeConfig.register("storePreallocate", true, sortOrder++, true, false, "Node.storePreallocate", "Node.storePreallocateLong", 
+				new BooleanCallback() {
+					@Override
+                    public Boolean get() {
+	                    return storePreallocate;
+                    }
+
+					@Override
+                    public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+						storePreallocate = val;
+						if (storeType.equals("salt-hash")) {
+							((SaltedHashFreenetStore) chkDatastore.getStore()).setPreallocate(val);
+							((SaltedHashFreenetStore) chkDatacache.getStore()).setPreallocate(val);
+							((SaltedHashFreenetStore) pubKeyDatastore.getStore()).setPreallocate(val);
+							((SaltedHashFreenetStore) pubKeyDatacache.getStore()).setPreallocate(val);
+							((SaltedHashFreenetStore) sskDatastore.getStore()).setPreallocate(val);
+							((SaltedHashFreenetStore) sskDatacache.getStore()).setPreallocate(val);
+						}
+                    }}
+		);
+		storePreallocate = nodeConfig.getBoolean("storePreallocate");
+		
 		if (storeType.equals("salt-hash")) {
 			initSaltHashFS(suffix);
 		} else if (storeType.equals("bdb-index")) {
@@ -1744,32 +1768,32 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			System.out.println("Initializing CHK Datastore (" + maxStoreKeys + " keys)");
 			chkDatastore = new CHKStore();
 			SaltedHashFreenetStore chkDataFS = SaltedHashFreenetStore.construct(storeDir, "CHK-store", chkDatastore,
-			        random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook);
+			        random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate);
 			Logger.normal(this, "Initializing CHK Datacache");
 			System.out.println("Initializing CHK Datacache (" + maxCacheKeys + ':' + maxCacheKeys + " keys)");
 			chkDatacache = new CHKStore();
 			SaltedHashFreenetStore chkCacheFS = SaltedHashFreenetStore.construct(storeDir, "CHK-cache", chkDatacache,
-			        random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook);
+			        random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate);
 			Logger.normal(this, "Initializing pubKey Datastore");
 			System.out.println("Initializing pubKey Datastore");
 			pubKeyDatastore = new PubkeyStore();
 			SaltedHashFreenetStore pubkeyDataFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-store",
-			        pubKeyDatastore, random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook);
+			        pubKeyDatastore, random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate);
 			Logger.normal(this, "Initializing pubKey Datacache");
 			System.out.println("Initializing pubKey Datacache (" + maxCacheKeys + " keys)");
 			pubKeyDatacache = new PubkeyStore();
 			SaltedHashFreenetStore pubkeyCacheFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-cache",
-			        pubKeyDatacache, random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook);
+			        pubKeyDatacache, random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate);
 			Logger.normal(this, "Initializing SSK Datastore");
 			System.out.println("Initializing SSK Datastore");
 			sskDatastore = new SSKStore(this);
 			SaltedHashFreenetStore sskDataFS = SaltedHashFreenetStore.construct(storeDir, "SSK-store", sskDatastore,
-			        random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook);
+			        random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate);
 			Logger.normal(this, "Initializing SSK Datacache");
 			System.out.println("Initializing SSK Datacache (" + maxCacheKeys + " keys)");
 			sskDatacache = new SSKStore(this);
 			SaltedHashFreenetStore sskCacheFS = SaltedHashFreenetStore.construct(storeDir, "SSK-cache", sskDatacache,
-			        random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook);
+			        random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate);
 
 			File migrationFile = new File(storeDir, "migrated");
 			if (!migrationFile.exists()) {
