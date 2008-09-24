@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Vector;
 
 import freenet.config.InvalidConfigValueException;
@@ -99,7 +100,7 @@ public class NodeIPDetector {
 	FreenetInetAddress[] detectPrimaryIPAddress(boolean dumpLocalAddresses) {
 		boolean addedValidIP = false;
 		Logger.minor(this, "Redetecting IPs...");
-		Vector<FreenetInetAddress> addresses = new Vector<FreenetInetAddress>();
+		ArrayList<FreenetInetAddress> addresses = new ArrayList<FreenetInetAddress>();
 		if(overrideIPAddress != null) {
 			// If the IP is overridden and the override is valid, the override has to be the first element.
 			// overrideIPAddress will be null if the override is invalid
@@ -166,7 +167,7 @@ public class NodeIPDetector {
 	 * @param addedValidIP
 	 * @return
 	 */
-	private boolean innerDetect(Vector addresses) {
+	private boolean innerDetect(List addresses) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		boolean addedValidIP = false;
 		InetAddress[] detectedAddrs = ipDetector.getAddress();
