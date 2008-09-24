@@ -38,8 +38,6 @@ public class ArchiveManager {
 	public static final String METADATA_NAME = ".metadata";
 	private static boolean logMINOR;
 
-	private long maxArchiveSize;
-
 	final long maxArchivedFileSize;
 	
 	// ArchiveHandler's
@@ -73,13 +71,12 @@ public class ArchiveManager {
 	 * @param random A cryptographicaly secure random source
 	 * @param weakRandom A weak and cheap random source
 	 */
-	public ArchiveManager(int maxHandlers, long maxCachedData, long maxArchiveSize, long maxArchivedFileSize, int maxCachedElements, BucketFactory tempBucketFactory) {
+	public ArchiveManager(int maxHandlers, long maxCachedData, long maxArchivedFileSize, int maxCachedElements, BucketFactory tempBucketFactory) {
 		maxArchiveHandlers = maxHandlers;
 		archiveHandlers = new LRUHashtable();
 		this.maxCachedElements = maxCachedElements;
 		this.maxCachedData = maxCachedData;
 		storedData = new LRUHashtable();
-		this.maxArchiveSize = maxArchiveSize;
 		this.maxArchivedFileSize = maxArchivedFileSize;
 		this.tempBucketFactory = tempBucketFactory;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -215,8 +212,8 @@ public class ArchiveManager {
 				throwAtExit = true;
 			ctx.setLastHash(realHash);
 		}
-		if(data.size() > Math.max(maxArchiveSize, archiveContext.maxArchiveSize))
-			throw new ArchiveFailureException("Archive too big ("+data.size()+" > "+maxArchiveSize+")!");
+		if(data.size() > archiveContext.maxArchiveSize)
+			throw new ArchiveFailureException("Archive too big ("+data.size()+" > "+archiveContext.maxArchiveSize+")!");
 		if(archiveType != Metadata.ARCHIVE_ZIP)
 			throw new ArchiveFailureException("Unknown or unsupported archive algorithm "+archiveType);
 		
@@ -493,11 +490,4 @@ outer:		while(true) {
 		ArchiveHandlerImpl.init(container, context, nodeDBHandle);
 	}
 	
-	public synchronized long getMaxArchiveSize() {
-		return maxArchiveSize;
-	}
-
-	public synchronized void setMaxArchiveSize(long maxArchiveSize) {
-		this.maxArchiveSize = maxArchiveSize;
-	}
 }
