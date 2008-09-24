@@ -178,7 +178,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		if (logMINOR)
 			Logger.minor(this, "Fetch " + HexUtil.bytesToHex(routingKey) + " for " + callback);
 
-		configLock.readLock().lock();
+		if (!configLock.readLock().tryLock(10, TimeUnit.SECOND))
+			return null;
 		try {
 			Map<Long, Condition> lockMap = lockPlainKey(routingKey, true);
 			if (lockMap == null) {
@@ -265,7 +266,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		if (logMINOR)
 			Logger.minor(this, "Putting " + HexUtil.bytesToHex(routingKey) + " (" + name + ")");
 
-		configLock.readLock().lock();
+		if (!configLock.readLock().tryLock(10, TimeUnit.SECOND))
+			throw new IOException("can't lock in 10 seconds");
 		try {
 			Map<Long, Condition> lockMap = lockPlainKey(routingKey, false);
 			if (lockMap == null) {
