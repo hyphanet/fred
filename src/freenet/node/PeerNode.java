@@ -1253,6 +1253,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @return The time at which we must send a packet, even if
 	* it means it will only contains ack requests etc., or
 	* Long.MAX_VALUE if we have no pending ack request/acks/etc.
+	* Note that if this is less than now, it may not be entirely
+	* accurate i.e. we definitely must send a packet, but don't
+	* rely on it to tell you exactly how overdue we are.
 	*/
 	public long getNextUrgentTime(long now) {
 		long t = Long.MAX_VALUE;
