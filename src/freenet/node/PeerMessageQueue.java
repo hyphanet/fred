@@ -2,12 +2,10 @@ package freenet.node;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 
 import freenet.io.comm.DMT;
-import freenet.support.Logger;
 
 /**
  * Queue of messages to send to a node. Ordered first by priority then by time.
