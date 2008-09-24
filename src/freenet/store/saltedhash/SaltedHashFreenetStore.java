@@ -771,6 +771,9 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			final long newHdLen = (headerBlockLength + dataBlockLength + hdPadding) * storeFileSize;
 
 			if (preallocate) {
+				metaRAF.setLength(newMetaLen);
+				hdRAF.setLength(newHdLen);
+
 				byte[] b = new byte[4096];
 				ByteBuffer bf = ByteBuffer.wrap(b); 
 
