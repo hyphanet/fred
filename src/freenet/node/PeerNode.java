@@ -2564,6 +2564,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			fs.put("metadata", meta);
 		fs.writeTo(w);
 	}
+	
+	/**
+	 * (both metadata + normal fieldset but atomically)
+	 */
+	public synchronized SimpleFieldSet exportDiskFieldSet() {
+		SimpleFieldSet fs = exportFieldSet();
+		SimpleFieldSet meta = exportMetadataFieldSet();
+		if(!meta.isEmpty())
+			fs.put("metadata", meta);
+		return fs;
+	}
 
 	/**
 	* Export metadata about the node as a SimpleFieldSet

@@ -1500,63 +1500,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 		final String suffix = "-" + getDarknetPortNumber();
 		String datastoreDir = nodeConfig.getString("storeDir");
-		// FIXME: temporary cludge for backward compat.
-		File tmpFile = new File("datastore");
-		if(".".equals(datastoreDir) && !tmpFile.exists()) {
-			System.out.println("Your node seems to be using the old directory, we will move it: !!DO NOT RESTART!!");
-			Logger.normal(this, "Your node seems to be using the old directory, we will move it: !!DO NOT RESTART!!");
-			boolean done = false;
-			try {
-				if(tmpFile.mkdir()) {
-					File chkStoreCache = new File("chk"+suffix+".cache");
-					File chkStoreCacheNew = new File("datastore/chk"+suffix+".cache");
-					if(!chkStoreCache.renameTo(chkStoreCacheNew))
-						throw new IOException();
-					File chkStoreStore = new File("chk"+suffix+".store");
-					File chkStoreStoreNew = new File("datastore/chk"+suffix+".store");
-					if(!chkStoreStore.renameTo(chkStoreStoreNew))
-						throw new IOException();
-					
-					File sskStoreCache = new File("ssk"+suffix+".cache");
-					File sskStoreCacheNew = new File("datastore/ssk"+suffix+".cache");
-					if(!sskStoreCache.renameTo(sskStoreCacheNew))
-						throw new IOException();
-					File sskStoreStore = new File("ssk"+suffix+".store");
-					File sskStoreStoreNew = new File("datastore/ssk"+suffix+".store");
-					if(!sskStoreStore.renameTo(sskStoreStoreNew))
-						throw new IOException();
-					
-					File pubkeyStoreCache = new File("pubkey"+suffix+".cache");
-					File pubkeyStoreCacheNew = new File("datastore/pubkey"+suffix+".cache");
-					if(!pubkeyStoreCache.renameTo(pubkeyStoreCacheNew))
-						throw new IOException();
-					File pubkeyStoreStore = new File("pubkey"+suffix+".store");
-					File pubkeyStoreStoreNew = new File("datastore/pubkey"+suffix+".store");
-					if(!pubkeyStoreStore.renameTo(pubkeyStoreStoreNew))
-						throw new IOException();
-					
-					File databaseStoreDir = new File("database"+suffix);
-					File databaseStoreDirNew = new File("datastore/database"+suffix);
-					if(!databaseStoreDir.renameTo(databaseStoreDirNew))
-						throw new IOException();
-					done = true;
-				}
-			} catch (Throwable e) {
-				e.printStackTrace();
-				done = false;
-			}
-			
-			if(done) {
-				datastoreDir = "datastore/";
-				nodeConfig.fixOldDefault("storeDir", datastoreDir);
-				Logger.normal(this, "The migration is complete, cool :)");
-				System.out.println("The migration is complete, cool :)");
-			} else {
-				Logger.error(this, "Something went wrong :( please report the bug!");
-				System.err.println("Something went wrong :( please report the bug!");
-			}
-		}
-		
 		storeDir = new File(datastoreDir);
 		if(!((storeDir.exists() && storeDir.isDirectory()) || (storeDir.mkdir()))) {
 			String msg = "Could not find or create datastore directory";

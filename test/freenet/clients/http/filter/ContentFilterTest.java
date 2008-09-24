@@ -62,7 +62,8 @@ public class ContentFilterTest extends TestCase {
 	private String HTMLFilter(String data) throws Exception {
 		String typeName = "text/html";
 		URI baseURI = new URI(BASE_URI);
+		byte[] dataToFilter = data.getBytes("UTF-8");
 		
-		return ContentFilter.filter(new ArrayBucket(data.getBytes("UTF-8")), bf, typeName, baseURI, null).data.toString();
+		return ContentFilter.filter(new ArrayBucket(dataToFilter, -1), bf, typeName, baseURI, null).data.toString();
 	}
 }

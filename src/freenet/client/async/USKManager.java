@@ -13,7 +13,7 @@ import freenet.keys.USK;
 import freenet.node.NodeClientCore;
 import freenet.node.RequestClient;
 import freenet.node.RequestStarter;
-import freenet.node.Ticker;
+import freenet.support.Executor;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
 
@@ -45,7 +45,7 @@ public class USKManager implements RequestClient {
 
 	final FetchContext backgroundFetchContext;
 	
-	final Ticker ticker;
+	final Executor executor;
 	
 	private ClientContext context;
 	
@@ -58,7 +58,7 @@ public class USKManager implements RequestClient {
 		checkersByUSK = new HashMap();
 		backgroundFetchersByClearUSK = new HashMap();
 		temporaryBackgroundFetchersLRU = new LRUQueue();
-		ticker = core.getTicker();
+		executor = core.getExecutor();
 	}
 
 	public void init(ObjectContainer container, ClientContext context) {
@@ -160,15 +160,15 @@ public class USKManager implements RequestClient {
 		}
 		if(callbacks != null) {
 			// Run off-thread, because of locking, and because client callbacks may take some time
-			ticker.queueTimedJob(new Runnable() {
-				public void run() {
-					USK usk = origUSK.copy(number);
-					for(int i=0;i<callbacks.length;i++)
-						callbacks[i].onFoundEdition(number, usk, null, // non-persistent
-								context, false, (short)-1, null);
+					final USK usk = origUSK.copy(number);
+					for(final USKCallback callback : callbacks)
+						context.mainExecutor.execute(new Runnable() {
+							public void run() {
+								callback.onFoundEdition(number, usk, null, // non-persistent
+										context, false, (short)-1, null);
+							}
+						}, "USKManager callback executor for " +callback);
 				}
-			}, 0);
-		}
 	}
 	
 	/**
@@ -214,11 +214,11 @@ public class USKManager implements RequestClient {
 			cb.onFoundEdition(curEd, origUSK.copy(curEd), null, context, false, (short)-1, null);
 		final USKFetcher fetcher = sched;
 		if(fetcher != null) {
-			ticker.queueTimedJob(new Runnable() {
+			executor.execute(new Runnable() {
 				public void run() {
 					fetcher.schedule(null, context);
 				}
-			}, 0);
+			}, "USKManager.schedule for "+fetcher);
 		}
 	}
 	

@@ -28,8 +28,6 @@ import javax.net.ServerSocketFactory;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 
-import com.sleepycat.je.utilint.NotImplementedYetException;
-
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.support.Logger;

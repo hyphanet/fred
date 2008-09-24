@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import freenet.support.HexUtil;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,7 +33,7 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 		
 		byte[] buf = new byte[Math.max(Math.min(128, maxLength), Math.min(1024, bufferSize))];
 		int ctr = 0;
-		mark((maxLength+1)*2); // Might be more than maxLengh if we use utf8
+		mark(Integer.MAX_VALUE); // Might be more than maxLengh if we use utf8
 		while(true) {
 			int x = read(buf, ctr, buf.length - ctr);
 			if(x == -1) {
@@ -41,9 +42,8 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 				return new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1");
 			}
 			// REDFLAG this is definitely safe with the above charsets, it may not be safe with some wierd ones. 
-			for(; ctr < buf.length; ctr++) {
-				if(ctr >= maxLength)
-					throw new TooLongException();
+			int end = ctr + x;
+			for(; ctr < end; ctr++) {
 				if(buf[ctr] == '\n') {
 					String toReturn = "";
 					if(ctr != 0) {
@@ -54,10 +54,12 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 					skip(ctr + 1);
 					return toReturn;
 				}
+				if(ctr >= maxLength)
+					throw new TooLongException("We reached maxLength="+maxLength+ " parsing\n "+HexUtil.bytesToHex(buf, 0, ctr) + "\n" + new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1"));
 			}
-			if(x > 0) {
+			if((buf.length != maxLength) && (buf.length - ctr < bufferSize)) {
 				byte[] newBuf = new byte[Math.min(buf.length * 2, maxLength)];
-				System.arraycopy(buf, 0, newBuf, 0, buf.length);
+				System.arraycopy(buf, 0, newBuf, 0, ctr);
 				buf = newBuf;
 			}
 		}
@@ -84,7 +86,7 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 				return new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1");
 			}
 			if(ctr >= maxLength)
-				throw new TooLongException();
+					throw new TooLongException("We reached maxLength="+maxLength+ " parsing\n "+HexUtil.bytesToHex(buf, 0, ctr) + "\n" + new String(buf, 0, ctr, utf ? "UTF-8" : "ISO-8859-1"));
 			if(ctr >= buf.length) {
 				byte[] newBuf = new byte[Math.min(buf.length * 2, maxLength)];
 				System.arraycopy(buf, 0, newBuf, 0, buf.length);

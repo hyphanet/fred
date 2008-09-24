@@ -182,8 +182,6 @@ public class TestnetHandler implements Runnable {
 						fs = node.exportOpennetPublicFieldSet();
 						fs.writeTo(bw);
 					}
-					bw.write("\n\nMy peers:\n");
-					node.peers.writePeers(bw);
 					bw.close();
 				}else {
 					Logger.error(this, "Unknown testnet command: "+command);

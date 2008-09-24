@@ -162,6 +162,7 @@ public class USKFetcher implements ClientGetState {
 				checker.schedule(container, context);
 		}
 		
+		@Override
 		public String toString() {
 			return "USKAttempt for "+number+" for "+origUSK.getURI()+" for "+USKFetcher.this;
 		}
@@ -471,7 +472,7 @@ public class USKFetcher implements ClientGetState {
 		if (delay<=0) {
 			schedule(container, context);
 		} else {
-			uskManager.ticker.queueTimedJob(new Runnable() {
+			context.ticker.queueTimedJob(new Runnable() {
 				public void run() {
 					USKFetcher.this.schedule(null, context);
 				}

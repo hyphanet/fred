@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class HTMLNode implements XMLCharacterClasses {
@@ -44,9 +43,7 @@ public class HTMLNode implements XMLCharacterClasses {
 	}
 
 	public HTMLNode(String name, String[] attributeNames, String[] attributeValues, String content) {
-		
-		Matcher nameMatcher = namePattern.matcher(name);
-		if ((name == null) || (!"#".equals(name) && !"%".equals(name) && !nameMatcher.matches())) {
+		if ((name == null) || (!"#".equals(name) && !"%".equals(name) && !namePattern.matcher(name).matches())) {
 			throw new IllegalArgumentException("element name is not legal");
 		}
 		if ((attributeNames != null) && (attributeValues != null)) {
@@ -193,7 +190,9 @@ public class HTMLNode implements XMLCharacterClasses {
 		}
 		if (children.size() == 0) {
 			if ("textarea".equals(name) || ("div").equals(name) || ("a").equals(name)) {
-				tagBuffer.append("></").append(name).append('>');
+				tagBuffer.append("></");
+				tagBuffer.append(name);
+				tagBuffer.append('>');
 			} else {
 				tagBuffer.append(" />");
 			}
@@ -206,7 +205,9 @@ public class HTMLNode implements XMLCharacterClasses {
 				HTMLNode childNode = children.get(childIndex);
 				childNode.generate(tagBuffer);
 			}
-			tagBuffer.append("</").append(name).append('>');
+			tagBuffer.append("</");
+			tagBuffer.append(name);
+			tagBuffer.append('>');
 			if(("div").equals(name)|| ("form").equals(name)|| ("input").equals(name)|| ("li").equals(name)|| ("option").equals(name)|| ("script").equals(name)|| ("table").equals(name)|| ("tr").equals(name)|| ("td").equals(name)) {
 				tagBuffer.append('\n');
 			}

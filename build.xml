@@ -82,6 +82,7 @@
 				<pathelement location="javax-security.jar"/>
 				<pathelement location="javax-crypto.jar"/>
 			</classpath>
+			<compilerarg value="-Xlint"/>
 
 			<!-- following a very temporary list of files to be build -->
 			<include name="org/**/*.java"/>
@@ -128,12 +129,16 @@
 	<!-- ================================================== -->
 
 	<target name="unit-build" depends="compile" if="junit.present" unless="skip_tests">
+		<delete dir="${build-test}"/>
+		<mkdir dir="${build-test}"/>
+
 		<javac srcdir="${test}" destdir="${build-test}" debug="on" optimize="on" source="1.5">
 			<classpath>
 				<pathelement path="${build}"/>
 				<pathelement location="${freenet-ext.location}"/>
 				<pathelement location="${junit.location}"/>
 			</classpath>
+			<compilerarg value="-Xlint"/>
 			<include name="**/*.java"/>
 			<exclude name="*.java"/>
 		</javac>
@@ -152,7 +157,7 @@
 
 			<batchtest fork="yes">
 				<fileset dir="${build-test}">
-					<include name="**/*.class"/>
+					<include name="**/*Test.class"/>
 				</fileset>
 			</batchtest>
 			<sysproperty key="benchmark" value="${benchmark}" />
