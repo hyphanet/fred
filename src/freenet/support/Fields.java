@@ -21,54 +21,56 @@ public abstract class Fields {
 	 * All possible chars for representing a number as a String. Used to
 	 * optimize numberList().
 	 */
-	private final static char[] digits =
-		{
-			'0',
-			'1',
-			'2',
-			'3',
-			'4',
-			'5',
-			'6',
-			'7',
-			'8',
-			'9',
-			'a',
-			'b',
-			'c',
-			'd',
-			'e',
-			'f',
-			'g',
-			'h',
-			'i',
-			'j',
-			'k',
-			'l',
-			'm',
-			'n',
-			'o',
-			'p',
-			'q',
-			'r',
-			's',
-			't',
-			'u',
-			'v',
-			'w',
-			'x',
-			'y',
-			'z' };
-
-	private static final long[] MULTIPLES = {
-		1000,						1l << 10,
-		1000 * 1000,			 		1l << 20,
-		1000l * 1000l * 1000l,				1l << 30,
-		1000l * 1000l * 1000l * 1000l,			1l << 40,
-		1000l * 1000l * 1000l * 1000l * 1000,		1l << 50,
-		1000l * 1000l * 1000l * 1000l * 1000l * 1000l, 	1l << 60
+	private final static char[] digits = {
+		'0',
+		'1',
+		'2',
+		'3',
+		'4',
+		'5',
+		'6',
+		'7',
+		'8',
+		'9',
+		'a',
+		'b',
+		'c',
+		'd',
+		'e',
+		'f',
+		'g',
+		'h',
+		'i',
+		'j',
+		'k',
+		'l',
+		'm',
+		'n',
+		'o',
+		'p',
+		'q',
+		'r',
+		's',
+		't',
+		'u',
+		'v',
+		'w',
+		'x',
+		'y',
+		'z'
 	};
-	
+	private static final long[] MULTIPLES = {
+		1000, 1l << 10,
+		1000 * 1000, 1l << 20,
+		1000l * 1000l * 1000l, 1l << 30,
+		1000l * 1000l * 1000l * 1000l, 1l << 40,
+		1000l * 1000l * 1000l * 1000l * 1000, 1l << 50,
+		1000l * 1000l * 1000l * 1000l * 1000l * 1000l, 1l << 60
+	};
+	private static final String[] MULTIPLES_2 = {
+		"k", "K", "m", "M", "g", "G", "t", "T", "p", "P", "e", "E"
+	};
+
 	/**
 	 * Converts a hex string into a long. Long.parseLong(hex, 16) assumes the
 	 * input is nonnegative unless there is a preceding minus sign. This method
@@ -88,14 +90,14 @@ public abstract class Fields {
 	public static final long hexToLong(String hex)
 		throws NumberFormatException {
 		int len = hex.length();
-		if (len > 16)
+		if(len > 16)
 			throw new NumberFormatException();
 
 		long l = 0;
-		for (int i = 0; i < len; i++) {
+		for(int i = 0; i < len; i++) {
 			l <<= 4;
 			int c = Character.digit(hex.charAt(i), 16);
-			if (c < 0)
+			if(c < 0)
 				throw new NumberFormatException();
 			l |= c;
 		}
@@ -120,14 +122,14 @@ public abstract class Fields {
 	 */
 	public static final int hexToInt(String hex) throws NumberFormatException {
 		int len = hex.length();
-		if (len > 16)
+		if(len > 16)
 			throw new NumberFormatException();
 
 		int l = 0;
-		for (int i = 0; i < len; i++) {
+		for(int i = 0; i < len; i++) {
 			l <<= 4;
 			int c = Character.digit(hex.charAt(i), 16);
-			if (c < 0)
+			if(c < 0)
 				throw new NumberFormatException();
 			l |= c;
 		}
@@ -149,7 +151,8 @@ public abstract class Fields {
 	 */
 	/* wooo, rocket science! (this is purely abstraction people) */
 	public static final boolean stringToBool(String s, boolean def) {
-		if(s == null) return def;
+		if(s == null)
+			return def;
 		return (def ? !s.equalsIgnoreCase("false") : s.equalsIgnoreCase("true"));
 	}
 
@@ -159,10 +162,13 @@ public abstract class Fields {
 	 * @return
 	 */
 	public static boolean stringToBool(String s) throws NumberFormatException {
-		if(s == null) throw new NumberFormatException("Null");
-		if(s.equalsIgnoreCase("false") || s.equalsIgnoreCase("no")) return false;
-		if(s.equalsIgnoreCase("true") || s.equalsIgnoreCase("yes")) return true;
-		throw new NumberFormatException("Invalid boolean: "+s);
+		if(s == null)
+			throw new NumberFormatException("Null");
+		if(s.equalsIgnoreCase("false") || s.equalsIgnoreCase("no"))
+			return false;
+		if(s.equalsIgnoreCase("true") || s.equalsIgnoreCase("yes"))
+			return true;
+		throw new NumberFormatException("Invalid boolean: " + s);
 	}
 
 	/**
@@ -177,10 +183,11 @@ public abstract class Fields {
 	}
 
 	public static final String[] commaList(String ls) {
-		if(ls == null) return null;
+		if(ls == null)
+			return null;
 		StringTokenizer st = new StringTokenizer(ls, ",");
 		String[] r = new String[st.countTokens()];
-		for (int i = 0; i < r.length; i++) {
+		for(int i = 0; i < r.length; i++) {
 			r[i] = st.nextToken().trim();
 		}
 		return r;
@@ -191,10 +198,10 @@ public abstract class Fields {
 	}
 
 	public static final String textList(String[] ls, char ch) {
-		StringBuffer sb = new StringBuffer();
-		for (int i = 0; i < ls.length; i++) {
+		StringBuilder sb = new StringBuilder();
+		for(int i = 0; i < ls.length; i++) {
 			sb.append(ls[i]);
-			if (i != ls.length - 1)
+			if(i != ls.length - 1)
 				sb.append(ch);
 		}
 		return sb.toString();
@@ -204,7 +211,7 @@ public abstract class Fields {
 		throws NumberFormatException {
 		StringTokenizer st = new StringTokenizer(ls, ",");
 		long[] r = new long[st.countTokens()];
-		for (int i = 0; i < r.length; i++) {
+		for(int i = 0; i < r.length; i++) {
 			r[i] = hexToLong(st.nextToken());
 		}
 		return r;
@@ -212,8 +219,8 @@ public abstract class Fields {
 
 	public static final String numberList(long[] ls) {
 		char[] numberBuf = new char[64];
-		StringBuffer listBuf = new StringBuffer(ls.length * 18);
-		for (int i = 0; i < ls.length; i++) {
+		StringBuilder listBuf = new StringBuilder(ls.length * 18);
+		for(int i = 0; i < ls.length; i++) {
 
 			// Convert the number into a string in a fixed size buffer.
 			long l = ls[i];
@@ -221,12 +228,11 @@ public abstract class Fields {
 			do {
 				numberBuf[--charPos] = digits[(int) (l & 0x0F)];
 				l >>>= 4;
-			} while (l != 0);
+			} while(l != 0);
 
 			listBuf.append(numberBuf, charPos, (64 - charPos));
-			if (i != ls.length - 1) {
+			if(i != ls.length - 1)
 				listBuf.append(',');
-			}
 		}
 		return listBuf.toString();
 	}
@@ -242,53 +248,39 @@ public abstract class Fields {
 	public static final long dateTime(String date)
 		throws NumberFormatException {
 
-		if (date.length() == 0)
+		if(date.length() == 0)
 			throw new NumberFormatException("Date time empty");
 
-		if ((date.charAt(0) == '-') || (date.charAt(0) == '+')) {
+		if((date.charAt(0) == '-') || (date.charAt(0) == '+')) {
 			// Relative date
-			StringBuffer sb = new StringBuffer(10);
-			for (int x = 1; x < date.length(); x++) {
+			StringBuilder sb = new StringBuilder(10);
+			for(int x = 1; x < date.length(); x++) {
 				char c = date.charAt(x);
-				if (Character.isDigit(c)) {
+				if(Character.isDigit(c))
 					sb.append(c);
-				} else
+				else
 					break;
 			}
 			int num = Integer.parseInt(sb.toString());
 			int chop = 1 + sb.length();
 			int deltaType = 0;
-			if (date.length() == chop)
+			if(date.length() == chop)
 				deltaType = Calendar.DAY_OF_YEAR;
 			else {
 				String deltaTypeString = date.substring(chop).toLowerCase();
-				if (deltaTypeString.equals("y")
-					|| deltaTypeString.equals("year"))
+				if(deltaTypeString.equals("y") || deltaTypeString.equals("year"))
 					deltaType = Calendar.YEAR;
-				else if (
-					deltaTypeString.equals("month")
-						|| deltaTypeString.equals("mo"))
+				else if(deltaTypeString.equals("month") || deltaTypeString.equals("mo"))
 					deltaType = Calendar.MONTH;
-				else if (
-					deltaTypeString.equals("week")
-						|| deltaTypeString.equals("w"))
+				else if(deltaTypeString.equals("week") || deltaTypeString.equals("w"))
 					deltaType = Calendar.WEEK_OF_YEAR;
-				else if (
-					deltaTypeString.equals("day")
-						|| deltaTypeString.equals("d"))
+				else if(deltaTypeString.equals("day") || deltaTypeString.equals("d"))
 					deltaType = Calendar.DAY_OF_YEAR;
-				else if (
-					deltaTypeString.equals("hour")
-						|| deltaTypeString.equals("h"))
+				else if(deltaTypeString.equals("hour") || deltaTypeString.equals("h"))
 					deltaType = Calendar.HOUR;
-				else if (
-					deltaTypeString.equals("minute")
-						|| deltaTypeString.equals("min"))
+				else if(deltaTypeString.equals("minute") || deltaTypeString.equals("min"))
 					deltaType = Calendar.MINUTE;
-				else if (
-					deltaTypeString.equals("second")
-						|| deltaTypeString.equals("s")
-						|| deltaTypeString.equals("sec"))
+				else if(deltaTypeString.equals("second") || deltaTypeString.equals("s") || deltaTypeString.equals("sec"))
 					deltaType = Calendar.SECOND;
 				else
 					throw new NumberFormatException(
@@ -301,8 +293,7 @@ public abstract class Fields {
 
 		int dash = date.indexOf('-');
 
-		if (!((dash == -1) && (date.length() == 8))
-			&& !((dash == 8) && (date.length() == 17)))
+		if(!((dash == -1) && (date.length() == 8)) && !((dash == 8) && (date.length() == 17)))
 			throw new NumberFormatException(
 				"Date time: " + date + " not correct.");
 		int year = Integer.parseInt(date.substring(0, 4));
@@ -315,17 +306,14 @@ public abstract class Fields {
 
 		// Note that month is zero based in GregorianCalender!
 		try {
-			return (
-				new GregorianCalendar(
-					year,
-					month - 1,
-					day,
-					hour,
-					minute,
-					second))
-				.getTime()
-				.getTime();
-		} catch (Exception e) {
+			return (new GregorianCalendar(
+				year,
+				month - 1,
+				day,
+				hour,
+				minute,
+				second)).getTime().getTime();
+		} catch(Exception e) {
 			e.printStackTrace();
 			// The API docs don't say which exception is thrown on bad numbers!
 			throw new NumberFormatException("Invalid date " + date + ": " + e);
@@ -342,7 +330,7 @@ public abstract class Fields {
 		//String dateString = f.format(c.getTime());
 		String dateString = f.format(new Date(time * 1000));
 
-		if (dateString.endsWith("-00:00:00"))
+		if(dateString.endsWith("-00:00:00"))
 			dateString = dateString.substring(0, 8);
 
 		return dateString;
@@ -350,14 +338,14 @@ public abstract class Fields {
 
 	public static final int compareBytes(byte[] b1, byte[] b2) {
 		int len = Math.max(b1.length, b2.length);
-		for (int i = 0; i < len; ++i) {
-			if (i == b1.length)
+		for(int i = 0; i < len; ++i) {
+			if(i == b1.length)
 				return i == b2.length ? 0 : -1;
-			else if (i == b2.length)
+			else if(i == b2.length)
 				return 1;
-			else if ((0xff & b1[i]) > (0xff & b2[i]))
+			else if((0xff & b1[i]) > (0xff & b2[i]))
 				return 1;
-			else if ((0xff & b1[i]) < (0xff & b2[i]))
+			else if((0xff & b1[i]) < (0xff & b2[i]))
 				return -1;
 		}
 		return 0;
@@ -369,24 +357,24 @@ public abstract class Fields {
 		int aoff,
 		int boff,
 		int len) {
-		for (int i = 0; i < len; ++i) {
-			if (i + aoff == a.length)
+		for(int i = 0; i < len; ++i) {
+			if(i + aoff == a.length)
 				return i + boff == b.length ? 0 : -1;
-			else if (i + boff == b.length)
+			else if(i + boff == b.length)
 				return 1;
-			else if ((0xff & a[i + aoff]) > (0xff & b[i + boff]))
+			else if((0xff & a[i + aoff]) > (0xff & b[i + boff]))
 				return 1;
-			else if ((0xff & a[i + aoff]) < (0xff & b[i + boff]))
+			else if((0xff & a[i + aoff]) < (0xff & b[i + boff]))
 				return -1;
 		}
 		return 0;
 	}
 
 	public static final boolean byteArrayEqual(byte[] a, byte[] b) {
-		if (a.length != b.length)
+		if(a.length != b.length)
 			return false;
-		for (int i = 0; i < a.length; ++i)
-			if (a[i] != b[i])
+		for(int i = 0; i < a.length; ++i)
+			if(a[i] != b[i])
 				return false;
 		return true;
 	}
@@ -397,10 +385,10 @@ public abstract class Fields {
 		int aoff,
 		int boff,
 		int len) {
-		if ((a.length < aoff + len) || (b.length < boff + len))
+		if((a.length < aoff + len) || (b.length < boff + len))
 			return false;
-		for (int i = 0; i < len; ++i)
-			if (a[i + aoff] != b[i + boff])
+		for(int i = 0; i < len; ++i)
+			if(a[i + aoff] != b[i + boff])
 				return false;
 		return true;
 	}
@@ -409,9 +397,11 @@ public abstract class Fields {
 	 * Compares byte arrays lexicographically.
 	 */
 	public static final class ByteArrayComparator implements Comparator {
+
 		public final int compare(Object o1, Object o2) {
 			return compare((byte[]) o1, (byte[]) o2);
 		}
+
 		public static final int compare(byte[] o1, byte[] o2) {
 			return compareBytes(o1, o2);
 		}
@@ -419,18 +409,17 @@ public abstract class Fields {
 
 	// could add stuff like IntegerComparator, LongComparator etc.
 	// if we need it
-
 	public static final int hashCode(byte[] b) {
-	    return hashCode(b, 0, b.length);
+		return hashCode(b, 0, b.length);
 	}
-	
+
 	/**
 	 * A generic hashcode suited for byte arrays that are more or less random.
 	 */
 	public static final int hashCode(byte[] b, int ptr, int length) {
 		int h = 0;
-		for (int i = length - 1; i >= 0; --i) {
-			int x = b[ptr+i] & 0xff;
+		for(int i = length - 1; i >= 0; --i) {
+			int x = b[ptr + i] & 0xff;
 			h ^= x << ((i & 3) << 3);
 		}
 		return h;
@@ -441,172 +430,176 @@ public abstract class Fields {
 	 */
 	public static final long longHashCode(byte[] b) {
 		return longHashCode(b, 0, b.length);
-	}	
+	}
 
 	/**
 	 * Long version of above Not believed to be secure in any sense of the word :)
 	 */
 	public static final long longHashCode(byte[] b, int offset, int length) {
 		long h = 0;
-		for (int i = length - 1; i >= 0; --i) {
-			int x = b[i+offset] & 0xff;
+		for(int i = length - 1; i >= 0; --i) {
+			int x = b[i + offset] & 0xff;
 			h ^= ((long) x) << ((i & 7) << 3);
 		}
 		return h;
 	}
 
-    /**
-     * @param addr
-     * @return
-     */
-    public static String commaList(Object[] addr) {
-		StringBuffer sb = new StringBuffer();
-		for (int i = 0; i < addr.length; i++) {
+	/**
+	 * @param addr
+	 * @return
+	 */
+	public static String commaList(Object[] addr) {
+		StringBuilder sb = new StringBuilder();
+		for(int i = 0; i < addr.length; i++) {
 			sb.append(addr[i]);
-			if (i != addr.length - 1)
+			if(i != addr.length - 1)
 				sb.append(',');
 		}
 		return sb.toString();
-    }
-
-    /**
-     * Convert an array of longs to an array of bytes, using a 
-     * consistent endianness.
-     */
-    public static byte[] longsToBytes(long[] longs) {
-        byte[] buf = new byte[longs.length * 8];
-        for(int i=0;i<longs.length;i++) {
-            long x = longs[i];
-            for(int j=0;j<8;j++) {
-                buf[i*8+j] = (byte)x;
-                x >>>= 8;
-            }
-        }
-        return buf;
-    }
-    
-    /**
-     * Convert an array of bytes to an array of longs.
-     */
-    public static long[] bytesToLongs(byte[] buf) {
-    	return bytesToLongs(buf, 0, buf.length);
-    }
-    
-    /**
-     * Convert an array of bytes to an array of longs.
-     * @param buf
-     * @param length 
-     * @param offset 
-     * @return
-     */
-    public static long[] bytesToLongs(byte[] buf, int offset, int length) {
-        if(length % 8 != 0) throw new IllegalArgumentException();
-        long[] longs = new long[length/8];
-        for(int i=0;i<longs.length;i++) {
-            long x = 0;
-            for(int j=7;j>=0;j--) {
-                long y = (buf[offset+i*8+j] & 0xff);
-                x = (x << 8) | y;
-            }
-            longs[i] = x;
-        }
-        return longs;
-    }
-
-    /**
-     * Convert an array of bytes to a single long.
-     */
-    public static long bytesToLong(byte[] buf) {
-        if(buf.length < 8) throw new IllegalArgumentException();
-        long x = 0;
-        for(int j=7;j>=0;j--) {
-            long y = (buf[j] & 0xff);
-            x = (x << 8) | y;
-        }
-        return x;
-    }
-
-    /**
-     * Convert an array of bytes to a single int.
-     */
-	public static int bytesToInt(byte[] buf, int offset) {
-        if(buf.length < 4) throw new IllegalArgumentException();
-        int x = 0;
-        for(int j=3;j>=0;j--) {
-            int y = (buf[j+offset] & 0xff);
-            x = (x << 8) | y;
-        }
-        return x;
 	}
-	
+
+	/**
+	 * Convert an array of longs to an array of bytes, using a 
+	 * consistent endianness.
+	 */
+	public static byte[] longsToBytes(long[] longs) {
+		byte[] buf = new byte[longs.length * 8];
+		for(int i = 0; i < longs.length; i++) {
+			long x = longs[i];
+			for(int j = 0; j < 8; j++) {
+				buf[i * 8 + j] = (byte) x;
+				x >>>= 8;
+			}
+		}
+		return buf;
+	}
+
+	/**
+	 * Convert an array of bytes to an array of longs.
+	 */
+	public static long[] bytesToLongs(byte[] buf) {
+		return bytesToLongs(buf, 0, buf.length);
+	}
+
+	/**
+	 * Convert an array of bytes to an array of longs.
+	 * @param buf
+	 * @param length 
+	 * @param offset 
+	 * @return
+	 */
+	public static long[] bytesToLongs(byte[] buf, int offset, int length) {
+		if(length % 8 != 0)
+			throw new IllegalArgumentException();
+		long[] longs = new long[length / 8];
+		for(int i = 0; i < longs.length; i++) {
+			long x = 0;
+			for(int j = 7; j >= 0; j--) {
+				long y = (buf[offset + i * 8 + j] & 0xff);
+				x = (x << 8) | y;
+			}
+			longs[i] = x;
+		}
+		return longs;
+	}
+
+	/**
+	 * Convert an array of bytes to a single long.
+	 */
+	public static long bytesToLong(byte[] buf) {
+		if(buf.length < 8)
+			throw new IllegalArgumentException();
+		long x = 0;
+		for(int j = 7; j >= 0; j--) {
+			long y = (buf[j] & 0xff);
+			x = (x << 8) | y;
+		}
+		return x;
+	}
+
+	/**
+	 * Convert an array of bytes to a single int.
+	 */
+	public static int bytesToInt(byte[] buf, int offset) {
+		if(buf.length < 4)
+			throw new IllegalArgumentException();
+		int x = 0;
+		for(int j = 3; j >= 0; j--) {
+			int y = (buf[j + offset] & 0xff);
+			x = (x << 8) | y;
+		}
+		return x;
+	}
+
 	public static int[] bytesToInts(byte[] buf, int offset, int length) {
-		if(length % 4 != 0) throw new IllegalArgumentException();
-		int[] ints = new int[length/4];
-		for(int i=0;i<ints.length;i++) {
+		if(length % 4 != 0)
+			throw new IllegalArgumentException();
+		int[] ints = new int[length / 4];
+		for(int i = 0; i < ints.length; i++) {
 			int x = 0;
-			for(int j=3;j>=0;j--) {
-				int y = (buf[j+offset] & 0xff);
+			for(int j = 3; j >= 0; j--) {
+				int y = (buf[j + offset] & 0xff);
 				x = (x << 8) | y;
 			}
 			ints[i] = x;
 		}
 		return ints;
 	}
-	
+
 	public static int[] bytesToInts(byte[] buf) {
 		return bytesToInts(buf, 0, buf.length);
 	}
-	
-    public static byte[] longToBytes(long x) {
-        byte[] buf = new byte[8];
-        for(int j=0;j<8;j++) {
-            buf[j] = (byte)x;
-            x >>>= 8;
-        }
-        return buf;
-    }
+
+	public static byte[] longToBytes(long x) {
+		byte[] buf = new byte[8];
+		for(int j = 0; j < 8; j++) {
+			buf[j] = (byte) x;
+			x >>>= 8;
+		}
+		return buf;
+	}
 
 	public static byte[] intsToBytes(int[] ints) {
-        byte[] buf = new byte[ints.length * 8];
-        for(int i=0;i<ints.length;i++) {
-            long x = ints[i];
-            for(int j=0;j<4;j++) {
-                buf[i*4+j] = (byte)x;
-                x >>>= 8;
-            }
-        }
-        return buf;
+		byte[] buf = new byte[ints.length * 8];
+		for(int i = 0; i < ints.length; i++) {
+			long x = ints[i];
+			for(int j = 0; j < 4; j++) {
+				buf[i * 4 + j] = (byte) x;
+				x >>>= 8;
+			}
+		}
+		return buf;
 	}
 
 	public static long parseLong(String s, long defaultValue) {
 		try {
 			return Long.parseLong(s);
-		} catch (NumberFormatException e) {
-			Logger.error(Fields.class, "Failed to parse value as long: "+s+" : "+e, e);
+		} catch(NumberFormatException e) {
+			Logger.error(Fields.class, "Failed to parse value as long: " + s + " : " + e, e);
 			return defaultValue;
 		}
 	}
-	
+
 	public static int parseInt(String s, int defaultValue) {
 		try {
 			return Integer.parseInt(s);
-		} catch (NumberFormatException e) {
-			Logger.error(Fields.class, "Failed to parse value as int: "+s+" : "+e, e);
+		} catch(NumberFormatException e) {
+			Logger.error(Fields.class, "Failed to parse value as int: " + s + " : " + e, e);
 			return defaultValue;
 		}
 	}
-	
+
 	public static long parseShort(String s, short defaultValue) {
 		try {
 			return Short.parseShort(s);
-		} catch (NumberFormatException e) {
-			Logger.error(Fields.class, "Failed to parse value as short: "+s+" : "+e, e);
+		} catch(NumberFormatException e) {
+			Logger.error(Fields.class, "Failed to parse value as short: " + s + " : " + e, e);
 			return defaultValue;
 		}
 	}
-	
-    /**
-     * Parse a human-readable string possibly including SI and ICE units into a short.
+
+	/**
+	 * Parse a human-readable string possibly including SI and ICE units into a short.
 	 * @throws NumberFormatException
 	 *             if the string is not parseable
 	 */
@@ -616,13 +609,12 @@ public abstract class Fields {
 		int x = s.length() - 1;
 		int idx;
 		try {
-			while ((x >= 0)
-				&& ((idx = "kK".indexOf(s.charAt(x))) != -1)) {
+			while((x >= 0) && ((idx = "kK".indexOf(s.charAt(x))) != -1)) {
 				x--;
 				res *= MULTIPLES[idx];
 			}
 			res *= Double.parseDouble(s.substring(0, x + 1));
-		} catch (ArithmeticException e) {
+		} catch(ArithmeticException e) {
 			res = Short.MAX_VALUE;
 			throw new NumberFormatException(e.getMessage());
 		}
@@ -640,19 +632,18 @@ public abstract class Fields {
 		int x = s.length() - 1;
 		int idx;
 		try {
-			while ((x >= 0)
-				&& ((idx = "kKmMgG".indexOf(s.charAt(x))) != -1)) {
+			while((x >= 0) && ((idx = "kKmMgG".indexOf(s.charAt(x))) != -1)) {
 				x--;
 				res *= MULTIPLES[idx];
 			}
 			res *= Double.parseDouble(s.substring(0, x + 1));
-		} catch (ArithmeticException e) {
+		} catch(ArithmeticException e) {
 			res = Integer.MAX_VALUE;
 			throw new NumberFormatException(e.getMessage());
 		}
 		return res;
 	}
-	
+
 	/**
 	 * Parse a human-readable string possibly including SI and ICE units into a long.
 	 * @throws NumberFormatException
@@ -664,20 +655,21 @@ public abstract class Fields {
 		int x = s.length() - 1;
 		int idx;
 		try {
-			while ((x >= 0)
-				&& ((idx = "kKmMgGtTpPeE".indexOf(s.charAt(x))) != -1)) {
+			while((x >= 0) && ((idx = "kKmMgGtTpPeE".indexOf(s.charAt(x))) != -1)) {
 				x--;
 				res *= MULTIPLES[idx];
 			}
 			String multiplier = s.substring(0, x + 1).trim();
 			if(multiplier.indexOf('.') > -1 || multiplier.indexOf('E') > -1) {
 				res *= Double.parseDouble(multiplier);
-				if(Logger.shouldLog(Logger.MINOR, Fields.class)) Logger.minor(Fields.class, "Parsed "+multiplier+" of "+s+" as double: "+res);
+				if(Logger.shouldLog(Logger.MINOR, Fields.class))
+					Logger.minor(Fields.class, "Parsed " + multiplier + " of " + s + " as double: " + res);
 			} else {
 				res *= Long.parseLong(multiplier);
-				if(Logger.shouldLog(Logger.MINOR, Fields.class)) Logger.minor(Fields.class, "Parsed "+multiplier+" of "+s+" as long: "+res);
+				if(Logger.shouldLog(Logger.MINOR, Fields.class))
+					Logger.minor(Fields.class, "Parsed " + multiplier + " of " + s + " as long: " + res);
 			}
-		} catch (ArithmeticException e) {
+		} catch(ArithmeticException e) {
 			res = Long.MAX_VALUE;
 			throw new NumberFormatException(e.getMessage());
 		}
@@ -685,16 +677,15 @@ public abstract class Fields {
 	}
 
 	public static String longToString(long val) {
-		String[] u = { "k", "K", "m", "M", "g", "G", "t", "T", "p", "P", "e", "E" };
 		String ret = Long.toString(val);
 
-		if (val <= 0)
+		if(val <= 0)
 			return ret;
 
-		for (int i = MULTIPLES.length - 1; i >= 0; i--) {
-			if (val > MULTIPLES[i] && val % MULTIPLES[i] == 0) {
-				ret = (val / MULTIPLES[i]) + u[i];
-				if (!u[i].toLowerCase().equals(u[i]))
+		for(int i = MULTIPLES.length - 1; i >= 0; i--) {
+			if(val > MULTIPLES[i] && val % MULTIPLES[i] == 0) {
+				ret = (val / MULTIPLES[i]) + MULTIPLES_2[i];
+				if(!MULTIPLES_2[i].toLowerCase().equals(MULTIPLES_2[i]))
 					ret += "iB";
 				break;
 			}
@@ -703,16 +694,15 @@ public abstract class Fields {
 	}
 
 	public static String intToString(int val) {
-		String[] u = { "k", "K", "m", "M", "g", "G", "t", "T", "p", "P", "e", "E" };
 		String ret = Integer.toString(val);
 
-		if (val <= 0)
+		if(val <= 0)
 			return ret;
 
-		for (int i = MULTIPLES.length - 1; i >= 0; i--) {
-			if (val > MULTIPLES[i] && val % MULTIPLES[i] == 0) {
-				ret = (val / MULTIPLES[i]) + u[i];
-				if (!u[i].toLowerCase().equals(u[i]))
+		for(int i = MULTIPLES.length - 1; i >= 0; i--) {
+			if(val > MULTIPLES[i] && val % MULTIPLES[i] == 0) {
+				ret = (val / MULTIPLES[i]) + MULTIPLES_2[i];
+				if(!MULTIPLES_2[i].toLowerCase().equals(MULTIPLES_2[i]))
 					ret += "iB";
 				break;
 			}
@@ -721,16 +711,15 @@ public abstract class Fields {
 	}
 
 	public static String shortToString(short val) {
-		String[] u = { "k", "K", "m", "M", "g", "G", "t", "T", "p", "P", "e", "E" };
 		String ret = Short.toString(val);
 
-		if (val <= 0)
+		if(val <= 0)
 			return ret;
-		
-		for (int i = MULTIPLES.length - 1; i >= 0; i--) {
-			if (val > MULTIPLES[i] && val % MULTIPLES[i] == 0) {
-				ret = (val / MULTIPLES[i]) + u[i];
-				if (!u[i].toLowerCase().equals(u[i]))
+
+		for(int i = MULTIPLES.length - 1; i >= 0; i--) {
+			if(val > MULTIPLES[i] && val % MULTIPLES[i] == 0) {
+				ret = (val / MULTIPLES[i]) + MULTIPLES_2[i];
+				if(!MULTIPLES_2[i].toLowerCase().equals(MULTIPLES_2[i]))
 					ret += "iB";
 				break;
 			}
@@ -741,14 +730,14 @@ public abstract class Fields {
 	public static double[] bytesToDoubles(byte[] data, int offset, int length) {
 		long[] longs = bytesToLongs(data, offset, length);
 		double[] doubles = new double[longs.length];
-		for(int i=0;i<longs.length;i++)
+		for(int i = 0; i < longs.length; i++)
 			doubles[i] = Double.longBitsToDouble(longs[i]);
 		return doubles;
 	}
 
 	public static byte[] doublesToBytes(double[] doubles) {
 		long[] longs = new long[doubles.length];
-		for(int i=0;i<longs.length;i++)
+		for(int i = 0; i < longs.length; i++)
 			longs[i] = Double.doubleToLongBits(doubles[i]);
 		return longsToBytes(longs);
 	}
@@ -765,18 +754,16 @@ public abstract class Fields {
 		int end = origEnd;
 		while(true) {
 			if(end < begin)	// so we can use origEnd=length-1 without worrying length=0
-				return -begin-1;
+				return -begin - 1;
 
 			int middle = (begin + end) >>> 1;
 			if(values[middle] == key)
 				return middle;
-			
-			if(values[middle] > key) {
+
+			if(values[middle] > key)
 				end = middle - 1;
-			} else if(values[middle] < key) {
+			else if(values[middle] < key)
 				begin = middle + 1;
-			}
 		}
 	}
-
 }

@@ -9,6 +9,6 @@ import java.util.Map;
 public interface ForwardPortCallback {
 	
 	/** Called to indicate status on one or more forwarded ports. */
-	public void portForwardStatus(Map /*<ForwardPort,ForwardPortStatus>*/ statuses);
+	public void portForwardStatus(Map<ForwardPort,ForwardPortStatus> statuses);
 
 }

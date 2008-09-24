@@ -2,21 +2,16 @@ package freenet.clients.http;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.JarURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
+import freenet.pluginmanager.FredPluginL10n;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
@@ -26,10 +21,48 @@ import freenet.support.io.FileUtil;
 */
 public final class PageMaker {
 	
-	public static final String DEFAULT_THEME = "clean";
+	public enum THEME {
+		BOXED("boxed", "Boxed", ""),
+		CLEAN("clean", "Clean", "Mr. Proper"),
+		GRAYANDBLUE("grayandblue", "Gray And Blue", ""),
+		SKY("sky", "Sky", "");
+		
+		public static final String[] possibleValues = {
+			BOXED.code,
+			CLEAN.code,
+			GRAYANDBLUE.code,
+			SKY.code
+		};
+		
+		public final String code;  // the internal name
+		public final String name;  // the name in "human form"
+		public final String description; // description
+		
+		private THEME(String code, String name, String description) {
+			this.code = code;
+			this.name = name;
+			this.description = description;
+		}
+
+		public static THEME themeFromName(String cssName) {
+			for(THEME t : THEME.values()) {
+				if(t.code.equalsIgnoreCase(cssName) ||
+				   t.name.equalsIgnoreCase(cssName))
+				{
+					return t;
+				}
+			}
+			return getDefault();
+		}
+
+		public static THEME getDefault() {
+			return THEME.CLEAN;
+		}
+	}	
+	
 	public static final int MODE_SIMPLE = 1;
 	public static final int MODE_ADVANCED = 2;
-	private String theme;
+	private THEME theme;
 	private File override;
 	private final List navigationLinkTexts = new ArrayList();
 	private final List navigationLinkTextsNonFull = new ArrayList();
@@ -39,30 +72,43 @@ public final class PageMaker {
 	private final Map/*<HTMLNode, HTMLNode>*/ headNodes = new HashMap();
 	private final Map /* <String, LinkEnabledCallback> */ navigationLinkCallbacks = new HashMap();
 	
-	/** Cache for themes read from the JAR file. */
-	private List jarThemesCache = null;
+	private final FredPluginL10n plugin; 
+	private final boolean pluginMode;
 	
-	public PageMaker(String t) {
+	public PageMaker(FredPluginL10n plug, THEME t) {
 		setTheme(t);
+		plugin = plug;
+		pluginMode = true;
+	}
+	
+	protected PageMaker(THEME t) {
+		setTheme(t);
+		plugin = null;
+		pluginMode = false;
 	}
 	
 	void setOverride(File f) {
 		this.override = f;
 	}
 	
-	void setTheme(String theme) {
-		if (theme == null) {
-			this.theme = DEFAULT_THEME;
+	public void setTheme(THEME theme2) {
+		if (theme2 == null) {
+			this.theme = THEME.getDefault();
 		} else {
-			URL themeurl = getClass().getResource("staticfiles/themes/" + theme + "/theme.css");
+			URL themeurl = getClass().getResource("staticfiles/themes/" + theme2.code + "/theme.css");
 			if (themeurl == null)
-				this.theme = DEFAULT_THEME;
+				this.theme = THEME.getDefault();
 			else
-				this.theme = theme;
+				this.theme = theme2;
 		}
 	}
         	
 	public void addNavigationLink(String path, String name, String title, boolean fullOnly, LinkEnabledCallback cb) {
+		if (pluginMode && (plugin == null)) {
+			// FIXME invent a check on compile time
+			// log only
+			Logger.error(this, "Deprecated way to use Pagemaker from plugin, your plugin need to implement FredPluginL10n to do so", new Error("FIXME"));
+		}
 		navigationLinkTexts.add(name);
 		if(!fullOnly)
 			navigationLinkTextsNonFull.add(name);
@@ -94,17 +140,16 @@ public final class PageMaker {
 	public HTMLNode getPageNode(String title, boolean renderNavigationLinks, ToadletContext ctx) {
 		boolean fullAccess = ctx == null ? false : ctx.isAllowedFullAccess();
 		HTMLNode pageNode = new HTMLNode.HTMLDoctype("html", "-//W3C//DTD XHTML 1.1//EN");
-		HTMLNode htmlNode = pageNode.addChild("html", "xml:lang", L10n.getSelectedLanguage());
+		HTMLNode htmlNode = pageNode.addChild("html", "xml:lang", L10n.getSelectedLanguage().isoCode);
 		HTMLNode headNode = htmlNode.addChild("head");
 		headNode.addChild("meta", new String[] { "http-equiv", "content" }, new String[] { "Content-Type", "text/html; charset=utf-8" });
 		headNode.addChild("title", title + " - Freenet");
 		if(override == null)
-			headNode.addChild("link", new String[] { "rel", "href", "type", "title" }, new String[] { "stylesheet", "/static/themes/" + theme + "/theme.css", "text/css", theme });
+			headNode.addChild("link", new String[] { "rel", "href", "type", "title" }, new String[] { "stylesheet", "/static/themes/" + theme.code + "/theme.css", "text/css", theme.code });
 		else
 			headNode.addChild(getOverrideContent());
-		List themes = getThemes();
-		for (Iterator themesIterator = themes.iterator(); themesIterator.hasNext();) {
-			String themeName = (String) themesIterator.next();
+		for (THEME t: THEME.values()) {
+			String themeName = t.code;
 			headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
 		}
 		
@@ -122,7 +167,10 @@ public final class PageMaker {
 				String navigationTitle = (String) navigationLinkTitles.get(navigationLink);
 				String navigationPath = (String) navigationLinks.get(navigationLink);
 				HTMLNode listItem = navbarUl.addChild("li");
-				listItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, L10n.getString(navigationTitle) }, L10n.getString(navigationLink));
+				if (plugin != null)
+					listItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, plugin.getString(navigationTitle) }, plugin.getString(navigationLink));
+				else
+					listItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, L10n.getString(navigationTitle) }, L10n.getString(navigationLink));
 			}
 		}
 		HTMLNode contentDiv = pageDiv.addChild("div", "id", "content");
@@ -192,63 +240,6 @@ public final class PageMaker {
 		infobox.addChild("div", "class", "infobox-header").addChild(header);
 		contentNodes.put(infobox, infobox.addChild("div", "class", "infobox-content"));
 		return infobox;
-	}
-	
-	/**
-	 * Returns an {@link ArrayList} containing the names of all available
-	 * themes. If Freenet was started from a JAR file the list is cached
-	 * (because the JAR file only changes between invocations), otherwise the
-	 * filesystem is read on every page access.
-	 * 
-	 * @return An {@link ArrayList} containing the names of all available themes
-	 */
-	public List<String> getThemes() {
-		if (jarThemesCache != null) {
-			return jarThemesCache;
-		}
-		List<String> themes = new ArrayList<String>();
-		try {
-			URL url = getClass().getResource("staticfiles/themes/");
-			URLConnection urlConnection = url.openConnection();
-			if (url.getProtocol().equals("file")) {
-				File themesDirectory = new File(URLDecoder.decode(url.getPath(), "ISO-8859-1").replaceAll("\\|", ":"));
-				File[] themeDirectories = themesDirectory.listFiles();
-				for (int themeIndex = 0; (themeDirectories != null) && (themeIndex < themeDirectories.length); themeIndex++) {
-					File themeDirectory = themeDirectories[themeIndex];
-					if (themeDirectory.isDirectory() && !themeDirectory.getName().startsWith(".")) {
-						themes.add(themeDirectory.getName());
-					}
-				}	
-			} else if (urlConnection instanceof JarURLConnection) {
-				JarURLConnection jarUrlConnection = (JarURLConnection) urlConnection;
-				JarFile jarFile = jarUrlConnection.getJarFile();
-				Enumeration entries = jarFile.entries();
-				while (entries.hasMoreElements()) {
-					JarEntry entry = (JarEntry) entries.nextElement();
-					String name = entry.getName();
-					if (name.startsWith("freenet/clients/http/staticfiles/themes/")) {
-						name = name.substring("freenet/clients/http/staticfiles/themes/".length());
-						if (name.indexOf('/') != -1) {
-							String themeName = name.substring(0, name.indexOf('/'));
-							if (!themes.contains(themeName)) {
-								themes.add(themeName);
-							}
-						}
-					}
-				}
-				jarThemesCache = themes;
-			}
-		} catch (IOException ioe1) {
-			Logger.error(this, "error creating list of themes", ioe1);
-		} catch (NullPointerException npe) {
-			Logger.error(this, "error creating list of themes (if you're using the gnu-classpath, it's \"normal\")", npe);
-			themes.add("clean");
-		} finally {
-			if (!themes.contains("clean")) {
-				themes.add("clean");
-			}
-		}
-		return themes;
 	}
 	
 	private HTMLNode getOverrideContent() {

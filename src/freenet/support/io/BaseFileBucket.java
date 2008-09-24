@@ -151,6 +151,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 				
 		}
 		
+		@Override
 		public void write(byte[] b) throws IOException {
 			synchronized (BaseFileBucket.this) {
 				confirmWriteSynchronized();
@@ -159,6 +160,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 			}
 		}
 
+		@Override
 		public void write(byte[] b, int off, int len) throws IOException {
 			synchronized (BaseFileBucket.this) {
 				confirmWriteSynchronized();
@@ -167,6 +169,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 			}
 		}
 
+		@Override
 		public void write(int b) throws IOException {
 			synchronized (BaseFileBucket.this) {
 				confirmWriteSynchronized();
@@ -175,6 +178,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 			}
 		}
 		
+		@Override
 		public void close() throws IOException {
 			File file;
 			synchronized(this) {
@@ -213,6 +217,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 			}
 		}
 		
+		@Override
 		public String toString() {
 			return super.toString()+":"+BaseFileBucket.this.toString();
 		}
@@ -225,6 +230,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 			super(f);
 		}
 		
+		@Override
 		public void close() throws IOException {
 			synchronized(this) {
 				if(closed) return;
@@ -234,6 +240,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 			super.close();
 		}
 		
+		@Override
 		public String toString() {
 			return super.toString()+":"+BaseFileBucket.this.toString();
 		}
@@ -277,6 +284,7 @@ public abstract class BaseFileBucket implements Bucket, SerializableToFieldSetBu
 		getFile().delete();
 	}
 
+	@Override
 	protected void finalize() {
 		if(deleteOnFinalize())
 			free(true);

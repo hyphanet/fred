@@ -29,7 +29,7 @@ public class NumberedRecentItems {
     }
 
     public synchronized NumberedItem get(int num) {
-        int x = java.util.Arrays.binarySearch(items, new Integer(num), myComparator);
+        int x = Arrays.binarySearch(items, num, myComparator);
         if(x >= 0) return items[x];
         return null;
     }
@@ -42,7 +42,7 @@ public class NumberedRecentItems {
      */
     public synchronized boolean add(NumberedItem item) {
         long num = item.getNumber();
-        int x = Arrays.binarySearch(items, new Long(num), myComparator);
+        int x = Arrays.binarySearch(items, num, myComparator);
         if(Logger.shouldLog(Logger.MINOR, this))
         	Logger.minor(this, "Search pos: "+x);
         if(x >= 0) return false; // already present
@@ -97,7 +97,7 @@ public class NumberedRecentItems {
     }
     
     public synchronized NumberedItem[] getAfter(long target) {
-        int x = Arrays.binarySearch(items, new Long(target), myComparator);
+        int x = Arrays.binarySearch(items, target, myComparator);
         if(x == items.length-1) return null;
         if(x >= 0) {
             NumberedItem[] out = new NumberedItem[items.length-x-1];

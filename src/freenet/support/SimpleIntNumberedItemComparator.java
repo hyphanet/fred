@@ -2,7 +2,7 @@ package freenet.support;
 
 import java.util.Comparator;
 
-public class SimpleIntNumberedItemComparator implements Comparator {
+public class SimpleIntNumberedItemComparator implements Comparator<Object> {
 
 	private final boolean nullAtStart;
 	

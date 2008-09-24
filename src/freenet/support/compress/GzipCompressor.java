@@ -17,6 +17,8 @@ import freenet.support.io.Closer;
 public class GzipCompressor extends Compressor {
 
 	public Bucket compress(Bucket data, BucketFactory bf, long maxLength) throws IOException, CompressionOutputSizeException {
+		if(maxLength <= 0)
+			throw new IllegalArgumentException();
 		Bucket output = bf.makeBucket(maxLength);
 		InputStream is = null;
 		OutputStream os = null;

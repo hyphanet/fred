@@ -45,7 +45,7 @@ public class NodeHelloMessage extends FCPMessage {
 		sfs.putSingle("Testnet", Boolean.toString(node == null ? false : node.isTestnetEnabled()));
 		sfs.putSingle("CompressionCodecs", Integer.toString(Compressor.countCompressAlgorithms()));
 		sfs.putSingle("ConnectionIdentifier", id);
-		sfs.putSingle("NodeLanguage", L10n.getSelectedLanguage());
+		sfs.putSingle("NodeLanguage", L10n.getSelectedLanguage().toString());
 		return sfs;
 	}
 

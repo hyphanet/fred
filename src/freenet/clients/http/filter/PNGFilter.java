@@ -4,11 +4,19 @@
 package freenet.clients.http.filter;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.zip.CRC32;
 
 import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
@@ -21,14 +29,6 @@ import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.OutputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.zip.CRC32;
 
 /**
  * Content filter for PNG's. Only allows valid chunks (valid CRC, known chunk type).
@@ -110,7 +110,7 @@ public class PNGFilter implements ContentDataFilter {
 			dis = new DataInputStream(bis);
 			// Check the header
 			byte[] headerCheck = new byte[pngHeader.length];
-			dis.read(headerCheck);
+			dis.readFully(headerCheck);
 			if(!Arrays.equals(headerCheck, pngHeader)) {
 				// Throw an exception
 				String message = l10n("invalidHeader");

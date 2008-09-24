@@ -236,7 +236,7 @@ public class ConfigToadlet extends Toadlet {
 		if(mode >= PageMaker.MODE_ADVANCED){
 			HTMLNode navigationBar = ctx.getPageMaker().getInfobox("navbar", l10n("configNavTitle"));
 			HTMLNode navigationContent = ctx.getPageMaker().getContentNode(navigationBar).addChild("ul");
-			if(!L10n.getSelectedLanguage().equals(L10n.FALLBACK_DEFAULT))
+			if(!L10n.getSelectedLanguage().equals(L10n.LANGUAGE.getDefault()))
 				navigationContent.addChild("a", "href", TranslationToadlet.TOADLET_URL, l10n("contributeTranslation"));
 			HTMLNode navigationTable = navigationContent.addChild("table", "class", "config_navigation");
 			HTMLNode navigationTableRow = navigationTable.addChild("tr");

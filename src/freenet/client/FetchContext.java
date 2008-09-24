@@ -159,6 +159,7 @@ public class FetchContext implements Cloneable {
 	}
 
 	/** Make public, but just call parent for a field for field copy */
+	@Override
 	public Object clone() {
 		try {
 			return super.clone();

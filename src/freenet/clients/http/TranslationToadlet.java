@@ -48,7 +48,7 @@ public class TranslationToadlet extends Toadlet {
 			}
 			byte[] data = sfs.toOrderedString().getBytes("UTF-8");
 			MultiValueTable head = new MultiValueTable();
-			head.put("Content-Disposition", "attachment; filename=\"" + L10n.PREFIX +L10n.getSelectedLanguage()+ L10n.OVERRIDE_SUFFIX + '"');
+			head.put("Content-Disposition", "attachment; filename=\"" + L10n.getSelectedLanguage().l10nOverrideFilename+ '"');
 			ctx.sendReplyHeaders(200, "Found", head, "text/plain; charset=utf-8", data.length);
 			ctx.writeData(data);
 			return;
@@ -154,7 +154,7 @@ public class TranslationToadlet extends Toadlet {
 
 		HTMLNode translationNode = contentNode.addChild("div", "class", "translation");
 		HTMLNode translationHeaderNode = translationNode.addChild("p");
-		translationHeaderNode.addChild("#", l10n("contributingToLabelWithLang", "lang", L10n.getSelectedLanguage()));
+		translationHeaderNode.addChild("#", l10n("contributingToLabelWithLang", "lang", L10n.getSelectedLanguage().fullName));
 		translationHeaderNode.addChild("a", "href", TOADLET_URL+"?getOverrideTranlationFile").addChild("#", l10n("downloadTranslationsFile"));
 		translationHeaderNode.addChild("#", " ");
 		if(showEverything)

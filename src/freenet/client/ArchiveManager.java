@@ -215,7 +215,7 @@ public class ArchiveManager {
 				throwAtExit = true;
 			ctx.setLastHash(realHash);
 		}
-		if(data.size() > maxArchiveSize)
+		if(data.size() > Math.max(maxArchiveSize, archiveContext.maxArchiveSize))
 			throw new ArchiveFailureException("Archive too big ("+data.size()+" > "+maxArchiveSize+")!");
 		if(archiveType != Metadata.ARCHIVE_ZIP)
 			throw new ArchiveFailureException("Unknown or unsupported archive algorithm "+archiveType);

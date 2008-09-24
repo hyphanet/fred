@@ -111,11 +111,9 @@ final public class FileUtil {
 			}
 
 		} finally {
-			try {
-				if(isr != null) isr.close();
-				if(bis != null) bis.close();
-				if(fis != null) fis.close();
-			} catch (IOException e) {}
+			Closer.close(isr);
+			Closer.close(bis);
+			Closer.close(fis);
 		}
 		return result.toString();
 	}

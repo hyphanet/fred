@@ -63,15 +63,15 @@ public class Serializer {
 			throw new IOException("Boolean is non boolean value: "+bool);
 		} else if (type.equals(Byte.class)) {
 			int b = dis.readByte();
-			return new Byte((byte) b);
+			return (byte) b;
 		} else if (type.equals(Short.class)) {
-			return new Short(dis.readShort());
+			return dis.readShort();
 		} else if (type.equals(Integer.class)) {
-			return new Integer(dis.readInt());
+			return dis.readInt();
 		} else if (type.equals(Long.class)) {
-			return new Long(dis.readLong());
+			return dis.readLong();
 		} else if (type.equals(Double.class)) {
-		    return new Double(dis.readDouble());
+		    return dis.readDouble();
 		} else if (type.equals(String.class)) {
 			int length = dis.readInt();
 			StringBuffer sb = new StringBuffer(length);

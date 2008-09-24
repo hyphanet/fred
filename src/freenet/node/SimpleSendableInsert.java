@@ -140,17 +140,18 @@ public class SimpleSendableInsert extends SendableInsert {
 
 	public synchronized Object[] allKeys(ObjectContainer container) {
 		if(finished) return new Object[] {};
-		return new Object[] { new Integer(0) };
+		return new Object[] { 0 };
 	}
 
 	public synchronized Object[] sendableKeys(ObjectContainer container) {
 		if(finished) return new Object[] {};
-		return new Object[] { new Integer(0) };
+		return new Object[] { 0 };
 	}
 
 	public synchronized Object chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
 		if(finished) return null;
-		else return new Integer(0);
+		else
+			return 0;
 	}
 
 	public boolean isSSK() {

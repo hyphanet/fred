@@ -246,7 +246,6 @@ public class LocationManager implements ByteCounter {
         Message origMessage;
         PeerNode pn;
         long uid;
-        Long luid;
         RecentlyForwardedItem item;
         
         IncomingSwapRequestHandler(Message msg, PeerNode pn, RecentlyForwardedItem item) {
@@ -254,7 +253,6 @@ public class LocationManager implements ByteCounter {
             this.pn = pn;
             this.item = item;
             uid = origMessage.getLong(DMT.UID);
-            luid = new Long(uid);
         }
         
         public void run() {
@@ -855,9 +853,8 @@ public class LocationManager implements ByteCounter {
      * to be handled otherwise.
      */
     public boolean handleSwapRequest(Message m, PeerNode pn) {
-        long oldID = m.getLong(DMT.UID);
-        Long luid = new Long(oldID);
-        long newID = oldID+1;
+        final long oldID = m.getLong(DMT.UID);
+        final long newID = oldID + 1;
         /**
          * UID is used to record the state i.e. UID x, came in from node a, forwarded to node b.
          * We increment it on each hop, because in order for the node selection to be as random as
@@ -865,7 +862,7 @@ public class LocationManager implements ByteCounter {
          * twice or more. However, if we get a request with either the incoming or the outgoing 
          * UID, we can safely kill it as it's clearly the result of a bug.
          */
-        RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(luid);
+        RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(oldID);
         if(item != null) {
         	if(logMINOR) Logger.minor(this, "Rejecting - same ID as previous request");
             // Reject
@@ -1012,8 +1009,8 @@ public class LocationManager implements ByteCounter {
 	private RecentlyForwardedItem addForwardedItem(long uid, long oid, PeerNode pn, PeerNode randomPeer) {
         RecentlyForwardedItem item = new RecentlyForwardedItem(uid, oid, pn, randomPeer);
         synchronized(recentlyForwardedIDs) {
-        	recentlyForwardedIDs.put(new Long(uid), item);
-        	recentlyForwardedIDs.put(new Long(oid), item);
+        	recentlyForwardedIDs.put(uid, item);
+			recentlyForwardedIDs.put(oid, item);
         }
         return item;
     }
@@ -1023,9 +1020,8 @@ public class LocationManager implements ByteCounter {
      * @return True if we recognized and forwarded this reply.
      */
     public boolean handleSwapReply(Message m, PeerNode source) {
-        long uid = m.getLong(DMT.UID);
-        Long luid = new Long(uid);
-        RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(luid);
+        final long uid = m.getLong(DMT.UID);
+		RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(uid);
         if(item == null) {
             Logger.error(this, "Unrecognized SwapReply: ID "+uid);
             return false;
@@ -1060,9 +1056,8 @@ public class LocationManager implements ByteCounter {
      * @return True if we recognized and forwarded this message.
      */
     public boolean handleSwapRejected(Message m, PeerNode source) {
-        long uid = m.getLong(DMT.UID);
-        Long luid = new Long(uid);
-        RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(luid);
+        final long uid = m.getLong(DMT.UID);
+		RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(uid);
         if(item == null) return false;
         if(item.requestSender == null){
         	if(logMINOR) Logger.minor(this, "Got a FNPSwapRejected without any requestSender set! we can't and won't claim it! UID="+uid);
@@ -1095,9 +1090,8 @@ public class LocationManager implements ByteCounter {
      * @return True if we recognized and forwarded this message.
      */
     public boolean handleSwapCommit(Message m, PeerNode source) {
-        long uid = m.getLong(DMT.UID);
-        Long luid = new Long(uid);
-        RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(luid);
+        final long uid = m.getLong(DMT.UID);
+		RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(uid);
         if(item == null) return false;
         if(item.routedTo == null) return false;
         if(source != item.requestSender) {
@@ -1123,10 +1117,9 @@ public class LocationManager implements ByteCounter {
      * @return True if we recognized and forwarded this message.
      */
     public boolean handleSwapComplete(Message m, PeerNode source) {
-        long uid = m.getLong(DMT.UID);
+        final long uid = m.getLong(DMT.UID);
         if(logMINOR) Logger.minor(this, "handleSwapComplete("+uid+ ')');
-        Long luid = new Long(uid);
-        RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(luid);
+        RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(uid);
         if(item == null) {
         	if(logMINOR) Logger.minor(this, "Item not found: "+uid+": "+m);
             return false;
@@ -1277,8 +1270,8 @@ public class LocationManager implements ByteCounter {
             Logger.error(this, "removeRecentlyForwardedItem(null)", new Exception("error"));
         }
         synchronized(recentlyForwardedIDs) {
-        	recentlyForwardedIDs.remove(new Long(item.incomingID));
-        	recentlyForwardedIDs.remove(new Long(item.outgoingID));
+        	recentlyForwardedIDs.remove(item.incomingID);
+			recentlyForwardedIDs.remove(item.outgoingID);
         }
     }
     

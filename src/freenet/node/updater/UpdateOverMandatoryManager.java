@@ -83,7 +83,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	/** Maximum time between asking for the main jar and it starting to transfer */
 	static final int REQUEST_MAIN_JAR_TIMEOUT = 60*1000;
 	//** Grace time before we use UoM to update */
-	public static final int GRACE_TIME = 60*60*1000; // 1h
+	public static final int GRACE_TIME = 3*60*60*1000; // 3h
 	private boolean logMINOR;
 	
 	private UserAlert alert;
@@ -231,8 +231,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				// If we have fetches running already, then sendUOMRequestMain() will add the offer to nodesOfferedMainJar,
 				// so that if all our fetches fail, we can fetch from this node.
 					if(!isOutdated) {
-						Logger.error(this, "The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN! (1)");
-						System.out.println("The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN! (1)");
+						String howLong = TimeUtil.formatTime(now - started);
+						Logger.error(this, "The update process seems to have been stuck for "+ howLong +"; let's switch to UoM! SHOULD NOT HAPPEN! (1)");
+						System.out.println("The update process seems to have been stuck for "+ howLong +"; let's switch to UoM! SHOULD NOT HAPPEN! (1)");
 					} else
 						if(logMINOR) Logger.minor(this, "Fetching via UOM as our build is deprecated");
 					// Fetch it
@@ -260,8 +261,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						if(!updateManager.isEnabled()) return;
 						if(updateManager.hasNewMainJar()) return;
 						if(!updateManager.node.isOudated()) {
-							Logger.error(this, "The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN! (2)");
-							System.out.println("The update process seems to have been stuck for over an hour; let's switch to UoM! SHOULD NOT HAPPEN! (2)");
+							Logger.error(this, "The update process seems to have been stuck for too long; let's switch to UoM! SHOULD NOT HAPPEN! (2)");
+							System.out.println("The update process seems to have been stuck for too long; let's switch to UoM! SHOULD NOT HAPPEN! (2)");
 						}
 						maybeRequestMainJar();
 					}
@@ -387,6 +388,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			super(false, null, null, null, null, UserAlert.CRITICAL_ERROR, true, null, false, null);
 		}
 		
+		@Override
 		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
 			
@@ -438,6 +440,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			return L10n.getString("PeersSayKeyBlownAlert."+key, pattern, value);
 		}
 		
+		@Override
 		public String getText() {
 			StringBuffer sb = new StringBuffer();
 			sb.append(l10n("intro")).append("\n\n");
@@ -481,14 +484,17 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			return sb.toString();
 		}
 
+		@Override
 		public String getTitle() {
 			return l10n("titleWithCount", "count", Integer.toString(nodesSayKeyRevoked.size()));
 		}
 
+		@Override
 		public void isValid(boolean validity) {
 			// Do nothing
 		}
 
+		@Override
 		public String getShortText() {
 			return l10n("short");
 		}
@@ -607,6 +613,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						Logger.minor(this, "Message sent, data soon");
 				}
 				
+				@Override
 				public String toString() {
 					return super.toString() + "("+uid+":"+source.getPeer()+")";
 				}
@@ -981,6 +988,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						Logger.minor(this, "Message sent, data soon");
 				}
 				
+				@Override
 				public String toString() {
 					return super.toString() + "("+uid+":"+source.getPeer()+")";
 				}

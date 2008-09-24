@@ -27,28 +27,73 @@ import freenet.support.io.FileUtil;
 */
 public class L10n {
 	public static final String CLASS_NAME = "L10n";
-	public static final String PREFIX = "freenet.l10n.";
-	public static final String SUFFIX = ".properties";
-	public static final String OVERRIDE_SUFFIX = ".override" + SUFFIX;
 	
-	public static final String FALLBACK_DEFAULT = "en";
 	/** @see http://www.omniglot.com/language/names.htm */
-	public static final String[][] AVAILABLE_LANGUAGES = {
-		new String[] { "en", "English", "eng" },
-		new String[] { "es", "Español", "spa" },
-		new String[] { "da", "Dansk", "dan" },
-		new String[] { "de", "Deutsch", "deu" },
-		new String[] { "fi", "Suomi", "fin" },
-		new String[] { "fr", "Français", "fra" },
-		new String[] { "it", "Italiano", "ita" },
-		new String[] { "no", "Norsk", "nor" },
-		new String[] { "pl", "Polski", "pol" },
-		new String[] { "se", "Svenska", "svk" },
-	        new String[] { "zh-cn", "中文(简体)", "chn" },
-		new String[] { "zh-tw", "中文(繁體)", "zh-tw" },
-		new String[] { "unlisted", "unlisted", "unlisted"},
-	};
-	private final String selectedLanguage;
+	public enum LANGUAGE {
+		ENGLISH("en", "English", "eng"),
+		SPANISH("es", "Español", "spa"),
+		DANISH("da", "Dansk", "dan"),
+		GERMAN("de", "Deutsch", "deu"),
+		FINNISH("fi", "Suomi", "fin"),
+		FRENCH("fr", "Français", "fra"),
+		ITALIAN("it", "Italiano", "ita"),
+		NORWEGIAN("no", "Norsk", "nor"),
+		POLISH("pl", "Polski", "pol"),
+		SWEDISH("se", "Svenska", "svk"),
+	        CHINESE("zh-cn", "中文(简体)", "chn"),
+		CHINESE_TAIWAN("zh-tw", "中文(繁體)", "zh-tw"),
+		UNLISTED("unlisted", "unlisted", "unlisted");
+		
+		/** The identifier we use internally : MUST BE UNIQUE! */
+		public final String shortCode;
+		/** The identifier shown to the user */
+		public final String fullName;
+		/** The mapping with the installer's l10n (@see bug #2424); MUST BE UNIQUE! */
+		public final String isoCode;
+		
+		public final String l10nFilename;
+		public final String l10nOverrideFilename;
+		
+		private LANGUAGE(String shortCode, String fullName, String isoCode) {
+			this.shortCode = shortCode;
+			this.fullName = fullName;
+			this.isoCode = isoCode;
+			this.l10nFilename = "freenet/l10n/freenet.l10n."+shortCode+".properties";
+			this.l10nOverrideFilename = "freenet.l10n."+shortCode+".override.properties";
+		}
+
+		LANGUAGE(LANGUAGE l) {
+			this(l.shortCode, l.fullName, l.isoCode);
+		}
+		
+		public static LANGUAGE mapToLanguage(String whatever) {
+			for(LANGUAGE currentLanguage : LANGUAGE.values()) {
+				if(currentLanguage.shortCode.equalsIgnoreCase(whatever) ||
+				   currentLanguage.fullName.equalsIgnoreCase(whatever) ||
+				   currentLanguage.isoCode.equalsIgnoreCase(whatever) ||
+				   currentLanguage.toString().equalsIgnoreCase(whatever))
+				{
+					return currentLanguage;
+				}
+			}
+			return null;
+		}
+		
+		public static String[] valuesWithFullNames() {
+			LANGUAGE[] allValues = values();
+			String[] result = new String[allValues.length];
+			for(int i=0; i<allValues.length; i++)
+				result[i] = allValues[i].fullName;
+			
+			return result;
+		}
+		
+		public static LANGUAGE getDefault() {
+			return ENGLISH;
+		}
+	}
+	
+	private final LANGUAGE selectedLanguage;
 	
 	private static SimpleFieldSet currentTranslation = null;
 	private static SimpleFieldSet fallbackTranslation = null;
@@ -57,11 +102,10 @@ public class L10n {
 	private static SimpleFieldSet translationOverride;
 	private static final Object sync = new Object();
 
-	L10n(String selected) {
-		selectedLanguage = mapLanguageNameToShortCode(selected);
-		File tmpFile = new File(L10n.PREFIX + selectedLanguage + L10n.OVERRIDE_SUFFIX);
-		
+	L10n(LANGUAGE selected) {		
+		selectedLanguage = selected;
 		try {
+			File tmpFile = new File(selected.l10nOverrideFilename);
 			if(tmpFile.exists() && tmpFile.canRead() && tmpFile.length() > 0) {
 				Logger.normal(this, "Override file detected : let's try to load it");
 				translationOverride = SimpleFieldSet.readFrom(tmpFile, false, false);
@@ -94,15 +138,17 @@ public class L10n {
 	* @throws MissingResourceException
 	*/
 	public static void setLanguage(String selectedLanguage) throws MissingResourceException {
-		selectedLanguage = mapLanguageNameToLongName(selectedLanguage);
 		synchronized (sync) {
 			Logger.normal(CLASS_NAME, "Changing the current language to : " + selectedLanguage);
-			currentClass = new L10n(selectedLanguage);
-			if(currentClass == null) {
-				currentClass = new L10n(FALLBACK_DEFAULT);
+			L10n oldClass = currentClass;
+			LANGUAGE lang = LANGUAGE.mapToLanguage(selectedLanguage);
+			if(lang == null) {
+				currentClass = (oldClass != null ? oldClass : new L10n(LANGUAGE.getDefault()));
 				Logger.error(CLASS_NAME, "The requested translation is not available!" + selectedLanguage);
 				throw new MissingResourceException("The requested translation (" + selectedLanguage + ") hasn't been found!", CLASS_NAME, selectedLanguage);
-			}
+			} else
+				currentClass = new L10n(lang);
+			
 		}
 	}
 	
@@ -123,7 +169,7 @@ public class L10n {
 				
 				// Set the value of the override
 				translationOverride.putOverwrite(key, value);
-				Logger.normal("L10n", "Got a new translation key: set the Override!");
+				Logger.normal(CLASS_NAME, "Got a new translation key: set the Override!");
 			}
 
 			// Save the file to disk
@@ -133,20 +179,21 @@ public class L10n {
 	
 	private static void _saveTranslationFile() {
 		FileOutputStream fos = null;
-		File finalFile = new File(L10n.PREFIX + L10n.getSelectedLanguage() + L10n.OVERRIDE_SUFFIX);
+		File finalFile = new File(getSelectedLanguage().l10nOverrideFilename);
 		
 		try {
 			// We don't set deleteOnExit on it : if the save operation fails, we want a backup
+			// FIXME: REDFLAG: not symlink-race proof!
 			File tempFile = new File(finalFile.getParentFile(), finalFile.getName()+".bak");
-			Logger.minor("L10n", "The temporary filename is : " + tempFile);
+			Logger.minor(CLASS_NAME, "The temporary filename is : " + tempFile);
 			
 			fos = new FileOutputStream(tempFile);
                         L10n.translationOverride.writeTo(fos);
 			
 			FileUtil.renameTo(tempFile, finalFile);
-			Logger.normal("L10n", "Override file saved successfully!");
+			Logger.normal(CLASS_NAME, "Override file saved successfully!");
 		} catch (IOException e) {
-			Logger.error("L10n", "Error while saving the translation override: "+ e.getMessage(), e);
+			Logger.error(CLASS_NAME, "Error while saving the translation override: "+ e.getMessage(), e);
 		} finally {
 			Closer.close(fos);
 		}
@@ -182,7 +229,7 @@ public class L10n {
 	public static SimpleFieldSet getDefaultLanguageTranslation() {
 		synchronized (sync) {
 			if(fallbackTranslation == null)
-				fallbackTranslation = loadTranslation(FALLBACK_DEFAULT);
+				fallbackTranslation = loadTranslation(LANGUAGE.getDefault());
 				
 			return new SimpleFieldSet(fallbackTranslation);	
 		}
@@ -254,7 +301,7 @@ public class L10n {
 		// We instanciate it only if necessary
 		synchronized (sync) {
 			if(fallbackTranslation == null)
-				fallbackTranslation = loadTranslation(FALLBACK_DEFAULT);
+				fallbackTranslation = loadTranslation(LANGUAGE.getDefault());
 			
 			result = fallbackTranslation.get(key);	
 		}
@@ -270,7 +317,7 @@ public class L10n {
 	
 	/**
 	* Allows things like :
-	* L10n.getString("testing.test", new String[]{ "test1", "test2" }, new String[] { "a", "b" })
+	* L10n.getString("testing.test", new String[]{ "test1", "test2" }, "a", "b" })
 	*
 	* @param key
 	* @param patterns : a list of patterns wich are matchable from the translation
@@ -311,10 +358,10 @@ public class L10n {
 	*
 	* @return String
 	*/
-	public static String getSelectedLanguage() {
+	public static LANGUAGE getSelectedLanguage() {
 		synchronized (sync) {
 			if((currentClass == null) || (currentClass.selectedLanguage == null))
-				return FALLBACK_DEFAULT;
+				return LANGUAGE.getDefault();
 			else
 				return currentClass.selectedLanguage;	
 		}
@@ -326,68 +373,24 @@ public class L10n {
 	* @param name
 	* @return the Properties object or null if not found
 	*/
-	public static SimpleFieldSet loadTranslation(String name) {
-		String shortCountryCode = mapLanguageNameToShortCode(name);
-		if(shortCountryCode == null) { 
-			Logger.error("L10n", "Can't map "+name+" to a country code!");
-			return null;
-		} else
-			name = shortCountryCode;
-		name = PREFIX.replace ('.', '/').concat(PREFIX.concat(name.concat(SUFFIX)));
-		
+	public static SimpleFieldSet loadTranslation(LANGUAGE lang) {
 		SimpleFieldSet result = null;
 		InputStream in = null;
 		try {
 			ClassLoader loader = ClassLoader.getSystemClassLoader();
 			
 			// Returns null on lookup failures:
-			in = loader.getResourceAsStream(name);
+			in = loader.getResourceAsStream(lang.l10nFilename);
 			if(in != null)
 				result = SimpleFieldSet.readFrom(in, false, false);
 		} catch (Exception e) {
-			Logger.error("L10n", "Error while loading the l10n file from " + name + " :" + e.getMessage(), e);
+			Logger.error(CLASS_NAME, "Error while loading the l10n file from " + lang.l10nFilename + " :" + e.getMessage(), e);
 			result = null;
 		} finally {
 			Closer.close(in);
 		}
 		
 		return result;
-	}
-	
-	/**
-	 * Map a full string language name to the corresponding country short code
-	 * 
-	 * @param The name to look for
-	 * @return The two letters short code OR null if not found
-	 */
-	public static String mapLanguageNameToShortCode(String name) {
-		for(int i=0; i<AVAILABLE_LANGUAGES.length; i++) {
-			String currentShortCode = AVAILABLE_LANGUAGES[i][0];
-			String currentLongName = AVAILABLE_LANGUAGES[i][1];
-			String currentCountryCodeName = AVAILABLE_LANGUAGES[i][2];
-			
-			if(currentShortCode.equalsIgnoreCase(name) || currentLongName.equalsIgnoreCase(name) ||	currentCountryCodeName.equalsIgnoreCase(name))
-				return currentShortCode;
-		}
-		return null;
-	}
-
-	/**
-	 * Map a language identifier to its corresponding long name
-	 * 
-	 * @param The name to look for
-	 * @return The full text language name OR null if not found
-	 */
-	public static String mapLanguageNameToLongName(String name) {
-		for(int i=0; i<AVAILABLE_LANGUAGES.length; i++) {
-			String currentShortCode = AVAILABLE_LANGUAGES[i][0];
-			String currentLongName = AVAILABLE_LANGUAGES[i][1];
-			String currentCountryCodeName = AVAILABLE_LANGUAGES[i][2];
-			
-			if(currentShortCode.equalsIgnoreCase(name) || currentLongName.equalsIgnoreCase(name) ||	currentCountryCodeName.equalsIgnoreCase(name))
-				return currentLongName;
-		}
-		return null;
 	}
 
 	public static boolean isOverridden(String key) {

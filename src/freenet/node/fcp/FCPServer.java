@@ -203,7 +203,7 @@ public class FCPServer implements Runnable {
 		}
 
 		public void set(Integer val) throws InvalidConfigValueException {
-			if(val != get()) {
+			if (!get().equals(val)) {
 				throw new InvalidConfigValueException("Cannot change FCP port number on the fly");
 			}
 		}
@@ -226,7 +226,7 @@ public class FCPServer implements Runnable {
 		}
 //TODO: Allow it
 		public void set(Boolean val) throws InvalidConfigValueException {
-			if(val != get()) {
+			if (!get().equals(val)) {
 				throw new InvalidConfigValueException(l10n("cannotStartOrStopOnTheFly"));
 			}
 		}
@@ -243,7 +243,8 @@ public class FCPServer implements Runnable {
 		}
 
 		public void set(Boolean val) throws InvalidConfigValueException {
-    		if(val == get()) return;
+			if (get().equals(val))
+				return;
 			if(!SSL.available()) {
 				throw new InvalidConfigValueException("Enable SSL support before use ssl with FCP");
 			}
@@ -365,7 +366,8 @@ public class FCPServer implements Runnable {
 		}
 		
 		public void set(Boolean val) throws InvalidConfigValueException {
-			if(val == get()) return;
+			if (get().equals(val))
+				return;
 			server.assumeDownloadDDAIsAllowed = val;
 		}
 	}
@@ -378,7 +380,8 @@ public class FCPServer implements Runnable {
 		}
 		
 		public void set(Boolean val) throws InvalidConfigValueException {
-			if(val == get()) return;
+			if (get().equals(val))
+				return;
 			server.assumeUploadDDAIsAllowed = val;
 		}
 	}

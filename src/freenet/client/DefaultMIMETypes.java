@@ -49,7 +49,7 @@ public class DefaultMIMETypes {
 			mimeTypesByNumber.add(number, null);
 		}
 		mimeTypesByNumber.set(number, type);
-		mimeTypesByName.put(type, new Short(number));
+		mimeTypesByName.put(type, number);
 	}
 
 	/**
@@ -763,15 +763,14 @@ public class DefaultMIMETypes {
 	public synchronized static String getExtension(String type) {
 		short typeNumber = byName(type);
 		if(typeNumber < 0) return null;
-		return (String) primaryExtensionByMimeNumber.get(new Short(typeNumber));
+		return (String) primaryExtensionByMimeNumber.get(typeNumber);
 	}
 	
 	public synchronized static boolean isValidExt(String expectedMimeType, String oldExt) {
 		short typeNumber = byName(expectedMimeType);
 		if(typeNumber < 0) return false;
 		
-		Short s = new Short(typeNumber);
-		String[] extensions = (String[]) allExtensionsByMimeNumber.get(s);
+		String[] extensions = (String[]) allExtensionsByMimeNumber.get(typeNumber);
 		if(extensions == null) return false;
 		for(int i=0;i<extensions.length;i++)
 			if(oldExt.equals(extensions[i])) return true;

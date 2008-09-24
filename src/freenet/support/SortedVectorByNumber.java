@@ -13,7 +13,7 @@ public class SortedVectorByNumber {
 
 	private IntNumberedItem[] data;
 	private int length;
-	private static final Comparator comparator = new SimpleIntNumberedItemComparator(true);
+	private static final Comparator<Object> comparator = new SimpleIntNumberedItemComparator(true);
 	private static final int MIN_SIZE = 4;
 	private final boolean persistent;
 	
@@ -38,7 +38,7 @@ public class SortedVectorByNumber {
 			for(int i=0;i<length;i++)
 				container.activate(data[i], 1);
 		}
-		int x = Arrays.binarySearch(data, new Integer(retryCount), comparator);
+		int x = Arrays.binarySearch(data, retryCount, comparator);
 		if(x >= 0)
 			return data[x];
 		return null;
@@ -50,7 +50,7 @@ public class SortedVectorByNumber {
 			for(int i=0;i<length;i++)
 				container.activate(data[i], 1);
 		}
-		int x = Arrays.binarySearch(data, new Integer(item), comparator);
+		int x = Arrays.binarySearch(data, item, comparator);
 		if(x >= 0) {
 			if(x < length-1)
 				System.arraycopy(data, x+1, data, x, length-x-1);
@@ -92,7 +92,7 @@ public class SortedVectorByNumber {
 			for(int i=0;i<length;i++)
 				container.activate(data[i], 1);
 		}
-		int x = Arrays.binarySearch(data, new Integer(grabber.getNumber()), comparator);
+		int x = Arrays.binarySearch(data, grabber.getNumber(), comparator);
 		if(x >= 0) return false;
 		// insertion point
 		x = -x-1;
@@ -106,7 +106,7 @@ public class SortedVectorByNumber {
 			for(int i=0;i<length;i++)
 				container.activate(data[i], 1);
 		}
-		int x = Arrays.binarySearch(data, new Integer(grabber.getNumber()), comparator);
+		int x = Arrays.binarySearch(data, grabber.getNumber(), comparator);
 		if(x >= 0) {
 			if(grabber != data[x])
 				throw new IllegalArgumentException(); // already exists

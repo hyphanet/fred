@@ -11,11 +11,11 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.DecimalFormat;
 
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.io.Closer;
-import java.text.DecimalFormat;
 
 /**
  * A class to estimate the node's average uptime. Every 5 minutes (with a fixed offset), we write
@@ -88,6 +88,8 @@ public class UptimeEstimator implements Runnable {
 				}
 			} catch (EOFException e) {
 				// Finished
+			} finally {
+				Closer.close(dis);
 			}
 		} catch (IOException e) {
 			Logger.error(this, "Unable to read old uptime file: "+file+" - we will assume we weren't online during that period");
@@ -119,6 +121,7 @@ public class UptimeEstimator implements Runnable {
 		} catch (IOException e) {
 			Logger.error(this, "Unable to write to uptime estimator log file: "+logFile);
 		} finally {
+			Closer.close(dos);
 			Closer.close(fos);
 			// Schedule next time
 			schedule(now);

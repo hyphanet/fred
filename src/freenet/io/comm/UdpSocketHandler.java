@@ -73,7 +73,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		// Only used for debugging, no need to seed from Yarrow
 		dropRandom = node.fastWeakRandom;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		logDEBUG = Logger.shouldLog(Logger.MINOR, this);
+		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		tracker = AddressTracker.create(node.lastBootID, node.getNodeDir(), listenPort);
 		tracker.startSend(startupTime);
 	}
@@ -192,7 +192,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 				Logger.error(this, "Caught " + t + " from "
 						+ lowLevelFilter, t);
 			}
-		} else if(logDEBUG) Logger.minor(this, "No packet received");
+		} else if(logDEBUG) Logger.debug(this, "No packet received");
 	}
 	
     private static final int MAX_RECEIVE_SIZE = 1500;
@@ -303,7 +303,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		}
 		node.executor.execute(this, "UdpSocketHandler for port "+listenPort);
 		if(!disableHangChecker) {
-			node.executor.execute(new USMChecker(), "UdpSockerHandler watchdog");
+			node.executor.execute(new USMChecker(), "UdpSocketHandler watchdog");
 		}
 	}
 	

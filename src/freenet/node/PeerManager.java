@@ -80,6 +80,21 @@ public class PeerManager {
 	/** routableConnectionStats update interval (milliseconds) */
 	private static final long routableConnectionStatsUpdateInterval = 7 * 1000;  // 7 seconds
 	
+	/** Should update the peer-file ? */
+	private volatile boolean shouldWritePeers = false;
+	private static final int MIN_WRITEPEERS_DELAY = 5*1000; // 5sec
+	private final Runnable writePeersRunnable = new Runnable() {
+
+		public void run() {
+			if(shouldWritePeers) {
+				shouldWritePeers = false;
+				writePeersInner();
+			}
+			
+			node.ps.queueTimedJob(writePeersRunnable, MIN_WRITEPEERS_DELAY);
+		}
+	};
+	
 	/**
 	 * Track the number of times a PeerNode has been selected by the routing algorithm
 	 * @see PeerNode.numberOfSelections
@@ -1069,12 +1084,7 @@ public class PeerManager {
 	private final Object writePeerFileSync = new Object();
 
 	void writePeers() {
-		node.ps.queueTimedJob(new Runnable() {
-
-			public void run() {
-				writePeersInner();
-			}
-		}, 0);
+		shouldWritePeers = true;
 	}
 	
 	protected StringBuilder getDarknetPeersString() {
@@ -1282,6 +1292,7 @@ public class PeerManager {
 		ua = new PeerManagerUserAlert(node.nodeStats);
 		updatePMUserAlert();
 		node.clientCore.alerts.register(ua);
+		node.ps.queueTimedJob(writePeersRunnable, 0);
 	}
 
 	public int countNonBackedOffPeers() {

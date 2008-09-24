@@ -1,6 +1,5 @@
 package freenet.node;
 
-import freenet.config.NodeNeedRestartException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -32,6 +31,7 @@ import freenet.clients.http.filter.FoundURICallback;
 import freenet.clients.http.filter.GenericReadFilterCallback;
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.crypt.RandomSource;
 import freenet.io.xfer.AbortedException;
@@ -177,6 +177,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 					// FIXME
 					throw new InvalidConfigValueException(l10n("movingTempDirOnTheFlyNotSupported"));
 				}
+				
+				@Override
 				public boolean isReadOnly() {
 				        return true;
 			        }
@@ -205,7 +207,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			}
 
 			public void set(Boolean val) throws InvalidConfigValueException {
-				if((val == get()) || (persistentTempBucketFactory == null)) return;
+				if (get().equals(val) || (persistentTempBucketFactory == null))
+					        return;
 				persistentTempBucketFactory.setEncryption(val);
 			}
 		});
@@ -223,6 +226,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 					// FIXME
 					throw new InvalidConfigValueException("Moving persistent temp directory on the fly not supported at present");
 				}
+				
+				@Override
 				public boolean isReadOnly() {
 				        return true;
 			        }
@@ -244,14 +249,15 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		clientContext.init(requestStarters);
 		InsertCompressor.load(container, clientContext);
 
-		nodeConfig.register("maxRAMBucketSize", "32KiB", sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
+		nodeConfig.register("maxRAMBucketSize", "128KiB", sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
 			
 			public Long get() {
 				return (tempBucketFactory == null ? 0 : tempBucketFactory.getMaxRAMBucketSize());
 			}
 
 			public void set(Long val) throws InvalidConfigValueException {
-				if((val == get()) || (tempBucketFactory == null)) return;
+				if (get().equals(val) || (tempBucketFactory == null))
+					        return;
 				tempBucketFactory.setMaxRAMBucketSize(val);
 			}
 		});
@@ -262,7 +268,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			}
 
 			public void set(Long val) throws InvalidConfigValueException {
-				if((val == get()) || (tempBucketFactory == null)) return;
+				if (get().equals(val) || (tempBucketFactory == null))
+					        return;
 				tempBucketFactory.setMaxRamUsed(val);
 			}
 		});
@@ -274,11 +281,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			}
 
 			public void set(Boolean val) throws InvalidConfigValueException {
-				if((val == get()) || (tempBucketFactory == null)) return;
+				if (get().equals(val) || (tempBucketFactory == null))
+					        return;
 				tempBucketFactory.setEncryption(val);
 			}
 		});
-		tempBucketFactory = new TempBucketFactory(tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), random, node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"));
+		tempBucketFactory = new TempBucketFactory(node.executor, tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), random, node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"));
 
 		healingQueue = new SimpleHealingQueue(
 				new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory,
@@ -355,7 +363,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			});
 		setUploadAllowedDirs(nodeConfig.getStringArr("uploadAllowedDirs"));
 
-		nodeConfig.register("maxArchiveSize", "5MiB", sortOrder++, true, false, "NodeClientCore.maxArchiveSize", "NodeClientCore.maxArchiveSizeLong", new LongCallback() {
+		nodeConfig.register("maxArchiveSize", "2MiB", sortOrder++, true, false, "NodeClientCore.maxArchiveSize", "NodeClientCore.maxArchiveSizeLong", new LongCallback() {
 
 			@Override
 			public Long get() {
@@ -364,7 +372,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 
 			@Override
 			public void set(Long val) throws InvalidConfigValueException, NodeNeedRestartException {
-				if(val == get()) return;
+				if (get().equals(val))
+					        return;
 				archiveManager.setMaxArchiveSize(val);
 			}
 		});

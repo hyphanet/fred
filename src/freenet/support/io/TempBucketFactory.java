@@ -4,6 +4,10 @@
 package freenet.support.io;
 
 import freenet.crypt.RandomSource;
+import freenet.support.Executor;
+import freenet.support.Logger;
+import freenet.support.SizeUtil;
+import freenet.support.TimeUtil;
 import java.io.IOException;
 
 import freenet.support.api.Bucket;
@@ -12,45 +16,293 @@ import freenet.support.api.BucketFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Random;
+import java.util.Vector;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import com.db4o.ObjectContainer;
 
 /**
  * Temporary Bucket Factory
+ * 
+ * Buckets created by this factory can be either:
+ *	- ArrayBuckets
+ * OR
+ *	- FileBuckets
+ * 
+ * ArrayBuckets are used if and only if:
+ *	1) there is enough room remaining on the pool (@see maxRamUsed and @see bytesInUse)
+ *	2) the initial size is smaller than (@maxRAMBucketSize)
+ * 
+ * Depending on how they are used they might switch from one type to another transparently.
+ * 
+ * Currently they are two factors considered for a migration:
+ *	- if they are long-lived or not (@see RAMBUCKET_MAX_AGE)
+ *	- if their size is over RAMBUCKET_CONVERSION_FACTOR*maxRAMBucketSize
  */
 public class TempBucketFactory implements BucketFactory {
+	public final static long defaultIncrement = 4096;
+	public final static float DEFAULT_FACTOR = 1.25F;
+	
+	private final FilenameGenerator filenameGenerator;
+	private long bytesInUse = 0;
+	private final RandomSource strongPRNG;
+	private final Random weakPRNG;
+	private final Executor executor;
+	private volatile boolean logMINOR;
+	private volatile boolean reallyEncrypt;
+	
+	/** How big can the defaultSize be for us to consider using RAMBuckets? */
+	private long maxRAMBucketSize;
+	/** How much memory do we dedicate to the RAMBucketPool? (in bytes) */
+	private long maxRamUsed;
+	
+	/** How old is a long-lived RAMBucket? */
+	private final int RAMBUCKET_MAX_AGE = 5*60*1000; // 5mins
+	/** How many times the maxRAMBucketSize can a RAMBucket be before it gets migrated? */
+	private final int RAMBUCKET_CONVERSION_FACTOR = 4;
+	
 	public class TempBucket implements Bucket {
+		/** The underlying bucket itself */
 		private Bucket currentBucket;
+		/** We have to account the size of the underlying bucket ourself in order to be able to access it fast */
+		private long currentSize;
+		/** A link to the "real" underlying outputStream, even if we migrated */
+		private OutputStream os = null;
+		/** All the open-streams to reset or close on migration or free() */
+		private final Vector<TempBucketInputStream> tbis;
+		/** An identifier used to know when to deprecate the InputStreams */
+		private short osIndex;
+		/** A timestamp used to evaluate the age of the bucket and maybe consider it for a migration */
+		public final long creationTime;
+		private boolean hasBeenFreed = false;
 		
-		public TempBucket(Bucket cur) {
+		public TempBucket(long now, Bucket cur) {
+			if(cur == null)
+				throw new NullPointerException();
 			this.currentBucket = cur;
+			this.creationTime = now;
+			this.osIndex = 0;
+			this.tbis = new Vector<TempBucketInputStream>();
 		}
 		
-		public final void migrateToFileBucket() throws IOException {
-			RAMBucket ramBucket = null;
-			synchronized(this) {
-				if(!isRAMBucket())
-					return;
-
-				ramBucket = (RAMBucket) currentBucket;
-				TempFileBucket tempFB = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator);
-				BucketTools.copy(currentBucket, tempFB);
-				currentBucket = tempFB;
+		private void closeInputStreams(boolean forFree) {
+			for(TempBucketInputStream is : tbis) {
+				try {
+					if(forFree)
+						is.close();
+					else
+						is._maybeResetInputStream();
+				} catch(IOException e) {
+					Closer.close(is);
+					tbis.remove(is);
+				}
 			}
-			ramBucket.free();
 		}
 		
-		public final synchronized boolean isRAMBucket() {
-			return (currentBucket instanceof RAMBucket);
+		/** A blocking method to force-migrate from a RAMBucket to a FileBucket */
+		private final void migrateToFileBucket() throws IOException {
+			Bucket toMigrate = null;
+			synchronized(this) {
+				if(!isRAMBucket() || hasBeenFreed)
+					// Nothing to migrate! We don't want to switch back to ram, do we?					
+					return;
+				toMigrate = currentBucket;
+				Bucket tempFB = _makeFileBucket();
+				if(os != null) {
+					os.flush();
+					Closer.close(os);
+					// DO NOT INCREMENT THE osIndex HERE!
+					os = tempFB.getOutputStream();
+					if(currentSize > 0)
+						BucketTools.copyTo(toMigrate, os, currentSize);
+				}
+				if(toMigrate.isReadOnly())
+					tempFB.setReadOnly();
+				
+				closeInputStreams(false);
+				
+				currentBucket = tempFB;
+				// We need streams to be reset to point to the new bucket
+			}
+			if(logMINOR)
+				Logger.minor(this, "We have migrated "+toMigrate.hashCode());
+			
+			// We can free it on-thread as it's a rambucket
+			toMigrate.free();
+			// Might have changed already so we can't rely on currentSize!
+			_hasFreed(toMigrate.size());
+		}
+		
+		public synchronized final boolean isRAMBucket() {
+			return (currentBucket instanceof ArrayBucket);
 		}
 
 		public synchronized OutputStream getOutputStream() throws IOException {
-			return currentBucket.getOutputStream();
+			if(osIndex > 0)
+				throw new IOException("Only one OutputStream per bucket!");
+			return new TempBucketOutputStream(++osIndex);
+		}
+
+		private class TempBucketOutputStream extends OutputStream {
+			private final short idx;
+			
+			TempBucketOutputStream(short idx) throws IOException {
+				this.idx = idx;
+				if(os == null)
+					os = currentBucket.getOutputStream();
+			}
+			
+			private void _maybeMigrateRamBucket(long futureSize) throws IOException {
+				if(isRAMBucket()) {
+					boolean shouldMigrate = false;
+					boolean isOversized = false;
+					
+					if(futureSize >= Math.min(Integer.MAX_VALUE, maxRAMBucketSize * RAMBUCKET_CONVERSION_FACTOR)) {
+						isOversized = true;
+						shouldMigrate = true;
+					} else if ((futureSize - currentSize) + bytesInUse >= maxRamUsed)
+						shouldMigrate = true;
+					
+					if(shouldMigrate) {
+						if(logMINOR) {
+							if(isOversized)
+								Logger.minor(this, "The bucket is over "+SizeUtil.formatSize(maxRAMBucketSize*RAMBUCKET_CONVERSION_FACTOR)+": we will force-migrate it to disk.");
+							else
+								Logger.minor(this, "The bucketpool is full: force-migrate before we go over the limit");
+						}
+						migrateToFileBucket();
+					}
+				}
+			}
+			
+			@Override
+			public final void write(int b) throws IOException {
+				synchronized(TempBucket.this) {
+					long futureSize = currentSize + 1;
+					_maybeMigrateRamBucket(futureSize);
+					os.write(b);
+					currentSize = futureSize;
+					if(isRAMBucket()) // We need to re-check because it might have changed!
+						_hasTaken(1);
+				}
+			}
+			
+			@Override
+			public final void write(byte b[], int off, int len) throws IOException {
+				synchronized(TempBucket.this) {
+					long futureSize = currentSize + len;
+					_maybeMigrateRamBucket(futureSize);
+					os.write(b, off, len);
+					currentSize = futureSize;
+					if(isRAMBucket()) // We need to re-check because it might have changed!
+						_hasTaken(len);
+				}
+			}
+			
+			@Override
+			public final void flush() throws IOException {
+				synchronized(TempBucket.this) {
+					_maybeMigrateRamBucket(currentSize);
+					os.flush();
+				}
+			}
+			
+			@Override
+			public final void close() throws IOException {
+				synchronized(TempBucket.this) {
+					_maybeMigrateRamBucket(currentSize);
+					os.flush();
+					os.close();
+					// DO NOT NULL os OUT HERE!
+				}
+			}
 		}
 
 		public synchronized InputStream getInputStream() throws IOException {
-			return currentBucket.getInputStream();
+			if(os == null)
+				throw new IOException("No OutputStream has been openned! Why would you want an InputStream then?");
+			TempBucketInputStream is = new TempBucketInputStream(osIndex);
+			tbis.add(is);
+			
+			return is;
+		}
+		
+		private class TempBucketInputStream extends InputStream {
+			/** The current InputStream we use from the underlying bucket */
+			private InputStream currentIS;
+			/** Keep a counter to know where we are on the stream (useful when we have to reset and skip) */
+			private long index = 0;
+			/** Will change if a new OutputStream is openned: used to detect deprecation */
+			private final short idx;
+			
+			TempBucketInputStream(short idx) throws IOException {
+				this.idx = idx;
+				this.currentIS = currentBucket.getInputStream();
+			}
+			
+			public void _maybeResetInputStream() throws IOException {
+				if(idx != osIndex)
+					close();
+			}
+			
+			@Override
+			public final int read() throws IOException {
+				synchronized(TempBucket.this) {
+					int toReturn = currentIS.read();
+					if(toReturn != -1)
+						index++;
+					return toReturn;
+				}
+			}
+			
+			@Override
+			public int read(byte b[]) throws IOException {
+				synchronized(TempBucket.this) {
+					return read(b, 0, b.length);
+				}
+			}
+			
+			@Override
+			public int read(byte b[], int off, int len) throws IOException {
+				synchronized(TempBucket.this) {
+					int toReturn = currentIS.read(b, off, len);
+					if(toReturn > 0)
+						index += toReturn;
+					return toReturn;
+				}
+			}
+			
+			@Override
+			public long skip(long n) throws IOException {
+				synchronized(TempBucket.this) {
+					long skipped = currentIS.skip(n);
+					index += skipped;
+					return skipped;
+				}
+			}
+			
+			@Override
+			public int available() throws IOException {
+				synchronized(TempBucket.this) {
+					return currentIS.available();
+				}
+			}
+			
+			@Override
+			public boolean markSupported() {
+				return false;
+			}
+			
+			@Override
+			public final void close() throws IOException {
+				synchronized(TempBucket.this) {
+					Closer.close(currentIS);
+					tbis.remove(this);
+				}
+			}
 		}
 
 		public synchronized String getName() {
@@ -58,7 +310,7 @@ public class TempBucketFactory implements BucketFactory {
 		}
 
 		public synchronized long size() {
-			return currentBucket.size();
+			return currentSize;
 		}
 
 		public synchronized boolean isReadOnly() {
@@ -70,7 +322,18 @@ public class TempBucketFactory implements BucketFactory {
 		}
 
 		public synchronized void free() {
+			if(hasBeenFreed) return;
+			hasBeenFreed = true;
+			
+			Closer.close(os);
+			closeInputStreams(true);
 			currentBucket.free();
+			if(isRAMBucket()) {
+				_hasFreed(currentSize);
+				synchronized(ramBucketQueue) {
+					ramBucketQueue.remove(this);
+				}
+			}
 		}
 
 		public Bucket createShadow() throws IOException {
@@ -87,42 +350,17 @@ public class TempBucketFactory implements BucketFactory {
 			container.set(this);
 		}
 	}
-
-	private class RAMBucket extends ArrayBucket {
-		public RAMBucket(long size) {
-			super("RAMBucket", size);
-			_hasTaken(size);
-		}
-		
-		@Override
-		public void free() {
-			super.free();
-			_hasFreed(size());
-		}
-	}
 	
-	private final FilenameGenerator filenameGenerator;
-	private long bytesInUse = 0;
-	
-	public final static long defaultIncrement = 4096;
-	
-	public final static float DEFAULT_FACTOR = 1.25F;
-	
-	public long maxRAMBucketSize;
-	public long maxRamUsed;
-
-	private final RandomSource strongPRNG;
-	private final Random weakPRNG;
-	private volatile boolean reallyEncrypt;
-
 	// Storage accounting disabled by default.
-	public TempBucketFactory(FilenameGenerator filenameGenerator, long maxBucketSizeKeptInRam, long maxRamUsed, RandomSource strongPRNG, Random weakPRNG, boolean reallyEncrypt) {
+	public TempBucketFactory(Executor executor, FilenameGenerator filenameGenerator, long maxBucketSizeKeptInRam, long maxRamUsed, RandomSource strongPRNG, Random weakPRNG, boolean reallyEncrypt) {
 		this.filenameGenerator = filenameGenerator;
 		this.maxRamUsed = maxRamUsed;
 		this.maxRAMBucketSize = maxBucketSizeKeptInRam;
 		this.strongPRNG = strongPRNG;
 		this.weakPRNG = weakPRNG;
 		this.reallyEncrypt = reallyEncrypt;
+		this.executor = executor;
+		this.logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
 	public Bucket makeBucket(long size) throws IOException {
@@ -146,22 +384,27 @@ public class TempBucketFactory implements BucketFactory {
 	}
 	
 	public synchronized void setMaxRamUsed(long size) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		maxRamUsed = size;
 	}
 	
 	public synchronized long getMaxRamUsed() {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		return maxRamUsed;
 	}
 	
 	public synchronized void setMaxRAMBucketSize(long size) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		maxRAMBucketSize = size;
 	}
 	
 	public synchronized long getMaxRAMBucketSize() {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		return maxRAMBucketSize;
 	}
 	
 	public void setEncryption(boolean value) {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		reallyEncrypt = value;
 	}
 	
@@ -184,7 +427,10 @@ public class TempBucketFactory implements BucketFactory {
 	public TempBucket makeBucket(long size, float factor, long increment) throws IOException {
 		Bucket realBucket = null;
 		boolean useRAMBucket = false;
+		long now = System.currentTimeMillis();
 		
+		// We need to clean the queue in order to have "space" to host new buckets
+		cleanBucketQueue(now);
 		synchronized(this) {
 			if((size > 0) && (size <= maxRAMBucketSize) && (bytesInUse <= maxRamUsed)) {
 				useRAMBucket = true;
@@ -192,10 +438,59 @@ public class TempBucketFactory implements BucketFactory {
 		}
 		
 		// Do we want a RAMBucket or a FileBucket?
-		realBucket = (useRAMBucket ? new RAMBucket(size) : new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator));
-		// Do we want it to be encrypted?
-		realBucket = (!reallyEncrypt ? realBucket : new PaddedEphemerallyEncryptedBucket(realBucket, 1024, strongPRNG, weakPRNG));
+		realBucket = (useRAMBucket ? new ArrayBucket() : _makeFileBucket());
 		
-		return new TempBucket(realBucket);
+		TempBucket toReturn = new TempBucket(now, realBucket);
+		if(useRAMBucket) { // No need to consider them for migration if they can't be migrated
+			synchronized(ramBucketQueue) {
+				ramBucketQueue.add(toReturn);
+			}
+		}
+		return toReturn;
+}
+	
+	/** Migrate all long-lived buckets from the queue */
+	private void cleanBucketQueue(long now) {
+		boolean shouldContinue = true;
+		// create a new list to avoid race-conditions
+		final Queue<TempBucket> toMigrate = new LinkedList<TempBucket>();
+		do {
+			synchronized(ramBucketQueue) {
+				final TempBucket tmpBucket = ramBucketQueue.peek();
+				if((tmpBucket == null) || (tmpBucket.creationTime + RAMBUCKET_MAX_AGE > now))
+					shouldContinue = false;
+				else {
+					if(logMINOR)
+						Logger.minor(this, "The bucket is "+TimeUtil.formatTime(now - tmpBucket.creationTime)+" old: we will force-migrate it to disk.");
+					ramBucketQueue.remove(tmpBucket);
+					toMigrate.add(tmpBucket);
+				}
+			}
+		} while(shouldContinue);
+
+		if(toMigrate.size() > 0) {
+			executor.execute(new Runnable() {
+
+				public void run() {
+					if(logMINOR)
+						Logger.minor(this, "We are going to migrate " + toMigrate.size() + " RAMBuckets");
+					for(TempBucket tmpBucket : toMigrate) {
+						try {
+							tmpBucket.migrateToFileBucket();
+						} catch(IOException e) {
+							Logger.error(tmpBucket, "An IOE occured while migrating long-lived buckets:" + e.getMessage(), e);
+						}
+					}
+				}
+			}, "RAMBucket migrator ("+now+')');
+		}
+	}
+	
+	private final Queue<TempBucket> ramBucketQueue = new LinkedBlockingQueue<TempBucket>();
+	
+	private Bucket _makeFileBucket() {
+		Bucket fileBucket = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator);
+		// Do we want it to be encrypted?
+		return (reallyEncrypt ? new PaddedEphemerallyEncryptedBucket(fileBucket, 1024, strongPRNG, weakPRNG) : fileBucket);
 	}
 }

@@ -141,31 +141,31 @@ public class BucketTools {
 	}
 
 	public final static int[] nullIndices(Bucket[] array) {
-		List list = new ArrayList();
+		List<Integer> list = new ArrayList();
 		for (int i = 0; i < array.length; i++) {
 			if (array[i] == null) {
-				list.add(new Integer(i));
+				list.add(i);
 			}
 		}
 
 		int[] ret = new int[list.size()];
 		for (int i = 0; i < list.size(); i++) {
-			ret[i] = ((Integer) list.get(i)).intValue();
+			ret[i] = list.get(i);
 		}
 		return ret;
 	}
 
 	public final static int[] nonNullIndices(Bucket[] array) {
-		List list = new ArrayList();
+		List<Integer> list = new ArrayList();
 		for (int i = 0; i < array.length; i++) {
 			if (array[i] != null) {
-				list.add(new Integer(i));
+				list.add(i);
 			}
 		}
 
 		int[] ret = new int[list.size()];
 		for (int i = 0; i < list.size(); i++) {
-			ret[i] = ((Integer) list.get(i)).intValue();
+			ret[i] = list.get(i);
 		}
 		return ret;
 	}
@@ -200,10 +200,8 @@ public class BucketTools {
 			dis = new DataInputStream(is);
 			dis.readFully(data);
 		} finally {
-			if(dis != null)
-				dis.close();
-			else
-				is.close();
+			Closer.close(dis);
+			Closer.close(is);
 		}
 		return data;
 	}
@@ -288,14 +286,16 @@ public class BucketTools {
 				if(bytes <= 0) {
 					if(truncateLength == Long.MAX_VALUE)
 						break;
-					new IOException().printStackTrace();
-					throw new IOException("Could not move required quantity of data in copyTo: "+bytes+" (moved "+moved+" of "+truncateLength+"): unable to read from "+is);
+					IOException ioException = new IOException("Could not move required quantity of data in copyTo: "+bytes+" (moved "+moved+" of "+truncateLength+"): unable to read from "+is);
+					ioException.printStackTrace();
+					throw ioException; 
 				}
 				os.write(buf, 0, bytes);
 				moved += bytes;
 			}
 		} finally {
 			is.close();
+			os.flush();
 		}
 	}
 

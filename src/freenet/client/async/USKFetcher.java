@@ -74,7 +74,7 @@ public class USKFetcher implements ClientGetState {
 	private final USK origUSK;
 	
 	/** Callbacks */
-	private final LinkedList callbacks;
+	private final LinkedList<USKFetcherCallback> callbacks;
 
 	/** Fetcher context */
 	final FetchContext ctx;
@@ -180,7 +180,7 @@ public class USKFetcher implements ClientGetState {
 		}
 	}
 	
-	private final Vector runningAttempts;
+	private final Vector<USKAttempt> runningAttempts;
 	
 	private long lastFetchedEdition;
 	private long lastAddedEdition;
@@ -224,9 +224,9 @@ public class USKFetcher implements ClientGetState {
 		this.origUSK = origUSK;
 		this.uskManager = manager;
 		this.minFailures = this.origMinFailures = minFailures;
-		runningAttempts = new Vector();
-		callbacks = new LinkedList();
-		subscribers = new HashSet();
+		runningAttempts = new Vector<USKAttempt>();
+		callbacks = new LinkedList<USKFetcherCallback>();
+		subscribers = new HashSet<USKCallback>();
 		lastFetchedEdition = -1;
 		lastAddedEdition = -1;
 		this.ctx = ctx;
@@ -289,7 +289,7 @@ public class USKFetcher implements ClientGetState {
 			USKFetcherCallback[] cb;
 			synchronized(this) {
 				completed = true;
-				cb = (USKFetcherCallback[]) callbacks.toArray(new USKFetcherCallback[callbacks.size()]);
+				cb = callbacks.toArray(new USKFetcherCallback[callbacks.size()]);
 			}
 			byte[] data;
 			if(lastRequestData == null)
@@ -302,14 +302,19 @@ public class USKFetcher implements ClientGetState {
 					data = null;
 				}
 			}
-			for(int i=0;i<cb.length;i++)
-				cb[i].onFoundEdition(ed, origUSK.copy(ed), null, context, lastWasMetadata, lastCompressionCodec, data);
+			for(int i=0;i<cb.length;i++) {
+				try {
+					cb[i].onFoundEdition(ed, origUSK.copy(ed), null, context, lastWasMetadata, lastCompressionCodec, data);
+				} catch (Exception e) {
+					Logger.error(this, "An exception occured while dealing with a callback:"+cb[i].toString()+"\n"+e.getMessage(),e);
+				}
+			}
 		}
 	}
 
 	void onSuccess(USKAttempt att, boolean dontUpdate, ClientSSKBlock block, final ClientContext context) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		LinkedList l = null;
+		LinkedList<USKAttempt> l = null;
 		final long lastEd = uskManager.lookup(origUSK);
 		long curLatest;
 		boolean decode = false;
@@ -324,7 +329,7 @@ public class USKFetcher implements ClientGetState {
 			long addFrom = Math.max(lastAddedEdition + 1, curLatest + 1);
 			if(logMINOR) Logger.minor(this, "Adding from "+addFrom+" to "+addTo+" for "+origUSK);
 			if(addTo >= addFrom) {
-				l = new LinkedList();
+				l = new LinkedList<USKAttempt>();
 				for(long i=addFrom;i<=addTo;i++) {
 					if(logMINOR) Logger.minor(this, "Adding checker for edition "+i+" for "+origUSK);
 					l.add(add(i));
@@ -340,6 +345,7 @@ public class USKFetcher implements ClientGetState {
 				data = null;
 			} catch (IOException e) {
 				data = null;
+				Logger.error(this, "An IOE occured while decoding: "+e.getMessage(),e);
 			}
 		}
 		synchronized(this) {
@@ -358,16 +364,16 @@ public class USKFetcher implements ClientGetState {
 		if(!dontUpdate)
 			uskManager.update(origUSK, curLatest, context);
 		if(l == null) return;
-		final LinkedList toSched = l;
+		final LinkedList<USKAttempt> toSched = l;
 		// If we schedule them here, we don't get icky recursion problems.
 		if(!cancelled) {
 			context.mainExecutor.execute(new Runnable() {
 				public void run() {
 					long last = lastEd;
-					for(Iterator i=toSched.iterator();i.hasNext();) {
+					for(Iterator<USKAttempt> i=toSched.iterator();i.hasNext();) {
 						// We may be called recursively through onSuccess().
 						// So don't start obsolete requests.
-						USKAttempt a = (USKAttempt) i.next();
+						USKAttempt a = i.next();
 						last = uskManager.lookup(origUSK);
 						if((last <= a.number) && !a.cancelled)
 							a.schedule(null, context);
@@ -396,7 +402,7 @@ public class USKFetcher implements ClientGetState {
 		USKFetcherCallback[] cb;
 		synchronized(this) {
 			completed = true;
-			cb = (USKFetcherCallback[]) callbacks.toArray(new USKFetcherCallback[callbacks.size()]);
+			cb = callbacks.toArray(new USKFetcherCallback[callbacks.size()]);
 		}
 		for(int i=0;i<cb.length;i++)
 			cb[i].onCancelled(null, context);
@@ -411,13 +417,13 @@ public class USKFetcher implements ClientGetState {
 	}
 
 	private void cancelBefore(long curLatest, ClientContext context) {
-		Vector v = null;
+		Vector<USKAttempt> v = null;
 		int count = 0;
 		synchronized(this) {
-			for(Iterator i=runningAttempts.iterator();i.hasNext();) {
-				USKAttempt att = (USKAttempt) (i.next());
+			for(Iterator<USKAttempt> i=runningAttempts.iterator();i.hasNext();) {
+				USKAttempt att = i.next();
 				if(att.number < curLatest) {
-					if(v == null) v = new Vector(runningAttempts.size()-count);
+					if(v == null) v = new Vector<USKAttempt>(runningAttempts.size()-count);
 					v.add(att);
 					i.remove();
 				}
@@ -426,7 +432,7 @@ public class USKFetcher implements ClientGetState {
 		}
 		if(v != null) {
 			for(int i=0;i<v.size();i++) {
-				USKAttempt att = (USKAttempt) v.get(i);
+				USKAttempt att = v.get(i);
 				att.cancel(null, context);
 			}
 		}
@@ -440,7 +446,7 @@ public class USKFetcher implements ClientGetState {
 		if(cancelled) return null;
 		if(logMINOR) Logger.minor(this, "Adding USKAttempt for "+i+" for "+origUSK.getURI());
 		if(!runningAttempts.isEmpty()) {
-			USKAttempt last = (USKAttempt) runningAttempts.lastElement();
+			USKAttempt last = runningAttempts.lastElement();
 			if(last.number >= i) {
 				if(logMINOR) Logger.minor(this, "Returning because last.number="+i+" for "+origUSK.getURI());
 				return null;
@@ -489,7 +495,7 @@ public class USKFetcher implements ClientGetState {
 			long startPoint = Math.max(origUSK.suggestedEdition, valueAtSchedule);
 			for(long i=startPoint;i<startPoint+minFailures;i++)
 				add(i);
-			attempts = (USKAttempt[]) runningAttempts.toArray(new USKAttempt[runningAttempts.size()]);
+			attempts = runningAttempts.toArray(new USKAttempt[runningAttempts.size()]);
 			started = true;
 		}
 		if(!cancelled) {
@@ -514,7 +520,7 @@ public class USKFetcher implements ClientGetState {
 		USKAttempt[] attempts;
 		synchronized(this) {
 			cancelled = true;
-			attempts = (USKAttempt[]) runningAttempts.toArray(new USKAttempt[runningAttempts.size()]);
+			attempts = runningAttempts.toArray(new USKAttempt[runningAttempts.size()]);
 		}
 		for(int i=0;i<attempts.length;i++)
 			attempts[i].cancel(container, context);
@@ -526,7 +532,7 @@ public class USKFetcher implements ClientGetState {
 	 * an alternative to a refcount. This could be replaced with a 
 	 * Bloom filter or whatever, we only need .exists and .count.
 	 */
-	final HashSet subscribers;
+	final HashSet<USKCallback> subscribers;
 	
 	public void addSubscriber(USKCallback cb) {
 		synchronized(this) {
@@ -541,18 +547,18 @@ public class USKFetcher implements ClientGetState {
 		// take locks...
 		short normalPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
 		short progressPrio = RequestStarter.MINIMUM_PRIORITY_CLASS;
-		USKCallback[] callbacks;
+		USKCallback[] localCallbacks;
 		synchronized(this) {
-			callbacks = (USKCallback[]) subscribers.toArray(new USKCallback[subscribers.size()]);
+			localCallbacks = subscribers.toArray(new USKCallback[subscribers.size()]);
 		}
-		if(callbacks.length == 0) {
+		if(localCallbacks.length == 0) {
 			normalPollPriority = DEFAULT_NORMAL_POLL_PRIORITY;
 			progressPollPriority = DEFAULT_PROGRESS_POLL_PRIORITY;
 			return;
 		}
 		
-		for(int i=0;i<callbacks.length;i++) {
-			USKCallback cb = callbacks[i];
+		for(int i=0;i<localCallbacks.length;i++) {
+			USKCallback cb = localCallbacks[i];
 			short prio = cb.getPollingPriorityNormal();
 			if(prio < normalPrio) normalPrio = prio;
 			prio = cb.getPollingPriorityProgress();
@@ -567,13 +573,10 @@ public class USKFetcher implements ClientGetState {
 	}
 	
 	public void removeSubscriber(USKCallback cb, ClientContext context) {
-		boolean kill = false;
 		synchronized(this) {
 			subscribers.remove(cb);
-			if(!(subscribers.isEmpty() && killOnLoseSubscribers)) kill = true;
 		}
 		updatePriorities();
-		if(kill) cancel(null, context);
 	}
 
 	public synchronized boolean hasLastData() {

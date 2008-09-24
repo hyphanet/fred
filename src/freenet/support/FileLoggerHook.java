@@ -13,6 +13,7 @@ import java.io.PrintStream;
 import java.net.InetAddress;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -22,7 +23,6 @@ import java.util.Locale;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
-import java.util.Vector;
 import java.util.zip.GZIPOutputStream;
 
 import freenet.node.Version;
@@ -95,7 +95,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	 * Something wierd happens when the disk gets full, also we don't want to
 	 * block So run the actual write on another thread
 	 */
-	protected final LinkedList list = new LinkedList();
+	protected final LinkedList<byte[]> list = new LinkedList<byte[]>();
 	protected long listBytes = 0;
 
 	protected int MAX_LIST_SIZE = 100000;
@@ -103,7 +103,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	// FIXME: should reimplement LinkedList with minimal locking
 
 	long maxOldLogfilesDiskUsage;
-	protected final LinkedList logFiles = new LinkedList();
+	protected final LinkedList<OldLogFile> logFiles = new LinkedList<OldLogFile>();
 	private long oldLogFilesDiskSpaceUsage = 0;
 
 	private static class OldLogFile {
@@ -132,7 +132,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	}
 
 	public void setInterval(String intervalName) throws IntervalParseException {
-		StringBuffer sb = new StringBuffer(intervalName.length());
+		StringBuilder sb = new StringBuilder(intervalName.length());
 		for(int i=0;i<intervalName.length();i++) {
 			char c = intervalName.charAt(i);
 			if(!Character.isDigit(c)) break;
@@ -175,7 +175,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	}
 
 	protected String getHourLogName(Calendar c, boolean compressed) {
-		StringBuffer buf = new StringBuffer(50);
+		StringBuilder buf = new StringBuilder(50);
 		buf.append(baseFilename).append('-');
 		buf.append(Version.buildNumber());
 		buf.append('-');
@@ -194,7 +194,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		return buf.toString();
 	}
 
-	private StringBuffer pad2digits(StringBuffer buf, int x) {
+	private StringBuilder pad2digits(StringBuilder buf, int x) {
 		String s = Integer.toString(x);
 		if (s.length() == 1) {
 			buf.append('0');
@@ -208,9 +208,10 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			super("Log File Writer Thread");
 		}
 
+		@SuppressWarnings("fallthrough")
 		public void run() {
 			File currentFilename = null;
-			Object o = null;
+			byte[] o = null;
 			long thisTime;
 			long lastTime = -1;
 			long startTime;
@@ -245,7 +246,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				filename = getHourLogName(gc, true);
 				currentFilename = new File(filename);
 				synchronized(logFiles) {
-					if((!logFiles.isEmpty()) && ((OldLogFile)logFiles.getLast()).filename.equals(currentFilename)) {
+					if ((!logFiles.isEmpty()) && logFiles.getLast().filename.equals(currentFilename)) {
 						logFiles.removeLast();
 					}
 				}
@@ -334,11 +335,11 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 							}
 						}
 						o = list.removeFirst();
-						listBytes -= (((byte[]) o).length + LINE_OVERHEAD);
+						listBytes -= o.length + LINE_OVERHEAD;
 					}
-					myWrite(logStream, ((byte[]) o));
+					myWrite(logStream,  o);
 			        if(altLogStream != null)
-			        	myWrite(altLogStream, (byte[]) o);
+			        	myWrite(altLogStream, o);
 				} catch (OutOfMemoryError e) {
 					System.err.println(e.getClass());
 					System.err.println(e.getMessage());
@@ -473,7 +474,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					if(logFiles.isEmpty()) {
 						System.err.println("ERROR: INCONSISTENT LOGGER TOTALS: Log file list is empty but still used "+oldLogFilesDiskSpaceUsage+" bytes!");
 					}
-					olf = (OldLogFile) logFiles.removeFirst();
+					olf = logFiles.removeFirst();
 				}
 				olf.filename.delete();
 				oldLogFilesDiskSpaceUsage -= olf.size;
@@ -719,9 +720,10 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			fmt = "d:c:h:t:p:m";
 		char[] f = fmt.toCharArray();
 
-		Vector fmtVec = new Vector(), strVec = new Vector();
+		ArrayList<Integer> fmtVec = new ArrayList<Integer>();
+		ArrayList<String> strVec = new ArrayList<String>();
 
-		StringBuffer sb = new StringBuffer();
+		StringBuilder sb = new StringBuilder();
 
 		boolean comment = false;
 		for (int i = 0; i < f.length; ++i) {
@@ -730,11 +732,11 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				getUName();
 			if (!comment && (type != 0)) {
 				if (sb.length() > 0) {
-					strVec.addElement(sb.toString());
-					fmtVec.addElement(new Integer(0));
-					sb = new StringBuffer();
+					strVec.add(sb.toString());
+					fmtVec.add(0);
+					sb = new StringBuilder();
 				}
-				fmtVec.addElement(new Integer(type));
+				fmtVec.add(type);
 			} else if (f[i] == '\\') {
 				comment = true;
 			} else {
@@ -743,17 +745,17 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			}
 		}
 		if (sb.length() > 0) {
-			strVec.addElement(sb.toString());
-			fmtVec.addElement(new Integer(0));
+			strVec.add(sb.toString());
+			fmtVec.add(0);
 		}
 
 		this.fmt = new int[fmtVec.size()];
 		int size = fmtVec.size();
 		for (int i = 0; i < size; ++i)
-			this.fmt[i] = ((Integer) fmtVec.elementAt(i)).intValue();
+			this.fmt[i] = fmtVec.get(i);
 
 		this.str = new String[strVec.size()];
-		str = (String[]) strVec.toArray(str);
+		str = strVec.toArray(str);
 	}
 
 	private void setDateFormat(String dfmt) {
@@ -769,14 +771,14 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		df.setTimeZone(TimeZone.getTimeZone("UTC"));
 	}
 
-	public void log(Object o, Class c, String msg, Throwable e, int priority) {
+	public void log(Object o, Class<?> c, String msg, Throwable e, int priority) {
 		if (!instanceShouldLog(priority, c))
 			return;
 
 		if (closed)
 			return;
 		
-		StringBuffer sb = new StringBuffer( e == null ? 512 : 1024 );
+		StringBuilder sb = new StringBuilder( e == null ? 512 : 1024 );
 		int sctr = 0;
 
 		for (int i = 0; i < fmt.length; ++i) {
@@ -858,7 +860,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					|| (listBytes > (MAX_LIST_BYTES * 0.9F))) {
 					byte[] ss;
 					try {
-						ss = (byte[]) (list.removeFirst());
+						ss = list.removeFirst();
 					} catch (NoSuchElementException e) {
 						// Yes I know this is impossible but it happens with 1.6 with heap profiling enabled
 						noElementCount++;
@@ -943,7 +945,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	public void listAvailableLogs(OutputStreamWriter writer) throws IOException {
 		OldLogFile[] oldLogFiles;
 		synchronized(logFiles) {
-			oldLogFiles = (OldLogFile[]) logFiles.toArray(new OldLogFile[logFiles.size()]);
+			oldLogFiles = logFiles.toArray(new OldLogFile[logFiles.size()]);
 		}
 		DateFormat tempDF = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.ENGLISH);
 		tempDF.setTimeZone(TimeZone.getTimeZone("GMT"));
@@ -956,9 +958,9 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 	public void sendLogByContainedDate(long time, OutputStream os) throws IOException {
 		OldLogFile toReturn = null;
 		synchronized(logFiles) {
-			Iterator i = logFiles.iterator();
+			Iterator<OldLogFile> i = logFiles.iterator();
 			while(i.hasNext()) {
-				OldLogFile olf = (OldLogFile) i.next();
+				OldLogFile olf = i.next();
 		    	boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		    	if(logMINOR)
 		    		Logger.minor(this, "Checking "+time+" against "+olf.filename+" : start="+olf.start+", end="+olf.end);
@@ -1040,7 +1042,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				OldLogFile olf;
 				synchronized(logFiles) {
 					if(logFiles.isEmpty()) return;
-					olf = (OldLogFile) logFiles.removeFirst();
+					olf = logFiles.removeFirst();
 				}
 				olf.filename.delete();
 				oldLogFilesDiskSpaceUsage -= olf.size;

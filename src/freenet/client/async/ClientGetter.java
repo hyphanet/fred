@@ -69,7 +69,7 @@ public class ClientGetter extends BaseClientGetter {
 		this.uri = uri;
 		this.ctx = ctx;
 		this.finished = false;
-		this.actx = new ArchiveContext(ctx.maxArchiveLevels);
+		this.actx = new ArchiveContext(ctx.maxTempLength, ctx.maxArchiveLevels);
 		this.binaryBlobBucket = binaryBlobBucket;
 		if(binaryBlobBucket != null) {
 			binaryBlobKeysAddedAlready = new HashSet();
@@ -282,6 +282,7 @@ public class ClientGetter extends BaseClientGetter {
 		return start(true, redirect, container, context);
 	}
 
+	@Override
 	public String toString() {
 		return super.toString()+ ':' +uri;
 	}

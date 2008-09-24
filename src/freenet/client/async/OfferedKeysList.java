@@ -36,8 +36,8 @@ import freenet.support.Logger;
  */
 public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 
-	private final HashSet keys;
-	private final Vector keysList; // O(1) remove random element the way we use it, see chooseKey().
+	private final HashSet<Key> keys;
+	private final Vector<Key> keysList; // O(1) remove random element the way we use it, see chooseKey().
 	private static boolean logMINOR;
 	private final RandomSource random;
 	private final short priorityClass;
@@ -46,8 +46,8 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 	
 	OfferedKeysList(NodeClientCore core, RandomSource random, short priorityClass, boolean isSSK) {
 		super(false);
-		this.keys = new HashSet();
-		this.keysList = new Vector();
+		this.keys = new HashSet<Key>();
+		this.keysList = new Vector<Key>();
 		this.random = random;
 		this.priorityClass = priorityClass;
 		this.core = core;
@@ -55,7 +55,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
-	/** Called when a key is found, when it no longer belogns to this list etc. */
+	/** Called when a key is found, when it no longer belongs to this list etc. */
 	public synchronized void remove(Key key) {
 		assert(keysList.size() == keys.size());
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);

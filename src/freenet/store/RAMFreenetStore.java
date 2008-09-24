@@ -122,4 +122,8 @@ public class RAMFreenetStore implements FreenetStore {
 		return writes;
 	}
 
+	public boolean probablyInStore(byte[] routingKey) {
+		ByteArrayWrapper key = new ByteArrayWrapper(routingKey);
+		return blocksByRoutingKey.get(key) != null;
+	}
 }
