@@ -10,7 +10,7 @@ import java.util.Enumeration;
  * value has changed. Allows duplicates.
  */
 public class UpdatableSortedLinkedList {
-
+	boolean debug = false;
 	protected boolean killed = false;
 	private static boolean logMINOR;
 	
@@ -62,7 +62,7 @@ public class UpdatableSortedLinkedList {
     protected synchronized void checkList() {
     	// If get errors, make this happen all the time.
     	ctr++;
-    	if(ctr % 256 != 0) return;
+    	if(ctr % 256 != 0 && !debug) return;
     	int statedLength = list.size();
     	int realLength = 0;
     	for(Enumeration e = list.elements();e.hasMoreElements();) {
