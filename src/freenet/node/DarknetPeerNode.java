@@ -68,7 +68,7 @@ public class DarknetPeerNode extends PeerNode {
 	private boolean allowLocalAddresses;
 	
 	/** Extra peer data file numbers */
-	private LinkedHashSet extraPeerDataFileNumbers;
+	private LinkedHashSet<Integer> extraPeerDataFileNumbers;
 
 	/** Private comment on the peer for /friends/ page */
 	private String privateDarknetComment;
@@ -77,7 +77,7 @@ public class DarknetPeerNode extends PeerNode {
 	private int privateDarknetCommentFileNumber;
 	
 	/** Queued-to-send N2NM extra peer data file numbers */
-	private LinkedHashSet queuedToSendN2NMExtraPeerDataFileNumbers;
+	private LinkedHashSet<Integer> queuedToSendN2NMExtraPeerDataFileNumbers;
 
 	private static boolean logMINOR;
 	
@@ -111,10 +111,10 @@ public class DarknetPeerNode extends PeerNode {
 		privateDarknetCommentFileNumber = -1;
 
 		// Setup the extraPeerDataFileNumbers
-		extraPeerDataFileNumbers = new LinkedHashSet();
+		extraPeerDataFileNumbers = new LinkedHashSet<Integer>();
 		
 		// Setup the queuedToSendN2NMExtraPeerDataFileNumbers
-		queuedToSendN2NMExtraPeerDataFileNumbers = new LinkedHashSet();
+		queuedToSendN2NMExtraPeerDataFileNumbers = new LinkedHashSet<Integer>();
 		
 	}
 

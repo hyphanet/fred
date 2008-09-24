@@ -43,9 +43,9 @@ import freenet.support.io.NativeThread;
 public class FailureTable implements OOMHook {
 	
 	/** FailureTableEntry's by key. Note that we push an entry only when sentTime changes. */
-	private final LRUHashtable entriesByKey;
+	private final LRUHashtable<Key,FailureTableEntry> entriesByKey;
 	/** BlockOfferList by key */
-	private final LRUHashtable blockOfferListByKey;
+	private final LRUHashtable<Key,BlockOfferList> blockOfferListByKey;
 	private final Node node;
 	
 	/** Maximum number of keys to track */
@@ -67,8 +67,8 @@ public class FailureTable implements OOMHook {
 	static boolean logDEBUG;
 	
 	FailureTable(Node node) {
-		entriesByKey = new LRUHashtable();
-		blockOfferListByKey = new LRUHashtable();
+		entriesByKey = new LRUHashtable<Key,FailureTableEntry>();
+		blockOfferListByKey = new LRUHashtable<Key,BlockOfferList>();
 		this.node = node;
 		offerAuthenticatorKey = new byte[32];
 		node.random.nextBytes(offerAuthenticatorKey);
@@ -505,8 +505,8 @@ public class FailureTable implements OOMHook {
 
 		OfferList(BlockOfferList offerList) {
 			this.offerList = offerList;
-			recentOffers = new Vector();
-			expiredOffers = new Vector();
+			recentOffers = new Vector<BlockOffer>();
+			expiredOffers = new Vector<BlockOffer>();
 			long now = System.currentTimeMillis();
 			BlockOffer[] offers = offerList.offers;
 			for(int i=0;i<offers.length;i++) {
@@ -521,8 +521,8 @@ public class FailureTable implements OOMHook {
 		
 		private final BlockOfferList offerList;
 		
-		private final Vector recentOffers;
-		private final Vector expiredOffers;
+		private final Vector<BlockOffer> recentOffers;
+		private final Vector<BlockOffer> expiredOffers;
 		
 		/** The last offer we returned */
 		private BlockOffer lastOffer;

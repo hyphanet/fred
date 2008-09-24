@@ -119,7 +119,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** My OutgoingPacketMangler i.e. the object which encrypts packets sent to this node */
 	private final OutgoingPacketMangler outgoingMangler;
 	/** Advertised addresses */
-	protected Vector nominalPeer;
+	protected Vector<Peer> nominalPeer;
 	/** The PeerNode's report of our IP address */
 	private Peer remoteDetectedPeer;
 	/** Is this a testnet node? */
@@ -284,9 +284,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 	
 	/** Holds a String-Long pair that shows which message types (as name) have been send to this peer. */
-	private final Hashtable localNodeSentMessageTypes = new Hashtable();
+	private final Hashtable<String, Long> localNodeSentMessageTypes = new Hashtable<String, Long>();
 	/** Holds a String-Long pair that shows which message types (as name) have been received by this peer. */
-	private final Hashtable localNodeReceivedMessageTypes = new Hashtable();
+	private final Hashtable<String, Long> localNodeReceivedMessageTypes = new Hashtable<String, Long>();
 
 	/** Hold collected IP addresses for handshake attempts, populated by DNSRequestor */
 	private Peer[] handshakeIPs;
@@ -319,7 +319,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private static final long CLEAR_MESSAGE_QUEUE_AFTER = 60 * 60 * 1000L;
 	/** A WeakReference to this object. Can be taken whenever a node object needs to refer to this object for a 
 	 * long time, but without preventing it from being GC'ed. */
-	final WeakReference myRef;
+	final WeakReference<PeerNode> myRef;
 	/** The node is being disconnected, but it may take a while. */
 	private boolean disconnecting;
 	/** When did we last disconnect? Not Disconnected because a discrete event */
@@ -349,7 +349,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 *  The initiator has to ensure that nonces send back by the
 	 *  responder in message2 match what was chosen in message 1
 	 */
-	protected final HashMap jfkNoncesSent = new HashMap();
+	protected final HashMap<Peer,byte[]> jfkNoncesSent = new HashMap<Peer,byte[]>();
 	private static boolean logMINOR;
 	
 	/**
@@ -381,7 +381,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		boolean noSig = false;
 		if(fromLocal || fromAnonymousInitiator) noSig = true;
 		logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
-		myRef = new WeakReference(this);
+		myRef = new WeakReference<PeerNode>(this);
 		this.outgoingMangler = mangler;
 		this.node = node2;
 		this.crypto = crypto;
@@ -541,7 +541,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			throw new Error(e1);
 		}
 
-		nominalPeer = new Vector();
+		nominalPeer = new Vector<Peer>();
 		try {
 			String physical[] = fs.getAll("physical.udp");
 			if(physical == null) {
@@ -817,7 +817,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 		}
 		// De-dupe
-		HashSet ret = new HashSet();
+		HashSet<Peer> ret = new HashSet<Peer>();
 		for(int i = 0; i < localHandshakeIPs.length; i++)
 			ret.add(localHandshakeIPs[i]);
 		return (Peer[]) ret.toArray(new Peer[ret.size()]);
@@ -873,9 +873,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		FreenetInetAddress localhost = node.fLocalhostAddress;
 		Peer[] nodePeers = outgoingMangler.getPrimaryIPAddress();
 
-		Vector peers = null;
+		Vector<Peer> peers = null;
 		synchronized(this) {
-			peers = new Vector(nominalPeer);
+			peers = new Vector<Peer>(nominalPeer);
 		}
 
 		boolean addedLocalhost = false;
@@ -1659,7 +1659,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(!isConnected)
 					return;
 				// Prevent leak by clearing, *but keep the current handshake*
-				Object o = jfkNoncesSent.get(newPeer);
+				byte[] o = jfkNoncesSent.get(newPeer);
 				jfkNoncesSent.clear();
 				jfkNoncesSent.put(newPeer, o);
 			} else
@@ -2324,7 +2324,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		Vector oldNominalPeer = nominalPeer;
 
 		if(nominalPeer == null)
-			nominalPeer = new Vector();
+			nominalPeer = new Vector<Peer>();
 		nominalPeer.removeAllElements();
 
 		Peer[] oldPeers = (Peer[]) nominalPeer.toArray(new Peer[nominalPeer.size()]);
@@ -2956,14 +2956,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 	}
 
-	public synchronized Hashtable getLocalNodeSentMessagesToStatistic() {
-		return new Hashtable(localNodeSentMessageTypes);
+	public synchronized Hashtable<String,Long> getLocalNodeSentMessagesToStatistic() {
+		return new Hashtable<String,Long>(localNodeSentMessageTypes);
 	}
 
-	public Hashtable getLocalNodeReceivedMessagesFromStatistic() {
+	public Hashtable<String,Long> getLocalNodeReceivedMessagesFromStatistic() {
 		// Must be synchronized *during the copy*
 		synchronized (localNodeReceivedMessageTypes) {
-			return new Hashtable(localNodeReceivedMessageTypes);
+			return new Hashtable<String,Long>(localNodeReceivedMessageTypes);
 		}
 	}
 
@@ -3773,7 +3773,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			return null;
 		}
 		long loopTime1 = System.currentTimeMillis();
-		Vector validIPs = new Vector();
+		Vector<Peer> validIPs = new Vector<Peer>();
 		for(int i=0;i<handshakeIPs.length;i++){
 			Peer peer = handshakeIPs[i];
 			FreenetInetAddress addr = peer.getFreenetAddress();
