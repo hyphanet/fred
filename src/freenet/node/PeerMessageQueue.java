@@ -169,7 +169,7 @@ public class PeerMessageQueue {
 				lists += itemsWithID.size();
 			for(int i=0;i<lists;i++) {
 				LinkedList<MessageItem> list;
-				int l = (i + roundRobinCounter) % lists;
+				int l = (i + roundRobinCounter + 1) % lists;
 				int listNum = -1;
 				if(itemsNoID != null) {
 					if(l == 0) list = itemsNoID;
@@ -252,7 +252,7 @@ public class PeerMessageQueue {
 				lists += itemsWithID.size();
 			for(int i=0;i<lists;i++) {
 				LinkedList<MessageItem> list;
-				int l = (i + roundRobinCounter) % lists;
+				int l = (i + roundRobinCounter + 1) % lists;
 				int listNum = -1;
 				if(itemsNoID != null) {
 					if(l == 0) list = itemsNoID;
