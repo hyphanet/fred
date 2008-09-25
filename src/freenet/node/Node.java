@@ -2489,8 +2489,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			}
 			chkDatacache.put(block);
 			nodeStats.avgCacheLocation.report(loc);
-			if(clientCore != null && clientCore.requestStarters != null)
-				clientCore.requestStarters.chkFetchScheduler.tripPendingKey(block);
 			failureTable.onFound(block);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store data: "+e, e);
@@ -2501,6 +2499,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			t.printStackTrace();
 			Logger.error(this, "Caught "+t+" storing data", t);
 		}
+		if(clientCore != null && clientCore.requestStarters != null)
+			clientCore.requestStarters.chkFetchScheduler.tripPendingKey(block);
 	}
 	
 	/** Store the block if this is a sink. Call for inserts. */
@@ -2523,8 +2523,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				sskDatastore.put(block, false);
 			}
 			sskDatacache.put(block, false);
-			if(clientCore != null && clientCore.requestStarters != null)
-				clientCore.requestStarters.sskFetchScheduler.tripPendingKey(block);
 			failureTable.onFound(block);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store data: "+e, e);
@@ -2537,6 +2535,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			t.printStackTrace();
 			Logger.error(this, "Caught "+t+" storing data", t);
 		}
+		if(clientCore != null && clientCore.requestStarters != null)
+			clientCore.requestStarters.sskFetchScheduler.tripPendingKey(block);
 	}
 	
 	/**
