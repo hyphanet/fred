@@ -78,6 +78,7 @@ import freenet.l10n.L10n;
 import freenet.node.NodeDispatcher.NodeDispatcherCallback;
 import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
+import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
@@ -651,7 +652,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		startupTime = System.currentTimeMillis();
 		SimpleFieldSet oldConfig = config.getSimpleFieldSet();
 		// Setup node-specific configuration
-		SubConfig nodeConfig = new SubConfig("node", config);
+		final SubConfig nodeConfig = new SubConfig("node", config);
 		
 		int sortOrder = 0;
 		
@@ -1599,6 +1600,25 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 		maxStoreKeys = maxTotalKeys / 2;
 		maxCacheKeys = maxTotalKeys - maxStoreKeys;
+		
+		if(File.separatorChar == '/' && System.getProperty("os.name").toLowerCase().indexOf("mac os") < 0) {
+			securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<SecurityLevels.PHYSICAL_THREAT_LEVEL>() {
+
+				public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
+					try {
+						if(newLevel == PHYSICAL_THREAT_LEVEL.LOW)
+							nodeConfig.set("storePreallocate", false);
+						else
+							nodeConfig.set("storePreallocate", true);
+					} catch (NodeNeedRestartException e) {
+						// Ignore
+					} catch (InvalidConfigValueException e) {
+						// Ignore
+					}
+				}
+				
+			});
+		}
 		
 		/*
 		 * On Windows, setting the file length normally involves writing lots of zeros.
