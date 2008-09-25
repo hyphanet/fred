@@ -1600,6 +1600,16 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		maxStoreKeys = maxTotalKeys / 2;
 		maxCacheKeys = maxTotalKeys - maxStoreKeys;
 		
+		/*
+		 * On Windows, setting the file length normally involves writing lots of zeros.
+		 * So it's an uninterruptible system call that takes a loooong time. On OS/X,
+		 * presumably the same is true. If the RNG is fast enough, this means that
+		 * setting the length and writing random data take exactly the same amount
+		 * of time. On most versions of Unix, holes can be created. However on all
+		 * systems, predictable disk usage is a good thing. So lets turn it on by
+		 * default for now, on all systems. The datastore can be read but mostly not 
+		 * written while the random data is being written.
+		 */
 		nodeConfig.register("storePreallocate", true, sortOrder++, true, false, "Node.storePreallocate", "Node.storePreallocateLong", 
 				new BooleanCallback() {
 					@Override
