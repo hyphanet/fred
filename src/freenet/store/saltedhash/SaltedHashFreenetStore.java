@@ -151,6 +151,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			flags |= FLAG_REBUILD_BLOOM;
 			checkBloom = false;
 
+			/*-
 			if (cleanerGlobalLock.tryLock()) {
 				System.out.println("Bloom filter for datastore (" + name + ") missing/mismatch, rebuilding.");
 				try {
@@ -160,6 +161,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				}
 				writeConfigFile();
 			}
+			*/
 		}
 
 		cleanerThread.start();

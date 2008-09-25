@@ -88,6 +88,7 @@ public class Announcer {
 			System.err.println("Attempting announcement to seednodes...");
 			synchronized(this) {
 				status = STATUS_LOADING;
+				started = true;
 			}
 			connectSomeSeednodes();
 		} else {
@@ -95,6 +96,9 @@ public class Announcer {
 			// Wait a minute, then check whether we need to seed.
 			node.getTicker().queueTimedJob(new Runnable() {
 				public void run() {
+					synchronized(Announcer.this) {
+						started = true;
+					}
 					try {
 						maybeSendAnnouncement();
 					} catch (Throwable t) {
@@ -310,7 +314,9 @@ public class Announcer {
 	private boolean dontKnowOurIPAddress;
 	
 	public void maybeSendAnnouncement() {
-		started = true;
+		synchronized(this) {
+			if(!started) return;
+		}
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "maybeSendAnnouncement()");

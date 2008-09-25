@@ -96,8 +96,14 @@ public class SecurityLevels {
 			}
 
 		};
-		myConfig.register("networkThreatLevel", "NORMAL", sortOrder++, false, true, "SecurityLevels.networkThreatLevelShort", "SecurityLevels.networkThreatLevel", networkThreatLevelCallback);
-		networkThreatLevel = NETWORK_THREAT_LEVEL.valueOf(myConfig.getString("networkThreatLevel"));
+		myConfig.register("networkThreatLevel", "HIGH", sortOrder++, false, true, "SecurityLevels.networkThreatLevelShort", "SecurityLevels.networkThreatLevel", networkThreatLevelCallback);
+		NETWORK_THREAT_LEVEL netLevel = NETWORK_THREAT_LEVEL.valueOf(myConfig.getString("networkThreatLevel"));
+		if(myConfig.getRawOption("networkThreatLevel") != null) {
+			networkThreatLevel = netLevel;
+		} else {
+			// Call all the callbacks so that the config is consistent with the threat level.
+			setThreatLevel(netLevel);
+		}
 		friendsThreatLevelCallback = new MyCallback<FRIENDS_THREAT_LEVEL>() {
 
 			@Override
@@ -132,7 +138,13 @@ public class SecurityLevels {
 
 		};
 		myConfig.register("friendsThreatLevel", "NORMAL", sortOrder++, false, true, "SecurityLevels.friendsThreatLevelShort", "SecurityLevels.friendsThreatLevel", friendsThreatLevelCallback);
-		friendsThreatLevel = FRIENDS_THREAT_LEVEL.valueOf(myConfig.getString("friendsThreatLevel"));
+		FRIENDS_THREAT_LEVEL friendsLevel = FRIENDS_THREAT_LEVEL.valueOf(myConfig.getString("friendsThreatLevel"));;
+		if(myConfig.getRawOption("friendsThreatLevel") != null) {
+			friendsThreatLevel = friendsLevel;
+		} else {
+			// Call all the callbacks so that the config is consistent with the threat level.
+			setThreatLevel(friendsLevel);
+		}
 		physicalThreatLevelCallback = new MyCallback<PHYSICAL_THREAT_LEVEL>() {
 
 			@Override
@@ -167,7 +179,14 @@ public class SecurityLevels {
 
 		};
 		myConfig.register("physicalThreatLevel", "NORMAL", sortOrder++, false, true, "SecurityLevels.physicalThreatLevelShort", "SecurityLevels.physicalThreatLevel", physicalThreatLevelCallback);
-		physicalThreatLevel = PHYSICAL_THREAT_LEVEL.valueOf(myConfig.getString("physicalThreatLevel"));
+		PHYSICAL_THREAT_LEVEL physLevel = PHYSICAL_THREAT_LEVEL.valueOf(myConfig.getString("physicalThreatLevel"));
+		if(myConfig.getRawOption("physicalThreatLevel") != null) {
+			physicalThreatLevel = physLevel;
+		} else {
+			// Call all the callbacks so that the config is consistent with the threat level.
+			setThreatLevel(physLevel);
+		}
+		
 		myConfig.finishedInitialization();
 	}
 	

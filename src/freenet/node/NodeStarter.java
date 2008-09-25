@@ -261,7 +261,7 @@ public class NodeStarter implements WrapperListener {
 	 * Not Node-specific; many nodes may be created later.
 	 * @param testName The name of the test instance.
 	 */
-	public static RandomSource globalTestInit(String testName, boolean enablePlug, int logThreshold, String details) throws InvalidThresholdException {
+	public static RandomSource globalTestInit(String testName, boolean enablePlug, int logThreshold, String details, boolean noDNS) throws InvalidThresholdException {
 
 		File dir = new File(testName);
 		if((!dir.mkdir()) && ((!dir.exists()) || (!dir.isDirectory()))) {
@@ -316,7 +316,7 @@ public class NodeStarter implements WrapperListener {
 		}
 
 		FNPPacketMangler.LOG_UNMATCHABLE_ERROR = true;
-		DNSRequester.DISABLE = true;
+		DNSRequester.DISABLE = noDNS;
 
 		return random;
 	}

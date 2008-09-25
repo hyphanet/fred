@@ -36,7 +36,7 @@ public class MessageCore {
 	private Dispatcher _dispatcher;
 	/** _filters serves as lock for both */
 	private final LinkedList _filters = new LinkedList();
-	private final LinkedList _unclaimed = new LinkedList();
+	private final LinkedList<Message> _unclaimed = new LinkedList<Message>();
 	private static final int MAX_UNMATCHED_FIFO_SIZE = 50000;
 	private static final long MAX_UNCLAIMED_FIFO_ITEM_LIFETIME = 10*60*1000;  // 10 minutes; maybe this should be per message type??
 	// Every second, remove all timed out filters
@@ -150,7 +150,7 @@ public class MessageCore {
 			((PeerNode)m.getSource()).addToLocalNodeReceivedMessagesFromStatistic(m);
 		}
 		boolean matched = false;
-		if ((!(m.getSpec().equals(DMT.packetTransmit))) && logMINOR) {
+		if (!(m.getSpec().equals(DMT.packetTransmit))) {
 			if(logMINOR) Logger.minor(this, "" + (System.currentTimeMillis() % 60000) + ' ' + from + " <- "
 					+ m.getSource() + " : " + m);
 		}
@@ -518,13 +518,13 @@ public class MessageCore {
 		}
 	}
 	
-	public Map getUnclaimedFIFOMessageCounts() {
-		Map messageCounts = new HashMap();
+	public Map<String, Integer> getUnclaimedFIFOMessageCounts() {
+		Map<String, Integer> messageCounts = new HashMap<String, Integer>();
 		synchronized(_filters) {
-			for (ListIterator i = _unclaimed.listIterator(); i.hasNext();) {
-				Message m = (Message) i.next();
+			for (ListIterator<Message> i = _unclaimed.listIterator(); i.hasNext();) {
+				Message m = i.next();
 				String messageName = m.getSpec().getName();
-				Integer messageCount = (Integer) messageCounts.get(messageName);
+				Integer messageCount = messageCounts.get(messageName);
 				if (messageCount == null) {
 					messageCounts.put(messageName, new Integer(1) );
 				} else {

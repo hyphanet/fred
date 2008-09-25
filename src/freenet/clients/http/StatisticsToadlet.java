@@ -7,7 +7,6 @@ import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -33,11 +32,8 @@ public class StatisticsToadlet extends Toadlet {
 
 	static final NumberFormat thousendPoint = NumberFormat.getInstance();
 	
-	static class MyComparator implements Comparator {
-
-		public int compare(Object arg0, Object arg1) {
-			Object[] row0 = (Object[])arg0;
-			Object[] row1 = (Object[])arg1;
+	static class MyComparator implements Comparator<Object[]> {
+		public int compare(Object[] row0, Object[] row1) {
 			Integer stat0 = (Integer) row0[2];  // 2 = status
 			Integer stat1 = (Integer) row1[2];
 			int x = stat0.compareTo(stat1);
@@ -131,10 +127,8 @@ public class StatisticsToadlet extends Toadlet {
 
 		/* gather connection statistics */
 		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses(true);
-		Arrays.sort(peerNodeStatuses, new Comparator() {
-			public int compare(Object first, Object second) {
-				PeerNodeStatus firstNode = (PeerNodeStatus) first;
-				PeerNodeStatus secondNode = (PeerNodeStatus) second;
+		Arrays.sort(peerNodeStatuses, new Comparator<PeerNodeStatus>() {
+			public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
 				int statusDifference = firstNode.getStatusValue() - secondNode.getStatusValue();
 				if (statusDifference != 0) {
 					return statusDifference;
@@ -172,8 +166,8 @@ public class StatisticsToadlet extends Toadlet {
 			contentNode.addChild(core.alerts.createSummary());
 		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, request, contentNode);
 
-		double swaps = (double)node.getSwaps();
-		double noSwaps = (double)node.getNoSwaps();
+		double swaps = node.getSwaps();
+		double noSwaps = node.getNoSwaps();
 
 		HTMLNode overviewTable = contentNode.addChild("table", "class", "column");
 		HTMLNode overviewTableRow = overviewTable.addChild("tr");
@@ -401,13 +395,13 @@ public class StatisticsToadlet extends Toadlet {
 		HTMLNode jvmStatsList = jvmStatsInfoboxContent.addChild("ul");
 
 		Runtime rt = Runtime.getRuntime();
-		float freeMemory = (float) rt.freeMemory();
-		float totalMemory = (float) rt.totalMemory();
-		float maxMemory = (float) rt.maxMemory();
+		long freeMemory = rt.freeMemory();
+		long totalMemory = rt.totalMemory();
+		long maxMemory = rt.maxMemory();
 
-		long usedJavaMem = (long)(totalMemory - freeMemory);
-		long allocatedJavaMem = (long)totalMemory;
-		long maxJavaMem = (long)maxMemory;
+		long usedJavaMem = totalMemory - freeMemory;
+		long allocatedJavaMem = totalMemory;
+		long maxJavaMem = maxMemory;
 		int availableCpus = rt.availableProcessors();
 
 		int threadCount = stats.getActiveThreadCount();
@@ -633,20 +627,18 @@ public class StatisticsToadlet extends Toadlet {
 		unclaimedFIFOMessageCountsInfobox.addChild("div", "class", "infobox-header", "unclaimedFIFO Message Counts");
 		HTMLNode unclaimedFIFOMessageCountsInfoboxContent = unclaimedFIFOMessageCountsInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode unclaimedFIFOMessageCountsList = unclaimedFIFOMessageCountsInfoboxContent.addChild("ul");
-		Map unclaimedFIFOMessageCountsMap = node.getUSM().getUnclaimedFIFOMessageCounts();
+		Map<String, Integer> unclaimedFIFOMessageCountsMap = node.getUSM().getUnclaimedFIFOMessageCounts();
 		STMessageCount[] unclaimedFIFOMessageCountsArray = new STMessageCount[unclaimedFIFOMessageCountsMap.size()];
 		int i = 0;
 		int totalCount = 0;
-		for (Iterator messageCounts = unclaimedFIFOMessageCountsMap.keySet().iterator(); messageCounts.hasNext(); ) {
-			String messageName = (String) messageCounts.next();
-			int messageCount = ((Integer) unclaimedFIFOMessageCountsMap.get(messageName)).intValue();
+		for (Map.Entry<String, Integer> e : unclaimedFIFOMessageCountsMap.entrySet()) {
+			String messageName = e.getKey();
+			int messageCount = e.getValue();
 			totalCount = totalCount + messageCount;
 			unclaimedFIFOMessageCountsArray[i++] = new STMessageCount( messageName, messageCount );
 		}
-		Arrays.sort(unclaimedFIFOMessageCountsArray, new Comparator() {
-			public int compare(Object first, Object second) {
-				STMessageCount firstCount = (STMessageCount) first;
-				STMessageCount secondCount = (STMessageCount) second;
+		Arrays.sort(unclaimedFIFOMessageCountsArray, new Comparator<STMessageCount>() {
+			public int compare(STMessageCount firstCount, STMessageCount secondCount) {
 				return secondCount.messageCount - firstCount.messageCount;  // sort in descending order
 			}
 		});
@@ -997,7 +989,7 @@ public class StatisticsToadlet extends Toadlet {
 		int networkSizeEstimateSession = stats.getNetworkSizeEstimate(-1);
 		int networkSizeEstimate24h = 0;
 		int networkSizeEstimate48h = 0;
-		double numberOfRemotePeerLocationsSeenInSwaps = (double)node.getNumberOfRemotePeerLocationsSeenInSwaps();
+		double numberOfRemotePeerLocationsSeenInSwaps = node.getNumberOfRemotePeerLocationsSeenInSwaps();
 
 		if(nodeUptimeSeconds > (24*60*60)) {  // 24 hours
 			networkSizeEstimate24h = stats.getNetworkSizeEstimate(now - (24*60*60*1000));  // 48 hours
@@ -1049,7 +1041,7 @@ public class StatisticsToadlet extends Toadlet {
 			stats.rootThreadGroup.enumerate(threads);
 			if(threads[threads.length-1] == null) break;
 		}
-		LinkedHashMap map = new LinkedHashMap();
+		LinkedHashMap<String, ThreadBunch> map = new LinkedHashMap<String, ThreadBunch>();
 		int totalCount = 0;
 		for(int i=0;i<threads.length;i++) {
 			if(threads[i] == null) break;
@@ -1060,7 +1052,7 @@ public class StatisticsToadlet extends Toadlet {
 				name = name.substring(0, name.indexOf("@"));
 			if (name.indexOf("(") != -1)
 				name = name.substring(0, name.indexOf("("));
-			ThreadBunch bunch = (ThreadBunch) map.get(name);
+			ThreadBunch bunch = map.get(name);
 			if(bunch != null) {
 				bunch.count++;
 			} else {
@@ -1068,12 +1060,9 @@ public class StatisticsToadlet extends Toadlet {
 			}
 			totalCount++;
 		}
-		ThreadBunch[] bunches = (ThreadBunch[]) map.values().toArray(new ThreadBunch[map.size()]);
-		Arrays.sort(bunches, new Comparator() {
-
-			public int compare(Object arg0, Object arg1) {
-				ThreadBunch b0 = (ThreadBunch) arg0;
-				ThreadBunch b1 = (ThreadBunch) arg1;
+		ThreadBunch[] bunches = map.values().toArray(new ThreadBunch[map.size()]);
+		Arrays.sort(bunches, new Comparator<ThreadBunch>() {
+			public int compare(ThreadBunch b0, ThreadBunch b1) {
 				if(b0.count > b1.count) return -1;
 				if(b0.count < b1.count) return 1;
 				return b0.name.compareTo(b1.name);
@@ -1272,7 +1261,7 @@ public class StatisticsToadlet extends Toadlet {
 			// Make our own peer stand out from the crowd better so we can see it easier
 			offset = -10;
 		} else {
-			offset = (int) (((double) PEER_CIRCLE_INNER_RADIUS) * (1.0 - strength));
+			offset = (int) (PEER_CIRCLE_INNER_RADIUS * (1.0 - strength));
 		}
 		double x = PEER_CIRCLE_ADDITIONAL_FREE_SPACE + PEER_CIRCLE_RADIUS + Math.sin(peerLocation) * (PEER_CIRCLE_RADIUS - offset);
 		double y = PEER_CIRCLE_RADIUS - Math.cos(peerLocation) * (PEER_CIRCLE_RADIUS - offset);  // no PEER_CIRCLE_ADDITIONAL_FREE_SPACE for y-disposition

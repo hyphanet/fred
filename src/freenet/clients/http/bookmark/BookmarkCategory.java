@@ -1,8 +1,9 @@
 package freenet.clients.http.bookmark;
 
+import java.util.Vector;
+
 import freenet.node.FSParseException;
 import freenet.support.SimpleFieldSet;
-import java.util.Vector;
 
 public class BookmarkCategory extends Bookmark {
     public static final String NAME = "BookmarkCategory";
@@ -113,7 +114,7 @@ public class BookmarkCategory extends Bookmark {
         return toStrings("").toArray(new String[0]);
     }
 
-    // Iternal use only
+    // Internal use only
 
     private Vector<String> toStrings(String prefix) {
         Vector<String> strings = new Vector<String>();

@@ -82,7 +82,7 @@ import freenet.l10n.L10n;
 		return L10n.getString("CSSTokenizerFilter."+key);
 	}
 	
-	class DecodedStringThingy {
+	static class DecodedStringThingy {
 		char quote; // " " means not quoted
 		boolean url; // in a url() ?
 		String data;

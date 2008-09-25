@@ -99,7 +99,7 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 		long secret = m.getLong(DMT.SECRET);
 		StoredSecret s=new StoredSecret(pn, uid, secret);
 		if (logMINOR) Logger.minor(this, "Storing secret: "+s);
-		addOrReplaceSecret(s);
+		addOrReplaceSecret(s); // FIXME - what if the message contain a bogus UID?
 		try {
 			pn.sendAsync(DMT.createFNPAccepted(uid), null, 0, ctr);
 		} catch (NotConnectedException e) {
@@ -264,8 +264,8 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 	
 	private void removeSecret(StoredSecret s) {
 		//synchronized (secretsByPeer) in calling functions
-		secretsByPeer.remove(s);
-		secretsByUID.remove(s);
+		secretsByPeer.remove(s.peer);
+		secretsByUID.remove(s.uid);
 	}
 	
 	private static final class StoredSecret {

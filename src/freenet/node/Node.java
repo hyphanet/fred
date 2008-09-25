@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Random;
 import java.util.Set;
@@ -145,10 +146,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private final static ClockProblemDetectedUserAlert clockProblemDetectedUserAlert = new ClockProblemDetectedUserAlert();
 	
 	public class NodeNameCallback extends StringCallback  {
-		GetPubkey node;
-	
-		NodeNameCallback(GetPubkey n) {
-			node=n;
+		NodeNameCallback() {
 		}
 		@Override
 		public String get() {
@@ -1547,7 +1545,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		// Name 	 
 		nodeConfig.register("name", myName, sortOrder++, false, true, "Node.nodeName", "Node.nodeNameLong", 	 
-						new NodeNameCallback(this)); 	 
+						new NodeNameCallback()); 	 
 		myName = nodeConfig.getString("name"); 	 
 
 		// Datastore		
@@ -2045,6 +2043,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_UPDATER, "Could not create Updater: "+e);
 		}
 		
+		registerNodeToNodeMessageListener(N2N_MESSAGE_TYPE_FPROXY, fproxyN2NMListener);
+		registerNodeToNodeMessageListener(Node.N2N_MESSAGE_TYPE_DIFFNODEREF, diffNoderefListener);
+		
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
 	}
@@ -2140,13 +2141,14 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// If we are running a Sun or Blackdown JVM, on Linux, and LD_ASSUME_KERNEL is not set, then we are.
 		
 		String jvmVendor = System.getProperty("java.vm.vendor");
+		String jvmSpecVendor = System.getProperty("java.specification.vendor","");
 		String jvmVersion = System.getProperty("java.version");
 		String osName = System.getProperty("os.name");
 		String osVersion = System.getProperty("os.version");
 		
 		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM version: "+jvmVersion+", OS name: "+osName+", OS version: "+osVersion);
 		
-		if(jvmVendor.startsWith("Sun ")) {
+		if(jvmVendor.startsWith("Sun ") || (jvmVendor.startsWith("The FreeBSD Foundation") && jvmSpecVendor.startsWith("Sun "))) {
 			// Sun bugs
 			
 			// Spurious OOMs
@@ -3233,6 +3235,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		return (buildOldAgeUserAlert.lastGoodVersion > 0);
 	}
 	
+	private Map<Integer, NodeToNodeMessageListener> n2nmListeners = new HashMap<Integer, NodeToNodeMessageListener>();
+	
+	public synchronized void registerNodeToNodeMessageListener(int type, NodeToNodeMessageListener listener) {
+		n2nmListeners.put(type, listener);
+	}
+	
 	/**
 	 * Handle a received node to node message
 	 */
@@ -3247,20 +3255,56 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		if(src instanceof DarknetPeerNode) {
 			fromDarknet = true;
 		}
-		DarknetPeerNode darkSource = null;
-		if(fromDarknet) {
-			darkSource = (DarknetPeerNode)src;
+		
+		NodeToNodeMessageListener listener = null;
+		synchronized(this) {
+			listener = n2nmListeners.get(type);
 		}
 		
-		if(type == Node.N2N_MESSAGE_TYPE_FPROXY) {
+		if(listener == null) {
+			Logger.error(this, "Unknown n2nm ID: "+type+" - discarding packet length "+messageData.getLength());
+			return;
+		}
+		
+		listener.handleMessage(messageData.getData(), fromDarknet, src, type);
+	}
+
+	private NodeToNodeMessageListener diffNoderefListener = new NodeToNodeMessageListener() {
+
+		public void handleMessage(byte[] data, boolean fromDarknet, PeerNode src, int type) {
+			Logger.normal(this, "Received differential node reference node to node message from "+src.getPeer());
+			SimpleFieldSet fs = null;
+			try {
+				fs = new SimpleFieldSet(new String(data, "UTF-8"), false, true);
+			} catch (IOException e) {
+				Logger.error(this, "IOException while parsing node to node message data", e);
+				return;
+			}
+			if(fs.get("n2nType") != null) {
+				fs.removeValue("n2nType");
+			}
+			try {
+				src.processDiffNoderef(fs);
+			} catch (FSParseException e) {
+				Logger.error(this, "FSParseException while parsing node to node message data", e);
+				return;
+			}
+		}
+		
+	};
+	
+	private NodeToNodeMessageListener fproxyN2NMListener = new NodeToNodeMessageListener() {
+
+		public void handleMessage(byte[] data, boolean fromDarknet, PeerNode src, int type) {
 			if(!fromDarknet) {
 				Logger.error(this, "Got N2NTM from non-darknet node ?!?!?!: from "+src);
 				return;
 			}
+			DarknetPeerNode darkSource = (DarknetPeerNode) src;
 			Logger.normal(this, "Received N2NTM from '"+darkSource.getPeer()+"'");
 			SimpleFieldSet fs = null;
 			try {
-				fs = new SimpleFieldSet(new String(messageData.getData(), "UTF-8"), false, true);
+				fs = new SimpleFieldSet(new String(data, "UTF-8"), false, true);
 			} catch (IOException e) {
 				Logger.error(this, "IOException while parsing node to node message data", e);
 				return;
@@ -3288,29 +3332,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				// Shouldn't happen
 				throw new Error(e);
 			}
-		} else if(type == Node.N2N_MESSAGE_TYPE_DIFFNODEREF) {
-			Logger.normal(this, "Received differential node reference node to node message from "+src.getPeer());
-			SimpleFieldSet fs = null;
-			try {
-				fs = new SimpleFieldSet(new String(messageData.getData(), "UTF-8"), false, true);
-			} catch (IOException e) {
-				Logger.error(this, "IOException while parsing node to node message data", e);
-				return;
-			}
-			if(fs.get("n2nType") != null) {
-				fs.removeValue("n2nType");
-			}
-			try {
-				src.processDiffNoderef(fs);
-			} catch (FSParseException e) {
-				Logger.error(this, "FSParseException while parsing node to node message data", e);
-				return;
-			}
-		} else {
-			Logger.error(this, "Received unknown node to node message type '"+type+"' from "+src.getPeer());
 		}
-	}
-
+		
+	};
+	
 	/**
 	 * Handle a node to node text message SimpleFieldSet
 	 * @throws FSParseException 
