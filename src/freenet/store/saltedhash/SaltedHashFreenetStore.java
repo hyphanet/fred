@@ -26,6 +26,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.spaceroots.mantissa.random.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.keys.KeyVerifyException;
@@ -808,11 +809,18 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					metaFC.write(bf, oldMetaLen);
 					oldMetaLen += 4096;
 				}
+				byte[] seed = new byte[64];
+				random.nextBytes(seed);
+				Random mt = new MersenneTwister(seed);
 				while (oldHdLen < newHdLen) {
-					random.nextBytes(b);
+					mt.nextBytes(b);
 					bf.rewind();
 					hdFC.write(bf, oldHdLen);
 					oldHdLen += 4096;
+					if(oldHdLen % (1024*1024*1024L) == 0) {
+						random.nextBytes(seed);
+						mt = new MersenneTwister(seed);
+					}
 				}
 			}
 
