@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import java.util.LinkedList;
 import java.util.TreeMap;
 import java.util.Vector;
 
@@ -42,7 +41,6 @@ public class PacketSender implements Runnable, Ticker {
 	/** We send connect attempts to old-opennet-peers no more than once every
 	 * this many milliseconds. */
 	static final int MIN_OLD_OPENNET_CONNECT_DELAY = 60 * 1000;
-	final LinkedList resendPackets;
 	/** ~= Ticker :) */
 	private final TreeMap timedJobsByTime;
 	final NativeThread myThread;
@@ -68,7 +66,6 @@ public class PacketSender implements Runnable, Ticker {
 	}
 	
 	PacketSender(Node node) {
-		resendPackets = new LinkedList();
 		timedJobsByTime = new TreeMap();
 		this.node = node;
 		myThread = new NativeThread(this, "PacketSender thread for " + node.getDarknetPortNumber(), NativeThread.MAX_PRIORITY, false);

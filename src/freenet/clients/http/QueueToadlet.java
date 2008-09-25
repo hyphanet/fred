@@ -215,7 +215,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 					writePermanentRedirect(ctx, "Done", "/queue/");
 					return;
 				}
-				LinkedList success = new LinkedList(), failure = new LinkedList();
+				LinkedList<String> success = new LinkedList(), failure = new LinkedList();
 				
 				for(int i=0; i<keys.length; i++) {
 					String currentKey = keys[i];
@@ -236,14 +236,14 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 				HTMLNode alertNode = contentNode.addChild(ctx.getPageMaker().getInfobox((displayFailureBox ? "infobox-warning" : "infobox-info"), L10n.getString("QueueToadlet.downloadFiles")));
 				HTMLNode alertContent = ctx.getPageMaker().getContentNode(alertNode);
-				Iterator it;
+				Iterator<String> it;
 				if(displaySuccessBox) {
 					HTMLNode successDiv = alertContent.addChild("ul");
 					successDiv.addChild("#", L10n.getString("QueueToadlet.enqueuedSuccessfully", "number", String.valueOf(success.size())));
 					it = success.iterator();
 					while(it.hasNext()) {
 						HTMLNode line = successDiv.addChild("li");
-						line.addChild("#", (String) it.next());
+						line.addChild("#", it.next());
 					}
 					successDiv.addChild("br");
 				}
@@ -254,7 +254,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 						it = failure.iterator();
 						while(it.hasNext()) {
 							HTMLNode line = failureDiv.addChild("li");
-							line.addChild("#", (String) it.next());
+							line.addChild("#", it.next());
 						}
 					}
 					failureDiv.addChild("br");
@@ -560,18 +560,18 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 	private HTMLNode handleGetInner(PageMaker pageMaker, final ObjectContainer container, ClientContext context, final HTTPRequest request, ToadletContext ctx) {
 		
 		// First, get the queued requests, and separate them into different types.
-		LinkedList completedDownloadToDisk = new LinkedList();
-		LinkedList completedDownloadToTemp = new LinkedList();
-		LinkedList completedUpload = new LinkedList();
-		LinkedList completedDirUpload = new LinkedList();
+		LinkedList<ClientRequest> completedDownloadToDisk = new LinkedList();
+		LinkedList<ClientRequest> completedDownloadToTemp = new LinkedList();
+		LinkedList<ClientRequest> completedUpload = new LinkedList();
+		LinkedList<ClientRequest> completedDirUpload = new LinkedList();
 		
-		LinkedList failedDownload = new LinkedList();
-		LinkedList failedUpload = new LinkedList();
-		LinkedList failedDirUpload = new LinkedList();
+		LinkedList<ClientRequest> failedDownload = new LinkedList();
+		LinkedList<ClientRequest> failedUpload = new LinkedList();
+		LinkedList<ClientRequest> failedDirUpload = new LinkedList();
 		
-		LinkedList uncompletedDownload = new LinkedList();
-		LinkedList uncompletedUpload = new LinkedList();
-		LinkedList uncompletedDirUpload = new LinkedList();
+		LinkedList<ClientRequest> uncompletedDownload = new LinkedList();
+		LinkedList<ClientRequest> uncompletedUpload = new LinkedList();
+		LinkedList<ClientRequest> uncompletedDirUpload = new LinkedList();
 		
 		ClientRequest[] reqs = fcp.getGlobalRequests(container);
 		if(Logger.shouldLog(Logger.MINOR, this))
@@ -654,11 +654,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		System.err.println("Total queued downloads: "+SizeUtil.formatSize(totalQueuedDownloadSize));
 		System.err.println("Total queued uploads: "+SizeUtil.formatSize(totalQueuedUploadSize));
 		
-		Comparator jobComparator = new Comparator() {
-			public int compare(Object first, Object second) {
-				ClientRequest firstRequest = (ClientRequest) first;
-				ClientRequest secondRequest = (ClientRequest) second;
-
+		Comparator<ClientRequest> jobComparator = new Comparator<ClientRequest>() {
+			public int compare(ClientRequest firstRequest, ClientRequest secondRequest) {
 				int result = 0;
 				boolean isSet = true;
 				
@@ -1134,7 +1131,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		return downloadBox;
 	}
 	
-	private HTMLNode createRequestTable(PageMaker pageMaker, ToadletContext ctx, List requests, int[] columns, String[] priorityClasses, boolean advancedModeEnabled, boolean isUpload, ObjectContainer container) {
+	private HTMLNode createRequestTable(PageMaker pageMaker, ToadletContext ctx, List<ClientRequest> requests, int[] columns, String[] priorityClasses, boolean advancedModeEnabled, boolean isUpload, ObjectContainer container) {
 		HTMLNode table = new HTMLNode("table", "class", "requests");
 		HTMLNode headerRow = table.addChild("tr", "class", "table-header");
 		headerRow.addChild("th");
@@ -1167,8 +1164,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 				headerRow.addChild("th", L10n.getString("QueueToadlet.reason"));
 			}
 		}
-		for (Iterator requestItems = requests.iterator(); requestItems.hasNext(); ) {
-			ClientRequest clientRequest = (ClientRequest) requestItems.next();
+		for (ClientRequest clientRequest : requests) {
 			HTMLNode requestRow = table.addChild("tr", "class", "priority" + clientRequest.getPriority());
 			
 			requestRow.addChild(createDeleteCell(pageMaker, clientRequest.getIdentifier(), clientRequest, ctx));
@@ -1236,9 +1232,9 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 	/**
 	 * List of completed request identifiers which the user hasn't acknowledged yet.
 	 */
-	private final HashSet completedRequestIdentifiers = new HashSet();
+	private final HashSet<String> completedRequestIdentifiers = new HashSet();
 	
-	private final HashMap alertsByIdentifier = new HashMap();
+	private final HashMap<String, UserAlert> alertsByIdentifier = new HashMap();
 	
 	public void notifyFailure(ClientRequest req, ObjectContainer container) {
 		// FIXME do something???
@@ -1271,7 +1267,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			public void run(ObjectContainer container, ClientContext context) {
 				String[] identifiers;
 				synchronized(completedRequestIdentifiers) {
-					identifiers = (String[]) completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
+					identifiers = completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
 				}
 				for(int i=0;i<identifiers.length;i++) {
 					ClientRequest req = fcp.getGlobalRequest(identifiers[i], container);
@@ -1333,7 +1329,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			bw = new BufferedWriter(osw);
 			String[] identifiers;
 			synchronized(completedRequestIdentifiers) {
-				identifiers = (String[]) completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
+				identifiers = completedRequestIdentifiers.toArray(new String[completedRequestIdentifiers.size()]);
 			}
 			for(int i=0;i<identifiers.length;i++)
 				bw.write(identifiers[i]+'\n');
@@ -1495,7 +1491,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		}
 		UserAlert alert;
 		synchronized(alertsByIdentifier) {
-			alert = (UserAlert) alertsByIdentifier.remove(identifier);
+			alert = alertsByIdentifier.remove(identifier);
 		}
 		core.alerts.unregister(alert);
 		saveCompletedIdentifiersOffThread();

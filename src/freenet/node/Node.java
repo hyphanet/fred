@@ -329,7 +329,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	/** Datastore properties */
 	private final String storeType;
-	private final int storeBloomFilterSize;
+	private int storeBloomFilterSize;
 	private final boolean storeBloomFilterCounting;
 
 	/** The number of bytes per key total in all the different datastores. All the datastores
@@ -1382,7 +1382,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		isAllowedToConnectToSeednodes = opennetConfig.getBoolean("connectToSeednodes");
 		
 		// Can be enabled on the fly
-		opennetConfig.register("enabled", false, 0, false, true, "Node.opennetEnabled", "Node.opennetEnabledLong", new BooleanCallback() {
+		opennetConfig.register("enabled", false, 0, true, true, "Node.opennetEnabled", "Node.opennetEnabledLong", new BooleanCallback() {
 			@Override
 			public Boolean get() {
 				synchronized(Node.this) {
@@ -1626,7 +1626,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 		maxTotalKeys = maxTotalDatastoreSize / sizePerKey;
 		
-		nodeConfig.register("storeBloomFilterSize", (int) Math.min(maxTotalDatastoreSize / 2048, 268435456), sortOrder++, true, false, "Node.storeBloomFilterSize",
+		nodeConfig.register("storeBloomFilterSize", -1, sortOrder++, true, false, "Node.storeBloomFilterSize",
 		        "Node.storeBloomFilterSizeLong", new IntCallback() {
 			        private Integer cachedBloomFilterSize;
 
@@ -1650,6 +1650,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		        });
 
 		storeBloomFilterSize = nodeConfig.getInt("storeBloomFilterSize");
+		if (storeBloomFilterSize == -1) 
+			storeBloomFilterSize = (int) Math.min(maxTotalDatastoreSize / 2048, 268435456);
 
 		nodeConfig.register("storeBloomFilterCounting", true, sortOrder++, true, false,
 		        "Node.storeBloomFilterCounting", "Node.storeBloomFilterCountingLong", new BooleanCallback() {

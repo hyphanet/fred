@@ -44,6 +44,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private final BucketFactory bf;
 	private final ToadletContainer container;
 	private final InetAddress remoteAddr;
+	private boolean sentReplyHeaders;
 	
 	/** Is the context closed? If so, don't allow any more writes. This is because there
 	 * may be later requests.
@@ -128,6 +129,10 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	public void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable mvt, String mimeType, long contentLength, Date mTime) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
+		if(sentReplyHeaders) {
+			throw new IllegalStateException("Already sent headers!");
+		}
+		sentReplyHeaders = true;
 		sendReplyHeaders(sockOutputStream, replyCode, replyDescription, mvt, mimeType, contentLength, mTime, shouldDisconnect);
 	}
 	

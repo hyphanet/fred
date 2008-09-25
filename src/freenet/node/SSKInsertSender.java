@@ -121,7 +121,6 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 
     private void realRun() {
         HashSet nodesRoutedTo = new HashSet();
-        HashSet nodesNotIgnored = new HashSet();
         
         PeerNode next = null;
         while(true) {
@@ -142,7 +141,8 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
             }
             
             // Route it
-            next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null, null);
+            next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
+			        null);
             
             if(next == null) {
                 // Backtrack

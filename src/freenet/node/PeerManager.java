@@ -13,12 +13,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Vector;
-import java.util.ArrayList;
 
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.ByteCounter;
@@ -34,10 +34,8 @@ import freenet.node.useralerts.PeerManagerUserAlert;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
-import freenet.support.io.FileUtil;
 import freenet.support.io.Closer;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import freenet.support.io.FileUtil;
 
 /**
  * @author amphibian
@@ -815,15 +813,16 @@ public class PeerManager {
 		return closestDist < nodeDist;
 	}
 
-	public PeerNode closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double loc, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo, Key key) {
-		return closerPeer(pn, routedTo, notIgnored, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key);
+	public PeerNode closerPeer(PeerNode pn, Set routedTo, double loc, boolean ignoreSelf, boolean calculateMisrouting,
+	        int minVersion, Vector addUnpickedLocsTo, Key key) {
+		return closerPeer(pn, routedTo, loc, ignoreSelf, calculateMisrouting, minVersion, addUnpickedLocsTo, 2.0, key);
 	}
 
 	/**
 	 * Find the peer, if any, which is closer to the target location than we are, and is not included in the provided set.
 	 * If ignoreSelf==false, and we are closer to the target than any peers, this function returns null.
 	 * This function returns two values, the closest such peer which is backed off, and the same which is not backed off.
-	 * It is possible for either to be null independant of the other, 'closest' is the closer of the two in either case, and
+	 * It is possible for either to be null independent of the other, 'closest' is the closer of the two in either case, and
 	 * will not be null if any of the other two return values is not null.
 	 * @param addUnpickedLocsTo Add all locations we didn't choose which we could have routed to to 
 	 * this array. Remove the location of the peer we pick from it.
@@ -831,7 +830,8 @@ public class PeerManager {
 	 * @param key The original key, if we have it, and if we want to consult with the FailureTable
 	 * to avoid routing to nodes which have recently failed for the same key.
 	 */
-	public PeerNode closerPeer(PeerNode pn, Set routedTo, Set notIgnored, double target, boolean ignoreSelf, boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo, double maxDistance, Key key) {
+	public PeerNode closerPeer(PeerNode pn, Set routedTo, double target, boolean ignoreSelf,
+	        boolean calculateMisrouting, int minVersion, Vector addUnpickedLocsTo, double maxDistance, Key key) {
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = connectedPeers;
@@ -875,7 +875,6 @@ public class PeerManager {
 		long now = System.currentTimeMillis();
 		int count = 0;
 		
-		Long selectionSamplesTimestamp = now - PeerNode.SELECTION_SAMPLING_PERIOD;
 		double[] selectionRates = new double[peers.length];
 		double totalSelectionRate = 0.0;
 		for(int i=0;i<peers.length;i++) {

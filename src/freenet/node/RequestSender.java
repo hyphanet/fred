@@ -448,7 +448,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		int routeAttempts=0;
 		int rejectOverloads=0;
         HashSet nodesRoutedTo = new HashSet();
-        HashSet nodesNotIgnored = new HashSet();
         PeerNode next = null;
         while(true) {
             /*
@@ -474,7 +473,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			routeAttempts++;
             
             // Route it
-            next = node.peers.closerPeer(source, nodesRoutedTo, nodesNotIgnored, target, true, node.isAdvancedModeEnabled(), -1, null, key);
+            next = node.peers.closerPeer(source, nodesRoutedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
+			        key);
             
             if(next == null) {
 				if (logMINOR && rejectOverloads>0)

@@ -36,6 +36,13 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
         _tailptr  = _t;
         _headptr.setParent(this);
         _tailptr.setParent(this);
+        
+        DoublyLinkedList.Item i = _headptr;
+        while (i != null ) {
+        	i.setParent(this);
+        	i = i.getNext();
+        }
+        
         this.size = size;
     }
 
@@ -133,13 +140,6 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
     
     /**
      * {@inheritDoc}
-     *  FIXME: unimplemented
-     */
-    public void unshift(DoublyLinkedList<T> l) {
-        throw new RuntimeException("function currently unimplemented because i am a lazy sod");
-    }
-    /**
-     * {@inheritDoc}
      */
     public final DoublyLinkedList.Item<T> shift() {
         return size == 0 ? null : remove(_headptr.next);
@@ -182,13 +182,7 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
     public final void push(DoublyLinkedList.Item<T> i) {
         insertPrev(_tailptr, i);
     }
-    /**
-     * {@inheritDoc}
-     * FIXME: unimplemented
-     */
-    public void push(DoublyLinkedList<T> l) {
-        throw new RuntimeException("function currently unimplemented because i am a lazy sod");
-    }
+    
     /**
      * {@inheritDoc}
      */
@@ -263,11 +257,8 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
      * {@inheritDoc}
      */
     public DoublyLinkedList.Item<T> remove(DoublyLinkedList.Item<T> i) {
-    	if (i.getParent() == null) return null; // not in list
-    	if(isEmpty()) {
-    		Logger.error(this, "Illegal ERROR: Removing from an empty list!!");
-    		throw new IllegalStateException("Illegal ERROR: Removing from an empty list!!");
-    	}
+    	if (i.getParent() == null || isEmpty())
+			return null; // not in list
     	if (i.getParent() != this)
     		throw new PromiscuousItemException(i, i.getParent());
         DoublyLinkedList.Item<T> next = i.getNext(), prev = i.getPrev();
@@ -313,14 +304,6 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
 
     /**
      * {@inheritDoc}
-     * FIXME: unimplemented
-     */
-    public void insertPrev(DoublyLinkedList.Item<T> i, DoublyLinkedList<T> l) {
-        throw new RuntimeException("function currently unimplemented because i am a lazy sod");
-    }
-
-    /**
-     * {@inheritDoc}
      */
     public void insertNext(DoublyLinkedList.Item<T> i, DoublyLinkedList.Item<T> j) {
     	if (i.getParent() != this)
@@ -339,15 +322,6 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
         j.setParent(this);
         ++size;
     }
-
-    /**
-     * {@inheritDoc}
-     * FIXME: unimplemented
-     */
-    public void insertNext(DoublyLinkedList.Item<T> i, DoublyLinkedList<T> l) {
-        throw new RuntimeException("function currently unimplemented because i am a lazy sod");
-    }
-
 
     //=== Walkable implementation ==============================================
     

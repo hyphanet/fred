@@ -42,6 +42,7 @@ public class BootstrapPullTest {
 	public static int EXIT_INSERT_FAILED = 259;
 	public static int EXIT_FETCH_FAILED = 260;
 	public static int EXIT_INSERTER_PROBLEM = 261;
+	public static int EXIT_THREW_SOMETHING = 262;
 	
 	public static int DARKNET_PORT = 5004;
 	public static int OPENNET_PORT = 5005;
@@ -54,6 +55,8 @@ public class BootstrapPullTest {
 	 * @throws InterruptedException 
 	 */
 	public static void main(String[] args) throws InvalidThresholdException, IOException, NodeInitException, InterruptedException {
+		Node secondNode = null;
+		try {
 		String ipOverride = null;
 		if(args.length > 0)
 			ipOverride = args[0];
@@ -97,7 +100,7 @@ public class BootstrapPullTest {
         FileUtil.writeTo(fis, new File(secondInnerDir, "seednodes.fref"));
         fis.close();
         PooledExecutor executor = new PooledExecutor();
-        Node secondNode = NodeStarter.createTestNode(DARKNET_PORT, OPENNET_PORT, dir.getPath(), true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);        
+        secondNode = NodeStarter.createTestNode(DARKNET_PORT, OPENNET_PORT, dir.getPath(), true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);        
         secondNode.start(true);
         waitForTenNodes(secondNode);
         
@@ -116,7 +119,15 @@ public class BootstrapPullTest {
 		System.out.println("RESULT: Fetch took "+(endFetchTime-startFetchTime)+"ms ("+TimeUtil.formatTime(endFetchTime-startFetchTime)+") of "+uri+" .");
 		secondNode.park();
 		System.exit(0);
-
+	    } catch (Throwable t) {
+	    	System.err.println("CAUGHT: "+t);
+	    	t.printStackTrace();
+	    	try {
+	    		if(secondNode != null)
+	    			secondNode.park();
+	    	} catch (Throwable t1) {};
+	    	System.exit(EXIT_THREW_SOMETHING);
+	    }
 	}
 
 	private static FreenetURI insertData(File dataFile) throws IOException {

@@ -215,7 +215,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "dsForm");
 			HTMLNode result = bandwidthForm.addChild("select", "name", "ds");
 
-			result.addChild("option", "value", "2G", "2GiB");
+			result.addChild("option", "value", "512M", "512MiB");
+			result.addChild("option", "value", "1G", "1GiB");
+			result.addChild("option", new String[] { "value", "selected" }, new String[] { "2G", "on" }, "2GiB");
 			result.addChild("option", "value", "3G", "3GiB");
 			result.addChild("option", "value", "5G", "5GiB");
 			result.addChild("option", "value", "10G", "10GiB");
@@ -364,6 +366,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			}
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_FRIENDS);
+			return;
 		} else if(request.isPartSet("security-levels.friendsThreatLevel")) {
 			// We don't require a confirmation here, since it's one page at a time, so there's less information to
 			// confuse the user, and we don't know whether the node has friends yet etc.
@@ -402,6 +405,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			}
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_PHYSICAL);
+			return;
 		} else if(request.isPartSet("security-levels.physicalThreatLevel")) {
 			// We don't require a confirmation here, since it's one page at a time, so there's less information to
 			// confuse the user, and we don't know whether the node has friends yet etc.
@@ -415,6 +419,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
 			core.storeConfig();
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.NAME_SELECTION+"&opennet="+core.node.isOpennetEnabled());
+			return;
 		} else if(request.isPartSet("nnameF")) {
 			String selectedNName = request.getPartAsString("nname", 128);
 			try {

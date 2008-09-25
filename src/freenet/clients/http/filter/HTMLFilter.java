@@ -17,13 +17,13 @@ import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.nio.charset.MalformedInputException;
-import java.util.Enumeration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.Vector;
 
 import freenet.l10n.L10n;
 import freenet.support.HTMLDecoder;
@@ -43,7 +43,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	private static boolean deleteWierdStuff = true;
 	private static boolean deleteErrors = true;
 
-	public Bucket readFilter(Bucket bucket, BucketFactory bf, String charset, HashMap otherParams, FilterCallback cb) throws DataFilterException, IOException {
+	public Bucket readFilter(Bucket bucket, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	        FilterCallback cb) throws DataFilterException, IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		if(logMINOR) Logger.minor(this, "readFilter(): charset="+charset);
@@ -76,7 +77,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		return temp;
 	}
 	
-	public Bucket writeFilter(Bucket bucket, BucketFactory bf, String charset, HashMap otherParams, FilterCallback cb) throws DataFilterException, IOException {
+	public Bucket writeFilter(Bucket bucket, BucketFactory bf, String charset, HashMap<String, String> otherParams,
+	        FilterCallback cb) throws DataFilterException, IOException {
 		throw new UnsupportedOperationException();
 	}
 	
@@ -150,7 +152,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			 */
 			StringBuilder b = new StringBuilder(100);
 			StringBuilder balt = new StringBuilder(4000);
-			Vector splitTag = new Vector();
+			List<String> splitTag = new ArrayList<String>();
 			String currentTag = null;
 			char pprevC = 0;
 			char prevC = 0;
@@ -218,7 +220,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								splitTag.add(b.toString());
 								b.setLength(0);
 								processTag(splitTag, w, this);
-								currentTag = (String)splitTag.get(0);
+								currentTag = splitTag.get(0);
 								splitTag.clear();
 								balt.setLength(0);
 								mode = INTEXT;
@@ -314,7 +316,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								if (!killTag)
 									processTag(splitTag, w, this);
 								killTag = false;
-								currentTag = (String)splitTag.get(0);
+								currentTag = splitTag.get(0);
 								splitTag.clear();
 								b.setLength(0);
 								balt.setLength(0);
@@ -402,7 +404,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		w.write(sout);
 	}
 
-	void processTag(Vector splitTag, Writer w, HTMLParseContext pc)
+	void processTag(List<String> splitTag, Writer w, HTMLParseContext pc)
 		throws IOException, DataFilterException {
 		// First, check that it is a recognized tag
 		if(logDEBUG) {
@@ -498,7 +500,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			this.endSlash = t.endSlash;
 		}
 
-		public ParsedTag(Vector v) {
+		public ParsedTag(List<String> v) {
 			int len = v.size();
 			if (len == 0) {
 				element = null;
@@ -506,26 +508,26 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				startSlash = endSlash = false;
 				return;
 			}
-			String s = (String) v.elementAt(len - 1);
+			String s = v.get(len - 1);
 			if (((len - 1 != 0) || (s.length() > 1)) && s.endsWith("/")) {
 				s = s.substring(0, s.length() - 1);
-				v.setElementAt(s, len - 1);
+				v.set(len - 1, s);
 				if (s.length() == 0)
 					len--;
 				endSlash = true;
 				// Don't need to set it back because everything is an I-value
 			} else endSlash = false;
-			s = (String) v.elementAt(0);
+			s = v.get(0);
 			if ((s.length() > 1) && s.startsWith("/")) {
 				s = s.substring(1);
-				v.setElementAt(s, 0);
+				v.set(0, s);
 				startSlash = true;
 			} else startSlash = false;
-			element = (String) v.elementAt(0);
+			element = v.get(0);
 			if (len > 1) {
 				unparsedAttrs = new String[len - 1];
 				for (int x = 1; x < len; x++)
-					unparsedAttrs[x - 1] = (String) v.elementAt(x);
+					unparsedAttrs[x - 1] = v.get(x);
 			} else
 				unparsedAttrs = new String[0];
 			if(logDEBUG) Logger.debug(this, "Element = "+element);
@@ -533,7 +535,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 		public ParsedTag sanitize(HTMLParseContext pc) throws DataFilterException {
 			TagVerifier tv =
-				(TagVerifier) allowedTagsVerifiers.get(element.toLowerCase());
+				allowedTagsVerifiers.get(element.toLowerCase());
 			if(logDEBUG) Logger.debug(this, "Got verifier: "+tv+" for "+element);
 			if (tv == null) {
 				if (deleteWierdStuff) {
@@ -575,7 +577,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 	}
 
-	static final Hashtable allowedTagsVerifiers = new Hashtable();
+	static final Map<String, TagVerifier> allowedTagsVerifiers = new HashMap<String, TagVerifier>();
 	static final String[] emptyStringArray = new String[0];
 
 	static {
@@ -1130,9 +1132,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 	static class TagVerifier {
 		final String tag;
-		final HashSet allowedAttrs;
-		final HashSet uriAttrs;
-		final HashSet inlineURIAttrs;
+		final HashSet<String> allowedAttrs;
+		final HashSet<String> uriAttrs;
+		final HashSet<String> inlineURIAttrs;
 
 		TagVerifier(String tag, String[] allowedAttrs) {
 			this(tag, allowedAttrs, null, null);
@@ -1140,17 +1142,17 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 		TagVerifier(String tag, String[] allowedAttrs, String[] uriAttrs, String[] inlineURIAttrs) {
 			this.tag = tag;
-			this.allowedAttrs = new HashSet();
+			this.allowedAttrs = new HashSet<String>();
 			if (allowedAttrs != null) {
 				for (int x = 0; x < allowedAttrs.length; x++)
 					this.allowedAttrs.add(allowedAttrs[x]);
 			}
-			this.uriAttrs = new HashSet();
+			this.uriAttrs = new HashSet<String>();
 			if (uriAttrs != null) {
 				for (int x = 0; x < uriAttrs.length; x++)
 					this.uriAttrs.add(uriAttrs[x]);
 			}
-			this.inlineURIAttrs = new HashSet();
+			this.inlineURIAttrs = new HashSet<String>();
 			if (inlineURIAttrs != null) {
 				for (int x = 0; x < inlineURIAttrs.length; x++)
 					this.inlineURIAttrs.add(inlineURIAttrs[x]);
@@ -1158,7 +1160,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		}
 
 		ParsedTag sanitize(ParsedTag t, HTMLParseContext pc) throws DataFilterException {
-			Hashtable h = new Hashtable();
+			Map<String, Object> h = new HashMap<String, Object>();
 			boolean equals = false;
 			String prevX = "";
 			if (t.unparsedAttrs != null)
@@ -1208,9 +1210,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 				return new ParsedTag(t, null);
 			String[] outAttrs = new String[h.size()];
 			int i = 0;
-			for (Enumeration e = h.keys(); e.hasMoreElements();) {
-				String x = (String) e.nextElement();
-				Object o = h.get(x);
+			for (Map.Entry<String, Object> entry : h.entrySet()) {
+				String x = entry.getKey();
+				Object o = entry.getValue();
 				String y;
 				if (o instanceof String)
 					y = (String) o;
@@ -1224,14 +1226,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			return new ParsedTag(t, outAttrs);
 		}
 
-		Hashtable sanitizeHash(
-			Hashtable h,
+		Map<String, Object> sanitizeHash(Map<String, Object> h,
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
-			Hashtable hn = new Hashtable();
-			for (Enumeration e = h.keys(); e.hasMoreElements();) {
-				String x = (String) e.nextElement();
-				Object o = h.get(x);
+			Map<String, Object> hn = new HashMap<String, Object>();
+			for (Map.Entry<String, Object> entry : h.entrySet()) {
+				String x = entry.getKey();
+				Object o = entry.getValue();
 				// Straight attribs
 				if (allowedAttrs.contains(x)) {
 					hn.put(x, o);
@@ -1319,12 +1320,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 
 		abstract void processStyle(HTMLParseContext pc);
 
-		@Override
-		Hashtable sanitizeHash(
-			Hashtable h,
+		Map<String, Object> sanitizeHash(Map<String, Object> h,
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
-			Hashtable hn = super.sanitizeHash(h, p, pc);
+			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			if (p.startSlash) {
 				return finish(h, hn, pc);
 			} else {
@@ -1332,9 +1331,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 		}
 
-		Hashtable finish(
-			Hashtable h,
-			Hashtable hn,
+		Map<String, Object> finish(Map<String, Object> h, Map<String, Object> hn,
 			HTMLParseContext pc) throws DataFilterException {
 			if(logDEBUG) Logger.debug(this, "Finishing script/style");
 			// Finishing
@@ -1360,7 +1357,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			return hn;
 		}
 
-		Hashtable start(Hashtable h, Hashtable hn, HTMLParseContext pc) throws DataFilterException {
+		Map<String, Object> start(Map<String, Object> h, Map<String, Object> hn, HTMLParseContext pc)
+		        throws DataFilterException {
 			if(logDEBUG) Logger.debug(this, "Starting script/style");
 			pc.styleScriptRecurseCount++;
 			if (pc.styleScriptRecurseCount > 1) {
@@ -1430,10 +1428,8 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			 */
 		}
 
-		Hashtable sanitizeHash(
-			Hashtable hn,
-			ParsedTag p,
-			HTMLParseContext pc) throws DataFilterException {
+		Map<String, Object> sanitizeHash(Map<String, Object> hn, ParsedTag p, HTMLParseContext pc)
+		        throws DataFilterException {
 			// Call parent so we swallow the scripting
 			super.sanitizeHash(hn, p, pc);
 			return null; // Lose the tags
@@ -1462,11 +1458,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs);
 		}
 
-		Hashtable sanitizeHash(
-			Hashtable h,
+		Map<String, Object> sanitizeHash(Map<String, Object> h,
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
-			Hashtable hn = super.sanitizeHash(h, p, pc);
+			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			// %i18n dealt with by TagVerifier
 			// %coreattrs
 			String id = getHashString(h, "id");
@@ -1498,7 +1493,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 
 	static class CoreTagVerifier extends BaseCoreTagVerifier {
-		final HashSet eventAttrs;
+		final HashSet<String> eventAttrs;
 		static final String[] stdEvents =
 			new String[] {
 				"onclick",
@@ -1543,7 +1538,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] eventAttrs,
 			boolean addStdEvents) {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs);
-			this.eventAttrs = new HashSet();
+			this.eventAttrs = new HashSet<String>();
 			if (eventAttrs != null) {
 				for (int x = 0; x < eventAttrs.length; x++)
 					this.eventAttrs.add(eventAttrs[x]);
@@ -1554,14 +1549,13 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			}
 		}
 
-		Hashtable sanitizeHash(
-			Hashtable h,
+		Map<String, Object> sanitizeHash(Map<String, Object> h,
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
-			Hashtable hn = super.sanitizeHash(h, p, pc);
+			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			// events (default and added)
-			for (Iterator e = eventAttrs.iterator(); e.hasNext();) {
-				String name = (String) e.next();
+			for (Iterator<String> e = eventAttrs.iterator(); e.hasNext();) {
+				String name = e.next();
 				String arg = getHashString(h, name);
 				if (arg != null) {
 					arg = sanitizeScripting(arg);
@@ -1584,11 +1578,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs);
 		}
 
-		Hashtable sanitizeHash(
-			Hashtable h,
+		Map<String, Object> sanitizeHash(Map<String, Object> h,
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
-			Hashtable hn = super.sanitizeHash(h, p, pc);
+			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			String hreflang = getHashString(h, "hreflang");
 			String charset = null;
 			String type = getHashString(h, "type");
@@ -1665,11 +1658,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super(tag, allowedAttrs, uriAttrs, null, eventAttrs);
 		}
 
-		Hashtable sanitizeHash(
-			Hashtable h,
+		Map<String, Object> sanitizeHash(Map<String, Object> h,
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
-			Hashtable hn = super.sanitizeHash(h, p, pc);
+			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			if(p.startSlash) {
 				// Allow, but only with standard elements
 				return hn;
@@ -1694,7 +1686,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 	}
 	
 	static class InputTagVerifier extends CoreTagVerifier{
-		final HashSet allowedTypes;
+		final HashSet<String> allowedTypes;
 		String[] types = new String[]{
 			"text",
 			"password",
@@ -1715,18 +1707,17 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			String[] inlineURIAttrs,
 			String[] eventAttrs) {
 			super(tag, allowedAttrs, uriAttrs, inlineURIAttrs, eventAttrs);
-			this.allowedTypes = new HashSet();
+			this.allowedTypes = new HashSet<String>();
 			if (types != null) {
 				for (int x = 0; x < types.length; x++)
 					this.allowedTypes.add(types[x]);
 			}
 		}
 
-		Hashtable sanitizeHash(
-			Hashtable h,
+		Map<String, Object> sanitizeHash(Map<String, Object> h,
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
-			Hashtable hn = super.sanitizeHash(h, p, pc);
+			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			
 			// We drop the whole <input> if type isn't allowed
 			if(!allowedTypes.contains(hn.get("type"))){
@@ -1742,11 +1733,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super("meta", new String[] { "id" });
 		}
 
-		Hashtable sanitizeHash(
-			Hashtable h,
+		Map<String, Object> sanitizeHash(Map<String, Object> h,
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
-			Hashtable hn = super.sanitizeHash(h, p, pc);
+			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			/*
 			 * Several possibilities: a) meta http-equiv=X content=Y b) meta
 			 * name=X content=Y
@@ -1826,7 +1816,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super(tag, null);
 		}
 
-		static final Hashtable DTDs = new Hashtable();
+		static final Map<String, Object> DTDs = new HashMap<String, Object>();
 
 		static {
 			DTDs.put(
@@ -1897,11 +1887,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super("html", new String[] { "id", "version" });
 		}
 
-		Hashtable sanitizeHash(
-			Hashtable h,
+		Map<String, Object> sanitizeHash(Map<String, Object> h,
 			ParsedTag p,
 			HTMLParseContext pc) throws DataFilterException {
-			Hashtable hn = super.sanitizeHash(h, p, pc);
+			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			String xmlns = getHashString(h, "xmlns");
 			if ((xmlns != null) && xmlns.equals("http://www.w3.org/1999/xhtml"))
 				hn.put("xmlns", xmlns);
@@ -1915,11 +1904,10 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 			super(string, strings, strings2, null);
 		}
 		
-		Hashtable sanitizeHash(
-				Hashtable h,
+		Map<String, Object> sanitizeHash(Map<String, Object> h,
 				ParsedTag p,
 				HTMLParseContext pc) throws DataFilterException {
-			Hashtable hn = super.sanitizeHash(h, p, pc);
+			Map<String, Object> hn = super.sanitizeHash(h, p, pc);
 			// Get the already-sanitized version.
 			String baseHref = getHashString(hn, "href");
 			if(baseHref != null) {
@@ -2075,7 +2063,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 		return cb.processURI(suri, overrideType, false, inline);
 	}
 
-	static String getHashString(Hashtable h, String key) {
+	static String getHashString(Map<String, Object> h, String key) {
 		Object o = h.get(key);
 		if (o == null)
 			return null;

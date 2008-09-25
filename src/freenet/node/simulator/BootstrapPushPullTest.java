@@ -32,8 +32,12 @@ public class BootstrapPushPullTest {
 	public static int EXIT_FAILED_TARGET = 258;
 	public static int EXIT_INSERT_FAILED = 259;
 	public static int EXIT_FETCH_FAILED = 260;
+	public static int EXIT_THREW_SOMETHING = 261;
 	
 	public static void main(String[] args) throws InvalidThresholdException, IOException, NodeInitException, InterruptedException {
+		Node node = null;
+		Node secondNode = null;
+		try {
 		String ipOverride = null;
 		if(args.length > 0)
 			ipOverride = args[0];
@@ -52,7 +56,7 @@ public class BootstrapPushPullTest {
         fis.close();
         // Create one node
         Executor executor = new PooledExecutor();
-        Node node = NodeStarter.createTestNode(5000, 5001, dir.getPath(), true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);
+        node = NodeStarter.createTestNode(5000, 5001, dir.getPath(), true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);
         //NodeCrypto.DISABLE_GROUP_STRIP = true;
     	//Logger.setupStdoutLogging(Logger.MINOR, "freenet:NORMAL,freenet.node.NodeDispatcher:MINOR,freenet.node.FNPPacketMangler:MINOR");
     	Logger.getChain().setThreshold(Logger.ERROR); // kill logging
@@ -94,7 +98,7 @@ public class BootstrapPushPullTest {
         FileUtil.writeTo(fis, new File(secondInnerDir, "seednodes.fref"));
         fis.close();
         executor = new PooledExecutor();
-        Node secondNode = NodeStarter.createTestNode(5002, 5003, dir.getPath(), true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);        
+        secondNode = NodeStarter.createTestNode(5002, 5003, dir.getPath(), true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);        
         secondNode.start(true);
         waitForTenNodes(secondNode);
         
@@ -113,6 +117,20 @@ public class BootstrapPushPullTest {
 		System.out.println("RESULT: Fetch took "+(endFetchTime-startFetchTime)+"ms ("+TimeUtil.formatTime(endFetchTime-startFetchTime)+") of "+uri+" .");
 		secondNode.park();
 		System.exit(0);
+	    } catch (Throwable t) {
+	    	System.err.println("CAUGHT: "+t);
+	    	t.printStackTrace();
+	    	try {
+	    		if(node != null)
+	    			node.park();
+	    	} catch (Throwable t1) {};
+	    	try {
+	    		if(secondNode != null)
+	    			secondNode.park();
+	    	} catch (Throwable t1) {};
+
+	    	System.exit(EXIT_THREW_SOMETHING);
+	    }
 	}
 
 	private static void waitForTenNodes(Node node) throws InterruptedException {

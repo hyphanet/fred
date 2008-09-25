@@ -323,6 +323,12 @@ public class BookmarkEditorToadlet extends Toadlet {
 					Bookmark newBookmark;
 					if("addItem".equals(action)) {
 						FreenetURI key = new FreenetURI(req.getPartAsString("key", MAX_KEY_LENGTH));
+						/* TODO:
+						 * <nextgens> I suggest you implement a HTTPRequest.getBoolean(String name) using Fields.stringtobool
+						 * <nextgens> HTTPRequest.getBoolean(String name, boolean default) even
+						 * 
+						 * - values as "on", "true", "yes" should be accepted.
+						 */
 						boolean hasAnActivelink = req.isPartSet("hasAnActivelink");
 						newBookmark = new BookmarkItem(key, name, req.getPartAsString("descB", MAX_KEY_LENGTH), hasAnActivelink, core.alerts);
 					} else

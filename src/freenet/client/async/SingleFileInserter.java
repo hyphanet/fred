@@ -370,7 +370,6 @@ class SingleFileInserter implements ClientPutState {
 		boolean metaInsertSetBlocks;
 		boolean metaInsertStarted;
 		boolean metaFetchable;
-		boolean dataFetchable;
 		final boolean persistent;
 
 		/**
@@ -741,8 +740,6 @@ class SingleFileInserter implements ClientPutState {
 						Logger.error(this, "onFetchable for unknown state "+state);
 						return;
 					}
-					if(dataFetchable) return;
-					dataFetchable = true;
 					if(persistent)
 						container.set(this);
 					if(logMINOR) Logger.minor(this, "Data fetchable");

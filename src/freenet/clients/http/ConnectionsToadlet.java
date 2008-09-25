@@ -83,9 +83,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 		}
 		
-		// TODO: use Long.valueOf().compare when we switch to 1.5
+		// TODO: check why we do not just return the result of (long1-long2)
 		private int compareLongs(long long1, long long2) {
-			long diff = long1 - long2;
+			int diff = Long.valueOf(long1).compareTo(long2);
 			if(diff == 0)
 				return 0;
 			else
@@ -93,7 +93,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		}
 		
 		private int compareInts(int int1, int int2) {
-			int diff = int1 -int2;
+			int diff = Integer.valueOf(int1).compareTo(int2);
 			if(diff == 0)
 				return 0;
 			else
@@ -120,7 +120,6 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				long total2 = secondNode.getTotalInputBytes()+secondNode.getTotalOutputBytes();
 				return compareLongs(total1, total2);
 			}else if(sortBy.equals("selection_percentage")){
-				long sinceWhen = System.currentTimeMillis() - PeerNode.SELECTION_SAMPLING_PERIOD;
 				return Double.compare(firstNode.getSelectionRate(), secondNode.getSelectionRate());
 			}else if(sortBy.equals("time_delta")){
 				return compareLongs(firstNode.getClockDelta(), secondNode.getClockDelta());

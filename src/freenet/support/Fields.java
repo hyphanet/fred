@@ -76,7 +76,7 @@ public abstract class Fields {
 	 * input is nonnegative unless there is a preceding minus sign. This method
 	 * reads the input as twos complement instead, so if the input is 8 bytes
 	 * long, it will correctly restore a negative long produced by
-	 * Long.toHexString() but not neccesarily one produced by
+	 * Long.toHexString() but not necessarily one produced by
 	 * Long.toString(x,16) since that method will produce a string like '-FF'
 	 * for negative longs values.
 	 * 
@@ -109,7 +109,7 @@ public abstract class Fields {
 	 * input is nonnegative unless there is a preceding minus sign. This method
 	 * reads the input as twos complement instead, so if the input is 8 bytes
 	 * long, it will correctly restore a negative int produced by
-	 * Integer.toHexString() but not neccesarily one produced by
+	 * Integer.toHexString() but not necessarily one produced by
 	 * Integer.toString(x,16) since that method will produce a string like
 	 * '-FF' for negative integer values.
 	 * 

@@ -20,6 +20,7 @@ public class BootstrapSeedTest {
 	public static int TARGET_PEERS = 10;
 	public static int EXIT_NO_SEEDNODES = 257;
 	public static int EXIT_FAILED_TARGET = 258;
+	public static int EXIT_THREW_SOMETHING = 259;
 	
 	/**
 	 * @param args
@@ -29,6 +30,8 @@ public class BootstrapSeedTest {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws InvalidThresholdException, NodeInitException, InterruptedException, IOException {
+		Node node = null;
+		try {
 		String ipOverride = null;
 		if(args.length > 0)
 			ipOverride = args[0];
@@ -47,7 +50,7 @@ public class BootstrapSeedTest {
         fis.close();
         // Create one node
         Executor executor = new PooledExecutor();
-        Node node = NodeStarter.createTestNode(5000, 5001, "bootstrap-test", true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);
+        node = NodeStarter.createTestNode(5000, 5001, "bootstrap-test", true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, true, true, true, true, true, true, 12*1024, false, true, ipOverride);
         //NodeCrypto.DISABLE_GROUP_STRIP = true;
     	//Logger.setupStdoutLogging(Logger.MINOR, "freenet:NORMAL,freenet.node.NodeDispatcher:MINOR,freenet.node.FNPPacketMangler:MINOR");
     	Logger.getChain().setThreshold(Logger.ERROR); // kill logging
@@ -75,6 +78,15 @@ public class BootstrapSeedTest {
         System.err.println("Failed to reach target peers count "+TARGET_PEERS+" in 5 minutes.");
 		node.park();
         System.exit(EXIT_FAILED_TARGET);
+	    } catch (Throwable t) {
+	    	System.err.println("CAUGHT: "+t);
+	    	t.printStackTrace();
+	    	try {
+	    		if(node != null)
+	    			node.park();
+	    	} catch (Throwable t1) {};
+	    	System.exit(EXIT_THREW_SOMETHING);
+	    }
 	}
 
 }

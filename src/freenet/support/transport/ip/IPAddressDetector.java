@@ -42,7 +42,6 @@ public class IPAddressDetector implements Runnable {
 		return System.currentTimeMillis() + interval; // We are pretty cheap
 	}
 
-	InetAddress lastInetAddress = null;
 	InetAddress[] lastAddressList = null;
 	long lastDetectedTime = -1;
 
@@ -80,7 +79,7 @@ public class IPAddressDetector implements Runnable {
 		} catch (SocketException e) {
 			Logger.error(
 				this,
-				"SocketException trying to detect NetworkInterfaces",
+				"SocketException trying to detect NetworkInterfaces: "+e,
 				e);
 			addrs.add(oldDetect());
 			old = true;

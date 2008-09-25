@@ -539,7 +539,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		long accessTime;
 		PeerNode source;
 		final HashSet<PeerNode> routedTo;
-		final HashSet<PeerNode> notIgnored;
 		Message msg;
 		short lastHtl;
 		final byte[] identity;
@@ -548,7 +547,6 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			createdTime = accessTime = System.currentTimeMillis();
 			this.source = source;
 			routedTo = new HashSet<PeerNode>();
-			notIgnored = new HashSet<PeerNode>();
 			this.msg = msg;
 			lastHtl = msg.getShort(DMT.HTL);
 			this.identity = identity;
@@ -690,7 +688,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 				next = null;
 			}
 			if(next == null)
-			next = node.peers.closerPeer(pn, ctx.routedTo, ctx.notIgnored, target, true, node.isAdvancedModeEnabled(), -1, null, null);
+			next = node.peers.closerPeer(pn, ctx.routedTo, target, true, node.isAdvancedModeEnabled(), -1, null,
+				        null);
 			if(logMINOR) Logger.minor(this, "Next: "+next+" message: "+m);
 			if(next != null) {
 				// next is connected, or at least has been => next.getPeer() CANNOT be null.
