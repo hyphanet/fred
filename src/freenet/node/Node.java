@@ -1601,25 +1601,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		maxStoreKeys = maxTotalKeys / 2;
 		maxCacheKeys = maxTotalKeys - maxStoreKeys;
 		
-		if(File.separatorChar == '/' && System.getProperty("os.name").toLowerCase().indexOf("mac os") < 0) {
-			securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<SecurityLevels.PHYSICAL_THREAT_LEVEL>() {
-
-				public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
-					try {
-						if(newLevel == PHYSICAL_THREAT_LEVEL.LOW)
-							nodeConfig.set("storePreallocate", false);
-						else
-							nodeConfig.set("storePreallocate", true);
-					} catch (NodeNeedRestartException e) {
-						// Ignore
-					} catch (InvalidConfigValueException e) {
-						// Ignore
-					}
-				}
-				
-			});
-		}
-		
 		/*
 		 * On Windows, setting the file length normally involves writing lots of zeros.
 		 * So it's an uninterruptible system call that takes a loooong time. On OS/X,
@@ -1651,6 +1632,25 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
                     }}
 		);
 		storePreallocate = nodeConfig.getBoolean("storePreallocate");
+		
+		if(File.separatorChar == '/' && System.getProperty("os.name").toLowerCase().indexOf("mac os") < 0) {
+			securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<SecurityLevels.PHYSICAL_THREAT_LEVEL>() {
+
+				public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
+					try {
+						if(newLevel == PHYSICAL_THREAT_LEVEL.LOW)
+							nodeConfig.set("storePreallocate", false);
+						else
+							nodeConfig.set("storePreallocate", true);
+					} catch (NodeNeedRestartException e) {
+						// Ignore
+					} catch (InvalidConfigValueException e) {
+						// Ignore
+					}
+				}
+				
+			});
+		}
 		
 		if (storeType.equals("salt-hash")) {
 			initSaltHashFS(suffix);
