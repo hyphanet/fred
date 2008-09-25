@@ -204,14 +204,12 @@ abstract class ClientRequestSchedulerBase {
 
 	public synchronized void addPendingKeys(KeyListener listener) {
 		keyListeners.add(listener);
-		System.out.println("Added pending keys to "+this+" : size now "+keyListeners.size()+" : "+listener);
 		Logger.normal(this, "Added pending keys to "+this+" : size now "+keyListeners.size()+" : "+listener);
 	}
 	
 	public synchronized boolean removePendingKeys(KeyListener listener) {
 		boolean ret = keyListeners.remove(listener);
 		listener.onRemove();
-		System.out.println("Removed pending keys from "+this+" : size now "+keyListeners.size()+" : "+listener);
 		Logger.normal(this, "Removed pending keys from "+this+" : size now "+keyListeners.size()+" : "+listener);
 		return ret;
 	}
@@ -224,7 +222,6 @@ abstract class ClientRequestSchedulerBase {
 				found = true;
 				i.remove();
 				listener.onRemove();
-				System.out.println("Removed pending keys from "+this+" : size now "+keyListeners.size()+" : "+listener);
 				Logger.normal(this, "Removed pending keys from "+this+" : size now "+keyListeners.size()+" : "+listener);
 			}
 		}
