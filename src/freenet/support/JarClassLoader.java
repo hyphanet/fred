@@ -114,6 +114,7 @@ public class JarClassLoader extends ClassLoader {
 	 * 
 	 * @see java.lang.ClassLoader#findClass(java.lang.String)
 	 */
+	@Override
 	protected Class<?> findClass(String name) throws ClassNotFoundException {
 		try {
 			String pathName = transformName(name);
@@ -140,6 +141,7 @@ public class JarClassLoader extends ClassLoader {
 	 * 
 	 * @see java.lang.ClassLoader#findResource(java.lang.String)
 	 */
+	@Override
 	protected URL findResource(String name) {
 		/* compatibility code. remove when all plugins are fixed. */
 		if (name.startsWith("/")) {

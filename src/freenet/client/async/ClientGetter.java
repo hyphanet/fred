@@ -236,14 +236,17 @@ public class ClientGetter extends BaseClientGetter {
 		}
 	}
 
+	@Override
 	public synchronized boolean isFinished() {
 		return finished || cancelled;
 	}
 
+	@Override
 	public FreenetURI getURI() {
 		return uri;
 	}
 
+	@Override
 	public void notifyClients(ObjectContainer container, ClientContext context) {
 		if(persistent()) {
 			container.activate(ctx, 1);

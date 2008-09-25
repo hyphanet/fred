@@ -15,6 +15,7 @@ public class KnownUnsafeContentTypeException extends UnsafeContentTypeException 
 		this.type = type;
 	}
 
+	@Override
 	public String getExplanation() {
 		StringBuilder sb = new StringBuilder();
 		sb.append("<p><b>");
@@ -38,6 +39,7 @@ public class KnownUnsafeContentTypeException extends UnsafeContentTypeException 
 		return sb.toString();
 	}
 	
+	@Override
 	public HTMLNode getHTMLExplanation() {
 		HTMLNode explanation = new HTMLNode("div");
 		explanation.addChild("p").addChild("b", type.readDescription);
@@ -59,10 +61,12 @@ public class KnownUnsafeContentTypeException extends UnsafeContentTypeException 
 		return explanation;
 	}
 
+	@Override
 	public String getHTMLEncodedTitle() {
 		return l10n("title", "type", HTMLEncoder.encode(type.primaryMimeType));
 	}
 
+	@Override
 	public String getRawTitle() {
 		return l10n("title", "type", type.primaryMimeType);
 	}

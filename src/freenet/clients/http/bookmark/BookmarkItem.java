@@ -69,47 +69,56 @@ public class BookmarkItem extends Bookmark {
             super(true, null, null, null, null, UserAlert.MINOR, false, null, true, null);
         }
 
-        public String getTitle() {
+        @Override
+		public String getTitle() {
             return l10n("bookmarkUpdatedTitle", "name", name);
         }
 
-        public String getText() {
+        @Override
+		public String getText() {
             return l10n("bookmarkUpdated", new String[]{"name", "edition"},
                     new String[]{name, Long.toString(key.getSuggestedEdition())});
         }
 
-        public HTMLNode getHTMLText() {
+        @Override
+		public HTMLNode getHTMLText() {
             HTMLNode n = new HTMLNode("div");
             L10n.addL10nSubstitution(n, "BookmarkItem.bookmarkUpdatedWithLink", new String[]{"link", "/link", "name", "edition"},
                     new String[]{"<a href=\"/" + key.toString() + "\">", "</a>", HTMLEncoder.encode(name), Long.toString(key.getSuggestedEdition())});
             return n;
         }
 
-        public boolean isValid() {
+        @Override
+		public boolean isValid() {
             synchronized (BookmarkItem.this) {
                 return updated;
             }
         }
 
-        public void isValid(boolean validity) {
+        @Override
+		public void isValid(boolean validity) {
             if (validity) {
                 return;
             }
             disableBookmark();
         }
 
-        public String dismissButtonText() {
+        @Override
+		public String dismissButtonText() {
             return l10n("deleteBookmarkUpdateNotification");
         }
 
-        public void onDismiss() {
+        @Override
+		public void onDismiss() {
             disableBookmark();
         }
 
+		@Override
 		public String getShortText() {
 			return l10n("bookmarkUpdatedShort", "name", name);
 		}
 
+		@Override
 		public boolean isEventNotification() {
 			return true;
 		}
@@ -158,11 +167,13 @@ public class BookmarkItem extends Bookmark {
         return key.getKeyType();
     }
 
-    public String getName() {
+    @Override
+	public String getName() {
         return ("".equals(name) ? l10n("unnamedBookmark") : name);
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         return this.name + "###" + (this.desc != null ? this.desc : "") + "###" + this.hasAnActivelink + "###" + this.key.toString();
     }
 
@@ -178,6 +189,7 @@ public class BookmarkItem extends Bookmark {
         return USK.create(key);
     }
 
+	@Override
 	public int hashCode() {
 		int hash = super.hashCode();
 		hash = 31 * hash + this.key.setSuggestedEdition(0).hashCode();
@@ -186,7 +198,8 @@ public class BookmarkItem extends Bookmark {
 		return hash;
 	}
 
-    public boolean equals(Object o) {
+    @Override
+	public boolean equals(Object o) {
         if (o == this) {
             return true;
         }
@@ -231,7 +244,8 @@ public class BookmarkItem extends Bookmark {
         return (desc == null ? "" : desc);
     }
     
-    public SimpleFieldSet getSimpleFieldSet() {
+    @Override
+	public SimpleFieldSet getSimpleFieldSet() {
 	SimpleFieldSet sfs = new SimpleFieldSet(true);
 	sfs.putSingle("Name", name);
 	sfs.putSingle("Description", desc);

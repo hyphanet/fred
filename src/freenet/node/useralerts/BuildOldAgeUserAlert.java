@@ -13,6 +13,7 @@ public class BuildOldAgeUserAlert extends AbstractUserAlert {
 		super(false, null, null, null, null, UserAlert.ERROR, true, L10n.getString("UserAlert.hide"), false, null);
 	}
 	
+	@Override
 	public String getTitle() {
 		return l10n("tooOldTitle");
 	}
@@ -25,6 +26,7 @@ public class BuildOldAgeUserAlert extends AbstractUserAlert {
 		return L10n.getString("BuildOldAgeUserAlert."+key, pattern, value);
 	}
 
+	@Override
 	public String getText() {
 	  if(lastGoodVersion == 0)
 		  throw new IllegalArgumentException("Not valid");
@@ -32,16 +34,19 @@ public class BuildOldAgeUserAlert extends AbstractUserAlert {
 		return s;
 	}
 
+	@Override
 	public HTMLNode getHTMLText() {
 		return new HTMLNode("div", getText());
 	}
 
+	@Override
 	public boolean isValid() {
 		if (lastGoodVersion == 0)
 			return false;
 		return super.isValid();
 	}
 	
+	@Override
 	public String getShortText() {
 		return l10n("tooOldShort", "lastgood", Integer.toString(lastGoodVersion));
 	}

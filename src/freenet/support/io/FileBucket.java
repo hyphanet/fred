@@ -67,6 +67,7 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 	/**
 	 * Returns the file object this buckets data is kept in.
 	 */
+	@Override
 	public synchronized File getFile() {
 		return file;
 	}
@@ -88,18 +89,22 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 		deleteOnFinalize = false;
 	}
 
+	@Override
 	protected boolean createFileOnly() {
 		return createFileOnly;
 	}
 
+	@Override
 	protected boolean deleteOnExit() {
 		return deleteOnExit;
 	}
 
+	@Override
 	protected boolean deleteOnFinalize() {
 		return deleteOnFinalize;
 	}
 
+	@Override
 	protected boolean deleteOnFree() {
 		return deleteOnFree;
 	}

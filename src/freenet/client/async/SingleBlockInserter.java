@@ -150,10 +150,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return parent.getPriorityClass(); // Not much point deactivating
 	}
 
+	@Override
 	public int getRetryCount() {
 		return retries;
 	}
 
+	@Override
 	public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(errors, 1);
@@ -292,6 +294,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return resultingURI;
 	}
 
+	@Override
 	public void onSuccess(Object keyNum, ObjectContainer container, ClientContext context) {
 		if(logMINOR) Logger.minor(this, "Succeeded ("+this+"): "+token);
 		if(persistent)
@@ -337,6 +340,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return finished;
 	}
 	
+	@Override
 	public synchronized boolean isCancelled(ObjectContainer container) {
 		return finished;
 	}
@@ -369,10 +373,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		};
 	}
 
+	@Override
 	public RequestClient getClient() {
 		return parent.getClient();
 	}
 
+	@Override
 	public ClientRequester getClientRequest() {
 		return parent;
 	}
@@ -402,6 +408,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		return true;
 	}
 
+	@Override
 	public synchronized Object[] sendableKeys(ObjectContainer container) {
 		if(finished)
 			return new Object[] {};
@@ -409,10 +416,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			return new Object[] { new Integer(0) };
 	}
 
+	@Override
 	public synchronized Object[] allKeys(ObjectContainer container) {
 		return sendableKeys(container);
 	}
 
+	@Override
 	public synchronized Object chooseKey(KeysFetchingLocally ignored, ObjectContainer container, ClientContext context) {
 		if(finished) return null;
 		// Ignore KeysFetchingLocally, it's for requests.

@@ -18,6 +18,7 @@ public class StringArrOption extends Option<String[]> {
 		this.currentValue = (defaultValue==null)?new String[0]:defaultValue;
 	}
 		
+	@Override
 	public String[] parseString(String val) throws InvalidConfigValueException {
 		if(val.length() == 0) return new String[0];
 		String[] out = val.split(delimiter);
@@ -43,6 +44,7 @@ public class StringArrOption extends Option<String[]> {
 		return L10n.getString("StringArrOption."+key, pattern, value);
 	}
 
+	@Override
 	public String toString(String[] arr) {
 		if (arr == null)
 			return null;
@@ -66,6 +68,7 @@ public class StringArrOption extends Option<String[]> {
 		}
 	}
 
+	@Override
 	public boolean isDefault() {
 		getValue();
 		return currentValue == null ? false : Arrays.equals(currentValue, defaultValue);

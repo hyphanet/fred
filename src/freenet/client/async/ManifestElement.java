@@ -66,10 +66,12 @@ public class ManifestElement {
 		this.targetURI = targetURI;
 	}
 	
+	@Override
 	public int hashCode() {
 		return name.hashCode();
 	}
 	
+	@Override
 	public boolean equals(Object o) {
 		if(this == o) return true;
 		if(o instanceof ManifestElement) {

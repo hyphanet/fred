@@ -27,6 +27,7 @@ class USKChecker extends BaseSingleFileFetcher {
 		this.cb = cb;
 	}
 	
+	@Override
 	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);
@@ -35,6 +36,7 @@ class USKChecker extends BaseSingleFileFetcher {
 		cb.onSuccess((ClientSSKBlock)block, context);
 	}
 
+	@Override
 	public void onFailure(LowLevelGetException e, Object token, ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);
@@ -87,6 +89,7 @@ class USKChecker extends BaseSingleFileFetcher {
 			cb.onNetworkError(context);
 	}
 
+	@Override
 	public String toString() {
 		return "USKChecker for "+key.getURI()+" for "+cb;
 	}

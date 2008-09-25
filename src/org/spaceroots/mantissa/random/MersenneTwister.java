@@ -216,6 +216,7 @@ public class MersenneTwister extends Random {
 	 * generator built with the same seed.</p>
 	 * @param seed the initial seed (64 bits integer)
 	 */
+	@Override
 	public synchronized void setSeed(long seed) {
 		if (mt == null) {
 			// this is probably a spurious call from base class constructor,
@@ -236,6 +237,7 @@ public class MersenneTwister extends Random {
 	 * #nextLong nextLong}.</p>
 	 * @param bits number of random bits to produce
 	 */
+	@Override
 	protected synchronized int next(int bits) {
 		int y;
 

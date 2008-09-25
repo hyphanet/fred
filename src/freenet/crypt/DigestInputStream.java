@@ -13,13 +13,15 @@ public class DigestInputStream extends FilterInputStream {
 	this.ctx=d;
     }
 
-    public int read(byte[] b, int offset, int len) throws IOException {
+    @Override
+	public int read(byte[] b, int offset, int len) throws IOException {
 	int rl=super.read(b, offset, len);
 	if (rl>0) ctx.update(b, offset, rl);
 	return rl;
     }
 
-    public int read() throws IOException {
+    @Override
+	public int read() throws IOException {
 	int rv=super.read();
 	if (rv!=-1) ctx.update((byte)rv);
 	return rv;

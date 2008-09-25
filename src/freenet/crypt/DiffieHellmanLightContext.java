@@ -18,6 +18,7 @@ public class DiffieHellmanLightContext extends KeyAgreementSchemeContext {
 	/** A timestamp: when was the context created ? */
 	public final long lifetime = System.currentTimeMillis();
 
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
 		sb.append(super.toString());

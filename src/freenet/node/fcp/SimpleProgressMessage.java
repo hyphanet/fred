@@ -21,6 +21,7 @@ public class SimpleProgressMessage extends FCPMessage {
 		this.global = global;
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.put("Total", event.totalBlocks);
@@ -34,10 +35,12 @@ public class SimpleProgressMessage extends FCPMessage {
 		return fs;
 	}
 
+	@Override
 	public String getName() {
 		return "SimpleProgress";
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "SimpleProgress goes from server to client not the other way around", ident, global);
 	}

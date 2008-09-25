@@ -18,28 +18,34 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 		super(n, core, client);
 	}
 
+	@Override
 	protected void drawNameColumn(HTMLNode peerRow,
 			PeerNodeStatus peerNodeStatus) {
 		// Do nothing - no names on opennet
 	}
 
+	@Override
 	protected void drawPrivateNoteColumn(HTMLNode peerRow,
 			PeerNodeStatus peerNodeStatus, boolean fProxyJavascriptEnabled) {
 		// Do nothing - no private notes either (no such thing as negative trust in cyberspace)
 	}
 
+	@Override
 	protected boolean hasNameColumn() {
 		return false;
 	}
 
+	@Override
 	protected boolean hasPrivateNoteColumn() {
 		return false;
 	}
 
+	@Override
 	protected SimpleFieldSet getNoderef() {
 		return node.exportOpennetPublicFieldSet();
 	}
 
+	@Override
 	protected PeerNodeStatus[] getPeerNodeStatuses(boolean noHeavy) {
 		return node.peers.getOpennetPeerNodeStatuses(noHeavy);
 	}
@@ -48,36 +54,44 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 		return node.isOpennetEnabled();
 	}
 
+	@Override
 	protected String getPageTitle(String titleCountString, String myName) {
 		return L10n.getString("OpennetConnectionsToadlet.fullTitle", new String[] { "counts", "name" }, new String[] { titleCountString, node.getMyName() } );
 	}
 
+	@Override
 	protected boolean shouldDrawNoderefBox(boolean advancedModeEnabled) {
 		return advancedModeEnabled;
 	}
 
+	@Override
 	protected boolean showPeerActionsBox() {
 		// No per-peer actions supported on opennet - there's no point, they'll only reconnect,
 		// possibly as a different identity. And we don't want to be able to send N2NTM spam either.
 		return false;
 	}
 
+	@Override
 	protected void drawPeerActionSelectBox(HTMLNode peerForm, boolean advancedModeEnabled) {
 		// Do nothing, see showPeerActionsBox().
 	}
 
+	@Override
 	protected String getPeerListTitle() {
 		return L10n.getString("OpennetConnectionsToadlet.peersListTitle");
 	}
 
+	@Override
 	protected boolean acceptRefPosts() {
 		return true;
 	}
 
+	@Override
 	protected String defaultRedirectLocation() {
 		return "/opennet/";
 	}
 
+	@Override
 	protected boolean isOpennet() {
 		return true;
 	}
@@ -88,6 +102,7 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 			super(sortBy, reversed);
 		}
 	
+		@Override
 		protected int customCompare(PeerNodeStatus firstNode, PeerNodeStatus secondNode, String sortBy) {
 			if(sortBy.equals("successTime")) {
 				long t1 = ((OpennetPeerNodeStatus)firstNode).timeLastSuccess;
@@ -99,26 +114,32 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 		}
 	}
 	
+	@Override
 	protected Comparator comparator(String sortBy, boolean reversed) {
 		return new OpennetComparator(sortBy, reversed);
 	}
 
+	@Override
 	SimpleColumn[] endColumnHeaders(boolean advancedMode) {
 		if(!advancedMode) return null;
 		return new SimpleColumn[] { 
 				new SimpleColumn() {
 
+					@Override
 					protected void drawColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus) {
 						OpennetPeerNodeStatus status = (OpennetPeerNodeStatus) peerNodeStatus;
 						long tLastSuccess = status.timeLastSuccess;
 						peerRow.addChild("td", "class", "peer-last-success", tLastSuccess > 0 ? TimeUtil.formatTime(System.currentTimeMillis() - tLastSuccess) : "NEVER");
 					}
+					@Override
 					public String getExplanationKey() {
 						return "OpennetConnectionsToadlet.successTime";
 					}
+					@Override
 					public String getSortString() {
 						return "successTime";
 					}
+					@Override
 					public String getTitleKey() {
 						return "OpennetConnectionsToadlet.successTimeTitle";
 					}

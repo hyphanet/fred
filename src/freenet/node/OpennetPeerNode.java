@@ -14,19 +14,23 @@ public class OpennetPeerNode extends PeerNode {
 		this.opennet = opennet;
 	}
 
+	@Override
 	public PeerNodeStatus getStatus(boolean noHeavy) {
 		return new OpennetPeerNodeStatus(this, noHeavy);
 	}
 
+	@Override
 	public boolean isRoutingCompatible() {
 		if(!node.isOpennetEnabled()) return false;
 		return super.isRoutingCompatible();
 	}
 
+	@Override
 	public boolean isDarknet() {
 		return false;
 	}
 
+	@Override
 	public boolean isOpennet() {
 		return true;
 	}
@@ -49,17 +53,20 @@ public class OpennetPeerNode extends PeerNode {
 		return true;
 	}
 	
+	@Override
 	public void onSuccess(boolean insert, boolean ssk) {
 		if(insert || ssk) return;
 		timeLastSuccess = System.currentTimeMillis();
 		opennet.onSuccess(this);
 	}
 
+	@Override
 	public void onRemove() {
 		opennet.onRemove(this);
 		super.onRemove();
 	}
 	
+	@Override
 	public synchronized SimpleFieldSet exportMetadataFieldSet() {
 		SimpleFieldSet fs = super.exportMetadataFieldSet();
 		fs.put("timeLastSuccess", timeLastSuccess);
@@ -78,18 +85,22 @@ public class OpennetPeerNode extends PeerNode {
 		return true;
 	}
 
+	@Override
 	public boolean isRealConnection() {
 		return true;
 	}
 
+	@Override
 	public boolean recordStatus() {
 		return true;
 	}
 
+	@Override
 	protected boolean generateIdentityFromPubkey() {
 		return false;
 	}
  
+	@Override
 	public boolean equals(Object o) {
 		if(o == this) return true;
 		// Only equal to seednode of its own type.
@@ -98,10 +109,12 @@ public class OpennetPeerNode extends PeerNode {
 		} else return false;
 	}
 	
+	@Override
 	public final boolean shouldDisconnectAndRemoveNow() {
 		return false;
 	}
 
+	@Override
 	protected void onConnect() {
 		opennet.crypto.socket.getAddressTracker().setPresumedGuiltyAt(System.currentTimeMillis()+60*60*1000);
 	}

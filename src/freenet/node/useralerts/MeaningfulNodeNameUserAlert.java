@@ -39,7 +39,7 @@ public class MeaningfulNodeNameUserAlert extends AbstractUserAlert {
 	@Override
 	public HTMLNode getHTMLText() {
 		SubConfig sc = node.config.get("node");
-		Option o = sc.getOption("name");
+		Option<?> o = sc.getOption("name");
 
 		HTMLNode alertNode = new HTMLNode("div");
 		HTMLNode textNode = alertNode.addChild("div");

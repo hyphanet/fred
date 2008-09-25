@@ -19,6 +19,7 @@ public class GenerateSSKMessage extends FCPMessage {
 		identifier = fs.get("Identifier");
 	}
 	
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		if(identifier != null)
@@ -26,10 +27,12 @@ public class GenerateSSKMessage extends FCPMessage {
 		return fs;
 	}
 
+	@Override
 	public String getName() {
 		return NAME;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
     	InsertableClientSSK key = InsertableClientSSK.createRandom(node.random, "");

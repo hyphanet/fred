@@ -42,6 +42,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	final long token;
 	
 	// Translate it, then call the real onFailure
+	@Override
 	public void onFailure(LowLevelGetException e, Object reqTokenIgnored, ObjectContainer container, ClientContext context) {
 		switch(e.code) {
 		case LowLevelGetException.DATA_NOT_FOUND:
@@ -123,6 +124,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		rcb.onSuccess(data, this, container, context);
 	}
 
+	@Override
 	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object reqTokenIgnored, ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(parent, 1);

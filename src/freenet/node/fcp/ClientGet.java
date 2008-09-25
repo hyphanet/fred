@@ -271,8 +271,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 		String[] allowed = fs.getAll("AllowedMIMETypes");
 		if(allowed != null) {
-			fctx.allowedMIMETypes = new HashSet();
-			for(int i=0;i<allowed.length;i++) fctx.allowedMIMETypes.add(allowed[i]);
+			fctx.allowedMIMETypes = new HashSet<String>();
+			for (String a : allowed)
+				fctx.allowedMIMETypes.add(a);
 		}
 
 		getter = new ClientGetter(this, server.core.requestStarters.chkFetchScheduler, 
@@ -304,6 +305,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			}
 	}
 
+	@Override
 	public void start(ObjectContainer container, ClientContext context) {
 		try {
 			synchronized(this) {
@@ -332,6 +334,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			container.set(this); // Update
 	}
 
+	@Override
 	public void onLostConnection(ObjectContainer container, ClientContext context) {
 		if(persistenceType == PERSIST_CONNECTION)
 			cancel(container, context);
@@ -483,6 +486,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			container.deactivate(client, 1);
 	}
 
+	@Override
 	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData, ObjectContainer container) {
 		if(persistenceType == ClientRequest.PERSIST_CONNECTION) {
 			Logger.error(this, "WTF? persistenceType="+persistenceType, new Exception("error"));
@@ -513,6 +517,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 	}
 
+	@Override
 	protected FCPMessage persistentTagMessage(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(uri, 5);
@@ -555,6 +560,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		// Ignore
 	}
 
+	@Override
 	public void requestWasRemoved(ObjectContainer container) {
 		// if request is still running, send a GetFailed with code=cancelled
 		if( !finished ) {
@@ -621,6 +627,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 	// This is distinct from the ClientGetMessage code, as later on it will be radically
 	// different (it can store detailed state).
+	@Override
 	public synchronized SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(false); // we will need multi-level later...
 		fs.putSingle("Type", "GET");
@@ -670,10 +677,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		return fs;
 	}
 
+	@Override
 	protected ClientRequester getClientRequest() {
 		return getter;
 	}
 
+	@Override
 	protected void freeData(ObjectContainer container) {
 		Bucket data;
 		synchronized(this) {
@@ -689,6 +698,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 	}
 
+	@Override
 	public boolean hasSucceeded() {
 		return succeeded;
 	}
@@ -733,6 +743,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		return targetFile;
 	}
 
+	@Override
 	public double getSuccessFraction(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER && progressPending != null)
 			container.activate(progressPending, 2);
@@ -742,6 +753,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			return -1;
 	}
 
+	@Override
 	public double getTotalBlocks(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER && progressPending != null)
 			container.activate(progressPending, 2);
@@ -751,6 +763,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			return 1;
 	}
 
+	@Override
 	public double getMinBlocks(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER && progressPending != null)
 			container.activate(progressPending, 2);
@@ -760,6 +773,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			return 1;
 	}
 
+	@Override
 	public double getFailedBlocks(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER && progressPending != null)
 			container.activate(progressPending, 2);
@@ -769,6 +783,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			return 0;
 	}
 
+	@Override
 	public double getFatalyFailedBlocks(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER && progressPending != null)
 			container.activate(progressPending, 2);
@@ -778,6 +793,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			return 0;
 	}
 
+	@Override
 	public double getFetchedBlocks(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER && progressPending != null)
 			container.activate(progressPending, 2);
@@ -787,6 +803,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			return 0;
 	}
 
+	@Override
 	public String getFailureReason(ObjectContainer container) {
 		if(getFailedMessage == null)
 			return null;
@@ -799,6 +816,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	}
 
 
+	@Override
 	public boolean isTotalFinalized(ObjectContainer container) {
 		if(finished && succeeded) return true;
 		if(progressPending == null) return false;
@@ -830,6 +848,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		// Ignore, we don't insert
 	}
 
+	@Override
 	public boolean canRestart() {
 		if(!finished) {
 			Logger.minor(this, "Cannot restart because not finished for "+identifier);
@@ -842,6 +861,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		return getter.canRestart();
 	}
 
+	@Override
 	public boolean restart(ObjectContainer container, ClientContext context) {
 		if(!canRestart()) return false;
 		FreenetURI redirect;

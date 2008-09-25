@@ -124,6 +124,7 @@ public class DarknetPeerNode extends PeerNode {
 	 * However, if ignoreSourcePort is set, we will search for a similar address with a different port 
 	 * number in the node reference.
 	 */
+	@Override
 	public synchronized Peer getPeer(){
 		Peer detectedPeer = super.getPeer();
 		if(ignoreSourcePort) {
@@ -145,6 +146,7 @@ public class DarknetPeerNode extends PeerNode {
 	 * sufficient time period since we last sent a handshake
 	 * attempt.
 	 */
+	@Override
 	public boolean shouldSendHandshake() {
 		synchronized(this) {
 			if(isDisabled) return false;
@@ -154,6 +156,7 @@ public class DarknetPeerNode extends PeerNode {
 		return true;
 	}
 	
+	@Override
 	protected synchronized boolean innerProcessNewNoderef(SimpleFieldSet fs, boolean forARK, boolean forDiffNodeRef) throws FSParseException {
 		boolean changedAnything = super.innerProcessNewNoderef(fs, forARK, forDiffNodeRef);
 		String name = fs.get("myName");
@@ -164,12 +167,14 @@ public class DarknetPeerNode extends PeerNode {
 		return changedAnything;
 	}
 	
+	@Override
 	public synchronized SimpleFieldSet exportFieldSet() {
 		SimpleFieldSet fs = super.exportFieldSet();
 		fs.putSingle("myName", getName());
 		return fs;
 	}
 		
+	@Override
 	public synchronized SimpleFieldSet exportMetadataFieldSet() {
 		SimpleFieldSet fs = super.exportMetadataFieldSet();
 		if(isDisabled)
@@ -191,6 +196,7 @@ public class DarknetPeerNode extends PeerNode {
 		return myName;
 	}
 
+	@Override
 	protected synchronized int getPeerNodeStatus(long now, long backedOffUntil) {
 		if(isDisabled) {
 			return PeerManager.PEER_NODE_STATUS_DISABLED;
@@ -232,6 +238,7 @@ public class DarknetPeerNode extends PeerNode {
 		node.peers.writePeers();
 	}
 
+	@Override
 	public synchronized boolean isDisabled() {
 		return isDisabled;
 	}
@@ -310,10 +317,12 @@ public class DarknetPeerNode extends PeerNode {
 		return ignoreSourcePort;
 	}
 	
+	@Override
 	public boolean isIgnoreSource() {
 		return ignoreSourcePort;
 	}
 	
+	@Override
 	public boolean isBurstOnly() {
 		synchronized(this) {
 			if(isBurstOnly) return true;
@@ -321,6 +330,7 @@ public class DarknetPeerNode extends PeerNode {
 		return super.isBurstOnly();
 	}
 
+	@Override
 	public boolean allowLocalAddresses() {
 		synchronized(this) {
 			if(allowLocalAddresses) return true;
@@ -721,6 +731,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 	}
 
+	@Override
 	public void queueN2NM(SimpleFieldSet fs) {
 		int fileNumber = writeNewExtraPeerDataFile( fs, Node.EXTRA_PEER_DATA_TYPE_QUEUED_TO_SEND_N2NM);
 		synchronized(queuedToSendN2NMExtraPeerDataFileNumbers) {
@@ -741,6 +752,7 @@ public class DarknetPeerNode extends PeerNode {
 		}
 	}
 
+	@Override
 	void startARKFetcher() {
 		synchronized(this) {
 			if(isListenOnly) {
@@ -751,6 +763,7 @@ public class DarknetPeerNode extends PeerNode {
 		super.startARKFetcher();
 	}
 	
+	@Override
 	public String getTMCIPeerInfo() {
 		return getName()+'\t'+super.getTMCIPeerInfo();
 	}
@@ -758,6 +771,7 @@ public class DarknetPeerNode extends PeerNode {
 	/**
 	 * A method to be called once at the beginning of every time isConnected() is true
 	 */
+	@Override
 	protected void onConnect() {
 		sendQueuedN2NMs();
 	}
@@ -917,9 +931,11 @@ public class DarknetPeerNode extends PeerNode {
 
 		protected void onReceiveFailure() {
 			UserAlert alert = new AbstractUserAlert() {
+				@Override
 				public String dismissButtonText() {
 					return L10n.getString("UserAlert.hide");
 				}
+				@Override
 				public HTMLNode getHTMLText() {
 					HTMLNode div = new HTMLNode("div");
 					
@@ -950,10 +966,12 @@ public class DarknetPeerNode extends PeerNode {
 					return div;
 				}
 
+				@Override
 				public short getPriorityClass() {
 					return UserAlert.MINOR;
 				}
 
+				@Override
 				public String getText() {
 					StringBuilder sb = new StringBuilder();
 					sb.append(l10n("failedReceiveHeader", new String[] { "filename", "node" },
@@ -983,30 +1001,37 @@ public class DarknetPeerNode extends PeerNode {
 					return sb.toString();
 				}
 
+				@Override
 				public String getTitle() {
 					return l10n("failedReceiveTitle");
 				}
 
+				@Override
 				public boolean isValid() {
 					return true;
 				}
 
+				@Override
 				public void isValid(boolean validity) {
 					// Ignore
 				}
 
+				@Override
 				public void onDismiss() {
 					// Ignore
 				}
 
+				@Override
 				public boolean shouldUnregisterOnDismiss() {
 					return true;
 				}
 
+				@Override
 				public boolean userCanDismiss() {
 					return true;
 				}
 				
+				@Override
 				public String getShortText() {
 					return l10n("failedReceiveShort", new String[] { "filename", "node" }, new String[] { filename, getName() });
 				}
@@ -1017,9 +1042,11 @@ public class DarknetPeerNode extends PeerNode {
 
 		private void onReceiveSuccess() {
 			UserAlert alert = new AbstractUserAlert() {
+				@Override
 				public String dismissButtonText() {
 					return L10n.getString("UserAlert.hide");
 				}
+				@Override
 				public HTMLNode getHTMLText() {
 					HTMLNode div = new HTMLNode("div");
 					
@@ -1052,10 +1079,12 @@ public class DarknetPeerNode extends PeerNode {
 					return div;
 				}
 
+				@Override
 				public short getPriorityClass() {
 					return UserAlert.MINOR;
 				}
 
+				@Override
 				public String getText() {
 					StringBuilder sb = new StringBuilder();
 					sb.append(l10n("succeededReceiveHeader", new String[] { "filename", "node" },
@@ -1085,29 +1114,36 @@ public class DarknetPeerNode extends PeerNode {
 					return sb.toString();
 				}
 
+				@Override
 				public String getTitle() {
 					return l10n("succeededReceiveTitle");
 				}
 
+				@Override
 				public boolean isValid() {
 					return true;
 				}
 
+				@Override
 				public void isValid(boolean validity) {
 					// Ignore
 				}
 
+				@Override
 				public void onDismiss() {
 					// Ignore
 				}
 
+				@Override
 				public boolean shouldUnregisterOnDismiss() {
 					return true;
 				}
 
+				@Override
 				public boolean userCanDismiss() {
 					return true;
 				}
+				@Override
 				public String getShortText() {
 					return l10n("succeededReceiveShort", new String[] { "filename", "node" }, new String[] { filename, getName() });
 				}
@@ -1120,9 +1156,11 @@ public class DarknetPeerNode extends PeerNode {
 		/** Ask the user whether (s)he wants to download a file from a direct peer */
 		public UserAlert askUserUserAlert() {
 			return new AbstractUserAlert() {
+				@Override
 				public String dismissButtonText() {
 					return null; // Cannot hide, but can reject
 				}
+				@Override
 				public HTMLNode getHTMLText() {
 					HTMLNode div = new HTMLNode("div");
 					
@@ -1169,9 +1207,11 @@ public class DarknetPeerNode extends PeerNode {
 					
 					return div;
 				}
+				@Override
 				public short getPriorityClass() {
 					return UserAlert.MINOR;
 				}
+				@Override
 				public String getText() {
 					StringBuilder sb = new StringBuilder();
 					sb.append(l10n("offeredFileHeader", "name", getName()));
@@ -1199,10 +1239,12 @@ public class DarknetPeerNode extends PeerNode {
 					}
 					return sb.toString();
 				}
+				@Override
 				public String getTitle() {
 					return l10n("askUserTitle");
 				}
 
+				@Override
 				public boolean isValid() {
 					if(acceptedOrRejected) {
 						node.clientCore.alerts.unregister(this);
@@ -1210,19 +1252,24 @@ public class DarknetPeerNode extends PeerNode {
 					}
 					return true;
 				}
+				@Override
 				public void isValid(boolean validity) {
 					// Ignore
 				}
+				@Override
 				public void onDismiss() {
 					// Ignore
 				}
+				@Override
 				public boolean shouldUnregisterOnDismiss() {
 					return false;
 				}
 
+				@Override
 				public boolean userCanDismiss() {
 					return false; // should accept or reject
 				}
+				@Override
 				public String getShortText() {
 					return l10n("offeredFileShort", new String[] { "filename", "node" }, new String[] { filename, getName() });
 				}
@@ -1491,43 +1538,53 @@ public class DarknetPeerNode extends PeerNode {
 		fo.onRejected();
 	}
 
+	@Override
 	public String userToString() {
 		return ""+getPeer()+" : "+getName();
 	}
 
+	@Override
 	public PeerNodeStatus getStatus(boolean noHeavy) {
 		return new DarknetPeerNodeStatus(this, noHeavy);
 	}
 
+	@Override
 	public boolean isDarknet() {
 		return true;
 	}
 
+	@Override
 	public boolean isOpennet() {
 		return false;
 	}
 
+	@Override
 	public void onSuccess(boolean insert, boolean ssk) {
 		// Ignore it
 	}
 
+	@Override
 	public void onRemove() {
 		// Do nothing
 		// FIXME is there anything we should do?
 	}
 
+	@Override
 	public boolean isRealConnection() {
 		return true;
 	}
 
+	@Override
 	public boolean recordStatus() {
 		return true;
 	}
 
+	@Override
 	protected boolean generateIdentityFromPubkey() {
 		return false;
 	}
 	
+	@Override
 	public boolean equals(Object o) {
 		if(o == this) return true;
 		// Only equal to seednode of its own type.
@@ -1536,6 +1593,7 @@ public class DarknetPeerNode extends PeerNode {
 		} else return false;
 	}
 	
+	@Override
 	public final boolean shouldDisconnectAndRemoveNow() {
 		return false;
 	}

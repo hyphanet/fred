@@ -27,16 +27,19 @@ public class SymlinkerToadlet extends Toadlet {
 		tslconfig = new SubConfig("toadletsymlinker", node.config);
 		tslconfig.register("symlinks", null, 9, true, false, "SymlinkerToadlet.symlinks", "SymlinkerToadlet.symlinksLong", 
         		new StringArrCallback() {
+			@Override
 			public String[] get() {
 				return getConfigLoadString();
 			}
+			@Override
 			public void set(String[] val) throws InvalidConfigValueException {
 				//if(storeDir.equals(new File(val))) return;
 				// FIXME
 				throw new InvalidConfigValueException("Cannot set the plugins that's loaded.");
 			}
 
-			        public boolean isReadOnly() {
+			        @Override
+					public boolean isReadOnly() {
 				        return true;
 			        }
 		});
@@ -97,10 +100,12 @@ public class SymlinkerToadlet extends Toadlet {
 		return retarr;
 	}
 	
+	@Override
 	public String supportedMethods() {
 		return "GET";
 	}
 	
+	@Override
 	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx)
 	throws ToadletContextClosedException, IOException, RedirectException {
 		String path = uri.getPath();

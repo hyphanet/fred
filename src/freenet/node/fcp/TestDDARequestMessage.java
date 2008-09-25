@@ -43,14 +43,17 @@ public class TestDDARequestMessage extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Both "+ WANT_READ + " and " + WANT_WRITE + " are set to false: what's the point of sending a message?", identifier, false);
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		return null;
 	}
 
+	@Override
 	public String getName() {
 		return NAME;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		DDACheckJob job;
 		try {

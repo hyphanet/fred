@@ -250,6 +250,7 @@ public class TranslationToadlet extends Toadlet {
 		return;
 	}
 	
+	@Override
 	public String supportedMethods() {
 		return "GET, POST";
 	}

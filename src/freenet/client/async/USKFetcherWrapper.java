@@ -23,14 +23,17 @@ public class USKFetcherWrapper extends BaseClientGetter {
 		this.usk = usk;
 	}
 
+	@Override
 	public FreenetURI getURI() {
 		return usk.getURI();
 	}
 
+	@Override
 	public boolean isFinished() {
 		return false;
 	}
 
+	@Override
 	public void notifyClients(ObjectContainer container, ClientContext context) {
 		// Do nothing
 	}
@@ -47,10 +50,12 @@ public class USKFetcherWrapper extends BaseClientGetter {
 		// Ignore
 	}
 
+	@Override
 	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 		// Ignore
 	}
 
+	@Override
 	public String toString() {
 		return super.toString()+ ':' +usk;
 	}

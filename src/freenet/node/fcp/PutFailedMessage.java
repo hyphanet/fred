@@ -76,6 +76,7 @@ public class PutFailedMessage extends FCPMessage {
 		}
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		return getFieldSet(true);
 	}
@@ -101,10 +102,12 @@ public class PutFailedMessage extends FCPMessage {
 		return fs;
 	}
 
+	@Override
 	public String getName() {
 		return "PutFailed";
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "PutFailed goes from server to client not the other way around", identifier, global);

@@ -41,6 +41,7 @@ public class ClientMetadata implements Cloneable {
 		return ((mimeType == null) || mimeType.equals(""));
 	}
 	
+	@Override
 	public Object clone() {
 		try {
 			return super.clone();
@@ -49,6 +50,7 @@ public class ClientMetadata implements Cloneable {
 		}
 	}
 	
+	@Override
 	public String toString() {
 		return getMIMEType();
 	}

@@ -806,10 +806,12 @@ public class NodeUpdateManager {
 	
 	class UpdaterEnabledCallback extends BooleanCallback  {
 		
+		@Override
 		public Boolean get() {
 			return isEnabled();
 		}
 		
+		@Override
 		public void set(Boolean val) throws InvalidConfigValueException {
 			enable(val);
 		}
@@ -817,10 +819,12 @@ public class NodeUpdateManager {
 	
 	class AutoUpdateAllowedCallback extends BooleanCallback  {
 		
+		@Override
 		public Boolean get() {
 			return isAutoUpdateAllowed();
 		}
 		
+		@Override
 		public void set(Boolean val) throws InvalidConfigValueException {
 			setAutoUpdateAllowed(val);
 		}
@@ -834,10 +838,12 @@ public class NodeUpdateManager {
 			this.isExt = isExt;
 		}
 		
+		@Override
 		public String get() {
 			return getURI(isExt).toString(false, false);
 		}
 
+		@Override
 		public void set(String val) throws InvalidConfigValueException {
 			FreenetURI uri;
 			try {
@@ -851,10 +857,12 @@ public class NodeUpdateManager {
 
 	public class UpdateRevocationURICallback extends StringCallback  {
 
+		@Override
 		public String get() {
 			return getRevocationURI().toString(false, false);
 		}
 
+		@Override
 		public void set(String val) throws InvalidConfigValueException {
 			FreenetURI uri;
 			try {

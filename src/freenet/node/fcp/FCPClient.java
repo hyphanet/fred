@@ -52,7 +52,7 @@ public class FCPClient {
 		this.persistenceType = persistenceType;
 		assert(persistenceType == ClientRequest.PERSIST_FOREVER || persistenceType == ClientRequest.PERSIST_REBOOT);
 		watchGlobalVerbosityMask = Integer.MAX_VALUE;
-		toStart = new LinkedList();
+		toStart = new LinkedList<ClientRequest>();
 		lowLevelClient = new RequestClient() {
 			public boolean persistent() {
 				return forever;
@@ -77,7 +77,7 @@ public class FCPClient {
 	/** Completed unacknowledged persistent requests */
 	private final List completedUnackedRequests;
 	/** ClientRequest's by identifier */
-	private final Map clientRequestsByIdentifier;
+	private final Map<String, ClientRequest> clientRequestsByIdentifier;
 	/** Are we the global queue? */
 	public final boolean isGlobalQueue;
 	/** Are we watching the global queue? */
@@ -86,7 +86,7 @@ public class FCPClient {
 	/** FCPClients watching us. Lazy init, sync on clientsWatchingLock */
 	private transient LinkedList clientsWatching;
 	private final NullObject clientsWatchingLock = new NullObject();
-	private final LinkedList toStart;
+	private final LinkedList<ClientRequest> toStart;
 	final RequestClient lowLevelClient;
 	private transient RequestCompletionCallback completionCallback;
 	/** Connection mode */
@@ -165,7 +165,7 @@ public class FCPClient {
 			Logger.minor(this, "Registering "+cg.getIdentifier()+(startLater ? " to start later" : ""));
 		synchronized(this) {
 			String ident = cg.getIdentifier();
-			ClientRequest old = (ClientRequest) clientRequestsByIdentifier.get(ident);
+			ClientRequest old = clientRequestsByIdentifier.get(ident);
 			if((old != null) && (old != cg))
 				throw new IdentifierCollisionException();
 			if(cg.hasFinished()) {
@@ -184,7 +184,7 @@ public class FCPClient {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "removeByIdentifier("+identifier+ ',' +kill+ ')');
 		synchronized(this) {
-			req = (ClientRequest) clientRequestsByIdentifier.get(identifier);
+			req = clientRequestsByIdentifier.get(identifier);
 			if(req == null)
 				return false;
 			else if(!(runningPersistentRequests.remove(req) || completedUnackedRequests.remove(req))) {
@@ -223,7 +223,7 @@ public class FCPClient {
 		synchronized(this) {
 			Iterator<ClientRequest> i = runningPersistentRequests.iterator();
 			while(i.hasNext()) {
-				ClientRequest req = (ClientRequest) i.next();
+				ClientRequest req = i.next();
 				if(req.isPersistentForever() || !onlyForever)
 					v.add(req);
 			}
@@ -342,6 +342,7 @@ public class FCPClient {
 		}
 	}
 	
+	@Override
 	public String toString() {
 		return super.toString()+ ':' +name;
 	}

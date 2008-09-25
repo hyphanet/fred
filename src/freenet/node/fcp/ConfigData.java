@@ -37,6 +37,7 @@ public class ConfigData extends FCPMessage {
 	}
 
 	
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		if(withCurrent) {
@@ -92,10 +93,12 @@ public class ConfigData extends FCPMessage {
 		return fs;
 	}
 
+	@Override
 	public String getName() {
 		return name;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "ConfigData goes from server to client not the other way around", null, false);

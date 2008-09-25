@@ -46,14 +46,17 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		cooldownWakeupTime = -1;
 	}
 
+	@Override
 	public Object[] allKeys(ObjectContainer container) {
 		return keys;
 	}
 	
+	@Override
 	public Object[] sendableKeys(ObjectContainer container) {
 		return keys;
 	}
 	
+	@Override
 	public Object chooseKey(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(key, 5);
@@ -65,6 +68,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return keys[0];
 	}
 	
+	@Override
 	public boolean hasValidKeys(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
 		if(persistent)
 			container.activate(key, 5);
@@ -72,16 +76,19 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return !fetching.hasKey(key.getNodeKey());
 	}
 	
+	@Override
 	public ClientKey getKey(Object token, ObjectContainer container) {
 		if(persistent)
 			container.activate(key, 5);
 		return key;
 	}
 	
+	@Override
 	public FetchContext getContext() {
 		return ctx;
 	}
 
+	@Override
 	public boolean isSSK() {
 		return key instanceof ClientSSK;
 	}
@@ -118,20 +125,24 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return false;
 	}
 
+	@Override
 	public int getRetryCount() {
 		return retryCount;
 	}
 
+	@Override
 	public ClientRequester getClientRequest() {
 		return parent;
 	}
 
+	@Override
 	public short getPriorityClass(ObjectContainer container) {
 		if(persistent) container.activate(parent, 1); // Not much point deactivating it
 		short retval = parent.getPriorityClass();
 		return retval;
 	}
 
+	@Override
 	public boolean ignoreStore() {
 		return ctx.ignoreStore;
 	}
@@ -157,6 +168,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		super.unregister(container, context);
 	}
 
+	@Override
 	public synchronized boolean isCancelled(ObjectContainer container) {
 		return cancelled;
 	}
@@ -165,6 +177,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return cancelled || finished || chosen;
 	}
 	
+	@Override
 	public RequestClient getClient() {
 		return parent.getClient();
 	}
@@ -173,6 +186,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return !ctx.cacheLocalRequests;
 	}
 	
+	@Override
 	public boolean dontCache() {
 		return !ctx.cacheLocalRequests;
 	}
@@ -222,20 +236,24 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	}
 	
 
+	@Override
 	public long getCooldownWakeup(Object token, ObjectContainer container) {
 		return cooldownWakeupTime;
 	}
-	
+
+	@Override
 	public long getCooldownWakeupByKey(Key key, ObjectContainer container) {
 		return cooldownWakeupTime;
 	}
 	
+	@Override
 	public synchronized void resetCooldownTimes(ObjectContainer container) {
 		cooldownWakeupTime = -1;
 		if(persistent)
 			container.set(this);
 	}
-	
+
+	@Override
 	public void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context) {
 		if(cooldownWakeupTime > time) {
 			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Not requeueing as deadline has not passed yet");

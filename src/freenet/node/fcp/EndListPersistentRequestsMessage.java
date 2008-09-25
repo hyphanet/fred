@@ -12,14 +12,17 @@ public class EndListPersistentRequestsMessage extends FCPMessage {
 
 	static final String name = "EndListPersistentRequests";
 	
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		return new SimpleFieldSet(true);
 	}
 
+	@Override
 	public String getName() {
 		return name;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "EndListPersistentRequests goes from server to client not the other way around", null, false);

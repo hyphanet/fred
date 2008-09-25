@@ -21,6 +21,7 @@ public class StartedCompressionMessage extends FCPMessage {
 		this.global = global;
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("Identifier", identifier);
@@ -29,10 +30,12 @@ public class StartedCompressionMessage extends FCPMessage {
 		return fs;
 	}
 
+	@Override
 	public String getName() {
 		return "StartedCompression";
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "StartedCompression goes from server to client not the other way around", identifier, global);

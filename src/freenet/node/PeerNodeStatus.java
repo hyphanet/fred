@@ -342,10 +342,12 @@ public class PeerNodeStatus {
 		return simpleVersion;
 	}
 
+	@Override
 	public String toString() {
 		return statusName + ' ' + peerAddress + ':' + peerPort + ' ' + location + ' ' + version + " backoff: " + routingBackoffLength + " (" + (Math.max(routingBackedOffUntil - System.currentTimeMillis(), 0)) + ')';
 	}
 
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}

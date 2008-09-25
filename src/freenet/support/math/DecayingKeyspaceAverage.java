@@ -29,6 +29,7 @@ public class DecayingKeyspaceAverage implements RunningAverage {
 		avg = (BootstrappingDecayingRunningAverage) a.clone();
 	}
 
+	@Override
 	public synchronized Object clone() {
 		return new DecayingKeyspaceAverage(avg);
 	}

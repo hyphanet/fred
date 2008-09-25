@@ -52,6 +52,7 @@ public class StartupToadlet extends Toadlet {
 		}
 	}
 
+	@Override
 	public String supportedMethods() {
 		return "GET";
 	}

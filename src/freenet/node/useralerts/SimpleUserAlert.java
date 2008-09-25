@@ -16,6 +16,7 @@ public class SimpleUserAlert extends AbstractUserAlert {
 		super(canDismiss, title, text, shortText, new HTMLNode("div", text), type, true, L10n.getString("UserAlert.hide"), true, userIdentifier);
 	}
 
+	@Override
 	public void isValid(boolean validity) {
 		// Do nothing
 	}

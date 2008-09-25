@@ -56,7 +56,8 @@ public class CipherInputStream extends FilterInputStream {
     }
 
     //int read = 0;
-    public int read() throws IOException {
+    @Override
+	public int read() throws IOException {
         if (needIV) {
             ctx.readIV(in);
             needIV = false;
@@ -69,7 +70,8 @@ public class CipherInputStream extends FilterInputStream {
         return (rv==-1 ? -1 : ctx.decipher(rv));
     }
 
-    public int read(byte[] b, int off, int len) throws IOException {
+    @Override
+	public int read(byte[] b, int off, int len) throws IOException {
         if (needIV) {
             ctx.readIV(in);
             needIV = false;
@@ -85,7 +87,8 @@ public class CipherInputStream extends FilterInputStream {
             return -1;
     }
 
-    public int available() throws IOException {
+    @Override
+	public int available() throws IOException {
         int r = in.available();
         return (needIV ? Math.max(0, r - ctx.lengthIV()) : r);
     }

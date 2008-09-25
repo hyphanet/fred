@@ -28,14 +28,17 @@ class ErrorArchiveStoreItem extends ArchiveStoreItem {
 	 * Throws an exception with the given error message, because this file could not be
 	 * extracted from the archive.
 	 */
+	@Override
 	Bucket getDataOrThrow() throws ArchiveFailureException {
 		throw new ArchiveFailureException(error);
 	}
 
+	@Override
 	public long spaceUsed() {
 		return 0;
 	}
 
+	@Override
 	Bucket getReaderBucket() throws ArchiveFailureException {
 		throw new ArchiveFailureException(error);
 	}

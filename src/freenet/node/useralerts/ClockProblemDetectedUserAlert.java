@@ -22,6 +22,7 @@ public class ClockProblemDetectedUserAlert extends AbstractUserAlert {
 		super(false, null, null, null, null, UserAlert.CRITICAL_ERROR, true, null, false, null);
 	}
 
+	@Override
 	public String getTitle() {
 		return l10n("title");
 	}
@@ -30,18 +31,22 @@ public class ClockProblemDetectedUserAlert extends AbstractUserAlert {
 		return L10n.getString("ClockProblemDetectedUserAlert."+key);
 	}
 
+	@Override
 	public String getText() {
 		return l10n("text");
 	}
 	
+	@Override
 	public String getShortText() {
 		return l10n("shortText");
 	}
 
+	@Override
 	public HTMLNode getHTMLText() {
 		return new HTMLNode("div", getText());
 	}
 
+	@Override
 	public boolean userCanDismiss() {
 		return false;
 	}

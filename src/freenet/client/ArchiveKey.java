@@ -15,6 +15,7 @@ public class ArchiveKey {
 		filename = filename2;
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if((o == null) || !(o instanceof ArchiveKey)) return false;
 		if(this == o) return true;
@@ -23,10 +24,12 @@ public class ArchiveKey {
 		return (cmp.key.equals(key) && cmp.filename.equals(filename));
 	}
 	
+	@Override
 	public int hashCode() {
 		return key.hashCode() ^ filename.hashCode();
 	}
 	
+	@Override
 	public String toString() {
 		return key+":"+filename;
 	}

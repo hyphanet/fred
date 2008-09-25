@@ -160,7 +160,8 @@ public final class FrostMessage {
         this.isValid = isValid;
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         return getSubject();
     }
     public String getContent() {

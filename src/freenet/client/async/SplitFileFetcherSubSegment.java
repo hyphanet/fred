@@ -66,19 +66,23 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
+	@Override
 	public boolean dontCache() {
 		return !ctx.cacheLocalRequests;
 	}
 
+	@Override
 	public FetchContext getContext() {
 		return ctx;
 	}
 
+	@Override
 	public Object chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
 		if(cancelled) return null;
 		return removeRandomBlockNum(keys, context, container);
 	}
 	
+	@Override
 	public ClientKey getKey(Object token, ObjectContainer container) {
 		if(persistent) {
 			container.activate(this, 1);
@@ -108,6 +112,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	 * Fetch the array from the segment because we need to include *ALL* keys, especially
 	 * those on cooldown queues. This is important when unregistering.
 	 */
+	@Override
 	public Object[] allKeys(ObjectContainer container) {
 		if(persistent) {
 			container.activate(this, 1);
@@ -119,6 +124,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	/**
 	 * Just those keys which are eligible to be started now.
 	 */
+	@Override
 	public Object[] sendableKeys(ObjectContainer container) {
 		if(persistent) {
 			container.activate(this, 1);
@@ -187,6 +193,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 	}
 
+	@Override
 	public boolean hasValidKeys(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);
@@ -232,6 +239,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		return retval;
 	}
 	
+	@Override
 	public boolean ignoreStore() {
 		return ctx.ignoreStore;
 	}
@@ -361,6 +369,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 	}
 	
+	@Override
 	public void onSuccess(ClientKeyBlock block, boolean fromStore, Object token, ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);
@@ -438,19 +447,23 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		return data;
 	}
 
+	@Override
 	public RequestClient getClient() {
 		return parent.getClient();
 	}
 
+	@Override
 	public ClientRequester getClientRequest() {
 		return parent;
 	}
 
+	@Override
 	public short getPriorityClass(ObjectContainer container) {
 		if(persistent) container.activate(parent, 1);
 		return parent.priorityClass;
 	}
 
+	@Override
 	public int getRetryCount() {
 		return retryCount;
 	}
@@ -469,6 +482,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 	}
 
+	@Override
 	public boolean isCancelled(ObjectContainer container) {
 		if(persistent) {
 			container.activate(parent, 1);
@@ -488,6 +502,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 	}
 
+	@Override
 	public boolean isSSK() {
 		// Not allowed in splitfiles
 		return false;
@@ -611,6 +626,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		return false;
 	}
 
+	@Override
 	public String toString() {
 		return super.toString()+":"+retryCount+"/"+segment+'('+(blockNums == null ? "null" : String.valueOf(blockNums.size()))+"),tempid="+objectHash(); 
 	}
@@ -707,6 +723,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 	}
 
+	@Override
 	public long getCooldownWakeup(Object token, ObjectContainer container) {
 		if(persistent) {
 			container.activate(this, 1);
@@ -716,6 +733,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		return ret;
 	}
 
+	@Override
 	public void requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(segment, 1);
@@ -734,6 +752,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 	}
 
+	@Override
 	public long getCooldownWakeupByKey(Key key, ObjectContainer container) {
 		/* Only deactivate if was deactivated in the first place. 
 		 * See the removePendingKey() stack trace: Segment is the listener (getter) ! */
@@ -751,6 +770,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		return ret;
 	}
 
+	@Override
 	public void resetCooldownTimes(ObjectContainer container) {
 		if(persistent) {
 			container.activate(this, 1);

@@ -25,6 +25,7 @@ public class DiskDirPutFile extends DirPutFile {
 		file = new File(s);
 	}
 
+	@Override
 	protected String guessMIME() {
 		String mime = super.guessMIME();
 		if(mime == null) {
@@ -33,6 +34,7 @@ public class DiskDirPutFile extends DirPutFile {
 		return mime;
 	}
 
+	@Override
 	public Bucket getData() {
 		return new FileBucket(file, true, false, false, false, false);
 	}

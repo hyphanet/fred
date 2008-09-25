@@ -48,6 +48,7 @@ public class ArrayBucket implements Bucket {
 		return new ArrayBucketInputStream();
 	}
 
+	@Override
 	public String toString() {
 		StringBuilder s = new StringBuilder(250);
 		for (byte[] b : data) {
@@ -104,6 +105,7 @@ public class ArrayBucket implements Bucket {
 			i = data.iterator();
 		}
 
+		@Override
 		public int read() {
 			return priv_read();
 		}
@@ -125,10 +127,12 @@ public class ArrayBucket implements Bucket {
 			}
 		}
 
+		@Override
 		public int read(byte[] b) {
 			return priv_read(b, 0, b.length);
 		}
 
+		@Override
 		public int read(byte[] b, int off, int len) {
 			return priv_read(b, off, len);
 		}
@@ -150,6 +154,7 @@ public class ArrayBucket implements Bucket {
 			}
 		}
 
+		@Override
 		public int available() {
 			if (in == null) {
 				if (i.hasNext()) {

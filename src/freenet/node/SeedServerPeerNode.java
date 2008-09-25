@@ -22,22 +22,27 @@ public class SeedServerPeerNode extends PeerNode {
 		super(fs, node2, crypto, peers, fromLocal, false, mangler, true);
 	}
 
+	@Override
 	public PeerNodeStatus getStatus(boolean noHeavy) {
 		return new PeerNodeStatus(this, noHeavy);
 	}
 
+	@Override
 	public boolean isDarknet() {
 		return false;
 	}
 
+	@Override
 	public boolean isOpennet() {
 		return false;
 	}
 
+	@Override
 	public boolean isRealConnection() {
 		return false;
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if(o == this) return true;
 		// Only equal to seednode of its own type.
@@ -47,18 +52,22 @@ public class SeedServerPeerNode extends PeerNode {
 		} else return false;
 	}
 	
+	@Override
 	public void onSuccess(boolean insert, boolean ssk) {
 		// Ignore
 	}
 
+	@Override
 	public boolean isRoutingCompatible() {
 		return false;
 	}
 
+	@Override
 	public boolean recordStatus() {
 		return false;
 	}
 
+	@Override
 	protected void sendInitialMessages() {
 		super.sendInitialMessages();
 		final OpennetManager om = node.getOpennet();
@@ -91,24 +100,29 @@ public class SeedServerPeerNode extends PeerNode {
 		return (InetAddress[]) v.toArray(new InetAddress[v.size()]);
 	}
 	
+	@Override
 	public boolean handshakeUnknownInitiator() {
 		return true;
 	}
 
+	@Override
 	public int handshakeSetupType() {
 		return FNPPacketMangler.SETUP_OPENNET_SEEDNODE;
 	}
 
+	@Override
 	public boolean disconnected(boolean dumpMessageQueue, boolean dumpTrackers) {
 		boolean ret = super.disconnected(dumpMessageQueue, dumpTrackers);
 		node.peers.disconnect(this, false, false);
 		return ret;
 	}
 
+	@Override
 	protected boolean generateIdentityFromPubkey() {
 		return false;
 	}
 	
+	@Override
 	public boolean shouldDisconnectAndRemoveNow() {
 		OpennetManager om = node.getOpennet();
 		if(om == null) return true;

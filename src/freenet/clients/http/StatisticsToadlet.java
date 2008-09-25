@@ -80,6 +80,7 @@ public class StatisticsToadlet extends Toadlet {
 		peers = node.peers;
 	}
 
+	@Override
 	public String supportedMethods() {
 		return "GET";
 	}

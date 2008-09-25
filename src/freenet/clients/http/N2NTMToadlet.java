@@ -31,10 +31,12 @@ public class N2NTMToadlet extends Toadlet {
 		this.core = core;
 	}
 
+	@Override
 	public String supportedMethods() {
 		return "GET, POST";
 	}
 
+	@Override
 	public void handleGet(URI uri, HTTPRequest request, ToadletContext ctx)
 			throws ToadletContextClosedException, IOException,
 			RedirectException {
@@ -114,6 +116,7 @@ public class N2NTMToadlet extends Toadlet {
 		return infobox;
 	}
 
+	@Override
 	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx)
 			throws ToadletContextClosedException, IOException,
 			RedirectException {

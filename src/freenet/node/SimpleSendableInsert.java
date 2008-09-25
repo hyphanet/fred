@@ -56,21 +56,25 @@ public class SimpleSendableInsert extends SendableInsert {
 		this.scheduler = scheduler;
 	}
 	
+	@Override
 	public void onSuccess(Object keyNum, ObjectContainer container, ClientContext context) {
 		// Yay!
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Finished insert of "+block);
 	}
 
+	@Override
 	public void onFailure(LowLevelPutException e, Object keyNum, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Failed insert of "+block+": "+e);
 	}
 
+	@Override
 	public short getPriorityClass(ObjectContainer container) {
 		return prioClass;
 	}
 
+	@Override
 	public int getRetryCount() {
 		// No retries.
 		return 0;
@@ -100,14 +104,17 @@ public class SimpleSendableInsert extends SendableInsert {
 		};
 	}
 
+	@Override
 	public RequestClient getClient() {
 		return client;
 	}
 
+	@Override
 	public ClientRequester getClientRequest() {
 		return null;
 	}
 
+	@Override
 	public boolean isCancelled(ObjectContainer container) {
 		return finished;
 	}
@@ -138,16 +145,19 @@ public class SimpleSendableInsert extends SendableInsert {
 		return false;
 	}
 
+	@Override
 	public synchronized Object[] allKeys(ObjectContainer container) {
 		if(finished) return new Object[] {};
 		return new Object[] { 0 };
 	}
 
+	@Override
 	public synchronized Object[] sendableKeys(ObjectContainer container) {
 		if(finished) return new Object[] {};
 		return new Object[] { 0 };
 	}
 
+	@Override
 	public synchronized Object chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
 		if(finished) return null;
 		else

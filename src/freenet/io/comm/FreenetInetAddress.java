@@ -168,6 +168,7 @@ public class FreenetInetAddress {
         // until it's needed to work better with dynamic DNS hostnames
 	}
 	
+	@Override
 	public boolean equals(Object o) {
 		if(!(o instanceof FreenetInetAddress)) {
 			return false;
@@ -300,6 +301,7 @@ public class FreenetInetAddress {
 	    }
 	}
 
+	@Override
 	public int hashCode() {
 		if(hostname != null) {
 			return hostname.hashCode(); // Was set at creation, so it can safely be used here.
@@ -308,6 +310,7 @@ public class FreenetInetAddress {
 		}
 	}
 	
+	@Override
 	public String toString() {
 		if(hostname != null) {
 			return hostname;

@@ -14,7 +14,8 @@ public final class RijndaelPCFBMode extends PCFBMode {
 
     // Refills the encrypted buffer with data.
     //private synchronized void refillBuffer() {
-    protected void refillBuffer() {
+    @Override
+	protected void refillBuffer() {
         // Encrypt feedback into result
         ((Rijndael)c).encipher(feedback_register, feedback_register, a, t);
 

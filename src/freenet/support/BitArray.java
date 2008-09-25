@@ -85,6 +85,7 @@ public class BitArray implements WritableToDataOutputStream {
 		return b & 0xFF;
 	}
 
+	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder(this._size);
 		for (int x=0; x<_size; x++) {
@@ -110,6 +111,7 @@ public class BitArray implements WritableToDataOutputStream {
 		return _size;
 	}
 	
+	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof BitArray)) {
 			return false;
@@ -126,6 +128,7 @@ public class BitArray implements WritableToDataOutputStream {
 		return true;
 	}
 	
+	@Override
 	public int hashCode() {
 	    return Fields.hashCode(_bits);
 	}

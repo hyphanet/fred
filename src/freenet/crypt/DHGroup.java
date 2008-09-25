@@ -58,14 +58,17 @@ public class DHGroup extends CryptoKey {
 		return g;
 	}
 
+	@Override
 	public String keyType() {
 		return "DHG-" + p.bitLength();
 	}
 
+	@Override
 	public byte[] fingerprint() {
 		return fingerprint(new BigInteger[] { p, g });
 	}
 
+	@Override
 	public byte[] asBytes() {
 		byte[] pb = Util.MPIbytes(p);
 		byte[] gb = Util.MPIbytes(g);

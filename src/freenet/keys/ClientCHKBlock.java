@@ -31,7 +31,8 @@ public class ClientCHKBlock extends CHKBlock implements ClientKeyBlock {
 
 	final ClientCHK key;
 	
-    public String toString() {
+    @Override
+	public String toString() {
         return super.toString()+",key="+key;
     }
     

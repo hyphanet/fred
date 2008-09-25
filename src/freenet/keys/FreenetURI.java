@@ -86,6 +86,7 @@ public class FreenetURI implements Cloneable {
 	static final String[] VALID_KEY_TYPES =
 		new String[]{"CHK", "SSK", "KSK", "USK"};
 
+	@Override
 	public int hashCode() {
 		if(hasHashCode)
 			return hashCode;
@@ -108,6 +109,7 @@ public class FreenetURI implements Cloneable {
 		return x;
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if(!(o instanceof FreenetURI))
 			return false;
@@ -142,6 +144,7 @@ public class FreenetURI implements Cloneable {
 		}
 	}
 
+	@Override
 	public final Object clone() {
 		return new FreenetURI(this);
 	}
@@ -534,6 +537,7 @@ public class FreenetURI implements Cloneable {
 			suggestedEdition);
 	}
 
+	@Override
 	public String toString() {
 		return toString(false, false);
 	}

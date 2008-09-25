@@ -45,17 +45,19 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 		dirname = new File(fnam);
 	}
 
+	@Override
 	public String getName() {
 		return NAME;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		if(!handler.server.core.allowUploadFrom(dirname))
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "Not allowed to upload from "+dirname, identifier, global);
 		// Create a directory listing of Buckets of data, mapped to ManifestElement's.
 		// Directories are sub-HashMap's.
-		HashMap buckets = makeBucketsByName(dirname, "");
+		HashMap<String, Object> buckets = makeBucketsByName(dirname, "");
 		handler.startClientPutDir(this, buckets, true);
 	}
 
@@ -64,12 +66,12 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
      * and its subdirs.
      * @throws MessageInvalidException 
      */
-    private HashMap makeBucketsByName(File thisdir, String prefix) throws MessageInvalidException {
+    private HashMap<String, Object> makeBucketsByName(File thisdir, String prefix) throws MessageInvalidException {
     	
     	if(Logger.shouldLog(Logger.MINOR, this))
     		Logger.minor(this, "Listing directory: "+thisdir);
     	
-    	HashMap ret = new HashMap();
+    	HashMap<String, Object> ret = new HashMap<String, Object>();
     	
     	File filelist[] = thisdir.listFiles();
     	if(filelist == null)
@@ -85,7 +87,8 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 	        		
 	        		ret.put(f.getName(), new ManifestElement(f.getName(), prefix + f.getName(), bucket, DefaultMIMETypes.guessMIMEType(f.getName(), true), f.length()));
 	        	} else if(filelist[i].isDirectory()) {
-	        		HashMap subdir = makeBucketsByName(new File(thisdir, filelist[i].getName()), prefix + filelist[i].getName() + '/');
+	        		HashMap<String, Object> subdir = makeBucketsByName(new File(thisdir, filelist[i].getName()), prefix
+					        + filelist[i].getName() + '/');
 	        		ret.put(filelist[i].getName(), subdir);
 	        	} else if(!allowUnreadableFiles) {
 	        		throw new MessageInvalidException(ProtocolErrorMessage.FILE_NOT_FOUND, "Not directory and not file: "+filelist[i], identifier, global);
@@ -98,6 +101,7 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
     	return ret;
 	}
 
+	@Override
 	long dataLength() {
 		return 0;
 	}
@@ -106,10 +110,12 @@ public class ClientPutDiskDirMessage extends ClientPutDirMessage {
 		return identifier;
 	}
 
+	@Override
 	public void readFrom(InputStream is, BucketFactory bf, FCPServer server) throws IOException, MessageInvalidException {
 		// Do nothing
 	}
 
+	@Override
 	protected void writeData(OutputStream os) throws IOException {
 		// Do nothing
 	}

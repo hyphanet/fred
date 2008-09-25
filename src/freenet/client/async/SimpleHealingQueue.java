@@ -66,18 +66,22 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 			data.free();
 	}
 	
+	@Override
 	public void onMajorProgress(ObjectContainer container) {
 		// Ignore
 	}
 
+	@Override
 	public FreenetURI getURI() {
 		return FreenetURI.EMPTY_CHK_URI;
 	}
 
+	@Override
 	public boolean isFinished() {
 		return false;
 	}
 
+	@Override
 	public void notifyClients(ObjectContainer container, ClientContext context) {
 		// Do nothing
 	}
@@ -126,6 +130,7 @@ public class SimpleHealingQueue extends BaseClientPutter implements HealingQueue
 		// Ignore
 	}
 
+	@Override
 	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 		// Ignore
 	}

@@ -277,6 +277,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 			this.uid=uid;
 			this.secret=secret;
 		}
+		@Override
 		public String toString() {
 			return "Secret("+uid+"/"+secret+")";
 		}
@@ -296,6 +297,7 @@ public class NetworkIDManager implements Runnable, Comparator {
 		RunningAverage fHtl=new BootstrappingDecayingRunningAverage(MAX_HTL, 0.0, MAX_HTL, 200, null);
 		RunningAverage sDawn=new BootstrappingDecayingRunningAverage(0.0, 0.0, MAX_HTL, 200, null);
 		RunningAverage fDawn=new BootstrappingDecayingRunningAverage(0.0, 0.0, MAX_HTL, 200, null);
+		@Override
 		public String toString() {
 			return "percent="+average.currentValue();
 		}
@@ -359,9 +361,11 @@ public class NetworkIDManager implements Runnable, Comparator {
 				diff=max;
 			return (short)(htl-diff);
 		}
+		@Override
 		public boolean equals(Object o) {
 			return (o instanceof PeerNode ? via.equals((PeerNode) o) : false);
 		}
+		@Override
 		public int hashCode() {
 			return via.hashCode();
 		}

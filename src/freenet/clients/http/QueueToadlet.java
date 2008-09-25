@@ -98,6 +98,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		loadCompletedIdentifiers();
 	}
 	
+	@Override
 	public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		
 		if(!core.hasLoadedQueue()) {
@@ -447,6 +448,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		writeHTMLReply(context, 400, "Bad request", pageNode.generate());
 	}
 
+	@Override
 	public void handleGet(URI uri, final HTTPRequest request, final ToadletContext ctx) 
 	throws ToadletContextClosedException, IOException, RedirectException {
 		
@@ -1226,6 +1228,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		return table;
 	}
 
+	@Override
 	public String supportedMethods() {
 		return "GET, POST";
 	}
@@ -1392,6 +1395,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 					new String[] { "<a href=\"/queue/"+uri.toACIIString()+"\">", "</a>", "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size) } );
 			UserAlert alert = 
 			new SimpleHTMLUserAlert(true, title, title, text, UserAlert.MINOR) {
+				@Override
 				public void onDismiss() {
 					synchronized(completedRequestIdentifiers) {
 						completedRequestIdentifiers.remove(identifier);
@@ -1401,6 +1405,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 					}
 					saveCompletedIdentifiersOffThread();
 				}
+				@Override
 				public boolean isEventNotification() {
 					return true;
 				}
@@ -1426,6 +1431,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 					new String[] { "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size) } );
 			UserAlert alert =
 			new SimpleHTMLUserAlert(true, title, title, text, UserAlert.MINOR) {
+				@Override
 				public void onDismiss() {
 					synchronized(completedRequestIdentifiers) {
 						completedRequestIdentifiers.remove(identifier);
@@ -1435,6 +1441,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 					}
 					saveCompletedIdentifiersOffThread();
 				}
+				@Override
 				public boolean isEventNotification() {
 					return true;
 				}
@@ -1455,6 +1462,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 					new String[] { "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size), Integer.toString(files) } );
 			UserAlert alert = 
 			new SimpleHTMLUserAlert(true, title, title, text, UserAlert.MINOR) {
+				@Override
 				public void onDismiss() {
 					synchronized(completedRequestIdentifiers) {
 						completedRequestIdentifiers.remove(identifier);
@@ -1464,6 +1472,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 					}
 					saveCompletedIdentifiersOffThread();
 				}
+				@Override
 				public boolean isEventNotification() {
 					return true;
 				}

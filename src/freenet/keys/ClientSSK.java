@@ -111,6 +111,7 @@ public class ClientSSK extends ClientKey {
 		this.pubKey = pubKey;
 	}
 	
+	@Override
 	public FreenetURI getURI() {
 		return new FreenetURI("SSK", docName, pubKeyHash, cryptoKey, getExtraBytes());
 	}
@@ -131,6 +132,7 @@ public class ClientSSK extends ClientKey {
 		return extra;
 	}
 
+	@Override
 	public Key getNodeKey() {
 		try {
 			if(ehDocname == null)
@@ -150,6 +152,7 @@ public class ClientSSK extends ClientKey {
 		return pubKey;
 	}
 
+	@Override
 	public String toString() {
 		return "ClientSSK:"+getURI().toString();
 	}

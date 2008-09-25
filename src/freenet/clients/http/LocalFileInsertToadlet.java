@@ -40,6 +40,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 	 * @see freenet.clients.http.Toadlet#handleGet(java.net.URI,
 	 *      freenet.clients.http.ToadletContext)
 	 */
+	@Override
 	public void handleGet(URI uri, HTTPRequest request, ToadletContext toadletContext) throws ToadletContextClosedException, IOException, RedirectException {
 		FreenetURI furi = null;
 		String key = request.getParam("key");
@@ -177,6 +178,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 	/**
 	 * @see freenet.clients.http.Toadlet#supportedMethods()
 	 */
+	@Override
 	public String supportedMethods() {
 		return "GET,POST";
 	}

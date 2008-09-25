@@ -37,18 +37,22 @@ public class FCPPluginReply extends DataCarryingMessage {
 		plugparams = fs;
 	}
 
+	@Override
 	String getIdentifier() {
 		return identifier;
 	}
 
+	@Override
 	boolean isGlobal() {
 		return false;
 	}
 
+	@Override
 	long dataLength() {
 		return dataLength;
 	}
 	
+	@Override
 	String getEndString() {
 		if (dataLength() > 0)
 			return "Data";
@@ -56,6 +60,7 @@ public class FCPPluginReply extends DataCarryingMessage {
 			return "EndMessage";
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		sfs.putSingle("PluginName", plugname);
@@ -66,10 +71,12 @@ public class FCPPluginReply extends DataCarryingMessage {
 		return sfs;
 	}
 
+	@Override
 	public String getName() {
 		return NAME;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, NAME + " goes from server to client not the other way around", null, false);
 	}

@@ -30,14 +30,17 @@ public class GetPluginInfo extends FCPMessage {
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "GetPluginInfo must contain a PluginName field", null, false);
 	}
 	
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		return new SimpleFieldSet(true);
 	}
 	
+	@Override
 	public String getName() {
 		return NAME;
 	}
 	
+	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		if(detailed && !handler.hasFullAccess()) {

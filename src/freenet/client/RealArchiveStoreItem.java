@@ -45,6 +45,7 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 	/**
 	 * Return the estimated space used by the data.
 	 */
+	@Override
 	long spaceUsed() {
 		return spaceUsed;
 	}
@@ -54,10 +55,12 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 		bucket.free();
 	}
 
+	@Override
 	Bucket getDataOrThrow() throws ArchiveFailureException {
 		return dataAsBucket();
 	}
 
+	@Override
 	Bucket getReaderBucket() throws ArchiveFailureException {
 		return mb.getReaderBucket();
 	}

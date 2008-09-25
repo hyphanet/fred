@@ -24,6 +24,7 @@ public class PeerMessage extends FCPMessage {
 		this.identifier = identifier;
 	}
 	
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = pn.exportFieldSet();
 		if(withMetadata) {
@@ -43,10 +44,12 @@ public class PeerMessage extends FCPMessage {
 		return fs;
 	}
 
+	@Override
 	public String getName() {
 		return name;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Peer goes from server to client not the other way around", null, false);

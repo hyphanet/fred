@@ -227,6 +227,7 @@ public class NativeBigInteger extends BigInteger {
 		this(integer.toByteArray());
 	}
 
+	@Override
 	public BigInteger modPow(BigInteger exponent, BigInteger m) {
 		if(_nativeOk)
 			return new NativeBigInteger(nativeModPow(toByteArray(), exponent.toByteArray(), m.toByteArray()));
@@ -234,12 +235,14 @@ public class NativeBigInteger extends BigInteger {
 			return new NativeBigInteger(super.modPow(exponent, m));
 	}
 
+	@Override
 	public byte[] toByteArray() {
 		if(cachedBa == null) //Since we are immutable it is safe to never update the cached ba after it has initially been generated
 			cachedBa = super.toByteArray();
 		return cachedBa;
 	}
 
+	@Override
 	public String toString(int radix) {
 		if(radix == 16)
 			return toHexString();
@@ -251,6 +254,7 @@ public class NativeBigInteger extends BigInteger {
 		return HexUtil.bytesToHex(buf);
 	}
 
+	@Override
 	public double doubleValue() {
 		if(_nativeOk)
 			return nativeDoubleValue(toByteArray());

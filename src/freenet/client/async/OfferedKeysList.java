@@ -70,16 +70,19 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		return keys.isEmpty();
 	}
 
+	@Override
 	public Object[] allKeys(ObjectContainer container) {
 		// Not supported.
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public Object[] sendableKeys(ObjectContainer container) {
 		// Not supported.
 		throw new UnsupportedOperationException();
 	}
 
+	@Override
 	public synchronized Object chooseKey(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
 		assert(keysList.size() == keys.size());
 		if(keys.size() == 1) {
@@ -106,6 +109,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		return null;
 	}
 
+	@Override
 	public synchronized boolean hasValidKeys(KeysFetchingLocally fetching, ObjectContainer container, ClientContext context) {
 		assert(keysList.size() == keys.size());
 		if(keys.size() == 1) {
@@ -125,23 +129,28 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		return false;
 	}
 
+	@Override
 	public RequestClient getClient() {
 		return this;
 	}
 
+	@Override
 	public ClientRequester getClientRequest() {
 		// FIXME is this safe?
 		return null;
 	}
 
+	@Override
 	public short getPriorityClass(ObjectContainer container) {
 		return priorityClass;
 	}
 
+	@Override
 	public int getRetryCount() {
 		return 0; // All keys have equal chance even if they've been tried before.
 	}
 
+	@Override
 	public void internalError(Throwable t, RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
 		Logger.error(this, "Internal error: "+t, t);
 	}
@@ -173,6 +182,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		return false;
 	}
 
+	@Override
 	public boolean isCancelled(ObjectContainer container) {
 		return false;
 	}
@@ -186,6 +196,7 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		assert(keysList.size() == keys.size());
 	}
 
+	@Override
 	public Key getNodeKey(Object token, ObjectContainer container) {
 		return (Key) token;
 	}

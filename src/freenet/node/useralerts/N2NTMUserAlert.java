@@ -31,11 +31,13 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 		this.receivedTime = receivedTime;
 	}
 	
+	@Override
 	public String getTitle() {
 		return l10n("title", new String[] { "number", "peername", "peer" },
 				new String[] { Integer.toString(fileNumber), sourcePeerNode.getName(), sourcePeerNode.getPeer().toString() });
 	}
 	
+	@Override
 	public String getText() {
 		return 
 			l10n("header", new String[] { "from", "composed", "sent", "received" },
@@ -44,10 +46,12 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 			messageText;
 	}
 
+	@Override
 	public String getShortText() {
 		return l10n("headerShort", "from", sourceNodename);
 	}
 	
+	@Override
 	public HTMLNode getHTMLText() {
 		HTMLNode alertNode = new HTMLNode("div");
 		alertNode.addChild("p",
@@ -64,6 +68,7 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 		return alertNode;
 	}
 
+	@Override
 	public String dismissButtonText(){
 		return l10n("delete");
 	}
@@ -80,6 +85,7 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 		return L10n.getString("N2NTMUserAlert."+key, pattern, value);
 	}
 
+	@Override
 	public void onDismiss() {
 		sourcePeerNode.deleteExtraPeerDataFile(fileNumber);
 	}

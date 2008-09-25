@@ -85,6 +85,7 @@ public class USK extends BaseClientKey {
 			siteName.hashCode() ^ (int)suggestedEdition ^ (int)(suggestedEdition >> 32);
 	}
 
+	@Override
 	public FreenetURI getURI() {
 		return new FreenetURI(pubKeyHash, cryptoKey, ClientSSK.getExtraBytes(cryptoAlgorithm), siteName, suggestedEdition);
 	}
@@ -111,6 +112,7 @@ public class USK extends BaseClientKey {
 		return copy(0);
 	}
 	
+	@Override
 	public boolean equals(Object o) {
 		if(o == null || !(o instanceof USK)) return false;
 		return equals(o, true);
@@ -128,6 +130,7 @@ public class USK extends BaseClientKey {
 		return false;
 	}
 
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}
@@ -136,6 +139,7 @@ public class USK extends BaseClientKey {
 		return new FreenetURI("SSK", siteName, pubKeyHash, cryptoKey, ClientSSK.getExtraBytes(cryptoAlgorithm));
 	}
 	
+	@Override
 	public String toString() {
 		return super.toString()+ ':' +getURI();
 	}

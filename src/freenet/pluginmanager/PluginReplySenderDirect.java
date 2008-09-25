@@ -23,6 +23,7 @@ public class PluginReplySenderDirect extends PluginReplySender {
 		target = target2;
 	}
 
+	@Override
 	public void send(final SimpleFieldSet params, final Bucket bucket) {
 		
 		node.executor.execute(new Runnable() {

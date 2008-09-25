@@ -21,8 +21,9 @@ import freenet.support.api.BucketFactory;
 import freenet.support.io.PersistentTempBucketFactory;
 
 /**
+ * <pre>
  * ClientPutComplexDir
- * < ... standard ClientPutDir headers ... >
+ * &lt; ... standard ClientPutDir headers ... &gt;
  * Files.0.Name=hello.txt
  * Files.0.UploadFrom=direct
  * Files.0.Metadata.ContentType=text/plain
@@ -41,14 +42,15 @@ import freenet.support.io.PersistentTempBucketFactory;
  *  order for UploadFrom=direct. they must be sequential and start at 0).
  * ...
  * End
- * <data from above direct uploads, ***in alphabetical order***>
+ * &lt;data from above direct uploads, ***in alphabetical order***&gt;
+ * </pre>
  */
 public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 
 	/** The files attached to this message, in a directory hierarchy */
-	private final HashMap filesByName;
+	private final HashMap<String, Object /* <HashMap || DirPutFile> */> filesByName;
 	/** Any files we want to read data from */
-	private final LinkedList filesToRead;
+	private final LinkedList<DirPutFile> filesToRead;
 	/** Total number of bytes of attached data */
 	private final long attachedBytes;
 	
@@ -56,8 +58,8 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 		// Parse the standard ClientPutDir headers - URI, etc.
 		super(fs);
 		
-		filesByName = new HashMap();
-		filesToRead = new LinkedList();
+		filesByName = new HashMap<String, Object>();
+		filesToRead = new LinkedList<DirPutFile>();
 		long totalBytes = 0;
 		// Now parse the meat
 		SimpleFieldSet files = fs.subset("Files");
@@ -87,7 +89,8 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 		addFile(filesByName, f.getName(), f);
 	}
 	
-	private void addFile(HashMap byName, String name, DirPutFile f) throws MessageInvalidException {
+	@SuppressWarnings("unchecked")
+	private void addFile(HashMap<String, Object> byName, String name, DirPutFile f) throws MessageInvalidException {
 		int idx = name.indexOf('/');
 		if(idx == -1) {
 			byName.put(name, f);
@@ -96,26 +99,28 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 			String after = name.substring(idx+1);
 			Object o = byName.get(before);
 			if(o != null) {
-				if(o instanceof HashMap) {
-					addFile((HashMap)o, after, f);
+				if (o instanceof HashMap) {
+					addFile((HashMap<String, Object>) o, after, f);
 					return;
 				} else {
 					throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "Cannot be both a file and a directory: "+before, identifier, global);
 				}
 			} else {
-				o = new HashMap();
+				o = new HashMap<Object, Object>();
 				byName.put(before, o);
-				addFile((HashMap)o, after, f);
+				addFile((HashMap<String, Object>) o, after, f);
 			}
 		}
 	}
 
 	static final String NAME = "ClientPutComplexDir";
 	
+	@Override
 	public String getName() {
 		return NAME;
 	}
 
+	@Override
 	long dataLength() {
 		return attachedBytes;
 	}
@@ -124,27 +129,30 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 		return identifier;
 	}
 
+	@Override
 	public void readFrom(InputStream is, BucketFactory bf, FCPServer server) throws IOException, MessageInvalidException {
-		Iterator i = filesToRead.iterator();
+		Iterator<DirPutFile> i = filesToRead.iterator();
 		while(i.hasNext()) {
 			DirectDirPutFile f = (DirectDirPutFile) i.next();
 			f.read(is);
 		}
 	}
 
+	@Override
 	protected void writeData(OutputStream os) throws IOException {
-		Iterator i = filesToRead.iterator();
+		Iterator<DirPutFile> i = filesToRead.iterator();
 		while(i.hasNext()) {
 			DirectDirPutFile f = (DirectDirPutFile) i.next();
 			f.write(os);
 		}
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		// Convert the hierarchical hashmap's of DirPutFile's to hierarchical hashmap's
 		// of ManifestElement's.
 		// Then simply create the ClientPutDir.
-		HashMap manifestElements = new HashMap();
+		HashMap<String, Object> manifestElements = new HashMap<String, Object>();
 		convertFilesByNameToManifestElements(filesByName, manifestElements, node);
 		handler.startClientPutDir(this, manifestElements, false);
 	}
@@ -153,15 +161,16 @@ public class ClientPutComplexDirMessage extends ClientPutDirMessage {
 	 * Convert a hierarchy of HashMap's containing DirPutFile's into a hierarchy of
 	 * HashMap's containing ManifestElement's.
 	 */
-	private void convertFilesByNameToManifestElements(HashMap filesByName, HashMap manifestElements, Node node) throws MessageInvalidException {
-		Iterator i = filesByName.entrySet().iterator();
-		while(i.hasNext()) {
-			Map.Entry entry = (Map.Entry) i.next();
-			String tempName = (String) entry.getKey();
+	@SuppressWarnings("unchecked")
+	private void convertFilesByNameToManifestElements(HashMap<String, Object> filesByName,
+	        HashMap<String, Object> manifestElements, Node node) throws MessageInvalidException {
+		
+		for (Map.Entry<String, Object> entry : filesByName.entrySet()) {
+			String tempName = entry.getKey();
 			Object val = entry.getValue();
 			if(val instanceof HashMap) {
-				HashMap h = (HashMap) val;
-				HashMap manifests = new HashMap();
+				HashMap<String, Object> h = (HashMap<String, Object>) val;
+				HashMap<String, Object> manifests = new HashMap<String, Object>();
 				manifestElements.put(tempName, manifests);
 				convertFilesByNameToManifestElements(h, manifests, node);
 			} else {

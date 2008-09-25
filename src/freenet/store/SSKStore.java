@@ -15,6 +15,7 @@ public class SSKStore extends StoreCallback {
 		this.pubkeyCache = pubkeyCache;
 	}
 	
+	@Override
 	public StorableBlock construct(byte[] data, byte[] headers,
 			byte[] routingKey, byte[] fullKey) throws SSKVerifyException {
 		if(data == null || headers == null) throw new SSKVerifyException("Need data and headers");
@@ -36,34 +37,42 @@ public class SSKStore extends StoreCallback {
 		store.put(b, key.getRoutingKey(), key.getFullKey(), b.getRawData(), b.getRawHeaders(), overwrite);
 	}
 	
+	@Override
 	public int dataLength() {
 		return SSKBlock.DATA_LENGTH;
 	}
 
+	@Override
 	public int fullKeyLength() {
 		return NodeSSK.FULL_KEY_LENGTH;
 	}
 
+	@Override
 	public int headerLength() {
 		return SSKBlock.TOTAL_HEADERS_LENGTH;
 	}
 
+	@Override
 	public int routingKeyLength() {
 		return NodeSSK.ROUTING_KEY_LENGTH;
 	}
 
+	@Override
 	public boolean storeFullKeys() {
 		return true;
 	}
 
+	@Override
 	public boolean collisionPossible() {
 		return true;
 	}
 
+	@Override
 	public boolean constructNeedsKey() {
 		return true;
 	}
 
+	@Override
 	public byte[] routingKeyFromFullKey(byte[] keyBuf) {
 		return NodeSSK.routingKeyFromFullKey(keyBuf);
 	}

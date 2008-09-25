@@ -236,7 +236,8 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     /** Receive failed. Not used internally; only used by CHKInsertHandler. */
     static final int RECEIVE_FAILED = 7;
     
-    public String toString() {
+    @Override
+	public String toString() {
         return super.toString()+" for "+uid;
     }
     

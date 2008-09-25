@@ -123,6 +123,7 @@ public class PacketThrottle {
 		return Math.max(MIN_DELAY, (long) (_roundTripTime / _simulatedWindowSize));
 	}
 
+	@Override
 	public synchronized String toString() {
 		return Double.toString((((PACKET_SIZE * 1000.0 / getDelay())) / 1024)) + " k/sec, (w: "
 				+ _simulatedWindowSize + ", r:" + _roundTripTime + ", d:"
@@ -312,6 +313,7 @@ public class PacketThrottle {
 			// Ignore
 		}
 		
+		@Override
 		public String toString() {
 			return super.toString()+":"+PacketThrottle.this.toString();
 		}

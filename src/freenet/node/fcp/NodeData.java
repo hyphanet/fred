@@ -25,6 +25,7 @@ public class NodeData extends FCPMessage {
 		this.identifier = identifier;
 	}
 	
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs;
 		if(giveOpennetRef) {
@@ -51,10 +52,12 @@ public class NodeData extends FCPMessage {
 		return fs;
 	}
 
+	@Override
 	public String getName() {
 		return name;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "NodeData goes from server to client not the other way around", identifier, false);

@@ -68,15 +68,15 @@ public class FCPConnectionHandler implements Closeable {
 	private FCPClient foreverClient;
 	private boolean failedGetForever;
 	final BucketFactory bf;
-	final HashMap requestsByIdentifier;
+	final HashMap<String, ClientRequest> requestsByIdentifier;
 	protected final String connectionIdentifier;
 	static boolean logMINOR;
 	private boolean killedDupe;
 
 	// We are confident that the given client can access those
-	private final HashMap checkedDirectories = new HashMap();
+	private final HashMap<String, DirectoryAccess> checkedDirectories = new HashMap<String, DirectoryAccess>();
 	// DDACheckJobs in flight
-	private final HashMap inTestDirectories = new HashMap();
+	private final HashMap<File, DDACheckJob> inTestDirectories = new HashMap<File, DDACheckJob>();
 	
 	public FCPConnectionHandler(Socket s, FCPServer server) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -84,7 +84,7 @@ public class FCPConnectionHandler implements Closeable {
 		this.server = server;
 		isClosed = false;
 		this.bf = server.core.tempBucketFactory;
-		requestsByIdentifier = new HashMap();
+		requestsByIdentifier = new HashMap<String, ClientRequest>();
 		this.inputHandler = new FCPConnectionInputHandler(this);
 		this.outputHandler = new FCPConnectionOutputHandler(this);
 		
@@ -108,7 +108,7 @@ public class FCPConnectionHandler implements Closeable {
 		synchronized(this) {
 			isClosed = true;
 			requests = new ClientRequest[requestsByIdentifier.size()];
-			requests = (ClientRequest[]) requestsByIdentifier.values().toArray(requests);
+			requests = requestsByIdentifier.values().toArray(requests);
 			dupe = killedDupe;
 		}
 		for(int i=0;i<requests.length;i++)
@@ -345,7 +345,7 @@ public class FCPConnectionHandler implements Closeable {
 		}
 	}
 
-	public void startClientPutDir(ClientPutDirMessage message, HashMap buckets, boolean wasDiskPut) {
+	public void startClientPutDir(ClientPutDirMessage message, HashMap<String, Object> buckets, boolean wasDiskPut) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Start ClientPutDir");
 		final String id = message.identifier;
@@ -462,7 +462,7 @@ public class FCPConnectionHandler implements Closeable {
 		DirectoryAccess da = null;
 		
 		synchronized (checkedDirectories) {
-				da = (DirectoryAccess) checkedDirectories.get(parentDirectory);
+				da = checkedDirectories.get(parentDirectory);
 		}
 		
 		if(logMINOR)
@@ -509,7 +509,7 @@ public class FCPConnectionHandler implements Closeable {
 		// See #1856
 		DDACheckJob job = null;
 		synchronized (inTestDirectories) {
-			job = (DDACheckJob) inTestDirectories.get(directory);
+			job = inTestDirectories.get(directory);
 		}
 		if(job != null)
 			throw new IllegalArgumentException("There is already a TestDDA going on for that directory!");
@@ -565,7 +565,7 @@ public class FCPConnectionHandler implements Closeable {
 			throw new IllegalArgumentException("The specified path isn't a directory! or doesn't exist or the node doesn't have access to it!");
 		
 		synchronized (inTestDirectories) {
-			return (DDACheckJob)inTestDirectories.remove(directory);
+			return inTestDirectories.remove(directory);
 		}
 	}
 	
@@ -575,9 +575,9 @@ public class FCPConnectionHandler implements Closeable {
 	 */
 	protected void freeDDAJobs(){
 		synchronized (inTestDirectories) {
-			Iterator it = inTestDirectories.keySet().iterator();
+			Iterator<File> it = inTestDirectories.keySet().iterator();
 			while(it.hasNext()) {
-				DDACheckJob job = (DDACheckJob)inTestDirectories.get(it.next());
+				DDACheckJob job = inTestDirectories.get(it.next());
 				if (job.readFilename != null)
 					job.readFilename.delete();
 			}
@@ -587,7 +587,7 @@ public class FCPConnectionHandler implements Closeable {
 	public ClientRequest removeRequestByIdentifier(String identifier, boolean kill) {
 		ClientRequest req;
 		synchronized(this) {
-			req = (ClientRequest) requestsByIdentifier.remove(identifier);
+			req = requestsByIdentifier.remove(identifier);
 		}
 		if(req != null) {
 			req.requestWasRemoved(null);

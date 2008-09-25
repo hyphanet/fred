@@ -51,11 +51,13 @@ public class NodeCHK extends Key {
         write(stream);
     }
 
-    public String toString() {
+    @Override
+	public String toString() {
         return super.toString() + '@' +Base64.encode(routingKey)+ ':' +Integer.toHexString(hash);
     }
 
-    public final void write(DataOutput _index) throws IOException {
+    @Override
+	public final void write(DataOutput _index) throws IOException {
         _index.writeShort(getType());
         _index.write(routingKey);
     }
@@ -66,7 +68,8 @@ public class NodeCHK extends Key {
         return new NodeCHK(buf, algo);
     }
 
-    public boolean equals(Object key) {
+    @Override
+	public boolean equals(Object key) {
     	if(key == this) return true;
         if(key instanceof NodeCHK) {
             NodeCHK chk = (NodeCHK) key;
@@ -75,18 +78,22 @@ public class NodeCHK extends Key {
         return false;
     }
     
-    public int hashCode(){
+    @Override
+	public int hashCode(){
     	return super.hashCode();
     }
     
+	@Override
 	public short getType() {
 		return (short) (0x100 + (cryptoAlgorithm & 0xFF));
 	}
     
-    public byte[] getRoutingKey(){
+    @Override
+	public byte[] getRoutingKey(){
     	return routingKey;
     }
 
+	@Override
 	public byte[] getFullKey() {
 		byte[] buf = new byte[FULL_KEY_LENGTH];
 		short type = getType();

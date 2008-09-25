@@ -45,6 +45,7 @@ public class FreenetFilePersistentConfig extends FilePersistentConfig {
 		return new FreenetFilePersistentConfig(load(filename, tempFilename), filename, tempFilename);
 	}
 	
+	@Override
 	public void store() {
 		synchronized(this) {
 			if(!finishedInit) {

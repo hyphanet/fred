@@ -39,7 +39,8 @@ public class DSAPrivateKey extends CryptoKey {
         this.x = tempX;
     }
 
-    public String keyType() {
+    @Override
+	public String keyType() {
         return "DSA.s";
     }
     
@@ -61,11 +62,13 @@ public class DSAPrivateKey extends CryptoKey {
     //    return new DSAPrivateKey(new BigInteger(field, 16));
     //}
     
-    public byte[] asBytes() {
+    @Override
+	public byte[] asBytes() {
         return Util.MPIbytes(x);
     }
     
-    public byte[] fingerprint() {
+    @Override
+	public byte[] fingerprint() {
         return fingerprint(new BigInteger[] {x});
     }
 

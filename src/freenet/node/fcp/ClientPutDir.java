@@ -4,8 +4,8 @@
 package freenet.node.fcp;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -33,7 +33,7 @@ import freenet.support.io.SerializableToFieldSetBucketUtil;
 
 public class ClientPutDir extends ClientPutBase {
 
-	private final HashMap manifestElements;
+	private final HashMap<String, Object> manifestElements;
 	private SimpleManifestPutter putter;
 	private final String defaultName;
 	private final long totalSize;
@@ -42,7 +42,7 @@ public class ClientPutDir extends ClientPutBase {
 	private final boolean wasDiskPut;
 	
 	public ClientPutDir(FCPConnectionHandler handler, ClientPutDirMessage message, 
-			HashMap manifestElements, boolean wasDiskPut, FCPServer server) throws IdentifierCollisionException, MalformedURLException {
+			HashMap<String, Object> manifestElements, boolean wasDiskPut, FCPServer server) throws IdentifierCollisionException, MalformedURLException {
 		super(message.uri, message.identifier, message.verbosity, handler,
 				message.priorityClass, message.persistenceType, message.clientToken, message.global,
 				message.getCHKOnly, message.dontCompress, message.maxRetries, message.earlyEncode, server);
@@ -92,17 +92,16 @@ public class ClientPutDir extends ClientPutBase {
 		}
 	}
 	
-	private HashMap makeDiskDirManifest(File dir, String prefix, boolean allowUnreadableFiles) throws FileNotFoundException {
+	private HashMap<String, Object> makeDiskDirManifest(File dir, String prefix, boolean allowUnreadableFiles) throws FileNotFoundException {
 
-		HashMap map = new HashMap();
+		HashMap<String, Object> map = new HashMap<String, Object>();
 		File[] files = dir.listFiles();
 		
 		if(files == null)
 			throw new IllegalArgumentException("No such directory");
 
-		for(int i=0; i < files.length; i++) {
+		for (File f : files) {
 
-			File f = files[i];
 			if (f.exists() && f.canRead()) {
 				if(f.isFile()) {
 					FileBucket bucket = new FileBucket(f, true, false, false, false, false);
@@ -151,7 +150,7 @@ public class ClientPutDir extends ClientPutBase {
 		// Flattened for disk, sort out afterwards
 		int fileCount = 0;
 		long size = 0;
-		Vector v = new Vector();
+		Vector<ManifestElement> v = new Vector<ManifestElement>();
 		for(int i=0;;i++) {
 			String num = Integer.toString(i);
 			SimpleFieldSet subset = files.subset(num);
@@ -218,6 +217,7 @@ public class ClientPutDir extends ClientPutBase {
 		}
 	}
 
+	@Override
 	public void start(ObjectContainer container, ClientContext context) {
 		if(finished) return;
 		if(started) return;
@@ -238,22 +238,25 @@ public class ClientPutDir extends ClientPutBase {
 		}
 	}
 	
+	@Override
 	public void onLostConnection(ObjectContainer container, ClientContext context) {
 		if(persistenceType == PERSIST_CONNECTION)
 			cancel(container, context);
 		// otherwise ignore
 	}
 	
+	@SuppressWarnings("unchecked")
 	protected void freeData(ObjectContainer container) {
 		freeData(manifestElements, container);
 	}
 	
-	private void freeData(HashMap manifestElements, ObjectContainer container) {
+	@SuppressWarnings("unchecked")
+	private void freeData(HashMap<String, Object> manifestElements, ObjectContainer container) {
 		Iterator i = manifestElements.values().iterator();
 		while(i.hasNext()) {
 			Object o = i.next();
 			if(o instanceof HashMap)
-				freeData((HashMap)o, container);
+				freeData((HashMap<String, Object>) o, container);
 			else {
 				ManifestElement e = (ManifestElement) o;
 				e.freeData(container, persistenceType == PERSIST_FOREVER);
@@ -261,10 +264,12 @@ public class ClientPutDir extends ClientPutBase {
 		}
 	}
 
+	@Override
 	protected ClientRequester getClientRequest() {
 		return putter;
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = super.getFieldSet();
 		// Translate manifestElements directly into a fieldset
@@ -311,6 +316,7 @@ public class ClientPutDir extends ClientPutBase {
 		return fs;
 	}
 
+	@Override
 	protected FCPMessage persistentTagMessage(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(publicURI, 5);
@@ -321,10 +327,12 @@ public class ClientPutDir extends ClientPutBase {
 				persistenceType, global, defaultName, manifestElements, clientToken, started, ctx.maxInsertRetries, wasDiskPut);
 	}
 
+	@Override
 	protected String getTypeName() {
 		return "PUTDIR";
 	}
 
+	@Override
 	public boolean hasSucceeded() {
 		return succeeded;
 	}
@@ -348,6 +356,7 @@ public class ClientPutDir extends ClientPutBase {
 		return totalSize;
 	}
 
+	@Override
 	public boolean canRestart() {
 		if(!finished) {
 			Logger.minor(this, "Cannot restart because not finished for "+identifier);
@@ -360,6 +369,7 @@ public class ClientPutDir extends ClientPutBase {
 		return true;
 	}
 
+	@Override
 	public boolean restart(ObjectContainer container, ClientContext context) {
 		if(!canRestart()) return false;
 		setVarsRestart(container);

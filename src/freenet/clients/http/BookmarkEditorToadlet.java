@@ -130,6 +130,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		return bookmarks;
 	}
 
+	@Override
 	public void handleGet(URI uri, HTTPRequest req, ToadletContext ctx)
 		throws ToadletContextClosedException, IOException {
 		PageMaker pageMaker = ctx.getPageMaker();
@@ -256,6 +257,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
+	@Override
 	public void handlePost(URI uri, HTTPRequest req, ToadletContext ctx)
 		throws ToadletContextClosedException, IOException {
 		PageMaker pageMaker = ctx.getPageMaker();
@@ -344,6 +346,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
 
+	@Override
 	public String supportedMethods() {
 		return "GET, POST";
 	}

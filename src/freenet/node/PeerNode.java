@@ -1752,6 +1752,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return shortToString;
 	}
 
+	@Override
 	public String toString() {
 		// FIXME?
 		return shortToString()+'@'+Integer.toHexString(super.hashCode());
@@ -2708,6 +2709,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if(o == this)
 			return true;
@@ -2718,6 +2720,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			return false;
 	}
 
+	@Override
 	public int hashCode() {
 		return hashCode;
 	}

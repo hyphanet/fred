@@ -218,6 +218,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		client.onFailure(e, this, container);
 	}
 
+	@Override
 	public void onMajorProgress(ObjectContainer container) {
 		if(persistent())
 			container.activate(client, 1);
@@ -236,7 +237,8 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			container.set(this);
 		client.onGeneratedURI(uri, this, container);
 	}
-	
+
+	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Cancelling "+this, new Exception("debug"));
@@ -257,10 +259,12 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
 	}
 	
+	@Override
 	public synchronized boolean isFinished() {
 		return finished || cancelled;
 	}
 
+	@Override
 	public FreenetURI getURI() {
 		return uri;
 	}
@@ -279,6 +283,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		Logger.error(this, "Got metadata on "+this+" from "+state+" (this means the metadata won't be inserted)");
 	}
 	
+	@Override
 	public void notifyClients(ObjectContainer container, ClientContext context) {
 		if(persistent())
 			container.activate(ctx, 2);
@@ -315,6 +320,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		return start(earlyEncode, true, container, context);
 	}
 
+	@Override
 	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 		// Ignore, at the moment
 	}

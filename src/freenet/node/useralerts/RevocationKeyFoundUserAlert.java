@@ -11,6 +11,7 @@ public class RevocationKeyFoundUserAlert extends AbstractUserAlert {
 		super(false, L10n.getString("RevocationKeyFoundUserAlert.title"), L10n.getString("RevocationKeyFoundUserAlert.text", "message", msg), L10n.getString("RevocationKeyFoundUserAlert.text", "message", msg), new HTMLNode("#", L10n.getString("RevocationKeyFoundUserAlert.text", "message", msg)), UserAlert.CRITICAL_ERROR, true, null, false, null);
 	}
 	
+	@Override
 	public void isValid(boolean b){
 		// We ignore it : it's ALWAYS valid !
 	}

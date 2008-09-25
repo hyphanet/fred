@@ -33,6 +33,7 @@ public class StandardOnionFECCodec extends FECCodec {
 			this.k = k;
 		}
 		
+		@Override
 		public boolean equals(Object o) {
 			if(o instanceof MyKey) {
 				MyKey key = (MyKey)o;
@@ -40,6 +41,7 @@ public class StandardOnionFECCodec extends FECCodec {
 			} else return false;
 		}
 		
+		@Override
 		public int hashCode() {
 			return (n << 16) + k;
 		}
@@ -105,10 +107,12 @@ public class StandardOnionFECCodec extends FECCodec {
 		// Crashes are caused by bugs which cause to use 320/128 etc. - n > 256, k < 256.
 	}
 
+	@Override
 	public int countCheckBlocks() {
 		return n-k;
 	}
 	
+	@Override
 	public String toString() {
 		return super.toString()+":n="+n+",k="+k;
 	}

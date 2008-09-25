@@ -63,7 +63,7 @@ public class PluginHandler {
 				try {
 					if(!threadless) // Have to do it now because threaded
 						pm.register(plugin, pi);
-					((FredPlugin)plugin).runPlugin(pr);
+					plugin.runPlugin(pr);
 					if(threadless) // Don't want it to receive callbacks until after it has the PluginRespirator, else get NPEs
 						pm.register(plugin, pi);
 				} catch (OutOfMemoryError e) {

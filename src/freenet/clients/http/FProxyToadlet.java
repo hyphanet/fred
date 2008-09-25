@@ -91,6 +91,7 @@ public final class FProxyToadlet extends Toadlet {
 			};
 	}
 	
+	@Override
 	public String supportedMethods() {
 		return "GET";
 	}

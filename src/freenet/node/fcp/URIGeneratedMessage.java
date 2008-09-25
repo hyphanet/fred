@@ -21,6 +21,7 @@ public class URIGeneratedMessage extends FCPMessage {
 		this.global = global;
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("URI", uri.toString());
@@ -29,10 +30,12 @@ public class URIGeneratedMessage extends FCPMessage {
 		return fs;
 	}
 
+	@Override
 	public String getName() {
 		return "URIGenerated";
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node)
 			throws MessageInvalidException {
 		throw new MessageInvalidException(ProtocolErrorMessage.INVALID_MESSAGE, "URIGenerated goes from server to client not the other way around", identifier, false);

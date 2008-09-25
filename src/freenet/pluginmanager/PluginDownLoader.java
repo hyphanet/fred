@@ -13,15 +13,15 @@ import java.io.InputStream;
  */
 public abstract class PluginDownLoader<T> {
 	
-	private T source;
+	private T _source;
 
 	public String setSource(String source) throws PluginNotFoundException {
-		this.source = checkSource(source);
+		this._source = checkSource(source);
 		return getPluginName(source);
 	}
 
 	public T getSource() {
-		return source;
+		return _source;
 	}
 	
 	abstract InputStream getInputStream() throws IOException, PluginNotFoundException;

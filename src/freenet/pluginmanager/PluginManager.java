@@ -190,7 +190,7 @@ public class PluginManager {
 		}
 
 		try {
-			FreenetURI uri = new FreenetURI(pluginname);
+			new FreenetURI(pluginname); // test for MalformedURLException 
 			startPluginFreenet(pluginname, store);
 			return;
 		} catch(MalformedURLException e) {
@@ -224,7 +224,7 @@ public class PluginManager {
 		realStartPlugin(new PluginDownLoaderFreenet(client), filename, store);
 	}
 
-	private void realStartPlugin(final PluginDownLoader pdl, final String filename, final boolean store) {
+	private void realStartPlugin(final PluginDownLoader<?> pdl, final String filename, final boolean store) {
 		if(filename.trim().length() == 0)
 			return;
 		final PluginProgress pluginProgress = new PluginProgress(filename);
@@ -591,7 +591,7 @@ public class PluginManager {
 	 * @throws PluginNotFoundException
 	 *             If anything goes wrong.
 	 */
-	private FredPlugin loadPlugin(PluginDownLoader pdl, String name) throws PluginNotFoundException {
+	private FredPlugin loadPlugin(PluginDownLoader<?> pdl, String name) throws PluginNotFoundException {
 
 		pdl.setSource(name);
 

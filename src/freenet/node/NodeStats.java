@@ -213,9 +213,11 @@ public class NodeStats implements Persistable {
 
 		statsConfig.register("threadLimit", 500, sortOrder++, true, true, "NodeStat.threadLimit", "NodeStat.threadLimitLong",
 				new IntCallback() {
+					@Override
 					public Integer get() {
 						return threadLimit;
 					}
+					@Override
 					public void set(Integer val) throws InvalidConfigValueException {
 						if (get().equals(val))
 					        return;
@@ -229,9 +231,11 @@ public class NodeStats implements Persistable {
 		// Yes it could be in seconds insteed of multiples of 0.12, but we don't want people to play with it :)
 		statsConfig.register("aggressiveGC", aggressiveGCModificator, sortOrder++, true, false, "NodeStat.aggressiveGC", "NodeStat.aggressiveGCLong",
 				new IntCallback() {
+					@Override
 					public Integer get() {
 						return aggressiveGCModificator;
 					}
+					@Override
 					public void set(Integer val) throws InvalidConfigValueException {
 						if (get().equals(val))
 					        return;
@@ -244,10 +248,12 @@ public class NodeStats implements Persistable {
 		myMemoryChecker = new MemoryChecker(node.ps, aggressiveGCModificator);
 		statsConfig.register("memoryChecker", true, sortOrder++, true, false, "NodeStat.memCheck", "NodeStat.memCheckLong", 
 				new BooleanCallback(){
+					@Override
 					public Boolean get() {
 						return myMemoryChecker.isRunning();
 					}
 
+					@Override
 					public void set(Boolean val) throws InvalidConfigValueException {
 						if (get().equals(val))
 					        return;
@@ -263,12 +269,14 @@ public class NodeStats implements Persistable {
 		
 		statsConfig.register("ignoreLocalVsRemoteBandwidthLiability", false, sortOrder++, true, false, "NodeStat.ignoreLocalVsRemoteBandwidthLiability", "NodeStat.ignoreLocalVsRemoteBandwidthLiabilityLong", new BooleanCallback() {
 
+			@Override
 			public Boolean get() {
 				synchronized(NodeStats.this) {
 					return ignoreLocalVsRemoteBandwidthLiability;
 				}
 			}
 
+			@Override
 			public void set(Boolean val) throws InvalidConfigValueException {
 				synchronized(NodeStats.this) {
 					ignoreLocalVsRemoteBandwidthLiability = val;

@@ -67,10 +67,12 @@ public class SSL {
 		sslConfig.register("sslEnable", false, configItemOrder++, true, true, "SSL.enable", "SSL.enableLong",
 			new BooleanCallback() {
 
+				@Override
 				public Boolean get() {
 					return enable;
 				}
 
+				@Override
 				public void set(Boolean newValue) throws InvalidConfigValueException {
 					if (!get().equals(newValue)) {
 						enable = newValue;
@@ -94,10 +96,12 @@ public class SSL {
 		sslConfig.register("sslKeyStore", "datastore/certs", configItemOrder++, true, true, "SSL.keyStore", "SSL.keyStoreLong",
 			new StringCallback() {
 
+				@Override
 				public String get() {
 					return keyStore;
 				}
 
+				@Override
 				public void set(String newKeyStore) throws InvalidConfigValueException {
 					if(!newKeyStore.equals(get())) {
 						String oldKeyStore = keyStore;
@@ -116,10 +120,12 @@ public class SSL {
 		sslConfig.register("sslKeyStorePass", "freenet", configItemOrder++, true, true, "SSL.keyStorePass", "SSL.keyStorePassLong",
 			new StringCallback() {
 
+				@Override
 				public String get() {
 					return keyStorePass;
 				}
 
+				@Override
 				public void set(String newKeyStorePass) throws InvalidConfigValueException {
 					if(!newKeyStorePass.equals(get())) {
 						String oldKeyStorePass = keyStorePass;
@@ -138,10 +144,12 @@ public class SSL {
 		sslConfig.register("sslKeyPass", "freenet", configItemOrder++, true, true, "SSL.keyPass", "SSL.keyPassLong",
 			new StringCallback() {
 
+				@Override
 				public String get() {
 					return keyPass;
 				}
 
+				@Override
 				public void set(String newKeyPass) throws InvalidConfigValueException {
 					if(!newKeyPass.equals(get())) {
 						String oldKeyPass = keyPass;
@@ -163,10 +171,12 @@ public class SSL {
 		sslConfig.register("sslVersion", "SSLv3", configItemOrder++, true, true, "SSL.version", "SSL.versionLong",
 			new StringCallback() {
 
+				@Override
 				public String get() {
 					return version;
 				}
 
+				@Override
 				public void set(String newVersion) throws InvalidConfigValueException {
 					if(!newVersion.equals(get())) {
 						String oldVersion = version;

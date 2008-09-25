@@ -106,10 +106,12 @@ public class FilePersistentConfig extends PersistentConfig {
 		}
 	}
 	
+	@Override
 	public void register(SubConfig sc) {
 		super.register(sc);
 	}
 	
+	@Override
 	public void store() {
 		if(!finishedInit) {
 			Logger.minor(this, "Initialization not finished, refusing to write config", new Exception("error"));

@@ -160,7 +160,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                     node2 = random.nextInt(NUMBER_OF_NODES);
                 } while(node2 == node1);
                 Node fetchNode = nodes[node2];
-                block = (ClientKeyBlock) fetchNode.clientCore.realGetKey(fetchKey, false, true, false);
+                block = fetchNode.clientCore.realGetKey(fetchKey, false, true, false);
                 if(block == null) {
 					int percentSuccess=100*fetchSuccesses/insertAttempts;
                     Logger.error(RealNodeRequestInsertTest.class, "Fetch #"+requestNumber+" FAILED ("+percentSuccess+"%); from "+node2);
@@ -187,7 +187,7 @@ public class RealNodeRequestInsertTest extends RealNodeRoutingTest {
                 StringBuilder load = new StringBuilder("Running UIDs for nodes: ");
                 int totalRunningUIDs = 0;
                 int totalRunningUIDsAlt = 0;
-                Vector runningUIDsList = new Vector(); // <Long>
+                Vector<Long> runningUIDsList = new Vector<Long>();
                 for(int i=0;i<nodes.length;i++) {
                 	load.append(i);
                 	load.append(':');

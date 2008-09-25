@@ -25,14 +25,17 @@ public class ModifyConfig extends FCPMessage {
 		fs.removeValue("Identifier");
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		return new SimpleFieldSet(true);
 	}
 
+	@Override
 	public String getName() {
 		return NAME;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node) throws MessageInvalidException {
 		if(!handler.hasFullAccess()) {
 			throw new MessageInvalidException(ProtocolErrorMessage.ACCESS_DENIED, "ModifyConfig requires full access", identifier, false);
@@ -43,7 +46,7 @@ public class ModifyConfig extends FCPMessage {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
 		for(int i=0; i<sc.length ; i++){
-			Option[] o = sc[i].getOptions();
+			Option<?>[] o = sc[i].getOptions();
 			String prefix = sc[i].getPrefix();
 			String configName;
 			

@@ -21,7 +21,8 @@ class Yytoken {
     m_charEnd = charEnd;
   }
 
-  public String toString() {
+  @Override
+public String toString() {
     return "Text   : "+m_text+
            "\nindex : "+m_index+
            "\nline  : "+m_line+

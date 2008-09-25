@@ -56,6 +56,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 			this.cs = cs;
 		}
 		
+		@Override
 		public String get(){
 			if(cs != null)
 				return cs.getChoosenPriorityScheduler();
@@ -63,6 +64,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				return ClientRequestScheduler.PRIORITY_HARD;
 		}
 		
+		@Override
 		public void set(String val) throws InvalidConfigValueException{
 			String value;
 			if(val == null || val.equalsIgnoreCase(get())) return;

@@ -60,6 +60,7 @@ public class RetrievalException extends Exception {
 		return _reason;
 	}
 	
+	@Override
 	public String toString() {
 		return _cause;
 	}

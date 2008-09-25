@@ -25,6 +25,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	/** Get a numbered key to fetch. */
 	public abstract ClientKey getKey(Object token, ObjectContainer container);
 	
+	@Override
 	public Key getNodeKey(Object token, ObjectContainer container) {
 		ClientKey key = getKey(token, container);
 		if(key == null) return null;
@@ -90,6 +91,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	/**
 	 * An internal error occurred, effecting this SendableGet, independantly of any ChosenBlock's.
 	 */
+	@Override
 	public void internalError(final Throwable t, final RequestScheduler sched, ObjectContainer container, ClientContext context, boolean persistent) {
 		sched.callFailure(this, new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR, t.getMessage(), t), NativeThread.MAX_PRIORITY, persistent);
 	}

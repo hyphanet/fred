@@ -94,6 +94,7 @@ public class MessageType {
 		return (Class<?>) _fields.get(new Integer(field.hashCode()));
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (!(o instanceof MessageType)) {
 			return false;
@@ -103,6 +104,7 @@ public class MessageType {
 		return ((MessageType) o)._name == _name;
 	}
 
+	@Override
 	public int hashCode() {
 	    return _name.hashCode();
 	}

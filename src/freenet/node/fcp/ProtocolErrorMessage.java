@@ -151,6 +151,7 @@ public class ProtocolErrorMessage extends FCPMessage {
 		global = Fields.stringToBool(fs.get("Global"), false);
 	}
 
+	@Override
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
 		if(ident != null)
@@ -165,10 +166,12 @@ public class ProtocolErrorMessage extends FCPMessage {
 		return sfs;
 	}
 
+	@Override
 	public void run(FCPConnectionHandler handler, Node node) {
 		Logger.error(this, "Client reported protocol error");
 	}
 
+	@Override
 	public String getName() {
 		return "ProtocolError";
 	}

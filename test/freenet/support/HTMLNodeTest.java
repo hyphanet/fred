@@ -46,6 +46,7 @@ public class HTMLNodeTest extends TestCase {
 	//example node content that includes a not ASCII char [Greek omicron]
 	private static final String SAMPLE_NODE_CONTENT = "sampleNodeC\u03bfntent";
 	
+	@Override
 	protected void setUp() throws Exception {
 		super.setUp();
 		exampleNode = null;

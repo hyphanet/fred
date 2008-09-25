@@ -12,6 +12,7 @@ public abstract class BaseDataCarryingMessage extends FCPMessage {
 	
 	public abstract void readFrom(InputStream is, BucketFactory bf, FCPServer server) throws IOException, MessageInvalidException;
 	
+	@Override
 	public void send(OutputStream os) throws IOException {
 		super.send(os);
 		writeData(os);

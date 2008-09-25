@@ -14,6 +14,7 @@ import freenet.support.Logger;
 
 public class PluginDownLoaderURL extends PluginDownLoader<URL> {
 
+	@Override
 	public URL checkSource(String source) throws PluginNotFoundException {
 		try {
 			return new URL(source);

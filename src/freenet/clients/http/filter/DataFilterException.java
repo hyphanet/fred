@@ -23,22 +23,27 @@ public class DataFilterException extends UnsafeContentTypeException {
 		this.htmlExplanation = htmlExplanation;
 	}
 	
+	@Override
 	public String getExplanation() {
 		return explanation;
 	}
 	
+	@Override
 	public HTMLNode getHTMLExplanation() {
 		return htmlExplanation;
 	}
 
+	@Override
 	public String getHTMLEncodedTitle() {
 		return encodedTitle;
 	}
 
+	@Override
 	public String getRawTitle() {
 		return rawTitle;
 	}
 	
+	@Override
 	public String toString() {
 		return rawTitle;
 	}

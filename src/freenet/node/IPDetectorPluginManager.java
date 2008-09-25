@@ -188,6 +188,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			portsNotForwarded = new int[] { };
 		}
 
+		@Override
 		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
 			div.addChild("#", super.getText());
@@ -203,6 +204,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			return div;
 		}
 
+		@Override
 		public String getText() {
 			if(!suggestPortForward) return super.getText();
 			StringBuilder sb = new StringBuilder();
@@ -219,19 +221,23 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			return sb.toString();
 		}
 
+		@Override
 		public void isValid(boolean validity) {
 			valid = validity;
 		}
 
+		@Override
 		public boolean isValid() {
 			portsNotForwarded = getUDPPortsNotForwarded();
 			return valid && (portsNotForwarded.length > 0);
 		}
 		
+		@Override
 		public void onDismiss() {
 			valid = false;
 		}
 		
+		@Override
 		public boolean userCanDismiss() {
 			return false;
 		}

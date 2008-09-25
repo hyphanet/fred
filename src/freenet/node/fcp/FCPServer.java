@@ -200,16 +200,19 @@ public class FCPServer implements Runnable {
 			this.node = node;
 		}
 		
+		@Override
 		public Integer get() {
 			return node.getFCPServer().port;
 		}
 
+		@Override
 		public void set(Integer val) throws InvalidConfigValueException {
 			if (!get().equals(val)) {
 				throw new InvalidConfigValueException("Cannot change FCP port number on the fly");
 			}
 		}
 
+		@Override
 		public boolean isReadOnly() {
 			return true;
 		}
@@ -223,16 +226,19 @@ public class FCPServer implements Runnable {
 			this.node = node;
 		}
 		
+		@Override
 		public Boolean get() {
 			return node.getFCPServer().enabled;
 		}
 //TODO: Allow it
+		@Override
 		public void set(Boolean val) throws InvalidConfigValueException {
 			if (!get().equals(val)) {
 				throw new InvalidConfigValueException(l10n("cannotStartOrStopOnTheFly"));
 			}
 		}
 
+		@Override
 		public boolean isReadOnly() {
 			return true;
 		}
@@ -240,10 +246,12 @@ public class FCPServer implements Runnable {
 
 	static class FCPSSLCallback extends BooleanCallback {
 
+		@Override
 		public Boolean get() {
 			return ssl;
 		}
 
+		@Override
 		public void set(Boolean val) throws InvalidConfigValueException {
 			if (get().equals(val))
 				return;
@@ -254,6 +262,7 @@ public class FCPServer implements Runnable {
 			throw new InvalidConfigValueException("Cannot change SSL on the fly, please restart freenet");
 		}
 
+		@Override
 		public boolean isReadOnly() {
 			return true;
 		}
@@ -270,10 +279,12 @@ public class FCPServer implements Runnable {
 			this.node = node;
 		}
 		
+		@Override
 		public String get() {
 			return node.getFCPServer().bindTo;
 		}
 
+		@Override
 		public void set(String val) throws InvalidConfigValueException {
 			if(!val.equals(get())) {
 				try {
@@ -297,6 +308,7 @@ public class FCPServer implements Runnable {
 			this.node = node;
 		}
 		
+		@Override
 		public String get() {
 			FCPServer server = node.getFCPServer();
 			if(server == null) return NetworkInterface.DEFAULT_BIND_TO;
@@ -304,6 +316,7 @@ public class FCPServer implements Runnable {
 			return (netIface == null ? NetworkInterface.DEFAULT_BIND_TO : netIface.getAllowedHosts());
 		}
 
+		@Override
 		public void set(String val) {
 			if (!val.equals(get())) {
 				node.getFCPServer().networkInterface.setAllowedHosts(val);
@@ -334,10 +347,12 @@ public class FCPServer implements Runnable {
 			this.node = node;
 		}
 		
+		@Override
 		public String get() {
 			return node.getFCPServer().allowedHostsFullAccess.getAllowedHosts();
 		}
 
+		@Override
 		public void set(String val) {
 			if (!val.equals(get())) {
 				node.getFCPServer().allowedHostsFullAccess.setAllowedHosts(val);
@@ -349,10 +364,12 @@ public class FCPServer implements Runnable {
 		
 		FCPServer server;
 		
+		@Override
 		public String get() {
 			return server.persistentDownloadsFile.toString();
 		}
 		
+		@Override
 		public void set(String val) throws InvalidConfigValueException {
 			File f = new File(val);
 			if(f.equals(server.persistentDownloadsFile)) return;
@@ -363,10 +380,12 @@ public class FCPServer implements Runnable {
 	static class AssumeDDADownloadIsAllowedCallback extends BooleanCallback {
 		FCPServer server;
 
+		@Override
 		public Boolean get() {
 			return server.assumeDownloadDDAIsAllowed;
 		}
 		
+		@Override
 		public void set(Boolean val) throws InvalidConfigValueException {
 			if (get().equals(val))
 				return;
@@ -377,10 +396,12 @@ public class FCPServer implements Runnable {
 	static class AssumeDDAUploadIsAllowedCallback extends BooleanCallback {
 		FCPServer server;
 
+		@Override
 		public Boolean get() {
 			return server.assumeUploadDDAIsAllowed;
 		}
 		
+		@Override
 		public void set(Boolean val) throws InvalidConfigValueException {
 			if (get().equals(val))
 				return;
@@ -882,8 +903,8 @@ public class FCPServer implements Runnable {
 			clients = clientsByName.values().toArray(new FCPClient[clientsByName.size()]);
 		}
 		
-		for(int i=0;i<clients.length;i++) {
-			clients[i].finishStart(node.clientCore.clientContext.jobRunner);
+		for (FCPClient client : clients) {
+			client.finishStart(node.clientCore.clientContext.jobRunner);
 		}
 		
 		if(enablePersistentDownloads) {

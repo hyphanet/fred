@@ -100,7 +100,7 @@ public class SeednodePingTest extends RealNodeTest {
 				System.out.println(seednode.getIdentityString() + " is not connected "+seednode.getHandshakeCount());
 			}
 		}
-		Map<FATE, Integer> totals = new EnumMap(SeedServerTestPeerNode.FATE.class);
+		Map<FATE, Integer> totals = new EnumMap<FATE, Integer>(SeedServerTestPeerNode.FATE.class);
 		for(SeedServerTestPeerNode seednode : seedNodes) {
 			FATE fate = seednode.getFate();
 			Integer x = totals.get(fate);
@@ -117,7 +117,7 @@ public class SeednodePingTest extends RealNodeTest {
 		System.out.println("################## ("+node.peers.countConnectedPeers()+") "+countConnectedSeednodes+'/'+node.peers.countSeednodes());
 		Thread.sleep(5000);
 	}
-	Map<FATE, Integer> totals = new EnumMap(SeedServerTestPeerNode.FATE.class);
+	Map<FATE, Integer> totals = new EnumMap<FATE, Integer>(SeedServerTestPeerNode.FATE.class);
 	for(SeedServerTestPeerNode seednode : seedNodes) {
 		FATE fate = seednode.getFate();
 		Integer x = totals.get(fate);

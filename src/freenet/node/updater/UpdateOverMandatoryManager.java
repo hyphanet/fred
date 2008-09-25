@@ -53,7 +53,6 @@ import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.io.FileBucket;
 import freenet.support.io.RandomAccessFileWrapper;
-import java.io.FileFilter;
 
 /**
  * Co-ordinates update over mandatory. Update over mandatory = updating from your peers, even
@@ -68,16 +67,16 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	
 	/** Set of PeerNode's which say (or said before they disconnected) 
 	 * the key has been revoked */
-	private final HashSet nodesSayKeyRevoked;
+	private final HashSet<PeerNode> nodesSayKeyRevoked;
 	/** Set of PeerNode's which say the key has been revoked but failed
 	 * to transfer the revocation key. */
-	private final HashSet nodesSayKeyRevokedFailedTransfer;
+	private final HashSet<PeerNode> nodesSayKeyRevokedFailedTransfer;
 	/** PeerNode's which have offered the main jar which we are not fetching it from right now */
-	private final HashSet nodesOfferedMainJar;
+	private final HashSet<PeerNode> nodesOfferedMainJar;
 	/** PeerNode's we've asked to send the main jar */
-	private final HashSet nodesAskedSendMainJar;
+	private final HashSet<PeerNode> nodesAskedSendMainJar;
 	/** PeerNode's sending us the main jar */
-	private final HashSet nodesSendingMainJar;
+	private final HashSet<PeerNode> nodesSendingMainJar;
 	// 2 for reliability, no more as gets very slow/wasteful
 	static final int MAX_NODES_SENDING_MAIN_JAR = 2;
 	/** Maximum time between asking for the main jar and it starting to transfer */
@@ -92,11 +91,11 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	
 	public UpdateOverMandatoryManager(NodeUpdateManager manager) {
 		this.updateManager = manager;
-		nodesSayKeyRevoked = new HashSet();
-		nodesSayKeyRevokedFailedTransfer = new HashSet();
-		nodesOfferedMainJar = new HashSet();
-		nodesAskedSendMainJar = new HashSet();
-		nodesSendingMainJar = new HashSet();
+		nodesSayKeyRevoked = new HashSet<PeerNode>();
+		nodesSayKeyRevokedFailedTransfer = new HashSet<PeerNode>();
+		nodesOfferedMainJar = new HashSet<PeerNode>();
+		nodesAskedSendMainJar = new HashSet<PeerNode>();
+		nodesSendingMainJar = new HashSet<PeerNode>();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
@@ -360,7 +359,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						>= MAX_NODES_SENDING_MAIN_JAR)
 					return;
 				if(nodesOfferedMainJar.isEmpty()) return;
-				offers = (PeerNode[]) nodesOfferedMainJar.toArray(new PeerNode[nodesOfferedMainJar.size()]);
+				offers = nodesOfferedMainJar.toArray(new PeerNode[nodesOfferedMainJar.size()]);
 			}
 			for(int i=0;i<offers.length;i++) {
 				if(offers[i].isConnected()) continue;
@@ -502,11 +501,11 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	}
 
 	public PeerNode[][] getNodesSayBlown() {
-		Vector nodesConnectedSayRevoked = new Vector();
-		Vector nodesDisconnectedSayRevoked = new Vector();
-		Vector nodesFailedSayRevoked = new Vector();
+		Vector<PeerNode> nodesConnectedSayRevoked = new Vector<PeerNode>();
+		Vector<PeerNode> nodesDisconnectedSayRevoked = new Vector<PeerNode>();
+		Vector<PeerNode> nodesFailedSayRevoked = new Vector<PeerNode>();
 		synchronized(this) {
-			PeerNode[] nodesSayRevoked = (PeerNode[]) nodesSayKeyRevoked.toArray(new PeerNode[nodesSayKeyRevoked.size()]);
+			PeerNode[] nodesSayRevoked = nodesSayKeyRevoked.toArray(new PeerNode[nodesSayKeyRevoked.size()]);
 			for(int i=0;i<nodesSayRevoked.length;i++) {
 				PeerNode pn = nodesSayRevoked[i];
 				if(nodesSayKeyRevokedFailedTransfer.contains(pn))
@@ -516,7 +515,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 		}
 		for(int i=0;i<nodesConnectedSayRevoked.size();i++) {
-			PeerNode pn = (PeerNode) nodesConnectedSayRevoked.get(i);
+			PeerNode pn = nodesConnectedSayRevoked.get(i);
 			if(!pn.isConnected()) {
 				nodesDisconnectedSayRevoked.add(pn);
 				nodesConnectedSayRevoked.remove(i);
@@ -525,9 +524,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			}
 		}
 		return new PeerNode[][] {
-				(PeerNode[]) nodesConnectedSayRevoked.toArray(new PeerNode[nodesConnectedSayRevoked.size()]),
-				(PeerNode[]) nodesDisconnectedSayRevoked.toArray(new PeerNode[nodesDisconnectedSayRevoked.size()]),
-				(PeerNode[]) nodesFailedSayRevoked.toArray(new PeerNode[nodesFailedSayRevoked.size()]),
+				nodesConnectedSayRevoked.toArray(new PeerNode[nodesConnectedSayRevoked.size()]),
+		        nodesDisconnectedSayRevoked.toArray(new PeerNode[nodesDisconnectedSayRevoked.size()]),
+		        nodesFailedSayRevoked.toArray(new PeerNode[nodesFailedSayRevoked.size()]),
 		};
 	}
 

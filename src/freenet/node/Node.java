@@ -150,6 +150,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		NodeNameCallback(GetPubkey n) {
 			node=n;
 		}
+		@Override
 		public String get() {
 			String name;
 			synchronized(this) {
@@ -163,6 +164,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			return name;
 		}
 
+		@Override
 		public void set(String val) throws InvalidConfigValueException {
 			if(get().equals(val)) return;
 			else if(val.length() > 128)
@@ -185,12 +187,14 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private class StoreTypeCallback extends StringCallback implements EnumerableOptionCallback {
 		private String cachedStoreType;
 
+		@Override
 		public String get() {
 			if (cachedStoreType == null)
 				cachedStoreType = storeType;
 			return cachedStoreType;
 		}
 
+		@Override
 		public void set(String val) throws InvalidConfigValueException, NodeNeedRestartException {
 			boolean found = false;
 			for (String p : getPossibleValues()) {
@@ -217,10 +221,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	private static class L10nCallback extends StringCallback implements EnumerableOptionCallback {
 		
+		@Override
 		public String get() {
 			return L10n.getSelectedLanguage().fullName;
 		}
 		
+		@Override
 		public void set(String val) throws InvalidConfigValueException {
 			if(val == null || get().equalsIgnoreCase(val)) return;
 			try {
@@ -785,15 +791,18 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		nodeConfig.register("nodeDir", ".", sortOrder++, true, true /* because can't be changed on the fly, also for packages */, "Node.nodeDir", "Node.nodeDirLong", 
 				new StringCallback() {
+					@Override
 					public String get() {
 						return nodeDir.getPath();
 					}
+					@Override
 					public void set(String val) throws InvalidConfigValueException {
 						if(nodeDir.equals(new File(val))) return;
 						// FIXME support it
 						// Don't translate the below as very few users will use it.
 						throw new InvalidConfigValueException("Moving node directory on the fly not supported at present");
 					}
+					@Override
 					public boolean isReadOnly() {
 				        return true;
 			        }
@@ -925,10 +934,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		nodeConfig.register("disableProbabilisticHTLs", false, sortOrder++, true, false, "Node.disablePHTLS", "Node.disablePHTLSLong", 
 				new BooleanCallback() {
 
+					@Override
 					public Boolean get() {
 						return disableProbabilisticHTLs;
 					}
 
+					@Override
 					public void set(Boolean val) throws InvalidConfigValueException {
 						disableProbabilisticHTLs = val;
 					}
@@ -939,10 +950,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		nodeConfig.register("maxHTL", DEFAULT_MAX_HTL, sortOrder++, true, false, "Node.maxHTL", "Node.maxHTLLong", new ShortCallback() {
 
+					@Override
 					public Short get() {
 						return maxHTL;
 					}
 
+					@Override
 					public void set(Short val) throws InvalidConfigValueException {
 						if(maxHTL < 0) throw new InvalidConfigValueException("Impossible max HTL");
 						maxHTL = val;
@@ -967,14 +980,17 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		nodeConfig.register("enableARKs", true, sortOrder++, true, false, "Node.enableARKs", "Node.enableARKsLong", new BooleanCallback() {
 
+			@Override
 			public Boolean get() {
 				return enableARKs;
 			}
 
+			@Override
 			public void set(Boolean val) throws InvalidConfigValueException {
 				throw new InvalidConfigValueException("Cannot change on the fly");
 			}
 
+			@Override
 			public boolean isReadOnly() {
 				        return true;
 			        }			
@@ -983,14 +999,17 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		nodeConfig.register("enablePerNodeFailureTables", true, sortOrder++, true, false, "Node.enablePerNodeFailureTables", "Node.enablePerNodeFailureTablesLong", new BooleanCallback() {
 
+			@Override
 			public Boolean get() {
 				return enablePerNodeFailureTables;
 			}
 
+			@Override
 			public void set(Boolean val) throws InvalidConfigValueException {
 				throw new InvalidConfigValueException("Cannot change on the fly");
 			}
 
+			@Override
 			public boolean isReadOnly() {
 				        return true;
 			      }			
@@ -999,14 +1018,17 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		nodeConfig.register("enableULPRDataPropagation", true, sortOrder++, true, false, "Node.enableULPRDataPropagation", "Node.enableULPRDataPropagationLong", new BooleanCallback() {
 
+			@Override
 			public Boolean get() {
 				return enableULPRDataPropagation;
 			}
 
+			@Override
 			public void set(Boolean val) throws InvalidConfigValueException {
 				throw new InvalidConfigValueException("Cannot change on the fly");
 			}
 
+			@Override
 			public boolean isReadOnly() {
 				        return true;
 			        }			
@@ -1015,14 +1037,17 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		nodeConfig.register("enableSwapping", true, sortOrder++, true, false, "Node.enableSwapping", "Node.enableSwappingLong", new BooleanCallback() {
 			
+			@Override
 			public Boolean get() {
 				return enableSwapping;
 			}
 
+			@Override
 			public void set(Boolean val) throws InvalidConfigValueException {
 				throw new InvalidConfigValueException("Cannot change on the fly");
 			}
 
+			@Override
 			public boolean isReadOnly() {
 				        return true;
 			        }			
@@ -1041,10 +1066,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		 */
 		nodeConfig.register("publishOurPeersLocation", true, sortOrder++, true, false, "Node.publishOurPeersLocation", "Node.publishOurPeersLocationLong", new BooleanCallback() {
 
+			@Override
 			public Boolean get() {
 				return publishOurPeersLocation;
 			}
 
+			@Override
 			public void set(Boolean val) throws InvalidConfigValueException {
 				publishOurPeersLocation = val;
 			}
@@ -1053,10 +1080,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		nodeConfig.register("routeAccordingToOurPeersLocation", true, sortOrder++, true, false, "Node.routeAccordingToOurPeersLocation", "Node.routeAccordingToOurPeersLocationLong", new BooleanCallback() {
 
+			@Override
 			public Boolean get() {
 				return routeAccordingToOurPeersLocation;
 			}
 
+			@Override
 			public void set(Boolean val) throws InvalidConfigValueException {
 				routeAccordingToOurPeersLocation = val;
 			}
@@ -1097,10 +1126,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		});
 		
 		nodeConfig.register("enableSwapQueueing", true, sortOrder++, true, false, "Node.enableSwapQueueing", "Node.enableSwapQueueingLong", new BooleanCallback() {
+			@Override
 			public Boolean get() {
 				return enableSwapQueueing;
 			}
 
+			@Override
 			public void set(Boolean val) throws InvalidConfigValueException {
 				enableSwapQueueing = val;
 			}
@@ -1109,10 +1140,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		enableSwapQueueing = nodeConfig.getBoolean("enableSwapQueueing");
 		
 		nodeConfig.register("enablePacketCoalescing", true, sortOrder++, true, false, "Node.enablePacketCoalescing", "Node.enablePacketCoalescingLong", new BooleanCallback() {
+			@Override
 			public Boolean get() {
 				return enablePacketCoalescing;
 			}
 
+			@Override
 			public void set(Boolean val) throws InvalidConfigValueException {
 				enablePacketCoalescing = val;
 			}
@@ -1143,6 +1176,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		Logger.normal(Node.class, "Creating node...");
 
 		shutdownHook.addEarlyJob(new Thread() {
+			@Override
 			public void run() {
 				if (opennet != null)
 					opennet.stop(false);
@@ -1150,6 +1184,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		});
 
 		shutdownHook.addEarlyJob(new Thread() {
+			@Override
 			public void run() {
 				darknetCrypto.stop();
 			}
@@ -1158,10 +1193,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// Bandwidth limit
 
 		nodeConfig.register("outputBandwidthLimit", "15K", sortOrder++, false, true, "Node.outBWLimit", "Node.outBWLimitLong", new IntCallback() {
+					@Override
 					public Integer get() {
 						//return BlockTransmitter.getHardBandwidthLimit();
 						return outputBandwidthLimit;
 					}
+					@Override
 					public void set(Integer obwLimit) throws InvalidConfigValueException {
 						if(obwLimit <= 0) throw new InvalidConfigValueException(l10n("bwlimitMustBePositive"));
 						synchronized(Node.this) {
@@ -1183,10 +1220,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		outputThrottle = new DoubleTokenBucket(obwLimit/2, (1000L*1000L*1000L) / obwLimit, obwLimit/2, 0.8);
 		
 		nodeConfig.register("inputBandwidthLimit", "-1", sortOrder++, false, true, "Node.inBWLimit", "Node.inBWLimitLong",	new IntCallback() {
+					@Override
 					public Integer get() {
 						if(inputLimitDefault) return -1;
 						return inputBandwidthLimit;
 					}
+					@Override
 					public void set(Integer ibwLimit) throws InvalidConfigValueException {
 						synchronized(Node.this) {
 							if(ibwLimit == -1) {
@@ -1212,10 +1251,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		nodeConfig.register("throttleLocalTraffic", false, sortOrder++, true, false, "Node.throttleLocalTraffic", "Node.throttleLocalTrafficLong", new BooleanCallback() {
 
+			@Override
 			public Boolean get() {
 				return throttleLocalData;
 			}
 
+			@Override
 			public void set(Boolean val) throws InvalidConfigValueException {
 				throttleLocalData = val;
 			}
@@ -1317,9 +1358,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		final SubConfig opennetConfig = new SubConfig("node.opennet", config);
 		opennetConfig.register("connectToSeednodes", true, 0, true, false, "Node.withAnnouncement", "Node.withAnnouncementLong", new BooleanCallback() {
+			@Override
 			public Boolean get() {
 				return isAllowedToConnectToSeednodes;
 			}
+			@Override
 			public void set(Boolean val) throws InvalidConfigValueException {
 				if (get().equals(val))
 					        return;
@@ -1331,6 +1374,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				}
 			}
 
+			@Override
 			public boolean isReadOnly() {
 				        return opennet != null;
 			        }
@@ -1339,11 +1383,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		// Can be enabled on the fly
 		opennetConfig.register("enabled", false, 0, false, true, "Node.opennetEnabled", "Node.opennetEnabledLong", new BooleanCallback() {
+			@Override
 			public Boolean get() {
 				synchronized(Node.this) {
 					return opennet != null;
 				}
 			}
+			@Override
 			public void set(Boolean val) throws InvalidConfigValueException {
 				OpennetManager o;
 				synchronized(Node.this) {
@@ -1369,9 +1415,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		opennetConfig.register("maxOpennetPeers", "20", 1, true, false, "Node.maxOpennetPeers",
 				"Node.maxOpennetPeersLong", new IntCallback() {
+					@Override
 					public Integer get() {
 						return maxOpennetPeers;
 					}
+					@Override
 					public void set(Integer inputMaxOpennetPeers) throws InvalidConfigValueException {
 						if(inputMaxOpennetPeers < 0) throw new InvalidConfigValueException(l10n("mustBePositive"));
 						if(inputMaxOpennetPeers > 20) throw new InvalidConfigValueException(l10n("maxOpennetPeersMustBeTwentyOrLess"));
@@ -1436,10 +1484,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		opennetConfig.register("acceptSeedConnections", false, 2, true, true, "Node.acceptSeedConnectionsShort", "Node.acceptSeedConnections", new BooleanCallback() {
 
+			@Override
 			public Boolean get() {
 				return acceptSeedConnections;
 			}
 
+			@Override
 			public void set(Boolean val) throws InvalidConfigValueException {
 				acceptSeedConnections = val;
 			}
@@ -1453,12 +1503,14 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		nodeConfig.register("passOpennetPeersThroughDarknet", true, sortOrder++, true, false, "Node.passOpennetPeersThroughDarknet", "Node.passOpennetPeersThroughDarknetLong",
 				new BooleanCallback() {
 
+					@Override
 					public Boolean get() {
 						synchronized(Node.this) {
 							return passOpennetRefsThroughDarknet;
 						}
 					}
 
+					@Override
 					public void set(Boolean val) throws InvalidConfigValueException {
 						synchronized(Node.this) {
 							passOpennetRefsThroughDarknet = val;
@@ -1472,14 +1524,17 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// Extra Peer Data Directory
 		nodeConfig.register("extraPeerDataDir", new File(nodeDir, "extra-peer-data-"+getDarknetPortNumber()).toString(), sortOrder++, true, true /* can't be changed on the fly, also for packages */, "Node.extraPeerDir", "Node.extraPeerDirLong",
 				new StringCallback() {
+					@Override
 					public String get() {
 						return extraPeerDataDir.getPath();
 					}
+					@Override
 					public void set(String val) throws InvalidConfigValueException {
 						if(extraPeerDataDir.equals(new File(val))) return;
 						// FIXME
 						throw new InvalidConfigValueException("Moving extra peer data directory on the fly not supported at present");
 					}
+					@Override
 					public boolean isReadOnly() {
 				        return true;
 			        }
@@ -1499,12 +1554,14 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		nodeConfig.register("storeForceBigShrinks", false, sortOrder++, true, false, "Node.forceBigShrink", "Node.forceBigShrinkLong",
 				new BooleanCallback() {
 
+					@Override
 					public Boolean get() {
 						synchronized(Node.this) {
 							return storeForceBigShrinks;
 						}
 					}
 
+					@Override
 					public void set(Boolean val) throws InvalidConfigValueException {
 						synchronized(Node.this) {
 							storeForceBigShrinks = val;
@@ -1520,10 +1577,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		nodeConfig.register("storeSize", "1G", sortOrder++, false, true, "Node.storeSize", "Node.storeSizeLong", 
 				new LongCallback() {
 
+					@Override
 					public Long get() {
 						return maxTotalDatastoreSize;
 					}
 
+					@Override
 					public void set(Long storeSize) throws InvalidConfigValueException {
 						if((storeSize < 0) || (storeSize < (32 * 1024 * 1024)))
 							throw new InvalidConfigValueException(l10n("invalidStoreSize"));
@@ -1571,18 +1630,21 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		        "Node.storeBloomFilterSizeLong", new IntCallback() {
 			        private Integer cachedBloomFilterSize;
 
-			        public Integer get() {
+			        @Override
+					public Integer get() {
 			        	if (cachedBloomFilterSize == null)
 					        cachedBloomFilterSize = storeBloomFilterSize;
 				        return cachedBloomFilterSize;
 			        }
 
-			        public void set(Integer val) throws InvalidConfigValueException, NodeNeedRestartException {
+			        @Override
+					public void set(Integer val) throws InvalidConfigValueException, NodeNeedRestartException {
 				        cachedBloomFilterSize = val;
 				        throw new NodeNeedRestartException("Store bloom filter size cannot be changed on the fly");
 			        }
 
-			        public boolean isReadOnly() {
+			        @Override
+					public boolean isReadOnly() {
 				        return !("salt-hash".equals(storeType));
 			        }
 		        });
@@ -1593,18 +1655,21 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		        "Node.storeBloomFilterCounting", "Node.storeBloomFilterCountingLong", new BooleanCallback() {
 			        private Boolean cachedBloomFilterCounting;
 
-			        public Boolean get() {
+			        @Override
+					public Boolean get() {
 				        if (cachedBloomFilterCounting == null)
 					        cachedBloomFilterCounting = storeBloomFilterCounting;
 				        return cachedBloomFilterCounting;
 			        }
 
-			        public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+			        @Override
+					public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
 				        cachedBloomFilterCounting = val;
 				        throw new NodeNeedRestartException("Store bloom filter type cannot be changed on the fly");
 			        }
 
-			        public boolean isReadOnly() {
+			        @Override
+					public boolean isReadOnly() {
 				        return !("salt-hash".equals(storeType));
 			        }
 		        });
@@ -1613,14 +1678,17 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		nodeConfig.register("storeDir", "datastore", sortOrder++, true, true, "Node.storeDirectory", "Node.storeDirectoryLong", 
 				new StringCallback() {
+					@Override
 					public String get() {
 						return storeDir.getPath();
 					}
+					@Override
 					public void set(String val) throws InvalidConfigValueException {
 						if(storeDir.equals(new File(val))) return;
 						// FIXME
 						throw new InvalidConfigValueException("Moving datastore on the fly not supported at present");
 					}
+					@Override
 					public boolean isReadOnly() {
 				        return true;
 			        }
@@ -1776,6 +1844,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		envMutableConfig = mutableConfig;
 		
 		shutdownHook.addLateJob(new Thread() {
+			@Override
 			public void run() {
 				try {
 					storeEnvironment.close();
@@ -1791,10 +1860,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		nodeConfig.register("databaseMaxMemory", "20M", sortOrder++, true, false, "Node.databaseMemory", "Node.databaseMemoryLong", 
 				new LongCallback() {
 
+			@Override
 			public Long get() {
 				return databaseMaxMemory;
 			}
 
+			@Override
 			public void set(Long val) throws InvalidConfigValueException {
 				if(val < 0)
 					throw new InvalidConfigValueException(l10n("mustBePositive"));
@@ -1929,10 +2000,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		nodeConfig.register("disableHangCheckers", false, sortOrder++, true, false, "Node.disableHangCheckers", "Node.disableHangCheckersLong", new BooleanCallback() {
 
+			@Override
 			public Boolean get() {
 				return disableHangCheckers;
 			}
 
+			@Override
 			public void set(Boolean val) throws InvalidConfigValueException {
 				disableHangCheckers = val;
 			}
@@ -2071,12 +2144,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		if(logMINOR) Logger.minor(this, "JVM vendor: "+jvmVendor+", JVM version: "+jvmVersion+", OS name: "+osName+", OS version: "+osVersion);
 		
-		if(jvmVersion.startsWith("1.4")) {
-			System.err.println("Java 1.4 will not be supported for much longer, PLEASE UPGRADE!");
-			nodeUpdater.disableThisSession();
-			clientCore.alerts.register(new SimpleUserAlert(false, l10n("java14Title"), l10n("java14Text"), l10n("java14ShortText"), UserAlert.ERROR));
-		}
-		
 		if(jvmVendor.startsWith("Sun ")) {
 			// Sun bugs
 			
@@ -2115,6 +2182,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				System.err.println("Please upgrade to at least sun jvm 1.4.2_13, 1.5.0_10 or 1.6 (recommended). This version is buggy and may cause spurious OutOfMemoryErrors.");
 				clientCore.alerts.register(new AbstractUserAlert(false, null, null, null, null, UserAlert.ERROR, true, null, false, null) {
 
+					@Override
 					public HTMLNode getHTMLText() {
 						HTMLNode n = new HTMLNode("div");
 						L10n.addL10nSubstitution(n, "Node.buggyJVMWithLink", 
@@ -2124,18 +2192,22 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						return n;
 					}
 
+					@Override
 					public String getText() {
 						return l10n("buggyJVM", "version", System.getProperty("java.version"));
 					}
 
+					@Override
 					public String getTitle() {
 						return l10n("buggyJVMTitle");
 					}
 
+					@Override
 					public void isValid(boolean validity) {
 						// Ignore
 					}
 
+					@Override
 					public String getShortText() {
 						return l10n("buggyJVMShort", "version", System.getProperty("java.version"));
 					}
@@ -2315,6 +2387,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			this.uid = uid;
 		}
 		
+		@Override
 		public boolean equals(Object o) {
 			if(o instanceof KeyHTLPair) {
 				KeyHTLPair p = (KeyHTLPair) o;
@@ -2322,10 +2395,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			} else return false;
 		}
 		
+		@Override
 		public int hashCode() {
 			return key.hashCode() ^ htl ^ (int)uid;
 		}
 		
+		@Override
 		public String toString() {
 			return key.toString()+ ':' +htl +':'+uid;
 		}

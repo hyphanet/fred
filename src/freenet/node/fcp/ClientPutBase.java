@@ -131,6 +131,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		}
 	}
 
+	@Override
 	public void onLostConnection(ObjectContainer container, ClientContext context) {
 		if(persistenceType == PERSIST_CONNECTION)
 			cancel(container, context);
@@ -173,6 +174,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		trySendGeneratedURIMessage(null, container);
 	}
 
+	@Override
 	public void requestWasRemoved(ObjectContainer container) {
 		// if request is still running, send a PutFailed with code=cancelled
 		if( !finished ) {
@@ -331,6 +333,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			client.queueClientRequestMessage(msg, verbosity, container);
 	}
 
+	@Override
 	public void sendPendingMessages(FCPConnectionOutputHandler handler, boolean includePersistentRequest, boolean includeData, boolean onlyData, ObjectContainer container) {
 		if(persistenceType == PERSIST_CONNECTION) {
 			Logger.error(this, "WTF? persistenceType="+persistenceType, new Exception("error"));
@@ -360,6 +363,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			trySendFinalMessage(handler, container);
 	}
 
+	@Override
 	public synchronized SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(false); // we will need multi-level later...
 		fs.putSingle("Type", getTypeName());
@@ -390,6 +394,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 
 	protected abstract String getTypeName();
 
+	@Override
 	public synchronized double getSuccessFraction(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER && progressMessage != null)
 			container.activate(progressMessage, 2);
@@ -402,6 +407,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 	}
 
 
+	@Override
 	public synchronized double getTotalBlocks(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER && progressMessage != null)
 			container.activate(progressMessage, 2);
@@ -413,6 +419,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 
+	@Override
 	public synchronized double getMinBlocks(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER && progressMessage != null)
 			container.activate(progressMessage, 2);
@@ -424,6 +431,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 
+	@Override
 	public synchronized double getFailedBlocks(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER && progressMessage != null)
 			container.activate(progressMessage, 2);
@@ -435,6 +443,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 
+	@Override
 	public synchronized double getFatalyFailedBlocks(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER && progressMessage != null)
 			container.activate(progressMessage, 2);
@@ -446,6 +455,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 
+	@Override
 	public synchronized double getFetchedBlocks(ObjectContainer container) {
 		if(persistenceType == PERSIST_FOREVER && progressMessage != null)
 			container.activate(progressMessage, 2);
@@ -457,6 +467,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			return -1;
 	}
 
+	@Override
 	public synchronized boolean isTotalFinalized(ObjectContainer container) {
 		if(!(progressMessage instanceof SimpleProgressMessage)) return false;
 		else {
@@ -466,6 +477,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		}
 	}
 
+	@Override
 	public synchronized String getFailureReason(ObjectContainer container) {
 		if(putFailedMessage == null)
 			return null;

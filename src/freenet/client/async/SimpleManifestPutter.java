@@ -94,10 +94,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			super.cancel();
 		}
 		
+		@Override
 		public FreenetURI getURI() {
 			return null;
 		}
 
+		@Override
 		public boolean isFinished() {
 			return SimpleManifestPutter.this.finished || cancelled || SimpleManifestPutter.this.cancelled;
 		}
@@ -170,42 +172,49 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			gotAllMetadata(container, context);
 		}
 
+		@Override
 		public void addBlock(ObjectContainer container) {
 			if(persistent)
 				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.addBlock(container);
 		}
 		
+		@Override
 		public void addBlocks(int num, ObjectContainer container) {
 			if(persistent)
 				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.addBlocks(num, container);
 		}
 		
+		@Override
 		public void completedBlock(boolean dontNotify, ObjectContainer container, ClientContext context) {
 			if(persistent)
 				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.completedBlock(dontNotify, container, context);
 		}
 		
+		@Override
 		public void failedBlock(ObjectContainer container, ClientContext context) {
 			if(persistent)
 				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.failedBlock(container, context);
 		}
 		
+		@Override
 		public void fatallyFailedBlock(ObjectContainer container, ClientContext context) {
 			if(persistent)
 				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.fatallyFailedBlock(container, context);
 		}
 		
+		@Override
 		public void addMustSucceedBlocks(int blocks, ObjectContainer container) {
 			if(persistent)
 				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.addMustSucceedBlocks(blocks, container);
 		}
 		
+		@Override
 		public void notifyClients(ObjectContainer container, ClientContext context) {
 			// FIXME generate per-filename events???
 		}
@@ -224,6 +233,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			SimpleManifestPutter.this.blockSetFinalized(container, context);
 		}
 
+		@Override
 		public void onMajorProgress(ObjectContainer container) {
 			if(persistent)
 				container.activate(SimpleManifestPutter.this, 1);
@@ -236,6 +246,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			SimpleManifestPutter.this.onFetchable(this, container);
 		}
 
+		@Override
 		public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 			// Ignore
 		}
@@ -391,10 +402,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 
+	@Override
 	public FreenetURI getURI() {
 		return finalURI;
 	}
 
+	@Override
 	public synchronized boolean isFinished() {
 		return finished || cancelled;
 	}
@@ -645,6 +658,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 	
+	@Override
 	public void cancel(ObjectContainer container, ClientContext context) {
 		super.cancel();
 		if(persistent())
@@ -715,6 +729,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		// Ignore
 	}
 
+	@Override
 	public void notifyClients(ObjectContainer container, ClientContext context) {
 		if(persistent()) {
 			container.activate(ctx, 1);
@@ -733,6 +748,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			container.set(this);
 	}
 
+	@Override
 	public void blockSetFinalized(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(!metadataBlockSetFinalized) return;
@@ -829,6 +845,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		return totalSize;
 	}
 
+	@Override
 	public void onMajorProgress(ObjectContainer container) {
 		if(persistent())
 			container.activate(cb, 1);
@@ -878,6 +895,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		cb.onFetchable(this, container);
 	}
 
+	@Override
 	public void onTransition(ClientGetState oldState, ClientGetState newState, ObjectContainer container) {
 		// Ignore
 	}

@@ -54,7 +54,8 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
 
     private static boolean logMINOR;
     
-    public String toString() {
+    @Override
+	public String toString() {
         return super.toString()+" for "+uid;
     }
 
