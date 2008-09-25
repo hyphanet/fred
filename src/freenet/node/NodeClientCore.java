@@ -249,12 +249,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
 		}
 
-		clientContext = new ClientContext(this);
-		storeChecker.setContext(clientContext);
-		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext);
-		clientContext.init(requestStarters);
-		InsertCompressor.load(container, clientContext);
-
 		nodeConfig.register("maxRAMBucketSize", "128KiB", sortOrder++, true, false, "NodeClientCore.maxRAMBucketSize", "NodeClientCore.maxRAMBucketSizeLong", new LongCallback() {
 			
 			@Override
@@ -299,6 +293,13 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			}
 		});
 		tempBucketFactory = new TempBucketFactory(node.executor, tempFilenameGenerator, nodeConfig.getLong("maxRAMBucketSize"), nodeConfig.getLong("RAMBucketPoolSize"), random, node.fastWeakRandom, nodeConfig.getBoolean("encryptTempBuckets"));
+
+		clientContext = new ClientContext(this);
+		storeChecker.setContext(clientContext);
+		
+		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext);
+		clientContext.init(requestStarters);
+		InsertCompressor.load(container, clientContext);
 
 		healingQueue = new SimpleHealingQueue(
 				new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory,

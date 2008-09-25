@@ -59,7 +59,9 @@ public class ClientContext {
 		this.random = core.random;
 		archiveManager = core.archiveManager;
 		this.persistentBucketFactory = core.persistentTempBucketFactory;
+		if(persistentBucketFactory == null) throw new NullPointerException();
 		this.tempBucketFactory = core.tempBucketFactory;
+		if(tempBucketFactory == null) throw new NullPointerException();
 		this.healingQueue = core.getHealingQueue();
 		this.uskManager = core.uskManager;
 		fastWeakRandom = core.node.fastWeakRandom;
