@@ -296,18 +296,18 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 
 		archiveManager = new ArchiveManager(MAX_ARCHIVE_HANDLERS, MAX_CACHED_ARCHIVE_DATA, MAX_ARCHIVED_FILE_SIZE, MAX_CACHED_ELEMENTS, tempBucketFactory);
 		
-		clientContext = new ClientContext(this);
+		healingQueue = new SimpleHealingQueue(
+				new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory,
+						0, 2, 1, 0, 0, new SimpleEventProducer(),
+						!Node.DONT_CACHE_LOCAL_REQUESTS), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
+		
+		clientContext = new ClientContext(this, fecQueue, clientDatabaseExecutor, backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, persistentTempBucketFactory, healingQueue, uskManager, random, random, null, persistentFilenameGenerator, persistentFilenameGenerator);
 		storeChecker.setContext(clientContext);
 		
 		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext);
 		clientContext.init(requestStarters);
 		InsertCompressor.load(container, clientContext);
 
-		healingQueue = new SimpleHealingQueue(
-				new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory,
-						0, 2, 1, 0, 0, new SimpleEventProducer(),
-						!Node.DONT_CACHE_LOCAL_REQUESTS), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
-		
 		node.securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<PHYSICAL_THREAT_LEVEL>() {
 
 			public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {

@@ -49,25 +49,30 @@ public class ClientContext {
 	public transient final FilenameGenerator fg;
 	public transient final FilenameGenerator persistentFG;
 
-	public ClientContext(NodeClientCore core) {
+	public ClientContext(NodeClientCore core, FECQueue fecQueue, Executor mainExecutor,
+			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
+			BucketFactory ptbf, BucketFactory tbf, HealingQueue hq,
+			USKManager uskManager, RandomSource strongRandom, 
+			Random fastWeakRandom, Ticker ticker, 
+			FilenameGenerator fg, FilenameGenerator persistentFG) {
 		this.bootID = core.node.bootID;
-		this.fecQueue = core.fecQueue;
+		this.fecQueue = fecQueue;
 		jobRunner = core;
-		this.mainExecutor = core.getExecutor();
+		this.mainExecutor = mainExecutor;
 		this.nodeDBHandle = core.node.nodeDBHandle;
-		this.backgroundBlockEncoder = core.backgroundBlockEncoder;
-		this.random = core.random;
-		archiveManager = core.archiveManager;
-		this.persistentBucketFactory = core.persistentTempBucketFactory;
+		this.backgroundBlockEncoder = blockEncoder;
+		this.random = strongRandom;
+		this.archiveManager = archiveManager;
+		this.persistentBucketFactory = ptbf;
 		if(persistentBucketFactory == null) throw new NullPointerException();
-		this.tempBucketFactory = core.tempBucketFactory;
+		this.tempBucketFactory = tbf;
 		if(tempBucketFactory == null) throw new NullPointerException();
-		this.healingQueue = core.getHealingQueue();
-		this.uskManager = core.uskManager;
-		fastWeakRandom = core.node.fastWeakRandom;
-		this.ticker = core.getTicker();
-		fg = core.tempFilenameGenerator;
-		persistentFG = core.persistentFilenameGenerator;
+		this.healingQueue = hq;
+		this.uskManager = uskManager;
+		this.fastWeakRandom = fastWeakRandom;
+		this.ticker = ticker;
+		this.fg = fg;
+		this.persistentFG = persistentFG;
 	}
 	
 	public void init(RequestStarterGroup starters) {
