@@ -232,7 +232,6 @@ public class ClientPutDir extends ClientPutBase {
 			}
 			if(persistenceType == PERSIST_FOREVER)
 				container.store(this); // Update
-				container.store(this); // Update
 		} catch (InsertException e) {
 			started = true;
 			onFailure(e, null, container);

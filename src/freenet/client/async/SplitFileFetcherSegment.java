@@ -240,7 +240,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 				dataBuckets[blockNo].setData(data);
 				if(persistent)
 					container.store(dataBuckets[blockNo]);
-					container.store(dataBuckets[blockNo]);
 			} else if(blockNo < checkKeys.length + dataKeys.length) {
 				blockNo -= dataKeys.length;
 				if(checkKeys[blockNo] == null) {
@@ -258,7 +257,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 				checkBuckets[blockNo].setData(data);
 				if(persistent)
 					container.store(checkBuckets[blockNo]);
-					container.store(checkBuckets[blockNo]);
 			} else
 				Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
 			if(startedDecode) {
@@ -275,7 +273,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 			dontNotify = !scheduled;
 		}
 		if(persistent) {
-			container.store(this);
 			container.store(this);
 			container.activate(parent, 1);
 		}
@@ -303,7 +300,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(codec == null)
 		codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length, context.mainExecutor);
 		if(persistent)
-			container.store(this);
 			container.store(this);
 		
 		// Activate buckets
@@ -362,7 +358,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 					// The FECCodec won't set them.
 					// But they should be active.
 					container.store(dataBuckets[i]);
-					container.store(dataBuckets[i]);
 				}
 			}
 			if(isCollectingBinaryBlob(parent)) {
@@ -399,7 +394,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(codec == null || !isCollectingBinaryBlob(parent))
 				parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
 			if(persistent) container.store(this);
-			if(persistent) container.store(this);
 			// Leave active before queueing
 		} catch (IOException e) {
 			Logger.normal(this, "Caught bucket error?: "+e, e);
@@ -407,7 +401,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 				finished = true;
 				failureException = new FetchException(FetchException.BUCKET_ERROR);
 			}
-			if(persistent) container.store(this);
 			if(persistent) container.store(this);
 			parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
 			return;
@@ -501,7 +494,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		if(persistent) {
 			container.store(this);
-			container.store(this);
 		}
 		// Defer the completion until we have generated healing blocks if we are collecting binary blobs.
 		if(isCollectingBinaryBlob(parent)) {
@@ -584,7 +576,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 			allFailed = failedBlocks + fatallyFailedBlocks > (dataKeys.length + checkKeys.length - minFetched);
 		}
 		if(persistent)
-			container.store(this);
 			container.store(this);
 		if(allFailed)
 			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors), container, context, false);
@@ -704,7 +695,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		if(persistent) {
 			container.store(this);
-			container.store(this);
 			container.deactivate(key, 5);
 		}
 		if(mustSchedule) 
@@ -743,7 +733,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		if(persistent)
 			container.store(subSegments);
-			container.store(subSegments);
 		return sub;
 	}
 
@@ -780,7 +769,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 		removeSubSegments(container, context);
 		if(persistent) {
 			container.store(this);
-			container.store(this);
 			container.activate(parentFetcher, 1);
 		}
 		parentFetcher.removeMyPendingKeys(this, container, context);
@@ -806,7 +794,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 				scheduled = true;
 			}
 			if(persistent)
-				container.store(this);
 				container.store(this);
 			if(persistent)
 				container.deactivate(seg, 1);
@@ -885,7 +872,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		if(persistent)
 			container.store(subSegments);
-			container.store(subSegments);
 		return true;
 	}
 
@@ -899,7 +885,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		if(persistent && deadSegs.length > 0)
 			container.store(this);
-			container.store(this);
 		for(int i=0;i<deadSegs.length;i++) {
 			if(persistent)
 				container.activate(deadSegs[i], 1);
@@ -910,8 +895,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		if(persistent) {
 			container.store(this);
-			container.store(this);
-			container.store(subSegments);
 			container.store(subSegments);
 		}
 	}

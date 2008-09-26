@@ -339,7 +339,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				insertedAllFiles = true;
 				if(persistent())
 					container.store(this);
-					container.store(this);
 				gotAllMetadata(container, context);
 			}
 		} catch (InsertException e) {
@@ -548,8 +547,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			metadataInserter.start(null, container, context);
 			if(persistent()) {
 				container.store(metadataPuttersByMetadata);
-				container.store(metadataPuttersByMetadata);
-				container.store(metadataPuttersUnfetchable);
 				container.store(metadataPuttersUnfetchable);
 			}
 		} catch (InsertException e) {

@@ -256,7 +256,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		
 		if(persistent)
 			container.store(this);
-			container.store(this);
 		
 		if(segmentCount == 1) {
 			// splitfile* will be overwritten, this is bad
@@ -277,7 +276,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				tempListener.addKey(newSplitfileCheckBlocks[i].getNodeKey(), 0, context);
 			}
 			if(persistent) {
-				container.store(segments[0]);
 				container.store(segments[0]);
 				segments[0].deactivateKeys(container);
 				container.deactivate(segments[0], 1);
@@ -302,7 +300,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				for(int j=0;j<checkBlocks.length;j++)
 					tempListener.addKey(checkBlocks[j].getNodeKey(), i, context);
 				if(persistent) {
-					container.store(segments[i]);
 					container.store(segments[i]);
 					segments[i].deactivateKeys(container);
 					container.deactivate(segments[i], 1);
@@ -426,7 +423,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			notifyAll();
 		}
 		if(persistent) container.store(this);
-		if(persistent) container.store(this);
 		if(finish) finish(container, context);
 	}
 
@@ -448,7 +444,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			Bucket data = finalStatus(container, context);
 			// Decompress
 			if(persistent) {
-				container.store(this);
 				container.store(this);
 				container.activate(decompressors, 5);
 				container.activate(returnBucket, 5);
@@ -577,7 +572,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					mainBloomFile = context.fg.makeRandomFile();
 					altBloomFile = context.fg.makeRandomFile();
 					container.store(this);
-					container.store(this);
 				} catch (IOException e1) {
 					throw new KeyListenerConstructionException(new FetchException(FetchException.BUCKET_ERROR, "Unable to create Bloom filter files in reconstruction", e1));
 				}
@@ -608,7 +602,6 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	void setKeyCount(int keyCount2, ObjectContainer container) {
 		this.keyCount = keyCount2;
 		if(persistent)
-			container.store(this);
 			container.store(this);
 	}
 

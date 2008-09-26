@@ -218,7 +218,6 @@ public abstract class ClientRequest {
 		freeData(container);
 		if(persistenceType == PERSIST_FOREVER)
 			container.store(this);
-			container.store(this);
 	}
 
 	public boolean isPersistentForever() {
@@ -262,7 +261,6 @@ public abstract class ClientRequest {
 			origHandler.finishedClientRequest(this);
 		client.finishedClientRequest(this, container);
 		if(persistenceType == ClientRequest.PERSIST_FOREVER)
-			container.store(this);
 			container.store(this);
 	}
 
@@ -354,7 +352,6 @@ public abstract class ClientRequest {
 		}
 		
 		if(persistenceType == PERSIST_FOREVER) {
-			container.store(this);
 			container.store(this);
 			container.commit(); // commit before we send the message
 			if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");

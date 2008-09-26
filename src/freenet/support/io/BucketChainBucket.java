@@ -298,8 +298,6 @@ public class BucketChainBucket implements Bucket {
 		for(int i=0;i<buckets.size();i++)
 			((Bucket) buckets.get(i)).storeTo(container);
 		container.store(buckets);
-		container.store(buckets);
-		container.store(this);
 		container.store(this);
 	}
 

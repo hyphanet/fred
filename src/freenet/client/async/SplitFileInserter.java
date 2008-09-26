@@ -121,7 +121,6 @@ public class SplitFileInserter implements ClientPutState {
 			for(int i=0;i<dataBuckets.length;i++) {
 				// If we don't set them now, they will be set when the segment is set, which means they will be set deactivated, and cause NPEs.
 				container.store(dataBuckets[i]);
-				container.store(dataBuckets[i]);
 				container.deactivate(dataBuckets[i], 1);
 				if(dataBuckets.length > segmentSize) // Otherwise we are nulling out within the segment
 					dataBuckets[i] = null;
@@ -136,7 +135,6 @@ public class SplitFileInserter implements ClientPutState {
 		parent.onMajorProgress(container);
 		if(persistent) {
 			for(int i=0;i<segments.length;i++) {
-				container.store(segments[i]);
 				container.store(segments[i]);
 				container.deactivate(segments[i], 1);
 			}
@@ -407,7 +405,6 @@ public class SplitFileInserter implements ClientPutState {
 		}
 		if(persistent) {
 			container.store(this);
-			container.store(this);
 			container.activate(cb, 1);
 		}
 		cb.onFailure(e, this, container, context);
@@ -524,7 +521,6 @@ public class SplitFileInserter implements ClientPutState {
 		}
 		if(persistent)
 			container.store(this);
-			container.store(this);
 		onAllFinished(container, context);
 	}
 	
@@ -551,7 +547,6 @@ public class SplitFileInserter implements ClientPutState {
 		}
 		if(persistent) {
 			container.activate(cb, 1);
-			container.store(this);
 			container.store(this);
 		}
 		cb.onFetchable(this, container);
@@ -594,7 +589,6 @@ public class SplitFileInserter implements ClientPutState {
 			finished = true;
 		}
 		if(persistent)
-			container.store(this);
 			container.store(this);
 		for(int i=0;i<segments.length;i++) {
 			if(persistent)

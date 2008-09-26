@@ -95,7 +95,6 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		parentGrabArray = parent;
 		if(persistent())
 			container.store(this);
-			container.store(this);
 	}
 	
 	public void unregister(ObjectContainer container, ClientContext context) {

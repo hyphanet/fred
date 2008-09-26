@@ -52,7 +52,6 @@ public class RandomGrabArray {
 			if(logMINOR) Logger.minor(this, "Added: "+req+" to "+this+" size now "+index);
 			if(persistent) {
 				container.store(this);
-				container.store(this);
 			}
 		}
 	}
@@ -148,19 +147,16 @@ public class RandomGrabArray {
 							if(logMINOR) Logger.minor(this, "Chosen random item "+ret+" out of "+valid);
 							if(persistent && changedMe)
 								container.store(this);
-								container.store(this);
 							return ret;
 						}
 						if(valid == 0 && exclude == 0) {
 							index = 0;
 							if(persistent)
 								container.store(this);
-								container.store(this);
 							if(logMINOR) Logger.minor(this, "No valid or excluded items");
 							return null;
 						} else if(valid == 0) {
 							if(persistent && changedMe)
-								container.store(this);
 								container.store(this);
 							if(logMINOR) Logger.minor(this, "No valid items, "+exclude+" excluded items");
 							return null;
@@ -179,7 +175,6 @@ public class RandomGrabArray {
 								if(logMINOR) Logger.minor(this, "No valid or excluded items apart from "+ret);
 							}
 							if(persistent && changedMe)
-								container.store(this);
 								container.store(this);
 							return ret;
 						} else {
@@ -217,7 +212,6 @@ public class RandomGrabArray {
 						Logger.normal(this, "Remove random returning null because "+excluded+" excluded items, length = "+index, new Exception("error"));
 						if(persistent && changedMe)
 							container.store(this);
-							container.store(this);
 						return null;
 					}
 					continue;
@@ -225,7 +219,6 @@ public class RandomGrabArray {
 				if(ret != null && !ret.canRemove(container)) {
 					if(logMINOR) Logger.minor(this, "Returning (cannot remove): "+ret+" of "+index);
 					if(persistent && changedMe)
-						container.store(this);
 						container.store(this);
 					return ret;
 				}
@@ -255,7 +248,6 @@ public class RandomGrabArray {
 		ret.setParentGrabArray(null, container);
 		if(persistent)
 			container.store(this);
-			container.store(this);
 		return ret;
 	}
 	
@@ -272,7 +264,6 @@ public class RandomGrabArray {
 		}
 		it.setParentGrabArray(null, container);
 		if(persistent) {
-			container.store(this);
 			container.store(this);
 		}
 	}

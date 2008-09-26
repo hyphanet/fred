@@ -172,7 +172,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				metadata = Metadata.construct(data);
 				if(persistent)
 					container.store(this);
-					container.store(this);
 			} catch (MetadataParseException e) {
 				onFailure(new FetchException(e), false, container, context);
 				return;
@@ -221,8 +220,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			result = new FetchResult(result, data);
 			if(persistent) {
 				container.store(this);
-				container.store(this);
-				container.store(decompressors);
 				container.store(decompressors);
 			}
 		}
@@ -292,8 +289,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					metadata = metadata.getDefaultDocument();
 					if(persistent) {
 						container.store(this);
-						container.store(this);
-						container.store(metaStrings);
 						container.store(metaStrings);
 					}
 					if(metadata == null)
@@ -303,10 +298,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					thisKey = thisKey.pushMetaString(name);
 					if(persistent) {
 						container.store(this);
-						container.store(this);
 						container.store(metaStrings);
-						container.store(metaStrings);
-						container.store(thisKey);
 						container.store(thisKey);
 					}
 					if(metadata == null)
@@ -318,7 +310,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(metaStrings.isEmpty() && ctx.returnZIPManifests) {
 					// Just return the archive, whole.
 					metadata.setSimpleRedirect();
-					if(persistent) container.store(metadata);
 					if(persistent) container.store(metadata);
 					continue;
 				}
@@ -340,7 +331,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						// Bucket error?
 						throw new FetchException(FetchException.BUCKET_ERROR, e);
 					}
-					if(persistent) container.store(this);
 					if(persistent) container.store(this);
 				} else {
 					final boolean persistent = this.persistent;
@@ -386,14 +376,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						}
 					}, container, context); // will result in this function being called again
 					if(persistent) container.store(this);
-					if(persistent) container.store(this);
 					return;
 				}
 				continue;
 			} else if(metadata.isArchiveInternalRedirect()) {
 				if(logMINOR) Logger.minor(this, "Is archive-internal redirect");
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata());
-				if(persistent) container.store(clientMetadata);
 				if(persistent) container.store(clientMetadata);
 				String mime = clientMetadata.getMIMEType();
 				if(mime != null) rcb.onExpectedMIME(mime, container);
@@ -491,8 +479,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// Clear our own metadata so it can be garbage collected, it will be replaced by whatever is fetched.
 				this.metadata = null;
 				if(persistent) container.store(this);
-				if(persistent) container.store(this);
-				if(persistent) container.store(f);
 				if(persistent) container.store(f);
 				f.wrapHandleMetadata(true, container, context);
 				if(persistent) container.deactivate(f, 1);
@@ -500,7 +486,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			} else if(metadata.isSingleFileRedirect()) {
 				if(logMINOR) Logger.minor(this, "Is single-file redirect");
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
-				if(persistent) container.store(clientMetadata);
 				if(persistent) container.store(clientMetadata);
 				String mime = clientMetadata.getMIMEType();
 				if(mime != null) rcb.onExpectedMIME(mime, container);
@@ -510,10 +495,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					// Looks like an implicit archive, handle as such
 					metadata.setArchiveManifest();
 					if(persistent) container.store(metadata);
-					if(persistent) container.store(metadata);
 					// Pick up MIME type from inside archive
 					clientMetadata.clear();
-					if(persistent) container.store(clientMetadata);
 					if(persistent) container.store(clientMetadata);
 					if(logMINOR) Logger.minor(this, "Handling implicit container... (redirect)");
 					continue;
@@ -562,10 +545,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				parent.onTransition(this, f, container);
 				if(persistent) {
 					container.store(metaStrings);
-					container.store(metaStrings);
 					container.store(f); // Store *before* scheduling to avoid activation problems.
-					container.store(f); // Store *before* scheduling to avoid activation problems.
-					container.store(this);
 					container.store(this);
 				}
 				f.schedule(container, context);
@@ -576,7 +556,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(logMINOR) Logger.minor(this, "Fetching splitfile");
 				
 				clientMetadata.mergeNoOverwrite(metadata.getClientMetadata()); // even splitfiles can have mime types!
-				if(persistent) container.store(clientMetadata);
 				if(persistent) container.store(clientMetadata);
 				String mime = clientMetadata.getMIMEType();
 				if(mime != null) rcb.onExpectedMIME(mime, container);
@@ -589,8 +568,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					clientMetadata.clear();
 					if(persistent) {
 						container.store(metadata);
-						container.store(metadata);
-						container.store(clientMetadata);
 						container.store(clientMetadata);
 					}
 					if(logMINOR) Logger.minor(this, "Handling implicit container... (splitfile)");
@@ -611,7 +588,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					Compressor codec = Compressor.getCompressionAlgorithmByMetadataID(metadata.getCompressionCodec());
 					addDecompressor(codec);
 					if(persistent)
-						container.store(decompressors);
 						container.store(decompressors);
 				}
 				
@@ -654,7 +630,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						decompressors, clientMetadata, actx, recursionLevel, returnBucket, token, container, context);
 				if(persistent)
 					container.store(sf); // Avoid problems caused by storing a deactivated sf
-					container.store(sf); // Avoid problems caused by storing a deactivated sf
 				parent.onTransition(this, sf, container);
 				try {
 					sf.schedule(container, context);
@@ -672,7 +647,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// SplitFile will now run.
 				// Then it will return data to rcd.
 				// We are now out of the loop. Yay!
-				if(persistent) container.store(this);
 				if(persistent) container.store(this);
 				return;
 			} else {
@@ -706,7 +680,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		newMeta.setSimpleRedirect();
 		final SingleFileFetcher f;
 		f = new SingleFileFetcher(this, newMeta, new ArchiveFetcherCallback(forData, element, callback), new FetchContext(ctx, FetchContext.SET_RETURN_ARCHIVES, true), container, context);
-		if(persistent) container.store(f);
 		if(persistent) container.store(f);
 		if(logMINOR) Logger.minor(this, "fetchArchive(): "+f);
 		// Fetch the archive. The archive fetcher callback will unpack it, and either call the element 
@@ -873,7 +846,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					metadata = meta;
 				}
 				if(persistent)
-					container.store(SingleFileFetcher.this);
 					container.store(SingleFileFetcher.this);
 				wrapHandleMetadata(true, container, context);
 			} catch (MetadataParseException e) {

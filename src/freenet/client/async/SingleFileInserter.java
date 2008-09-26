@@ -209,7 +209,6 @@ class SingleFileInserter implements ClientPutState {
 				started = true;
 				if(persistent) {
 					container.store(this);
-					container.store(this);
 					container.deactivate(cb, 1);
 					container.deactivate(parent, 1);
 				}
@@ -256,7 +255,6 @@ class SingleFileInserter implements ClientPutState {
 			started = true;
 			if(persistent) {
 				container.store(this);
-				container.store(this);
 				container.deactivate(cb, 1);
 				container.deactivate(parent, 1);
 			}
@@ -278,14 +276,12 @@ class SingleFileInserter implements ClientPutState {
 			sh.sfi = sfi;
 			if(persistent)
 				container.store(sh);
-				container.store(sh);
 			cb.onTransition(this, sh, container);
 			sfi.start(container, context);
 			if(earlyEncode) sfi.forceEncode(container, context);
 		}
 		started = true;
 		if(persistent) {
-			container.store(this);
 			container.store(this);
 			container.deactivate(cb, 1);
 			container.deactivate(parent, 1);
@@ -426,7 +422,6 @@ class SingleFileInserter implements ClientPutState {
 			}
 			if(persistent)
 				container.store(this);
-				container.store(this);
 		}
 
 		public SplitHandler() {
@@ -444,7 +439,6 @@ class SingleFileInserter implements ClientPutState {
 				metadataPutter = newState;
 			if(persistent)
 				container.store(this);
-				container.store(this);
 		}
 		
 		public void onSuccess(ClientPutState state, ObjectContainer container, ClientContext context) {
@@ -459,7 +453,6 @@ class SingleFileInserter implements ClientPutState {
 					if(freeData) {
 						block.free(container);
 						if(persistent)
-							container.store(this);
 							container.store(this);
 					}
 					return;
@@ -484,7 +477,6 @@ class SingleFileInserter implements ClientPutState {
 				}
 			}
 			if(persistent)
-				container.store(this);
 				container.store(this);
 			if(lateStart)
 				startMetadata(container, context);
@@ -538,7 +530,6 @@ class SingleFileInserter implements ClientPutState {
 			}
 			if(reportMetadataOnly) {
 				if(persistent)
-					container.store(this);
 					container.store(this);
 				cb.onMetadata(meta, this, container, context);
 				return;
@@ -600,7 +591,6 @@ class SingleFileInserter implements ClientPutState {
 						Logger.minor(this, "Created metadata putter for "+this+" : "+metadataPutter+" bucket "+metadataBucket+" size "+metadataBucket.size());
 					if(persistent)
 						container.store(this);
-						container.store(this);
 					if(!(earlyEncode || splitInsertSuccess)) return;
 				}
 				if(logMINOR) Logger.minor(this, "Putting metadata on "+metadataPutter+" from "+sfi+" ("+((SplitFileInserter)sfi).getLength()+ ')');
@@ -638,7 +628,6 @@ class SingleFileInserter implements ClientPutState {
 			cb.onFailure(e, this, container, context);
 			if(persistent)
 				container.store(this);
-				container.store(this);
 		}
 
 		public BaseClientPutter getParent() {
@@ -665,7 +654,6 @@ class SingleFileInserter implements ClientPutState {
 			}
 			if(persistent) {
 				container.store(this);
-				container.store(this);
 				if(oldSFI != null)
 					container.activate(oldSFI, 1);
 				if(oldMetadataPutter != null)
@@ -690,7 +678,6 @@ class SingleFileInserter implements ClientPutState {
 				else if (state == metadataPutter)
 					metaInsertSetBlocks = true;
 				if(persistent)
-					container.store(this);
 					container.store(this);
 				if(!(splitInsertSetBlocks && metaInsertSetBlocks)) 
 					return;
@@ -748,14 +735,12 @@ class SingleFileInserter implements ClientPutState {
 					metaFetchable = true;
 					if(persistent)
 						container.store(this);
-						container.store(this);
 				} else {
 					if(state != sfi) {
 						Logger.error(this, "onFetchable for unknown state "+state);
 						return;
 					}
 					if(persistent)
-						container.store(this);
 						container.store(this);
 					if(logMINOR) Logger.minor(this, "Data fetchable");
 					if(metaInsertStarted) return;
@@ -787,7 +772,6 @@ class SingleFileInserter implements ClientPutState {
 					splitInserter = sfi;
 				}
 				if(persistent)
-					container.store(this);
 					container.store(this);
 				if(putter != null) {
 					if(logMINOR) Logger.minor(this, "Starting metadata inserter: "+putter+" for "+this);
@@ -822,7 +806,6 @@ class SingleFileInserter implements ClientPutState {
 		if(freeData)
 			block.free(container);
 		if(persistent)
-			container.store(this);
 			container.store(this);
 	}
 

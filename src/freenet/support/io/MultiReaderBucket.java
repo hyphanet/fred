@@ -133,7 +133,6 @@ public class MultiReaderBucket {
 
 		public void storeTo(ObjectContainer container) {
 			container.store(this);
-			container.store(this);
 		}
 
 		public void removeFrom(ObjectContainer container) {

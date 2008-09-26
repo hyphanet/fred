@@ -68,13 +68,11 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			ObjectContainer container, FetchContext ctx, boolean keepLast, int token) {
 		USKFetcherTag tag = new USKFetcherTag(usk, callback, nodeDBHandle, persistent, container, ctx, keepLast, token);
 		if(persistent) container.store(tag);
-		if(persistent) container.store(tag);
 		return tag;
 	}
 	
 	synchronized void updatedEdition(long ed, ObjectContainer container) {
 		if(edition < ed) edition = ed;
-		if(persistent) container.store(this); // Update
 		if(persistent) container.store(this); // Update
 	}
 
@@ -110,7 +108,6 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 
 				public void run(ObjectContainer container, ClientContext context) {
 					container.store(USKFetcherTag.this);
-					container.store(USKFetcherTag.this);
 				}
 				
 			}, NativeThread.HIGH_PRIORITY, false);
@@ -136,7 +133,6 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 					container.activate(callback, 1);
 					callback.onCancelled(container, context);
 					container.store(this);
-					container.store(this);
 					container.deactivate(callback, 1);
 				}
 				
@@ -156,7 +152,6 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 				public void run(ObjectContainer container, ClientContext context) {
 					container.activate(callback, 1);
 					callback.onFailure(container, context);
-					container.store(this);
 					container.store(this);
 					container.deactivate(callback, 1);
 				}
@@ -189,7 +184,6 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 				public void run(ObjectContainer container, ClientContext context) {
 					container.activate(callback, 1);
 					callback.onFoundEdition(l, key, container, context, metadata, codec, data);
-					container.store(this);
 					container.store(this);
 					container.deactivate(callback, 1);
 				}

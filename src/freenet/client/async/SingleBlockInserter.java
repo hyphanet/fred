@@ -140,7 +140,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			cb.onEncode(block.getClientKey(), this, container, context);
 		if(shouldSend && persistent)
 			container.store(this);
-			container.store(this);
 		if(persistent && !calledByCB)
 			container.deactivate(cb, 1);
 		return block;
@@ -203,7 +202,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 		if(persistent)
 			container.store(this);
-			container.store(this);
 		getScheduler(context).registerInsert(this, persistent, false, true, container);
 	}
 
@@ -217,7 +215,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			finished = true;
 		}
 		if(persistent)
-			container.store(this);
 			container.store(this);
 		if(e.isFatal() || forceFatal)
 			parent.fatallyFailedBlock(container, context);
@@ -234,7 +231,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				if(finished) return null;
 			}
 			if(persistent)
-				container.store(this);
 				container.store(this);
 			return encode(container, context, calledByCB);
 		} catch (InsertException e) {
@@ -272,7 +268,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			cb.onSuccess(this, container, context);
 			finished = true;
 			if(persistent)
-				container.store(this);
 				container.store(this);
 		} else {
 			getScheduler(context).registerInsert(this, persistent, true, true, container);
@@ -319,7 +314,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(persistent) {
 			container.activate(cb, 1);
 			container.store(this);
-			container.store(this);
 		}
 		parent.completedBlock(false, container, context);
 		cb.onSuccess(this, container, context);
@@ -335,7 +329,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			finished = true;
 		}
 		if(persistent) {
-			container.store(this);
 			container.store(this);
 			container.activate(cb, 1);
 		}

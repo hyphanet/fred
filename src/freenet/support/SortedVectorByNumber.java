@@ -62,7 +62,6 @@ public class SortedVectorByNumber {
 			data = newData;
 		}
 		if(persistent) container.store(this);
-		if(persistent) container.store(this);
 		verify(container);
 	}
 
@@ -138,7 +137,6 @@ public class SortedVectorByNumber {
 		data[x] = grabber;
 		length++;
 		if(persistent)
-			container.store(this);
 			container.store(this);
 		verify(container);
 	}

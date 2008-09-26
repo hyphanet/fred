@@ -53,8 +53,6 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			addElement(client, rga);
 			if(persistent) {
 				container.store(rga);
-				container.store(rga);
-				container.store(this);
 				container.store(this);
 			}
 		} else {
@@ -113,7 +111,6 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 		addElement(client, requestGrabber);
 		if(persistent) {
 			container.store(this);
-			container.store(this);
 		}
 	}
 
@@ -139,7 +136,6 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 					grabArrays = new RemoveRandomWithObject[0];
 					grabClients = new Object[0];
 					if(persistent)
-						container.store(this);
 						container.store(this);
 				}
 				if(logMINOR)
@@ -179,7 +175,6 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 						grabClients = new Object[0];
 						if(persistent)
 							container.store(this);
-							container.store(this);
 					} else if(firstRGA.isEmpty()) {
 						if(persistent) {
 							container.activate(firstRGA, 1);
@@ -187,7 +182,6 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 						grabArrays = new RemoveRandomWithObject[] { rga };
 						grabClients = new Object[] { grabClients[x] };
 						if(persistent)
-							container.store(this);
 							container.store(this);
 					}
 					if(persistent) {
@@ -224,7 +218,6 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 				Object client = rga.getObject();
 				removeElement(x);
 				if(persistent)
-					container.store(this);
 					container.store(this);
 			}
 			if(item == null) {
