@@ -248,11 +248,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	/** db4o database for node and client layer.
 	 * Other databases can be created for the datastore (since its usage
 	 * patterns and content are completely different), or for plugins (for
-	 * security reasons).
-	 * 
-	 * This is an internal server, specific parts of the code can create
-	 * ObjectContainer's from it. Be careful to refresh objects on any
-	 * long-lived container! */
+	 * security reasons). */
 	public final ObjectContainer db;
 	/** A fixed random number which identifies the top-level objects belonging to
 	 * this node, as opposed to any others that might be stored in the same database
@@ -819,9 +815,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		shutdownHook = new SemiOrderedShutdownHook();
 		Runtime.getRuntime().addShutdownHook(shutdownHook);
 		
-		/* FIXME: this may throw if e.g. we ran out of disk space last time.
-		 * We need to back it up and auto-recover. */
-		/* Client-server mode. Refresh objects if you have a long-lived container! */
+		/* FIXME: Backup the database! */
 		/* On my db4o test node with lots of downloads, and several days old, com.db4o.internal.freespace.FreeSlotNode
 		 * used 73MB out of the 128MB limit (117MB used). This memory was not reclaimed despite constant garbage collection.
 		 * This is unacceptable! */
