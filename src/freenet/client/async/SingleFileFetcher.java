@@ -754,6 +754,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				wasActive = container.ext().isActive(SingleFileFetcher.this);
 				if(!wasActive)
 					container.activate(SingleFileFetcher.this, 1);
+				if(persistent)
+					container.activate(actx, 1);
 				ah.activateForExecution(container);
 				ah.extractPersistentOffThread(result.asBucket(), actx, element, callback, container, context);
 				if(!wasActive)

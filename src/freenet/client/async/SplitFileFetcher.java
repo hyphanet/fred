@@ -146,12 +146,20 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			finalLength = overrideLength;
 		}
 		long eventualLength = Math.max(overrideLength, metadata.uncompressedDataLength());
+		boolean wasActive = true;
+		if(persistent) {
+			wasActive = container.ext().isActive(cb);
+			if(!wasActive)
+				container.activate(cb, 1);
+		}
 		cb.onExpectedSize(eventualLength, container);
 		String mimeType = metadata.getMIMEType();
 		if(mimeType != null)
 			cb.onExpectedMIME(mimeType, container);
 		if(metadata.uncompressedDataLength() > 0)
 			cb.onFinalizedMetadata(container);
+		if(!wasActive)
+			container.deactivate(cb, 1);
 		if(eventualLength > 0 && newCtx.maxOutputLength > 0 && eventualLength > newCtx.maxOutputLength)
 			throw new FetchException(FetchException.TOO_BIG, eventualLength, true, clientMetadata.getMIMEType());
 		
@@ -558,11 +566,12 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					new SplitFileFetcherKeyListener(this, keyCount, main, alt, mainBloomFilterSizeBytes, mainBloomK, !cacheLocalRequests, localSalt, segments.length, perSegmentBloomFilterSizeBytes, perSegmentK, persistent, false);
 			} catch (IOException e) {
 				Logger.error(this, "Unable to read Bloom filter for "+this+" attempting to reconstruct...", e);
-				mainBloomFile.delete();
-				altBloomFile.delete();
+				main.delete();
+				alt.delete();
 				try {
 					mainBloomFile = context.fg.makeRandomFile();
 					altBloomFile = context.fg.makeRandomFile();
+					container.set(this);
 				} catch (IOException e1) {
 					throw new KeyListenerConstructionException(new FetchException(FetchException.BUCKET_ERROR, "Unable to create Bloom filter files in reconstruction", e1));
 				}
