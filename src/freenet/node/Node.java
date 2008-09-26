@@ -30,6 +30,7 @@ import org.tanukisoftware.wrapper.WrapperManager;
 import com.db4o.Db4o;
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectServer;
+import com.db4o.config.Configuration;
 import com.db4o.config.QueryEvaluationMode;
 import com.db4o.diagnostic.ClassHasNoFields;
 import com.db4o.diagnostic.Diagnostic;
@@ -819,19 +820,20 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		/* On my db4o test node with lots of downloads, and several days old, com.db4o.internal.freespace.FreeSlotNode
 		 * used 73MB out of the 128MB limit (117MB used). This memory was not reclaimed despite constant garbage collection.
 		 * This is unacceptable! */
-		Db4o.configure().freespace().useBTreeSystem();
-		Db4o.configure().objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("key").indexed(true);
-		Db4o.configure().objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("keyAsBytes").indexed(true);
-		Db4o.configure().objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("time").indexed(true);
-		Db4o.configure().objectClass(freenet.client.async.RegisterMe.class).objectField("core").indexed(true);
-		Db4o.configure().objectClass(freenet.client.async.RegisterMe.class).objectField("key").indexed(true);
-		Db4o.configure().objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("time").indexed(true);
-		Db4o.configure().objectClass(freenet.client.FECJob.class).objectField("priority").indexed(true);
-		Db4o.configure().objectClass(freenet.client.FECJob.class).objectField("addedTime").indexed(true);
-		Db4o.configure().objectClass(freenet.client.FECJob.class).objectField("queue").indexed(true);
-		Db4o.configure().objectClass(freenet.client.async.InsertCompressor.class).objectField("nodeDBHandle").indexed(true);
-		Db4o.configure().objectClass(freenet.node.fcp.FCPClient.class).objectField("name").indexed(true);
-		Db4o.configure().objectClass(freenet.client.async.DatastoreCheckerItem.class).objectField("prio").indexed(true);
+		Configuration dbConfig = Db4o.newConfiguration();
+		dbConfig.freespace().useBTreeSystem();
+		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("key").indexed(true);
+		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("keyAsBytes").indexed(true);
+		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("time").indexed(true);
+		dbConfig.objectClass(freenet.client.async.RegisterMe.class).objectField("core").indexed(true);
+		dbConfig.objectClass(freenet.client.async.RegisterMe.class).objectField("key").indexed(true);
+		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("time").indexed(true);
+		dbConfig.objectClass(freenet.client.FECJob.class).objectField("priority").indexed(true);
+		dbConfig.objectClass(freenet.client.FECJob.class).objectField("addedTime").indexed(true);
+		dbConfig.objectClass(freenet.client.FECJob.class).objectField("queue").indexed(true);
+		dbConfig.objectClass(freenet.client.async.InsertCompressor.class).objectField("nodeDBHandle").indexed(true);
+		dbConfig.objectClass(freenet.node.fcp.FCPClient.class).objectField("name").indexed(true);
+		dbConfig.objectClass(freenet.client.async.DatastoreCheckerItem.class).objectField("prio").indexed(true);
 		/** Maybe we want a different query evaluation mode?
 		 * At the moment, a big splitfile insert will result in one SingleBlockInserter
 		 * for every key, which means one RegisterMe for each ... this results in a long pause
@@ -843,9 +845,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// LAZY appears to cause ClassCastException's relating to db4o objects inside db4o code. :(
 		// Also it causes duplicates if we activate immediately.
 		// And the performance gain for e.g. RegisterMeRunner isn't that great.
-//		Db4o.configure().queries().evaluationMode(QueryEvaluationMode.LAZY);
-		Db4o.configure().messageLevel(1);
-		Db4o.configure().activationDepth(1);
+//		dbConfig.queries().evaluationMode(QueryEvaluationMode.LAZY);
+		dbConfig.messageLevel(1);
+		dbConfig.activationDepth(1);
 		/* TURN OFF SHUTDOWN HOOK.
 		 * The shutdown hook does auto-commit. We do NOT want auto-commit: if a
 		 * transaction hasn't commit()ed, it's not safe to commit it. For example,
@@ -855,8 +857,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		 * up only registering the proportion of segments for which a RegisterMe
 		 * has already been created. Yes, this has happened, yes, it sucks.
 		 * Add our own hook to rollback and close... */
-		Db4o.configure().automaticShutDown(false);
-		Db4o.configure().diagnostic().addListener(new DiagnosticListener() {
+		dbConfig.automaticShutDown(false);
+		dbConfig.diagnostic().addListener(new DiagnosticListener() {
 			
 			public void onDiagnostic(Diagnostic arg0) {
 				if(arg0 instanceof ClassHasNoFields)
@@ -880,9 +882,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			
 		});
 		
-		System.err.println("Optimise native queries: "+Db4o.configure().optimizeNativeQueries());
-		System.err.println("Query activation depth: "+Db4o.configure().activationDepth());
-		db = Db4o.openFile(new File(nodeDir, "node.db4o").toString());
+		System.err.println("Optimise native queries: "+dbConfig.optimizeNativeQueries());
+		System.err.println("Query activation depth: "+dbConfig.activationDepth());
+		db = Db4o.openFile(dbConfig, new File(nodeDir, "node.db4o").toString());
 		
 		System.err.println("Opened database");
 
