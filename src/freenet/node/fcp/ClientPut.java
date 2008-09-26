@@ -372,7 +372,8 @@ public class ClientPut extends ClientPutBase {
 				started = true;
 			}
 			if(persistenceType == PERSIST_FOREVER)
-				container.set(this); // Update
+				container.store(this); // Update
+				container.store(this); // Update
 		} catch (InsertException e) {
 			synchronized(this) {
 				started = true;
@@ -510,7 +511,8 @@ public class ClientPut extends ClientPutBase {
 				}
 			}
 			if(persistenceType == PERSIST_FOREVER)
-				container.set(this);
+				container.store(this);
+				container.store(this);
 			return true;
 		} catch (InsertException e) {
 			onFailure(e, null, container);

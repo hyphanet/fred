@@ -173,7 +173,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					if(!queueFull)
 						bootID = this.node.bootID;
 					final RegisterMe regme = new RegisterMe(req, req.getPriorityClass(container), schedCore, null, bootID);
-					container.set(regme);
+					container.store(regme);
 					if(logMINOR)
 						Logger.minor(this, "Added insert RegisterMe: "+regme);
 					if(!queueFull) {
@@ -296,7 +296,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(hasListener != null) {
 			listener = hasListener.makeKeyListener(container, clientContext);
 			schedCore.addPendingKeys(listener);
-			container.set(hasListener);
+			container.store(hasListener);
 		} else
 			listener = null;
 		
@@ -304,7 +304,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(getters != null) {
 			for(SendableGet getter : getters) {
 				container.activate(getter, 1);
-				container.set(getter);
+				container.store(getter);
 			}
 		}
 		

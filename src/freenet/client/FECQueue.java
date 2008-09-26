@@ -60,7 +60,7 @@ public class FECQueue implements OOMHook {
 			return queue;
 		} else {
 			FECQueue queue = new FECQueue(nodeDBHandle);
-			container.set(queue);
+			container.store(queue);
 			return queue;
 		}
 	}
@@ -99,7 +99,7 @@ public class FECQueue implements OOMHook {
 		int maxThreads = getMaxRunningFECThreads();
 		if(job.persistent) {
 			job.activateForExecution(container);
-			container.set(job);
+			container.store(job);
 		}
 		synchronized(this) {
 			if(!job.persistent) {

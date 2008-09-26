@@ -41,7 +41,8 @@ public class FCPPersistentRoot {
 			return root;
 		}
 		FCPPersistentRoot root = new FCPPersistentRoot(nodeDBHandle, container);
-		container.set(root);
+		container.store(root);
+		container.store(root);
 		System.err.println("Created FCP persistent root.");
 		return root;
 	}
@@ -77,7 +78,8 @@ public class FCPPersistentRoot {
 			return client;
 		}
 		FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_FOREVER, this, container);
-		container.set(client);
+		container.store(client);
+		container.store(client);
 		return client;
 	}
 

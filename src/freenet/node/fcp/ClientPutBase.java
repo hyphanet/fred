@@ -170,7 +170,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			generatedURI = uri;
 		}
 		if(persistenceType == PERSIST_FOREVER)
-			container.set(this);
+			container.store(this);
+			container.store(this);
 		trySendGeneratedURIMessage(null, container);
 	}
 
@@ -308,7 +309,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 					if(persistenceType != PERSIST_CONNECTION)
 						progressMessage = msg;
 				}
-				container.set(this);
+				container.store(this);
+				container.store(this);
 			} else {
 				context.jobRunner.queue(new DBJob() {
 
@@ -503,6 +505,7 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		pfm.removeFrom(container);
 		progress.removeFrom(container);
 		if(persistenceType == PERSIST_FOREVER)
-			container.set(this);
+			container.store(this);
+			container.store(this);
 	}
 }

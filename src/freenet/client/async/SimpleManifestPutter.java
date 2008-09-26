@@ -87,7 +87,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			origSFI.start(null, container, context);
 			origSFI = null;
 			if(persistent)
-				container.set(this);
+				container.store(this);
 		}
 		
 		public void cancel(ObjectContainer container, ClientContext context) {
@@ -119,7 +119,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				}
 			}
 			if(persistent)
-				container.set(runningPutHandlers);
+				container.store(runningPutHandlers);
 			insertedAllFiles(container);
 		}
 
@@ -165,8 +165,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				if(!putHandlersWaitingForMetadata.isEmpty()) return;
 			}
 			if(persistent) {
-				container.set(putHandlersWaitingForMetadata);
-				container.set(this);
+				container.store(putHandlersWaitingForMetadata);
+				container.store(this);
 				container.activate(SimpleManifestPutter.this, 1);
 			}
 			gotAllMetadata(container, context);
@@ -229,7 +229,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				if(!waitingForBlockSets.isEmpty()) return;
 			}
 			if(persistent)
-				container.set(waitingForBlockSets);
+				container.store(waitingForBlockSets);
 			SimpleManifestPutter.this.blockSetFinalized(container, context);
 		}
 
@@ -338,7 +338,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if (running.length == 0) {
 				insertedAllFiles = true;
 				if(persistent())
-					container.set(this);
+					container.store(this);
+					container.store(this);
 				gotAllMetadata(container, context);
 			}
 		} catch (InsertException e) {
@@ -439,7 +440,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		baseMetadata =
 			Metadata.mkRedirectionManifestWithMetadata(namesToByteArrays);
 		if(persistent()) {
-			container.set(baseMetadata);
+			container.store(baseMetadata);
 		}
 		resolveAndStartBase(container, context);
 		
@@ -546,8 +547,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			metadataPuttersUnfetchable.put(baseMetadata, metadataInserter);
 			metadataInserter.start(null, container, context);
 			if(persistent()) {
-				container.set(metadataPuttersByMetadata);
-				container.set(metadataPuttersUnfetchable);
+				container.store(metadataPuttersByMetadata);
+				container.store(metadataPuttersByMetadata);
+				container.store(metadataPuttersUnfetchable);
+				container.store(metadataPuttersUnfetchable);
 			}
 		} catch (InsertException e) {
 			fail(e, container);
@@ -582,7 +585,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 		}
 		if(persistent())
-			container.set(metadataPuttersByMetadata);
+			container.store(metadataPuttersByMetadata);
 		return mustWait;
 	}
 
@@ -619,7 +622,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			finished = true;
 		}
 		if(persistent())
-			container.set(this);
+			container.store(this);
 		complete(container);
 	}
 	
@@ -651,7 +654,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			finished = true;
 		}
 		if(persistent())
-			container.set(this);
+			container.store(this);
 		
 		for(int i=0;i<running.length;i++) {
 			running[i].cancel();
@@ -662,7 +665,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	public void cancel(ObjectContainer container, ClientContext context) {
 		super.cancel();
 		if(persistent())
-			container.set(this);
+			container.store(this);
 		fail(new InsertException(InsertException.CANCELLED), container);
 	}
 	
@@ -690,8 +693,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			finished = true;
 		}
 		if(persistent()) {
-			container.set(metadataPuttersByMetadata);
-			container.set(this);
+			container.store(metadataPuttersByMetadata);
+			container.store(this);
 		}
 		complete(container);
 	}
@@ -709,7 +712,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.activate(cb, 1);
 			cb.onGeneratedURI(finalURI, this, container);
 			if(persistent())
-				container.set(this);
+				container.store(this);
 		} else {
 			// It's a sub-Metadata
 			Metadata m = (Metadata) state.getToken();
@@ -745,7 +748,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		this.blockSetFinalized(container, context);
 		if(persistent())
-			container.set(this);
+			container.store(this);
 	}
 
 	@Override
@@ -756,7 +759,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		super.blockSetFinalized(container, context);
 		if(persistent())
-			container.set(this);
+			container.store(this);
 	}
 	
 	/**
@@ -867,8 +870,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			fetchable = true;
 		}
 		if(persistent()) {
-			container.set(putHandlersWaitingForMetadata);
-			container.set(this);
+			container.store(putHandlersWaitingForMetadata);
+			container.store(this);
 		}
 		cb.onFetchable(this, container);
 	}
@@ -889,8 +892,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			fetchable = true;
 		}
 		if(persistent()) {
-			container.set(metadataPuttersUnfetchable);
-			container.set(this);
+			container.store(metadataPuttersUnfetchable);
+			container.store(this);
 		}
 		cb.onFetchable(this, container);
 	}

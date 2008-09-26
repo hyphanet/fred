@@ -79,7 +79,7 @@ public class BackgroundBlockEncoder implements PrioRunnable {
 
 	private void queuePersistent(SingleBlockInserter sbi, ObjectContainer container, ClientContext context) {
 		BackgroundBlockEncoderTag tag = new BackgroundBlockEncoderTag(sbi, sbi.getPriorityClass(container), context);
-		container.set(tag);
+		container.store(tag);
 	}
 
 	public void run() {

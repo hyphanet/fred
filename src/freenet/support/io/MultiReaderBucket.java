@@ -132,7 +132,8 @@ public class MultiReaderBucket {
 		}
 
 		public void storeTo(ObjectContainer container) {
-			container.set(this);
+			container.store(this);
+			container.store(this);
 		}
 
 		public void removeFrom(ObjectContainer container) {

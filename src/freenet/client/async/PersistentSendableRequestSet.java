@@ -29,7 +29,7 @@ public class PersistentSendableRequestSet implements SendableRequestSet {
 		int idx = find(req);
 		if(idx == -1) {
 			list.add(req);
-			container.set(list);
+			container.store(list);
 			return true;
 		} else return false;
 	}
@@ -50,7 +50,7 @@ public class PersistentSendableRequestSet implements SendableRequestSet {
 		int idx = find(req);
 		if(idx == -1) return false;
 		list.remove(idx);
-		container.set(list);
+		container.store(list);
 		return true;
 	}
 

@@ -69,9 +69,9 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			}
 		}
 		if(persistent) {
-			container.set(waitingFor);
-			container.set(waitingForBlockSet);
-			container.set(waitingForFetchable);
+			container.store(waitingFor);
+			container.store(waitingForBlockSet);
+			container.store(waitingForFetchable);
 		}
 		complete(e, container, context);
 	}
@@ -87,7 +87,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			if(e == null) e = this.e;
 		}
 		if(persistent) {
-			container.set(this);
+			container.store(this);
 			container.activate(cb, 1);
 		}
 		if(e != null)
@@ -100,7 +100,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		add(ps, container);
 		generator = ps;
 		if(persistent)
-			container.set(this);
+			container.store(this);
 	}
 	
 	public synchronized void add(ClientPutState ps, ObjectContainer container) {
@@ -109,9 +109,9 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		waitingForBlockSet.add(ps);
 		waitingForFetchable.add(ps);
 		if(persistent) {
-			container.set(waitingFor);
-			container.set(waitingForBlockSet);
-			container.set(waitingForFetchable);
+			container.store(waitingFor);
+			container.store(waitingForBlockSet);
+			container.store(waitingForFetchable);
 		}
 	}
 
@@ -124,7 +124,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			allGotBlocks = waitingForBlockSet.isEmpty();
 		}
 		if(persistent) {
-			container.set(this);
+			container.store(this);
 			container.activate(cb, 1);
 		}
 		if(allGotBlocks) {
@@ -167,19 +167,19 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		for(int i=0;i<waitingFor.size();i++) {
 			if(waitingFor.get(i) == oldState) {
 				waitingFor.set(i, newState);
-				container.set(waitingFor);
+				container.store(waitingFor);
 			}
 		}
 		for(int i=0;i<waitingFor.size();i++) {
 			if(waitingForBlockSet.get(i) == oldState) {
 				waitingForBlockSet.set(i, newState);
-				container.set(waitingFor);
+				container.store(waitingFor);
 			}
 		}
 		for(int i=0;i<waitingFor.size();i++) {
 			if(waitingForFetchable.get(i) == oldState) {
 				waitingForFetchable.set(i, newState);
-				container.set(waitingFor);
+				container.store(waitingFor);
 			}
 		}
 	}
@@ -198,7 +198,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		synchronized(this) {
 			this.waitingForBlockSet.remove(state);
 			if(persistent)
-				container.set(waitingForBlockSet);
+				container.store(waitingForBlockSet);
 			if(!started) return;
 			if(!waitingForBlockSet.isEmpty()) return;
 		}
@@ -223,7 +223,7 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		synchronized(this) {
 			this.waitingForFetchable.remove(state);
 			if(persistent)
-				container.set(waitingForFetchable);
+				container.store(waitingForFetchable);
 			if(!started) return;
 			if(!waitingForFetchable.isEmpty()) return;
 		}

@@ -297,8 +297,10 @@ public class BucketChainBucket implements Bucket {
 	public void storeTo(ObjectContainer container) {
 		for(int i=0;i<buckets.size();i++)
 			((Bucket) buckets.get(i)).storeTo(container);
-		container.set(buckets);
-		container.set(this);
+		container.store(buckets);
+		container.store(buckets);
+		container.store(this);
+		container.store(this);
 	}
 
 	public void removeFrom(ObjectContainer container) {

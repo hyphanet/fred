@@ -120,7 +120,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				onFailure(new InsertException(InsertException.CANCELLED), null, container, context);
 				oldProgress = null;
 				if(persistent())
-					container.set(this);
+					container.store(this);
 				return false;
 			}
 			if(Logger.shouldLog(Logger.MINOR, this))
@@ -134,7 +134,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				cancel = cancelled;
 			}
 			if(persistent()) {
-				container.set(this);
+				container.store(this);
 				// It has scheduled, we can safely deactivate it now, so it won't hang around in memory.
 				container.deactivate(currentState, 1);
 			}
@@ -150,7 +150,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				currentState = null;
 			}
 			if(persistent())
-				container.set(this);
+				container.store(this);
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
 				this.client.onFailure(e, this, container);
@@ -163,7 +163,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				currentState = null;
 			}
 			if(persistent())
-				container.set(this);
+				container.store(this);
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
 				this.client.onFailure(new InsertException(InsertException.BUCKET_ERROR, e, null), this, container);
@@ -176,7 +176,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				currentState = null;
 			}
 			if(persistent())
-				container.set(this);
+				container.store(this);
 			// notify the client that the insert could not even be started
 			if (this.client!=null) {
 				this.client.onFailure(new InsertException(InsertException.BINARY_BLOB_FORMAT_ERROR, e, null), this, container);
@@ -201,7 +201,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 					new Exception("debug"));
 		}
 		if(persistent())
-			container.set(this);
+			container.store(this);
 		client.onSuccess(this, container);
 	}
 
@@ -214,7 +214,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			oldProgress = null;
 		}
 		if(persistent())
-			container.set(this);
+			container.store(this);
 		client.onFailure(e, this, container);
 	}
 
@@ -234,7 +234,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 				uri = uri.pushMetaString(targetFilename);
 		}
 		if(persistent())
-			container.set(this);
+			container.store(this);
 		client.onGeneratedURI(uri, this, container);
 	}
 
@@ -251,7 +251,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			startedStarting = true;
 		}
 		if(persistent()) {
-			container.set(this);
+			container.store(this);
 			if(oldState != null)
 				container.activate(oldState, 1);
 		}
@@ -274,7 +274,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		if(currentState == oldState) {
 			currentState = newState;
 			if(persistent())
-				container.set(this);
+				container.store(this);
 		} else
 			Logger.error(this, "onTransition: cur="+currentState+", old="+oldState+", new="+newState, new Exception("debug"));
 	}

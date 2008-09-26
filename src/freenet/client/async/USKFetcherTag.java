@@ -67,13 +67,15 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	public static USKFetcherTag create(USK usk, USKFetcherCallback callback, long nodeDBHandle, boolean persistent, 
 			ObjectContainer container, FetchContext ctx, boolean keepLast, int token) {
 		USKFetcherTag tag = new USKFetcherTag(usk, callback, nodeDBHandle, persistent, container, ctx, keepLast, token);
-		if(persistent) container.set(tag);
+		if(persistent) container.store(tag);
+		if(persistent) container.store(tag);
 		return tag;
 	}
 	
 	synchronized void updatedEdition(long ed, ObjectContainer container) {
 		if(edition < ed) edition = ed;
-		if(persistent) container.set(this); // Update
+		if(persistent) container.store(this); // Update
+		if(persistent) container.store(this); // Update
 	}
 
 	private static final RequestClient client = new RequestClient() {
@@ -107,7 +109,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 			context.jobRunner.queue(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
-					container.set(USKFetcherTag.this);
+					container.store(USKFetcherTag.this);
+					container.store(USKFetcherTag.this);
 				}
 				
 			}, NativeThread.HIGH_PRIORITY, false);
@@ -132,7 +135,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 				public void run(ObjectContainer container, ClientContext context) {
 					container.activate(callback, 1);
 					callback.onCancelled(container, context);
-					container.set(this);
+					container.store(this);
+					container.store(this);
 					container.deactivate(callback, 1);
 				}
 				
@@ -152,7 +156,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 				public void run(ObjectContainer container, ClientContext context) {
 					container.activate(callback, 1);
 					callback.onFailure(container, context);
-					container.set(this);
+					container.store(this);
+					container.store(this);
 					container.deactivate(callback, 1);
 				}
 				
@@ -184,7 +189,8 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 				public void run(ObjectContainer container, ClientContext context) {
 					container.activate(callback, 1);
 					callback.onFoundEdition(l, key, container, context, metadata, codec, data);
-					container.set(this);
+					container.store(this);
+					container.store(this);
 					container.deactivate(callback, 1);
 				}
 				

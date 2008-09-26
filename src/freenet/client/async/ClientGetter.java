@@ -104,7 +104,7 @@ public class ClientGetter extends BaseClientGetter {
 			if(cancelled) cancel();
 			// schedule() may deactivate stuff, so store it now.
 			if(persistent())
-				container.set(currentState);
+				container.store(currentState);
 			if(currentState != null && !finished) {
 				if(binaryBlobBucket != null) {
 					try {
@@ -113,7 +113,7 @@ public class ClientGetter extends BaseClientGetter {
 					} catch (IOException e) {
 						onFailure(new FetchException(FetchException.BUCKET_ERROR, "Failed to open binary blob bucket", e), null, container, context);
 						if(persistent())
-							container.set(this);
+							container.store(this);
 						return false;
 					}
 				}
@@ -126,7 +126,7 @@ public class ClientGetter extends BaseClientGetter {
 			onFailure(e.getFetchException(), currentState, container, context);
 		}
 		if(persistent()) {
-			container.set(this);
+			container.store(this);
 			container.deactivate(currentState, 1);
 		}
 		return true;
@@ -170,7 +170,7 @@ public class ClientGetter extends BaseClientGetter {
 		}
 		FetchResult res = result;
 		if(persistent())
-			container.set(this);
+			container.store(this);
 		clientCallback.onSuccess(res, ClientGetter.this, container);
 	}
 
@@ -210,7 +210,7 @@ public class ClientGetter extends BaseClientGetter {
 			Logger.minor(this, "onFailure("+e+", "+state+") on "+this+" for "+uri, e);
 			final FetchException e1 = e;
 			if(persistent())
-				container.set(this);
+				container.store(this);
 			clientCallback.onFailure(e1, ClientGetter.this, container);
 			return;
 		}
@@ -225,7 +225,7 @@ public class ClientGetter extends BaseClientGetter {
 			s = currentState;
 		}
 		if(persistent())
-			container.set(this);
+			container.store(this);
 		if(s != null) {
 			if(logMINOR) Logger.minor(this, "Cancelling "+currentState);
 			if(persistent())
@@ -270,7 +270,7 @@ public class ClientGetter extends BaseClientGetter {
 				Logger.minor(this, "Ignoring transition: "+oldState+" -> "+newState+" because current = "+currentState);
 		}
 		if(persistent())
-			container.set(this);
+			container.store(this);
 	}
 
 	public boolean canRestart() {
@@ -362,20 +362,20 @@ public class ClientGetter extends BaseClientGetter {
 		if(finalizedMetadata) return;
 		expectedMIME = mime;
 		if(persistent())
-			container.set(this);
+			container.store(this);
 	}
 
 	public void onExpectedSize(long size, ObjectContainer container) {
 		if(finalizedMetadata) return;
 		expectedSize = size;
 		if(persistent())
-			container.set(this);
+			container.store(this);
 	}
 
 	public void onFinalizedMetadata(ObjectContainer container) {
 		finalizedMetadata = true;
 		if(persistent())
-			container.set(this);
+			container.store(this);
 	}
 	
 	public boolean finalizedMetadata() {

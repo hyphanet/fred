@@ -36,7 +36,7 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		assert(cooldownTime != 0);
 		long removeTime = System.currentTimeMillis() + cooldownTime;
 		PersistentCooldownQueueItem persistentCooldownQueueItem = new PersistentCooldownQueueItem(client, key, removeTime, this);
-		container.set(persistentCooldownQueueItem);
+		container.store(persistentCooldownQueueItem);
 		return removeTime;
 	}
 

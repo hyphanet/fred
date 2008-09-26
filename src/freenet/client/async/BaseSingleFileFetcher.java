@@ -64,7 +64,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if(chosen) return null;
 		chosen = true;
 		if(persistent)
-			container.set(this);
+			container.store(this);
 		return keys[0];
 	}
 	
@@ -103,7 +103,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		// We want 0, 1, ... maxRetries i.e. maxRetries+1 attempts (maxRetries=0 => try once, no retries, maxRetries=1 = original try + 1 retry)
 		if((retryCount <= maxRetries) || (maxRetries == -1)) {
 			if(persistent)
-				container.set(this);
+				container.store(this);
 			if(retryCount % RequestScheduler.COOLDOWN_RETRIES == 0) {
 				// Add to cooldown queue. Don't reschedule yet.
 				long now = System.currentTimeMillis();
@@ -152,7 +152,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			cancelled = true;
 		}
 		if(persistent) {
-			container.set(this);
+			container.store(this);
 			container.activate(key, 5);
 		}
 		
@@ -211,7 +211,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			}
 			finished = true;
 			if(persistent)
-				container.set(this);
+				container.store(this);
 			if(isCancelled(container)) return;
 			if(key == null)
 				throw new NullPointerException();
@@ -250,7 +250,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	public synchronized void resetCooldownTimes(ObjectContainer container) {
 		cooldownWakeupTime = -1;
 		if(persistent)
-			container.set(this);
+			container.store(this);
 	}
 
 	@Override

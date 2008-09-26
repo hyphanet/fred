@@ -554,7 +554,7 @@ public class NodeCrypto {
 					continue;
 				}
 				tuple.portNumber = portNumber;
-				setupContainer.set(tuple);
+				setupContainer.store(tuple);
 				setupContainer.commit();
 				if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
 				System.err.println("Generated and stored database handle for node on port "+portNumber+": "+handle);

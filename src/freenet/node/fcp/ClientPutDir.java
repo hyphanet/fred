@@ -231,7 +231,8 @@ public class ClientPutDir extends ClientPutBase {
 				client.queueClientRequestMessage(msg, 0, container);
 			}
 			if(persistenceType == PERSIST_FOREVER)
-				container.set(this); // Update
+				container.store(this); // Update
+				container.store(this); // Update
 		} catch (InsertException e) {
 			started = true;
 			onFailure(e, null, container);

@@ -186,7 +186,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				if(logMINOR)
 					Logger.minor(this, "Removing block "+x+" of "+(blockNums.size()+1)+ " : "+ret+ " on "+this);
 				if(persistent)
-					container.set(blockNums);
+					container.store(blockNums);
+					container.store(blockNums);
 				return ret;
 			}
 			return null;
@@ -221,7 +222,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 					blockNums.remove(x);
 					if(persistent && !hasSet) {
 						hasSet = true;
-						container.set(blockNums);
+						container.store(blockNums);
+						container.store(blockNums);
 					}
 					continue;
 				}
@@ -258,7 +260,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			removeBlockNum(((Integer)items[i].token).intValue(), container, true);
 		}
 		if(persistent) {
-			container.set(blockNums);
+			container.store(blockNums);
+			container.store(blockNums);
 			container.deactivate(blockNums, 2);
 			container.activate(segment, 1);
 			container.activate(parent, 1);
@@ -395,7 +398,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				}
 			}
 			if(persistent && removed)
-				container.set(blockNums);
+				container.store(blockNums);
+				container.store(blockNums);
 		}
 		if(!block.isMetadata()) {
 			onSuccess(data, fromStore, (Integer)token, ((Integer)token).intValue(), block, container, context);
@@ -558,7 +562,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			}
 		}
 		if(persistent)
-			container.set(blockNums);
+			container.store(blockNums);
+			container.store(blockNums);
 		if(schedule) {
 			// Only need to register once for all the blocks.
 			try {
@@ -614,7 +619,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			}
 		}
 		if(persistent)
-			container.set(blockNums);
+			container.store(blockNums);
+			container.store(blockNums);
 		if(schedule) {
 			if(dontSchedule) return true;
 			try {
@@ -716,9 +722,11 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			if(!dontDeactivateSeg)
 				container.deactivate(segment, 1);
 			if(container.ext().isStored(this))
-				container.set(this);
+				container.store(this);
+				container.store(this);
 			if(container.ext().isStored(blockNums))
-				container.set(blockNums);
+				container.store(blockNums);
+				container.store(blockNums);
 			container.deactivate(blockNums, 1);
 		}
 	}
@@ -807,7 +815,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			}
 		}
 		if(persistent && !callerActivatesAndSets) {
-			container.set(blockNums);
+			container.store(blockNums);
+			container.store(blockNums);
 			container.deactivate(blockNums, 2);
 		}
 		return found;
@@ -820,7 +829,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		for(int i=0;i<blockNos.length;i++)
 			store |= removeBlockNum(blockNos[i], container, true);
 		if(persistent) {
-			if(store) container.set(blockNums);
+			if(store) container.store(blockNums);
+			if(store) container.store(blockNums);
 			container.deactivate(blockNums, 2);
 		}
 	}

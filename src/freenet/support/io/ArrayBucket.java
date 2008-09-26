@@ -196,8 +196,10 @@ public class ArrayBucket implements Bucket {
 	}
 
 	public void storeTo(ObjectContainer container) {
-		container.set(data);
-		container.set(this);
+		container.store(data);
+		container.store(data);
+		container.store(this);
+		container.store(this);
 	}
 
 	public void removeFrom(ObjectContainer container) {

@@ -344,7 +344,8 @@ public class TempBucketFactory implements BucketFactory {
 
 		public void storeTo(ObjectContainer container) {
 			currentBucket.storeTo(container);
-			container.set(this);
+			container.store(this);
+			container.store(this);
 		}
 	}
 	

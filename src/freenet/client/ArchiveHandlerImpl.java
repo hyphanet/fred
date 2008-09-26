@@ -93,7 +93,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 		assert(element != null); // no callback would be called...
 		final ArchiveManager manager = context.archiveManager;
 		final ArchiveExtractTag tag = new ArchiveExtractTag(this, bucket, actx, element, callback, context.nodeDBHandle);
-		container.set(tag);
+		container.store(tag);
 		runPersistentOffThread(tag, context, manager, context.persistentBucketFactory);
 	}
 

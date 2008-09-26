@@ -82,7 +82,7 @@ public abstract class ClientRequester {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Finalized set of blocks for "+this, new Exception("debug"));
 		if(persistent())
-			container.set(this);
+			container.store(this);
 		notifyClients(container, context);
 	}
 
@@ -94,7 +94,7 @@ public abstract class ClientRequester {
 				Logger.error(this, "addBlock() but set finalized! on "+this, new Exception("error"));
 		totalBlocks++;
 		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "addBlock(): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks);
-		if(persistent()) container.set(this);
+		if(persistent()) container.store(this);
 	}
 
 	public synchronized void addBlocks(int num, ObjectContainer container) {
@@ -105,7 +105,7 @@ public abstract class ClientRequester {
 				Logger.error(this, "addBlocks() but set finalized! on "+this, new Exception("error"));
 		totalBlocks+=num;
 		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "addBlocks("+num+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
-		if(persistent()) container.set(this);
+		if(persistent()) container.store(this);
 	}
 
 	public void completedBlock(boolean dontNotify, ObjectContainer container, ClientContext context) {
@@ -115,7 +115,7 @@ public abstract class ClientRequester {
 			if(cancelled) return;
 			successfulBlocks++;
 		}
-		if(persistent()) container.set(this);
+		if(persistent()) container.store(this);
 		if(dontNotify) return;
 		notifyClients(container, context);
 	}
@@ -124,7 +124,7 @@ public abstract class ClientRequester {
 		synchronized(this) {
 			failedBlocks++;
 		}
-		if(persistent()) container.set(this);
+		if(persistent()) container.store(this);
 		notifyClients(container, context);
 	}
 
@@ -132,13 +132,13 @@ public abstract class ClientRequester {
 		synchronized(this) {
 			fatallyFailedBlocks++;
 		}
-		if(persistent()) container.set(this);
+		if(persistent()) container.store(this);
 		notifyClients(container, context);
 	}
 
 	public synchronized void addMustSucceedBlocks(int blocks, ObjectContainer container) {
 		minSuccessBlocks += blocks;
-		if(persistent()) container.set(this);
+		if(persistent()) container.store(this);
 		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "addMustSucceedBlocks("+blocks+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
 	}
 
@@ -155,7 +155,7 @@ public abstract class ClientRequester {
 		ctx.getChkInsertScheduler().reregisterAll(this, container);
 		ctx.getSskFetchScheduler().reregisterAll(this, container);
 		ctx.getSskInsertScheduler().reregisterAll(this, container);
-		if(persistent()) container.set(this);
+		if(persistent()) container.store(this);
 	}
 
 	public boolean persistent() {

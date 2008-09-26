@@ -123,7 +123,7 @@ public class DatastoreChecker implements PrioRunnable {
 				Key[] keys = getter.listKeys(container);
 				// FIXME check the store bloom filter using store.probablyInStore().
 				item.chosenBy = context.bootID;
-				container.set(item);
+				container.store(item);
 				synchronized(this) {
 					if(persistentGetters[prio].contains(getter)) continue;
 					ArrayList<Key> finalKeysToCheck = new ArrayList<Key>();
@@ -176,7 +176,7 @@ public class DatastoreChecker implements PrioRunnable {
 						persistentKeys[i].remove(idx);
 						persistentBlockSets[i].remove(idx);
 						item.chosenBy = 0;
-						container.set(item);
+						container.store(item);
 					}
 				}
 				return true;
@@ -199,7 +199,7 @@ public class DatastoreChecker implements PrioRunnable {
 						Key[] keys = persistentKeys[i].remove(idx);
 						persistentBlockSets[i].remove(idx);
 						item.chosenBy = 0;
-						container.set(item);
+						container.store(item);
 						if(postQueueSize + preQueueSize - keys.length < MAX_PERSISTENT_KEYS) {
 							return false;
 						}
@@ -240,7 +240,7 @@ public class DatastoreChecker implements PrioRunnable {
 		boolean dontCache = getter.dontCache();
 		ClientRequestScheduler sched = getter.getScheduler(context);
 		DatastoreCheckerItem item = new DatastoreCheckerItem(getter, context.nodeDBHandle, prio, blocks);
-		container.set(item);
+		container.store(item);
 		container.activate(blocks, 5);
 		synchronized(this) {
 			// FIXME only add if queue not full.
@@ -253,7 +253,7 @@ public class DatastoreChecker implements PrioRunnable {
 			}
 			if(queueSize > MAX_PERSISTENT_KEYS) return;
 			item.chosenBy = context.bootID;
-			container.set(item);
+			container.store(item);
 			// FIXME check using store.probablyInStore
 			ArrayList<Key> finalKeysToCheck = new ArrayList<Key>();
 			for(Key key : checkKeys) {

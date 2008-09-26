@@ -248,7 +248,8 @@ public class FCPConnectionHandler implements Closeable {
 							public void run(ObjectContainer container, ClientContext context) {
 								try {
 									getter.register(container, false, false);
-									container.set(getter);
+									container.store(getter);
+									container.store(getter);
 								} catch (IdentifierCollisionException e) {
 									Logger.normal(this, "Identifier collision on "+this);
 									FCPMessage msg = new IdentifierCollisionMessage(id, global);
@@ -316,7 +317,8 @@ public class FCPConnectionHandler implements Closeable {
 						public void run(ObjectContainer container, ClientContext context) {
 							try {
 								putter.register(container, false, false);
-								container.set(putter);
+								container.store(putter);
+								container.store(putter);
 							} catch (IdentifierCollisionException e) {
 								Logger.normal(this, "Identifier collision on "+this);
 								FCPMessage msg = new IdentifierCollisionMessage(id, global);
@@ -382,7 +384,8 @@ public class FCPConnectionHandler implements Closeable {
 					public void run(ObjectContainer container, ClientContext context) {
 						try {
 							putter.register(container, false, false);
-							container.set(putter);
+							container.store(putter);
+							container.store(putter);
 						} catch (IdentifierCollisionException e) {
 							Logger.normal(this, "Identifier collision on "+this);
 							FCPMessage msg = new IdentifierCollisionMessage(id, global);

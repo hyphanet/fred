@@ -230,7 +230,7 @@ public class InsertCompressor {
 			Bucket origData, int minSize, BucketFactory bf, boolean persistent) {
 		InsertCompressor compressor = new InsertCompressor(context.nodeDBHandle, inserter, origData, minSize, bf, persistent);
 		if(persistent)
-			container.set(compressor);
+			container.store(compressor);
 		compressor.init(container, context);
 		return compressor;
 	}

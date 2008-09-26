@@ -52,8 +52,10 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			rga = new RandomGrabArrayWithClient(client, persistent, container);
 			addElement(client, rga);
 			if(persistent) {
-				container.set(rga);
-				container.set(this);
+				container.store(rga);
+				container.store(rga);
+				container.store(this);
+				container.store(this);
 			}
 		} else {
 			rga = (RandomGrabArrayWithClient) grabArrays[clientIndex];
@@ -110,7 +112,8 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			throw new IllegalArgumentException("Client not equal to RemoveRandomWithObject's client: client="+client+" rr="+requestGrabber+" his object="+requestGrabber.getObject());
 		addElement(client, requestGrabber);
 		if(persistent) {
-			container.set(this);
+			container.store(this);
+			container.store(this);
 		}
 	}
 
@@ -136,7 +139,8 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 					grabArrays = new RemoveRandomWithObject[0];
 					grabClients = new Object[0];
 					if(persistent)
-						container.set(this);
+						container.store(this);
+						container.store(this);
 				}
 				if(logMINOR)
 					Logger.minor(this, "Returning (one item only) "+item+" for "+rga);
@@ -174,7 +178,8 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 						grabArrays = new RemoveRandomWithObject[0];
 						grabClients = new Object[0];
 						if(persistent)
-							container.set(this);
+							container.store(this);
+							container.store(this);
 					} else if(firstRGA.isEmpty()) {
 						if(persistent) {
 							container.activate(firstRGA, 1);
@@ -182,7 +187,8 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 						grabArrays = new RemoveRandomWithObject[] { rga };
 						grabClients = new Object[] { grabClients[x] };
 						if(persistent)
-							container.set(this);
+							container.store(this);
+							container.store(this);
 					}
 					if(persistent) {
 						container.deactivate(rga, 1);
@@ -218,7 +224,8 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 				Object client = rga.getObject();
 				removeElement(x);
 				if(persistent)
-					container.set(this);
+					container.store(this);
+					container.store(this);
 			}
 			if(item == null) {
 				if(!rga.isEmpty()) {

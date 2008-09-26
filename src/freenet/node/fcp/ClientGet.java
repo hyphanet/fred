@@ -331,7 +331,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			onFailure(new FetchException(FetchException.INTERNAL_ERROR, t), null, container);
 		}
 		if(persistenceType == PERSIST_FOREVER)
-			container.set(this); // Update
+			container.store(this); // Update
+			container.store(this); // Update
 	}
 
 	@Override
@@ -424,7 +425,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			data.free();
 		if(persistenceType == PERSIST_FOREVER) {
 			returnBucket.storeTo(container);
-			container.set(this);
+			container.store(this);
+			container.store(this);
 		}
 		finish(container);
 		client.notifySuccess(this, container);
@@ -465,7 +467,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
 			allDataPending = msg;
 			if(persistenceType == ClientRequest.PERSIST_FOREVER)
-				container.set(this);
+				container.store(this);
+				container.store(this);
 		} else {
 			if(persistenceType == PERSIST_FOREVER)
 				container.activate(client, 1);
@@ -477,7 +480,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
 			progressPending = msg;
 			if(persistenceType == ClientRequest.PERSIST_FOREVER)
-				container.set(this);
+				container.store(this);
+				container.store(this);
 		}
 		if(persistenceType == PERSIST_FOREVER)
 			container.activate(client, 1);
@@ -542,7 +546,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		trySendDataFoundOrGetFailed(null, container);
 		if(persistenceType == PERSIST_FOREVER) {
 			container.activate(client, 1);
-			container.set(this);
+			container.store(this);
+			container.store(this);
 		}
 		finish(container);
 		client.notifyFailure(this, container);
@@ -882,7 +887,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 					started = true;
 				}
 				if(persistenceType == PERSIST_FOREVER)
-					container.set(this);
+					container.store(this);
+					container.store(this);
 			}
 			return true;
 		} catch (FetchException e) {

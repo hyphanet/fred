@@ -120,7 +120,7 @@ abstract class ClientRequestSchedulerBase {
 			prio = new SortedVectorByNumber(persistent());
 			priorities[priorityClass] = prio;
 			if(persistent())
-				container.set(this);
+				container.store(this);
 		}
 		// Client
 		SectoredRandomGrabArrayWithInt clientGrabber = (SectoredRandomGrabArrayWithInt) prio.get(rc, container);

@@ -488,7 +488,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			fetchable = (blocksCompleted > dataBlocks.length);
 		}
 		if(persistent)
-			container.set(this);
+			container.store(this);
+			container.store(this);
 		if (fetchable)
 			parent.segmentFetchable(this, container);
 		if (fin)
@@ -545,7 +546,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		}
 		
 		if(persistent)
-			container.set(this);
+			container.store(this);
+			container.store(this);
 
 		// Tell parent only after have started the inserts.
 		// Because of the counting.
@@ -562,7 +564,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		}
 		
 		if(persistent) {
-			container.set(this);
+			container.store(this);
+			container.store(this);
 			container.deactivate(parent, 1);
 		}
 	}
@@ -584,7 +587,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			toThrow = ex;
 		}
 		if(persistent) {
-			container.set(this);
+			container.store(this);
+			container.store(this);
 		}
 		parent.segmentFinished(this, container, context);
 	}
@@ -605,7 +609,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			toThrow = InsertException.construct(errors);
 		}
 		if(persistent) {
-			container.set(this);
+			container.store(this);
+			container.store(this);
 			container.deactivate(errors, 5);
 		}
 		parent.segmentFinished(this, container, context);
@@ -631,7 +636,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			}
 			blocksGotURI++;
 			if(persistent)
-				container.set(this);
+				container.store(this);
+				container.store(this);
 			if (blocksGotURI != dataBlocks.length + checkBlocks.length)
 				return;
 			// Double check
@@ -651,7 +657,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		}
 		if(persistent) {
 			container.activate(parent, 1);
-			container.set(this);
+			container.store(this);
+			container.store(this);
 		}
 		parent.segmentHasURIs(this, container, context);
 		if(persistent)
@@ -709,7 +716,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		if (total != dataBlockInserters.length + checkBlockInserters.length)
 			return;
 		if(persistent)
-			container.set(this);
+			container.store(this);
+			container.store(this);
 		finish(container, context, parent);
 	}
 
@@ -757,7 +765,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		}
 		blocksCompleted++;
 		if(persistent)
-			container.set(this);
+			container.store(this);
+			container.store(this);
 		return blocksCompleted;
 	}
 
@@ -834,7 +843,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			}
 		}
 		if(persistent) {
-			container.set(this);
+			container.store(this);
+			container.store(this);
 			container.activate(parent, 1);
 		}
 		parent.segmentFinished(this, container, context);
