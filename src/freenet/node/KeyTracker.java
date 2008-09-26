@@ -702,6 +702,8 @@ public class KeyTracker {
 		while(true) {
 			try {
 				sentPacketsContents.lock(packetNumber);
+				if(logMINOR)
+					Logger.minor(this, "Locked "+packetNumber);
 				return packetNumber;
 			} catch(InterruptedException e) {
 				synchronized(this) {
@@ -983,7 +985,7 @@ public class KeyTracker {
 			// Ignore packet#
 			if(logMINOR)
 				Logger.minor(this, "Queueing resend of what was once " + element.packetNumber);
-			messages[i] = new MessageItem(buf, callbacks, true, 0, pn.resendByteCounter, element.priority);
+			messages[i] = new MessageItem(buf, callbacks, true, pn.resendByteCounter, element.priority);
 		}
 		pn.requeueMessageItems(messages, 0, messages.length, true);
 
@@ -1051,6 +1053,12 @@ public class KeyTracker {
 		if(rpiTemp.isEmpty())
 			return null;
 		return numbers;
+	}
+	
+	public boolean hasPacketsToResend() {
+		synchronized(packetsToResend) {
+			return !packetsToResend.isEmpty();
+		}
 	}
 
 	public boolean isDeprecated() {

@@ -8,28 +8,22 @@ import java.util.Vector;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
-import freenet.io.comm.DMT;
-import freenet.io.comm.Message;
-import freenet.io.comm.NotConnectedException;
-import freenet.io.comm.PacketSocketHandler;
 import freenet.support.FileLoggerHook;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
-import freenet.support.WouldBlockException;
 import freenet.support.io.NativeThread;
 
 /**
  * @author amphibian
  * 
- * Thread that sends a packet whenever:
- * - A packet needs to be resent immediately
- * - Acknowledgements or resend requests need to be sent urgently.
+ *         Thread that sends a packet whenever: - A packet needs to be resent immediately -
+ *         Acknowledgments or resend requests need to be sent urgently.
  */
 public class PacketSender implements Runnable, Ticker {
 
 	private static boolean logMINOR;
 	private static boolean logDEBUG;
-	/** Maximum time we will queue a message for in millseconds */
+	/** Maximum time we will queue a message for in milliseconds */
 	static final int MAX_COALESCING_DELAY = 100;
 	/** If opennet is enabled, and there are fewer than this many connections,
 	 * we MAY attempt to contact old opennet peers (opennet peers we have 
@@ -162,11 +156,16 @@ public class PacketSender implements Runnable, Ticker {
 	public void run() {
 		if(logMINOR) Logger.minor(this, "In PacketSender.run()");
 		freenet.support.Logger.OSThread.logPID(this);
+		/*
+		 * Index of the point in the nodes list at which we sent a packet and then
+		 * ran out of bandwidth. We start the loop from here next time.
+		 */
+		int brokeAt = 0;
 		while(true) {
 			lastReceivedPacketFromAnyNode = lastReportedNoPackets;
 			try {
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
-				realRun();
+				brokeAt = realRun(brokeAt);
 			} catch(OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
 				System.err.println("Will retry above failed operation...");
@@ -178,7 +177,7 @@ public class PacketSender implements Runnable, Ticker {
 		}
 	}
 
-	private void realRun() {
+	private int realRun(int brokeAt) {
 		long now = System.currentTimeMillis();
 		lastTimeInSeconds = (int) (now / 1000);
 		PeerManager pm = node.peers;
@@ -200,9 +199,27 @@ public class PacketSender implements Runnable, Ticker {
 		long oldTempNow = now;
 		// Needs to be run very frequently. Maybe change to a regular once per second schedule job?
 		// Maybe not worth it as it is fairly lightweight.
+		// FIXME given the lock contention, maybe it's worth it? What about 
+		// running it on the UdpSocketHandler thread? That would surely be better...?
 		node.lm.removeTooOldQueuedItems();
+		
+		boolean canSendThrottled = false;
+		
+		int MAX_PACKET_SIZE = node.darknetCrypto.socket.getMaxPacketSize();
+		long count = node.outputThrottle.getCount();
+		if(count > MAX_PACKET_SIZE)
+			canSendThrottled = true;
+		else {
+			long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
+			canSendAt = (canSendAt / (1000*1000)) + (canSendAt % (1000*1000) == 0 ? 0 : 1);
+			if(logMINOR)
+				Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
+			nextActionTime = Math.min(nextActionTime, now + canSendAt);
+		}
+		
+		int newBrokeAt = 0;
 		for(int i = 0; i < nodes.length; i++) {
-			PeerNode pn = nodes[i];
+			PeerNode pn = nodes[(i + brokeAt + 1) % nodes.length];
 			lastReceivedPacketFromAnyNode =
 				Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
 			pn.maybeOnConnect();
@@ -210,6 +227,8 @@ public class PacketSender implements Runnable, Ticker {
 				// Might as well do it properly.
 				node.peers.disconnect(pn, true, true);
 			}
+			if(pn.shouldThrottle() && !canSendThrottled)
+				continue;
 
 			if(pn.isConnected()) {
 				// Is the node dead?
@@ -230,109 +249,26 @@ public class PacketSender implements Runnable, Ticker {
 					continue;
 				}
 				
-				boolean mustSend = false;
-
-				// Any urgent notifications to send?
-				long urgentTime = pn.getNextUrgentTime();
+				if(pn.maybeSendPacket(now, rpiTemp, rpiIntTemp) && canSendThrottled) {
+					canSendThrottled = false;
+					count = node.outputThrottle.getCount();
+					if(count > MAX_PACKET_SIZE)
+						canSendThrottled = true;
+					else {
+						long canSendAt = node.outputThrottle.getNanosPerTick() * (MAX_PACKET_SIZE - count);
+						canSendAt = (canSendAt / (1000*1000)) + (canSendAt % (1000*1000) == 0 ? 0 : 1);
+						if(logMINOR)
+							Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
+						nextActionTime = Math.min(nextActionTime, now + canSendAt);
+						newBrokeAt = i;
+					}
+				}
+				
+				long urgentTime = pn.getNextUrgentTime(now);
 				// Should spam the logs, unless there is a deadlock
 				if(urgentTime < Long.MAX_VALUE && logMINOR)
-					Logger.minor(this, "Next urgent time: " + urgentTime + " for " + pn.getPeer());
-				if(urgentTime <= now)
-					mustSend = true;
-				else
-					nextActionTime = Math.min(nextActionTime, urgentTime);
-
-				pn.checkTrackerTimeout();
-				
-				// Any packets to resend?
-				for(int j = 0; j < 2; j++) {
-					KeyTracker kt;
-					if(j == 0)
-						kt = pn.getCurrentKeyTracker();
-					else if(j == 1)
-						kt = pn.getPreviousKeyTracker();
-					else
-						break; // impossible
-					if(kt == null)
-						continue;
-					int[] tmp = kt.grabResendPackets(rpiTemp, rpiIntTemp);
-					if(tmp == null)
-						continue;
-					rpiIntTemp = tmp;
-					for(int k = 0; k < rpiTemp.size(); k++) {
-						ResendPacketItem item = (ResendPacketItem) rpiTemp.get(k);
-						if(item == null)
-							continue;
-						try {
-							if(logMINOR)
-								Logger.minor(this, "Resending " + item.packetNumber + " to " + item.kt);
-							pn.getOutgoingMangler().resend(item);
-							mustSend = false;
-						} catch(KeyChangedException e) {
-							Logger.error(this, "Caught " + e + " resending packets to " + kt);
-							pn.requeueResendItems(rpiTemp);
-							break;
-						} catch(NotConnectedException e) {
-							Logger.normal(this, "Caught " + e + " resending packets to " + kt);
-							pn.requeueResendItems(rpiTemp);
-							break;
-						} catch(PacketSequenceException e) {
-							Logger.error(this, "Caught " + e + " - disconnecting", e);
-							// PSE is fairly drastic, something is broken between us, but maybe we can resync
-							pn.forceDisconnect(false); 
-						} catch(WouldBlockException e) {
-							Logger.error(this, "Impossible: " + e, e);
-						}
-					}
-
-				}
-
-				// Any messages to send?
-				MessageItem[] messages = null;
-				messages = pn.grabQueuedMessageItems();
-				if((messages != null) && (messages.length > 0)) {
-					long l = Long.MAX_VALUE;
-					int sz = pn.getOutgoingMangler().fullHeadersLengthOneMessage(); // includes UDP headers 
-					for(int j = 0; j < messages.length; j++) {
-						if(l > messages[j].submitted)
-							l = messages[j].submitted;
-						sz += 2 + /* FIXME only 2? */ messages[j].getData(pn).length;
-					}
-					if(node.enablePacketCoalescing && (l + MAX_COALESCING_DELAY > now) &&
-						(sz < ((PacketSocketHandler) pn.getSocketHandler()).getPacketSendThreshold())) {
-						// Don't send immediately
-						if(nextActionTime > (l + MAX_COALESCING_DELAY))
-							nextActionTime = l + MAX_COALESCING_DELAY;
-						pn.requeueMessageItems(messages, 0, messages.length, true, "TrafficCoalescing");
-					} else {
-						for(int j = 0; j < messages.length; j++)
-							if(logMINOR)
-								Logger.minor(this, "PS Sending: " + (messages[j].msg == null ? "(not a Message)" : messages[j].msg.getSpec().getName())+" to "+pn);
-						// Send packets, right now, blocking, including any active notifications
-						pn.getOutgoingMangler().processOutgoingOrRequeue(messages, pn, true, false);
-						continue;
-					}
-				}
-
-				if(mustSend)
-					// Send them
-
-					try {
-						pn.sendAnyUrgentNotifications(false);
-					} catch(PacketSequenceException e) {
-						Logger.error(this, "Caught " + e + " - while sending urgent notifications : disconnecting", e);
-						pn.forceDisconnect(false);
-					}
-
-				// Need to send a keepalive packet?
-				if(now - pn.lastSentPacketTime() > Node.KEEPALIVE_INTERVAL) {
-					if(logMINOR)
-						Logger.minor(this, "Sending keepalive");
-					// Force packet to have a sequence number.
-					Message m = DMT.createFNPVoid();
-					pn.addToLocalNodeSentMessagesToStatistic(m);
-					pn.getOutgoingMangler().processOutgoingOrRequeue(new MessageItem[]{new MessageItem(m, null, 0, null)}, pn, true, true);
-				}
+					Logger.minor(this, "Next urgent time: " + urgentTime + "(in "+(urgentTime - now)+") for " + pn.getPeer());
+				nextActionTime = Math.min(nextActionTime, urgentTime);
 			} else
 				// Not connected
 
@@ -352,6 +288,7 @@ public class PacketSender implements Runnable, Ticker {
 				Logger.error(this, "tempNow is more than 5 seconds past oldTempNow (" + (tempNow - oldTempNow) + ") in PacketSender working with " + pn.userToString());
 			oldTempNow = tempNow;
 		}
+		brokeAt = newBrokeAt;
 
 		// Consider sending connect requests to our opennet old-peers.
 		// No point if they are NATed, of course... but we don't know whether they are.
@@ -468,6 +405,7 @@ public class PacketSender implements Runnable, Ticker {
 			// because a new packet came in.
 			}
 		}
+		return brokeAt;
 	}
 
 	/** Wake up, and send any queued packets. */

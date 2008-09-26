@@ -179,7 +179,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
         this.prb = prb;
         this.fromStore = fromStore;
         this.startTime = System.currentTimeMillis();
-        this.backgroundTransfers = new Vector();
+        this.backgroundTransfers = new Vector<BackgroundTransfer>();
         logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
 
@@ -210,7 +210,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     
     /** List of nodes we are waiting for either a transfer completion
      * notice or a transfer completion from. Also used as a sync object for waiting for transfer completion. */
-    private Vector backgroundTransfers;
+    private Vector<BackgroundTransfer> backgroundTransfers;
     
     /** Have all transfers completed and all nodes reported completion status? */
     private boolean allTransfersCompleted;
@@ -268,7 +268,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
     }
     
     private void realRun() {
-        HashSet nodesRoutedTo = new HashSet();
+        HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
         
         PeerNode next = null;
         while(true) {
@@ -339,7 +339,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 				   ACCEPTED_TIMEOUT, using sendAsync() will skip them before they get the request. This would be a need for retuning
 				   ACCEPTED_TIMEOUT.
 				 */
-				next.sendAsync(req, null, 0, this);
+				next.sendAsync(req, null, this);
 			} catch (NotConnectedException e1) {
 				if(logMINOR) Logger.minor(this, "Not connected to "+next);
 				continue;

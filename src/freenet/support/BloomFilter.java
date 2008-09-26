@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.util.Random;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -56,6 +57,12 @@ public abstract class BloomFilter {
 			lock.writeLock().unlock();
 		}
 
+		if (forkedFilter != null)
+			forkedFilter.addKey(key);
+	}
+
+	// add to the forked filter only
+	public void addKeyForked(byte[] key) {
 		if (forkedFilter != null)
 			forkedFilter.addKey(key);
 	}
@@ -120,14 +127,20 @@ public abstract class BloomFilter {
 			if (forkedFilter == null)
 				return;
 
-			filter.position(0);
-			forkedFilter.filter.position(0);
+			Lock forkedLock = forkedFilter.lock.writeLock();
+			forkedLock.lock();
+			try {
+				filter.position(0);
+				forkedFilter.filter.position(0);
 
-			filter.put(forkedFilter.filter);
+				filter.put(forkedFilter.filter);
 
-			filter.position(0);
-			forkedFilter.finalize();
-			forkedFilter = null;
+				filter.position(0);
+				forkedFilter.finalize();
+				forkedFilter = null;
+			} finally {
+				forkedLock.unlock();
+			}
 		} finally {
 			lock.writeLock().unlock();
 		}

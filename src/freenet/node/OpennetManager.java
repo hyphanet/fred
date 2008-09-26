@@ -11,9 +11,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Vector;
 
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
@@ -128,11 +128,8 @@ public class OpennetManager {
 		oldPeers = new LRUQueue();
 		node.peers.tryReadPeers(new File(node.nodeDir, "openpeers-"+crypto.portNumber).toString(), crypto, this, true, false);
 		OpennetPeerNode[] nodes = node.peers.getOpennetPeers();
-		Arrays.sort(nodes, new Comparator() {
-			public int compare(Object arg0, Object arg1) {
-				OpennetPeerNode pn1 = (OpennetPeerNode) arg0;
-				OpennetPeerNode pn2 = (OpennetPeerNode) arg1;
-				
+		Arrays.sort(nodes, new Comparator<OpennetPeerNode>() {
+			public int compare(OpennetPeerNode pn1, OpennetPeerNode pn2) {
 				long lastSuccess1 = pn1.timeLastSuccess();
 				long lastSuccess2 = pn2.timeLastSuccess();
 				
@@ -310,7 +307,7 @@ public class OpennetManager {
 			return true;
 		}
 		boolean canAdd = true;
-		Vector dropList = new Vector();
+		ArrayList<OpennetPeerNode> dropList = new ArrayList<OpennetPeerNode>();
 		synchronized(this) {
 			int maxPeers = getNumberOfConnectedPeersToAim();
 			// If we have dropped a disconnected peer, then the inter-peer offer cooldown doesn't apply: we can accept immediately.
@@ -320,7 +317,7 @@ public class OpennetManager {
 				if(toDrop != null)
 					hasDisconnected = !toDrop.isConnected();
 			} else while(peersLRU.size() > maxPeers - (nodeToAddNow == null ? 0 : 1)) {
-				PeerNode toDrop;
+				OpennetPeerNode toDrop;
 				// can drop peers which are over the limit
 				toDrop = peerToDrop(noDisconnect || nodeToAddNow == null);
 				if(toDrop == null) {
@@ -370,8 +367,7 @@ public class OpennetManager {
 			// Just because it's in the global peers list doesn't mean its in the LRU, it may be an old-opennet-peers reconnection.
 			// In which case we add it to the global peers list *before* adding it here.
 		}
-		for(int i=0;i<dropList.size();i++) {
-			OpennetPeerNode pn = (OpennetPeerNode) dropList.get(i);
+		for(OpennetPeerNode pn : dropList) {
 			if(logMINOR) Logger.minor(this, "Dropping LRU opennet peer: "+pn);
 			node.peers.disconnect(pn, true, true);
 		}
@@ -392,7 +388,7 @@ public class OpennetManager {
 		}
 	}
 	
-	synchronized PeerNode peerToDrop(boolean noDisconnect) {
+	synchronized OpennetPeerNode peerToDrop(boolean noDisconnect) {
 		if(peersLRU.size() < getNumberOfConnectedPeersToAim()) {
 			// Don't drop any peers
 			return null;
@@ -520,7 +516,7 @@ public class OpennetManager {
 		long xferUID = node.random.nextLong();
 		Message msg2 = isReply ? DMT.createFNPOpennetConnectReplyNew(uid, xferUID, noderef.length, padded.length) :
 			DMT.createFNPOpennetConnectDestinationNew(uid, xferUID, noderef.length, padded.length);
-		peer.sendAsync(msg2, null, 0, ctr);
+		peer.sendAsync(msg2, null, ctr);
 		innerSendOpennetRef(xferUID, padded, peer, ctr);
 	}
 
@@ -551,7 +547,7 @@ public class OpennetManager {
 		long xferUID = node.random.nextLong();
 		Message msg = DMT.createFNPOpennetAnnounceRequest(uid, xferUID, noderef.length, 
 				paddedSize(noderef.length), target, htl);
-		peer.sendAsync(msg, null, 0, ctr);
+		peer.sendAsync(msg, null, ctr);
 		return xferUID;
 	}
 	
@@ -582,7 +578,7 @@ public class OpennetManager {
 		long xferUID = node.random.nextLong();
 		Message msg = DMT.createFNPOpennetAnnounceReply(uid, xferUID, noderef.length, 
 				padded.length);
-		peer.sendAsync(msg, null, 0, ctr);
+		peer.sendAsync(msg, null, ctr);
 		innerSendOpennetRef(xferUID, padded, peer, ctr);
 	}
 	
@@ -664,7 +660,7 @@ public class OpennetManager {
 	public void rejectRef(long uid, PeerNode source, int reason, ByteCounter ctr) {
 		Message msg = DMT.createFNPOpennetNoderefRejected(uid, reason);
 		try {
-			source.sendAsync(msg, null, 0, ctr);
+			source.sendAsync(msg, null, ctr);
 		} catch (NotConnectedException e) {
 			// Ignore
 		}

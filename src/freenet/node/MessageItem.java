@@ -8,14 +8,15 @@ import freenet.io.comm.ByteCounter;
 import freenet.io.comm.Message;
 import freenet.support.Logger;
 
-/** A queued Message or byte[], and a callback, which may be null. */
+/** A queued byte[], maybe including a Message, and a callback, which may be null.
+ * Note that we always create the byte[] on construction, as almost everywhere 
+ * which uses a MessageItem needs to know its length immediately. */
 public class MessageItem {
     
     final Message msg;
-    byte[] buf;
+    final byte[] buf;
     final AsyncMessageCallback[] cb;
     final long submitted;
-    final int alreadyReportedBytes;
     /** If true, the buffer may contain several messages, and is formatted
      * for sending as a single packet.
      */
@@ -23,19 +24,17 @@ public class MessageItem {
     final ByteCounter ctrCallback;
     private final short priority;
     
-    public MessageItem(Message msg2, AsyncMessageCallback[] cb2, int alreadyReportedBytes, ByteCounter ctr) {
-    	this.alreadyReportedBytes = alreadyReportedBytes;
+    public MessageItem(Message msg2, AsyncMessageCallback[] cb2, ByteCounter ctr, PeerNode pn) {
         this.msg = msg2;
         this.cb = cb2;
-        buf = null;
         formatted = false;
         this.ctrCallback = ctr;
         this.submitted = System.currentTimeMillis();
         priority = msg2.getSpec().getPriority();
+        buf = msg.encodeToPacket(pn);
     }
 
-    public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, int alreadyReportedBytes, ByteCounter ctr, short priority) {
-    	this.alreadyReportedBytes = alreadyReportedBytes;
+    public MessageItem(byte[] data, AsyncMessageCallback[] cb2, boolean formatted, ByteCounter ctr, short priority) {
         this.cb = cb2;
         this.msg = null;
         this.buf = data;
@@ -50,13 +49,12 @@ public class MessageItem {
     /**
      * Return the data contents of this MessageItem.
      */
-    public byte[] getData(PeerNode pn) {
-        if(buf == null)
-            buf = msg.encodeToPacket(pn);
-        if(buf.length <= alreadyReportedBytes) {
-        	Logger.error(this, "buf.length = "+buf.length+" but alreadyReportedBytes = "+alreadyReportedBytes+" on "+this);
-        }
+    public byte[] getData() {
         return buf;
+    }
+    
+    public int getLength() {
+    	return buf.length;
     }
 
     /**
@@ -89,7 +87,7 @@ public class MessageItem {
 	
 	@Override
 	public String toString() {
-		return super.toString()+":formatted="+formatted+",msg="+msg+",alreadyReported="+alreadyReportedBytes;
+		return super.toString()+":formatted="+formatted+",msg="+msg;
 	}
 
 	public void onDisconnect() {

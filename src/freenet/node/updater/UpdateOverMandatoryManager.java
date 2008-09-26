@@ -184,7 +184,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						public void sent() {
 							// Cool
 						}
-					}, 0, updateManager.ctr);
+					}, updateManager.ctr);
 					
 					// The reply message will start the transfer. It includes the revocation URI
 					// so we can tell if anything wierd is happening.
@@ -343,7 +343,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 						}
 					}, REQUEST_MAIN_JAR_TIMEOUT);
 				}
-			}, 0, updateManager.ctr);
+			}, updateManager.ctr);
 		} catch (NotConnectedException e) {
 			synchronized(this) {
 				nodesAskedSendMainJar.remove(source);
@@ -619,7 +619,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					return super.toString() + "("+uid+":"+source.getPeer()+")";
 				}
 				
-			}, 0, updateManager.ctr);
+			}, updateManager.ctr);
 		} catch (NotConnectedException e) {
 			Logger.error(this, "Peer "+source+" asked us for the blob file for the revocation key, then disconnected when we tried to send the UOMSendingRevocation: "+e, e);
 			return true;
@@ -901,7 +901,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	private void cancelSend(PeerNode source, long uid) {
 		Message msg = DMT.createFNPBulkReceiveAborted(uid);
 		try {
-			source.sendAsync(msg, null, 0, updateManager.ctr);
+			source.sendAsync(msg, null, updateManager.ctr);
 		} catch (NotConnectedException e1) {
 			// Ignore
 		}
@@ -994,7 +994,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 					return super.toString() + "("+uid+":"+source.getPeer()+")";
 				}
 				
-			}, 0, updateManager.ctr);
+			}, updateManager.ctr);
 		} catch (NotConnectedException e) {
 			Logger.error(this, "Peer "+source+" asked us for the blob file for the main jar, then disconnected when we tried to send the UOMSendingMain: "+e, e);
 			return true;

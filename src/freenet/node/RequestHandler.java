@@ -136,7 +136,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			Logger.minor(this, "Handling a request: " + uid);
 
 		Message accepted = DMT.createFNPAccepted(uid);
-		source.sendAsync(accepted, null, 0, this);
+		source.sendAsync(accepted, null, this);
 
 		Object o = node.makeRequestSender(key, htl, uid, source, false, true, false, false);
 		if(o instanceof KeyBlock) {
@@ -168,7 +168,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 				// Forward RejectedOverload
 				//Note: This message is only decernable from the terminal messages by the IS_LOCAL flag being false. (!IS_LOCAL)->!Terminal
 				Message msg = DMT.createFNPRejectedOverload(uid, false);
-				source.sendAsync(msg, null, 0, this);
+				source.sendAsync(msg, null, this);
 				//If the status changes (e.g. to SUCCESS), there is little need to send yet another reject overload.
 				sentRejectedOverload = true;
 			}
@@ -182,7 +182,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		try {
 			// Is a CHK.
 			Message df = DMT.createFNPCHKDataFound(uid, rs.getHeaders());
-			source.sendAsync(df, null, 0, this);
+			source.sendAsync(df, null, this);
 
 			PartiallyReceivedBlock prb = rs.getPRB();
 			bt =
@@ -339,7 +339,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		// SUCCESS requires that BOTH the pubkey AND the data/headers have been received.
 		// The pubKey will have been set on the SSK key, and the SSKBlock will have been constructed.
 		Message headersMsg = DMT.createFNPSSKDataFoundHeaders(uid, headers);
-		source.sendAsync(headersMsg, null, 0, this);
+		source.sendAsync(headersMsg, null, this);
 		final Message dataMsg = DMT.createFNPSSKDataFoundData(uid, data);
 		node.executor.execute(new PrioRunnable() {
 
@@ -366,13 +366,13 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 		if(SEND_OLD_FORMAT_SSK) {
 			Message df = DMT.createFNPSSKDataFound(uid, headers, data);
-			source.sendAsync(df, null, 0, this);
+			source.sendAsync(df, null, this);
 			// Not throttled, so report payload here.
 			sentPayload(data.length);
 		}
 		if(needsPubKey) {
 			Message pk = DMT.createFNPSSKPubKey(uid, pubKey);
-			source.sendAsync(pk, null, 0, this);
+			source.sendAsync(pk, null, this);
 		}
 	}
 
@@ -380,7 +380,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		// SUCCESS requires that BOTH the pubkey AND the data/headers have been received.
 		// The pubKey will have been set on the SSK key, and the SSKBlock will have been constructed.
 		Message headersMsg = DMT.createFNPSSKDataFoundHeaders(uid, headers);
-		source.sendAsync(headersMsg, null, 0, ctr);
+		source.sendAsync(headersMsg, null, ctr);
 		final Message dataMsg = DMT.createFNPSSKDataFoundData(uid, data);
 		try {
 			source.sendThrottledMessage(dataMsg, data.length, ctr, 60 * 1000, false);
@@ -391,13 +391,13 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 		if(SEND_OLD_FORMAT_SSK) {
 			Message df = DMT.createFNPSSKDataFound(uid, headers, data);
-			source.sendAsync(df, null, 0, ctr);
+			source.sendAsync(df, null, ctr);
 			// Not throttled, so report payload here.
 			ctr.sentPayload(data.length);
 		}
 		if(needsPubKey) {
 			Message pk = DMT.createFNPSSKPubKey(uid, pubKey);
-			source.sendAsync(pk, null, 0, ctr);
+			source.sendAsync(pk, null, ctr);
 		}
 	}
 
@@ -417,7 +417,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			BlockTransmitter bt =
 				new BlockTransmitter(node.usm, source, uid, prb, this);
 			node.addTransferringRequestHandler(uid);
-			source.sendAsync(df, null, 0, this);
+			source.sendAsync(df, null, this);
 			if(bt.send(node.executor)) {
 				// for byte logging
 				status = RequestSender.SUCCESS;
@@ -451,7 +451,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		else
 			sendTerminalCalled = true;
 
-		source.sendAsync(msg, new TerminalMessageByteCountCollector(), 0, this);
+		source.sendAsync(msg, new TerminalMessageByteCountCollector(), this);
 	}
 	boolean sendTerminalCalled = false;
 

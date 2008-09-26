@@ -34,7 +34,7 @@ public interface PeerContext {
 	int getVersionNumber();
 	
 	/** Send a message to the node */
-	public void sendAsync(Message msg, AsyncMessageCallback cb, int alreadyReportedBytes, ByteCounter ctr) throws NotConnectedException;
+	public void sendAsync(Message msg, AsyncMessageCallback cb, ByteCounter ctr) throws NotConnectedException;
 	
 	/** Send a throttled message to the node (may block for a long time). 
 	 * @throws SyncSendWaitedTooLongException */

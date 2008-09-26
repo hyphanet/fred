@@ -43,9 +43,9 @@ import freenet.support.io.NativeThread;
 public class FailureTable implements OOMHook {
 	
 	/** FailureTableEntry's by key. Note that we push an entry only when sentTime changes. */
-	private final LRUHashtable entriesByKey;
+	private final LRUHashtable<Key,FailureTableEntry> entriesByKey;
 	/** BlockOfferList by key */
-	private final LRUHashtable blockOfferListByKey;
+	private final LRUHashtable<Key,BlockOfferList> blockOfferListByKey;
 	private final Node node;
 	
 	/** Maximum number of keys to track */
@@ -67,8 +67,8 @@ public class FailureTable implements OOMHook {
 	static boolean logDEBUG;
 	
 	FailureTable(Node node) {
-		entriesByKey = new LRUHashtable();
-		blockOfferListByKey = new LRUHashtable();
+		entriesByKey = new LRUHashtable<Key,FailureTableEntry>();
+		blockOfferListByKey = new LRUHashtable<Key,BlockOfferList>();
 		this.node = node;
 		offerAuthenticatorKey = new byte[32];
 		node.random.nextBytes(offerAuthenticatorKey);
@@ -387,7 +387,11 @@ public class FailureTable implements OOMHook {
 				try {
 					innerSendOfferedKey(key, isSSK, needPubKey, uid, source);
 				} catch (NotConnectedException e) {
+					node.unlockUID(uid, isSSK, false, false, true, false);
 					// Too bad.
+				} catch (Throwable t) {
+					node.unlockUID(uid, isSSK, false, false, true, false);
+					Logger.error(this, "Caught "+t+" sending offered key");
 				}
 			}
 		}, "sendOfferedKey");
@@ -403,7 +407,8 @@ public class FailureTable implements OOMHook {
 			SSKBlock block = node.fetch((NodeSSK)key, false);
 			if(block == null) {
 				// Don't have the key
-				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, 0, senderCounter);
+				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, senderCounter);
+				node.unlockUID(uid, isSSK, false, false, true, false);
 				return;
 			}
 			
@@ -411,7 +416,7 @@ public class FailureTable implements OOMHook {
 			Message headers = DMT.createFNPSSKDataFoundHeaders(uid, block.getRawHeaders());
 			final int dataLength = block.getRawData().length;
 			
-			source.sendAsync(headers, null, 0, senderCounter);
+			source.sendAsync(headers, null, senderCounter);
 			
 			node.executor.execute(new PrioRunnable() {
 
@@ -438,21 +443,22 @@ public class FailureTable implements OOMHook {
 			
 			if(RequestHandler.SEND_OLD_FORMAT_SSK) {
 				Message df = DMT.createFNPSSKDataFound(uid, block.getRawHeaders(), block.getRawData());
-				source.sendAsync(df, null, 0, senderCounter);
+				source.sendAsync(df, null, senderCounter);
 			}
 			if(needPubKey) {
 				Message pk = DMT.createFNPSSKPubKey(uid, block.getPubKey());
-				source.sendAsync(pk, null, 0, senderCounter);
+				source.sendAsync(pk, null, senderCounter);
 			}
 		} else {
 			CHKBlock block = node.fetch((NodeCHK)key, false);
 			if(block == null) {
 				// Don't have the key
-				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, 0, senderCounter);
+				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, senderCounter);
+				node.unlockUID(uid, isSSK, false, false, true, false);
 				return;
 			}
 			Message df = DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
-			source.sendAsync(df, null, 0, senderCounter);
+			source.sendAsync(df, null, senderCounter);
         	PartiallyReceivedBlock prb =
         		new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, block.getRawData());
         	final BlockTransmitter bt =
@@ -500,8 +506,8 @@ public class FailureTable implements OOMHook {
 
 		OfferList(BlockOfferList offerList) {
 			this.offerList = offerList;
-			recentOffers = new Vector();
-			expiredOffers = new Vector();
+			recentOffers = new Vector<BlockOffer>();
+			expiredOffers = new Vector<BlockOffer>();
 			long now = System.currentTimeMillis();
 			BlockOffer[] offers = offerList.offers;
 			for(int i=0;i<offers.length;i++) {
@@ -516,8 +522,8 @@ public class FailureTable implements OOMHook {
 		
 		private final BlockOfferList offerList;
 		
-		private final Vector recentOffers;
-		private final Vector expiredOffers;
+		private final Vector<BlockOffer> recentOffers;
+		private final Vector<BlockOffer> expiredOffers;
 		
 		/** The last offer we returned */
 		private BlockOffer lastOffer;

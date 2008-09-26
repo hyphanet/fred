@@ -210,7 +210,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	}
         	Message msg = DMT.createFNPGetOfferedKey(key, offer.authenticator, pubKey == null, uid);
         	try {
-				pn.sendAsync(msg, null, 0, this);
+				pn.sendAsync(msg, null, this);
 			} catch (NotConnectedException e2) {
 				if(logMINOR)
 					Logger.minor(this, "Disconnected: "+pn+" getting offer for "+key);

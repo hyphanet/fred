@@ -8,10 +8,9 @@ import com.sleepycat.je.DatabaseException;
  * Datastore interface
  */
 public interface FreenetStore {
-
-	public static final short TYPE_CHK = 0;
-	public static final short TYPE_PUBKEY = 1;
-	public static final short TYPE_SSK = 2;
+	public enum StoreType {
+		CHK, PUBKEY, SSK
+	};
 
 	/**
 	 * Retrieve a block. Use the StoreCallback to convert it to the appropriate type of block.

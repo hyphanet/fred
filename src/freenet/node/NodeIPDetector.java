@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Vector;
+import java.util.List;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -24,7 +24,6 @@ import freenet.pluginmanager.FredPluginIPDetector;
 import freenet.pluginmanager.FredPluginPortForward;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
-import freenet.support.api.BooleanCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPAddressDetector;
@@ -99,7 +98,7 @@ public class NodeIPDetector {
 	FreenetInetAddress[] detectPrimaryIPAddress(boolean dumpLocalAddresses) {
 		boolean addedValidIP = false;
 		Logger.minor(this, "Redetecting IPs...");
-		Vector addresses = new Vector();
+		ArrayList<FreenetInetAddress> addresses = new ArrayList<FreenetInetAddress>();
 		if(overrideIPAddress != null) {
 			// If the IP is overridden and the override is valid, the override has to be the first element.
 			// overrideIPAddress will be null if the override is invalid
@@ -131,10 +130,13 @@ public class NodeIPDetector {
 	   	}
 	   	lastIPAddress = (FreenetInetAddress[]) addresses.toArray(new FreenetInetAddress[addresses.size()]);
 	   	if(dumpLocalAddresses) {
-	   		ArrayList filtered = new ArrayList(lastIPAddress.length);
+	   		ArrayList<FreenetInetAddress> filtered = new ArrayList<FreenetInetAddress>(lastIPAddress.length);
 	   		for(int i=0;i<lastIPAddress.length;i++) {
 	   			if(lastIPAddress[i] == null) continue;
-	   			if(IPUtil.isValidAddress(lastIPAddress[i].getAddress(), false))
+	   			if(lastIPAddress[i] == overrideIPAddress && lastIPAddress[i].hasHostnameNoIP())
+	   				filtered.add(lastIPAddress[i]);
+	   			else if(lastIPAddress[i].hasHostnameNoIP()) continue;
+	   			else if(IPUtil.isValidAddress(lastIPAddress[i].getAddress(), false))
 	   				filtered.add(lastIPAddress[i]);
 	   		}
 	   		return (FreenetInetAddress[]) filtered.toArray(new FreenetInetAddress[filtered.size()]);
@@ -163,7 +165,7 @@ public class NodeIPDetector {
 	 * @param addedValidIP
 	 * @return
 	 */
-	private boolean innerDetect(Vector addresses) {
+	private boolean innerDetect(List<FreenetInetAddress> addresses) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		boolean addedValidIP = false;
 		InetAddress[] detectedAddrs = ipDetector.getAddress();
@@ -204,7 +206,7 @@ public class NodeIPDetector {
 		// Try to pick it up from our connections
 		if(node.peers != null) {
 			PeerNode[] peerList = node.peers.myPeers;
-			HashMap countsByPeer = new HashMap();
+			HashMap<FreenetInetAddress,Integer> countsByPeer = new HashMap<FreenetInetAddress,Integer>();
 			// FIXME use a standard mutable int object, we have one somewhere
 			for(int i=0;i<peerList.length;i++) {
 				if(!peerList[i].isConnected()) continue;
@@ -221,11 +223,9 @@ public class NodeIPDetector {
 				if(logMINOR)
 					Logger.minor(this, "Peer "+peerList[i].getPeer()+" thinks we are "+addr);
 				if(countsByPeer.containsKey(addr)) {
-					Integer count = (Integer) countsByPeer.get(addr);
-					Integer newCount = new Integer(count.intValue()+1);
-					countsByPeer.put(addr, newCount);
+					countsByPeer.put(addr, countsByPeer.get(addr) + 1);
 				} else {
-					countsByPeer.put(addr, new Integer(1));
+					countsByPeer.put(addr, 1);
 				}
 			}
 			if(countsByPeer.size() == 1) {

@@ -9,7 +9,7 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.security.MessageDigest;
-import java.util.Vector;
+import java.util.ArrayList;
 import java.util.zip.DeflaterOutputStream;
 
 import com.db4o.ObjectContainer;
@@ -492,14 +492,14 @@ public class NodeCrypto {
 	}
 
 	public PeerNode[] getAnonSetupPeerNodes() {
-		Vector v = new Vector();
+		ArrayList<PeerNode> v = new ArrayList<PeerNode>();
 		PeerNode[] peers = node.peers.myPeers;
 		for(int i=0;i<peers.length;i++) {
 			PeerNode pn = peers[i];
 			if(pn.handshakeUnknownInitiator() && pn.getOutgoingMangler() == packetMangler)
 				v.add(pn);
 		}
-		return (PeerNode[]) v.toArray(new PeerNode[v.size()]);
+		return v.toArray(new PeerNode[v.size()]);
 	}
 	
 	void setPortForwardingBroken() {

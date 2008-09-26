@@ -154,7 +154,7 @@ public class BulkTransmitter {
 			sentCancel = true;
 		}
 		try {
-			peer.sendAsync(DMT.createFNPBulkSendAborted(uid), null, 0, ctr);
+			peer.sendAsync(DMT.createFNPBulkSendAborted(uid), null, ctr);
 		} catch (NotConnectedException e) {
 			// Cool
 		}

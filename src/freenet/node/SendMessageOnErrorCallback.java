@@ -44,7 +44,7 @@ public class SendMessageOnErrorCallback implements AsyncMessageCallback {
     	if(Logger.shouldLog(Logger.MINOR, this))
     		Logger.minor(this, "Disconnect trigger: "+this);
         try {
-            dest.sendAsync(msg, null, 0, ctr);
+            dest.sendAsync(msg, null, ctr);
         } catch (NotConnectedException e) {
         	if(Logger.shouldLog(Logger.MINOR, this))
         		Logger.minor(this, "Both source and destination disconnected: "+msg+" for "+this);

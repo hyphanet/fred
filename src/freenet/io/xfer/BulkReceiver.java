@@ -48,7 +48,7 @@ public class BulkReceiver {
 			sentCancel = true;
 		}
 		try {
-			peer.sendAsync(DMT.createFNPBulkReceiveAborted(uid), null, 0, ctr);
+			peer.sendAsync(DMT.createFNPBulkReceiveAborted(uid), null, ctr);
 		} catch (NotConnectedException e) {
 			// Cool
 		}
@@ -64,7 +64,7 @@ public class BulkReceiver {
 			MessageFilter mfPacket = MessageFilter.create().setSource(peer).setType(DMT.FNPBulkPacketSend) .setField(DMT.UID, uid).setTimeout(TIMEOUT);
 			if(prb.hasWholeFile()) {
 				try {
-					peer.sendAsync(DMT.createFNPBulkReceivedAll(uid), null, 0, ctr);
+					peer.sendAsync(DMT.createFNPBulkReceivedAll(uid), null, ctr);
 				} catch (NotConnectedException e) {
 					// Ignore, we have the data.
 				}

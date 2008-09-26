@@ -86,6 +86,7 @@ import freenet.l10n.L10n;
 import freenet.node.NodeDispatcher.NodeDispatcherCallback;
 import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
 import freenet.node.SecurityLevels.NETWORK_THREAT_LEVEL;
+import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.useralerts.AbstractUserAlert;
 import freenet.node.useralerts.BuildOldAgeUserAlert;
@@ -100,14 +101,13 @@ import freenet.pluginmanager.ForwardPort;
 import freenet.pluginmanager.PluginManager;
 import freenet.store.BerkeleyDBFreenetStore;
 import freenet.store.CHKStore;
-import freenet.store.FreenetStore;
 import freenet.store.KeyCollisionException;
 import freenet.store.PubkeyStore;
 import freenet.store.RAMFreenetStore;
 import freenet.store.SSKStore;
+import freenet.store.FreenetStore.StoreType;
 import freenet.store.saltedhash.SaltedHashFreenetStore;
 import freenet.support.ByteArrayWrapper;
-import freenet.support.DoubleTokenBucket;
 import freenet.support.Executor;
 import freenet.support.Fields;
 import freenet.support.FileLoggerHook;
@@ -122,6 +122,7 @@ import freenet.support.OOMHandler;
 import freenet.support.PooledExecutor;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
+import freenet.support.TokenBucket;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
@@ -245,12 +246,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	}
 	
 	/** db4o database for node and client layer.
-	 * Other databases can be created for the datastore (since its usage 
-	 * patterns and content are completely different), or for plugins (for 
+	 * Other databases can be created for the datastore (since its usage
+	 * patterns and content are completely different), or for plugins (for
 	 * security reasons).
 	 * 
 	 * This is an internal server, specific parts of the code can create
-	 * ObjectContainer's from it. Be careful to refresh objects on any 
+	 * ObjectContainer's from it. Be careful to refresh objects on any
 	 * long-lived container! */
 	public final ObjectContainer db;
 	/** A fixed random number which identifies the top-level objects belonging to
@@ -347,8 +348,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private boolean storeForceBigShrinks;
 	
 	/* These are private because must be protected by synchronized(this) */
-	private final Environment storeEnvironment;
-	private final EnvironmentMutableConfig envMutableConfig;
+	private Environment storeEnvironment;
+	private EnvironmentMutableConfig envMutableConfig;
 	private final SemiOrderedShutdownHook shutdownHook;
 	private long databaseMaxMemory;
 	/** The CHK datastore. Long term storage; data should only be inserted here if
@@ -356,20 +357,20 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * insert (because inserts will always reach the most specialized node; if we
 	 * allow requests to store here, then we get pollution by inserts for keys not
 	 * close to our specialization). These conclusions derived from Oskar's simulations. */
-	private final CHKStore chkDatastore;
+	private CHKStore chkDatastore;
 	/** The SSK datastore. See description for chkDatastore. */
-	private final SSKStore sskDatastore;
+	private SSKStore sskDatastore;
 	/** The store of DSAPublicKeys (by hash). See description for chkDatastore. */
-	private final PubkeyStore pubKeyDatastore;
+	private PubkeyStore pubKeyDatastore;
 	/** The CHK datacache. Short term cache which stores everything that passes
 	 * through this node. */
-	private final CHKStore chkDatacache;
+	private CHKStore chkDatacache;
 	/** The SSK datacache. Short term cache which stores everything that passes
 	 * through this node. */
-	private final SSKStore sskDatacache;
+	private SSKStore sskDatacache;
 	/** The public key datacache (by hash). Short term cache which stores 
 	 * everything that passes through this node. */
-	private final PubkeyStore pubKeyDatacache;
+	private PubkeyStore pubKeyDatacache;
 	/** RequestSender's currently running, by KeyHTLPair */
 	private final HashMap<KeyHTLPair, RequestSender> requestSenders;
 	/** RequestSender's currently transferring, by key */
@@ -444,7 +445,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	final LRUHashtable<ByteArrayWrapper, DSAPublicKey> cachedPubKeys;
 	final boolean testnetEnabled;
 	final TestnetHandler testnetHandler;
-	public final DoubleTokenBucket outputThrottle;
+	public final TokenBucket outputThrottle;
 	public boolean throttleLocalData;
 	private int outputBandwidthLimit;
 	private int inputBandwidthLimit;
@@ -528,6 +529,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private static final int MIN_UPTIME_STORE_KEY = 40;
 	
 	private volatile boolean isPRNGReady = false;
+
+	private boolean storePreallocate;
 	
 	/**
 	 * Read all storable settings (identity etc) from the node file.
@@ -672,7 +675,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		startupTime = System.currentTimeMillis();
 		SimpleFieldSet oldConfig = config.getSimpleFieldSet();
 		// Setup node-specific configuration
-		SubConfig nodeConfig = new SubConfig("node", config);
+		final SubConfig nodeConfig = new SubConfig("node", config);
 		
 		int sortOrder = 0;
 		
@@ -815,8 +818,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// init shutdown hook
 		shutdownHook = new SemiOrderedShutdownHook();
 		Runtime.getRuntime().addShutdownHook(shutdownHook);
-
-		/* FIXME: this may throw if e.g. we ran out of disk space last time. 
+		
+		/* FIXME: this may throw if e.g. we ran out of disk space last time.
 		 * We need to back it up and auto-recover. */
 		/* Client-server mode. Refresh objects if you have a long-lived container! */
 		/* On my db4o test node with lots of downloads, and several days old, com.db4o.internal.freespace.FreeSlotNode
@@ -850,9 +853,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		Db4o.configure().messageLevel(1);
 		Db4o.configure().activationDepth(1);
 		/* TURN OFF SHUTDOWN HOOK.
-		 * The shutdown hook does auto-commit. We do NOT want auto-commit: if a 
+		 * The shutdown hook does auto-commit. We do NOT want auto-commit: if a
 		 * transaction hasn't commit()ed, it's not safe to commit it. For example,
-		 * a splitfile is started, gets half way through, then we shut down. 
+		 * a splitfile is started, gets half way through, then we shut down.
 		 * The shutdown hook commits the half-finished transaction. When we start
 		 * back up, we assume the whole transaction has been committed, and end
 		 * up only registering the proportion of segments for which a RegisterMe
@@ -860,7 +863,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		 * Add our own hook to rollback and close... */
 		Db4o.configure().automaticShutDown(false);
 		Db4o.configure().diagnostic().addListener(new DiagnosticListener() {
-
+			
 			public void onDiagnostic(Diagnostic arg0) {
 				if(arg0 instanceof ClassHasNoFields)
 					return; // Ignore
@@ -870,7 +873,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				} else
 					Logger.error(this, "Diagnostic: "+arg0+" : "+arg0.getClass(), new Exception("debug"));
 			}
-			
 		});
 		
 		shutdownHook.addLateJob(new Thread() {
@@ -889,7 +891,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		db = Db4o.openFile(new File(nodeDir, "node.db4o").toString());
 		
 		System.err.println("Opened database");
-		
+
 		// Boot ID
 		bootID = random.nextLong();
 		// Fixed length file containing boot ID. Accessed with random access file. So hopefully it will always be
@@ -1215,7 +1217,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		// Add them at a rate determined by the obwLimit.
 		// Maximum forced bytes 80%, in other words, 20% of the bandwidth is reserved for 
 		// block transfers, so we will use that 20% for block transfers even if more than 80% of the limit is used for non-limited data (resends etc).
-		outputThrottle = new DoubleTokenBucket(obwLimit/2, (1000L*1000L*1000L) / obwLimit, obwLimit/2, 0.8);
+		int bucketSize = obwLimit/2;
+		// Must have at least space for ONE PACKET.
+		// FIXME: make compatible with alternate transports.
+		bucketSize = Math.max(bucketSize, 2048);
+		outputThrottle = new TokenBucket(bucketSize, (1000L*1000L*1000L) / obwLimit, obwLimit/2);
 		
 		nodeConfig.register("inputBandwidthLimit", "-1", sortOrder++, false, true, "Node.inBWLimit", "Node.inBWLimitLong",	new IntCallback() {
 					@Override
@@ -1293,11 +1299,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			}
 		} else {
 			String s = "Testnet mode DISABLED. You may have some level of anonymity. :)\n"+
-				"Note that Freenet 0.7 is still under intense development, and is by no means feature complete, especially "+
-				"in the area of security: There are known design flaws and there are bugs we haven't found out about yet. "+
-				"Smart attackers can probably compromise your anonymity! This is easiest if they are directly connected to " +
-				"you, but (especially on opennet) they can probably find you given time even if they are not.\n\n"+
-				"USE FREENET AT YOUR OWN RISK. THERE IS ABSOLUTELY NO WARRANTY FOR FREENET.";
+				"Note that this version of Freenet is still a very early alpha, and may well have numerous bugs and design flaws.\n"+
+				"In particular: YOU ARE WIDE OPEN TO YOUR IMMEDIATE PEERS! They can eavesdrop on your requests with relatively little difficulty at present (correlation attacks etc).";
 			Logger.normal(this, s);
 			System.err.println(s);
 			testnetEnabled = false;
@@ -1361,21 +1364,15 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				return isAllowedToConnectToSeednodes;
 			}
 			@Override
-			public void set(Boolean val) throws InvalidConfigValueException {
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
 				if (get().equals(val))
 					        return;
 				synchronized(Node.this) {
+					isAllowedToConnectToSeednodes = val;
 					if(opennet != null)
-						throw new InvalidConfigValueException("Can't change that setting on the fly when opennet is already active!");
-					else
-						isAllowedToConnectToSeednodes = val;
+						throw new NodeNeedRestartException(l10n("connectToSeednodesCannotBeChangedMustDisableOpennetOrReboot"));
 				}
 			}
-
-			@Override
-			public boolean isReadOnly() {
-				        return opennet != null;
-			        }
 		});
 		isAllowedToConnectToSeednodes = opennetConfig.getBoolean("connectToSeednodes");
 		
@@ -1568,7 +1565,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			
 		});
 
-		nodeConfig.register("storeType", "bdb-index", sortOrder++, true, false, "Node.storeType", "Node.storeTypeLong", new StoreTypeCallback());
+		nodeConfig.register("storeType", "bdb-index", sortOrder++, true, true, "Node.storeType", "Node.storeTypeLong", new StoreTypeCallback());
 		
 		storeType = nodeConfig.getString("storeType");
 		
@@ -1705,265 +1702,100 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		maxStoreKeys = maxTotalKeys / 2;
 		maxCacheKeys = maxTotalKeys - maxStoreKeys;
 		
+		/*
+		 * On Windows, setting the file length normally involves writing lots of zeros.
+		 * So it's an uninterruptible system call that takes a loooong time. On OS/X,
+		 * presumably the same is true. If the RNG is fast enough, this means that
+		 * setting the length and writing random data take exactly the same amount
+		 * of time. On most versions of Unix, holes can be created. However on all
+		 * systems, predictable disk usage is a good thing. So lets turn it on by
+		 * default for now, on all systems. The datastore can be read but mostly not 
+		 * written while the random data is being written.
+		 */
+		nodeConfig.register("storePreallocate", true, sortOrder++, true, false, "Node.storePreallocate", "Node.storePreallocateLong", 
+				new BooleanCallback() {
+					@Override
+                    public Boolean get() {
+	                    return storePreallocate;
+                    }
+
+					@Override
+                    public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+						storePreallocate = val;
+						if (storeType.equals("salt-hash")) {
+							((SaltedHashFreenetStore) chkDatastore.getStore()).setPreallocate(val);
+							((SaltedHashFreenetStore) chkDatacache.getStore()).setPreallocate(val);
+							((SaltedHashFreenetStore) pubKeyDatastore.getStore()).setPreallocate(val);
+							((SaltedHashFreenetStore) pubKeyDatacache.getStore()).setPreallocate(val);
+							((SaltedHashFreenetStore) sskDatastore.getStore()).setPreallocate(val);
+							((SaltedHashFreenetStore) sskDatacache.getStore()).setPreallocate(val);
+						}
+                    }}
+		);
+		storePreallocate = nodeConfig.getBoolean("storePreallocate");
+		
+		if(File.separatorChar == '/' && System.getProperty("os.name").toLowerCase().indexOf("mac os") < 0) {
+			securityLevels.addPhysicalThreatLevelListener(new SecurityLevelListener<SecurityLevels.PHYSICAL_THREAT_LEVEL>() {
+
+				public void onChange(PHYSICAL_THREAT_LEVEL oldLevel, PHYSICAL_THREAT_LEVEL newLevel) {
+					try {
+						if(newLevel == PHYSICAL_THREAT_LEVEL.LOW)
+							nodeConfig.set("storePreallocate", false);
+						else
+							nodeConfig.set("storePreallocate", true);
+					} catch (NodeNeedRestartException e) {
+						// Ignore
+					} catch (InvalidConfigValueException e) {
+						// Ignore
+					}
+				}
+				
+			});
+		}
+		
 		if (storeType.equals("salt-hash")) {
-			storeEnvironment = null;
-			envMutableConfig = null;
-			try {
-				int bloomFilterSizeInM = storeBloomFilterCounting ? storeBloomFilterSize / 6 * 4
-				        : (storeBloomFilterSize + 6) / 6 * 8; // + 6 to make size different, trigger rebuild 
-				
-				Logger.normal(this, "Initializing CHK Datastore");
-				System.out.println("Initializing CHK Datastore (" + maxStoreKeys + " keys)");
-				chkDatastore = new CHKStore();
-				SaltedHashFreenetStore chkDataFS = SaltedHashFreenetStore.construct(storeDir, "CHK-store",
-				        chkDatastore, random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting,
-				        shutdownHook);
-				Logger.normal(this, "Initializing CHK Datacache");
-				System.out.println("Initializing CHK Datacache (" + maxCacheKeys + ':' + maxCacheKeys + " keys)");
-				chkDatacache = new CHKStore();
-				SaltedHashFreenetStore chkCacheFS = SaltedHashFreenetStore.construct(storeDir, "CHK-cache",
-				        chkDatacache, random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting,
-				        shutdownHook);
-				Logger.normal(this, "Initializing pubKey Datastore");
-				System.out.println("Initializing pubKey Datastore");
-				pubKeyDatastore = new PubkeyStore();
-				SaltedHashFreenetStore pubkeyDataFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-store",
-				        pubKeyDatastore, random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting,
-				        shutdownHook);
-				Logger.normal(this, "Initializing pubKey Datacache");
-				System.out.println("Initializing pubKey Datacache (" + maxCacheKeys + " keys)");
-				pubKeyDatacache = new PubkeyStore();
-				SaltedHashFreenetStore pubkeyCacheFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-cache",
-				        pubKeyDatacache, random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting,
-				        shutdownHook);
-				Logger.normal(this, "Initializing SSK Datastore");
-				System.out.println("Initializing SSK Datastore");
-				sskDatastore = new SSKStore(this);
-				SaltedHashFreenetStore sskDataFS = SaltedHashFreenetStore.construct(storeDir, "SSK-store",
-				        sskDatastore, random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting,
-				        shutdownHook);
-				Logger.normal(this, "Initializing SSK Datacache");
-				System.out.println("Initializing SSK Datacache (" + maxCacheKeys + " keys)");
-				sskDatacache = new SSKStore(this);
-				SaltedHashFreenetStore sskCacheFS = SaltedHashFreenetStore.construct(storeDir, "SSK-cache",
-				        sskDatacache, random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting,
-				        shutdownHook);
-				
-				File migrationFile = new File(storeDir, "migrated");
-				if (!migrationFile.exists()) {
-					chkDataFS.migrationFrom(//
-					        new File(storeDir, "chk" + suffix + ".store"), // 
-					        new File(storeDir, "chk" + suffix + ".store.keys"));
-					chkCacheFS.migrationFrom(//
-					        new File(storeDir, "chk" + suffix + ".cache"), // 
-					        new File(storeDir, "chk" + suffix + ".cache.keys"));
-
-					pubkeyDataFS.migrationFrom(//
-					        new File(storeDir, "pubkey" + suffix + ".store"), // 
-					        new File(storeDir, "pubkey" + suffix + ".store.keys"));
-					pubkeyCacheFS.migrationFrom(//
-					        new File(storeDir, "pubkey" + suffix + ".cache"), // 
-					        new File(storeDir, "pubkey" + suffix + ".cache.keys"));
-
-					sskDataFS.migrationFrom(//
-					        new File(storeDir, "ssk" + suffix + ".store"), // 
-					        new File(storeDir, "ssk" + suffix + ".store.keys"));
-					sskCacheFS.migrationFrom(//
-					        new File(storeDir, "ssk" + suffix + ".cache"), // 
-					        new File(storeDir, "ssk" + suffix + ".cache.keys"));
-					migrationFile.createNewFile();
-				}
-			} catch (IOException e) {
-				System.err.println("Could not open store: " + e);
-				e.printStackTrace();
-				throw new NodeInitException(NodeInitException.EXIT_STORE_OTHER, e.getMessage());
-			}
+			initSaltHashFS(suffix);
 		} else if (storeType.equals("bdb-index")) {
-		// Setup datastores
-		
-		EnvironmentConfig envConfig = BerkeleyDBFreenetStore.getBDBConfig();
-		
-		File dbDir = new File(storeDir, "database-"+getDarknetPortNumber());
-		dbDir.mkdirs();
-		
-		File reconstructFile = new File(dbDir, "reconstruct");
-		
-		Environment env = null;
-		EnvironmentMutableConfig mutableConfig;
-		
-		// This can take some time
-		System.out.println("Starting database...");
-		try {
-			if(reconstructFile.exists()) {
-				reconstructFile.delete();
-				throw new DatabaseException();
-			}
-			// Auto-recovery can take a long time
-			WrapperManager.signalStarting(60*60*1000);
-			env = new Environment(dbDir, envConfig);
-			mutableConfig = env.getConfig();
-		} catch (DatabaseException e) {
+			nodeConfig.register("databaseMaxMemory", "20M", sortOrder++, true, false, "Node.databaseMemory", "Node.databaseMemoryLong", 
+					new LongCallback() {
 
-			// Close the database
-			if(env != null) {
-				try {
-					env.close();
-				} catch (Throwable t) {
-					System.err.println("Error closing database: "+t+" after "+e);
-					t.printStackTrace();
+				@Override
+				public Long get() {
+					return databaseMaxMemory;
 				}
-			}
-			
-			// Delete the database logs
-			
-			System.err.println("Deleting old database log files...");
-			
-			File[] files = dbDir.listFiles();
-			for(int i=0;i<files.length;i++) {
-				String name = files[i].getName().toLowerCase();
-				if(name.endsWith(".jdb") || name.equals("je.lck"))
-					if(!files[i].delete())
-						System.err.println("Failed to delete old database log file "+files[i]);
-			}
-			
-			System.err.println("Recovering...");
-			// The database is broken
-			// We will have to recover from scratch
-			try {
-				env = new Environment(dbDir, envConfig);
-				mutableConfig = env.getConfig();
-			} catch (DatabaseException e1) {
-				System.err.println("Could not open store: "+e1);
-				e1.printStackTrace();
-				System.err.println("Previous error was (tried deleting database and retrying): "+e);
-				e.printStackTrace();
-				throw new NodeInitException(NodeInitException.EXIT_STORE_OTHER, e1.getMessage());
-			}
-		}
-		storeEnvironment = env;
-		envMutableConfig = mutableConfig;
-		
-		shutdownHook.addLateJob(new Thread() {
-			@Override
-			public void run() {
-				try {
-					storeEnvironment.close();
-					System.err.println("Successfully closed all datastores.");
-				} catch (Throwable t) {
-					System.err.println("Caught "+t+" closing environment");
-					t.printStackTrace();
-				}
-			}
-		});
-		
-		
-		nodeConfig.register("databaseMaxMemory", "20M", sortOrder++, true, false, "Node.databaseMemory", "Node.databaseMemoryLong", 
-				new LongCallback() {
 
-			@Override
-			public Long get() {
-				return databaseMaxMemory;
-			}
-
-			@Override
-			public void set(Long val) throws InvalidConfigValueException {
-				if(val < 0)
-					throw new InvalidConfigValueException(l10n("mustBePositive"));
-				else {
-					long maxHeapMemory = Runtime.getRuntime().maxMemory();
-					/* There are some JVMs (for example libgcj 4.1.1) whose Runtime.maxMemory() does not work. */
-					if(maxHeapMemory < Long.MAX_VALUE && val > (80 * maxHeapMemory / 100))
-						throw new InvalidConfigValueException(l10n("storeMaxMemTooHigh"));
+				@Override
+				public void set(Long val) throws InvalidConfigValueException {
+					if(val < 0)
+						throw new InvalidConfigValueException(l10n("mustBePositive"));
+					else {
+						long maxHeapMemory = Runtime.getRuntime().maxMemory();
+						/* There are some JVMs (for example libgcj 4.1.1) whose Runtime.maxMemory() does not work. */
+						if(maxHeapMemory < Long.MAX_VALUE && val > (80 * maxHeapMemory / 100))
+							throw new InvalidConfigValueException(l10n("storeMaxMemTooHigh"));
+					}
+					
+					envMutableConfig.setCacheSize(val);
+					try{
+						storeEnvironment.setMutableConfig(envMutableConfig);
+					} catch (DatabaseException e) {
+						throw new InvalidConfigValueException(l10n("errorApplyingConfig", "error", e.getLocalizedMessage()));
+					}
+					databaseMaxMemory = val;
 				}
 				
-				envMutableConfig.setCacheSize(val);
-				try{
-					storeEnvironment.setMutableConfig(envMutableConfig);
-				} catch (DatabaseException e) {
-					throw new InvalidConfigValueException(l10n("errorApplyingConfig", "error", e.getLocalizedMessage()));
-				}
-				databaseMaxMemory = val;
-			}
-			
-		});
+			});
 
-		/* There are some JVMs (for example libgcj 4.1.1) whose Runtime.maxMemory() does not work. */
-		long maxHeapMemory = Runtime.getRuntime().maxMemory();
-		databaseMaxMemory = nodeConfig.getLong("databaseMaxMemory");
-		// see #1202
-		if(maxHeapMemory < Long.MAX_VALUE && databaseMaxMemory > (80 * maxHeapMemory / 100)){
-			Logger.error(this, "The databaseMemory setting is set too high " + databaseMaxMemory +
-					" ... let's assume it's not what the user wants to do and restore the default.");
-			databaseMaxMemory = Long.valueOf(((LongOption) nodeConfig.getOption("databaseMaxMemory")).getDefault()).longValue();
-		}
-		envMutableConfig.setCacheSize(databaseMaxMemory);
-		// http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#35
-		
-		try {
-			storeEnvironment.setMutableConfig(envMutableConfig);
-		} catch (DatabaseException e) {
-			System.err.println("Could not set the database configuration: "+e);
-			e.printStackTrace();
-			throw new NodeInitException(NodeInitException.EXIT_STORE_OTHER, e.getMessage());			
-		}
-		
-		try {
-			Logger.normal(this, "Initializing CHK Datastore");
-			System.out.println("Initializing CHK Datastore ("+maxStoreKeys+" keys)");
-			chkDatastore = new CHKStore();
-			BerkeleyDBFreenetStore.construct(storeDir, true, suffix, maxStoreKeys, FreenetStore.TYPE_CHK, 
-					storeEnvironment, shutdownHook, reconstructFile, chkDatastore, random);
-			Logger.normal(this, "Initializing CHK Datacache");
-			System.out.println("Initializing CHK Datacache ("+maxCacheKeys+ ':' +maxCacheKeys+" keys)");
-			chkDatacache = new CHKStore();
-			BerkeleyDBFreenetStore.construct(storeDir, false, suffix, maxCacheKeys, FreenetStore.TYPE_CHK, 
-					storeEnvironment, shutdownHook, reconstructFile, chkDatacache, random);
-			Logger.normal(this, "Initializing pubKey Datastore");
-			System.out.println("Initializing pubKey Datastore");
-			pubKeyDatastore = new PubkeyStore();
-			BerkeleyDBFreenetStore.construct(storeDir, true, suffix, maxStoreKeys, FreenetStore.TYPE_PUBKEY, 
-					storeEnvironment, shutdownHook, reconstructFile, pubKeyDatastore, random);
-			Logger.normal(this, "Initializing pubKey Datacache");
-			System.out.println("Initializing pubKey Datacache ("+maxCacheKeys+" keys)");
-			pubKeyDatacache = new PubkeyStore();
-			BerkeleyDBFreenetStore.construct(storeDir, false, suffix, maxCacheKeys, FreenetStore.TYPE_PUBKEY, 
-					storeEnvironment, shutdownHook, reconstructFile, pubKeyDatacache, random);
-			// FIXME can't auto-fix SSK stores.
-			Logger.normal(this, "Initializing SSK Datastore");
-			System.out.println("Initializing SSK Datastore");
-			sskDatastore = new SSKStore(this);
-			BerkeleyDBFreenetStore.construct(storeDir, true, suffix, maxStoreKeys, FreenetStore.TYPE_SSK, 
-					storeEnvironment, shutdownHook, reconstructFile, sskDatastore, random);
-			Logger.normal(this, "Initializing SSK Datacache");
-			System.out.println("Initializing SSK Datacache ("+maxCacheKeys+" keys)");
-			sskDatacache = new SSKStore(this);
-			BerkeleyDBFreenetStore.construct(storeDir, false, suffix, maxStoreKeys, FreenetStore.TYPE_SSK, 
-					storeEnvironment, shutdownHook, reconstructFile, sskDatacache, random);
-		} catch (FileNotFoundException e1) {
-			String msg = "Could not open datastore: "+e1;
-			Logger.error(this, msg, e1);
-			System.err.println(msg);
-			throw new NodeInitException(NodeInitException.EXIT_STORE_FILE_NOT_FOUND, msg);
-		} catch (IOException e1) {
-			String msg = "Could not open datastore: "+e1;
-			Logger.error(this, msg, e1);
-			System.err.println(msg);
-			e1.printStackTrace();
-			throw new NodeInitException(NodeInitException.EXIT_STORE_IOEXCEPTION, msg);
-		} catch (DatabaseException e1) {
-			try {
-				reconstructFile.createNewFile();
-			} catch (IOException e) {
-				System.err.println("Cannot create reconstruct file "+reconstructFile+" : "+e+" - store will not be reconstructed !!!!");
-				e.printStackTrace();
+			/* There are some JVMs (for example libgcj 4.1.1) whose Runtime.maxMemory() does not work. */
+			long maxHeapMemory = Runtime.getRuntime().maxMemory();
+			databaseMaxMemory = nodeConfig.getLong("databaseMaxMemory");
+			// see #1202
+			if(maxHeapMemory < Long.MAX_VALUE && databaseMaxMemory > (80 * maxHeapMemory / 100)){
+				Logger.error(this, "The databaseMemory setting is set too high " + databaseMaxMemory +
+						" ... let's assume it's not what the user wants to do and restore the default.");
+				databaseMaxMemory = Long.valueOf(((LongOption) nodeConfig.getOption("databaseMaxMemory")).getDefault()).longValue();
 			}
-			String msg = "Could not open datastore due to corruption, will attempt to reconstruct on next startup: "+e1;
-			Logger.error(this, msg, e1);
-			System.err.println(msg);
-			e1.printStackTrace();
-			throw new NodeInitException(NodeInitException.EXIT_STORE_RECONSTRUCT, msg);
-		}
-
+			initBDBFS(suffix);
 		} else {
 			chkDatastore = new CHKStore();
 			new RAMFreenetStore(chkDatastore, (int) Math.min(Integer.MAX_VALUE, maxStoreKeys));
@@ -2048,6 +1880,219 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		Logger.normal(this, "Node constructor completed");
 		System.out.println("Node constructor completed");
+	}
+
+	private void initSaltHashFS(final String suffix) throws NodeInitException {
+	    storeEnvironment = null;
+		envMutableConfig = null;
+		try {
+			int bloomFilterSizeInM = storeBloomFilterCounting ? storeBloomFilterSize / 6 * 4
+			        : (storeBloomFilterSize + 6) / 6 * 8; // + 6 to make size different, trigger rebuild 
+
+			Logger.normal(this, "Initializing CHK Datastore");
+			System.out.println("Initializing CHK Datastore (" + maxStoreKeys + " keys)");
+			chkDatastore = new CHKStore();
+			SaltedHashFreenetStore chkDataFS = SaltedHashFreenetStore.construct(storeDir, "CHK-store", chkDatastore,
+			        random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate);
+			Logger.normal(this, "Initializing CHK Datacache");
+			System.out.println("Initializing CHK Datacache (" + maxCacheKeys + ':' + maxCacheKeys + " keys)");
+			chkDatacache = new CHKStore();
+			SaltedHashFreenetStore chkCacheFS = SaltedHashFreenetStore.construct(storeDir, "CHK-cache", chkDatacache,
+			        random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate);
+			Logger.normal(this, "Initializing pubKey Datastore");
+			System.out.println("Initializing pubKey Datastore");
+			pubKeyDatastore = new PubkeyStore();
+			SaltedHashFreenetStore pubkeyDataFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-store",
+			        pubKeyDatastore, random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate);
+			Logger.normal(this, "Initializing pubKey Datacache");
+			System.out.println("Initializing pubKey Datacache (" + maxCacheKeys + " keys)");
+			pubKeyDatacache = new PubkeyStore();
+			SaltedHashFreenetStore pubkeyCacheFS = SaltedHashFreenetStore.construct(storeDir, "PUBKEY-cache",
+			        pubKeyDatacache, random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate);
+			Logger.normal(this, "Initializing SSK Datastore");
+			System.out.println("Initializing SSK Datastore");
+			sskDatastore = new SSKStore(this);
+			SaltedHashFreenetStore sskDataFS = SaltedHashFreenetStore.construct(storeDir, "SSK-store", sskDatastore,
+			        random, maxStoreKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate);
+			Logger.normal(this, "Initializing SSK Datacache");
+			System.out.println("Initializing SSK Datacache (" + maxCacheKeys + " keys)");
+			sskDatacache = new SSKStore(this);
+			SaltedHashFreenetStore sskCacheFS = SaltedHashFreenetStore.construct(storeDir, "SSK-cache", sskDatacache,
+			        random, maxCacheKeys, bloomFilterSizeInM, storeBloomFilterCounting, shutdownHook, storePreallocate);
+
+			File migrationFile = new File(storeDir, "migrated");
+			if (!migrationFile.exists()) {
+				chkDataFS.migrationFrom(//
+				        new File(storeDir, "chk" + suffix + ".store"), // 
+				        new File(storeDir, "chk" + suffix + ".store.keys"));
+				chkCacheFS.migrationFrom(//
+				        new File(storeDir, "chk" + suffix + ".cache"), // 
+				        new File(storeDir, "chk" + suffix + ".cache.keys"));
+
+				pubkeyDataFS.migrationFrom(//
+				        new File(storeDir, "pubkey" + suffix + ".store"), // 
+				        new File(storeDir, "pubkey" + suffix + ".store.keys"));
+				pubkeyCacheFS.migrationFrom(//
+				        new File(storeDir, "pubkey" + suffix + ".cache"), // 
+				        new File(storeDir, "pubkey" + suffix + ".cache.keys"));
+
+				sskDataFS.migrationFrom(//
+				        new File(storeDir, "ssk" + suffix + ".store"), // 
+				        new File(storeDir, "ssk" + suffix + ".store.keys"));
+				sskCacheFS.migrationFrom(//
+				        new File(storeDir, "ssk" + suffix + ".cache"), // 
+				        new File(storeDir, "ssk" + suffix + ".cache.keys"));
+				migrationFile.createNewFile();
+			}
+		} catch (IOException e) {
+			System.err.println("Could not open store: " + e);
+			e.printStackTrace();
+			throw new NodeInitException(NodeInitException.EXIT_STORE_OTHER, e.getMessage());
+		}
+    }
+	
+	private void initBDBFS(final String suffix) throws NodeInitException {
+		// Setup datastores		
+		final EnvironmentConfig envConfig = BerkeleyDBFreenetStore.getBDBConfig();
+		
+		final File dbDir = new File(storeDir, "database-"+getDarknetPortNumber());
+		dbDir.mkdirs();
+		
+		final File reconstructFile = new File(dbDir, "reconstruct");
+		
+		Environment env = null;
+		EnvironmentMutableConfig mutableConfig;
+		
+		// This can take some time
+		System.out.println("Starting database...");
+		try {
+			if(reconstructFile.exists()) {
+				reconstructFile.delete();
+				throw new DatabaseException();
+			}
+			// Auto-recovery can take a long time
+			WrapperManager.signalStarting(60*60*1000);
+			env = new Environment(dbDir, envConfig);
+			mutableConfig = env.getConfig();
+		} catch (final DatabaseException e) {
+
+			// Close the database
+			if(env != null) {
+				try {
+					env.close();
+				} catch (final Throwable t) {
+					System.err.println("Error closing database: "+t+" after "+e);
+					t.printStackTrace();
+				}
+			}
+			
+			// Delete the database logs
+			
+			System.err.println("Deleting old database log files...");
+			
+			final File[] files = dbDir.listFiles();
+			for(int i=0;i<files.length;i++) {
+				final String name = files[i].getName().toLowerCase();
+				if(name.endsWith(".jdb") || name.equals("je.lck"))
+					if(!files[i].delete())
+						System.err.println("Failed to delete old database log file "+files[i]);
+			}
+			
+			System.err.println("Recovering...");
+			// The database is broken
+			// We will have to recover from scratch
+			try {
+				env = new Environment(dbDir, envConfig);
+				mutableConfig = env.getConfig();
+			} catch (final DatabaseException e1) {
+				System.err.println("Could not open store: "+e1);
+				e1.printStackTrace();
+				System.err.println("Previous error was (tried deleting database and retrying): "+e);
+				e.printStackTrace();
+				throw new NodeInitException(NodeInitException.EXIT_STORE_OTHER, e1.getMessage());
+			}
+		}
+		storeEnvironment = env;
+		envMutableConfig = mutableConfig;
+		
+		shutdownHook.addLateJob(new Thread() {
+			@Override
+			public void run() {
+				try {
+					storeEnvironment.close();
+					System.err.println("Successfully closed all datastores.");
+				} catch (final Throwable t) {
+					System.err.println("Caught "+t+" closing environment");
+					t.printStackTrace();
+				}
+			}
+		});
+		envMutableConfig.setCacheSize(databaseMaxMemory);
+		// http://www.oracle.com/technology/products/berkeley-db/faq/je_faq.html#35
+		
+		try {
+			storeEnvironment.setMutableConfig(envMutableConfig);
+		} catch (final DatabaseException e) {
+			System.err.println("Could not set the database configuration: "+e);
+			e.printStackTrace();
+			throw new NodeInitException(NodeInitException.EXIT_STORE_OTHER, e.getMessage());			
+		}
+		
+		try {
+			Logger.normal(this, "Initializing CHK Datastore");
+			System.out.println("Initializing CHK Datastore ("+maxStoreKeys+" keys)");
+			chkDatastore = new CHKStore();
+			BerkeleyDBFreenetStore.construct(storeDir, true, suffix, maxStoreKeys, StoreType.CHK, 
+					storeEnvironment, shutdownHook, reconstructFile, chkDatastore, random);
+			Logger.normal(this, "Initializing CHK Datacache");
+			System.out.println("Initializing CHK Datacache ("+maxCacheKeys+ ':' +maxCacheKeys+" keys)");
+			chkDatacache = new CHKStore();
+			BerkeleyDBFreenetStore.construct(storeDir, false, suffix, maxCacheKeys, StoreType.CHK, 
+					storeEnvironment, shutdownHook, reconstructFile, chkDatacache, random);
+			Logger.normal(this, "Initializing pubKey Datastore");
+			System.out.println("Initializing pubKey Datastore");
+			pubKeyDatastore = new PubkeyStore();
+			BerkeleyDBFreenetStore.construct(storeDir, true, suffix, maxStoreKeys, StoreType.PUBKEY, 
+					storeEnvironment, shutdownHook, reconstructFile, pubKeyDatastore, random);
+			Logger.normal(this, "Initializing pubKey Datacache");
+			System.out.println("Initializing pubKey Datacache ("+maxCacheKeys+" keys)");
+			pubKeyDatacache = new PubkeyStore();
+			BerkeleyDBFreenetStore.construct(storeDir, false, suffix, maxCacheKeys, StoreType.PUBKEY, 
+					storeEnvironment, shutdownHook, reconstructFile, pubKeyDatacache, random);
+			Logger.normal(this, "Initializing SSK Datastore");
+			System.out.println("Initializing SSK Datastore");
+			sskDatastore = new SSKStore(this);
+			BerkeleyDBFreenetStore.construct(storeDir, true, suffix, maxStoreKeys, StoreType.SSK, 
+					storeEnvironment, shutdownHook, reconstructFile, sskDatastore, random);
+			Logger.normal(this, "Initializing SSK Datacache");
+			System.out.println("Initializing SSK Datacache ("+maxCacheKeys+" keys)");
+			sskDatacache = new SSKStore(this);
+			BerkeleyDBFreenetStore.construct(storeDir, false, suffix, maxStoreKeys, StoreType.SSK, 
+					storeEnvironment, shutdownHook, reconstructFile, sskDatacache, random);
+		} catch (final FileNotFoundException e1) {
+			final String msg = "Could not open datastore: "+e1;
+			Logger.error(this, msg, e1);
+			System.err.println(msg);
+			throw new NodeInitException(NodeInitException.EXIT_STORE_FILE_NOT_FOUND, msg);
+		} catch (final IOException e1) {
+			final String msg = "Could not open datastore: "+e1;
+			Logger.error(this, msg, e1);
+			System.err.println(msg);
+			e1.printStackTrace();
+			throw new NodeInitException(NodeInitException.EXIT_STORE_IOEXCEPTION, msg);
+		} catch (final DatabaseException e1) {
+			try {
+				reconstructFile.createNewFile();
+			} catch (final IOException e) {
+				System.err.println("Cannot create reconstruct file "+reconstructFile+" : "+e+" - store will not be reconstructed !!!!");
+				e.printStackTrace();
+			}
+			final String msg = "Could not open datastore due to corruption, will attempt to reconstruct on next startup: "+e1;
+			Logger.error(this, msg, e1);
+			System.err.println(msg);
+			e1.printStackTrace();
+			throw new NodeInitException(NodeInitException.EXIT_STORE_RECONSTRUCT, msg);
+		}
 	}
 
 	public void start(boolean noSwaps) throws NodeInitException {
@@ -2581,8 +2626,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			}
 			chkDatacache.put(block);
 			nodeStats.avgCacheLocation.report(loc);
-			if(clientCore != null && clientCore.requestStarters != null)
-				clientCore.requestStarters.chkFetchScheduler.tripPendingKey(block);
 			failureTable.onFound(block);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store data: "+e, e);
@@ -2593,6 +2636,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			t.printStackTrace();
 			Logger.error(this, "Caught "+t+" storing data", t);
 		}
+		if(clientCore != null && clientCore.requestStarters != null)
+			clientCore.requestStarters.chkFetchScheduler.tripPendingKey(block);
 	}
 	
 	/** Store the block if this is a sink. Call for inserts. */
@@ -2615,8 +2660,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				sskDatastore.put(block, false);
 			}
 			sskDatacache.put(block, false);
-			if(clientCore != null && clientCore.requestStarters != null)
-				clientCore.requestStarters.sskFetchScheduler.tripPendingKey(block);
 			failureTable.onFound(block);
 		} catch (IOException e) {
 			Logger.error(this, "Cannot store data: "+e, e);
@@ -2629,6 +2672,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			t.printStackTrace();
 			Logger.error(this, "Caught "+t+" storing data", t);
 		}
+		if(clientCore != null && clientCore.requestStarters != null)
+			clientCore.requestStarters.sskFetchScheduler.tripPendingKey(block);
 	}
 	
 	/**
@@ -3784,7 +3829,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	}
 
 	private SimpleUserAlert alertMTUTooSmall;
-
+	
 	public final RequestClient nonPersistentClient = new RequestClient() {
 		public boolean persistent() {
 			return false;

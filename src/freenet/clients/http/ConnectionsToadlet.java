@@ -270,9 +270,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				HTMLNode overviewList = overviewInfoboxContent.addChild("ul");
 				overviewList.addChild("li", "bwlimitDelayTime:\u00a0" + bwlimitDelayTime + "ms");
 				overviewList.addChild("li", "nodeAveragePingTime:\u00a0" + nodeAveragePingTime + "ms");
-				overviewList.addChild("li", "networkSizeEstimateSession:\u00a0" + networkSizeEstimateSession + "\u00a0nodes");
+				overviewList.addChild("li", "darknetSizeEstimateSession:\u00a0" + networkSizeEstimateSession + "\u00a0nodes");
 				if(nodeUptimeSeconds > (48*60*60)) {  // 48 hours
-					overviewList.addChild("li", "networkSizeEstimateRecent:\u00a0" + networkSizeEstimateRecent + "\u00a0nodes");
+					overviewList.addChild("li", "darknetSizeEstimateRecent:\u00a0" + networkSizeEstimateRecent + "\u00a0nodes");
 				}
 				overviewList.addChild("li", "nodeUptime:\u00a0" + nodeUptimeString);
 				overviewList.addChild("li", "routingMissDistance:\u00a0" + fix4.format(routingMissDistance));
