@@ -110,10 +110,17 @@ class SingleFileInserter implements ClientPutState {
 				try {
 					SplitHandler sh = new SplitHandler();
 					sh.start(fs, false, container, context);
-					if(persistent)
-						container.activate(cb, 1);
+					boolean wasActive = true;
+					
+					if(persistent) {
+						wasActive = container.ext().isActive(cb);
+						if(!wasActive)
+							container.activate(cb, 1);
+					}
 					cb.onTransition(this, sh, container);
 					sh.schedule(container, context);
+					if(!wasActive)
+						container.deactivate(cb, 1);
 					return;
 				} catch (ResumeException e) {
 					Logger.error(this, "Failed to restore: "+e, e);
@@ -127,6 +134,12 @@ class SingleFileInserter implements ClientPutState {
 	}
 
 	void onCompressed(CompressionOutput output, ObjectContainer container, ClientContext context) {
+		boolean cbActive = true;
+		if(persistent) {
+			cbActive = container.ext().isActive(cb);
+			if(!cbActive)
+				container.activate(cb, 1);
+		}
 		if(started) {
 			Logger.error(this, "Already started, not starting again", new Exception("error"));
 			return;
@@ -147,13 +160,14 @@ class SingleFileInserter implements ClientPutState {
             // Try to fail gracefully
 			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), SingleFileInserter.this, container, context);
 		}
+		if(!cbActive)
+			container.deactivate(cb, 1);
 	}
 	
 	void onCompressedInner(CompressionOutput output, ObjectContainer container, ClientContext context) throws InsertException {
 		if(container != null) {
 			container.activate(block, 2);
 			container.activate(parent, 1);
-			container.activate(cb, 1);
 		}
 		long origSize = block.getData().size();
 		Bucket bestCompressedData = output.data;
@@ -255,7 +269,6 @@ class SingleFileInserter implements ClientPutState {
 			started = true;
 			if(persistent) {
 				container.store(this);
-				container.deactivate(cb, 1);
 				container.deactivate(parent, 1);
 			}
 			return;
@@ -283,7 +296,6 @@ class SingleFileInserter implements ClientPutState {
 		started = true;
 		if(persistent) {
 			container.store(this);
-			container.deactivate(cb, 1);
 			container.deactivate(parent, 1);
 		}
 	}
