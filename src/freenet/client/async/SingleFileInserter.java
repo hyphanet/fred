@@ -165,9 +165,12 @@ class SingleFileInserter implements ClientPutState {
 	}
 	
 	void onCompressedInner(CompressionOutput output, ObjectContainer container, ClientContext context) throws InsertException {
+		boolean parentWasActive = true;
 		if(container != null) {
 			container.activate(block, 2);
-			container.activate(parent, 1);
+			parentWasActive = container.ext().isActive(parent);
+			if(!parentWasActive)
+				container.activate(parent, 1);
 		}
 		long origSize = block.getData().size();
 		Bucket bestCompressedData = output.data;
@@ -224,7 +227,8 @@ class SingleFileInserter implements ClientPutState {
 				if(persistent) {
 					container.store(this);
 					container.deactivate(cb, 1);
-					container.deactivate(parent, 1);
+					if(!parentWasActive)
+						container.deactivate(parent, 1);
 				}
 				return;
 			}
@@ -269,7 +273,8 @@ class SingleFileInserter implements ClientPutState {
 			started = true;
 			if(persistent) {
 				container.store(this);
-				container.deactivate(parent, 1);
+				if(!parentWasActive)
+					container.deactivate(parent, 1);
 			}
 			return;
 		}
@@ -296,7 +301,8 @@ class SingleFileInserter implements ClientPutState {
 		started = true;
 		if(persistent) {
 			container.store(this);
-			container.deactivate(parent, 1);
+			if(!parentWasActive)
+				container.deactivate(parent, 1);
 		}
 	}
 	
@@ -394,8 +400,12 @@ class SingleFileInserter implements ClientPutState {
 		 */
 		void start(SimpleFieldSet fs, boolean forceMetadata, ObjectContainer container, ClientContext context) throws ResumeException, InsertException {
 			
-			if(persistent)
-				container.activate(parent, 1);
+			boolean parentWasActive = true;
+			if(persistent) {
+				parentWasActive = container.ext().isActive(parent);
+				if(!parentWasActive)
+					container.activate(parent, 1);
+			}
 			
 			boolean meta = metadata || forceMetadata;
 			
@@ -432,8 +442,11 @@ class SingleFileInserter implements ClientPutState {
 				sfi = newSFI;
 				metadataPutter = newMetaPutter;
 			}
-			if(persistent)
+			if(persistent) {
 				container.store(this);
+				if(!parentWasActive)
+					container.deactivate(parent, 1);
+			}
 		}
 
 		public SplitHandler() {
