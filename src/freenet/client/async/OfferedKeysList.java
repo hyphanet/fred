@@ -215,4 +215,12 @@ public class OfferedKeysList extends BaseSendableGet implements RequestClient {
 		return false;
 	}
 
+	@Override
+	public ClientRequestScheduler getScheduler(ClientContext context) {
+		if(isSSK)
+			return context.getSskFetchScheduler();
+		else
+			return context.getChkFetchScheduler();
+	}
+
 }

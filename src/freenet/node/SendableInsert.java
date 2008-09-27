@@ -6,6 +6,7 @@ package freenet.node;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
+import freenet.client.async.ClientRequestScheduler;
 import freenet.support.io.NativeThread;
 
 /**
@@ -33,6 +34,13 @@ public abstract class SendableInsert extends SendableRequest {
 
 	public final boolean isInsert() {
 		return true;
+	}
+	
+	public ClientRequestScheduler getScheduler(ClientContext context) {
+		if(isSSK())
+			return context.getSskInsertScheduler();
+		else
+			return context.getChkInsertScheduler();
 	}
 	
 }

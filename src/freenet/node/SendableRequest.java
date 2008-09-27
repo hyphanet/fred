@@ -115,14 +115,9 @@ public abstract class SendableRequest implements RandomGrabArrayItem {
 		// FIXME should we deactivate??
 		//if(persistent) container.deactivate(cr, 1);
 	}
-
-	public ClientRequestScheduler getScheduler(ClientContext context) {
-		if(isSSK())
-			return context.getSskInsertScheduler();
-		else
-			return context.getChkInsertScheduler();
-	}
 	
+	public abstract ClientRequestScheduler getScheduler(ClientContext context);
+
 	/** Is this an SSK? For purposes of determining which scheduler to use. */
 	public abstract boolean isSSK();
 	
