@@ -126,7 +126,7 @@ public class FECQueue implements OOMHook {
 							while(total >= maxPersistentQueueCacheSize && !persistentQueueCache[i].isEmpty()) {
 								if(logMINOR)
 									Logger.minor(this, "Removing low priority job from cache, total now "+total);
-								persistentQueueCache[job.priority].removeLast();
+								persistentQueueCache[i].removeLast();
 								total--;
 							}
 						}
