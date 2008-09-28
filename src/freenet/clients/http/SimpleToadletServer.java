@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
+import freenet.config.NodeNeedRestartException;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -69,7 +70,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	private Thread myThread;
 	private boolean advancedModeEnabled;
 	private boolean ssl = false;
-	private boolean fProxyJavascriptEnabled;
+	private volatile boolean fProxyJavascriptEnabled;
+	private volatile boolean fproxyHasCompletedWizard;
 	private final PageMaker pageMaker;
 	private NodeClientCore core;
 	private final Executor executor;
@@ -385,6 +387,21 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyAdvancedModeEnabledCallback(this));
 		fproxyConfig.register("javascriptEnabled", false, configItemOrder++, true, false, "SimpleToadletServer.enableJS", "SimpleToadletServer.enableJSLong",
 				new FProxyJavascriptEnabledCallback(this));
+		fproxyConfig.register("hasCompletedWizard", false, configItemOrder++, true, false, "SimpleToadletServer.hasCompletedWizard", "SimpleToadletServer.hasCompletedWizardLong",
+				new BooleanCallback() {
+					@Override
+					public Boolean get() {
+						return fproxyHasCompletedWizard;
+					}
+
+					@Override
+					public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+						if(val == get()) return;
+						fproxyHasCompletedWizard = val;
+					}
+		});
+		fproxyHasCompletedWizard = fproxyConfig.getBoolean("hasCompletedWizard");
+		
 		fproxyConfig.register("showPanicButton", false, configItemOrder++, true, true, "SimpleToadletServer.panicButton", "SimpleToadletServer.panicButtonLong",
 				new BooleanCallback(){
 				@Override
@@ -588,13 +605,22 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	}
 	
 	public Toadlet findToadlet(URI uri) throws PermanentRedirectException {
-		Iterator i = toadlets.iterator();
 		String path = uri.getPath();
+
+		if(!fproxyHasCompletedWizard) {
+			if(!(path.startsWith(FirstTimeWizardToadlet.TOADLET_URL) ||
+				path.startsWith(StaticToadlet.ROOT_URL)))
+				try {
+					throw new PermanentRedirectException(new URI(FirstTimeWizardToadlet.TOADLET_URL));
+				} catch(URISyntaxException e) { throw new Error(e); }
+		}
+
+		Iterator i = toadlets.iterator();		
 		while(i.hasNext()) {
 			ToadletElement te = (ToadletElement) i.next();
-			
+						
 			if(path.startsWith(te.prefix))
-				return te.t;
+					return te.t;
 			if(te.prefix.length() > 0 && te.prefix.charAt(te.prefix.length()-1) == '/') {
 				if(path.equals(te.prefix.substring(0, te.prefix.length()-1))) {
 					URI newURI;

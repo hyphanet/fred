@@ -45,7 +45,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		BANDWIDTH,
 		DATASTORE_SIZE,
 		MEMORY,
-		CONGRATZ;
+		CONGRATZ,
+		FINAL;
 	}
 	
 	
@@ -271,9 +272,17 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			congratzInfoboxHeader.addChild("#", l10n("congratz"));
 			congratzInfoboxContent.addChild("p", l10n("congratzLong"));
 			
-			congratzInfoboxContent.addChild("a", "href", "/", L10n.getString("FirstTimeWizardToadlet.continueEnd"));
+			congratzInfoboxContent.addChild("a", "href", "?step="+WIZARD_STEP.FINAL, L10n.getString("FirstTimeWizardToadlet.continueEnd"));
 
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+			return;
+		} else if(currentStep == WIZARD_STEP.FINAL) {
+			try {
+				config.get("fproxy").set("hasCompletedWizard", true);
+				this.writeTemporaryRedirect(ctx, "Return to home", "/");
+			} catch (ConfigException e) {
+				Logger.error(this, e.getMessage(), e);
+			}
 			return;
 		}
 		
@@ -291,7 +300,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		secondParagraph.addChild("a", "href", "?step="+WIZARD_STEP.SECURITY_NETWORK).addChild("#", L10n.getString("FirstTimeWizardToadlet.clickContinue"));
 		
 		HTMLNode thirdParagraph = welcomeInfoboxContent.addChild("p");
-		thirdParagraph.addChild("a", "href", "/").addChild("#", l10n("skipWizard"));
+		thirdParagraph.addChild("a", "href", "?step="+WIZARD_STEP.FINAL).addChild("#", l10n("skipWizard"));
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
