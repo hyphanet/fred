@@ -17,7 +17,7 @@ import freenet.keys.ClientCHK;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
-import freenet.support.compress.Compressor;
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 
 public class SplitFileInserter implements ClientPutState {
@@ -66,7 +66,7 @@ public class SplitFileInserter implements ClientPutState {
 		return fs;
 	}
 
-	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, Compressor bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, boolean insertAsArchiveManifest, boolean freeData) throws InsertException {
+	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, COMPRESSOR_TYPE bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, boolean insertAsArchiveManifest, boolean freeData) throws InsertException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.parent = put;
 		this.insertAsArchiveManifest = insertAsArchiveManifest;
@@ -90,7 +90,7 @@ public class SplitFileInserter implements ClientPutState {
 		if(bestCodec == null)
 			compressionCodec = -1;
 		else
-			compressionCodec = bestCodec.codecNumberForMetadata();
+			compressionCodec = bestCodec.metadataID;
 		this.splitfileAlgorithm = ctx.splitfileAlgorithm;
 		segmentSize = ctx.splitfileSegmentDataBlocks;
 		checkSegmentSize = splitfileAlgorithm == Metadata.SPLITFILE_NONREDUNDANT ? 0 : ctx.splitfileSegmentCheckBlocks;

@@ -20,7 +20,7 @@ import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;
-import freenet.support.compress.Compressor;
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketChainBucketFactory;
 import freenet.support.io.BucketTools;
 
@@ -155,21 +155,21 @@ class SingleFileInserter implements ClientPutState {
 			throw new InsertException(InsertException.INVALID_URI, "Unknown key type: "+type, null);
 		}
 		
-		Compressor bestCodec = null;
+		COMPRESSOR_TYPE bestCodec = null;
 		Bucket bestCompressedData = null;
 
 		boolean tryCompress = (origSize > blockSize) && (!ctx.dontCompress) && (!dontCompress);
 		if(tryCompress) {
+			if(logMINOR) Logger.minor(this, "Attempt to compress the data");
 			// Try to compress the data.
 			// Try each algorithm, starting with the fastest and weakest.
 			// Stop when run out of algorithms, or the compressed data fits in a single block.
-			int algos = Compressor.countCompressAlgorithms();
 			try {
-				for(int i=0;i<algos;i++) {
+				for(COMPRESSOR_TYPE comp : COMPRESSOR_TYPE.values()) {
+					if(logMINOR) Logger.minor(this, "Attempt to compress using "+comp);
 					// Only produce if we are compressing *the original data*
 					if(parent == cb)
-						ctx.eventProducer.produceEvent(new StartedCompressionEvent(i));
-					Compressor comp = Compressor.getCompressionAlgorithmByDifficulty(i);
+						ctx.eventProducer.produceEvent(new StartedCompressionEvent(comp));
 					Bucket result;
 					result = comp.compress(origData, new BucketChainBucketFactory(ctx.persistentBucketFactory, CHKBlock.DATA_LENGTH), origData.size());
 					if(result.size() < oneBlockCompressedSize) {
@@ -199,20 +199,22 @@ class SingleFileInserter implements ClientPutState {
 		}
 		boolean freeData = false;
 		if(bestCompressedData != null) {
+			long compressedSize = bestCompressedData.size();
+			if(logMINOR) Logger.minor(this, "The best compression algorithm is "+bestCodec+ " we have a "+origSize/compressedSize+" ratio! ("+origSize+'/'+compressedSize+')');
 			data = bestCompressedData;
 			freeData = true;
 		}
 		
 		if(parent == cb) {
 			if(tryCompress)
-				ctx.eventProducer.produceEvent(new FinishedCompressionEvent(bestCodec == null ? -1 : bestCodec.codecNumberForMetadata(), origSize, data.size()));
+				ctx.eventProducer.produceEvent(new FinishedCompressionEvent(bestCodec == null ? -1 : bestCodec.metadataID, origSize, data.size()));
 			if(logMINOR) Logger.minor(this, "Compressed "+origSize+" to "+data.size()+" on "+this);
 		}
 		
 		// Compressed data
 		
 		// Insert it...
-		short codecNumber = bestCodec == null ? -1 : bestCodec.codecNumberForMetadata();
+		short codecNumber = bestCodec == null ? -1 : bestCodec.metadataID;
 		long compressedDataSize = data.size();
 		boolean fitsInOneBlockAsIs = bestCodec == null ? compressedDataSize < blockSize : compressedDataSize < oneBlockCompressedSize;
 		boolean fitsInOneCHK = bestCodec == null ? compressedDataSize < CHKBlock.DATA_LENGTH : compressedDataSize < CHKBlock.MAX_COMPRESSED_DATA_LENGTH;

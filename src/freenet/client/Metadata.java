@@ -23,6 +23,7 @@ import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 
 
@@ -76,8 +77,8 @@ public class Metadata implements Cloneable {
 	
 	/** Compressed splitfile codec */
 	short compressionCodec = -1;
-	static public final short COMPRESS_GZIP = 0;
-	static final short COMPRESS_BZIP2 = 1; // FIXME for future use
+	public static final short COMPRESS_GZIP = COMPRESSOR_TYPE.GZIP.metadataID;
+	public static final short COMPRESS_BZIP2 = 1; //COMPRESSOR_TYPE.BZIP2.metadataID
 	
 	/** The length of the splitfile */
 	long dataLength;
@@ -214,7 +215,7 @@ public class Metadata implements Cloneable {
 		
 		if(compressed) {
 			compressionCodec = dis.readShort();
-			if(compressionCodec != COMPRESS_GZIP)
+			if(!COMPRESSOR_TYPE.isValidMetadataID(compressionCodec))
 				throw new MetadataParseException("Unrecognized splitfile compression codec "+compressionCodec);
 			
 			decompressedLength = dis.readLong();

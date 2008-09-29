@@ -1,6 +1,5 @@
 package freenet.support.compress;
 
-import freenet.client.Metadata;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -13,7 +12,7 @@ import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
-public class GzipCompressor extends Compressor {
+public class GzipCompressor implements Compressor {
 
 	@Override
 	public Bucket compress(Bucket data, BucketFactory bf, long maxLength) throws IOException, CompressionOutputSizeException {
@@ -113,10 +112,5 @@ public class GzipCompressor extends Compressor {
 		byte[] buf = baos.toByteArray();
 		System.arraycopy(buf, 0, output, 0, bytes);
 		return bytes;
-	}
-	
-	@Override
-	public short codecNumberForMetadata() {
-		return Metadata.COMPRESS_GZIP;
 	}
 }
