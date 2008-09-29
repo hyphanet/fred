@@ -78,7 +78,7 @@ public class Metadata implements Cloneable {
 	/** Compressed splitfile codec */
 	short compressionCodec = -1;
 	public static final short COMPRESS_GZIP = COMPRESSOR_TYPE.GZIP.metadataID;
-	public static final short COMPRESS_BZIP2 = 1; //COMPRESSOR_TYPE.BZIP2.metadataID
+	public static final short COMPRESS_BZIP2 = COMPRESSOR_TYPE.BZIP2.metadataID;
 	
 	/** The length of the splitfile */
 	long dataLength;
