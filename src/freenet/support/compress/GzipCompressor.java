@@ -14,7 +14,6 @@ import freenet.support.api.BucketFactory;
 
 public class GzipCompressor implements Compressor {
 
-	@Override
 	public Bucket compress(Bucket data, BucketFactory bf, long maxLength) throws IOException, CompressionOutputSizeException {
 		if(maxLength <= 0)
 			throw new IllegalArgumentException();
@@ -50,7 +49,6 @@ public class GzipCompressor implements Compressor {
 		return output;
 	}
 
-	@Override
 	public Bucket decompress(Bucket data, BucketFactory bf, long maxLength, long maxCheckSizeLength, Bucket preferred) throws IOException, CompressionOutputSizeException {
 		Bucket output;
 		if(preferred != null)
@@ -96,7 +94,6 @@ public class GzipCompressor implements Compressor {
 		}
 	}
 
-	@Override
 	public int decompress(byte[] dbuf, int i, int j, byte[] output) throws CompressionOutputSizeException {
 		// Didn't work with Inflater.
 		// FIXME fix sometimes to use Inflater - format issue?

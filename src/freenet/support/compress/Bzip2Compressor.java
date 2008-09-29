@@ -17,7 +17,6 @@ import org.apache.tools.bzip2.CBZip2OutputStream;
 
 public class Bzip2Compressor implements Compressor {
 
-	@Override
 	public Bucket compress(Bucket data, BucketFactory bf, long maxLength) throws IOException, CompressionOutputSizeException {
 		if(maxLength <= 0)
 			throw new IllegalArgumentException();
@@ -54,7 +53,6 @@ public class Bzip2Compressor implements Compressor {
 		return output;
 	}
 
-	@Override
 	public Bucket decompress(Bucket data, BucketFactory bf, long maxLength, long maxCheckSizeLength, Bucket preferred) throws IOException, CompressionOutputSizeException {
 		Bucket output;
 		if(preferred != null)
@@ -100,7 +98,6 @@ public class Bzip2Compressor implements Compressor {
 		}
 	}
 
-	@Override
 	public int decompress(byte[] dbuf, int i, int j, byte[] output) throws CompressionOutputSizeException {
 		// Didn't work with Inflater.
 		// FIXME fix sometimes to use Inflater - format issue?
