@@ -60,13 +60,6 @@ public abstract class Toadlet {
 		handleUnhandledRequest(uri, null, ctx);
 	}
 	
-	/**
-	 * Likewise for a PUT request.
-	 */
-	public void handlePut(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		handleUnhandledRequest(uri, null, ctx);
-	}
-	
 	public void handlePost(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		handleUnhandledRequest(uri, null, ctx);
 	}
