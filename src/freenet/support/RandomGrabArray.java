@@ -201,8 +201,8 @@ public class RandomGrabArray {
 					if(logMINOR) Logger.minor(this, "Not returning because cancelled: "+ret);
 					ret = null;
 					// Will be removed in the do{} loop
-					// Need to tell it first.
-					oret.setParentGrabArray(this, container);
+					// Tell it that it's been removed first.
+					oret.setParentGrabArray(null, container);
 				}
 				if(ret != null && excluding.exclude(ret, container, context)) {
 					excluded++;
