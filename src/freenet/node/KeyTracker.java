@@ -857,7 +857,7 @@ public class KeyTracker {
 							continue;
 						}
 						if(now - qr.createdTime > 2 * 60 * 1000)
-							Logger.error(this, "Packet " + qr.packetNumber + " sent over " + (now - qr.createdTime) + "ms ago and still not acked on " + this + " for " + pn);
+							Logger.normal(this, "Packet " + qr.packetNumber + " sent over " + (now - qr.createdTime) + "ms ago and still not acked on " + this + " for " + pn);
 						packetNumbers[realLength++] = packetNumber;
 						if(logMINOR)
 							Logger.minor(this, "Grabbing ack request " + packetNumber + " (" + realLength + ") from " + this);
