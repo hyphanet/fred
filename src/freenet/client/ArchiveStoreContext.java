@@ -24,7 +24,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 
 	private ArchiveManager manager;
 	private FreenetURI key;
-	private short archiveType;
+	private final short archiveType;
 	private boolean forceRefetchArchive;
 	/** Archive size */
 	private long lastSize = -1;

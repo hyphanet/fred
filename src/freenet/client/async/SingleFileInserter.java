@@ -294,7 +294,7 @@ class SingleFileInserter implements ClientPutState {
 	}
 	
 	private Metadata makeMetadata(FreenetURI uri) {
-		Metadata meta = new Metadata(insertAsArchiveManifest ? Metadata.ZIP_MANIFEST : Metadata.SIMPLE_REDIRECT, uri, block.clientMetadata);
+		Metadata meta = new Metadata(insertAsArchiveManifest ? Metadata.ARCHIVE_MANIFEST : Metadata.SIMPLE_REDIRECT, uri, block.clientMetadata);
 		if(targetFilename != null) {
 			HashMap hm = new HashMap();
 			hm.put(targetFilename, meta);

@@ -162,7 +162,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				metadata = Metadata.construct(data);
 				wrapHandleMetadata(false);
 			} catch (MetadataParseException e) {
-				onFailure(new FetchException(e), sched);
+				onFailure(new FetchException(FetchException.INVALID_METADATA, e), sched);
 				return;
 			} catch (IOException e) {
 				// Bucket error?
@@ -255,11 +255,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					metadata = metadata.getDocument(name);
 					thisKey = thisKey.pushMetaString(name);
 					if(metadata == null)
-						throw new FetchException(FetchException.NOT_IN_ARCHIVE);
+						throw new FetchException(FetchException.NOT_IN_ARCHIVE, "can't find "+name);
 				}
 				continue; // loop
 			} else if(metadata.isArchiveManifest()) {
-				if(logMINOR) Logger.minor(this, "Is archive manifest");
+				if(logMINOR) Logger.minor(this, "Is archive manifest (type="+metadata.getArchiveType()+')');
 				if(metaStrings.isEmpty() && ctx.returnZIPManifests) {
 					// Just return the archive, whole.
 					metadata.setSimpleRedirect();
@@ -396,7 +396,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(mime != null) rcb.onExpectedMIME(mime);
 
 				String mimeType = clientMetadata.getMIMETypeNoParams();
-				if(mimeType != null && ArchiveManager.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
+				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
 					// Looks like an implicit archive, handle as such
 					metadata.setArchiveManifest();
 					// Pick up MIME type from inside archive
@@ -461,7 +461,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(mime != null) rcb.onExpectedMIME(mime);
 				
 				String mimeType = clientMetadata.getMIMETypeNoParams();
-				if(mimeType != null && ArchiveManager.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
+				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
 					// Looks like an implicit archive, handle as such
 					metadata.setArchiveManifest();
 					// Pick up MIME type from inside archive
@@ -573,7 +573,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		try {
 			handleMetadata();
 		} catch (MetadataParseException e) {
-			onFailure(new FetchException(e), sched);
+			onFailure(new FetchException(FetchException.INVALID_METADATA, e), sched);
 		} catch (FetchException e) {
 			if(notFinalizedSize)
 				e.setNotFinalizedSize();
