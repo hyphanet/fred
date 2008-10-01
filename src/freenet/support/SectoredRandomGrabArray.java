@@ -128,11 +128,8 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 					container.activate(rga, 1);
 				RandomGrabArrayItem item = rga.removeRandom(excluding, container, context);
 				if(rga.isEmpty()) {
-					Object client = rga.getObject();
-					if(persistent)
-						container.activate(client, 1);
 					if(logMINOR)
-						Logger.minor(this, "Removing only grab array (0) : "+rga+" for "+rga.getObject()+" (is empty)");
+						Logger.minor(this, "Removing only grab array (0) : "+rga);
 					grabArrays = new RemoveRandomWithObject[0];
 					grabClients = new Object[0];
 					if(persistent)
@@ -215,7 +212,6 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 			if(rga.isEmpty()) {
 				if(logMINOR)
 					Logger.minor(this, "Removing grab array "+x+" : "+rga+" (is empty)");
-				Object client = rga.getObject();
 				removeElement(x);
 				if(persistent)
 					container.store(this);
