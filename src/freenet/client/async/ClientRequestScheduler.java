@@ -445,6 +445,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(runningPersistentRequests.get(i) == request) {
 					runningPersistentRequests.remove(i);
 					i--;
+					if(logMINOR)
+						Logger.minor(this, "Removed running request "+request+" size now "+runningPersistentRequests.size());
 				}
 			}
 		}
@@ -572,6 +574,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 				int length = starterQueueLength();
 				length += chosen.sizeNotStarted();
 				runningPersistentRequests.add(request);
+				if(logMINOR)
+					Logger.minor(this, "Added to running persistent requests, size now "+runningPersistentRequests.size()+" : "+request);
 				return length < MAX_STARTER_QUEUE_SIZE;
 			}
 		}
