@@ -345,7 +345,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 	
 	public void onDecodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets2, Bucket[] checkBuckets2, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus) {
 		if(persistent) {
-			container.activate(this, 1);
 			container.activate(parentFetcher, 1);
 			container.activate(parent, 1);
 			container.activate(context, 1);
