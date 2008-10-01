@@ -148,6 +148,7 @@ public class PersistentChosenRequest {
 		Logger.normal(this, "Finishing "+this+" for "+request);
 		// Call all the callbacks.
 		PersistentChosenBlock[] finishedBlocks;
+		int startedSize;
 		synchronized(this) {
 			if(finished) {
 				if(blocksFinished.isEmpty()) {
@@ -160,6 +161,14 @@ public class PersistentChosenRequest {
 					// Process the blocks...
 				}
 			}
+			startedSize = blocksStarted.size();
+			if(startedSize > 0) {
+				Logger.error(this, "Still waiting for callbacks on "+this+" for "+startedSize+" blocks");
+				// Wait... if we set finished, we have to process them now, and
+				// we can't process them now because we haven't had the callbacks,
+				// we don't know what the outcome will be.
+				return;
+			}
 			finished = true;
 			finishedBlocks = blocksFinished.toArray(new PersistentChosenBlock[blocksFinished.size()]);
 		}
@@ -168,6 +177,8 @@ public class PersistentChosenRequest {
 				Logger.error(this, "No finished blocks in finish() on "+this);
 			else if(logMINOR)
 				Logger.minor(this, "No finished blocks in finish() on "+this);
+			// Remove from running requests, we won't be called.
+			scheduler.removeRunningRequest(request);
 			if(!alreadyActive)
 				container.deactivate(request, 1);
 			return;
