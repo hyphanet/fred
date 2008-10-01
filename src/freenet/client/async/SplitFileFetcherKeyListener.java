@@ -309,7 +309,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 				filter.removeKey(salted);
 			} else
 				// Huh??
-				Logger.error(this, "Removing key "+removeKeys[i]+" for "+this+" from "+segment+" : NOT IN BLOOM FILTER!");
+				Logger.error(this, "Removing key "+removeKeys[i]+" for "+this+" from "+segment+" : NOT IN BLOOM FILTER!", new Exception("debug"));
 		}
 		scheduleWriteFilters(context);
 		return keyCount -= removeKeys.length;
