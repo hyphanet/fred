@@ -118,6 +118,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		this.finished = false;
 		this.returnBucket = returnBucket;
 		this.fetchContext = newCtx;
+		if(newCtx == null)
+			throw new NullPointerException();
 		this.archiveContext = actx;
 		this.decompressors = decompressors2;
 		if(decompressors.size() > 1) {
@@ -444,12 +446,24 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			Bucket data = finalStatus(container, context);
 			// Decompress
 			if(persistent) {
-				container.store(this);
 				container.activate(decompressors, 5);
 				container.activate(returnBucket, 5);
 				cbWasActive = container.ext().isActive(cb);
 				if(!cbWasActive)
 					container.activate(cb, 1);
+				container.activate(fetchContext, 1);
+				if(fetchContext == null) {
+					Logger.error(this, "Fetch context is null");
+					if(!container.ext().isActive(fetchContext)) {
+						Logger.error(this, "Fetch context is null and splitfile is not activated", new Exception("error"));
+						container.activate(this, 1);
+						container.activate(decompressors, 5);
+						container.activate(returnBucket, 5);
+						container.activate(fetchContext, 1);
+					} else {
+						Logger.error(this, "Fetch context is null and splitfile IS activated", new Exception("error"));
+					}
+				}
 				container.activate(fetchContext, 1);
 			}
 			int count = 0;
@@ -571,7 +585,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				try {
 					mainBloomFile = context.fg.makeRandomFile();
 					altBloomFile = context.fg.makeRandomFile();
-					container.store(this);
+					if(persistent)
+						container.store(this);
 				} catch (IOException e1) {
 					throw new KeyListenerConstructionException(new FetchException(FetchException.BUCKET_ERROR, "Unable to create Bloom filter files in reconstruction", e1));
 				}
