@@ -51,7 +51,7 @@ public class WelcomeToadlet extends Toadlet {
     }
 
     void redirectToRoot(ToadletContext ctx) throws ToadletContextClosedException, IOException {
-        MultiValueTable headers = new MultiValueTable();
+        MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
         headers.put("Location", "/");
         ctx.sendReplyHeaders(302, "Found", headers, null, 0);
         return;
@@ -122,7 +122,7 @@ public class WelcomeToadlet extends Toadlet {
                 redirectToRoot(ctx);
                 return;
             }
-            MultiValueTable headers = new MultiValueTable();
+            MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
             String url = null;
             if ((request.getPartAsString("Go", 32).length() > 0)) {
                 url = request.getPartAsString(GenericReadFilterCallback.magicHTTPEscapeString, MAX_URL_LENGTH);
@@ -355,7 +355,7 @@ public class WelcomeToadlet extends Toadlet {
                 redirectToRoot(ctx);
                 return;
             }
-            MultiValueTable headers = new MultiValueTable();
+            MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
             headers.put("Location", "/?terminated&formPassword=" + core.formPassword);
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
             node.ps.queueTimedJob(new Runnable() {
@@ -371,7 +371,7 @@ public class WelcomeToadlet extends Toadlet {
                 return;
             }
 
-            MultiValueTable headers = new MultiValueTable();
+            MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
             headers.put("Location", "/?restarted&formPassword=" + core.formPassword);
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
             node.ps.queueTimedJob(new Runnable() {

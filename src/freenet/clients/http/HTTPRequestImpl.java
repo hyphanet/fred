@@ -59,7 +59,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	/**
 	 * The headers sent by the client
 	 */
-	private MultiValueTable headers;
+	private MultiValueTable<String, String> headers;
 	
 	/**
 	 * The data sent in the connection

@@ -192,20 +192,20 @@ public final class FProxyToadlet extends Toadlet {
 							new String[] { "<a href=\"/\">", "</a>" });
 					
 					byte[] pageBytes = pageNode.generate().getBytes("UTF-8");
-					context.sendReplyHeaders(200, "OK", new MultiValueTable(), "text/html; charset=utf-8", pageBytes.length);
+					context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), "text/html; charset=utf-8", pageBytes.length);
 					context.writeData(pageBytes);
 					return;
 				}
 			}
 			
 			if (forceDownload) {
-				MultiValueTable headers = new MultiValueTable();
+				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 				headers.put("Content-Disposition", "attachment; filename=\"" + key.getPreferredFilename() + '"');
 				context.sendReplyHeaders(200, "OK", headers, "application/x-msdownload", data.size());
 				context.writeData(data);
 			} else {
 				// Send the data, intact
-				context.sendReplyHeaders(200, "OK", new MultiValueTable(), mimeType, data.size());
+				context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, data.size());
 				context.writeData(data);
 			}
 		} catch (URISyntaxException use1) {
@@ -256,7 +256,7 @@ public final class FProxyToadlet extends Toadlet {
 			}
 
 			byte[] pageBytes = pageNode.generate().getBytes("UTF-8");
-			context.sendReplyHeaders(200, "OK", new MultiValueTable(), "text/html; charset=utf-8", pageBytes.length);
+			context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), "text/html; charset=utf-8", pageBytes.length);
 			context.writeData(pageBytes);
 		}
 	}
@@ -330,7 +330,7 @@ public final class FProxyToadlet extends Toadlet {
 		
 		if (ks.equals("/")) {
 			if (httprequest.isParameterSet("key")) {
-				MultiValueTable headers = new MultiValueTable();
+				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 				
 				String k = httprequest.getParam("key");
 				FreenetURI newURI;
@@ -387,12 +387,12 @@ public final class FProxyToadlet extends Toadlet {
 			this.writeTextReply(ctx, 200, "Ok", "User-agent: *\nDisallow: /");
 			return;
 		}else if(ks.startsWith("/darknet/")) { //TODO: remove when obsolete
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(301, "Permanent Redirect", headers, null, 0);
 			return;
 		}else if(ks.startsWith("/opennet/")) { //TODO: remove when obsolete
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/strangers/");
 			ctx.sendReplyHeaders(301, "Permanent Redirect", headers, null, 0);
 			return;

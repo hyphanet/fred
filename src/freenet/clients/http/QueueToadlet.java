@@ -121,7 +121,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 					}
 				}
 				
-				MultiValueTable responseHeaders = new MultiValueTable();
+				MultiValueTable<String, String> responseHeaders = new MultiValueTable<String, String>();
 				responseHeaders.put("Location", "/files/?key="+insertURI.toACIIString());
 				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
 				return;
@@ -129,7 +129,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			
 			String pass = request.getPartAsString("formPassword", 32);
 			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
-				MultiValueTable headers = new MultiValueTable();
+				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 				headers.put("Location", "/queue/");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				if(logMINOR) Logger.minor(this, "No formPassword: "+pass);
@@ -425,7 +425,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 										if ((System.currentTimeMillis() - forceDownloadTime) > 60 * 1000) {
 											break loop;
 										}
-										MultiValueTable responseHeaders = new MultiValueTable();
+										MultiValueTable<String, String> responseHeaders = new MultiValueTable<String, String>();
 										responseHeaders.put("Content-Disposition", "attachment; filename=\"" + clientGet.getURI().getPreferredFilename() + '"');
 										writeReply(ctx, 200, "application/x-msdownload", "OK", responseHeaders, dataBucket);
 										return;
@@ -854,7 +854,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		
 		contentNode.addChild(createBulkDownloadForm(ctx, pageMaker));
 				
-		MultiValueTable pageHeaders = new MultiValueTable();
+		MultiValueTable<String, String> pageHeaders = new MultiValueTable<String, String>();
 		writeHTMLReply(ctx, 200, "OK", pageHeaders, pageNode.generate());
 	}
 
