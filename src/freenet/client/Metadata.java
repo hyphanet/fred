@@ -388,7 +388,7 @@ public class Metadata implements Cloneable {
 			if(o instanceof String) {
 				// External redirect
 				FreenetURI uri = new FreenetURI((String)o);
-				target = new Metadata(SIMPLE_REDIRECT, uri, null);
+				target = new Metadata(SIMPLE_REDIRECT, (short) -1, uri, null);
 			} else if(o instanceof HashMap) {
 				target = new Metadata();
 				target.addRedirectionManifest((HashMap)o);
@@ -471,7 +471,7 @@ public class Metadata implements Cloneable {
 			Metadata target;
 			if(o instanceof String) {
 				// Zip internal redirect
-				target = new Metadata(ARCHIVE_INTERNAL_REDIRECT, prefix+key, new ClientMetadata(DefaultMIMETypes.guessMIMEType(key, false)));
+				target = new Metadata(ARCHIVE_INTERNAL_REDIRECT, (short)-1, prefix+key, new ClientMetadata(DefaultMIMETypes.guessMIMEType(key, false)));
 			} else if(o instanceof HashMap) {
 				target = new Metadata((HashMap)o, prefix+key+"/");
 			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
@@ -486,9 +486,10 @@ public class Metadata implements Cloneable {
 	 * @param arg The argument; in the case of ZIP_INTERNAL_REDIRECT, the filename in
 	 * the archive to read from.
 	 */
-	public Metadata(byte docType, String arg, ClientMetadata cm) {
+	public Metadata(byte docType, short archiveType, String arg, ClientMetadata cm) {
 		if(docType == ARCHIVE_INTERNAL_REDIRECT) {
 			documentType = docType;
+			this.archiveType = archiveType;
 			// Determine MIME type
 			this.clientMetadata = cm;
 			if(cm != null)
@@ -504,10 +505,10 @@ public class Metadata implements Cloneable {
 	 * @param uri The URI pointed to.
 	 * @param cm The client metadata, if any.
 	 */
-	public Metadata(byte docType, FreenetURI uri, ClientMetadata cm) {
+	public Metadata(byte docType, short archiveType, FreenetURI uri, ClientMetadata cm) {
 		if((docType == SIMPLE_REDIRECT) || (docType == ARCHIVE_MANIFEST)) {
 			documentType = docType;
-			archiveType = ARCHIVE_TYPE.getDefault().metadataID;
+			this.archiveType = archiveType;
 			clientMetadata = cm;
 			if((cm != null) && !cm.isTrivial()) {
 				setMIMEType(cm.getMIMEType());
@@ -523,13 +524,14 @@ public class Metadata implements Cloneable {
 	}
 
 	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize, 
-			ClientMetadata cm, long dataLength, short compressionAlgo, long decompressedLength, boolean isMetadata, boolean insertAsArchiveManifest) {
+			ClientMetadata cm, long dataLength, short compressionAlgo, long decompressedLength, boolean isMetadata, boolean insertAsArchiveManifest, short archiveType) {
 		if(isMetadata)
 			documentType = MULTI_LEVEL_METADATA;
 		else {
-			if(insertAsArchiveManifest)
+			if(insertAsArchiveManifest) {
 				documentType = ARCHIVE_MANIFEST;
-			else documentType = SIMPLE_REDIRECT;
+				this.archiveType = archiveType;
+			} else documentType = SIMPLE_REDIRECT;
 		}
 		splitfile = true;
 		splitfileAlgorithm = algo;
@@ -825,7 +827,7 @@ public class Metadata implements Cloneable {
 					if(data.length > Short.MAX_VALUE) {
 						FreenetURI uri = meta.resolvedURI;
 						if(uri != null) {
-							meta = new Metadata(SIMPLE_REDIRECT, uri, null);
+							meta = new Metadata(SIMPLE_REDIRECT, (short)-1,  uri, null);
 							data = meta.writeToByteArray();
 						} else {
 							kill = true;

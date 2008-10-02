@@ -81,7 +81,7 @@ public class ArchiveManager {
 		}
 		
 		public final static ARCHIVE_TYPE getDefault() {
-			return ZIP;
+			return TAR;
 		}
 	}
 	

@@ -49,7 +49,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			super(smp.getPriorityClass(), smp.chkScheduler, smp.sskScheduler, smp.client);
 			this.cm = cm;
 			this.data = null;
-			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, target, cm);
+			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, (short)-1, target, cm);
 			metadata = m;
 			origSFI = null;
 		}
@@ -59,7 +59,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			this.cm = cm;
 			this.data = data;
 			this.targetInArchive = targetInArchive;
-			Metadata m = new Metadata(Metadata.ARCHIVE_INTERNAL_REDIRECT, targetInArchive, cm);
+			Metadata m = new Metadata(Metadata.ARCHIVE_INTERNAL_REDIRECT, (short)-1, targetInArchive, cm);
 			metadata = m;
 			origSFI = null;
 		}
@@ -118,7 +118,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				// The file was too small to have its own metadata, we get this instead.
 				// So we make the key into metadata.
 				Metadata m =
-					new Metadata(Metadata.SIMPLE_REDIRECT, key.getURI(), cm);
+					new Metadata(Metadata.SIMPLE_REDIRECT, (short) -1, key.getURI(), cm);
 				onMetadata(m, null);
 			}
 		}

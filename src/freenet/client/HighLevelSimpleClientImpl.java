@@ -166,7 +166,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 	}
 
 	public FreenetURI insertRedirect(FreenetURI insertURI, FreenetURI targetURI) throws InsertException {
-		Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, new ClientMetadata());
+		Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, (short)-1, targetURI, new ClientMetadata());
 		Bucket b;
 		try {
 			b = BucketTools.makeImmutableBucket(bucketFactory, m.writeToByteArray());

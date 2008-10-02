@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import java.io.IOException;
 import java.util.Vector;
 
@@ -290,7 +291,7 @@ public class SplitFileInserter implements ClientPutState {
 			
 			if(!missingURIs) {
 				// Create Metadata
-				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, cm, dataLength, compressionCodec, decompressedLength, isMetadata, insertAsArchiveManifest);
+				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, cm, dataLength, compressionCodec, decompressedLength, isMetadata, insertAsArchiveManifest, ARCHIVE_TYPE.getDefault().metadataID);
 			}
 			haveSentMetadata = true;
 		}

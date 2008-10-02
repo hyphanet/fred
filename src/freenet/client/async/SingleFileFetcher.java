@@ -107,7 +107,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.actx = fetcher.actx;
 		this.ah = fetcher.ah;
 		this.archiveMetadata = fetcher.archiveMetadata;
-		this.clientMetadata = (ClientMetadata) fetcher.clientMetadata.clone();
+		this.clientMetadata = (fetcher.clientMetadata != null ? (ClientMetadata) fetcher.clientMetadata.clone() : null);
 		this.metadata = newMeta;
 		this.metaStrings = new LinkedList();
 		this.addedMetaStrings = 0;

@@ -123,7 +123,7 @@ public class ClientPut extends ClientPutBase {
 		if(logMINOR) Logger.minor(this, "data = "+tempData+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
 			this.targetURI = redirectTarget;
-			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, cm);
+			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, (short)-1, targetURI, cm);
 			byte[] d;
 			try {
 				d = m.writeToByteArray();
@@ -205,7 +205,7 @@ public class ClientPut extends ClientPutBase {
 		if(logMINOR) Logger.minor(this, "data = "+tempData+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
 			this.targetURI = message.redirectTarget;
-			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, cm);
+			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, (short)-1, targetURI, cm);
 			byte[] d;
 			try {
 				d = m.writeToByteArray();
@@ -326,7 +326,7 @@ public class ClientPut extends ClientPutBase {
 			targetURI = new FreenetURI(target);
 			if(logMINOR)
 				Logger.minor(this, "Uploading from redirect for "+this+" : "+targetURI);
-			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, cm);
+			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, (short)-1, targetURI, cm);
 			byte[] d;
 			try {
 				d = m.writeToByteArray();
