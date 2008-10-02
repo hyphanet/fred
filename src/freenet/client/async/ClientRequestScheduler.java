@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 
 import com.db4o.ObjectContainer;
+import com.db4o.ObjectSet;
 
 import freenet.client.FECQueue;
 import freenet.client.FetchException;
@@ -143,6 +144,35 @@ public class ClientRequestScheduler implements RequestScheduler {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
+	public static void loadKeyListeners(final ObjectContainer container, ClientContext context) {
+		ObjectSet<HasKeyListener> results =
+			container.query(HasKeyListener.class);
+		for(HasKeyListener l : results) {
+			container.activate(l, 1);
+			try {
+				if(l.isCancelled(container)) continue;
+				KeyListener listener = l.makeKeyListener(container, context);
+				if(listener != null) {
+					if(listener.isSSK())
+						context.getSskFetchScheduler().addPersistentPendingKeys(listener);
+					else
+						context.getChkFetchScheduler().addPersistentPendingKeys(listener);
+					System.err.println("Loaded request key listener: "+listener+" for "+l);
+				}
+			} catch (KeyListenerConstructionException e) {
+				System.err.println("FAILED TO LOAD REQUEST BLOOM FILTERS:");
+				e.printStackTrace();
+				Logger.error(ClientRequestSchedulerCore.class, "FAILED TO LOAD REQUEST BLOOM FILTERS: "+e, e);
+			} catch (Throwable t) {
+				// Probably an error on last startup???
+				Logger.error(ClientRequestSchedulerCore.class, "FAILED TO LOAD REQUEST: "+t, t);
+				System.err.println("FAILED TO LOAD REQUEST: "+t);
+				t.printStackTrace();
+			}
+			container.deactivate(l, 1);
+		}
+	}
+
 	public void start(NodeClientCore core) {
 		schedCore.start(core);
 		queueFillRequestStarterQueue();
@@ -623,6 +653,15 @@ public class ClientRequestScheduler implements RequestScheduler {
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;	
 		synchronized(starterQueue) {
+			if((!isSSKScheduler) && (!isInsertScheduler)) {
+				Logger.minor(this, "Scheduling CHK fetches...");
+				for(SendableRequest req : runningPersistentRequests) {
+					boolean wasActive = container.ext().isActive(req);
+					if(!wasActive) container.activate(req, 1);
+					Logger.minor(this, "Running persistent request: "+req);
+					if(!wasActive) container.deactivate(req, 1);
+				}
+			}
 			// Recompute starterQueueLength
 			int length = 0;
 			PersistentChosenRequest old = null;
@@ -658,6 +697,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 			}
 		}
 		
+		if((!isSSKScheduler) && (!isInsertScheduler)) {
+			Logger.minor(this, "Scheduling CHK fetches...");
+		}
 		while(true) {
 			SendableRequest request = schedCore.removeFirstInner(fuzz, random, offeredKeys, starter, schedTransient, false, true, Short.MAX_VALUE, Integer.MAX_VALUE, context, container);
 			if(request == null) return;
@@ -1036,6 +1078,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return schedCore.hasKey(key);
 	}
 
+	public long countPersistentWaitingKeys(ObjectContainer container) {
+		return schedCore.countWaitingKeys(container);
+	}
+	
 	public long countPersistentQueuedRequests(ObjectContainer container) {
 		return schedCore.countQueuedRequests(container);
 	}
@@ -1062,6 +1108,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 		byte[] ret = md.digest();
 		SHA256.returnMessageDigest(md);
 		return ret;
+	}
+
+	void addPersistentPendingKeys(KeyListener listener) {
+		schedCore.addPendingKeys(listener);
 	}
 	
 }

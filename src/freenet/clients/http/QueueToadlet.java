@@ -509,8 +509,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 				HTMLNode pageNode = null;
 				try {
 					if(count) {
-						long queued = core.requestStarters.chkFetchScheduler.countPersistentQueuedRequests(container);
-						System.err.println("Total queued CHK requests: "+queued);
+						long queued = core.requestStarters.chkFetchScheduler.countPersistentWaitingKeys(container);
+						System.err.println("Total waiting CHKs: "+queued);
+						long reallyQueued = core.requestStarters.chkFetchScheduler.countPersistentQueuedRequests(container);
+						System.err.println("Total queued CHK requests: "+reallyQueued);
 						pageNode = pageMaker.getPageNode(L10n.getString("QueueToadlet.title", new String[]{ "nodeName" }, new String[]{ core.getMyName() }), ctx);
 						HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 						/* add alert summary box */
@@ -518,7 +520,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 							contentNode.addChild(core.alerts.createSummary());
 						HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-information", "Queued requests status"));
 						HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
-						infoboxContent.addChild("#", "Total queued CHK requests: "+queued);
+						infoboxContent.addChild("p", "Total awaiting CHKs: "+queued);
+						infoboxContent.addChild("p", "Total queued CHK requests: "+reallyQueued);
 						return;
 					} else {
 						pageNode = handleGetInner(pageMaker, container, context, request, ctx);

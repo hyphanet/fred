@@ -136,4 +136,12 @@ public class PersistentCooldownQueue implements CooldownQueue {
 		}
 	}
 
+	public long size(ObjectContainer container) {
+		Query query = container.query();
+		query.constrain(PersistentCooldownQueueItem.class);
+		query.descend("parent").constrain(this).identity();
+		ObjectSet results = query.execute();
+		return results.size();
+	}
+
 }

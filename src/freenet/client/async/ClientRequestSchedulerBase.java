@@ -24,6 +24,7 @@ import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.support.Logger;
+import freenet.support.RandomGrabArray;
 import freenet.support.SectoredRandomGrabArrayWithInt;
 import freenet.support.SectoredRandomGrabArrayWithObject;
 import freenet.support.SortedVectorByNumber;
@@ -247,7 +248,7 @@ abstract class ClientRequestSchedulerBase {
 		return priority;
 	}
 	
-	public synchronized long countQueuedRequests(ObjectContainer container) {
+	public synchronized long countWaitingKeys(ObjectContainer container) {
 		long count = 0;
 		for(KeyListener listener : keyListeners)
 			count += listener.countKeys();
@@ -399,4 +400,56 @@ abstract class ClientRequestSchedulerBase {
 		return sb.toString();
 	}
 
+	public synchronized long countQueuedRequests(ObjectContainer container) {
+		long total = 0;
+		for(int i=0;i<priorities.length;i++) {
+			SortedVectorByNumber prio = priorities[i];
+			if(prio == null || prio.isEmpty())
+				System.out.println("Priority "+i+" : empty");
+			else {
+				System.out.println("Priority "+i+" : "+prio.count());
+				for(int j=0;j<prio.count();j++) {
+					int frc = prio.getNumberByIndex(j);
+					System.out.println("Fixed retry count: "+frc);
+					SectoredRandomGrabArrayWithInt clientGrabber = (SectoredRandomGrabArrayWithInt) prio.get(frc, container);
+					container.activate(clientGrabber, 1);
+					System.out.println("Clients: "+clientGrabber.size()+" for "+clientGrabber);
+					for(int k=0;k<clientGrabber.size();k++) {
+						Object client = clientGrabber.getClient(k);
+						container.activate(client, 1);
+						System.out.println("Client "+k+" : "+client);
+						container.deactivate(client, 1);
+						SectoredRandomGrabArrayWithObject requestGrabber = (SectoredRandomGrabArrayWithObject) clientGrabber.getGrabber(client);
+						container.activate(requestGrabber, 1);
+						System.out.println("SRGA for client: "+requestGrabber);
+						for(int l=0;l<requestGrabber.size();l++) {
+							client = requestGrabber.getClient(l);
+							container.activate(client, 1);
+							System.out.println("Request "+l+" : "+client);
+							container.deactivate(client, 1);
+							RandomGrabArray rga = (RandomGrabArray) requestGrabber.getGrabber(client);
+							container.activate(rga, 1);
+							System.out.println("Queued SendableRequests: "+rga.size()+" on "+rga);
+							long sendable = 0;
+							long all = 0;
+							for(int m=0;m<rga.size();m++) {
+								SendableRequest req = (SendableRequest) rga.get(m);
+								if(req == null) continue;
+								container.activate(req, 1);
+								sendable += req.sendableKeys(container).length;
+								all += req.allKeys(container).length;
+								container.deactivate(req, 1);
+							}
+							System.out.println("Sendable keys: "+sendable+" all keys "+all+" diff "+(all-sendable));
+							total += all;
+							container.deactivate(rga, 1);
+						}
+						container.deactivate(requestGrabber, 1);
+					}
+					container.deactivate(clientGrabber, 1);
+				}
+			}
+		}
+		return total;
+	}	
 }
