@@ -103,7 +103,7 @@ public class DatastoreChecker implements PrioRunnable {
 				return;
 			}
 		}
-		for(short p = RequestStarter.MAXIMUM_PRIORITY_CLASS; p < RequestStarter.MINIMUM_PRIORITY_CLASS; p++) {
+		for(short p = RequestStarter.MAXIMUM_PRIORITY_CLASS; p <= RequestStarter.MINIMUM_PRIORITY_CLASS; p++) {
 			final short prio = p;
 			Query query = container.query();
 			query.constrain(DatastoreCheckerItem.class);
