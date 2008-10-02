@@ -192,6 +192,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			container.activate(ctx, 1);
 			container.activate(rcb, 1);
 		}
+		synchronized(this) {
+			// So a SingleKeyListener isn't created.
+			finished = true;
+		}
 		if(parent.isCancelled()) {
 			if(logMINOR)
 				Logger.minor(this, "Parent is cancelled");
@@ -275,6 +279,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			container.activate(clientMetadata, 5);
 			container.activate(rcb, 1);
 			container.activate(returnBucket, 5);
+		}
+		synchronized(this) {
+			// So a SingleKeyListener isn't created.
+			finished = true;
 		}
 		while(true) {
 			if(metadata.isSimpleManifest()) {
