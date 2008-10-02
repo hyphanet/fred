@@ -100,6 +100,10 @@ public class SectoredRandomGrabArray implements RemoveRandom {
 		if(idx == -1) return null;
 		else return grabArrays[idx];
 	}
+	
+	public synchronized Object getClient(int x) {
+		return grabClients[x];
+	}
 
 	/**
 	 * Put a grabber. This lets us use things other than RandomGrabArrayWithClient's, so don't mix calls
