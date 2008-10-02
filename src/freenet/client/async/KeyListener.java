@@ -90,4 +90,6 @@ public interface KeyListener {
 	 */
 	public boolean isEmpty();
 
+	public boolean isSSK();
+
 }

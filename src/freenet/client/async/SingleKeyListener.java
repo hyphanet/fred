@@ -4,6 +4,7 @@ import com.db4o.ObjectContainer;
 
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
+import freenet.keys.NodeSSK;
 import freenet.node.SendableGet;
 
 public class SingleKeyListener implements KeyListener {
@@ -85,6 +86,10 @@ public class SingleKeyListener implements KeyListener {
 
 	public boolean isEmpty() {
 		return done;
+	}
+
+	public boolean isSSK() {
+		return key instanceof NodeSSK;
 	}
 
 }

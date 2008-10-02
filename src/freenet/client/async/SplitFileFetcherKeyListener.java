@@ -360,4 +360,8 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 		return killed;
 	}
 
+	public boolean isSSK() {
+		return false;
+	}
+
 }
