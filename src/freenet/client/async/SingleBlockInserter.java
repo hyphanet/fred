@@ -404,10 +404,6 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 	}
 
-	public boolean canRemove(ObjectContainer container) {
-		return true;
-	}
-
 	@Override
 	public synchronized Object[] sendableKeys(ObjectContainer container) {
 		if(finished)

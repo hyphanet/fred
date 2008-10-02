@@ -191,11 +191,6 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return !ctx.cacheLocalRequests;
 	}
 	
-	public boolean canRemove(ObjectContainer container) {
-		// Simple request, once it's sent, it's sent. May be requeued at a different # retries.
-		return true;
-	}
-
 	public void onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
 		if(persistent) {
 			container.activate(this, 1);

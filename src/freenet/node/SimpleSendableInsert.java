@@ -123,10 +123,6 @@ public class SimpleSendableInsert extends SendableInsert {
 		return finished;
 	}
 
-	public boolean canRemove(ObjectContainer container) {
-		return true;
-	}
-
 	public void schedule() {
 		finished = false; // can reschedule
 		scheduler.registerInsert(this, false, false, null);

@@ -468,20 +468,6 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		return retryCount;
 	}
 
-	public boolean canRemove(ObjectContainer container) {
-		if(persistent)
-			container.activate(blockNums, 1);
-		synchronized(segment) {
-			if(blockNums.size() < 2) {
-				// Can be removed, if the one key is processed.
-				// Once it has been processed, we may need to be reinstated.
-				if(Logger.shouldLog(Logger.MINOR, this))
-					Logger.minor(this, "Can remove "+this+" in canRemove()");
-				return true;
-			} else return false;
-		}
-	}
-
 	@Override
 	public boolean isCancelled(ObjectContainer container) {
 		if(persistent) {
