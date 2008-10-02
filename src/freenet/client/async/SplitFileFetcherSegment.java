@@ -160,8 +160,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 			throw failureException;
 	}
 	
-	/** Decoded length? */
-	public long decodedLength() {
+	/** Decoded length? 
+	 * @param container */
+	public long decodedLength(ObjectContainer container) {
+		if(persistent)
+			container.activate(decodedData, 1);
 		return decodedData.size();
 	}
 

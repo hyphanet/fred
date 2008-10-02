@@ -114,6 +114,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			FetchContext newCtx, ArrayList decompressors2, ClientMetadata clientMetadata, 
 			ArchiveContext actx, int recursionLevel, Bucket returnBucket, long token2, ObjectContainer container, ClientContext context) throws FetchException, MetadataParseException {
 		this.persistent = parent2.persistent();
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Persistence = "+persistent+" from "+parent2, new Exception("debug"));
 		this.hashCode = super.hashCode();
 		this.finished = false;
 		this.returnBucket = returnBucket;
@@ -345,9 +347,10 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			}
 			s.throwError();
 			// If still here, it succeeded
-			finalLength += s.decodedLength();
+			long sz = s.decodedLength(container);
+			finalLength += sz;
 			if(logMINOR)
-				Logger.minor(this, "Segment "+i+" decoded length "+s.decodedLength()+" total length now "+finalLength+" for "+s.dataBuckets.length+" blocks which should be "+(s.dataBuckets.length * NodeCHK.BLOCK_SIZE));
+				Logger.minor(this, "Segment "+i+" decoded length "+sz+" total length now "+finalLength+" for "+s.dataBuckets.length+" blocks which should be "+(s.dataBuckets.length * NodeCHK.BLOCK_SIZE));
 			// Healing is done by Segment
 		}
 		if(finalLength > overrideLength) {
@@ -443,6 +446,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				}
 				finished = true;
 			}
+			if(persistent)
+				container.store(this);
 			Bucket data = finalStatus(container, context);
 			// Decompress
 			if(persistent) {
