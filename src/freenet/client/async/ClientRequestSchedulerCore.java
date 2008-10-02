@@ -487,16 +487,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			// Now we have chosen a request.
 			if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" ("+chosenTracker.getNumber()+", prio "+
 					req.getPriorityClass(container)+", retries "+req.getRetryCount()+", client "+req.getClient()+", client-req "+req.getClientRequest()+ ')');
-			ClientRequester cr = req.getClientRequest();
-			if(req.canRemove(container)) {
-				if(req.persistent())
-					removeFromAllRequestsByClientRequest(req, cr, false, container);
-				else
-					schedTransient.removeFromAllRequestsByClientRequest(req, cr, false, null);
-				// Do not remove from the pendingKeys list.
-				// Whether it is running a request, waiting to execute, or waiting on the
-				// cooldown queue, ULPRs and backdoor coalescing should still be active.
-			}
 			if(logMINOR) Logger.minor(this, "removeFirst() returning "+req+" of "+req.getClientRequest());
 			return req;
 			
