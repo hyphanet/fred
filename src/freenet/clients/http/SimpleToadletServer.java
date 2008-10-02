@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
-import freenet.config.NodeNeedRestartException;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -28,6 +27,7 @@ import freenet.clients.http.PageMaker.THEME;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.crypt.SSL;
 import freenet.io.AllowedHosts;
@@ -58,13 +58,13 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		String prefix;
 	}
 
-	final int port;
-	String bindTo;
+	private final int port;
+	private String bindTo;
 	private String allowedHosts;
-	final AllowedHosts allowedFullAccess;
-	BucketFactory bf;
-	NetworkInterface networkInterface;
-	private final LinkedList toadlets;
+	private final AllowedHosts allowedFullAccess;
+	private BucketFactory bf;
+	private NetworkInterface networkInterface;
+	private final LinkedList<ToadletElement> toadlets;
 	private THEME cssTheme;
 	private File cssOverride;
 	private Thread myThread;
@@ -83,8 +83,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	static boolean isPanicButtonToBeShown;
 	public static final int DEFAULT_FPROXY_PORT = 8888;
 	
-	class FProxySSLCallback extends BooleanCallback  {
-		
+	private class FProxySSLCallback extends BooleanCallback  {
 		@Override
 		public Boolean get() {
 			return ssl;
@@ -105,8 +104,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	static class FProxyPassthruMaxSize extends LongCallback {
-		
+	private static class FProxyPassthruMaxSize extends LongCallback {
 		@Override
 		public Long get() {
 			return FProxyToadlet.MAX_LENGTH;
@@ -120,8 +118,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 
-	class FProxyPortCallback extends IntCallback  {
-		
+	private class FProxyPortCallback extends IntCallback  {
 		@Override
 		public Integer get() {
 			return port;
@@ -139,8 +136,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	class FProxyBindtoCallback extends StringCallback  {
-		
+	private class FProxyBindtoCallback extends StringCallback  {
 		@Override
 		public String get() {
 			return bindTo;
@@ -156,14 +152,13 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 					// This is an advanced option for reasons of reducing clutter,
 					// but it is expected to be used by regular users, not devs.
 					// So we translate the error messages.
-					throw new InvalidConfigValueException(l10n("couldNotChangeBindTo", "error", e.getLocalizedMessage())); 
+					throw new InvalidConfigValueException(l10n("couldNotChangeBindTo", "error", e.getLocalizedMessage()));
 				}
 			}
 		}
 	}
 	
-	class FProxyAllowedHostsCallback extends StringCallback  {
-	
+	private class FProxyAllowedHostsCallback extends StringCallback  {
 		@Override
 		public String get() {
 			return networkInterface.getAllowedHosts();
@@ -177,8 +172,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	class FProxyCSSNameCallback extends StringCallback implements EnumerableOptionCallback {
-		
+	private class FProxyCSSNameCallback extends StringCallback implements EnumerableOptionCallback {
 		@Override
 		public String get() {
 			return cssTheme.code;
@@ -203,8 +197,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	class FProxyCSSOverrideCallback extends StringCallback  {
-
+	private class FProxyCSSOverrideCallback extends StringCallback  {
 		@Override
 		public String get() {
 			return (cssOverride == null ? "" : cssOverride.toString());
@@ -227,8 +220,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	class FProxyEnabledCallback extends BooleanCallback  {
-		
+	private class FProxyEnabledCallback extends BooleanCallback  {
 		@Override
 		public Boolean get() {
 			synchronized(SimpleToadletServer.this) {
@@ -333,7 +325,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		boolean enabled = fproxyConfig.getBoolean("enabled");
 		
-		List themes = new ArrayList();
+		List<String> themes = new ArrayList<String>();
 		try {
 			URL url = getClass().getResource("staticfiles/themes/");
 			URLConnection urlConnection = url.openConnection();
@@ -510,13 +502,13 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		pageMaker = new PageMaker(cssTheme);
 	
 		if(!fproxyConfig.getOption("CSSOverride").isDefault()) {
-			cssOverride = new File(fproxyConfig.getString("CSSOverride"));			
+			cssOverride = new File(fproxyConfig.getString("CSSOverride"));
 			pageMaker.setOverride(cssOverride);
 		} else
 			cssOverride = null;
 		
-		this.advancedModeEnabled = fproxyConfig.getBoolean("advancedModeEnabled");		
-		toadlets = new LinkedList();
+		this.advancedModeEnabled = fproxyConfig.getBoolean("advancedModeEnabled");
+		toadlets = new LinkedList<ToadletElement>();
 
 		if(SSL.available()) {
 			ssl = fproxyConfig.getBoolean("ssl");
@@ -591,8 +583,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	}
 
 	public synchronized void unregister(Toadlet t) {
-		for(Iterator i=toadlets.iterator();i.hasNext();) {
-			ToadletElement e = (ToadletElement) i.next();
+		for(Iterator<ToadletElement> i=toadlets.iterator();i.hasNext();) {
+			ToadletElement e = i.next();
 			if(e.t == t) {
 				i.remove();
 				return;
@@ -615,9 +607,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				} catch(URISyntaxException e) { throw new Error(e); }
 		}
 
-		Iterator i = toadlets.iterator();		
+		Iterator<ToadletElement> i = toadlets.iterator();
 		while(i.hasNext()) {
-			ToadletElement te = (ToadletElement) i.next();
+			ToadletElement te = i.next();
 						
 			if(path.startsWith(te.prefix))
 					return te.t;
