@@ -3,7 +3,6 @@ package freenet.support;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
-import freenet.node.SendableRequest;
 
 /**
  * An array which supports very fast remove-and-return-a-random-element.
