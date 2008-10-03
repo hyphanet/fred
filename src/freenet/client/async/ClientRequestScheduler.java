@@ -653,7 +653,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		else if(PRIORITY_HARD.equals(choosenPriorityScheduler))
 			fuzz = 0;	
 		synchronized(starterQueue) {
-			if((!isSSKScheduler) && (!isInsertScheduler)) {
+			if(logMINOR && (!isSSKScheduler) && (!isInsertScheduler)) {
 				Logger.minor(this, "Scheduling CHK fetches...");
 				for(SendableRequest req : runningPersistentRequests) {
 					boolean wasActive = container.ext().isActive(req);
