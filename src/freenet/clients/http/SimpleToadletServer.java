@@ -187,11 +187,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			if (core.node.pluginManager != null)
 				core.node.pluginManager.setFProxyTheme(cssTheme);
 		}
-		
-		public void setPossibleValues(String[] val) {
-			throw new NullPointerException("Should not happen!");
-		}
-		
+
 		public String[] getPossibleValues() {
 			return THEME.possibleValues;
 		}

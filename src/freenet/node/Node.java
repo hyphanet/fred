@@ -203,14 +203,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		public String[] getPossibleValues() {
 			return new String[] { "bdb-index", "salt-hash", "ram" };
 		}
-
-		public void setPossibleValues(String[] val) {
-			throw new UnsupportedOperationException();
-		}
 	}
 	
 	private static class L10nCallback extends StringCallback implements EnumerableOptionCallback {
-		
 		@Override
 		public String get() {
 			return L10n.getSelectedLanguage().fullName;
@@ -225,10 +220,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				throw new InvalidConfigValueException(e.getLocalizedMessage());
 			}
 			PluginManager.setLanguage(L10n.getSelectedLanguage());
-		}
-		
-		public void setPossibleValues(String[] val) {
-			throw new NullPointerException("Should not happen!");
 		}
 		
 		public String[] getPossibleValues() {
