@@ -279,6 +279,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		} else if(currentStep == WIZARD_STEP.FINAL) {
 			try {
 				config.get("fproxy").set("hasCompletedWizard", true);
+                                config.store();
 				this.writeTemporaryRedirect(ctx, "Return to home", "/");
 			} catch (ConfigException e) {
 				Logger.error(this, e.getMessage(), e);
