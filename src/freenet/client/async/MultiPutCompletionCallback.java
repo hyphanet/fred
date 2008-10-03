@@ -1,5 +1,6 @@
 package freenet.client.async;
 
+import java.util.Arrays;
 import java.util.Vector;
 
 import com.db4o.ObjectContainer;
@@ -51,9 +52,14 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 		synchronized(this) {
 			if(finished) return;
 			waitingFor.remove(state);
-			if(!(waitingFor.isEmpty() && started))
+			if(!(waitingFor.isEmpty() && started)) {
+				if(persistent) {
+					container.store(waitingFor);
+				}
 				return;
+			}
 		}
+		Logger.minor(this, "Completing...");
 		complete(null, container, context);
 	}
 
@@ -64,7 +70,11 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			waitingForBlockSet.remove(state);
 			waitingForFetchable.remove(state);
 			if(!(waitingFor.isEmpty() && started)) {
+				container.store(waitingFor);
+				container.store(waitingForBlockSet);
+				container.store(waitingForFetchable);
 				this.e = e;
+				container.store(this);
 				return;
 			}
 		}
