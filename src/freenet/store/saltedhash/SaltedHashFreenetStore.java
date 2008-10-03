@@ -84,14 +84,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private boolean preallocate = true;
 
 	public static SaltedHashFreenetStore construct(File baseDir, String name, StoreCallback callback, Random random,
-	        long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate)
+	        long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart)
 	        throws IOException {
 		return new SaltedHashFreenetStore(baseDir, name, callback, random, maxKeys, bloomFilterSize, bloomCounting,
-		        shutdownHook, preallocate);
+		        shutdownHook, preallocate, resizeOnStart);
 	}
 
 	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback callback, Random random, long maxKeys,
-	        int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate) throws IOException {
+	        int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart) throws IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 
@@ -146,7 +146,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		cleanerStatusUserAlert = new CleanerStatusUserAlert(cleanerThread);
 
 		// finish all resizing before continue
-		if (prevStoreSize != 0 && cleanerGlobalLock.tryLock()) {
+		if (resizeOnStart && prevStoreSize != 0 && cleanerGlobalLock.tryLock()) {
 			System.out.println("Resizing datastore (" + name + ")");
 			try {
 				cleanerThread.resizeStore(prevStoreSize, false);
@@ -154,7 +154,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				cleanerGlobalLock.unlock();
 			}
 			writeConfigFile();
-		} else if (bloomFilter.needRebuild() && !newStore) {
+		} 
+		if (bloomFilter.needRebuild() && !newStore) {
 			// Bloom filter resized?
 			flags |= FLAG_REBUILD_BLOOM;
 			checkBloom = false;
