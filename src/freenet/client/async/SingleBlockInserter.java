@@ -186,6 +186,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			Logger.error(this, "Unknown LowLevelPutException code: "+e.code);
 			errors.inc(InsertException.INTERNAL_ERROR);
 		}
+		if(persistent)
+			container.activate(ctx, 1);
 		if(e.code == LowLevelPutException.ROUTE_NOT_FOUND || e.code == LowLevelPutException.ROUTE_REALLY_NOT_FOUND) {
 			consecutiveRNFs++;
 			if(logMINOR) Logger.minor(this, "Consecutive RNFs: "+consecutiveRNFs+" / "+ctx.consecutiveRNFsCountAsSuccess);
@@ -200,10 +202,14 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		retries++;
 		if((retries > ctx.maxInsertRetries) && (ctx.maxInsertRetries != -1)) {
 			fail(InsertException.construct(errors), container, context);
+			if(persistent)
+				container.deactivate(ctx, 1);
 			return;
 		}
-		if(persistent)
+		if(persistent) {
 			container.store(this);
+			container.deactivate(ctx, 1);
+		}
 		getScheduler(context).registerInsert(this, persistent, false, true, container);
 	}
 
