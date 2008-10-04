@@ -360,20 +360,20 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			public boolean send(NodeClientCore core, RequestScheduler sched, ClientContext context, ChosenBlock req) {
 				// Ignore keyNum, key, since we're only sending one block.
 				try {
-					if(logMINOR) Logger.minor(this, "Starting request: "+this);
+					if(logMINOR) Logger.minor(this, "Starting request: "+SingleBlockInserter.this);
 					ClientKeyBlock b = (ClientKeyBlock) req.token;
 					if(b != null)
 						core.realPut(b, req.cacheLocalRequests);
 					else {
-						Logger.error(this, "Asked to send empty block on "+this, new Exception("error"));
+						Logger.error(this, "Asked to send empty block on "+SingleBlockInserter.this, new Exception("error"));
 						return false;
 					}
 				} catch (LowLevelPutException e) {
 					req.onFailure(e, context);
-					if(logMINOR) Logger.minor(this, "Request failed: "+this+" for "+e);
+					if(logMINOR) Logger.minor(this, "Request failed: "+SingleBlockInserter.this+" for "+e);
 					return true;
 				}
-				if(logMINOR) Logger.minor(this, "Request succeeded: "+this);
+				if(logMINOR) Logger.minor(this, "Request succeeded: "+SingleBlockInserter.this);
 				req.onInsertSuccess(context);
 				return true;
 			}
