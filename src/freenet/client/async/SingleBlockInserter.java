@@ -57,6 +57,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	final boolean getCHKOnly;
 	final int sourceLength;
 	private int consecutiveRNFs;
+	private boolean isSSK;
 	
 	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ObjectContainer container, ClientContext context, boolean persistent) {
 		super(persistent);
@@ -78,6 +79,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		this.isMetadata = isMetadata;
 		this.sourceLength = sourceLength;
 		this.getCHKOnly = getCHKOnly;
+		isSSK = uri.getKeyType().toUpperCase().equals("SSK");
 		if(addToParent) {
 			parent.addBlock(container);
 			parent.addMustSucceedBlocks(1, container);
@@ -275,7 +277,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	public boolean isSSK() {
-		return uri.getKeyType().toUpperCase().equals("SSK");
+		return isSSK;
 	}
 
 	public FreenetURI getURI(ObjectContainer container, ClientContext context) {
