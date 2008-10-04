@@ -225,7 +225,7 @@ public class ClientPutDir extends ClientPutBase {
 			if(putter != null)
 				putter.start(container, context);
 			started = true;
-			if(logMINOR) Logger.minor(this, "Started "+putter);
+			if(logMINOR) Logger.minor(this, "Started "+putter+" for "+this+" persistence="+persistenceType);
 			if(persistenceType != PERSIST_CONNECTION && !finished) {
 				FCPMessage msg = persistentTagMessage(container);
 				client.queueClientRequestMessage(msg, 0, container);
