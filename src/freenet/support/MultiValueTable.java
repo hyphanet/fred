@@ -91,13 +91,13 @@ public class MultiValueTable<K,V> {
 		}
     }
     
-    public V[] getArray(K key) {
+    public Object[] getArray(K key) {
         synchronized (table) {
             Vector<V> v = table.get(key);
             if (v == null)
                 return null;
             else {
-                V[] r = (V[])new Object[v.size()];
+            	Object[] r = new Object[v.size()];
                 v.copyInto(r);
                 return r;
             }
