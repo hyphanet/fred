@@ -114,12 +114,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			SimpleManifestPutter.this.onFetchable(this, container);
 			synchronized(SimpleManifestPutter.this) {
 				runningPutHandlers.remove(this);
+				if(persistent)
+					container.store(runningPutHandlers);
 				if(!runningPutHandlers.isEmpty()) {
 					return;
 				}
 			}
-			if(persistent)
-				container.store(runningPutHandlers);
 			insertedAllFiles(container);
 		}
 
@@ -150,7 +150,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 		public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {
 			logMINOR = Logger.shouldLog(Logger.MINOR, this);
-			if(logMINOR) Logger.minor(this, "Assigning metadata: "+m+" for "+this+" from "+state,
+			if(logMINOR) Logger.minor(this, "Assigning metadata: "+m+" for "+this+" from "+state+" persistent="+persistent,
 					new Exception("debug"));
 			if(metadata != null) {
 				Logger.error(this, "Reassigning metadata", new Exception("debug"));
@@ -162,11 +162,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 			synchronized(SimpleManifestPutter.this) {
 				putHandlersWaitingForMetadata.remove(this);
+				if(persistent) {
+					container.store(putHandlersWaitingForMetadata);
+					container.store(this);
+				}
 				if(!putHandlersWaitingForMetadata.isEmpty()) return;
 			}
 			if(persistent) {
-				container.store(putHandlersWaitingForMetadata);
-				container.store(this);
 				container.activate(SimpleManifestPutter.this, 1);
 			}
 			gotAllMetadata(container, context);
@@ -226,10 +228,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 			synchronized(SimpleManifestPutter.this) {
 				waitingForBlockSets.remove(this);
+				if(persistent)
+					container.store(waitingForBlockSets);
 				if(!waitingForBlockSets.isEmpty()) return;
 			}
-			if(persistent)
-				container.store(waitingForBlockSets);
 			SimpleManifestPutter.this.blockSetFinalized(container, context);
 		}
 
@@ -313,7 +315,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	public void start(ObjectContainer container, ClientContext context) throws InsertException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if (logMINOR)
-			Logger.minor(this, "Starting " + this);
+			Logger.minor(this, "Starting " + this+" persistence="+persistent());
 		PutHandler[] running;
 
 		if(persistent()) {
@@ -384,6 +386,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 							(bytesOnZip + sz < ((2048-64)*1024))) { // totally dumb heuristic!
 						bytesOnZip += sz;
 						// Put it in the zip.
+						if(logMINOR)
+							Logger.minor(this, "Putting into ZIP: "+name);
 						ph = new PutHandler(this, name, ZipPrefix+element.fullName, cm, data);
 						elementsToPutInZip.add(ph);
 						numberOfFiles++;
@@ -393,6 +397,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 						runningPutHandlers.add(ph);
 						putHandlersWaitingForMetadata.add(ph);
 						putHandlersWaitingForFetchable.add(ph);
+						if(logMINOR)
+							Logger.minor(this, "Inserting separately as PutHandler: "+name+" : "+ph+" persistent="+ph.persistent()+":"+ph.persistent);
 						numberOfFiles++;
 						totalSize += data.size();
 					}
@@ -418,7 +424,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		if(logMINOR) Logger.minor(this, "Got all metadata");
 		HashMap namesToByteArrays = new HashMap();
-		namesToByteArrays(putHandlersByName, namesToByteArrays);
+		namesToByteArrays(putHandlersByName, namesToByteArrays, container);
 		if(defaultName != null) {
 			Metadata meta = (Metadata) namesToByteArrays.get(defaultName);
 			if(meta == null) {
@@ -440,6 +446,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			Metadata.mkRedirectionManifestWithMetadata(namesToByteArrays);
 		if(persistent()) {
 			container.store(baseMetadata);
+			container.store(this);
 		}
 		resolveAndStartBase(container, context);
 		
@@ -474,6 +481,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(hasResolvedBase) return;
 			hasResolvedBase = true;
 		}
+		if(persistent())
+			container.store(this);
 		InsertBlock block;
 		boolean isMetadata = true;
 		boolean insertAsArchiveManifest = false;
@@ -586,19 +595,29 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		return mustWait;
 	}
 
-	private void namesToByteArrays(HashMap putHandlersByName, HashMap namesToByteArrays) {
+	private void namesToByteArrays(HashMap putHandlersByName, HashMap namesToByteArrays, ObjectContainer container) {
 		Iterator i = putHandlersByName.keySet().iterator();
 		while(i.hasNext()) {
 			String name = (String) i.next();
 			Object o = putHandlersByName.get(name);
 			if(o instanceof PutHandler) {
 				PutHandler ph = (PutHandler) o;
+				if(persistent())
+					container.activate(ph, 1);
 				Metadata meta = ph.metadata;
+				if(ph.metadata == null)
+					Logger.error(this, "Metadata for "+name+" : "+ph+" is null");
+				if(persistent())
+					container.activate(meta, 100);
+				Logger.minor(this, "Putting "+name);
 				namesToByteArrays.put(name, meta);
 			} else if(o instanceof HashMap) {
 				HashMap subMap = new HashMap();
+				if(persistent())
+					container.activate(o, 1);
 				namesToByteArrays.put(name, subMap);
-				namesToByteArrays((HashMap)o, subMap);
+				Logger.minor(this, "Putting directory: "+name);
+				namesToByteArrays((HashMap)o, subMap, container);
 			} else
 				throw new IllegalStateException();
 		}
@@ -610,10 +629,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			insertedAllFiles = true;
 			if(finished || cancelled) {
 				if(logMINOR) Logger.minor(this, "Already "+(finished?"finished":"cancelled"));
+				if(persistent())
+					container.store(this);
 				return;
 			}
 			if(!insertedManifest) {
 				if(logMINOR) Logger.minor(this, "Haven't inserted manifest");
+				if(persistent())
+					container.store(this);
 				return;
 			}
 			finished = true;
@@ -681,10 +704,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			insertedManifest = true;
 			if(finished) {
 				if(logMINOR) Logger.minor(this, "Already finished");
+				if(persistent())
+					container.store(this);
 				return;
 			}
 			if(!insertedAllFiles) {
 				if(logMINOR) Logger.minor(this, "Not inserted all files");
+				if(persistent())
+					container.store(this);
 				return;
 			}
 			finished = true;
@@ -741,7 +768,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			this.metadataBlockSetFinalized = true;
-			if(!waitingForBlockSets.isEmpty()) return;
+			if(!waitingForBlockSets.isEmpty()) {
+				if(persistent())
+					container.store(this);
+				return;
+			}
 		}
 		this.blockSetFinalized(container, context);
 		if(persistent())
