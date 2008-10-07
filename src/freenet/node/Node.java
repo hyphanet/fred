@@ -834,9 +834,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		dbConfig.objectClass(freenet.client.async.InsertCompressor.class).objectField("nodeDBHandle").indexed(true);
 		dbConfig.objectClass(freenet.node.fcp.FCPClient.class).objectField("name").indexed(true);
 		dbConfig.objectClass(freenet.client.async.DatastoreCheckerItem.class).objectField("prio").indexed(true);
-		dbConfig.objectClass(java.util.HashMap.class).cascadeOnUpdate(true);
-		dbConfig.objectClass(java.util.HashMap.class).cascadeOnDelete(true);
-		dbConfig.objectClass(java.util.HashMap.class).cascadeOnActivate(true);
+		/*
+		 * HashMap: don't enable cascade on update/delete/activate, db4o handles this
+		 * internally through the TMap translator.
+		 */
 		/** Maybe we want a different query evaluation mode?
 		 * At the moment, a big splitfile insert will result in one SingleBlockInserter
 		 * for every key, which means one RegisterMe for each ... this results in a long pause
