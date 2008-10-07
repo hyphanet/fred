@@ -88,6 +88,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		this.strongPRNG = strongPRNG;
 		this.weakPRNG = weakPRNG;
 		fg.init(dir, prefix, weakPRNG);
+		bucketsToFree = new LinkedList<Bucket>();
 	}
 	
 	public void register(File file) {
