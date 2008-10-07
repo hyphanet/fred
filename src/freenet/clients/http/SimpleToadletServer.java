@@ -47,6 +47,11 @@ import freenet.support.api.LongCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.ArrayBucketFactory;
 
+/** 
+ * The Toadlet (HTTP) Server
+ * 
+ * Provide a HTTP server for FProxy
+ */
 public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	
 	private static class ToadletElement {
@@ -595,6 +600,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	public Toadlet findToadlet(URI uri) throws PermanentRedirectException {
 		String path = uri.getPath();
 
+		// Show the wizard until dismissed by the user (See bug #2624)
 		if(!fproxyHasCompletedWizard) {
 			if(!(path.startsWith(FirstTimeWizardToadlet.TOADLET_URL) ||
 				path.startsWith(StaticToadlet.ROOT_URL)))
