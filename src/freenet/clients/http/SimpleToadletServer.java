@@ -6,22 +6,13 @@ package freenet.clients.http;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.JarURLConnection;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 
 import freenet.clients.http.PageMaker.THEME;
 import freenet.clients.http.bookmark.BookmarkManager;
@@ -332,46 +323,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		boolean enabled = fproxyConfig.getBoolean("enabled");
 		
-		List<String> themes = new ArrayList<String>();
-		try {
-			URL url = getClass().getResource("staticfiles/themes/");
-			URLConnection urlConnection = url.openConnection();
-			if (url.getProtocol().equals("file")) {
-				File themesDirectory = new File(URLDecoder.decode(url.getPath(), "ISO-8859-1").replaceAll("\\|", ":"));
-				File[] themeDirectories = themesDirectory.listFiles();
-				for (int themeIndex = 0; (themeDirectories != null) && (themeIndex < themeDirectories.length); themeIndex++) {
-					File themeDirectory = themeDirectories[themeIndex];
-					if (themeDirectory.isDirectory() && !themeDirectory.getName().startsWith(".")) {
-						themes.add(themeDirectory.getName());
-					}
-				}	
-			} else if (urlConnection instanceof JarURLConnection) {
-				JarURLConnection jarUrlConnection = (JarURLConnection) urlConnection;
-				JarFile jarFile = jarUrlConnection.getJarFile();
-				Enumeration entries = jarFile.entries();
-				while (entries.hasMoreElements()) {
-					JarEntry entry = (JarEntry) entries.nextElement();
-					String name = entry.getName();
-					if (name.startsWith("freenet/clients/http/staticfiles/themes/")) {
-						name = name.substring("freenet/clients/http/staticfiles/themes/".length());
-						if (name.indexOf('/') != -1) {
-							String themeName = name.substring(0, name.indexOf('/'));
-							if (!themes.contains(themeName)) {
-								themes.add(themeName);
-							}
-						}
-					}
-				}
-			}
-		} catch (IOException ioe1) {
-			Logger.error(this, "error creating list of themes", ioe1);
-		} catch (NullPointerException npe) {
-			Logger.error(this, "error creating list of themes", npe);
-		} finally {
-			if (!themes.contains("clean")) {
-				themes.add("clean");
-			}
-		}
 		fproxyConfig.register("ssl", false, configItemOrder++, true, true, "SimpleToadletServer.ssl", "SimpleToadletServer.sslLong",
 				new FProxySSLCallback());
 		fproxyConfig.register("port", DEFAULT_FPROXY_PORT, configItemOrder++, true, true, "SimpleToadletServer.port", "SimpleToadletServer.portLong",
