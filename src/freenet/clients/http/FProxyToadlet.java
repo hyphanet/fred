@@ -330,8 +330,6 @@ public final class FProxyToadlet extends Toadlet {
 		
 		if (ks.equals("/")) {
 			if (httprequest.isParameterSet("key")) {
-				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-				
 				String k = httprequest.getParam("key");
 				FreenetURI newURI;
 				try {
@@ -344,12 +342,13 @@ public final class FProxyToadlet extends Toadlet {
 				
 				if(logMINOR) Logger.minor(this, "Redirecting to FreenetURI: "+newURI);
 				String type = httprequest.getParam("type");
+				String location;
 				if ((type != null) && (type.length() > 0)) {
-					headers.put("Location", "/"+newURI + "?type=" + type);
+					location =  "/"+newURI + "?type=" + type;
 				} else {
-					headers.put("Location", "/"+newURI);
+					location =  "/"+newURI;
 				}
-				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+				writeTemporaryRedirect(ctx, null, location);
 				return;
 			}
 			
@@ -387,14 +386,10 @@ public final class FProxyToadlet extends Toadlet {
 			this.writeTextReply(ctx, 200, "Ok", "User-agent: *\nDisallow: /");
 			return;
 		}else if(ks.startsWith("/darknet/")) { //TODO (pre-build 1045 url format) remove when obsolete
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/friends/");
-			ctx.sendReplyHeaders(301, "Permanent Redirect", headers, null, 0);
+			writePermanentRedirect(ctx, "obsoleted", "/friends/");
 			return;
 		}else if(ks.startsWith("/opennet/")) { //TODO (pre-build 1045 url format) remove when obsolete
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/strangers/");
-			ctx.sendReplyHeaders(301, "Permanent Redirect", headers, null, 0);
+			writePermanentRedirect(ctx, "obsoleted", "/strangers/");
 			return;
 		}
 		
