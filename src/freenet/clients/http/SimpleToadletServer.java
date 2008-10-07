@@ -53,7 +53,8 @@ import freenet.support.io.ArrayBucketFactory;
  * Provide a HTTP server for FProxy
  */
 public final class SimpleToadletServer implements ToadletContainer, Runnable {
-	
+	/** List of urlPrefix / Toadlet */ 
+	private final LinkedList<ToadletElement> toadlets;
 	private static class ToadletElement {
 		public ToadletElement(Toadlet t2, String urlPrefix) {
 			t = t2;
@@ -63,31 +64,41 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		String prefix;
 	}
 
+	// Socket / Binding
 	private final int port;
 	private String bindTo;
 	private String allowedHosts;
-	private final AllowedHosts allowedFullAccess;
-	private BucketFactory bf;
 	private NetworkInterface networkInterface;
-	private final LinkedList<ToadletElement> toadlets;
+	private boolean ssl = false;
+	public static final int DEFAULT_FPROXY_PORT = 8888;
+	
+	// ACL
+	private final AllowedHosts allowedFullAccess;
+	
+	// Theme 
 	private THEME cssTheme;
 	private File cssOverride;
-	private Thread myThread;
 	private boolean advancedModeEnabled;
-	private boolean ssl = false;
-	private volatile boolean fProxyJavascriptEnabled;
-	private volatile boolean fproxyHasCompletedWizard;
 	private final PageMaker pageMaker;
-	private NodeClientCore core;
+	
+	// Control
+	private Thread myThread;
 	private final Executor executor;
+	private BucketFactory bf;
+	private NodeClientCore core;
+	
+	// HTTP Option
 	private boolean doRobots;
-	public BookmarkManager bookmarkManager;
 	private boolean enablePersistentConnections;
 	private boolean enableInlinePrefetch;
 	
-	static boolean isPanicButtonToBeShown;
-	public static final int DEFAULT_FPROXY_PORT = 8888;
+	// Something does not really belongs to here
+	static boolean isPanicButtonToBeShown;				// move to QueueToadlet ?
+	public BookmarkManager bookmarkManager;				// move to WelcomeToadlet / BookmarkEditorToadlet ?
+	private volatile boolean fProxyJavascriptEnabled;	// ugh?
+	private volatile boolean fproxyHasCompletedWizard;	// hmmm..
 	
+	// Config Callbacks
 	private class FProxySSLCallback extends BooleanCallback  {
 		@Override
 		public Boolean get() {
@@ -162,7 +173,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			}
 		}
 	}
-	
 	private class FProxyAllowedHostsCallback extends StringCallback  {
 		@Override
 		public String get() {
@@ -176,7 +186,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			}
 		}
 	}
-	
 	private class FProxyCSSNameCallback extends StringCallback implements EnumerableOptionCallback {
 		@Override
 		public String get() {
@@ -197,7 +206,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			return THEME.possibleValues;
 		}
 	}
-	
 	private class FProxyCSSOverrideCallback extends StringCallback  {
 		@Override
 		public String get() {
@@ -220,7 +228,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			pageMaker.setOverride(cssOverride);
 		}
 	}
-	
 	private class FProxyEnabledCallback extends BooleanCallback  {
 		@Override
 		public Boolean get() {
@@ -247,26 +254,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			myThread.start();
 		}
 	}
-	
-	private boolean haveCalledFProxy = false;
-	
-	public void createFproxy() {
-		synchronized(this) {
-			if(haveCalledFProxy) return;
-			haveCalledFProxy = true;
-		}
-		bookmarkManager = new BookmarkManager(core);
-		try {
-			FProxyToadlet.maybeCreateFProxyEtc(core, core.node, core.node.config, this, bookmarkManager);
-		} catch (IOException e) {
-			Logger.error(this, "Could not start fproxy: "+e, e);
-			System.err.println("Could not start fproxy:");
-			e.printStackTrace();
-		}
-	}
-	
 	private static class FProxyAdvancedModeEnabledCallback extends BooleanCallback  {
-		
 		private final SimpleToadletServer ts;
 		
 		FProxyAdvancedModeEnabledCallback(SimpleToadletServer ts){
@@ -285,7 +273,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				ts.enableAdvancedMode(val);
 		}
 	}
-	
 	private static class FProxyJavascriptEnabledCallback extends BooleanCallback  {
 		
 		private final SimpleToadletServer ts;
@@ -306,6 +293,25 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				ts.enableFProxyJavascript(val);
 		}
 	}
+	
+	private boolean haveCalledFProxy = false;
+	
+	public void createFproxy() {
+		synchronized(this) {
+			if(haveCalledFProxy) return;
+			haveCalledFProxy = true;
+		}
+		bookmarkManager = new BookmarkManager(core);
+		try {
+			FProxyToadlet.maybeCreateFProxyEtc(core, core.node, core.node.config, this, bookmarkManager);
+		} catch (IOException e) {
+			Logger.error(this, "Could not start fproxy: "+e, e);
+			System.err.println("Could not start fproxy:");
+			e.printStackTrace();
+		}
+	}
+	
+
 	
 	public synchronized void setCore(NodeClientCore core) {
 		this.core = core;
