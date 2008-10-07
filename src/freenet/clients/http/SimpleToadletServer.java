@@ -488,9 +488,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		StaticToadlet statictoadlet = new StaticToadlet();
 		register(statictoadlet, "/static/", false, false);
 		
+		// "Freenet is starting up..." page, to be removed at #removeStartupToadlet()
 		startupToadlet = new StartupToadlet(statictoadlet);
 		register(startupToadlet, "/", false, false);
-		
 	}
 	
 	public StartupToadlet startupToadlet;

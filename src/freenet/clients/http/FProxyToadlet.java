@@ -386,12 +386,12 @@ public final class FProxyToadlet extends Toadlet {
 		}else if(ks.equals("/robots.txt") && ctx.doRobots()){
 			this.writeTextReply(ctx, 200, "Ok", "User-agent: *\nDisallow: /");
 			return;
-		}else if(ks.startsWith("/darknet/")) { //TODO: remove when obsolete
+		}else if(ks.startsWith("/darknet/")) { //TODO (pre-build 1045 url format) remove when obsolete
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(301, "Permanent Redirect", headers, null, 0);
 			return;
-		}else if(ks.startsWith("/opennet/")) { //TODO: remove when obsolete
+		}else if(ks.startsWith("/opennet/")) { //TODO (pre-build 1045 url format) remove when obsolete
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/strangers/");
 			ctx.sendReplyHeaders(301, "Permanent Redirect", headers, null, 0);
