@@ -385,10 +385,10 @@ public final class FProxyToadlet extends Toadlet {
 		}else if(ks.equals("/robots.txt") && ctx.doRobots()){
 			this.writeTextReply(ctx, 200, "Ok", "User-agent: *\nDisallow: /");
 			return;
-		}else if(ks.startsWith("/darknet/")) { //TODO (pre-build 1045 url format) remove when obsolete
+		}else if(ks.startsWith("/darknet/") || ks.equals("/darknet")) { //TODO (pre-build 1045 url format) remove when obsolete
 			writePermanentRedirect(ctx, "obsoleted", "/friends/");
 			return;
-		}else if(ks.startsWith("/opennet/")) { //TODO (pre-build 1045 url format) remove when obsolete
+		}else if(ks.startsWith("/opennet/") || ks.equals("/opennet")) { //TODO (pre-build 1045 url format) remove when obsolete
 			writePermanentRedirect(ctx, "obsoleted", "/strangers/");
 			return;
 		}
