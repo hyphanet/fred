@@ -109,7 +109,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(logMINOR) Logger.minor(this, "Completed "+this);
 			if(persistent) {
 				container.activate(SimpleManifestPutter.this, 1);
-				container.activate(runningPutHandlers, 1);
+				container.activate(runningPutHandlers, 2);
 			}
 			SimpleManifestPutter.this.onFetchable(this, container);
 			synchronized(SimpleManifestPutter.this) {
@@ -117,6 +117,19 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				if(persistent)
 					container.store(runningPutHandlers);
 				if(!runningPutHandlers.isEmpty()) {
+					if(logMINOR) {
+						Logger.minor(this, "Running put handlers: "+runningPutHandlers.size());
+//						for(Object o : runningPutHandlers) {
+//							boolean activated = true;
+//							if(persistent) {
+//								activated = container.ext().isActive(o);
+//								if(!activated) container.activate(o, 1);
+//							}
+//							Logger.minor(this, "Still running: "+o);
+//							if(!activated)
+//								container.deactivate(o, 1);
+//						}
+					}
 					return;
 				}
 			}
