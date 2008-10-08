@@ -172,7 +172,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			metadata = m;
 			if(persistent) {
 				container.activate(SimpleManifestPutter.this, 1);
-				container.activate(putHandlersWaitingForMetadata, 1);
+				container.activate(putHandlersWaitingForMetadata, 2);
 			}
 			synchronized(SimpleManifestPutter.this) {
 				putHandlersWaitingForMetadata.remove(this);
@@ -242,7 +242,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 			if(persistent) {
 				container.activate(SimpleManifestPutter.this, 1);
-				container.activate(waitingForBlockSets, 1);
+				container.activate(waitingForBlockSets, 2);
 			}
 			synchronized(SimpleManifestPutter.this) {
 				waitingForBlockSets.remove(this);
@@ -438,7 +438,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	private void gotAllMetadata(ObjectContainer container, ClientContext context) {
 		if(persistent()) {
-			container.activate(putHandlersByName, 1);
+			container.activate(putHandlersByName, 2);
 		}
 		if(logMINOR) Logger.minor(this, "Got all metadata");
 		HashMap namesToByteArrays = new HashMap();
@@ -786,6 +786,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	public void onBlockSetFinished(ClientPutState state, ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			this.metadataBlockSetFinalized = true;
+			if(persistent())
+				container.activate(waitingForBlockSets, 2);
 			if(!waitingForBlockSets.isEmpty()) {
 				if(persistent())
 					container.store(this);
@@ -801,6 +803,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	public void blockSetFinalized(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
 			if(!metadataBlockSetFinalized) return;
+			if(persistent())
+				container.activate(waitingForBlockSets, 2);
 			if(waitingForBlockSets.isEmpty()) return;
 		}
 		super.blockSetFinalized(container, context);
@@ -903,8 +907,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 	protected void onFetchable(PutHandler handler, ObjectContainer container) {
 		if(persistent()) {
-			container.activate(putHandlersWaitingForFetchable, 1);
-			container.activate(metadataPuttersUnfetchable, 1);
+			container.activate(putHandlersWaitingForFetchable, 2);
+			container.activate(metadataPuttersUnfetchable, 2);
 			container.activate(cb, 1);
 		}
 		synchronized(this) {
@@ -926,8 +930,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		Metadata m = (Metadata) state.getToken();
 		if(persistent()) {
 			container.activate(m, 100);
-			container.activate(metadataPuttersUnfetchable, 1);
-			container.activate(putHandlersWaitingForFetchable, 1);
+			container.activate(metadataPuttersUnfetchable, 2);
+			container.activate(putHandlersWaitingForFetchable, 2);
 			container.activate(cb, 1);
 		}
 		synchronized(this) {
