@@ -252,6 +252,8 @@ public class ClientPutDir extends ClientPutBase {
 	
 	@SuppressWarnings("unchecked")
 	private void freeData(HashMap<String, Object> manifestElements, ObjectContainer container) {
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(manifestElements, 1);
 		Iterator i = manifestElements.values().iterator();
 		while(i.hasNext()) {
 			Object o = i.next();
