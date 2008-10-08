@@ -285,6 +285,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 
 	private void trySendGeneratedURIMessage(FCPConnectionOutputHandler handler, ObjectContainer container) {
 		FCPMessage msg;
+		if(persistenceType == PERSIST_FOREVER)
+			container.activate(client, 1);
 		synchronized(this) {
 			msg = new URIGeneratedMessage(generatedURI, identifier, client.isGlobalQueue);
 		}
