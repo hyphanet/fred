@@ -171,6 +171,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 			metadata = m;
 			if(persistent) {
+				container.activate(SimpleManifestPutter.this, 1);
 				container.activate(putHandlersWaitingForMetadata, 1);
 			}
 			synchronized(SimpleManifestPutter.this) {
@@ -179,7 +180,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					container.store(putHandlersWaitingForMetadata);
 					container.store(this);
 				}
-				if(!putHandlersWaitingForMetadata.isEmpty()) return;
+				if(!putHandlersWaitingForMetadata.isEmpty()) {
+					if(logMINOR)
+						Logger.minor(this, "Still waiting for metadata: "+putHandlersWaitingForMetadata.size());
+					return;
+				}
 			}
 			if(persistent) {
 				container.activate(SimpleManifestPutter.this, 1);
