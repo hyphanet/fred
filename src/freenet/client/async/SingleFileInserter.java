@@ -201,6 +201,10 @@ class SingleFileInserter implements ClientPutState {
 		// Compressed data
 		
 		if(parent == cb) {
+			if(persistent) {
+				container.activate(ctx, 1);
+				container.activate(ctx.eventProducer, 1);
+			}
 			ctx.eventProducer.produceEvent(new FinishedCompressionEvent(bestCodec == null ? -1 : bestCodec.codecNumberForMetadata(), origSize, data.size()), container, context);
 			if(logMINOR) Logger.minor(this, "Compressed "+origSize+" to "+data.size()+" on "+this);
 		}
@@ -220,6 +224,8 @@ class SingleFileInserter implements ClientPutState {
 				// Just insert it
 				ClientPutState bi =
 					createInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true, true, container, context);
+				if(logMINOR)
+					Logger.minor(this, "Inserting without metadata: "+bi+" for "+this);
 				cb.onTransition(this, bi, container);
 				bi.schedule(container, context);
 				cb.onBlockSetFinished(this, container, context);
@@ -237,6 +243,8 @@ class SingleFileInserter implements ClientPutState {
 			// Insert single block, then insert pointer to it
 			if(reportMetadataOnly) {
 				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token, container, context, persistent);
+				if(logMINOR)
+					Logger.minor(this, "Inserting with metadata: "+dataPutter+" for "+this);
 				Metadata meta = makeMetadata(dataPutter.getURI(container, context));
 				cb.onMetadata(meta, this, container, context);
 				cb.onTransition(this, dataPutter, container);
@@ -246,6 +254,8 @@ class SingleFileInserter implements ClientPutState {
 				MultiPutCompletionCallback mcb = 
 					new MultiPutCompletionCallback(cb, parent, token);
 				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token, container, context, persistent);
+				if(logMINOR)
+					Logger.minor(this, "Inserting data: "+dataPutter+" for "+this);
 				Metadata meta = makeMetadata(dataPutter.getURI(container, context));
 				Bucket metadataBucket;
 				try {
@@ -259,6 +269,8 @@ class SingleFileInserter implements ClientPutState {
 					throw new InsertException(InsertException.INTERNAL_ERROR, "Got MetadataUnresolvedException in SingleFileInserter: "+e.toString(), null);
 				}
 				ClientPutState metaPutter = createInserter(parent, metadataBucket, (short) -1, block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly, true, false, container, context);
+				if(logMINOR)
+					Logger.minor(this, "Inserting metadata: "+metaPutter+" for "+this);
 				mcb.addURIGenerator(metaPutter, container);
 				mcb.add(dataPutter, container);
 				cb.onTransition(this, mcb, container);
@@ -285,6 +297,8 @@ class SingleFileInserter implements ClientPutState {
 		// metadata insert has finished too, tell the master callback.
 		if(reportMetadataOnly) {
 			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData, persistent, container, context);
+			if(logMINOR)
+				Logger.minor(this, "Inserting as splitfile: "+sfi+" for "+this);
 			cb.onTransition(this, sfi, container);
 			sfi.start(container, context);
 			if(earlyEncode) sfi.forceEncode(container, context);
@@ -292,6 +306,8 @@ class SingleFileInserter implements ClientPutState {
 			SplitHandler sh = new SplitHandler();
 			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData, persistent, container, context);
 			sh.sfi = sfi;
+			if(logMINOR)
+				Logger.minor(this, "Inserting as splitfile: "+sfi+" for "+sh+" for "+this);
 			if(persistent)
 				container.store(sh);
 			cb.onTransition(this, sh, container);
@@ -315,6 +331,8 @@ class SingleFileInserter implements ClientPutState {
 		boolean dontCompress = ctx.dontCompress;
 		
 		long origSize = data.size();
+		if(persistent)
+			container.activate(block.desiredURI, 5);
 		String type = block.desiredURI.getKeyType();
 		if(type.equals("SSK") || type.equals("KSK") || type.equals("USK")) {
 			blockSize = SSKBlock.DATA_LENGTH;
