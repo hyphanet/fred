@@ -43,6 +43,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		this.maxRetries = maxRetries;
 		this.key = key;
 		this.ctx = ctx;
+		if(ctx == null) throw new NullPointerException();
+		if(key == null) throw new NullPointerException();
 		cooldownWakeupTime = -1;
 	}
 
