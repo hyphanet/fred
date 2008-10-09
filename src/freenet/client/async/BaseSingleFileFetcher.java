@@ -329,7 +329,8 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if(finished) return null;
 		Key newKey = key.getNodeKey().cloneKey();
 		short prio = parent.getPriorityClass();
-		KeyListener ret = new SingleKeyListener(newKey, this, !ctx.cacheLocalRequests, prio, persistent);
+		boolean dontCache = !ctx.cacheLocalRequests;
+		KeyListener ret = new SingleKeyListener(newKey, this, dontCache, prio, persistent);
 		if(persistent) {
 			container.deactivate(key, 5);
 			container.deactivate(parent, 1);
