@@ -232,7 +232,6 @@ class SingleFileInserter implements ClientPutState {
 				started = true;
 				if(persistent) {
 					container.store(this);
-					container.deactivate(cb, 1);
 					if(!parentWasActive)
 						container.deactivate(parent, 1);
 				}
