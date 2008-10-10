@@ -138,6 +138,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			shouldSend = (resultingURI == null);
 			resultingURI = block.getClientKey().getURI();
 		}
+		if(logMINOR)
+			Logger.minor(this, "Encoded "+resultingURI+" for "+this+" shouldSend="+shouldSend+" dontSendEncoded="+dontSendEncoded);
 		if(shouldSend && !dontSendEncoded)
 			cb.onEncode(block.getClientKey(), this, container, context);
 		if(shouldSend && persistent)
@@ -324,6 +326,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			container.store(this);
 		}
 		parent.completedBlock(false, container, context);
+		if(logMINOR) Logger.minor(this, "Calling onSuccess for "+cb);
 		cb.onSuccess(this, container, context);
 	}
 

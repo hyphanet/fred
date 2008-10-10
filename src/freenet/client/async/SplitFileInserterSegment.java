@@ -615,6 +615,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		ClientCHK key = (ClientCHK) k;
 		SingleBlockInserter sbi = (SingleBlockInserter) state;
 		int x = sbi.token;
+		if(logMINOR) Logger.minor(this, "Encoded block "+x+" on "+this+" : "+sbi);
 		synchronized (this) {
 			if (finished)
 				return;
@@ -632,6 +633,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			blocksGotURI++;
 			if(persistent)
 				container.store(this);
+			if(logMINOR)
+				Logger.minor(this, "Blocks got URI: "+blocksGotURI+" of "+(dataBlocks.length + checkBlocks.length));
 			if (blocksGotURI != dataBlocks.length + checkBlocks.length)
 				return;
 			// Double check
