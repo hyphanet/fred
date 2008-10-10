@@ -63,7 +63,6 @@ import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
 import freenet.support.PrioritizedSerialExecutor;
-import freenet.support.SerialExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.Bucket;
@@ -301,7 +300,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 						0, 2, 1, 0, 0, new SimpleEventProducer(),
 						!Node.DONT_CACHE_LOCAL_REQUESTS), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
-		clientContext = new ClientContext(this, fecQueue, clientDatabaseExecutor, backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, node.getTicker(), persistentFilenameGenerator, persistentFilenameGenerator);
+		clientContext = new ClientContext(this, fecQueue, node.executor, backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, node.getTicker(), persistentFilenameGenerator, persistentFilenameGenerator);
 		storeChecker.setContext(clientContext);
 		
 		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext);
