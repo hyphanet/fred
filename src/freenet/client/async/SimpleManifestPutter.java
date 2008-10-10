@@ -499,8 +499,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(hasResolvedBase) return;
 			hasResolvedBase = true;
 		}
-		if(persistent())
+		if(persistent()) {
 			container.store(this);
+			container.activate(elementsToPutInZip, 2);
+		}
 		InsertBlock block;
 		boolean isMetadata = true;
 		boolean insertAsArchiveManifest = false;
@@ -519,9 +521,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				ZipOutputStream zos = new ZipOutputStream(os);
 				ZipEntry ze;
 				
-				if(persistent()) {
-					container.activate(elementsToPutInZip, 2);
-				}
 				for(Iterator i=elementsToPutInZip.iterator();i.hasNext();) {
 					PutHandler ph = (PutHandler) i.next();
 					ze = new ZipEntry(ph.targetInZip);
@@ -571,11 +570,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 			this.metadataPuttersByMetadata.put(baseMetadata, metadataInserter);
 			metadataPuttersUnfetchable.put(baseMetadata, metadataInserter);
-			metadataInserter.start(null, container, context);
 			if(persistent()) {
 				container.store(metadataPuttersByMetadata);
 				container.store(metadataPuttersUnfetchable);
 			}
+			metadataInserter.start(null, container, context);
 		} catch (InsertException e) {
 			fail(e, container);
 		}
