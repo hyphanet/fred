@@ -586,24 +586,24 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				RegisterMe reg = (RegisterMe) registerMeSet.next();
 				container.activate(reg, 1);
 				if(reg.bootID == context.bootID) {
-					if(logMINOR) Logger.minor(this, "Not registering block as was added to the queue");
+					if(logMINOR) Logger.minor(this, "Not registering block "+reg+" as was added to the queue");
 					continue;
 				}
 				// FIXME remove the leftover/old core handling at some point, an NPE is acceptable long-term.
 				if(reg.core != ClientRequestSchedulerCore.this) {
 					if(reg.core == null) {
-						Logger.error(this, "Leftover RegisterMe: core already deleted. THIS IS AN ERROR unless you have seen \"Old core not active\" messages before this point.");
+						Logger.error(this, "Leftover RegisterMe "+reg+" : core already deleted. THIS IS AN ERROR unless you have seen \"Old core not active\" messages before this point.");
 						container.delete(reg);
 						continue;
 					}
 					if(!container.ext().isActive(reg.core)) {
-						Logger.error(this, "Old core not active in RegisterMe - duplicated cores????");
+						Logger.error(this, "Old core not active in RegisterMe "+reg+" - duplicated cores????");
 						container.delete(reg.core);
 						container.delete(reg);
 						continue;
 					}
 					if(logMINOR)
-						Logger.minor(this, "Ignoring RegisterMe as doesn't belong to me: my insert="+isInsertScheduler+" my ssk="+isSSKScheduler+" his insert="+reg.core.isInsertScheduler+" his ssk="+reg.core.isSSKScheduler);
+						Logger.minor(this, "Ignoring RegisterMe "+reg+" as doesn't belong to me: my insert="+isInsertScheduler+" my ssk="+isSSKScheduler+" his insert="+reg.core.isInsertScheduler+" his ssk="+reg.core.isSSKScheduler);
 					container.deactivate(reg, 1);
 					continue; // Don't delete.
 				}
