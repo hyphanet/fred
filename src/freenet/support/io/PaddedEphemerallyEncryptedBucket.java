@@ -6,8 +6,6 @@ package freenet.support.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.ref.WeakReference;
-import java.util.Random;
 import java.util.Random;
 
 import org.spaceroots.mantissa.random.MersenneTwister;
@@ -32,7 +30,6 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 
 	private final Bucket bucket;
 	private final int minPaddedSize;
-	private transient WeakReference<Rijndael> aesRef;
 	/** The decryption key. */
 	private final byte[] key;
 	private final byte[] randomSeed;
@@ -323,17 +320,12 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 
 	private synchronized Rijndael getRijndael() {
 		Rijndael aes;
-		if(aesRef != null) {
-			aes = aesRef.get();
-			if(aes != null) return aes;
-		}
 		try {
 			aes = new Rijndael(256, 256);
 		} catch (UnsupportedCipherException e) {
 			throw new Error(e);
 		}
 		aes.initialize(key);
-		aesRef = new WeakReference<Rijndael>(aes);
 		return aes;
 	}
 
@@ -412,6 +404,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	}
 	
 	public void objectOnActivate(ObjectContainer container) {
+		Logger.minor(this, "Activating "+super.toString()+" bucket == null = "+(bucket == null));
 		// Cascading activation of dependancies
 		container.activate(bucket, 1);
 	}
