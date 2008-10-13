@@ -617,7 +617,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					}else if(sortBy.equals("size")){
 						result = (firstRequest.getTotalBlocks() - secondRequest.getTotalBlocks()) < 0 ? -1 : 1;
 					}else if(sortBy.equals("progress")){
-						result = firstRequest.getSuccessFraction() - secondRequest.getSuccessFraction() < 0 ? -1 : 1;
+						result = (firstRequest.getFetchedBlocks() / firstRequest.getMinBlocks() - secondRequest.getFetchedBlocks() / secondRequest.getMinBlocks()) < 0 ? -1 : 1;
 					}else
 						isSet=false;
 				}else
