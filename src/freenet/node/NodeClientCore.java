@@ -60,6 +60,7 @@ import freenet.store.KeyCollisionException;
 import freenet.support.Base64;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.MutableBoolean;
 import freenet.support.OOMHandler;
 import freenet.support.OOMHook;
 import freenet.support.PrioritizedSerialExecutor;
@@ -86,6 +87,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	public final ArchiveManager archiveManager;
 	public final RequestStarterGroup requestStarters;
 	private final HealingQueue healingQueue;
+	public final NodeRestartJobsQueue restartJobsQueue;
 	/** Must be included as a hidden field in order for any dangerous HTTP operation to complete successfully. */
 	public final String formPassword;
 	File downloadDir;
@@ -136,6 +138,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	 * of them, so only cache a small number of them */
 	private static final int FEC_QUEUE_CACHE_SIZE = 20;
 	private UserAlert startingUpAlert;
+	private DBJob[] startupDatabaseJobs;
 
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, ObjectContainer container) throws NodeInitException {
 		this.node = node;
@@ -150,6 +153,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		this.formPassword = Base64.encode(pwdBuf);
 		alerts = new UserAlertManager(this);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		restartJobsQueue = NodeRestartJobsQueue.init(node.nodeDBHandle, container);
+		startupDatabaseJobs = restartJobsQueue.getRestartDatabaseJobs(container);
 
 		persister = new ConfigurablePersister(this, nodeConfig, "clientThrottleFile", "client-throttle.dat", sortOrder++, true, false,
 			"NodeClientCore.fileForClientStats", "NodeClientCore.fileForClientStatsLong", node.ps, nodeDir);
@@ -565,6 +570,21 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 				return NativeThread.LOW_PRIORITY;
 			}
 		}, "Startup completion thread");
+		
+		queue(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				for(int i=0;i<startupDatabaseJobs.length;i++) {
+					try {
+						startupDatabaseJobs[i].run(container, context);
+					} catch (Throwable t) {
+						Logger.error(this, "Caught "+t+" in startup job "+startupDatabaseJobs[i], t);
+					}
+				}
+				startupDatabaseJobs = null;
+			}
+			
+		}, NativeThread.HIGH_PRIORITY, false);
 	}
 
 	public interface SimpleRequestSenderCompletionListener {
@@ -1366,5 +1386,44 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		}
 		System.err.println("Out of memory: Emergency shutdown to protect database integrity in progress...");
 		System.exit(NodeInitException.EXIT_OUT_OF_MEMORY_PROTECTING_DATABASE);
+	}
+
+	public void queueRestartJob(DBJob job, int priority, ObjectContainer container) {
+		restartJobsQueue.queueRestartJob(job, priority, container);
+	}
+
+	public void removeRestartJob(DBJob job, int priority, ObjectContainer container) {
+		restartJobsQueue.removeRestartJob(job, priority, container);
+	}
+
+	public void runBlocking(final DBJob job, int priority) {
+		if(clientDatabaseExecutor.onThread()) {
+			job.run(node.db, clientContext);
+		} else {
+			final MutableBoolean finished = new MutableBoolean();
+			queue(new DBJob() {
+
+				public void run(ObjectContainer container, ClientContext context) {
+					try {
+						job.run(container, context);
+					} finally {
+						synchronized(finished) {
+							finished.value = true;
+							finished.notifyAll();
+						}
+					}
+				}
+				
+			}, priority, false);
+			synchronized(finished) {
+				while(!finished.value) {
+					try {
+						finished.wait();
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+				}
+			}
+		}
 	}
 }

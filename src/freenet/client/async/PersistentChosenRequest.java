@@ -204,8 +204,9 @@ public class PersistentChosenRequest {
 				container.commit(); // db4o is read-committed, so we need to commit here.
 			}
 		} else /*if(request instanceof SendableInsert)*/ {
+			container.activate(request, 1);
 			for(PersistentChosenBlock block : finishedBlocks) {
-				container.activate(request, 1);
+				container.activate(block, 1);
 				if(block.insertSucceeded()) {
 					((SendableInsert)request).onSuccess(block.token, container, context);
 					container.commit(); // db4o is read-committed, so we need to commit here.

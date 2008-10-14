@@ -169,8 +169,10 @@ public class ClientGetter extends BaseClientGetter {
 				Logger.minor(this, "client.async returned data in returnBucket");
 		}
 		FetchResult res = result;
-		if(persistent())
+		if(persistent()) {
 			container.store(this);
+			container.activate(clientCallback, 1);
+		}
 		clientCallback.onSuccess(res, ClientGetter.this, container);
 	}
 
