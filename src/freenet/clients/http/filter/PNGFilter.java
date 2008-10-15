@@ -83,7 +83,7 @@ public class PNGFilter implements ContentDataFilter {
 			return output;
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Need to modify PNG...");
-		Bucket filtered = bf.makeBucket(data.size());
+		Bucket filtered = bf.makeBucket(-1);
 		OutputStream os = new BufferedOutputStream(filtered.getOutputStream());
 		try {
 			readFilter(data, bf, charset, otherParams, cb, deleteText, deleteTimestamp, checkCRCs, os);

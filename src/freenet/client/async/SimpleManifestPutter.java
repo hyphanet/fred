@@ -516,7 +516,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				// FIXME support formats other than .zip.
 				// Only the *decoding* is generic at present.
 				
-				Bucket zipBucket = context.getBucketFactory(persistent()).makeBucket(baseMetadata.dataLength());
+				Bucket zipBucket = context.getBucketFactory(persistent()).makeBucket(-1);
 				OutputStream os = new BufferedOutputStream(zipBucket.getOutputStream());
 				ZipOutputStream zos = new ZipOutputStream(os);
 				ZipEntry ze;

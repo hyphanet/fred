@@ -36,7 +36,7 @@ public class CSSReadFilter implements ContentDataFilter, CharsetExtractor {
 					+ ','
                         + charset);
 		InputStream strm = bucket.getInputStream();
-		Bucket temp = bf.makeBucket(bucket.size());
+		Bucket temp = bf.makeBucket(-1);
 		OutputStream os = temp.getOutputStream();
 		Reader r = null;
 		Writer w = null;
