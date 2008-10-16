@@ -245,7 +245,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		try {
 			File dir = new File(nodeConfig.getString("persistentTempDir"));
 			String prefix = "freenet-temp-";
-			persistentTempBucketFactory = PersistentTempBucketFactory.load(dir, prefix, random, node.fastWeakRandom, container, node.nodeDBHandle, nodeConfig.getBoolean("encryptPersistentTempBuckets"));
+			persistentTempBucketFactory = PersistentTempBucketFactory.load(dir, prefix, random, node.fastWeakRandom, container, node.nodeDBHandle, nodeConfig.getBoolean("encryptPersistentTempBuckets"), this);
 			persistentTempBucketFactory.init(dir, prefix, random, node.fastWeakRandom);
 			persistentFilenameGenerator = persistentTempBucketFactory.fg;
 		} catch(IOException e2) {
@@ -305,7 +305,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 						0, 2, 1, 0, 0, new SimpleEventProducer(),
 						!Node.DONT_CACHE_LOCAL_REQUESTS), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
-		clientContext = new ClientContext(this, fecQueue, node.executor, backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, node.getTicker(), persistentFilenameGenerator, persistentFilenameGenerator);
+		clientContext = new ClientContext(this, fecQueue, node.executor, backgroundBlockEncoder, archiveManager, tempBucketFactory, persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, node.getTicker(), persistentFilenameGenerator, persistentFilenameGenerator);
 		storeChecker.setContext(clientContext);
 		
 		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext);
