@@ -305,7 +305,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 						0, 2, 1, 0, 0, new SimpleEventProducer(),
 						!Node.DONT_CACHE_LOCAL_REQUESTS), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
-		clientContext = new ClientContext(this, fecQueue, node.executor, backgroundBlockEncoder, archiveManager, tempBucketFactory, persistentTempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, node.getTicker(), persistentFilenameGenerator, persistentFilenameGenerator);
+		clientContext = new ClientContext(this, fecQueue, node.executor, backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, node.getTicker(), persistentFilenameGenerator, persistentFilenameGenerator);
 		storeChecker.setContext(clientContext);
 		
 		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext);
@@ -576,6 +576,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			public void run(ObjectContainer container, ClientContext context) {
 				for(int i=0;i<startupDatabaseJobs.length;i++) {
 					try {
+						container.activate(startupDatabaseJobs[i], 1);
 						startupDatabaseJobs[i].run(container, context);
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t+" in startup job "+startupDatabaseJobs[i], t);
