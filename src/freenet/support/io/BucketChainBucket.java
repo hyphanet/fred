@@ -25,7 +25,7 @@ public class BucketChainBucket implements Bucket {
 	private boolean freed;
 	private boolean readOnly;
 	private final BucketFactory bf;
-	private final DBJobRunner dbJobRunner;
+	private transient DBJobRunner dbJobRunner;
 	private boolean stored;
 
 	/**
