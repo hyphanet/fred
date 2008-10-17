@@ -241,8 +241,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(persistent)
 					container.activate(dataBuckets[blockNo], 1);
 				dataBuckets[blockNo].setData(data);
-				if(persistent)
+				if(persistent) {
+					data.storeTo(container);
 					container.store(dataBuckets[blockNo]);
+				}
 			} else if(blockNo < checkKeys.length + dataKeys.length) {
 				blockNo -= dataKeys.length;
 				if(checkKeys[blockNo] == null) {
@@ -258,8 +260,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(persistent)
 					container.activate(checkBuckets[blockNo], 1);
 				checkBuckets[blockNo].setData(data);
-				if(persistent)
+				if(persistent) {
+					data.storeTo(container);
 					container.store(checkBuckets[blockNo]);
+				}
 			} else
 				Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
 			if(startedDecode) {
@@ -359,6 +363,12 @@ public class SplitFileFetcherSegment implements FECCallback {
 				for(int i=0;i<dataBuckets.length;i++) {
 					// The FECCodec won't set them.
 					// But they should be active.
+					if(!container.ext().isActive(dataBuckets[i]))
+						Logger.error(this, "Data block "+i+" is inactive!");
+					if(dataBuckets[i] == null)
+						Logger.error(this, "Data block "+i+" is null!");
+					else
+						dataBuckets[i].data.storeTo(container);
 					container.store(dataBuckets[i]);
 				}
 			}
@@ -460,6 +470,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 					queueHeal(data, context);
 				} else {
 					dataBuckets[i].data.free();
+					if(persistent)
+						dataBuckets[i].data.removeFrom(container);
 					dataBuckets[i].data = null;
 				}
 				dataBuckets[i] = null;
@@ -488,6 +500,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 					queueHeal(data, context);
 				} else {
 					data.free();
+					if(persistent)
+						data.removeFrom(container);
 				}
 				checkBuckets[i] = null;
 				checkKeys[i] = null;
