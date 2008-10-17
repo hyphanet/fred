@@ -14,7 +14,9 @@ import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Predicate;
 
+import freenet.client.async.DBJobRunner;
 import freenet.crypt.RandomSource;
+import freenet.keys.CHKBlock;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -46,9 +48,14 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	private final long nodeDBHandle;
 	
 	private volatile boolean encrypt;
+	
+	private final PersistentBlobTempBucketFactory blobFactory;
+	
+	static final int BLOB_SIZE = CHKBlock.DATA_LENGTH;
 
 	public PersistentTempBucketFactory(File dir, final String prefix, RandomSource strongPRNG, Random weakPRNG, boolean encrypt, long nodeDBHandle) throws IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		blobFactory = new PersistentBlobTempBucketFactory(BLOB_SIZE, nodeDBHandle, new File(dir, "persistent-blob.tmp"));
 		this.strongPRNG = strongPRNG;
 		this.nodeDBHandle = nodeDBHandle;
 		this.weakPRNG = weakPRNG;
@@ -121,7 +128,12 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	}
 
 	public Bucket makeBucket(long size) throws IOException {
-		PersistentTempFileBucket rawBucket = new PersistentTempFileBucket(fg.makeRandomFilename(), fg);
+		Bucket rawBucket = null;
+		if(size == BLOB_SIZE) {
+			rawBucket = blobFactory.makeBucket();
+		}
+		if(rawBucket == null)
+			rawBucket = new PersistentTempFileBucket(fg.makeRandomFilename(), fg);
 		Bucket maybeEncryptedBucket = (encrypt ? new PaddedEphemerallyEncryptedBucket(rawBucket, 1024, strongPRNG, weakPRNG) : rawBucket);
 		return new DelayedFreeBucket(this, maybeEncryptedBucket);
 	}
@@ -163,7 +175,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		return encrypt;
 	}
 
-	public static PersistentTempBucketFactory load(File dir, String prefix, RandomSource random, Random fastWeakRandom, ObjectContainer container, final long nodeDBHandle, boolean encrypt) throws IOException {
+	public static PersistentTempBucketFactory load(File dir, String prefix, RandomSource random, Random fastWeakRandom, ObjectContainer container, final long nodeDBHandle, boolean encrypt, DBJobRunner jobRunner) throws IOException {
 		ObjectSet<PersistentTempBucketFactory> results = container.query(new Predicate<PersistentTempBucketFactory>() {
 			public boolean match(PersistentTempBucketFactory factory) {
 				if(factory.nodeDBHandle == nodeDBHandle) return true;
@@ -175,9 +187,14 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			container.activate(factory, 5);
 			factory.init(dir, prefix, random, fastWeakRandom);
 			factory.setEncryption(encrypt);
+			factory.blobFactory.onInit(container, jobRunner, fastWeakRandom, new File(dir, "persistent-blob.tmp"), BLOB_SIZE);
 			return factory;
-		} else
-			return new PersistentTempBucketFactory(dir, prefix, random, fastWeakRandom, encrypt, nodeDBHandle);
+		} else {
+			PersistentTempBucketFactory factory =
+				new PersistentTempBucketFactory(dir, prefix, random, fastWeakRandom, encrypt, nodeDBHandle);
+			factory.blobFactory.onInit(container, jobRunner, fastWeakRandom, new File(dir, "persistent-blob.tmp"), BLOB_SIZE);
+			return factory;
+		}
 	}
 
 	public void setEncryption(boolean encrypt) {
