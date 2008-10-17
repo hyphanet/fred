@@ -391,7 +391,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 	}
 
 	public void storeTo(ObjectContainer container) {
-		container.store(bucket);
+		bucket.storeTo(container);
 		container.store(this);
 	}
 
