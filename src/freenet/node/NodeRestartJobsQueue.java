@@ -10,6 +10,7 @@ import com.db4o.query.Predicate;
 
 import freenet.client.async.DBJob;
 import freenet.support.Logger;
+import freenet.support.io.NativeThread;
 
 public class NodeRestartJobsQueue {
 	
@@ -17,7 +18,7 @@ public class NodeRestartJobsQueue {
 
 	public NodeRestartJobsQueue(long nodeDBHandle2) {
 		nodeDBHandle = nodeDBHandle2;
-		dbJobs = new Set[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
+		dbJobs = new Set[NativeThread.JAVA_PRIORITY_RANGE];
 		for(int i=0;i<dbJobs.length;i++)
 			dbJobs[i] = new HashSet<DBJob>();
 	}
@@ -83,7 +84,7 @@ public class NodeRestartJobsQueue {
 	
 	DBJob[] getRestartDatabaseJobs(ObjectContainer container) {
 		ArrayList<DBJob> list = new ArrayList<DBJob>();
-		for(int i=0;i<dbJobs.length;i++) {
+		for(int i=dbJobs.length-1;i>=0;i--) {
 			container.activate(dbJobs[i], 1);
 			list.addAll(dbJobs[i]);
 			dbJobs[i].clear();
