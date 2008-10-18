@@ -52,7 +52,7 @@ public class NodeRestartJobsQueue {
 	
 	public void queueRestartJob(DBJob job, int priority, ObjectContainer container) {
 		container.activate(dbJobs[priority], 1);
-		dbJobs[priority].add(job);
+		if(dbJobs[priority].add(job)) {
 		/*
 		 * Store to 1 hop only.
 		 * Otherwise db4o will update ALL the jobs on the queue to a depth of 3,
@@ -62,6 +62,7 @@ public class NodeRestartJobsQueue {
 		 * See http://tracker.db4o.com/browse/COR-1436
 		 */
 		container.ext().store(dbJobs[priority], 1);
+		}
 		container.deactivate(dbJobs[priority], 1);
 	}
 	
