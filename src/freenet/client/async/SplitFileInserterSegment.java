@@ -518,6 +518,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 						Logger.minor(this, "Skipping check block "+i+" - is null");
 					continue;
 				}
+				if(persistent)
+					checkBlocks[i].storeTo(container);
 				if(checkBlockInserters[i] != null) continue;
 				checkBlockInserters[i] = new SingleBlockInserter(parent.parent,
 						checkBlocks[i], (short) -1, FreenetURI.EMPTY_CHK_URI,
