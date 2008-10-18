@@ -50,7 +50,7 @@ public class NodeRestartJobsQueue {
 
 	private final Set<DBJob>[] dbJobs;
 	
-	public void queueRestartJob(DBJob job, int priority, ObjectContainer container) {
+	public synchronized void queueRestartJob(DBJob job, int priority, ObjectContainer container) {
 		container.activate(dbJobs[priority], 1);
 		if(dbJobs[priority].add(job)) {
 			/*
@@ -66,7 +66,7 @@ public class NodeRestartJobsQueue {
 		container.deactivate(dbJobs[priority], 1);
 	}
 	
-	public void removeRestartJob(DBJob job, int priority, ObjectContainer container) {
+	public synchronized void removeRestartJob(DBJob job, int priority, ObjectContainer container) {
 		boolean jobWasActive = container.ext().isActive(job);
 		if(!jobWasActive) container.activate(job, 1);
 		container.activate(dbJobs[priority], 1);
@@ -107,7 +107,7 @@ public class NodeRestartJobsQueue {
 		if(!jobWasActive) container.deactivate(job, 1);
 	}
 	
-	DBJob[] getRestartDatabaseJobs(ObjectContainer container) {
+	synchronized DBJob[] getRestartDatabaseJobs(ObjectContainer container) {
 		ArrayList<DBJob> list = new ArrayList<DBJob>();
 		for(int i=dbJobs.length-1;i>=0;i--) {
 			container.activate(dbJobs[i], 1);
