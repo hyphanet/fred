@@ -53,7 +53,15 @@ public class NodeRestartJobsQueue {
 	public void queueRestartJob(DBJob job, int priority, ObjectContainer container) {
 		container.activate(dbJobs[priority], 1);
 		dbJobs[priority].add(job);
-		container.store(dbJobs[priority]);
+		/*
+		 * Store to 1 hop only.
+		 * Otherwise db4o will update ALL the jobs on the queue to a depth of 3,
+		 * which in practice means all the buckets inside the BucketChainBucket's
+		 * linked by the BucketChainBucketKillTag's (adding new ones). This will
+		 * take ages and is in any case not what we want.
+		 * See http://tracker.db4o.com/browse/COR-1436
+		 */
+		container.ext().store(dbJobs[priority], 1);
 		container.deactivate(dbJobs[priority], 1);
 	}
 	
@@ -66,7 +74,15 @@ public class NodeRestartJobsQueue {
 			for(int i=0;i<dbJobs.length;i++) {
 				container.activate(dbJobs[priority], 1);
 				if(dbJobs[priority].remove(job)) {
-					container.store(dbJobs[priority]);
+					/*
+					 * Store to 1 hop only.
+					 * Otherwise db4o will update ALL the jobs on the queue to a depth of 3,
+					 * which in practice means all the buckets inside the BucketChainBucket's
+					 * linked by the BucketChainBucketKillTag's (adding new ones). This will
+					 * take ages and is in any case not what we want.
+					 * See http://tracker.db4o.com/browse/COR-1436
+					 */
+					container.ext().store(dbJobs[priority], 1);
 					found++;
 				}
 				container.deactivate(dbJobs[priority], 1);
@@ -76,7 +92,15 @@ public class NodeRestartJobsQueue {
 			else
 				Logger.error(this, "Job "+job+" not found when removing it");
 		} else {
-			container.store(dbJobs[priority]);
+			/*
+			 * Store to 1 hop only.
+			 * Otherwise db4o will update ALL the jobs on the queue to a depth of 3,
+			 * which in practice means all the buckets inside the BucketChainBucket's
+			 * linked by the BucketChainBucketKillTag's (adding new ones). This will
+			 * take ages and is in any case not what we want.
+			 * See http://tracker.db4o.com/browse/COR-1436
+			 */
+			container.ext().store(dbJobs[priority], 1);
 			container.deactivate(dbJobs[priority], 1);
 		}
 		if(!jobWasActive) container.deactivate(job, 1);
