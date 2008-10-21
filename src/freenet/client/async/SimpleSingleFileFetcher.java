@@ -103,6 +103,9 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		}
 		// :(
 		unregisterAll(container, context);
+		synchronized(this) {
+			finished = true;
+		}
 		if(e.isFatal() || forceFatal)
 			parent.fatallyFailedBlock(container, context);
 		else
