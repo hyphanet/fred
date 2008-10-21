@@ -329,8 +329,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		if(finished) return null;
 		Key newKey = key.getNodeKey().cloneKey();
 		short prio = parent.getPriorityClass();
-		//Why would ctx ever be null here!? If it is, lets assume you don't want to cache it. - TheSeeker
-		boolean dontCache = ctx == null ? true : !ctx.cacheLocalRequests;
+		boolean dontCache = !ctx.cacheLocalRequests;
 		KeyListener ret = new SingleKeyListener(newKey, this, dontCache, prio, persistent);
 		if(persistent) {
 			container.deactivate(key, 5);
