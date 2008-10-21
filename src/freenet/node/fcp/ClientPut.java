@@ -117,7 +117,7 @@ public class ClientPut extends ClientPutBase {
 		if(persistenceType != PERSIST_CONNECTION)
 			client.register(this, false);
 		Bucket tempData = data;
-		ClientMetadata cm = new ClientMetadata(mimeType, null);
+		ClientMetadata cm = new ClientMetadata(mimeType);
 		boolean isMetadata = false;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "data = "+tempData+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
@@ -200,7 +200,7 @@ public class ClientPut extends ClientPutBase {
 		if(persistenceType != PERSIST_CONNECTION)
 			client.register(this, false);
 		Bucket tempData = message.bucket;
-		ClientMetadata cm = new ClientMetadata(mimeType, null);
+		ClientMetadata cm = new ClientMetadata(mimeType);
 		boolean isMetadata = false;
 		if(logMINOR) Logger.minor(this, "data = "+tempData+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		if(uploadFrom == ClientPutMessage.UPLOAD_FROM_REDIRECT) {
@@ -292,7 +292,7 @@ public class ClientPut extends ClientPutBase {
 				throw new PersistenceParseException("Unknown UploadFrom: "+from);
 		}
 		
-		ClientMetadata cm = new ClientMetadata(mimeType, null);
+		ClientMetadata cm = new ClientMetadata(mimeType);
 		
 		boolean isMetadata = false;
 		

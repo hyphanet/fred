@@ -582,7 +582,7 @@ public class TextModeClientInterface implements Runnable {
             		mimeType = ""; // don't need to override it
             	
             	FileBucket fb = new FileBucket(f, true, false, false, false, false);
-            	InsertBlock block = new InsertBlock(fb, new ClientMetadata(mimeType, null), FreenetURI.EMPTY_CHK_URI);
+            	InsertBlock block = new InsertBlock(fb, new ClientMetadata(mimeType), FreenetURI.EMPTY_CHK_URI);
 
             	startTime = System.currentTimeMillis();
             	FreenetURI uri = client.insert(block, getCHKOnly, f.getName());

@@ -103,7 +103,7 @@ public class SplitFileInserter implements ClientPutState {
 		parent.onMajorProgress();
 	}
 
-	public SplitFileInserter(BaseClientPutter parent, PutCompletionCallback cb, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean metadata, Object token, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE bestCodec, SimpleFieldSet fs) throws ResumeException {
+	public SplitFileInserter(BaseClientPutter parent, PutCompletionCallback cb, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean metadata, Object token, ARCHIVE_TYPE archiveType, SimpleFieldSet fs) throws ResumeException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.parent = parent;
 		this.archiveType = archiveType;
@@ -146,14 +146,10 @@ public class SplitFileInserter implements ClientPutState {
 		} catch (NumberFormatException e) {
 			throw new ResumeException("Corrupt CheckSegmentSize: "+e+" : "+length);
 		}
-		if(bestCodec != null) {
-			compressionCodec = bestCodec;
-		} else {
 		String ccodec = fs.get("CompressionCodec");
-			if(ccodec == null)
-				throw new ResumeException("No compression codec");
-			compressionCodec = COMPRESSOR_TYPE.valueOf(ccodec);
-		}
+		if(ccodec == null)
+			throw new ResumeException("No compression codec");
+		compressionCodec = COMPRESSOR_TYPE.valueOf(ccodec);
 		String scodec = fs.get("SplitfileCodec");
 		if(scodec == null) throw new ResumeException("No splitfile codec");
 		try {

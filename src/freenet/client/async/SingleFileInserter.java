@@ -206,7 +206,6 @@ class SingleFileInserter implements ClientPutState {
 			if(logMINOR) Logger.minor(this, "The best compression algorithm is "+bestCodec+ " we have a "+origSize/compressedSize+" ratio! ("+origSize+'/'+compressedSize+')');
 			data = bestCompressedData;
 			shouldFreeData = true;
-			block.clientMetadata.setCompressorType(bestCodec);
 			compressorUsed = bestCodec;
 		}
 		
@@ -371,7 +370,7 @@ class SingleFileInserter implements ClientPutState {
 			if(sfiFS == null)
 				throw new ResumeException("No SplitFileInserter");
 			ClientPutState newSFI, newMetaPutter = null;
-			newSFI = new SplitFileInserter(parent, this, forceMetadata ? null : block.clientMetadata, ctx, getCHKOnly, meta, token, archiveType, compressorUsed, sfiFS);
+			newSFI = new SplitFileInserter(parent, this, forceMetadata ? null : block.clientMetadata, ctx, getCHKOnly, meta, token, archiveType, sfiFS);
 			if(logMINOR) Logger.minor(this, "Starting "+newSFI+" for "+this);
 			fs.removeSubset("SplitFileInserter");
 			SimpleFieldSet metaFS = fs.subset("MetadataPutter");
@@ -381,7 +380,7 @@ class SingleFileInserter implements ClientPutState {
 					if(type.equals("SplitFileInserter")) {
 						// FIXME insertAsArchiveManifest ?!?!?!
 						newMetaPutter = 
-							new SplitFileInserter(parent, this, null, ctx, getCHKOnly, true, token, archiveType, compressorUsed, metaFS);
+							new SplitFileInserter(parent, this, null, ctx, getCHKOnly, true, token, archiveType, metaFS);
 					} else if(type.equals("SplitHandler")) {
 						newMetaPutter = new SplitHandler();
 						((SplitHandler)newMetaPutter).start(metaFS, true);

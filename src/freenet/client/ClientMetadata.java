@@ -3,8 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client;
 
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
-
 /**
  * Stores the metadata that the client might actually be interested in.
  */
@@ -12,16 +10,13 @@ public class ClientMetadata implements Cloneable {
 	
 	/** The document MIME type */
 	private String mimeType;
-	private COMPRESSOR_TYPE compressor;
 
 	public ClientMetadata(){
 		mimeType = null;
-		compressor = null;
 	}
 
-	public ClientMetadata(String mime, COMPRESSOR_TYPE comp) {
+	public ClientMetadata(String mime) {
 		mimeType = (mime == null) ? null : mime.intern();
-		compressor = comp;
 	}
 	
 	/** Get the document MIME type. Will always be a valid MIME type, unless there
@@ -71,13 +66,5 @@ public class ClientMetadata implements Cloneable {
 			s = s.substring(i);
 		}
 		return s;
-	}
-	
-	public COMPRESSOR_TYPE getCompressorType() {
-		return compressor;
-}
-	
-	public void setCompressorType(COMPRESSOR_TYPE compressor) {
-		this.compressor = compressor;
 	}
 }

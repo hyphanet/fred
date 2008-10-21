@@ -305,7 +305,7 @@ public class WelcomeToadlet extends Toadlet {
             if (type == null) {
                 type = "text/plain";
             }
-            ClientMetadata contentType = new ClientMetadata(type, null);
+            ClientMetadata contentType = new ClientMetadata(type);
 
             Bucket bucket = request.getPart("filename");
 

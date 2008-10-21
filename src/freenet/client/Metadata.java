@@ -267,7 +267,7 @@ public class Metadata implements Cloneable {
 			extraMetadata = false; // can't parse, can't write
 		}
 		
-		clientMetadata = new ClientMetadata(mimeType, compressionCodec);
+		clientMetadata = new ClientMetadata(mimeType);
 		
 		if((!splitfile) && ((documentType == SIMPLE_REDIRECT) || (documentType == ARCHIVE_MANIFEST))) {
 			simpleRedirectKey = readKey(dis);
@@ -461,7 +461,7 @@ public class Metadata implements Cloneable {
 		documentType = SIMPLE_MANIFEST;
 		noMIME = true;
 		mimeType = null;
-		clientMetadata = new ClientMetadata(null,null);
+		clientMetadata = new ClientMetadata();
 		manifestEntries = new HashMap();
 		int count = 0;
 		for(Iterator i = dir.keySet().iterator();i.hasNext();) {
@@ -472,7 +472,7 @@ public class Metadata implements Cloneable {
 			if(o instanceof String) {
 				// Zip internal redirect
 				target = new Metadata(ARCHIVE_INTERNAL_REDIRECT, null, null, prefix+key,
-					new ClientMetadata(DefaultMIMETypes.guessMIMEType(key, false),null));
+					new ClientMetadata(DefaultMIMETypes.guessMIMEType(key, false)));
 			} else if(o instanceof HashMap) {
 				target = new Metadata((HashMap)o, prefix+key+"/");
 			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
@@ -922,7 +922,7 @@ public class Metadata implements Cloneable {
 	public void setArchiveManifest() {
 		ARCHIVE_TYPE type = ARCHIVE_TYPE.getArchiveType(clientMetadata.getMIMEType());
 		archiveType = type;
-		compressionCodec = clientMetadata.getCompressorType();
+		compressionCodec = null;
 		clientMetadata.clear();
 		documentType = ARCHIVE_MANIFEST;
 	}
