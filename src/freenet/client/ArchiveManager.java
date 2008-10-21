@@ -18,9 +18,11 @@ import freenet.support.Logger;
 import freenet.support.MutableBoolean;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.compress.Bzip2Compressor;
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
+import java.io.InputStream;
+import java.util.zip.GZIPInputStream;
 import org.apache.tools.bzip2.CBZip2InputStream;
 import org.apache.tools.tar.TarEntry;
 import org.apache.tools.tar.TarInputStream;
@@ -77,6 +79,13 @@ public class ArchiveManager {
 				for(String ctype : current.mimeTypes)
 					if(ctype.equalsIgnoreCase(type))
 						return current;
+			return null;
+		}
+		
+		public static ARCHIVE_TYPE getArchiveType(short type) {
+			for(ARCHIVE_TYPE current : values())
+				if(current.metadataID == type)
+					return current;
 			return null;
 		}
 		
@@ -155,12 +164,12 @@ public class ArchiveManager {
 	 * @param archiveType The archive type, defined in Metadata.
 	 * @return An archive handler. 
 	 */
-	public synchronized ArchiveHandler makeHandler(FreenetURI key, short archiveType, boolean returnNullIfNotFound, boolean forceRefetchArchive) {
+	public synchronized ArchiveHandler makeHandler(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, boolean returnNullIfNotFound, boolean forceRefetchArchive) {
 		ArchiveHandler handler = null;
 		if(!forceRefetchArchive) handler = getCached(key);
 		if(handler != null) return handler;
 		if(returnNullIfNotFound) return null;
-		handler = new ArchiveStoreContext(this, key, archiveType, forceRefetchArchive);
+		handler = new ArchiveStoreContext(this, key, archiveType, ctype, forceRefetchArchive);
 		putCached(key, handler);
 		return handler;
 	}
@@ -216,7 +225,7 @@ public class ArchiveManager {
 	 * @throws ArchiveRestartException If the request needs to be restarted because the archive
 	 * changed.
 	 */
-	public void extractToCache(FreenetURI key, short archiveType, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback) throws ArchiveFailureException, ArchiveRestartException {
+	public void extractToCache(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback) throws ArchiveFailureException, ArchiveRestartException {
 		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
@@ -249,21 +258,40 @@ public class ArchiveManager {
 		}
 		if(data.size() > archiveContext.maxArchiveSize)
 			throw new ArchiveFailureException("Archive too big ("+data.size()+" > "+archiveContext.maxArchiveSize+")!");
-		if(ARCHIVE_TYPE.ZIP.metadataID ==  archiveType)
-			handleZIPArchive(ctx, key, data, element, callback, gotElement, throwAtExit);
-		else if(ARCHIVE_TYPE.TAR.metadataID == archiveType)
-			handleTARArchive(ctx, key, data, element, callback, gotElement, throwAtExit);
+		
+		
+		InputStream is = null;
+		try {
+			if(ctype == null) {
+				if(logMINOR) Logger.minor(this, "No compression");
+				is = data.getInputStream();
+			} else if(ctype == COMPRESSOR_TYPE.BZIP2) {
+				if(logMINOR) Logger.minor(this, "dealing with BZIP2");
+				is = new CBZip2InputStream(data.getInputStream());
+			} else if(ctype == COMPRESSOR_TYPE.GZIP) {
+				if(logMINOR) Logger.minor(this, "dealing with GZIP");
+				is = new GZIPInputStream(data.getInputStream());
+			} else
+				throw new ArchiveFailureException("Unknown or unsupported compression algorithm "+ctype);
+
+			if(ARCHIVE_TYPE.ZIP == archiveType)
+				handleZIPArchive(ctx, key, is, element, callback, gotElement, throwAtExit);
+			else if(ARCHIVE_TYPE.TAR == archiveType)
+				handleTARArchive(ctx, key, is, element, callback, gotElement, throwAtExit);
 		else
-			throw new ArchiveFailureException("Unknown or unsupported archive algorithm "+archiveType);
+				throw new ArchiveFailureException("Unknown or unsupported archive algorithm " + archiveType);
+		} catch (IOException ioe) {
+			throw new ArchiveFailureException("An IOE occured: "+ioe.getMessage(), ioe);
+		}finally {
+			Closer.close(is);
+	}
 	}
 	
-	private void handleTARArchive(ArchiveStoreContext ctx, FreenetURI key, Bucket data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit) throws ArchiveFailureException, ArchiveRestartException {
+	private void handleTARArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit) throws ArchiveFailureException, ArchiveRestartException {
 		if(logMINOR) Logger.minor(this, "Handling a TAR Archive");
-		CBZip2InputStream bz2is = null;
 		TarInputStream tarIS = null;
 		try {
-			bz2is = new CBZip2InputStream(data.getInputStream());
-			tarIS = new TarInputStream(bz2is);
+			tarIS = new TarInputStream(data);
 			
 			// MINOR: Assumes the first entry in the tarball is a directory. 
 			TarEntry entry;
@@ -324,22 +352,15 @@ outerTAR:		while(true) {
 		} catch (IOException e) {
 			throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
 		} finally {
-			if(bz2is != null) {
-				try {
-					bz2is.close();
-				} catch (IOException e) {
-					Logger.error(this, "Failed to close stream: "+e, e);
-				}
-			}
 			Closer.close(tarIS);
 		}
 	}
 	
-	private void handleZIPArchive(ArchiveStoreContext ctx, FreenetURI key, Bucket data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit) throws ArchiveFailureException, ArchiveRestartException {
+	private void handleZIPArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit) throws ArchiveFailureException, ArchiveRestartException {
 		if(logMINOR) Logger.minor(this, "Handling a ZIP Archive");
 		ZipInputStream zis = null;
 		try {
-			zis = new ZipInputStream(data.getInputStream());
+			zis = new ZipInputStream(data);
 			
 			// MINOR: Assumes the first entry in the zip is a directory. 
 			ZipEntry entry;

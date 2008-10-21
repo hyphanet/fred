@@ -293,7 +293,7 @@ public final class FrostMessage {
     		key = this.composeUploadKey(innitialIndex);
     		keepgoing = false;
 
-            block = new InsertBlock(new ArrayBucket(data), new ClientMetadata(type), key);
+            block = new InsertBlock(new ArrayBucket(data), new ClientMetadata(type, null), key);
 
     		// try inserting the message with the key
             try {

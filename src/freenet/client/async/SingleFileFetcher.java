@@ -259,7 +259,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				}
 				continue; // loop
 			} else if(metadata.isArchiveManifest()) {
-				if(logMINOR) Logger.minor(this, "Is archive manifest (type="+metadata.getArchiveType()+')');
+				if(logMINOR) Logger.minor(this, "Is archive manifest (type="+metadata.getArchiveType()+" codec="+metadata.getCompressionCodec()+')');
 				if(metaStrings.isEmpty() && ctx.returnZIPManifests) {
 					// Just return the archive, whole.
 					metadata.setSimpleRedirect();
@@ -270,7 +270,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// It's more efficient to keep the existing ah if we can, and it is vital in
 				// the case of binary blobs.
 				if(ah == null || !ah.getKey().equals(thisKey))
-					ah = (ArchiveStoreContext) ctx.archiveManager.makeHandler(thisKey, metadata.getArchiveType(), false, 
+					ah = (ArchiveStoreContext) ctx.archiveManager.makeHandler(thisKey, metadata.getArchiveType(), metadata.getCompressionCodec(), false, 
 							(parent instanceof ClientGetter ? ((ClientGetter)parent).collectingBinaryBlob() : false));
 				archiveMetadata = metadata;
 				// ah is set. This means we are currently handling an archive.
@@ -442,7 +442,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if((redirectedKey instanceof ClientCHK) && !((ClientCHK)redirectedKey).isMetadata())
 					rcb.onBlockSetFinished(this);
 				if(metadata.isCompressed()) {
-					COMPRESSOR_TYPE codec = COMPRESSOR_TYPE.getCompressorByMetadataID(metadata.getCompressionCodec());
+					COMPRESSOR_TYPE codec = metadata.getCompressionCodec();
 					f.addDecompressor(codec);
 				}
 				parent.onTransition(this, f);
@@ -478,7 +478,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// Splitfile (possibly compressed)
 				
 				if(metadata.isCompressed()) {
-					COMPRESSOR_TYPE codec = COMPRESSOR_TYPE.getCompressorByMetadataID(metadata.getCompressionCodec());
+					COMPRESSOR_TYPE codec = metadata.getCompressionCodec();
 					addDecompressor(codec);
 				}
 				

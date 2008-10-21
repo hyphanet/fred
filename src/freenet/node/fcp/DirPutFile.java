@@ -26,9 +26,9 @@ abstract class DirPutFile {
 			throw new MessageInvalidException(ProtocolErrorMessage.MISSING_FIELD, "Missing field Name", identifier, global);
 		String contentTypeOverride = subset.get("Metadata.ContentType");
 		if(contentTypeOverride != null) {
-			meta = new ClientMetadata(contentTypeOverride);
+			meta = new ClientMetadata(contentTypeOverride, null);
 		} else {
-			meta = new ClientMetadata(guessMIME());
+			meta = new ClientMetadata(guessMIME(), null);
 		}
 	}
 

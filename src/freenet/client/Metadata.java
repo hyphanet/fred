@@ -74,12 +74,12 @@ public class Metadata implements Cloneable {
 	/** Container archive type 
 	 * @see ARCHIVE_TYPE
 	 */
-	short archiveType;
+	ARCHIVE_TYPE archiveType;
 	
 	/** Compressed splitfile codec 
 	 * @see COMPRESSOR_TYPE
 	 */
-	short compressionCodec = -1;
+	COMPRESSOR_TYPE compressionCodec;
 	
 	/** The length of the splitfile */
 	long dataLength;
@@ -197,8 +197,8 @@ public class Metadata implements Cloneable {
 		
 		if(documentType == ARCHIVE_MANIFEST) {
 			if(logMINOR) Logger.minor(this, "Archive manifest");
-			archiveType = dis.readShort();
-			if(!ARCHIVE_TYPE.isValidMetadataID(archiveType))
+			archiveType = ARCHIVE_TYPE.getArchiveType(dis.readShort());
+			if(archiveType == null)
 				throw new MetadataParseException("Unrecognized archive type "+archiveType);
 		}
 
@@ -215,8 +215,8 @@ public class Metadata implements Cloneable {
 		}
 		
 		if(compressed) {
-			compressionCodec = dis.readShort();
-			if(!COMPRESSOR_TYPE.isValidMetadataID(compressionCodec))
+			compressionCodec = COMPRESSOR_TYPE.getCompressorByMetadataID(dis.readShort());
+			if(compressionCodec == null)
 				throw new MetadataParseException("Unrecognized splitfile compression codec "+compressionCodec);
 			
 			decompressedLength = dis.readLong();
@@ -267,7 +267,7 @@ public class Metadata implements Cloneable {
 			extraMetadata = false; // can't parse, can't write
 		}
 		
-		clientMetadata = new ClientMetadata(mimeType);
+		clientMetadata = new ClientMetadata(mimeType, compressionCodec);
 		
 		if((!splitfile) && ((documentType == SIMPLE_REDIRECT) || (documentType == ARCHIVE_MANIFEST))) {
 			simpleRedirectKey = readKey(dis);
@@ -388,7 +388,7 @@ public class Metadata implements Cloneable {
 			if(o instanceof String) {
 				// External redirect
 				FreenetURI uri = new FreenetURI((String)o);
-				target = new Metadata(SIMPLE_REDIRECT, (short) -1, uri, null);
+				target = new Metadata(SIMPLE_REDIRECT, null, null, uri, null);
 			} else if(o instanceof HashMap) {
 				target = new Metadata();
 				target.addRedirectionManifest((HashMap)o);
@@ -461,7 +461,7 @@ public class Metadata implements Cloneable {
 		documentType = SIMPLE_MANIFEST;
 		noMIME = true;
 		mimeType = null;
-		clientMetadata = new ClientMetadata(null);
+		clientMetadata = new ClientMetadata(null,null);
 		manifestEntries = new HashMap();
 		int count = 0;
 		for(Iterator i = dir.keySet().iterator();i.hasNext();) {
@@ -471,7 +471,8 @@ public class Metadata implements Cloneable {
 			Metadata target;
 			if(o instanceof String) {
 				// Zip internal redirect
-				target = new Metadata(ARCHIVE_INTERNAL_REDIRECT, (short)-1, prefix+key, new ClientMetadata(DefaultMIMETypes.guessMIMEType(key, false)));
+				target = new Metadata(ARCHIVE_INTERNAL_REDIRECT, null, null, prefix+key,
+					new ClientMetadata(DefaultMIMETypes.guessMIMEType(key, false),null));
 			} else if(o instanceof HashMap) {
 				target = new Metadata((HashMap)o, prefix+key+"/");
 			} else throw new IllegalArgumentException("Not String nor HashMap: "+o);
@@ -486,12 +487,13 @@ public class Metadata implements Cloneable {
 	 * @param arg The argument; in the case of ZIP_INTERNAL_REDIRECT, the filename in
 	 * the archive to read from.
 	 */
-	public Metadata(byte docType, short archiveType, String arg, ClientMetadata cm) {
+	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, String arg, ClientMetadata cm) {
 		if(docType == ARCHIVE_INTERNAL_REDIRECT) {
 			documentType = docType;
 			this.archiveType = archiveType;
 			// Determine MIME type
 			this.clientMetadata = cm;
+			this.compressionCodec = compressionCodec;
 			if(cm != null)
 				this.setMIMEType(cm.getMIMEType());
 			nameInArchive = arg;
@@ -505,10 +507,11 @@ public class Metadata implements Cloneable {
 	 * @param uri The URI pointed to.
 	 * @param cm The client metadata, if any.
 	 */
-	public Metadata(byte docType, short archiveType, FreenetURI uri, ClientMetadata cm) {
+	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm) {
 		if((docType == SIMPLE_REDIRECT) || (docType == ARCHIVE_MANIFEST)) {
 			documentType = docType;
 			this.archiveType = archiveType;
+			this.compressionCodec = compressionCodec;
 			clientMetadata = cm;
 			if((cm != null) && !cm.isTrivial()) {
 				setMIMEType(cm.getMIMEType());
@@ -524,11 +527,11 @@ public class Metadata implements Cloneable {
 	}
 
 	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize, 
-			ClientMetadata cm, long dataLength, short compressionAlgo, long decompressedLength, boolean isMetadata, boolean insertAsArchiveManifest, short archiveType) {
+			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata) {
 		if(isMetadata)
 			documentType = MULTI_LEVEL_METADATA;
 		else {
-			if(insertAsArchiveManifest) {
+			if(archiveType != null) {
 				documentType = ARCHIVE_MANIFEST;
 				this.archiveType = archiveType;
 			} else documentType = SIMPLE_REDIRECT;
@@ -536,12 +539,13 @@ public class Metadata implements Cloneable {
 		splitfile = true;
 		splitfileAlgorithm = algo;
 		this.dataLength = dataLength;
-		this.compressionCodec = compressionAlgo;
+		this.compressionCodec = compressionCodec;
 		splitfileBlocks = dataURIs.length;
 		splitfileCheckBlocks = checkURIs.length;
 		splitfileDataKeys = dataURIs;
 		splitfileCheckKeys = checkURIs;
 		clientMetadata = cm;
+		this.compressionCodec = compressionCodec;
 		this.decompressedLength = decompressedLength;
 		if(cm != null)
 			setMIMEType(cm.getMIMEType());
@@ -728,7 +732,7 @@ public class Metadata implements Cloneable {
 	}
 
 	/** What kind of archive is it? */
-	public short getArchiveType() {
+	public ARCHIVE_TYPE getArchiveType() {
 		return archiveType;
 	}
 
@@ -755,20 +759,21 @@ public class Metadata implements Cloneable {
 			if(compressedMIME) flags |= FLAGS_COMPRESSED_MIME;
 			if(extraMetadata) flags |= FLAGS_EXTRA_METADATA;
 			if(fullKeys) flags |= FLAGS_FULL_KEYS;
-			if(compressionCodec >= 0) flags |= FLAGS_COMPRESSED;
+			if(compressionCodec != null) flags |= FLAGS_COMPRESSED;
 			dos.writeShort(flags);
 		}
 		
 		if(documentType == ARCHIVE_MANIFEST) {
-			dos.writeShort(archiveType);
+			short code = archiveType.metadataID;
+			dos.writeShort(code);
 		}
 		
 		if(splitfile) {
 			dos.writeLong(dataLength);
 		}
 		
-		if(compressionCodec >= 0) {
-			dos.writeShort(compressionCodec);
+		if(compressionCodec != null) {
+			dos.writeShort(compressionCodec.metadataID);
 			dos.writeLong(decompressedLength);
 		}
 		
@@ -827,7 +832,7 @@ public class Metadata implements Cloneable {
 					if(data.length > Short.MAX_VALUE) {
 						FreenetURI uri = meta.resolvedURI;
 						if(uri != null) {
-							meta = new Metadata(SIMPLE_REDIRECT, (short)-1,  uri, null);
+							meta = new Metadata(SIMPLE_REDIRECT, null, null, uri, null);
 							data = meta.writeToByteArray();
 						} else {
 							kill = true;
@@ -878,10 +883,10 @@ public class Metadata implements Cloneable {
 	}
 
 	public boolean isCompressed() {
-		return compressionCodec >= 0;
+		return compressionCodec != null;
 	}
 
-	public short getCompressionCodec() {
+	public COMPRESSOR_TYPE getCompressionCodec() {
 		return compressionCodec;
 	}
 
@@ -915,7 +920,9 @@ public class Metadata implements Cloneable {
 	}
 
 	public void setArchiveManifest() {
-		archiveType = ARCHIVE_TYPE.getArchiveType(clientMetadata.getMIMEType()).metadataID;
+		ARCHIVE_TYPE type = ARCHIVE_TYPE.getArchiveType(clientMetadata.getMIMEType());
+		archiveType = type;
+		compressionCodec = clientMetadata.getCompressorType();
 		clientMetadata.clear();
 		documentType = ARCHIVE_MANIFEST;
 	}
