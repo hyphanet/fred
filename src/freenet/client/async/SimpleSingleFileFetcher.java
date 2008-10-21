@@ -106,6 +106,8 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		synchronized(this) {
 			finished = true;
 		}
+		if(persistent)
+			container.store(this);
 		if(e.isFatal() || forceFatal)
 			parent.fatallyFailedBlock(container, context);
 		else
