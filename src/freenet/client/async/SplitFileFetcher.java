@@ -571,12 +571,12 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				container.deactivate(mainBloomFile, 1);
 				container.deactivate(altBloomFile, 1);
 				container.activate(fetchContext, 1);
-				cacheLocalRequests = fetchContext == null ? false : fetchContext.cacheLocalRequests; //TheSeeker - same problem as 22983
+				cacheLocalRequests = fetchContext.cacheLocalRequests;
 				container.deactivate(fetchContext, 1);
 			} else {
 				main = null;
 				alt = null;
-				cacheLocalRequests = fetchContext == null ? false : fetchContext.cacheLocalRequests; //TheSeeker - same problem as 22983
+				cacheLocalRequests = fetchContext.cacheLocalRequests;
 			}
 			try {
 				if(Logger.shouldLog(Logger.MINOR, this))
