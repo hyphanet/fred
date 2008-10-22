@@ -76,7 +76,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	// going by memory usage only; 4kB per stripe
 	static final int MAX_SPLITFILE_BLOCKS_PER_SEGMENT = 1024;
 	static final int MAX_SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 1536;
-	static final int SPLITFILE_BLOCKS_PER_SEGMENT = 128;
+	public static final int SPLITFILE_BLOCKS_PER_SEGMENT = 128;
 	static final int SPLITFILE_CHECK_BLOCKS_PER_SEGMENT = 128;
 	
 	

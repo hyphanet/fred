@@ -11,6 +11,7 @@ public class BucketChainBucketFactory implements BucketFactory {
 	final BucketFactory factory;
 	final int blockSize;
 	final DBJobRunner runner;
+	final int segmentSize;
 
 	/**
 	 * If you want persistent buckets which will be saved every 1000 buckets, and
@@ -20,14 +21,18 @@ public class BucketChainBucketFactory implements BucketFactory {
 	 * @param block_size
 	 * @param runner
 	 */
-	public BucketChainBucketFactory(BucketFactory bucketFactory, int block_size, DBJobRunner runner) {
+	public BucketChainBucketFactory(BucketFactory bucketFactory, int block_size, DBJobRunner runner, int segmentSize) {
 		this.factory = bucketFactory;
 		this.blockSize = block_size;
 		this.runner = runner;
+		this.segmentSize = segmentSize;
 	}
 
 	public Bucket makeBucket(long size) throws IOException {
-		return new BucketChainBucket(blockSize, factory, runner);
+		if(runner == null)
+			return new BucketChainBucket(blockSize, factory, runner);
+		else
+			return new SegmentedBucketChainBucket(blockSize, factory, runner, segmentSize);
 	}
 
 }

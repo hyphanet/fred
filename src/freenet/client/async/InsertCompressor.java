@@ -6,6 +6,8 @@ import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Query;
 
+import freenet.client.HighLevelSimpleClient;
+import freenet.client.HighLevelSimpleClientImpl;
 import freenet.client.InsertException;
 import freenet.keys.NodeCHK;
 import freenet.support.Logger;
@@ -123,7 +125,7 @@ public class InsertCompressor {
 				
 				Compressor comp = Compressor.getCompressionAlgorithmByDifficulty(i);
 				Bucket result;
-				result = comp.compress(origData, new BucketChainBucketFactory(bucketFactory, NodeCHK.BLOCK_SIZE, persistent ? context.jobRunner : null), origData.size());
+				result = comp.compress(origData, new BucketChainBucketFactory(bucketFactory, NodeCHK.BLOCK_SIZE, persistent ? context.jobRunner : null, HighLevelSimpleClientImpl.SPLITFILE_BLOCKS_PER_SEGMENT), origData.size());
 				if(result.size() < minSize) {
 					bestCodec = comp;
 					if(bestCompressedData != null)
