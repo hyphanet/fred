@@ -76,7 +76,7 @@ public class BucketChainBucket implements Bucket {
 	}
 	
 	/** Equivalent to free(), but don't free the underlying buckets. */
-	public void clear() {
+	void clear() {
 		synchronized(this) {
 			size = 0;
 			buckets.clear();
