@@ -281,6 +281,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			container.activate(returnBucket, 5);
 		}
 		synchronized(this) {
+			if(cancelled)
+				return;
 			// So a SingleKeyListener isn't created.
 			finished = true;
 		}
@@ -636,8 +638,13 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				
 				SplitFileFetcher sf = new SplitFileFetcher(metadata, rcb, parent, ctx, 
 						decompressors, clientMetadata, actx, recursionLevel, returnBucket, token, container, context);
-				if(persistent)
+				if(persistent) {
 					container.store(sf); // Avoid problems caused by storing a deactivated sf
+					if(!container.ext().isActive(parent)) {
+						container.activate(parent, 1);
+						Logger.error(this, "Not active: "+parent);
+					}
+				}
 				parent.onTransition(this, sf, container);
 				try {
 					sf.schedule(container, context);
