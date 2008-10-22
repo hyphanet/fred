@@ -14,6 +14,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -26,7 +27,7 @@ public class BucketChainBucket implements Bucket {
 	private boolean readOnly;
 	private final BucketFactory bf;
 	private transient DBJobRunner dbJobRunner;
-	private boolean stored;
+	boolean stored;
 
 	/**
 	 * @param bucketSize
@@ -294,29 +295,35 @@ public class BucketChainBucket implements Bucket {
 		};
 	}
 
-	private final DBJob killMe = new DBJob() {
-
-		public void run(ObjectContainer container, ClientContext context) {
-			container.activate(BucketChainBucket.this, 1);
-			if(stored) return;
-			System.err.println("Freeing unfinished unstored bucket "+this);
-			removeFrom(container);
-		}
-		
-	};
+	private final DBJob killMe = new BucketChainBucketKillJob(this);
 	
 	protected OutputStream makeBucketOutputStream(int i) throws IOException {
-		Bucket bucket = bf.makeBucket(bucketSize);
-		buckets.add(bucket);
-		if (buckets.size() != i + 1)
-			throw new IllegalStateException("Added bucket, size should be " + (i + 1) + " but is " + buckets.size());
-		if (buckets.get(i) != bucket)
-			throw new IllegalStateException("Bucket got replaced. Race condition?");
+		Bucket bucket;
+		synchronized(this) {
+			bucket = bf.makeBucket(bucketSize);
+			buckets.add(bucket);
+			if (buckets.size() != i + 1)
+				throw new IllegalStateException("Added bucket, size should be " + (i + 1) + " but is " + buckets.size());
+			if (buckets.get(i) != bucket)
+				throw new IllegalStateException("Bucket got replaced. Race condition?");
+		}
 		if(dbJobRunner != null && !stored && buckets.size() % 1024 == 0) {
 			dbJobRunner.runBlocking(new DBJob() {
 
 				public void run(ObjectContainer container, ClientContext context) {
+					synchronized(BucketChainBucket.this) {
+						for(int i=storedTo;i<buckets.size();i++) {
+							buckets.get(i).storeTo(container);
+						}
+						storedTo = buckets.size() - 1; // include the last one next time
+						container.store(buckets);
+					}
+					boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+					if(logMINOR)
+						Logger.minor(this, "Storing "+BucketChainBucket.this);
 					container.store(BucketChainBucket.this);
+					if(logMINOR)
+						Logger.minor(this, "Queueing restart job for "+BucketChainBucket.this);
 					dbJobRunner.queueRestartJob(killMe, NativeThread.HIGH_PRIORITY, container);
 				}
 				
@@ -325,6 +332,8 @@ public class BucketChainBucket implements Bucket {
 		return bucket.getOutputStream();
 	}
 
+	private int storedTo = 0;
+	
 	public boolean isReadOnly() {
 		return readOnly;
 	}
@@ -338,15 +347,21 @@ public class BucketChainBucket implements Bucket {
 	}
 
 	public void storeTo(ObjectContainer container) {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Storing to database: "+this);
 		for(int i=0;i<buckets.size();i++)
 			((Bucket) buckets.get(i)).storeTo(container);
 		stored = true;
 		container.store(buckets);
 		container.store(this);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Removing restart job: "+this);
 		dbJobRunner.removeRestartJob(killMe, NativeThread.HIGH_PRIORITY, container);
 	}
 
 	public void removeFrom(ObjectContainer container) {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Removing from database: "+this);
 		Bucket[] list;
 		synchronized(this) {
 			list = (Bucket[]) buckets.toArray(new Bucket[buckets.size()]);
@@ -374,4 +389,14 @@ public class BucketChainBucket implements Bucket {
 		return new BucketChainBucket(newBuckets, bucketSize, size, true, bf);
 	}
 
+	// For debugging
+	
+	public boolean objectCanUpdate(ObjectContainer container) {
+		return true;
+	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		return true;
+	}
+	
 }
