@@ -8,6 +8,7 @@ import java.nio.channels.FileChannel;
 
 import com.db4o.ObjectContainer;
 
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
 /**
@@ -82,7 +83,7 @@ public class PersistentBlobTempBucket implements Bucket {
 					if(freed) throw new IOException("Bucket freed during read");
 					max = Math.max(blockSize, size);
 				}
-				if(offset < 0) return -1; // throw new EOFException() ???
+				if(bufOffset < 0) return -1; // throw new EOFException() ???
 				if(offset + length >= max)
 					length = (int) Math.min(max - offset, Integer.MAX_VALUE);
 				ByteBuffer buf = ByteBuffer.wrap(buffer, bufOffset, length);
@@ -134,7 +135,7 @@ public class PersistentBlobTempBucket implements Bucket {
 				}
 				long remaining = blockSize - offset;
 				if(remaining <= 0) throw new IOException("Too big");
-				if(length > remaining) length = (int) remaining;
+				if(length > remaining) throw new IOException("Writing too many bytes: written "+offset+" of "+blockSize+" and now want to write "+length);
 				ByteBuffer buf = ByteBuffer.wrap(buffer, bufOffset, length);
 				int written = 0;
 				while(written < length) {
@@ -179,6 +180,7 @@ public class PersistentBlobTempBucket implements Bucket {
 		// you should always store it before making it publicly available...
 		synchronized(this) {
 			p = persisted;
+			persisted = true;
 		}
 		if(!p)
 			factory.store(this, container); // Calls onStore(). Take the outer lock first.
@@ -188,8 +190,9 @@ public class PersistentBlobTempBucket implements Bucket {
 		synchronized(this) {
 			if(persisted) return true;
 		}
-		storeTo(container);
+		Logger.error(this, "objectOnNew() called but we haven't been stored yet! for "+this+" for "+factory+" index "+index, new Exception("error"));
 		return true;
+		
 	}
 	
 	synchronized void onStore() {
@@ -209,5 +212,5 @@ public class PersistentBlobTempBucket implements Bucket {
 	synchronized void onRemove() {
 		persisted = false;
 	}
-
+	
 }
