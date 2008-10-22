@@ -195,10 +195,6 @@ public class PersistentBlobTempBucket implements Bucket {
 		
 	}
 	
-	synchronized void onStore() {
-		persisted = true;
-	}
-	
 	public void removeFrom(ObjectContainer container) {
 		boolean p;
 		synchronized(this) {
