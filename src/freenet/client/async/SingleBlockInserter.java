@@ -31,7 +31,6 @@ import freenet.node.SendableRequestSender;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
-import freenet.support.io.NativeThread;
 
 /**
  * Insert *ONE KEY*.
@@ -134,7 +133,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			}
 			block = innerEncode(context.random, container);
 			refToClientKeyBlock = 
-				new SoftReference(block);
+				new SoftReference<ClientKeyBlock>(block);
 			shouldSend = (resultingURI == null);
 			resultingURI = block.getClientKey().getURI();
 		}
@@ -277,8 +276,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			parent.completedBlock(false, container, context);
 			cb.onSuccess(this, container, context);
 			finished = true;
-			if(persistent)
+			if(persistent) {
 				container.store(this);
+				container.deactivate(cb, 1);
+			}
 		} else {
 			getScheduler(context).registerInsert(this, persistent, true, true, container);
 		}
@@ -328,6 +329,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		parent.completedBlock(false, container, context);
 		if(logMINOR) Logger.minor(this, "Calling onSuccess for "+cb);
 		cb.onSuccess(this, container, context);
+		if(persistent)
+			container.deactivate(cb, 1);
 	}
 
 	public BaseClientPutter getParent() {
@@ -345,6 +348,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 		super.unregister(container, context);
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
+		if(persistent)
+			container.deactivate(cb, 1);
 	}
 
 	public synchronized boolean isEmpty(ObjectContainer container) {
