@@ -34,9 +34,6 @@ import freenet.support.io.BucketTools;
  */
 class SingleFileInserter implements ClientPutState {
 
-	// Config option???
-	private static final long COMPRESS_OFF_THREAD_LIMIT = 65536;
-	
 	private static boolean logMINOR;
 	final BaseClientPutter parent;
 	final InsertBlock block;
@@ -105,17 +102,16 @@ class SingleFileInserter implements ClientPutState {
 				}
 			}
 		}
-		Bucket data = block.getData();
-		if(data.size() > COMPRESS_OFF_THREAD_LIMIT) {
-			// Run off thread
-			OffThreadCompressor otc = new OffThreadCompressor();
-			ctx.executor.execute(otc, "Compressor for "+this);
-		} else {
-			tryCompress();
-		}
+		// Run off thread in any case
+		OffThreadCompressor otc = new OffThreadCompressor();
+		ctx.executor.execute(otc, "Compressor for " + this);
 	}
 
-	private class OffThreadCompressor implements Runnable {
+	// Use a mutex to serialize compression (limit memory usage/IO)
+	// Of course it doesn't make any sense on multi-core systems.
+	private static final Object compressorSync = new Object();
+	
+	private  class OffThreadCompressor implements Runnable {
 		public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
 			try {
@@ -138,6 +134,7 @@ class SingleFileInserter implements ClientPutState {
 	}
 	
 	private void tryCompress() throws InsertException {
+		synchronized(compressorSync) {
 		// First, determine how small it needs to be
 		Bucket origData = block.getData();
 		Bucket data = origData;
@@ -180,7 +177,7 @@ class SingleFileInserter implements ClientPutState {
 						if(bestCompressedData != null)
 							bestCompressedData.free();
 						bestCompressedData = result;
-						break;
+						continue;
 					}
 					if((bestCompressedData != null) && (result.size() < bestCompressedData.size())) {
 						bestCompressedData.free();
@@ -203,7 +200,7 @@ class SingleFileInserter implements ClientPutState {
 		boolean shouldFreeData = false;
 		if(bestCompressedData != null) {
 			long compressedSize = bestCompressedData.size();
-			if(logMINOR) Logger.minor(this, "The best compression algorithm is "+bestCodec+ " we have a "+origSize/compressedSize+" ratio! ("+origSize+'/'+compressedSize+')');
+			if(logMINOR) Logger.minor(this, "The best compression algorithm is "+bestCodec+ " we have gained "+ (100-(compressedSize*100/origSize)) +"% ! ("+origSize+'/'+compressedSize+')');
 			data = bestCompressedData;
 			shouldFreeData = true;
 			compressorUsed = bestCodec;
@@ -294,6 +291,7 @@ class SingleFileInserter implements ClientPutState {
 			cb.onTransition(this, sh);
 			sfi.start();
 			if(earlyEncode) sfi.forceEncode();
+		}
 		}
 	}
 	
