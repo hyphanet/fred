@@ -23,6 +23,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
+import net.contrapunctus.lzma.LzmaInputStream;
 import org.apache.tools.bzip2.CBZip2InputStream;
 import org.apache.tools.tar.TarEntry;
 import org.apache.tools.tar.TarInputStream;
@@ -271,9 +272,11 @@ public class ArchiveManager {
 			} else if(ctype == COMPRESSOR_TYPE.GZIP) {
 				if(logMINOR) Logger.minor(this, "dealing with GZIP");
 				is = new GZIPInputStream(data.getInputStream());
-			} else
-				throw new ArchiveFailureException("Unknown or unsupported compression algorithm "+ctype);
-
+			} else if(ctype == COMPRESSOR_TYPE.LZMA) {
+				if(logMINOR) Logger.minor(this, "dealing with LZMA");
+				is = new LzmaInputStream(data.getInputStream());
+			}
+			
 			if(ARCHIVE_TYPE.ZIP == archiveType)
 				handleZIPArchive(ctx, key, is, element, callback, gotElement, throwAtExit);
 			else if(ARCHIVE_TYPE.TAR == archiveType)
