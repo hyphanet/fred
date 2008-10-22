@@ -18,6 +18,7 @@ public interface Compressor {
 		// They will be tried in order: put the less resource consuming first
 		GZIP("GZIP", new GzipCompressor(), (short) 0),
 		BZIP2("BZIP2", new Bzip2Compressor(), (short) 1);
+		//LZMA("LZMA", new LZMACompressor(), (short)2);
 		
 		public final String name;
 		public final Compressor compressor;
@@ -34,15 +35,7 @@ public interface Compressor {
 			for(COMPRESSOR_TYPE current : values)
 				if(current.metadataID == id)
 					return current;
-			return null;			
-		}
-		
-		public static boolean isValidMetadataID(short id) {
-			COMPRESSOR_TYPE[] values = values();
-			for(COMPRESSOR_TYPE current : values)
-				if(current.metadataID == id)
-					return true;
-			return false;						
+			return null;
 		}
 
 		public Bucket compress(Bucket data, BucketFactory bf, long maxLength) throws IOException, CompressionOutputSizeException {
