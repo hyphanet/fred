@@ -103,8 +103,10 @@ public class ClientGetter extends BaseClientGetter {
 			}
 			if(cancelled) cancel();
 			// schedule() may deactivate stuff, so store it now.
-			if(persistent())
+			if(persistent()) {
 				container.store(currentState);
+				container.store(this);
+			}
 			if(currentState != null && !finished) {
 				if(binaryBlobBucket != null) {
 					try {
@@ -134,7 +136,7 @@ public class ClientGetter extends BaseClientGetter {
 
 	public void onSuccess(FetchResult result, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Succeeded from "+state);
+			Logger.minor(this, "Succeeded from "+state+" on "+this);
 		if(!closeBinaryBlobStream(container, context)) return;
 		synchronized(this) {
 			finished = true;
@@ -178,7 +180,7 @@ public class ClientGetter extends BaseClientGetter {
 
 	public void onFailure(FetchException e, ClientGetState state, ObjectContainer container, ClientContext context) {
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Failed from "+state+" : "+e, e);
+			Logger.minor(this, "Failed from "+state+" : "+e+" on "+this, e);
 		closeBinaryBlobStream(container, context);
 		while(true) {
 			if(e.mode == FetchException.ARCHIVE_RESTART) {
@@ -235,6 +237,8 @@ public class ClientGetter extends BaseClientGetter {
 			s.cancel(container, context);
 			if(persistent())
 				container.deactivate(s, 1);
+		} else {
+			if(logMINOR) Logger.minor(this, "Nothing to cancel");
 		}
 	}
 
@@ -267,9 +271,9 @@ public class ClientGetter extends BaseClientGetter {
 		synchronized(this) {
 			if(currentState == oldState) {
 				currentState = newState;
-				Logger.minor(this, "Transition: "+oldState+" -> "+newState);
+				Logger.minor(this, "Transition: "+oldState+" -> "+newState+" on "+this);
 			} else
-				Logger.minor(this, "Ignoring transition: "+oldState+" -> "+newState+" because current = "+currentState);
+				Logger.minor(this, "Ignoring transition: "+oldState+" -> "+newState+" because current = "+currentState+" on "+this);
 		}
 		if(persistent())
 			container.store(this);
