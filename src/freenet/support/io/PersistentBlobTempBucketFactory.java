@@ -133,6 +133,7 @@ public class PersistentBlobTempBucketFactory {
 					stored = notCommittedBlobs.get(ptr) == null;
 					if(stored) {
 						if(freeSlots.contains(ptr)) break;
+						if(notCommittedBlobs.get(ptr) != null) continue;
 						freeSlots.add(ptr);
 					}
 				}
@@ -157,7 +158,8 @@ public class PersistentBlobTempBucketFactory {
 			// Lets extend the file.
 			// FIXME if physical security is LOW, just set the length, possibly
 			// padding will nonrandom nulls on unix.
-			long extendBy = blockSize * 32;
+			long addBlocks = Math.min(1024, (blocks / 20) + 32);
+			long extendBy = addBlocks * blockSize;
 			long written = 0;
 			byte[] buf = new byte[4096];
 			ByteBuffer buffer = ByteBuffer.wrap(buf);
@@ -173,7 +175,7 @@ public class PersistentBlobTempBucketFactory {
 					break;
 				}
 			}
-			for(int i=0;i<written / blockSize;i++) {
+			for(int i=0;i<addBlocks;i++) {
 				ptr = blocks + i;
 				container.store(new PersistentBlobFreeSlotTag(ptr, PersistentBlobTempBucketFactory.this));
 				synchronized(PersistentBlobTempBucketFactory.this) {
@@ -197,7 +199,7 @@ public class PersistentBlobTempBucketFactory {
 				Long slot = freeSlots.first();
 				freeSlots.remove(slot);
 				if(notCommittedBlobs.get(slot) != null) {
-					Logger.error(this, "Slot "+slot+" already occupied despite being in freeSlots!!");
+					Logger.error(this, "Slot "+slot+" already occupied by a not committed blob despite being in freeSlots!!");
 					return null;
 				}
 				PersistentBlobTempBucket bucket = new PersistentBlobTempBucket(this, blockSize, slot);
@@ -212,7 +214,7 @@ public class PersistentBlobTempBucketFactory {
 				Long slot = freeSlots.first();
 				freeSlots.remove(slot);
 				if(notCommittedBlobs.get(slot) != null) {
-					Logger.error(this, "Slot "+slot+" already occupied despite being in freeSlots!!");
+					Logger.error(this, "Slot "+slot+" already occupied by a not committed blob despite being in freeSlots!! (after waiting)");
 					return null;
 				}
 				PersistentBlobTempBucket bucket = new PersistentBlobTempBucket(this, blockSize, slot);
@@ -226,6 +228,7 @@ public class PersistentBlobTempBucketFactory {
 	}
 
 	public synchronized void freeBucket(long index, PersistentBlobTempBucket bucket) {
+		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Freeing index "+index+" for "+bucket);
 		notCommittedBlobs.remove(index);
 		bucket.onFree();
 	}
@@ -234,6 +237,9 @@ public class PersistentBlobTempBucketFactory {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Removing bucket "+bucket+" for slot "+bucket.index+" from database");
 		if(!bucket.persisted()) return;
+		if(!bucket.freed()) {
+			Logger.error(this, "Removing bucket "+bucket+" for slot "+bucket.index+" but not freed!");
+		}
 		Query query = container.query();
 		long index = bucket.index;
 		freeSlots.add(index);
@@ -256,6 +262,7 @@ public class PersistentBlobTempBucketFactory {
 	}
 
 	public void store(PersistentBlobTempBucket bucket, ObjectContainer container) {
+		
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Storing bucket "+bucket+" for slot "+bucket.index+" to database");
 		long index = bucket.index;
@@ -280,7 +287,6 @@ public class PersistentBlobTempBucketFactory {
 				Logger.minor(this, "Deleting free slot tag for index "+index+" : "+tag+" : "+tag.index);
 			container.delete(tag);
 		}
-		bucket.onStore();
 		PersistentBlobTakenSlotTag tag = new PersistentBlobTakenSlotTag(index, this, bucket);
 		container.store(tag);
 	}
