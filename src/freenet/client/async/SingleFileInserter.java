@@ -301,6 +301,10 @@ class SingleFileInserter implements ClientPutState {
 			cb.onTransition(this, sfi, container);
 			sfi.start(container, context);
 			if(earlyEncode) sfi.forceEncode(container, context);
+			if(persistent) {
+				container.store(sfi);
+				container.deactivate(sfi, 1);
+			}
 		} else {
 			SplitHandler sh = new SplitHandler();
 			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData, persistent, container, context);
@@ -312,6 +316,10 @@ class SingleFileInserter implements ClientPutState {
 			cb.onTransition(this, sh, container);
 			sfi.start(container, context);
 			if(earlyEncode) sfi.forceEncode(container, context);
+			if(persistent) {
+				container.store(sfi);
+				container.deactivate(sfi, 1);
+			}
 		}
 		started = true;
 		if(persistent) {
