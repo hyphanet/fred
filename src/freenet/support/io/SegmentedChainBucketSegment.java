@@ -37,6 +37,11 @@ public class SegmentedChainBucketSegment {
 		return out;
 	}
 
+	public synchronized void shallowCopyBuckets(Bucket[] out, int index) {
+		int sz = buckets.size();
+		for(int i=0;i<sz;i++) out[index++] = buckets.get(i);
+	}
+
 	public OutputStream makeBucketStream(int bucketNo) throws IOException {
 		if(bucketNo >= bcb.segmentSize)
 			throw new IllegalArgumentException("Too many buckets in segment");

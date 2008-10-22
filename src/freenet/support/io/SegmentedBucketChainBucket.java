@@ -59,11 +59,11 @@ public class SegmentedBucketChainBucket implements Bucket {
 		}
 		return new InputStream() {
 
-			int segmentNo = 0;
-			int bucketNo = 0;
-			SegmentedChainBucketSegment seg = getSegment(0);
-			Bucket[] buckets = seg == null ? null : getBuckets(seg);
-			InputStream is = buckets == null ? null : buckets[0].getInputStream();
+			int segmentNo = -1;
+			int bucketNo = segmentSize;
+			SegmentedChainBucketSegment seg = null;
+			Bucket[] buckets = null;
+			InputStream is = null;
 			private long bucketRead = 0;
 			private boolean closed;
 			
@@ -83,8 +83,10 @@ public class SegmentedBucketChainBucket implements Bucket {
 			public int read(byte[] buf, int offset, int length) throws IOException {
 				if(closed) throw new IOException("Already closed");
 				if(bucketRead == bucketSize || is == null) {
-					is.close();
-					buckets[bucketNo] = null;
+					if(is != null)
+						is.close();
+					if(buckets != null)
+						buckets[bucketNo] = null;
 					bucketRead = 0;
 					bucketNo++;
 					if(bucketNo == segmentSize) {
@@ -92,6 +94,7 @@ public class SegmentedBucketChainBucket implements Bucket {
 						segmentNo++;
 						seg = getSegment(segmentNo);
 						if(seg == null) return -1;
+						buckets = getBuckets(seg);
 					}
 					if(bucketNo >= buckets.length) {
 						synchronized(SegmentedBucketChainBucket.this) {
@@ -114,7 +117,7 @@ public class SegmentedBucketChainBucket implements Bucket {
 			@Override
 			public void close() throws IOException {
 				if(closed) return;
-				is.close();
+				if(is != null) is.close();
 				closed = true;
 				is = null;
 				seg = null;
@@ -129,7 +132,6 @@ public class SegmentedBucketChainBucket implements Bucket {
 	}
 
 	protected Bucket[] getBuckets(final SegmentedChainBucketSegment seg) {
-		Bucket[] buckets;
 		final BucketArrayWrapper baw = new BucketArrayWrapper();
 		dbJobRunner.runBlocking(new DBJob() {
 
@@ -144,7 +146,7 @@ public class SegmentedBucketChainBucket implements Bucket {
 	}
 
 	public String getName() {
-		return "SectoredBucketChainBucket";
+		return "SegmentedBucketChainBucket";
 	}
 
 	public OutputStream getOutputStream() throws IOException {
@@ -279,6 +281,9 @@ public class SegmentedBucketChainBucket implements Bucket {
 	 * transaction. So you will need to close the OutputStream to commit the 
 	 * progress of writing to a file. And yes, we can't append. So you need to
 	 * write everything before storing the bucket.
+	 * 
+	 * FIXME: Enforce the rule that you must close any OutputStream's before 
+	 * calling storeTo().
 	 */
 	public void storeTo(ObjectContainer container) {
 		stored = true;
@@ -307,25 +312,21 @@ public class SegmentedBucketChainBucket implements Bucket {
 		seg.activateBuckets(container);
 		int size = (segs - 1) * segmentSize + seg.size();
 		Bucket[] buckets = new Bucket[size];
-		Bucket[] temp = seg.shallowCopyBuckets();
-		container.deactivate(seg, 1);
-		System.arraycopy(temp, 0, buckets, (segs-1)*segmentSize, temp.length);
-		temp = null;
+		seg.shallowCopyBuckets(buckets, (segs-1)*segmentSize);
 		container.deactivate(seg, 1);
 		int pos = 0;
 		for(int i=0;i<(segs-1);i++) {
 			seg = segments.get(i);
 			container.activate(seg, 1);
 			seg.activateBuckets(container);
-			temp = seg.shallowCopyBuckets();
+			seg.shallowCopyBuckets(buckets, pos);
 			container.deactivate(seg, 1);
-			System.arraycopy(temp, 0, buckets, pos, segmentSize);
 			pos += segmentSize;
 		}
 		return buckets;
 	}
 
-	public synchronized void clear() {
+	synchronized void clear() {
 		segments.clear();
 	}
 
