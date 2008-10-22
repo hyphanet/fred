@@ -277,6 +277,9 @@ public class PersistentBlobTempBucketFactory {
 			throw new IllegalStateException("Slot "+index+" already occupied!");
 		}
 		// Now the normal bit
+		synchronized(this) {
+			notCommittedBlobs.remove(index);
+		}
 		query = container.query();
 		query.constrain(PersistentBlobFreeSlotTag.class);
 		query.descend("index").constrain(index).and(query.descend("factory").constrain(PersistentBlobTempBucketFactory.this));
