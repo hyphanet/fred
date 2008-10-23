@@ -100,4 +100,23 @@ public class FECJob {
 				container.activate(checkBlocks[i], 1);
 		}
 	}
+
+	public void deactivate(ObjectContainer container) {
+		if(dataBlockStatus != null) {
+			for(int i=0;i<dataBlockStatus.length;i++)
+				container.deactivate(dataBlockStatus[i], 2);
+		}
+		if(checkBlockStatus != null) {
+			for(int i=0;i<checkBlockStatus.length;i++)
+				container.deactivate(checkBlockStatus[i], 2);
+		}
+		if(dataBlocks != null) {
+			for(int i=0;i<dataBlocks.length;i++)
+				container.deactivate(dataBlocks[i], 1);
+		}
+		if(checkBlocks != null) {
+			for(int i=0;i<checkBlocks.length;i++)
+				container.deactivate(checkBlocks[i], 1);
+		}
+	}
 }
