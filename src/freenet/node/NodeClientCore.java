@@ -51,6 +51,7 @@ import freenet.keys.NodeSSK;
 import freenet.keys.SSKBlock;
 import freenet.keys.SSKVerifyException;
 import freenet.l10n.L10n;
+import freenet.node.NodeRestartJobsQueue.RestartDBJob;
 import freenet.node.SecurityLevels.PHYSICAL_THREAT_LEVEL;
 import freenet.node.fcp.FCPServer;
 import freenet.node.useralerts.SimpleUserAlert;
@@ -138,8 +139,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	 * of them, so only cache a small number of them */
 	private static final int FEC_QUEUE_CACHE_SIZE = 20;
 	private UserAlert startingUpAlert;
-	private DBJob[] startupDatabaseJobs;
-
+	private RestartDBJob[] startupDatabaseJobs;
+	
 	NodeClientCore(Node node, Config config, SubConfig nodeConfig, File nodeDir, int portNumber, int sortOrder, SimpleFieldSet oldConfig, SubConfig fproxyConfig, SimpleToadletServer toadlets, ObjectContainer container) throws NodeInitException {
 		this.node = node;
 		this.nodeStats = node.nodeStats;
@@ -579,10 +580,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	private DBJob startupJobRunner = new DBJob() {
 
 		public void run(ObjectContainer container, ClientContext context) {
-			DBJob job = startupDatabaseJobs[startupDatabaseJobsDone];
+			RestartDBJob job = startupDatabaseJobs[startupDatabaseJobsDone];
 			try {
-				container.activate(job, 1);
-				job.run(container, context);
+				container.activate(job.job, 1);
+				job.job.run(container, context);
+				restartJobsQueue.removeRestartJob(job.job, job.prio, container);
 				container.commit();
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t+" in startup job "+job, t);
@@ -1397,6 +1399,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		System.exit(NodeInitException.EXIT_OUT_OF_MEMORY_PROTECTING_DATABASE);
 	}
 
+	/**
+	 * Queue a job to be run soon after startup. The job must delete itself.
+	 */
 	public void queueRestartJob(DBJob job, int priority, ObjectContainer container) {
 		restartJobsQueue.queueRestartJob(job, priority, container);
 	}

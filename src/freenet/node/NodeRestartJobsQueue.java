@@ -107,16 +107,24 @@ public class NodeRestartJobsQueue {
 		if(!jobWasActive) container.deactivate(job, 1);
 	}
 	
-	synchronized DBJob[] getRestartDatabaseJobs(ObjectContainer container) {
-		ArrayList<DBJob> list = new ArrayList<DBJob>();
+	class RestartDBJob {
+		public RestartDBJob(DBJob job2, int i) {
+			job = job2;
+			prio = i;
+		}
+		DBJob job;
+		int prio;
+	}
+
+	synchronized RestartDBJob[] getRestartDatabaseJobs(ObjectContainer container) {
+		ArrayList<RestartDBJob> list = new ArrayList<RestartDBJob>();
 		for(int i=dbJobs.length-1;i>=0;i--) {
 			container.activate(dbJobs[i], 1);
-			list.addAll(dbJobs[i]);
-			dbJobs[i].clear();
-			container.store(dbJobs[i]);
+			for(DBJob job : dbJobs[i])
+				list.add(new RestartDBJob(job, i));
 			container.deactivate(dbJobs[i], 1);
 		}
-		return list.toArray(new DBJob[list.size()]);
+		return list.toArray(new RestartDBJob[list.size()]);
 	}
 	
 }
