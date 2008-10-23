@@ -21,6 +21,15 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 	private final PersistentFileTracker factory;
 	Bucket bucket;
 	boolean freed;
+	boolean removed;
+	
+	public boolean toFree() {
+		return freed;
+	}
+	
+	public boolean toRemove() {
+		return removed;
+	}
 	
 	public DelayedFreeBucket(PersistentTempBucketFactory factory, Bucket bucket) {
 		this.factory = factory;
@@ -70,7 +79,7 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 			if(freed) return;
 			if(Logger.shouldLog(Logger.MINOR, this)) 
 				Logger.minor(this, "Freeing "+this+" underlying="+bucket, new Exception("debug"));
-			this.factory.delayedFreeBucket(bucket);
+			this.factory.delayedFreeBucket(this);
 			freed = true;
 		}
 	}
@@ -99,8 +108,14 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 	public void removeFrom(ObjectContainer container) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Removing from database: "+this);
-		bucket.removeFrom(container);
-		container.delete(this);
+		synchronized(this) {
+			boolean wasQueued = freed || removed;
+			if(!freed)
+				Logger.error(this, "Asking to remove from database but not freed: "+this, new Exception("error"));
+			removed = true;
+			if(!wasQueued)
+				this.factory.delayedFreeBucket(this);
+		}
 	}
 
 	public String toString() {

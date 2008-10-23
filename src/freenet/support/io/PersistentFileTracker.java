@@ -15,7 +15,7 @@ public interface PersistentFileTracker {
 	 * next serialization to disk.
 	 * @param bucket The bucket to free. Should be a DelayedFreeBucket.
 	 */
-	public void delayedFreeBucket(Bucket bucket);
+	public void delayedFreeBucket(DelayedFreeBucket bucket);
 
 	/**
 	 * Get the persistent temp files directory.

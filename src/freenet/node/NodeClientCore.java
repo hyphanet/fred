@@ -72,6 +72,7 @@ import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.api.StringArrCallback;
 import freenet.support.api.StringCallback;
+import freenet.support.io.DelayedFreeBucket;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NativeThread;
@@ -1339,11 +1340,14 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 				} else
 					node.db.commit();
 				if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
-				LinkedList toFree = persistentTempBucketFactory.grabBucketsToFree();
-				for(Iterator i=toFree.iterator();i.hasNext();) {
-					Bucket bucket = (Bucket)i.next();
+				LinkedList<DelayedFreeBucket> toFree = persistentTempBucketFactory.grabBucketsToFree();
+				for(Iterator<DelayedFreeBucket> i=toFree.iterator();i.hasNext();) {
+					DelayedFreeBucket bucket = i.next();
 					try {
-						bucket.free();
+						if(bucket.toFree())
+							bucket.free();
+						if(bucket.toRemove())
+							bucket.removeFrom(node.db);
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t+" freeing bucket "+bucket+" after transaction commit");
 					}

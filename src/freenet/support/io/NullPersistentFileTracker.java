@@ -13,7 +13,7 @@ public class NullPersistentFileTracker implements PersistentFileTracker {
 		// Do nothing
 	}
 
-	public void delayedFreeBucket(Bucket bucket) {
+	public void delayedFreeBucket(DelayedFreeBucket bucket) {
 		// Free immediately
 		bucket.free();
 	}

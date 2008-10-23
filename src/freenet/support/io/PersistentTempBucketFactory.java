@@ -43,7 +43,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	private transient Random weakPRNG;
 	
 	/** Buckets to free */
-	private transient LinkedList<Bucket> bucketsToFree;
+	private transient LinkedList<DelayedFreeBucket> bucketsToFree;
 	
 	private final long nodeDBHandle;
 	
@@ -88,14 +88,14 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			originalFiles.add(f);
 		}
 		
-		bucketsToFree = new LinkedList<Bucket>();
+		bucketsToFree = new LinkedList<DelayedFreeBucket>();
 	}
 	
 	public void init(File dir, String prefix, RandomSource strongPRNG, Random weakPRNG) throws IOException {
 		this.strongPRNG = strongPRNG;
 		this.weakPRNG = weakPRNG;
 		fg.init(dir, prefix, weakPRNG);
-		bucketsToFree = new LinkedList<Bucket>();
+		bucketsToFree = new LinkedList<DelayedFreeBucket>();
 	}
 	
 	public void register(File file) {
@@ -141,16 +141,16 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	/**
 	 * Free an allocated bucket, but only after the change has been written to disk.
 	 */
-	public void delayedFreeBucket(Bucket b) {
+	public void delayedFreeBucket(DelayedFreeBucket b) {
 		synchronized(this) {
 			bucketsToFree.add(b);
 		}
 	}
 
-	public LinkedList<Bucket> grabBucketsToFree() {
+	public LinkedList<DelayedFreeBucket> grabBucketsToFree() {
 		synchronized(this) {
-			LinkedList<Bucket> toFree = bucketsToFree;
-			bucketsToFree = new LinkedList<Bucket>();
+			LinkedList<DelayedFreeBucket> toFree = bucketsToFree;
+			bucketsToFree = new LinkedList<DelayedFreeBucket>();
 			return toFree;
 		}
 	}
