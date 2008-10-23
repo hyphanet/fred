@@ -16,6 +16,22 @@ import freenet.support.api.BucketFactory;
 /**
  * Splits a large persistent file into a series of buckets, which are collected 
  * into groups called segments to avoid huge transactions/memory usage.
+ * 
+ * NON-PERSISTENT: This class uses persistent buckets, it stores them in the 
+ * database to save memory, but the bucket itself does not support persistence.
+ * Making it support persistence cleanly requires major refactoring. The obvious
+ * avenues are:
+ * 
+ * 1. Pass DBJobRunner in to getOutputStream(), getInputStream(), free(), 
+ * storeTo(). This will touch hundreds of files, mostly it is trivial though. It
+ * will however increase the overhead for all buckets slightly.
+ * 2. Make DBJobRunner a static variable, hence there will be only one database
+ * thread for the whole VM, even in a simulation with more than one node. One
+ * difficulty with this is that the node.db4o needs to be in the correct directory,
+ * yet the database would need to be initiated very early on.
+ * 
+ * Generally we create it, write to it, call getBuckets() and clear(), anyway ...
+ * 
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
 public class SegmentedBucketChainBucket implements Bucket {
@@ -28,7 +44,6 @@ public class SegmentedBucketChainBucket implements Bucket {
 	private boolean freed;
 	final BucketFactory bf;
 	private transient DBJobRunner dbJobRunner;
-	boolean stored;
 	
 	public SegmentedBucketChainBucket(int blockSize, BucketFactory factory, 
 			DBJobRunner runner, int segmentSize2) {
@@ -272,7 +287,7 @@ public class SegmentedBucketChainBucket implements Bucket {
 	}
 
 	public void removeFrom(ObjectContainer container) {
-		// FIXME do something
+		throw new UnsupportedOperationException();
 	}
 
 	public void setReadOnly() {
@@ -293,10 +308,7 @@ public class SegmentedBucketChainBucket implements Bucket {
 	 * calling storeTo().
 	 */
 	public void storeTo(ObjectContainer container) {
-		stored = true;
-		dbJobRunner.removeRestartJob(killMe, NativeThread.HIGH_PRIORITY, container);
-		container.ext().store(segments, 1);
-		container.ext().store(this, 1);
+		throw new UnsupportedOperationException();
 	}
 	
 	public Bucket[] getBuckets() {
