@@ -101,9 +101,12 @@ public class FECQueue implements OOMHook {
 			job.activateForExecution(container);
 			container.store(job);
 		}
+		boolean kept = false;
+		
 		synchronized(this) {
 			if(!job.persistent) {
 				transientQueue[job.priority].addLast(job);
+				kept = true;
 			} else {
 				int totalAbove = 0;
 				for(int i=0;i<job.priority;i++) {
@@ -120,6 +123,7 @@ public class FECQueue implements OOMHook {
 							Logger.minor(this, "Not adding persistent job to in-RAM cache, too many at same priority");
 					} else {
 						persistentQueueCache[job.priority].addLast(job);
+						kept = true;
 						int total = totalAbove + persistentQueueCache[job.priority].size();
 						for(int i=job.priority+1;i<priorities;i++) {
 							total += persistentQueueCache[i].size();
@@ -132,6 +136,9 @@ public class FECQueue implements OOMHook {
 						}
 					}
 				}
+			}
+			if(!kept) {
+				job.deactivate(container);
 			}
 			if(runningFECThreads < maxThreads) {
 				executor.execute(runner, "FEC Pool "+fecPoolCounter++);
