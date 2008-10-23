@@ -576,7 +576,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 	 * @param context
 	 * @param parent
 	 */
-	private void finish(InsertException ex, ObjectContainer container, ClientContext context, SplitFileInserter parent) {
+	void finish(InsertException ex, ObjectContainer container, ClientContext context, SplitFileInserter parent) {
 		if (logMINOR)
 			Logger.minor(this, "Finishing " + this + " with " + ex, ex);
 		synchronized (this) {
