@@ -573,6 +573,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			}
 		}, "Startup completion thread");
 		
+		if(startupDatabaseJobs != null &&
+				startupDatabaseJobs.length > 0)
 		queue(startupJobRunner, NativeThread.HIGH_PRIORITY, false);
 	}
 	

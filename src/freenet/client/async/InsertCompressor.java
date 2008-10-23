@@ -154,8 +154,6 @@ public class InsertCompressor {
 					public void run(ObjectContainer container, ClientContext context) {
 						if(container.ext().isActive(inserter))
 							Logger.error(this, "ALREADY ACTIVE in compressed callback: "+inserter);
-						// Must call storeTo at this point to cancel the delete-on-startup job.
-						output.data.storeTo(container);
 						container.activate(inserter, 1);
 						inserter.onCompressed(output, container, context);
 						container.deactivate(inserter, 1);

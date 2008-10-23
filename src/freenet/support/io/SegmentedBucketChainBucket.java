@@ -346,6 +346,17 @@ public class SegmentedBucketChainBucket implements Bucket {
 	}
 
 	synchronized void clear() {
+		dbJobRunner.runBlocking(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				for(SegmentedChainBucketSegment segment : segments) {
+					container.activate(segment, 1);
+					segment.clear(container, context);
+				}
+				container.delete(SegmentedBucketChainBucket.class);
+			}
+			
+		}, NativeThread.HIGH_PRIORITY);
 		segments.clear();
 	}
 

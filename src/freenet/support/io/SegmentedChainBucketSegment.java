@@ -6,6 +6,7 @@ import java.util.ArrayList;
 
 import com.db4o.ObjectContainer;
 
+import freenet.client.async.ClientContext;
 import freenet.support.api.Bucket;
 
 public class SegmentedChainBucketSegment {
@@ -60,6 +61,12 @@ public class SegmentedChainBucketSegment {
 	
 	void activateBuckets(ObjectContainer container) {
 		container.activate(buckets, 1);
+	}
+
+	public void clear(ObjectContainer container, ClientContext context) {
+		buckets.clear();
+		container.delete(buckets);
+		container.delete(this);
 	}
 
 }
