@@ -162,6 +162,7 @@ class SingleFileInserter implements ClientPutState {
 		
 		COMPRESSOR_TYPE bestCodec = null;
 		Bucket bestCompressedData = null;
+		long bestCompressedDataSize = origSize;
 
 		boolean tryCompress = (origSize > blockSize) && (!ctx.dontCompress) && (!dontCompress);
 		if(tryCompress) {
@@ -177,20 +178,23 @@ class SingleFileInserter implements ClientPutState {
 					if(parent == cb)
 						ctx.eventProducer.produceEvent(new StartedCompressionEvent(comp));
 					Bucket result;
-					result = comp.compress(origData, new BucketChainBucketFactory(ctx.persistentBucketFactory, CHKBlock.DATA_LENGTH), origData.size());
-					if(result.size() < oneBlockCompressedSize) {
+					result = comp.compress(origData, new BucketChainBucketFactory(ctx.persistentBucketFactory, CHKBlock.DATA_LENGTH), bestCompressedDataSize);
+					long resultSize = result.size();
+					if(resultSize < oneBlockCompressedSize) {
 						bestCodec = comp;
 						if(bestCompressedData != null)
 							bestCompressedData.free();
 						bestCompressedData = result;
 						continue;
 					}
-					if((bestCompressedData != null) && (result.size() < bestCompressedData.size())) {
+					if((bestCompressedData != null) && (resultSize < bestCompressedDataSize)) {
 						bestCompressedData.free();
 						bestCompressedData = result;
+						bestCompressedDataSize = resultSize;
 						bestCodec = comp;
-					} else if((bestCompressedData == null) && (result.size() < data.size())) {
+					} else if((bestCompressedData == null) && (resultSize < origSize)) {
 						bestCompressedData = result;
+						bestCompressedDataSize = resultSize;
 						bestCodec = comp;
 					} else
 						result.free();
@@ -205,8 +209,7 @@ class SingleFileInserter implements ClientPutState {
 		}
 		boolean shouldFreeData = false;
 		if(bestCompressedData != null) {
-			long compressedSize = bestCompressedData.size();
-			if(logMINOR) Logger.minor(this, "The best compression algorithm is "+bestCodec+ " we have gained "+ (100-(compressedSize*100/origSize)) +"% ! ("+origSize+'/'+compressedSize+')');
+			if(logMINOR) Logger.minor(this, "The best compression algorithm is "+bestCodec+ " we have gained "+ (100-(bestCompressedDataSize*100/origSize)) +"% ! ("+origSize+'/'+bestCompressedDataSize+')');
 			data = bestCompressedData;
 			shouldFreeData = true;
 			compressorUsed = bestCodec;
