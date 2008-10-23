@@ -30,7 +30,7 @@ public class BucketChainBucketFactory implements BucketFactory {
 
 	public Bucket makeBucket(long size) throws IOException {
 		if(runner == null)
-			return new BucketChainBucket(blockSize, factory, runner);
+			return new BucketChainBucket(blockSize, factory);
 		else
 			return new SegmentedBucketChainBucket(blockSize, factory, runner, segmentSize);
 	}
