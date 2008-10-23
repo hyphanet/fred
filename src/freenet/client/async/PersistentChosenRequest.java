@@ -96,7 +96,7 @@ public class PersistentChosenRequest {
 				}
 			}
 			
-		}, 20*60*1000);
+		}, 4*60*60*1000); // should be plenty of time even with 1000 single-insert PCRs each taking 10 seconds ...
 	}
 
 	void onFinished(PersistentChosenBlock block, ClientContext context) {
