@@ -578,6 +578,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 					try {
 						container.activate(startupDatabaseJobs[i], 1);
 						startupDatabaseJobs[i].run(container, context);
+						container.commit();
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t+" in startup job "+startupDatabaseJobs[i], t);
 					}
