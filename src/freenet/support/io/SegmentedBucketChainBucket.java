@@ -258,7 +258,7 @@ public class SegmentedBucketChainBucket implements Bucket {
 
 	private transient DBJob killMe;
 	
-	protected synchronized SegmentedChainBucketSegment makeSegment(int index, final SegmentedChainBucketSegment oldSeg) {
+	protected SegmentedChainBucketSegment makeSegment(int index, final SegmentedChainBucketSegment oldSeg) {
 		if(oldSeg != null) {
 			dbJobRunner.runBlocking(new DBJob() {
 				
@@ -276,10 +276,12 @@ public class SegmentedBucketChainBucket implements Bucket {
 				
 			}, NativeThread.NORM_PRIORITY);
 		}
-		SegmentedChainBucketSegment seg = new SegmentedChainBucketSegment(this);
-		if(segments.size() != index) throw new IllegalArgumentException("Asked to add segment "+index+" but segments length is "+segments.size());
-		segments.add(seg);
-		return seg;
+		synchronized(this) {
+			SegmentedChainBucketSegment seg = new SegmentedChainBucketSegment(this);
+			if(segments.size() != index) throw new IllegalArgumentException("Asked to add segment "+index+" but segments length is "+segments.size());
+			segments.add(seg);
+			return seg;
+		}
 	}
 
 	public boolean isReadOnly() {
