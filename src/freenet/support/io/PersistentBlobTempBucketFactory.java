@@ -238,7 +238,7 @@ public class PersistentBlobTempBucketFactory {
 			Logger.minor(this, "Removing bucket "+bucket+" for slot "+bucket.index+" from database");
 		if(!bucket.persisted()) return;
 		if(!bucket.freed()) {
-			Logger.error(this, "Removing bucket "+bucket+" for slot "+bucket.index+" but not freed!");
+			Logger.error(this, "Removing bucket "+bucket+" for slot "+bucket.index+" but not freed!", new Exception("debug"));
 		}
 		Query query = container.query();
 		long index = bucket.index;
