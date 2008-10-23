@@ -26,6 +26,7 @@ public class SplitFileInserterSegmentRegisterJob implements DBJob {
 		}
 		container.deactivate(seg, 1);
 		context.jobRunner.removeRestartJob(this, restartPriority, container);
+		container.delete(this);
 	}
 
 	public void schedule(ObjectContainer container, ClientContext context, int nowPriority) {

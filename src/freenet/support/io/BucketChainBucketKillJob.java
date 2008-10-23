@@ -21,6 +21,7 @@ class BucketChainBucketKillJob implements DBJob {
 		if(bcb.stored) return;
 		System.err.println("Freeing unfinished unstored bucket "+this);
 		bcb.removeFrom(container);
+		container.delete(this);
 	}
 	
 }
