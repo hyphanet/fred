@@ -571,23 +571,30 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			}
 		}, "Startup completion thread");
 		
-		queue(new DBJob() {
-
-			public void run(ObjectContainer container, ClientContext context) {
-				for(int i=0;i<startupDatabaseJobs.length;i++) {
-					try {
-						container.activate(startupDatabaseJobs[i], 1);
-						startupDatabaseJobs[i].run(container, context);
-						container.commit();
-					} catch (Throwable t) {
-						Logger.error(this, "Caught "+t+" in startup job "+startupDatabaseJobs[i], t);
-					}
-				}
-				startupDatabaseJobs = null;
-			}
-			
-		}, NativeThread.HIGH_PRIORITY, false);
+		queue(startupJobRunner, NativeThread.HIGH_PRIORITY, false);
 	}
+	
+	private int startupDatabaseJobsDone = 0;
+	
+	private DBJob startupJobRunner = new DBJob() {
+
+		public void run(ObjectContainer container, ClientContext context) {
+			DBJob job = startupDatabaseJobs[startupDatabaseJobsDone];
+			try {
+				container.activate(job, 1);
+				job.run(container, context);
+				container.commit();
+			} catch (Throwable t) {
+				Logger.error(this, "Caught "+t+" in startup job "+job, t);
+			}
+			startupDatabaseJobsDone++;
+			if(startupDatabaseJobsDone == startupDatabaseJobs.length)
+				startupDatabaseJobs = null;
+			else
+				context.jobRunner.queue(startupJobRunner, NativeThread.HIGH_PRIORITY, false);
+		}
+		
+	};
 
 	public interface SimpleRequestSenderCompletionListener {
 
