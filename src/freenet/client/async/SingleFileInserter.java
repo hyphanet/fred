@@ -16,6 +16,7 @@ import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.SSKBlock;
+import freenet.node.PrioRunnable;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
@@ -24,6 +25,7 @@ import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketChainBucketFactory;
 import freenet.support.io.BucketTools;
+import freenet.support.io.NativeThread;
 
 /**
  * Attempt to insert a file. May include metadata.
@@ -111,7 +113,7 @@ class SingleFileInserter implements ClientPutState {
 	// Of course it doesn't make any sense on multi-core systems.
 	private static final Object compressorSync = new Object();
 	
-	private  class OffThreadCompressor implements Runnable {
+	private  class OffThreadCompressor implements PrioRunnable {
 		public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
 			try {
@@ -130,6 +132,10 @@ class SingleFileInserter implements ClientPutState {
                 // Try to fail gracefully
 				cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), SingleFileInserter.this);
 			}
+		}
+
+		public int getPriority() {
+			return NativeThread.LOW_PRIORITY;
 		}
 	}
 	
