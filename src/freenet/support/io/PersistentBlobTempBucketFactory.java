@@ -158,7 +158,7 @@ public class PersistentBlobTempBucketFactory {
 			// Lets extend the file.
 			// FIXME if physical security is LOW, just set the length, possibly
 			// padding will nonrandom nulls on unix.
-			long addBlocks = Math.min(1024, (blocks / 20) + 32);
+			long addBlocks = Math.min(16384, (blocks / 10) + 32);
 			long extendBy = addBlocks * blockSize;
 			long written = 0;
 			byte[] buf = new byte[4096];
