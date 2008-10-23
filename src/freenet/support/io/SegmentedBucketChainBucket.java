@@ -230,6 +230,9 @@ public class SegmentedBucketChainBucket implements Bucket {
 						container.ext().store(segments, 1);
 						container.ext().store(SegmentedBucketChainBucket.this, 1);
 						container.deactivate(oldSeg, 1);
+						synchronized(SegmentedBucketChainBucket.this) {
+							if(killMe == null) return;
+						}
 						dbJobRunner.removeRestartJob(killMe, NativeThread.HIGH_PRIORITY, container);
 					}
 					
@@ -238,7 +241,7 @@ public class SegmentedBucketChainBucket implements Bucket {
 		};
 	}
 
-	private final DBJob killMe = new SegmentedBucketChainBucketKillJob(this);
+	private transient DBJob killMe;
 	
 	protected synchronized SegmentedChainBucketSegment makeSegment(int index, final SegmentedChainBucketSegment oldSeg) {
 		if(oldSeg != null) {
@@ -249,6 +252,10 @@ public class SegmentedBucketChainBucket implements Bucket {
 					container.ext().store(segments, 1);
 					container.ext().store(SegmentedBucketChainBucket.this, 1);
 					container.deactivate(oldSeg, 1);
+					synchronized(SegmentedBucketChainBucket.this) {
+						if(killMe != null) return;
+						killMe = new SegmentedBucketChainBucketKillJob(SegmentedBucketChainBucket.this);
+					}
 					dbJobRunner.queueRestartJob(killMe, NativeThread.HIGH_PRIORITY, container);
 				}
 				
