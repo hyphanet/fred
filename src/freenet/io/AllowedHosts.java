@@ -26,7 +26,7 @@ import freenet.support.Logger;
 /** Implementation of allowedHosts */
 public class AllowedHosts {
 	
-	protected final List addressMatchers = new ArrayList();
+	protected final List<AddressMatcher> addressMatchers = new ArrayList<AddressMatcher>();
 	
 	public AllowedHosts(String allowedHosts) {
 		setAllowedHosts(allowedHosts);
@@ -42,7 +42,7 @@ public class AllowedHosts {
 	public void setAllowedHosts(String allowedHosts) {
                 if(allowedHosts == null || allowedHosts.equals("")) allowedHosts = NetworkInterface.DEFAULT_BIND_TO;
 		StringTokenizer allowedHostsTokens = new StringTokenizer(allowedHosts, ",");
-		List newAddressMatchers = new ArrayList();
+		List<AddressMatcher> newAddressMatchers = new ArrayList<AddressMatcher>();
 		while (allowedHostsTokens.hasMoreTokens()) {
 			String allowedHost = allowedHostsTokens.nextToken().trim();
 			String hostname = allowedHost;
@@ -73,9 +73,7 @@ public class AllowedHosts {
 	}
 
 	public synchronized boolean allowed(AddressType clientAddressType, InetAddress clientAddress) {
-		for(int i=0;i<addressMatchers.size();i++) {
-			AddressMatcher matcher = (AddressMatcher) addressMatchers.get(i);
-			
+		for(AddressMatcher matcher: addressMatchers) {
 			if (clientAddressType == matcher.getAddressType()) {
 				if(matcher.matches(clientAddress)) return true;
 			}
@@ -86,7 +84,7 @@ public class AllowedHosts {
 	public synchronized String getAllowedHosts() {
 		StringBuilder sb = new StringBuilder();
 		for(int i=0;i<addressMatchers.size();i++) {
-			AddressMatcher matcher = (AddressMatcher) addressMatchers.get(i);
+			AddressMatcher matcher = addressMatchers.get(i);
 			if(matcher instanceof EverythingMatcher) return "*";
 			if(i != 0) sb.append(',');
 			sb.append(matcher.getHumanRepresentation());
