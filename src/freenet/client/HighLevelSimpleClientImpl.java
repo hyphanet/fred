@@ -218,7 +218,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient {
 
 	public InsertContext getInsertContext(boolean forceNonPersistent) {
 		return new InsertContext(bucketFactory, forceNonPersistent ? bucketFactory : persistentBucketFactory,
-				forceNonPersistent ? new NullPersistentFileTracker() : persistentFileTracker,
+				forceNonPersistent ? NullPersistentFileTracker.getInstance() : persistentFileTracker,
 				random, INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
 				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
 				globalEventProducer, cacheLocalRequests, core.uskManager, blockEncoder, core.getExecutor());

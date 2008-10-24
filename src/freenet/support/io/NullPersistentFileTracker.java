@@ -8,6 +8,16 @@ import java.io.File;
 import freenet.support.api.Bucket;
 
 public class NullPersistentFileTracker implements PersistentFileTracker {
+	private static NullPersistentFileTracker instance;
+	
+	public static synchronized NullPersistentFileTracker getInstance() {
+		if (instance == null)
+			instance = new NullPersistentFileTracker();
+		return instance;
+	}
+	
+	private NullPersistentFileTracker() {		
+	}
 
 	public void register(File file) {
 		// Do nothing
@@ -33,5 +43,4 @@ public class NullPersistentFileTracker implements PersistentFileTracker {
 	public long getID(File file) {
 		return 0;
 	}
-
 }
