@@ -1,6 +1,5 @@
 package freenet.client.async;
 
-import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.HashMap;
@@ -10,6 +9,7 @@ import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
+import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.events.FinishedCompressionEvent;
 import freenet.client.events.StartedCompressionEvent;
 import freenet.keys.BaseClientKey;
@@ -203,7 +203,7 @@ class SingleFileInserter implements ClientPutState {
 				throw new InsertException(InsertException.BUCKET_ERROR, e, null);
 				} catch(CompressionOutputSizeException e) {
 				// Impossible
-				throw new Error(e);
+				throw new InsertException(InsertException.INTERNAL_ERROR, e,null);
 			}
 		}
 		}
