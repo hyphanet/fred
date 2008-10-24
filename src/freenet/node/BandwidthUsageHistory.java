@@ -3,6 +3,7 @@ package freenet.node;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Date;
+import java.util.NoSuchElementException;
 
 /**
  * A fixed-size list of bandwidth usage measurements. Storing a measurement
@@ -55,21 +56,28 @@ public class BandwidthUsageHistory implements Iterable<BandwidthUsageHistory.Ban
 
 	public Iterator<BandwidthUsageSample> iterator() {
 		return new Iterator<BandwidthUsageSample>() {
-			int idx = (slot  - data.length) % data.length;
+			int idx = 0;
 			
 			public boolean hasNext() {
-				// TODO Auto-generated method stub
-				return false;
+				return (idx != data.length);
 			}
 
 			public BandwidthUsageSample next() {
-				// TODO Auto-generated method stub
-				return null;
+				if(!hasNext())
+					throw new NoSuchElementException();
+				
+				// FIXME: figure out whether we should clone() it.
+				BandwidthUsageSample result = data[(slot+idx) % data.length];
+				++idx;
+				return result;
 			}
 
+			/**
+			 * This cannot be used: The BandwidthUsageHistory contains a fixed
+			 * amount of elements.
+			 */
 			public void remove() {
-				// TODO Auto-generated method stub
-				
+				throw new UnsupportedOperationException();
 			}
 			
 		};
