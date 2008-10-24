@@ -404,9 +404,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 			// Must set finished BEFORE calling parentFetcher.
 			// Otherwise a race is possible that might result in it not seeing our finishing.
 			finished = true;
+			if(persistent) container.store(this);
 			if(codec == null || !isCollectingBinaryBlob(parent))
 				parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
-			if(persistent) container.store(this);
 			// Leave active before queueing
 		} catch (IOException e) {
 			Logger.normal(this, "Caught bucket error?: "+e, e);
@@ -1195,6 +1195,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 			blockNum = this.getBlockNumber(key, container);
 			if(blockNum < 0) return false;
+			if(logMINOR)
+				Logger.minor(this, "Found key for block "+blockNum+" on "+this+" in onGotKey() for "+key);
 			ClientCHK ckey = this.getBlockKey(blockNum, container);
 			int retryCount = getBlockRetryCount(blockNum);
 			seg = this.getSubSegment(retryCount, container, true, null);
@@ -1223,7 +1225,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 				return false;
 			}
 			data = extract(cb, blockNum, container, context);
-			if(data == null) return false;
+			if(data == null) {
+				if(logMINOR)
+					Logger.minor(this, "Extract failed");
+				return false;
+			}
 		}
 		if(!cb.isMetadata()) {
 			this.onSuccess(data, blockNum, cb, container, context, seg);
