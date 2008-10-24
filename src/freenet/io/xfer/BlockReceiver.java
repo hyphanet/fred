@@ -26,11 +26,11 @@ import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.Message;
+import freenet.io.comm.MessageCore;
 import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
-import freenet.io.comm.MessageCore;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.Logger;
@@ -56,7 +56,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	long _uid;
 	MessageCore _usm;
 	/** packet : Integer -> reportTime : Long * */
-	HashMap _recentlyReportedMissingPackets = new HashMap();
+	HashMap<Integer, Long> _recentlyReportedMissingPackets = new HashMap<Integer, Long>();
 	ByteCounter _ctr;
 	boolean sentAborted;
 	private MessageFilter discardFilter;
@@ -113,19 +113,19 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				// Remove it from rrmp if its in there
 				_recentlyReportedMissingPackets.remove(new Integer(packetNo));
 				// Check that we have what the sender thinks we have
-				LinkedList missing = new LinkedList();
+				LinkedList<Integer> missing = new LinkedList<Integer>();
 				for (int x = 0; x < sent.getSize(); x++) {
 					if (sent.bitAt(x) && !_prb.isReceived(x)) {
 						// Sender thinks we have a block which we don't, but have we already
 						// re-requested it recently?
-						Long resendTime = (Long) _recentlyReportedMissingPackets.get(new Integer(x));
+						Long resendTime = _recentlyReportedMissingPackets.get(x);
 						if ((resendTime == null) || (System.currentTimeMillis() > resendTime.longValue())) {
 							// Make a note of the earliest time we should resend this, based on the number of other
 							// packets we are already waiting for
 							long resendWait = System.currentTimeMillis()
 									+ (MAX_ROUND_TRIP_TIME + (_recentlyReportedMissingPackets.size() * MAX_SEND_INTERVAL));
-							_recentlyReportedMissingPackets.put(new Integer(x), (new Long(resendWait)));
-							missing.add(new Integer(x));
+							_recentlyReportedMissingPackets.put(x, resendWait);
+							missing.add(x);
 						}
 					}
 				}
@@ -147,10 +147,10 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 					throw new RetrievalException(RetrievalException.SENDER_DIED,
 							"Sender unresponsive to resend requests");
 				}
-				LinkedList missing = new LinkedList();
+				LinkedList<Integer> missing = new LinkedList<Integer>();
 				for (int x = 0; x < _prb.getNumPackets(); x++) {
 					if (!_prb.isReceived(x)) {
-						missing.add(new Integer(x));
+						missing.add(x);
 					}
 				}
 				Message mn = DMT.createMissingPacketNotification(_uid, missing);
