@@ -256,6 +256,7 @@ public class PersistentBlobTempBucketFactory {
 			Logger.error(this, "Slot "+index+" already occupied!: "+tag.bucket+" for "+tag.index);
 			throw new IllegalStateException("Slot "+index+" already occupied!");
 		}
+		tag.bucket = bucket;
 		container.store(tag);
 		synchronized(this) {
 			notCommittedBlobs.remove(index);
