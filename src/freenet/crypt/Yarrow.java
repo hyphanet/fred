@@ -102,7 +102,7 @@ public class Yarrow extends RandomSource {
 		slow_pool_reseed();
 	}
 
-	public void seedFromExternalStuff(boolean canBlock) {
+	private void seedFromExternalStuff(boolean canBlock) {
 		byte[] buf = new byte[32];
 		if(File.separatorChar == '/') {
 			DataInputStream dis = null;
@@ -450,7 +450,7 @@ public class Yarrow extends RandomSource {
 		return totalRealEntropy;
 	}
 
-	public int acceptEntropy(
+	private int acceptEntropy(
 		EntropySource source,
 		long data,
 		int entropyGuess,
@@ -498,7 +498,7 @@ public class Yarrow extends RandomSource {
 
 					if(slow_entropy >= (SLOW_THRESHOLD * 2)) {
 						int kc = 0;
-						for(Enumeration enu = entropySeen.keys(); enu.hasMoreElements();) {
+						for(Enumeration<EntropySource> enu = entropySeen.keys(); enu.hasMoreElements();) {
 							Object key = enu.nextElement();
 							Integer v = entropySeen.get(key);
 							if(DEBUG)
@@ -767,17 +767,5 @@ public class Yarrow extends RandomSource {
 		else
 			slow_pool.update(bytes, 0, bytes.length);
 		fast_select = !fast_select;
-	}
-
-	public String getCheckpointName() {
-		return "Yarrow random number generator checkpoint";
-	}
-
-	public long nextCheckpoint() {
-		return System.currentTimeMillis() + 60 * 60 * 1000;
-	}
-
-	public void checkpoint() {
-		seedFromExternalStuff(true);
 	}
 }
