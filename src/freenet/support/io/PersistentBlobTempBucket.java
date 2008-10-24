@@ -28,16 +28,18 @@ public class PersistentBlobTempBucket implements Bucket {
 	 * map in the factory. */
 	private boolean persisted;
 	private final int hashCode;
+	final PersistentBlobTempBucketTag tag;
 	
 	public int hashCode() {
 		return hashCode;
 	}
 
-	public PersistentBlobTempBucket(PersistentBlobTempBucketFactory factory2, long blockSize2, long slot) {
+	public PersistentBlobTempBucket(PersistentBlobTempBucketFactory factory2, long blockSize2, long slot, PersistentBlobTempBucketTag tag) {
 		factory = factory2;
 		blockSize = blockSize2;
 		index = slot;
 		hashCode = super.hashCode();
+		this.tag = tag;
 	}
 
 	public Bucket createShadow() throws IOException {
