@@ -138,6 +138,8 @@ public class FECQueue implements OOMHook {
 				}
 			}
 			if(!kept) {
+				if(logMINOR)
+					Logger.minor(this, "Deactivating job "+job);
 				job.deactivate(container);
 			}
 			if(runningFECThreads < maxThreads) {
