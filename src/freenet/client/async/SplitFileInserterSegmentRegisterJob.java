@@ -29,8 +29,9 @@ public class SplitFileInserterSegmentRegisterJob implements DBJob {
 		container.delete(this);
 	}
 
-	public void schedule(ObjectContainer container, ClientContext context, int nowPriority) {
-		context.jobRunner.queueRestartJob(this, restartPriority, container);
+	public void schedule(ObjectContainer container, ClientContext context, int nowPriority, boolean persistent) {
+		if(persistent)
+			context.jobRunner.queueRestartJob(this, restartPriority, container);
 		context.jobRunner.queue(this, nowPriority, false);
 	}
 

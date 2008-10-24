@@ -274,7 +274,7 @@ public class SplitFileInserter implements ClientPutState {
 			if(persistent)
 				container.activate(segments[i], 1);
 			SplitFileInserterSegmentRegisterJob segJob = new SplitFileInserterSegmentRegisterJob(segments[i], NativeThread.NORM_PRIORITY);
-			segJob.schedule(container, context, NativeThread.NORM_PRIORITY);
+			segJob.schedule(container, context, NativeThread.NORM_PRIORITY, persistent);
 			if(persistent)
 				container.deactivate(segments[i], 1);
 		}
