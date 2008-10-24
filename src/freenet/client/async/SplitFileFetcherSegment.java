@@ -367,6 +367,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 						Logger.error(this, "Data block "+i+" is inactive!");
 					if(dataBuckets[i] == null)
 						Logger.error(this, "Data block "+i+" is null!");
+					else if(dataBuckets[i].data == null)
+						Logger.error(this, "Data block "+i+" has null data!");
 					else
 						dataBuckets[i].data.storeTo(container);
 					container.store(dataBuckets[i]);
