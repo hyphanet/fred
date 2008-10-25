@@ -91,7 +91,7 @@ public class MessageType {
 	}
 
 	public Class<?> typeOf(String field) {
-		return _fields.get(field.hashCode());
+		return _fields.get(field);
 	}
 
 	@Override
