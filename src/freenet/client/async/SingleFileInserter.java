@@ -203,7 +203,8 @@ class SingleFileInserter implements ClientPutState {
 				throw new InsertException(InsertException.BUCKET_ERROR, e, null);
 				} catch(CompressionOutputSizeException e) {
 				// Impossible
-				throw new InsertException(InsertException.INTERNAL_ERROR, e,null);
+				// throw new InsertException(InsertException.INTERNAL_ERROR, e,null);
+					continue;	// try next compressor type
 			}
 		}
 		}
