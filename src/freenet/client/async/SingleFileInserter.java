@@ -170,7 +170,7 @@ class SingleFileInserter implements ClientPutState {
 			// Try to compress the data.
 			// Try each algorithm, starting with the fastest and weakest.
 			// Stop when run out of algorithms, or the compressed data fits in a single block.
-				for(COMPRESSOR_TYPE comp : COMPRESSOR_TYPE.values()) {
+			for(COMPRESSOR_TYPE comp : COMPRESSOR_TYPE.values()) {
 				try {
 					if(logMINOR)
 						Logger.minor(this, "Attempt to compress using " + comp);
@@ -200,13 +200,13 @@ class SingleFileInserter implements ClientPutState {
 						result.free();
 
 				} catch(IOException e) {
-				throw new InsertException(InsertException.BUCKET_ERROR, e, null);
+					throw new InsertException(InsertException.BUCKET_ERROR, e, null);
 				} catch(CompressionOutputSizeException e) {
-				// Impossible
-				// throw new InsertException(InsertException.INTERNAL_ERROR, e,null);
+					// Impossible
+					// throw new InsertException(InsertException.INTERNAL_ERROR, e,null);
 					continue;	// try next compressor type
+				}
 			}
-		}
 		}
 		boolean shouldFreeData = false;
 		if(bestCompressedData != null) {
