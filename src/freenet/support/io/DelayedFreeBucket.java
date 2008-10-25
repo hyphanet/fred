@@ -148,6 +148,14 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 	public Bucket createShadow() throws IOException {
 		return bucket.createShadow();
 	}
+
+	public void realFree() {
+		bucket.free();
+	}
+
+	public void realRemoveFrom(ObjectContainer container) {
+		bucket.removeFrom(container);
+	}
 	
 //	public void objectOnDeactivate(ObjectContainer container) {
 //		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Deactivating "+super.toString()+" : "+bucket, new Exception("debug"));

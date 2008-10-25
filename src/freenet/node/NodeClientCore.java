@@ -6,6 +6,8 @@ import java.net.URI;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import org.tanukisoftware.wrapper.WrapperManager;
+
 import com.db4o.ObjectContainer;
 
 import freenet.client.ArchiveManager;
@@ -67,7 +69,6 @@ import freenet.support.OOMHook;
 import freenet.support.PrioritizedSerialExecutor;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.BooleanCallback;
-import freenet.support.api.Bucket;
 import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.api.StringArrCallback;
@@ -1347,9 +1348,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 					DelayedFreeBucket bucket = i.next();
 					try {
 						if(bucket.toFree())
-							bucket.free();
+							bucket.realFree();
 						if(bucket.toRemove())
-							bucket.removeFrom(node.db);
+							bucket.realRemoveFrom(node.db);
 					} catch (Throwable t) {
 						Logger.error(this, "Caught "+t+" freeing bucket "+bucket+" after transaction commit");
 					}
@@ -1401,6 +1402,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		synchronized(this) {
 			killedDatabase = true;
 		}
+		WrapperManager.requestThreadDump();
 		System.err.println("Out of memory: Emergency shutdown to protect database integrity in progress...");
 		System.exit(NodeInitException.EXIT_OUT_OF_MEMORY_PROTECTING_DATABASE);
 	}
