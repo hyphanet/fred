@@ -171,13 +171,14 @@ class SingleFileInserter implements ClientPutState {
 			// Try each algorithm, starting with the fastest and weakest.
 			// Stop when run out of algorithms, or the compressed data fits in a single block.
 			for(COMPRESSOR_TYPE comp : COMPRESSOR_TYPE.values()) {
+				boolean shouldFreeOnFinally = true;
+				Bucket result = null;
 				try {
 					if(logMINOR)
 						Logger.minor(this, "Attempt to compress using " + comp);
 					// Only produce if we are compressing *the original data*
 					if(parent == cb)
 						ctx.eventProducer.produceEvent(new StartedCompressionEvent(comp));
-					Bucket result;
 					result = comp.compress(origData, new BucketChainBucketFactory(ctx.persistentBucketFactory, CHKBlock.DATA_LENGTH), bestCompressedDataSize);
 					long resultSize = result.size();
 					if(resultSize < oneBlockCompressedSize) {
@@ -185,26 +186,25 @@ class SingleFileInserter implements ClientPutState {
 						if(bestCompressedData != null)
 							bestCompressedData.free();
 						bestCompressedData = result;
-						continue;
+						bestCompressedDataSize = resultSize;
+						shouldFreeOnFinally = false;
+						break;
 					}
-					if((bestCompressedData != null) && (resultSize < bestCompressedDataSize)) {
-						bestCompressedData.free();
+					if((resultSize < bestCompressedDataSize) || (resultSize < origSize)) {
+						if(bestCompressedData != null)
+							bestCompressedData.free();
 						bestCompressedData = result;
 						bestCompressedDataSize = resultSize;
 						bestCodec = comp;
-					} else if((bestCompressedData == null) && (resultSize < origSize)) {
-						bestCompressedData = result;
-						bestCompressedDataSize = resultSize;
-						bestCodec = comp;
-					} else
-						result.free();
-
+						shouldFreeOnFinally = false;
+					}
+				} catch(CompressionOutputSizeException e) {
+					continue;	// try next compressor type
 				} catch(IOException e) {
 					throw new InsertException(InsertException.BUCKET_ERROR, e, null);
-				} catch(CompressionOutputSizeException e) {
-					// Impossible
-					// throw new InsertException(InsertException.INTERNAL_ERROR, e,null);
-					continue;	// try next compressor type
+				} finally {
+					if(shouldFreeOnFinally && (result != null))
+						result.free();
 				}
 			}
 		}
