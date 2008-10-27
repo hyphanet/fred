@@ -45,7 +45,7 @@ public class HMAC {
 		else {
 			// Step 2
 			if(K.length > B)
-				K0 = K = Util.hashBytes(d, K);
+				K = Util.hashBytes(d, K);
 
 			if(K.length < B) { // Step 3
 				K0 = new byte[B];
