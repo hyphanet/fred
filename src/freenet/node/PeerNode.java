@@ -74,6 +74,7 @@ import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPUtil;
+import java.net.InetAddress;
 
 /**
  * @author amphibian
@@ -3912,7 +3913,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public static boolean shouldThrottle(Peer peer, Node node) {
 		if(node.throttleLocalData) return true;
 		if(peer == null) return true; // presumably
-		return IPUtil.isValidAddress(peer.getAddress(), false);
+		InetAddress addr = peer.getAddress();
+		if(addr == null) return true; // presumably
+		return IPUtil.isValidAddress(addr, false);
 	}
 
 	public void reportPing(long t) {
