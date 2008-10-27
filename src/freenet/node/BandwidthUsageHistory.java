@@ -42,22 +42,59 @@ public class BandwidthUsageHistory implements Iterable<BandwidthUsageHistory.Ban
 		slot = 0;
 	}
 
-	public BandwidthUsageHistory(BandwidthUsageSample[] newData, boolean bOldestIsNotIndex0) {
+	/**
+	 * Create a new BandWidthUsageHistory from an existing array of BandwidthUsageSample. 
+	 * @param newData The data for the new object.
+	 * @param bNextSlotIsNotIndex0 If set to false, the new object assumes that slot 0 is the oldest sample. If set to true, the next slot is searched (time expensive!).
+	 */
+	protected BandwidthUsageHistory(BandwidthUsageSample[] newData, boolean bNextSlotIsNotIndex0) {
 		if (newData == null)
 			throw new IllegalArgumentException("newData == null");
 
 		data = newData;
-		slot = 0;
-		
+
 		/* TODO: Remove if it is not needed by any caller. */
-		if(bOldestIsNotIndex0)
-			slot = getOldestSampleIndex();
-		else
-			assert(getOldestSampleIndex() == slot);
+		if(bNextSlotIsNotIndex0)
+			slot = getNextFreeSlot();
+		else {
+			slot = 0;
+			assert(getNextFreeSlot() == slot);	/* Catch wrong use of this constructor. */
+		}
+	}
+	
+	protected BandwidthUsageHistory(BandwidthUsageSample[] newData, int newSlot) {
+		if (newData == null)
+			throw new IllegalArgumentException("newData == null");
+		if (newSlot < 0 || newSlot >= newData.length)
+			throw new IllegalArgumentException("newSlot invalid: " + newSlot);
+
+		data = newData;
+		slot = newSlot;
+		
+		assert (getNextFreeSlot() == slot); /* Catch wrong use of this constructor. */
 	}
 
 	public int getSampleCount() {
 		return(data.length);
+	}
+	
+	/**
+	 * Creates a new BandwidthUsageHistory with the same sample data but different space for samples.
+	 * @param newSampleCount The amount of samples for the new object. If <code>newSampleCount</code> is less than the current sample count, the oldest samples are dropped.
+	 */
+	public synchronized BandwidthUsageHistory clone(int newSampleCount) {
+		if(newSampleCount < 1)
+			throw new IllegalArgumentException("newSampleCount < 1");
+		
+		BandwidthUsageSample[] newData = new BandwidthUsageSample[newSampleCount];
+		int newIdx = 0;
+		
+		for(int idx = newSampleCount >= data.length ? 0 : (data.length - newSampleCount); idx < data.length; idx++) {
+			newData[newIdx++] = getSample(idx);
+		}
+		newIdx %= newData.length;
+		
+		return (new BandwidthUsageHistory(newData, newIdx));
 	}
 
 	public synchronized void putValue(float value, long time) {
@@ -70,8 +107,11 @@ public class BandwidthUsageHistory implements Iterable<BandwidthUsageHistory.Ban
 	}
 
 	/**
-	 * Returns the <code>BandwidthUsageSample</code> with index <code>idx</code> from this object. Do not modify it, the original object
-	 * is returned instead of a copy to prevent creation of large amounts of BandwidthUsageSample-objects.
+	 * Returns the <code>BandwidthUsageSample</code> with index <code>idx</code> from this object. The index is zero based, index 0 being the
+	 * oldest bandwidth sample.
+	 * Do not modify it, the original object is returned instead of a copy to prevent creation of large amounts of BandwidthUsageSample-objects.
+	 * @param idx The index of the sample, index 0 being the oldest bandwidth sample.
+	 * @return The BandwidthUsageSample with the desired index, null if there is no such element yet.
 	 */
 	public synchronized BandwidthUsageSample getSample(int idx) {
 		/* It should not be necessary for clients of this class to use values of idx greater than data.length, it will work however. */
@@ -168,15 +208,20 @@ public class BandwidthUsageHistory implements Iterable<BandwidthUsageHistory.Ban
 	}
 	
 	/**
-	 * Uses O(data.length) time! Should be avoided!
-	 * @return The index of the oldest sample in the data.
+	 * Uses O(data.length) time! Should be avoided by passing over calculated values to constructors!
+	 * Should be used in assert() statements.
+	 * @return The index of the oldest sample in the data if the array was full, the next empty slot otherwise.
 	 */
-	protected int getOldestSampleIndex() {
+	protected int getNextFreeSlot() {
 		int oldest = 0;
 		long oldestTime = Long.MAX_VALUE;
 
 		for (int idx = 0; idx < data.length; ++idx) {
-			if (data[idx] != null && data[idx].getTime() < oldestTime) {
+			if (data[idx] == null) {
+				oldest = idx;
+				break;
+			}
+			else if (data[idx] != null && data[idx].getTime() < oldestTime) {
 				oldest = idx;
 			}
 		}
