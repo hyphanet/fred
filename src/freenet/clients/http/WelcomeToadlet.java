@@ -51,7 +51,7 @@ public class WelcomeToadlet extends Toadlet {
     }
 
     void redirectToRoot(ToadletContext ctx) throws ToadletContextClosedException, IOException {
-        MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+        MultiValueTable headers = new MultiValueTable();
         headers.put("Location", "/");
         ctx.sendReplyHeaders(302, "Found", headers, null, 0);
         return;
@@ -122,7 +122,7 @@ public class WelcomeToadlet extends Toadlet {
                 redirectToRoot(ctx);
                 return;
             }
-            MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+            MultiValueTable headers = new MultiValueTable();
             String url = null;
             if ((request.getPartAsString("Go", 32).length() > 0)) {
                 url = request.getPartAsString(GenericReadFilterCallback.magicHTTPEscapeString, MAX_URL_LENGTH);
@@ -355,7 +355,7 @@ public class WelcomeToadlet extends Toadlet {
                 redirectToRoot(ctx);
                 return;
             }
-            MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+            MultiValueTable headers = new MultiValueTable();
             headers.put("Location", "/?terminated&formPassword=" + core.formPassword);
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
             node.ps.queueTimedJob(new Runnable() {
@@ -371,7 +371,7 @@ public class WelcomeToadlet extends Toadlet {
                 return;
             }
 
-            MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+            MultiValueTable headers = new MultiValueTable();
             headers.put("Location", "/?restarted&formPassword=" + core.formPassword);
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
             node.ps.queueTimedJob(new Runnable() {
@@ -564,7 +564,8 @@ public class WelcomeToadlet extends Toadlet {
 
         HTMLNode bookmarkBoxContent = bookmarkBox.addChild("div", "class", "infobox-content");
         HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
-        addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, useragent != null && useragent.contains("khtml") && !useragent.contains("chrome"));
+	String userAgent = useragent.toLowerCase();
+        addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, useragent != null && userAgent.contains("khtml") && !userAgent.contains("chrome"));
 
         // Fetch-a-key box
         HTMLNode fetchKeyBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", l10n("fetchKeyLabel")));

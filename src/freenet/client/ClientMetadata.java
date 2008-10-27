@@ -11,12 +11,13 @@ public class ClientMetadata implements Cloneable {
 	/** The document MIME type */
 	private String mimeType;
 
-	public ClientMetadata(){
-		mimeType = null;
-	}
-
 	public ClientMetadata(String mime) {
 		mimeType = (mime == null) ? null : mime.intern();
+	}
+
+	/** Create an empty ClientMetadata instance */
+	public ClientMetadata() {
+		mimeType = null;
 	}
 	
 	/** Get the document MIME type. Will always be a valid MIME type, unless there

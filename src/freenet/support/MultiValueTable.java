@@ -1,15 +1,14 @@
 package freenet.support;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Vector;
+import java.util.*;
 /**
  * A hashtable that can store several values for each entry.
  *
  * @author oskar
  */
 
-public class MultiValueTable<K,V> {
-    private Hashtable<K, Vector<V>> table;
+public class MultiValueTable {
+
+    private Hashtable table;
     private int ies;
 
     public MultiValueTable() {
@@ -21,15 +20,15 @@ public class MultiValueTable<K,V> {
     }
 
     public MultiValueTable(int initialSize, int initialEntrySize) {
-        table = new Hashtable<K, Vector<V>>(initialSize);
+        table = new Hashtable(initialSize);
         ies = initialEntrySize;
     }
 
-    public void put(K key, V value) {
+    public void put(Object key, Object value) {
         synchronized (table) {
-            Vector<V> v = table.get(key);
+            Vector v = (Vector) table.get(key);
             if (v == null) {
-                v = new Vector<V>(ies);
+                v = new Vector(ies);
                 table.put(key, v);
             }
             v.addElement(value);
@@ -39,24 +38,24 @@ public class MultiValueTable<K,V> {
     /**
      * Returns the first element for this key.
      */
-    public V get(K key) {
+    public Object get(Object key) {
         synchronized (table) {
-            Vector<V> v = table.get(key);
+            Vector v = (Vector) table.get(key);
             return (v == null ?
                     null :
                     v.firstElement());
         }
     }
 
-    public boolean containsKey(K key) {
+    public boolean containsKey(Object key) {
 		synchronized (table) {
 			return table.containsKey(key);
 		}
     }
 
-    public boolean containsElement(K key, V value) {
+    public boolean containsElement(Object key, Object value) {
         synchronized (table) {
-            Vector<V> v = table.get(key);
+            Vector v = (Vector) table.get(key);
             return (v != null) && v.contains(value);
         }
     }
@@ -64,20 +63,20 @@ public class MultiValueTable<K,V> {
     /**
      * Users will have to handle synchronizing.
      */
-    public Enumeration<V> getAll(K key) {
-    	Vector<V> v;
+    public Enumeration getAll(Object key) {
+    	Vector v;
 		synchronized (table) {
-			v = table.get(key);
+			v = (Vector) table.get(key);
 		}
         return (v == null ?
-                new LimitedEnumeration<V>(null) :
+                new LimitedEnumeration(null) :
                 v.elements());
     }
     
-    public int countAll(K key) {
-    	Vector<V> v;
+    public int countAll(Object key) {
+    	Vector v;
 		synchronized (table) {
-			v = table.get(key);
+			v = (Vector)table.get(key);
 		}
     	if(v != null) 
         	return v.size();
@@ -85,26 +84,26 @@ public class MultiValueTable<K,V> {
         	return 0;
     }
     
-    public Object getSync(K key) {
+    public Object getSync(Object key) {
 		synchronized (table) {
 			return table.get(key);
 		}
     }
     
-    public Object[] getArray(K key) {
+    public Object[] getArray(Object key) {
         synchronized (table) {
-            Vector<V> v = table.get(key);
+            Vector v = (Vector) table.get(key);
             if (v == null)
                 return null;
             else {
-            	Object[] r = new Object[v.size()];
+                Object[] r = new Object[v.size()];
                 v.copyInto(r);
                 return r;
             }
         }
     }
 
-    public void remove(K key) {
+    public void remove(Object key) {
 		synchronized (table) {
 			table.remove(key);
 		}
@@ -122,9 +121,9 @@ public class MultiValueTable<K,V> {
 		}
     }
 
-    public boolean removeElement(K key, V value) {
+    public boolean removeElement(Object key, Object value) {
         synchronized (table) {
-            Vector<V> v = table.get(key);
+            Vector v = (Vector) table.get(key);
             if (v == null)
                 return false;
             else {
@@ -136,43 +135,43 @@ public class MultiValueTable<K,V> {
         }
     }
 
-    public Enumeration<K> keys() {
+    public Enumeration keys() {
 		synchronized (table) {
 			return table.keys();
 		}
     }
 
-    public Enumeration<V> elements() {
+    public Enumeration elements() {
 		synchronized (table) {
 			if (table.isEmpty())
-				return new LimitedEnumeration<V>(null);
+				return new LimitedEnumeration(null);
 			else 
 				return new MultiValueEnumeration();
 		}
     }
 
-    private class MultiValueEnumeration implements Enumeration<V> {
-        private Enumeration<V> current;
-        private Enumeration< Vector<V>> global;
+    private class MultiValueEnumeration implements Enumeration {
+        private Enumeration current;
+        private Enumeration global;
         public MultiValueEnumeration() {
 			synchronized (table) {
 				global = table.elements();
 			}
-            current =  global.nextElement().elements();
+            current = ((Vector) global.nextElement()).elements();
             step();
         }
 
         public final void step() {
             while (!current.hasMoreElements() && global.hasMoreElements())
-                current = global.nextElement().elements();
+                current = ((Vector) global.nextElement()).elements();
         }
 
         public final boolean hasMoreElements() {
             return global.hasMoreElements(); // || current.hasMoreElements();
         }
         
-        public final V nextElement() {
-            V o = current.nextElement();
+        public final Object nextElement() {
+            Object o = current.nextElement();
             step();
             return o;
         }

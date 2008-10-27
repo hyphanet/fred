@@ -19,7 +19,7 @@ import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.CompressionOutputSizeException;
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+import freenet.support.compress.Compressor;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
@@ -141,7 +141,7 @@ public abstract class Key implements WritableToDataOutputStream {
             		(output[3] & 0xff);
             if(len > maxLength)
                 throw new TooBigException("Invalid precompressed size: "+len + " maxlength="+maxLength);
-            COMPRESSOR_TYPE decompressor = COMPRESSOR_TYPE.getCompressorByMetadataID(compressionAlgorithm);
+            Compressor decompressor = Compressor.getCompressionAlgorithmByMetadataID(compressionAlgorithm);
             Bucket inputBucket = new SimpleReadOnlyArrayBucket(output, shortLength?2:4, outputLength-(shortLength?2:4));
             try {
 				return decompressor.decompress(inputBucket, bf, maxLength, -1, null);
@@ -184,7 +184,9 @@ public abstract class Key implements WritableToDataOutputStream {
         	} else {
         		if (sourceData.size() > maxCompressedDataLength) {
 					// Determine the best algorithm
-					for (COMPRESSOR_TYPE comp : COMPRESSOR_TYPE.values()) {
+					for (int i = 0; i < Compressor.countCompressAlgorithms(); i++) {
+						Compressor comp = Compressor
+								.getCompressionAlgorithmByDifficulty(i);
 						ArrayBucket compressedData;
 						try {
 							compressedData = (ArrayBucket) comp.compress(
@@ -195,7 +197,8 @@ public abstract class Key implements WritableToDataOutputStream {
 							continue;
 						}
 						if (compressedData.size() <= maxCompressedDataLength) {
-							compressionAlgorithm = comp.metadataID;
+							compressionAlgorithm = comp
+									.codecNumberForMetadata();
 							sourceLength = sourceData.size();
 							try {
 								cbuf = BucketTools.toByteArray(compressedData);

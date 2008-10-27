@@ -24,10 +24,10 @@ import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
+import java.util.Vector;
 
 import freenet.support.ByteBufferInputStream;
 import freenet.support.Fields;
@@ -45,10 +45,10 @@ public class Message {
     public static final String VERSION = "$Id: Message.java,v 1.11 2005/09/15 18:16:04 amphibian Exp $";
 
 	private final MessageType _spec;
-	private final WeakReference<PeerContext> _sourceRef;
+	private final WeakReference/*<PeerContext>*/ _sourceRef;
 	private final boolean _internal;
-	private final HashMap<String, Object> _payload = new HashMap<String, Object>(8, 1.0F); // REDFLAG at the moment memory is more of an issue than CPU so we use a high load factor
-	private List<Message> _subMessages;
+	private final HashMap _payload = new HashMap(8, 1.0F); // REDFLAG at the moment memory is more of an issue than CPU so we use a high load factor
+	private Vector _subMessages;
 	public final long localInstantiationTime;
 	final int _receivedByteCount;
 
@@ -75,11 +75,12 @@ public class Message {
 		    return null; // silently discard internal-only messages
 		Message m = new Message(mspec, peer, recvByteCount);
 		try {
-		    for (String name : mspec.getOrderedFields()) {
-		        Class<?> type = mspec.getFields().get(name);
+		    for (Iterator i = mspec.getOrderedFields().iterator(); i.hasNext();) {
+		        String name = (String) i.next();
+		        Class<?> type = (Class<?>) mspec.getFields().get(name);
 		        if (type.equals(LinkedList.class)) { // Special handling for LinkedList to deal with element type
 		            m.set(name, Serializer
-					        .readListFromDataInputStream(mspec.getLinkedListTypes().get(name),
+					        .readListFromDataInputStream((Class<?>) mspec.getLinkedListTypes().get(name),
 					        bb));
 		        } else {
 		            m.set(name, Serializer.readFromDataInputStream(type, bb));
@@ -220,7 +221,8 @@ public class Message {
 		DataOutputStream dos = new DataOutputStream(baos);
 		try {
 			dos.writeInt(_spec.getName().hashCode());
-			for (String name : _spec.getOrderedFields()) {
+			for (Iterator i = _spec.getOrderedFields().iterator(); i.hasNext();) {
+				String name = (String) i.next();
 				Serializer.writeToDataOutputStream(_payload.get(name), dos, destination);
 			}
 			dos.flush();
@@ -231,7 +233,7 @@ public class Message {
 		
 		if(_subMessages != null && includeSubMessages) {
 			for(int i=0;i<_subMessages.size();i++) {
-				byte[] temp = _subMessages.get(i).encodeToPacket(destination, false, true);
+				byte[] temp = ((Message)_subMessages.get(i)).encodeToPacket(destination, false, true);
 				try {
 					dos.writeShort(temp.length);
 					dos.write(temp);
@@ -253,8 +255,9 @@ public class Message {
 		StringBuilder ret = new StringBuilder(1000);
 		String comma = "";
         ret.append(_spec.getName()).append(" {");
-		for (String name : _spec.getFields().keySet()) {
+		for (Iterator i = _spec.getFields().keySet().iterator(); i.hasNext();) {
 			ret.append(comma);
+			String name = (String) i.next();
             ret.append(name).append('=').append(_payload.get(name));
 			comma = ", ";
 		}
@@ -310,14 +313,14 @@ public class Message {
 	}
 	
 	public void addSubMessage(Message subMessage) {
-		if(_subMessages == null) _subMessages = new ArrayList<Message>();
+		if(_subMessages == null) _subMessages = new Vector();
 		_subMessages.add(subMessage);
 	}
 	
 	public Message getSubMessage(MessageType t) {
 		if(_subMessages == null) return null;
 		for(int i=0;i<_subMessages.size();i++) {
-			Message m = _subMessages.get(i);
+			Message m = (Message) _subMessages.get(i);
 			if(m.getSpec() == t) return m;
 		}
 		return null;
@@ -326,7 +329,7 @@ public class Message {
 	public Message grabSubMessage(MessageType t) {
 		if(_subMessages == null) return null;
 		for(int i=0;i<_subMessages.size();i++) {
-			Message m = _subMessages.get(i);
+			Message m = (Message) _subMessages.get(i);
 			if(m.getSpec() == t) {
 				_subMessages.remove(i);
 				return m;

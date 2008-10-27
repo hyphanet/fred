@@ -192,7 +192,7 @@ public class DMT {
 		addLinkedListField(MISSING, Integer.class);
 	}};
 	
-	public static final Message createMissingPacketNotification(long uid, LinkedList<Integer> missing) {
+	public static final Message createMissingPacketNotification(long uid, LinkedList missing) {
 		Message msg = new Message(missingPacketNotification);
 		msg.set(UID, uid);
 		msg.set(MISSING, missing);

@@ -121,7 +121,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 					}
 				}
 				
-				MultiValueTable<String, String> responseHeaders = new MultiValueTable<String, String>();
+				MultiValueTable responseHeaders = new MultiValueTable();
 				responseHeaders.put("Location", "/files/?key="+insertURI.toACIIString());
 				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
 				return;
@@ -129,7 +129,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			
 			String pass = request.getPartAsString("formPassword", 32);
 			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
-				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+				MultiValueTable headers = new MultiValueTable();
 				headers.put("Location", "/queue/");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				if(logMINOR) Logger.minor(this, "No formPassword: "+pass);
@@ -425,7 +425,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 										if ((System.currentTimeMillis() - forceDownloadTime) > 60 * 1000) {
 											break loop;
 										}
-										MultiValueTable<String, String> responseHeaders = new MultiValueTable<String, String>();
+										MultiValueTable responseHeaders = new MultiValueTable();
 										responseHeaders.put("Content-Disposition", "attachment; filename=\"" + clientGet.getURI().getPreferredFilename() + '"');
 										writeReply(ctx, 200, "application/x-msdownload", "OK", responseHeaders, dataBucket);
 										return;
@@ -617,7 +617,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					}else if(sortBy.equals("size")){
 						result = (firstRequest.getTotalBlocks() - secondRequest.getTotalBlocks()) < 0 ? -1 : 1;
 					}else if(sortBy.equals("progress")){
-						result = (firstRequest.getFetchedBlocks() / firstRequest.getMinBlocks() - secondRequest.getFetchedBlocks() / secondRequest.getMinBlocks()) < 0 ? -1 : 1;
+						result = firstRequest.getSuccessFraction() - secondRequest.getSuccessFraction() < 0 ? -1 : 1;
 					}else
 						isSet=false;
 				}else
@@ -854,7 +854,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		
 		contentNode.addChild(createBulkDownloadForm(ctx, pageMaker));
 				
-		MultiValueTable<String, String> pageHeaders = new MultiValueTable<String, String>();
+		MultiValueTable pageHeaders = new MultiValueTable();
 		writeHTMLReply(ctx, 200, "OK", pageHeaders, pageNode.generate());
 	}
 

@@ -5,6 +5,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 import freenet.support.api.Bucket;
 
@@ -16,7 +18,8 @@ import freenet.support.api.Bucket;
  * @author oskar
  */
 public class ArrayBucket implements Bucket {
-	private volatile byte[] data;
+
+	private final ArrayList<byte[]> data;
 	private String name;
 	private boolean readOnly;
 
@@ -26,11 +29,11 @@ public class ArrayBucket implements Bucket {
 
 	public ArrayBucket(byte[] initdata) {
 		this("ArrayBucket");
-		data = initdata;
+		data.add(initdata);
 	}
 
 	public ArrayBucket(String name) {
-		data = new byte[0];
+		data = new ArrayList<byte[]>();
 		this.name = name;
 	}
 
@@ -40,16 +43,34 @@ public class ArrayBucket implements Bucket {
 	}
 
 	public InputStream getInputStream() {
-		return new ByteArrayInputStream(data);
+		return new ArrayBucketInputStream();
 	}
 
 	@Override
 	public String toString() {
-		return new String(data);
+		StringBuilder s = new StringBuilder(250);
+		for (byte[] b : data) {
+			s.append(new String(b));
+		}
+		return s.toString();
+	}
+
+	public void read(InputStream in) throws IOException {
+		OutputStream out = new ArrayBucketOutputStream();
+		int i;
+		byte[] b = new byte[8 * 1024];
+		while ((i = in.read(b)) != -1) {
+			out.write(b, 0, i);
+		}
+		out.close();
 	}
 
 	public long size() {
-		return data.length;
+		long size = 0;
+		for (byte[] b : data) {
+			size += b.length;
+		}
+		return size;
 	}
 
 	public String getName() {
@@ -66,11 +87,83 @@ public class ArrayBucket implements Bucket {
 		@Override
 		public synchronized void close() throws IOException {
 			if(hasBeenClosed) return;
-			data = super.toByteArray();
+			data.add(super.toByteArray());
 			if(readOnly) throw new IOException("Read only");
 			// FIXME maybe we should throw on write instead? :)
 			hasBeenClosed = true;
 		}
+	}
+
+	private class ArrayBucketInputStream extends InputStream {
+		
+		private Iterator<byte[]> i;
+		private ByteArrayInputStream in;
+
+		public ArrayBucketInputStream() {
+			i = data.iterator();
+		}
+
+		@Override
+		public int read() {
+			return priv_read();
+		}
+
+		private int priv_read() {
+			if (in == null) {
+				if (i.hasNext()) {
+					in = new ByteArrayInputStream(i.next());
+				} else {
+					return -1;
+				}
+			}
+			int i = in.read();
+			if (i == -1) {
+				in = null;
+				return priv_read();
+			} else {
+				return i;
+			}
+		}
+
+		@Override
+		public int read(byte[] b) {
+			return priv_read(b, 0, b.length);
+		}
+
+		@Override
+		public int read(byte[] b, int off, int len) {
+			return priv_read(b, off, len);
+		}
+
+		private int priv_read(byte[] b, int off, int len) {
+			if (in == null) {
+				if (i.hasNext()) {
+					in = new ByteArrayInputStream(i.next());
+				} else {
+					return -1;
+				}
+			}
+			int i = in.read(b, off, len);
+			if (i == -1) {
+				in = null;
+				return priv_read(b, off, len);
+			} else {
+				return i;
+			}
+		}
+
+		@Override
+		public int available() {
+			if (in == null) {
+				if (i.hasNext()) {
+					in = new ByteArrayInputStream(i.next());
+				} else {
+					return 0;
+				}
+			}
+			return in.available();
+		}
+
 	}
 
 	public boolean isReadOnly() {
@@ -82,7 +175,7 @@ public class ArrayBucket implements Bucket {
 	}
 
 	public void free() {
-		data = new byte[0];
+		data.clear();
 		// Not much else we can do.
 	}
 
@@ -90,7 +183,13 @@ public class ArrayBucket implements Bucket {
 		long sz = size();
 		int size = (int)sz;
 		byte[] buf = new byte[size];
-		System.arraycopy(data, 0, buf, 0, size);
+		int index = 0;
+		for (byte[] obuf : data) {			
+			System.arraycopy(obuf, 0, buf, index, obuf.length);
+			index += obuf.length;
+		}
+		if(index != buf.length)
+			throw new IllegalStateException();
 		return buf;
 	}
 }

@@ -218,6 +218,10 @@ public class SecurityLevels {
 			listeners.add(listener);
 		}
 		
+		public void setPossibleValues(String[] val) {
+			throw new UnsupportedOperationException();
+		}
+		
 		@Override
 		public void set(String val) throws InvalidConfigValueException, NodeNeedRestartException {
 			T oldLevel = getValue();

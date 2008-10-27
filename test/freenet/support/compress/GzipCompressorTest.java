@@ -32,7 +32,7 @@ import freenet.support.io.ArrayBucketFactory;
  */
 public class GzipCompressorTest extends TestCase {
 
-	public static final String UNCOMPRESSED_DATA_1 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+	private static final String UNCOMPRESSED_DATA_1 = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 			+ "aksjdhaskjsdhaskjdhaksjdhkajsdhkasdhkqhdioqahdkashdkashdnkashdnaskdhnkasjhdnkasjhdnkasjhdnkasjhdnkasjhdnkashdnkasjhdnkasjhdnkasjhndkasjhdna"
 			+ "djjjjjjjjjjjjjjj3j12j312j312j312j31j23hj123niah1ia3h1iu2b321uiab31ugb312gba38gab23igb12i3ag1b2ig3bi1g3bi1gba3iu12ba3iug1bi3ug1b2i3gab1i2ua3";
 
@@ -47,8 +47,8 @@ public class GzipCompressorTest extends TestCase {
 	 * test GZIP compressor's identity and functionality
 	 */
 	public void testGzipCompressor() {
-		Compressor.COMPRESSOR_TYPE gzipCompressor = Compressor.COMPRESSOR_TYPE.GZIP;
-		Compressor compressorZero = Compressor.COMPRESSOR_TYPE.getCompressorByMetadataID((short)0);
+		GzipCompressor gzipCompressor = (GzipCompressor) Compressor.GZIP;
+		Compressor compressorZero = Compressor.getCompressionAlgorithmByMetadataID((short) 0);
 
 		// check GZIP is the first compressor
 		assertEquals(gzipCompressor, compressorZero);
@@ -94,7 +94,7 @@ public class GzipCompressorTest extends TestCase {
 		int writtenBytes = 0;
 		
 		try {
-			writtenBytes = Compressor.COMPRESSOR_TYPE.GZIP.decompress(compressedData, 0, compressedData.length, outUncompressedData);
+			writtenBytes = Compressor.GZIP.decompress(compressedData, 0, compressedData.length, outUncompressedData);
 		} catch (CompressionOutputSizeException e) {
 			fail("unexpected exception thrown : " + e.getMessage());
 		}
@@ -115,7 +115,7 @@ public class GzipCompressorTest extends TestCase {
 		BucketFactory factory = new ArrayBucketFactory();
 
 		try {
-			Compressor.COMPRESSOR_TYPE.GZIP.compress(inBucket, factory, 32);
+			Compressor.GZIP.compress(inBucket, factory, 32);
 		} catch (IOException e) {
 			fail("unexpected exception thrown : " + e.getMessage());
 		} catch (CompressionOutputSizeException e) {
@@ -137,7 +137,7 @@ public class GzipCompressorTest extends TestCase {
 		BucketFactory factory = new ArrayBucketFactory();
 
 		try {
-			Compressor.COMPRESSOR_TYPE.GZIP.decompress(inBucket, factory, 4096 + 10, 4096 + 20, null);
+			Compressor.GZIP.decompress(inBucket, factory, 4096 + 10, 4096 + 20, null);
 		} catch (IOException e) {
 			fail("unexpected exception thrown : " + e.getMessage());
 		} catch (CompressionOutputSizeException e) {
@@ -152,7 +152,7 @@ public class GzipCompressorTest extends TestCase {
 		Bucket outBucket = null;
 
 		try {
-			outBucket = Compressor.COMPRESSOR_TYPE.GZIP.decompress(inBucket, factory, 32768, 32768 * 2, null);
+			outBucket = Compressor.GZIP.decompress(inBucket, factory, 32768, 32768 * 2, null);
 		} catch (IOException e) {
 			fail("unexpected exception thrown : " + e.getMessage());
 		} catch (CompressionOutputSizeException e) {
@@ -184,7 +184,7 @@ public class GzipCompressorTest extends TestCase {
 		Bucket outBucket = null;
 
 		try {
-			outBucket = Compressor.COMPRESSOR_TYPE.GZIP.compress(inBucket, factory, 32768);
+			outBucket = Compressor.GZIP.compress(inBucket, factory, 32768);
 		} catch (IOException e) {
 			fail("unexpected exception thrown : " + e.getMessage());
 		} catch (CompressionOutputSizeException e) {

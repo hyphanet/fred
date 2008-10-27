@@ -30,12 +30,12 @@ public class MessageType {
 
     public static final String VERSION = "$Id: MessageType.java,v 1.6 2005/08/25 17:28:19 amphibian Exp $";
 
-	private static HashMap<Integer, MessageType> _specs = new HashMap<Integer, MessageType>();
+	private static HashMap _specs = new HashMap();
 
 	private final String _name;
-	private final LinkedList<String> _orderedFields = new LinkedList<String>();
-	private final HashMap<String, Class<?>> _fields = new HashMap<String, Class<?>>();
-	private final HashMap<String, Class<?>> _linkedListTypes = new HashMap<String, Class<?>>();
+	private final LinkedList _orderedFields = new LinkedList();
+	private final HashMap _fields = new HashMap();
+	private final HashMap _linkedListTypes = new HashMap();
 	private final boolean internalOnly;
 	private final short priority;
 	
@@ -83,7 +83,7 @@ public class MessageType {
 		if (fieldValue == null) {
 			return false;
 		}
-		Class<?> defClass = _fields.get(fieldName);
+		Class<?> defClass = (Class<?>) (_fields.get(fieldName));
 		Class<?> valueClass = fieldValue.getClass();
 		if(defClass == valueClass) return true;
 		if(defClass.isAssignableFrom(valueClass)) return true;
@@ -91,7 +91,7 @@ public class MessageType {
 	}
 
 	public Class<?> typeOf(String field) {
-		return _fields.get(field);
+		return (Class<?>) _fields.get(new Integer(field.hashCode()));
 	}
 
 	@Override
@@ -114,22 +114,22 @@ public class MessageType {
 			Logger.error(MessageType.class, "Unrecognised message type received (" + specID + ')');
 			return null;
 		}
-		return _specs.get(specID);
+		return (MessageType) _specs.get(specID);
 	}
 
 	public String getName() {
 		return _name;
 	}
 
-	public Map<String, Class<?>> getFields() {
+	public Map getFields() {
 		return _fields;
 	}
 
-	public LinkedList<String> getOrderedFields() {
+	public LinkedList getOrderedFields() {
 		return _orderedFields;
 	}
 	
-	public Map<String, Class<?>> getLinkedListTypes() {
+	public Map getLinkedListTypes() {
 		return _linkedListTypes;
 	}
 

@@ -35,7 +35,7 @@ public class DiffieHellman {
 
 	private static Random r;
 	private static DHGroup group = Global.DHgroupA;
-	private static Stack<NativeBigInteger[]> precalcBuffer = new Stack<NativeBigInteger[]>();
+	private static Stack precalcBuffer = new Stack();
 	private static Object precalcerWaitObj = new Object();
 
 	private static NativeThread precalcThread;
@@ -114,10 +114,10 @@ public class DiffieHellman {
 	public static NativeBigInteger[] getParams() {
 		synchronized (precalcBuffer) {
 			//Ensure that we will have something to pop (at least pretty soon)
-			askRefill();
+			askRefill(); 
 
 			if(!precalcBuffer.isEmpty()) {
-				return precalcBuffer.pop();
+				return (NativeBigInteger[]) precalcBuffer.pop();
 			}
 
 		}

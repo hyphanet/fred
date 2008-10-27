@@ -18,7 +18,6 @@
  */
 package freenet.io.comm;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.ListIterator;
@@ -36,7 +35,7 @@ public class MessageCore {
 	private static boolean logMINOR; 
 	private Dispatcher _dispatcher;
 	/** _filters serves as lock for both */
-	private final LinkedList<MessageFilter> _filters = new LinkedList<MessageFilter>();
+	private final LinkedList _filters = new LinkedList();
 	private final LinkedList<Message> _unclaimed = new LinkedList<Message>();
 	private static final int MAX_UNMATCHED_FIFO_SIZE = 50000;
 	private static final long MAX_UNCLAIMED_FIFO_ITEM_LIFETIME = 10*60*1000;  // 10 minutes; maybe this should be per message type??
@@ -49,7 +48,7 @@ public class MessageCore {
 	}
 
 	public MessageCore() {
-		_timedOutFilters = new Vector<MessageFilter>(32);
+		_timedOutFilters = new Vector(32);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
@@ -72,7 +71,7 @@ public class MessageCore {
 
     /** Only used by removeTimedOutFilters() - if future code uses this elsewhere, we need to
      * reconsider its locking. */
-    private final Vector<MessageFilter> _timedOutFilters;
+    private final Vector _timedOutFilters;
     
     public void start(final Ticker ticker) {
     	synchronized(this) {
@@ -104,8 +103,8 @@ public class MessageCore {
 		if(logMINOR)
 			Logger.minor(this, "Removing timed out filters");
 		synchronized (_filters) {
-			for (ListIterator<MessageFilter> i = _filters.listIterator(); i.hasNext();) {
-				MessageFilter f = i.next();
+			for (ListIterator i = _filters.listIterator(); i.hasNext();) {
+				MessageFilter f = (MessageFilter) i.next();
 				if (f.timedOut(tStart)) {
 					if(logMINOR)
 						Logger.minor(this, "Removing "+f);
@@ -116,11 +115,12 @@ public class MessageCore {
 				// be timed out because their client callbacks say they should be.
 				// Also simplifies the logic significantly, we've had some major bugs here.
 				
-				// See also the end of waitFor() for another weird case.
+				// See also the end of waitFor() for another wierd case.
 			}
 		}
 		
-		for(MessageFilter f : _timedOutFilters) {
+		for(int i=0;i<_timedOutFilters.size();i++) {
+			MessageFilter f = (MessageFilter) _timedOutFilters.get(i);
 			f.setMessage(null);
 			f.onTimedOut();
 		}
@@ -154,8 +154,8 @@ public class MessageCore {
 		}
 		MessageFilter match = null;
 		synchronized (_filters) {
-			for (ListIterator<MessageFilter> i = _filters.listIterator(); i.hasNext();) {
-				MessageFilter f = i.next();
+			for (ListIterator i = _filters.listIterator(); i.hasNext();) {
+				MessageFilter f = (MessageFilter) i.next();
 				if (f.matched()) {
 					Logger.error(this, "removed pre-matched message filter found in _filters: "+f);
 					i.remove();
@@ -209,8 +209,8 @@ public class MessageCore {
 		     */
 			synchronized (_filters) {
 				if(logMINOR) Logger.minor(this, "Rechecking filters and adding message");
-				for (ListIterator<MessageFilter> i = _filters.listIterator(); i.hasNext();) {
-					MessageFilter f = i.next();
+				for (ListIterator i = _filters.listIterator(); i.hasNext();) {
+					MessageFilter f = (MessageFilter) i.next();
 					if (f.match(m)) {
 						matched = true;
 						match = f;
@@ -221,7 +221,7 @@ public class MessageCore {
 				}
 				if(!matched) {
 				    while (_unclaimed.size() > MAX_UNMATCHED_FIFO_SIZE) {
-				        Message removed = _unclaimed.removeFirst();
+				        Message removed = (Message)_unclaimed.removeFirst();
 				        long messageLifeTime = System.currentTimeMillis() - removed.localInstantiationTime;
 				        if ((removed.getSource()) instanceof PeerNode) {
 				            Logger.normal(this, "Dropping unclaimed from "+removed.getSource().getPeer()+", lived "+TimeUtil.formatTime(messageLifeTime, 2, true)+" (quantity)"+": "+removed);
@@ -249,21 +249,22 @@ public class MessageCore {
 	
 	/** IncomingPacketFilter should call this when a node is disconnected. */
 	public void onDisconnect(PeerContext ctx) {
-		ArrayList<MessageFilter> droppedFilters = null; // rare operation, we can waste objects for better locking
+		Vector droppedFilters = null; // rare operation, we can waste objects for better locking
 	    synchronized(_filters) {
-			ListIterator<MessageFilter> i = _filters.listIterator();
+			ListIterator i = _filters.listIterator();
 			while (i.hasNext()) {
-			    MessageFilter f = i.next();
+			    MessageFilter f = (MessageFilter) i.next();
 			    if(f.matchesDroppedConnection(ctx)) {
 			    	if(droppedFilters == null)
-			    		droppedFilters = new ArrayList<MessageFilter>();
+			    		droppedFilters = new Vector();
 			    	droppedFilters.add(f);
 			    	i.remove();
 			    }
 			}
 	    }
 	    if(droppedFilters != null) {
-	    	for(MessageFilter mf : droppedFilters) {
+	    	for(int i=0;i<droppedFilters.size();i++) {
+	    		MessageFilter mf = (MessageFilter) droppedFilters.get(i);
 		        mf.onDroppedConnection(ctx);
 	    	}
 	    }
@@ -271,21 +272,22 @@ public class MessageCore {
 	
 	/** IncomingPacketFilter should call this when a node connects with a new boot ID */
 	public void onRestart(PeerContext ctx) {
-		ArrayList<MessageFilter> droppedFilters = null; // rare operation, we can waste objects for better locking
+		Vector droppedFilters = null; // rare operation, we can waste objects for better locking
 	    synchronized(_filters) {
-			ListIterator<MessageFilter> i = _filters.listIterator();
+			ListIterator i = _filters.listIterator();
 			while (i.hasNext()) {
-			    MessageFilter f = i.next();
+			    MessageFilter f = (MessageFilter) i.next();
 			    if(f.matchesRestartedConnection(ctx)) {
 			    	if(droppedFilters == null)
-			    		droppedFilters = new ArrayList<MessageFilter>();
+			    		droppedFilters = new Vector();
 			    	droppedFilters.add(f);
 			    	i.remove();
 			    }
 			}
 	    }
 	    if(droppedFilters != null) {
-	    	for(MessageFilter mf : droppedFilters) {
+	    	for(int i=0;i<droppedFilters.size();i++) {
+	    		MessageFilter mf = (MessageFilter) droppedFilters.get(i);
 		        mf.onRestartedConnection(ctx);
 	    	}
 	    }
@@ -319,8 +321,8 @@ public class MessageCore {
 				//but we are holding the _filters lock!
 			}
 			if(logMINOR) Logger.minor(this, "Checking _unclaimed");
-			for (ListIterator<Message> i = _unclaimed.listIterator(); i.hasNext();) {
-				Message m = i.next();
+			for (ListIterator i = _unclaimed.listIterator(); i.hasNext();) {
+				Message m = (Message) i.next();
 				if (filter.match(m)) {
 					i.remove();
 					ret = m;
@@ -339,14 +341,14 @@ public class MessageCore {
 			if (ret == null) {
 				if(logMINOR) Logger.minor(this, "Not in _unclaimed");
 			    // Insert filter into filter list in order of timeout
-				ListIterator<MessageFilter> i = _filters.listIterator();
+				ListIterator i = _filters.listIterator();
 				while (true) {
 					if (!i.hasNext()) {
 						i.add(filter);
 						if(logMINOR) Logger.minor(this, "Added at end");
 						break;
 					}
-					MessageFilter mf = i.next();
+					MessageFilter mf = (MessageFilter) i.next();
 					if (mf.getTimeout() > filter.getTimeout()) {
 						i.previous();
 						i.add(filter);
@@ -393,8 +395,8 @@ public class MessageCore {
 		long messageLifeTime = 0;
 		synchronized (_filters) {
 			if(logMINOR) Logger.minor(this, "Checking _unclaimed");
-			for (ListIterator<Message> i = _unclaimed.listIterator(); i.hasNext();) {
-				Message m = i.next();
+			for (ListIterator i = _unclaimed.listIterator(); i.hasNext();) {
+				Message m = (Message) i.next();
 				if (filter.match(m)) {
 					i.remove();
 					ret = m;
@@ -413,14 +415,14 @@ public class MessageCore {
 			if (ret == null) {
 				if(logMINOR) Logger.minor(this, "Not in _unclaimed");
 			    // Insert filter into filter list in order of timeout
-				ListIterator<MessageFilter> i = _filters.listIterator();
+				ListIterator i = _filters.listIterator();
 				while (true) {
 					if (!i.hasNext()) {
 						i.add(filter);
 						if(logMINOR) Logger.minor(this, "Added at end");
 						break;
 					}
-					MessageFilter mf = i.next();
+					MessageFilter mf = (MessageFilter) i.next();
 					if (mf.getTimeout() > filter.getTimeout()) {
 						i.previous();
 						i.add(filter);

@@ -35,6 +35,13 @@ public class NullBucket implements Bucket, SerializableToFieldSetBucket {
     public InputStream getInputStream() { return nullIn; }
 
     /**
+     * If resetWrite() is called on the object, the next getOutputStream
+     * should overwrite any other data in the bucket from the beginning,
+     * otherwise it should append it.
+     **/
+    public void resetWrite() {}
+
+    /**
      * Returns the amount of data currently in this bucket.
      **/
     public long size() {

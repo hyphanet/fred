@@ -38,7 +38,7 @@ import freenet.support.io.TooLongException;
  */
 public class ToadletContextImpl implements ToadletContext {
 	
-	private final MultiValueTable<String,String> headers;
+	private final MultiValueTable headers;
 	private final OutputStream sockOutputStream;
 	private final PageMaker pagemaker;
 	private final BucketFactory bf;
@@ -52,7 +52,7 @@ public class ToadletContextImpl implements ToadletContext {
 	private boolean closed;
 	private boolean shouldDisconnect;
 	
-	public ToadletContextImpl(Socket sock, MultiValueTable<String,String> headers, BucketFactory bf, PageMaker pageMaker, ToadletContainer container) throws IOException {
+	public ToadletContextImpl(Socket sock, MultiValueTable headers, BucketFactory bf, PageMaker pageMaker, ToadletContainer container) throws IOException {
 		this.headers = headers;
 		this.closed = false;
 		sockOutputStream = sock.getOutputStream();
@@ -70,7 +70,7 @@ public class ToadletContextImpl implements ToadletContext {
 	
 	private void sendMethodNotAllowed(String method, boolean shouldDisconnect) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
-		MultiValueTable<String,String> mvt = new MultiValueTable<String,String>();
+		MultiValueTable mvt = new MultiValueTable();
 		mvt.put("Allow", "GET, PUT");
 		sendError(sockOutputStream, 405, "Method Not Allowed", l10n("methodNotAllowed"), shouldDisconnect, mvt);
 	}
@@ -87,7 +87,7 @@ public class ToadletContextImpl implements ToadletContext {
 	 * Send an error message. Caller provides the HTTP code, reason string, and a message, which
 	 * will become the title and the h1'ed contents of the error page. 
 	 */
-	private static void sendError(OutputStream os, int code, String httpReason, String message, boolean shouldDisconnect, MultiValueTable<String,String> mvt) throws IOException {
+	private static void sendError(OutputStream os, int code, String httpReason, String message, boolean shouldDisconnect, MultiValueTable mvt) throws IOException {
 		sendHTMLError(os, code, httpReason, "<html><head><title>"+message+"</title></head><body><h1>"+message+"</h1></body>", shouldDisconnect, mvt);
 	}
 	
@@ -102,8 +102,8 @@ public class ToadletContextImpl implements ToadletContext {
 	 * @param mvt Any additional headers.
 	 * @throws IOException If we could not send the error message.
 	 */
-	private static void sendHTMLError(OutputStream os, int code, String httpReason, String htmlMessage, boolean disconnect, MultiValueTable<String,String> mvt) throws IOException {
-		if(mvt == null) mvt = new MultiValueTable<String,String>();
+	private static void sendHTMLError(OutputStream os, int code, String httpReason, String htmlMessage, boolean disconnect, MultiValueTable mvt) throws IOException {
+		if(mvt == null) mvt = new MultiValueTable();
 		byte[] messageBytes = htmlMessage.getBytes("UTF-8");
 		sendReplyHeaders(os, code, httpReason, mvt, "text/html; charset=UTF-8", messageBytes.length, null, disconnect);
 		os.write(messageBytes);
@@ -123,11 +123,11 @@ public class ToadletContextImpl implements ToadletContext {
 		sendHTMLError(os, 400, "Bad Request", message, shouldDisconnect, null);
 	}
 	
-	public void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength) throws ToadletContextClosedException, IOException {
+	public void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable mvt, String mimeType, long contentLength) throws ToadletContextClosedException, IOException {
 		sendReplyHeaders(replyCode, replyDescription, mvt, mimeType, contentLength, null);
 	}
 	
-	public void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime) throws ToadletContextClosedException, IOException {
+	public void sendReplyHeaders(int replyCode, String replyDescription, MultiValueTable mvt, String mimeType, long contentLength, Date mTime) throws ToadletContextClosedException, IOException {
 		if(closed) throw new ToadletContextClosedException();
 		if(sentReplyHeaders) {
 			throw new IllegalStateException("Already sent headers!");
@@ -140,14 +140,14 @@ public class ToadletContextImpl implements ToadletContext {
 		return pagemaker;
 	}
 	
-	public MultiValueTable<String,String> getHeaders() {
+	public MultiValueTable getHeaders() {
 		return headers;
 	}
 	
-	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable<String,String> mvt, String mimeType, long contentLength, Date mTime, boolean disconnect) throws IOException {
+	static void sendReplyHeaders(OutputStream sockOutputStream, int replyCode, String replyDescription, MultiValueTable mvt, String mimeType, long contentLength, Date mTime, boolean disconnect) throws IOException {
 		// Construct headers
 		if(mvt == null)
-			mvt = new MultiValueTable<String,String>();
+			mvt = new MultiValueTable();
 		if(mimeType != null)
 			if(mimeType.equalsIgnoreCase("text/html")){
 				mvt.put("content-type", mimeType+"; charset=UTF-8");
@@ -190,8 +190,8 @@ public class ToadletContextImpl implements ToadletContext {
 		buf.append(' ');
 		buf.append(replyDescription);
 		buf.append("\r\n");
-		for(Enumeration<String> e = mvt.keys();e.hasMoreElements();) {
-			String key = e.nextElement();
+		for(Enumeration e = mvt.keys();e.hasMoreElements();) {
+			String key = (String) e.nextElement();
 			Object[] list = mvt.getArray(key);
 			key = fixKey(key);
 			for(int i=0;i<list.length;i++) {
@@ -276,7 +276,7 @@ public class ToadletContextImpl implements ToadletContext {
 				
 				String method = split[0];
 				
-				MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
+				MultiValueTable headers = new MultiValueTable();
 				
 				while(true) {
 					String line = lis.readLine(32768, 128, false); // ISO-8859 or US-ASCII, not UTF-8
@@ -312,7 +312,7 @@ public class ToadletContextImpl implements ToadletContext {
 				Bucket data;
 				
 				if(method.equals("POST")) {
-					String slen = headers.get("content-length");
+					String slen = (String) headers.get("content-length");
 					if(slen == null) {
 						sendError(sock.getOutputStream(), 400, "Bad Request", l10n("noContentLengthInPOST"), true, null);
 						return;
@@ -364,6 +364,9 @@ public class ToadletContextImpl implements ToadletContext {
 						if(method.equals("GET")) {
 							t.handleGet(uri, req, ctx);
 							ctx.close();
+						} else if(method.equals("PUT")) {
+							t.handlePut(uri, ctx);
+							ctx.close();
 						} else if(method.equals("POST")) {
 							t.handlePost(uri, req, ctx);
 						} else {
@@ -411,8 +414,8 @@ public class ToadletContextImpl implements ToadletContext {
 	 * @param headers Client headers.
 	 * @return True if the connection should be closed.
 	 */
-	private static boolean shouldDisconnectAfterHandled(boolean isHTTP10, MultiValueTable<String,String> headers) {
-		String connection = headers.get("connection");
+	private static boolean shouldDisconnectAfterHandled(boolean isHTTP10, MultiValueTable headers) {
+		String connection = (String) headers.get("connection");
 		if(connection != null) {
 			if(connection.equalsIgnoreCase("close"))
 				return true;

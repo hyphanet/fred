@@ -7,7 +7,6 @@ import freenet.keys.FreenetURI;
 import freenet.support.DoublyLinkedListImpl;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 
 /**
  * Tracks all files currently in the cache from a given key.
@@ -25,8 +24,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 
 	private ArchiveManager manager;
 	private FreenetURI key;
-	private final ArchiveManager.ARCHIVE_TYPE archiveType;
-	private final COMPRESSOR_TYPE compressorType;
+	private short archiveType;
 	private boolean forceRefetchArchive;
 	/** Archive size */
 	private long lastSize = -1;
@@ -38,11 +36,10 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	 * the inner lock to avoid deadlocks. */
 	private final DoublyLinkedListImpl myItems;
 	
-	public ArchiveStoreContext(ArchiveManager manager, FreenetURI key, ArchiveManager.ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, boolean forceRefetchArchive) {
+	public ArchiveStoreContext(ArchiveManager manager, FreenetURI key, short archiveType, boolean forceRefetchArchive) {
 		this.manager = manager;
 		this.key = key;
 		this.archiveType = archiveType;
-		this.compressorType = ctype;
 		myItems = new DoublyLinkedListImpl();
 		this.forceRefetchArchive = forceRefetchArchive;
 	}
@@ -134,7 +131,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	}
 
 	public short getArchiveType() {
-		return archiveType.metadataID;
+		return archiveType;
 	}
 	
 	public FreenetURI getKey() {
@@ -142,7 +139,7 @@ public class ArchiveStoreContext implements ArchiveHandler {
 	}
 
 	public void extractToCache(Bucket bucket, ArchiveContext actx, String element, ArchiveExtractCallback callback) throws ArchiveFailureException, ArchiveRestartException {
-		manager.extractToCache(key, archiveType, compressorType, bucket, actx, this, element, callback);
+		manager.extractToCache(key, archiveType, bucket, actx, this, element, callback);
 	}
 
 	/** Called just before extracting this container to the cache */

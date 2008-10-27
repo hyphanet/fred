@@ -57,7 +57,7 @@ public class InsertContext {
 	}
 
 	public InsertContext(InsertContext ctx, SimpleEventProducer producer, boolean forceNonPersistent) {
-		this.persistentFileTracker = forceNonPersistent ? NullPersistentFileTracker.getInstance() : ctx.persistentFileTracker;
+		this.persistentFileTracker = forceNonPersistent ? new NullPersistentFileTracker() : ctx.persistentFileTracker;
 		this.uskManager = ctx.uskManager;
 		this.bf = ctx.bf;
 		this.persistentBucketFactory = forceNonPersistent ? ctx.bf : ctx.persistentBucketFactory;

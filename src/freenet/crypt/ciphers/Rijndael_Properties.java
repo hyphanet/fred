@@ -100,7 +100,7 @@ class Rijndael_Properties // implicit no-argument constructor
 		out.println("# ----- Begin "+ALGORITHM+" properties -----");
 		out.println("#");
 		String key, value;
-		Enumeration<?> enu = properties.propertyNames();
+		Enumeration enu = properties.propertyNames();
 		while (enu.hasMoreElements()) {
 			key = (String) enu.nextElement();
 			value = getProperty(key);
@@ -112,7 +112,7 @@ class Rijndael_Properties // implicit no-argument constructor
 
 //	public synchronized void load(InputStream in) throws IOException {}
 
-	public static Enumeration<?> propertyNames() {
+	public static Enumeration propertyNames() {
 		return properties.propertyNames();
 	}
 

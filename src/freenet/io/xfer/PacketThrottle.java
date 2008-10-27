@@ -24,7 +24,9 @@ import freenet.io.comm.Message;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
+import freenet.node.PeerNode;
 import freenet.node.SyncSendWaitedTooLongException;
+import freenet.support.DoubleTokenBucket;
 import freenet.support.Logger;
 
 public class PacketThrottle {

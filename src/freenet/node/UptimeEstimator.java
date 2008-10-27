@@ -101,7 +101,8 @@ public class UptimeEstimator implements Runnable {
 	public void run() {
 		synchronized(this) {
 			wasOnline[slot] = true;
-			slot = (slot + 1) % wasOnline.length;
+			slot++;
+			if(slot == wasOnline.length) slot = 0;
 		}
 		long now = System.currentTimeMillis();
 		if(logFile.length() > wasOnline.length*4L) {

@@ -143,8 +143,8 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 			if(closed) throw new IOException("Already closed!");
 			if(streamNumber != lastOutputStream)
 				throw new IllegalStateException("Writing to old stream in "+getName());
-			//if((b < 0) || (b > 255))
-			//	throw new IllegalArgumentException();
+			if((b < 0) || (b > 255))
+				throw new IllegalArgumentException();
 			int toWrite = pcfb.encipher(b);
 			synchronized(PaddedEphemerallyEncryptedBucket.this) {
 				out.write(toWrite);
@@ -225,7 +225,7 @@ public class PaddedEphemerallyEncryptedBucket implements Bucket, SerializableToF
 		
 		@Override
 		public int read() throws IOException {
-			if(ptr >= dataLength) return -1;
+			if(ptr > dataLength) return -1;
 			int x = in.read();
 			if(x == -1) return x;
 			ptr++;

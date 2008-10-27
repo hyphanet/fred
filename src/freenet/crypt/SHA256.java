@@ -76,7 +76,7 @@ public class SHA256 {
 		}
 	}
 
-	static private final Vector<MessageDigest> digests = new Vector<MessageDigest>();
+	static private final Vector digests = new Vector();
 
 	/**
 	 * Create a new SHA-256 MessageDigest
@@ -85,7 +85,7 @@ public class SHA256 {
 	public synchronized static MessageDigest getMessageDigest() {
 		try {
 			if(!digests.isEmpty())
-				return digests.remove(digests.size() - 1);
+				return (MessageDigest) digests.remove(digests.size() - 1);
 			return MessageDigest.getInstance("SHA-256");
 		} catch(NoSuchAlgorithmException e2) {
 			//TODO: maybe we should point to a HOWTO for freejvms

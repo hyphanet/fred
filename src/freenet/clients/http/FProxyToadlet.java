@@ -192,20 +192,20 @@ public final class FProxyToadlet extends Toadlet {
 							new String[] { "<a href=\"/\">", "</a>" });
 					
 					byte[] pageBytes = pageNode.generate().getBytes("UTF-8");
-					context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), "text/html; charset=utf-8", pageBytes.length);
+					context.sendReplyHeaders(200, "OK", new MultiValueTable(), "text/html; charset=utf-8", pageBytes.length);
 					context.writeData(pageBytes);
 					return;
 				}
 			}
 			
 			if (forceDownload) {
-				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+				MultiValueTable headers = new MultiValueTable();
 				headers.put("Content-Disposition", "attachment; filename=\"" + key.getPreferredFilename() + '"');
 				context.sendReplyHeaders(200, "OK", headers, "application/x-msdownload", data.size());
 				context.writeData(data);
 			} else {
 				// Send the data, intact
-				context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), mimeType, data.size());
+				context.sendReplyHeaders(200, "OK", new MultiValueTable(), mimeType, data.size());
 				context.writeData(data);
 			}
 		} catch (URISyntaxException use1) {
@@ -223,17 +223,14 @@ public final class FProxyToadlet extends Toadlet {
 			infoboxContent.addChild("p").addChild(e.getHTMLExplanation());
 			infoboxContent.addChild("p", l10n("options"));
 			HTMLNode optionList = infoboxContent.addChild("ul");
-			HTMLNode option;
+			HTMLNode option = optionList.addChild("li");
+			L10n.addL10nSubstitution(option, "FProxyToadlet.openAsText", new String[] { "link", "/link" }, new String[] { "<a href=\""+basePath+key.toString()+"?type=text/plain"+extrasNoMime+"\">", "</a>" });
+			// FIXME: is this safe? See bug #131
 			
 			if((mimeType.equals("application/x-freenet-index")) && (core.node.pluginManager.isPluginLoaded("plugins.ThawIndexBrowser.ThawIndexBrowser"))) {
 				option = optionList.addChild("li");
-				L10n.addL10nSubstitution(option, "FProxyToadlet.openAsThawIndex", new String[] { "link", "/link" }, new String[] { "<b><a href=\""+basePath + "plugins/plugins.ThawIndexBrowser.ThawIndexBrowser/?key=" + key.toString() + "\">", "</a></b>" });
+				L10n.addL10nSubstitution(option, "FProxyToadlet.openAsThawIndex", new String[] { "link", "/link" }, new String[] { "<a href=\""+basePath + "plugins/plugins.ThawIndexBrowser.ThawIndexBrowser/?key=" + key.toString() + "\">", "</a>" });
 			}
-			
-			option = optionList.addChild("li");
-			// FIXME: is this safe? See bug #131
-			L10n.addL10nSubstitution(option, "FProxyToadlet.openAsText", new String[] { "link", "/link" }, new String[] { "<a href=\""+basePath+key.toString()+"?type=text/plain"+extrasNoMime+"\">", "</a>" });
-
 			option = optionList.addChild("li");
 			L10n.addL10nSubstitution(option, "FProxyToadlet.openForceDisk", new String[] { "link", "/link" }, new String[] { "<a href=\""+basePath+key.toString()+"?forcedownload"+extras+"\">", "</a>" });
 			if(!(mimeType.equals("application/octet-stream") || mimeType.equals("application/x-msdownload"))) {
@@ -259,7 +256,7 @@ public final class FProxyToadlet extends Toadlet {
 			}
 
 			byte[] pageBytes = pageNode.generate().getBytes("UTF-8");
-			context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), "text/html; charset=utf-8", pageBytes.length);
+			context.sendReplyHeaders(200, "OK", new MultiValueTable(), "text/html; charset=utf-8", pageBytes.length);
 			context.writeData(pageBytes);
 		}
 	}
@@ -333,6 +330,8 @@ public final class FProxyToadlet extends Toadlet {
 		
 		if (ks.equals("/")) {
 			if (httprequest.isParameterSet("key")) {
+				MultiValueTable headers = new MultiValueTable();
+				
 				String k = httprequest.getParam("key");
 				FreenetURI newURI;
 				try {
@@ -345,13 +344,12 @@ public final class FProxyToadlet extends Toadlet {
 				
 				if(logMINOR) Logger.minor(this, "Redirecting to FreenetURI: "+newURI);
 				String type = httprequest.getParam("type");
-				String location;
 				if ((type != null) && (type.length() > 0)) {
-					location =  "/"+newURI + "?type=" + type;
+					headers.put("Location", "/"+newURI + "?type=" + type);
 				} else {
-					location =  "/"+newURI;
+					headers.put("Location", "/"+newURI);
 				}
-				writeTemporaryRedirect(ctx, null, location);
+				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
 			
@@ -388,11 +386,15 @@ public final class FProxyToadlet extends Toadlet {
 		}else if(ks.equals("/robots.txt") && ctx.doRobots()){
 			this.writeTextReply(ctx, 200, "Ok", "User-agent: *\nDisallow: /");
 			return;
-		}else if(ks.startsWith("/darknet/") || ks.equals("/darknet")) { //TODO (pre-build 1045 url format) remove when obsolete
-			writePermanentRedirect(ctx, "obsoleted", "/friends/");
+		}else if(ks.startsWith("/darknet/")) { //TODO: remove when obsolete
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/friends/");
+			ctx.sendReplyHeaders(301, "Permanent Redirect", headers, null, 0);
 			return;
-		}else if(ks.startsWith("/opennet/") || ks.equals("/opennet")) { //TODO (pre-build 1045 url format) remove when obsolete
-			writePermanentRedirect(ctx, "obsoleted", "/strangers/");
+		}else if(ks.startsWith("/opennet/")) { //TODO: remove when obsolete
+			MultiValueTable headers = new MultiValueTable();
+			headers.put("Location", "/strangers/");
+			ctx.sendReplyHeaders(301, "Permanent Redirect", headers, null, 0);
 			return;
 		}
 		

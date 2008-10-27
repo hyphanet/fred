@@ -18,13 +18,7 @@ import freenet.support.Logger;
 import freenet.support.MutableBoolean;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
-import freenet.support.io.Closer;
-import java.io.InputStream;
-import java.util.zip.GZIPInputStream;
-import org.apache.tools.tar.TarEntry;
-import org.apache.tools.tar.TarInputStream;
 
 /**
  * Cache of recently decoded archives:
@@ -40,58 +34,6 @@ public class ArchiveManager {
 	public static final String METADATA_NAME = ".metadata";
 	private static boolean logMINOR;
 
-	public enum ARCHIVE_TYPE {
-		ZIP((short)0, new String[] { "application/zip", "application/x-zip" });
-		
-		public final short metadataID;
-		public final String[] mimeTypes;
-		
-		private ARCHIVE_TYPE(short metadataID, String[] mimeTypes) {
-			this.metadataID = metadataID;
-			this.mimeTypes = mimeTypes;
-		}
-		
-		public static boolean isValidMetadataID(short id) {
-			for(ARCHIVE_TYPE current : values())
-				if(id == current.metadataID)
-					return true;
-			return false;
-		}
-
-		/**
-		 * Is the given MIME type an archive type that we can deal with?
-		 */
-		public static boolean isUsableArchiveType(String type) {
-			for(ARCHIVE_TYPE current : values())
-				for(String ctype : current.mimeTypes)
-					if(ctype.equalsIgnoreCase(type))
-						return true;
-			return false;
-		}
-
-		/** If the given MIME type is an archive type that we can deal with,
-		 * get its archive type number (see the ARCHIVE_ constants in Metadata).
-		 */
-		public static ARCHIVE_TYPE getArchiveType(String type) {
-			for(ARCHIVE_TYPE current : values())
-				for(String ctype : current.mimeTypes)
-					if(ctype.equalsIgnoreCase(type))
-						return current;
-			return null;
-		}
-		
-		public static ARCHIVE_TYPE getArchiveType(short type) {
-			for(ARCHIVE_TYPE current : values())
-				if(current.metadataID == type)
-					return current;
-			return null;
-		}
-		
-		public final static ARCHIVE_TYPE getDefault() {
-			return ZIP;
-		}
-	}
-	
 	final long maxArchivedFileSize;
 	
 	// ArchiveHandler's
@@ -162,12 +104,12 @@ public class ArchiveManager {
 	 * @param archiveType The archive type, defined in Metadata.
 	 * @return An archive handler. 
 	 */
-	public synchronized ArchiveHandler makeHandler(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, boolean returnNullIfNotFound, boolean forceRefetchArchive) {
+	public synchronized ArchiveHandler makeHandler(FreenetURI key, short archiveType, boolean returnNullIfNotFound, boolean forceRefetchArchive) {
 		ArchiveHandler handler = null;
 		if(!forceRefetchArchive) handler = getCached(key);
 		if(handler != null) return handler;
 		if(returnNullIfNotFound) return null;
-		handler = new ArchiveStoreContext(this, key, archiveType, ctype, forceRefetchArchive);
+		handler = new ArchiveStoreContext(this, key, archiveType, forceRefetchArchive);
 		putCached(key, handler);
 		return handler;
 	}
@@ -223,7 +165,7 @@ public class ArchiveManager {
 	 * @throws ArchiveRestartException If the request needs to be restarted because the archive
 	 * changed.
 	 */
-	public void extractToCache(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback) throws ArchiveFailureException, ArchiveRestartException {
+	public void extractToCache(FreenetURI key, short archiveType, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback) throws ArchiveFailureException, ArchiveRestartException {
 		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
@@ -256,34 +198,12 @@ public class ArchiveManager {
 		}
 		if(data.size() > archiveContext.maxArchiveSize)
 			throw new ArchiveFailureException("Archive too big ("+data.size()+" > "+archiveContext.maxArchiveSize+")!");
+		if(archiveType != Metadata.ARCHIVE_ZIP)
+			throw new ArchiveFailureException("Unknown or unsupported archive algorithm "+archiveType);
 		
-		
-		InputStream is = null;
-		try {
-			if(ctype == null) {
-				if(logMINOR) Logger.minor(this, "No compression");
-				is = data.getInputStream();
-			} else if(ctype == COMPRESSOR_TYPE.GZIP) {
-				if(logMINOR) Logger.minor(this, "dealing with GZIP");
-				is = new GZIPInputStream(data.getInputStream());
-			}
-			
-			if(ARCHIVE_TYPE.ZIP == archiveType)
-				handleZIPArchive(ctx, key, is, element, callback, gotElement, throwAtExit);
-		else
-				throw new ArchiveFailureException("Unknown or unsupported archive algorithm " + archiveType);
-		} catch (IOException ioe) {
-			throw new ArchiveFailureException("An IOE occured: "+ioe.getMessage(), ioe);
-		}finally {
-			Closer.close(is);
-	}
-	}
-	
-	private void handleZIPArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit) throws ArchiveFailureException, ArchiveRestartException {
-		if(logMINOR) Logger.minor(this, "Handling a ZIP Archive");
 		ZipInputStream zis = null;
 		try {
-			zis = new ZipInputStream(data);
+			zis = new ZipInputStream(data.getInputStream());
 			
 			// MINOR: Assumes the first entry in the zip is a directory. 
 			ZipEntry entry;
@@ -292,7 +212,7 @@ public class ArchiveManager {
 			HashSet names = new HashSet();
 			boolean gotMetadata = false;
 			
-outerZIP:		while(true) {
+outer:		while(true) {
 				entry = zis.getNextEntry();
 				if(entry == null) break;
 				if(entry.isDirectory()) continue;
@@ -318,7 +238,7 @@ outerZIP:		while(true) {
 							addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize);
 							out.close();
 							output.free();
-							continue outerZIP;
+							continue outer;
 						}
 					}
 
@@ -531,5 +451,22 @@ outerZIP:		while(true) {
 			item.close();
 		}
 		}
+	}
+
+	/**
+	 * Is the given MIME type an archive type that we can deal with?
+	 */
+	public static boolean isUsableArchiveType(String type) {
+		return type.equals("application/zip") || type.equals("application/x-zip");
+		// Update when add new archive types
+	}
+
+	/** If the given MIME type is an archive type that we can deal with,
+	 * get its archive type number (see the ARCHIVE_ constants in Metadata).
+	 */
+	public static short getArchiveType(String type) {
+		if(type.equals("application/zip") || type.equals("application/x-zip"))
+			return Metadata.ARCHIVE_ZIP;
+		else throw new IllegalArgumentException(); 
 	}
 }

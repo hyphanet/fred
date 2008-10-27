@@ -18,6 +18,7 @@
  */
 package freenet.io.xfer;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 
 import freenet.io.comm.ByteCounter;
@@ -53,7 +54,7 @@ public class BlockTransmitter {
 	private boolean _sendComplete;
 	final long _uid;
 	final PartiallyReceivedBlock _prb;
-	private LinkedList<Integer> _unsent;
+	private LinkedList _unsent;
 	private Runnable _senderThread;
 	private BitArray _sentPackets;
 	final PacketThrottle throttle;
@@ -90,7 +91,7 @@ public class BlockTransmitter {
 								if(_sendComplete) return;
 								_senderThread.wait(10*1000);
 							}
-							packetNo = _unsent.removeFirst();
+							packetNo = ((Integer) _unsent.removeFirst()).intValue();
 						}
 					} catch (InterruptedException e) {
 						Logger.error(this, "_senderThread interrupted");
@@ -160,7 +161,7 @@ public class BlockTransmitter {
 
 					public void packetReceived(int packetNo) {
 						synchronized(_senderThread) {
-							_unsent.addLast(packetNo);
+							_unsent.addLast(new Integer(packetNo));
 							timeAllSent = -1;
 							_sentPackets.setBit(packetNo, false);
 							_senderThread.notifyAll();
@@ -206,16 +207,17 @@ public class BlockTransmitter {
 						continue;
 					}
 				} else if (msg.getSpec().equals(DMT.missingPacketNotification)) {
-					LinkedList<Integer> missing = (LinkedList<Integer>) msg.getObject(DMT.MISSING);
-					for (int packetNo :missing) {
-						if (_prb.isReceived(packetNo)) {
+					LinkedList missing = (LinkedList) msg.getObject(DMT.MISSING);
+					for (Iterator i = missing.iterator(); i.hasNext();) {
+						Integer packetNo = (Integer) i.next();
+						if (_prb.isReceived(packetNo.intValue())) {
 							synchronized(_senderThread) {
 								if (_unsent.contains(packetNo)) {
 									Logger.minor(this, "already to transmit packet #"+packetNo);
 								} else {
 								_unsent.addFirst(packetNo);
 								timeAllSent=-1;
-								_sentPackets.setBit(packetNo, false);
+								_sentPackets.setBit(packetNo.intValue(), false);
 								_senderThread.notifyAll();
 								}
 							}

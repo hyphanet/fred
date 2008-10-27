@@ -1,5 +1,6 @@
 package freenet.support.compress;
 
+import freenet.client.Metadata;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -12,8 +13,9 @@ import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
-public class GzipCompressor implements Compressor {
+public class GzipCompressor extends Compressor {
 
+	@Override
 	public Bucket compress(Bucket data, BucketFactory bf, long maxLength) throws IOException, CompressionOutputSizeException {
 		if(maxLength <= 0)
 			throw new IllegalArgumentException();
@@ -49,6 +51,7 @@ public class GzipCompressor implements Compressor {
 		return output;
 	}
 
+	@Override
 	public Bucket decompress(Bucket data, BucketFactory bf, long maxLength, long maxCheckSizeLength, Bucket preferred) throws IOException, CompressionOutputSizeException {
 		Bucket output;
 		if(preferred != null)
@@ -94,6 +97,7 @@ public class GzipCompressor implements Compressor {
 		}
 	}
 
+	@Override
 	public int decompress(byte[] dbuf, int i, int j, byte[] output) throws CompressionOutputSizeException {
 		// Didn't work with Inflater.
 		// FIXME fix sometimes to use Inflater - format issue?
@@ -109,5 +113,10 @@ public class GzipCompressor implements Compressor {
 		byte[] buf = baos.toByteArray();
 		System.arraycopy(buf, 0, output, 0, bytes);
 		return bytes;
+	}
+	
+	@Override
+	public short codecNumberForMetadata() {
+		return Metadata.COMPRESS_GZIP;
 	}
 }

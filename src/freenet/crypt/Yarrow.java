@@ -102,7 +102,7 @@ public class Yarrow extends RandomSource {
 		slow_pool_reseed();
 	}
 
-	private void seedFromExternalStuff(boolean canBlock) {
+	public void seedFromExternalStuff(boolean canBlock) {
 		byte[] buf = new byte[32];
 		if(File.separatorChar == '/') {
 			DataInputStream dis = null;
@@ -179,7 +179,7 @@ public class Yarrow extends RandomSource {
 		EntropySource startupEntropy = new EntropySource();
 
 		// Consume the system properties list
-		for(Enumeration<?> enu = sys.propertyNames(); enu.hasMoreElements();) {
+		for(Enumeration enu = sys.propertyNames(); enu.hasMoreElements();) {
 			String key = (String) enu.nextElement();
 			consumeString(key);
 			consumeString(sys.getProperty(key));
@@ -237,7 +237,7 @@ public class Yarrow extends RandomSource {
 	}
 	private long timeLastWroteSeed = -1;
 
-	private void write_seed(File filename) {
+	public void write_seed(File filename) {
 		write_seed(filename, false);
 	}
 
@@ -421,12 +421,12 @@ public class Yarrow extends RandomSource {
 	private MessageDigest fast_pool,  slow_pool;
 	private int fast_entropy,  slow_entropy;
 	private boolean fast_select;
-	private Hashtable<EntropySource, Integer> entropySeen;
+	private Hashtable entropySeen;
 
 	private void accumulator_init(String digest) throws NoSuchAlgorithmException {
 		fast_pool = MessageDigest.getInstance(digest);
 		slow_pool = MessageDigest.getInstance(digest);
-		entropySeen = new Hashtable<EntropySource, Integer>();
+		entropySeen = new Hashtable();
 	}
 
 	@Override
@@ -450,7 +450,7 @@ public class Yarrow extends RandomSource {
 		return totalRealEntropy;
 	}
 
-	private int acceptEntropy(
+	public int acceptEntropy(
 		EntropySource source,
 		long data,
 		int entropyGuess,
@@ -489,7 +489,7 @@ public class Yarrow extends RandomSource {
 				slow_entropy += actualEntropy;
 
 				if(source != null) {
-					Integer contributedEntropy = entropySeen.get(source);
+					Integer contributedEntropy = (Integer) entropySeen.get(source);
 					if(contributedEntropy == null)
 						contributedEntropy = new Integer(actualEntropy);
 					else
@@ -498,9 +498,9 @@ public class Yarrow extends RandomSource {
 
 					if(slow_entropy >= (SLOW_THRESHOLD * 2)) {
 						int kc = 0;
-						for(Enumeration<EntropySource> enu = entropySeen.keys(); enu.hasMoreElements();) {
+						for(Enumeration enu = entropySeen.keys(); enu.hasMoreElements();) {
 							Object key = enu.nextElement();
-							Integer v = entropySeen.get(key);
+							Integer v = (Integer) entropySeen.get(key);
 							if(DEBUG)
 								Logger.normal(this, "Key: <" + key + "> " + v);
 							if(v.intValue() > SLOW_THRESHOLD) {
@@ -636,9 +636,9 @@ public class Yarrow extends RandomSource {
 		fast_pool_reseed();
 		slow_entropy = 0;
 
-		Integer ZERO = 0;
-		for(EntropySource src : entropySeen.keySet())
-			entropySeen.put(src, ZERO);
+		Integer ZERO = new Integer(0);
+		for(Enumeration enu = entropySeen.keys(); enu.hasMoreElements();)
+			entropySeen.put(enu.nextElement(), ZERO);
 	}
 	/**
 	 * 5.4 Reseed Control parameters
@@ -767,5 +767,17 @@ public class Yarrow extends RandomSource {
 		else
 			slow_pool.update(bytes, 0, bytes.length);
 		fast_select = !fast_select;
+	}
+
+	public String getCheckpointName() {
+		return "Yarrow random number generator checkpoint";
+	}
+
+	public long nextCheckpoint() {
+		return System.currentTimeMillis() + 60 * 60 * 1000;
+	}
+
+	public void checkpoint() {
+		seedFromExternalStuff(true);
 	}
 }

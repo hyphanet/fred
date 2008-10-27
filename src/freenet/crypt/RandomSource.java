@@ -10,7 +10,6 @@ import java.util.Random;
  *
  * @author Scott G. Miller <scgmille@indiana.edu>
  */
-@SuppressWarnings("serial")
 public abstract class RandomSource extends Random {
 
     /**
@@ -80,5 +79,7 @@ public abstract class RandomSource extends Random {
      * do so when this method is called
      */
     public abstract void close();
+
+
 }
 
