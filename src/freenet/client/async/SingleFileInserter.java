@@ -190,7 +190,7 @@ class SingleFileInserter implements ClientPutState {
 						shouldFreeOnFinally = false;
 						break;
 					}
-					if((resultSize < bestCompressedDataSize) || (resultSize < origSize)) {
+					if(resultSize < bestCompressedDataSize) {
 						if(bestCompressedData != null)
 							bestCompressedData.free();
 						bestCompressedData = result;
