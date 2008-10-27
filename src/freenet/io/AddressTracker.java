@@ -105,7 +105,8 @@ public class AddressTracker {
 		timeDefinitelyNoPacketsReceived = System.currentTimeMillis();
 		timeDefinitelyNoPacketsSent = fs.getLong("TimeDefinitelyNoPacketsSent");
 		peerTrackers = new HashMap();
-		SimpleFieldSet peers = fs.getSubset("Peers");
+		SimpleFieldSet peers = fs.subset("Peers");
+		if(peers != null) {
 		Iterator i = peers.directSubsetNameIterator();
 		if(i != null) {
 		while(i.hasNext()) {
@@ -114,14 +115,17 @@ public class AddressTracker {
 			peerTrackers.put(item.peer, item);
 		}
 		}
+		}
 		ipTrackers = new HashMap();
-		SimpleFieldSet ips = fs.getSubset("IPs");
-		i = ips.directSubsetNameIterator();
+		SimpleFieldSet ips = fs.subset("IPs");
+		if(ips != null) {
+		Iterator i = ips.directSubsetNameIterator();
 		if(i != null) {
 		while(i.hasNext()) {
 			SimpleFieldSet peer = ips.subset((String)i.next());
 			InetAddressAddressTrackerItem item = new InetAddressAddressTrackerItem(peer);
 			ipTrackers.put(item.addr, item);
+		}
 		}
 		}
 	}
