@@ -25,8 +25,6 @@ import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
-import org.apache.tools.tar.TarEntry;
-import org.apache.tools.tar.TarOutputStream;
 
 public class SimpleManifestPutter extends BaseClientPutter implements PutCompletionCallback {
 	// Only implements PutCompletionCallback for the final metadata insert
@@ -427,9 +425,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				Bucket outputBucket = ctx.bf.makeBucket(baseMetadata.dataLength());
 				// TODO: try both ? - maybe not worth it
 				archiveType = ARCHIVE_TYPE.getDefault();
-				String mimeType = (archiveType == ARCHIVE_TYPE.TAR ?
-					createTarBucket(bucket, outputBucket) :
-					createZipBucket(bucket, outputBucket));
+				String mimeType = createZipBucket(bucket, outputBucket);
 				
 				if(logMINOR) Logger.minor(this, "We are using "+archiveType);
 				
@@ -459,40 +455,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 
-	private String createTarBucket(Bucket inputBucket, Bucket outputBucket) throws IOException {
-		if(logMINOR) Logger.minor(this, "Create a TAR Bucket");
-		
-		OutputStream os = new BufferedOutputStream(outputBucket.getOutputStream());
-		TarOutputStream tarOS = new TarOutputStream(os);
-		TarEntry ze;
-
-		for(PutHandler ph : elementsToPutInArchive) {
-			ze = new TarEntry(ph.targetInArchive);
-			ze.setModTime(0);
-			long size = ph.data.size();
-			ze.setSize(size);
-			tarOS.putNextEntry(ze);
-			BucketTools.copyTo(ph.data, tarOS, size);
-			tarOS.closeEntry();
-		}
-
-		// Add .metadata - after the rest.
-		ze = new TarEntry(".metadata");
-		ze.setModTime(0); // -1 = now, 0 = 1970.
-		long size = inputBucket.size();
-		ze.setSize(size);
-		tarOS.putNextEntry(ze);
-		BucketTools.copyTo(inputBucket, tarOS, size);
-
-		tarOS.closeEntry();
-		// Both finish() and close() are necessary.
-		tarOS.finish();
-		tarOS.flush();
-		tarOS.close();
-		
-		return ARCHIVE_TYPE.TAR.mimeTypes[0];
-	}
-	
 	private String createZipBucket(Bucket inputBucket, Bucket outputBucket) throws IOException {
 		if(logMINOR) Logger.minor(this, "Create a ZIP Bucket");
 		

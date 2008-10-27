@@ -23,8 +23,6 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
-import net.contrapunctus.lzma.LzmaInputStream;
-import org.apache.tools.bzip2.CBZip2InputStream;
 import org.apache.tools.tar.TarEntry;
 import org.apache.tools.tar.TarInputStream;
 
@@ -43,8 +41,7 @@ public class ArchiveManager {
 	private static boolean logMINOR;
 
 	public enum ARCHIVE_TYPE {
-		ZIP((short)0, new String[] { "application/zip", "application/x-zip" }), 	/* eventually get rid of ZIP support at some point */
-		TAR((short)1, new String[] { "application/x-tar" });
+		ZIP((short)0, new String[] { "application/zip", "application/x-zip" });
 		
 		public final short metadataID;
 		public final String[] mimeTypes;
@@ -91,7 +88,7 @@ public class ArchiveManager {
 		}
 		
 		public final static ARCHIVE_TYPE getDefault() {
-			return TAR;
+			return ZIP;
 		}
 	}
 	
@@ -215,7 +212,7 @@ public class ArchiveManager {
 	/**
 	 * Extract data to cache. Call synchronized on ctx.
 	 * @param key The key the data was fetched from.
-	 * @param archiveType The archive type. Must be Metadata.ARCHIVE_ZIP | Metadata.ARCHIVE_TAR.
+	 * @param archiveType The archive type. Must be Metadata.ARCHIVE_ZIP.
 	 * @param data The actual data fetched.
 	 * @param archiveContext The context for the whole fetch process.
 	 * @param ctx The ArchiveStoreContext for this key.
@@ -266,21 +263,13 @@ public class ArchiveManager {
 			if(ctype == null) {
 				if(logMINOR) Logger.minor(this, "No compression");
 				is = data.getInputStream();
-			} else if(ctype == COMPRESSOR_TYPE.BZIP2) {
-				if(logMINOR) Logger.minor(this, "dealing with BZIP2");
-				is = new CBZip2InputStream(data.getInputStream());
 			} else if(ctype == COMPRESSOR_TYPE.GZIP) {
 				if(logMINOR) Logger.minor(this, "dealing with GZIP");
 				is = new GZIPInputStream(data.getInputStream());
-			} else if(ctype == COMPRESSOR_TYPE.LZMA) {
-				if(logMINOR) Logger.minor(this, "dealing with LZMA");
-				is = new LzmaInputStream(data.getInputStream());
 			}
 			
 			if(ARCHIVE_TYPE.ZIP == archiveType)
 				handleZIPArchive(ctx, key, is, element, callback, gotElement, throwAtExit);
-			else if(ARCHIVE_TYPE.TAR == archiveType)
-				handleTARArchive(ctx, key, is, element, callback, gotElement, throwAtExit);
 		else
 				throw new ArchiveFailureException("Unknown or unsupported archive algorithm " + archiveType);
 		} catch (IOException ioe) {
@@ -288,75 +277,6 @@ public class ArchiveManager {
 		}finally {
 			Closer.close(is);
 	}
-	}
-	
-	private void handleTARArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit) throws ArchiveFailureException, ArchiveRestartException {
-		if(logMINOR) Logger.minor(this, "Handling a TAR Archive");
-		TarInputStream tarIS = null;
-		try {
-			tarIS = new TarInputStream(data);
-			
-			// MINOR: Assumes the first entry in the tarball is a directory. 
-			TarEntry entry;
-			
-			byte[] buf = new byte[32768];
-			HashSet names = new HashSet();
-			boolean gotMetadata = false;
-			
-outerTAR:		while(true) {
-				entry = tarIS.getNextEntry();
-				if(entry == null) break;
-				if(entry.isDirectory()) continue;
-				String name = entry.getName();
-				if(names.contains(name)) {
-					Logger.error(this, "Duplicate key "+name+" in archive "+key);
-					continue;
-				}
-				long size = entry.getSize();
-				if(size > maxArchivedFileSize) {
-					addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize);
-				} else {
-					// Read the element
-					long realLen = 0;
-					Bucket output = tempBucketFactory.makeBucket(size);
-					OutputStream out = output.getOutputStream();
-
-					int readBytes;
-					while((readBytes = tarIS.read(buf)) > 0) {
-						out.write(buf, 0, readBytes);
-						readBytes += realLen;
-						if(readBytes > maxArchivedFileSize) {
-							addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize);
-							out.close();
-							output.free();
-							continue outerTAR;
-						}
-					}
-
-					out.close();
-					if(name.equals(".metadata"))
-						gotMetadata = true;
-					addStoreElement(ctx, key, name, output, gotElement, element, callback);
-					names.add(name);
-					trimStoredData();
-				}
-			}
-
-			// If no metadata, generate some
-			if(!gotMetadata) {
-				generateMetadata(ctx, key, names, gotElement, element, callback);
-				trimStoredData();
-			}
-			if(throwAtExit) throw new ArchiveRestartException("Archive changed on re-fetch");
-			
-			if((!gotElement.value) && element != null)
-				callback.notInArchive();
-			
-		} catch (IOException e) {
-			throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
-		} finally {
-			Closer.close(tarIS);
-		}
 	}
 	
 	private void handleZIPArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit) throws ArchiveFailureException, ArchiveRestartException {
