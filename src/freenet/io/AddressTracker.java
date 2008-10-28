@@ -44,10 +44,10 @@ import freenet.support.SimpleFieldSet;
 public class AddressTracker {
 	
 	/** PeerAddressTrackerItem's by Peer */
-	private final HashMap peerTrackers;
+	private final HashMap<Peer, PeerAddressTrackerItem> peerTrackers;
 	
 	/** InetAddressAddressTrackerItem's by InetAddress */
-	private final HashMap ipTrackers;
+	private final HashMap<InetAddress, InetAddressAddressTrackerItem> ipTrackers;
 	
 	/** Maximum number of Item's of either type */
 	static final int MAX_ITEMS = 1000;
@@ -55,7 +55,6 @@ public class AddressTracker {
 	private long timeDefinitelyNoPacketsReceived;
 	private long timeDefinitelyNoPacketsSent;
 	
-	private boolean isBroken;
 	private long brokenTime;
 	
 	public static AddressTracker create(long lastBootID, File nodeDir, int port) {
@@ -89,8 +88,8 @@ public class AddressTracker {
 	private AddressTracker() {
 		timeDefinitelyNoPacketsReceived = System.currentTimeMillis();
 		timeDefinitelyNoPacketsSent = System.currentTimeMillis();
-		peerTrackers = new HashMap();
-		ipTrackers = new HashMap();
+		peerTrackers = new HashMap<Peer, PeerAddressTrackerItem>();
+		ipTrackers = new HashMap<InetAddress, InetAddressAddressTrackerItem>();
 	}
 	
 	private AddressTracker(SimpleFieldSet fs, long lastBootID) throws FSParseException {
@@ -104,24 +103,28 @@ public class AddressTracker {
 		//timeDefinitelyNoPacketsReceived = fs.getLong("TimeDefinitelyNoPacketsReceived");
 		timeDefinitelyNoPacketsReceived = System.currentTimeMillis();
 		timeDefinitelyNoPacketsSent = fs.getLong("TimeDefinitelyNoPacketsSent");
-		peerTrackers = new HashMap();
-		SimpleFieldSet peers = fs.getSubset("Peers");
-		Iterator i = peers.directSubsetNameIterator();
+		peerTrackers = new HashMap<Peer, PeerAddressTrackerItem>();
+		SimpleFieldSet peers = fs.subset("Peers");
+		if(peers != null) {
+		Iterator<String> i = peers.directSubsetNameIterator();
 		if(i != null) {
 		while(i.hasNext()) {
-			SimpleFieldSet peer = peers.subset((String)i.next());
+			SimpleFieldSet peer = peers.subset(i.next());
 			PeerAddressTrackerItem item = new PeerAddressTrackerItem(peer);
 			peerTrackers.put(item.peer, item);
 		}
 		}
-		ipTrackers = new HashMap();
-		SimpleFieldSet ips = fs.getSubset("IPs");
-		i = ips.directSubsetNameIterator();
+		}
+		ipTrackers = new HashMap<InetAddress, InetAddressAddressTrackerItem>();
+		SimpleFieldSet ips = fs.subset("IPs");
+		if(ips != null) {
+		Iterator<String> i = ips.directSubsetNameIterator();
 		if(i != null) {
 		while(i.hasNext()) {
-			SimpleFieldSet peer = ips.subset((String)i.next());
+			SimpleFieldSet peer = ips.subset(i.next());
 			InetAddressAddressTrackerItem item = new InetAddressAddressTrackerItem(peer);
 			ipTrackers.put(item.addr, item);
+		}
 		}
 		}
 	}
@@ -139,7 +142,7 @@ public class AddressTracker {
 		InetAddress ip = peer.getAddress();
 		long now = System.currentTimeMillis();
 		synchronized(this) {
-			PeerAddressTrackerItem peerItem = (PeerAddressTrackerItem) peerTrackers.get(peer);
+			PeerAddressTrackerItem peerItem = peerTrackers.get(peer);
 			if(peerItem == null) {
 				peerItem = new PeerAddressTrackerItem(timeDefinitelyNoPacketsReceived, timeDefinitelyNoPacketsSent, peer);
 				if(peerTrackers.size() > MAX_ITEMS) {
@@ -154,7 +157,7 @@ public class AddressTracker {
 				peerItem.sentPacket(now);
 			else
 				peerItem.receivedPacket(now);
-			InetAddressAddressTrackerItem ipItem = (InetAddressAddressTrackerItem) ipTrackers.get(ip);
+			InetAddressAddressTrackerItem ipItem = ipTrackers.get(ip);
 			if(ipItem == null) {
 				ipItem = new InetAddressAddressTrackerItem(timeDefinitelyNoPacketsReceived, timeDefinitelyNoPacketsSent, ip);
 				if(ipTrackers.size() > MAX_ITEMS) {
@@ -182,12 +185,12 @@ public class AddressTracker {
 
 	public synchronized PeerAddressTrackerItem[] getPeerAddressTrackerItems() {
 		PeerAddressTrackerItem[] items = new PeerAddressTrackerItem[peerTrackers.size()];
-		return (PeerAddressTrackerItem[]) peerTrackers.values().toArray(items);
+		return peerTrackers.values().toArray(items);
 	}
 
 	public synchronized InetAddressAddressTrackerItem[] getInetAddressTrackerItems() {
 		InetAddressAddressTrackerItem[] items = new InetAddressAddressTrackerItem[ipTrackers.size()];
-		return (InetAddressAddressTrackerItem[]) ipTrackers.values().toArray(items);
+		return ipTrackers.values().toArray(items);
 	}
 	
 	public static final int DEFINITELY_PORT_FORWARDED = 2;

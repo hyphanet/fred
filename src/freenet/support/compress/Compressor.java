@@ -1,8 +1,10 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+* Public License, version 2 (or at your option any later version). See
+* http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.compress;
 
 import java.io.IOException;
 
-import freenet.client.Metadata;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -10,9 +12,44 @@ import freenet.support.api.BucketFactory;
  * A data compressor. Contains methods to get all data compressors.
  * This is for single-file compression (gzip, bzip2) as opposed to archives.
  */
-public abstract class Compressor {
+public interface Compressor {
 
-    public static final Compressor GZIP = new GzipCompressor();
+	public enum COMPRESSOR_TYPE implements Compressor {
+		// They will be tried in order: put the less resource consuming first
+		GZIP("GZIP", new GzipCompressor(), (short) 0),
+		BZIP2("BZIP2", new Bzip2Compressor(), (short) 1),
+		LZMA("LZMA", new LZMACompressor(), (short)2);
+		
+		public final String name;
+		public final Compressor compressor;
+		public final short metadataID;
+		
+		COMPRESSOR_TYPE(String name, Compressor c, short metadataID) {
+			this.name = name;
+			this.compressor = c;
+			this.metadataID = metadataID;
+		}
+		
+		public static COMPRESSOR_TYPE getCompressorByMetadataID(short id) {
+			COMPRESSOR_TYPE[] values = values();
+			for(COMPRESSOR_TYPE current : values)
+				if(current.metadataID == id)
+					return current;
+			return null;
+		}
+
+		public Bucket compress(Bucket data, BucketFactory bf, long maxLength) throws IOException, CompressionOutputSizeException {
+			return compressor.compress(data, bf, maxLength);
+		}
+
+		public Bucket decompress(Bucket data, BucketFactory bucketFactory, long maxLength, long maxEstimateSizeLength, Bucket preferred) throws IOException, CompressionOutputSizeException {
+			return compressor.decompress(data, bucketFactory, maxLength, maxEstimateSizeLength, preferred);
+		}
+
+		public int decompress(byte[] dbuf, int i, int j, byte[] output) throws CompressionOutputSizeException {
+			return compressor.decompress(dbuf, i, j, output);
+		}
+	}
 
 	public abstract Bucket compress(Bucket data, BucketFactory bf, long maxLength) throws IOException, CompressionOutputSizeException;
 
@@ -29,28 +66,6 @@ public abstract class Compressor {
 	 */
 	public abstract Bucket decompress(Bucket data, BucketFactory bucketFactory, long maxLength, long maxEstimateSizeLength, Bucket preferred) throws IOException, CompressionOutputSizeException;
 
-	public abstract short codecNumberForMetadata();
-
-	/** Count the number of distinct compression algorithms currently supported. */
-	public static int countCompressAlgorithms() {
-		// FIXME we presently only support gzip. This should change in future.
-		return 1;
-	}
-
-	public static Compressor getCompressionAlgorithmByDifficulty(int i) {
-		if(i == 0)
-            return GZIP;
-		// FIXME when we get more compression algos, put them here.
-		return null;
-	}
-
-	public static Compressor getCompressionAlgorithmByMetadataID(short algo) {
-		if(algo == Metadata.COMPRESS_GZIP)
-            return GZIP;
-		// FIXME when we get more compression algos, put them here.
-		return null;
-	}
-	
 	/** Decompress in RAM only.
 	 * @param dbuf Input buffer.
 	 * @param i Offset to start reading from.
@@ -61,5 +76,4 @@ public abstract class Compressor {
 	 * @returns The number of bytes actually written.
 	 */
 	public abstract int decompress(byte[] dbuf, int i, int j, byte[] output) throws CompressionOutputSizeException;
-
 }

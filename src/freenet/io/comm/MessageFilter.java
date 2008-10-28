@@ -19,7 +19,9 @@
 
 package freenet.io.comm;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 
 import freenet.support.Logger;
 
@@ -36,8 +38,8 @@ public final class MessageFilter {
     private boolean _matched;
     private PeerContext _droppedConnection;
 	private MessageType _type;
-    private HashMap _fields = new HashMap();
-    private List _fieldList = new LinkedList();
+    private HashMap<String, Object> _fields = new HashMap<String, Object>();
+    private List<String> _fieldList = new LinkedList<String>();
     private PeerContext _source;
     private long _timeout;
     /** If true, timeouts are relative to the start of waiting, if false, they are relative to
@@ -177,9 +179,7 @@ public final class MessageFilter {
 			return false;
 		}
 		synchronized (_fields) {
-			ListIterator it = _fieldList.listIterator();
-			while (it.hasNext()) {
-				String fieldName = (String) it.next();
+			for (String fieldName : _fieldList) {
 				if (!m.isSet(fieldName)) {
 					return false;
 				}

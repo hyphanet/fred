@@ -26,7 +26,6 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -49,10 +48,10 @@ public class NetworkInterface implements Closeable {
 	protected final Object syncObject = new Object();
 
 	/** Acceptors created by this interface. */
-	private final List/* <Acceptor> */acceptors = new ArrayList();
+	private final List<Acceptor>  acceptors = new ArrayList<Acceptor>();
 
 	/** Queue of accepted client connections. */
-	protected final List/* <Socket> */acceptedSockets = new ArrayList();
+	protected final List<Socket> acceptedSockets = new ArrayList<Socket>();
 	
 	/** AllowedHosts structure */
 	protected final AllowedHosts allowedHosts;
@@ -112,13 +111,13 @@ public class NetworkInterface implements Closeable {
 	public void setBindTo(String bindTo, boolean ignoreUnbindableIP6) throws IOException {
                 if(bindTo == null || bindTo.equals("")) bindTo = NetworkInterface.DEFAULT_BIND_TO;
 		StringTokenizer bindToTokens = new StringTokenizer(bindTo, ",");
-		List bindToTokenList = new ArrayList();
+		List<String> bindToTokenList = new ArrayList<String>();
 		while (bindToTokens.hasMoreTokens()) {
 			bindToTokenList.add(bindToTokens.nextToken().trim());
 		}
 		/* stop the old acceptors. */
 		for (int acceptorIndex = 0, acceptorCount = acceptors.size(); acceptorIndex < acceptorCount; acceptorIndex++) {
-			Acceptor acceptor = (Acceptor) acceptors.get(acceptorIndex);
+			Acceptor acceptor = acceptors.get(acceptorIndex);
 			try {
 				acceptor.close();
 			} catch (IOException e) {
@@ -138,7 +137,7 @@ public class NetworkInterface implements Closeable {
 			ServerSocket serverSocket = createServerSocket();
 			InetSocketAddress addr = null;
 			try {
-				addr = new InetSocketAddress((String) bindToTokenList.get(serverSocketIndex), port);
+				addr = new InetSocketAddress(bindToTokenList.get(serverSocketIndex), port);
 				serverSocket.setReuseAddress(true);
 				serverSocket.bind(addr);
 			} catch (SocketException e) {
@@ -152,9 +151,7 @@ public class NetworkInterface implements Closeable {
 		}
 		setSoTimeout(timeout);
 		synchronized (syncObject) {
-			Iterator acceptors = this.acceptors.iterator();
-			while (acceptors.hasNext()) {
-				Acceptor acceptor=(Acceptor) acceptors.next();
+			for (Acceptor acceptor : this.acceptors) {
 				executor.execute(acceptor, "Network Interface Acceptor for "+acceptor.serverSocket);
 			}
 		}
@@ -174,9 +171,8 @@ public class NetworkInterface implements Closeable {
 	 * @see ServerSocket#setSoTimeout(int)
 	 */
 	public void setSoTimeout(int timeout) throws SocketException {
-		Iterator acceptors = this.acceptors.iterator();
-		while (acceptors.hasNext()) {
-			((Acceptor) acceptors.next()).setSoTimeout(timeout);
+		for (Acceptor acceptor : acceptors) {
+			acceptor.setSoTimeout(timeout);
 		}
 	}
 
@@ -202,7 +198,7 @@ public class NetworkInterface implements Closeable {
 					throw new SocketTimeoutException();
 				}
 			}
-			return (Socket) acceptedSockets.remove(0);
+			return acceptedSockets.remove(0);
 		}
 	}
 
@@ -215,9 +211,7 @@ public class NetworkInterface implements Closeable {
 	 */
 	public void close() throws IOException {
 		IOException exception = null;
-		Iterator acceptors = this.acceptors.iterator();
-		while (acceptors.hasNext()) {
-			Acceptor acceptor = (Acceptor) acceptors.next();
+		for (Acceptor acceptor : acceptors) {
 			try {
 				acceptor.close();
 			} catch (IOException ioe1) {
@@ -225,7 +219,7 @@ public class NetworkInterface implements Closeable {
 			}
 		}
 		if (exception != null) {
-			throw (exception);
+			throw exception;
 		}
 	}
 

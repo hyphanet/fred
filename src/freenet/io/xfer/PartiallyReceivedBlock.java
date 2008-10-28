@@ -18,7 +18,6 @@
  */
 package freenet.io.xfer;
 
-import java.util.Iterator;
 import java.util.LinkedList;
 
 import freenet.support.Buffer;
@@ -38,7 +37,7 @@ public class PartiallyReceivedBlock {
 	boolean _aborted;
 	int _abortReason;
 	String _abortDescription;
-	LinkedList _packetReceivedListeners = new LinkedList();
+	LinkedList<PacketReceivedListener> _packetReceivedListeners = new LinkedList<PacketReceivedListener>();
 
 	public PartiallyReceivedBlock(int packets, int packetSize, byte[] data) {
 		if (data.length != packets * packetSize) {
@@ -61,15 +60,15 @@ public class PartiallyReceivedBlock {
 		_packetSize = packetSize;
 	}
 
-	public synchronized LinkedList addListener(PacketReceivedListener listener) throws AbortedException {
+	public synchronized LinkedList<Integer> addListener(PacketReceivedListener listener) throws AbortedException {
 		if (_aborted) {
 			throw new AbortedException("Adding listener to aborted PRB");
 		}
 		_packetReceivedListeners.add(listener);
-		LinkedList ret = new LinkedList();
+		LinkedList<Integer> ret = new LinkedList<Integer>();
 		for (int x = 0; x < _packets; x++) {
 			if (_received[x]) {
-				ret.addLast(new Integer(x));
+				ret.addLast(x);
 			}
 		}
 		return ret;
@@ -115,7 +114,7 @@ public class PartiallyReceivedBlock {
 			_received[position] = true;
 			
 			// FIXME keep it as as an array
-			prls = (PacketReceivedListener[]) _packetReceivedListeners.toArray(new PacketReceivedListener[_packetReceivedListeners.size()]);
+			prls = _packetReceivedListeners.toArray(new PacketReceivedListener[_packetReceivedListeners.size()]);
 		}
 		
 		
@@ -160,8 +159,7 @@ public class PartiallyReceivedBlock {
 		_aborted = true;
 		_abortReason = reason;
 		_abortDescription = description;
-		for (Iterator i = _packetReceivedListeners.iterator(); i.hasNext();) {
-			PacketReceivedListener prl = (PacketReceivedListener) i.next();
+		for (PacketReceivedListener prl : _packetReceivedListeners) {
 			prl.receiveAborted(reason, description);
 		}
 	}

@@ -16,9 +16,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.ListIterator;
 import java.util.Vector;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
@@ -74,6 +71,7 @@ import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPUtil;
+import java.net.InetAddress;
 
 /**
  * @author amphibian
@@ -568,7 +566,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			Logger.normal(this, "No IP addresses found for identity '" + Base64.encode(identity) + "', possibly at location '" + Double.toString(currentLocation) + ": " + userToString());
 			detectedPeer = null;
 		} else {
-			detectedPeer = (Peer) nominalPeer.firstElement();
+			detectedPeer = nominalPeer.firstElement();
 		}
 		updateShortToString();
 		
@@ -820,7 +818,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		HashSet<Peer> ret = new HashSet<Peer>();
 		for(int i = 0; i < localHandshakeIPs.length; i++)
 			ret.add(localHandshakeIPs[i]);
-		return (Peer[]) ret.toArray(new Peer[ret.size()]);
+		return ret.toArray(new Peer[ret.size()]);
 	}
 
 	/**
@@ -846,7 +844,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		// Don't synchronize while doing lookups which may take a long time!
 		synchronized(this) {
-			myNominalPeer = (Peer[]) nominalPeer.toArray(new Peer[nominalPeer.size()]);
+			myNominalPeer = nominalPeer.toArray(new Peer[nominalPeer.size()]);
 		}
 
 		Peer[] localHandshakeIPs;
@@ -910,7 +908,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			peers.add(p);
 		}
 
-		localHandshakeIPs = (Peer[]) peers.toArray(new Peer[peers.size()]);
+		localHandshakeIPs = peers.toArray(new Peer[peers.size()]);
 		localHandshakeIPs = updateHandshakeIPs(localHandshakeIPs, ignoreHostnames);
 		synchronized(this) {
 			handshakeIPs = localHandshakeIPs;
@@ -2330,7 +2328,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			nominalPeer = new Vector<Peer>();
 		nominalPeer.removeAllElements();
 
-		Peer[] oldPeers = (Peer[]) nominalPeer.toArray(new Peer[nominalPeer.size()]);
+		Peer[] oldPeers = nominalPeer.toArray(new Peer[nominalPeer.size()]);
 
 		boolean refHadPhysicalUDP = false;
 
@@ -2934,7 +2932,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		messageSpecName = m.getSpec().getName();
 		// Synchronize to make increments atomic.
 		synchronized(this) {
-			count = (Long) localNodeSentMessageTypes.get(messageSpecName);
+			count = localNodeSentMessageTypes.get(messageSpecName);
 			if(count == null)
 				count = 1L;
 			else
@@ -2950,7 +2948,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		messageSpecName = m.getSpec().getName();
 		// Synchronize to make increments atomic.
 		synchronized(localNodeReceivedMessageTypes) {
-			count = (Long) localNodeReceivedMessageTypes.get(messageSpecName);
+			count = localNodeReceivedMessageTypes.get(messageSpecName);
 			if(count == null)
 				count = 1L;
 			else
@@ -3798,12 +3796,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(validIPs.isEmpty()) {
 			ret = null;
 		} else if(validIPs.size() == 1) {
-			ret = (Peer) validIPs.get(0);
+			ret = validIPs.get(0);
 		} else {
 			synchronized(this) {
 				if(handshakeIPAlternator >= validIPs.size())
 					handshakeIPAlternator = 0;
-				ret = (Peer) validIPs.get(handshakeIPAlternator);
+				ret = validIPs.get(handshakeIPAlternator);
 				handshakeIPAlternator++;
 			}
 		}
@@ -3912,7 +3910,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public static boolean shouldThrottle(Peer peer, Node node) {
 		if(node.throttleLocalData) return true;
 		if(peer == null) return true; // presumably
-		return IPUtil.isValidAddress(peer.getAddress(), false);
+		InetAddress addr = peer.getAddress();
+		if(addr == null) return true; // presumably
+		return IPUtil.isValidAddress(addr, false);
 	}
 
 	public void reportPing(long t) {
