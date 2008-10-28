@@ -449,7 +449,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			block = new InsertBlock(bucket, null, targetURI);
 		try {
 			SingleFileInserter metadataInserter = 
-				new SingleFileInserter(this, this, block, isMetadata, ctx, false, getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode);
+				new SingleFileInserter(this, this, block, isMetadata, ctx, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode);
 			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+metadataInserter);
 			this.metadataPuttersByMetadata.put(baseMetadata, metadataInserter);
 			metadataPuttersUnfetchable.put(baseMetadata, metadataInserter);
