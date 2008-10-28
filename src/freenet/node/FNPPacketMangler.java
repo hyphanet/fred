@@ -2352,41 +2352,51 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		1 + // no forgotten packets
 		length; // the payload !
 
-		if(logMINOR) Logger.minor(this, "Pre-padding length: "+packetLength);
-		
-		// Padding
-		// This will do an adequate job of disguising the contents, and a poor (but not totally
-		// worthless) job of disguising the traffic. FIXME!!!!!
-		// Ideally we'd mimic the size profile - and the session bytes! - of a common protocol.
-
+		boolean paddThisPacket = crypto.config.paddDataPackets();
 		int paddedLen;
-		
-		if(packetLength < 64) {
-			// Up to 37 bytes of payload (after base overhead above of 27 bytes), padded size 96-128 bytes.
-			// Most small messages, and most ack only packets.
-			paddedLen = 64 + node.fastWeakRandom.nextInt(32);
+		if(paddThisPacket) {
+			if(logMINOR)
+				Logger.minor(this, "Pre-padding length: " + packetLength);
+
+			// Padding
+			// This will do an adequate job of disguising the contents, and a poor (but not totally
+			// worthless) job of disguising the traffic. FIXME!!!!!
+			// Ideally we'd mimic the size profile - and the session bytes! - of a common protocol.
+
+			if(packetLength < 64)
+				// Up to 37 bytes of payload (after base overhead above of 27 bytes), padded size 96-128 bytes.
+				// Most small messages, and most ack only packets.
+				paddedLen = 64 + node.fastWeakRandom.nextInt(32);
+			else {
+				// Up to 69 bytes of payload, final size 128-192 bytes (CHK request, CHK insert, opennet announcement, CHK offer, swap reply) 
+				// Up to 133 bytes of payload, final size 192-256 bytes (SSK request, get offered CHK, offer SSK[, SSKInsertRequestNew], get offered SSK)
+				// Up to 197 bytes of payload, final size 256-320 bytes (swap commit/complete[, SSKDataFoundNew, SSKInsertRequestAltNew])
+				// Up to 1093 bytes of payload, final size 1152-1216 bytes (bulk transmit, block transmit, time deltas, SSK pubkey[, SSKData, SSKDataInsert])
+				packetLength += 32;
+				paddedLen = ((packetLength + 63) / 64) * 64;
+				paddedLen += node.fastWeakRandom.nextInt(64);
+				// FIXME get rid of this, we shouldn't be sending packets anywhere near this size unless
+				// we've done PMTU...
+				if(packetLength <= 1280 && paddedLen > 1280)
+					paddedLen = 1280;
+				int maxPacketSize = sock.getMaxPacketSize();
+				if(packetLength <= maxPacketSize && paddedLen > maxPacketSize)
+					paddedLen = maxPacketSize;
+				packetLength -= 32;
+				paddedLen -= 32;
+			}
 		} else {
-			// Up to 69 bytes of payload, final size 128-192 bytes (CHK request, CHK insert, opennet announcement, CHK offer, swap reply) 
-			// Up to 133 bytes of payload, final size 192-256 bytes (SSK request, get offered CHK, offer SSK[, SSKInsertRequestNew], get offered SSK)
-			// Up to 197 bytes of payload, final size 256-320 bytes (swap commit/complete[, SSKDataFoundNew, SSKInsertRequestAltNew])
-			// Up to 1093 bytes of payload, final size 1152-1216 bytes (bulk transmit, block transmit, time deltas, SSK pubkey[, SSKData, SSKDataInsert])
-			packetLength += 32;
-			paddedLen = ((packetLength + 63) / 64) * 64;
-			paddedLen += node.fastWeakRandom.nextInt(64);
-			// FIXME get rid of this, we shouldn't be sending packets anywhere near this size unless
-			// we've done PMTU...
-			if(packetLength <= 1280 && paddedLen > 1280) paddedLen = 1280;
-			int maxPacketSize = sock.getMaxPacketSize();
-			if(packetLength <= maxPacketSize && paddedLen > maxPacketSize) paddedLen = maxPacketSize;
-			packetLength -= 32;
-			paddedLen -= 32;
+			if(logMINOR)
+				Logger.minor(this, "Don't padd the packet: we have been asked not to.");
+			paddedLen = packetLength;
 		}
 
 		byte[] padding = new byte[paddedLen - packetLength];
-		node.fastWeakRandom.nextBytes(padding);
-
-		packetLength = paddedLen;
-
+		if(paddThisPacket) {
+			node.fastWeakRandom.nextBytes(padding);
+			packetLength = paddedLen;
+		}
+		
 		if(logMINOR) Logger.minor(this, "Packet length: "+packetLength+" ("+length+")");
 
 		byte[] plaintext = new byte[packetLength];
@@ -2496,8 +2506,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(buf, offset, plaintext, ptr, length);
 		ptr += length;
 
-		System.arraycopy(padding, 0, plaintext, ptr, padding.length);
-		ptr += padding.length;
+		if(paddThisPacket) {
+			System.arraycopy(padding, 0, plaintext, ptr, padding.length);
+			ptr += padding.length;
+		}
 
 		if(ptr != plaintext.length) {
 			Logger.error(this, "Inconsistent length: "+plaintext.length+" buffer but "+(ptr)+" actual");

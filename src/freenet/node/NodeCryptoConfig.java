@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import freenet.config.NodeNeedRestartException;
 import java.net.UnknownHostException;
 
 import freenet.config.InvalidConfigValueException;
@@ -53,6 +54,9 @@ public class NodeCryptoConfig {
 	
 	/** If true, include local addresses on noderefs */
 	public boolean includeLocalAddressesInNoderefs;
+	
+	/** If false we won't make any effort do disguise the length of packets */
+	private boolean paddDataPackets;
 	
 	NodeCryptoConfig(SubConfig config, int sortOrder, boolean isOpennet, SecurityLevels securityLevels) throws NodeInitException {
 		this.isOpennet = isOpennet;
@@ -231,6 +235,34 @@ public class NodeCryptoConfig {
 		
 		includeLocalAddressesInNoderefs = config.getBoolean("includeLocalAddressesInNoderefs");
 		
+		// enable/disable Padding of outgoing packets (won't affect auth-packets)
+		
+		config.register("paddDataPackets", true, sortOrder++, true, false, "Node.paddDataPackets", "Node.paddDataPacketsLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				return paddDataPackets;
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				if(val == get()) return;
+				paddDataPackets = val;
+			}
+		});
+		
+		paddDataPackets = config.getBoolean("paddDataPackets");
+		securityLevels.addNetworkThreatLevelListener(new SecurityLevelListener<NETWORK_THREAT_LEVEL>() {
+
+			public void onChange(NETWORK_THREAT_LEVEL oldLevel, NETWORK_THREAT_LEVEL newLevel) {
+				// Might be useful for nodes which are running with a tight bandwidth quota to minimize the overhead,
+				// so turn it off for LOW. Otherwise is sensible.
+				if(newLevel == NETWORK_THREAT_LEVEL.LOW)
+					paddDataPackets = false;
+				if(oldLevel == NETWORK_THREAT_LEVEL.LOW)
+					paddDataPackets = true;
+			}
+		});
 	}
 
 	/** The number of config options i.e. the amount to increment sortOrder by */
@@ -303,5 +335,8 @@ public class NodeCryptoConfig {
 	public boolean includeLocalAddressesInNoderefs() {
 		return includeLocalAddressesInNoderefs;
 	}
-
+	
+	public boolean paddDataPackets() {
+		return paddDataPackets;
+	}
 }
