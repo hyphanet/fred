@@ -85,18 +85,6 @@ public class PersistentChosenRequest {
 		if(!reqActive)
 			container.deactivate(req, 1);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		
-		// Remove debugging check? How reasonable is the timeout for inserts??
-		context.ticker.queueTimedJob(new Runnable() {
-
-			public void run() {
-				synchronized(PersistentChosenRequest.this) {
-					if(finished) return;
-					Logger.error(this, "Still not finished after timeout: "+PersistentChosenRequest.this);
-				}
-			}
-			
-		}, 4*60*60*1000); // should be plenty of time even with 1000 single-insert PCRs each taking 10 seconds ...
 	}
 
 	void onFinished(PersistentChosenBlock block, ClientContext context) {
