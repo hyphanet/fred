@@ -263,7 +263,7 @@ public class ArchiveManager {
 		
 		InputStream is = null;
 		try {
-			if(ctype == null) {
+			if((ctype == null) || (ARCHIVE_TYPE.ZIP == archiveType)) {
 				if(logMINOR) Logger.minor(this, "No compression");
 				is = data.getInputStream();
 			} else if(ctype == COMPRESSOR_TYPE.BZIP2) {
