@@ -26,6 +26,7 @@ import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketChainBucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NativeThread;
+import java.util.concurrent.Semaphore;
 
 /**
  * Attempt to insert a file. May include metadata.
@@ -108,10 +109,6 @@ class SingleFileInserter implements ClientPutState {
 		OffThreadCompressor otc = new OffThreadCompressor();
 		ctx.executor.execute(otc, "Compressor for " + this);
 	}
-
-	// Use a mutex to serialize compression (limit memory usage/IO)
-	// Of course it doesn't make any sense on multi-core systems.
-	private static final Object compressorSync = new Object();
 	
 	private  class OffThreadCompressor implements PrioRunnable {
 		public void run() {
@@ -140,7 +137,14 @@ class SingleFileInserter implements ClientPutState {
 	}
 	
 	private void tryCompress() throws InsertException {
-		synchronized(compressorSync) {
+		try {
+			try {
+				COMPRESSOR_TYPE.compressorSemaphore.acquire();
+			} catch (InterruptedException e) {
+				// should not happen
+				Logger.error(this, "Caught an InterruptedException:"+e.getMessage(), e);
+				throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
+			}
 		// First, determine how small it needs to be
 		Bucket origData = block.getData();
 		Bucket data = origData;
@@ -302,6 +306,8 @@ class SingleFileInserter implements ClientPutState {
 			sfi.start();
 			if(earlyEncode) sfi.forceEncode();
 		}
+		} finally {
+		COMPRESSOR_TYPE.compressorSemaphore.release();
 		}
 	}
 	
