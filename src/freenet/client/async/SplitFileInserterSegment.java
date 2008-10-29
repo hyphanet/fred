@@ -31,7 +31,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 
 	final SplitFileInserter parent;
 
-	final FECCodec splitfileAlgo;
+	final short splitfileAlgo;
 
 	final Bucket[] dataBlocks;
 
@@ -79,7 +79,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 	}
 
 	public SplitFileInserterSegment(SplitFileInserter parent,
-			FECCodec splitfileAlgo, Bucket[] origDataBlocks,
+			short splitfileAlgo, int checkBlockCount, Bucket[] origDataBlocks,
 			InsertContext blockInsertContext, boolean getCHKOnly, int segNo, ObjectContainer container) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		hashCode = super.hashCode();
@@ -90,8 +90,6 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		this.blockInsertContext = blockInsertContext;
 		this.splitfileAlgo = splitfileAlgo;
 		this.dataBlocks = origDataBlocks;
-		int checkBlockCount = splitfileAlgo == null ? 0 : splitfileAlgo
-				.countCheckBlocks();
 		checkBlocks = new Bucket[checkBlockCount];
 		checkURIs = new ClientCHK[checkBlockCount];
 		dataURIs = new ClientCHK[origDataBlocks.length];
@@ -112,6 +110,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			boolean getCHKOnly, int segNo, ClientContext context, ObjectContainer container) throws ResumeException {
 		hashCode = super.hashCode();
 		this.parent = parent;
+		this.splitfileAlgo = splitfileAlgorithm;
 		this.getCHKOnly = getCHKOnly;
 		this.persistent = parent.persistent;
 		this.blockInsertContext = ctx;
@@ -238,8 +237,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 				}
 				checkFS.removeSubset(index);
 			}
-			splitfileAlgo = FECCodec.getCodec(splitfileAlgorithm,
-					dataBlockCount, checkBlocks.length, context.mainExecutor);
+			if(persistent)
+				container.activate(splitfileAlgorithm, 10);
 			
 			if(checkBlocks.length > dataBlocks.length) {
 				// Work around 1135 bug.
@@ -249,9 +248,9 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		} else {
 			Logger.normal(this, "Not encoded because no check blocks");
 			encoded = false;
-			splitfileAlgo = FECCodec.getCodec(splitfileAlgorithm,
+			FECCodec splitfileAlgo = FECCodec.getCodec(splitfileAlgorithm,
 					dataBlockCount, context.mainExecutor);
-			int checkBlocksCount = splitfileAlgo.countCheckBlocks();
+			int checkBlocksCount =splitfileAlgo.countCheckBlocks();
 			this.checkURIs = new ClientCHK[checkBlocksCount];
 			this.checkBlocks = new Bucket[checkBlocksCount];
 			this.checkBlockInserters = new SingleBlockInserter[checkBlocksCount];
@@ -446,7 +445,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			if (logMINOR)
 				Logger.minor(this, "Segment " + segNo + " of " + parent + " ("
 						+ parent.dataLength + ") is not encoded");
-			if (splitfileAlgo != null) {
+			FECCodec splitfileAlgo = FECCodec.getCodec(this.splitfileAlgo,
+					dataBlocks.length, checkBlocks.length, context.mainExecutor);
 				if (logMINOR)
 					Logger.minor(this, "Encoding segment " + segNo + " of "
 							+ parent + " (" + parent.dataLength + ") persistent="+persistent);
@@ -462,7 +462,6 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 					}
 				}				
 				fin = false;
-			}
 		} else {
 			for (int i = 0; i < checkBlockInserters.length; i++) {
 				if (checkBlocks[i] != null) {

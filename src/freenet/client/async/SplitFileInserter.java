@@ -242,8 +242,7 @@ public class SplitFileInserter implements ClientPutState {
 		// First split the data up
 		if((dataBlocks < segmentSize) || (segmentSize == -1)) {
 			// Single segment
-			FECCodec codec = FECCodec.getCodec(splitfileAlgorithm, origDataBlocks.length, executor);
-			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, codec, origDataBlocks, ctx, getCHKOnly, 0, container);
+			SplitFileInserterSegment onlySeg = new SplitFileInserterSegment(this, splitfileAlgorithm, FECCodec.getCheckBlocks(splitfileAlgorithm, origDataBlocks.length), origDataBlocks, ctx, getCHKOnly, 0, container);
 			segs.add(onlySeg);
 		} else {
 			int j = 0;
@@ -255,8 +254,7 @@ public class SplitFileInserter implements ClientPutState {
 				j = i;
 				for(int x=0;x<seg.length;x++)
 					if(seg[x] == null) throw new NullPointerException("In splitIntoSegs: "+x+" is null of "+seg.length+" of "+segNo);
-				FECCodec codec = FECCodec.getCodec(splitfileAlgorithm, seg.length, executor);
-				SplitFileInserterSegment s = new SplitFileInserterSegment(this, codec, seg, ctx, getCHKOnly, segNo, container);
+				SplitFileInserterSegment s = new SplitFileInserterSegment(this, splitfileAlgorithm, FECCodec.getCheckBlocks(splitfileAlgorithm, seg.length), seg, ctx, getCHKOnly, segNo, container);
 				segs.add(s);
 				
 				if(i == dataBlocks) break;
@@ -371,6 +369,13 @@ public class SplitFileInserter implements ClientPutState {
 			if(logMINOR) Logger.minor(this, "Data URIs: "+dataURIs.length+", check URIs: "+checkURIs.length);
 			
 			missingURIs = anyNulls(dataURIs) || anyNulls(checkURIs);
+			
+			if(persistent) {
+				for(ClientCHK key : dataURIs)
+					container.activate(key, 5);
+				for(ClientCHK key : checkURIs)
+					container.activate(key, 5);
+			}
 			
 			if(!missingURIs) {
 				// Create Metadata
