@@ -318,6 +318,23 @@ public class SplitFileFetcherSegment implements FECCallback {
 			for(int i=0;i<checkBuckets.length;i++)
 				container.activate(checkBuckets[i], 1);
 		}
+		int data = 0;
+		for(int i=0;i<dataBuckets.length;i++) {
+			if(dataBuckets[i].getData() != null) {
+				data++;
+			}
+		}
+		if(data == dataBuckets.length) {
+			if(logMINOR)
+				Logger.minor(this, "Already decoded");
+			if(persistent) {
+				for(int i=0;i<dataBuckets.length;i++) {
+					container.activate(dataBuckets[i].getData(), 1);
+				}
+			}
+			onDecodedSegment(container, context, null, null, null, dataBuckets, checkBuckets);
+			return;
+		}
 		
 		if(splitfileType != Metadata.SPLITFILE_NONREDUNDANT) {
 			FECQueue queue = context.fecQueue;
@@ -376,8 +393,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 			if(isCollectingBinaryBlob(parent)) {
 				for(int i=0;i<dataBuckets.length;i++) {
-					if(persistent)
-						container.activate(dataBlockStatus[i], 1);
 					Bucket data = dataBlockStatus[i].getData();
 					try {
 						maybeAddToBinaryBlob(data, i, false, container, context);
