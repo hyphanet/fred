@@ -64,22 +64,34 @@ public abstract class FECCodec {
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
 			return null;
 		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
-			/**
-			 * ALCHEMY: What we do know is that redundancy by FEC is much more efficient than 
-			 * redundancy by simply duplicating blocks, for obvious reasons (see e.g. Wuala). But
-			 * we have to have some redundancy at the duplicating blocks level because we do use
-			 * some keys directly etc: we store an insert in 3 nodes. We also cache it on 20 nodes,
-			 * but generally the key will fall out of the caches within days. So long term, it's 3.
-			 * Multiplied by 2 here, makes 6. Used to be 1.5 * 3 = 4.5. Wuala uses 5, but that's 
-			 * all FEC.
-			 */
-			int checkBlocks = dataBlocks * HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT / HighLevelSimpleClientImpl.SPLITFILE_BLOCKS_PER_SEGMENT;
-			if(dataBlocks >= HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT) 
-				checkBlocks = HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT;
+			int checkBlocks = standardOnionCheckBlocks(dataBlocks);
 			return StandardOnionFECCodec.getInstance(dataBlocks, checkBlocks, executor);
 		}
 		else
 			return null;
+	}
+	
+	private static int standardOnionCheckBlocks(int dataBlocks) {
+		/**
+		 * ALCHEMY: What we do know is that redundancy by FEC is much more efficient than 
+		 * redundancy by simply duplicating blocks, for obvious reasons (see e.g. Wuala). But
+		 * we have to have some redundancy at the duplicating blocks level because we do use
+		 * some keys directly etc: we store an insert in 3 nodes. We also cache it on 20 nodes,
+		 * but generally the key will fall out of the caches within days. So long term, it's 3.
+		 * Multiplied by 2 here, makes 6. Used to be 1.5 * 3 = 4.5. Wuala uses 5, but that's 
+		 * all FEC.
+		 */
+		int checkBlocks = dataBlocks * HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT / HighLevelSimpleClientImpl.SPLITFILE_BLOCKS_PER_SEGMENT;
+		if(dataBlocks >= HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT) 
+			checkBlocks = HighLevelSimpleClientImpl.SPLITFILE_CHECK_BLOCKS_PER_SEGMENT;
+		return checkBlocks;
+	}
+
+	public static int getCheckBlocks(short splitfileType, int dataBlocks) {
+		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD) {
+			return standardOnionCheckBlocks(dataBlocks);
+		} else
+			return 0;
 	}
 
 	/**
@@ -342,5 +354,9 @@ public abstract class FECCodec {
 	 */
 	public void addToQueue(FECJob job, FECQueue queue, ObjectContainer container) {
 		queue.addToQueue(job, this, container);
+	}
+	
+	public void objectCanDeactivate(ObjectContainer container) {
+		Logger.minor(this, "Deactivating "+this, new Exception("debug"));
 	}
 }
