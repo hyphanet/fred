@@ -46,7 +46,7 @@ public class FreenetInetAddress {
 			ba = new byte[4];
 			dis.readFully(ba);
 		} else {
-			throw new IOException("Unknown type byte (old form? corrupt stream? too short/long prev field?): "+(int)firstByte);
+			throw new IOException("Unknown type byte (old form? corrupt stream? too short/long prev field?): "+firstByte);
 		}
 		_address = InetAddress.getByAddress(ba);
 		String name = null;

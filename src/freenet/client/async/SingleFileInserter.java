@@ -9,20 +9,24 @@ import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
+import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.events.FinishedCompressionEvent;
 import freenet.client.events.StartedCompressionEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
 import freenet.keys.FreenetURI;
 import freenet.keys.SSKBlock;
+import freenet.node.PrioRunnable;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;
-import freenet.support.compress.Compressor;
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketChainBucketFactory;
 import freenet.support.io.BucketTools;
+import freenet.support.io.NativeThread;
+import java.util.concurrent.Semaphore;
 
 /**
  * Attempt to insert a file. May include metadata.
@@ -33,9 +37,6 @@ import freenet.support.io.BucketTools;
  */
 class SingleFileInserter implements ClientPutState {
 
-	// Config option???
-	private static final long COMPRESS_OFF_THREAD_LIMIT = 65536;
-	
 	private static boolean logMINOR;
 	final BaseClientPutter parent;
 	final InsertBlock block;
@@ -43,7 +44,8 @@ class SingleFileInserter implements ClientPutState {
 	final boolean metadata;
 	final PutCompletionCallback cb;
 	final boolean getCHKOnly;
-	final boolean insertAsArchiveManifest;
+	final ARCHIVE_TYPE archiveType;
+	COMPRESSOR_TYPE compressorUsed;
 	/** If true, we are not the top level request, and should not
 	 * update our parent to point to us as current put-stage. */
 	private final boolean reportMetadataOnly;
@@ -69,7 +71,7 @@ class SingleFileInserter implements ClientPutState {
 	 */
 	SingleFileInserter(BaseClientPutter parent, PutCompletionCallback cb, InsertBlock block, 
 			boolean metadata, InsertContext ctx, boolean dontCompress, 
-			boolean getCHKOnly, boolean reportMetadataOnly, Object token, boolean insertAsArchiveManifest, 
+			boolean getCHKOnly, boolean reportMetadataOnly, Object token, ARCHIVE_TYPE archiveType, 
 			boolean freeData, String targetFilename, boolean earlyEncode) throws InsertException {
 		this.earlyEncode = earlyEncode;
 		this.reportMetadataOnly = reportMetadataOnly;
@@ -80,7 +82,7 @@ class SingleFileInserter implements ClientPutState {
 		this.metadata = metadata;
 		this.cb = cb;
 		this.getCHKOnly = getCHKOnly;
-		this.insertAsArchiveManifest = insertAsArchiveManifest;
+		this.archiveType = archiveType;
 		this.freeData = freeData;
 		this.targetFilename = targetFilename;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -103,17 +105,12 @@ class SingleFileInserter implements ClientPutState {
 				}
 			}
 		}
-		Bucket data = block.getData();
-		if(data.size() > COMPRESS_OFF_THREAD_LIMIT) {
-			// Run off thread
-			OffThreadCompressor otc = new OffThreadCompressor();
-			ctx.executor.execute(otc, "Compressor for "+this);
-		} else {
-			tryCompress();
-		}
+		// Run off thread in any case
+		OffThreadCompressor otc = new OffThreadCompressor();
+		ctx.executor.execute(otc, "Compressor for " + this);
 	}
-
-	private class OffThreadCompressor implements Runnable {
+	
+	private  class OffThreadCompressor implements PrioRunnable {
 		public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
 			try {
@@ -133,9 +130,21 @@ class SingleFileInserter implements ClientPutState {
 				cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), SingleFileInserter.this);
 			}
 		}
+
+		public int getPriority() {
+			return NativeThread.LOW_PRIORITY;
+		}
 	}
 	
 	private void tryCompress() throws InsertException {
+		try {
+			try {
+				COMPRESSOR_TYPE.compressorSemaphore.acquire();
+			} catch (InterruptedException e) {
+				// should not happen
+				Logger.error(this, "Caught an InterruptedException:"+e.getMessage(), e);
+				throw new InsertException(InsertException.INTERNAL_ERROR, e, null);
+			}
 		// First, determine how small it needs to be
 		Bucket origData = block.getData();
 		Bucket data = origData;
@@ -155,64 +164,72 @@ class SingleFileInserter implements ClientPutState {
 			throw new InsertException(InsertException.INVALID_URI, "Unknown key type: "+type, null);
 		}
 		
-		Compressor bestCodec = null;
+		COMPRESSOR_TYPE bestCodec = null;
 		Bucket bestCompressedData = null;
+		long bestCompressedDataSize = origSize;
 
 		boolean tryCompress = (origSize > blockSize) && (!ctx.dontCompress) && (!dontCompress);
 		if(tryCompress) {
+			if(logMINOR) Logger.minor(this, "Attempt to compress the data");
 			// Try to compress the data.
 			// Try each algorithm, starting with the fastest and weakest.
 			// Stop when run out of algorithms, or the compressed data fits in a single block.
-			int algos = Compressor.countCompressAlgorithms();
-			try {
-				for(int i=0;i<algos;i++) {
+			for(COMPRESSOR_TYPE comp : COMPRESSOR_TYPE.values()) {
+				boolean shouldFreeOnFinally = true;
+				Bucket result = null;
+				try {
+					if(logMINOR)
+						Logger.minor(this, "Attempt to compress using " + comp);
 					// Only produce if we are compressing *the original data*
 					if(parent == cb)
-						ctx.eventProducer.produceEvent(new StartedCompressionEvent(i));
-					Compressor comp = Compressor.getCompressionAlgorithmByDifficulty(i);
-					Bucket result;
-					result = comp.compress(origData, new BucketChainBucketFactory(ctx.persistentBucketFactory, CHKBlock.DATA_LENGTH), origData.size());
-					if(result.size() < oneBlockCompressedSize) {
+						ctx.eventProducer.produceEvent(new StartedCompressionEvent(comp));
+					result = comp.compress(origData, new BucketChainBucketFactory(ctx.persistentBucketFactory, CHKBlock.DATA_LENGTH), bestCompressedDataSize);
+					long resultSize = result.size();
+					if(resultSize < oneBlockCompressedSize) {
 						bestCodec = comp;
 						if(bestCompressedData != null)
 							bestCompressedData.free();
 						bestCompressedData = result;
+						bestCompressedDataSize = resultSize;
+						shouldFreeOnFinally = false;
 						break;
 					}
-					if((bestCompressedData != null) && (result.size() <  bestCompressedData.size())) {
-						bestCompressedData.free();
+					if(resultSize < bestCompressedDataSize) {
+						if(bestCompressedData != null)
+							bestCompressedData.free();
 						bestCompressedData = result;
+						bestCompressedDataSize = resultSize;
 						bestCodec = comp;
-					} else if((bestCompressedData == null) && (result.size() < data.size())) {
-						bestCompressedData = result;
-						bestCodec = comp;
-					} else {
-						result.free();
+						shouldFreeOnFinally = false;
 					}
+				} catch(CompressionOutputSizeException e) {
+					continue;	// try next compressor type
+				} catch(IOException e) {
+					throw new InsertException(InsertException.BUCKET_ERROR, e, null);
+				} finally {
+					if(shouldFreeOnFinally && (result != null))
+						result.free();
 				}
-			} catch (IOException e) {
-				throw new InsertException(InsertException.BUCKET_ERROR, e, null);
-			} catch (CompressionOutputSizeException e) {
-				// Impossible
-				throw new Error(e);
 			}
 		}
-		boolean freeData = false;
+		boolean shouldFreeData = false;
 		if(bestCompressedData != null) {
+			if(logMINOR) Logger.minor(this, "The best compression algorithm is "+bestCodec+ " we have gained "+ (100-(bestCompressedDataSize*100/origSize)) +"% ! ("+origSize+'/'+bestCompressedDataSize+')');
 			data = bestCompressedData;
-			freeData = true;
+			shouldFreeData = true;
+			compressorUsed = bestCodec;
 		}
 		
 		if(parent == cb) {
 			if(tryCompress)
-				ctx.eventProducer.produceEvent(new FinishedCompressionEvent(bestCodec == null ? -1 : bestCodec.codecNumberForMetadata(), origSize, data.size()));
+				ctx.eventProducer.produceEvent(new FinishedCompressionEvent(bestCodec == null ? -1 : bestCodec.metadataID, origSize, data.size()));
 			if(logMINOR) Logger.minor(this, "Compressed "+origSize+" to "+data.size()+" on "+this);
 		}
 		
 		// Compressed data
 		
 		// Insert it...
-		short codecNumber = bestCodec == null ? -1 : bestCodec.codecNumberForMetadata();
+		short codecNumber = bestCodec == null ? -1 : bestCodec.metadataID;
 		long compressedDataSize = data.size();
 		boolean fitsInOneBlockAsIs = bestCodec == null ? compressedDataSize < blockSize : compressedDataSize < oneBlockCompressedSize;
 		boolean fitsInOneCHK = bestCodec == null ? compressedDataSize < CHKBlock.DATA_LENGTH : compressedDataSize < CHKBlock.MAX_COMPRESSED_DATA_LENGTH;
@@ -221,7 +238,7 @@ class SingleFileInserter implements ClientPutState {
 			throw new InsertException(InsertException.INTERNAL_ERROR, "2GB+ should not encode to one block!", null);
 
 		boolean noMetadata = ((block.clientMetadata == null) || block.clientMetadata.isTrivial()) && targetFilename == null;
-		if(noMetadata && !insertAsArchiveManifest) {
+		if(noMetadata && archiveType == null) {
 			if(fitsInOneBlockAsIs) {
 				// Just insert it
 				ClientPutState bi =
@@ -236,7 +253,7 @@ class SingleFileInserter implements ClientPutState {
 			// Insert single block, then insert pointer to it
 			if(reportMetadataOnly) {
 				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token);
-				Metadata meta = makeMetadata(dataPutter.getURI());
+				Metadata meta = makeMetadata(archiveType, bestCodec, dataPutter.getURI());
 				cb.onMetadata(meta, this);
 				cb.onTransition(this, dataPutter);
 				dataPutter.schedule();
@@ -245,7 +262,7 @@ class SingleFileInserter implements ClientPutState {
 				MultiPutCompletionCallback mcb = 
 					new MultiPutCompletionCallback(cb, parent, token);
 				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token);
-				Metadata meta = makeMetadata(dataPutter.getURI());
+				Metadata meta = makeMetadata(archiveType, bestCodec, dataPutter.getURI());
 				Bucket metadataBucket;
 				try {
 					metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, meta.writeToByteArray());
@@ -277,22 +294,29 @@ class SingleFileInserter implements ClientPutState {
 		// insert it. Then when the splitinserter has finished, and the
 		// metadata insert has finished too, tell the master callback.
 		if(reportMetadataOnly) {
-			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData);
+			SplitFileInserter sfi = new SplitFileInserter(parent, cb, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData);
 			cb.onTransition(this, sfi);
 			sfi.start();
 			if(earlyEncode) sfi.forceEncode();
 		} else {
 			SplitHandler sh = new SplitHandler();
-			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, insertAsArchiveManifest, freeData);
+			SplitFileInserter sfi = new SplitFileInserter(parent, sh, data, bestCodec, origSize, block.clientMetadata, ctx, getCHKOnly, metadata, token, archiveType, shouldFreeData);
 			sh.sfi = sfi;
 			cb.onTransition(this, sh);
 			sfi.start();
 			if(earlyEncode) sfi.forceEncode();
 		}
+		} finally {
+		COMPRESSOR_TYPE.compressorSemaphore.release();
+		}
 	}
 	
-	private Metadata makeMetadata(FreenetURI uri) {
-		Metadata meta = new Metadata(insertAsArchiveManifest ? Metadata.ZIP_MANIFEST : Metadata.SIMPLE_REDIRECT, uri, block.clientMetadata);
+	private Metadata makeMetadata(ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE codec, FreenetURI uri) {
+		Metadata meta = null;
+		if(archiveType != null)
+			meta = new Metadata(Metadata.ARCHIVE_MANIFEST, archiveType, codec, uri, block.clientMetadata);
+		else  // redirect
+			meta = new Metadata(Metadata.SIMPLE_REDIRECT, archiveType, codec, uri, block.clientMetadata);
 		if(targetFilename != null) {
 			HashMap hm = new HashMap();
 			hm.put(targetFilename, meta);
@@ -360,7 +384,7 @@ class SingleFileInserter implements ClientPutState {
 			if(sfiFS == null)
 				throw new ResumeException("No SplitFileInserter");
 			ClientPutState newSFI, newMetaPutter = null;
-			newSFI = new SplitFileInserter(parent, this, forceMetadata ? null : block.clientMetadata, ctx, getCHKOnly, meta, token, insertAsArchiveManifest, sfiFS);
+			newSFI = new SplitFileInserter(parent, this, forceMetadata ? null : block.clientMetadata, ctx, getCHKOnly, meta, token, archiveType, sfiFS);
 			if(logMINOR) Logger.minor(this, "Starting "+newSFI+" for "+this);
 			fs.removeSubset("SplitFileInserter");
 			SimpleFieldSet metaFS = fs.subset("MetadataPutter");
@@ -370,7 +394,7 @@ class SingleFileInserter implements ClientPutState {
 					if(type.equals("SplitFileInserter")) {
 						// FIXME insertAsArchiveManifest ?!?!?!
 						newMetaPutter = 
-							new SplitFileInserter(parent, this, null, ctx, getCHKOnly, true, token, insertAsArchiveManifest, metaFS);
+							new SplitFileInserter(parent, this, null, ctx, getCHKOnly, true, token, archiveType, metaFS);
 					} else if(type.equals("SplitHandler")) {
 						newMetaPutter = new SplitHandler();
 						((SplitHandler)newMetaPutter).start(metaFS, true);
@@ -519,7 +543,7 @@ class SingleFileInserter implements ClientPutState {
 			InsertBlock newBlock = new InsertBlock(metadataBucket, null, block.desiredURI);
 			try {
 				synchronized(this) {
-					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, false, true, metaPutterTargetFilename, earlyEncode);
+					metadataPutter = new SingleFileInserter(parent, this, newBlock, true, ctx, false, getCHKOnly, false, token, archiveType, true, metaPutterTargetFilename, earlyEncode);
 					// If EarlyEncode, then start the metadata insert ASAP, to get the key.
 					// Otherwise, wait until the data is fetchable (to improve persistence).
 					if(!(earlyEncode || splitInsertSuccess)) return;

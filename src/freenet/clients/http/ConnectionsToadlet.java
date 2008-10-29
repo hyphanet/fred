@@ -180,7 +180,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			SimpleFieldSet fs = getNoderef();
 			StringWriter sw = new StringWriter();
 			fs.writeTo(sw);
-			MultiValueTable extraHeaders = new MultiValueTable();
+			MultiValueTable<String, String> extraHeaders = new MultiValueTable<String, String>();
 			// Force download to disk
 			extraHeaders.put("Content-Disposition", "attachment; filename=myref.fref");
 			this.writeReply(ctx, 200, "application/x-freenet-reference", "OK", extraHeaders, sw.toString());
@@ -499,7 +499,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		
 		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", defaultRedirectLocation());
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			if(logMINOR) Logger.minor(this, "No password ("+pass+" should be "+core.formPassword+ ')');
@@ -607,7 +607,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				return;
 			}
 			
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", defaultRedirectLocation());
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;

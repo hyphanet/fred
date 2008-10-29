@@ -45,10 +45,6 @@ public class LoggingConfigHandler {
 		public String[] getPossibleValues() {
 			return possibleValues;
 		}
-
-		public void setPossibleValues(String[] val) {
-			throw new NullPointerException("Should not happen!");
-		 }
 	}
 
 	protected static final String LOG_PREFIX = "freenet";

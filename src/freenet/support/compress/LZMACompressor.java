@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+* Public License, version 2 (or at your option any later version). See
+* http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.compress;
 
 import java.io.ByteArrayInputStream;
@@ -5,14 +8,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import net.contrapunctus.lzma.LzmaInputStream;
+import net.contrapunctus.lzma.LzmaOutputStream;
 
-public class GzipCompressor implements Compressor {
+public class LZMACompressor implements Compressor {
 
 	public Bucket compress(Bucket data, BucketFactory bf, long maxLength) throws IOException, CompressionOutputSizeException {
 		if(maxLength <= 0)
@@ -20,11 +23,11 @@ public class GzipCompressor implements Compressor {
 		Bucket output = bf.makeBucket(maxLength);
 		InputStream is = null;
 		OutputStream os = null;
-		GZIPOutputStream gos = null;
+		LzmaOutputStream lzmaOS = null;
 		try {
 			is = data.getInputStream();
 			os = output.getOutputStream();
-			gos = new GZIPOutputStream(os);
+			lzmaOS = new LzmaOutputStream(os);
 			long written = 0;
 			// Bigger input buffer, so can compress all at once.
 			// Won't hurt on I/O either, although most OSs will only return a page at a time.
@@ -37,14 +40,15 @@ public class GzipCompressor implements Compressor {
 				}
 				if(x <= -1) break;
 				if(x == 0) throw new IOException("Returned zero from read()");
-				gos.write(buffer, 0, x);
+				lzmaOS.write(buffer, 0, x);
 				written += x;
 			}
-			gos.flush();
+			lzmaOS.flush();
+			lzmaOS.close();
+			os = null;
 		} finally {
 			if(is != null) is.close();
-			if(gos != null) gos.close();
-			else if(os != null) os.close();
+			if(os != null) os.close();
 		}
 		return output;
 	}
@@ -64,7 +68,7 @@ public class GzipCompressor implements Compressor {
 	}
 
 	private long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
-		GZIPInputStream gis = new GZIPInputStream(is);
+		LzmaInputStream lzmaIS = new LzmaInputStream(is);
 		long written = 0;
 		byte[] buffer = new byte[4096];
 		while(true) {
@@ -72,14 +76,14 @@ public class GzipCompressor implements Compressor {
 			// We can over-read to determine whether we have over-read.
 			// We enforce maximum size this way.
 			// FIXME there is probably a better way to do this!
-			int x = gis.read(buffer, 0, buffer.length);
+			int x = lzmaIS.read(buffer, 0, buffer.length);
 			if(l < x) {
 				Logger.normal(this, "l="+l+", x="+x+", written="+written+", maxLength="+maxLength+" throwing a CompressionOutputSizeException");
 				if(maxCheckSizeBytes > 0) {
 					written += x;
 					while(true) {
 						l = (int) Math.min(buffer.length, maxLength + maxCheckSizeBytes - written);
-						x = gis.read(buffer, 0, l);
+						x = lzmaIS.read(buffer, 0, l);
 						if(x <= -1) throw new CompressionOutputSizeException(written);
 						if(x == 0) throw new IOException("Returned zero from read()");
 						written += x;

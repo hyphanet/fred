@@ -347,7 +347,7 @@ public abstract class FECCodec implements OOMHook {
 		synchronized(_awaitingJobs) {
 			_awaitingJobs.addFirst(job);
 			if(runningFECThreads < maxThreads) {
-				executor.execute(fecRunner, "FEC Pool "+fecPoolCounter++);
+				executor.execute(fecRunner, "FEC Pool(" + (fecPoolCounter++) + ")");
 				runningFECThreads++;
 			}
 			_awaitingJobs.notifyAll();
