@@ -128,7 +128,7 @@ public class PersistentBlobTempBucketFactory {
 					stored = notCommittedBlobs.get(ptr) == null;
 					if(stored) {
 						if(freeSlots.containsKey(ptr)) break;
-						if(notCommittedBlobs.get(ptr) != null) {
+						if(notCommittedBlobs.containsKey(ptr)) {
 							ptr--;
 							continue;
 						}
@@ -213,7 +213,7 @@ public class PersistentBlobTempBucketFactory {
 				}
 				PersistentBlobTempBucket bucket = new PersistentBlobTempBucket(this, blockSize, slot, tag);
 				notCommittedBlobs.put(slot, bucket);
-				if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Using slot "+slot+" for "+bucket);
+				if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Using slot "+slot+" for "+bucket+" (after waiting)");
 				return bucket;
 			}
 		}
