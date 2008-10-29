@@ -6,7 +6,7 @@ import java.util.Enumeration;
  * Framework for managing a doubly linked list.
  * @author tavin
  */
-public interface DoublyLinkedList<T> {
+public interface DoublyLinkedList<T> extends Iterable<T> {
     public abstract DoublyLinkedList<T> clone();
 
     /**

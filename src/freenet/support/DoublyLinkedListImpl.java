@@ -1,6 +1,7 @@
 package freenet.support;
 
 import java.util.Enumeration;
+import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 /**
@@ -420,4 +421,26 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
 			return old;
 		}
     }
+
+	public Iterator<T> iterator() {
+		return new Iterator<T>() {
+			private Enumeration<T> e = forwardElements();
+
+			public boolean hasNext() {
+				return e.hasMoreElements();
+			}
+
+			public T next() {
+				if(!hasNext())
+					throw new NoSuchElementException();
+				
+				return e.nextElement();
+			}
+
+			public void remove() {
+				throw new UnsupportedOperationException();
+			}
+			
+		};
+	}
 }
