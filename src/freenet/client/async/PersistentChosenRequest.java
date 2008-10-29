@@ -49,7 +49,7 @@ public class PersistentChosenRequest {
 	private boolean logMINOR;
 	private boolean finished;
 	
-	PersistentChosenRequest(SendableRequest req, short prio, int retryCount, ObjectContainer container, RequestScheduler sched, ClientContext context) {
+	PersistentChosenRequest(SendableRequest req, short prio, int retryCount, ObjectContainer container, RequestScheduler sched, ClientContext context) throws NoValidBlocksException {
 		request = req;
 		this.prio = prio;
 		this.retryCount = retryCount;
@@ -75,6 +75,10 @@ public class PersistentChosenRequest {
 		if(!reqActive)
 			container.activate(req, 1);
 		List<PersistentChosenBlock> candidates = req.makeBlocks(this, sched, container, context);
+		if(candidates == null) {
+			if(!reqActive) container.deactivate(req, 1);
+			throw new NoValidBlocksException();
+		}
 		for(PersistentChosenBlock block : candidates) {
 			Key key = block.key;
 			if(key != null && sched.hasFetchingKey(key))
@@ -90,7 +94,7 @@ public class PersistentChosenRequest {
 	void onFinished(PersistentChosenBlock block, ClientContext context) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
-			Logger.minor(this, "onFinished() on "+this+" for "+block);
+			Logger.minor(this, "onFinished() on "+this+" for "+block, new Exception("debug"));
 		synchronized(this) {
 			// Remove by pointer
 			for(int i=0;i<blocksNotStarted.size();i++) {

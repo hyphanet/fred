@@ -586,7 +586,12 @@ public class ClientRequestScheduler implements RequestScheduler {
 		if(logMINOR)
 			Logger.minor(this, "Adding to starter queue: "+request);
 		container.activate(request, 1);
-		PersistentChosenRequest chosen = new PersistentChosenRequest(request, request.getPriorityClass(container), request.getRetryCount(), container, ClientRequestScheduler.this, clientContext);
+		PersistentChosenRequest chosen;
+		try {
+			chosen = new PersistentChosenRequest(request, request.getPriorityClass(container), request.getRetryCount(), container, ClientRequestScheduler.this, clientContext);
+		} catch (NoValidBlocksException e) {
+			return false;
+		}
 		if(logMINOR)
 			Logger.minor(this, "Created PCR: "+chosen);
 		container.deactivate(request, 1);
@@ -606,7 +611,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 				runningPersistentRequests.add(request);
 				if(logMINOR)
 					Logger.minor(this, "Added to running persistent requests, size now "+runningPersistentRequests.size()+" : "+request);
-				return length < MAX_STARTER_QUEUE_SIZE;
+				return length > MAX_STARTER_QUEUE_SIZE;
 			}
 		}
 		if(dumpNew)
