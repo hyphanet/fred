@@ -47,6 +47,12 @@ public interface DoublyLinkedList<T> extends Iterable<T> {
     /** Get a {@link Enumeration} of {@link DoublyLinkedList.Item}. */
     Enumeration elements();   // for consistency w/ typical Java API
 
+    
+    /**
+     * Returns true if the passed item is contained in the list.
+     */
+    public boolean contains(DoublyLinkedList.Item<T> item);
+    
     /**
      * Returns the first item.
      * @return  the item at the head of the list, or <code>null</code> if empty

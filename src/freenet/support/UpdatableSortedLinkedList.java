@@ -218,6 +218,13 @@ public class UpdatableSortedLinkedList implements Iterable {
     }
 
     /**
+     * @return Does the list contain that item?
+     */
+    public synchronized boolean contains(UpdatableSortedLinkedListItem item) {
+    	return list.contains(item);
+    }
+    
+    /**
      * @return Is the list empty?
      */
     public synchronized boolean isEmpty() {

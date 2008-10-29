@@ -116,6 +116,14 @@ public class DoublyLinkedListImpl<T> implements DoublyLinkedList<T>{
         return forwardElements();
     }
 
+    public boolean contains(DoublyLinkedList.Item<T> item) {
+    	for(T i : this) {
+    		if(i == item)
+    			return true;
+    	}
+    	return false;
+    }
+    
     /**
      * {@inheritDoc}
      */

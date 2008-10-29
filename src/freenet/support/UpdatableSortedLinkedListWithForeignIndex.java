@@ -50,6 +50,10 @@ public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLi
     public synchronized boolean containsKey(Object key) {
         return map.containsKey(key);
     }
+    
+    public synchronized boolean contains(IndexableUpdatableSortedLinkedListItem item) {
+    	return containsKey(item.indexValue());
+    }
 
     /**
      * Remove an element from the list by its key.
