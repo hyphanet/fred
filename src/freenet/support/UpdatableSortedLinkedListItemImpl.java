@@ -29,4 +29,20 @@ public abstract class UpdatableSortedLinkedListItemImpl implements UpdatableSort
         prev = i;
         return old;
     }
+    
+    /*
+     * FIXME: DoublyLinkedList says that this is only for debugging purposes.
+     * Maybe it should be removed completely?
+     */
+    
+    private DoublyLinkedList parentList;
+
+	public DoublyLinkedList getParent() {
+		return parentList;
+	}
+
+	public DoublyLinkedList setParent(DoublyLinkedList l) {
+		return parentList;
+	}
+    
 }
