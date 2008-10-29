@@ -46,6 +46,7 @@ public class ClientCHK extends ClientKey {
     	this.controlDocument = key.controlDocument;
     	this.cryptoAlgorithm = key.cryptoAlgorithm;
     	this.compressionAlgorithm = key.compressionAlgorithm;
+        if(routingKey == null) throw new NullPointerException();
     }
     
     /**
@@ -67,6 +68,7 @@ public class ClientCHK extends ClientKey {
         this.controlDocument = isControlDocument;
         this.cryptoAlgorithm = algo;
         this.compressionAlgorithm = compressionAlgorithm;
+        if(routingKey == null) throw new NullPointerException();
     }
 
     /**
