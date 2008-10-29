@@ -18,7 +18,15 @@ import freenet.support.Logger;
 import freenet.support.MutableBoolean;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
+import freenet.support.io.Closer;
+import java.io.InputStream;
+import java.util.zip.GZIPInputStream;
+import net.contrapunctus.lzma.LzmaInputStream;
+import org.apache.tools.bzip2.CBZip2InputStream;
+import org.apache.tools.tar.TarEntry;
+import org.apache.tools.tar.TarInputStream;
 
 /**
  * Cache of recently decoded archives:
@@ -34,6 +42,59 @@ public class ArchiveManager {
 	public static final String METADATA_NAME = ".metadata";
 	private static boolean logMINOR;
 
+	public enum ARCHIVE_TYPE {
+		ZIP((short)0, new String[] { "application/zip", "application/x-zip" }), 	/* eventually get rid of ZIP support at some point */
+		TAR((short)1, new String[] { "application/x-tar" });
+		
+		public final short metadataID;
+		public final String[] mimeTypes;
+		
+		private ARCHIVE_TYPE(short metadataID, String[] mimeTypes) {
+			this.metadataID = metadataID;
+			this.mimeTypes = mimeTypes;
+		}
+		
+		public static boolean isValidMetadataID(short id) {
+			for(ARCHIVE_TYPE current : values())
+				if(id == current.metadataID)
+					return true;
+			return false;
+		}
+
+		/**
+		 * Is the given MIME type an archive type that we can deal with?
+		 */
+		public static boolean isUsableArchiveType(String type) {
+			for(ARCHIVE_TYPE current : values())
+				for(String ctype : current.mimeTypes)
+					if(ctype.equalsIgnoreCase(type))
+						return true;
+			return false;
+		}
+
+		/** If the given MIME type is an archive type that we can deal with,
+		 * get its archive type number (see the ARCHIVE_ constants in Metadata).
+		 */
+		public static ARCHIVE_TYPE getArchiveType(String type) {
+			for(ARCHIVE_TYPE current : values())
+				for(String ctype : current.mimeTypes)
+					if(ctype.equalsIgnoreCase(type))
+						return current;
+			return null;
+		}
+		
+		public static ARCHIVE_TYPE getArchiveType(short type) {
+			for(ARCHIVE_TYPE current : values())
+				if(current.metadataID == type)
+					return current;
+			return null;
+		}
+		
+		public final static ARCHIVE_TYPE getDefault() {
+			return TAR;
+		}
+	}
+	
 	final long maxArchivedFileSize;
 	
 	// ArchiveHandler's
@@ -104,12 +165,12 @@ public class ArchiveManager {
 	 * @param archiveType The archive type, defined in Metadata.
 	 * @return An archive handler. 
 	 */
-	public synchronized ArchiveHandler makeHandler(FreenetURI key, short archiveType, boolean returnNullIfNotFound, boolean forceRefetchArchive) {
+	public synchronized ArchiveHandler makeHandler(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, boolean returnNullIfNotFound, boolean forceRefetchArchive) {
 		ArchiveHandler handler = null;
 		if(!forceRefetchArchive) handler = getCached(key);
 		if(handler != null) return handler;
 		if(returnNullIfNotFound) return null;
-		handler = new ArchiveStoreContext(this, key, archiveType, forceRefetchArchive);
+		handler = new ArchiveStoreContext(this, key, archiveType, ctype, forceRefetchArchive);
 		putCached(key, handler);
 		return handler;
 	}
@@ -154,7 +215,7 @@ public class ArchiveManager {
 	/**
 	 * Extract data to cache. Call synchronized on ctx.
 	 * @param key The key the data was fetched from.
-	 * @param archiveType The archive type. Must be Metadata.ARCHIVE_ZIP.
+	 * @param archiveType The archive type. Must be Metadata.ARCHIVE_ZIP | Metadata.ARCHIVE_TAR.
 	 * @param data The actual data fetched.
 	 * @param archiveContext The context for the whole fetch process.
 	 * @param ctx The ArchiveStoreContext for this key.
@@ -165,7 +226,7 @@ public class ArchiveManager {
 	 * @throws ArchiveRestartException If the request needs to be restarted because the archive
 	 * changed.
 	 */
-	public void extractToCache(FreenetURI key, short archiveType, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback) throws ArchiveFailureException, ArchiveRestartException {
+	public void extractToCache(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, Bucket data, ArchiveContext archiveContext, ArchiveStoreContext ctx, String element, ArchiveExtractCallback callback) throws ArchiveFailureException, ArchiveRestartException {
 		
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
@@ -198,12 +259,111 @@ public class ArchiveManager {
 		}
 		if(data.size() > archiveContext.maxArchiveSize)
 			throw new ArchiveFailureException("Archive too big ("+data.size()+" > "+archiveContext.maxArchiveSize+")!");
-		if(archiveType != Metadata.ARCHIVE_ZIP)
-			throw new ArchiveFailureException("Unknown or unsupported archive algorithm "+archiveType);
 		
+		
+		InputStream is = null;
+		try {
+			if((ctype == null) || (ARCHIVE_TYPE.ZIP == archiveType)) {
+				if(logMINOR) Logger.minor(this, "No compression");
+				is = data.getInputStream();
+			} else if(ctype == COMPRESSOR_TYPE.BZIP2) {
+				if(logMINOR) Logger.minor(this, "dealing with BZIP2");
+				is = new CBZip2InputStream(data.getInputStream());
+			} else if(ctype == COMPRESSOR_TYPE.GZIP) {
+				if(logMINOR) Logger.minor(this, "dealing with GZIP");
+				is = new GZIPInputStream(data.getInputStream());
+			} else if(ctype == COMPRESSOR_TYPE.LZMA) {
+				if(logMINOR) Logger.minor(this, "dealing with LZMA");
+				is = new LzmaInputStream(data.getInputStream());
+			}
+			
+			if(ARCHIVE_TYPE.ZIP == archiveType)
+				handleZIPArchive(ctx, key, is, element, callback, gotElement, throwAtExit);
+			else if(ARCHIVE_TYPE.TAR == archiveType)
+				handleTARArchive(ctx, key, is, element, callback, gotElement, throwAtExit);
+		else
+				throw new ArchiveFailureException("Unknown or unsupported archive algorithm " + archiveType);
+		} catch (IOException ioe) {
+			throw new ArchiveFailureException("An IOE occured: "+ioe.getMessage(), ioe);
+		}finally {
+			Closer.close(is);
+	}
+	}
+	
+	private void handleTARArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit) throws ArchiveFailureException, ArchiveRestartException {
+		if(logMINOR) Logger.minor(this, "Handling a TAR Archive");
+		TarInputStream tarIS = null;
+		try {
+			tarIS = new TarInputStream(data);
+			
+			// MINOR: Assumes the first entry in the tarball is a directory. 
+			TarEntry entry;
+			
+			byte[] buf = new byte[32768];
+			HashSet names = new HashSet();
+			boolean gotMetadata = false;
+			
+outerTAR:		while(true) {
+				entry = tarIS.getNextEntry();
+				if(entry == null) break;
+				if(entry.isDirectory()) continue;
+				String name = entry.getName();
+				if(names.contains(name)) {
+					Logger.error(this, "Duplicate key "+name+" in archive "+key);
+					continue;
+				}
+				long size = entry.getSize();
+				if(size > maxArchivedFileSize) {
+					addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize);
+				} else {
+					// Read the element
+					long realLen = 0;
+					Bucket output = tempBucketFactory.makeBucket(size);
+					OutputStream out = output.getOutputStream();
+
+					int readBytes;
+					while((readBytes = tarIS.read(buf)) > 0) {
+						out.write(buf, 0, readBytes);
+						readBytes += realLen;
+						if(readBytes > maxArchivedFileSize) {
+							addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize);
+							out.close();
+							output.free();
+							continue outerTAR;
+						}
+					}
+
+					out.close();
+					if(name.equals(".metadata"))
+						gotMetadata = true;
+					addStoreElement(ctx, key, name, output, gotElement, element, callback);
+					names.add(name);
+					trimStoredData();
+				}
+			}
+
+			// If no metadata, generate some
+			if(!gotMetadata) {
+				generateMetadata(ctx, key, names, gotElement, element, callback);
+				trimStoredData();
+			}
+			if(throwAtExit) throw new ArchiveRestartException("Archive changed on re-fetch");
+			
+			if((!gotElement.value) && element != null)
+				callback.notInArchive();
+			
+		} catch (IOException e) {
+			throw new ArchiveFailureException("Error reading archive: "+e.getMessage(), e);
+		} finally {
+			Closer.close(tarIS);
+		}
+	}
+	
+	private void handleZIPArchive(ArchiveStoreContext ctx, FreenetURI key, InputStream data, String element, ArchiveExtractCallback callback, MutableBoolean gotElement, boolean throwAtExit) throws ArchiveFailureException, ArchiveRestartException {
+		if(logMINOR) Logger.minor(this, "Handling a ZIP Archive");
 		ZipInputStream zis = null;
 		try {
-			zis = new ZipInputStream(data.getInputStream());
+			zis = new ZipInputStream(data);
 			
 			// MINOR: Assumes the first entry in the zip is a directory. 
 			ZipEntry entry;
@@ -212,7 +372,7 @@ public class ArchiveManager {
 			HashSet names = new HashSet();
 			boolean gotMetadata = false;
 			
-outer:		while(true) {
+outerZIP:		while(true) {
 				entry = zis.getNextEntry();
 				if(entry == null) break;
 				if(entry.isDirectory()) continue;
@@ -238,7 +398,7 @@ outer:		while(true) {
 							addErrorElement(ctx, key, name, "File too big: "+maxArchivedFileSize+" greater than current archived file size limit "+maxArchivedFileSize);
 							out.close();
 							output.free();
-							continue outer;
+							continue outerZIP;
 						}
 					}
 
@@ -451,22 +611,5 @@ outer:		while(true) {
 			item.close();
 		}
 		}
-	}
-
-	/**
-	 * Is the given MIME type an archive type that we can deal with?
-	 */
-	public static boolean isUsableArchiveType(String type) {
-		return type.equals("application/zip") || type.equals("application/x-zip");
-		// Update when add new archive types
-	}
-
-	/** If the given MIME type is an archive type that we can deal with,
-	 * get its archive type number (see the ARCHIVE_ constants in Metadata).
-	 */
-	public static short getArchiveType(String type) {
-		if(type.equals("application/zip") || type.equals("application/x-zip"))
-			return Metadata.ARCHIVE_ZIP;
-		else throw new IllegalArgumentException(); 
 	}
 }

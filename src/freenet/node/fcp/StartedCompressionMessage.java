@@ -5,15 +5,16 @@ package freenet.node.fcp;
 
 import freenet.node.Node;
 import freenet.support.SimpleFieldSet;
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 
 public class StartedCompressionMessage extends FCPMessage {
 
 	final String identifier;
 	final boolean global;
 	
-	final int codec;
+	final COMPRESSOR_TYPE codec;
 	
-	public StartedCompressionMessage(String identifier, boolean global, int codec) {
+	public StartedCompressionMessage(String identifier, boolean global, COMPRESSOR_TYPE codec) {
 		this.identifier = identifier;
 		this.codec = codec;
 		this.global = global;
@@ -23,7 +24,7 @@ public class StartedCompressionMessage extends FCPMessage {
 	public SimpleFieldSet getFieldSet() {
 		SimpleFieldSet fs = new SimpleFieldSet(true);
 		fs.putSingle("Identifier", identifier);
-		fs.put("Codec", codec);
+		fs.putSingle("Codec", codec.name);
 		if(global) fs.putSingle("Global", "true");
 		return fs;
 	}

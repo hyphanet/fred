@@ -1,6 +1,8 @@
 package freenet.support;
 
 import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * @author amphibian
@@ -9,7 +11,7 @@ import java.util.Enumeration;
  * and provides an update() function to move an item when its
  * value has changed. Allows duplicates.
  */
-public class UpdatableSortedLinkedList {
+public class UpdatableSortedLinkedList implements Iterable {
 	boolean debug = false;
 	protected boolean killed = false;
 	private static boolean logMINOR;
@@ -216,6 +218,13 @@ public class UpdatableSortedLinkedList {
     }
 
     /**
+     * @return Does the list contain that item?
+     */
+    public synchronized boolean contains(UpdatableSortedLinkedListItem item) {
+    	return list.contains(item);
+    }
+    
+    /**
      * @return Is the list empty?
      */
     public synchronized boolean isEmpty() {
@@ -252,5 +261,9 @@ public class UpdatableSortedLinkedList {
 			remove(item);
 			dest.add(item);
 		}
+	}
+
+	public synchronized Iterator iterator() {
+		return list.iterator();
 	}
 }

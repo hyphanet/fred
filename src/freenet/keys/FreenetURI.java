@@ -539,6 +539,7 @@ public class FreenetURI implements Cloneable {
 		return toString(false, false);
 	}
 
+	// FIXME: remove the typo in the function name.
 	public String toACIIString() {
 		return toString(true, true);
 	}

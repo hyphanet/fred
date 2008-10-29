@@ -6,27 +6,19 @@ package freenet.clients.http;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.JarURLConnection;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 
 import freenet.clients.http.PageMaker.THEME;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.crypt.SSL;
 import freenet.io.AllowedHosts;
@@ -46,8 +38,14 @@ import freenet.support.api.LongCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.ArrayBucketFactory;
 
+/** 
+ * The Toadlet (HTTP) Server
+ * 
+ * Provide a HTTP server for FProxy
+ */
 public final class SimpleToadletServer implements ToadletContainer, Runnable {
-	
+	/** List of urlPrefix / Toadlet */ 
+	private final LinkedList<ToadletElement> toadlets;
 	private static class ToadletElement {
 		public ToadletElement(Toadlet t2, String urlPrefix) {
 			t = t2;
@@ -57,32 +55,42 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		String prefix;
 	}
 
-	final int port;
-	String bindTo;
+	// Socket / Binding
+	private final int port;
+	private String bindTo;
 	private String allowedHosts;
-	final AllowedHosts allowedFullAccess;
-	BucketFactory bf;
-	NetworkInterface networkInterface;
-	private final LinkedList toadlets;
+	private NetworkInterface networkInterface;
+	private boolean ssl = false;
+	public static final int DEFAULT_FPROXY_PORT = 8888;
+	
+	// ACL
+	private final AllowedHosts allowedFullAccess;
+	
+	// Theme 
 	private THEME cssTheme;
 	private File cssOverride;
-	private Thread myThread;
 	private boolean advancedModeEnabled;
-	private boolean ssl = false;
-	private boolean fProxyJavascriptEnabled;
 	private final PageMaker pageMaker;
-	private NodeClientCore core;
+	
+	// Control
+	private Thread myThread;
 	private final Executor executor;
+	private BucketFactory bf;
+	private NodeClientCore core;
+	
+	// HTTP Option
 	private boolean doRobots;
-	public BookmarkManager bookmarkManager;
 	private boolean enablePersistentConnections;
 	private boolean enableInlinePrefetch;
 	
-	static boolean isPanicButtonToBeShown;
-	public static final int DEFAULT_FPROXY_PORT = 8888;
+	// Something does not really belongs to here
+	static boolean isPanicButtonToBeShown;				// move to QueueToadlet ?
+	public BookmarkManager bookmarkManager;				// move to WelcomeToadlet / BookmarkEditorToadlet ?
+	private volatile boolean fProxyJavascriptEnabled;	// ugh?
+	private volatile boolean fproxyHasCompletedWizard;	// hmmm..
 	
-	class FProxySSLCallback extends BooleanCallback  {
-		
+	// Config Callbacks
+	private class FProxySSLCallback extends BooleanCallback  {
 		@Override
 		public Boolean get() {
 			return ssl;
@@ -103,8 +111,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
-	static class FProxyPassthruMaxSize extends LongCallback {
-		
+	private static class FProxyPassthruMaxSize extends LongCallback {
 		@Override
 		public Long get() {
 			return FProxyToadlet.MAX_LENGTH;
@@ -118,27 +125,25 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 
-	class FProxyPortCallback extends IntCallback  {
-		
+	private class FProxyPortCallback extends IntCallback  {
+		private Integer savedPort;
 		@Override
 		public Integer get() {
-			return port;
+			if (savedPort == null)
+				savedPort = port;
+			return savedPort;
 		}
 		
 		@Override
-		public void set(Integer newPort) throws InvalidConfigValueException {
-			if(port != newPort)
-				throw new InvalidConfigValueException(L10n.getString("cannotChangePortOnTheFly"));
-			// FIXME
-		}
-		@Override
-		public boolean isReadOnly() {
-			return true;
+		public void set(Integer newPort) throws NodeNeedRestartException {
+			if(savedPort != (int)newPort) {
+				savedPort = port;
+				throw new NodeNeedRestartException("Port cannot change on the fly");
+			}
 		}
 	}
 	
-	class FProxyBindtoCallback extends StringCallback  {
-		
+	private class FProxyBindtoCallback extends StringCallback  {
 		@Override
 		public String get() {
 			return bindTo;
@@ -154,14 +159,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 					// This is an advanced option for reasons of reducing clutter,
 					// but it is expected to be used by regular users, not devs.
 					// So we translate the error messages.
-					throw new InvalidConfigValueException(l10n("couldNotChangeBindTo", "error", e.getLocalizedMessage())); 
+					throw new InvalidConfigValueException(l10n("couldNotChangeBindTo", "error", e.getLocalizedMessage()));
 				}
 			}
 		}
 	}
-	
-	class FProxyAllowedHostsCallback extends StringCallback  {
-	
+	private class FProxyAllowedHostsCallback extends StringCallback  {
 		@Override
 		public String get() {
 			return networkInterface.getAllowedHosts();
@@ -174,9 +177,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			}
 		}
 	}
-	
-	class FProxyCSSNameCallback extends StringCallback implements EnumerableOptionCallback {
-		
+	private class FProxyCSSNameCallback extends StringCallback implements EnumerableOptionCallback {
 		@Override
 		public String get() {
 			return cssTheme.code;
@@ -191,18 +192,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			if (core.node.pluginManager != null)
 				core.node.pluginManager.setFProxyTheme(cssTheme);
 		}
-		
-		public void setPossibleValues(String[] val) {
-			throw new NullPointerException("Should not happen!");
-		}
-		
+
 		public String[] getPossibleValues() {
 			return THEME.possibleValues;
 		}
 	}
-	
-	class FProxyCSSOverrideCallback extends StringCallback  {
-
+	private class FProxyCSSOverrideCallback extends StringCallback  {
 		@Override
 		public String get() {
 			return (cssOverride == null ? "" : cssOverride.toString());
@@ -224,9 +219,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			pageMaker.setOverride(cssOverride);
 		}
 	}
-	
-	class FProxyEnabledCallback extends BooleanCallback  {
-		
+	private class FProxyEnabledCallback extends BooleanCallback  {
 		@Override
 		public Boolean get() {
 			synchronized(SimpleToadletServer.this) {
@@ -252,26 +245,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 			myThread.start();
 		}
 	}
-	
-	private boolean haveCalledFProxy = false;
-	
-	public void createFproxy() {
-		synchronized(this) {
-			if(haveCalledFProxy) return;
-			haveCalledFProxy = true;
-		}
-		bookmarkManager = new BookmarkManager(core);
-		try {
-			FProxyToadlet.maybeCreateFProxyEtc(core, core.node, core.node.config, this, bookmarkManager);
-		} catch (IOException e) {
-			Logger.error(this, "Could not start fproxy: "+e, e);
-			System.err.println("Could not start fproxy:");
-			e.printStackTrace();
-		}
-	}
-	
 	private static class FProxyAdvancedModeEnabledCallback extends BooleanCallback  {
-		
 		private final SimpleToadletServer ts;
 		
 		FProxyAdvancedModeEnabledCallback(SimpleToadletServer ts){
@@ -290,7 +264,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				ts.enableAdvancedMode(val);
 		}
 	}
-	
 	private static class FProxyJavascriptEnabledCallback extends BooleanCallback  {
 		
 		private final SimpleToadletServer ts;
@@ -312,6 +285,25 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		}
 	}
 	
+	private boolean haveCalledFProxy = false;
+	
+	public void createFproxy() {
+		synchronized(this) {
+			if(haveCalledFProxy) return;
+			haveCalledFProxy = true;
+		}
+		bookmarkManager = new BookmarkManager(core);
+		try {
+			FProxyToadlet.maybeCreateFProxyEtc(core, core.node, core.node.config, this, bookmarkManager);
+		} catch (IOException e) {
+			Logger.error(this, "Could not start fproxy: "+e, e);
+			System.err.println("Could not start fproxy:");
+			e.printStackTrace();
+		}
+	}
+	
+
+	
 	public synchronized void setCore(NodeClientCore core) {
 		this.core = core;
 	}
@@ -331,46 +323,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		
 		boolean enabled = fproxyConfig.getBoolean("enabled");
 		
-		List themes = new ArrayList();
-		try {
-			URL url = getClass().getResource("staticfiles/themes/");
-			URLConnection urlConnection = url.openConnection();
-			if (url.getProtocol().equals("file")) {
-				File themesDirectory = new File(URLDecoder.decode(url.getPath(), "ISO-8859-1").replaceAll("\\|", ":"));
-				File[] themeDirectories = themesDirectory.listFiles();
-				for (int themeIndex = 0; (themeDirectories != null) && (themeIndex < themeDirectories.length); themeIndex++) {
-					File themeDirectory = themeDirectories[themeIndex];
-					if (themeDirectory.isDirectory() && !themeDirectory.getName().startsWith(".")) {
-						themes.add(themeDirectory.getName());
-					}
-				}	
-			} else if (urlConnection instanceof JarURLConnection) {
-				JarURLConnection jarUrlConnection = (JarURLConnection) urlConnection;
-				JarFile jarFile = jarUrlConnection.getJarFile();
-				Enumeration entries = jarFile.entries();
-				while (entries.hasMoreElements()) {
-					JarEntry entry = (JarEntry) entries.nextElement();
-					String name = entry.getName();
-					if (name.startsWith("freenet/clients/http/staticfiles/themes/")) {
-						name = name.substring("freenet/clients/http/staticfiles/themes/".length());
-						if (name.indexOf('/') != -1) {
-							String themeName = name.substring(0, name.indexOf('/'));
-							if (!themes.contains(themeName)) {
-								themes.add(themeName);
-							}
-						}
-					}
-				}
-			}
-		} catch (IOException ioe1) {
-			Logger.error(this, "error creating list of themes", ioe1);
-		} catch (NullPointerException npe) {
-			Logger.error(this, "error creating list of themes", npe);
-		} finally {
-			if (!themes.contains("clean")) {
-				themes.add("clean");
-			}
-		}
 		fproxyConfig.register("ssl", false, configItemOrder++, true, true, "SimpleToadletServer.ssl", "SimpleToadletServer.sslLong",
 				new FProxySSLCallback());
 		fproxyConfig.register("port", DEFAULT_FPROXY_PORT, configItemOrder++, true, true, "SimpleToadletServer.port", "SimpleToadletServer.portLong",
@@ -385,6 +337,21 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				new FProxyAdvancedModeEnabledCallback(this));
 		fproxyConfig.register("javascriptEnabled", false, configItemOrder++, true, false, "SimpleToadletServer.enableJS", "SimpleToadletServer.enableJSLong",
 				new FProxyJavascriptEnabledCallback(this));
+		fproxyConfig.register("hasCompletedWizard", false, configItemOrder++, true, false, "SimpleToadletServer.hasCompletedWizard", "SimpleToadletServer.hasCompletedWizardLong",
+				new BooleanCallback() {
+					@Override
+					public Boolean get() {
+						return fproxyHasCompletedWizard;
+					}
+
+					@Override
+					public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+						if(val == get()) return;
+						fproxyHasCompletedWizard = val;
+					}
+		});
+		fproxyHasCompletedWizard = fproxyConfig.getBoolean("hasCompletedWizard");
+		
 		fproxyConfig.register("showPanicButton", false, configItemOrder++, true, true, "SimpleToadletServer.panicButton", "SimpleToadletServer.panicButtonLong",
 				new BooleanCallback(){
 				@Override
@@ -493,13 +460,13 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		pageMaker = new PageMaker(cssTheme);
 	
 		if(!fproxyConfig.getOption("CSSOverride").isDefault()) {
-			cssOverride = new File(fproxyConfig.getString("CSSOverride"));			
+			cssOverride = new File(fproxyConfig.getString("CSSOverride"));
 			pageMaker.setOverride(cssOverride);
 		} else
 			cssOverride = null;
 		
-		this.advancedModeEnabled = fproxyConfig.getBoolean("advancedModeEnabled");		
-		toadlets = new LinkedList();
+		this.advancedModeEnabled = fproxyConfig.getBoolean("advancedModeEnabled");
+		toadlets = new LinkedList<ToadletElement>();
 
 		if(SSL.available()) {
 			ssl = fproxyConfig.getBoolean("ssl");
@@ -521,9 +488,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		StaticToadlet statictoadlet = new StaticToadlet();
 		register(statictoadlet, "/static/", false, false);
 		
+		// "Freenet is starting up..." page, to be removed at #removeStartupToadlet()
 		startupToadlet = new StartupToadlet(statictoadlet);
 		register(startupToadlet, "/", false, false);
-		
 	}
 	
 	public StartupToadlet startupToadlet;
@@ -574,8 +541,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	}
 
 	public synchronized void unregister(Toadlet t) {
-		for(Iterator i=toadlets.iterator();i.hasNext();) {
-			ToadletElement e = (ToadletElement) i.next();
+		for(Iterator<ToadletElement> i=toadlets.iterator();i.hasNext();) {
+			ToadletElement e = i.next();
 			if(e.t == t) {
 				i.remove();
 				return;
@@ -588,13 +555,23 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	}
 	
 	public Toadlet findToadlet(URI uri) throws PermanentRedirectException {
-		Iterator i = toadlets.iterator();
 		String path = uri.getPath();
+
+		// Show the wizard until dismissed by the user (See bug #2624)
+		if(!fproxyHasCompletedWizard) {
+			if(!(path.startsWith(FirstTimeWizardToadlet.TOADLET_URL) ||
+				path.startsWith(StaticToadlet.ROOT_URL)))
+				try {
+					throw new PermanentRedirectException(new URI(FirstTimeWizardToadlet.TOADLET_URL));
+				} catch(URISyntaxException e) { throw new Error(e); }
+		}
+
+		Iterator<ToadletElement> i = toadlets.iterator();
 		while(i.hasNext()) {
-			ToadletElement te = (ToadletElement) i.next();
-			
+			ToadletElement te = i.next();
+						
 			if(path.startsWith(te.prefix))
-				return te.t;
+					return te.t;
 			if(te.prefix.length() > 0 && te.prefix.charAt(te.prefix.length()-1) == '/') {
 				if(path.equals(te.prefix.substring(0, te.prefix.length()-1))) {
 					URI newURI;

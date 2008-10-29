@@ -76,7 +76,7 @@ public class BootstrapPushPullTest {
         os.close();
         System.out.println("Inserting test data.");
         HighLevelSimpleClient client = node.clientCore.makeClient((short)0);
-        InsertBlock block = new InsertBlock(data, new ClientMetadata(null), FreenetURI.EMPTY_CHK_URI);
+        InsertBlock block = new InsertBlock(data, new ClientMetadata(), FreenetURI.EMPTY_CHK_URI);
         long startInsertTime = System.currentTimeMillis();
         FreenetURI uri;
         try {

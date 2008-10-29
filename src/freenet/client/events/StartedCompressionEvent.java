@@ -3,21 +3,23 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.events;
 
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
+
 /**
  * Event indicating that we are attempting to compress the file.
  */
 public class StartedCompressionEvent implements ClientEvent {
 
-	public final int codec;
+	public final COMPRESSOR_TYPE codec;
 	
-	public StartedCompressionEvent(int codec) {
+	public StartedCompressionEvent(COMPRESSOR_TYPE codec) {
 		this.codec = codec;
 	}
 	
-	static final int code = 0x08;
+	final static int code = 0x08;
 	
 	public String getDescription() {
-		return "Started compression attempt with codec "+codec;
+		return "Started compression attempt with "+codec.name;
 	}
 
 	public int getCode() {

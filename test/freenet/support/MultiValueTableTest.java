@@ -77,7 +77,7 @@ public class MultiValueTableTest extends TestCase {
 	 * @param isRandom true if the maxValueNumber is an upper bound, false if it is the actual value
 	 * @return the sample MultiValueTable created
 	 */
-	private MultiValueTable createSampleMultiValueTable(int keyNumber, int maxValueNumber, boolean isRandom) {
+	private MultiValueTable<Object, Object> createSampleMultiValueTable(int keyNumber, int maxValueNumber, boolean isRandom) {
 		Object[][] sampleObjects = createSampleKeyMultiVal(keyNumber,maxValueNumber,isRandom);
 		return fillMultiValueTable(sampleObjects);
 	}
@@ -87,7 +87,7 @@ public class MultiValueTableTest extends TestCase {
 	 * @param anEnumeration
 	 * @return the number of present objects
 	 */
-	private int enumerationSize(Enumeration anEnumeration) {
+	private int enumerationSize(Enumeration<Object> anEnumeration) {
 		int counter = 0;
 		while(anEnumeration.hasMoreElements()) {
 			anEnumeration.nextElement();
@@ -102,11 +102,12 @@ public class MultiValueTableTest extends TestCase {
 	 * @param sampleObjects Object[][] array, with [i][0] as key and [i][1] as list of values
 	 * @return the created MultiValueTable
 	 */
-	private MultiValueTable fillMultiValueTable(Object[][] sampleObjects) {
-		MultiValueTable methodMVTable = new MultiValueTable();
-		Iterator itr;
+	@SuppressWarnings("unchecked")
+    private MultiValueTable<Object, Object> fillMultiValueTable(Object[][] sampleObjects) {
+		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();
+		Iterator<Object> itr;
 		for(int i=0;i<sampleKeyNumber;i++) {
-			itr = ((List)(sampleObjects[i][1])).iterator();
+			itr = ((List<Object>)(sampleObjects[i][1])).iterator();
 			while( itr.hasNext())
 				methodMVTable.put(sampleObjects[i][0], itr.next());
 		}
@@ -127,14 +128,15 @@ public class MultiValueTableTest extends TestCase {
 	 * Tests get(Object) method with both
 	 * present keys and not present
 	 */
-	public void testGet() {
-		MultiValueTable methodMVTable = new MultiValueTable();
+	@SuppressWarnings("unchecked")
+    public void testGet() {
+		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();
 		assertNull(methodMVTable.get(new Object()));
 		Object[][] sampleObjects = 
 			createSampleKeyMultiVal(sampleKeyNumber,sampleMaxValueNumber,sampleIsRandom);
 		methodMVTable = fillMultiValueTable(sampleObjects);
 		for(int i=0;i<sampleObjects.length;i++)
-			assertEquals(methodMVTable.get(sampleObjects[i][0]),((List)sampleObjects[i][1]).get(0));
+			assertEquals(methodMVTable.get(sampleObjects[i][0]),((List<Object>)sampleObjects[i][1]).get(0));
 	}
 
 	/**
@@ -144,7 +146,7 @@ public class MultiValueTableTest extends TestCase {
 	 * MultiValueTable and not present keys, too.
 	 */
 	public void testContainsKey() {
-		MultiValueTable methodMVTable = new MultiValueTable();
+		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();
 		assertFalse(methodMVTable.containsKey(new Object()));
 		Object[][] sampleObjects = 
 			createSampleKeyMultiVal(sampleKeyNumber,sampleMaxValueNumber,sampleIsRandom);
@@ -161,15 +163,16 @@ public class MultiValueTableTest extends TestCase {
 	 * It verifies the correct behavior with empty
 	 * MultiValueTable and not present Elements, too.
 	 */
-	public void testContainsElement() {
-		MultiValueTable methodMVTable = new MultiValueTable();
+	@SuppressWarnings("unchecked")
+    public void testContainsElement() {
+		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();
 		assertFalse(methodMVTable.containsElement(new Object(),new Object()));
 		Object[][] sampleObjects = 
 			createSampleKeyMultiVal(sampleKeyNumber,sampleMaxValueNumber,sampleIsRandom);
 		methodMVTable = fillMultiValueTable(sampleObjects);
-		Iterator iter;
+		Iterator<Object> iter;
 		for(int i=0;i<sampleObjects.length;i++) {
-			iter = ((List)(sampleObjects[i][1])).iterator();
+			iter = ((List<Object>)(sampleObjects[i][1])).iterator();
 			assertFalse(methodMVTable.containsElement(sampleObjects[i][0],new Object()));
 			while(iter.hasNext())
 				assertTrue(methodMVTable.containsElement(sampleObjects[i][0],iter.next()));
@@ -179,17 +182,18 @@ public class MultiValueTableTest extends TestCase {
 	/**
 	 * Tests getAll() method
 	 */
-	public void testGetAll() {
-		MultiValueTable methodMVTable = new MultiValueTable();
+	@SuppressWarnings("unchecked")
+    public void testGetAll() {
+		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();
 		//TODO: verifies if an Exception is necessary
 		methodMVTable.getAll(new Object());
 		Object[][] sampleObjects = 
 			createSampleKeyMultiVal(sampleKeyNumber,sampleMaxValueNumber,sampleIsRandom);
 		methodMVTable = fillMultiValueTable(sampleObjects);
-		Iterator iter;
-		Enumeration methodEnumeration;
+		Iterator<Object> iter;
+		Enumeration<Object> methodEnumeration;
 		for(int i=0;i<sampleObjects.length;i++) {
-			iter = ((List)(sampleObjects[i][1])).iterator();
+			iter = ((List<Object>)(sampleObjects[i][1])).iterator();
 			methodEnumeration = methodMVTable.getAll(sampleObjects[i][0]);
 			while(iter.hasNext())
 				assertEquals(methodEnumeration.nextElement(),iter.next());
@@ -199,42 +203,45 @@ public class MultiValueTableTest extends TestCase {
 	/**
 	 * Tests countAll() method
 	 */
-	public void testCountAll() {
-		MultiValueTable methodMVTable = new MultiValueTable();
+	@SuppressWarnings("unchecked")
+    public void testCountAll() {
+		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();
 		assertEquals(methodMVTable.countAll(new Object()),0);
 		Object[][] sampleObjects = 
 			createSampleKeyMultiVal(sampleKeyNumber,sampleMaxValueNumber,sampleIsRandom);
 		methodMVTable = fillMultiValueTable(sampleObjects);
 		for(int i=0;i<sampleObjects.length;i++)
-			assertEquals(((List)(sampleObjects[i][1])).size(),methodMVTable.countAll(sampleObjects[i][0]));
+			assertEquals(((List<Object>)(sampleObjects[i][1])).size(),methodMVTable.countAll(sampleObjects[i][0]));
 	}
 
 	/**
 	 * Tests getSync(Object) method fetching
 	 * both present and not present keys
 	 */
-	public void testGetSync() {
-		MultiValueTable methodMVTable = new MultiValueTable();
+	@SuppressWarnings({ "cast", "unchecked" })
+    public void testGetSync() {
+		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();
 		assertNull(methodMVTable.getSync(new Object()));
 		Object[][] sampleObjects = 
 			createSampleKeyMultiVal(sampleKeyNumber,sampleMaxValueNumber,sampleIsRandom);
 		methodMVTable = fillMultiValueTable(sampleObjects);
 		for(int i=0;i<sampleObjects.length;i++)
-			assertEquals(methodMVTable.getSync(sampleObjects[i][0]),((List)sampleObjects[i][1]));
+			assertEquals(methodMVTable.getSync(sampleObjects[i][0]),((List<Object>)sampleObjects[i][1]));
 	}
 
 	/**
 	 * Tests getArray(Object) method both
 	 * with a present key and a not present key
 	 */
-	public void testGetArray() {
-		MultiValueTable methodMVTable = new MultiValueTable();
+	@SuppressWarnings("unchecked")
+    public void testGetArray() {
+		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();
 		assertNull(methodMVTable.getArray(new Object()));
 		Object[][] sampleObjects = 
 			createSampleKeyMultiVal(sampleKeyNumber,sampleMaxValueNumber,sampleIsRandom);
 		methodMVTable = fillMultiValueTable(sampleObjects);
 		for(int i=0;i<sampleObjects.length;i++)
-			assertTrue(Arrays.equals(((List)(sampleObjects[i][1])).toArray(),methodMVTable.getArray(sampleObjects[i][0])));
+			assertTrue(Arrays.equals(((List<Object>)(sampleObjects[i][1])).toArray(),methodMVTable.getArray(sampleObjects[i][0])));
 	}
 
 	/**
@@ -244,7 +251,7 @@ public class MultiValueTableTest extends TestCase {
 	 * key, too.
 	 */
 	public void testRemove() {
-		MultiValueTable methodMVTable = new MultiValueTable();
+		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();
 		//TODO: shouldn't it raise an exception?
 		methodMVTable.remove(new Object());
 		Object[][] sampleObjects = 
@@ -260,7 +267,7 @@ public class MultiValueTableTest extends TestCase {
 	 * after putting objects and after removing all of them.
 	 */
 	public void testIsEmpty() {
-		MultiValueTable methodMVTable = new MultiValueTable();
+		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();
 		assertTrue(methodMVTable.isEmpty());
 		Object[][] sampleObjects = 
 			createSampleKeyMultiVal(sampleKeyNumber,sampleMaxValueNumber,sampleIsRandom);
@@ -279,7 +286,7 @@ public class MultiValueTableTest extends TestCase {
 	public void testClear() {
 		Object[][] sampleObjects = 
 			createSampleKeyMultiVal(sampleKeyNumber,sampleMaxValueNumber,sampleIsRandom);
-		MultiValueTable methodMVTable = fillMultiValueTable(sampleObjects);
+		MultiValueTable<Object, Object> methodMVTable = fillMultiValueTable(sampleObjects);
 		methodMVTable.clear();
 		for(int i=0;i<sampleObjects.length;i++)
 			assertFalse(methodMVTable.containsKey(sampleObjects[i][0]));
@@ -291,14 +298,15 @@ public class MultiValueTableTest extends TestCase {
 	 * a sample MultiValueTable, and verifying if they are correctly
 	 * removed and if the result of isEmpty() method is correct.
 	 */
-	public void testRemoveElement() {
+	@SuppressWarnings("unchecked")
+    public void testRemoveElement() {
 		Object[][] sampleObjects = 
 			createSampleKeyMultiVal(sampleKeyNumber,sampleMaxValueNumber,sampleIsRandom);
-		MultiValueTable methodMVTable = fillMultiValueTable(sampleObjects);
+		MultiValueTable<Object, Object> methodMVTable = fillMultiValueTable(sampleObjects);
 		Object methodValue;
-		Iterator iter;
+		Iterator<Object> iter;
 		for(int i=0;i<sampleObjects.length;i++) {
-			iter = ((List)(sampleObjects[i][1])).iterator();
+			iter = ((List<Object>)(sampleObjects[i][1])).iterator();
 			assertFalse(methodMVTable.removeElement(sampleObjects[i][0],new Object()));
 			while(iter.hasNext()) {
 				methodValue = iter.next();
@@ -316,10 +324,10 @@ public class MultiValueTableTest extends TestCase {
 	public void testKeys() {
 		Object[][] sampleObjects = 
 			createSampleKeyMultiVal(sampleKeyNumber,sampleMaxValueNumber,sampleIsRandom);
-		MultiValueTable methodMVTable = fillMultiValueTable(sampleObjects);
+		MultiValueTable<Object, Object> methodMVTable = fillMultiValueTable(sampleObjects);
 		//TODO: shouldn't it respect keys order?
 		int j = sampleObjects.length-1;
-		Enumeration methodEnumeration = methodMVTable.keys();
+		Enumeration<Object> methodEnumeration = methodMVTable.keys();
 		while(methodEnumeration.hasMoreElements()) {
 			assertEquals(sampleObjects[j][0],methodEnumeration.nextElement());
 			j--;}
@@ -332,7 +340,7 @@ public class MultiValueTableTest extends TestCase {
 	 */
 	public void testDifferentKeysSameElement() {
 		int keysNumber = 2;
-		MultiValueTable methodMVTable = new MultiValueTable();
+		MultiValueTable<Object, Object> methodMVTable = new MultiValueTable<Object, Object>();
 		String sampleValue = "sampleValue";
 		//putting the same value for different keys
 		for(int i=0;i<keysNumber;i++)

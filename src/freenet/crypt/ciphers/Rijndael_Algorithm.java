@@ -46,12 +46,7 @@ final class Rijndael_Algorithm // implicit no-argument constructor
 	private static void trace(boolean in, String s) {
 		if (TRACE) err.println((in?"==> ":"<== ")+NAME+ '.' +s);
 	}
-	private static void trace(String s) {
-		if (TRACE)
-			err.println("<=> " + NAME + '.' + s);
-	}
-
-
+	
 //	Constants and variables
 //	...........................................................................
 

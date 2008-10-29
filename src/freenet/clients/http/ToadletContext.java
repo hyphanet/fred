@@ -23,9 +23,9 @@ public interface ToadletContext {
 	 * @param length The length of the reply.
 	 * @param mTime The modification time of the data being sent or null for 'now' and disabling caching
 	 */
-	void sendReplyHeaders(int code, String desc, MultiValueTable mvt, String mimeType, long length, Date mTime) throws ToadletContextClosedException, IOException;
+	void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length, Date mTime) throws ToadletContextClosedException, IOException;
 	
-	void sendReplyHeaders(int code, String desc, MultiValueTable mvt, String mimeType, long length) throws ToadletContextClosedException, IOException;
+	void sendReplyHeaders(int code, String desc, MultiValueTable<String,String> mvt, String mimeType, long length) throws ToadletContextClosedException, IOException;
 
 	/**
 	 * Write data. Note you must send reply headers first.
@@ -63,7 +63,7 @@ public interface ToadletContext {
 
 	BucketFactory getBucketFactory();
 	
-	MultiValueTable getHeaders();
+	MultiValueTable<String, String> getHeaders();
 
 	/**
 	 * Add a form node to an HTMLNode under construction. This will have the correct enctype and 

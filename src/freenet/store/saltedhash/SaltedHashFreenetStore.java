@@ -84,14 +84,14 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	private boolean preallocate = true;
 
 	public static SaltedHashFreenetStore construct(File baseDir, String name, StoreCallback callback, Random random,
-	        long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate)
+	        long maxKeys, int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart)
 	        throws IOException {
 		return new SaltedHashFreenetStore(baseDir, name, callback, random, maxKeys, bloomFilterSize, bloomCounting,
-		        shutdownHook, preallocate);
+		        shutdownHook, preallocate, resizeOnStart);
 	}
 
 	private SaltedHashFreenetStore(File baseDir, String name, StoreCallback callback, Random random, long maxKeys,
-	        int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate) throws IOException {
+	        int bloomFilterSize, boolean bloomCounting, SemiOrderedShutdownHook shutdownHook, boolean preallocate, boolean resizeOnStart) throws IOException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 
@@ -146,7 +146,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		cleanerStatusUserAlert = new CleanerStatusUserAlert(cleanerThread);
 
 		// finish all resizing before continue
-		if (prevStoreSize != 0 && cleanerGlobalLock.tryLock()) {
+		if (resizeOnStart && prevStoreSize != 0 && cleanerGlobalLock.tryLock()) {
 			System.out.println("Resizing datastore (" + name + ")");
 			try {
 				cleanerThread.resizeStore(prevStoreSize, false);
@@ -154,7 +154,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				cleanerGlobalLock.unlock();
 			}
 			writeConfigFile();
-		} else if (bloomFilter.needRebuild() && !newStore) {
+		} 
+		if (bloomFilter.needRebuild() && !newStore) {
 			// Bloom filter resized?
 			flags |= FLAG_REBUILD_BLOOM;
 			checkBloom = false;
@@ -644,12 +645,12 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				}
 				headerFile.delete();
 				dataFile.delete();
-				setStoreFileSize(storeFileSize);
+				setStoreFileSize(storeFileSize, true);
 			}
 		}
 
 		WrapperManager.signalStarting(10 * 60 * 1000); // 10minutes, for filesystem that support no sparse file.
-		setStoreFileSize(storeFileSize);
+		setStoreFileSize(storeFileSize, true);
 		
 		return newStore;
 	}
@@ -783,7 +784,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	 * 
 	 * @param storeFileSize
 	 */
-	private void setStoreFileSize(long storeFileSize) {
+	private void setStoreFileSize(long storeFileSize, boolean starting) {
 		try {
 			long oldMetaLen = metaRAF.length();
 			long oldHdLen = hdRAF.length();
@@ -820,6 +821,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					if(oldHdLen % (1024*1024*1024L) == 0) {
 						random.nextBytes(seed);
 						mt = new MersenneTwister(seed);
+						if(starting)
+							WrapperManager.signalStarting(5*60*1000);
 					}
 				}
 			}
@@ -1055,7 +1058,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 				public void init() {
 					if (storeSize > _prevStoreSize)
-						setStoreFileSize(storeSize);
+						setStoreFileSize(storeSize, false);
 
 					optimialK = BloomFilter.optimialK(bloomFilterSize, storeSize);
 					configLock.writeLock().lock();
@@ -1117,7 +1120,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 					// shrink data file to current size
 					if (storeSize < _prevStoreSize)
-						setStoreFileSize(Math.max(storeSize, entriesLeft));
+						setStoreFileSize(Math.max(storeSize, entriesLeft), false);
 
 					// try to resolve the list
 					ListIterator<Entry> it = oldEntryList.listIterator();
