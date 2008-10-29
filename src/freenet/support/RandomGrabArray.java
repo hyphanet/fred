@@ -72,7 +72,7 @@ public class RandomGrabArray {
 					Logger.error(this, "Block "+i+" of "+blocks.length+" is wrong size: "+block.reqs.length+" should be "+BLOCK_SIZE);
 				}
 				for(int j=0;j<block.reqs.length;j++) {
-					if(x > index) break;
+					if(x >= index) break;
 					if(block.reqs[j] == req) {
 						if(logMINOR) Logger.minor(this, "Already contains "+req+" : "+this+" size now "+index);
 						if(persistent) container.deactivate(block, 1);
@@ -87,6 +87,8 @@ public class RandomGrabArray {
 			}
 			int oldBlockLen = blocks.length;
 			if(blocks.length <= targetBlock) {
+				if(logMINOR)
+					Logger.minor(this, "Adding blocks on "+this);
 				Block[] newBlocks = new Block[targetBlock + 1];
 				System.arraycopy(blocks, 0, newBlocks, 0, blocks.length);
 				for(int i=blocks.length;i<newBlocks.length;i++) {
@@ -295,6 +297,8 @@ public class RandomGrabArray {
 				} else if(blocks.length > 1 &&
 						(((index + (BLOCK_SIZE/2)) / BLOCK_SIZE) + 1) < 
 						blocks.length) {
+					if(logMINOR)
+						Logger.minor(this, "Shrinking blocks on "+this);
 					Block[] newBlocks = new Block[((index + (BLOCK_SIZE/2)) / BLOCK_SIZE) + 1];
 					System.arraycopy(blocks, 0, newBlocks, 0, newBlocks.length);
 					if(persistent) {
