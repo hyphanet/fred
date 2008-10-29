@@ -380,7 +380,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 				for(int i=0;i<dataBuckets.length;i++) {
 					// The FECCodec won't set them.
 					// But they should be active.
-					if(!container.ext().isActive(dataBuckets[i]))
+					if(!container.ext().isStored(dataBuckets[i]))
+						Logger.error(this, "Data block "+i+" is not stored!");
+					else if(!container.ext().isActive(dataBuckets[i]))
 						Logger.error(this, "Data block "+i+" is inactive!");
 					if(dataBuckets[i] == null)
 						Logger.error(this, "Data block "+i+" is null!");
