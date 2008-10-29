@@ -1,6 +1,9 @@
 package freenet.client.async;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.SplitfileBlock;
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
 public class MinimalSplitfileBlock implements SplitfileBlock {
@@ -26,6 +29,17 @@ public class MinimalSplitfileBlock implements SplitfileBlock {
 
 	public void setData(Bucket data) {
 		this.data = data;
+	}
+	
+	public void objectOnDeactivate(ObjectContainer container) {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Deactivating "+this, new Exception("debug"));
+	}
+
+	public void storeTo(ObjectContainer container) {
+		if(data != null)
+			data.storeTo(container);
+		container.store(this);
 	}
 
 }

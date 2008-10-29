@@ -119,4 +119,15 @@ public class FECJob {
 				container.deactivate(checkBlocks[i], 1);
 		}
 	}
+
+	public void storeBlockStatuses(ObjectContainer container) {
+		if(dataBlockStatus != null) {
+			for(SplitfileBlock block : dataBlockStatus)
+				block.storeTo(container);
+		}
+		if(checkBlockStatus != null) {
+			for(SplitfileBlock block : checkBlockStatus)
+				block.storeTo(container);
+		}
+	}
 }

@@ -1,5 +1,7 @@
 package freenet.client;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.api.Bucket;
 
 public interface SplitfileBlock {
@@ -15,6 +17,8 @@ public interface SplitfileBlock {
 	
 	/** Set data */
 	abstract void setData(Bucket data);
+
+	abstract void storeTo(ObjectContainer container);
 
 
 }

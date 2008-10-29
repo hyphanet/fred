@@ -201,6 +201,7 @@ public class FECQueue implements OOMHook {
 							databaseJobRunner.queue(new DBJob() {
 
 								public void run(ObjectContainer container, ClientContext context) {
+									job.storeBlockStatuses(container);
 									// Don't activate the job itself.
 									// It MUST already be activated, because it is carrying the status blocks.
 									// The status blocks have been set on the FEC thread but *not stored* because
