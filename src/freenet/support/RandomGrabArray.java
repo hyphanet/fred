@@ -327,8 +327,9 @@ public class RandomGrabArray {
 		int endBlock = index / BLOCK_SIZE;
 		if(blocks.length == 1 || blockNo == endBlock) {
 			RandomGrabArrayItem[] items = blocks[blockNo].reqs;
-			items[i] = items[index];
-			items[index] = null;
+			int idx = index % BLOCK_SIZE;
+			items[i] = items[idx];
+			items[idx] = null;
 			if(persistent)
 				container.store(blocks[blockNo]);
 		} else {
