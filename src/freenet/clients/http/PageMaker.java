@@ -25,13 +25,15 @@ public final class PageMaker {
 		BOXED("boxed", "Boxed", ""),
 		CLEAN("clean", "Clean", "Mr. Proper"),
 		GRAYANDBLUE("grayandblue", "Gray And Blue", ""),
-		SKY("sky", "Sky", "");
+		SKY("sky", "Sky", ""),
+                MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue");
 		
 		public static final String[] possibleValues = {
 			BOXED.code,
 			CLEAN.code,
 			GRAYANDBLUE.code,
-			SKY.code
+			SKY.code,
+                        MINIMALBLUE.code
 		};
 		
 		public final String code;  // the internal name
