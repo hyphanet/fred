@@ -434,7 +434,9 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 
 	@Override
 	public List<PersistentChosenBlock> makeBlocks(PersistentChosenRequest request, RequestScheduler sched, ObjectContainer container, ClientContext context) {
-		PersistentChosenBlock block = new PersistentChosenBlock(true, request, getBlock(container, context, false), null, null, sched);
+		ClientKeyBlock encoded = getBlock(container, context, false);
+		if(encoded == null) return null;
+		PersistentChosenBlock block = new PersistentChosenBlock(true, request, encoded, null, null, sched);
 		return Collections.singletonList(block);
 	}
 
