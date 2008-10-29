@@ -433,7 +433,7 @@ abstract class ClientRequestSchedulerBase {
 							long sendable = 0;
 							long all = 0;
 							for(int m=0;m<rga.size();m++) {
-								SendableRequest req = (SendableRequest) rga.get(m);
+								SendableRequest req = (SendableRequest) rga.get(m, container);
 								if(req == null) continue;
 								container.activate(req, 1);
 								sendable += req.sendableKeys(container).length;

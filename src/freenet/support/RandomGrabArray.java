@@ -9,18 +9,24 @@ import freenet.client.async.ClientContext;
  */
 public class RandomGrabArray {
 
+	private class Block {
+		RandomGrabArrayItem[] reqs;
+	}
+	
 	/** Array of items. Non-null's followed by null's. 
 	 * We used to have a Set so we could check whether something is in the set quickly.
 	 * We got rid of this because for persistent requests it is vastly faster to just loop the
 	 * loop and check ==, and for non-persistent requests it doesn't matter much. */
-	private RandomGrabArrayItem[] reqs;
+	private Block[] blocks;
 	/** Index of first null item. */
 	private int index;
 	private final static int MIN_SIZE = 32;
+	private final static int BLOCK_SIZE = 1024;
 	private final boolean persistent;
 
 	public RandomGrabArray(boolean persistent, ObjectContainer container) {
-		this.reqs = new RandomGrabArrayItem[MIN_SIZE];
+		this.blocks = new Block[] { new Block() };
+		blocks[0].reqs = new RandomGrabArrayItem[MIN_SIZE];
 		this.persistent = persistent;
 		index = 0;
 	}
@@ -34,25 +40,74 @@ public class RandomGrabArray {
 		}
 		req.setParentGrabArray(this, container);
 		synchronized(this) {
-			for(int i=0;i<index;i++) {
-				if(reqs[i] == req) {
-					if(logMINOR) Logger.minor(this, "Already contains "+req+" : "+this+" size now "+index);
-					return;
+			int x = 0;
+			int size = 0;
+			if(blocks.length == 1 && index < BLOCK_SIZE) {
+				if(persistent) container.activate(blocks[0], 1);
+				for(int i=0;i<index;i++) {
+					if(blocks[0].reqs[i] == req) {
+						if(persistent) container.deactivate(blocks[0], 1);
+						return;
+					}
 				}
-				if(reqs[i] == null) {
-					Logger.error(this, "reqs["+i+"] = null on "+this);
+				if(index >= blocks[0].reqs.length) {
+					int newSize = Math.min(BLOCK_SIZE, blocks[0].reqs.length*2);
+					RandomGrabArrayItem[] newReqs = new RandomGrabArrayItem[newSize];
+					System.arraycopy(blocks[0].reqs, 0, newReqs, 0, blocks[0].reqs.length);
+					blocks[0].reqs = newReqs;
 				}
+				blocks[0].reqs[index++] = req;
+				if(persistent) {
+					container.store(blocks[0]);
+					container.store(this);
+					container.deactivate(blocks[0], 1);
+				}
+				return;
 			}
-			if(index >= reqs.length) {
-				RandomGrabArrayItem[] r = new RandomGrabArrayItem[reqs.length*2];
-				System.arraycopy(reqs, 0, r, 0, reqs.length);
-				reqs = r;
+			int targetBlock = index / BLOCK_SIZE;
+			for(int i=0;i<blocks.length;i++) {
+				Block block = blocks[i];
+				if(persistent) container.activate(block, 1);
+				if(i != (blocks.length - 1) && block.reqs.length != BLOCK_SIZE) {
+					Logger.error(this, "Block "+i+" of "+blocks.length+" is wrong size: "+block.reqs.length+" should be "+BLOCK_SIZE);
+				}
+				for(int j=0;j<block.reqs.length;j++) {
+					if(x > index) break;
+					if(block.reqs[j] == req) {
+						if(logMINOR) Logger.minor(this, "Already contains "+req+" : "+this+" size now "+index);
+						if(persistent) container.deactivate(block, 1);
+						return;
+					}
+					if(block.reqs[j] == null) {
+						Logger.error(this, "reqs["+i+"."+j+"] = null on "+this);
+					}
+					x++;
+				}
+				if(persistent && i != targetBlock) container.deactivate(block, 1);
 			}
-			reqs[index++] = req;
-			if(logMINOR) Logger.minor(this, "Added: "+req+" to "+this+" size now "+index);
+			int oldBlockLen = blocks.length;
+			if(blocks.length <= targetBlock) {
+				Block[] newBlocks = new Block[targetBlock + 1];
+				System.arraycopy(blocks, 0, newBlocks, 0, blocks.length);
+				for(int i=blocks.length;i<newBlocks.length;i++) {
+					newBlocks[i] = new Block();
+					newBlocks[i].reqs = new RandomGrabArrayItem[BLOCK_SIZE];
+				}
+				blocks = newBlocks;
+			} else {
+				container.activate(blocks[targetBlock], 1);
+			}
+			Block target = blocks[targetBlock];
+			target.reqs[index++ % BLOCK_SIZE] = req;
 			if(persistent) {
+				for(int i=oldBlockLen;i<blocks.length;i++)
+					container.store(blocks[i]);
 				container.store(this);
+				container.store(target);
+				for(int i=oldBlockLen;i<blocks.length;i++)
+					container.deactivate(blocks[i], 1);
 			}
+			if(logMINOR) Logger.minor(this, "Added: "+req+" to "+this+" size now "+index);
 		}
 	}
 	
@@ -61,19 +116,21 @@ public class RandomGrabArray {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "removeRandom() on "+this+" index="+index);
 		synchronized(this) {
+			int lastActiveBlock = -1;
+			/** Must be less than BLOCK_SIZE */
 			final int MAX_EXCLUDED = 10;
 			int excluded = 0;
 			boolean changedMe = false;
 			while(true) {
 				if(index == 0) {
-					if(reqs == null)
-						throw new NullPointerException();
 					if(logMINOR) Logger.minor(this, "All null on "+this);
 					return null;
 				}
 				if(index < MAX_EXCLUDED) {
 					// Optimise the common case of not many items, and avoid some spurious errors.
 					int random = -1;
+					if(persistent) container.activate(blocks[0], 1);
+					RandomGrabArrayItem[] reqs = blocks[0].reqs;
 					while(true) {
 						int exclude = 0;
 						int valid = 0;
@@ -141,27 +198,33 @@ public class RandomGrabArray {
 							ret = chosenItem;
 							assert(ret == reqs[chosenIndex]);
 							if(logMINOR) Logger.minor(this, "Chosen random item "+ret+" out of "+valid+" total "+index);
-							if(persistent && changedMe)
+							if(persistent && changedMe) {
+								container.store(blocks[0]);
 								container.store(this);
+							}
 							return ret;
 						}
 						if(valid == 0 && exclude == 0) {
 							index = 0;
 							if(persistent)
-								container.store(this);
+								container.store(blocks[0]);
 							if(logMINOR) Logger.minor(this, "No valid or excluded items total "+index);
 							return null;
 						} else if(valid == 0) {
-							if(persistent && changedMe)
+							if(persistent && changedMe) {
+								container.store(blocks[0]);
 								container.store(this);
+							}
 							if(logMINOR) Logger.minor(this, "No valid items, "+exclude+" excluded items total "+index);
 							return null;
 						} else if(valid == 1) {
 							ret = validItem;
 							assert(ret == reqs[validIndex]);
 							if(logMINOR) Logger.minor(this, "No valid or excluded items apart from "+ret+" total "+index);
-							if(persistent && changedMe)
+							if(persistent && changedMe) {
+								container.store(blocks[0]);
 								container.store(this);
+							}
 							return ret;
 						} else {
 							random = context.fastWeakRandom.nextInt(valid);
@@ -169,14 +232,16 @@ public class RandomGrabArray {
 					}
 				}
 				int i = context.fastWeakRandom.nextInt(index);
-				ret = reqs[i];
+				int blockNo = i / BLOCK_SIZE;
+				if(persistent && blockNo != lastActiveBlock) {
+					if(lastActiveBlock != -1)
+						container.deactivate(blocks[lastActiveBlock], 1);
+					container.activate(blocks[blockNo], 1);
+				}
+				ret = blocks[blockNo].reqs[i % BLOCK_SIZE];
 				if(ret == null) {
 					Logger.error(this, "reqs["+i+"] = null");
-					index--;
-					if(i != index) {
-						reqs[i] = reqs[index];
-						reqs[index] = null;
-					}
+					remove(blockNo, i, container);
 					changedMe = true;
 					continue;
 				}
@@ -211,21 +276,33 @@ public class RandomGrabArray {
 				// Remove an element.
 				do {
 					changedMe = true;
-					reqs[i] = reqs[--index];
-					reqs[index] = null;
+					remove(blockNo, i, container);
 					if(persistent && oret != null && ret == null) // if ret != null we will return it
 						container.deactivate(oret, 1);
-					oret = reqs[i];
+					oret = blocks[blockNo].reqs[i % BLOCK_SIZE];
 					// Check for nulls, but don't check for cancelled, since we'd have to activate.
 				} while (index > i && oret == null);
 				// Shrink array
-				if((index < reqs.length / 4) && (reqs.length > MIN_SIZE)) {
+				if(blocks.length == 1 && index < blocks[0].reqs.length / 4) {
 					changedMe = true;
 					// Shrink array
 					int newSize = Math.max(index * 2, MIN_SIZE);
 					RandomGrabArrayItem[] r = new RandomGrabArrayItem[newSize];
-					System.arraycopy(reqs, 0, r, 0, r.length);
-					reqs = r;
+					System.arraycopy(blocks[0].reqs, 0, r, 0, r.length);
+					blocks[0].reqs = r;
+					if(persistent)
+						container.store(this);
+				} else if(blocks.length > 1 &&
+						(((index + (BLOCK_SIZE/2)) / BLOCK_SIZE) + 1) < 
+						blocks.length) {
+					Block[] newBlocks = new Block[((index + (BLOCK_SIZE/2)) / BLOCK_SIZE) + 1];
+					System.arraycopy(blocks, 0, newBlocks, 0, newBlocks.length);
+					if(persistent) {
+						container.store(this);
+						for(int x=newBlocks.length;x<blocks.length;x++)
+							container.delete(newBlocks[x]);
+					}
+					blocks = newBlocks;
 				}
 				if(ret != null) break;
 			}
@@ -237,20 +314,94 @@ public class RandomGrabArray {
 		return ret;
 	}
 	
+	/**
+	 * blockNo is assumed to be already active. The last block is assumed not 
+	 * to be.
+	 */
+	private void remove(int blockNo, int i, ObjectContainer container) {
+		index--;
+		int endBlock = index / BLOCK_SIZE;
+		if(blocks.length == 1 || blockNo == endBlock) {
+			RandomGrabArrayItem[] items = blocks[blockNo].reqs;
+			items[i] = items[index];
+			items[index] = null;
+			if(persistent)
+				container.store(blocks[blockNo]);
+		} else {
+			RandomGrabArrayItem[] toItems = blocks[blockNo].reqs;
+			if(persistent) container.activate(blocks[endBlock], 1);
+			RandomGrabArrayItem[] endItems = blocks[endBlock].reqs;
+			toItems[i % BLOCK_SIZE] = endItems[index % BLOCK_SIZE];
+			endItems[index % BLOCK_SIZE] = null;
+			if(persistent) {
+				container.store(blocks[blockNo]);
+				container.store(blocks[endBlock]);
+				container.deactivate(blocks[endBlock], 1);
+			}
+		}
+	}
+
 	public void remove(RandomGrabArrayItem it, ObjectContainer container) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Removing "+it+" from "+this);
+		boolean matched = false;
 		synchronized(this) {
-			for(int i=0;i<index;i++) {
-				if(reqs[i] == null) continue;
-				if((reqs[i] == it) || reqs[i].equals(it)) {
-					reqs[i] = reqs[--index];
-					reqs[index] = null;
-					break;
+			if(blocks.length == 1) {
+				Block block = blocks[0];
+				if(persistent)
+					container.activate(block, 1);
+				for(int i=0;i<index;i++) {
+					if(block.reqs[i] == it) {
+						block.reqs[i] = block.reqs[--index];
+						block.reqs[index] = null;
+						matched = true;
+						if(persistent)
+							container.store(block);
+						break;
+					}
+				}
+				if(persistent)
+					container.deactivate(block, 1);
+			} else {
+				int x = 0;
+				for(int i=0;i<blocks.length;i++) {
+					Block block = blocks[i];
+					if(persistent)
+						container.activate(block, 1);
+					for(int j=0;j<block.reqs.length;j++) {
+						if(x >= index) break;
+						x++;
+						if(block.reqs[i] == it) {
+							int pullFrom = --index;
+							int idx = pullFrom % BLOCK_SIZE;
+							int endBlock = pullFrom / BLOCK_SIZE;
+							if(i == endBlock) {
+								block.reqs[i] = block.reqs[idx];
+								block.reqs[idx] = null;
+							} else {
+								Block fromBlock = blocks[endBlock];
+								if(persistent)
+									container.activate(fromBlock, 1);
+								block.reqs[i] = fromBlock.reqs[idx];
+								fromBlock.reqs[idx] = null;
+								if(persistent) {
+									container.store(fromBlock);
+									container.deactivate(fromBlock, 1);
+								}
+							}
+							if(persistent)
+								container.store(block);
+							matched = true;
+							break;
+						}
+					}
+					if(persistent)
+						container.deactivate(block, 1);
 				}
 			}
 		}
 		it.setParentGrabArray(null, container);
+		if(!matched) return;
 		if(persistent) {
 			container.store(this);
 		}
@@ -265,8 +416,39 @@ public class RandomGrabArray {
 	}
 
 	public boolean contains(RandomGrabArrayItem item, ObjectContainer container) {
-		for(int i=0;i<index;i++) {
-			if(reqs[i] == item) return true;
+		synchronized(this) {
+			if(blocks.length == 1) {
+				Block block = blocks[0];
+				if(persistent)
+					container.activate(block, 1);
+				for(int i=0;i<index;i++) {
+					if(block.reqs[i] == item) {
+						if(persistent)
+							container.deactivate(block, 1);
+						return true;
+					}
+				}
+				if(persistent)
+					container.deactivate(block, 1);
+			} else {
+				int x = 0;
+				for(int i=0;i<blocks.length;i++) {
+					Block block = blocks[i];
+					if(persistent)
+						container.activate(block, 1);
+					for(int j=0;j<block.reqs.length;j++) {
+						if(x >= index) break;
+						x++;
+						if(block.reqs[i] == item) {
+							if(persistent)
+								container.deactivate(block, 1);
+							return true;
+						}
+					}
+					if(persistent)
+						container.deactivate(block, 1);
+				}
+			}
 		}
 		return false;
 	}
@@ -275,7 +457,13 @@ public class RandomGrabArray {
 		return index;
 	}
 
-	public synchronized RandomGrabArrayItem get(int idx) {
-		return reqs[idx];
+	public synchronized RandomGrabArrayItem get(int idx, ObjectContainer container) {
+		int blockNo = idx / BLOCK_SIZE;
+		if(persistent)
+			container.activate(blocks[blockNo], 1);
+		RandomGrabArrayItem item = blocks[blockNo].reqs[idx % BLOCK_SIZE];
+		if(persistent)
+			container.deactivate(blocks[blockNo], 1);
+		return item;
 	}
 }
