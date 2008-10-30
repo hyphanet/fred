@@ -2705,8 +2705,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		DiffieHellmanLightContext result = null;
 		
 		synchronized (dhContextFIFO) {
-			
-			result = (DiffieHellmanLightContext) dhContextFIFO.removeFirst();
+			result = dhContextFIFO.removeFirst();
 			
 			// Shall we replace one element of the queue ?
 			if((jfkDHLastGenerationTimestamp + DH_GENERATION_INTERVAL) < now) {
