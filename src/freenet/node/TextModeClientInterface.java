@@ -20,8 +20,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.text.NumberFormat;
+import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Hashtable;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
@@ -50,7 +50,6 @@ import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
-import java.util.Arrays;
 
 /**
  * @author amphibian
@@ -65,7 +64,6 @@ public class TextModeClientInterface implements Runnable {
     final Node n;
     final NodeClientCore core;
     final HighLevelSimpleClient client;
-    final Hashtable streams;
     final File downloadsDir;
     final InputStream in;
     final OutputStream out;
@@ -76,7 +74,6 @@ public class TextModeClientInterface implements Runnable {
     	this.core = server.n.clientCore;
     	this.r = server.r;
         client = core.makeClient(RequestStarter.INTERACTIVE_PRIORITY_CLASS, true);
-    	this.streams = new Hashtable();
     	this.downloadsDir = server.downloadsDir;
     	this.in = in;
     	this.out = out;
@@ -88,7 +85,6 @@ public class TextModeClientInterface implements Runnable {
     	this.r = n.random;
     	this.core = n.clientCore;
     	this.client = c;
-    	this.streams = new Hashtable();
     	this.downloadsDir = downloadDir;
     	this.in = in;
     	this.out = out;
@@ -405,9 +401,9 @@ public class TextModeClientInterface implements Runnable {
 		return true;
         } else if(uline.startsWith("MEMSTAT")) {
 		Runtime rt = Runtime.getRuntime();
-		float freeMemory = (float) rt.freeMemory();
-		float totalMemory = (float) rt.totalMemory();
-		float maxMemory = (float) rt.maxMemory();
+		float freeMemory = rt.freeMemory();
+		float totalMemory = rt.totalMemory();
+		float maxMemory = rt.maxMemory();
 
 		long usedJavaMem = (long)(totalMemory - freeMemory);
 		long allocatedJavaMem = (long)totalMemory;
@@ -520,7 +516,7 @@ public class TextModeClientInterface implements Runnable {
         		}
         	}
         	
-        	HashMap bucketsByName =
+        	HashMap<String, Object> bucketsByName =
         		makeBucketsByName(line);
         	
         	if(defaultFile == null) {
@@ -991,7 +987,7 @@ public class TextModeClientInterface implements Runnable {
      * Create a map of String -> Bucket for every file in a directory
      * and its subdirs.
      */
-    private HashMap makeBucketsByName(String directory) {
+    private HashMap<String, Object> makeBucketsByName(String directory) {
     	
     	if (!directory.endsWith("/"))
     		directory = directory + '/';
@@ -999,7 +995,7 @@ public class TextModeClientInterface implements Runnable {
     	
     	System.out.println("Listing dir: "+thisdir);
     	
-    	HashMap ret = new HashMap();
+    	HashMap<String, Object> ret = new HashMap<String, Object>();
     	
     	File filelist[] = thisdir.listFiles();
     	if(filelist == null)
@@ -1015,7 +1011,7 @@ public class TextModeClientInterface implements Runnable {
     			
     			ret.put(f.getName(), bucket);
     		} else if(filelist[i].isDirectory()) {
-    			HashMap subdir = makeBucketsByName(directory + filelist[i].getName());
+    			HashMap<String, Object> subdir = makeBucketsByName(directory + filelist[i].getName());
     			ret.put(filelist[i].getName(), subdir);
     		}
 		}

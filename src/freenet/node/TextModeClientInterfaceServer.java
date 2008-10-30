@@ -10,7 +10,6 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.util.Hashtable;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
@@ -30,8 +29,6 @@ public class TextModeClientInterfaceServer implements Runnable {
     final RandomSource r;
     final Node n;
     final NodeClientCore core;
-//    final HighLevelSimpleClient client;
-    final Hashtable streams;
     final File downloadsDir;
     int port;
     String bindTo;
@@ -44,7 +41,6 @@ public class TextModeClientInterfaceServer implements Runnable {
     	this.n = node;
     	this.core = n.clientCore;
         this.r = n.random;
-        streams = new Hashtable();
         this.downloadsDir = core.downloadDir;
         this.port=port;
         this.bindTo=bindTo;

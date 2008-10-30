@@ -121,7 +121,7 @@ public class DarknetPeerNode extends PeerNode {
 	/**
 	 * 
 	 * Normally this is the address that packets have been received from from this node.
-	 * However, if ignoreSourcePort is set, we will search for a similar address with a different port 
+	 * However, if ignoreSourcePort is set, we will search for a similar address with a different port
 	 * number in the node reference.
 	 */
 	@Override
@@ -131,7 +131,7 @@ public class DarknetPeerNode extends PeerNode {
 			FreenetInetAddress addr = detectedPeer == null ? null : detectedPeer.getFreenetAddress();
 			int port = detectedPeer == null ? -1 : detectedPeer.getPort();
 			if(nominalPeer == null) return detectedPeer;
-			for(Peer p : nominalPeer) {				
+			for(Peer p : nominalPeer) {
 				if(p.getPort() != port && p.getFreenetAddress().equals(addr)) {
 					return p;
 				}
@@ -201,7 +201,7 @@ public class DarknetPeerNode extends PeerNode {
 			return PeerManager.PEER_NODE_STATUS_DISABLED;
 		}
 		int status = super.getPeerNodeStatus(now, backedOffUntil);
-		if(status == PeerManager.PEER_NODE_STATUS_CONNECTED || 
+		if(status == PeerManager.PEER_NODE_STATUS_CONNECTED ||
 				status == PeerManager.PEER_NODE_STATUS_CLOCK_PROBLEM ||
 				status == PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF ||
 				status == PeerManager.PEER_NODE_STATUS_CONN_ERROR ||
@@ -360,10 +360,10 @@ public class DarknetPeerNode extends PeerNode {
 	 	}
 		boolean gotError = false;
 		boolean readResult = false;
-		for (int i = 0; i < extraPeerDataFiles.length; i++) {
+		for (File extraPeerDataFile : extraPeerDataFiles) {
 			Integer fileNumber;
 			try {
-				fileNumber = new Integer(extraPeerDataFiles[i].getName());
+				fileNumber = new Integer(extraPeerDataFile.getName());
 			} catch (NumberFormatException e) {
 				gotError = true;
 				continue;
@@ -371,7 +371,7 @@ public class DarknetPeerNode extends PeerNode {
 			synchronized(extraPeerDataFileNumbers) {
 				extraPeerDataFileNumbers.add(fileNumber);
 			}
-			readResult = readExtraPeerDataFile(extraPeerDataFiles[i], fileNumber.intValue());
+			readResult = readExtraPeerDataFile(extraPeerDataFile, fileNumber.intValue());
 			if(!readResult) {
 				gotError = true;
 			}
@@ -648,8 +648,8 @@ public class DarknetPeerNode extends PeerNode {
 		synchronized(extraPeerDataFileNumbers) {
 			localFileNumbers = extraPeerDataFileNumbers.toArray(new Integer[extraPeerDataFileNumbers.size()]);
 		}
-		for (int i = 0; i < localFileNumbers.length; i++) {
-			deleteExtraPeerDataFile(localFileNumbers[i].intValue());
+		for (Integer localFileNumber : localFileNumbers) {
+			deleteExtraPeerDataFile(localFileNumber.intValue());
 		}
 		extraPeerDataPeerDir.delete();
 	}
@@ -746,8 +746,8 @@ public class DarknetPeerNode extends PeerNode {
 			localFileNumbers = queuedToSendN2NMExtraPeerDataFileNumbers.toArray(new Integer[queuedToSendN2NMExtraPeerDataFileNumbers.size()]);
 		}
 		Arrays.sort(localFileNumbers);
-		for (int i = 0; i < localFileNumbers.length; i++) {
-			rereadExtraPeerDataFile(localFileNumbers[i].intValue());
+		for (Integer localFileNumber : localFileNumbers) {
+			rereadExtraPeerDataFile(localFileNumber.intValue());
 		}
 	}
 
@@ -1198,10 +1198,10 @@ public class DarknetPeerNode extends PeerNode {
 					form.addChild("input", new String[] { "type", "name", "value" },
 							new String[] { "hidden", "id", Long.toString(uid) });
 					
-					form.addChild("input", new String[] { "type", "name", "value" }, 
+					form.addChild("input", new String[] { "type", "name", "value" },
 							new String[] { "submit", "acceptTransfer", l10n("acceptTransferButton") });
 
-					form.addChild("input", new String[] { "type", "name", "value" }, 
+					form.addChild("input", new String[] { "type", "name", "value" },
 							new String[] { "submit", "rejectTransfer", l10n("rejectTransferButton") });
 					
 					return div;
