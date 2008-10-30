@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.Vector;
 
@@ -1673,16 +1674,16 @@ public class PeerManager {
 		return v;
 	}
 
-	public Vector getSeedServerPeersVector() {
+	public List<SeedServerPeerNode> getSeedServerPeersVector() {
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = myPeers;
 		}
 		// FIXME optimise! Maybe maintain as a separate list?
-		Vector v = new Vector(myPeers.length);
-		for(int i = 0; i < peers.length; i++) {
-			if(peers[i] instanceof SeedServerPeerNode)
-				v.add(peers[i]);
+		List<SeedServerPeerNode> v = new ArrayList<SeedServerPeerNode>(myPeers.length);
+		for(PeerNode peer : peers) {
+			if(peer instanceof SeedServerPeerNode)
+				v.add((SeedServerPeerNode)peer);
 		}
 		return v;
 	}

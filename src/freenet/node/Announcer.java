@@ -11,7 +11,9 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Vector;
 
 import freenet.io.comm.PeerParseException;
@@ -118,7 +120,7 @@ public class Announcer {
 		boolean announceNow = false;
 		if(logMINOR)
 			Logger.minor(this, "Connecting some seednodes...");
-		Vector/*<SimpleFieldSet>*/ seeds = Announcer.readSeednodes(node.nodeDir);
+		List<SimpleFieldSet> seeds = Announcer.readSeednodes(node.nodeDir);
 		long now = System.currentTimeMillis();
 		synchronized(this) {
 			if(now - timeAddedSeeds < MIN_ADDED_SEEDS_INTERVAL) return;
@@ -180,13 +182,13 @@ public class Announcer {
 	}
 
 	// Synchronize to protect announcedToIdentities and prevent running in parallel.
-	private synchronized int connectSomeNodesInner(Vector seeds) {
+	private synchronized int connectSomeNodesInner(List<SimpleFieldSet> seeds) {
 		if(logMINOR)
 			Logger.minor(this, "Connecting some seednodes from "+seeds.size());
 		int count = 0;
 		while(count < CONNECT_AT_ONCE) {
 			if(seeds.size() == 0) break;
-			SimpleFieldSet fs = (SimpleFieldSet) seeds.remove(node.random.nextInt(seeds.size()));
+			SimpleFieldSet fs = seeds.remove(node.random.nextInt(seeds.size()));
 			try {
 				SeedServerPeerNode seed =
 					new SeedServerPeerNode(fs, node, om.crypto, node.peers, false, om.crypto.packetMangler);
@@ -220,9 +222,9 @@ public class Announcer {
 		return count;
 	}
 
-	public static Vector readSeednodes(File nodeDir) {
+	public static List<SimpleFieldSet> readSeednodes(File nodeDir) {
 		File file = new File(nodeDir, "seednodes.fref");
-		Vector<SimpleFieldSet> list = new Vector<SimpleFieldSet>();
+		List<SimpleFieldSet> list = new ArrayList<SimpleFieldSet>();
 		FileInputStream fis = null;
 		try {
 			fis = new FileInputStream(file);
@@ -437,8 +439,8 @@ public class Announcer {
 	}
 	
 	private synchronized void addAnnouncedIPs(InetAddress[] addrs) {
-		for(int i=0;i<addrs.length;i++)
-			announcedToIPs.add(addrs[i]);
+		for (InetAddress addr : addrs)
+	        announcedToIPs.add(addr);
 	}
 
 	/**
@@ -582,9 +584,8 @@ public class Announcer {
 					runningAnnouncements = Announcer.this.runningAnnouncements;
 					
 				}
-				Vector nodes = node.peers.getSeedServerPeersVector();
-				for(int i=0;i<nodes.size();i++) {
-					SeedServerPeerNode seed = (SeedServerPeerNode) nodes.get(i);
+				List<SeedServerPeerNode> nodes = node.peers.getSeedServerPeersVector();
+				for(SeedServerPeerNode seed : nodes) {
 					if(seed.isConnected())
 						connectedSeednodes++;
 					else
@@ -593,7 +594,7 @@ public class Announcer {
 				if(dontKnowAddress) {
 					sb.append(l10n("dontKnowAddress"));
 				} else {
-					sb.append(l10n("announceDetails", 
+					sb.append(l10n("announceDetails",
 							new String[] { "addedNodes", "refusedNodes", "recentSentAnnouncements", "runningAnnouncements", "connectedSeednodes", "disconnectedSeednodes" },
 							new String[] {
 							Integer.toString(addedNodes),
