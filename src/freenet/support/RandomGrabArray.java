@@ -384,13 +384,13 @@ public class RandomGrabArray {
 							int idx = pullFrom % BLOCK_SIZE;
 							int endBlock = pullFrom / BLOCK_SIZE;
 							if(i == endBlock) {
-								block.reqs[i] = block.reqs[idx];
+								block.reqs[j] = block.reqs[idx];
 								block.reqs[idx] = null;
 							} else {
 								Block fromBlock = blocks[endBlock];
 								if(persistent)
 									container.activate(fromBlock, 1);
-								block.reqs[i] = fromBlock.reqs[idx];
+								block.reqs[j] = fromBlock.reqs[idx];
 								fromBlock.reqs[idx] = null;
 								if(persistent) {
 									container.store(fromBlock);
