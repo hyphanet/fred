@@ -5,10 +5,10 @@ package freenet.node;
 
 import java.util.Map;
 
+import freenet.clients.http.DarknetConnectionsToadlet;
 import freenet.io.comm.Peer;
 import freenet.io.xfer.PacketThrottle;
 import freenet.support.Logger;
-import java.util.SortedSet;
 
 /**
  * Contains various status information for a {@link PeerNode}. Used e.g. in
@@ -65,9 +65,9 @@ public class PeerNodeStatus {
 
 	private long peerAddedTime;
 
-	private Map localMessagesReceived;
+	private Map<String,Long> localMessagesReceived;
 
-	private Map localMessagesSent;
+	private Map<String,Long> localMessagesSent;
 	
 	private final int hashCode;
 	
@@ -156,14 +156,14 @@ public class PeerNodeStatus {
 	/**
 	 * @return the localMessagesReceived
 	 */
-	public Map getLocalMessagesReceived() {
+	public Map<String, Long> getLocalMessagesReceived() {
 		return localMessagesReceived;
 	}
 
 	/**
 	 * @return the localMessagesSent
 	 */
-	public Map getLocalMessagesSent() {
+	public Map<String, Long> getLocalMessagesSent() {
 		return localMessagesSent;
 	}
 
