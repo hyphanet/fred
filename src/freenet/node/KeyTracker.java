@@ -57,7 +57,7 @@ public class KeyTracker {
 	/** Serial numbers of packets that we have forgotten. Usually
 	 * when we have forgotten a packet it just means that it has 
 	 * been shifted to another KeyTracker because this one was
-	 * depreciated; the messages will get through in the end.
+	 * deprecated; the messages will get through in the end.
 	 */
 	private final List<QueuedForgotten> forgottenQueue;
 	/** The highest incoming serial number we have ever seen
@@ -107,7 +107,7 @@ public class KeyTracker {
 	}
 
 	/**
-	 * Set the depreciated flag to indicate that we are now
+	 * Set the deprecated flag to indicate that we are now
 	 * no longer the primary key. And wake up any threads trying to lock
 	 * a packet number; they can be sent with the new KT.
 	 * 
