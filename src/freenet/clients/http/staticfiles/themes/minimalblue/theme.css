@@ -390,19 +390,19 @@ color: #035196;
 }
 
 span.connected{
-color: #001100;
+color: #fff;
 }
 
 span.disconnected{
-color: #445544;
+color: #aaa;
 }
 
 div.histogramConnected{
-background: #001100;
+background: #fff;
 }
 
 div.histogramDisconnected{
-background: #445544;
+background: #aaa;
 }
 
 span.peer_connected {
