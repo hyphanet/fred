@@ -178,6 +178,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		synchronized(this) {
 			writtenVersion = fetched;
 		}
+		System.err.println("Written "+(extUpdate ? "ext" : "main")+" jar to "+fNew);
 	}
 	
 	public void onSuccess(FetchResult result, ClientGetter state) {
