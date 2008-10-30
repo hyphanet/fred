@@ -208,8 +208,10 @@ public class RandomGrabArray {
 						}
 						if(valid == 0 && exclude == 0) {
 							index = 0;
-							if(persistent)
+							if(persistent) {
 								container.store(blocks[0]);
+								container.store(this);
+							}
 							if(logMINOR) Logger.minor(this, "No valid or excluded items total "+index);
 							return null;
 						} else if(valid == 0) {
@@ -328,7 +330,7 @@ public class RandomGrabArray {
 		if(blocks.length == 1 || blockNo == endBlock) {
 			RandomGrabArrayItem[] items = blocks[blockNo].reqs;
 			int idx = index % BLOCK_SIZE;
-			items[i] = items[idx];
+			items[i % BLOCK_SIZE] = items[idx];
 			items[idx] = null;
 			if(persistent)
 				container.store(blocks[blockNo]);
