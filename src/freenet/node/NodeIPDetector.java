@@ -7,6 +7,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -128,7 +129,7 @@ public class NodeIPDetector {
 	   	synchronized(this) {
 	   		hasValidIP = addedValidIP;
 	   	}
-	   	lastIPAddress = (FreenetInetAddress[]) addresses.toArray(new FreenetInetAddress[addresses.size()]);
+	   	lastIPAddress = addresses.toArray(new FreenetInetAddress[addresses.size()]);
 	   	if(dumpLocalAddresses) {
 	   		ArrayList<FreenetInetAddress> filtered = new ArrayList<FreenetInetAddress>(lastIPAddress.length);
 	   		for(int i=0;i<lastIPAddress.length;i++) {
@@ -139,7 +140,7 @@ public class NodeIPDetector {
 	   			else if(IPUtil.isValidAddress(lastIPAddress[i].getAddress(), false))
 	   				filtered.add(lastIPAddress[i]);
 	   		}
-	   		return (FreenetInetAddress[]) filtered.toArray(new FreenetInetAddress[filtered.size()]);
+	   		return filtered.toArray(new FreenetInetAddress[filtered.size()]);
 	   	}
 	   	return lastIPAddress;
 	}
@@ -229,8 +230,8 @@ public class NodeIPDetector {
 				}
 			}
 			if(countsByPeer.size() == 1) {
-				Iterator it = countsByPeer.keySet().iterator();
-				FreenetInetAddress addr = (FreenetInetAddress) (it.next());
+				Iterator<FreenetInetAddress> it = countsByPeer.keySet().iterator();
+				FreenetInetAddress addr = it.next();
 				Logger.minor(this, "Everyone agrees we are "+addr);
 				if(!addresses.contains(addr)) {
 					if(addr.isRealInternetAddress(false, false, false))
@@ -238,15 +239,14 @@ public class NodeIPDetector {
 					addresses.add(addr);
 				}
 			} else if(countsByPeer.size() > 1) {
-				Iterator it = countsByPeer.keySet().iterator();
 				// Take two most popular addresses.
 				FreenetInetAddress best = null;
 				FreenetInetAddress secondBest = null;
 				int bestPopularity = 0;
 				int secondBestPopularity = 0;
-				while(it.hasNext()) {
-					FreenetInetAddress cur = (FreenetInetAddress) (it.next());
-					int curPop = ((Integer) (countsByPeer.get(cur))).intValue();
+				for(Map.Entry<FreenetInetAddress,Integer> entry : countsByPeer.entrySet()) {
+					FreenetInetAddress cur = entry.getKey();
+					int curPop = entry.getValue();
 					Logger.minor(this, "Detected peer: "+cur+" popularity "+curPop);
 					if(curPop >= bestPopularity) {
 						secondBestPopularity = bestPopularity;
