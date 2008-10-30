@@ -3,12 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import freenet.io.AddressTracker;
-import freenet.io.comm.SocketHandler;
-
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.LinkedList;
 
 import net.i2p.util.NativeBigInteger;
@@ -25,6 +24,7 @@ import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
+import freenet.io.AddressTracker;
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.DMT;
 import freenet.io.comm.FreenetInetAddress;
@@ -32,24 +32,21 @@ import freenet.io.comm.IncomingPacketFilter;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageCore;
 import freenet.io.comm.NotConnectedException;
-import freenet.io.comm.PeerParseException;
-import freenet.io.comm.ReferenceSignatureVerificationException;
-import freenet.io.comm.Peer.LocalAddressException;
-import freenet.support.Fields;
 import freenet.io.comm.PacketSocketHandler;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
+import freenet.io.comm.PeerParseException;
+import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.io.comm.SocketHandler;
+import freenet.io.comm.Peer.LocalAddressException;
 import freenet.support.ByteArrayWrapper;
+import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
 import freenet.support.io.NativeThread;
-
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
-import java.util.HashMap;
 
 /**
  * @author amphibian
@@ -61,7 +58,6 @@ import java.util.HashMap;
  * changes in IncomingPacketFilter).
  */
 public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFilter {
-
 	private static boolean logMINOR;
 	private static boolean logDEBUG;
 	private final Node node;
@@ -75,7 +71,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * The messages are cached in hashmaps because the message retrieval from the cache 
 	 * can be performed in constant time( given the key)
 	 */
-	private final HashMap authenticatorCache;
+	private final HashMap<ByteArrayWrapper, byte[]> authenticatorCache;
 	/** The following is used in the HMAC calculation of JFK message3 and message4 */
 	private static final byte[] JFK_PREFIX_INITIATOR, JFK_PREFIX_RESPONDER;
 	static {
@@ -99,7 +95,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	* The FIFO itself
 	* Get a lock on dhContextFIFO before touching it!
 	*/
-	private final LinkedList dhContextFIFO = new LinkedList();
+	private final LinkedList<DiffieHellmanLightContext> dhContextFIFO = new LinkedList<DiffieHellmanLightContext>();
 	/* The element which is about to be prunned from the FIFO */
 	private DiffieHellmanLightContext dhContextToBePrunned = null;
 	private long jfkDHLastGenerationTimestamp = 0;
@@ -164,7 +160,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		this.sock = sock;
 		fnpTimingSource = new EntropySource();
 		myPacketDataSource = new EntropySource();
-		authenticatorCache = new HashMap();
+		authenticatorCache = new HashMap<ByteArrayWrapper, byte[]>();
 		
 		fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
 		fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
@@ -946,7 +942,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// sanity check
 		byte[] myNi;
 		synchronized (pn) {
-			myNi = (byte[]) pn.jfkNoncesSent.get(replyTo);
+			myNi = pn.jfkNoncesSent.get(replyTo);
 		}
 		// We don't except such a message;
 		if(myNi == null) {
@@ -2683,12 +2679,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private void _fillJFKDHFIFO() {
 		synchronized (dhContextFIFO) {
 			if(dhContextFIFO.size() + 1 > DH_CONTEXT_BUFFER_SIZE) {
-				DiffieHellmanLightContext result = null, tmp;
+				DiffieHellmanLightContext result = null;
 				long oldestSeen = Long.MAX_VALUE;
 
-				Iterator it = dhContextFIFO.iterator();
-				while(it.hasNext()) {
-					tmp = (DiffieHellmanLightContext) it.next();
+				for (DiffieHellmanLightContext tmp: dhContextFIFO) {
 					if(tmp.lifetime < oldestSeen) {
 						oldestSeen = tmp.lifetime;
 						result = tmp;
@@ -2736,11 +2730,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @return the corresponding DiffieHellmanLightContext with the right exponent
 	 */
 	private DiffieHellmanLightContext findContextByExponential(BigInteger exponential) {
-		DiffieHellmanLightContext result = null;
 		synchronized (dhContextFIFO) {
-			Iterator it = dhContextFIFO.iterator();
-			while(it.hasNext()) {
-				result = (DiffieHellmanLightContext) it.next();
+			for (DiffieHellmanLightContext result : dhContextFIFO) {
 				if(exponential.equals(result.myExponential)) {
 					return result;
 				}

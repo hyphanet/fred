@@ -131,8 +131,7 @@ public class DarknetPeerNode extends PeerNode {
 			FreenetInetAddress addr = detectedPeer == null ? null : detectedPeer.getFreenetAddress();
 			int port = detectedPeer == null ? -1 : detectedPeer.getPort();
 			if(nominalPeer == null) return detectedPeer;
-			for(int i=0;i<nominalPeer.size();i++) {
-				Peer p = (Peer) nominalPeer.get(i);
+			for(Peer p : nominalPeer) {				
 				if(p.getPort() != port && p.getFreenetAddress().equals(addr)) {
 					return p;
 				}
@@ -560,13 +559,13 @@ public class DarknetPeerNode extends PeerNode {
 		int nextFileNumber = 0;
 		synchronized(extraPeerDataFileNumbers) {
 			// Find the first free slot
-			localFileNumbers = (Integer[]) extraPeerDataFileNumbers.toArray(new Integer[extraPeerDataFileNumbers.size()]);
+			localFileNumbers = extraPeerDataFileNumbers.toArray(new Integer[extraPeerDataFileNumbers.size()]);
 			Arrays.sort(localFileNumbers);
-			for (int i = 0; i < localFileNumbers.length; i++) {
-				if(localFileNumbers[i].intValue() > nextFileNumber) {
+			for (int localFileNumber : localFileNumbers) {
+				if(localFileNumber > nextFileNumber) {
 					break;
 				}
-				nextFileNumber = localFileNumbers[i].intValue() + 1;
+				nextFileNumber = localFileNumber + 1;
 			}
 			extraPeerDataFileNumbers.add(nextFileNumber);
 		}
@@ -647,7 +646,7 @@ public class DarknetPeerNode extends PeerNode {
 	 	}
 		Integer[] localFileNumbers;
 		synchronized(extraPeerDataFileNumbers) {
-			localFileNumbers = (Integer[]) extraPeerDataFileNumbers.toArray(new Integer[extraPeerDataFileNumbers.size()]);
+			localFileNumbers = extraPeerDataFileNumbers.toArray(new Integer[extraPeerDataFileNumbers.size()]);
 		}
 		for (int i = 0; i < localFileNumbers.length; i++) {
 			deleteExtraPeerDataFile(localFileNumbers[i].intValue());
@@ -744,7 +743,7 @@ public class DarknetPeerNode extends PeerNode {
 			Logger.minor(this, "Sending queued N2NMs for "+shortToString());
 		Integer[] localFileNumbers;
 		synchronized(queuedToSendN2NMExtraPeerDataFileNumbers) {
-			localFileNumbers = (Integer[]) queuedToSendN2NMExtraPeerDataFileNumbers.toArray(new Integer[queuedToSendN2NMExtraPeerDataFileNumbers.size()]);
+			localFileNumbers = queuedToSendN2NMExtraPeerDataFileNumbers.toArray(new Integer[queuedToSendN2NMExtraPeerDataFileNumbers.size()]);
 		}
 		Arrays.sort(localFileNumbers);
 		for (int i = 0; i < localFileNumbers.length; i++) {

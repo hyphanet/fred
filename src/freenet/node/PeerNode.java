@@ -8,6 +8,7 @@ import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 import java.lang.ref.WeakReference;
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
@@ -61,7 +62,6 @@ import freenet.support.Base64;
 import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
-import freenet.support.LRUHashtable;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
@@ -71,7 +71,6 @@ import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPUtil;
-import java.net.InetAddress;
 
 /**
  * @author amphibian
@@ -2322,7 +2321,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: " + e);
 			}
 		}
-		Vector oldNominalPeer = nominalPeer;
+		Vector<Peer> oldNominalPeer = nominalPeer;
 
 		if(nominalPeer == null)
 			nominalPeer = new Vector<Peer>();
@@ -2628,7 +2627,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* Requeue ResendPacketItem[]s if they are not sent.
 	* @param resendItems
 	*/
-	public void requeueResendItems(Vector resendItems) {
+	public void requeueResendItems(Vector<ResendPacketItem> resendItems) {
 		KeyTracker cur,
 		 prev,
 		 unv;
@@ -2637,8 +2636,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			prev = previousTracker;
 			unv = unverifiedTracker;
 		}
-		for(int i = 0; i < resendItems.size(); i++) {
-			ResendPacketItem item = (ResendPacketItem) resendItems.get(i);
+		for(ResendPacketItem item : resendItems) {
 			if(item.pn != this)
 				throw new IllegalArgumentException("item.pn != this!");
 			KeyTracker kt = cur;
@@ -2875,7 +2873,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	// We want to get reasonably early feedback if it's dropping all of them...
 
 	final static int MAX_PINGS = 5;
-	final LRUHashtable pingsSentTimes = new LRUHashtable();
 	long pingNumber;
 	private final RunningAverage pingAverage;
 
@@ -3746,7 +3743,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return -1;
 	}
 
-	public WeakReference getWeakRef() {
+	public WeakReference<PeerNode> getWeakRef() {
 		return myRef;
 	}
 
@@ -4014,7 +4011,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * @param rpiTemp
 	 * @param rpiTemp
 	 */
-	public boolean maybeSendPacket(long now, Vector rpiTemp, int[] rpiIntTemp) {
+	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp) {
 		// If there are any urgent notifications, we must send a packet.
 		boolean mustSend = false;
 		if(mustSendNotificationsNow(now)) {
@@ -4038,7 +4035,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				continue;
 			rpiIntTemp = tmp;
 			for(int k = 0; k < rpiTemp.size(); k++) {
-				ResendPacketItem item = (ResendPacketItem) rpiTemp.get(k);
+				ResendPacketItem item = rpiTemp.get(k);
 				if(item == null)
 					continue;
 				try {

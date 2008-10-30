@@ -45,7 +45,7 @@ public class Message {
     public static final String VERSION = "$Id: Message.java,v 1.11 2005/09/15 18:16:04 amphibian Exp $";
 
 	private final MessageType _spec;
-	private final WeakReference<PeerContext> _sourceRef;
+	private final WeakReference<? extends PeerContext> _sourceRef;
 	private final boolean _internal;
 	private final HashMap<String, Object> _payload = new HashMap<String, Object>(8, 1.0F); // REDFLAG at the moment memory is more of an issue than CPU so we use a high load factor
 	private List<Message> _subMessages;
