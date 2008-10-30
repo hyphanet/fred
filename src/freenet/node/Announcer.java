@@ -35,7 +35,6 @@ import freenet.support.transport.ip.IPUtil;
  * @author toad
  */
 public class Announcer {
-
 	private static boolean logMINOR;
 	private final Node node;
 	private final OpennetManager om;
@@ -49,7 +48,7 @@ public class Announcer {
 	private int sentAnnouncements;
 	private long startTime;
 	private long timeAddedSeeds;
-	static final long MIN_ADDED_SEEDS_INTERVAL = 60*1000;
+	private static final long MIN_ADDED_SEEDS_INTERVAL = 60*1000;
 	/** After we have sent 3 announcements, wait for 30 seconds before sending 3 more if we still have no connections. */
 	static final int COOLING_OFF_PERIOD = 30*1000;
 	/** Identities of nodes we have announced to */
@@ -57,7 +56,7 @@ public class Announcer {
 	/** IPs of nodes we have announced to. Maybe this should be first-two-bytes, but I'm not sure how to do that with IPv6. */
 	private final HashSet<InetAddress> announcedToIPs;
 	/** How many nodes to connect to at once? */
-	static final int CONNECT_AT_ONCE = 15;
+	private static final int CONNECT_AT_ONCE = 15;
 	/** Do not announce if there are more than this many opennet peers connected */
 	private static final int MIN_OPENNET_CONNECTED_PEERS = 10;
 	private static final long NOT_ALL_CONNECTED_DELAY = 60*1000;
@@ -77,7 +76,7 @@ public class Announcer {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
-	public void start() {
+	protected void start() {
 		if(!node.isOpennetEnabled()) return;
 		registerAlert();
 		int darkPeers = node.peers.getDarknetPeers().length;
@@ -247,7 +246,7 @@ public class Announcer {
 		}
 	}
 
-	public void stop() {
+	protected void stop() {
 		// Do nothing at present
 	}
 	
@@ -305,9 +304,9 @@ public class Announcer {
 	}
 
 	private boolean ignoreIPUndetected;
-	static final int FORCE_ANNOUNCEMENT_NO_IP = 120*1000;
+	private static final int FORCE_ANNOUNCEMENT_NO_IP = 120*1000;
 	/** 1 minute after we have enough peers, remove all seednodes left (presumably disconnected ones) */
-	static final int FINAL_DELAY = 60*1000;
+	private static final int FINAL_DELAY = 60*1000;
 	/** But if we don't have enough peers at that point, wait another minute and if the situation has not improved, reannounce. */
 	static final int RETRY_DELAY = 60*1000;
 	private boolean started = false;
@@ -315,7 +314,7 @@ public class Announcer {
 	private long toldUserNoIP = -1;
 	private boolean dontKnowOurIPAddress;
 	
-	public void maybeSendAnnouncement() {
+	protected void maybeSendAnnouncement() {
 		synchronized(this) {
 			if(!started) return;
 		}
@@ -463,7 +462,7 @@ public class Announcer {
 		return !hasNonLocalAddresses;
 	}
 
-	public void sendAnnouncement(final SeedServerPeerNode seed) {
+	protected void sendAnnouncement(final SeedServerPeerNode seed) {
 		if(!node.isOpennetEnabled()) {
 			if(logMINOR)
 				Logger.minor(this, "Not announcing to "+seed+" because opennet is disabled");
@@ -538,8 +537,7 @@ public class Announcer {
 		node.executor.execute(sender, "Announcer to "+seed);
 	}
 
-	public class AnnouncementUserAlert implements UserAlert {
-
+	class AnnouncementUserAlert implements UserAlert {
 		public String dismissButtonText() {
 			return L10n.getString("UserAlert.hide");
 		}
@@ -659,12 +657,11 @@ public class Announcer {
 		return L10n.getString("Announcer."+key);
 	}
 
-	public String l10n(String key, String[] patterns, String[] values) {
+	protected String l10n(String key, String[] patterns, String[] values) {
 		return L10n.getString("Announcer."+key, patterns, values);
 	}
 
-	public String l10n(String key, String pattern, String value) {
+	private String l10n(String key, String pattern, String value) {
 		return L10n.getString("Announcer."+key, pattern, value);
 	}
-
 }
