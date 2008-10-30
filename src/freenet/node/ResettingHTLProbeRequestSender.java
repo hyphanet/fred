@@ -5,7 +5,6 @@ package freenet.node;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
@@ -50,7 +49,7 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
     final PeerNode source;
     private boolean hasForwarded;
 	
-	private ArrayList listeners=new ArrayList();
+	private ArrayList<Listener> listeners=new ArrayList<Listener>();
 
     private static boolean logMINOR;
     
@@ -100,7 +99,7 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
     private void realRun() {
 		int routeAttempts=0;
 		int rejectOverloads=0;
-        HashSet nodesRoutedTo = new HashSet();
+        HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
         while(true) {
             if(logMINOR) Logger.minor(this, "htl="+htl);
             if(htl == 0) {
@@ -358,9 +357,7 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
 		uniqueCounter = (short) (uniqueCounter + this.uniqueCounter);
 		linearCounter = (short) (linearCounter + this.linearCounter);
 		synchronized (listeners) {
-			Iterator i=listeners.iterator();
-			while (i.hasNext()) {
-				Listener l=(Listener)i.next();
+			for (Listener l : listeners) {
 				try {
 					l.onTrace(uid, nearest, best, htl, counter, uniqueCounter, location, myUID,
 							peerLocs, peerUIDs, (short)0, linearCounter, reason, prevUID);
@@ -477,9 +474,7 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
 	
 	private void fireReceivedRejectOverload(double nearest, double best, short counter, short uniqueCounter, short linearCounter, String reason) {
 		synchronized (listeners) {
-			Iterator i=listeners.iterator();
-			while (i.hasNext()) {
-				Listener l=(Listener)i.next();
+			for (Listener l : listeners) {
 				try {
 					l.onReceivedRejectOverload(nearest, best, counter, uniqueCounter, linearCounter, reason);
 				} catch (Throwable t) {
@@ -491,9 +486,7 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
 	
 	private void fireCompletion() {
 		synchronized (listeners) {
-			Iterator i=listeners.iterator();
-			while (i.hasNext()) {
-				Listener l=(Listener)i.next();
+			for (Listener l : listeners) {
 				try {
 					l.onCompletion(nearestLoc, best, counter, uniqueCounter, linearCounter);
 				} catch (Throwable t) {
@@ -505,9 +498,7 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
     
     private void fireRNF() {
 		synchronized (listeners) {
-			Iterator i=listeners.iterator();
-			while (i.hasNext()) {
-				Listener l=(Listener)i.next();
+			for (Listener l : listeners) {
 				try {
 					l.onRNF(htl, nearestLoc, best, counter, uniqueCounter, linearCounter);
 				} catch (Throwable t) {
@@ -519,9 +510,7 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
 
     private void fireTimeout(String reason) {
 		synchronized (listeners) {
-			Iterator i=listeners.iterator();
-			while (i.hasNext()) {
-				Listener l=(Listener)i.next();
+			for (Listener l : listeners) {
 				try {
 					l.onTimeout(nearestLoc, best, counter, uniqueCounter, linearCounter, reason);
 				} catch (Throwable t) {
@@ -533,9 +522,9 @@ public class ResettingHTLProbeRequestSender implements PrioRunnable, ByteCounter
     
 	private void updateBest() {
 		PeerNode[] nodes = node.peers.myPeers;
-		for(int i=0;i<nodes.length;i++) {
-			if(!nodes[i].isConnected()) continue;
-			double loc = nodes[i].getLocation();
+		for(PeerNode node : nodes) {
+			if(!node.isConnected()) continue;
+			double loc = node.getLocation();
 			if(loc < target)
 				continue;
 			if(loc > target && loc < best)

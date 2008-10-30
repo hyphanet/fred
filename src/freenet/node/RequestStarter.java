@@ -73,7 +73,7 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 		this.averageInputBytesPerRequest = averageInputBytesPerRequest;
 		this.isInsert = isInsert;
 		this.isSSK = isSSK;
-		if(!isInsert) keysFetching = new HashSet();
+		if(!isInsert) keysFetching = new HashSet<Key>();
 	}
 
 	void setScheduler(RequestScheduler sched) {
@@ -181,7 +181,7 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 	 * we'd move this to node but only track keys we are fetching at max HTL.
 	 * LOCKING: Always lock this LAST.
 	 */
-	private HashSet keysFetching;
+	private HashSet<Key> keysFetching;
 	
 	private boolean startRequest(SendableRequest req, boolean logMINOR) {
 		// Create a thread to handle starting the request, and the resulting feedback

@@ -5,7 +5,6 @@ package freenet.node;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
 
 import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
@@ -78,7 +77,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     /** If true, only try to fetch the key from nodes which have offered it */
     private boolean tryOffersOnly;
     
-	private ArrayList listeners=new ArrayList();
+	private ArrayList<Listener> listeners=new ArrayList<Listener>();
     
     // Terminal status
     // Always set finished AFTER setting the reason flag
@@ -446,7 +445,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         
 		int routeAttempts=0;
 		int rejectOverloads=0;
-        HashSet nodesRoutedTo = new HashSet();
+        HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
         PeerNode next = null;
         while(true) {
             /*
@@ -1317,9 +1316,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		synchronized (listeners) {
 			if(sentReceivedRejectOverload) return;
 			sentReceivedRejectOverload = true;
-			Iterator i=listeners.iterator();
-			while (i.hasNext()) {
-				Listener l=(Listener)i.next();
+			for (Listener l : listeners) {
 				try {
 					l.onReceivedRejectOverload();
 				} catch (Throwable t) {
@@ -1334,9 +1331,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	private void fireCHKTransferBegins() {
 		synchronized (listeners) {
 			sentCHKTransferBegins = true;
-			Iterator i=listeners.iterator();
-			while (i.hasNext()) {
-				Listener l=(Listener)i.next();
+			for (Listener l : listeners) {
 				try {
 					l.onCHKTransferBegins();
 				} catch (Throwable t) {
@@ -1351,9 +1346,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	private void fireRequestSenderFinished(int status) {
 		synchronized (listeners) {
 			sentRequestSenderFinished = true;
-			Iterator i=listeners.iterator();
-			while (i.hasNext()) {
-				Listener l=(Listener)i.next();
+			for (Listener l : listeners) {
 				try {
 					l.onRequestSenderFinished(status);
 				} catch (Throwable t) {
