@@ -240,6 +240,7 @@ public class RandomGrabArray {
 				if(persistent && blockNo != lastActiveBlock) {
 					if(lastActiveBlock != -1)
 						container.deactivate(blocks[lastActiveBlock], 1);
+					lastActiveBlock = blockNo;
 					container.activate(blocks[blockNo], 1);
 				}
 				ret = blocks[blockNo].reqs[i % BLOCK_SIZE];
