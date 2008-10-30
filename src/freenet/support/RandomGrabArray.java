@@ -304,7 +304,7 @@ public class RandomGrabArray {
 					if(persistent) {
 						container.store(this);
 						for(int x=newBlocks.length;x<blocks.length;x++)
-							container.delete(newBlocks[x]);
+							container.delete(blocks[x]);
 					}
 					blocks = newBlocks;
 				}
