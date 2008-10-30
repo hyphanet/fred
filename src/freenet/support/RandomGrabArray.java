@@ -408,7 +408,8 @@ public class RandomGrabArray {
 				}
 			}
 		}
-		it.setParentGrabArray(null, container);
+		if(it.getParentGrabArray() == this)
+			it.setParentGrabArray(null, container);
 		if(!matched) return;
 		if(persistent) {
 			container.store(this);
