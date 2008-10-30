@@ -8,13 +8,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Vector;
 
 import freenet.crypt.RandomSource;
 import freenet.crypt.SHA256;
@@ -93,7 +93,7 @@ public class LocationManager implements ByteCounter {
         sender = new SwapRequestSender();
         this.r = r;
         this.node = node;
-        recentlyForwardedIDs = new Hashtable();
+        recentlyForwardedIDs = new Hashtable<Long, RecentlyForwardedItem>();
         // FIXME persist to disk!
         averageSwapTime = new BootstrappingDecayingRunningAverage(SEND_SWAP_INTERVAL, 0, Integer.MAX_VALUE, 20, null);
         timeLocSet = System.currentTimeMillis();
@@ -709,7 +709,7 @@ public class LocationManager implements ByteCounter {
         
         // Otherwise, stay locked, and start the next one from the queue.
         
-        nextMessage = (Message) incomingMessageQueue.removeFirst();
+        nextMessage = incomingMessageQueue.removeFirst();
         lockedTime = System.currentTimeMillis();
         
     	}
@@ -814,7 +814,7 @@ public class LocationManager implements ByteCounter {
 
     static final double SWAP_ACCEPT_PROB = 0.25;
     
-    final Hashtable recentlyForwardedIDs;
+    final Hashtable<Long, RecentlyForwardedItem> recentlyForwardedIDs;
     
     static class RecentlyForwardedItem {
         final long incomingID; // unnecessary?
@@ -837,7 +837,7 @@ public class LocationManager implements ByteCounter {
     }
     
     /** Queue of swap requests to handle after this one. */
-    private final LinkedList incomingMessageQueue = new LinkedList();
+    private final LinkedList<Message> incomingMessageQueue = new LinkedList<Message>();
     
     static final int MAX_INCOMING_QUEUE_LENGTH = 10;
     
@@ -849,7 +849,7 @@ public class LocationManager implements ByteCounter {
     		Message first;
     		synchronized(this) {
     			if(incomingMessageQueue.isEmpty()) return;
-    			first = (Message) incomingMessageQueue.getFirst();
+    			first = incomingMessageQueue.getFirst();
     			if(first.age() < MAX_TIME_ON_INCOMING_QUEUE) return;
     			incomingMessageQueue.removeFirst();
     			if(logMINOR) Logger.minor(this, "Cancelling queued item: "+first+" - too long on queue, maybe circular waiting?");
@@ -883,7 +883,7 @@ public class LocationManager implements ByteCounter {
          * twice or more. However, if we get a request with either the incoming or the outgoing 
          * UID, we can safely kill it as it's clearly the result of a bug.
          */
-        RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(oldID);
+        RecentlyForwardedItem item = recentlyForwardedIDs.get(oldID);
         if(item != null) {
         	if(logMINOR) Logger.minor(this, "Rejecting - same ID as previous request");
             // Reject
@@ -1042,7 +1042,7 @@ public class LocationManager implements ByteCounter {
      */
     public boolean handleSwapReply(Message m, PeerNode source) {
         final long uid = m.getLong(DMT.UID);
-		RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(uid);
+		RecentlyForwardedItem item = recentlyForwardedIDs.get(uid);
         if(item == null) {
             Logger.error(this, "Unrecognized SwapReply: ID "+uid);
             return false;
@@ -1078,7 +1078,7 @@ public class LocationManager implements ByteCounter {
      */
     public boolean handleSwapRejected(Message m, PeerNode source) {
         final long uid = m.getLong(DMT.UID);
-		RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(uid);
+		RecentlyForwardedItem item = recentlyForwardedIDs.get(uid);
         if(item == null) return false;
         if(item.requestSender == null){
         	if(logMINOR) Logger.minor(this, "Got a FNPSwapRejected without any requestSender set! we can't and won't claim it! UID="+uid);
@@ -1112,7 +1112,7 @@ public class LocationManager implements ByteCounter {
      */
     public boolean handleSwapCommit(Message m, PeerNode source) {
         final long uid = m.getLong(DMT.UID);
-		RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(uid);
+		RecentlyForwardedItem item = recentlyForwardedIDs.get(uid);
         if(item == null) return false;
         if(item.routedTo == null) return false;
         if(source != item.requestSender) {
@@ -1140,7 +1140,7 @@ public class LocationManager implements ByteCounter {
     public boolean handleSwapComplete(Message m, PeerNode source) {
         final long uid = m.getLong(DMT.UID);
         if(logMINOR) Logger.minor(this, "handleSwapComplete("+uid+ ')');
-        RecentlyForwardedItem item = (RecentlyForwardedItem) recentlyForwardedIDs.get(uid);
+        RecentlyForwardedItem item = recentlyForwardedIDs.get(uid);
         if(item == null) {
         	if(logMINOR) Logger.minor(this, "Item not found: "+uid+": "+m);
             return false;
@@ -1231,7 +1231,7 @@ public class LocationManager implements ByteCounter {
             RecentlyForwardedItem[] items = new RecentlyForwardedItem[recentlyForwardedIDs.size()];
             if(items.length < 1)
             	return;
-            items = (RecentlyForwardedItem[]) recentlyForwardedIDs.values().toArray(items);
+            items = recentlyForwardedIDs.values().toArray(items);
             for(int i=0;i<items.length;i++) {
                 if(now - items[i].lastMessageTime > (TIMEOUT*2)) {
                     removeRecentlyForwardedItem(items[i]);
@@ -1244,15 +1244,12 @@ public class LocationManager implements ByteCounter {
      * We lost the connection to a node, or it was restarted.
      */
     public void lostOrRestartedNode(PeerNode pn) {
-        Vector v = new Vector();
+        List<RecentlyForwardedItem> v = new ArrayList<RecentlyForwardedItem>();
         synchronized(recentlyForwardedIDs) {
-        	Set entrySet = recentlyForwardedIDs.entrySet();
-			Iterator it = entrySet.iterator();
-			while (it.hasNext()) {
-				Map.Entry entry = (Map.Entry) it.next();
-				Long l = (Long) entry.getKey();
-
-				RecentlyForwardedItem item = (RecentlyForwardedItem) entry.getValue();
+        	Set<Map.Entry<Long, RecentlyForwardedItem>> entrySet = recentlyForwardedIDs.entrySet();
+			for (Map.Entry<Long, RecentlyForwardedItem> entry : entrySet) {
+				Long l = entry.getKey();
+				RecentlyForwardedItem item = entry.getValue();
 				
                 if(item == null) {
                 	Logger.error(this, "Key is "+l+" but no value on recentlyForwardedIDs - shouldn't be possible");
@@ -1265,15 +1262,13 @@ public class LocationManager implements ByteCounter {
             }
 			
 			// remove them
-			Iterator it2 = v.iterator();
-			while (it2.hasNext())
-				removeRecentlyForwardedItem((RecentlyForwardedItem) it2.next());
+			for (RecentlyForwardedItem item : v)
+				removeRecentlyForwardedItem(item);
         }
 		int dumped=v.size();
 		if (dumped!=0 && logMINOR)
 			Logger.minor(this, "lostOrRestartedNode dumping "+dumped+" swap requests for "+pn.getPeer());
-        for(int i=0;i<dumped;i++) {
-            RecentlyForwardedItem item = (RecentlyForwardedItem) v.get(i);
+        for(RecentlyForwardedItem item : v) {
             // Just reject it to avoid locking problems etc
             Message msg = DMT.createFNPSwapRejected(item.incomingID);
             if(logMINOR) Logger.minor(this, "Rejecting in lostOrRestartedNode: "+item.incomingID+ " from "+item.requestSender);
