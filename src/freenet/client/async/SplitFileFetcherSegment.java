@@ -478,11 +478,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
 			for(int i=0;i<dataBuckets.length;i++) {
 				boolean heal = false;
-				if(persistent)
-					container.activate(dataBuckets[i], 1);
 				Bucket data = dataBuckets[i].getData();
-				if(persistent)
-					container.activate(data, 1);
 				if(dataRetries[i] > 0)
 					heal = true;
 				if(heal) {
@@ -505,8 +501,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 					Logger.error(this, "Check block "+i+" is null on "+this);
 					continue;
 				}
-				if(persistent)
-					container.activate(data, 1);
 				try {
 					maybeAddToBinaryBlob(data, i, true, container, context);
 				} catch (FetchException e) {
