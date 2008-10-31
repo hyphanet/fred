@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
@@ -81,21 +83,36 @@ public class PersistentBlobTempBucketFactory {
 		return storageFile.getPath();
 	}
 	
+	static final int MAX_FREE = 2048;
+	
 	private final DBJob slotFinder = new DBJob() {
 		
 		public void run(ObjectContainer container, ClientContext context) {
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			synchronized(PersistentBlobTempBucketFactory.this) {
-				if(freeSlots.size() > 1024) return;
+				if(freeSlots.size() > MAX_FREE) return;
 			}
 			Query query = container.query();
-			query.constrain(PersistentBlobTempBucketTag.class).and(query.descend("factory").constrain(PersistentBlobTempBucketFactory.this).and(query.descend("bucket").constrain(null)));
+			query.constrain(PersistentBlobTempBucketTag.class);
+			query.descend("isFree").constrain(true);
 			ObjectSet<PersistentBlobTempBucketTag> tags = query.execute();
 			Long[] notCommitted;
 			int added = 0;
 			synchronized(PersistentBlobTempBucketFactory.this) {
 				while(tags.hasNext()) {
 					PersistentBlobTempBucketTag tag = tags.next();
+					if(!tag.isFree) {
+						Logger.error(this, "Tag is free! "+tag.index);
+						if(tag.bucket == null) {
+							Logger.error(this, "Tag flagged free yet has no bucket for index "+tag.index);
+							tag.isFree = true;
+						} else continue;
+					}
+					if(tag.bucket != null) {
+						Logger.error(this, "Query returned tag with valid bucket!");
+						continue;
+					}
+					if(tag.factory != PersistentBlobTempBucketFactory.this) continue;
 					if(notCommittedBlobs.containsKey(tag.index)) continue;
 					if(freeSlots.containsKey(tag.index)) continue;
 					if(tag.bucket != null) {
@@ -105,7 +122,7 @@ public class PersistentBlobTempBucketFactory {
 					if(logMINOR) Logger.minor(this, "Adding slot "+tag.index+" to freeSlots (has a free tag and no taken tag)");
 					freeSlots.put(tag.index, tag);
 					added++;
-					if(added > 1024) return;
+					if(added > MAX_FREE) return;
 				}
 			}
 			long size;
@@ -138,7 +155,7 @@ public class PersistentBlobTempBucketFactory {
 						added++;
 						if(logMINOR)
 							Logger.minor(this, "Adding slot "+ptr+" to freeSlots, searching for free slots from the end");
-						if(added > 1024) return;
+						if(added > MAX_FREE) return;
 						ptr--;
 					}
 				}
@@ -165,12 +182,22 @@ public class PersistentBlobTempBucketFactory {
 					break;
 				}
 			}
+			query.constrain(PersistentBlobTempBucketTag.class);
+			query.descend("index").constrain(blocks-1).greater().and(query.descend("factory").constrain(PersistentBlobTempBucketFactory.this));
+			HashSet<Long> taken = null;
+			ObjectSet<PersistentBlobTempBucketTag> results = query.execute();
+			while(results.hasNext()) {
+				PersistentBlobTempBucketTag tag = results.next();
+				if(!tag.isFree) {
+					Logger.error(this, "Block already exists beyond the end of the file, yet is occupied: block "+tag.index);
+				}
+				if(taken == null) taken = new HashSet<Long>();
+				taken.add(tag.index);
+			}
+			
 			for(int i=0;i<addBlocks;i++) {
 				ptr = blocks + i;
-				query = container.query();
-				query.constrain(PersistentBlobTempBucketTag.class);
-				query.descend("index").constrain(ptr).and(query.descend("factory").constrain(PersistentBlobTempBucketFactory.this));
-				if(query.execute().hasNext()) continue;
+				if(taken != null && taken.contains(ptr)) continue;
 				PersistentBlobTempBucketTag tag = new PersistentBlobTempBucketTag(PersistentBlobTempBucketFactory.this, ptr);
 				container.store(tag);
 				synchronized(PersistentBlobTempBucketFactory.this) {
@@ -241,6 +268,7 @@ public class PersistentBlobTempBucketFactory {
 			freeSlots.put(index, tag);
 		}
 		tag.bucket = null;
+		tag.isFree = true;
 		container.store(tag);
 		container.delete(bucket);
 		bucket.onRemove();
@@ -257,6 +285,7 @@ public class PersistentBlobTempBucketFactory {
 			throw new IllegalStateException("Slot "+index+" already occupied!");
 		}
 		tag.bucket = bucket;
+		tag.isFree = false;
 		container.store(tag);
 		synchronized(this) {
 			notCommittedBlobs.remove(index);
