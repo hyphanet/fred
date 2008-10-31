@@ -16,7 +16,7 @@ public class SegmentedBucketChainBucketKillJob implements DBJob {
 	public void run(ObjectContainer container, ClientContext context) {
 		container.activate(bcb, 1);
 		System.err.println("Freeing unfinished unstored bucket "+this);
-		bcb.removeFrom(container);
+		bcb.removeContents(container);
 	}
 
 }

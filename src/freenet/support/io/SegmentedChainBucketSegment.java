@@ -68,5 +68,14 @@ public class SegmentedChainBucketSegment {
 		container.delete(buckets);
 		container.delete(this);
 	}
+	
+	public void removeFrom(ObjectContainer container) {
+		for(Bucket bucket : buckets) {
+			container.activate(bucket, 1);
+			bucket.removeFrom(container);
+		}
+		container.delete(buckets);
+		container.delete(this);
+	}
 
 }

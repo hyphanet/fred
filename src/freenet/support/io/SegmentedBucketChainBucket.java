@@ -362,4 +362,12 @@ public class SegmentedBucketChainBucket implements Bucket {
 		segments.clear();
 	}
 
+	synchronized void removeContents(ObjectContainer container) {
+		for(SegmentedChainBucketSegment seg : segments) {
+			seg.removeFrom(container);
+		}
+		container.delete(segments);
+		container.delete(this);
+	}
+	
 }
