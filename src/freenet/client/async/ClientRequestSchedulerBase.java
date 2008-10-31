@@ -204,6 +204,7 @@ abstract class ClientRequestSchedulerBase {
 	}
 
 	public synchronized void addPendingKeys(KeyListener listener) {
+		if(listener == null) throw new NullPointerException();
 		keyListeners.add(listener);
 		Logger.normal(this, "Added pending keys to "+this+" : size now "+keyListeners.size()+" : "+listener);
 	}
@@ -219,6 +220,11 @@ abstract class ClientRequestSchedulerBase {
 		boolean found = false;
 		for(Iterator<KeyListener> i = keyListeners.iterator();i.hasNext();) {
 			KeyListener listener = i.next();
+			if(listener == null) {
+				i.remove();
+				Logger.error(this, "Null KeyListener in removePendingKeys()");
+				continue;
+			}
 			if(listener.getHasKeyListener() == hasListener) {
 				found = true;
 				i.remove();
