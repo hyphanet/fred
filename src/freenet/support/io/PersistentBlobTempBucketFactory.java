@@ -182,6 +182,7 @@ public class PersistentBlobTempBucketFactory {
 					break;
 				}
 			}
+			query = container.query();
 			query.constrain(PersistentBlobTempBucketTag.class);
 			query.descend("index").constrain(blocks-1).greater().and(query.descend("factory").constrain(PersistentBlobTempBucketFactory.this));
 			HashSet<Long> taken = null;
