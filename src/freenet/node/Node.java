@@ -835,7 +835,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		dbConfig.objectClass(freenet.node.fcp.FCPClient.class).objectField("name").indexed(true);
 		dbConfig.objectClass(freenet.client.async.DatastoreCheckerItem.class).objectField("prio").indexed(true);
 		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("index").indexed(true);
-		
+		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("bucket").indexed(true);
+		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("factory").indexed(true);
+		dbConfig.objectClass(freenet.support.io.PersistentBlobTempBucketTag.class).objectField("isFree").indexed(true);
 		/*
 		 * HashMap: don't enable cascade on update/delete/activate, db4o handles this
 		 * internally through the TMap translator.
