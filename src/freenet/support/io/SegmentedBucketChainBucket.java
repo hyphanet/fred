@@ -274,7 +274,7 @@ public class SegmentedBucketChainBucket implements Bucket {
 					dbJobRunner.queueRestartJob(killMe, NativeThread.HIGH_PRIORITY, container);
 				}
 				
-			}, NativeThread.NORM_PRIORITY);
+			}, NativeThread.HIGH_PRIORITY-1);
 		}
 		synchronized(this) {
 			SegmentedChainBucketSegment seg = new SegmentedChainBucketSegment(this);
