@@ -237,8 +237,6 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 				}
 				checkFS.removeSubset(index);
 			}
-			if(persistent)
-				container.activate(splitfileAlgorithm, 10);
 			
 			if(checkBlocks.length > dataBlocks.length) {
 				// Work around 1135 bug.
