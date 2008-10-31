@@ -303,7 +303,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 			final KeyListener listener;
 			if(hasListener != null) {
 				listener = hasListener.makeKeyListener(container, clientContext);
-				schedTransient.addPendingKeys(listener);
+				if(listener != null)
+					schedTransient.addPendingKeys(listener);
+				else
+					Logger.normal(this, "No KeyListener for "+listener);
 			} else
 				listener = null;
 			if(getters != null && !noCheckStore) {
