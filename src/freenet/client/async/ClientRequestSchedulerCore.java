@@ -146,8 +146,18 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 //					}
 //					
 //				});
-				Query query = container.query();
-				query.constrain(RegisterMe.class);
+				ObjectSet results = null;
+				for(int i=RequestStarter.MAXIMUM_PRIORITY_CLASS;i<=RequestStarter.MINIMUM_PRIORITY_CLASS;i++) {
+					Query query = container.query();
+					query.constrain(RegisterMe.class);
+					query.descend("priority").constrain(i);
+					results = query.execute();
+					if(results.hasNext()) {
+						break;
+					} else results = null;
+				}
+				if(results == null)
+					return;
 				// This throws NotSupported.
 //				query.descend("core").constrain(this).identity().
 //					and(query.descend("key").descend("addedTime").constrain(new Long(initTime)).smaller());
@@ -175,7 +185,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 //				query.constrain(eval);
 //				query.descend("key").descend("priority").orderAscending();
 //				query.descend("key").descend("addedTime").orderAscending();
-				ObjectSet results = query.execute();
 				synchronized(ClientRequestSchedulerCore.this) {
 					registerMeSet = results;
 				}
@@ -607,7 +616,6 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					container.deactivate(reg, 1);
 					continue; // Don't delete.
 				}
-				container.activate(reg.key, 1);
 //				if(reg.key.addedTime > initTime) {
 //					if(logMINOR) Logger.minor(this, "Ignoring RegisterMe as created since startup");
 //					container.deactivate(reg.key, 1);
@@ -619,7 +627,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					Logger.minor(this, "RegisterMe: next() took "+(endNext-startNext));
 				
 				if(logMINOR)
-					Logger.minor(this, "Running RegisterMe "+reg+" for "+reg.nonGetRequest+" : "+reg.key.addedTime+" : "+reg.key.priority);
+					Logger.minor(this, "Running RegisterMe "+reg+" for "+reg.nonGetRequest+" : "+reg.addedTime+" : "+reg.priority);
 				// Don't need to activate, fields should exist? FIXME
 				if(reg.nonGetRequest != null) {
 					container.activate(reg.nonGetRequest, 1);
@@ -647,9 +655,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 					shouldReRunRegisterMeRunner = false;
 					registerMeSet = null;
 				}
-				if(rerun) {
-					preRegisterMeRunner.run(container, context);
-				}
+				// Always re-run the query. If there is nothing to register, it won't call back to us.
+				preRegisterMeRunner.run(container, context);
 			}
 		}
 		

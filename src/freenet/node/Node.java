@@ -827,6 +827,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("time").indexed(true);
 		dbConfig.objectClass(freenet.client.async.RegisterMe.class).objectField("core").indexed(true);
 		dbConfig.objectClass(freenet.client.async.RegisterMe.class).objectField("key").indexed(true);
+		dbConfig.objectClass(freenet.client.async.RegisterMe.class).objectField("priority").indexed(true);
 		dbConfig.objectClass(freenet.client.async.PersistentCooldownQueueItem.class).objectField("time").indexed(true);
 		dbConfig.objectClass(freenet.client.FECJob.class).objectField("priority").indexed(true);
 		dbConfig.objectClass(freenet.client.FECJob.class).objectField("addedTime").indexed(true);

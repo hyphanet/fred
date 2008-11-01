@@ -1,7 +1,5 @@
 package freenet.client.async;
 
-import com.db4o.ObjectContainer;
-
 import freenet.node.SendableRequest;
 
 /**
@@ -12,7 +10,8 @@ import freenet.node.SendableRequest;
 public class RegisterMe {
 	final SendableRequest nonGetRequest;
 	final ClientRequestSchedulerCore core;
-	final RegisterMeSortKey key;
+	final long addedTime;
+	final short priority;
 	/**
 	 * Only set if the key is on the queue.
 	 */
@@ -24,17 +23,14 @@ public class RegisterMe {
 		this.bootID = bootID;
 		this.core = core;
 		this.nonGetRequest = nonGetRequest;
-		this.key = new RegisterMeSortKey(prio);
+		priority = prio;
+		addedTime = System.currentTimeMillis();
 		this.blocks = blocks;
 		int hash = core.hashCode();
 		if(nonGetRequest != null)
 			hash ^= nonGetRequest.hashCode();
 		hash *= prio;
 		hashCode = hash;
-	}
-	
-	public void objectOnActivate(ObjectContainer container) {
-		container.activate(key, 1);
 	}
 	
 	public int hashCode() {
