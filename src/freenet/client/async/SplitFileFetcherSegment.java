@@ -380,10 +380,12 @@ public class SplitFileFetcherSegment implements FECCallback {
 				for(int i=0;i<dataBuckets.length;i++) {
 					// The FECCodec won't set them.
 					// But they should be active.
+					if(logMINOR)
+						Logger.minor(this, "Data block "+i+" is "+dataBuckets[i]);
 					if(!container.ext().isStored(dataBuckets[i]))
 						Logger.error(this, "Data block "+i+" is not stored!");
 					else if(!container.ext().isActive(dataBuckets[i]))
-						Logger.error(this, "Data block "+i+" is inactive!");
+						Logger.error(this, "Data block "+i+" is inactive! : "+dataBuckets[i]);
 					if(dataBuckets[i] == null)
 						Logger.error(this, "Data block "+i+" is null!");
 					else if(dataBuckets[i].data == null)
@@ -467,7 +469,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 	public void onEncodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets2, Bucket[] checkBuckets2, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus) {
 		if(persistent) {
-			container.activate(this, 1);
 			container.activate(parent, 1);
 		}
 		if(logMINOR)
@@ -478,7 +479,30 @@ public class SplitFileFetcherSegment implements FECCallback {
 			// Now insert *ALL* blocks on which we had at least one failure, and didn't eventually succeed
 			for(int i=0;i<dataBuckets.length;i++) {
 				boolean heal = false;
+				if(dataBuckets[i] == null) {
+					Logger.error(this, "Data bucket "+i+" is null in onEncodedSegment on "+this);
+					continue;
+				}
+				if(dataBuckets[i] != dataBlockStatus[i]) {
+					Logger.error(this, "Data block "+i+" : ours is "+dataBuckets[i]+" codec's is "+dataBlockStatus[i]);
+					if(persistent) {
+						if(container.ext().getID(dataBuckets[i]) == container.ext().getID(dataBlockStatus[i]))
+							Logger.error(this, "DB4O BUG DETECTED: SAME UID FOR TWO OBJECTS: "+dataBuckets[i]+"="+container.ext().getID(dataBuckets[i])+" and "+dataBlockStatus[i]+"="+container.ext().getID(dataBlockStatus[i])+" ... attempting workaround ...");
+						Logger.error(this, "Ours is "+(container.ext().isStored(dataBuckets[i])?"stored ":"")+(container.ext().isActive(dataBuckets[i])?"active ":"")+" UUID "+container.ext().getID(dataBuckets[i]));
+						Logger.error(this, "Theirs is "+(container.ext().isStored(dataBlockStatus[i])?"stored ":"")+(container.ext().isActive(dataBlockStatus[i])?"active ":"")+" UUID "+container.ext().getID(dataBlockStatus[i]));
+					}
+					dataBuckets[i] = (MinimalSplitfileBlock) dataBlockStatus[i];
+				}
 				Bucket data = dataBuckets[i].getData();
+				if(data == null) {
+					Logger.error(this, "Data bucket "+i+" has null contents in onEncodedSegment on "+this+" for block "+dataBuckets[i]);
+					if(!container.ext().isStored(dataBuckets[i]))
+						Logger.error(this, "Splitfile block appears not to be stored");
+					else if(!container.ext().isActive(dataBuckets[i]))
+						Logger.error(this, "Splitfile block appears not to be active");
+					continue;
+				}
+				
 				if(dataRetries[i] > 0)
 					heal = true;
 				if(heal) {
@@ -496,9 +520,27 @@ public class SplitFileFetcherSegment implements FECCallback {
 				boolean heal = false;
 				// Check buckets will already be active because the FEC codec
 				// has been using them.
+				if(checkBuckets[i] == null) {
+					Logger.error(this, "Check bucket "+i+" is null in onEncodedSegment on "+this);
+					continue;
+				}
+				if(checkBuckets[i] != checkBlockStatus[i]) {
+					Logger.error(this, "Check block "+i+" : ours is "+checkBuckets[i]+" codec's is "+checkBlockStatus[i]);
+					if(persistent) {
+						if(container.ext().getID(checkBuckets[i]) == container.ext().getID(checkBlockStatus[i]))
+							Logger.error(this, "DB4O BUG DETECTED: SAME UID FOR TWO OBJECTS: "+checkBuckets[i]+"="+container.ext().getID(checkBuckets[i])+" and "+checkBlockStatus[i]+"="+container.ext().getID(checkBlockStatus[i])+" ... attempting workaround ...");
+						Logger.error(this, "Ours is "+(container.ext().isStored(checkBuckets[i])?"stored ":"")+(container.ext().isActive(checkBuckets[i])?"active ":"")+" UUID "+container.ext().getID(checkBuckets[i]));
+						Logger.error(this, "Theirs is "+(container.ext().isStored(checkBlockStatus[i])?"stored ":"")+(container.ext().isActive(checkBlockStatus[i])?"active ":"")+" UUID "+container.ext().getID(checkBlockStatus[i]));
+					}
+					checkBuckets[i] = (MinimalSplitfileBlock) checkBlockStatus[i];
+				}
 				Bucket data = checkBuckets[i].getData();
 				if(data == null) {
-					Logger.error(this, "Check block "+i+" is null on "+this);
+					Logger.error(this, "Check bucket "+i+" has null contents in onEncodedSegment on "+this+" for block "+checkBuckets[i]);
+					if(!container.ext().isStored(dataBuckets[i]))
+						Logger.error(this, "Splitfile block appears not to be stored");
+					else if(!container.ext().isActive(dataBuckets[i]))
+						Logger.error(this, "Splitfile block appears not to be active");
 					continue;
 				}
 				try {
