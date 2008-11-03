@@ -125,7 +125,7 @@ public class InsertCompressor {
 				
 				Compressor comp = Compressor.getCompressionAlgorithmByDifficulty(i);
 				Bucket result;
-				result = comp.compress(origData, new BucketChainBucketFactory(bucketFactory, NodeCHK.BLOCK_SIZE, persistent ? context.jobRunner : null, HighLevelSimpleClientImpl.SPLITFILE_BLOCKS_PER_SEGMENT), origData.size());
+				result = comp.compress(origData, new BucketChainBucketFactory(bucketFactory, NodeCHK.BLOCK_SIZE, persistent ? context.jobRunner : null, 1024), origData.size());
 				if(result.size() < minSize) {
 					bestCodec = comp;
 					if(bestCompressedData != null)
