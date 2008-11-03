@@ -10,6 +10,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 
@@ -258,23 +259,48 @@ public class SegmentedBucketChainBucket implements Bucket {
 
 	private transient DBJob killMe;
 	
+	private transient boolean runningSegStore;
+	
 	protected SegmentedChainBucketSegment makeSegment(int index, final SegmentedChainBucketSegment oldSeg) {
 		if(oldSeg != null) {
+			synchronized(this) {
+				while(runningSegStore) {
+					Logger.normal(this, "Waiting for last segment-store job to finish on "+this);
+					try {
+						wait();
+					} catch (InterruptedException e) {
+						// Ignore
+					}
+				}
+				runningSegStore = true;
+			}
+			try {
 			dbJobRunner.runBlocking(new DBJob() {
 				
 				public void run(ObjectContainer container, ClientContext context) {
-					oldSeg.storeTo(container);
-					container.ext().store(segments, 1);
-					container.ext().store(SegmentedBucketChainBucket.this, 1);
-					container.deactivate(oldSeg, 1);
-					synchronized(SegmentedBucketChainBucket.this) {
-						if(killMe != null) return;
-						killMe = new SegmentedBucketChainBucketKillJob(SegmentedBucketChainBucket.this);
+					try {
+						oldSeg.storeTo(container);
+						container.ext().store(segments, 1);
+						container.ext().store(SegmentedBucketChainBucket.this, 1);
+						container.deactivate(oldSeg, 1);
+						synchronized(SegmentedBucketChainBucket.this) {
+							if(killMe != null) return;
+							killMe = new SegmentedBucketChainBucketKillJob(SegmentedBucketChainBucket.this);
+						}
+						dbJobRunner.queueRestartJob(killMe, NativeThread.HIGH_PRIORITY, container);
+					} finally {
+						synchronized(SegmentedBucketChainBucket.this) {
+							runningSegStore = false;
+							SegmentedBucketChainBucket.this.notifyAll();
+						}
 					}
-					dbJobRunner.queueRestartJob(killMe, NativeThread.HIGH_PRIORITY, container);
 				}
 				
 			}, NativeThread.HIGH_PRIORITY-1);
+			} catch (Throwable t) {
+				Logger.error(this, "Caught throwable: "+t, t);
+				runningSegStore = false;
+			}
 		}
 		synchronized(this) {
 			SegmentedChainBucketSegment seg = new SegmentedChainBucketSegment(this);
