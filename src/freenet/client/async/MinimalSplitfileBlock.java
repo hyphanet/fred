@@ -37,6 +37,8 @@ public class MinimalSplitfileBlock implements SplitfileBlock {
 	}
 
 	public void storeTo(ObjectContainer container) {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Storing "+this+" with data: "+data);
 		if(data != null)
 			data.storeTo(container);
 		container.store(this);
