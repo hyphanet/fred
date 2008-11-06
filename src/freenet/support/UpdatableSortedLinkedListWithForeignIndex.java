@@ -1,6 +1,7 @@
 package freenet.support;
 
 import java.util.HashMap;
+import java.util.Iterator;
 
 /**
  * UpdatableSortedLinkedList plus a hashtable. Each item has
@@ -41,9 +42,17 @@ public class UpdatableSortedLinkedListWithForeignIndex extends UpdatableSortedLi
         map.remove(((IndexableUpdatableSortedLinkedListItem)item).indexValue());
         return super.remove(item);
     }
+    
+	public synchronized IndexableUpdatableSortedLinkedListItem get(Object key) {
+		return (IndexableUpdatableSortedLinkedListItem)map.get(key);
+	}
 
-    public synchronized boolean containsKey(Object o) {
-        return map.containsKey(o);
+    public synchronized boolean containsKey(Object key) {
+        return map.containsKey(key);
+    }
+    
+    public synchronized boolean contains(IndexableUpdatableSortedLinkedListItem item) {
+    	return containsKey(item.indexValue());
     }
 
     /**

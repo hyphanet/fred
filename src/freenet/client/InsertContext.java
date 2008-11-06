@@ -10,6 +10,7 @@ import freenet.client.events.SimpleEventProducer;
 import freenet.crypt.RandomSource;
 import freenet.support.Executor;
 import freenet.support.api.BucketFactory;
+import freenet.support.compress.RealCompressor;
 import freenet.support.io.NullPersistentFileTracker;
 import freenet.support.io.PersistentFileTracker;
 
@@ -34,6 +35,7 @@ public class InsertContext {
 	public final USKManager uskManager;
 	public final BackgroundBlockEncoder backgroundBlockEncoder;
 	public final Executor executor;
+	public final RealCompressor compressor;
 	
 	public InsertContext(BucketFactory bf, BucketFactory persistentBF, PersistentFileTracker tracker, RandomSource random,
 			int maxRetries, int rnfsToSuccess, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
@@ -54,10 +56,12 @@ public class InsertContext {
 		this.cacheLocalRequests = cacheLocalRequests;
 		this.backgroundBlockEncoder = blockEncoder;
 		this.executor = executor;
+		this.compressor = new RealCompressor(executor);
+		executor.execute(compressor, "Compression scheduler");
 	}
 
 	public InsertContext(InsertContext ctx, SimpleEventProducer producer, boolean forceNonPersistent) {
-		this.persistentFileTracker = forceNonPersistent ? new NullPersistentFileTracker() : ctx.persistentFileTracker;
+		this.persistentFileTracker = forceNonPersistent ? NullPersistentFileTracker.getInstance() : ctx.persistentFileTracker;
 		this.uskManager = ctx.uskManager;
 		this.bf = ctx.bf;
 		this.persistentBucketFactory = forceNonPersistent ? ctx.bf : ctx.persistentBucketFactory;
@@ -73,6 +77,7 @@ public class InsertContext {
 		this.cacheLocalRequests = ctx.cacheLocalRequests;
 		this.backgroundBlockEncoder = ctx.backgroundBlockEncoder;
 		this.executor = ctx.executor;
+		this.compressor = ctx.compressor;
 	}
 
 	public InsertContext(InsertContext ctx, SimpleEventProducer producer) {
@@ -92,6 +97,7 @@ public class InsertContext {
 		this.cacheLocalRequests = ctx.cacheLocalRequests;
 		this.backgroundBlockEncoder = ctx.backgroundBlockEncoder;
 		this.executor = ctx.executor;
+		this.compressor = ctx.compressor;
 	}
 
 }

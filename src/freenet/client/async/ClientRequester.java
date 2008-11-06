@@ -68,23 +68,36 @@ public abstract class ClientRequester {
 		notifyClients();
 	}
 
-	public synchronized void addBlock() {
-		if(blockSetFinalized)
-			if(Logger.globalGetThreshold() > Logger.MINOR)
-				Logger.error(this, "addBlock() but set finalized! on "+this);
+	public void addBlock() {
+		boolean wasFinalized;
+		synchronized (this) {
+			totalBlocks++;
+			wasFinalized = blockSetFinalized;
+		}
+
+		if (wasFinalized) {
+			if (Logger.globalGetThreshold() > Logger.MINOR)
+				Logger.error(this, "addBlock() but set finalized! on " + this);
 			else
-				Logger.error(this, "addBlock() but set finalized! on "+this, new Exception("error"));
-		totalBlocks++;
+				Logger.error(this, "addBlock() but set finalized! on " + this, new Exception("error"));
+		}
+		
 		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "addBlock(): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
 	}
 
-	public synchronized void addBlocks(int num) {
-		if(blockSetFinalized)
+	public void addBlocks(int num) {
+		boolean wasFinalized;
+		synchronized (this) {
+			totalBlocks += num;
+			wasFinalized = blockSetFinalized;
+		}
+
+		if (wasFinalized)
 			if(Logger.globalGetThreshold() > Logger.MINOR)
 				Logger.error(this, "addBlocks() but set finalized! on "+this);
 			else
 				Logger.error(this, "addBlocks() but set finalized! on "+this, new Exception("error"));
-		totalBlocks+=num;
+		
 		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "addBlocks("+num+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
 	}
 

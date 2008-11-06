@@ -53,13 +53,13 @@ public class KeyTracker {
 	 * and when they become urgent. We always add to the end,
 	 * and we always remove from the beginning, so should always
 	 * be consistent. */
-	private final List ackQueue;
+	private final List<QueuedAck> ackQueue;
 	/** Serial numbers of packets that we have forgotten. Usually
 	 * when we have forgotten a packet it just means that it has 
 	 * been shifted to another KeyTracker because this one was
 	 * deprecated; the messages will get through in the end.
 	 */
-	private final List forgottenQueue;
+	private final List<QueuedForgotten> forgottenQueue;
 	/** The highest incoming serial number we have ever seen
 	 * from the other side. Includes actual packets and resend
 	 * requests (provided they are within range). */
@@ -76,7 +76,7 @@ public class KeyTracker {
 	private final UpdatableSortedLinkedListWithForeignIndex ackRequestQueue;
 	/** Numbered packets that we need to send to the other side
 	 * because they asked for them. Just contains the numbers. */
-	private final HashSet packetsToResend;
+	private final HashSet<Integer> packetsToResend;
 	/** Ranges of packet numbers we have received from the other
 	 * side. */
 	private final ReceivedPacketNumbers packetNumbersReceived;
@@ -91,14 +91,14 @@ public class KeyTracker {
 		this.pn = pn;
 		this.sessionCipher = cipher;
 		this.sessionKey = sessionKey;
-		ackQueue = new LinkedList();
-		forgottenQueue = new LinkedList();
+		ackQueue = new LinkedList<QueuedAck>();
+		forgottenQueue = new LinkedList<QueuedForgotten>();
 		highestSeenIncomingSerialNumber = -1;
 		// give some leeway
 		sentPacketsContents = new LimitedRangeIntByteArrayMap(128);
 		resendRequestQueue = new UpdatableSortedLinkedListWithForeignIndex();
 		ackRequestQueue = new UpdatableSortedLinkedListWithForeignIndex();
-		packetsToResend = new HashSet();
+		packetsToResend = new HashSet<Integer>();
 		packetNumbersReceived = new ReceivedPacketNumbers(512);
 		isDeprecated = false;
 		nextPacketNumber = pn.node.random.nextInt(100 * 1000);
@@ -653,9 +653,7 @@ public class KeyTracker {
 	 */
 	private boolean queuedAck(int packetNumber) {
 		synchronized(ackQueue) {
-			Iterator it = ackQueue.iterator();
-			while(it.hasNext()) {
-				QueuedAck qa = (QueuedAck) it.next();
+			for ( QueuedAck qa :ackQueue ) {
 				if(qa.packetNumber == packetNumber)
 					return true;
 			}
@@ -779,9 +777,9 @@ public class KeyTracker {
 			int length = ackQueue.size();
 			acks = new int[length];
 			int i = 0;
-			Iterator it = ackQueue.iterator();
+			Iterator<QueuedAck> it = ackQueue.iterator();
 			while(it.hasNext()) {
-				QueuedAck ack = (QueuedAck) it.next();
+				QueuedAck ack = it.next();
 				acks[i++] = ack.packetNumber;
 				if(logMINOR)
 					Logger.minor(this, "Grabbing ack " + ack.packetNumber + " from " + this);
@@ -887,7 +885,7 @@ public class KeyTracker {
 		long earliestTime = Long.MAX_VALUE;
 		synchronized(ackQueue) {
 			if(!ackQueue.isEmpty()) {
-				QueuedAck qa = (QueuedAck) ackQueue.get(0);
+				QueuedAck qa = ackQueue.get(0);
 				earliestTime = qa.urgentTime;
 			}
 		}
@@ -936,7 +934,7 @@ public class KeyTracker {
 	}
 
 	/**
-	 * Clear the KeyTracker. Deprecate it, clear all resend, ack, request-ack etc queues.
+	 * Clear the KeyTracker. Depreciate it, clear all resend, ack, request-ack etc queues.
 	 * Return the messages we still had in flight. The caller will then either add them to
 	 * another KeyTracker, or call their callbacks to indicate failure.
 	 */
@@ -1018,7 +1016,7 @@ public class KeyTracker {
 	 * Not a very nice API, but it saves a load of allocations, and at
 	 * least it's documented!
 	 */
-	public int[] grabResendPackets(Vector rpiTemp, int[] numbers) {
+	public int[] grabResendPackets(Vector<ResendPacketItem> rpiTemp, int[] numbers) {
 		rpiTemp.clear();
 		long now = System.currentTimeMillis();
 		long fourRTTs = twoRTTs();
@@ -1027,8 +1025,8 @@ public class KeyTracker {
 			int len = packetsToResend.size();
 			if(numbers.length < len)
 				numbers = new int[len * 2];
-			for(Iterator it = packetsToResend.iterator(); it.hasNext();) {
-				int packetNo = ((Integer) it.next()).intValue();
+			for(Iterator<Integer> it = packetsToResend.iterator(); it.hasNext();) {
+				int packetNo = it.next();
 				long resentTime = sentPacketsContents.getReaddedTime(packetNo);
 				if(now - resentTime > fourRTTs) {
 					// Either never resent, or resent at least 4 RTTs ago

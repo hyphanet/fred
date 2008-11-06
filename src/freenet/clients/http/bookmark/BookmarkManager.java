@@ -10,6 +10,8 @@ import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
+
 import freenet.client.async.USKCallback;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
@@ -91,7 +93,7 @@ public class BookmarkManager {
 	private class USKUpdatedCallback implements USKCallback {
 
 		public void onFoundEdition(long edition, USK key) {
-			BookmarkItems items = MAIN_CATEGORY.getAllItems();
+			List<BookmarkItem> items = MAIN_CATEGORY.getAllItems();
 			for(int i = 0; i < items.size(); i++) {
 				if(!"USK".equals(items.get(i).getKeyType()))
 					continue;
@@ -247,7 +249,7 @@ public class BookmarkManager {
 	}
 
 	public FreenetURI[] getBookmarkURIs() {
-		BookmarkItems items = MAIN_CATEGORY.getAllItems();
+		List<BookmarkItem> items = MAIN_CATEGORY.getAllItems();
 		FreenetURI[] uris = new FreenetURI[items.size()];
 		for(int i = 0; i < items.size(); i++)
 			uris[i] = items.get(i).getURI();
@@ -350,7 +352,7 @@ public class BookmarkManager {
 
 	public static SimpleFieldSet toSimpleFieldSet(BookmarkCategory cat) {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
-		BookmarkCategories bc = cat.getSubCategories();
+		List<BookmarkCategory> bc = cat.getSubCategories();
 
 		for(int i = 0; i < bc.size(); i++) {
 			BookmarkCategory currentCat = bc.get(i);
@@ -359,7 +361,7 @@ public class BookmarkManager {
 		sfs.put(BookmarkCategory.NAME, bc.size());
 
 
-		BookmarkItems bi = cat.getItems();
+		List<BookmarkItem> bi = cat.getItems();
 		for(int i = 0; i < bi.size(); i++)
 			sfs.put(BookmarkItem.NAME + i, bi.get(i).getSimpleFieldSet());
 		sfs.put(BookmarkItem.NAME, bi.size());

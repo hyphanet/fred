@@ -59,7 +59,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	}
 	
 	@Override
-	protected Comparator comparator(String sortBy, boolean reversed) {
+	protected Comparator<PeerNodeStatus> comparator(String sortBy, boolean reversed) {
 		return new DarknetComparator(sortBy, reversed);
 	}
 		
@@ -167,10 +167,9 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("sendMessageTitle"), ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
-			HashMap peers = new HashMap();
-			for(int i = 0; i < peerNodes.length; i++) {
-				if (request.isPartSet("node_"+peerNodes[i].hashCode())) {
-					DarknetPeerNode pn = peerNodes[i];
+			HashMap<String, String> peers = new HashMap<String, String>();
+			for(DarknetPeerNode pn : peerNodes) {
+				if (request.isPartSet("node_"+pn.hashCode())) {
 					String peer_name = pn.getName();
 					String peer_hash = "" + pn.hashCode();
 					if(!peers.containsKey(peer_hash)) {
@@ -192,7 +191,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					}
 				}
 			}
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -205,7 +204,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].enablePeer();
 				}
 			}
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -218,7 +217,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].disablePeer();
 				}
 			}
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -231,7 +230,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].setBurstOnly(true);
 				}
 			}
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -244,7 +243,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].setBurstOnly(false);
 				}
 			}
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -257,7 +256,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].setIgnoreSourcePort(true);
 				}
 			}
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -270,7 +269,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].setIgnoreSourcePort(false);
 				}
 			}
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -281,7 +280,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].setRoutingStatus(true, true);
 				}
 			}
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -292,7 +291,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].setRoutingStatus(false, true);
 				}
 			}
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -305,7 +304,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].setListenOnly(true);
 				}
 			}
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -318,7 +317,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].setListenOnly(false);
 				}
 			}
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -331,7 +330,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].setAllowLocalAddresses(true);
 				}
 			}
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -344,7 +343,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].setAllowLocalAddresses(false);
 				}
 			}
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -378,7 +377,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					if(logMINOR) Logger.minor(this, "Part not set: node_"+peerNodes[i].hashCode());
 				}
 			}
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -392,7 +391,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					break;
 				}
 			}
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -406,7 +405,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					break;
 				}
 			}
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/friends/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;

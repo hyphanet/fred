@@ -84,11 +84,8 @@ public class LocalFileInsertToadlet extends Toadlet {
 
 		if (currentPath.exists() && currentPath.isDirectory() && currentPath.canRead()) {
 			File[] files = currentPath.listFiles();
-			Arrays.sort(files, new Comparator() {
-
-				public int compare(Object first, Object second) {
-					File firstFile = (File) first;
-					File secondFile = (File) second;
+			Arrays.sort(files, new Comparator<File>() {
+				public int compare(File firstFile, File secondFile) {
 					if (firstFile.isDirectory() && !secondFile.isDirectory()) {
 						return -1;
 					}

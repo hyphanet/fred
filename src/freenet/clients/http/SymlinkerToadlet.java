@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.Map;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.InvalidConfigValueException;
@@ -15,9 +15,13 @@ import freenet.support.Logger;
 import freenet.support.api.HTTPRequest;
 import freenet.support.api.StringArrCallback;
 
-public class SymlinkerToadlet extends Toadlet {
-	
-	private final HashMap linkMap = new HashMap();
+/**
+ * Symlinker Toadlet
+ * 
+ * Provide alias to other toadlet URLs by throwing {@link RedirectException}.
+ */
+public class SymlinkerToadlet extends Toadlet {	
+	private final HashMap<String, String> linkMap = new HashMap<String, String>();
 	private final Node node;
 	SubConfig tslconfig;
 	
@@ -46,8 +50,8 @@ public class SymlinkerToadlet extends Toadlet {
 		
 		String fns[] = tslconfig.getStringArr("symlinks");
 		if (fns != null) {
-			for (int i = 0 ; i < fns.length ; i++) {
-				String tuple[] = fns[i].split("#");
+			for (String fn : fns) {
+				String tuple[] = fn.split("#");
 				if (tuple.length == 2)
 					addLink(tuple[0], tuple[1], false);
 			}
@@ -90,11 +94,9 @@ public class SymlinkerToadlet extends Toadlet {
 	private String[] getConfigLoadString() {
 		String retarr[] = new String[linkMap.size()];
 		synchronized (linkMap) {
-			Iterator it = linkMap.keySet().iterator();
 			int i = 0;
-			while(it.hasNext()) {
-				String key = (String)it.next();
-				retarr[i++] = key + '#' + linkMap.get(key);
+			for (Map.Entry<String,String> entry : linkMap.entrySet()) {
+				retarr[i++] = entry.getKey() + '#' + entry.getValue();
 			}
 		}
 		return retarr;
@@ -112,12 +114,11 @@ public class SymlinkerToadlet extends Toadlet {
 		String foundkey = null;
 		String foundtarget = null;
 		synchronized (linkMap) {
-			Iterator it = linkMap.keySet().iterator();
-			while (it.hasNext()) {
-				String key = (String)it.next();
+			for (Map.Entry<String,String> entry : linkMap.entrySet()) {
+				String key = entry.getKey();
 				if (path.startsWith(key)) {
 					foundkey = key;
-					foundtarget = (String)linkMap.get(key);
+					foundtarget = entry.getValue();
 				}
 			}
 		}

@@ -3,8 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http.filter;
 
-import java.net.MalformedURLException;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLEncoder;
@@ -14,7 +14,6 @@ import freenet.clients.http.HTTPRequestImpl;
 import freenet.clients.http.StaticToadlet;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
-import freenet.node.StaticSwapRequestInterval;
 import freenet.support.HTMLEncoder;
 import freenet.support.Logger;
 import freenet.support.URIPreEncoder;

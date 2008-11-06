@@ -1,5 +1,6 @@
 package freenet.clients.http.bookmark;
 
+import java.util.List;
 import java.util.Vector;
 
 import freenet.node.FSParseException;
@@ -67,8 +68,8 @@ public class BookmarkCategory extends Bookmark {
         return bookmarks.size();
     }
 
-    public BookmarkItems getItems() {
-        BookmarkItems items = new BookmarkItems();
+    public List<BookmarkItem> getItems() {
+    	List<BookmarkItem>  items = new Vector<BookmarkItem>();
         for (int i = 0; i < size(); i++) {
             if (get(i) instanceof BookmarkItem) {
                 items.add((BookmarkItem) get(i));
@@ -78,18 +79,18 @@ public class BookmarkCategory extends Bookmark {
         return items;
     }
 
-    public BookmarkItems getAllItems() {
-        BookmarkItems items = getItems();
-        BookmarkCategories subCategories = getSubCategories();
+    public List<BookmarkItem> getAllItems() {
+    	List<BookmarkItem> items = getItems();
+        List<BookmarkCategory> subCategories = getSubCategories();
 
         for (int i = 0; i < subCategories.size(); i++) {
-            items.extend(subCategories.get(i).getAllItems());
+            items.addAll(subCategories.get(i).getAllItems());
         }
         return items;
     }
 
-    public BookmarkCategories getSubCategories() {
-        BookmarkCategories categories = new BookmarkCategories();
+    public List<BookmarkCategory> getSubCategories() {
+    	List<BookmarkCategory> categories = new Vector<BookmarkCategory>();
         for (int i = 0; i < size(); i++) {
             if (get(i) instanceof BookmarkCategory) {
                 categories.add((BookmarkCategory) get(i));
@@ -99,12 +100,12 @@ public class BookmarkCategory extends Bookmark {
         return categories;
     }
 
-    public BookmarkCategories getAllSubCategories() {
-        BookmarkCategories categories = getSubCategories();
-        BookmarkCategories subCategories = getSubCategories();
+    public List<BookmarkCategory> getAllSubCategories() {
+    	List<BookmarkCategory> categories = getSubCategories();
+    	List<BookmarkCategory> subCategories = getSubCategories();
 
         for (int i = 0; i < subCategories.size(); i++) {
-            categories.extend(subCategories.get(i).getAllSubCategories());
+            categories.addAll(subCategories.get(i).getAllSubCategories());
         }
 
         return categories;
@@ -118,8 +119,8 @@ public class BookmarkCategory extends Bookmark {
 
     private Vector<String> toStrings(String prefix) {
         Vector<String> strings = new Vector<String>();
-        BookmarkItems items = getItems();
-        BookmarkCategories subCategories = getSubCategories();
+        List<BookmarkItem> items = getItems();
+        List<BookmarkCategory> subCategories = getSubCategories();
         prefix += this.name + "/";
 
         for (int i = 0; i < items.size(); i++) {

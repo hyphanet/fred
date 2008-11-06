@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -25,13 +24,15 @@ public final class PageMaker {
 		BOXED("boxed", "Boxed", ""),
 		CLEAN("clean", "Clean", "Mr. Proper"),
 		GRAYANDBLUE("grayandblue", "Gray And Blue", ""),
-		SKY("sky", "Sky", "");
+		SKY("sky", "Sky", ""),
+                MINIMALBLUE("minimalblue", "Minimal Blue", "A minimalistic theme in blue");
 		
 		public static final String[] possibleValues = {
 			BOXED.code,
 			CLEAN.code,
 			GRAYANDBLUE.code,
-			SKY.code
+			SKY.code,
+                        MINIMALBLUE.code
 		};
 		
 		public final String code;  // the internal name
@@ -64,13 +65,13 @@ public final class PageMaker {
 	public static final int MODE_ADVANCED = 2;
 	private THEME theme;
 	private File override;
-	private final List navigationLinkTexts = new ArrayList();
-	private final List navigationLinkTextsNonFull = new ArrayList();
-	private final Map navigationLinkTitles = new HashMap();
-	private final Map navigationLinks = new HashMap();
-	private final Map contentNodes = new HashMap();
-	private final Map/*<HTMLNode, HTMLNode>*/ headNodes = new HashMap();
-	private final Map /* <String, LinkEnabledCallback> */ navigationLinkCallbacks = new HashMap();
+	private final List<String> navigationLinkTexts = new ArrayList<String>();
+	private final List<String> navigationLinkTextsNonFull = new ArrayList<String>();
+	private final Map<String, String> navigationLinkTitles = new HashMap<String, String>();
+	private final Map<String, String> navigationLinks = new HashMap<String, String>();
+	private final Map<HTMLNode, HTMLNode> contentNodes = new HashMap<HTMLNode, HTMLNode>();
+	private final Map<HTMLNode, HTMLNode> headNodes = new HashMap<HTMLNode, HTMLNode>();
+	private final Map<String, LinkEnabledCallback>  navigationLinkCallbacks = new HashMap<String, LinkEnabledCallback>();
 	
 	private final FredPluginL10n plugin; 
 	private final boolean pluginMode;
@@ -126,7 +127,7 @@ public final class PageMaker {
 	}
 	
 	public HTMLNode createBackLink(ToadletContext toadletContext, String name) {
-		String referer = (String) toadletContext.getHeaders().get("referer");
+		String referer = toadletContext.getHeaders().get("referer");
 		if (referer != null) {
 			return new HTMLNode("a", new String[] { "href", "title" }, new String[] { referer, name }, name);
 		}
@@ -160,12 +161,11 @@ public final class PageMaker {
 		if (renderNavigationLinks) {
 			HTMLNode navbarDiv = pageDiv.addChild("div", "id", "navbar");
 			HTMLNode navbarUl = navbarDiv.addChild("ul", "id", "navlist");
-			for (Iterator navigationLinkIterator = fullAccess ? navigationLinkTexts.iterator() : navigationLinkTextsNonFull.iterator(); navigationLinkIterator.hasNext();) {
-				String navigationLink = (String) navigationLinkIterator.next();
-				LinkEnabledCallback cb = (LinkEnabledCallback) navigationLinkCallbacks.get(navigationLink);
+			for (String navigationLink :  fullAccess ? navigationLinkTexts : navigationLinkTextsNonFull) {
+				LinkEnabledCallback cb = navigationLinkCallbacks.get(navigationLink);
 				if(cb != null && !cb.isEnabled()) continue;
-				String navigationTitle = (String) navigationLinkTitles.get(navigationLink);
-				String navigationPath = (String) navigationLinks.get(navigationLink);
+				String navigationTitle = navigationLinkTitles.get(navigationLink);
+				String navigationPath = navigationLinks.get(navigationLink);
 				HTMLNode listItem = navbarUl.addChild("li");
 				if (plugin != null)
 					listItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, plugin.getString(navigationTitle) }, plugin.getString(navigationLink));
@@ -190,7 +190,7 @@ public final class PageMaker {
 	 *         already been called
 	 */
 	public HTMLNode getHeadNode(HTMLNode pageNode) {
-		return (HTMLNode) headNodes.remove(pageNode);
+		return headNodes.remove(pageNode);
 	}
 
 	/**
@@ -207,7 +207,7 @@ public final class PageMaker {
 	 */
 	public HTMLNode getContentNode(HTMLNode node) {
 		headNodes.remove(node);
-		return (HTMLNode) contentNodes.remove(node);
+		return contentNodes.remove(node);
 	}
 	
 	public HTMLNode getInfobox(String header) {

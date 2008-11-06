@@ -110,7 +110,7 @@ public class ConfigToadlet extends Toadlet {
     public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
 			headers.put("Location", "/config/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -221,7 +221,7 @@ public class ConfigToadlet extends Toadlet {
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			} else {
-				MultiValueTable headers = new MultiValueTable();
+				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 				headers.put("Location", "/config/?mode="+MODE_SECURITY_LEVELS);
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;

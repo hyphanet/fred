@@ -3,12 +3,11 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import freenet.io.AddressTracker;
-import freenet.io.comm.SocketHandler;
-
+import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.HashMap;
 import java.util.LinkedList;
 
 import net.i2p.util.NativeBigInteger;
@@ -25,6 +24,7 @@ import freenet.crypt.PCFBMode;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.crypt.ciphers.Rijndael;
+import freenet.io.AddressTracker;
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.DMT;
 import freenet.io.comm.FreenetInetAddress;
@@ -32,24 +32,21 @@ import freenet.io.comm.IncomingPacketFilter;
 import freenet.io.comm.Message;
 import freenet.io.comm.MessageCore;
 import freenet.io.comm.NotConnectedException;
-import freenet.io.comm.PeerParseException;
-import freenet.io.comm.ReferenceSignatureVerificationException;
-import freenet.io.comm.Peer.LocalAddressException;
-import freenet.support.Fields;
 import freenet.io.comm.PacketSocketHandler;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
+import freenet.io.comm.PeerParseException;
+import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.io.comm.SocketHandler;
+import freenet.io.comm.Peer.LocalAddressException;
 import freenet.support.ByteArrayWrapper;
+import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
 import freenet.support.io.NativeThread;
-
-import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
-import java.util.HashMap;
 
 /**
  * @author amphibian
@@ -61,7 +58,6 @@ import java.util.HashMap;
  * changes in IncomingPacketFilter).
  */
 public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFilter {
-
 	private static boolean logMINOR;
 	private static boolean logDEBUG;
 	private final Node node;
@@ -75,7 +71,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * The messages are cached in hashmaps because the message retrieval from the cache 
 	 * can be performed in constant time( given the key)
 	 */
-	private final HashMap authenticatorCache;
+	private final HashMap<ByteArrayWrapper, byte[]> authenticatorCache;
 	/** The following is used in the HMAC calculation of JFK message3 and message4 */
 	private static final byte[] JFK_PREFIX_INITIATOR, JFK_PREFIX_RESPONDER;
 	static {
@@ -99,7 +95,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	* The FIFO itself
 	* Get a lock on dhContextFIFO before touching it!
 	*/
-	private final LinkedList dhContextFIFO = new LinkedList();
+	private final LinkedList<DiffieHellmanLightContext> dhContextFIFO = new LinkedList<DiffieHellmanLightContext>();
 	/* The element which is about to be prunned from the FIFO */
 	private DiffieHellmanLightContext dhContextToBePrunned = null;
 	private long jfkDHLastGenerationTimestamp = 0;
@@ -164,7 +160,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		this.sock = sock;
 		fnpTimingSource = new EntropySource();
 		myPacketDataSource = new EntropySource();
-		authenticatorCache = new HashMap();
+		authenticatorCache = new HashMap<ByteArrayWrapper, byte[]>();
 		
 		fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
 		fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
@@ -946,7 +942,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// sanity check
 		byte[] myNi;
 		synchronized (pn) {
-			myNi = (byte[]) pn.jfkNoncesSent.get(replyTo);
+			myNi = pn.jfkNoncesSent.get(replyTo);
 		}
 		// We don't except such a message;
 		if(myNi == null) {
@@ -2352,41 +2348,51 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		1 + // no forgotten packets
 		length; // the payload !
 
-		if(logMINOR) Logger.minor(this, "Pre-padding length: "+packetLength);
-		
-		// Padding
-		// This will do an adequate job of disguising the contents, and a poor (but not totally
-		// worthless) job of disguising the traffic. FIXME!!!!!
-		// Ideally we'd mimic the size profile - and the session bytes! - of a common protocol.
-
+		boolean paddThisPacket = crypto.config.paddDataPackets();
 		int paddedLen;
-		
-		if(packetLength < 64) {
-			// Up to 37 bytes of payload (after base overhead above of 27 bytes), padded size 96-128 bytes.
-			// Most small messages, and most ack only packets.
-			paddedLen = 64 + node.fastWeakRandom.nextInt(32);
+		if(paddThisPacket) {
+			if(logMINOR)
+				Logger.minor(this, "Pre-padding length: " + packetLength);
+
+			// Padding
+			// This will do an adequate job of disguising the contents, and a poor (but not totally
+			// worthless) job of disguising the traffic. FIXME!!!!!
+			// Ideally we'd mimic the size profile - and the session bytes! - of a common protocol.
+
+			if(packetLength < 64)
+				// Up to 37 bytes of payload (after base overhead above of 27 bytes), padded size 96-128 bytes.
+				// Most small messages, and most ack only packets.
+				paddedLen = 64 + node.fastWeakRandom.nextInt(32);
+			else {
+				// Up to 69 bytes of payload, final size 128-192 bytes (CHK request, CHK insert, opennet announcement, CHK offer, swap reply) 
+				// Up to 133 bytes of payload, final size 192-256 bytes (SSK request, get offered CHK, offer SSK[, SSKInsertRequestNew], get offered SSK)
+				// Up to 197 bytes of payload, final size 256-320 bytes (swap commit/complete[, SSKDataFoundNew, SSKInsertRequestAltNew])
+				// Up to 1093 bytes of payload, final size 1152-1216 bytes (bulk transmit, block transmit, time deltas, SSK pubkey[, SSKData, SSKDataInsert])
+				packetLength += 32;
+				paddedLen = ((packetLength + 63) / 64) * 64;
+				paddedLen += node.fastWeakRandom.nextInt(64);
+				// FIXME get rid of this, we shouldn't be sending packets anywhere near this size unless
+				// we've done PMTU...
+				if(packetLength <= 1280 && paddedLen > 1280)
+					paddedLen = 1280;
+				int maxPacketSize = sock.getMaxPacketSize();
+				if(packetLength <= maxPacketSize && paddedLen > maxPacketSize)
+					paddedLen = maxPacketSize;
+				packetLength -= 32;
+				paddedLen -= 32;
+			}
 		} else {
-			// Up to 69 bytes of payload, final size 128-192 bytes (CHK request, CHK insert, opennet announcement, CHK offer, swap reply) 
-			// Up to 133 bytes of payload, final size 192-256 bytes (SSK request, get offered CHK, offer SSK[, SSKInsertRequestNew], get offered SSK)
-			// Up to 197 bytes of payload, final size 256-320 bytes (swap commit/complete[, SSKDataFoundNew, SSKInsertRequestAltNew])
-			// Up to 1093 bytes of payload, final size 1152-1216 bytes (bulk transmit, block transmit, time deltas, SSK pubkey[, SSKData, SSKDataInsert])
-			packetLength += 32;
-			paddedLen = ((packetLength + 63) / 64) * 64;
-			paddedLen += node.fastWeakRandom.nextInt(64);
-			// FIXME get rid of this, we shouldn't be sending packets anywhere near this size unless
-			// we've done PMTU...
-			if(packetLength <= 1280 && paddedLen > 1280) paddedLen = 1280;
-			int maxPacketSize = sock.getMaxPacketSize();
-			if(packetLength <= maxPacketSize && paddedLen > maxPacketSize) paddedLen = maxPacketSize;
-			packetLength -= 32;
-			paddedLen -= 32;
+			if(logMINOR)
+				Logger.minor(this, "Don't padd the packet: we have been asked not to.");
+			paddedLen = packetLength;
 		}
 
 		byte[] padding = new byte[paddedLen - packetLength];
-		node.fastWeakRandom.nextBytes(padding);
-
-		packetLength = paddedLen;
-
+		if(paddThisPacket) {
+			node.fastWeakRandom.nextBytes(padding);
+			packetLength = paddedLen;
+		}
+		
 		if(logMINOR) Logger.minor(this, "Packet length: "+packetLength+" ("+length+")");
 
 		byte[] plaintext = new byte[packetLength];
@@ -2496,8 +2502,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(buf, offset, plaintext, ptr, length);
 		ptr += length;
 
-		System.arraycopy(padding, 0, plaintext, ptr, padding.length);
-		ptr += padding.length;
+		if(paddThisPacket) {
+			System.arraycopy(padding, 0, plaintext, ptr, padding.length);
+			ptr += padding.length;
+		}
 
 		if(ptr != plaintext.length) {
 			Logger.error(this, "Inconsistent length: "+plaintext.length+" buffer but "+(ptr)+" actual");
@@ -2671,12 +2679,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private void _fillJFKDHFIFO() {
 		synchronized (dhContextFIFO) {
 			if(dhContextFIFO.size() + 1 > DH_CONTEXT_BUFFER_SIZE) {
-				DiffieHellmanLightContext result = null, tmp;
+				DiffieHellmanLightContext result = null;
 				long oldestSeen = Long.MAX_VALUE;
 
-				Iterator it = dhContextFIFO.iterator();
-				while(it.hasNext()) {
-					tmp = (DiffieHellmanLightContext) it.next();
+				for (DiffieHellmanLightContext tmp: dhContextFIFO) {
 					if(tmp.lifetime < oldestSeen) {
 						oldestSeen = tmp.lifetime;
 						result = tmp;
@@ -2699,8 +2705,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		DiffieHellmanLightContext result = null;
 		
 		synchronized (dhContextFIFO) {
-			
-			result = (DiffieHellmanLightContext) dhContextFIFO.removeFirst();
+			result = dhContextFIFO.removeFirst();
 			
 			// Shall we replace one element of the queue ?
 			if((jfkDHLastGenerationTimestamp + DH_GENERATION_INTERVAL) < now) {
@@ -2724,11 +2729,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @return the corresponding DiffieHellmanLightContext with the right exponent
 	 */
 	private DiffieHellmanLightContext findContextByExponential(BigInteger exponential) {
-		DiffieHellmanLightContext result = null;
 		synchronized (dhContextFIFO) {
-			Iterator it = dhContextFIFO.iterator();
-			while(it.hasNext()) {
-				result = (DiffieHellmanLightContext) it.next();
+			for (DiffieHellmanLightContext result : dhContextFIFO) {
 				if(exponential.equals(result.myExponential)) {
 					return result;
 				}

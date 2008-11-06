@@ -4,7 +4,7 @@
 package freenet.node;
 
 import java.net.InetAddress;
-import java.util.Vector;
+import java.util.ArrayList;
 
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
@@ -91,13 +91,13 @@ public class SeedServerPeerNode extends PeerNode {
 
 	public InetAddress[] getInetAddresses() {
 		Peer[] peers = getHandshakeIPs();
-		Vector v = new Vector();
+		ArrayList<InetAddress> v = new ArrayList<InetAddress>();
 		for(int i=0;i<peers.length;i++) {
 			InetAddress ia = peers[i].getFreenetAddress().dropHostname().getAddress();
 			if(v.contains(ia)) continue;
 			v.add(ia);
 		}
-		return (InetAddress[]) v.toArray(new InetAddress[v.size()]);
+		return v.toArray(new InetAddress[v.size()]);
 	}
 	
 	@Override

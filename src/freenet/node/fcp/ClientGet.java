@@ -150,8 +150,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		fctx.maxTempLength = message.maxTempSize;
 
 		if(message.allowedMIMETypes != null) {
-			fctx.allowedMIMETypes = new HashSet();
-			for(int i=0;i<message.allowedMIMETypes.length;i++) fctx.allowedMIMETypes.add(message.allowedMIMETypes[i]);
+			fctx.allowedMIMETypes = new HashSet<String>();
+			for(String mime : message.allowedMIMETypes) 
+				fctx.allowedMIMETypes.add(mime);
 		}
 
 		this.returnType = message.returnType;
@@ -577,7 +578,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		fs.putSingle("Finished", Boolean.toString(finished));
 		fs.putSingle("Succeeded", Boolean.toString(succeeded));
 		if(fctx.allowedMIMETypes != null)
-			fs.putOverwrite("AllowedMIMETypes", (String[]) fctx.allowedMIMETypes.toArray(new String[fctx.allowedMIMETypes.size()]));
+			fs.putOverwrite("AllowedMIMETypes", (String[]) 
+					fctx.allowedMIMETypes.toArray(new String[fctx.allowedMIMETypes.size()]));
 		if(finished) {
 			if(succeeded) {
 				fs.putSingle("FoundDataLength", Long.toString(foundDataLength));

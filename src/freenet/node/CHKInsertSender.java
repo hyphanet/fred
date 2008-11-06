@@ -722,7 +722,7 @@ public final class CHKInsertSender implements PrioRunnable, AnyInsertSender, Byt
 			BackgroundTransfer[] transfers;
 			synchronized(backgroundTransfers) {
 				transfers = new BackgroundTransfer[backgroundTransfers.size()];
-				transfers = (BackgroundTransfer[]) backgroundTransfers.toArray(transfers);
+				transfers = backgroundTransfers.toArray(transfers);
 			}
 			
 			// Wait for the outgoing transfers to complete.

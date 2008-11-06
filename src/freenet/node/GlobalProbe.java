@@ -3,8 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import freenet.support.Logger;
 import java.util.Arrays;
+
+import freenet.support.Logger;
 
 public class GlobalProbe implements Runnable {
 
@@ -98,7 +99,7 @@ public class GlobalProbe implements Runnable {
 	}
 
 	private void output(double loc, int hops) {
-		double estimatedNodes = ((double) (ctr+1)) / loc;
+		double estimatedNodes = (ctr + 1.0) / loc;
 		Logger.error(this, "LOCATION "+ctr+": " + loc+" - estimated nodes: "+estimatedNodes+" ("+hops+" hops)");
 		System.err.println("LOCATION "+ctr+": " + loc+" - estimated nodes: "+estimatedNodes+" ("+hops+" hops)");
 	}

@@ -4,6 +4,7 @@
 package freenet.support.math;
 
 import java.io.DataOutputStream;
+
 import freenet.support.Logger;
 
 /**
@@ -46,7 +47,7 @@ public class SimpleRunningAverage implements RunningAverage {
         this.curLen = a.curLen;
         this.initValue = a.initValue;
         this.nextSlotPtr = a.nextSlotPtr;
-        this.refs = (double[]) a.refs.clone();
+        this.refs = a.refs.clone();
         this.total = a.total;
         this.totalReports = a.totalReports;
     }

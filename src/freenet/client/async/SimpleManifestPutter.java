@@ -7,10 +7,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipException;
 import java.util.zip.ZipOutputStream;
+
+import org.apache.tools.tar.TarEntry;
+import org.apache.tools.tar.TarOutputStream;
 
 import freenet.client.ClientMetadata;
 import freenet.client.DefaultMIMETypes;
@@ -19,6 +23,7 @@ import freenet.client.InsertContext;
 import freenet.client.InsertException;
 import freenet.client.Metadata;
 import freenet.client.MetadataUnresolvedException;
+import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.events.SplitfileProgressEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.FreenetURI;
@@ -38,7 +43,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			InsertBlock block = 
 				new InsertBlock(data, cm, FreenetURI.EMPTY_CHK_URI);
 			this.origSFI =
-				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null, false, false, null, earlyEncode);
+				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null, null, false, null, earlyEncode);
 			metadata = null;
 		}
 
@@ -46,17 +51,17 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			super(smp.getPriorityClass(), smp.chkScheduler, smp.sskScheduler, smp.client);
 			this.cm = cm;
 			this.data = null;
-			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, target, cm);
+			Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, target, cm);
 			metadata = m;
 			origSFI = null;
 		}
 		
-		protected PutHandler(final SimpleManifestPutter smp, String name, String targetInZip, ClientMetadata cm, Bucket data) {
+		protected PutHandler(final SimpleManifestPutter smp, String name, String targetInArchive, ClientMetadata cm, Bucket data) {
 			super(smp.getPriorityClass(), smp.chkScheduler, smp.sskScheduler, smp.client);
 			this.cm = cm;
 			this.data = data;
-			this.targetInZip = targetInZip;
-			Metadata m = new Metadata(Metadata.ZIP_INTERNAL_REDIRECT, targetInZip, cm);
+			this.targetInArchive = targetInArchive;
+			Metadata m = new Metadata(Metadata.ARCHIVE_INTERNAL_REDIRECT, null, null, targetInArchive, cm);
 			metadata = m;
 			origSFI = null;
 		}
@@ -64,7 +69,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		private SingleFileInserter origSFI;
 		private ClientMetadata cm;
 		private Metadata metadata;
-		private String targetInZip;
+		private String targetInArchive;
 		private final Bucket data;
 		
 		public void start() throws InsertException {
@@ -115,7 +120,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				// The file was too small to have its own metadata, we get this instead.
 				// So we make the key into metadata.
 				Metadata m =
-					new Metadata(Metadata.SIMPLE_REDIRECT, key.getURI(), cm);
+					new Metadata(Metadata.SIMPLE_REDIRECT, null, null, key.getURI(), cm);
 				onMetadata(m, null);
 			}
 		}
@@ -222,7 +227,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private final static String[] defaultDefaultNames =
 		new String[] { "index.html", "index.htm", "default.html", "default.htm" };
 	private int bytesOnZip;
-	private LinkedList elementsToPutInZip;
+	private LinkedList<PutHandler> elementsToPutInArchive;
 	private boolean fetchable;
 	private final boolean earlyEncode;
 	
@@ -244,7 +249,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		waitingForBlockSets = new HashSet();
 		metadataPuttersByMetadata = new HashMap();
 		metadataPuttersUnfetchable = new HashMap();
-		elementsToPutInZip = new LinkedList();
+		elementsToPutInArchive = new LinkedList();
 		makePutHandlers(manifestElements, putHandlersByName);
 		checkZips();
 	}
@@ -324,7 +329,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 						bytesOnZip += sz;
 						// Put it in the zip.
 						ph = new PutHandler(this, name, ZipPrefix+element.fullName, cm, data);
-						elementsToPutInZip.addLast(ph);
+						elementsToPutInArchive.addLast(ph);
 						numberOfFiles++;
 						totalSize += data.size();
 					} else {
@@ -415,52 +420,30 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		InsertBlock block;
 		boolean isMetadata = true;
 		boolean insertAsArchiveManifest = false;
-		if(!(elementsToPutInZip.isEmpty())) {
-			// There is a zip to insert.
+		ARCHIVE_TYPE archiveType = null;
+		if(!(elementsToPutInArchive.isEmpty())) {
+			// There is an archive to insert.
 			// We want to include the metadata.
 			// We have the metadata, fortunately enough, because everything has been resolve()d.
-			// So all we need to do is create the actual ZIP.
-			try {
+			// So all we need to do is create the actual archive.
+			try {				
+				Bucket outputBucket = ctx.bf.makeBucket(baseMetadata.dataLength());
+				// TODO: try both ? - maybe not worth it
+				archiveType = ARCHIVE_TYPE.getDefault();
+				String mimeType = (archiveType == ARCHIVE_TYPE.TAR ?
+					createTarBucket(bucket, outputBucket) :
+					createZipBucket(bucket, outputBucket));
 				
-				// FIXME support formats other than .zip.
-				// Only the *decoding* is generic at present.
+				if(logMINOR) Logger.minor(this, "We are using "+archiveType);
 				
-				Bucket zipBucket = ctx.bf.makeBucket(baseMetadata.dataLength());
-				OutputStream os = new BufferedOutputStream(zipBucket.getOutputStream());
-				ZipOutputStream zos = new ZipOutputStream(os);
-				ZipEntry ze;
-				
-				for(Iterator i=elementsToPutInZip.iterator();i.hasNext();) {
-					PutHandler ph = (PutHandler) i.next();
-					ze = new ZipEntry(ph.targetInZip);
-					ze.setTime(0);
-					zos.putNextEntry(ze);
-					BucketTools.copyTo(ph.data, zos, ph.data.size());
-				}
-				
-				// Add .metadata - after the rest.
-				ze = new ZipEntry(".metadata");
-				ze.setTime(0); // -1 = now, 0 = 1970.
-				zos.putNextEntry(ze);
-				BucketTools.copyTo(bucket, zos, bucket.size());
-				
-				zos.closeEntry();
-				// Both finish() and close() are necessary.
-				zos.finish();
-				zos.flush();
-				zos.close();
-				
-				// Now we have to insert the ZIP.
+				// Now we have to insert the Archive we have generated.
 				
 				// Can we just insert it, and not bother with a redirect to it?
 				// Thereby exploiting implicit manifest support, which will pick up on .metadata??
 				// We ought to be able to !!
-				block = new InsertBlock(zipBucket, new ClientMetadata("application/zip"), targetURI);
+				block = new InsertBlock(outputBucket, new ClientMetadata(mimeType), targetURI);
 				isMetadata = false;
 				insertAsArchiveManifest = true;
-			} catch (ZipException e) {
-				fail(new InsertException(InsertException.INTERNAL_ERROR, e, null));
-				return;
 			} catch (IOException e) {
 				fail(new InsertException(InsertException.BUCKET_ERROR, e, null));
 				return;
@@ -469,7 +452,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			block = new InsertBlock(bucket, null, targetURI);
 		try {
 			SingleFileInserter metadataInserter = 
-				new SingleFileInserter(this, this, block, isMetadata, ctx, false, getCHKOnly, false, baseMetadata, insertAsArchiveManifest, true, null, earlyEncode);
+				new SingleFileInserter(this, this, block, isMetadata, ctx, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode);
 			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+metadataInserter);
 			this.metadataPuttersByMetadata.put(baseMetadata, metadataInserter);
 			metadataPuttersUnfetchable.put(baseMetadata, metadataInserter);
@@ -477,6 +460,71 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		} catch (InsertException e) {
 			fail(e);
 		}
+	}
+
+	private String createTarBucket(Bucket inputBucket, Bucket outputBucket) throws IOException {
+		if(logMINOR) Logger.minor(this, "Create a TAR Bucket");
+		
+		OutputStream os = new BufferedOutputStream(outputBucket.getOutputStream());
+		TarOutputStream tarOS = new TarOutputStream(os);
+		TarEntry ze;
+
+		for(PutHandler ph : elementsToPutInArchive) {
+			ze = new TarEntry(ph.targetInArchive);
+			ze.setModTime(0);
+			long size = ph.data.size();
+			ze.setSize(size);
+			tarOS.putNextEntry(ze);
+			BucketTools.copyTo(ph.data, tarOS, size);
+			tarOS.closeEntry();
+		}
+
+		// Add .metadata - after the rest.
+		ze = new TarEntry(".metadata");
+		ze.setModTime(0); // -1 = now, 0 = 1970.
+		long size = inputBucket.size();
+		ze.setSize(size);
+		tarOS.putNextEntry(ze);
+		BucketTools.copyTo(inputBucket, tarOS, size);
+
+		tarOS.closeEntry();
+		// Both finish() and close() are necessary.
+		tarOS.finish();
+		tarOS.flush();
+		tarOS.close();
+		
+		return ARCHIVE_TYPE.TAR.mimeTypes[0];
+	}
+	
+	private String createZipBucket(Bucket inputBucket, Bucket outputBucket) throws IOException {
+		if(logMINOR) Logger.minor(this, "Create a ZIP Bucket");
+		
+		OutputStream os = new BufferedOutputStream(outputBucket.getOutputStream());
+		ZipOutputStream zos = new ZipOutputStream(os);
+		ZipEntry ze;
+
+		for(Iterator i = elementsToPutInArchive.iterator(); i.hasNext();) {
+			PutHandler ph = (PutHandler) i.next();
+			ze = new ZipEntry(ph.targetInArchive);
+			ze.setTime(0);
+			zos.putNextEntry(ze);
+			BucketTools.copyTo(ph.data, zos, ph.data.size());
+			zos.closeEntry();
+		}
+
+		// Add .metadata - after the rest.
+		ze = new ZipEntry(".metadata");
+		ze.setTime(0); // -1 = now, 0 = 1970.
+		zos.putNextEntry(ze);
+		BucketTools.copyTo(inputBucket, zos, inputBucket.size());
+
+		zos.closeEntry();
+		// Both finish() and close() are necessary.
+		zos.finish();
+		zos.flush();
+		zos.close();
+		
+		return ARCHIVE_TYPE.ZIP.mimeTypes[0];
 	}
 
 	private boolean resolve(MetadataUnresolvedException e) throws InsertException, IOException {
@@ -494,7 +542,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				
 				InsertBlock ib = new InsertBlock(b, null, FreenetURI.EMPTY_CHK_URI);
 				SingleFileInserter metadataInserter = 
-					new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, m, false, true, null, earlyEncode);
+					new SingleFileInserter(this, this, ib, true, ctx, false, getCHKOnly, false, m, null, true, null, earlyEncode);
 				if(logMINOR) Logger.minor(this, "Inserting subsidiary metadata: "+metadataInserter+" for "+m);
 				synchronized(this) {
 					this.metadataPuttersByMetadata.put(m, metadataInserter);
@@ -702,25 +750,25 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	 * Note that this can throw a ClassCastException if the vector passed in is
 	 * bogus (has files pretending to be directories).
 	 */
-	public static HashMap unflatten(Vector v) {
-		HashMap manifestElements = new HashMap();
-		for(int i=0;i<v.size();i++) {
-			ManifestElement oldElement = (ManifestElement)v.get(i);
+	public static <T> HashMap<String, Object> unflatten(List<ManifestElement> v) {
+		HashMap<String, Object> manifestElements = new HashMap<String, Object>();
+		for(ManifestElement oldElement : v) {
 			add(oldElement, oldElement.getName(), manifestElements);
 		}
 		return manifestElements;
 	}
 	
-	private static void add(ManifestElement e, String namePart, HashMap target) {
+	private static void add(ManifestElement e, String namePart, Map<String, Object> target) {
 		int idx = namePart.indexOf('/');
 		if(idx < 0) {
 			target.put(namePart, new ManifestElement(e, namePart));
 		} else {
 			String before = namePart.substring(0, idx);
 			String after = namePart.substring(idx+1);
-			HashMap hm = (HashMap) (target.get(before));
+			@SuppressWarnings("unchecked")
+			HashMap<String, Object> hm = (HashMap<String, Object>) target.get(before);
 			if(hm == null) {
-				hm = new HashMap();
+				hm = new HashMap<String, Object>();
 				target.put(before.intern(), hm);
 			}
 			add(e, after, hm);

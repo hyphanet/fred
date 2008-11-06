@@ -31,19 +31,6 @@ import freenet.support.api.HTTPRequest;
 public class StatisticsToadlet extends Toadlet {
 
 	static final NumberFormat thousendPoint = NumberFormat.getInstance();
-	
-	static class MyComparator implements Comparator<Object[]> {
-		public int compare(Object[] row0, Object[] row1) {
-			Integer stat0 = (Integer) row0[2];  // 2 = status
-			Integer stat1 = (Integer) row1[2];
-			int x = stat0.compareTo(stat1);
-			if(x != 0) return x;
-			String name0 = (String) row0[9];  // 9 = node name
-			String name1 = (String) row1[9];
-			return name0.toLowerCase().compareTo(name1.toLowerCase());
-		}
-
-	}
 
 	private static class STMessageCount {
 		public String messageName;

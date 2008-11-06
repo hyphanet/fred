@@ -1,20 +1,20 @@
 package freenet.clients.http;
 
+import static freenet.clients.http.QueueToadlet.MAX_KEY_LENGTH;
+
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
+import java.util.List;
 
+import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.bookmark.Bookmark;
-import freenet.clients.http.bookmark.BookmarkItem;
-import freenet.clients.http.bookmark.BookmarkItems;
 import freenet.clients.http.bookmark.BookmarkCategory;
-import freenet.clients.http.bookmark.BookmarkCategories;
+import freenet.clients.http.bookmark.BookmarkItem;
 import freenet.clients.http.bookmark.BookmarkManager;
-
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
-import freenet.client.HighLevelSimpleClient;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.URLDecoder;
@@ -22,12 +22,18 @@ import freenet.support.URLEncodedFormatException;
 import freenet.support.URLEncoder;
 import freenet.support.api.HTTPRequest;
 
+/**
+ * BookmarkEditor Toadlet 
+ * 
+ * Accessible from http://.../bookmarkEditor/
+ */
 public class BookmarkEditorToadlet extends Toadlet {
-
 	private static final int MAX_ACTION_LENGTH = 20;
-	private static final int MAX_KEY_LENGTH = QueueToadlet.MAX_KEY_LENGTH;
+	/** Max. bookmark name length */
 	private static final int MAX_NAME_LENGTH = 500;
+	/** Max. bookmark path length (e.g. <code>Freenet related software and documentation/Freenet Message System</code> ) */
 	private static final int MAX_BOOKMARK_PATH_LENGTH = 10 * MAX_NAME_LENGTH;
+	
 	private final NodeClientCore core;
 	private final BookmarkManager bookmarkManager;
 	private String cutedPath;
@@ -39,8 +45,11 @@ public class BookmarkEditorToadlet extends Toadlet {
 		this.cutedPath = null;
 	}
 
+	/**
+	 * Get all bookmark as a tree of &lt;li&gt;...&lt;/li&gt;s
+	 */
 	private void addCategoryToList(BookmarkCategory cat, String path, HTMLNode list) {
-		BookmarkItems items = cat.getItems();
+		List<BookmarkItem> items = cat.getItems();
 
 		final String edit = L10n.getString("BookmarkEditorToadlet.edit");
 		final String delete = L10n.getString("BookmarkEditorToadlet.delete");
@@ -52,9 +61,10 @@ public class BookmarkEditorToadlet extends Toadlet {
 		final String addCategory = L10n.getString("BookmarkEditorToadlet.addCategory");
 
 		for(int i = 0; i < items.size(); i++) {
-
-			String itemPath = URLEncoder.encode(path + items.get(i).getName(), false);
-			HTMLNode li = new HTMLNode("li", "class", "item", items.get(i).getName());
+			BookmarkItem item =  items.get(i);
+				
+			String itemPath = URLEncoder.encode(path + item.getName(), false);
+			HTMLNode li = new HTMLNode("li", "class", "item", item.getName());
 
 			HTMLNode actions = new HTMLNode("span", "class", "actions");
 			actions.addChild("a", "href", "?action=edit&bookmark=" + itemPath).addChild("img", new String[]{"src", "alt", "title"}, new String[]{"/static/icon/edit.png", edit, edit});
@@ -74,9 +84,8 @@ public class BookmarkEditorToadlet extends Toadlet {
 			list.addChild(li);
 		}
 
-		BookmarkCategories cats = cat.getSubCategories();
+		List<BookmarkCategory> cats = cat.getSubCategories();
 		for(int i = 0; i < cats.size(); i++) {
-
 			String catPath = path + cats.get(i).getName() + '/';
 			String catPathEncoded = URLEncoder.encode(catPath, false);
 

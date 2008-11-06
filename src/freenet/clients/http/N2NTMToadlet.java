@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
-import java.util.Iterator;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.l10n.L10n;
@@ -80,13 +79,13 @@ public class N2NTMToadlet extends Toadlet {
 						.generate());
 				return;
 			}
-			HashMap peers = new HashMap();
+			HashMap<String, String> peers = new HashMap<String, String>();
 			peers.put(input_hashcode_string, peernode_name);
 			createN2NTMSendForm(pageNode, contentNode, ctx, peers);
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		}
-		MultiValueTable headers = new MultiValueTable();
+		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 		headers.put("Location", "/friends/");
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
@@ -122,7 +121,7 @@ public class N2NTMToadlet extends Toadlet {
 			RedirectException {
 		String pass = request.getPartAsString("formPassword", 32);
 		if ((pass == null) || !pass.equals(core.formPassword)) {
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", "/send_n2ntm/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -229,13 +228,13 @@ public class N2NTMToadlet extends Toadlet {
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		}
-		MultiValueTable headers = new MultiValueTable();
+		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 		headers.put("Location", "/friends/");
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 
 	public static void createN2NTMSendForm(HTMLNode pageNode,
-			HTMLNode contentNode, ToadletContext ctx, HashMap peers)
+			HTMLNode contentNode, ToadletContext ctx, HashMap<String, String> peers)
 			throws ToadletContextClosedException, IOException {
 		HTMLNode infobox = contentNode.addChild("div", new String[] { "class",
 				"id" }, new String[] { "infobox", "n2nbox" });
@@ -245,8 +244,7 @@ public class N2NTMToadlet extends Toadlet {
 		messageTargets.addChild("p", l10n("composingMessageLabel"));
 		HTMLNode messageTargetList = messageTargets.addChild("ul");
 		// Iterate peers
-		for (Iterator it = peers.values().iterator(); it.hasNext();) {
-			String peer_name = (String) it.next();
+		for (String peer_name: peers.values()) {
 			messageTargetList.addChild("li", peer_name);
 		}
 		HTMLNode infoboxContent = infobox.addChild("div", "class",
@@ -254,8 +252,7 @@ public class N2NTMToadlet extends Toadlet {
 		HTMLNode messageForm = ctx.addFormChild(infoboxContent, "/send_n2ntm/",
 				"sendN2NTMForm");
 		// Iterate peers
-		for (Iterator it = peers.keySet().iterator(); it.hasNext();) {
-			String peerNodeHash = (String) it.next();
+		for (String peerNodeHash : peers.keySet()) {
 			messageForm.addChild("input", new String[] { "type", "name",
 					"value" }, new String[] { "hidden", "node_" + peerNodeHash,
 					"1" });
