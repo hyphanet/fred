@@ -41,8 +41,16 @@ public class FECJob {
 		this.queue = queue;
 		this.priority = priority;
 		this.addedTime = System.currentTimeMillis();
-		this.dataBlockStatus = dataBlockStatus;
-		this.checkBlockStatus = checkBlockStatus;
+		
+		this.dataBlockStatus = new SplitfileBlock[dataBlockStatus.length];
+		this.checkBlockStatus = new SplitfileBlock[checkBlockStatus.length];
+		for(int i=0;i<dataBlockStatus.length;i++)
+			this.dataBlockStatus[i] = dataBlockStatus[i];
+		for(int i=0;i<checkBlockStatus.length;i++)
+			this.checkBlockStatus[i] = checkBlockStatus[i];
+		
+//		this.dataBlockStatus = dataBlockStatus;
+//		this.checkBlockStatus = checkBlockStatus;
 		
 		this.dataBlocks = new Bucket[dataBlockStatus.length];
 		this.checkBlocks = new Bucket[checkBlockStatus.length];
@@ -81,11 +89,20 @@ public class FECJob {
 	}
 
 	public void activateForExecution(ObjectContainer container) {
-		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Activating FECJob...");
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Activating FECJob...");
+		if(dataBlockStatus != null && logMINOR) {
+			for(int i=0;i<dataBlockStatus.length;i++)
+				Logger.minor(this, "Block "+i+": "+dataBlockStatus[i]+" (before activation)");
+		}
 		container.activate(this, 2);
 		if(dataBlockStatus != null) {
 			for(int i=0;i<dataBlockStatus.length;i++)
 				container.activate(dataBlockStatus[i], 2);
+		}
+		if(dataBlockStatus != null && logMINOR) {
+			for(int i=0;i<dataBlockStatus.length;i++)
+				Logger.minor(this, "Block "+i+": "+dataBlockStatus[i]+" (after activation)");
 		}
 		if(checkBlockStatus != null) {
 			for(int i=0;i<checkBlockStatus.length;i++)
@@ -102,6 +119,7 @@ public class FECJob {
 	}
 
 	public void deactivate(ObjectContainer container) {
+		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Deactivating FECJob...");
 		if(dataBlockStatus != null) {
 			for(int i=0;i<dataBlockStatus.length;i++)
 				container.deactivate(dataBlockStatus[i], 2);
@@ -121,13 +139,21 @@ public class FECJob {
 	}
 
 	public void storeBlockStatuses(ObjectContainer container) {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Storing block statuses");
 		if(dataBlockStatus != null) {
-			for(SplitfileBlock block : dataBlockStatus)
+			for(int i=0;i<dataBlockStatus.length;i++) {
+				SplitfileBlock block = dataBlockStatus[i];
+				if(logMINOR) Logger.minor(this, "Storing data block "+i+": "+block);
 				block.storeTo(container);
+			}
 		}
 		if(checkBlockStatus != null) {
-			for(SplitfileBlock block : checkBlockStatus)
+			for(int i=0;i<checkBlockStatus.length;i++) {
+				SplitfileBlock block = checkBlockStatus[i];
+				if(logMINOR) Logger.minor(this, "Storing check block "+i+": "+block);
 				block.storeTo(container);
+			}
 		}
 	}
 }
