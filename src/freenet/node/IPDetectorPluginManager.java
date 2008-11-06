@@ -346,6 +346,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	public void registerDetectorPlugin(FredPluginIPDetector d) {
 		if(d == null) throw new NullPointerException();
 		synchronized(this) {
+			lastDetectAttemptEndedTime = -1;
 			FredPluginIPDetector[] newPlugins = new FredPluginIPDetector[plugins.length+1];
 			System.arraycopy(plugins, 0, newPlugins, 0, plugins.length);
 			newPlugins[plugins.length] = d;
