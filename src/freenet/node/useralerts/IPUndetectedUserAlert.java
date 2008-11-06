@@ -25,6 +25,8 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 
 	@Override
 	public String getText() {
+		if(node.ipDetector.noDetectPlugins())
+			return l10n("noDetectorPlugins");
 		if(node.ipDetector.isDetecting())
 			return l10n("detecting");
 		else
@@ -45,10 +47,15 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 
 	@Override
 	public HTMLNode getHTMLText() {
+		if(node.ipDetector.noDetectPlugins()) {
+			HTMLNode p = new HTMLNode("p");
+			L10n.addL10nSubstitution(p, "IPUndetectedUserAlert.loadDetectPlugins", new String[] { "plugins", "/plugins", "config", "/config" }, new String[] { "<a href=\"/plugins/\">", "</a>", "<a href=\"/config/\">", "</a>" });
+			return p;
+		}
+		HTMLNode textNode = new HTMLNode("div");
 		SubConfig sc = node.config.get("node");
 		Option<?> o = sc.getOption("tempIPAddressHint");
 		
-		HTMLNode textNode = new HTMLNode("div");
 		L10n.addL10nSubstitution(textNode, "IPUndetectedUserAlert."+(node.ipDetector.isDetecting() ? "detectingWithConfigLink" : "unknownAddressWithConfigLink"), 
 				new String[] { "link", "/link" }, 
 				new String[] { "<a href=\"/config/\">", "</a>" });
@@ -98,6 +105,8 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 
 	@Override
 	public String getShortText() {
+		if(node.ipDetector.noDetectPlugins())
+			return l10n("noDetectorPlugins");
 		if(node.ipDetector.isDetecting())
 			return l10n("detectingShort");
 		else

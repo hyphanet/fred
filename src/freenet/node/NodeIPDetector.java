@@ -69,6 +69,7 @@ public class NodeIPDetector {
 	/** Subsidiary detectors: NodeIPPortDetector's which rely on this object */
 	private NodeIPPortDetector[] portDetectors;
 	private boolean hasValidIP;
+	private boolean firstDetection = true;
 	
 	SimpleUserAlert maybeSymmetricAlert;
 	
@@ -112,20 +113,28 @@ public class NodeIPDetector {
 			addedValidIP |= innerDetect(addresses);
 		}
 		
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	   	if(node.clientCore != null) {
 	   		boolean hadValidIP;
 	   		synchronized(this) {
 	   			hadValidIP = hasValidIP;
 	   			hasValidIP = addedValidIP;
+	   			if(firstDetection) {
+	   				hadValidIP = !addedValidIP;
+	   				firstDetection = false;
+	   			}
 	   		}
 	   		if(hadValidIP != addedValidIP) {
 	   			if (addedValidIP) {
+	   				if(logMINOR) Logger.minor(this, "Got valid IP");
 	   				onAddedValidIP();
 	   			} else {
+	   				if(logMINOR) Logger.minor(this, "No valid IP");
 	   				onNotAddedValidIP();
 	   			}
 	   		}
-	   	}
+	   	} else if(logMINOR)
+	   		Logger.minor(this, "Client core not loaded");
 	   	synchronized(this) {
 	   		hasValidIP = addedValidIP;
 	   	}
@@ -565,5 +574,9 @@ public class NodeIPDetector {
 
 	public void addConnectionTypeBox(HTMLNode contentNode) {
 		ipDetectorManager.addConnectionTypeBox(contentNode);
+	}
+
+	public boolean noDetectPlugins() {
+		return !ipDetectorManager.hasDetectors();
 	}
 }
