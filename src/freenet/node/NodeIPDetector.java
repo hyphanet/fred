@@ -200,8 +200,9 @@ public class NodeIPDetector {
 		
 		if((!addedValidIP) && (oldIPAddress != null) && !oldIPAddress.equals(overrideIPAddress)) {
 			addresses.add(oldIPAddress);
-			if(oldIPAddress.isRealInternetAddress(false, true, false))
-				addedValidIP = true;
+			// Don't set addedValidIP.
+			// There is an excellent chance that this is out of date.
+			// So we still want to nag the user, until we have some confirmation.
 		}
 		
 		// Try to pick it up from our connections
