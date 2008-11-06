@@ -206,6 +206,7 @@ public class FECQueue implements OOMHook {
 									// It MUST already be activated, because it is carrying the status blocks.
 									// The status blocks have been set on the FEC thread but *not stored* because
 									// they can't be stored on the FEC thread.
+									Logger.minor(this, "Activating "+job.callback+" is active="+container.ext().isActive(job.callback));
 									container.activate(job.callback, 1);
 									if(Logger.shouldLog(Logger.MINOR, this))
 										Logger.minor(this, "Running callback for "+job);
