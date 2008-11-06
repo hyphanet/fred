@@ -54,7 +54,6 @@ public class RealCompressor implements PrioRunnable {
 				public void run() {
 					freenet.support.Logger.OSThread.logPID(this);
 					try {
-						while(true) {
 							try {
 								finalJob.tryCompress();
 							} catch(InsertException e) {
@@ -72,7 +71,6 @@ public class RealCompressor implements PrioRunnable {
 								finalJob.onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), null);
 							}
 
-						}
 					} catch(Throwable t) {
 						Logger.error(this, "Caught " + t + " in " + this, t);
 					} finally {
