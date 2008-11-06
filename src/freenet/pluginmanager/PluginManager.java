@@ -26,6 +26,7 @@ import java.util.zip.ZipException;
 
 import freenet.client.HighLevelSimpleClient;
 import freenet.clients.http.PageMaker.THEME;
+import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.keys.FreenetURI;
@@ -150,21 +151,32 @@ public class PluginManager {
 				}
 			});
 
-		String fns[] = pmconfig.getStringArr("loadplugin");
-		if(fns != null)
-			for(String name : fns)
-				startPluginAuto(name, false);
-
+		toStart = pmconfig.getStringArr("loadplugin");
+		
 		pmconfig.finishedInitialization();
 		
 		fproxyTheme = THEME.themeFromName(node.config.get("fproxy").getString("css"));
 		selfinstance = this;
+	}
+	
+	private boolean started;
+	private String[] toStart;
+	
+	public void start(Config config) {
+		if(toStart != null)
+			for(String name : toStart)
+				startPluginAuto(name, false);
+		synchronized(pluginWrappers) {
+			started = true;
+			toStart = null;
+		}
 	}
 
 	private String[] getConfigLoadString() {
 		Vector<String> v = new Vector<String>();
 		
 		synchronized(pluginWrappers) {
+			if(!started) return toStart;
 			for(PluginInfoWrapper pi : pluginWrappers) {
 				v.add(pi.getFilename());
 			}
@@ -233,9 +245,6 @@ public class PluginManager {
 		synchronized(startingPlugins) {
 			startingPlugins.add(pluginProgress);
 		}
-		node.executor.execute(new Runnable() {
-
-			public void run() {
 				Logger.normal(this, "Loading plugin: " + filename);
 				FredPlugin plug;
 				try {
@@ -273,8 +282,6 @@ public class PluginManager {
 					if(store)
 						core.storeConfig();
 				}
-			}
-		}, "Plugin Starter");
 	}
 
 	class PluginLoadFailedUserAlert extends SimpleUserAlert {
