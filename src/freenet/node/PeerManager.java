@@ -31,6 +31,7 @@ import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.keys.Key;
 import freenet.node.useralerts.PeerManagerUserAlert;
+import freenet.support.ByteArrayWrapper;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
@@ -1647,7 +1648,7 @@ public class PeerManager {
 		return (DarknetPeerNode[]) v.toArray(new DarknetPeerNode[v.size()]);
 	}
 
-	public Vector<SeedServerPeerNode> getConnectedSeedServerPeersVector(HashSet exclude) {
+	public Vector<SeedServerPeerNode> getConnectedSeedServerPeersVector(HashSet<ByteArrayWrapper> exclude) {
 		PeerNode[] peers;
 		synchronized(this) {
 			peers = myPeers;
@@ -1656,7 +1657,7 @@ public class PeerManager {
 		Vector<SeedServerPeerNode> v = new Vector<SeedServerPeerNode>(myPeers.length);
 		for(int i = 0; i < peers.length; i++) {
 			if(peers[i] instanceof SeedServerPeerNode) {
-				if(exclude != null && exclude.contains(peers[i].getIdentity())) {
+				if(exclude != null && exclude.contains(new ByteArrayWrapper(peers[i].getIdentity()))) {
 					if(logMINOR)
 						Logger.minor(this, "Not including in getConnectedSeedServerPeersVector() as in exclude set: " + peers[i].userToString());
 					continue;
