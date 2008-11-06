@@ -65,6 +65,8 @@ public class TempBucketFactory implements BucketFactory {
 		private Bucket currentBucket;
 		/** We have to account the size of the underlying bucket ourself in order to be able to access it fast */
 		private long currentSize;
+		/** Has an OutputStream been opened at some point? */
+		private boolean hasWritten;
 		/** A link to the "real" underlying outputStream, even if we migrated */
 		private OutputStream os = null;
 		/** All the open-streams to reset or close on migration or free() */
@@ -114,6 +116,12 @@ public class TempBucketFactory implements BucketFactory {
 					os = tempFB.getOutputStream();
 					if(currentSize > 0)
 						BucketTools.copyTo(toMigrate, os, currentSize);
+				} else {
+					if(currentSize > 0) {
+						OutputStream temp = tempFB.getOutputStream();
+						BucketTools.copyTo(toMigrate, temp, currentSize);
+						temp.close();
+					}
 				}
 				if(toMigrate.isReadOnly())
 					tempFB.setReadOnly();
@@ -209,13 +217,13 @@ public class TempBucketFactory implements BucketFactory {
 					_maybeMigrateRamBucket(currentSize);
 					os.flush();
 					os.close();
-					// DO NOT NULL os OUT HERE!
+					os = null;
 				}
 			}
 		}
 
 		public synchronized InputStream getInputStream() throws IOException {
-			if(os == null)
+			if(!hasWritten)
 				throw new IOException("No OutputStream has been openned! Why would you want an InputStream then?");
 			TempBucketInputStream is = new TempBucketInputStream(osIndex);
 			tbis.add(is);
