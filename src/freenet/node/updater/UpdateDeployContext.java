@@ -189,7 +189,9 @@ class UpdateDeployContext {
 		}
 		
 		// New config installed.
-
+		
+		System.err.println("Rewritten wrapper.conf for"+(writtenNewJar ? (" new main jar: "+newMainJar) : "")+(writtenNewExt ? (" new ext jar: "+newExtJar): ""));
+		
 	}
 
 }
