@@ -63,6 +63,7 @@ public class PluginManager {
 	/* All currently starting plugins. */
 	private final Set<PluginProgress> startingPlugins = new HashSet<PluginProgress>();
 	private final Vector<PluginInfoWrapper> pluginWrappers;
+	private final Vector<String> pluginsFailedLoad;
 	final Node node;
 	private final NodeClientCore core;
 	SubConfig pmconfig;
@@ -83,6 +84,7 @@ public class PluginManager {
 
 		toadletList = new HashMap<String, FredPlugin>();
 		pluginWrappers = new Vector<PluginInfoWrapper>();
+		pluginsFailedLoad = new Vector<String>();
 		this.node = node;
 		this.core = node.clientCore;
 
@@ -166,6 +168,9 @@ public class PluginManager {
 			for(PluginInfoWrapper pi : pluginWrappers) {
 				v.add(pi.getFilename());
 			}
+			for(String s : pluginsFailedLoad) {
+				v.add(s);
+			}
 		}
 		
 		return v.toArray(new String[v.size()]);
@@ -244,14 +249,20 @@ public class PluginManager {
 				} catch(PluginNotFoundException e) {
 					Logger.normal(this, "Loading plugin failed (" + filename + ')', e);
 					String message = e.getMessage();
-					core.alerts.register(new SimpleUserAlert(true, l10n("pluginLoadingFailedTitle"), l10n("pluginLoadingFailedWithMessage", new String[]{"name", "message"}, new String[]{filename, message}), l10n("pluginLoadingFailedShort", "name", filename), UserAlert.ERROR, PluginManager.class));
+					synchronized(pluginWrappers) {
+						pluginsFailedLoad.add(filename);
+					}
+					core.alerts.register(new PluginLoadFailedUserAlert(filename, true, l10n("pluginLoadingFailedTitle"), l10n("pluginLoadingFailedWithMessage", new String[]{"name", "message"}, new String[]{filename, message}), l10n("pluginLoadingFailedShort", "name", filename), UserAlert.ERROR, PluginManager.class));
 				} catch(UnsupportedClassVersionError e) {
 					Logger.error(this, "Could not load plugin " + filename + " : " + e, e);
 					System.err.println("Could not load plugin " + filename + " : " + e);
 					e.printStackTrace();
 					System.err.println("Plugin " + filename + " appears to require a later JVM");
 					Logger.error(this, "Plugin " + filename + " appears to require a later JVM");
-					core.alerts.register(new SimpleUserAlert(true, l10n("pluginReqNewerJVMTitle", "name", filename), l10n("pluginReqNewerJVM", "name", filename), l10n("pluginLoadingFailedShort", "name", filename), UserAlert.ERROR, PluginManager.class));
+					synchronized(pluginWrappers) {
+						pluginsFailedLoad.add(filename);
+					}
+					core.alerts.register(new PluginLoadFailedUserAlert(filename, true, l10n("pluginReqNewerJVMTitle", "name", filename), l10n("pluginReqNewerJVM", "name", filename), l10n("pluginLoadingFailedShort", "name", filename), UserAlert.ERROR, PluginManager.class));
 				} finally {
 					synchronized(startingPlugins) {
 						startingPlugins.remove(pluginProgress);
@@ -266,6 +277,28 @@ public class PluginManager {
 		}, "Plugin Starter");
 	}
 
+	class PluginLoadFailedUserAlert extends SimpleUserAlert {
+
+		final String filename;
+		
+		public PluginLoadFailedUserAlert(String filename, boolean canDismiss, String title, String text, String shortText, short type, Object userIdentifier) {
+			super(canDismiss, title, text, shortText, type, userIdentifier);
+			this.filename = filename;
+		}
+
+		public String dismissButtonText() {
+			return l10n("deleteFailedPluginButton");
+		}
+		
+		public void onDismiss() {
+			synchronized(pluginWrappers) {
+				pluginsFailedLoad.remove(filename);
+			}
+		}
+		
+		
+	}
+	
 	void register(FredPlugin plug, PluginInfoWrapper pi) {
 		// handles FProxy? If so, register
 
