@@ -507,6 +507,7 @@ public class NodeClientCore implements Persistable {
 				fcpServer.finishStart();
 				persistentTempBucketFactory.completedInit();
 				node.pluginManager.start(node.config);
+				node.ipDetector.ipDetectorManager.start();
 				// FIXME most of the work is done after this point on splitfile starter threads.
 				// So do we want to make a fuss?
 				// FIXME but a better solution is real request resuming.

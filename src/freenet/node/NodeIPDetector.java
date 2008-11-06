@@ -481,7 +481,6 @@ public class NodeIPDetector {
 		if(!haveValidAddressOverride) {
 			onNotGetValidAddressOverride();
 		}
-		ipDetectorManager.start();
 		node.executor.execute(ipDetector, "IP address re-detector");
 		redetectAddress();
 		// 60 second delay for inserting ARK to avoid reinserting more than necessary if we don't detect IP on startup.
@@ -515,6 +514,8 @@ public class NodeIPDetector {
 	}
 
 	void hasDetectedPM() {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "hasDetectedPM() called", new Exception("debug"));
 		synchronized(this) {
 			hasDetectedPM = true;
 		}

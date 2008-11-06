@@ -834,6 +834,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			} finally {
 				synchronized(IPDetectorPluginManager.this) {
 					runners.remove(plugin);
+					if(!runners.isEmpty()) return;
 				}
 				detector.hasDetectedPM();
 			}

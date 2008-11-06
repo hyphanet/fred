@@ -34,11 +34,12 @@ public class PluginHandler {
 					t.start();
 				}
 			};
+			pm.getTicker().queueTimedJob(job, 0);
 		} else {
-			job = ps;
+			// Avoid NPEs: let it init, then register it.
+			plug.runPlugin(pr);
+			pm.register(plug, pi);
 		}
-		// Run immediately after startup
-		pm.getTicker().queueTimedJob(job, 0);
 		return pi;
 	}
 	
@@ -59,13 +60,9 @@ public class PluginHandler {
 		}
 		
 		public void run() {
-			boolean threadless = plugin instanceof FredPluginThreadless;
 				try {
-					if(!threadless) // Have to do it now because threaded
-						pm.register(plugin, pi);
+					pm.register(plugin, pi);
 					plugin.runPlugin(pr);
-					if(threadless) // Don't want it to receive callbacks until after it has the PluginRespirator, else get NPEs
-						pm.register(plugin, pi);
 				} catch (OutOfMemoryError e) {
 					OOMHandler.handleOOM(e);
 				} catch (Throwable t) {
@@ -73,10 +70,8 @@ public class PluginHandler {
 					System.err.println("Caught Throwable while running plugin: "+t);
 					t.printStackTrace();
 				}
-				if(!threadless) {
-					pi.unregister(pm); // If not already unregistered
-					pm.removePlugin(pi);
-				}
+				pi.unregister(pm); // If not already unregistered
+				pm.removePlugin(pi);
 		}
 		
 	}
