@@ -3,10 +3,10 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
-import freenet.config.NodeNeedRestartException;
 import java.net.UnknownHostException;
 
 import freenet.config.InvalidConfigValueException;
+import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
 import freenet.node.SecurityLevels.FRIENDS_THREAT_LEVEL;
@@ -246,7 +246,8 @@ public class NodeCryptoConfig {
 
 			@Override
 			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
-				if(val == get()) return;
+				if (val.equals(get()))
+					        return;
 				paddDataPackets = val;
 			}
 		});
