@@ -44,7 +44,6 @@ public class LZMACompressor implements Compressor {
 				written += x;
 			}
 			lzmaOS.flush();
-			lzmaOS.close();
 			os = null;
 		} finally {
 			if(is != null) is.close();
