@@ -48,7 +48,8 @@ public class LZMACompressor implements Compressor {
 			os = null;
 		} finally {
 			if(is != null) is.close();
-			if(os != null) os.close();
+			if(lzmaOS != null) lzmaOS.close();
+			else if(os != null) os.close();
 		}
 		return output;
 	}
