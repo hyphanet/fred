@@ -10,11 +10,8 @@ import java.util.Random;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-
-import org.spaceroots.mantissa.random.MersenneTwister;
-
+import freenet.crypt.MockRandomSource;
 import freenet.crypt.RandomSource;
-import freenet.crypt.Yarrow;
 import freenet.support.Executor;
 import freenet.support.SerialExecutor;
 import freenet.support.api.Bucket;
@@ -23,8 +20,8 @@ import freenet.support.io.TempBucketFactory.TempBucket;
 public class TempBucketTest extends TestSuite {
 
 	public static class TempBucketMigrationTest extends TestCase {
-		private RandomSource strongPRNG = new Yarrow();
-		private Random weakPRNG = new MersenneTwister();
+		private RandomSource strongPRNG = new MockRandomSource();
+		private Random weakPRNG = new Random();
 		private Executor exec = new SerialExecutor(NativeThread.NORM_PRIORITY);
 		private FilenameGenerator fg;
 
@@ -107,8 +104,8 @@ public class TempBucketTest extends TestSuite {
 	}
 
 	public static class RealTempBucketTest_ extends BucketTestBase {
-		private RandomSource strongPRNG = new Yarrow();
-		private Random weakPRNG = new MersenneTwister();
+		private RandomSource strongPRNG = new MockRandomSource();
+		private Random weakPRNG = new Random();
 		private Executor exec = new SerialExecutor(NativeThread.NORM_PRIORITY);
 		private FilenameGenerator fg;
 

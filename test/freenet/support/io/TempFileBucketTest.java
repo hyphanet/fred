@@ -7,12 +7,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Random;
 
-import org.spaceroots.mantissa.random.MersenneTwister;
-
 import freenet.support.api.Bucket;
 
 public class TempFileBucketTest extends BucketTestBase {
-	private Random weakPRNG = new MersenneTwister();
+	private Random weakPRNG = new Random();
 
 	@Override
 	protected Bucket makeBucket(long size) throws IOException {

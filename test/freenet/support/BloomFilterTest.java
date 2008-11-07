@@ -8,8 +8,6 @@ import java.util.Set;
 
 import junit.framework.TestCase;
 
-import org.spaceroots.mantissa.random.MersenneTwister;
-
 public class BloomFilterTest extends TestCase {
 	private static final int FILTER_SIZE = 4 * 1024; // MUST be > PASS,
 	private static final int PASS = 2048;
@@ -17,7 +15,7 @@ public class BloomFilterTest extends TestCase {
 	private static final int PASS_POS = 256;
 	private static final int PASS_FALSE = 8192;
 
-	private final Random rand = new MersenneTwister();
+	private final Random rand = new Random();
 
 	private void _testFilterPositive(BloomFilter filter) {
 		byte[][] list = new byte[PASS_POS][];
