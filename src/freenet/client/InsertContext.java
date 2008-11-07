@@ -39,7 +39,7 @@ public class InsertContext {
 	
 	public InsertContext(BucketFactory bf, BucketFactory persistentBF, PersistentFileTracker tracker, RandomSource random,
 			int maxRetries, int rnfsToSuccess, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
-			ClientEventProducer eventProducer, boolean cacheLocalRequests, USKManager uskManager, BackgroundBlockEncoder blockEncoder, Executor executor) {
+			ClientEventProducer eventProducer, boolean cacheLocalRequests, USKManager uskManager, BackgroundBlockEncoder blockEncoder, Executor executor, RealCompressor compressor) {
 		this.bf = bf;
 		this.persistentFileTracker = tracker;
 		this.persistentBucketFactory = persistentBF;
@@ -56,8 +56,7 @@ public class InsertContext {
 		this.cacheLocalRequests = cacheLocalRequests;
 		this.backgroundBlockEncoder = blockEncoder;
 		this.executor = executor;
-		this.compressor = new RealCompressor(executor);
-		executor.execute(compressor, "Compression scheduler");
+		this.compressor = compressor;
 	}
 
 	public InsertContext(InsertContext ctx, SimpleEventProducer producer, boolean forceNonPersistent) {

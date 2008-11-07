@@ -57,6 +57,7 @@ import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.api.StringArrCallback;
 import freenet.support.api.StringCallback;
+import freenet.support.compress.RealCompressor;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NativeThread;
@@ -95,6 +96,7 @@ public class NodeClientCore implements Persistable {
 	FProxyToadlet fproxyServlet;
 	final SimpleToadletServer toadletContainer;
 	public final BackgroundBlockEncoder backgroundBlockEncoder;
+	public final RealCompressor compressor;
 	/** If true, requests are resumed lazily i.e. startup does not block waiting for them. */
 	private boolean lazyResume;
 	protected final Persister persister;
@@ -124,6 +126,7 @@ public class NodeClientCore implements Persistable {
 		}
 		byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
+		compressor = new RealCompressor(node.executor);
 		this.formPassword = Base64.encode(pwdBuf);
 		alerts = new UserAlertManager(this);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -371,7 +374,7 @@ public class NodeClientCore implements Persistable {
 		healingQueue = new SimpleHealingQueue(requestStarters.chkPutScheduler,
 			new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory,
 			random, 0, 2, 1, 0, 0, new SimpleEventProducer(),
-			!Node.DONT_CACHE_LOCAL_REQUESTS, uskManager, backgroundBlockEncoder, node.executor), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
+			!Node.DONT_CACHE_LOCAL_REQUESTS, uskManager, backgroundBlockEncoder, node.executor, compressor), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 
 		nodeConfig.register("lazyResume", false, sortOrder++, true, false, "NodeClientCore.lazyResume",
 			"NodeClientCore.lazyResumeLong", new BooleanCallback() {
@@ -497,7 +500,8 @@ public class NodeClientCore implements Persistable {
 			tmci.start();
 		for(int i = 0; i < clientSlowSerialExecutor.length; i++)
 			clientSlowSerialExecutor[i].start(node.executor, "Heavy client jobs runner (" + i + ")");
-
+		node.executor.execute(compressor, "Compression scheduler");
+		
 		node.executor.execute(new PrioRunnable() {
 
 			public void run() {
