@@ -48,7 +48,8 @@ public class Bzip2Compressor implements Compressor {
 			os = null;
 		} finally {
 			if(is != null) is.close();
-			if(os != null) os.close();
+			if(bz2os != null) bz2os.close();
+			else if(os != null) os.close();
 		}
 		return output;
 	}
