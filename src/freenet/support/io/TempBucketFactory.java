@@ -152,6 +152,7 @@ public class TempBucketFactory implements BucketFactory {
 		}
 
 		private class TempBucketOutputStream extends OutputStream {
+			boolean closed = false;
 			TempBucketOutputStream(short idx) throws IOException {
 				if(os == null)
 					os = currentBucket.getOutputStream();
@@ -208,7 +209,8 @@ public class TempBucketFactory implements BucketFactory {
 			public final void flush() throws IOException {
 				synchronized(TempBucket.this) {
 					_maybeMigrateRamBucket(currentSize);
-					os.flush();
+					if(!closed)
+						os.flush();
 				}
 			}
 			
@@ -219,6 +221,7 @@ public class TempBucketFactory implements BucketFactory {
 					os.flush();
 					os.close();
 					os = null;
+					closed = true;
 				}
 			}
 		}
