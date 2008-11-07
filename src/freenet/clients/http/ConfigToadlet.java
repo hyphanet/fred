@@ -380,16 +380,16 @@ public class ConfigToadlet extends Toadlet {
 			String configName = "wrapper.java.maxmemory";
 			String curValue = WrapperConfig.getWrapperProperty(configName);
 			if(curValue != null) {
-			formNode.addChild("div", "class", "configprefix", l10n("wrapper"));
-			HTMLNode list = formNode.addChild("ul", "class", "config");
-			HTMLNode item = list.addChild("li");
-			// FIXME how to get the real default???
-			String defaultValue = "128";
-			item.addChild("span", new String[]{ "class", "title", "style" },
-					new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { defaultValue }),
-					"cursor: help;" }).addChild(L10n.getHTMLNode("WrapperConfig."+configName+".short"));
-			item.addChild("span", "class", "config").addChild("input", new String[] { "type", "class", "name", "value" }, new String[] { "text", "config", configName, curValue });
-			item.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode("WrapperConfig."+configName+".long"));
+				formNode.addChild("div", "class", "configprefix", l10n("wrapper"));
+				HTMLNode list = formNode.addChild("ul", "class", "config");
+				HTMLNode item = list.addChild("li");
+				// FIXME how to get the real default???
+				String defaultValue = "128";
+				item.addChild("span", new String[]{ "class", "title", "style" },
+						new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { defaultValue }),
+						"cursor: help;" }).addChild(L10n.getHTMLNode("WrapperConfig."+configName+".short"));
+				item.addChild("span", "class", "config").addChild("input", new String[] { "type", "class", "name", "value" }, new String[] { "text", "config", configName, curValue });
+				item.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode("WrapperConfig."+configName+".long"));
 			}
 		}
 		
