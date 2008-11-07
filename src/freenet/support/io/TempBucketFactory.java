@@ -58,7 +58,7 @@ public class TempBucketFactory implements BucketFactory {
 	/** How old is a long-lived RAMBucket? */
 	private final int RAMBUCKET_MAX_AGE = 5*60*1000; // 5mins
 	/** How many times the maxRAMBucketSize can a RAMBucket be before it gets migrated? */
-	private final int RAMBUCKET_CONVERSION_FACTOR = 4;
+	final static int RAMBUCKET_CONVERSION_FACTOR = 4;
 	
 	public class TempBucket implements Bucket {
 		/** The underlying bucket itself */

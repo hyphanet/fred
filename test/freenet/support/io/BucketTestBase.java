@@ -24,6 +24,9 @@ public abstract class BucketTestBase extends TestCase {
 		Bucket bucket = makeBucket(3);
 		try {
 			assertEquals("Size-0", 0, bucket.size());
+			OutputStream os = bucket.getOutputStream();
+			os.close();
+			
 			// Read byte[]
 			InputStream is = bucket.getInputStream();
 			byte[] data = new byte[10];
@@ -100,9 +103,14 @@ public abstract class BucketTestBase extends TestCase {
 			freeBucket(bucket);
 		}
 	}
+	
+	protected boolean canOverwrite = true; 
 
 	// Write twice -- should overwrite, not append
 	public void testReuse() throws IOException {
+		if (!canOverwrite)
+			return;
+		
 		Bucket bucket = makeBucket(Math.max(DATA1.length, DATA2.length));
 		try {
 			// Write
