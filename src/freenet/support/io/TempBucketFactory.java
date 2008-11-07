@@ -217,6 +217,7 @@ public class TempBucketFactory implements BucketFactory {
 			@Override
 			public final void close() throws IOException {
 				synchronized(TempBucket.this) {
+					if(closed) return;
 					_maybeMigrateRamBucket(currentSize);
 					os.flush();
 					os.close();
