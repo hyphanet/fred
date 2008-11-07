@@ -6,11 +6,9 @@ package freenet.crypt.ciphers;
 import java.util.Arrays;
 import java.util.Random;
 
-import javax.crypto.Cipher;
-
+import junit.framework.TestCase;
 import freenet.crypt.UnsupportedCipherException;
 import freenet.support.HexUtil;
-import junit.framework.TestCase;
 
 /**
  * @author sdiz
@@ -31,7 +29,7 @@ public class RijndaelTest extends TestCase {
 	private final byte[] CIPHER256_1 = HexUtil
 			.hexToBytes("6fcbc68fc938e5f5a7c24d7422f4b5f153257b6fb53e0bca26770497dd65078c");
 
-	private static final Random rand = new Random();
+	private static final Random rand = new Random(12345);
 
 	public void testKnownValue() throws UnsupportedCipherException {
 		Rijndael aes128 = new Rijndael(128, 128);

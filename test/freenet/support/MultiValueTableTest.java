@@ -34,6 +34,7 @@ public class MultiValueTableTest extends TestCase {
 	private final int sampleKeyNumber = 100;
 	private final int sampleMaxValueNumber = 3;
 	private final boolean sampleIsRandom = true;
+	private Random rnd = new Random(12345);
 	
 	/**
 	 * Create a Object[][] filled with increasing Integers as keys
@@ -47,7 +48,6 @@ public class MultiValueTableTest extends TestCase {
 	private Object[][] createSampleKeyMultiVal(int keysNumber, int valuesNumber, boolean isRandom) {
 		Object[][] sampleObjects = new Object[keysNumber][valuesNumber];
 		int methodValuesNumber = valuesNumber;
-		Random rnd = new Random();
 		for (int i=0; i<sampleObjects.length;i++) {
 			if (isRandom) 
 				methodValuesNumber = 1+rnd.nextInt(valuesNumber);

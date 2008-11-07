@@ -11,8 +11,8 @@ import freenet.crypt.RandomSource;
 import freenet.support.api.Bucket;
 
 public class PaddedEphemerallyEncryptedBucketTest extends BucketTestBase {
-	private RandomSource strongPRNG = new MockRandomSource();
-	private Random weakPRNG = new Random();
+	private RandomSource strongPRNG = new MockRandomSource(12345);
+	private Random weakPRNG = new MockRandomSource(54321);
 	
 	@Override
 	protected Bucket makeBucket(long size) throws IOException {

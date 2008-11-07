@@ -10,7 +10,7 @@ import java.util.Random;
 import freenet.support.api.Bucket;
 
 public class TempFileBucketTest extends BucketTestBase {
-	private Random weakPRNG = new Random();
+	private Random weakPRNG = new Random(12345);
 
 	@Override
 	protected Bucket makeBucket(long size) throws IOException {

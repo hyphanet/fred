@@ -15,7 +15,7 @@ public class BloomFilterTest extends TestCase {
 	private static final int PASS_POS = 256;
 	private static final int PASS_FALSE = 8192;
 
-	private final Random rand = new Random();
+	private final Random rand = new Random(12345);
 
 	private void _testFilterPositive(BloomFilter filter) {
 		byte[][] list = new byte[PASS_POS][];

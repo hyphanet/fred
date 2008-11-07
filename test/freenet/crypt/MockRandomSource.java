@@ -9,6 +9,10 @@ package freenet.crypt;
  * @author sdiz
  */
 public class MockRandomSource extends RandomSource {
+	public MockRandomSource(long seed) {
+		setSeed(seed);
+	}
+	
 	@Override
 	public int acceptEntropy(EntropySource source, long data, int entropyGuess) {
 		return 0;

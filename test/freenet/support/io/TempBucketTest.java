@@ -20,8 +20,8 @@ import freenet.support.io.TempBucketFactory.TempBucket;
 public class TempBucketTest extends TestSuite {
 
 	public static class TempBucketMigrationTest extends TestCase {
-		private RandomSource strongPRNG = new MockRandomSource();
-		private Random weakPRNG = new Random();
+		private RandomSource strongPRNG = new MockRandomSource(43210);
+		private Random weakPRNG = new Random(12340);
 		private Executor exec = new SerialExecutor(NativeThread.NORM_PRIORITY);
 		private FilenameGenerator fg;
 
@@ -104,8 +104,8 @@ public class TempBucketTest extends TestSuite {
 	}
 
 	public static class RealTempBucketTest_ extends BucketTestBase {
-		private RandomSource strongPRNG = new MockRandomSource();
-		private Random weakPRNG = new Random();
+		private RandomSource strongPRNG = new MockRandomSource(12345);
+		private Random weakPRNG = new MockRandomSource(54321);
 		private Executor exec = new SerialExecutor(NativeThread.NORM_PRIORITY);
 		private FilenameGenerator fg;
 
