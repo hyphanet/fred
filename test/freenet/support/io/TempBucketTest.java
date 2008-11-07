@@ -106,7 +106,7 @@ public class TempBucketTest extends TestSuite {
 		}
 	}
 
-	public static class RealTempBucketTest extends BucketTestBase {
+	public static class RealTempBucketTest_ extends BucketTestBase {
 		private RandomSource strongPRNG = new Yarrow();
 		private Random weakPRNG = new MersenneTwister();
 		private Executor exec = new SerialExecutor(NativeThread.NORM_PRIORITY);
@@ -114,7 +114,7 @@ public class TempBucketTest extends TestSuite {
 
 		private TempBucketFactory tbf;
 
-		public RealTempBucketTest(int maxRamSize, int maxTotalRamSize, boolean encrypted) throws IOException {
+		public RealTempBucketTest_(int maxRamSize, int maxTotalRamSize, boolean encrypted) throws IOException {
 			fg = new FilenameGenerator(weakPRNG, false, null, "junit");
 			tbf = new TempBucketFactory(exec, fg, maxRamSize, maxTotalRamSize, strongPRNG, weakPRNG, encrypted);
 
@@ -132,34 +132,44 @@ public class TempBucketTest extends TestSuite {
 		}
 	}
 
-	public static class RealTempBucketTest_8_16_F extends RealTempBucketTest {
+	public static class RealTempBucketTest_8_16_F extends RealTempBucketTest_ {
 		public RealTempBucketTest_8_16_F() throws IOException {
 			super(8, 16, false);
 		}
 	}
 
-	public static class RealTempBucketTest_64_128_F extends RealTempBucketTest {
+	public static class RealTempBucketTest_64_128_F extends RealTempBucketTest_ {
 		public RealTempBucketTest_64_128_F() throws IOException {
 			super(64, 128, false);
 		}
 	}
 
-	public static class RealTempBucketTest_64k_128k_F extends RealTempBucketTest {
+	public static class RealTempBucketTest_64k_128k_F extends RealTempBucketTest_ {
 		public RealTempBucketTest_64k_128k_F() throws IOException {
 			super(64 * 1024, 128 * 1024, false);
 		}
 	}
 
-	public static class RealTempBucketTest_8_16_T extends RealTempBucketTest {
+	public static class RealTempBucketTest_8_16_T extends RealTempBucketTest_ {
 		public RealTempBucketTest_8_16_T() throws IOException {
 			super(8, 16, true);
 		}
 	}
 
-	public static class RealTempBucketTest_64k_128k_T extends RealTempBucketTest {
+	public static class RealTempBucketTest_64k_128k_T extends RealTempBucketTest_ {
 		public RealTempBucketTest_64k_128k_T() throws IOException {
 			super(64 * 1024, 128 * 1024, true);
 		}
+	}
+
+    public TempBucketTest() {
+		super("TempBucketTest");
+		addTest(new TestSuite(RealTempBucketTest_8_16_F.class));
+		addTest(new TestSuite(RealTempBucketTest_64_128_F.class));
+		addTest(new TestSuite(RealTempBucketTest_64k_128k_F.class));
+		addTest(new TestSuite(RealTempBucketTest_8_16_T.class));
+		addTest(new TestSuite(RealTempBucketTest_64k_128k_T.class));
+		addTest(new TestSuite(TempBucketMigrationTest.class));
 	}
 
 	public static Test suite() {
