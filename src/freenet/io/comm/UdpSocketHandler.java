@@ -202,7 +202,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		try {
 			_sock.receive(packet);
 			collector.addInfo(packet.getAddress() + ":" + packet.getPort(),
-					packet.getLength(), 0);
+					packet.getLength(), 0); // FIXME use (packet.getLength() + UDP_HEADERS_LENGTH)?
 		} catch (SocketTimeoutException e1) {
 			return false;
 		} catch (IOException e2) {
