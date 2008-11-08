@@ -235,7 +235,7 @@ public class SingleFileInserter implements ClientPutState, CompressJob {
 				// Insert single block, then insert pointer to it
 				if(reportMetadataOnly) {
 					SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int) origSize, -1, getCHKOnly, true, true, token);
-					Metadata meta = makeMetadata(archiveType, bestCodec, dataPutter.getURI());
+					Metadata meta = makeMetadata(archiveType, null, dataPutter.getURI());
 					cb.onMetadata(meta, this);
 					cb.onTransition(this, dataPutter);
 					dataPutter.schedule();
@@ -244,7 +244,7 @@ public class SingleFileInserter implements ClientPutState, CompressJob {
 					MultiPutCompletionCallback mcb =
 						new MultiPutCompletionCallback(cb, parent, token);
 					SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int) origSize, -1, getCHKOnly, true, false, token);
-					Metadata meta = makeMetadata(archiveType, bestCodec, dataPutter.getURI());
+					Metadata meta = makeMetadata(archiveType, null, dataPutter.getURI());
 					Bucket metadataBucket;
 					try {
 						metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, meta.writeToByteArray());
