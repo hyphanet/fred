@@ -37,9 +37,10 @@ import freenet.support.api.HTTPRequest;
  * on systems with NIO, we use that, on systems without it, we just run
  * the fetch on another (or this) thread. With no need to change any
  * APIs, and no danger of exploding memory use (unlike the traditional
- * NIO servlets approach).
+ * NIO servlets approach). Obviously this assumes continuations, and that
+ * we can suspend in a method on Toadlet ... which might be possible.
  * 
- * FIXME Investigate servlet 3.0, which support continuations.  
+ * FIXME Investigate servlet 3.0, which support continuations.
  */
 public abstract class Toadlet {
 
