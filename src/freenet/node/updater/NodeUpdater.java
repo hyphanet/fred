@@ -103,6 +103,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 				}
 			}, 60 * 1000); // leave some time in case we get later editions
 			// LOCKING: Always take the NodeUpdater lock *BEFORE* the NodeUpdateManager lock
+			if(found > currentVersion)
 			manager.onStartFetching(extUpdate);
 	}
 
