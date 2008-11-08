@@ -11,34 +11,35 @@ import java.util.zip.GZIPOutputStream;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.io.CountedOutputStream;
 
 public class GzipCompressor implements Compressor {
 
-	public Bucket compress(Bucket data, BucketFactory bf, long maxLength) throws IOException, CompressionOutputSizeException {
-		if(maxLength <= 0)
+	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+		if(maxReadLength < 0)
 			throw new IllegalArgumentException();
-		Bucket output = bf.makeBucket(maxLength);
+		Bucket output = bf.makeBucket(maxWriteLength);
 		InputStream is = null;
 		OutputStream os = null;
 		GZIPOutputStream gos = null;
 		try {
 			is = data.getInputStream();
 			os = output.getOutputStream();
-			gos = new GZIPOutputStream(os);
-			long written = 0;
+			CountedOutputStream cos = new CountedOutputStream(os);
+			gos = new GZIPOutputStream(cos);
+			long read = 0;
 			// Bigger input buffer, so can compress all at once.
 			// Won't hurt on I/O either, although most OSs will only return a page at a time.
 			byte[] buffer = new byte[32768];
 			while(true) {
-				int l = (int) Math.min(buffer.length, maxLength - written);
-				int x = is.read(buffer, 0, buffer.length);
-				if(l < x) {
-					throw new CompressionOutputSizeException();
-				}
+				int l = (int) Math.min(buffer.length, maxReadLength - read);
+				int x = l == 0 ? -1 : is.read(buffer, 0, l);
 				if(x <= -1) break;
 				if(x == 0) throw new IOException("Returned zero from read()");
 				gos.write(buffer, 0, x);
-				written += x;
+				read += x;
+				if(cos.written() > maxWriteLength)
+					throw new CompressionOutputSizeException();
 			}
 			gos.flush();
 		} finally {

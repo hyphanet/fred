@@ -41,8 +41,8 @@ public interface Compressor {
 			return null;
 		}
 
-		public Bucket compress(Bucket data, BucketFactory bf, long maxLength) throws IOException, CompressionOutputSizeException {
-			return compressor.compress(data, bf, maxLength);
+		public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+			return compressor.compress(data, bf, maxReadLength, maxWriteLength);
 		}
 
 		public Bucket decompress(Bucket data, BucketFactory bucketFactory, long maxLength, long maxEstimateSizeLength, Bucket preferred) throws IOException, CompressionOutputSizeException {
@@ -81,7 +81,17 @@ public interface Compressor {
 		}
 	}
 
-	public abstract Bucket compress(Bucket data, BucketFactory bf, long maxLength) throws IOException, CompressionOutputSizeException;
+	/**
+	 * Compress the data.
+	 * @param data The bucket to read from.
+	 * @param bf The means to create a new bucket.
+	 * @param maxReadLength The maximum number of bytes to read from the input bucket.
+	 * @param maxWriteLength The maximum number of bytes to write to the output bucket. If this is exceeded, throw a CompressionOutputSizeException.
+	 * @return The compressed data.
+	 * @throws IOException If an error occurs reading or writing data.
+	 * @throws CompressionOutputSizeException If the compressed data is larger than maxWriteLength. 
+	 */
+	public abstract Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException;
 
 	/**
 	 * Decompress data.

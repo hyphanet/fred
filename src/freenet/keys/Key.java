@@ -188,7 +188,7 @@ public abstract class Key implements WritableToDataOutputStream {
 						ArrayBucket compressedData;
 						try {
 							compressedData = (ArrayBucket) comp.compress(
-									sourceData, new ArrayBucketFactory(), maxCompressedDataLength);
+									sourceData, new ArrayBucketFactory(), Long.MAX_VALUE, maxCompressedDataLength);
 						} catch (IOException e) {
 							throw new Error(e);
 						} catch (CompressionOutputSizeException e) {

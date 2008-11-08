@@ -147,7 +147,7 @@ public class SingleFileInserter implements ClientPutState, CompressJob {
 					// Only produce if we are compressing *the original data*
 					if(parent == cb)
 						ctx.eventProducer.produceEvent(new StartedCompressionEvent(comp));
-					result = comp.compress(origData, new BucketChainBucketFactory(ctx.persistentBucketFactory, CHKBlock.DATA_LENGTH), bestCompressedDataSize);
+					result = comp.compress(origData, new BucketChainBucketFactory(ctx.persistentBucketFactory, CHKBlock.DATA_LENGTH), origSize, bestCompressedDataSize);
 					long resultSize = result.size();
 					if(resultSize < oneBlockCompressedSize) {
 						bestCodec = comp;
