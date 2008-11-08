@@ -26,6 +26,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.FileBucket;
 
 public class NodeUpdater implements ClientCallback, USKCallback {
+
 	static private boolean logMINOR;
 	private FetchContext ctx;
 	private FetchResult result;
@@ -35,25 +36,22 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	public final NodeClientCore core;
 	private final Node node;
 	public final NodeUpdateManager manager;
-	
 	private final int currentVersion;
 	private int availableVersion;
 	private int fetchingVersion;
 	private int fetchedVersion;
 	private int writtenVersion;
-	
 	private boolean isRunning;
 	private boolean isFetching;
-	
 	public final boolean extUpdate;
 	private final String blobFilenamePrefix;
 	private File tempBlobFile;
-	
+
 	NodeUpdater(NodeUpdateManager manager, FreenetURI URI, boolean extUpdate, int current, String blobFilenamePrefix) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.manager = manager;
 		this.node = manager.node;
-		this.URI = URI.setSuggestedEdition(Version.buildNumber()+1);
+		this.URI = URI.setSuggestedEdition(Version.buildNumber() + 1);
 		this.ticker = node.ps;
 		this.core = node.clientCore;
 		this.currentVersion = current;
@@ -63,104 +61,109 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		this.isFetching = false;
 		this.extUpdate = extUpdate;
 		this.blobFilenamePrefix = blobFilenamePrefix;
-		
-		FetchContext tempContext = core.makeClient((short)0, true).getFetchContext();		
+
+		FetchContext tempContext = core.makeClient((short) 0, true).getFetchContext();
 		tempContext.allowSplitfiles = true;
 		tempContext.dontEnterImplicitArchives = false;
 		this.ctx = tempContext;
-		
+
 	}
 
 	void start() {
-		try{
+		try {
 			// because of UoM, this version is actually worth having as well
-			USK myUsk=USK.create(URI.setSuggestedEdition(currentVersion));
+			USK myUsk = USK.create(URI.setSuggestedEdition(currentVersion));
 			ctx.uskManager.subscribe(myUsk, this, true, this);
-		}catch(MalformedURLException e){
-			Logger.error(this,"The auto-update URI isn't valid and can't be used");
+		} catch(MalformedURLException e) {
+			Logger.error(this, "The auto-update URI isn't valid and can't be used");
 			manager.blow("The auto-update URI isn't valid and can't be used");
 		}
 	}
-	
-	public void onFoundEdition(long l, USK key){
+
+	public void onFoundEdition(long l, USK key) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Found edition "+l);
-		System.err.println("Found "+(extUpdate?"freenet-ext.jar " : "")+"update edition "+l);
+		if(logMINOR)
+			Logger.minor(this, "Found edition " + l);
+		System.err.println("Found " + (extUpdate ? "freenet-ext.jar " : "") + "update edition " + l);
 		int found;
 		synchronized(this) {
-		if(!isRunning) return;
-		found = (int)key.suggestedEdition;
-		
-		if(found <= availableVersion){
-			return;
-		}
+			if(!isRunning)
+				return;
+			found = (int) key.suggestedEdition;
+
+			if(found <= availableVersion)
+				return;
 			Logger.minor(this, "Updating availableVersion from " + availableVersion + " to " + found + " and queueing an update");
 			this.availableVersion = found;
 		}
-			ticker.queueTimedJob(new Runnable() {
+		ticker.queueTimedJob(new Runnable() {
 
-				public void run() {
-					maybeUpdate();
-				}
-			}, 60 * 1000); // leave some time in case we get later editions
-			// LOCKING: Always take the NodeUpdater lock *BEFORE* the NodeUpdateManager lock
-			if(found > currentVersion)
+			public void run() {
+				maybeUpdate();
+			}
+		}, 60 * 1000); // leave some time in case we get later editions
+		// LOCKING: Always take the NodeUpdater lock *BEFORE* the NodeUpdateManager lock
+		if(found > currentVersion)
 			manager.onStartFetching(extUpdate);
 	}
 
-	public void maybeUpdate(){
+	public void maybeUpdate() {
 		ClientGetter toStart = null;
-		if(!manager.isEnabled()) return;
-		if(manager.isBlown()) return;
+		if(!manager.isEnabled())
+			return;
+		if(manager.isBlown())
+			return;
 		synchronized(this) {
 			if(logMINOR)
-				Logger.minor(this, "maybeUpdate: isFetching="+isFetching+", isRunning="+isRunning+", availableVersion="+availableVersion);
-			if(isFetching || (!isRunning)) return;
-			if(availableVersion <= fetchedVersion) return;
+				Logger.minor(this, "maybeUpdate: isFetching=" + isFetching + ", isRunning=" + isRunning + ", availableVersion=" + availableVersion);
+			if(isFetching || (!isRunning))
+				return;
+			if(availableVersion <= fetchedVersion)
+				return;
 			fetchingVersion = availableVersion;
-			
+
 			if(availableVersion > currentVersion) {
-				Logger.normal(this,"Starting the update process ("+availableVersion+ ')');
-				System.err.println("Starting the update process: found the update ("+availableVersion+"), now fetching it.");
+				Logger.normal(this, "Starting the update process (" + availableVersion + ')');
+				System.err.println("Starting the update process: found the update (" + availableVersion + "), now fetching it.");
 			}
 			if(logMINOR)
-				Logger.minor(this,"Starting the update process ("+availableVersion+ ')');
+				Logger.minor(this, "Starting the update process (" + availableVersion + ')');
 			// We fetch it
-			try{
-				if((cg==null)||cg.isCancelled()){
-					if(logMINOR) Logger.minor(this, "Scheduling request for "+URI.setSuggestedEdition(availableVersion));
+			try {
+				if((cg == null) || cg.isCancelled()) {
+					if(logMINOR)
+						Logger.minor(this, "Scheduling request for " + URI.setSuggestedEdition(availableVersion));
 					if(availableVersion > currentVersion)
-						System.err.println("Starting "+(extUpdate?"freenet-ext.jar ":"")+"fetch for "+availableVersion);
-					tempBlobFile = 
-						File.createTempFile(blobFilenamePrefix+availableVersion+"-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
-					cg = new ClientGetter(this, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, 
-							URI.setSuggestedEdition(availableVersion), ctx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS, 
-							this, null, new FileBucket(tempBlobFile, false, false, false, false, false));
+						System.err.println("Starting " + (extUpdate ? "freenet-ext.jar " : "") + "fetch for " + availableVersion);
+					tempBlobFile =
+						File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
+					cg = new ClientGetter(this, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler,
+						URI.setSuggestedEdition(availableVersion), ctx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
+						this, null, new FileBucket(tempBlobFile, false, false, false, false, false));
 					toStart = cg;
 				}
 				isFetching = true;
-			}catch (Exception e) {
-				Logger.error(this, "Error while starting the fetching: "+e, e);
-				isFetching=false;
+			} catch(Exception e) {
+				Logger.error(this, "Error while starting the fetching: " + e, e);
+				isFetching = false;
 			}
 		}
 		if(toStart != null)
 			try {
 				toStart.start();
-			} catch (FetchException e) {
-				Logger.error(this, "Error while starting the fetching: "+e, e);
+			} catch(FetchException e) {
+				Logger.error(this, "Error while starting the fetching: " + e, e);
 				synchronized(this) {
-					isFetching=false;
+					isFetching = false;
 				}
 			}
 	}
-	
-	File getBlobFile(int availableVersion) {
-		return new File(node.clientCore.getPersistentTempDir(), blobFilenamePrefix+availableVersion+".fblob");
-	}
 
+	File getBlobFile(int availableVersion) {
+		return new File(node.clientCore.getPersistentTempDir(), blobFilenamePrefix + availableVersion + ".fblob");
+	}
 	private final Object writeJarSync = new Object();
-	
+
 	public void writeJarTo(File fNew) throws IOException {
 		int fetched;
 		synchronized(this) {
@@ -168,25 +171,25 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		}
 		synchronized(writeJarSync) {
 			fNew.delete();
-			
+
 			FileOutputStream fos;
 			fos = new FileOutputStream(fNew);
-			
+
 			BucketTools.copyTo(result.asBucket(), fos, -1);
-			
+
 			fos.flush();
 			fos.close();
 		}
 		synchronized(this) {
 			writtenVersion = fetched;
 		}
-		System.err.println("Written "+(extUpdate ? "ext" : "main")+" jar to "+fNew);
+		System.err.println("Written " + (extUpdate ? "ext" : "main") + " jar to " + fNew);
 	}
-	
+
 	public void onSuccess(FetchResult result, ClientGetter state) {
 		onSuccess(result, state, tempBlobFile, fetchingVersion);
 	}
-	
+
 	void onSuccess(FetchResult result, ClientGetter state, File tempBlobFile, int fetchedVersion) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		synchronized(this) {
@@ -201,34 +204,35 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			}
 			if(result == null || result.asBucket() == null || result.asBucket().size() == 0) {
 				tempBlobFile.delete();
-				Logger.error(this, "Cannot update: result either null or empty for "+availableVersion);
-				System.err.println("Cannot update: result either null or empty for "+availableVersion);
+				Logger.error(this, "Cannot update: result either null or empty for " + availableVersion);
+				System.err.println("Cannot update: result either null or empty for " + availableVersion);
 				// Try again
-				if(result == null || result.asBucket() == null || availableVersion > fetchedVersion) {
+				if(result == null || result.asBucket() == null || availableVersion > fetchedVersion)
 					node.ps.queueTimedJob(new Runnable() {
-						public void run() { maybeUpdate(); }
+
+						public void run() {
+							maybeUpdate();
+						}
 					}, 0);
-				}
 				return;
 			}
 			File blobFile = getBlobFile(fetchedVersion);
 			if(!tempBlobFile.renameTo(blobFile)) {
 				blobFile.delete();
-				if(!tempBlobFile.renameTo(blobFile)) {
+				if(!tempBlobFile.renameTo(blobFile))
 					if(blobFile.exists() && tempBlobFile.exists() &&
-							blobFile.length() == tempBlobFile.length())
-						Logger.minor(this, "Can't rename "+tempBlobFile+" over "+blobFile+" for "+fetchedVersion+" - probably not a big deal though as the files are the same size");
+						blobFile.length() == tempBlobFile.length())
+						Logger.minor(this, "Can't rename " + tempBlobFile + " over " + blobFile + " for " + fetchedVersion + " - probably not a big deal though as the files are the same size");
 					else
-						Logger.error(this, "Not able to rename binary blob for node updater: "+tempBlobFile+" -> "+blobFile+" - may not be able to tell other peers about this build");
-				}
+						Logger.error(this, "Not able to rename binary blob for node updater: " + tempBlobFile + " -> " + blobFile + " - may not be able to tell other peers about this build");
 			}
 			this.fetchedVersion = fetchedVersion;
-			System.out.println("Found "+fetchedVersion);
-			if(fetchedVersion > currentVersion) {
+			System.out.println("Found " + fetchedVersion);
+			if(fetchedVersion > currentVersion)
 				Logger.normal(this, "Found version " + fetchedVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
-			}
 			this.cg = null;
-			if(this.result != null) this.result.asBucket().free();
+			if(this.result != null)
+				this.result.asBucket().free();
 			this.result = result;
 		}
 		manager.onDownloadedNewJar(extUpdate);
@@ -236,35 +240,38 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 
 	public void onFailure(FetchException e, ClientGetter state) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(!isRunning) return;
+		if(!isRunning)
+			return;
 		int errorCode = e.getMode();
 		tempBlobFile.delete();
-		
-		if(logMINOR) Logger.minor(this, "onFailure("+e+ ',' +state+ ')');
+
+		if(logMINOR)
+			Logger.minor(this, "onFailure(" + e + ',' + state + ')');
 		synchronized(this) {
 			this.cg = null;
-			isFetching=false;
+			isFetching = false;
 		}
 		if(errorCode == FetchException.CANCELLED ||
-				!e.isFatal()) {
+			!e.isFatal()) {
 			Logger.normal(this, "Rescheduling new request");
 			ticker.queueTimedJob(new Runnable() {
+
 				public void run() {
 					maybeUpdate();
 				}
 			}, 0);
 		} else {
-			Logger.error(this, "Canceling fetch : "+ e.getMessage());
-			System.err.println("Unexpected error fetching update: "+e.getMessage());
+			Logger.error(this, "Canceling fetch : " + e.getMessage());
+			System.err.println("Unexpected error fetching update: " + e.getMessage());
 			if(e.isFatal()) {
 				// Wait for the next version
-			} else {
+			} else
 				ticker.queueTimedJob(new Runnable() {
+
 					public void run() {
 						maybeUpdate();
 					}
-				}, 60*60*1000);
-			}
+				}, 60 * 60 * 1000);
 		}
 	}
 
@@ -279,32 +286,32 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	public void onGeneratedURI(FreenetURI uri, BaseClientPutter state) {
 		// Impossible
 	}
-	
+
 	/** Called before kill(). Don't do anything that will involve taking locks. */
 	public void preKill() {
 		isRunning = false;
 	}
-	
-	void kill(){
-		try{
+
+	void kill() {
+		try {
 			ClientGetter c;
 			synchronized(this) {
 				isRunning = false;
-				USK myUsk=USK.create(URI.setSuggestedEdition(currentVersion));
-				ctx.uskManager.unsubscribe(myUsk, this,	true);
+				USK myUsk = USK.create(URI.setSuggestedEdition(currentVersion));
+				ctx.uskManager.unsubscribe(myUsk, this, true);
 				c = cg;
 				cg = null;
 			}
 			c.cancel();
-		}catch(Exception e){
+		} catch(Exception e) {
 			Logger.minor(this, "Cannot kill NodeUpdater", e);
 		}
 	}
-	
-	public FreenetURI getUpdateKey(){
+
+	public FreenetURI getUpdateKey() {
 		return URI;
 	}
-	
+
 	public void onMajorProgress() {
 		// Ignore
 	}
@@ -312,7 +319,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	public synchronized boolean canUpdateNow() {
 		return fetchedVersion > currentVersion;
 	}
-	
+
 	public void onFetchable(BaseClientPutter state) {
 		// Ignore, we don't insert
 	}
@@ -339,8 +346,10 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 
 	public int fetchingVersion() {
 		// We will not deploy currentVersion...
-		if(fetchingVersion <= currentVersion) return availableVersion;
-		else return fetchingVersion;
+		if(fetchingVersion <= currentVersion)
+			return availableVersion;
+		else
+			return fetchingVersion;
 	}
 
 	public long getBlobSize() {
