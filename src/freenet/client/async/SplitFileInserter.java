@@ -53,7 +53,8 @@ public class SplitFileInserter implements ClientPutState {
 		fs.putSingle("Type", "SplitFileInserter");
 		fs.put("DataLength", dataLength);
 		fs.put("DecompressedLength", decompressedLength);
-		fs.putSingle("CompressionCodec", compressionCodec.toString());
+		if(compressionCodec != null)
+			fs.putSingle("CompressionCodec", compressionCodec.toString());
 		fs.put("SplitfileCodec", splitfileAlgorithm);
 		fs.put("Finished", finished);
 		fs.put("SegmentSize", segmentSize);
@@ -147,9 +148,20 @@ public class SplitFileInserter implements ClientPutState {
 			throw new ResumeException("Corrupt CheckSegmentSize: "+e+" : "+length);
 		}
 		String ccodec = fs.get("CompressionCodec");
-		if(ccodec == null)
-			throw new ResumeException("No compression codec");
-		compressionCodec = COMPRESSOR_TYPE.valueOf(ccodec);
+		COMPRESSOR_TYPE compressor = null;
+		if(ccodec != null) {
+			try {
+				compressor = COMPRESSOR_TYPE.valueOf(ccodec);
+			} catch (Throwable t) {
+				try {
+					short codecNo = Short.parseShort(ccodec);
+					compressor = COMPRESSOR_TYPE.getCompressorByMetadataID(codecNo);
+				} catch (NumberFormatException nfe) {
+					throw new ResumeException("Invalid compression codec: "+ccodec);
+				}
+			}
+		}
+		compressionCodec = compressor;
 		String scodec = fs.get("SplitfileCodec");
 		if(scodec == null) throw new ResumeException("No splitfile codec");
 		try {
