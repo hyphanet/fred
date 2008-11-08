@@ -323,9 +323,17 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					// Decide whether to put it in the ZIP.
 					// FIXME support multiple ZIPs and size limits.
 					// FIXME support better heuristics.
-					int sz = (int)data.size() + 40 + element.fullName.length();
-					if((data.size() <= 65536) && 
-							(bytesOnZip + sz < ((2048-64)*1024))) { // totally dumb heuristic!
+					// ZIP is slightly more compact, can use this formula:
+					//int sz = (int)data.size() + 40 + element.fullName.length();
+					// TAR is less compact (but with a chained compressor is far more efficient due to inter-file compression):
+					int sz = 512 + (((((int)data.size()) + 511) / 512) * 512);
+					if((data.size() <= 65536) &&
+							// tar pads to next 10k, and has 1k end-headers
+							// FIXME this also needs to include the metadata!!
+							// FIXME no way to know at this point how big that is...
+							// need major refactoring to make this work... for now just
+							// assume 64k will cover it.
+							(bytesOnZip + sz < (2038-64)*1024)) { // totally dumb heuristic!
 						bytesOnZip += sz;
 						// Put it in the zip.
 						ph = new PutHandler(this, name, ZipPrefix+element.fullName, cm, data);
