@@ -104,7 +104,7 @@ public class Bzip2CompressorTest extends TestCase {
 		BucketFactory factory = new ArrayBucketFactory();
 
 		try {
-			Compressor.COMPRESSOR_TYPE.BZIP2.compress(inBucket, factory, 32);
+			Compressor.COMPRESSOR_TYPE.BZIP2.compress(inBucket, factory, 32, 32);
 		} catch (IOException e) {
 			fail("unexpected exception thrown : " + e.getMessage());
 		} catch (CompressionOutputSizeException e) {
@@ -173,7 +173,7 @@ public class Bzip2CompressorTest extends TestCase {
 		Bucket outBucket = null;
 
 		try {
-			outBucket = Compressor.COMPRESSOR_TYPE.BZIP2.compress(inBucket, factory, 32768);
+			outBucket = Compressor.COMPRESSOR_TYPE.BZIP2.compress(inBucket, factory, 32768, 32768);
 		} catch (IOException e) {
 			fail("unexpected exception thrown : " + e.getMessage());
 		} catch (CompressionOutputSizeException e) {

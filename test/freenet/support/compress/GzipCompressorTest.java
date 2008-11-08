@@ -115,7 +115,7 @@ public class GzipCompressorTest extends TestCase {
 		BucketFactory factory = new ArrayBucketFactory();
 
 		try {
-			Compressor.COMPRESSOR_TYPE.GZIP.compress(inBucket, factory, 32);
+			Compressor.COMPRESSOR_TYPE.GZIP.compress(inBucket, factory, 32, 32);
 		} catch (IOException e) {
 			fail("unexpected exception thrown : " + e.getMessage());
 		} catch (CompressionOutputSizeException e) {
@@ -184,7 +184,7 @@ public class GzipCompressorTest extends TestCase {
 		Bucket outBucket = null;
 
 		try {
-			outBucket = Compressor.COMPRESSOR_TYPE.GZIP.compress(inBucket, factory, 32768);
+			outBucket = Compressor.COMPRESSOR_TYPE.GZIP.compress(inBucket, factory, 32768, 32768);
 		} catch (IOException e) {
 			fail("unexpected exception thrown : " + e.getMessage());
 		} catch (CompressionOutputSizeException e) {
