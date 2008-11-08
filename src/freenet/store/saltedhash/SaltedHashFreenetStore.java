@@ -125,6 +125,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		File bloomFile = new File(this.baseDir, name + ".bloom");
 		bloomFilter = BloomFilter.createFilter(bloomFile, bloomFilterSize, bloomFilterK, bloomCounting);
 
+		System.err.println("Bloomfilter (" + bloomFilter + ") for " + name + " is loaded.");
+		
 		if ((flags & FLAG_DIRTY) != 0)
 			System.err.println("Datastore(" + name + ") is dirty.");
 
@@ -173,6 +175,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			*/
 		}
 
+		System.err.println(" checkBloom=" + checkBloom + ", flags=" + flags);
+		
 		cleanerThread.start();
 	}
 
