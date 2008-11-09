@@ -10,6 +10,13 @@ package freenet.crypt;
  */
 public class DummyRandomSource extends RandomSource {
 	private static final long serialVersionUID = -1;
+
+	public DummyRandomSource() {}
+
+	public DummyRandomSource(long seed) {
+		setSeed(seed);
+	}
+
     @Override
 	public int acceptEntropy(EntropySource source, long data, int entropyGuess) {
         return 0;
