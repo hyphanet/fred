@@ -22,7 +22,10 @@ public class PluginDownLoaderFile extends PluginDownLoader<File> {
 
 	@Override
 	String getPluginName(String source) throws PluginNotFoundException {
-		return source.substring(source.lastIndexOf('/') + 1);
+		int slashIndex = source.lastIndexOf('/');
+		if(slashIndex == -1)
+			slashIndex = source.lastIndexOf('\\');
+		return source.substring(slashIndex + 1);
 	}
 
 	@Override
