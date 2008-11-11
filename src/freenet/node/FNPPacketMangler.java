@@ -1322,7 +1322,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		long bootID = Fields.bytesToLong(data);
 		if(data.length - 8 < 0) {
 			Logger.error(this, "No space for hisRef: data.length="+data.length+" myRef.length="+(pn.jfkMyRef==null?0:pn.jfkMyRef.length)+" orig data length "+(payload.length-inputOffset));
-			return false;
+			return true;
 		}
 		byte[] hisRef = new byte[data.length - 8];
 		System.arraycopy(data, 8, hisRef, 0, hisRef.length);
@@ -1343,7 +1343,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, messageHash), false)) {
 			String error = "The signature verification has failed!! JFK(4) -"+pn.getPeer()+" message hash "+HexUtil.bytesToHex(messageHash)+" length "+locallyGeneratedText.length+" hisRef "+hisRef.length+" hash "+Fields.hashCode(hisRef)+" myRef "+pn.jfkMyRef.length+" hash "+Fields.hashCode(pn.jfkMyRef)+" boot ID "+bootID;
 			Logger.error(this, error);
-			return false;
+			return true;
 		}
 		
 		// Promote if necessary
@@ -1352,7 +1352,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			OpennetManager opennet = node.getOpennet();
 			if(opennet == null) {
 				Logger.normal(this, "Dumping incoming old-opennet peer as opennet just turned off: "+pn+".");
-				return false;
+				return true;
 			}
 			if(!opennet.wantPeer(pn, true)) {
 				Logger.normal(this, "No longer want peer "+pn+" - dumping it after connecting");
