@@ -1284,6 +1284,23 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.normal(this, "The digest-HMAC doesn't match; let's discard the packet - "+pn.getPeer());
 			return false;
 		}
+
+		// Try to find the HMAC in the cache:
+		// If it is already present it indicates duplicate/replayed message4 and we can discard
+		// If it's not, we can add it with a timestamp
+		byte[] message4Timestamp = null;
+		synchronized (authenticatorCache) {
+			ByteArrayWrapper hmacBAW = new ByteArrayWrapper(hmac);
+			message4Timestamp = authenticatorCache.get(hmacBAW);
+			if(message4Timestamp == null) { // normal behaviour
+				authenticatorCache.put(hmacBAW, Fields.longToBytes(t1));
+			}
+		}
+		if(message4Timestamp != null) {
+			Logger.normal(this, "We got a replayed message4 (first handled at "+Fields.bytesToLong(message4Timestamp)+") from - "+pn);
+			return true;
+		}
+
 		// Get the IV
 		pk.reset(decypheredPayload, decypheredPayloadOffset);
 		decypheredPayloadOffset += ivLength;
