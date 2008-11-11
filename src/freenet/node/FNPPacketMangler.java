@@ -1297,7 +1297,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			}
 		}
 		if(message4Timestamp != null) {
-			Logger.normal(this, "We got a replayed message4 (first handled at "+Fields.bytesToLong(message4Timestamp)+") from - "+pn);
+			Logger.normal(this, "We got a replayed message4 (first handled at "+TimeUtil.formatTime(t1-Fields.bytesToLong(message4Timestamp))+") from - "+pn);
 			return true;
 		}
 
