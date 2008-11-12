@@ -562,6 +562,15 @@ public class WelcomeToadlet extends Toadlet {
         }
 
         HTMLNode bookmarkBoxContent = bookmarkBox.addChild("div", "class", "infobox-content");
+        
+        // Search box
+        if(core.node.pluginManager.isPluginLoaded("plugins.XMLLibrarian.XMLLibrarian")) {
+        	HTMLNode form = bookmarkBoxContent.addChild("form", new String[] { "method", "action" }, new String[] { "GET", "/plugins/plugins.XMLLibrarian.XMLLibrarian" });
+        	form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "choice", "index" });
+        	form.addChild("input", new String[] { "type", "size", "name" }, new String[] { "text", "80", "search" });
+        	form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "find", "Search Freenet!" });
+        }
+        
         HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
         addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, useragent != null && useragent.contains("khtml") && !useragent.contains("chrome"));
 
