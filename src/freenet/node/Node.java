@@ -1570,7 +1570,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			
 		});
 
-		nodeConfig.register("storeType", "bdb-index", sortOrder++, true, true, "Node.storeType", "Node.storeTypeLong", new StoreTypeCallback());
+		nodeConfig.register("storeType", "salt-hash", sortOrder++, true, true, "Node.storeType", "Node.storeTypeLong", new StoreTypeCallback());
 		
 		storeType = nodeConfig.getString("storeType");
 		

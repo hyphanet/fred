@@ -152,9 +152,11 @@ class UpdateDeployContext {
 			if(line.startsWith("wrapper.java.classpath.")) {
 				if(writtenNewJar && line.startsWith("wrapper.java.classpath."+mainClasspathNo+'=')) {
 					bw.write("wrapper.java.classpath."+mainClasspathNo+'='+newMain+'\n');
+					System.err.println("Rewritten wrapper.conf for main jar");
 					writtenMain = true;
 				} else if(writtenNewExt && line.startsWith("wrapper.java.classpath."+extClasspathNo+'=')) {
 					bw.write("wrapper.java.classpath."+extClasspathNo+'='+newExt+'\n');
+					System.err.println("Rewritten wrapper.conf for ext jar");
 					writtenExt = true;
 				} else {
 					bw.write(line+'\n');
@@ -189,7 +191,9 @@ class UpdateDeployContext {
 		}
 		
 		// New config installed.
-
+		
+		System.err.println("Rewritten wrapper.conf for"+(writtenNewJar ? (" new main jar: "+newMainJar) : "")+(writtenNewExt ? (" new ext jar: "+newExtJar): ""));
+		
 	}
 
 }
