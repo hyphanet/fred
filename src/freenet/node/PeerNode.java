@@ -269,14 +269,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** The status of this peer node in terms of Node.PEER_NODE_STATUS_* */
 	public int peerNodeStatus = PeerManager.PEER_NODE_STATUS_DISCONNECTED;
 	
-	private final ArrayList<KeyTracker> oldTrackers = new ArrayList<KeyTracker>();
-	
-	/**
-	 * Enable this if debugging losing KeyTracker's. May cause a memory leak and
-	 * also may cause messages to be received twice.
-	 */
-	static final boolean KEEP_OLD_TRACKERS = true;
-	
 	static final int CHECK_FOR_SWAPPED_TRACKERS_INTERVAL = FNPPacketMangler.SESSION_KEY_REKEYING_INTERVAL / 30;
 
 	static final byte[] TEST_AS_BYTES;
@@ -1852,19 +1844,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		KeyTracker prev = null;
 		MessageItem[] messagesTellDisconnected = null;
 		synchronized(this) {
-			oldTrackers.add(newTracker);
-			if(currentTracker != null) {
-				if(Arrays.equals(currentTracker.sessionKey, newTracker.sessionKey))
-					Logger.error(this, "Current tracker has same session key as new tracker: "+currentTracker+" vs "+newTracker+" for "+this);
-			}
-			if(previousTracker != null) {
-				if(Arrays.equals(previousTracker.sessionKey, newTracker.sessionKey))
-					Logger.error(this, "Previous tracker has same session key as new tracker: "+previousTracker+" vs "+newTracker+" for "+this);
-			}
-			if(unverifiedTracker != null) {
-				if(Arrays.equals(unverifiedTracker.sessionKey, newTracker.sessionKey))
-					Logger.error(this, "Previous tracker has same session key as new tracker: "+unverifiedTracker+" vs "+newTracker+" for "+this);
-			}
 			handshakeCount = 0;
 			bogusNoderef = false;
 			// Don't reset the uptime if we rekey
@@ -4160,9 +4139,5 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		
 		return false;
-	}
-
-	public synchronized KeyTracker[] getOldTrackers() {
-		return oldTrackers.toArray(new KeyTracker[oldTrackers.size()]);
 	}
 }
