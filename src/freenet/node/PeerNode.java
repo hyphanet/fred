@@ -2407,7 +2407,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @throws PacketSequenceException If there is an error sending the packet
 	* caused by a sequence inconsistency. 
 	*/
-	public boolean sendAnyUrgentNotifications(boolean forceSendPrimary) throws PacketSequenceException {
+	public boolean sendAnyUrgentNotifications(boolean forceSendPrimary) {
 		boolean sent = false;
 		if(logMINOR)
 			Logger.minor(this, "sendAnyUrgentNotifications");
@@ -2433,6 +2433,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				// Ignore
 				} catch(WouldBlockException e) {
 				// Impossible, ignore
+				} catch(PacketSequenceException e) {
+					// Impossible, ignore
 				}
 			}
 		}
@@ -2451,6 +2453,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				// Ignore
 				} catch(WouldBlockException e) {
 					Logger.error(this, "Impossible: " + e, e);
+				} catch(PacketSequenceException e) {
+					// Impossible, ignore
 				}
 		}
 		return sent;
@@ -4014,10 +4018,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp) {
 		// If there are any urgent notifications, we must send a packet.
 		boolean mustSend = false;
+		boolean mustSendPacket = false;
 		if(mustSendNotificationsNow(now)) {
 			if(logMINOR)
 				Logger.minor(this, "Sending notification");
 			mustSend = true;
+			mustSendPacket = true;
 		}
 		// Any packets to resend? If so, resend ONE packet and then return.
 		for(int j = 0; j < 2; j++) {
@@ -4074,6 +4080,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				Logger.minor(this, "Sending keepalive");
 			keepalive = true;
 			mustSend = true;
+			mustSendPacket = true;
 		}
 		
 		ArrayList<MessageItem> messages = new ArrayList<MessageItem>(10);
@@ -4122,17 +4129,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			// Send packets, right now, blocking, including any active notifications
 			// Note that processOutgoingOrRequeue will drop messages from the end
 			// if necessary to fit the messages into a single packet.
-			getOutgoingMangler().processOutgoingOrRequeue(messages.toArray(new MessageItem[messages.size()]), this, true, false, true);
+			if(!getOutgoingMangler().processOutgoingOrRequeue(messages.toArray(new MessageItem[messages.size()]), this, true, false, true)) {
+				if(mustSendPacket) {
+					if(!sendAnyUrgentNotifications(false))
+						sendAnyUrgentNotifications(true);
+				}
+			}
 			return true;
 		} else {
 			if(mustSend) {
-				try {
 					if(sendAnyUrgentNotifications(false))
 						return true;
-				} catch (PacketSequenceException e) {
-					Logger.error(this, "Caught "+e, e);
-					return false;
-				}
 				// Can happen occasionally as a race condition...
 				Logger.normal(this, "No notifications sent despite no messages and mustSend=true for "+this);
 			}
