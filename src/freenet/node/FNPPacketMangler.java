@@ -2018,7 +2018,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		KeyTracker kt = pn.getCurrentKeyTracker();
 		if(kt == null) {
 			Logger.error(this, "Not connected while sending packets: "+pn);
-			return;
+			return false;
 		}
 		int length = 1;
 		length += kt.countAcks() + kt.countAckRequests() + kt.countResendRequests();
@@ -2044,7 +2044,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 						pn.requeueMessageItems(newMsgs, 0, x, false, "NotConnectedException(1a)");
 						pn.requeueMessageItems(messages, i, messages.length-i, false, "NotConnectedException(1b)");
 					}
-					return;
+					return false;
 				} catch (WouldBlockException e) {
 					if(logMINOR) Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
 					// Requeue
@@ -2052,7 +2052,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 						pn.requeueMessageItems(newMsgs, 0, x, false, "WouldBlockException(1a)");
 						pn.requeueMessageItems(messages, i, messages.length-i, false, "WouldBlockException(1b)");
 					}
-					return;
+					return false;
 				} catch (KeyChangedException e) {
 					if(logMINOR) Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
 					// Requeue
@@ -2060,7 +2060,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 						pn.requeueMessageItems(newMsgs, 0, x, false, "KeyChangedException(1a)");
 						pn.requeueMessageItems(messages, i, messages.length-i, false, "KeyChangedException(1b)");
 					}
-					return;
+					return false;
 				} catch (Throwable e) {
 					Logger.error(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
 					// Requeue
@@ -2068,7 +2068,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 						pn.requeueMessageItems(newMsgs, 0, x, false, "Throwable(1)");
 						pn.requeueMessageItems(messages, i, messages.length-i, false, "Throwable(1)");
 					}
-					return;
+					return false;
 				}
 			} else {
 				byte[] data = mi.getData();
@@ -2126,19 +2126,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				// Requeue
 				if(!dontRequeue)
 					pn.requeueMessageItems(messages, 0, messages.length, false, "NotConnectedException(2)");
-				return;
+				return false;
 			} catch (WouldBlockException e) {
 				if(logMINOR) Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
 				// Requeue
 				if(!dontRequeue)
 					pn.requeueMessageItems(messages, 0, messages.length, false, "WouldBlockException(2)");
-				return;
+				return false;
 			} catch (Throwable e) {
 				Logger.error(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
 				// Requeue
 				if(!dontRequeue)
 					pn.requeueMessageItems(messages, 0, messages.length, false, "Throwable(2)");
-				return;
+				return false;
 
 			}
 		} else {
@@ -2180,23 +2180,23 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 							// Requeue
 							if(!dontRequeue)
 								pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false, "NotConnectedException(3)");
-							return;
+							return false;
 						} catch (WouldBlockException e) {
 							if(logMINOR) Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
 							// Requeue
 							if(!dontRequeue)
 								pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false, "WouldBlockException(3)");
-							return;
+							return false;
 						} catch (Throwable e) {
 							Logger.error(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
 							// Requeue
 							if(!dontRequeue)
 								pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false, "Throwable(3)");
-							return;
+							return false;
 						}
 						if(onePacket) {
 							pn.requeueMessageItems(messages, i, messageData.length - i, true, "Didn't fit in single packet");
-							return;
+							return false;
 						}
 					}
 					lastIndex = i;
@@ -2209,6 +2209,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				}
 			}
 		}
+		return true;
 	}
 
 	/**
