@@ -712,6 +712,9 @@ public class KeyTracker {
 				sentPacketsContents.lock(packetNumber);
 				if(logMINOR)
 					Logger.minor(this, "Locked "+packetNumber);
+				synchronized(this) {
+					timeWouldBlock = -1;
+				}
 				return packetNumber;
 			} catch(InterruptedException e) {
 				synchronized(this) {
