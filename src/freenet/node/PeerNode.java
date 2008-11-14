@@ -1263,30 +1263,27 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			prev = previousTracker;
 		}
 		KeyTracker kt = cur;
-		try {
-		if(kt != null && !kt.wouldBlock(false)) {
+		if(kt != null) {
 			long next = kt.getNextUrgentTime();
 			t = Math.min(t, next);
 			if(next < now && logMINOR)
 				Logger.minor(this, "Next urgent time from curTracker less than now");
 			if(kt.hasPacketsToResend()) return now;
 		}
-		} catch (BlockedTooLongException e) {
-			// Ignore for now, it will come back around
-		}
 		kt = prev;
-		try {
-		if(kt != null && !kt.wouldBlock(false)) {
+		if(kt != null) {
 			long next = kt.getNextUrgentTime();
 			t = Math.min(t, next);
 			if(next < now && logMINOR)
 				Logger.minor(this, "Next urgent time from prevTracker less than now");
 			if(kt.hasPacketsToResend()) return now;
 		}
+		try {
+			if(!cur.wouldBlock(false))
+				t = messageQueue.getNextUrgentTime(t, now);
 		} catch (BlockedTooLongException e) {
 			// Ignore for now, it will come back around
 		}
-		t = messageQueue.getNextUrgentTime(t, now);
 		return t;
 	}
 	
