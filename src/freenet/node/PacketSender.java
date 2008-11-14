@@ -460,7 +460,7 @@ public class PacketSender implements Runnable, Ticker {
 			synchronized(peersDumpedBlockedTooLong) {
 				peers = peersDumpedBlockedTooLong.toArray(new Peer[peersDumpedBlockedTooLong.size()]);
 			}
-			L10n.addL10nSubstitution(div, "FNPPacketMangler.somePeersDisconnectedBlockedTooLongDetail", 
+			L10n.addL10nSubstitution(div, "PacketSender.somePeersDisconnectedBlockedTooLongDetail", 
 					new String[] { "count", "link", "/link" }
 					, new String[] { Integer.toString(peers.length), "<a href=\"/?_CHECKED_HTTP_=https://bugs.freenetproject.org/\">", "</a>" });
 			HTMLNode list = div.addChild("ul");
