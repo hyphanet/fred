@@ -1859,7 +1859,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			unroutableNewerVersion = newer;
 			unroutableOlderVersion = older;
 			bootIDChanged = (thisBootID != this.bootID);
-			if(bootIDChanged && logMINOR)
+			if(bootIDChanged && wasARekey)
+				Logger.error(this, "Changed boot ID while rekeying! from " + bootID + " to " + thisBootID + " for " + getPeer());
+			else if(bootIDChanged && logMINOR)
 				Logger.minor(this, "Changed boot ID from " + bootID + " to " + thisBootID + " for " + getPeer());
 			this.bootID = thisBootID;
 			if(bootIDChanged) {
