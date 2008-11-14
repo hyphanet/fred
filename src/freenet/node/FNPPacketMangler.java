@@ -1346,6 +1346,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return true;
 		}
 		
+		// Received a packet
+		pn.receivedPacket(true, false);
+		
 		// Promote if necessary
 		boolean dontWant = false;
 		if(oldOpennetPeer) {
