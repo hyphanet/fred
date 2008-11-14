@@ -859,7 +859,7 @@ public class KeyTracker {
 								Logger.minor(this, "Packet " + qr.packetNumber + " sent over " + (now - qr.createdTime) + "ms ago and still not acked on " + this + " for " + pn);
 							if(now - qr.createdTime > 10 * 60 * 1000) {
 								Logger.error(this, "Packet " + qr.packetNumber + " sent over " + (now - qr.createdTime) + "ms ago and still not acked on " + this + " for " + pn);
-								throw new StillNotAckedException();
+								throw new StillNotAckedException(this);
 							}
 						}
 						packetNumbers[realLength++] = packetNumber;

@@ -8,6 +8,7 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 
 import net.i2p.util.NativeBigInteger;
@@ -39,8 +40,11 @@ import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
 import freenet.io.comm.Peer.LocalAddressException;
+import freenet.l10n.L10n;
+import freenet.node.useralerts.UserAlert;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
+import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -2358,6 +2362,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		} catch (StillNotAckedException e) {
 			Logger.error(this, "Forcing disconnect on "+tracker.pn+" for "+tracker+" because packets not acked after 10 minutes!");
 			tracker.pn.forceDisconnect(true);
+			disconnectedStillNotAcked(tracker);
 			throw new NotConnectedException();
 		}
 
@@ -2554,6 +2559,106 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		return ret;
 	}
 
+	private HashSet<Peer> peersWithProblems = new HashSet<Peer>();
+	
+	private void disconnectedStillNotAcked(KeyTracker tracker) {
+		synchronized(peersWithProblems) {
+			peersWithProblems.add(tracker.pn.getPeer());
+			if(peersWithProblems.size() > 1) return;
+		}
+		node.clientCore.alerts.register(disconnectedStillNotAckedAlert);
+	}
+	
+	private UserAlert disconnectedStillNotAckedAlert = new UserAlert() {
+
+		public String anchor() {
+			return "disconnectedStillNotAcked";
+		}
+
+		public String dismissButtonText() {
+			return null;
+		}
+
+		public short getPriorityClass() {
+			return UserAlert.ERROR;
+		}
+
+		public String getShortText() {
+			int sz;
+			synchronized(peersWithProblems) {
+				sz = peersWithProblems.size();
+			}
+			return l10n("somePeersDisconnectedStillNotAcked", "count", Integer.toString(sz));
+		}
+
+		public HTMLNode getHTMLText() {
+			HTMLNode div = new HTMLNode("div");
+			Peer[] peers;
+			synchronized(peersWithProblems) {
+				peers = peersWithProblems.toArray(new Peer[peersWithProblems.size()]);
+			}
+			L10n.addL10nSubstitution(div, "FNPPacketMangler.somePeersDisconnectedStillNotAckedDetail", 
+					new String[] { "count", "link", "/link" }
+					, new String[] { Integer.toString(peers.length), "<a href=\"/__CHECKED_HTTPS_=https://bugs.freenetproject.org/\">", "</a>" });
+			HTMLNode list = div.addChild("ul");
+			for(Peer peer : peers) {
+				list.addChild("li", peer.toString());
+			}
+			return div;
+		}
+
+		public String getText() {
+			StringBuffer sb = new StringBuffer();
+			Peer[] peers;
+			synchronized(peersWithProblems) {
+				peers = peersWithProblems.toArray(new Peer[peersWithProblems.size()]);
+			}
+			sb.append(l10n("somePeersDisconnectedStillNotAckedDetail", 
+					new String[] { "count", "link", "/link" },
+					new String[] { Integer.toString(peers.length), "", "" } ));
+			sb.append('\n');
+			for(Peer peer : peers) {
+				sb.append('\t');
+				sb.append(peer.toString());
+				sb.append('\n');
+			}
+			return sb.toString();
+		}
+		
+		public String getTitle() {
+			return getShortText();
+		}
+
+		public Object getUserIdentifier() {
+			return FNPPacketMangler.this;
+		}
+
+		public boolean isEventNotification() {
+			return false;
+		}
+
+		public boolean isValid() {
+			return true;
+		}
+
+		public void isValid(boolean validity) {
+			// Ignore
+		}
+
+		public void onDismiss() {
+			// Ignore
+		}
+
+		public boolean shouldUnregisterOnDismiss() {
+			return false;
+		}
+
+		public boolean userCanDismiss() {
+			return false;
+		}
+
+	};
+
 	/**
 	 * Encrypt and send a packet.
 	 * @param plaintext The packet's plaintext, including all formatting,
@@ -2621,6 +2726,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		kt.pn.sentPacket();
 		return output.length + sock.getHeadersLength();
+	}
+
+	protected String l10n(String key, String[] patterns, String[] values) {
+		return L10n.getString("FNPPacketMangler."+key, patterns, values);
+	}
+
+	protected String l10n(String key, String pattern, String value) {
+		return L10n.getString("FNPPacketMangler."+key, pattern, value);
 	}
 
 	/* (non-Javadoc)
