@@ -1279,7 +1279,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(kt.hasPacketsToResend()) return now;
 		}
 		try {
-			if(!cur.wouldBlock(false))
+			if(cur != null && !cur.wouldBlock(false))
 				t = messageQueue.getNextUrgentTime(t, now);
 		} catch (BlockedTooLongException e) {
 			// Ignore for now, it will come back around
