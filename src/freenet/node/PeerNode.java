@@ -1281,6 +1281,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		try {
 			if(cur != null && !cur.wouldBlock(false))
 				t = messageQueue.getNextUrgentTime(t, now);
+			// If there isn't a current tracker, no point worrying about it as we won't be able to send it anyway...
 		} catch (BlockedTooLongException e) {
 			// Ignore for now, it will come back around
 		}
