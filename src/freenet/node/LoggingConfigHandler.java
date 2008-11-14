@@ -163,7 +163,7 @@ public class LoggingConfigHandler {
     	
     	// interval
     	
-    	config.register("interval", "1HOUR", 5, true, false, "LogConfigHandler.rotationInterval", "LogConfigHandler.rotationIntervalLong",
+    	config.register("interval", "10MINUTE", 5, true, false, "LogConfigHandler.rotationInterval", "LogConfigHandler.rotationIntervalLong",
     			new StringCallback() {
 					@Override
 					public String get() {
