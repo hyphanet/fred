@@ -27,9 +27,10 @@ public interface OutgoingPacketMangler {
 	 * @param onePacketOnly If true, we will only send one packet, and will requeue any
 	 * messages that don't fit in that single packet.
 	 * @return True if we sent a packet.
+	 * @throws BlockedTooLongException 
 	 */
 	public boolean processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn,
-			boolean neverWaitForPacketNumber, boolean dontRequeue, boolean onePacketOnly);
+			boolean neverWaitForPacketNumber, boolean dontRequeue, boolean onePacketOnly) throws BlockedTooLongException;
 
 	/**
 	 * Resend a single packet.

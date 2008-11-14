@@ -1256,23 +1256,35 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	*/
 	public long getNextUrgentTime(long now) {
 		long t = Long.MAX_VALUE;
+		KeyTracker cur;
+		KeyTracker prev;
 		synchronized(this) {
-		KeyTracker kt = currentTracker;
-		if(kt != null) {
+			cur = currentTracker;
+			prev = previousTracker;
+		}
+		KeyTracker kt = cur;
+		try {
+		if(kt != null && !kt.wouldBlock(false)) {
 			long next = kt.getNextUrgentTime();
 			t = Math.min(t, next);
 			if(next < now && logMINOR)
 				Logger.minor(this, "Next urgent time from curTracker less than now");
 			if(kt.hasPacketsToResend()) return now;
 		}
-		kt = previousTracker;
-		if(kt != null) {
+		} catch (BlockedTooLongException e) {
+			// Ignore for now, it will come back around
+		}
+		kt = prev;
+		try {
+		if(kt != null && !kt.wouldBlock(false)) {
 			long next = kt.getNextUrgentTime();
 			t = Math.min(t, next);
 			if(next < now && logMINOR)
 				Logger.minor(this, "Next urgent time from prevTracker less than now");
 			if(kt.hasPacketsToResend()) return now;
 		}
+		} catch (BlockedTooLongException e) {
+			// Ignore for now, it will come back around
 		}
 		t = messageQueue.getNextUrgentTime(t, now);
 		return t;
@@ -4016,8 +4028,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * @param now
 	 * @param rpiTemp
 	 * @param rpiTemp
+	 * @throws BlockedTooLongException 
 	 */
-	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp) {
+	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp) throws BlockedTooLongException {
 		// If there are any urgent notifications, we must send a packet.
 		boolean mustSend = false;
 		boolean mustSendPacket = false;

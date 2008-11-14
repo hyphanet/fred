@@ -541,6 +541,11 @@ public class KeyTracker {
 		}
 		if(cbCount > 0 && logMINOR)
 			Logger.minor(this, "Executed " + cbCount + " callbacks");
+		try {
+			wouldBlock(true);
+		} catch (BlockedTooLongException e) {
+			// Ignore, will come up again. In any case it's rather unlikely...
+		}
 	}
 
 	/**
@@ -570,6 +575,11 @@ public class KeyTracker {
 				throttle.notifyOfPacketAcknowledged();
 				throttle.setRoundTripTime(System.currentTimeMillis() - timeAdded);
 			}
+		try {
+			wouldBlock(true);
+		} catch (BlockedTooLongException e) {
+			// Ignore, will come up again. In any case it's rather unlikely...
+		}
 		if(callbacks != null) {
 			for(int i = 0; i < callbacks.length; i++)
 				callbacks[i].acknowledged();
@@ -711,6 +721,36 @@ public class KeyTracker {
 			}
 		}
 	}
+	
+	private long timeWouldBlock = -1;
+	
+	static final long MAX_WOULD_BLOCK_DELTA = 10*60*1000;
+	
+	public boolean wouldBlock(boolean wakeTicker) throws BlockedTooLongException {
+		long now = System.currentTimeMillis();
+		synchronized(this) {
+			if(sentPacketsContents.wouldBlock(nextPacketNumber)) {
+				if(timeWouldBlock == -1)
+					timeWouldBlock = now;
+				else {
+					long delta = now - timeWouldBlock;
+					if(delta > MAX_WOULD_BLOCK_DELTA) {
+						Logger.error(this, "Not been able to allocate a packet to tracker "+this+" for "+TimeUtil.formatTime(delta));
+						throw new BlockedTooLongException(this, delta);
+					}
+				}
+				return true;
+			} else {
+				long delta = now - timeWouldBlock;
+				timeWouldBlock = -1;
+				if(timeWouldBlock != -1 && (delta > PacketSender.MAX_COALESCING_DELAY)) {
+					Logger.error(this, "Waking PacketSender: have been blocking for packet ack for "+TimeUtil.formatTime(delta));
+				} else return false;
+			}
+		}
+		pn.node.ps.wakeUp();
+		return false;
+	}
 
 	/**
 	 * @return A packet number for a new outgoing packet.
@@ -727,6 +767,7 @@ public class KeyTracker {
 			if(isDeprecated)
 				throw new KeyChangedException();
 			sentPacketsContents.lockNeverBlock(packetNumber);
+			timeWouldBlock = -1;
 			nextPacketNumber = packetNumber + 1;
 			if(logMINOR)
 				Logger.minor(this, "Allocated " + packetNumber + " in allocateOutgoingPacketNumberNeverBlock for " + this);

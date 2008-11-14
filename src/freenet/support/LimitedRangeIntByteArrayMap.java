@@ -146,6 +146,11 @@ public class LimitedRangeIntByteArrayMap {
         }
     }
     
+    public boolean wouldBlock(int index) {
+    	if(minValue == -1) return false;
+    	return (index - minValue >= maxRange);
+    }
+    
     /**
      * Wait until add(index, whatever) would return true.
      * If this returns, add(index, whatever) will work.

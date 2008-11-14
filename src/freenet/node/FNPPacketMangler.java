@@ -2014,7 +2014,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/* (non-Javadoc)
 	 * @see freenet.node.OutgoingPacketMangler#processOutgoingOrRequeue(freenet.node.MessageItem[], freenet.node.PeerNode, boolean, boolean)
 	 */
-	public boolean processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn, boolean neverWaitForPacketNumber, boolean dontRequeue, boolean onePacket) {
+	public boolean processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn, boolean neverWaitForPacketNumber, boolean dontRequeue, boolean onePacket) throws BlockedTooLongException {
 		String requeueLogString = "";
 		if(!dontRequeue) {
 			requeueLogString = ", requeueing";
@@ -2025,6 +2025,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		KeyTracker kt = pn.getCurrentKeyTracker();
 		if(kt == null) {
 			Logger.error(this, "Not connected while sending packets: "+pn);
+			return false;
+		}
+		if(kt.wouldBlock(false)) {
+			if(logMINOR) Logger.minor(this, "Would block: "+kt);
 			return false;
 		}
 		int length = 1;
