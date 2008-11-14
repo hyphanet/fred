@@ -2434,9 +2434,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				} catch(KeyChangedException e) {
 				// Ignore
 				} catch(WouldBlockException e) {
-				// Impossible, ignore
+					Logger.error(this, "Caught impossible: "+e, e);
 				} catch(PacketSequenceException e) {
-					// Impossible, ignore
+					Logger.error(this, "Caught impossible: "+e, e);
 				}
 			}
 		}
@@ -2454,9 +2454,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				} catch(KeyChangedException e) {
 				// Ignore
 				} catch(WouldBlockException e) {
-					Logger.error(this, "Impossible: " + e, e);
+					Logger.error(this, "Caught impossible: "+e, e);
 				} catch(PacketSequenceException e) {
-					// Impossible, ignore
+					Logger.error(this, "Caught impossible: "+e, e);
 				}
 		}
 		return sent;
