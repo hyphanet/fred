@@ -2570,6 +2570,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			peersWithProblems.add(tracker.pn.getPeer());
 			if(peersWithProblems.size() > 1) return;
 		}
+		if(node.clientCore == null || node.clientCore.alerts == null)
+			return;
 		node.clientCore.alerts.register(disconnectedStillNotAckedAlert);
 	}
 	

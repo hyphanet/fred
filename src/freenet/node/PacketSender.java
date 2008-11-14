@@ -429,6 +429,8 @@ public class PacketSender implements Runnable, Ticker {
 			peersDumpedBlockedTooLong.add(p);
 			if(peersDumpedBlockedTooLong.size() > 1) return;
 		}
+		if(node.clientCore == null || node.clientCore.alerts == null)
+			return;
 		node.clientCore.alerts.register(peersDumpedBlockedTooLongAlert);
 	}
 	
