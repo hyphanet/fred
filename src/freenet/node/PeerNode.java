@@ -1898,7 +1898,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 			ctx = null;
 			isRekeying = false;
-			timeLastRekeyed = now;
+			timeLastRekeyed = now - (unverified ? 0 : FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY / 2);
 			totalBytesExchangedWithCurrentTracker = 0;
 			// This has happened in the past, and caused problems, check for it.
 			if(currentTracker != null && previousTracker != null && 
