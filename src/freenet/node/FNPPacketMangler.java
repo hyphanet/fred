@@ -7,9 +7,11 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.TimeZone;
 
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.BlockCipher;
@@ -2563,9 +2565,18 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		return ret;
 	}
 
+	static long bugValidTime;
+	static {
+		final Calendar _cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+		// year, month - 1 (or constant), day, hour, minute, second
+		_cal.set( 2008, Calendar.NOVEMBER, 17, 0, 0, 0 );
+		long bugValidTime = _cal.getTimeInMillis();
+	}
+	
 	private HashSet<Peer> peersWithProblems = new HashSet<Peer>();
 	
 	private void disconnectedStillNotAcked(KeyTracker tracker) {
+		if(System.currentTimeMillis() < bugValidTime) return;
 		synchronized(peersWithProblems) {
 			peersWithProblems.add(tracker.pn.getPeer());
 			if(peersWithProblems.size() > 1) return;
