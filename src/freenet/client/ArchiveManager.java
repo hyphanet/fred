@@ -235,8 +235,8 @@ public class ArchiveManager {
 		if(logMINOR) Logger.minor(this, "Extracting "+key);
 		ctx.onExtract();
 		ctx.removeAllCachedItems(); // flush cache anyway
-		long expectedSize = ctx.getLastSize();
-		long archiveSize = data.size();
+		final long expectedSize = ctx.getLastSize();
+		final long archiveSize = data.size();
 		/** Set if we need to throw a RestartedException rather than returning success,
 		 * after we have unpacked everything.
 		 */
@@ -258,13 +258,12 @@ public class ArchiveManager {
 			ctx.setLastHash(realHash);
 		}
 		
-		long dataSize = data.size();
-		if(dataSize > archiveContext.maxArchiveSize)
-			throw new ArchiveFailureException("Archive too big ("+dataSize+" > "+archiveContext.maxArchiveSize+")!");
-		else if(dataSize <= 0)
-			throw new ArchiveFailureException("Archive too small! ("+dataSize+')');
+		if(archiveSize > archiveContext.maxArchiveSize)
+			throw new ArchiveFailureException("Archive too big ("+archiveSize+" > "+archiveContext.maxArchiveSize+")!");
+		else if(archiveSize <= 0)
+			throw new ArchiveFailureException("Archive too small! ("+archiveSize+')');
 		else if(logMINOR)
-			Logger.minor(this, "Container size (possibly compressed): "+data.size()+" for "+data);
+			Logger.minor(this, "Container size (possibly compressed): "+archiveSize+" for "+data);
 		
 		
 		InputStream is = null;
