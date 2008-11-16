@@ -257,8 +257,12 @@ public class ArchiveManager {
 				throwAtExit = true;
 			ctx.setLastHash(realHash);
 		}
-		if(data.size() > archiveContext.maxArchiveSize)
-			throw new ArchiveFailureException("Archive too big ("+data.size()+" > "+archiveContext.maxArchiveSize+")!");
+		
+		long dataSize = data.size();
+		if(dataSize > archiveContext.maxArchiveSize)
+			throw new ArchiveFailureException("Archive too big ("+dataSize+" > "+archiveContext.maxArchiveSize+")!");
+		else if(dataSize <= 0)
+			throw new ArchiveFailureException("Archive too small! ("+dataSize+')');
 		else if(logMINOR)
 			Logger.minor(this, "Container size (possibly compressed): "+data.size()+" for "+data);
 		
