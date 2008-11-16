@@ -294,7 +294,7 @@ public class KeyTracker {
 	private class QueuedResendRequest extends BaseQueuedResend {
 
 		@Override
-		long initialActiveTime(long now) {
+		long initialActiveTime( long now) {
 			return now; // Active immediately; reordering is rare
 		}
 
@@ -322,7 +322,7 @@ public class KeyTracker {
 		long activeDelay;
 
 		@Override
-		long initialActiveTime(long now) {
+		long initialActiveTime( long now) {
 			// Request an ack after four RTTs
 			activeDelay = twoRTTs();
 			return now + activeDelay;
@@ -330,7 +330,7 @@ public class KeyTracker {
 
 		QueuedAckRequest(int packetNumber) {
 			super(packetNumber);
-			this.createdTime = System.currentTimeMillis();			
+			this.createdTime = System.currentTimeMillis();
 		}
 
 		@Override
@@ -543,7 +543,7 @@ public class KeyTracker {
 			Logger.minor(this, "Executed " + cbCount + " callbacks");
 		try {
 			wouldBlock(true);
-		} catch (BlockedTooLongException e) {
+		} catch(BlockedTooLongException e) {
 			// Ignore, will come up again. In any case it's rather unlikely...
 		}
 	}
@@ -577,7 +577,7 @@ public class KeyTracker {
 			}
 		try {
 			wouldBlock(true);
-		} catch (BlockedTooLongException e) {
+		} catch(BlockedTooLongException e) {
 			// Ignore, will come up again. In any case it's rather unlikely...
 		}
 		if(callbacks != null) {
@@ -594,7 +594,7 @@ public class KeyTracker {
 	 */
 	private void removeAckRequest(int seqNo) throws UpdatableSortedLinkedListKilledException {
 		QueuedAckRequest qr = null;
-		
+
 		synchronized(ackRequestQueue) {
 			qr = (QueuedAckRequest) ackRequestQueue.removeByKey(seqNo);
 		}
@@ -639,19 +639,18 @@ public class KeyTracker {
 		if(queuedAck(packetNumber)) {
 			// Already going to send an ack
 			// Don't speed it up though; wasteful
-		} else
-			if(packetNumbersReceived.contains(packetNumber))
-				// We have received it, so send them an ack
-				queueAck(packetNumber);
-			else {
-				// We have not received it, so get them to resend it
-				try {
-					queueResendRequest(packetNumber);
-				} catch(UpdatableSortedLinkedListKilledException e) {
-					// Ignore, we are decoding, not sending.
+		} else if(packetNumbersReceived.contains(packetNumber))
+			// We have received it, so send them an ack
+			queueAck(packetNumber);
+		else {
+			// We have not received it, so get them to resend it
+			try {
+				queueResendRequest(packetNumber);
+			} catch(UpdatableSortedLinkedListKilledException e) {
+				// Ignore, we are decoding, not sending.
 				}
-				highestSeenIncomingSerialNumber = Math.max(highestSeenIncomingSerialNumber, packetNumber);
-			}
+			highestSeenIncomingSerialNumber = Math.max(highestSeenIncomingSerialNumber, packetNumber);
+		}
 	}
 
 	/**
@@ -663,7 +662,7 @@ public class KeyTracker {
 	 */
 	private boolean queuedAck(int packetNumber) {
 		synchronized(ackQueue) {
-			for ( QueuedAck qa :ackQueue ) {
+			for(QueuedAck qa : ackQueue) {
 				if(qa.packetNumber == packetNumber)
 					return true;
 			}
@@ -711,7 +710,7 @@ public class KeyTracker {
 			try {
 				sentPacketsContents.lock(packetNumber);
 				if(logMINOR)
-					Logger.minor(this, "Locked "+packetNumber);
+					Logger.minor(this, "Locked " + packetNumber);
 				synchronized(this) {
 					timeWouldBlock = -1;
 				}
@@ -724,11 +723,9 @@ public class KeyTracker {
 			}
 		}
 	}
-	
 	private long timeWouldBlock = -1;
-	
-	static final long MAX_WOULD_BLOCK_DELTA = 10*60*1000;
-	
+	static final long MAX_WOULD_BLOCK_DELTA = 10 * 60 * 1000;
+
 	public boolean wouldBlock(boolean wakeTicker) throws BlockedTooLongException {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
@@ -738,20 +735,21 @@ public class KeyTracker {
 				else {
 					long delta = now - timeWouldBlock;
 					if(delta > MAX_WOULD_BLOCK_DELTA) {
-						Logger.error(this, "Not been able to allocate a packet to tracker "+this+" for "+TimeUtil.formatTime(delta));
+						Logger.error(this, "Not been able to allocate a packet to tracker " + this + " for " + TimeUtil.formatTime(delta));
 						throw new BlockedTooLongException(this, delta);
 					}
 				}
 				return true;
-			} else {
+			} else
 				if(timeWouldBlock != -1) {
 					long delta = now - timeWouldBlock;
 					timeWouldBlock = -1;
-					if(delta > PacketSender.MAX_COALESCING_DELAY) {
-						Logger.error(this, "Waking PacketSender: have been blocking for packet ack for "+TimeUtil.formatTime(delta));
-					} else return false;
-				} else return false;
-			}
+					if(delta > PacketSender.MAX_COALESCING_DELAY)
+						Logger.error(this, "Waking PacketSender: have been blocking for packet ack for " + TimeUtil.formatTime(delta));
+					else
+						return false;
+				} else
+					return false;
 		}
 		pn.node.ps.wakeUp();
 		return false;
@@ -864,9 +862,8 @@ public class KeyTracker {
 						if(logMINOR)
 							Logger.minor(this, "Grabbing resend request: " + qrr.packetNumber + " from " + this);
 						qrr.sent();
-					} else
-						if(logMINOR)
-							Logger.minor(this, "Rejecting resend request: " + qrr.packetNumber + " - in future by " + (qrr.activeTime - now) + "ms for " + this);
+					} else if(logMINOR)
+						Logger.minor(this, "Rejecting resend request: " + qrr.packetNumber + " - in future by " + (qrr.activeTime - now) + "ms for " + this);
 				}
 			}
 		} catch(UpdatableSortedLinkedListKilledException e) {
@@ -912,9 +909,8 @@ public class KeyTracker {
 						if(logMINOR)
 							Logger.minor(this, "Grabbing ack request " + packetNumber + " (" + realLength + ") from " + this);
 						qr.sent();
-					} else
-						if(logMINOR)
-							Logger.minor(this, "Ignoring ack request " + packetNumber + " (" + realLength + ") - will become active in " + (qr.activeTime - now) + "ms on " + this + " - " + qr);
+					} else if(logMINOR)
+						Logger.minor(this, "Ignoring ack request " + packetNumber + " (" + realLength + ") - will become active in " + (qr.activeTime - now) + "ms on " + this + " - " + qr);
 				}
 			}
 		} catch(UpdatableSortedLinkedListKilledException e) {
@@ -1104,7 +1100,7 @@ public class KeyTracker {
 			return null;
 		return numbers;
 	}
-	
+
 	public boolean hasPacketsToResend() {
 		synchronized(packetsToResend) {
 			return !packetsToResend.isEmpty();
