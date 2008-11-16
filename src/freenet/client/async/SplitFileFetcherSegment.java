@@ -230,12 +230,13 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			decodedData = fetchContext.bucketFactory.makeBucket(maxBlockLength * dataBuckets.length);
 			if(logMINOR) Logger.minor(this, "Copying data from data blocks");
 			OutputStream os = decodedData.getOutputStream();
+			long osSize = 0;
 			for(int i=0;i<dataBuckets.length;i++) {
 				SplitfileBlock status = dataBuckets[i];
 				Bucket data = status.getData();
-				BucketTools.copyTo(data, os, Long.MAX_VALUE);
+				osSize += BucketTools.copyTo(data, os, Long.MAX_VALUE);
 			}
-			if(logMINOR) Logger.minor(this, "Copied data");
+			if(logMINOR) Logger.minor(this, "Copied data ("+osSize+")");
 			os.close();
 			// Must set finished BEFORE calling parentFetcher.
 			// Otherwise a race is possible that might result in it not seeing our finishing.
