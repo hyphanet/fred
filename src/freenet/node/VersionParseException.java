@@ -4,7 +4,7 @@
 package freenet.node;
 
 /**
- * Unchecked exception thrown by Version.getArbitraryBuildNumber()
+ * checked exception thrown by Version.getArbitraryBuildNumber()
  * @author toad
  */
 public class VersionParseException extends Exception {
