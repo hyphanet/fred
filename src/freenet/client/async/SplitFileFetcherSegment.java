@@ -234,7 +234,11 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			for(int i=0;i<dataBuckets.length;i++) {
 				SplitfileBlock status = dataBuckets[i];
 				Bucket data = status.getData();
-				osSize += BucketTools.copyTo(data, os, Long.MAX_VALUE);
+				long copied = BucketTools.copyTo(data, os, Long.MAX_VALUE);
+				osSize += copied;
+				if(i != dataBuckets.length-1 && copied != 32768)
+					Logger.error(this, "Copied only "+copied+" bytes from "+data+" (bucket "+i+")");
+				if(logMINOR) Logger.minor(this, "Copied "+copied+" bytes from bucket "+i);
 			}
 			if(logMINOR) Logger.minor(this, "Copied data ("+osSize+")");
 			os.close();
