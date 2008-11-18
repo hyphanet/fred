@@ -264,10 +264,11 @@ public class SplitFileFetcher implements ClientGetState {
 				try {
 					out = returnBucket;
 					if(!decompressors.isEmpty()) out = null;
+					Bucket oldData = data;
 					data = c.decompress(data, fetchContext.bucketFactory, maxLen, maxLen * 4, out);
 					File o = new File("not-broken."+System.currentTimeMillis());
 					FileBucket dumpCopy = new FileBucket(o, false, false, false, false, false);
-					BucketTools.copy(data, dumpCopy);
+					BucketTools.copy(oldData, dumpCopy);
 					System.err.println("Written not-broken copy to "+o);
 				} catch (IOException e) {
 					File o = new File("broken."+System.currentTimeMillis());
