@@ -69,6 +69,10 @@ public class Base64
     return encode(in, false);
   }
 
+  /* FIXME: Figure out where this function is used and maybe remove it if its not
+   * used. Its old javadoc which has been here for a while fools the user into believing
+   * that the format is standard compliant */
+  
   /**
    * Caller should specify equalsPad=true if they want a standards compliant padding,
    * but not standard compliant encoding.
