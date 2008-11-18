@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.LinkedList;
@@ -22,6 +23,8 @@ import freenet.support.OOMHandler;
 import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;
 import freenet.support.compress.Compressor;
+import freenet.support.io.BucketTools;
+import freenet.support.io.FileBucket;
 
 /**
  * Fetch a splitfile, decompress it if need be, and return it to the GetCompletionCallback.
@@ -257,11 +260,20 @@ public class SplitFileFetcher implements ClientGetState {
 			while(!decompressors.isEmpty()) {
 				Compressor c = (Compressor) decompressors.removeLast();
 				long maxLen = Math.max(fetchContext.maxTempLength, fetchContext.maxOutputLength);
+				Bucket out;
 				try {
-					Bucket out = returnBucket;
+					out = returnBucket;
 					if(!decompressors.isEmpty()) out = null;
 					data = c.decompress(data, fetchContext.bucketFactory, maxLen, maxLen * 4, out);
+					File o = new File("not-broken."+System.currentTimeMillis());
+					FileBucket dumpCopy = new FileBucket(o, false, false, false, false, false);
+					BucketTools.copy(data, dumpCopy);
+					System.err.println("Written not-broken copy to "+o);
 				} catch (IOException e) {
+					File o = new File("broken."+System.currentTimeMillis());
+					FileBucket dumpCopy = new FileBucket(o, false, false, false, false, false);
+					BucketTools.copy(data, dumpCopy);
+					System.err.println("Written broken copy to "+o);
 					cb.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), this);
 					return;
 				} catch (CompressionOutputSizeException e) {
