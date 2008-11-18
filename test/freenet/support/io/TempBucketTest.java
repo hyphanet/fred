@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -116,6 +117,25 @@ public class TempBucketTest extends TestSuite {
 			assertTrue(is.read(readTo, 0, 16) == 16);
 			for(int i=0;i<readTo.length;i++)
 				assertTrue(readTo[i] == 0);
+			is.close();
+			os.close();
+		}
+		
+		// Do a bigger read, verify contents.
+		public void testBigConversionWhileReading() throws IOException {
+			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 4096, 65536, strongPRNG, weakPRNG, false);
+			
+			TempBucket bucket = (TempBucket) tbf.makeBucket(2048);
+			OutputStream os = bucket.getOutputStream();
+			byte[] data = new byte[2048];
+			new Random(89).nextBytes(data);
+			os.write(data);
+			InputStream is = bucket.getInputStream();
+			bucket.migrateToFileBucket();
+			byte[] readTo = new byte[2048];
+			new DataInputStream(is).readFully(readTo);
+			for(int i=0;i<readTo.length;i++)
+				assertTrue(readTo[i] == data[i]);
 			is.close();
 			os.close();
 		}
