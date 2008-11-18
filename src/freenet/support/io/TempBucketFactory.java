@@ -252,6 +252,11 @@ public class TempBucketFactory implements BucketFactory {
 			public void _maybeResetInputStream() throws IOException {
 				if(idx != osIndex)
 					close();
+				else {
+					Closer.close(currentIS);
+					currentIS = currentBucket.getInputStream();
+					currentIS.skip(index);
+				}
 			}
 			
 			@Override
