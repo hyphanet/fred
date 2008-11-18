@@ -101,7 +101,7 @@ public class TempBucketFactory implements BucketFactory {
 		}
 		
 		/** A blocking method to force-migrate from a RAMBucket to a FileBucket */
-		public final void migrateToFileBucket() throws IOException {
+		final void migrateToFileBucket() throws IOException {
 			Bucket toMigrate = null;
 			synchronized(this) {
 				if(!isRAMBucket() || hasBeenFreed)
