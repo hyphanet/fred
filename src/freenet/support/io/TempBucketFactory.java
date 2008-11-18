@@ -255,7 +255,10 @@ public class TempBucketFactory implements BucketFactory {
 				else {
 					Closer.close(currentIS);
 					currentIS = currentBucket.getInputStream();
-					currentIS.skip(index);
+					long toSkip = index;
+					while(toSkip > 0) {
+						toSkip -= currentIS.skip(toSkip);
+					}
 				}
 			}
 			
