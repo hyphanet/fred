@@ -4,6 +4,7 @@
 package freenet.support.io;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Random;
 
@@ -101,6 +102,24 @@ public class TempBucketTest extends TestSuite {
 				b.free();
 			}
 		}
+		
+		// This CAN happen due to memory pressure.
+		public void testConversionWhileReading() throws IOException {
+			TempBucketFactory tbf = new TempBucketFactory(exec, fg, 1024, 65536, strongPRNG, weakPRNG, false);
+			
+			TempBucket bucket = (TempBucket) tbf.makeBucket(64);
+			OutputStream os = bucket.getOutputStream();
+			os.write(new byte[16]);
+			InputStream is = bucket.getInputStream();
+			bucket.migrateToFileBucket();
+			byte[] readTo = new byte[16];
+			assertTrue(is.read(readTo, 0, 16) == 16);
+			for(int i=0;i<readTo.length;i++)
+				assertTrue(readTo[i] == 0);
+			is.close();
+			os.close();
+		}
+		
 	}
 
 	public static class RealTempBucketTest_ extends BucketTestBase {
