@@ -263,7 +263,7 @@ public class FieldsTest extends TestCase {
 		assertEquals(outLongs.length, ints.length);
 	}
 	
-	public void testBytesToIntException() {
+	public void testBytesToLongsException() {
 		byte[] bytes = new byte[3];
 		try {
 			Fields.bytesToLongs(bytes, 0, bytes.length);
@@ -271,7 +271,7 @@ public class FieldsTest extends TestCase {
 		}
 		catch(IllegalArgumentException e){
 			// expect this
-		}
+		}		
 	}
 	
 	public void testBytesToInt() {
