@@ -682,7 +682,7 @@ public class OpennetManager {
 			return null;
 		}
     	
-		registerKnownIdentity(ref.get("identity"));
+		//registerKnownIdentity(ref.get("identity"));
 		return ref;
 	}
 
