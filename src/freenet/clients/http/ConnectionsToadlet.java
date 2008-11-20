@@ -245,10 +245,10 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			long nodeUptimeSeconds = (now - node.startupTime) / 1000;
 			int bwlimitDelayTime = (int) stats.getBwlimitDelayTime();
 			int nodeAveragePingTime = (int) stats.getNodeAveragePingTime();
-			int networkSizeEstimateSession = stats.getNetworkSizeEstimate(-1);
+			int networkSizeEstimateSession = stats.getDarknetSizeEstimate(-1);
 			int networkSizeEstimateRecent = 0;
 			if(nodeUptimeSeconds > (48*60*60)) {  // 48 hours
-				networkSizeEstimateRecent = stats.getNetworkSizeEstimate(now - (48*60*60*1000));  // 48 hours
+				networkSizeEstimateRecent = stats.getDarknetSizeEstimate(now - (48*60*60*1000));  // 48 hours
 			}
 			DecimalFormat fix4 = new DecimalFormat("0.0000");
 			double routingMissDistance =  stats.routingMissDistance.currentValue();
