@@ -1299,7 +1299,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		});		
 		boolean opennetEnabled = opennetConfig.getBoolean("enabled");
 		
-		opennetConfig.register("maxOpennetPeers", "20", 1, true, false, "Node.maxOpennetPeers",
+		opennetConfig.register("maxOpennetPeers", "" + OpennetManager.MAX_PEERS_FOR_SCALING, 1, true, false, "Node.maxOpennetPeers",
 				"Node.maxOpennetPeersLong", new IntCallback() {
 					@Override
 					public Integer get() {
@@ -1308,16 +1308,16 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 					@Override
 					public void set(Integer inputMaxOpennetPeers) throws InvalidConfigValueException {
 						if(inputMaxOpennetPeers < 0) throw new InvalidConfigValueException(l10n("mustBePositive"));
-						if(inputMaxOpennetPeers > 20) throw new InvalidConfigValueException(l10n("maxOpennetPeersMustBeTwentyOrLess"));
+						if(inputMaxOpennetPeers > OpennetManager.MAX_PEERS_FOR_SCALING) throw new InvalidConfigValueException(l10n("maxOpennetPeersMustBeTwentyOrLess"));
 						maxOpennetPeers = inputMaxOpennetPeers;
 						}
 					}
 		);
 		
 		maxOpennetPeers = opennetConfig.getInt("maxOpennetPeers");
-		if(maxOpennetPeers > 20) {
-			Logger.error(this, "maxOpennetPeers may not be over 20");
-			maxOpennetPeers = 20;
+		if(maxOpennetPeers > OpennetManager.MAX_PEERS_FOR_SCALING) {
+			Logger.error(this, "maxOpennetPeers may not be over " + OpennetManager.MAX_PEERS_FOR_SCALING);
+			maxOpennetPeers = OpennetManager.MAX_PEERS_FOR_SCALING;
 		}
 		
 		opennetCryptoConfig = new NodeCryptoConfig(opennetConfig, 2 /* 0 = enabled */, true, securityLevels);
