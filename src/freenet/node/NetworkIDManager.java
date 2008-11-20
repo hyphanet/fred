@@ -362,9 +362,17 @@ public class NetworkIDManager implements Runnable, Comparator<NetworkIDManager.P
 			return (short)(htl-diff);
 		}
 		@Override
-		public boolean equals(Object o) {
-			return (o instanceof PeerNode ? via.equals(o) : false);
-		}
+        public boolean equals(Object obj) {
+	        if (this == obj)
+		        return true;
+	        if (obj == null)
+		        return false;
+	        if (getClass() != obj.getClass())
+		        return false;
+	         else if (!via.equals(((PingRecord) obj).via))
+		        return false;
+	        return true;
+        }
 		@Override
 		public int hashCode() {
 			return via.hashCode();
