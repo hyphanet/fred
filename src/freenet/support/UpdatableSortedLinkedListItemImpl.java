@@ -42,7 +42,9 @@ public abstract class UpdatableSortedLinkedListItemImpl implements UpdatableSort
 	}
 
 	public DoublyLinkedList setParent(DoublyLinkedList l) {
-		return parentList;
+		DoublyLinkedList oldParent = parentList;
+		parentList = l;
+		return oldParent;
 	}
     
 }
