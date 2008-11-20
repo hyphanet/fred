@@ -301,7 +301,7 @@ public class FieldsTest extends TestCase {
 	private void doTestRoundTripBytesArrayToInt(byte[] inBytes) {
 
 		int outLong = Fields.bytesToInt(inBytes, 0);
-		assertEquals(inBytes, MersenneTwister.bytesToInt(inBytes, 0));
+		assertEquals(outLong, MersenneTwister.bytesToInt(inBytes, 0));
 		byte[] outBytes = Fields.intToBytes(outLong);
 		for(int i = 0; i < inBytes.length; i++) {
 			assertEquals(outBytes[i], inBytes[i]);
