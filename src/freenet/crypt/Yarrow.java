@@ -76,7 +76,8 @@ public class Yarrow extends RandomSource {
 		this(seed, digest, cipher, updateSeed, canBlock, true);
 	}
 	
-	public Yarrow(File seed, String digest, String cipher, boolean updateSeed, boolean canBlock, boolean reseedOnStartup) {
+	// unset reseedOnStartup only in unit test
+	Yarrow(File seed, String digest, String cipher, boolean updateSeed, boolean canBlock, boolean reseedOnStartup) {
 		SecureRandom s;
 		try {
 			s = SecureRandom.getInstance("SHA1PRNG");
