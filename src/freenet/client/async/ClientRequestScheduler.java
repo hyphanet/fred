@@ -228,7 +228,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 								addPendingKey(key, getter);
 							} else {
 								if(logMINOR)
-									Logger.minor(this, "Got "+block);
+									Logger.minor(this, "Got "+block+" for "+key.getURI());
 							}
 						}
 					} catch (KeyVerifyException e) {
@@ -656,7 +656,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 						if(logMINOR) Logger.minor(this, "Calling callback for "+gets[i]+" for "+key);
 						gets[i].onGotKey(key, block, ClientRequestScheduler.this);
 					} catch (Throwable t) {
-						Logger.error(this, "Caught "+t+" running callback "+gets[i]+" for "+key);
+						Logger.error(this, "Caught "+t+" running callback "+gets[i]+" for "+key, t);
 					}
 				}
 				if(logMINOR) Logger.minor(this, "Finished running callbacks");
