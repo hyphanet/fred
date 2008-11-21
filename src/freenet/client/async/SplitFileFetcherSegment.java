@@ -167,6 +167,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	}
 
 	public void onSuccess(Bucket data, int blockNo, SplitFileFetcherSubSegment seg, ClientKeyBlock block) {
+		if(data == null) throw new NullPointerException();
 		boolean decodeNow = false;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" on "+seg);
@@ -175,8 +176,10 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		// No need to unregister key, because it will be cleared in tripPendingKey().
 		boolean dontNotify;
 		boolean haveDataBlocks;
+		boolean wasDataBlock = false;
 		synchronized(this) {
 			if(blockNo < dataKeys.length) {
+				wasDataBlock = true;
 				if(dataKeys[blockNo] == null) {
 					if(!startedDecode) Logger.error(this, "Block already finished: "+blockNo);
 					data.free();
@@ -205,7 +208,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 					fetchedBlocks++;
 				// However, if we manage to get EVERY data block (common on a small splitfile),
 				// we don't need to FEC decode.
-				if(blockNo < dataKeys.length)
+				if(wasDataBlock)
 					fetchedDataBlocks++;
 				if(logMINOR) Logger.minor(this, "Fetched "+fetchedBlocks+" blocks in onSuccess("+blockNo+")");
 				haveDataBlocks = fetchedDataBlocks == dataKeys.length;
@@ -260,6 +263,8 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			for(int i=0;i<dataBuckets.length;i++) {
 				SplitfileBlock status = dataBuckets[i];
 				Bucket data = status.getData();
+				if(data == null) 
+					throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null");
 				long copied = BucketTools.copyTo(data, os, Long.MAX_VALUE);
 				osSize += copied;
 				if(i != dataBuckets.length-1 && copied != 32768)
