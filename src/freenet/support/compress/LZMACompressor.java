@@ -22,6 +22,7 @@ import freenet.support.io.CountedOutputStream;
 public class LZMACompressor implements Compressor {
 
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
+		// FIXME: optimise: use Encoder directly like we use Decoder directly.
 		if(maxReadLength <= 0)
 			throw new IllegalArgumentException();
 		Bucket output = bf.makeBucket(maxWriteLength);
