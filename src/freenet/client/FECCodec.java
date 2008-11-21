@@ -140,18 +140,19 @@ public abstract class FECCodec implements OOMHook {
 							buckets[i] = bf.makeBucket(blockLength);
 							writers[i] = buckets[i].getOutputStream();
 							if(logMINOR)
-								Logger.minor(this, "writers[" + i + "] != null");
+								Logger.minor(this, "writers[" + i + "] != null (NOT PADDING)");
 							readers[i] = null;
 							numberToDecode++;
 						}
 						else
 							throw new IllegalArgumentException("Too big: " + sz + " bigger than " + blockLength);
+					} else {
+						if(logMINOR)
+							Logger.minor(this, "writers[" + i + "] = null (already filled)");
+						writers[i] = null;
+						readers[i] = new DataInputStream(buckets[i].getInputStream());
+						packetIndexes[idx++] = i;
 					}
-					if(logMINOR)
-						Logger.minor(this, "writers[" + i + "] = null (already filled)");
-					writers[i] = null;
-					readers[i] = new DataInputStream(buckets[i].getInputStream());
-					packetIndexes[idx++] = i;
 				}
 			}
 			for(int i = 0; i < checkBlockStatus.length; i++) {
@@ -437,7 +438,7 @@ public abstract class FECCodec implements OOMHook {
 							}
 						}
 					} catch (IOException e) {
-						Logger.error(this, "BOH! ioe:" + e.getMessage());
+						Logger.error(this, "BOH! ioe:" + e.getMessage(), e);
 					}
 
 					// Call the callback
