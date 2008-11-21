@@ -11,15 +11,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import net.contrapunctus.lzma.LzmaOutputStream;
 import SevenZip.Compression.LZMA.Decoder;
-
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.CountedInputStream;
 import freenet.support.io.CountedOutputStream;
-import net.contrapunctus.lzma.LzmaInputStream;
-import net.contrapunctus.lzma.LzmaOutputStream;
 
 public class LZMACompressor implements Compressor {
 
