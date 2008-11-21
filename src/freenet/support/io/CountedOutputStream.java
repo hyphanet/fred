@@ -22,7 +22,7 @@ public class CountedOutputStream extends FilterOutputStream {
 	}
 	
 	public void write(byte[] buf, int offset, int length) throws IOException {
-		super.write(buf, offset, length);
+		out.write(buf, offset, length);
 		written += length;
 	}
 
