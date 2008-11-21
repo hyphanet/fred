@@ -61,13 +61,26 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	/** Recursion level */
 	final int recursionLevel;
 	private FetchException failureException;
+	/**
+	 * If true, the last data block has bad padding and cannot be involved in FEC decoding.
+	 */
+	private final boolean ignoreLastDataBlock;
 	private int fatallyFailedBlocks;
 	private int failedBlocks;
+	/**
+	 * The number of blocks fetched. If ignoreLastDataBlock is set, fetchedBlocks does not
+	 * include the last data block.
+	 */
 	private int fetchedBlocks;
+	/**
+	 * The number of data blocks (NOT check blocks) fetched. On a small splitfile, sometimes
+	 * we will manage to fetch all the data blocks. If so, we can complete the segment, even
+	 * if we can't do a FEC decode because of ignoreLastDataBlock.
+	 */
+	private int fetchedDataBlocks;
 	final FailureCodeTracker errors;
 	private boolean finishing;
 	private boolean scheduled;
-	private final boolean ignoreLastDataBlock;
 	
 	private FECCodec codec;
 	
@@ -186,9 +199,15 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			if(startedDecode) {
 				return;
 			} else {
-				fetchedBlocks++;
+				// Don't count the last data block, since we can't use it in FEC decoding.
+				if(!(ignoreLastDataBlock && blockNo == dataKeys.length - 1))
+					fetchedBlocks++;
+				// However, if we manage to get EVERY data block (common on a small splitfile),
+				// we don't need to FEC decode.
+				if(blockNo < dataKeys.length)
+					fetchedDataBlocks++;
 				if(logMINOR) Logger.minor(this, "Fetched "+fetchedBlocks+" blocks in onSuccess("+blockNo+")");
-				decodeNow = (fetchedBlocks >= minFetched);
+				decodeNow = (fetchedBlocks >= minFetched || fetchedDataBlocks == dataKeys.length);
 				if(decodeNow) {
 					startedDecode = true;
 					finishing = true;
@@ -495,9 +514,6 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		try {
 			SplitFileFetcherSubSegment seg = getSubSegment(0);
 			for(int i=0;i<dataRetries.length+checkRetries.length;i++) {
-				// FIXME NOT FETCHING LAST BLOCK
-				if(ignoreLastDataBlock && 
-						i == dataRetries.length - 1) continue;
 				seg.add(i, true);
 			}
 			
