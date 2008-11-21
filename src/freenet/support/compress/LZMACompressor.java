@@ -3,6 +3,8 @@
 * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.compress;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -14,6 +16,7 @@ import SevenZip.Compression.LZMA.Decoder;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.io.CountedInputStream;
 import freenet.support.io.CountedOutputStream;
 import net.contrapunctus.lzma.LzmaInputStream;
 import net.contrapunctus.lzma.LzmaOutputStream;
@@ -64,12 +67,12 @@ public class LZMACompressor implements Compressor {
 			output = bf.makeBucket(maxLength);
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Decompressing "+data+" size "+data.size()+" to new bucket "+output);
-		InputStream is = data.getInputStream();
-		OutputStream os = output.getOutputStream();
+		CountedInputStream is = new CountedInputStream(new BufferedInputStream(data.getInputStream()));
+		CountedOutputStream os = new CountedOutputStream(new BufferedOutputStream(output.getOutputStream()));
 		decompress(is, os, maxLength, maxCheckSizeLength);
 		os.close();
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Output: "+output+" size "+output.size());
+			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+is.count()+" written "+os.written());
 		return output;
 	}
 
