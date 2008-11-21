@@ -67,12 +67,14 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	final FailureCodeTracker errors;
 	private boolean finishing;
 	private boolean scheduled;
+	private final boolean ignoreLastDataBlock;
 	
 	private FECCodec codec;
 	
-	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext fetchContext, long maxTempLength, int recursionLevel) throws MetadataParseException, FetchException {
+	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext fetchContext, long maxTempLength, int recursionLevel, boolean ignoreLastDataBlock) throws MetadataParseException, FetchException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.parentFetcher = fetcher;
+		this.ignoreLastDataBlock = ignoreLastDataBlock;
 		this.errors = new FailureCodeTracker(false);
 		this.archiveContext = archiveContext;
 		this.splitfileType = splitfileType;
@@ -494,7 +496,8 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			SplitFileFetcherSubSegment seg = getSubSegment(0);
 			for(int i=0;i<dataRetries.length+checkRetries.length;i++) {
 				// FIXME NOT FETCHING LAST BLOCK
-				if(i == dataRetries.length - 1) continue;
+				if(ignoreLastDataBlock && 
+						i == dataRetries.length - 1) continue;
 				seg.add(i, true);
 			}
 			
