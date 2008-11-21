@@ -25,6 +25,10 @@ public class YarrowTest extends TestCase {
 		(byte)0xCD, (byte)0xD0, (byte)0xEB, (byte)0x37, (byte)0xF4 
 	};
 
+	public void testIt() {
+		assertTrue(true);
+	}
+	
 //	@Override
 //	protected void setUp() throws Exception {
 //		super.setUp();
