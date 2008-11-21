@@ -11,8 +11,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import net.contrapunctus.lzma.LzmaOutputStream;
 import SevenZip.Compression.LZMA.Decoder;
+import SevenZip.Compression.LZMA.Encoder;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -21,40 +21,23 @@ import freenet.support.io.CountedOutputStream;
 
 public class LZMACompressor implements Compressor {
 
+	// Copied from EncoderThread. See below re licensing.
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
-		// FIXME: optimise: use Encoder directly like we use Decoder directly.
-		if(maxReadLength <= 0)
-			throw new IllegalArgumentException();
-		Bucket output = bf.makeBucket(maxWriteLength);
-		InputStream is = null;
-		OutputStream os = null;
-		LzmaOutputStream lzmaOS = null;
-		try {
-			is = data.getInputStream();
-			os = new BufferedOutputStream(output.getOutputStream());
-			CountedOutputStream cos = new CountedOutputStream(os);
-			lzmaOS = new LzmaOutputStream(cos);
-			long read = 0;
-			// Bigger input buffer, so can compress all at once.
-			// Won't hurt on I/O either, although most OSs will only return a page at a time.
-			byte[] buffer = new byte[32768];
-			while(true) {
-				int l = (int) Math.min(buffer.length, maxReadLength - read);
-				int x = l == 0 ? -1 : is.read(buffer, 0, buffer.length);
-				if(x <= -1) break;
-				if(x == 0) throw new IOException("Returned zero from read()");
-				lzmaOS.write(buffer, 0, x);
-				read += x;
-				if(cos.written() > maxWriteLength)
-					throw new CompressionOutputSizeException();
-			}
-			lzmaOS.flush();
-			os = null;
-		} finally {
-			if(is != null) is.close();
-			if(lzmaOS != null) lzmaOS.close();
-			else if(os != null) os.close();
-		}
+		Bucket output;
+		output = bf.makeBucket(maxWriteLength);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Compressing "+data+" size "+data.size()+" to new bucket "+output);
+		CountedInputStream is = new CountedInputStream(new BufferedInputStream(data.getInputStream()));
+		CountedOutputStream os = new CountedOutputStream(new BufferedOutputStream(output.getOutputStream()));
+		Encoder encoder = new Encoder();
+        encoder.SetEndMarkerMode( true );
+        encoder.SetDictionarySize( 1 << 20 );
+        // enc.WriteCoderProperties( out );
+        // 5d 00 00 10 00
+        encoder.Code( is, os, maxReadLength, maxWriteLength, null );
+		os.close();
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+is.count()+" written "+os.written());
 		return output;
 	}
 
