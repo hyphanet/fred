@@ -1,5 +1,6 @@
 package freenet.support.compress;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -24,7 +25,7 @@ public class GzipCompressor implements Compressor {
 		GZIPOutputStream gos = null;
 		try {
 			is = data.getInputStream();
-			os = output.getOutputStream();
+			os = new BufferedOutputStream(output.getOutputStream());
 			CountedOutputStream cos = new CountedOutputStream(os);
 			gos = new GZIPOutputStream(cos);
 			long read = 0;
