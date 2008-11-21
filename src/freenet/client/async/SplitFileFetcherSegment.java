@@ -248,6 +248,8 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			if(isCollectingBinaryBlob()) {
 				for(int i=0;i<dataBuckets.length;i++) {
 					Bucket data = dataBuckets[i].getData();
+					if(data == null) 
+						throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null");
 					try {
 						maybeAddToBinaryBlob(data, i, false);
 					} catch (FetchException e) {
