@@ -32,7 +32,7 @@ public class LZMACompressor implements Compressor {
 		LzmaOutputStream lzmaOS = null;
 		try {
 			is = data.getInputStream();
-			os = output.getOutputStream();
+			os = new BufferedOutputStream(output.getOutputStream());
 			CountedOutputStream cos = new CountedOutputStream(os);
 			lzmaOS = new LzmaOutputStream(cos);
 			long read = 0;
