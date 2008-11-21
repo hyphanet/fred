@@ -71,8 +71,12 @@ public class Yarrow extends RandomSource {
 	public Yarrow(String seed, String digest, String cipher, boolean updateSeed, boolean canBlock) {
 		this(new File(seed), digest, cipher, updateSeed, canBlock);
 	}
-
+	
 	public Yarrow(File seed, String digest, String cipher, boolean updateSeed, boolean canBlock) {
+		this(seed, digest, cipher, updateSeed, canBlock, true);
+	}
+	
+	public Yarrow(File seed, String digest, String cipher, boolean updateSeed, boolean canBlock, boolean reseedOnStartup) {
 		SecureRandom s;
 		try {
 			s = SecureRandom.getInstance("SHA1PRNG");
@@ -88,18 +92,23 @@ public class Yarrow extends RandomSource {
 			Logger.error(this, "Could not init pools trying to getInstance(" + digest + "): " + e, e);
 			throw new RuntimeException("Cannot initialize Yarrow!: " + e, e);
 		}
-		entropy_init(seed);
-		seedFromExternalStuff(canBlock);
+		
 		if(updateSeed && !(seed.toString()).equals("/dev/urandom")) //Dont try to update the seedfile if we know that it wont be possible anyways 
 			seedfile = seed;
 		else
 			seedfile = null;
-		/**
-		 * If we don't reseed at this point, we will be predictable,
-		 * because the startup entropy won't cause a reseed.
-		 */
-		fast_pool_reseed();
-		slow_pool_reseed();
+		if(reseedOnStartup) {
+			entropy_init(seed);
+			seedFromExternalStuff(canBlock);
+			/**
+			 * If we don't reseed at this point, we will be predictable,
+			 * because the startup entropy won't cause a reseed.
+			 */
+			fast_pool_reseed();
+			slow_pool_reseed();
+		} else {
+			read_seed(seed);
+		}
 	}
 
 	private void seedFromExternalStuff(boolean canBlock) {
