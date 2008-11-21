@@ -92,6 +92,7 @@ public abstract class FECCodec implements OOMHook {
 	public abstract int countCheckBlocks();
 
 	protected void realDecode(SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus, int blockLength, BucketFactory bf) throws IOException {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Doing decode: " + dataBlockStatus.length + " data blocks, " + checkBlockStatus.length + " check blocks, block length " + blockLength + " with " + this, new Exception("debug"));
 		if(dataBlockStatus.length + checkBlockStatus.length != n)
@@ -133,8 +134,16 @@ public abstract class FECCodec implements OOMHook {
 					if(sz < blockLength) {
 						if(i != dataBlockStatus.length - 1)
 							throw new IllegalArgumentException("All buckets except the last must be the full size but data bucket " + i + " of " + dataBlockStatus.length + " (" + dataBlockStatus[i] + ") is " + sz + " not " + blockLength);
-						if(sz < blockLength)
-							buckets[i] = BucketTools.pad(buckets[i], blockLength, bf, (int) sz);
+						if(sz < blockLength) {
+							// FIXME NOT FETCHING LAST BLOCK
+//							buckets[i] = BucketTools.pad(buckets[i], blockLength, bf, (int) sz);
+							buckets[i] = bf.makeBucket(blockLength);
+							writers[i] = buckets[i].getOutputStream();
+							if(logMINOR)
+								Logger.minor(this, "writers[" + i + "] != null");
+							readers[i] = null;
+							numberToDecode++;
+						}
 						else
 							throw new IllegalArgumentException("Too big: " + sz + " bigger than " + blockLength);
 					}
@@ -210,6 +219,7 @@ public abstract class FECCodec implements OOMHook {
 	protected void realEncode(Bucket[] dataBlockStatus,
 		Bucket[] checkBlockStatus, int blockLength, BucketFactory bf)
 		throws IOException {
+		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		//		Runtime.getRuntime().gc();
 //		Runtime.getRuntime().runFinalization();
 //		Runtime.getRuntime().gc();

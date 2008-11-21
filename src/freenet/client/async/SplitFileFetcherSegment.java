@@ -492,8 +492,11 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	public void schedule() {
 		try {
 			SplitFileFetcherSubSegment seg = getSubSegment(0);
-			for(int i=0;i<dataRetries.length+checkRetries.length;i++)
+			for(int i=0;i<dataRetries.length+checkRetries.length;i++) {
+				// FIXME NOT FETCHING LAST BLOCK
+				if(i == dataRetries.length - 1) continue;
 				seg.add(i, true);
+			}
 			
 			seg.schedule();
 			synchronized(this) {
