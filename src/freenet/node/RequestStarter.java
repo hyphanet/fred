@@ -115,7 +115,7 @@ public class RequestStarter implements Runnable, KeysFetchingLocally, RandomGrab
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(req == null) req = sched.removeFirst();
 			if(req != null) {
-				if(logMINOR) Logger.minor(this, "Running "+req);
+				if(logMINOR) Logger.minor(this, "Running "+req+" prio "+req.getPriorityClass()+" retries "+req.getRetryCount());
 				// Wait
 				long delay = throttle.getDelay();
 				if(logMINOR) Logger.minor(this, "Delay="+delay+" from "+throttle);
