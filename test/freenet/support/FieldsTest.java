@@ -280,8 +280,10 @@ public class FieldsTest extends TestCase {
 		
 		int outLong = Fields.bytesToInt(bytes, 0);
 		// We did dupplicate the code to avoid cross-dependancies
+		// TODO: Will need to be updated when next -ext is released
 		int outLongMT = MersenneTwister.bytesToInt(bytes, 0);
-		assertEquals(outLong, outLongMT, 33685760);
+		assertEquals(outLong, outLongMT);
+		assertEquals(outLong, 33685760);
 		
 		doTestRoundTripBytesArrayToInt(bytes);
 		
