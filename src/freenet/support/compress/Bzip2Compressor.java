@@ -3,19 +3,20 @@
 * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.compress;
 
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.apache.tools.bzip2.CBZip2InputStream;
+import org.apache.tools.bzip2.CBZip2OutputStream;
+
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.CountedOutputStream;
-
-import org.apache.tools.bzip2.CBZip2InputStream;
-import org.apache.tools.bzip2.CBZip2OutputStream;
 
 public class Bzip2Compressor implements Compressor {
 
@@ -30,7 +31,7 @@ public class Bzip2Compressor implements Compressor {
 			is = data.getInputStream();
 			os = output.getOutputStream();
 			CountedOutputStream cos = new CountedOutputStream(os);
-			bz2os = new CBZip2OutputStream(cos);
+			bz2os = new CBZip2OutputStream(new BufferedOutputStream(cos));
 			long read = 0;
 			// Bigger input buffer, so can compress all at once.
 			// Won't hurt on I/O either, although most OSs will only return a page at a time.
