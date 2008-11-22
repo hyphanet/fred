@@ -175,7 +175,6 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			((ClientGetter)parentFetcher.parent).addKeyToBinaryBlob(block);
 		// No need to unregister key, because it will be cleared in tripPendingKey().
 		boolean dontNotify;
-		boolean haveDataBlocks;
 		boolean wasDataBlock = false;
 		boolean allFailed = false;
 		synchronized(this) {
@@ -217,7 +216,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				if(wasDataBlock)
 					fetchedDataBlocks++;
 				if(logMINOR) Logger.minor(this, "Fetched "+fetchedBlocks+" blocks in onSuccess("+blockNo+")");
-				haveDataBlocks = fetchedDataBlocks == dataKeys.length;
+				boolean haveDataBlocks = fetchedDataBlocks == dataKeys.length;
 				decodeNow = (fetchedBlocks >= minFetched || haveDataBlocks);
 				if(decodeNow) {
 					startedDecode = true;
@@ -234,10 +233,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		seg.possiblyRemoveFromParent();
 		if(decodeNow) {
 			removeSubSegments();
-			if(haveDataBlocks)
-				onDecodedSegment();
-			else
-				decode();
+			decode();
 		} else if(allFailed) {
 			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors));
 		}
