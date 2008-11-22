@@ -119,6 +119,18 @@ public abstract class FECCodec implements OOMHook {
 				packets[i] = new Buffer(realBuffer, i * STRIPE_SIZE,
 					STRIPE_SIZE);
 
+			// Shortcut.
+			// Due to the not-fetching-last-block code, we need to check here,
+			// rather than relying on numberToDecode (since the last data block won't be part of numberToDecode).
+			
+			boolean needDecode = false;
+			for(int i = 0; i < dataBlockStatus.length;i++) {
+				if(dataBlockStatus[i].getData() == null)
+					needDecode = true;
+			}
+			
+			if(!needDecode) return;
+			
 			for(int i = 0; i < dataBlockStatus.length; i++) {
 				buckets[i] = dataBlockStatus[i].getData();
 				if(buckets[i] == null) {
