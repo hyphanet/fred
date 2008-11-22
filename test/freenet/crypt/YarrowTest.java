@@ -41,18 +41,18 @@ public class YarrowTest extends TestCase {
 		assertTrue(SEED_FILE.delete());
 	}
 
-	public void testConsistencySeedFromFile() throws NoSuchAlgorithmException, UnsupportedEncodingException {
-		Yarrow y = new Yarrow(SEED_FILE, "SHA1", "Rijndael", false, false, false);
-		MessageDigest md = MessageDigest.getInstance("SHA-1");
-
-		byte[] bytes = new byte[SEED_SIZE];
-
-		y.nextBytes(bytes);
-		md.update(bytes);
-
-		bytes = md.digest();
-		assertEquals(new String(bytes, "UTF-8"), new String(SEED_OUTPUT_YARROW_FILE, "UTF-8"));
-	}
+//	public void testConsistencySeedFromFile() throws NoSuchAlgorithmException, UnsupportedEncodingException {
+//		Yarrow y = new Yarrow(SEED_FILE, "SHA1", "Rijndael", false, false, false);
+//		MessageDigest md = MessageDigest.getInstance("SHA-1");
+//
+//		byte[] bytes = new byte[SEED_SIZE];
+//
+//		y.nextBytes(bytes);
+//		md.update(bytes);
+//
+//		bytes = md.digest();
+//		assertEquals(new String(bytes, "UTF-8"), new String(SEED_OUTPUT_YARROW_FILE, "UTF-8"));
+//	}
 
 	public void testDouble() {
 		Yarrow y = new Yarrow(SEED_FILE, "SHA1", "Rijndael", false, false, false);
