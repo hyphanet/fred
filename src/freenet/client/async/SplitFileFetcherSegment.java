@@ -177,6 +177,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		boolean dontNotify;
 		boolean haveDataBlocks;
 		boolean wasDataBlock = false;
+		boolean allFailed = false;
 		synchronized(this) {
 			if(blockNo < dataKeys.length) {
 				wasDataBlock = true;
@@ -206,6 +207,11 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				// Don't count the last data block, since we can't use it in FEC decoding.
 				if(!(ignoreLastDataBlock && blockNo == dataKeys.length - 1))
 					fetchedBlocks++;
+				else
+					// This block is not going to be fetched, and because of the insertion format. 
+					// Thus it is a fatal failure. We need to track it, because it is quite possible
+					// to fetch the last block, not complete because it's the last block, and hang.
+					fatallyFailedBlocks++;
 				// However, if we manage to get EVERY data block (common on a small splitfile),
 				// we don't need to FEC decode.
 				if(wasDataBlock)
@@ -216,6 +222,10 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				if(decodeNow) {
 					startedDecode = true;
 					finishing = true;
+				} else {
+					// Avoid hanging when we have one n-1 check blocks, we succeed on the last data block,
+					// we don't have the other data blocks, and we have nothing else fetching.
+					allFailed = failedBlocks + fatallyFailedBlocks > (dataKeys.length + checkKeys.length - minFetched);
 				}
 			}
 			dontNotify = !scheduled;
@@ -228,6 +238,8 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				onDecodedSegment();
 			else
 				decode();
+		} else if(allFailed) {
+			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors));
 		}
 	}
 
