@@ -60,7 +60,7 @@ public class PNGFilter implements ContentDataFilter {
 		// http://wiki.mozilla.org/APNG_Specification
 		"acTL",
 		"fcTL",
-		"fDAT"
+		"fdAT"
 		// MNG isn't supported by Firefox and IE because of lack of market demand. Big surprise
 		// given nobody supports it! It is supported by Konqueror though. Complex standard,
 		// not worth it for the time being.
