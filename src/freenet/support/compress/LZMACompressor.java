@@ -25,10 +25,17 @@ public class LZMACompressor implements Compressor {
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
 		Bucket output;
 		output = bf.makeBucket(maxWriteLength);
-		if(Logger.shouldLog(Logger.MINOR, this))
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR)
 			Logger.minor(this, "Compressing "+data+" size "+data.size()+" to new bucket "+output);
-		CountedInputStream is = new CountedInputStream(new BufferedInputStream(data.getInputStream()));
-		CountedOutputStream os = new CountedOutputStream(new BufferedOutputStream(output.getOutputStream()));
+		InputStream is = new BufferedInputStream(data.getInputStream());
+		OutputStream os = new BufferedOutputStream(output.getOutputStream());
+		CountedInputStream cis = null;
+		CountedOutputStream cos = null;
+		if(logMINOR) {
+			is = cis = new CountedInputStream(is);
+			os = cos = new CountedOutputStream(os);
+		}
 		Encoder encoder = new Encoder();
         encoder.SetEndMarkerMode( true );
         encoder.SetDictionarySize( 1 << 20 );
@@ -36,8 +43,8 @@ public class LZMACompressor implements Compressor {
         // 5d 00 00 10 00
         encoder.Code( is, os, maxReadLength, maxWriteLength, null );
 		os.close();
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+is.count()+" written "+os.written());
+		if(logMINOR)
+			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+cis.count()+" written "+cos.written());
 		return output;
 	}
 
@@ -47,14 +54,21 @@ public class LZMACompressor implements Compressor {
 			output = preferred;
 		else
 			output = bf.makeBucket(maxLength);
-		if(Logger.shouldLog(Logger.MINOR, this))
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR)
 			Logger.minor(this, "Decompressing "+data+" size "+data.size()+" to new bucket "+output);
-		CountedInputStream is = new CountedInputStream(new BufferedInputStream(data.getInputStream()));
-		CountedOutputStream os = new CountedOutputStream(new BufferedOutputStream(output.getOutputStream()));
+		CountedInputStream cis = null;
+		CountedOutputStream cos = null;
+		InputStream is = new BufferedInputStream(data.getInputStream());
+		OutputStream os = new BufferedOutputStream(output.getOutputStream());
+		if(logMINOR) {
+			is = cis = new CountedInputStream(is);
+			os = cos = new CountedOutputStream(os);
+		}
 		decompress(is, os, maxLength, maxCheckSizeLength);
 		os.close();
-		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+is.count()+" written "+os.written());
+		if(logMINOR)
+			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+cis.count()+" written "+cos.written());
 		return output;
 	}
 
