@@ -7,6 +7,8 @@ import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
@@ -90,7 +92,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 	final boolean isInsertScheduler;
 	final boolean isSSKScheduler;
 	final RandomSource random;
-	private final HashMap<ClientRequester, HashSet<SendableRequest>> allRequestsByClientRequest;
+	private final Map<ClientRequester, HashSet<SendableRequest>> allRequestsByClientRequest;
 	private final RequestStarter starter;
 	private final Node node;
 	public final String name;
@@ -165,7 +167,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		this.isInsertScheduler = forInserts;
 		this.isSSKScheduler = forSSKs;
 		priorities = new SortedVectorByNumber[RequestStarter.NUMBER_OF_PRIORITY_CLASSES];
-		allRequestsByClientRequest = new HashMap<ClientRequester, HashSet<SendableRequest>>();
+		allRequestsByClientRequest = new WeakHashMap<ClientRequester, HashSet<SendableRequest>>();
 		if(forInserts)
 			pendingKeys = null;
 		else
