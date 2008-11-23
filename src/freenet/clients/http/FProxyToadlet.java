@@ -100,15 +100,12 @@ public final class FProxyToadlet extends Toadlet {
 		String ks = uri.getPath();
 		
 		if (ks.equals("/")||ks.startsWith("/servlet/")) {
-			RedirectException re = new RedirectException();
 			try {
-				re.newuri = new URI("/welcome/");
+	            throw new RedirectException("/welcome/");
 			} catch (URISyntaxException e) {
 				// HUH!?!
 			}
-			throw re;
-		}
-		
+		}		
 	}
 
 	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras, String referrer, boolean downloadLink, ToadletContext ctx, NodeClientCore core) throws ToadletContextClosedException, IOException {
@@ -355,21 +352,19 @@ public final class FProxyToadlet extends Toadlet {
 				return;
 			}
 			
-			RedirectException re = new RedirectException();
 			try {
 				String querystring = uri.getQuery();
 				
 				if (querystring == null) {
-					re.newuri = welcome;
+					throw new RedirectException(welcome);
 				} else {
 					// TODP possibly a proper URLEncode method
 					querystring = querystring.replace(' ', '+');
-					re.newuri = new URI("/welcome/?"+querystring);
+					throw new RedirectException("/welcome/?" + querystring);
 				}
 			} catch (URISyntaxException e) {
 				// HUH!?!
 			}
-			throw re;
 		}else if(ks.equals("/favicon.ico")){
 			byte[] buf = new byte[1024];
 			int len;

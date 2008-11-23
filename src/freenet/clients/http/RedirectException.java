@@ -4,6 +4,7 @@
 package freenet.clients.http;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 
 public class RedirectException extends Exception {
 	private static final long serialVersionUID = -1;
@@ -12,9 +13,12 @@ public class RedirectException extends Exception {
 	public RedirectException() {
 		super();
 	}
+
+	public RedirectException(String newURI) throws URISyntaxException {
+		this.newuri = new URI(newURI);
+	}
 	
 	public RedirectException(URI newURI) {
 		this.newuri = newURI;
 	}
-
 }
