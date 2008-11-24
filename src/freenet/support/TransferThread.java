@@ -5,25 +5,37 @@ import java.util.Iterator;
 
 import freenet.client.FetchException;
 import freenet.client.FetchResult;
+import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
+import freenet.node.Node;
+import freenet.support.io.TempBucketFactory;
 
 public abstract class TransferThread implements Runnable {
 	
-	private final Executor mExecutor;
+	private final String mName;
+	protected final Node mNode;
+	protected final HighLevelSimpleClient mClient;
+	protected final TempBucketFactory mTBF;
 	
 	private Thread mThread;
 	
 	private volatile boolean isRunning = false;
 	
-	private final Collection<ClientGetter> mFetches = getFetchStorage();
-	private final Collection<BaseClientPutter> mInserts = getInsertStorage();
+	private final Collection<ClientGetter> mFetches = createFetchStorage();
+	private final Collection<BaseClientPutter> mInserts = createInsertStorage();
 	
-	public TransferThread(Executor myExecutor, String myName) {
-		mExecutor = myExecutor;
-		mExecutor.execute(this, myName);
+	public TransferThread(Node myNode, HighLevelSimpleClient myClient, String myName) {
+		mNode = myNode;
+		mClient = myClient;
+		mTBF = mNode.clientCore.tempBucketFactory;
+		mName = myName;
+	}
+	
+	protected void start() {
+		mNode.executor.execute(this, mName);
 	}
 
 	public void run() {
@@ -54,19 +66,21 @@ public abstract class TransferThread implements Runnable {
 	protected void abortAllTransfers() {
 		Logger.debug(this, "Trying to stop all requests & inserts");
 		
-		synchronized(mFetches) {
-			Iterator<ClientGetter> r = mFetches.iterator();
-			int rcounter = 0;
-			while (r.hasNext()) { r.next().cancel(); r.remove(); ++rcounter; }
-			Logger.debug(this, "Stopped " + rcounter + " current requests");
-		}
+		if(mFetches != null)
+			synchronized(mFetches) {
+				Iterator<ClientGetter> r = mFetches.iterator();
+				int rcounter = 0;
+				while (r.hasNext()) { r.next().cancel(); r.remove(); ++rcounter; }
+				Logger.debug(this, "Stopped " + rcounter + " current requests");
+			}
 
-		synchronized(mInserts) {
-			Iterator<BaseClientPutter> i = mInserts.iterator();
-			int icounter = 0;
-			while (i.hasNext()) { i.next().cancel(); i.remove(); ++icounter; }
-			Logger.debug(this, "Stopped " + icounter + " current inserts");
-		}
+		if(mInserts != null)
+			synchronized(mInserts) {
+				Iterator<BaseClientPutter> i = mInserts.iterator();
+				int icounter = 0;
+				while (i.hasNext()) { i.next().cancel(); i.remove(); ++icounter; }
+				Logger.debug(this, "Stopped " + icounter + " current inserts");
+			}
 	}
 	
 	protected void removeFetch(ClientGetter g) {
@@ -98,15 +112,15 @@ public abstract class TransferThread implements Runnable {
 	}
 	
 	
-	public abstract Collection<ClientGetter> getFetchStorage();
+	protected abstract Collection<ClientGetter> createFetchStorage();
 	
-	public abstract Collection<BaseClientPutter> getInsertStorage();
+	protected abstract Collection<BaseClientPutter> createInsertStorage();
 	
-	public abstract long getStartupDelay();
+	protected abstract long getStartupDelay();
 
-	public abstract long getSleepTime();
+	protected abstract long getSleepTime();
 	
-	public abstract void iterate();
+	protected abstract void iterate();
 
 	
 	/* Fetches */
