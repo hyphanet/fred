@@ -3820,6 +3820,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		} else if(validIPs.size() == 1) {
 			ret = validIPs.get(0);
 		} else {
+			// Don't need to synchronize for this value as we're only called from one thread anyway.
 			ret = validIPs.get(handshakeIPAlternator);
 			handshakeIPAlternator = ++handshakeIPAlternator % validIPs.size();
 		}
@@ -4048,10 +4049,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			KeyTracker kt;
 			if(j == 0)
 				kt = getCurrentKeyTracker();
-			else if(j == 1)
+			else// if(j == 1)
 				kt = getPreviousKeyTracker();
-			else
-				throw new NullPointerException("WTF?");
 			if(kt == null)
 				continue;
 			int[] tmp = kt.grabResendPackets(rpiTemp, rpiIntTemp);
