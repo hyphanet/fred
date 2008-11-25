@@ -112,6 +112,12 @@ public class ConfigToadlet extends Toadlet {
 	
 	@Override
     public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		if (!ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n
+			        .getString("Toadlet.unauthorized"));
+			return;
+		}
+		
 		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
@@ -234,11 +240,6 @@ public class ConfigToadlet extends Toadlet {
 		// Other setting (not security level) goes here 
 		SubConfig[] sc = config.getConfigs();
 		StringBuilder errbuf = new StringBuilder();
-		
-		if(!ctx.isAllowedFullAccess()) {
-			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
-			return;
-		}
 		
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		
