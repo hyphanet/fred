@@ -6,6 +6,7 @@ package freenet.support.io;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.ref.WeakReference;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
@@ -345,8 +346,15 @@ public class TempBucketFactory implements BucketFactory {
 			if(isRAMBucket()) {
 				_hasFreed(currentSize);
 				synchronized(ramBucketQueue) {
-					ramBucketQueue.remove(this);
+					ramBucketQueue.remove(this); // FIXME
 				}
+			}
+		}
+		
+		protected void finalize() {
+			if (!hasBeenFreed) {
+				Logger.normal(this, "TempBucket not freed, size=" + size() + ", isRAMBucket=" + isRAMBucket());
+				free();
 			}
 		}
 	}
@@ -443,7 +451,7 @@ public class TempBucketFactory implements BucketFactory {
 		TempBucket toReturn = new TempBucket(now, realBucket);
 		if(useRAMBucket) { // No need to consider them for migration if they can't be migrated
 			synchronized(ramBucketQueue) {
-				ramBucketQueue.add(toReturn);
+				ramBucketQueue.add(new WeakReference<TempBucket>(toReturn));
 			}
 		}
 		return toReturn;
@@ -456,14 +464,25 @@ public class TempBucketFactory implements BucketFactory {
 		final Queue<TempBucket> toMigrate = new LinkedList<TempBucket>();
 		do {
 			synchronized(ramBucketQueue) {
-				final TempBucket tmpBucket = ramBucketQueue.peek();
-				if((tmpBucket == null) || (tmpBucket.creationTime + RAMBUCKET_MAX_AGE > now))
+				final WeakReference<TempBucket> tmpBucketRef = ramBucketQueue.peek();
+				if (tmpBucketRef == null)
 					shouldContinue = false;
 				else {
-					if(logMINOR)
-						Logger.minor(this, "The bucket is "+TimeUtil.formatTime(now - tmpBucket.creationTime)+" old: we will force-migrate it to disk.");
-					ramBucketQueue.remove(tmpBucket);
-					toMigrate.add(tmpBucket);
+					TempBucket tmpBucket = tmpBucketRef.get();
+					if (tmpBucket == null) {
+						ramBucketQueue.remove(tmpBucketRef);
+						continue; // ugh. this is freed
+					}
+
+					if (tmpBucket.creationTime + RAMBUCKET_MAX_AGE > now)
+						shouldContinue = false;
+					else {
+						if (logMINOR)
+							Logger.minor(this, "The bucket is " + TimeUtil.formatTime(now - tmpBucket.creationTime)
+							        + " old: we will force-migrate it to disk.");
+						ramBucketQueue.remove(tmpBucketRef);
+						toMigrate.add(tmpBucket);
+					}
 				}
 			}
 		} while(shouldContinue);
@@ -486,7 +505,7 @@ public class TempBucketFactory implements BucketFactory {
 		}
 	}
 	
-	private final Queue<TempBucket> ramBucketQueue = new LinkedBlockingQueue<TempBucket>();
+	private final Queue<WeakReference<TempBucket>> ramBucketQueue = new LinkedBlockingQueue<WeakReference<TempBucket>>();
 	
 	private Bucket _makeFileBucket() {
 		Bucket fileBucket = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator);
