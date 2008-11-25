@@ -212,7 +212,7 @@ public class FailureTable implements OOMHook {
 		}
 
 		public boolean isExpired(long now) {
-			return now > (offeredTime + OFFER_EXPIRY_TIME);
+			return nodeRef.get() == null || now > (offeredTime + OFFER_EXPIRY_TIME);
 		}
 
 		public boolean isExpired() {
