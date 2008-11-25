@@ -32,7 +32,9 @@ import freenet.support.MultiValueTable;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.HTTPRequest;
 
-
+/**
+ * Node Configuration Toadlet. Accessible from <code>http://.../config/</code>.
+ */
 // FIXME: add logging, comments
 public class ConfigToadlet extends Toadlet {
 	// If a setting has to be more than a meg, something is seriously wrong!
@@ -43,6 +45,9 @@ public class ConfigToadlet extends Toadlet {
 	private boolean needRestart = false;
 	private NeedRestartUserAlert needRestartUserAlert;
 
+	/**
+	 * Prompt for node restart
+	 */
 	private class NeedRestartUserAlert extends AbstractUserAlert {
 		@Override
 		public String getTitle() {
@@ -104,7 +109,6 @@ public class ConfigToadlet extends Toadlet {
 		this.core = core;
 		this.node = node;
 	}
-
 	
 	@Override
     public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
@@ -118,7 +122,6 @@ public class ConfigToadlet extends Toadlet {
 		
 		if(request.isPartSet("seclevels")) {
 			// Handle the security level changes.
-			
 			HTMLNode pageNode = null;
 			HTMLNode content = null;
 			HTMLNode ul = null;
@@ -228,6 +231,7 @@ public class ConfigToadlet extends Toadlet {
 			}
 		}
 		
+		// Other setting (not security level) goes here 
 		SubConfig[] sc = config.getConfigs();
 		StringBuilder errbuf = new StringBuilder();
 		
