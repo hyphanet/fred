@@ -346,9 +346,15 @@ public class TempBucketFactory implements BucketFactory {
 			if(isRAMBucket()) {
 				_hasFreed(currentSize);
 				synchronized(ramBucketQueue) {
-					ramBucketQueue.remove(this); // FIXME
+					ramBucketQueue.remove(getReference());
 				}
 			}
+		}
+		
+		private WeakReference<TempBucket> weakRef = new WeakReference<TempBucket>(this);
+
+		public WeakReference<TempBucket> getReference() {
+			return weakRef;
 		}
 		
 		protected void finalize() {
@@ -451,7 +457,7 @@ public class TempBucketFactory implements BucketFactory {
 		TempBucket toReturn = new TempBucket(now, realBucket);
 		if(useRAMBucket) { // No need to consider them for migration if they can't be migrated
 			synchronized(ramBucketQueue) {
-				ramBucketQueue.add(new WeakReference<TempBucket>(toReturn));
+				ramBucketQueue.add(toReturn.getReference());
 			}
 		}
 		return toReturn;
