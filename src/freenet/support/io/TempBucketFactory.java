@@ -359,7 +359,8 @@ public class TempBucketFactory implements BucketFactory {
 		
 		protected void finalize() {
 			if (!hasBeenFreed) {
-				Logger.normal(this, "TempBucket not freed, size=" + size() + ", isRAMBucket=" + isRAMBucket());
+				if (logMINOR)
+					Logger.minor(this, "TempBucket not freed, size=" + size() + ", isRAMBucket=" + isRAMBucket());
 				free();
 			}
 		}
