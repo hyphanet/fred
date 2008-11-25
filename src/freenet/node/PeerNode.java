@@ -3821,8 +3821,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			ret = validIPs.get(0);
 		} else {
 			// Don't need to synchronize for this value as we're only called from one thread anyway.
+			handshakeIPAlternator %= validIPs.size();
 			ret = validIPs.get(handshakeIPAlternator);
-			handshakeIPAlternator = (handshakeIPAlternator + 1) % validIPs.size();
+			handshakeIPAlternator++;
 		}
 		long loopTime2 = System.currentTimeMillis();
 		if((loopTime2 - loopTime1) > 1000)
