@@ -85,7 +85,7 @@ public class TempBucketFactory implements BucketFactory {
 			this.creationTime = now;
 			this.osIndex = 0;
 			this.tbis = new Vector<TempBucketInputStream>();
-			if(logMINOR) Logger.minor(this, "Created "+this);
+			if(logMINOR) Logger.minor(this, "Created "+this, new Exception("debug"));
 		}
 		
 		private synchronized void closeInputStreams(boolean forFree) {
