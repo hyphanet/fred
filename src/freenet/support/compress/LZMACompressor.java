@@ -38,7 +38,7 @@ public class LZMACompressor implements Compressor {
         encoder.SetDictionarySize( 1 << 20 );
         // enc.WriteCoderProperties( out );
         // 5d 00 00 10 00
-        encoder.Code( cis, cos, maxReadLength, maxWriteLength, null );
+        encoder.Code( cis, cos, -1, -1, null );
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+cis.count()+" written "+cos.written());
 		cis.close();
