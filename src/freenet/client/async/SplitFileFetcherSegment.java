@@ -170,7 +170,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		if(data == null) throw new NullPointerException();
 		boolean decodeNow = false;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" on "+seg);
+		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" on "+seg+" data="+dataBuckets.length+" check="+checkBuckets.length);
 		if(parentFetcher.parent instanceof ClientGetter)
 			((ClientGetter)parentFetcher.parent).addKeyToBinaryBlob(block);
 		// No need to unregister key, because it will be cleared in tripPendingKey().
@@ -379,7 +379,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	}
 
 	private void queueHeal(Bucket data) {
-		if(logMINOR) Logger.minor(this, "Queueing healing insert");
+		if(logMINOR) Logger.minor(this, "Queueing healing insert for "+data+" on "+this);
 		fetchContext.healingQueue.queue(data);
 	}
 	
