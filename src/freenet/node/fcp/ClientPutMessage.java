@@ -289,5 +289,9 @@ public class ClientPutMessage extends DataCarryingMessage {
 	boolean isGlobal() {
 		return global;
 	}
+
+	public void freeData() {
+		bucket.free();
+	}
 	
 }

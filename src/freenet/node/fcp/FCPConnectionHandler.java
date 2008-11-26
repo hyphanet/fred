@@ -231,6 +231,10 @@ public class FCPConnectionHandler implements Closeable {
 		}
 		if(failedMessage != null) {
 			outputHandler.queue(failedMessage);
+			if(cp != null)
+				cp.freeData();
+			else
+				message.freeData();
 			return;
 		} else {
 			Logger.minor(this, "Starting "+cp);
