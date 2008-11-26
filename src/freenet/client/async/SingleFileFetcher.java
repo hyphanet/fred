@@ -147,26 +147,32 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		} else {
 			if(!ctx.followRedirects) {
 				onFailure(new FetchException(FetchException.INVALID_METADATA, "Told me not to follow redirects (splitfile block??)"), sched);
+				data.free();
 				return;
 			}
 			if(parent.isCancelled()) {
 				onFailure(new FetchException(FetchException.CANCELLED), sched);
+				data.free();
 				return;
 			}
 			if(data.size() > ctx.maxMetadataSize) {
 				onFailure(new FetchException(FetchException.TOO_BIG_METADATA), sched);
+				data.free();
 				return;
 			}
 			// Parse metadata
 			try {
 				metadata = Metadata.construct(data);
 				wrapHandleMetadata(false);
+				data.free();
 			} catch (MetadataParseException e) {
 				onFailure(new FetchException(FetchException.INVALID_METADATA, e), sched);
+				data.free();
 				return;
 			} catch (IOException e) {
 				// Bucket error?
 				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), sched);
+				data.free();
 				return;
 			}
 		}
