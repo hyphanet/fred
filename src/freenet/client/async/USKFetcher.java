@@ -336,9 +336,11 @@ public class USKFetcher implements ClientGetState {
 			if (decode) {
 					lastCompressionCodec = block.getCompressionCodec();
 					lastWasMetadata = block.isMetadata();
-					if(keepLastData)
+					if(keepLastData) {
+						if(lastRequestData != null)
+							lastRequestData.free();
 						lastRequestData = data;
-					else
+					} else
 						data.free();
 			}
 		}
