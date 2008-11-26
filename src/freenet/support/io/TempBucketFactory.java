@@ -85,6 +85,7 @@ public class TempBucketFactory implements BucketFactory {
 			this.creationTime = now;
 			this.osIndex = 0;
 			this.tbis = new Vector<TempBucketInputStream>();
+			if(logMINOR) Logger.minor(this, "Created "+this);
 		}
 		
 		private synchronized void closeInputStreams(boolean forFree) {
@@ -149,7 +150,10 @@ public class TempBucketFactory implements BucketFactory {
 			if(osIndex > 0)
 				throw new IOException("Only one OutputStream per bucket!");
 			hasWritten = true;
-			return new TempBucketOutputStream(++osIndex);
+			OutputStream os = new TempBucketOutputStream(++osIndex);
+			if(logMINOR)
+				Logger.minor(this, "Got "+os+" for "+this);
+			return os;
 		}
 
 		private class TempBucketOutputStream extends OutputStream {
@@ -233,7 +237,8 @@ public class TempBucketFactory implements BucketFactory {
 				throw new IOException("No OutputStream has been openned! Why would you want an InputStream then?");
 			TempBucketInputStream is = new TempBucketInputStream(osIndex);
 			tbis.add(is);
-			
+			if(logMINOR)
+				Logger.minor(this, "Got "+is+" for "+this);
 			return is;
 		}
 		
