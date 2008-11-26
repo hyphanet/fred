@@ -11,8 +11,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import net.contrapunctus.lzma.LzmaOutputStream;
 import SevenZip.Compression.LZMA.Decoder;
-import SevenZip.Compression.LZMA.Encoder;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -21,30 +21,40 @@ import freenet.support.io.CountedOutputStream;
 
 public class LZMACompressor implements Compressor {
 
-	// Copied from EncoderThread. See below re licensing.
 	public Bucket compress(Bucket data, BucketFactory bf, long maxReadLength, long maxWriteLength) throws IOException, CompressionOutputSizeException {
-		Bucket output;
-		output = bf.makeBucket(maxWriteLength);
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR)
-			Logger.minor(this, "Compressing "+data+" size "+data.size()+" to new bucket "+output);
-		InputStream is = new BufferedInputStream(data.getInputStream());
-		OutputStream os = new BufferedOutputStream(output.getOutputStream());
-		CountedInputStream cis = null;
-		CountedOutputStream cos = null;
-		if(logMINOR) {
-			is = cis = new CountedInputStream(is);
-			os = cos = new CountedOutputStream(os);
+		// FIXME: optimise: use Encoder directly like we use Decoder directly.
+		if(maxReadLength <= 0)
+			throw new IllegalArgumentException();
+		Bucket output = bf.makeBucket(maxWriteLength);
+		InputStream is = null;
+		OutputStream os = null;
+		LzmaOutputStream lzmaOS = null;
+		try {
+			is = data.getInputStream();
+			os = new BufferedOutputStream(output.getOutputStream());
+			CountedOutputStream cos = new CountedOutputStream(os);
+			lzmaOS = new LzmaOutputStream(cos);
+			long read = 0;
+			// Bigger input buffer, so can compress all at once.
+			// Won't hurt on I/O either, although most OSs will only return a page at a time.
+			byte[] buffer = new byte[32768];
+			while(true) {
+				int l = (int) Math.min(buffer.length, maxReadLength - read);
+				int x = l == 0 ? -1 : is.read(buffer, 0, buffer.length);
+				if(x <= -1) break;
+				if(x == 0) throw new IOException("Returned zero from read()");
+				lzmaOS.write(buffer, 0, x);
+				read += x;
+				if(cos.written() > maxWriteLength)
+					throw new CompressionOutputSizeException();
+			}
+			lzmaOS.flush();
+			os = null;
+		} finally {
+			if(is != null) is.close();
+			if(lzmaOS != null) lzmaOS.close();
+			else if(os != null) os.close();
 		}
-		Encoder encoder = new Encoder();
-        encoder.SetEndMarkerMode( true );
-        encoder.SetDictionarySize( 1 << 20 );
-        // enc.WriteCoderProperties( out );
-        // 5d 00 00 10 00
-        encoder.Code( is, os, maxReadLength, maxWriteLength, null );
-		os.close();
-		if(logMINOR)
-			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+cis.count()+" written "+cos.written());
 		return output;
 	}
 
@@ -54,21 +64,14 @@ public class LZMACompressor implements Compressor {
 			output = preferred;
 		else
 			output = bf.makeBucket(maxLength);
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR)
+		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Decompressing "+data+" size "+data.size()+" to new bucket "+output);
-		CountedInputStream cis = null;
-		CountedOutputStream cos = null;
-		InputStream is = new BufferedInputStream(data.getInputStream());
-		OutputStream os = new BufferedOutputStream(output.getOutputStream());
-		if(logMINOR) {
-			is = cis = new CountedInputStream(is);
-			os = cos = new CountedOutputStream(os);
-		}
+		CountedInputStream is = new CountedInputStream(new BufferedInputStream(data.getInputStream()));
+		CountedOutputStream os = new CountedOutputStream(new BufferedOutputStream(output.getOutputStream()));
 		decompress(is, os, maxLength, maxCheckSizeLength);
 		os.close();
-		if(logMINOR)
-			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+cis.count()+" written "+cos.written());
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+is.count()+" written "+os.written());
 		return output;
 	}
 
