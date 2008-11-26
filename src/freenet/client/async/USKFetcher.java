@@ -324,7 +324,7 @@ public class USKFetcher implements ClientGetState {
 		Bucket data = null;
 		if(decode) {
 			try {
-				data = lastRequestData = block.decode(ctx.bucketFactory, 1025 /* it's an SSK */, true);
+				data = block.decode(ctx.bucketFactory, 1025 /* it's an SSK */, true);
 			} catch (KeyDecodeException e) {
 				data = null;
 			} catch (IOException e) {
