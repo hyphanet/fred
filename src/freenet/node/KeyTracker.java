@@ -735,7 +735,7 @@ public class KeyTracker {
 				else {
 					long delta = now - timeWouldBlock;
 					if(delta > MAX_WOULD_BLOCK_DELTA) {
-						Logger.error(this, "Not been able to allocate a packet to tracker " + this + " for " + TimeUtil.formatTime(delta));
+						Logger.error(this, "Not been able to allocate a packet to tracker " + this + " for " + TimeUtil.formatTime(delta, 3, true));
 						throw new BlockedTooLongException(this, delta);
 					}
 				}
@@ -745,7 +745,7 @@ public class KeyTracker {
 					long delta = now - timeWouldBlock;
 					timeWouldBlock = -1;
 					if(delta > PacketSender.MAX_COALESCING_DELAY)
-						Logger.error(this, "Waking PacketSender: have been blocking for packet ack for " + TimeUtil.formatTime(delta));
+						Logger.error(this, "Waking PacketSender: have been blocking for packet ack for " + TimeUtil.formatTime(delta, 3, true));
 					else
 						return false;
 				} else
