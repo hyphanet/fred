@@ -3249,6 +3249,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			data = result.asByteArray();
 		} catch(IOException e) {
 			Logger.error(this, "I/O error reading fetched ARK: " + e, e);
+			result.asBucket().free();
 			return;
 		}
 
@@ -3256,6 +3257,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		try {
 			ref = new String(data, "UTF-8");
 		} catch(UnsupportedEncodingException e) {
+			result.asBucket().free();
 			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
 
@@ -3269,6 +3271,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			// Corrupt ref.
 			Logger.error(this, "Corrupt ARK reference? Fetched " + myARK.copy(edition) + " got while parsing: " + e + " from:\n" + ref, e);
 		}
+		result.asBucket().free();
 
 	}
 
