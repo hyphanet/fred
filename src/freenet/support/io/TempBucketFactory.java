@@ -87,7 +87,7 @@ public class TempBucketFactory implements BucketFactory {
 			this.tbis = new Vector<TempBucketInputStream>();
 		}
 		
-		private void closeInputStreams(boolean forFree) {
+		private synchronized void closeInputStreams(boolean forFree) {
 			for(TempBucketInputStream is : tbis) {
 				try {
 					if(forFree)
