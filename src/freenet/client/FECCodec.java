@@ -149,6 +149,7 @@ public abstract class FECCodec implements OOMHook {
 						if(sz < blockLength) {
 							// FIXME NOT FETCHING LAST BLOCK
 //							buckets[i] = BucketTools.pad(buckets[i], blockLength, bf, (int) sz);
+							buckets[i].free();
 							buckets[i] = bf.makeBucket(blockLength);
 							writers[i] = buckets[i].getOutputStream();
 							if(logMINOR)
