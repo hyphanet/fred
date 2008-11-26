@@ -254,6 +254,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			onSuccess(data, fromStore, (Integer)token, ((Integer)token).intValue(), block, sched);
 		} else {
 			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), token, sched);
+			data.free();
 		}
 	}
 	
