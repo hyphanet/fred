@@ -88,7 +88,13 @@ public class TempBucketFactory implements BucketFactory {
 		}
 		
 		private void closeInputStreams(boolean forFree) {
-			for(TempBucketInputStream is : tbis) {
+			TempBucketInputStream[] streams;
+			synchronized(this) {
+				streams = tbis.toArray(new TempBucketInputStream[tbis.size()]);
+				if(forFree)
+					tbis.clear();
+			}
+			for(TempBucketInputStream is : streams) {
 				try {
 					if(forFree)
 						is.close();
@@ -96,7 +102,11 @@ public class TempBucketFactory implements BucketFactory {
 						is._maybeResetInputStream();
 				} catch(IOException e) {
 					Closer.close(is);
-					tbis.remove(is);
+					if(!forFree) {
+						synchronized(this) {
+							tbis.remove(is);
+						}
+					}
 				}
 			}
 		}
