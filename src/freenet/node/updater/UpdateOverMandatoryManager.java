@@ -215,6 +215,14 @@ public class UpdateOverMandatoryManager {
 			return true; // Don't care if not enabled, except for the revocation URI
 
 		long now = System.currentTimeMillis();
+		
+		handleMainJarOffer(now, mainJarFileLength, mainJarVersion, source, jarKey);
+		
+		return true;
+	}
+
+	private void handleMainJarOffer(long now, long mainJarFileLength, long mainJarVersion, PeerNode source, String jarKey) {
+		
 		long started = updateManager.getStartedFetchingNextMainJarTimestamp();
 		long whenToTakeOverTheNormalUpdater;
 		if(started > 0)
@@ -276,8 +284,7 @@ public class UpdateOverMandatoryManager {
 				}, whenToTakeOverTheNormalUpdater - now);
 			}
 		}
-
-		return true;
+		
 	}
 
 	private void sendUOMRequestMain(final PeerNode source, boolean addOnFail) {
