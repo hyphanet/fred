@@ -50,6 +50,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	private boolean finished;
 	/** After attempting inserts on this many slots, go back to the Fetcher */
 	private static final long MAX_TRIED_SLOTS = 10;
+	private boolean freeData;
 	
 	public void schedule() throws InsertException {
 		// Caller calls schedule()
@@ -123,7 +124,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "scheduling insert for "+pubUSK.getURI()+ ' ' +edition);
 			sbi = new SingleBlockInserter(parent, data, compressionCodec, privUSK.getInsertableSSK(edition).getInsertURI(),
-					ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject);
+					ctx, this, isMetadata, sourceLength, token, getCHKOnly, false, true /* we don't use it */, tokenObject, freeData);
 		}
 		try {
 			sbi.schedule();
@@ -165,7 +166,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 
 	public USKInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
 			InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, 
-			boolean getCHKOnly, boolean addToParent, Object tokenObject) throws MalformedURLException {
+			boolean getCHKOnly, boolean addToParent, Object tokenObject, boolean freeData) throws MalformedURLException {
 		this.tokenObject = tokenObject;
 		this.parent = parent;
 		this.data = data;
@@ -184,6 +185,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		privUSK = InsertableUSK.createInsertable(uri);
 		pubUSK = privUSK.getUSK();
 		edition = pubUSK.suggestedEdition;
+		this.freeData = freeData;
 	}
 
 	public BaseClientPutter getParent() {
@@ -198,6 +200,8 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 		synchronized(this) {
 			finished = true;
 		}
+		if(freeData)
+			data.free();
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this);
 	}
 

@@ -49,8 +49,9 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	final boolean getCHKOnly;
 	final int sourceLength;
 	private int consecutiveRNFs;
+	private boolean freeData;
 	
-	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject) {
+	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, boolean freeData) {
 		this.consecutiveRNFs = 0;
 		this.tokenObject = tokenObject;
 		this.token = token;
@@ -59,6 +60,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		this.retries = 0;
 		this.finished = false;
 		this.ctx = ctx;
+		this.freeData = freeData;
 		errors = new FailureCodeTracker(true);
 		this.cb = cb;
 		this.uri = uri;
@@ -199,6 +201,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		else
 			parent.failedBlock();
 		cb.onFailure(e, this);
+		if(freeData)
+			sourceData.free();
 	}
 
 	public ClientKeyBlock getBlock() {
@@ -267,6 +271,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		synchronized(this) {
 			finished = true;
 		}
+		if(freeData)
+			sourceData.free();
 		parent.completedBlock(false);
 		cb.onSuccess(this);
 	}
@@ -280,6 +286,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(finished) return;
 			finished = true;
 		}
+		if(freeData)
+			sourceData.free();
 		super.unregister(false);
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this);
 	}

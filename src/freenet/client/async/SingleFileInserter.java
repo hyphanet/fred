@@ -225,7 +225,7 @@ public class SingleFileInserter implements ClientPutState, CompressJob {
 				if(fitsInOneBlockAsIs) {
 					// Just insert it
 					ClientPutState bi =
-						createInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int) block.getData().size(), -1, getCHKOnly, true, true);
+						createInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int) block.getData().size(), -1, getCHKOnly, true, true, false);
 					cb.onTransition(this, bi);
 					bi.schedule();
 					cb.onBlockSetFinished(this);
@@ -234,7 +234,7 @@ public class SingleFileInserter implements ClientPutState, CompressJob {
 			if(fitsInOneCHK) {
 				// Insert single block, then insert pointer to it
 				if(reportMetadataOnly) {
-					SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int) origSize, -1, getCHKOnly, true, true, token);
+					SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int) origSize, -1, getCHKOnly, true, true, token, false);
 					Metadata meta = makeMetadata(archiveType, null, dataPutter.getURI());
 					cb.onMetadata(meta, this);
 					cb.onTransition(this, dataPutter);
@@ -243,7 +243,7 @@ public class SingleFileInserter implements ClientPutState, CompressJob {
 				} else {
 					MultiPutCompletionCallback mcb =
 						new MultiPutCompletionCallback(cb, parent, token);
-					SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int) origSize, -1, getCHKOnly, true, false, token);
+					SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int) origSize, -1, getCHKOnly, true, false, token, false);
 					Metadata meta = makeMetadata(archiveType, null, dataPutter.getURI());
 					Bucket metadataBucket;
 					try {
@@ -256,7 +256,7 @@ public class SingleFileInserter implements ClientPutState, CompressJob {
 						Logger.error(this, "Caught " + e, e);
 						throw new InsertException(InsertException.INTERNAL_ERROR, "Got MetadataUnresolvedException in SingleFileInserter: " + e.toString(), null);
 					}
-					ClientPutState metaPutter = createInserter(parent, metadataBucket, (short) -1, block.desiredURI, ctx, mcb, true, (int) origSize, -1, getCHKOnly, true, false);
+					ClientPutState metaPutter = createInserter(parent, metadataBucket, (short) -1, block.desiredURI, ctx, mcb, true, (int) origSize, -1, getCHKOnly, true, false, true);
 					mcb.addURIGenerator(metaPutter);
 					mcb.add(dataPutter);
 					cb.onTransition(this, mcb);
@@ -311,21 +311,21 @@ public class SingleFileInserter implements ClientPutState, CompressJob {
 
 	private ClientPutState createInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
 			InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, 
-			boolean addToParent, boolean encodeCHK) throws InsertException {
+			boolean addToParent, boolean encodeCHK, boolean freeData) throws InsertException {
 		
 		uri.checkInsertURI(); // will throw an exception if needed
 		
 		if(uri.getKeyType().equals("USK")) {
 			try {
 				return new USKInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
-					getCHKOnly, addToParent, this.token);
+					getCHKOnly, addToParent, this.token, freeData);
 			} catch (MalformedURLException e) {
 				throw new InsertException(InsertException.INVALID_URI, e, null);
 			}
 		} else {
 			SingleBlockInserter sbi = 
 				new SingleBlockInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
-						getCHKOnly, addToParent, false, this.token);
+						getCHKOnly, addToParent, false, this.token, freeData);
 			if(encodeCHK)
 				cb.onEncode(sbi.getBlock().getClientKey(), this);
 			return sbi;

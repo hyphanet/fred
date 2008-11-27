@@ -406,7 +406,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 				dataBlockInserters[i] = new SingleBlockInserter(parent.parent,
 						dataBlocks[i], (short) -1, FreenetURI.EMPTY_CHK_URI,
 						blockInsertContext, this, false, CHKBlock.DATA_LENGTH,
-						i, getCHKOnly, false, false, parent.token);
+						i, getCHKOnly, false, false, parent.token, false);
 				dataBlockInserters[i].schedule();
 				fin = false;
 			} else {
@@ -438,7 +438,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 							parent.parent, checkBlocks[i], (short) -1,
 							FreenetURI.EMPTY_CHK_URI, blockInsertContext, this,
 							false, CHKBlock.DATA_LENGTH, i + dataBlocks.length,
-							getCHKOnly, false, false, parent.token);
+							getCHKOnly, false, false, parent.token, false);
 					checkBlockInserters[i].schedule();
 					fin = false;
 				} else
@@ -474,7 +474,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, Standard
 						checkBlocks[i], (short) -1, FreenetURI.EMPTY_CHK_URI,
 						blockInsertContext, this, false, CHKBlock.DATA_LENGTH,
 						i + dataBlocks.length, getCHKOnly, false, false,
-						parent.token);
+						parent.token, false);
 				checkBlockInserters[i].schedule();
 			}
 		} catch (Throwable t) {
