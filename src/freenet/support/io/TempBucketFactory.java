@@ -7,7 +7,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
+import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Vector;
@@ -89,16 +91,23 @@ public class TempBucketFactory implements BucketFactory {
 		}
 		
 		private synchronized void closeInputStreams(boolean forFree) {
-			for(TempBucketInputStream is : tbis) {
-				try {
-					if(forFree)
-						is.close();
-					else
-						is._maybeResetInputStream();
-				} catch(IOException e) {
-					Closer.close(is);
-					tbis.remove(is);
-				}
+			for(ListIterator<TempBucketInputStream> i = tbis.listIterator(); i.hasNext();) {
+				TempBucketInputStream is = i.next();
+					if(forFree) {
+						i.remove();
+						try {
+							is.close();
+						} catch (IOException e) {
+							Logger.error(this, "Caught "+e+" closing "+is);
+						}
+					} else {
+						try {
+							is._maybeResetInputStream();
+						} catch(IOException e) {
+							i.remove();
+							Closer.close(is);
+						}
+					}
 			}
 		}
 		
