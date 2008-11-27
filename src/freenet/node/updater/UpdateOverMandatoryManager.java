@@ -250,8 +250,8 @@ public class UpdateOverMandatoryManager {
 							"our key: " + updateManager.updateURI + "\nhis key:" + mainJarURI);
 				} catch(MalformedURLException e) {
 					// Should maybe be a useralert?
-					Logger.error(this, "Node " + source + " sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: " + revocationKey + " : " + e, e);
-					System.err.println("Node " + source.userToString() + " sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: " + revocationKey + " : " + e);
+					Logger.error(this, "Node " + source + " sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: " + jarKey + " : " + e, e);
+					System.err.println("Node " + source.userToString() + " sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: " + jarKey + " : " + e);
 				}
 			} else {
 				// Don't take up the offer. Add to nodesOfferedMainJar, so that we know where to fetch it from when we need it.
