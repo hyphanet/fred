@@ -819,7 +819,7 @@ public class UpdateOverMandatoryManager {
 					updateManager.revocationChecker.onFailure(e, state, cleanedBlobFile);
 					temp.delete();
 
-					insertBlob(updateManager.revocationChecker.getBlobFile());
+					insertBlob(updateManager.revocationChecker.getBlobFile(), "revocation");
 
 				} else {
 					Logger.error(this, "Failed to fetch revocation certificate from blob from " + source.userToString());
@@ -850,7 +850,7 @@ public class UpdateOverMandatoryManager {
 				System.err.println("Got revocation certificate from " + source.userToString());
 				updateManager.revocationChecker.onSuccess(result, state, cleanedBlobFile);
 				temp.delete();
-				insertBlob(updateManager.revocationChecker.getBlobFile());
+				insertBlob(updateManager.revocationChecker.getBlobFile(), "revocation");
 			}
 
 			public void onSuccess(BaseClientPutter state) {
@@ -873,7 +873,7 @@ public class UpdateOverMandatoryManager {
 
 	}
 
-	protected void insertBlob(final File blob) {
+	protected void insertBlob(final File blob, final String type) {
 		ClientCallback callback = new ClientCallback() {
 
 			public void onFailure(FetchException e, ClientGetter state) {
@@ -881,7 +881,7 @@ public class UpdateOverMandatoryManager {
 			}
 
 			public void onFailure(InsertException e, BaseClientPutter state) {
-				Logger.error(this, "Failed to insert revocation key binary blob: " + e, e);
+				Logger.error(this, "Failed to insert "+type+" binary blob: " + e, e);
 			}
 
 			public void onFetchable(BaseClientPutter state) {
@@ -902,7 +902,7 @@ public class UpdateOverMandatoryManager {
 
 			public void onSuccess(BaseClientPutter state) {
 				// All done. Cool.
-				Logger.normal(this, "Inserted binary blob for revocation key");
+				Logger.normal(this, "Inserted "+type+" binary blob");
 			}
 		};
 		FileBucket bucket = new FileBucket(blob, true, false, false, false, false);
@@ -914,7 +914,7 @@ public class UpdateOverMandatoryManager {
 		try {
 			putter.start(false);
 		} catch(InsertException e1) {
-			Logger.error(this, "Failed to start insert of revocation key binary blob: " + e1, e1);
+			Logger.error(this, "Failed to start insert of "+type+" binary blob: " + e1, e1);
 		}
 	}
 
@@ -1235,7 +1235,7 @@ public class UpdateOverMandatoryManager {
 				}
 				mainUpdater.onSuccess(result, state, cleanedBlobFile, version);
 				temp.delete();
-				insertBlob(mainUpdater.getBlobFile(version));
+				insertBlob(mainUpdater.getBlobFile(version), "main jar");
 			}
 
 			public void onSuccess(BaseClientPutter state) {
