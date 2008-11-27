@@ -130,6 +130,11 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			sbi.schedule();
 		} catch (InsertException e) {
 			cb.onFailure(e, this);
+			synchronized(this) {
+				finished = true;
+			}
+			if(freeData)
+				data.free();
 		}
 	}
 
