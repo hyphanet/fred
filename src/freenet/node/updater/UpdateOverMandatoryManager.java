@@ -938,6 +938,99 @@ public class UpdateOverMandatoryManager {
 		updateManager.node.clientCore.alerts.unregister(alert);
 	}
 
+	public boolean handleRequestExt(Message m, final PeerNode source) {
+		// Do we have the data?
+
+		int version = updateManager.newExtJarVersion();
+		File data = updateManager.getExtBlob(version);
+
+		if(data == null) {
+			Logger.normal(this, "Peer " + source + " asked us for the blob file for the ext jar but we don't have it!");
+			// Probably a race condition on reconnect, hopefully we'll be asked again
+			return true;
+		}
+
+		final long uid = m.getLong(DMT.UID);
+
+		RandomAccessFileWrapper raf;
+		try {
+			raf = new RandomAccessFileWrapper(data, "r");
+		} catch(FileNotFoundException e) {
+			Logger.error(this, "Peer " + source + " asked us for the blob file for the ext jar, we have downloaded it but don't have the file even though we did have it when we checked!: " + e, e);
+			return true;
+		}
+
+		final PartiallyReceivedBulk prb;
+		long length;
+		try {
+			length = raf.size();
+			prb = new PartiallyReceivedBulk(updateManager.node.getUSM(), length,
+				Node.PACKET_SIZE, raf, true);
+		} catch(IOException e) {
+			Logger.error(this, "Peer " + source + " asked us for the blob file for the ext jar, we have downloaded it but we can't determine the file size: " + e, e);
+			return true;
+		}
+
+		final BulkTransmitter bt;
+		try {
+			bt = new BulkTransmitter(prb, source, uid, false, updateManager.ctr);
+		} catch(DisconnectedException e) {
+			Logger.error(this, "Peer " + source + " asked us for the blob file for the ext jar, then disconnected: " + e, e);
+			return true;
+		}
+
+		final Runnable r = new Runnable() {
+
+			public void run() {
+				if(!bt.send())
+					Logger.error(this, "Failed to send ext jar blob to " + source.userToString() + " : " + bt.getCancelReason());
+				else
+					Logger.normal(this, "Sent ext jar blob to " + source.userToString());
+			}
+		};
+
+		Message msg = DMT.createUOMSendingExtra(uid, length, updateManager.updateURI.toString(), version);
+
+		try {
+			source.sendAsync(msg, new AsyncMessageCallback() {
+
+				public void acknowledged() {
+					if(logMINOR)
+						Logger.minor(this, "Sending data...");
+					// Send the data
+
+					updateManager.node.executor.execute(r, "Ext jar send for " + uid + " to " + source.userToString());
+				}
+
+				public void disconnected() {
+					// Argh
+					Logger.error(this, "Peer " + source + " asked us for the blob file for the ext jar, then disconnected when we tried to send the UOMSendingMain");
+				}
+
+				public void fatalError() {
+					// Argh
+					Logger.error(this, "Peer " + source + " asked us for the blob file for the ext jar, then got a fatal error when we tried to send the UOMSendingMain");
+				}
+
+				public void sent() {
+					if(logMINOR)
+						Logger.minor(this, "Message sent, data soon");
+				}
+
+				@Override
+				public String toString() {
+					return super.toString() + "(" + uid + ":" + source.getPeer() + ")";
+				}
+			}, updateManager.ctr);
+		} catch(NotConnectedException e) {
+			Logger.error(this, "Peer " + source + " asked us for the blob file for the ext jar, then disconnected when we tried to send the UOMSendingExt: " + e, e);
+			return true;
+		}
+
+		return true;
+		
+	}
+	
 	public boolean handleRequestMain(Message m, final PeerNode source) {
 		// Do we have the data?
 
