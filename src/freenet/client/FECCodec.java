@@ -252,6 +252,8 @@ public abstract class FECCodec implements OOMHook {
 		DataInputStream[] readers = new DataInputStream[k];
 		OutputStream[] writers = new OutputStream[n - k];
 
+		Bucket toFree = null;
+		
 		try {
 
 			int[] toEncode = new int[n - k];
@@ -272,9 +274,10 @@ public abstract class FECCodec implements OOMHook {
 				if(sz < blockLength) {
 					if(i != dataBlockStatus.length - 1)
 						throw new IllegalArgumentException("All buckets except the last must be the full size");
-					if(sz < blockLength)
+					if(sz < blockLength) {
 						buckets[i] = BucketTools.pad(buckets[i], blockLength, bf, (int) sz);
-					else
+						toFree = buckets[i];
+					} else
 						throw new IllegalArgumentException("Too big: " + sz + " bigger than " + blockLength);
 				}
 				readers[i] = new DataInputStream(buckets[i].getInputStream());
@@ -345,6 +348,8 @@ public abstract class FECCodec implements OOMHook {
 				Closer.close(readers[i]);
 			for(int i = 0; i < n - k; i++)
 				Closer.close(writers[i]);
+			if(toFree != null)
+				toFree.free();
 		}
 		// Set new buckets only after have a successful decode.
 		for(int i = 0; i < checkBlockStatus.length; i++) {
