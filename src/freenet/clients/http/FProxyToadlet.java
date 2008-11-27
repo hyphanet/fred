@@ -129,9 +129,11 @@ public final class FProxyToadlet extends Toadlet {
 				force = true;
 		}
 
+		Bucket toFree = null;
 		try {
 			if((!force) && (!forceDownload)) {
 				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), context.getContainer().enableInlinePrefetch() ? prefetchHook : null);
+				if(data != fo.data) toFree = fo.data;
 				data = fo.data;
 				mimeType = fo.type;
 				
@@ -258,6 +260,8 @@ public final class FProxyToadlet extends Toadlet {
 			byte[] pageBytes = pageNode.generate().getBytes("UTF-8");
 			context.sendReplyHeaders(200, "OK", new MultiValueTable<String, String>(), "text/html; charset=utf-8", pageBytes.length);
 			context.writeData(pageBytes);
+		} finally {
+			if(toFree != null) toFree.free();
 		}
 	}
 	
@@ -424,6 +428,7 @@ public final class FProxyToadlet extends Toadlet {
 			if(override.length() == 0) override = "?forcedownload";
 			else override = override+"&forcedownload";
 		}
+		Bucket data = null;
 		try {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "FProxy fetching "+key+" ("+maxSize+ ')');
@@ -431,7 +436,7 @@ public final class FProxyToadlet extends Toadlet {
 			
 			// Now, is it safe?
 			
-			Bucket data = result.asBucket();
+			data = result.asBucket();
 			String mimeType = result.getMimeType();
 			
 			String referer = sanitizeReferer(ctx);
@@ -549,6 +554,8 @@ public final class FProxyToadlet extends Toadlet {
 			throw e;
 		} catch (Throwable t) {
 			writeInternalError(t, ctx);
+		} finally {
+			if(data != null) data.free();
 		}
 	}
 
