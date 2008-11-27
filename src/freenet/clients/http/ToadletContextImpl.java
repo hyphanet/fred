@@ -341,6 +341,7 @@ public class ToadletContextImpl implements ToadletContext {
 				}
 				
 				// Handle it.
+				try {
 				boolean redirect = true;
 				while (redirect) {
 					// don't go around the loop unless set explicitly
@@ -380,6 +381,9 @@ public class ToadletContextImpl implements ToadletContext {
 				if(ctx.shouldDisconnect) {
 					sock.close();
 					return;
+				}
+				} finally {
+					if(data != null) data.free();
 				}
 			}
 			

@@ -605,8 +605,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		}
 		parts.clear();
 		
-		if(data != null)
-			data.free();
+		// Do not free data. Caller is responsible for that.
 	}
 
 	/* (non-Javadoc)

@@ -152,7 +152,7 @@ public class TempBucketFactory implements BucketFactory {
 			hasWritten = true;
 			OutputStream os = new TempBucketOutputStream(++osIndex);
 			if(logMINOR)
-				Logger.minor(this, "Got "+os+" for "+this);
+				Logger.minor(this, "Got "+os+" for "+this, new Exception());
 			return os;
 		}
 
@@ -238,7 +238,7 @@ public class TempBucketFactory implements BucketFactory {
 			TempBucketInputStream is = new TempBucketInputStream(osIndex);
 			tbis.add(is);
 			if(logMINOR)
-				Logger.minor(this, "Got "+is+" for "+this);
+				Logger.minor(this, "Got "+is+" for "+this, new Exception());
 			return is;
 		}
 		
