@@ -111,6 +111,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			parent.addMustSucceedBlocks(1);
 			parent.completedBlock(true);
 			cb.onSuccess(this);
+			if(freeData) data.free();
 		} else {
 			scheduleInsert();
 		}
