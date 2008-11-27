@@ -1162,6 +1162,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 		}
 		if(messagesTellDisconnected != null) {
+			if(logMINOR)
+				Logger.minor(this, "Messages to dump: "+messagesTellDisconnected.length);
 			for(MessageItem mi : messagesTellDisconnected) {
 				mi.onDisconnect();
 			}
