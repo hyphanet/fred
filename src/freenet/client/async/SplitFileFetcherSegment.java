@@ -730,4 +730,9 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				checkCooldownTimes[blockNo - dataCooldownTimes.length] = -1;
 		}
 	}
+
+	public void freeDecodedData() {
+		decodedData.free();
+		decodedData = null;
+	}
 }
