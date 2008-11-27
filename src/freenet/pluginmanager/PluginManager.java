@@ -214,9 +214,12 @@ public class PluginManager {
 			// not a freenet key
 		}
 
-		if(new File(pluginname).exists()) {
-			startPluginFile(pluginname, store);
-			return;
+		File[] roots = File.listRoots();
+		for(File f : roots) {
+			if(pluginname.startsWith(f.getName())) {
+				startPluginFile(pluginname, store);
+				return;
+			}
 		}
 
 		startPluginURL(pluginname, store);
