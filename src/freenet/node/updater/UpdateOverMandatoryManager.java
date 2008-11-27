@@ -938,7 +938,7 @@ public class UpdateOverMandatoryManager {
 		File data = updateManager.getMainBlob(version);
 
 		if(data == null) {
-			Logger.normal(this, "Peer " + source + " asked us for the blob file for the revocation key for the main jar but we don't have it!");
+			Logger.normal(this, "Peer " + source + " asked us for the blob file for the main jar but we don't have it!");
 			// Probably a race condition on reconnect, hopefully we'll be asked again
 			return true;
 		}
