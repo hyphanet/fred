@@ -463,12 +463,15 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		private boolean completed = false;
 
 		public void acknowledged() {
+			if(logMINOR)
+				Logger.minor(this, "Acknowledged terminal message: " + RequestHandler.this);
 			//terminalMessage ack'd by remote peer
 			complete();
 		}
 
 		public void disconnected() {
-			Logger.minor(this, "Peer disconnected before terminal message sent for " + RequestHandler.this);
+			if(logMINOR)
+				Logger.minor(this, "Peer disconnected before terminal message sent for " + RequestHandler.this);
 			complete();
 		}
 
@@ -478,6 +481,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		}
 
 		public void sent() {
+			if(logMINOR)
+				Logger.minor(this, "Sent terminal message: " + RequestHandler.this);
 			complete();
 		}
 
@@ -487,6 +492,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 					return;
 				completed = true;
 			}
+			if(logMINOR)
+				Logger.minor(this, "Completing: " + RequestHandler.this);
 			//For byte counting, this relies on the fact that the callback will only be excuted once.
 			applyByteCounts();
 			unregisterRequestHandlerWithNode();
