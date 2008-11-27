@@ -897,6 +897,16 @@ public class NodeUpdateManager {
 		}
 		return updater.getBlobFile(version);
 	}
+	
+	public File getExtBlob(int version) {
+		NodeUpdater updater;
+		synchronized(this) {
+			if(hasBeenBlown) return null;
+			updater = extUpdater;
+			if(updater == null) return null;
+		}
+		return updater.getBlobFile(version);
+	}
 
 	public synchronized long timeRemainingOnCheck() {
 		long now = System.currentTimeMillis();
