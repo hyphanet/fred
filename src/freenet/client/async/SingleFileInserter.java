@@ -225,7 +225,7 @@ public class SingleFileInserter implements ClientPutState, CompressJob {
 				if(fitsInOneBlockAsIs) {
 					// Just insert it
 					ClientPutState bi =
-						createInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int) block.getData().size(), -1, getCHKOnly, true, true, false);
+						createInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int) block.getData().size(), -1, getCHKOnly, true, true, freeData);
 					cb.onTransition(this, bi);
 					bi.schedule();
 					cb.onBlockSetFinished(this);
@@ -234,7 +234,7 @@ public class SingleFileInserter implements ClientPutState, CompressJob {
 			if(fitsInOneCHK) {
 				// Insert single block, then insert pointer to it
 				if(reportMetadataOnly) {
-					SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int) origSize, -1, getCHKOnly, true, true, token, false);
+					SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int) origSize, -1, getCHKOnly, true, true, token, freeData);
 					Metadata meta = makeMetadata(archiveType, null, dataPutter.getURI());
 					cb.onMetadata(meta, this);
 					cb.onTransition(this, dataPutter);
@@ -243,7 +243,7 @@ public class SingleFileInserter implements ClientPutState, CompressJob {
 				} else {
 					MultiPutCompletionCallback mcb =
 						new MultiPutCompletionCallback(cb, parent, token);
-					SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int) origSize, -1, getCHKOnly, true, false, token, false);
+					SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int) origSize, -1, getCHKOnly, true, false, token, freeData);
 					Metadata meta = makeMetadata(archiveType, null, dataPutter.getURI());
 					Bucket metadataBucket;
 					try {
