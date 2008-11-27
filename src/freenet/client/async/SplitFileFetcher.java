@@ -257,6 +257,7 @@ public class SplitFileFetcher implements ClientGetState {
 			while(!decompressors.isEmpty()) {
 				Compressor c = (Compressor) decompressors.removeLast();
 				long maxLen = Math.max(fetchContext.maxTempLength, fetchContext.maxOutputLength);
+				Bucket orig = data;
 				try {
 					Bucket out = returnBucket;
 					if(!decompressors.isEmpty()) out = null;
@@ -267,6 +268,8 @@ public class SplitFileFetcher implements ClientGetState {
 				} catch (CompressionOutputSizeException e) {
 					cb.onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, false /* FIXME */, clientMetadata.getMIMEType()), this);
 					return;
+				} finally {
+					if(orig != data) orig.free();
 				}
 			}
 			cb.onSuccess(new FetchResult(clientMetadata, data), this);
