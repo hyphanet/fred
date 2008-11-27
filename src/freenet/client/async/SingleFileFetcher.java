@@ -616,6 +616,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			} catch (ArchiveRestartException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(e), sched);
 				return;
+			} finally {
+				result.asBucket().free();
 			}
 			if(callback != null) return;
 			wrapHandleMetadata(true);
@@ -662,6 +664,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// Bucket error?
 				SingleFileFetcher.this.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), sched);
 				return;
+			} finally {
+				result.asBucket().free();
 			}
 			wrapHandleMetadata(true);
 		}
