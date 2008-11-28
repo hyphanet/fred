@@ -102,7 +102,7 @@ public class UpdateOverMandatoryManager {
 	 * @return True unless we don't want the message (in this case, always true).
 	 */
 	public boolean handleAnnounce(Message m, final PeerNode source) {
-		String jarKey = m.getString(DMT.MAIN_JAR_KEY);
+		String mainJarKey = m.getString(DMT.MAIN_JAR_KEY);
 		String extraJarKey = m.getString(DMT.EXTRA_JAR_KEY);
 		String revocationKey = m.getString(DMT.REVOCATION_KEY);
 		boolean haveRevocationKey = m.getBoolean(DMT.HAVE_REVOCATION_KEY);
@@ -121,7 +121,7 @@ public class UpdateOverMandatoryManager {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) {
 			Logger.minor(this, "Update Over Mandatory offer from node " + source.getPeer() + " : " + source.userToString() + ":");
-			Logger.minor(this, "Main jar key: " + jarKey + " version=" + mainJarVersion + " length=" + mainJarFileLength);
+			Logger.minor(this, "Main jar key: " + mainJarKey + " version=" + mainJarVersion + " length=" + mainJarFileLength);
 			Logger.minor(this, "Extra jar key: " + extraJarKey + " version=" + extraJarVersion + " length=" + extraJarFileLength);
 			Logger.minor(this, "Revocation key: " + revocationKey + " found=" + haveRevocationKey + " length=" + revocationKeyFileLength + " last had 3 DNFs " + revocationKeyLastTried + " ms ago, " + revocationKeyDNFs + " DNFs so far");
 			Logger.minor(this, "Load stats: " + pingTime + "ms ping, " + delayTime + "ms bwlimit delay time");
@@ -216,7 +216,7 @@ public class UpdateOverMandatoryManager {
 
 		long now = System.currentTimeMillis();
 		
-		handleMainJarOffer(now, mainJarFileLength, mainJarVersion, source, jarKey);
+		handleMainJarOffer(now, mainJarFileLength, mainJarVersion, source, mainJarKey);
 		
 		return true;
 	}
