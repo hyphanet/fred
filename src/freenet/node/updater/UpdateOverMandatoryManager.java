@@ -69,7 +69,7 @@ public class UpdateOverMandatoryManager {
 	private final HashSet<PeerNode> nodesSayKeyRevokedFailedTransfer;
 	/** PeerNode's which have offered the main jar which we are not fetching it from right now */
 	private final HashSet<PeerNode> nodesOfferedMainJar;
-	/** PeerNode's which have offered the main jar which we are not fetching it from right now */
+	/** PeerNode's which have offered the ext jar which we are not fetching it from right now */
 	private final HashSet<PeerNode> nodesOfferedExtJar;
 	/** PeerNode's we've asked to send the main jar */
 	private final HashSet<PeerNode> nodesAskedSendMainJar;
