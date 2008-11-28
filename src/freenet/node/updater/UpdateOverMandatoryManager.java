@@ -269,8 +269,8 @@ public class UpdateOverMandatoryManager {
 							"our key: " + updateManager.updateURI + "\nhis key:" + mainJarURI);
 				} catch(MalformedURLException e) {
 					// Should maybe be a useralert?
-					Logger.error(this, "Node " + source + " sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: " + jarKey + " : " + e, e);
-					System.err.println("Node " + source.userToString() + " sent us a UOMAnnounce claiming to have a new jar, but it had an invalid URI: " + jarKey + " : " + e);
+					Logger.error(this, "Node " + source + " sent us a UOMAnnounce claiming to have a new ext jar, but it had an invalid URI: " + jarKey + " : " + e, e);
+					System.err.println("Node " + source.userToString() + " sent us a UOMAnnounce claiming to have a new ext jar, but it had an invalid URI: " + jarKey + " : " + e);
 				}
 			} else {
 				// Don't take up the offer. Add to nodesOfferedMainJar, so that we know where to fetch it from when we need it.
@@ -287,8 +287,8 @@ public class UpdateOverMandatoryManager {
 						if(updateManager.hasNewMainJar())
 							return;
 						if(!updateManager.node.isOudated()) {
-							Logger.error(this, "The update process seems to have been stuck for too long; let's switch to UoM! SHOULD NOT HAPPEN! (2)");
-							System.out.println("The update process seems to have been stuck for too long; let's switch to UoM! SHOULD NOT HAPPEN! (2)");
+							Logger.error(this, "The update process seems to have been stuck for too long; let's switch to UoM! SHOULD NOT HAPPEN! (2) (ext)");
+							System.out.println("The update process seems to have been stuck for too long; let's switch to UoM! SHOULD NOT HAPPEN! (2) (ext)");
 						}
 						maybeRequestMainJar();
 					}
@@ -387,7 +387,7 @@ public class UpdateOverMandatoryManager {
 			int curVersion = isExt ? updateManager.getExtVersion() : updateManager.getMainVersion();
 			if(curVersion >= offeredVersion) {
 				if(logMINOR)
-					Logger.minor(this, "Not fetching from " + source + " because current "+lname+" jar version " + updateManager.getMainVersion() + " is more recent than " + offeredVersion);
+					Logger.minor(this, "Not fetching from " + source + " because current "+lname+" jar version " + curVersion + " is more recent than " + offeredVersion);
 				return;
 			}
 			if(askedSendJar.contains(source)) {
