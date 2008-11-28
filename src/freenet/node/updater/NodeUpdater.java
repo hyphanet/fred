@@ -240,7 +240,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 						Logger.error(this, "Not able to rename binary blob for node updater: " + tempBlobFile + " -> " + blobFile + " - may not be able to tell other peers about this build");
 			}
 			this.fetchedVersion = fetchedVersion;
-			System.out.println("Found " + fetchedVersion);
+			System.out.println("Found " + (extUpdate ? "ext " : "") + fetchedVersion);
 			if(fetchedVersion > currentVersion)
 				Logger.normal(this, "Found version " + fetchedVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
 			this.cg = null;
