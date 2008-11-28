@@ -169,7 +169,6 @@ public final class MessageFilter {
 	
 	public boolean match(Message m) {
 		if ((_or != null) && (_or.match(m))) {
-			_matched = true;
 			return true;
 		}
 		if ((_type != null) && (!_type.equals(m.getSpec()))) {
@@ -189,7 +188,6 @@ public final class MessageFilter {
 			}
 		}
 		if(reallyTimedOut(System.currentTimeMillis())) return false;
-		_matched=true;
 		return true;
 	}
 
@@ -227,9 +225,11 @@ public final class MessageFilter {
         return _message;
     }
 
-    public void setMessage(Message message) {
+    public synchronized void setMessage(Message message) {
         //Logger.debug(this, "setMessage("+message+") on "+this, new Exception("debug"));
         _message = message;
+        _matched = _message != null;
+        notifyAll();
     }
 
     public int getInitialTimeout() {
@@ -315,7 +315,6 @@ public final class MessageFilter {
 			// Clear matched before calling callback in case we are re-added.
 			if(_callback != null)
 				clearMatched();
-			notifyAll();
 		}
 		if(cb != null) {
 			cb.onMatched(msg);
