@@ -845,4 +845,9 @@ public class FreenetURI implements Cloneable {
 	public URI toURI(String basePath) throws URISyntaxException {
 		return new URI(basePath + toString(false, false));
 	}
+
+	public FreenetURI sskForUSK() {
+		if(!keyType.equalsIgnoreCase("USK")) throw new IllegalStateException();
+		return new FreenetURI("SSK", docName+"-"+suggestedEdition, metaStr, routingKey, cryptoKey, extra, 0);
+	}
 }

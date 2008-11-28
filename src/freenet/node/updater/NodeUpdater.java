@@ -41,13 +41,14 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private int fetchingVersion;
 	private int fetchedVersion;
 	private int writtenVersion;
+	private int maxDeployVersion;
 	private boolean isRunning;
 	private boolean isFetching;
 	public final boolean extUpdate;
 	private final String blobFilenamePrefix;
 	private File tempBlobFile;
 
-	NodeUpdater(NodeUpdateManager manager, FreenetURI URI, boolean extUpdate, int current, String blobFilenamePrefix) {
+	NodeUpdater(NodeUpdateManager manager, FreenetURI URI, boolean extUpdate, int current, int max, String blobFilenamePrefix) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.manager = manager;
 		this.node = manager.node;
@@ -61,6 +62,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		this.isFetching = false;
 		this.extUpdate = extUpdate;
 		this.blobFilenamePrefix = blobFilenamePrefix;
+		this.maxDeployVersion = max;
 
 		FetchContext tempContext = core.makeClient((short) 0, true).getFetchContext();
 		tempContext.allowSplitfiles = true;
@@ -91,6 +93,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 				return;
 			found = (int) key.suggestedEdition;
 
+			if(found > maxDeployVersion) found = maxDeployVersion;
+			
 			if(found <= availableVersion)
 				return;
 			Logger.minor(this, "Updating availableVersion from " + availableVersion + " to " + found + " and queueing an update");
@@ -139,8 +143,13 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 						System.err.println("Starting " + (extUpdate ? "freenet-ext.jar " : "") + "fetch for " + availableVersion);
 					tempBlobFile =
 						File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
+					FreenetURI uri = URI.setSuggestedEdition(availableVersion);
+					if(maxDeployVersion != Integer.MAX_VALUE) {
+						uri = uri.sskForUSK();
+						if(logMINOR) Logger.minor(this, "Fetching SSK not USK because of upper limit: "+uri);
+					}
 					cg = new ClientGetter(this, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler,
-						URI.setSuggestedEdition(availableVersion), ctx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
+						uri, ctx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
 						this, null, new FileBucket(tempBlobFile, false, false, false, false, false));
 					toStart = cg;
 				}

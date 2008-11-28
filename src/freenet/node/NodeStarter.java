@@ -37,7 +37,8 @@ public class NodeStarter implements WrapperListener {
 	 * This will be included in the jar manifest file so we can check it when we download new builds. */
 	public final static int REQUIRED_EXT_BUILD_NUMBER = 25;
 	/** Freenet will function best with this build of freenet-ext.jar. 
-	 * It may be required in the near future. The node will try to download it. */
+	 * It may be required in the near future. The node will try to download it. 
+	 * The node will not update to a later ext version than this, because that might be incompatible. */
 	public final static int RECOMMENDED_EXT_BUILD_NUMBER = 26;
 	/*
 	(File.separatorChar == '\\') &&
