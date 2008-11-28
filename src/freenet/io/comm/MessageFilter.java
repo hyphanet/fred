@@ -62,6 +62,14 @@ public final class MessageFilter {
 
     void onStartWaiting() {
     	synchronized(this) {
+    		/* We cannot wait on a MessageFilter with a callback, because onMatched() calls clearMatched()
+    		 * if we have a callback. The solution would be to:
+    		 * - Set a flag indicating we are waitFor()ing a filter here.
+    		 * - On matching a message (setMessage), call the callback immediately if not waitFor()ing.
+    		 * - If we are waitFor()ing, call the callback when we exit waitFor() (onStopWaiting()???).
+    		 */
+        	if(_callback != null)
+        		throw new IllegalStateException("Cannot wait on a MessageFilter with a callback!");
     		if(!_setTimeout)
     			Logger.error(this, "No timeout set on filter "+this, new Exception("error"));
     		if(_initialTimeout > 0 && _timeoutFromWait)
