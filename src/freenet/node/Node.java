@@ -1460,7 +1460,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		storeType = nodeConfig.getString("storeType");
 		
-		nodeConfig.register("storeSize", "1G", sortOrder++, false, true, "Node.storeSize", "Node.storeSizeLong", 
+		/*
+		 * Very small initial store size, since the node will preallocate it when starting up for the first time,
+		 * BLOCKING STARTUP, and since everyone goes through the wizard anyway...
+		 */
+		nodeConfig.register("storeSize", "50M", sortOrder++, false, true, "Node.storeSize", "Node.storeSizeLong", 
 				new LongCallback() {
 
 					@Override
