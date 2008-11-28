@@ -1036,14 +1036,6 @@ public class UpdateOverMandatoryManager {
 		
 	}
 	
-	public boolean handleRequestExt(Message m, final PeerNode source) {
-		return handleRequestJar(m, source, true);
-	}
-	
-	public boolean handleRequestMain(Message m, final PeerNode source) {
-		return handleRequestJar(m, source, false);
-	}
-
 	public boolean handleSendingMain(Message m, final PeerNode source) {
 		final long uid = m.getLong(DMT.UID);
 		final long length = m.getLong(DMT.FILE_LENGTH);
