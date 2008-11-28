@@ -992,7 +992,7 @@ public class UpdateOverMandatoryManager {
 		};
 
 		Message msg =
-			isExt ? DMT.createUOMSendingExtra(uid, length, updateManager.updateURI.toString(), version) :
+			isExt ? DMT.createUOMSendingExtra(uid, length, updateManager.extURI.toString(), version) :
 				DMT.createUOMSendingMain(uid, length, updateManager.updateURI.toString(), version);
 
 		try {
