@@ -144,10 +144,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 					tempBlobFile =
 						File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
 					FreenetURI uri = URI.setSuggestedEdition(availableVersion);
-					if(maxDeployVersion != Integer.MAX_VALUE) {
-						uri = uri.sskForUSK();
-						if(logMINOR) Logger.minor(this, "Fetching SSK not USK because of upper limit: "+uri);
-					}
+					uri = uri.sskForUSK();
 					cg = new ClientGetter(this, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler,
 						uri, ctx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
 						this, null, new FileBucket(tempBlobFile, false, false, false, false, false));
