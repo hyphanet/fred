@@ -298,7 +298,7 @@ public class MessageCore {
 			Logger.error(this, "addAsyncFilter() on a filter which is already matched: "+filter, new Exception("error"));
 			filter.clearMatched();
 		}
-		filter.onStartWaiting();
+		filter.onStartWaiting(false);
 		if(logMINOR) Logger.minor(this, "Adding async filter "+filter+" for "+callback);
 		Message ret = null;
 		if(filter.anyConnectionsDropped()) {
@@ -380,7 +380,7 @@ public class MessageCore {
 			Logger.error(this, "waitFor() on a filter which is already matched: "+filter, new Exception("error"));
 			filter.clearMatched();
 		}
-		filter.onStartWaiting();
+		filter.onStartWaiting(true);
 		Message ret = null;
 		if(filter.anyConnectionsDropped()) {
 			filter.onDroppedConnection(filter.droppedConnection());
