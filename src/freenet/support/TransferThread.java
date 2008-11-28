@@ -11,9 +11,11 @@ import freenet.client.async.BaseClientPutter;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
+import freenet.node.PrioRunnable;
+import freenet.support.io.NativeThread;
 import freenet.support.io.TempBucketFactory;
 
-public abstract class TransferThread implements Runnable {
+public abstract class TransferThread implements PrioRunnable {
 	
 	private final String mName;
 	protected final Node mNode;
@@ -37,6 +39,9 @@ public abstract class TransferThread implements Runnable {
 	protected void start() {
 		mNode.executor.execute(this, mName);
 	}
+	
+	/** Specify the priority of this thread. Priorities to return can be found in class NativeThread. */
+	public abstract int getPriority();
 
 	public void run() {
 		isRunning = true;
