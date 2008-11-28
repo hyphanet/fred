@@ -134,6 +134,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			return node.nodeUpdater.uom.handleRequestJar(m, source, true);
 		} else if(spec == DMT.UOMSendingMain && source.isRealConnection()) {
 			return node.nodeUpdater.uom.handleSendingMain(m, source);
+		} else if(spec == DMT.UOMSendingExtra && source.isRealConnection()) {
+			return node.nodeUpdater.uom.handleSendingExt(m, source);
 		} else if(spec == DMT.FNPOpennetAnnounceRequest) {
 			return handleAnnounceRequest(m, source);
 		} else if(spec == DMT.FNPRoutingStatus) {

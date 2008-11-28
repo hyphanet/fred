@@ -935,4 +935,8 @@ public class NodeUpdateManager {
 	protected long getStartedFetchingNextMainJarTimestamp() {
 		return startedFetchingNextMainJar;
 	}
+	
+	protected long getStartedFetchingNextExtJarTimestamp() {
+		return startedFetchingNextExtJar;
+	}
 }
