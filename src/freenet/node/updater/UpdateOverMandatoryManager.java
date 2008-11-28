@@ -225,7 +225,7 @@ public class UpdateOverMandatoryManager {
 
 		long now = System.currentTimeMillis();
 		
-		//handleMainJarOffer(now, mainJarFileLength, mainJarVersion, source, mainJarKey);
+		handleMainJarOffer(now, mainJarFileLength, mainJarVersion, source, mainJarKey);
 		
 		handleExtJarOffer(now, extraJarFileLength, extraJarVersion, source, extraJarKey);
 		
