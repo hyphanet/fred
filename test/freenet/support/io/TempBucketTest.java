@@ -10,7 +10,7 @@ import java.util.Random;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import freenet.crypt.MockRandomSource;
+import freenet.crypt.DummyRandomSource;
 import freenet.crypt.RandomSource;
 import freenet.support.Executor;
 import freenet.support.SerialExecutor;
@@ -20,7 +20,7 @@ import freenet.support.io.TempBucketFactory.TempBucket;
 public class TempBucketTest extends TestSuite {
 
 	public static class TempBucketMigrationTest extends TestCase {
-		private RandomSource strongPRNG = new MockRandomSource(43210);
+		private RandomSource strongPRNG = new DummyRandomSource(43210);
 		private Random weakPRNG = new Random(12340);
 		private Executor exec = new SerialExecutor(NativeThread.NORM_PRIORITY);
 		private FilenameGenerator fg;
@@ -104,8 +104,8 @@ public class TempBucketTest extends TestSuite {
 	}
 
 	public static class RealTempBucketTest_ extends BucketTestBase {
-		private RandomSource strongPRNG = new MockRandomSource(12345);
-		private Random weakPRNG = new MockRandomSource(54321);
+		private RandomSource strongPRNG = new DummyRandomSource(12345);
+		private Random weakPRNG = new DummyRandomSource(54321);
 		private Executor exec = new SerialExecutor(NativeThread.NORM_PRIORITY);
 		private FilenameGenerator fg;
 

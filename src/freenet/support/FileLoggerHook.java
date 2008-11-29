@@ -269,6 +269,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 							currentFilename = rotateLog(currentFilename, lastTime, nextHour, gc);
 
 							gc.add(INTERVAL, INTERVAL_MULTIPLIER);
+							lastTime = nextHour;
 							nextHour = gc.getTimeInMillis();
 
 							if(switchedBaseFilename) {

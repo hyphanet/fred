@@ -579,6 +579,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		
 		OutputStream os = new BufferedOutputStream(outputBucket.getOutputStream());
 		TarOutputStream tarOS = new TarOutputStream(os);
+		tarOS.setLongFileMode(TarOutputStream.LONGFILE_GNU);
 		TarEntry ze;
 
 		for(PutHandler ph : elementsToPutInArchive) {
