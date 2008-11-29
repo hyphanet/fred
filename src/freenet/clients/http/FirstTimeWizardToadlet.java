@@ -11,6 +11,7 @@ import java.net.URI;
 import freenet.client.HighLevelSimpleClient;
 import freenet.config.Config;
 import freenet.config.ConfigException;
+import freenet.config.Option;
 import freenet.config.WrapperConfig;
 import freenet.l10n.L10n;
 import freenet.node.Node;
@@ -185,13 +186,22 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "bwForm");
 			HTMLNode result = bandwidthForm.addChild("select", "name", "bw");
 			
+			Option sizeOption = config.get("node").getOption("outputBandwidthLimit");
+			if(!sizeOption.isDefault()) {
+				long current = (Integer)sizeOption.getValue();
+				result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(current), "on" }, l10n("currentSpeed")+" "+SizeUtil.formatSize(current)+"/s");
+			}
+
 			// don't forget to update handlePost too if you change that!
 			result.addChild("option", "value", "8K", l10n("bwlimitLowerSpeed"));
 			// Special case for 128kbps to increase performance at the cost of some link degradation. Above that we use 50% of the limit.
-			result.addChild("option", "value", "12K", "512+/128 kbps");
-			result.addChild("option", new String[] { "value", "selected" }, new String[] { "16K", "selected" }, "1024+/256 kbps");
-			result.addChild("option", "value", "32K", "1024+/512 kbps");
-			result.addChild("option", "value", "64K", "1024+/1024 kbps");
+			result.addChild("option", "value", "12K", "512+/128 kbps (12KB/s)");
+			if(!sizeOption.isDefault())
+				result.addChild("option", "value", "16K", "1024+/256 kbps (16KB/s)");
+			else
+				result.addChild("option", new String[] { "value", "selected" }, new String[] { "16K", "selected" }, "1024+/256 kbps (16KB/s)");
+			result.addChild("option", "value", "32K", "1024+/512 kbps (32K/s)");
+			result.addChild("option", "value", "64K", "1024+/1024 kbps (64K/s)");
 			result.addChild("option", "value", "1000K", l10n("bwlimitHigherSpeed"));
 			
 			bandwidthForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "bwF", L10n.getString("FirstTimeWizardToadlet.continue")});
@@ -216,9 +226,17 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			HTMLNode bandwidthForm = ctx.addFormChild(bandwidthInfoboxContent, ".", "dsForm");
 			HTMLNode result = bandwidthForm.addChild("select", "name", "ds");
 
+			Option sizeOption = config.get("node").getOption("storeSize");
+			if(!sizeOption.isDefault()) {
+				long current = (Long)sizeOption.getValue();
+				result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(current), "on" }, l10n("currentPrefix")+" "+SizeUtil.formatSize(current));
+			}
 			result.addChild("option", "value", "512M", "512MiB");
 			result.addChild("option", "value", "1G", "1GiB");
-			result.addChild("option", new String[] { "value", "selected" }, new String[] { "2G", "on" }, "2GiB");
+			if(!sizeOption.isDefault())
+				result.addChild("option", "value", "2G", "2GiB");
+			else
+				result.addChild("option", new String[] { "value", "selected" }, new String[] { "2G", "on" }, "2GiB");
 			result.addChild("option", "value", "3G", "3GiB");
 			result.addChild("option", "value", "5G", "5GiB");
 			result.addChild("option", "value", "10G", "10GiB");
@@ -499,6 +517,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	}
 	
 	private boolean canAutoconfigureBandwidth() {
+		if(!config.get("node").getOption("outputBandwidthLimit").isDefault())
+			return false;
 		FredPluginBandwidthIndicator bwIndicator = core.node.ipDetector.getBandwidthIndicator();
 		if(bwIndicator == null)
 			return false;
@@ -524,6 +544,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	}
 	
 	private boolean canAutoconfigureDatastoreSize() {
+		if(!config.get("node").getOption("storeSize").isDefault())
+			return false;
 		// Use JNI to find out the free space on this partition.
 		long freeSpace = -1;
 		File dir = FileUtil.getCanonicalFile(core.node.getNodeDir());
