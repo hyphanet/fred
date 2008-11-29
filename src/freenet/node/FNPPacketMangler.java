@@ -8,6 +8,7 @@ import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 
 import net.i2p.util.NativeBigInteger;
@@ -39,8 +40,11 @@ import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.io.comm.SocketHandler;
 import freenet.io.comm.Peer.LocalAddressException;
+import freenet.l10n.L10n;
+import freenet.node.useralerts.UserAlert;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.Fields;
+import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -950,8 +954,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				Logger.normal(this, "We received an unexpected JFK(2) message from "+pn.getPeer()+" (time since added: "+pn.timeSinceAddedOrRestarted()+" time last receive:"+pn.lastReceivedPacketTime()+')');
 			return;
 		} else if(!Arrays.equals(myNi, nonceInitiator)){
-			if(logMINOR)
-				Logger.minor(this, "Ignoring old JFK(2) (different nonce to the one we sent - either a timing artefact or an attempt to change the nonce)");
+			if(shouldLogErrorInHandshake(t1))
+				Logger.normal(this, "Ignoring old JFK(2) (different nonce to the one we sent - either a timing artefact or an attempt to change the nonce)");
 			return;
 		}
 		
@@ -1345,6 +1349,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, error);
 			return true;
 		}
+		
+		// Received a packet
+		pn.receivedPacket(true, false);
 		
 		// Promote if necessary
 		boolean dontWant = false;
@@ -2007,7 +2014,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/* (non-Javadoc)
 	 * @see freenet.node.OutgoingPacketMangler#processOutgoingOrRequeue(freenet.node.MessageItem[], freenet.node.PeerNode, boolean, boolean)
 	 */
-	public void processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn, boolean neverWaitForPacketNumber, boolean dontRequeue, boolean onePacket) {
+	public boolean processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn, boolean neverWaitForPacketNumber, boolean dontRequeue, boolean onePacket) throws BlockedTooLongException {
 		String requeueLogString = "";
 		if(!dontRequeue) {
 			requeueLogString = ", requeueing";
@@ -2018,7 +2025,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		KeyTracker kt = pn.getCurrentKeyTracker();
 		if(kt == null) {
 			Logger.error(this, "Not connected while sending packets: "+pn);
-			return;
+			return false;
+		}
+		if(kt.wouldBlock(false)) {
+			if(logMINOR) Logger.minor(this, "Would block: "+kt);
+			return false;
 		}
 		int length = 1;
 		length += kt.countAcks() + kt.countAckRequests() + kt.countResendRequests();
@@ -2044,7 +2055,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 						pn.requeueMessageItems(newMsgs, 0, x, false, "NotConnectedException(1a)");
 						pn.requeueMessageItems(messages, i, messages.length-i, false, "NotConnectedException(1b)");
 					}
-					return;
+					return false;
 				} catch (WouldBlockException e) {
 					if(logMINOR) Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
 					// Requeue
@@ -2052,7 +2063,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 						pn.requeueMessageItems(newMsgs, 0, x, false, "WouldBlockException(1a)");
 						pn.requeueMessageItems(messages, i, messages.length-i, false, "WouldBlockException(1b)");
 					}
-					return;
+					return false;
 				} catch (KeyChangedException e) {
 					if(logMINOR) Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
 					// Requeue
@@ -2060,7 +2071,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 						pn.requeueMessageItems(newMsgs, 0, x, false, "KeyChangedException(1a)");
 						pn.requeueMessageItems(messages, i, messages.length-i, false, "KeyChangedException(1b)");
 					}
-					return;
+					return false;
 				} catch (Throwable e) {
 					Logger.error(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
 					// Requeue
@@ -2068,7 +2079,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 						pn.requeueMessageItems(newMsgs, 0, x, false, "Throwable(1)");
 						pn.requeueMessageItems(messages, i, messages.length-i, false, "Throwable(1)");
 					}
-					return;
+					return false;
 				}
 			} else {
 				byte[] data = mi.getData();
@@ -2126,19 +2137,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				// Requeue
 				if(!dontRequeue)
 					pn.requeueMessageItems(messages, 0, messages.length, false, "NotConnectedException(2)");
-				return;
+				return false;
 			} catch (WouldBlockException e) {
 				if(logMINOR) Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
 				// Requeue
 				if(!dontRequeue)
 					pn.requeueMessageItems(messages, 0, messages.length, false, "WouldBlockException(2)");
-				return;
+				return false;
 			} catch (Throwable e) {
 				Logger.error(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
 				// Requeue
 				if(!dontRequeue)
 					pn.requeueMessageItems(messages, 0, messages.length, false, "Throwable(2)");
-				return;
+				return false;
 
 			}
 		} else {
@@ -2180,23 +2191,23 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 							// Requeue
 							if(!dontRequeue)
 								pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false, "NotConnectedException(3)");
-							return;
+							return false;
 						} catch (WouldBlockException e) {
 							if(logMINOR) Logger.minor(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
 							// Requeue
 							if(!dontRequeue)
 								pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false, "WouldBlockException(3)");
-							return;
+							return false;
 						} catch (Throwable e) {
 							Logger.error(this, "Caught "+e+" while sending messages ("+mi_name+") to "+pn.getPeer()+requeueLogString, e);
 							// Requeue
 							if(!dontRequeue)
 								pn.requeueMessageItems(messages, lastIndex, messages.length - lastIndex, false, "Throwable(3)");
-							return;
+							return false;
 						}
 						if(onePacket) {
 							pn.requeueMessageItems(messages, i, messageData.length - i, true, "Didn't fit in single packet");
-							return;
+							return false;
 						}
 					}
 					lastIndex = i;
@@ -2209,6 +2220,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				}
 			}
 		}
+		return true;
 	}
 
 	/**
@@ -2354,6 +2366,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		} catch (StillNotAckedException e) {
 			Logger.error(this, "Forcing disconnect on "+tracker.pn+" for "+tracker+" because packets not acked after 10 minutes!");
 			tracker.pn.forceDisconnect(true);
+			disconnectedStillNotAcked(tracker);
 			throw new NotConnectedException();
 		}
 
@@ -2550,6 +2563,106 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		return ret;
 	}
 
+	private HashSet<Peer> peersWithProblems = new HashSet<Peer>();
+	
+	private void disconnectedStillNotAcked(KeyTracker tracker) {
+		synchronized(peersWithProblems) {
+			peersWithProblems.add(tracker.pn.getPeer());
+			if(peersWithProblems.size() > 1) return;
+		}
+		node.clientCore.alerts.register(disconnectedStillNotAckedAlert);
+	}
+	
+	private UserAlert disconnectedStillNotAckedAlert = new UserAlert() {
+
+		public String anchor() {
+			return "disconnectedStillNotAcked";
+		}
+
+		public String dismissButtonText() {
+			return null;
+		}
+
+		public short getPriorityClass() {
+			return UserAlert.ERROR;
+		}
+
+		public String getShortText() {
+			int sz;
+			synchronized(peersWithProblems) {
+				sz = peersWithProblems.size();
+			}
+			return l10n("somePeersDisconnectedStillNotAcked", "count", Integer.toString(sz));
+		}
+
+		public HTMLNode getHTMLText() {
+			HTMLNode div = new HTMLNode("div");
+			Peer[] peers;
+			synchronized(peersWithProblems) {
+				peers = peersWithProblems.toArray(new Peer[peersWithProblems.size()]);
+			}
+			L10n.addL10nSubstitution(div, "FNPPacketMangler.somePeersDisconnectedStillNotAckedDetail", 
+					new String[] { "count", "link", "/link" }
+					, new String[] { Integer.toString(peers.length), "<a href=\"/?_CHECKED_HTTP_=https://bugs.freenetproject.org/\">", "</a>" });
+			HTMLNode list = div.addChild("ul");
+			for(Peer peer : peers) {
+				list.addChild("li", peer.toString());
+			}
+			return div;
+		}
+
+		public String getText() {
+			StringBuffer sb = new StringBuffer();
+			Peer[] peers;
+			synchronized(peersWithProblems) {
+				peers = peersWithProblems.toArray(new Peer[peersWithProblems.size()]);
+			}
+			sb.append(l10n("somePeersDisconnectedStillNotAckedDetail", 
+					new String[] { "count", "link", "/link" },
+					new String[] { Integer.toString(peers.length), "", "" } ));
+			sb.append('\n');
+			for(Peer peer : peers) {
+				sb.append('\t');
+				sb.append(peer.toString());
+				sb.append('\n');
+			}
+			return sb.toString();
+		}
+		
+		public String getTitle() {
+			return getShortText();
+		}
+
+		public Object getUserIdentifier() {
+			return FNPPacketMangler.this;
+		}
+
+		public boolean isEventNotification() {
+			return false;
+		}
+
+		public boolean isValid() {
+			return true;
+		}
+
+		public void isValid(boolean validity) {
+			// Ignore
+		}
+
+		public void onDismiss() {
+			// Ignore
+		}
+
+		public boolean shouldUnregisterOnDismiss() {
+			return false;
+		}
+
+		public boolean userCanDismiss() {
+			return false;
+		}
+
+	};
+
 	/**
 	 * Encrypt and send a packet.
 	 * @param plaintext The packet's plaintext, including all formatting,
@@ -2617,6 +2730,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		kt.pn.sentPacket();
 		return output.length + sock.getHeadersLength();
+	}
+
+	protected String l10n(String key, String[] patterns, String[] values) {
+		return L10n.getString("FNPPacketMangler."+key, patterns, values);
+	}
+
+	protected String l10n(String key, String pattern, String value) {
+		return L10n.getString("FNPPacketMangler."+key, pattern, value);
 	}
 
 	/* (non-Javadoc)

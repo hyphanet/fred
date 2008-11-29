@@ -298,11 +298,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		node.getTicker().queueTimedJob(new FastRunnable() {
 			public void run() {
 				// Send the ack
-				try {
 					source.sendAnyUrgentNotifications(true);
-				} catch (PacketSequenceException e) {
-					// Ignore
-				}
 				finishDisconnect(m, source);
 			}
 		}, 0);

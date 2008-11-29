@@ -22,7 +22,7 @@ BookmarkCategory0.Content.Bookmark1.Description=Text version of the Activelink I
 BookmarkCategory0.Content.Bookmark1.URI=USK@qd-hk0vHYg7YvK2BQsJMcUD5QSF0tDkgnnF6lnWUH0g,xTFOV9ddCQQk6vQ6G~jfL6IzRUgmfMcZJ6nuySu~NUc,AQACAAE/activelink-index-text/54/
 BookmarkCategory1.Name=Freenet related software and documentation
 BookmarkCategory1.Content.BookmarkCategory=0
-BookmarkCategory1.Content.Bookmark=6
+BookmarkCategory1.Content.Bookmark=5
 BookmarkCategory1.Content.Bookmark0.Name=Freenet Message System
 BookmarkCategory1.Content.Bookmark0.Description=The official freesite of FMS, a spam resistant message board system for Freenet
 BookmarkCategory1.Content.Bookmark0.hasAnActivelink=true
@@ -43,8 +43,4 @@ BookmarkCategory1.Content.Bookmark4.URI=USK@ugb~uuscsidMI-Ze8laZe~o3BUIb3S50i25R
 BookmarkCategory1.Content.Bookmark4.hasAnActivelink=true
 BookmarkCategory1.Content.Bookmark4.Name=The Freenet Applications Freesite
 BookmarkCategory1.Content.Bookmark4.Description=Various links to Freenet applications, and instructions for using them
-BookmarkCategory1.Content.Bookmark5.Name=wAnnA search Freenet?
-BookmarkCategory1.Content.Bookmark5.Description=How to search Freenet
-BookmarkCategory1.Content.Bookmark5.hasAnActivelink=true
-BookmarkCategory1.Content.Bookmark5.URI=USK@ZC7ThxBN-OgGd8WRQcLsaCREJufzeihThQ5NBkjoX5A,~31qR8wv08tVkj--3bfCwJAC7ndaXh7uLFgafpimOik,AQACAAE/wAnnA/13/
 End

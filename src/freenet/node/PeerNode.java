@@ -1256,8 +1256,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	*/
 	public long getNextUrgentTime(long now) {
 		long t = Long.MAX_VALUE;
+		KeyTracker cur;
+		KeyTracker prev;
 		synchronized(this) {
-		KeyTracker kt = currentTracker;
+			cur = currentTracker;
+			prev = previousTracker;
+		}
+		KeyTracker kt = cur;
 		if(kt != null) {
 			long next = kt.getNextUrgentTime();
 			t = Math.min(t, next);
@@ -1265,7 +1270,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				Logger.minor(this, "Next urgent time from curTracker less than now");
 			if(kt.hasPacketsToResend()) return now;
 		}
-		kt = previousTracker;
+		kt = prev;
 		if(kt != null) {
 			long next = kt.getNextUrgentTime();
 			t = Math.min(t, next);
@@ -1273,8 +1278,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				Logger.minor(this, "Next urgent time from prevTracker less than now");
 			if(kt.hasPacketsToResend()) return now;
 		}
+		try {
+			if(!cur.wouldBlock(false))
+				t = messageQueue.getNextUrgentTime(t, now);
+		} catch (BlockedTooLongException e) {
+			// Ignore for now, it will come back around
 		}
-		t = messageQueue.getNextUrgentTime(t, now);
 		return t;
 	}
 	
@@ -1859,7 +1868,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			unroutableNewerVersion = newer;
 			unroutableOlderVersion = older;
 			bootIDChanged = (thisBootID != this.bootID);
-			if(bootIDChanged && logMINOR)
+			if(bootIDChanged && wasARekey)
+				Logger.error(this, "Changed boot ID while rekeying! from " + bootID + " to " + thisBootID + " for " + getPeer());
+			else if(bootIDChanged && logMINOR)
 				Logger.minor(this, "Changed boot ID from " + bootID + " to " + thisBootID + " for " + getPeer());
 			this.bootID = thisBootID;
 			if(bootIDChanged) {
@@ -1896,7 +1907,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 			ctx = null;
 			isRekeying = false;
-			timeLastRekeyed = now;
+			timeLastRekeyed = now - (unverified ? 0 : FNPPacketMangler.MAX_SESSION_KEY_REKEYING_DELAY / 2);
 			totalBytesExchangedWithCurrentTracker = 0;
 			// This has happened in the past, and caused problems, check for it.
 			if(currentTracker != null && previousTracker != null && 
@@ -2407,7 +2418,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @throws PacketSequenceException If there is an error sending the packet
 	* caused by a sequence inconsistency. 
 	*/
-	public boolean sendAnyUrgentNotifications(boolean forceSendPrimary) throws PacketSequenceException {
+	public boolean sendAnyUrgentNotifications(boolean forceSendPrimary) {
 		boolean sent = false;
 		if(logMINOR)
 			Logger.minor(this, "sendAnyUrgentNotifications");
@@ -2432,7 +2443,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				} catch(KeyChangedException e) {
 				// Ignore
 				} catch(WouldBlockException e) {
-				// Impossible, ignore
+					Logger.error(this, "Caught impossible: "+e, e);
+				} catch(PacketSequenceException e) {
+					Logger.error(this, "Caught impossible: "+e, e);
 				}
 			}
 		}
@@ -2450,7 +2463,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				} catch(KeyChangedException e) {
 				// Ignore
 				} catch(WouldBlockException e) {
-					Logger.error(this, "Impossible: " + e, e);
+					Logger.error(this, "Caught impossible: "+e, e);
+				} catch(PacketSequenceException e) {
+					Logger.error(this, "Caught impossible: "+e, e);
 				}
 		}
 		return sent;
@@ -4010,14 +4025,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * @param now
 	 * @param rpiTemp
 	 * @param rpiTemp
+	 * @throws BlockedTooLongException 
 	 */
-	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp) {
+	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp) throws BlockedTooLongException {
 		// If there are any urgent notifications, we must send a packet.
 		boolean mustSend = false;
+		boolean mustSendPacket = false;
 		if(mustSendNotificationsNow(now)) {
 			if(logMINOR)
 				Logger.minor(this, "Sending notification");
 			mustSend = true;
+			mustSendPacket = true;
 		}
 		// Any packets to resend? If so, resend ONE packet and then return.
 		for(int j = 0; j < 2; j++) {
@@ -4074,6 +4092,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				Logger.minor(this, "Sending keepalive");
 			keepalive = true;
 			mustSend = true;
+			mustSendPacket = true;
 		}
 		
 		ArrayList<MessageItem> messages = new ArrayList<MessageItem>(10);
@@ -4122,17 +4141,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			// Send packets, right now, blocking, including any active notifications
 			// Note that processOutgoingOrRequeue will drop messages from the end
 			// if necessary to fit the messages into a single packet.
-			getOutgoingMangler().processOutgoingOrRequeue(messages.toArray(new MessageItem[messages.size()]), this, true, false, true);
+			if(!getOutgoingMangler().processOutgoingOrRequeue(messages.toArray(new MessageItem[messages.size()]), this, true, false, true)) {
+				if(mustSendPacket) {
+					if(!sendAnyUrgentNotifications(false))
+						sendAnyUrgentNotifications(true);
+				}
+			}
 			return true;
 		} else {
 			if(mustSend) {
-				try {
 					if(sendAnyUrgentNotifications(false))
 						return true;
-				} catch (PacketSequenceException e) {
-					Logger.error(this, "Caught "+e, e);
-					return false;
-				}
 				// Can happen occasionally as a race condition...
 				Logger.normal(this, "No notifications sent despite no messages and mustSend=true for "+this);
 			}

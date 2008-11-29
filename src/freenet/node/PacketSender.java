@@ -4,15 +4,21 @@
 package freenet.node;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.Vector;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
+import freenet.io.comm.Peer;
+import freenet.l10n.L10n;
+import freenet.node.useralerts.UserAlert;
 import freenet.support.FileLoggerHook;
+import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
+import freenet.support.TimeUtil;
 import freenet.support.io.NativeThread;
 
 /**
@@ -251,6 +257,7 @@ public class PacketSender implements Runnable, Ticker {
 					continue;
 				}
 				
+				try {
 				if(pn.maybeSendPacket(now, rpiTemp, rpiIntTemp) && canSendThrottled) {
 					canSendThrottled = false;
 					count = node.outputThrottle.getCount();
@@ -264,6 +271,11 @@ public class PacketSender implements Runnable, Ticker {
 						nextActionTime = Math.min(nextActionTime, now + canSendAt);
 						newBrokeAt = i;
 					}
+				}
+				} catch (BlockedTooLongException e) {
+					Logger.error(this, "Waited too long: "+TimeUtil.formatTime(e.delta)+" to allocate a packet number to send to "+this+" on "+e.tracker+" - DISCONNECTING!");
+					pn.forceDisconnect(true);
+					onForceDisconnectBlockTooLong(pn, e);
 				}
 				
 				long urgentTime = pn.getNextUrgentTime(now);
@@ -409,6 +421,107 @@ public class PacketSender implements Runnable, Ticker {
 		return brokeAt;
 	}
 
+	private HashSet<Peer> peersDumpedBlockedTooLong = new HashSet<Peer>();
+	
+	private void onForceDisconnectBlockTooLong(PeerNode pn, BlockedTooLongException e) {
+		Peer p = pn.getPeer();
+		synchronized(peersDumpedBlockedTooLong) {
+			peersDumpedBlockedTooLong.add(p);
+			if(peersDumpedBlockedTooLong.size() > 1) return;
+		}
+		node.clientCore.alerts.register(peersDumpedBlockedTooLongAlert);
+	}
+	
+	private UserAlert peersDumpedBlockedTooLongAlert = new UserAlert() {
+
+		public String anchor() {
+			return "disconnectedStillNotAcked";
+		}
+
+		public String dismissButtonText() {
+			return null;
+		}
+
+		public short getPriorityClass() {
+			return UserAlert.ERROR;
+		}
+
+		public String getShortText() {
+			int sz;
+			synchronized(peersDumpedBlockedTooLong) {
+				sz = peersDumpedBlockedTooLong.size();
+			}
+			return l10n("somePeersDisconnectedBlockedTooLong", "count", Integer.toString(sz));
+		}
+
+		public HTMLNode getHTMLText() {
+			HTMLNode div = new HTMLNode("div");
+			Peer[] peers;
+			synchronized(peersDumpedBlockedTooLong) {
+				peers = peersDumpedBlockedTooLong.toArray(new Peer[peersDumpedBlockedTooLong.size()]);
+			}
+			L10n.addL10nSubstitution(div, "FNPPacketMangler.somePeersDisconnectedBlockedTooLongDetail", 
+					new String[] { "count", "link", "/link" }
+					, new String[] { Integer.toString(peers.length), "<a href=\"/?_CHECKED_HTTP_=https://bugs.freenetproject.org/\">", "</a>" });
+			HTMLNode list = div.addChild("ul");
+			for(Peer peer : peers) {
+				list.addChild("li", peer.toString());
+			}
+			return div;
+		}
+
+		public String getText() {
+			StringBuffer sb = new StringBuffer();
+			Peer[] peers;
+			synchronized(peersDumpedBlockedTooLong) {
+				peers = peersDumpedBlockedTooLong.toArray(new Peer[peersDumpedBlockedTooLong.size()]);
+			}
+			sb.append(l10n("somePeersDisconnectedStillNotAckedDetail", 
+					new String[] { "count", "link", "/link" },
+					new String[] { Integer.toString(peers.length), "", "" } ));
+			sb.append('\n');
+			for(Peer peer : peers) {
+				sb.append('\t');
+				sb.append(peer.toString());
+				sb.append('\n');
+			}
+			return sb.toString();
+		}
+		
+		public String getTitle() {
+			return getShortText();
+		}
+
+		public Object getUserIdentifier() {
+			return PacketSender.this;
+		}
+
+		public boolean isEventNotification() {
+			return false;
+		}
+
+		public boolean isValid() {
+			return true;
+		}
+
+		public void isValid(boolean validity) {
+			// Ignore
+		}
+
+		public void onDismiss() {
+			// Ignore
+		}
+
+		public boolean shouldUnregisterOnDismiss() {
+			return false;
+		}
+
+		public boolean userCanDismiss() {
+			return false;
+		}
+
+	};
+
 	/** Wake up, and send any queued packets. */
 	void wakeUp() {
 		// Wake up if needed
@@ -417,11 +530,17 @@ public class PacketSender implements Runnable, Ticker {
 		}
 	}
 
+	protected String l10n(String key, String[] patterns, String[] values) {
+		return L10n.getString("PacketSender."+key, patterns, values);
+	}
+
+	protected String l10n(String key, String pattern, String value) {
+		return L10n.getString("PacketSender."+key, pattern, value);
+	}
+
 	public void queueTimedJob(Runnable job, long offset) {
 		queueTimedJob(job, "Scheduled job: "+job, offset, false);
 	}
-	
-	
 	
 	public void queueTimedJob(Runnable runner, String name, long offset, boolean runOnTickerAnyway) {
 		// Run directly *if* that won't cause any priority problems.
