@@ -1868,7 +1868,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						HTMLNode ul = div.addChild("ul");
 
 						for (String type : new String[] { "chk", "pubkey", "ssk" })
-							for (String storecache : new String[] { "store", "store.key", "store.lru" }) {
+							for (String storecache : new String[] { "store", "store.keys", "store.lru", "cache",
+							        "cache.keys", "cache.lru" }) {
 								File f = new File(storeDir, type + suffix + "." + storecache);
 								if (f.exists())
 									ul.addChild("li", f.getAbsolutePath());
@@ -1887,7 +1888,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						sb.append(L10n.getString("Node.storeSaltHashMigrated") + " \n");
 						
 						for (String type : new String[] { "chk", "pubkey", "ssk" })
-							for (String storecache : new String[] { "store", "store.key", "store.lru" }) {
+							for (String storecache : new String[] { "store", "store.keys", "store.lru", "cache",
+							        "cache.keys", "cache.lru" }) {
 								File f = new File(storeDir, type + suffix + "." + storecache);
 						if (f.exists())
 									sb.append(" - ");

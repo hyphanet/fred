@@ -2025,10 +2025,18 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		KeyTracker kt = pn.getCurrentKeyTracker();
 		if(kt == null) {
 			Logger.error(this, "Not connected while sending packets: "+pn);
+			if(!dontRequeue) {
+				for(MessageItem item : messages)
+					item.onDisconnect();
+			}
 			return false;
 		}
 		if(kt.wouldBlock(false)) {
 			if(logMINOR) Logger.minor(this, "Would block: "+kt);
+			// Requeue
+			if(!dontRequeue) {
+				pn.requeueMessageItems(messages, 0, messages.length, false, "WouldBlock");
+			}
 			return false;
 		}
 		int length = 1;
