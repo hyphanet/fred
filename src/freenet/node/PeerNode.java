@@ -2345,20 +2345,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					Logger.minor(this, "Invalid or null location, waiting for FNPLocChangeNotification: " + e);
 			}
 		}
-		Vector<Peer> oldNominalPeer = nominalPeer;
-
-		if(nominalPeer == null)
-			nominalPeer = new Vector<Peer>();
-		nominalPeer.removeAllElements();
-
-		Peer[] oldPeers = nominalPeer.toArray(new Peer[nominalPeer.size()]);
-
-		boolean refHadPhysicalUDP = false;
-
 		try {
 			String physical[] = fs.getAll("physical.udp");
 			if(physical != null) {
-				refHadPhysicalUDP = true;
+				Vector<Peer> oldNominalPeer = nominalPeer;
+
+				if(nominalPeer == null)
+					nominalPeer = new Vector<Peer>();
+				nominalPeer.removeAllElements();
+
+				Peer[] oldPeers = nominalPeer.toArray(new Peer[nominalPeer.size()]);
+
 				for(int i = 0; i < physical.length; i++) {
 					Peer p;
 					try {
@@ -2376,30 +2373,23 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 						nominalPeer.addElement(p);
 					}
 				}
+				if(!Arrays.equals(oldPeers, nominalPeer.toArray(new Peer[nominalPeer.size()]))) {
+					changedAnything = true;
+					if(logMINOR) Logger.minor(this, "Got new physical.udp for "+this+" : "+Arrays.toString(nominalPeer.toArray()));
+					lastAttemptedHandshakeIPUpdateTime = 0;
+					// Clear nonces to prevent leak. Will kill any in-progress connect attempts, but that is okay because
+					// either we got an ARK which changed our peers list, or we just connected.
+					jfkNoncesSent.clear();
+				}
+
+			} else if(forDiffNodeRef || forARK) {
+				// Connection setup doesn't count, it doesn't send a physical.udp.
+				// Keep the old version anyway...
+				Logger.error(this, "Noderef has no physical.udp for "+this+" : forDiffNodeRef="+forDiffNodeRef+" forARK="+forARK);
 			}
 		} catch(Exception e1) {
 			Logger.error(this, "Caught "+e1, e1);
 			throw new FSParseException(e1);
-		}
-
-		// Don't act as if we got an empty physical.udp if we didn't
-		// even have that field in our ref for builds 1102 and later,
-		// making the physical.udp field itself clearly optional in all
-		// new-ref-for-existing-peer contexts
-		if(refHadPhysicalUDP || (!forDiffNodeRef && 1102 > simpleVersion)) {
-			if(!Arrays.equals(oldPeers, nominalPeer.toArray(new Peer[nominalPeer.size()]))) {
-				changedAnything = true;
-				lastAttemptedHandshakeIPUpdateTime = 0;
-				// Clear nonces to prevent leak. Will kill any in-progress connect attempts, but that is okay because
-				// either we got an ARK which changed our peers list, or we just connected.
-				jfkNoncesSent.clear();
-			}
-
-			// DO NOT change detectedPeer !!!
-			// The given physical.udp may be WRONG!!!
-
-			// In future, ARKs may support automatic transition when the ARK key is changed.
-			// So parse it anyway. If it fails, no big loss; it won't even log an error.
 		}
 
 		if(logMINOR)

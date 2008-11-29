@@ -174,7 +174,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			*/
 		}
 
-		System.err.println(" checkBloom=" + checkBloom + ", flags=" + flags);
+		System.err.println(" checkBloom=" + checkBloom + ", flags=" + flags+" bloom size = "+bloomFilterSize+" size = "+maxKeys);
 		
 		cleanerThread.start();
 	}
