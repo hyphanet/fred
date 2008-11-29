@@ -188,7 +188,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			
 			Option sizeOption = config.get("node").getOption("outputBandwidthLimit");
 			if(!sizeOption.isDefault()) {
-				long current = (Integer)sizeOption.getValue();
+				int current = (Integer)sizeOption.getValue();
 				result.addChild("option", new String[] { "value", "selected" }, new String[] { SizeUtil.formatSize(current), "on" }, l10n("currentSpeed")+" "+SizeUtil.formatSize(current)+"/s");
 			}
 

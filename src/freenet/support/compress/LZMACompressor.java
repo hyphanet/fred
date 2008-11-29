@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import SevenZip.Compression.LZMA.Decoder;
+
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -60,43 +62,39 @@ public class LZMACompressor implements Compressor {
 			output = preferred;
 		else
 			output = bf.makeBucket(maxLength);
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Decompressing "+data+" size "+data.size()+" to new bucket "+output);
 		InputStream is = data.getInputStream();
 		OutputStream os = output.getOutputStream();
 		decompress(is, os, maxLength, maxCheckSizeLength);
 		os.close();
-		is.close();
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Output: "+output+" size "+output.size());
 		return output;
 	}
 
-	private long decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
-		LzmaInputStream lzmaIS = new LzmaInputStream(is);
-		long written = 0;
-		byte[] buffer = new byte[4096];
-		while(true) {
-			int l = (int) Math.min(buffer.length, maxLength - written);
-			// We can over-read to determine whether we have over-read.
-			// We enforce maximum size this way.
-			// FIXME there is probably a better way to do this!
-			int x = lzmaIS.read(buffer, 0, buffer.length);
-			if(l < x) {
-				Logger.normal(this, "l="+l+", x="+x+", written="+written+", maxLength="+maxLength+" throwing a CompressionOutputSizeException");
-				if(maxCheckSizeBytes > 0) {
-					written += x;
-					while(true) {
-						l = (int) Math.min(buffer.length, maxLength + maxCheckSizeBytes - written);
-						x = lzmaIS.read(buffer, 0, l);
-						if(x <= -1) throw new CompressionOutputSizeException(written);
-						if(x == 0) throw new IOException("Returned zero from read()");
-						written += x;
-					}
-				}
-				throw new CompressionOutputSizeException();
-			}
-			if(x <= -1) return written;
-			if(x == 0) throw new IOException("Returned zero from read()");
-			os.write(buffer, 0, x);
-			written += x;
-		}
+	
+	// Copied from DecoderThread
+	// LICENSING: DecoderThread is LGPL 2.1/CPL according to comments.
+	
+    static final int propSize = 5;
+    
+    static final byte[] props = new byte[propSize];
+
+    static {
+        // enc.SetEndMarkerMode( true );
+        // enc.SetDictionarySize( 1 << 20 );
+        props[0] = 0x5d;
+        props[1] = 0x00;
+        props[2] = 0x00;
+        props[3] = 0x10;
+        props[4] = 0x00;
+    }
+
+	private void decompress(InputStream is, OutputStream os, long maxLength, long maxCheckSizeBytes) throws IOException, CompressionOutputSizeException {
+		Decoder decoder = new Decoder();
+		decoder.SetDecoderProperties(props);
+		decoder.Code(is, os, maxLength);
 	}
 
 	public int decompress(byte[] dbuf, int i, int j, byte[] output) throws CompressionOutputSizeException {
@@ -106,7 +104,8 @@ public class LZMACompressor implements Compressor {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream(output.length);
 		int bytes = 0;
 		try {
-			bytes = (int)decompress(bais, baos, output.length, -1);
+			decompress(bais, baos, output.length, -1);
+			bytes = baos.size();
 		} catch (IOException e) {
 			// Impossible
 			throw new Error("Got IOException: " + e.getMessage(), e);

@@ -421,6 +421,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 						if(logMINOR)
 							Logger.minor(this, "Putting into ZIP: "+name);
 						ph = new PutHandler(this, name, ZipPrefix+element.fullName, cm, data);
+						if(logMINOR)
+							Logger.minor(this, "Putting file into container: "+element.fullName+" : "+ph);
 						elementsToPutInArchive.addLast(ph);
 						numberOfFiles++;
 						totalSize += data.size();
@@ -492,6 +494,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		while(true) {
 			try {
 				bucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent()), baseMetadata.writeToByteArray());
+				if(logMINOR)
+					Logger.minor(this, "Metadata bucket is "+bucket.size()+" bytes long");
 				break;
 			} catch (IOException e) {
 				fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container);
@@ -578,6 +582,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		TarEntry ze;
 
 		for(PutHandler ph : elementsToPutInArchive) {
+			if(logMINOR)
+				Logger.minor(this, "Putting into tar: "+ph+" data length "+ph.data.size()+" name "+ph.targetInArchive);
 			ze = new TarEntry(ph.targetInArchive);
 			ze.setModTime(0);
 			long size = ph.data.size();
@@ -588,6 +594,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 
 		// Add .metadata - after the rest.
+		if(logMINOR)
+			Logger.minor(this, "Putting metadata into tar: length is "+inputBucket.size());
 		ze = new TarEntry(".metadata");
 		ze.setModTime(0); // -1 = now, 0 = 1970.
 		long size = inputBucket.size();
@@ -600,6 +608,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		tarOS.finish();
 		tarOS.flush();
 		tarOS.close();
+		
+		if(logMINOR)
+			Logger.minor(this, "Archive size is "+outputBucket.size());
 		
 		return ARCHIVE_TYPE.TAR.mimeTypes[0];
 	}
@@ -683,11 +694,15 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					container.activate(meta, 100);
 				Logger.minor(this, "Putting "+name);
 				namesToByteArrays.put(name, meta);
+				if(logMINOR)
+					Logger.minor(this, "Putting PutHandler into base metadata: "+ph+" name "+name);
 			} else if(o instanceof HashMap) {
 				HashMap subMap = new HashMap();
 				if(persistent())
 					container.activate(o, 1);
 				namesToByteArrays.put(name, subMap);
+				if(logMINOR)
+					Logger.minor(this, "Putting hashmap into base metadata: "+name);
 				Logger.minor(this, "Putting directory: "+name);
 				namesToByteArrays((HashMap)o, subMap, container);
 			} else

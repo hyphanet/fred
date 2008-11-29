@@ -275,6 +275,8 @@ public class ArchiveManager {
 		}
 		if(data.size() > archiveContext.maxArchiveSize)
 			throw new ArchiveFailureException("Archive too big ("+data.size()+" > "+archiveContext.maxArchiveSize+")!");
+		else if(logMINOR)
+			Logger.minor(this, "Container size (possibly compressed): "+data.size()+" for "+data);
 		
 		
 		InputStream is = null;
