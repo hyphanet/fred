@@ -25,7 +25,7 @@ public class CountedInputStream extends FilterInputStream {
 
     @Override
 	public int read(byte[] buf, int off, int len) throws IOException {
-        int ret = super.read(buf, off, len);
+        int ret = in.read(buf, off, len);
         if (ret != -1)
             count += ret;
         return ret;
@@ -33,7 +33,7 @@ public class CountedInputStream extends FilterInputStream {
     
     @Override
 	public int read(byte[] buf) throws IOException {
-        int ret = super.read(buf);
+        int ret = in.read(buf);
         if (ret != -1)
             count += ret;
         return ret;

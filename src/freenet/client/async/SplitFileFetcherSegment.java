@@ -218,8 +218,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 			((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
 		// No need to unregister key, because it will be cleared in tripPendingKey().
 		boolean dontNotify;
-		boolean haveDataBlocks;
 		boolean wasDataBlock = false;
+		boolean allFailed = false;
 		synchronized(this) {
 			if(finished) {
 				// Happens sometimes, don't complain about it...
@@ -290,16 +290,25 @@ public class SplitFileFetcherSegment implements FECCallback {
 				// Don't count the last data block, since we can't use it in FEC decoding.
 				if(!(ignoreLastDataBlock && blockNo == dataKeys.length - 1))
 					fetchedBlocks++;
+				else
+					// This block is not going to be fetched, and because of the insertion format. 
+					// Thus it is a fatal failure. We need to track it, because it is quite possible
+					// to fetch the last block, not complete because it's the last block, and hang.
+					fatallyFailedBlocks++;
 				// However, if we manage to get EVERY data block (common on a small splitfile),
 				// we don't need to FEC decode.
 				if(wasDataBlock)
 					fetchedDataBlocks++;
 				if(logMINOR) Logger.minor(this, "Fetched "+fetchedBlocks+" blocks in onSuccess("+blockNo+")");
-				haveDataBlocks = fetchedDataBlocks == dataKeys.length;
+				boolean haveDataBlocks = fetchedDataBlocks == dataKeys.length;
 				decodeNow = (!startedDecode) && (fetchedBlocks >= minFetched || haveDataBlocks);
 				if(decodeNow) {
 					startedDecode = true;
 					finishing = true;
+				} else {
+					// Avoid hanging when we have one n-1 check blocks, we succeed on the last data block,
+					// we don't have the other data blocks, and we have nothing else fetching.
+					allFailed = failedBlocks + fatallyFailedBlocks > (dataKeys.length + checkKeys.length - minFetched);
 				}
 			}
 			dontNotify = !scheduled;
@@ -316,10 +325,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(persistent)
 				container.deactivate(parentFetcher, 1);
 			removeSubSegments(container, context);
-			if(haveDataBlocks)
-				onDecodedSegment(container, context, null, null, null, dataBuckets, checkBuckets);
-			else
-				decode(container, context);
+			decode(container, context);
+		} else if(allFailed) {
+			fail(new FetchException(FetchException.SPLITFILE_ERROR, errors), container, context, true);
 		}
 		if(persistent) {
 			container.deactivate(parent, 1);

@@ -99,7 +99,7 @@ public class Yarrow extends RandomSource {
 		else
 			seedfile = null;
 		if(reseedOnStartup) {
-			entropy_init(seed);
+			entropy_init(seed, reseedOnStartup);
 			seedFromExternalStuff(canBlock);
 			/**
 			 * If we don't reseed at this point, we will be predictable,
@@ -184,25 +184,26 @@ public class Yarrow extends RandomSource {
 		consumeString(Long.toHexString(Runtime.getRuntime().totalMemory()));
 	}
 
-	private void entropy_init(File seed) {
-		Properties sys = System.getProperties();
-		EntropySource startupEntropy = new EntropySource();
+	private void entropy_init(File seed, boolean reseedOnStartup) {
+		if(reseedOnStartup) {
+			Properties sys = System.getProperties();
+			EntropySource startupEntropy = new EntropySource();
 
-		// Consume the system properties list
-		for(Enumeration<?> enu = sys.propertyNames(); enu.hasMoreElements();) {
-			String key = (String) enu.nextElement();
-			consumeString(key);
-			consumeString(sys.getProperty(key));
+			// Consume the system properties list
+			for(Enumeration<?> enu = sys.propertyNames(); enu.hasMoreElements();) {
+				String key = (String) enu.nextElement();
+				consumeString(key);
+				consumeString(sys.getProperty(key));
+			}
+
+			// Consume the local IP address
+			try {
+				consumeString(InetAddress.getLocalHost().toString());
+			} catch(Exception e) {
+				// Ignore
+			}
+			readStartupEntropy(startupEntropy);
 		}
-
-		// Consume the local IP address
-		try {
-			consumeString(InetAddress.getLocalHost().toString());
-		} catch(Exception e) {
-			// Ignore
-		}
-
-		readStartupEntropy(startupEntropy);
 
 		read_seed(seed);
 	}
