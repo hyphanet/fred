@@ -120,7 +120,9 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 		synchronized(this) {
 			if(logMINOR)
 				Logger.minor(this, "maybeUpdate: isFetching=" + isFetching + ", isRunning=" + isRunning + ", availableVersion=" + availableVersion);
-			if(isFetching || (!isRunning))
+			if(!isRunning) 
+				return;
+			if(isFetching && availableVersion == fetchingVersion) 
 				return;
 			if(availableVersion <= fetchedVersion)
 				return;

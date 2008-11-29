@@ -381,7 +381,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			offers = nodesOfferedMainJar.toArray(new PeerNode[nodesOfferedMainJar.size()]);
 		}
 		for(int i = 0; i < offers.length; i++) {
-			if(offers[i].isConnected())
+			if(!offers[i].isConnected())
 				continue;
 			synchronized(this) {
 				if(nodesAskedSendMainJar.size() + nodesSendingMainJar.size() >= MAX_NODES_SENDING_MAIN_JAR)
