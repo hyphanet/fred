@@ -16,6 +16,7 @@ import freenet.support.api.BucketFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.ref.WeakReference;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Random;
@@ -88,9 +89,10 @@ public class TempBucketFactory implements BucketFactory {
 			this.creationTime = now;
 			this.osIndex = 0;
 			this.tbis = new Vector<TempBucketInputStream>();
+			if(logMINOR) Logger.minor(this, "Created "+this, new Exception("debug"));
 		}
 		
-		private void closeInputStreams(boolean forFree) {
+		private synchronized void closeInputStreams(boolean forFree) {
 			for(TempBucketInputStream is : tbis) {
 				try {
 					if(forFree)
@@ -152,7 +154,10 @@ public class TempBucketFactory implements BucketFactory {
 			if(osIndex > 0)
 				throw new IOException("Only one OutputStream per bucket!");
 			hasWritten = true;
-			return new TempBucketOutputStream(++osIndex);
+			OutputStream os = new TempBucketOutputStream(++osIndex);
+			if(logMINOR)
+				Logger.minor(this, "Got "+os+" for "+this);
+			return os;
 		}
 
 		private class TempBucketOutputStream extends OutputStream {
@@ -236,7 +241,8 @@ public class TempBucketFactory implements BucketFactory {
 				throw new IOException("No OutputStream has been openned! Why would you want an InputStream then?");
 			TempBucketInputStream is = new TempBucketInputStream(osIndex);
 			tbis.add(is);
-			
+			if(logMINOR)
+				Logger.minor(this, "Got "+is+" for "+this);
 			return is;
 		}
 		
@@ -349,7 +355,7 @@ public class TempBucketFactory implements BucketFactory {
 			if(isRAMBucket()) {
 				_hasFreed(currentSize);
 				synchronized(ramBucketQueue) {
-					ramBucketQueue.remove(this);
+					ramBucketQueue.remove(getReference());
 				}
 			}
 		}
@@ -366,6 +372,19 @@ public class TempBucketFactory implements BucketFactory {
 		public void storeTo(ObjectContainer container) {
 			currentBucket.storeTo(container);
 			container.store(this);
+		}
+		
+		private WeakReference<TempBucket> weakRef = new WeakReference<TempBucket>(this);
+
+		public WeakReference<TempBucket> getReference() {
+			return weakRef;
+		}
+		
+		protected void finalize() {
+			if (!hasBeenFreed) {
+				Logger.error(this, "TempBucket not freed, size=" + size() + ", isRAMBucket=" + isRAMBucket()+" : "+this);
+				free();
+			}
 		}
 	}
 	
@@ -461,7 +480,7 @@ public class TempBucketFactory implements BucketFactory {
 		TempBucket toReturn = new TempBucket(now, realBucket);
 		if(useRAMBucket) { // No need to consider them for migration if they can't be migrated
 			synchronized(ramBucketQueue) {
-				ramBucketQueue.add(toReturn);
+				ramBucketQueue.add(toReturn.getReference());
 			}
 		}
 		return toReturn;
@@ -474,14 +493,25 @@ public class TempBucketFactory implements BucketFactory {
 		final Queue<TempBucket> toMigrate = new LinkedList<TempBucket>();
 		do {
 			synchronized(ramBucketQueue) {
-				final TempBucket tmpBucket = ramBucketQueue.peek();
-				if((tmpBucket == null) || (tmpBucket.creationTime + RAMBUCKET_MAX_AGE > now))
+				final WeakReference<TempBucket> tmpBucketRef = ramBucketQueue.peek();
+				if (tmpBucketRef == null)
 					shouldContinue = false;
 				else {
-					if(logMINOR)
-						Logger.minor(this, "The bucket is "+TimeUtil.formatTime(now - tmpBucket.creationTime)+" old: we will force-migrate it to disk.");
-					ramBucketQueue.remove(tmpBucket);
-					toMigrate.add(tmpBucket);
+					TempBucket tmpBucket = tmpBucketRef.get();
+					if (tmpBucket == null) {
+						ramBucketQueue.remove(tmpBucketRef);
+						continue; // ugh. this is freed
+					}
+
+					if (tmpBucket.creationTime + RAMBUCKET_MAX_AGE > now)
+						shouldContinue = false;
+					else {
+						if (logMINOR)
+							Logger.minor(this, "The bucket is " + TimeUtil.formatTime(now - tmpBucket.creationTime)
+							        + " old: we will force-migrate it to disk.");
+						ramBucketQueue.remove(tmpBucketRef);
+						toMigrate.add(tmpBucket);
+					}
 				}
 			}
 		} while(shouldContinue);
@@ -504,7 +534,7 @@ public class TempBucketFactory implements BucketFactory {
 		}
 	}
 	
-	private final Queue<TempBucket> ramBucketQueue = new LinkedBlockingQueue<TempBucket>();
+	private final Queue<WeakReference<TempBucket>> ramBucketQueue = new LinkedBlockingQueue<WeakReference<TempBucket>>();
 	
 	private Bucket _makeFileBucket() {
 		Bucket fileBucket = new TempFileBucket(filenameGenerator.makeRandomFilename(), filenameGenerator);
