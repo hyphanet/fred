@@ -25,6 +25,8 @@ public class TimeSortedHashtable<T extends Comparable> implements Cloneable {
 		Element(long t, T v) {
 			time = t;
 			value = v;
+			if(value == null)
+				throw new NullPointerException();
 		}
 		
 		long time;

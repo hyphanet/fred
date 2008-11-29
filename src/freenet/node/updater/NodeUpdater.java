@@ -176,7 +176,9 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 			fetched = fetchedVersion;
 		}
 		synchronized(writeJarSync) {
-			fNew.delete();
+			if (!fNew.delete() && fNew.exists()) {
+				System.err.println("Can't delete " + fNew + "!");
+			}
 
 			FileOutputStream fos;
 			fos = new FileOutputStream(fNew);

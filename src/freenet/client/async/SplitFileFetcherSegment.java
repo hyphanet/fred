@@ -73,9 +73,23 @@ public class SplitFileFetcherSegment implements FECCallback {
 	/** Recursion level */
 	final int recursionLevel;
 	private FetchException failureException;
+	/**
+	 * If true, the last data block has bad padding and cannot be involved in FEC decoding.
+	 */
+	private final boolean ignoreLastDataBlock;
 	private int fatallyFailedBlocks;
 	private int failedBlocks;
+	/**
+	 * The number of blocks fetched. If ignoreLastDataBlock is set, fetchedBlocks does not
+	 * include the last data block.
+	 */
 	private int fetchedBlocks;
+	/**
+	 * The number of data blocks (NOT check blocks) fetched. On a small splitfile, sometimes
+	 * we will manage to fetch all the data blocks. If so, we can complete the segment, even
+	 * if we can't do a FEC decode because of ignoreLastDataBlock.
+	 */
+	private int fetchedDataBlocks;
 	final FailureCodeTracker errors;
 	private boolean finishing;
 	private boolean scheduled;
@@ -93,12 +107,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 	
 	private FECCodec codec;
 	
-	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext fetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum) throws MetadataParseException, FetchException {
+	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext fetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum, boolean ignoreLastDataBlock) throws MetadataParseException, FetchException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.segNum = segNum;
 		this.hashCode = super.hashCode();
 		this.persistent = fetcher.persistent;
 		this.parentFetcher = fetcher;
+		this.ignoreLastDataBlock = ignoreLastDataBlock;
 		this.errors = new FailureCodeTracker(false);
 		this.archiveContext = archiveContext;
 		this.splitfileType = splitfileType;
@@ -203,6 +218,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 			((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
 		// No need to unregister key, because it will be cleared in tripPendingKey().
 		boolean dontNotify;
+		boolean haveDataBlocks;
+		boolean wasDataBlock = false;
 		synchronized(this) {
 			if(finished) {
 				// Happens sometimes, don't complain about it...
@@ -221,6 +238,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				return;
 			}
 			if(blockNo < dataKeys.length) {
+				wasDataBlock = true;
 				if(dataKeys[blockNo] == null) {
 					if(!startedDecode) {
 						// This can happen.
@@ -269,9 +287,16 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(startedDecode) {
 				return;
 			} else {
-				fetchedBlocks++;
+				// Don't count the last data block, since we can't use it in FEC decoding.
+				if(!(ignoreLastDataBlock && blockNo == dataKeys.length - 1))
+					fetchedBlocks++;
+				// However, if we manage to get EVERY data block (common on a small splitfile),
+				// we don't need to FEC decode.
+				if(wasDataBlock)
+					fetchedDataBlocks++;
 				if(logMINOR) Logger.minor(this, "Fetched "+fetchedBlocks+" blocks in onSuccess("+blockNo+")");
-				decodeNow = (!startedDecode) && (fetchedBlocks >= minFetched);
+				haveDataBlocks = fetchedDataBlocks == dataKeys.length;
+				decodeNow = (!startedDecode) && (fetchedBlocks >= minFetched || haveDataBlocks);
 				if(decodeNow) {
 					startedDecode = true;
 					finishing = true;
@@ -291,7 +316,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(persistent)
 				container.deactivate(parentFetcher, 1);
 			removeSubSegments(container, context);
-			decode(container, context);
+			if(haveDataBlocks)
+				onDecodedSegment(container, context, null, null, null, dataBuckets, checkBuckets);
+			else
+				decode(container, context);
 		}
 		if(persistent) {
 			container.deactivate(parent, 1);
@@ -398,6 +426,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(isCollectingBinaryBlob(parent)) {
 				for(int i=0;i<dataBuckets.length;i++) {
 					Bucket data = dataBlockStatus[i].getData();
+					if(data == null) 
+						throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null");
 					try {
 						maybeAddToBinaryBlob(data, i, false, container, context);
 					} catch (FetchException e) {
@@ -409,16 +439,22 @@ public class SplitFileFetcherSegment implements FECCallback {
 			decodedData = context.getBucketFactory(persistent).makeBucket(maxBlockLength * dataBuckets.length);
 			if(logMINOR) Logger.minor(this, "Copying data from "+dataBuckets.length+" data blocks");
 			OutputStream os = decodedData.getOutputStream();
+			long osSize = 0;
 			for(int i=0;i<dataBuckets.length;i++) {
 				if(logMINOR) Logger.minor(this, "Copying data from block "+i);
 				SplitfileBlock status = dataBuckets[i];
 				if(status == null) throw new NullPointerException();
 				Bucket data = status.getData();
-				if(data == null) throw new NullPointerException();
+				if(data == null) 
+					throw new NullPointerException("Data bucket "+i+" of "+dataBuckets.length+" is null");
 				if(persistent) container.activate(data, 1);
-				BucketTools.copyTo(data, os, Long.MAX_VALUE);
+				long copied = BucketTools.copyTo(data, os, Long.MAX_VALUE);
+				osSize += copied;
+				if(i != dataBuckets.length-1 && copied != 32768)
+					Logger.error(this, "Copied only "+copied+" bytes from "+data+" (bucket "+i+")");
+				if(logMINOR) Logger.minor(this, "Copied "+copied+" bytes from bucket "+i);
 			}
-			if(logMINOR) Logger.minor(this, "Copied data");
+			if(logMINOR) Logger.minor(this, "Copied data ("+osSize+")");
 			os.close();
 			// Must set finished BEFORE calling parentFetcher.
 			// Otherwise a race is possible that might result in it not seeing our finishing.

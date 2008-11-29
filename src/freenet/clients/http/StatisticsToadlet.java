@@ -973,28 +973,47 @@ public class StatisticsToadlet extends Toadlet {
 		/* node status values */
 		int bwlimitDelayTime = (int) stats.getBwlimitDelayTime();
 		int nodeAveragePingTime = (int) stats.getNodeAveragePingTime();
-		int networkSizeEstimateSession = stats.getNetworkSizeEstimate(-1);
-		int networkSizeEstimate24h = 0;
-		int networkSizeEstimate48h = 0;
 		double numberOfRemotePeerLocationsSeenInSwaps = node.getNumberOfRemotePeerLocationsSeenInSwaps();
 
+		// Darknet
+		int darknetSizeEstimateSession = stats.getDarknetSizeEstimate(-1);
+		int darknetSizeEstimate24h = 0;
+		int darknetSizeEstimate48h = 0;
 		if(nodeUptimeSeconds > (24*60*60)) {  // 24 hours
-			networkSizeEstimate24h = stats.getNetworkSizeEstimate(now - (24*60*60*1000));  // 48 hours
+			darknetSizeEstimate24h = stats.getDarknetSizeEstimate(now - (24*60*60*1000));  // 48 hours
 		}
 		if(nodeUptimeSeconds > (48*60*60)) {  // 48 hours
-			networkSizeEstimate48h = stats.getNetworkSizeEstimate(now - (48*60*60*1000));  // 48 hours
+			darknetSizeEstimate48h = stats.getDarknetSizeEstimate(now - (48*60*60*1000));  // 48 hours
 		}
+		// Opennet
+		int opennetSizeEstimateSession = stats.getOpennetSizeEstimate(-1);
+		int opennetSizeEstimate24h = 0;
+		int opennetSizeEstimate48h = 0;
+		if (nodeUptimeSeconds > (24 * 60 * 60)) { // 24 hours
+			opennetSizeEstimate24h = stats.getOpennetSizeEstimate(now - (24 * 60 * 60 * 1000)); // 48 hours
+		}
+		if (nodeUptimeSeconds > (48 * 60 * 60)) { // 48 hours
+			opennetSizeEstimate48h = stats.getOpennetSizeEstimate(now - (48 * 60 * 60 * 1000)); // 48 hours
+		}
+		
 		double routingMissDistance =  stats.routingMissDistance.currentValue();
 		double backedOffPercent =  stats.backedOffPercent.currentValue();
 		String nodeUptimeString = TimeUtil.formatTime(nodeUptimeSeconds * 1000);  // *1000 to convert to milliseconds
 		overviewList.addChild("li", "bwlimitDelayTime:\u00a0" + bwlimitDelayTime + "ms");
 		overviewList.addChild("li", "nodeAveragePingTime:\u00a0" + nodeAveragePingTime + "ms");
-		overviewList.addChild("li", "darknetSizeEstimateSession:\u00a0" + networkSizeEstimateSession + "\u00a0nodes");
+		overviewList.addChild("li", "darknetSizeEstimateSession:\u00a0" + darknetSizeEstimateSession + "\u00a0nodes");
 		if(nodeUptimeSeconds > (24*60*60)) {  // 24 hours
-			overviewList.addChild("li", "darknetSizeEstimate24h:\u00a0" + networkSizeEstimate24h + "\u00a0nodes");
+			overviewList.addChild("li", "darknetSizeEstimate24h:\u00a0" + darknetSizeEstimate24h + "\u00a0nodes");
 		}
 		if(nodeUptimeSeconds > (48*60*60)) {  // 48 hours
-			overviewList.addChild("li", "darknetSizeEstimate48h:\u00a0" + networkSizeEstimate48h + "\u00a0nodes");
+			overviewList.addChild("li", "darknetSizeEstimate48h:\u00a0" + darknetSizeEstimate48h + "\u00a0nodes");
+		}
+		overviewList.addChild("li", "opennetSizeEstimateSession:\u00a0" + opennetSizeEstimateSession + "\u00a0nodes");
+		if (nodeUptimeSeconds > (24 * 60 * 60)) { // 24 hours
+			overviewList.addChild("li", "opennetSizeEstimate24h:\u00a0" + opennetSizeEstimate24h + "\u00a0nodes");
+		}
+		if (nodeUptimeSeconds > (48 * 60 * 60)) { // 48 hours
+			overviewList.addChild("li", "opennetSizeEstimate48h:\u00a0" + opennetSizeEstimate48h + "\u00a0nodes");
 		}
 		if ((numberOfRemotePeerLocationsSeenInSwaps > 0.0) && ((swaps > 0.0) || (noSwaps > 0.0))) {
 			overviewList.addChild("li", "avrConnPeersPerNode:\u00a0" + fix6p6.format(numberOfRemotePeerLocationsSeenInSwaps/(swaps+noSwaps)) + "\u00a0peers");

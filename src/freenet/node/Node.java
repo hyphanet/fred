@@ -417,7 +417,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	// Opennet stuff
 	
 	private final NodeCryptoConfig opennetCryptoConfig;
-	private OpennetManager opennet;
+	OpennetManager opennet;
 	private volatile boolean isAllowedToConnectToSeednodes;
 	private int maxOpennetPeers;
 	private boolean acceptSeedConnections;

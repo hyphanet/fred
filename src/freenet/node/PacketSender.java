@@ -423,18 +423,9 @@ public class PacketSender implements Runnable, Ticker {
 		return brokeAt;
 	}
 
-	static long bugValidTime;
-	static {
-		final Calendar _cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-		// year, month - 1 (or constant), day, hour, minute, second
-		_cal.set( 2008, Calendar.NOVEMBER, 17, 0, 0, 0 );
-		long bugValidTime = _cal.getTimeInMillis();
-	}
-	
 	private HashSet<Peer> peersDumpedBlockedTooLong = new HashSet<Peer>();
 	
 	private void onForceDisconnectBlockTooLong(PeerNode pn, BlockedTooLongException e) {
-		if(System.currentTimeMillis() < bugValidTime) return;
 		Peer p = pn.getPeer();
 		synchronized(peersDumpedBlockedTooLong) {
 			peersDumpedBlockedTooLong.add(p);

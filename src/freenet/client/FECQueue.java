@@ -185,7 +185,7 @@ public class FECQueue implements OOMHook {
 							}
 						}
 					} catch (IOException e) {
-						Logger.error(this, "BOH! ioe:" + e.getMessage());
+						Logger.error(this, "BOH! ioe:" + e.getMessage(), e);
 					}
 
 					// Call the callback

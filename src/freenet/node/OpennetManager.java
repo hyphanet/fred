@@ -32,6 +32,7 @@ import freenet.support.LRUQueue;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.SizeUtil;
+import freenet.support.TimeSortedHashtable;
 import freenet.support.io.ByteArrayRandomAccessThing;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
@@ -101,9 +102,8 @@ public class OpennetManager {
 	/** Maximum number of peers */
 	public static final int MAX_PEERS_FOR_SCALING = 20;
 	
-	
 	private final long creationTime;
-	
+    
 	public OpennetManager(Node node, NodeCryptoConfig opennetConfig, long startupTime, boolean enableAnnouncement) throws NodeInitException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.creationTime = System.currentTimeMillis();
@@ -682,6 +682,7 @@ public class OpennetManager {
 			return null;
 		}
     	
+		if (ref != null) registerKnownIdentity(ref.get("identity"));
 		return ref;
 	}
 
@@ -698,4 +699,29 @@ public class OpennetManager {
 		return creationTime;
 	}
 
+
+	private static final long MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+	private final TimeSortedHashtable<String> knownIds = new TimeSortedHashtable<String>();
+
+	private void registerKnownIdentity(String d) {
+		if (d == null) return;	// why?
+
+		if (logMINOR)
+			Logger.minor(this, "Known Id: " + d);
+		long now = System.currentTimeMillis();
+
+		synchronized (knownIds) {
+			Logger.minor(this, "Adding Id " + d + " knownIds size " + knownIds.size());
+			knownIds.push(d, now);
+			Logger.minor(this, "Added Id " + d + " knownIds size " + knownIds.size());
+			knownIds.removeBefore(now - MAX_AGE);
+			Logger.minor(this, "Added and pruned location " + d + " knownIds size " + knownIds.size());
+		}
+		if (logMINOR)
+			Logger.minor(this, "Estimated opennet size(session): " + knownIds.size());
+	}
+    //Return the estimated network size based on locations seen after timestamp or for the whole session if -1
+	public int getNetworkSizeEstimate(long timestamp) {
+		return knownIds.countValuesAfter(timestamp);
+	}
 }

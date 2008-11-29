@@ -4,12 +4,9 @@
 
 package freenet.support;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.omg.CORBA.LongHolder;
-
+import freenet.node.ExtVersion;
 import junit.framework.TestCase;
+import org.spaceroots.mantissa.random.MersenneTwister;
 
 /**
  * Test case for {@link freenet.support.Fields} class.
@@ -266,7 +263,7 @@ public class FieldsTest extends TestCase {
 		assertEquals(outLongs.length, ints.length);
 	}
 	
-	public void testBytesToIntException() {
+	public void testBytesToLongsException() {
 		byte[] bytes = new byte[3];
 		try {
 			Fields.bytesToLongs(bytes, 0, bytes.length);
@@ -274,7 +271,7 @@ public class FieldsTest extends TestCase {
 		}
 		catch(IllegalArgumentException e){
 			// expect this
-		}
+		}		
 	}
 	
 	public void testBytesToInt() {
@@ -282,7 +279,9 @@ public class FieldsTest extends TestCase {
 		byte[] bytes = new byte[] { 0, 1, 2, 2 };
 		
 		int outLong = Fields.bytesToInt(bytes, 0);
-		assertEquals(outLong, 33685760);
+		// We did dupplicate the code to avoid cross-dependancies
+		int outLongMT = MersenneTwister.bytesToInt(bytes, 0);
+		assertEquals(outLong, outLongMT, 33685760);
 		
 		doTestRoundTripBytesArrayToInt(bytes);
 		
@@ -297,12 +296,12 @@ public class FieldsTest extends TestCase {
 		
 		bytes = new byte[] {1, 1, 1, 1};
 		doTestRoundTripBytesArrayToInt(bytes);
-		
 	}
 	
 	private void doTestRoundTripBytesArrayToInt(byte[] inBytes) {
 
 		int outLong = Fields.bytesToInt(inBytes, 0);
+		assertEquals(outLong, MersenneTwister.bytesToInt(inBytes, 0));
 		byte[] outBytes = Fields.intToBytes(outLong);
 		for(int i = 0; i < inBytes.length; i++) {
 			assertEquals(outBytes[i], inBytes[i]);

@@ -26,21 +26,39 @@ public class Base64
     'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
     'w', 'x', 'y', 'z', '0', '1', '2', '3',
     '4', '5', '6', '7', '8', '9', '~', '-'};
+  
+  private static char[] base64StandardAlphabet = {
+	    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+	    'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+	    'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+	    'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
+	    'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+	    'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+	    'w', 'x', 'y', 'z', '0', '1', '2', '3',
+	    '4', '5', '6', '7', '8', '9', '+', '/'};
 
   /**
    * A reverse lookup table to convert base64 letters back into the
    * a 6-bit sequence.
    */
   private static byte[] base64Reverse;
+  private static byte[] base64StandardReverse;
+  
    // Populate the base64Reverse lookup table from the base64Alphabet table.
   static {
     base64Reverse = new byte[128];
+    base64StandardReverse = new byte[base64Reverse.length];
+    
       // Set all entries to 0xFF, which means that that particular letter
       // is not a legal base64 letter.
-    for (int i = 0; i < base64Reverse.length; i++)
+    for (int i = 0; i < base64Reverse.length; i++) {
       base64Reverse[i] = (byte) 0xFF;
-    for (int i = 0; i < base64Alphabet.length; i++)
+      base64StandardReverse[i] = (byte) 0xFF;
+    }
+    for (int i = 0; i < base64Alphabet.length; i++) {
       base64Reverse[base64Alphabet[i]] = (byte) i;
+      base64StandardReverse[base64StandardAlphabet[i]] = (byte) i;
+    }
   }
 
   /**
@@ -51,10 +69,29 @@ public class Base64
     return encode(in, false);
   }
 
+  /* FIXME: Figure out where this function is used and maybe remove it if its not
+   * used. Its old javadoc which has been here for a while fools the user into believing
+   * that the format is standard compliant */
+  
+  /**
+   * Caller should specify equalsPad=true if they want a standards compliant padding,
+   * but not standard compliant encoding.
+   */
+  public static String encode(byte[] in, boolean equalsPad) {
+	  return encode(in, equalsPad, base64Alphabet);
+  }
+  
+  /**
+   * Standard compliant encoding.
+   */
+  public static String encodeStandard(byte[] in) {
+	  return encode(in, true, base64StandardAlphabet);
+  }
+  
   /**
    * Caller should specify equalsPad=true if they want a standards compliant encoding.
    */
-  public static String encode(byte[] in, boolean equalsPad)
+  private static String encode(byte[] in, boolean equalsPad, char[] alphabet)
   {
     char[] out = new char[((in.length+2)/3)*4];
     int rem = in.length%3;
@@ -65,10 +102,10 @@ public class Base64
         val |= (in[i++] & 0xFF) << 8;
       if (i < in.length)
         val |= (in[i++] & 0xFF);
-      out[o++] = base64Alphabet[(val>>18) & 0x3F];
-      out[o++] = base64Alphabet[(val>>12) & 0x3F];
-      out[o++] = base64Alphabet[(val>>6) & 0x3F];
-      out[o++] = base64Alphabet[val & 0x3F];
+      out[o++] = alphabet[(val>>18) & 0x3F];
+      out[o++] = alphabet[(val>>12) & 0x3F];
+      out[o++] = alphabet[(val>>6) & 0x3F];
+      out[o++] = alphabet[val & 0x3F];
     }
     int outLen = out.length;
     switch (rem) {
@@ -83,10 +120,26 @@ public class Base64
   }
 
   /**
+   * Handles the standards-compliant padding (padded with '=' signs) as well as our
+   * shortened form.
+ * @throws IllegalBase64Exception 
+   */
+  public static byte[] decode(String inStr) throws IllegalBase64Exception {
+	  return decode(inStr, base64Reverse);
+  }
+  
+  /**
+   * Handles the standards-compliant base64 encoding.
+   */
+  public static byte[] decodeStandard(String inStr) throws IllegalBase64Exception {
+	  return decode(inStr, base64StandardReverse);
+  }
+
+  /**
    * Handles the standards-compliant (padded with '=' signs) as well as our
    * shortened form.
    */
-  public static byte[] decode(String inStr)
+  private static byte[] decode(String inStr, byte[] reverseAlphabet)
     throws IllegalBase64Exception
   {
     try {
@@ -114,10 +167,10 @@ public class Base64
       int o = 0;
       int i;
       for (i = 0; i < wholeInLen;) {
-        int in1 = base64Reverse[in[i]];
-        int in2 = base64Reverse[in[i+1]];
-        int in3 = base64Reverse[in[i+2]];
-        int in4 = base64Reverse[in[i+3]];
+        int in1 = reverseAlphabet[in[i]];
+        int in2 = reverseAlphabet[in[i+1]];
+        int in3 = reverseAlphabet[in[i+2]];
+        int in4 = reverseAlphabet[in[i+3]];
         int orValue = in1|in2|in3|in4;
         if ((orValue & 0x80) != 0)
           throw new IllegalBase64Exception("illegal Base64 character");
@@ -132,8 +185,8 @@ public class Base64
       switch (remainder) {
         case 2:
           {
-            int in1 = base64Reverse[in[i]];
-            int in2 = base64Reverse[in[i+1]];
+            int in1 = reverseAlphabet[in[i]];
+            int in2 = reverseAlphabet[in[i+1]];
             orValue = in1|in2;
             int outVal = (in1 << 18) | (in2 << 12);
             out[o] = (byte) (outVal>>16);
@@ -141,9 +194,9 @@ public class Base64
           break;
         case 3:
           {
-            int in1 = base64Reverse[in[i]];
-            int in2 = base64Reverse[in[i+1]];
-            int in3 = base64Reverse[in[i+2]];
+            int in1 = reverseAlphabet[in[i]];
+            int in2 = reverseAlphabet[in[i+1]];
+            int in3 = reverseAlphabet[in[i+2]];
             orValue = in1|in2|in3;
             int outVal = (in1 << 18) | (in2 << 12) | (in3 << 6);
             out[o] = (byte) (outVal>>16);
@@ -159,7 +212,7 @@ public class Base64
       return out;
     }
       // Illegal characters can cause an ArrayIndexOutOfBoundsException when
-      // looking up base64Reverse.
+      // looking up reverseAlphabet.
     catch (ArrayIndexOutOfBoundsException e) {
       throw new IllegalBase64Exception("illegal Base64 character");
     }

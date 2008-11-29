@@ -270,8 +270,8 @@ public class BucketTools {
 
 	/** Copy the given quantity of data from the given bucket to the given OutputStream. 
 	 * @throws IOException If there was an error reading from the bucket or writing to the stream. */
-	public static void copyTo(Bucket decodedData, OutputStream os, long truncateLength) throws IOException {
-		if(truncateLength == 0) return;
+	public static long copyTo(Bucket decodedData, OutputStream os, long truncateLength) throws IOException {
+		if(truncateLength == 0) return 0;
 		if(truncateLength < 0) truncateLength = Long.MAX_VALUE;
 		InputStream is = decodedData.getInputStream();
 		try {
@@ -293,6 +293,7 @@ public class BucketTools {
 				os.write(buf, 0, bytes);
 				moved += bytes;
 			}
+			return moved;
 		} finally {
 			is.close();
 			os.flush();

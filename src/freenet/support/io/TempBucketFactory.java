@@ -105,7 +105,7 @@ public class TempBucketFactory implements BucketFactory {
 		}
 		
 		/** A blocking method to force-migrate from a RAMBucket to a FileBucket */
-		private final void migrateToFileBucket() throws IOException {
+		final void migrateToFileBucket() throws IOException {
 			Bucket toMigrate = null;
 			synchronized(this) {
 				if(!isRAMBucket() || hasBeenFreed)
@@ -256,6 +256,14 @@ public class TempBucketFactory implements BucketFactory {
 			public void _maybeResetInputStream() throws IOException {
 				if(idx != osIndex)
 					close();
+				else {
+					Closer.close(currentIS);
+					currentIS = currentBucket.getInputStream();
+					long toSkip = index;
+					while(toSkip > 0) {
+						toSkip -= currentIS.skip(toSkip);
+					}
+				}
 			}
 			
 			@Override
