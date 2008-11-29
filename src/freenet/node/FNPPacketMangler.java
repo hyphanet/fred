@@ -2341,6 +2341,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		int otherSideSeqNumber;
 
+		try {
 		synchronized(tracker) {
 			acks = tracker.grabAcks();
 			forgotPackets = tracker.grabForgotten();
@@ -2349,6 +2350,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			realSeqNumber = tracker.getLastOutgoingSeqNumber();
 			otherSideSeqNumber = tracker.highestReceivedIncomingSeqNumber();
 			if(logMINOR) Logger.minor(this, "Sending packet to "+tracker.pn.getPeer()+", other side max seqno: "+otherSideSeqNumber);
+		}
+		} catch (StillNotAckedException e) {
+			Logger.error(this, "Forcing disconnect on "+tracker.pn+" for "+tracker+" because packets not acked after 10 minutes!");
+			tracker.pn.forceDisconnect(true);
+			throw new NotConnectedException();
 		}
 
 		int packetLength = 4 + // seq number

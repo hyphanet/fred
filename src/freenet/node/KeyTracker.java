@@ -831,7 +831,7 @@ public class KeyTracker {
 		return trimmedPacketNumbers;
 	}
 
-	public int[] grabAckRequests() throws NotConnectedException {
+	public int[] grabAckRequests() throws NotConnectedException, StillNotAckedException {
 		UpdatableSortedLinkedListItem[] items;
 		int[] packetNumbers;
 		int realLength;
@@ -854,8 +854,14 @@ public class KeyTracker {
 							ackRequestQueue.remove(qr);
 							continue;
 						}
-						if(now - qr.createdTime > 2 * 60 * 1000)
-							Logger.normal(this, "Packet " + qr.packetNumber + " sent over " + (now - qr.createdTime) + "ms ago and still not acked on " + this + " for " + pn);
+						if(now - qr.createdTime > 2 * 60 * 1000) {
+							if(logMINOR)
+								Logger.minor(this, "Packet " + qr.packetNumber + " sent over " + (now - qr.createdTime) + "ms ago and still not acked on " + this + " for " + pn);
+							if(now - qr.createdTime > 10 * 60 * 1000) {
+								Logger.error(this, "Packet " + qr.packetNumber + " sent over " + (now - qr.createdTime) + "ms ago and still not acked on " + this + " for " + pn);
+								throw new StillNotAckedException();
+							}
+						}
 						packetNumbers[realLength++] = packetNumber;
 						if(logMINOR)
 							Logger.minor(this, "Grabbing ack request " + packetNumber + " (" + realLength + ") from " + this);
