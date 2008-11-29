@@ -573,7 +573,8 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			String shortSize = null;
 			if(freeSpace / 20 > 1024 * 1024 * 1024) {
 				// If 20GB+ free, 5% of available disk space.
-				shortSize = SizeUtil.formatSize(freeSpace / 20);
+				// Maximum of 256GB. That's a 128MB bloom filter.
+				shortSize = SizeUtil.formatSize(Math.min(freeSpace / 20, 256*1024*1024*1024L));
 			}else if(freeSpace / 10 > 1024 * 1024 * 1024) {
 				// If 10GB+ free, 10% of available disk space.
 				shortSize = SizeUtil.formatSize(freeSpace / 10);

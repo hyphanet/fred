@@ -235,9 +235,8 @@ public class NodeUpdateManager {
 					throw new InvalidConfigValueException(l10n("noUpdateWithoutWrapper"));
 				}
 				// Start it
-				mainUpdater = new NodeUpdater(this, updateURI, false, Version.buildNumber(), "main-jar-");
-				if(shouldUpdateExt)
-					extUpdater = new NodeUpdater(this, extURI, true, NodeStarter.extBuildNumber, "ext-jar-");
+				mainUpdater = new NodeUpdater(this, updateURI, false, Version.buildNumber(), Integer.MAX_VALUE, "main-jar-");
+				extUpdater = new NodeUpdater(this, extURI, true, NodeStarter.extBuildNumber, NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER, "ext-jar-");
 			}
 		}
 		if(!enable) {
@@ -897,6 +896,16 @@ public class NodeUpdateManager {
 		}
 		return updater.getBlobFile(version);
 	}
+	
+	public File getExtBlob(int version) {
+		NodeUpdater updater;
+		synchronized(this) {
+			if(hasBeenBlown) return null;
+			updater = extUpdater;
+			if(updater == null) return null;
+		}
+		return updater.getBlobFile(version);
+	}
 
 	public synchronized long timeRemainingOnCheck() {
 		long now = System.currentTimeMillis();
@@ -925,5 +934,9 @@ public class NodeUpdateManager {
 	
 	protected long getStartedFetchingNextMainJarTimestamp() {
 		return startedFetchingNextMainJar;
+	}
+	
+	protected long getStartedFetchingNextExtJarTimestamp() {
+		return startedFetchingNextExtJar;
 	}
 }

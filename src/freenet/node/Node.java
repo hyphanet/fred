@@ -1566,7 +1566,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		storeType = nodeConfig.getString("storeType");
 		
-		nodeConfig.register("storeSize", "1G", sortOrder++, false, true, "Node.storeSize", "Node.storeSizeLong", 
+		/*
+		 * Very small initial store size, since the node will preallocate it when starting up for the first time,
+		 * BLOCKING STARTUP, and since everyone goes through the wizard anyway...
+		 */
+		nodeConfig.register("storeSize", "100M", sortOrder++, false, true, "Node.storeSize", "Node.storeSizeLong", 
 				new LongCallback() {
 
 					@Override
@@ -1643,7 +1647,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 		storeBloomFilterSize = nodeConfig.getInt("storeBloomFilterSize");
 		if (storeBloomFilterSize == -1) 
-			storeBloomFilterSize = (int) Math.min(maxTotalDatastoreSize / 2048, 268435456);
+			storeBloomFilterSize = (int) Math.min(maxTotalDatastoreSize / 2048, Integer.MAX_VALUE);
 
 		nodeConfig.register("storeBloomFilterCounting", true, sortOrder++, true, false,
 		        "Node.storeBloomFilterCounting", "Node.storeBloomFilterCountingLong", new BooleanCallback() {
@@ -3083,6 +3087,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	}
 	
 	public int getNumRemoteSSKRequests() {
+//		synchronized(runningSSKGetUIDs) {
+//			for(Long l : runningSSKGetUIDs)
+//				Logger.minor(this, "Running remote SSK fetch: "+l);
+//		}
 		return runningSSKGetUIDs.size();
 	}
 	

@@ -45,13 +45,14 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 	private int fetchingVersion;
 	private int fetchedVersion;
 	private int writtenVersion;
+	private int maxDeployVersion;
 	private boolean isRunning;
 	private boolean isFetching;
 	public final boolean extUpdate;
 	private final String blobFilenamePrefix;
 	private File tempBlobFile;
 
-	NodeUpdater(NodeUpdateManager manager, FreenetURI URI, boolean extUpdate, int current, String blobFilenamePrefix) {
+	NodeUpdater(NodeUpdateManager manager, FreenetURI URI, boolean extUpdate, int current, int max, String blobFilenamePrefix) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.manager = manager;
 		this.node = manager.node;
@@ -65,6 +66,7 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 		this.isFetching = false;
 		this.extUpdate = extUpdate;
 		this.blobFilenamePrefix = blobFilenamePrefix;
+		this.maxDeployVersion = max;
 
 		FetchContext tempContext = core.makeClient((short) 0, true).getFetchContext();
 		tempContext.allowSplitfiles = true;
@@ -95,6 +97,8 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 				return;
 			found = (int) key.suggestedEdition;
 
+			if(found > maxDeployVersion) found = maxDeployVersion;
+			
 			if(found <= availableVersion)
 				return;
 			Logger.minor(this, "Updating availableVersion from " + availableVersion + " to " + found + " and queueing an update");
@@ -143,8 +147,10 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 						System.err.println("Starting " + (extUpdate ? "freenet-ext.jar " : "") + "fetch for " + availableVersion);
 					tempBlobFile =
 						File.createTempFile(blobFilenamePrefix + availableVersion + "-", ".fblob.tmp", manager.node.clientCore.getPersistentTempDir());
+					FreenetURI uri = URI.setSuggestedEdition(availableVersion);
+					uri = uri.sskForUSK();
 					cg = new ClientGetter(this, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler,
-						URI.setSuggestedEdition(availableVersion), ctx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
+						uri, ctx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
 						this, null, new FileBucket(tempBlobFile, false, false, false, false, false));
 					toStart = cg;
 				}
@@ -235,7 +241,7 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 						Logger.error(this, "Not able to rename binary blob for node updater: " + tempBlobFile + " -> " + blobFile + " - may not be able to tell other peers about this build");
 			}
 			this.fetchedVersion = fetchedVersion;
-			System.out.println("Found " + fetchedVersion);
+			System.out.println("Found " + (extUpdate ? "ext " : "") + fetchedVersion);
 			if(fetchedVersion > currentVersion)
 				Logger.normal(this, "Found version " + fetchedVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
 			this.cg = null;

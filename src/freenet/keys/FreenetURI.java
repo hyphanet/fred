@@ -860,4 +860,9 @@ public class FreenetURI implements Cloneable {
 		// All members are inline (arrays, ints etc), treated as values, so we can happily just call delete(this).
 		container.delete(this);
 	}
+
+	public FreenetURI sskForUSK() {
+		if(!keyType.equalsIgnoreCase("USK")) throw new IllegalStateException();
+		return new FreenetURI("SSK", docName+"-"+suggestedEdition, metaStr, routingKey, cryptoKey, extra, 0);
+	}
 }

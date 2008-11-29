@@ -742,6 +742,17 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			final long newHdLen = (headerBlockLength + dataBlockLength + hdPadding) * storeFileSize;
 
 			if (preallocate) {
+				/*
+				 * Fill the store file with random data. This won't be compressed, unlike filling it with zeros.
+				 * So the disk space usage of the node will not change (apart from temp files).
+				 * 
+				 * Note that MersenneTwister is *not* cryptographically secure, in fact from 2.4KB of output you
+				 * can predict the rest of the stream! This is okay because an attacker knows which blocks are
+				 * occupied anyway; it is essential to label them to get good data retention on resizing etc.
+				 * 
+				 * On my test system (phenom 2.2GHz), this does approx 80MB/sec. If I reseed every 2kB from an
+				 * AES CTR, which is pointless as I just explained, it does 40MB/sec.
+				 */
 				byte[] b = new byte[4096];
 				ByteBuffer bf = ByteBuffer.wrap(b); 
 

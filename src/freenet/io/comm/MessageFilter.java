@@ -60,15 +60,23 @@ public final class MessageFilter {
         return new MessageFilter();
     }
 
-    void onStartWaiting() {
+    void onStartWaiting(boolean waitFor) {
     	synchronized(this) {
+    		/* We cannot wait on a MessageFilter with a callback, because onMatched() calls clearMatched()
+    		 * if we have a callback. The solution would be to:
+    		 * - Set a flag indicating we are waitFor()ing a filter here.
+    		 * - On matching a message (setMessage), call the callback immediately if not waitFor()ing.
+    		 * - If we are waitFor()ing, call the callback when we exit waitFor() (onStopWaiting()???).
+    		 */
+        	if(waitFor && _callback != null)
+        		throw new IllegalStateException("Cannot wait on a MessageFilter with a callback!");
     		if(!_setTimeout)
     			Logger.error(this, "No timeout set on filter "+this, new Exception("error"));
     		if(_initialTimeout > 0 && _timeoutFromWait)
     			_timeout = System.currentTimeMillis() + _initialTimeout;
     	}
     	if(_or != null)
-    		_or.onStartWaiting();
+    		_or.onStartWaiting(waitFor);
     }
     
     /**
@@ -169,7 +177,6 @@ public final class MessageFilter {
 	
 	public boolean match(Message m) {
 		if ((_or != null) && (_or.match(m))) {
-			_matched = true;
 			return true;
 		}
 		if ((_type != null) && (!_type.equals(m.getSpec()))) {
@@ -189,7 +196,6 @@ public final class MessageFilter {
 			}
 		}
 		if(reallyTimedOut(System.currentTimeMillis())) return false;
-		_matched=true;
 		return true;
 	}
 
@@ -227,9 +233,11 @@ public final class MessageFilter {
         return _message;
     }
 
-    public void setMessage(Message message) {
+    public synchronized void setMessage(Message message) {
         //Logger.debug(this, "setMessage("+message+") on "+this, new Exception("debug"));
         _message = message;
+        _matched = _message != null;
+        notifyAll();
     }
 
     public int getInitialTimeout() {
@@ -315,7 +323,6 @@ public final class MessageFilter {
 			// Clear matched before calling callback in case we are re-added.
 			if(_callback != null)
 				clearMatched();
-			notifyAll();
 		}
 		if(cb != null) {
 			cb.onMatched(msg);
