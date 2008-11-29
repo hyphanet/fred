@@ -2,7 +2,6 @@ package freenet.node.fcp;
 
 import java.net.MalformedURLException;
 
-import freenet.client.ClientMetadata;
 import freenet.client.async.ManifestElement;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
@@ -25,7 +24,6 @@ public class RedirectDirPutFile extends DirPutFile {
 		}
         if(Logger.shouldLog(Logger.MINOR, this))
         	Logger.minor(this, "targetURI = "+targetURI);
-		super.meta = new ClientMetadata();
 	}
 
 	@Override
