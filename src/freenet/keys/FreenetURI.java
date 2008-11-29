@@ -143,6 +143,13 @@ public class FreenetURI implements Cloneable {
 			return true;
 		}
 	}
+	
+	public boolean equalsKeypair(FreenetURI u2) {
+		if((routingKey != null) && (cryptoKey != null))
+			return Arrays.equals(routingKey, u2.routingKey) && Arrays.equals(cryptoKey, u2.cryptoKey);
+		
+		return false;
+	}
 
 	@Override
 	public final Object clone() {

@@ -745,8 +745,8 @@ public class KeyTracker {
 				return true;
 			} else {
 				if(timeWouldBlock != -1) {
-					timeWouldBlock = -1;
 					long delta = now - timeWouldBlock;
+					timeWouldBlock = -1;
 					if(delta > PacketSender.MAX_COALESCING_DELAY) {
 						Logger.error(this, "Waking PacketSender: have been blocking for packet ack for "+TimeUtil.formatTime(delta));
 					} else return false;
