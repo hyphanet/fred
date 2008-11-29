@@ -19,7 +19,7 @@ import freenet.support.SimpleReadOnlyArrayBucket;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.CompressionOutputSizeException;
-import freenet.support.compress.Compressor;
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
 import freenet.support.io.BucketTools;
@@ -151,7 +151,7 @@ public abstract class Key implements WritableToDataOutputStream, Comparable {
             		(output[3] & 0xff);
             if(len > maxLength)
                 throw new TooBigException("Invalid precompressed size: "+len + " maxlength="+maxLength);
-            Compressor decompressor = Compressor.getCompressionAlgorithmByMetadataID(compressionAlgorithm);
+            COMPRESSOR_TYPE decompressor = COMPRESSOR_TYPE.getCompressorByMetadataID(compressionAlgorithm);
             Bucket inputBucket = new SimpleReadOnlyArrayBucket(output, shortLength?2:4, outputLength-(shortLength?2:4));
             try {
 				return decompressor.decompress(inputBucket, bf, maxLength, -1, null);
@@ -194,21 +194,18 @@ public abstract class Key implements WritableToDataOutputStream, Comparable {
         	} else {
         		if (sourceData.size() > maxCompressedDataLength) {
 					// Determine the best algorithm
-					for (int i = 0; i < Compressor.countCompressAlgorithms(); i++) {
-						Compressor comp = Compressor
-								.getCompressionAlgorithmByDifficulty(i);
+					for (COMPRESSOR_TYPE comp : COMPRESSOR_TYPE.values()) {
 						ArrayBucket compressedData;
 						try {
 							compressedData = (ArrayBucket) comp.compress(
-									sourceData, new ArrayBucketFactory(), maxCompressedDataLength);
+									sourceData, new ArrayBucketFactory(), Long.MAX_VALUE, maxCompressedDataLength);
 						} catch (IOException e) {
 							throw new Error(e);
 						} catch (CompressionOutputSizeException e) {
 							continue;
 						}
 						if (compressedData.size() <= maxCompressedDataLength) {
-							compressionAlgorithm = comp
-									.codecNumberForMetadata();
+							compressionAlgorithm = comp.metadataID;
 							sourceLength = sourceData.size();
 							try {
 								cbuf = BucketTools.toByteArray(compressedData);

@@ -18,6 +18,7 @@ import freenet.node.RequestStarterGroup;
 import freenet.node.Ticker;
 import freenet.support.Executor;
 import freenet.support.api.BucketFactory;
+import freenet.support.compress.RealCompressor;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NativeThread;
 
@@ -48,13 +49,14 @@ public class ClientContext {
 	public transient final Ticker ticker;
 	public transient final FilenameGenerator fg;
 	public transient final FilenameGenerator persistentFG;
+	public transient final RealCompressor rc;
 
 	public ClientContext(NodeClientCore core, FECQueue fecQueue, Executor mainExecutor,
 			BackgroundBlockEncoder blockEncoder, ArchiveManager archiveManager,
 			BucketFactory ptbf, BucketFactory tbf, HealingQueue hq,
 			USKManager uskManager, RandomSource strongRandom, 
 			Random fastWeakRandom, Ticker ticker, 
-			FilenameGenerator fg, FilenameGenerator persistentFG) {
+			FilenameGenerator fg, FilenameGenerator persistentFG, RealCompressor rc) {
 		this.bootID = core.node.bootID;
 		this.fecQueue = fecQueue;
 		jobRunner = core;
@@ -73,6 +75,7 @@ public class ClientContext {
 		this.ticker = ticker;
 		this.fg = fg;
 		this.persistentFG = persistentFG;
+		this.rc = rc;
 	}
 	
 	public void init(RequestStarterGroup starters) {

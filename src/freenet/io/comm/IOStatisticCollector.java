@@ -5,7 +5,7 @@ package freenet.io.comm;
 
 import java.util.Date;
 import java.util.LinkedHashMap;
-import java.util.Iterator;
+import java.util.Map;
 
 import freenet.support.Logger;
 
@@ -18,11 +18,11 @@ public class IOStatisticCollector {
 	private static boolean logDEBUG;
 	private long totalbytesin;
 	private long totalbytesout;
-	private final LinkedHashMap targets;
+	private final LinkedHashMap<String, StatisticEntry> targets;
 	static boolean ENABLE_PER_ADDRESS_TRACKING = false;
 	
 	public IOStatisticCollector() {
-		targets = new LinkedHashMap();
+		targets = new LinkedHashMap<String, StatisticEntry>();
 		// TODO: only for testing!!!!
 		// This should only happen once
 		//SNMPAgent.create();
@@ -43,7 +43,7 @@ public class IOStatisticCollector {
 	private void _addInfo(String key, int inbytes, int outbytes) {
 		rotate();
 		if(ENABLE_PER_ADDRESS_TRACKING) {
-			StatisticEntry entry = (StatisticEntry)targets.get(key);
+			StatisticEntry entry = targets.get(key);
 			if (entry == null) {
 				entry = new StatisticEntry();
 				targets.put(key, entry);
@@ -92,11 +92,9 @@ public class IOStatisticCollector {
 			ret[i][0] = ret[i][1] = 0;
 		}
 		
-		Iterator it = targets.keySet().iterator();
-		while (it.hasNext()) {
-			String key = (String)it.next();
-			int inres[] = ((StatisticEntry)targets.get(key)).getRecieved();
-			int outres[] = ((StatisticEntry)targets.get(key)).getSent();
+		for (Map.Entry<String,StatisticEntry> entry : targets.entrySet()) {
+			int inres[] = entry.getValue().getRecieved();
+			int outres[] = entry.getValue().getSent();
 			for (int i = 0 ; i < STATISTICS_ENTRIES ; i++) {
 				ret[i][1] += inres[i];
 				ret[i][0] += outres[i];
@@ -111,12 +109,11 @@ public class IOStatisticCollector {
 		//DateFormat df = DateFormat.getDateInstance(DateFormat.LONG, Locale.FRANCE);
 		//System.err.println(DateFormat.getDateInstance().format(new Date()));
 		System.err.println(new Date());
-		Iterator it = targets.keySet().iterator();
 		final double divby = STATISTICS_DURATION_S*1024; 
-		while (it.hasNext()) {
-			String key = (String)it.next();
-			int inres[] = ((StatisticEntry)targets.get(key)).getRecieved();
-			int outres[] = ((StatisticEntry)targets.get(key)).getSent();
+		for (Map.Entry<String,StatisticEntry> entry : targets.entrySet()) {
+			String key = entry.getKey();
+			int inres[] = entry.getValue().getRecieved();
+			int outres[] = entry.getValue().getSent();
 			System.err.print((key + "          ").substring(0,22) + ": ");
 			int tin = 0;
 			int tout = 0;
@@ -146,7 +143,7 @@ public class IOStatisticCollector {
 			if(keys == null) return; // Why aren't we iterating there ?
 			for(int i = 0 ; i < keys.length ; i++) {
 				Object key = keys[i];
-				if (((StatisticEntry)(targets.get(key))).rotate() == false)
+				if (targets.get(key).rotate() == false)
 					targets.remove(key);
 			}
 			// FIXME: debugging

@@ -86,24 +86,38 @@ public abstract class ClientRequester {
 		notifyClients(container, context);
 	}
 
-	public synchronized void addBlock(ObjectContainer container) {
-		if(blockSetFinalized)
-			if(Logger.globalGetThreshold() > Logger.MINOR)
-				Logger.error(this, "addBlock() but set finalized! on "+this);
+	public void addBlock(ObjectContainer container) {
+		boolean wasFinalized;
+		synchronized (this) {
+			totalBlocks++;
+			wasFinalized = blockSetFinalized;
+		}
+
+		if (wasFinalized) {
+			if (Logger.globalGetThreshold() > Logger.MINOR)
+				Logger.error(this, "addBlock() but set finalized! on " + this);
 			else
-				Logger.error(this, "addBlock() but set finalized! on "+this, new Exception("error"));
-		totalBlocks++;
+				Logger.error(this, "addBlock() but set finalized! on " + this, new Exception("error"));
+		}
+		
 		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "addBlock(): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks);
 		if(persistent()) container.store(this);
 	}
 
-	public synchronized void addBlocks(int num, ObjectContainer container) {
-		if(blockSetFinalized)
+	public void addBlocks(int num, ObjectContainer container) {
+		boolean wasFinalized;
+		synchronized (this) {
+			totalBlocks += num;
+			wasFinalized = blockSetFinalized;
+		}
+
+		if (wasFinalized) {
 			if(Logger.globalGetThreshold() > Logger.MINOR)
 				Logger.error(this, "addBlocks() but set finalized! on "+this);
 			else
 				Logger.error(this, "addBlocks() but set finalized! on "+this, new Exception("error"));
-		totalBlocks+=num;
+		}
+		
 		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "addBlocks("+num+"): total="+totalBlocks+" successful="+successfulBlocks+" failed="+failedBlocks+" required="+minSuccessBlocks); 
 		if(persistent()) container.store(this);
 	}

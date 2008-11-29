@@ -46,7 +46,7 @@ public class FreenetInetAddress {
 			ba = new byte[4];
 			dis.readFully(ba);
 		} else {
-			throw new IOException("Unknown type byte (old form? corrupt stream? too short/long prev field?): "+(int)firstByte);
+			throw new IOException("Unknown type byte (old form? corrupt stream? too short/long prev field?): "+firstByte);
 		}
 		_address = InetAddress.getByAddress(ba);
 		String name = null;
@@ -269,7 +269,7 @@ public class FreenetInetAddress {
 	    	if(logMINOR) Logger.minor(this, "hostname is null, returning "+_address);
 	        return _address;
 	    } else {
-	    	if(logMINOR) Logger.minor(this, "Looking up '"+hostname+"' in DNS");
+	    	if(logMINOR) Logger.minor(this, "Looking up '"+hostname+"' in DNS", new Exception("debug"));
 	        /* 
 	         * Peers are constructed from an address once a
 	         * handshake has been completed, so this lookup

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
@@ -90,22 +91,21 @@ public class NodeIPPortDetector {
 				}
 			}
 			if(countsByPeer.size() == 1) {
-				Iterator it = countsByPeer.keySet().iterator();
-				Peer p = (Peer) (it.next());
+				Iterator<Peer> it = countsByPeer.keySet().iterator();
+				Peer p = (it.next());
 				Logger.minor(this, "Everyone agrees we are "+p);
 				if(!addresses.contains(p)) {
 					addresses.add(p);
 				}
 			} else if(countsByPeer.size() > 1) {
-				Iterator it = countsByPeer.keySet().iterator();
 				// Take two most popular addresses.
 				Peer best = null;
 				Peer secondBest = null;
 				int bestPopularity = 0;
 				int secondBestPopularity = 0;
-				while(it.hasNext()) {
-					Peer cur = (Peer) (it.next());
-					int curPop = ((Integer) (countsByPeer.get(cur))).intValue();
+				for (Map.Entry<Peer,Integer> entry : countsByPeer.entrySet()) {
+					Peer cur = entry.getKey();
+					int curPop = entry.getValue();
 					Logger.normal(this, "Detected peer: "+cur+" popularity "+curPop);
 					if(curPop >= bestPopularity) {
 						secondBestPopularity = bestPopularity;
@@ -141,7 +141,7 @@ public class NodeIPPortDetector {
 				}
 			}
 		}
-		lastPeers = (Peer[]) addresses.toArray(new Peer[addresses.size()]);
+		lastPeers = addresses.toArray(new Peer[addresses.size()]);
 		if(logMINOR)
 			Logger.minor(this, "Returning for port "+crypto.portNumber+" : "+Arrays.toString(lastPeers));
 		return lastPeers;

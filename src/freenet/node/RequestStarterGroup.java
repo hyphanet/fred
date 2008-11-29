@@ -202,9 +202,9 @@ public class RequestStarterGroup {
 		MyRequestThrottle throttle = getThrottle(isSSK, isInsert);
 		sb.append(TimeUtil.formatTime((long)throttle.getRTT(), 2, true));
 		sb.append(" delay=");
-		sb.append(TimeUtil.formatTime((long)throttle.getDelay(), 2, true));
+		sb.append(TimeUtil.formatTime(throttle.getDelay(), 2, true));
 		sb.append(" bw=");
-		sb.append((long)throttle.getRate());
+		sb.append(throttle.getRate());
 		sb.append("B/sec");
 		return sb.toString();
 	}

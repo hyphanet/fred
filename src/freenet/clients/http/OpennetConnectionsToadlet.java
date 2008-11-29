@@ -115,7 +115,7 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 	}
 	
 	@Override
-	protected Comparator comparator(String sortBy, boolean reversed) {
+	protected Comparator<PeerNodeStatus> comparator(String sortBy, boolean reversed) {
 		return new OpennetComparator(sortBy, reversed);
 	}
 

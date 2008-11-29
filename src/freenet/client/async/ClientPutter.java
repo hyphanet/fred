@@ -102,7 +102,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 					if(!binaryBlob)
 						currentState =
 							new SingleFileInserter(this, this, new InsertBlock(data, cm, targetURI), isMetadata, ctx, 
-									false, getCHKOnly, false, null, false, false, targetFilename, earlyEncode);
+									false, getCHKOnly, false, null, null, false, targetFilename, earlyEncode);
 					else
 						currentState =
 							new BinaryBlobInserter(data, this, null, false, priorityClass, ctx, context, container);
@@ -269,14 +269,18 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 		return uri;
 	}
 
-	public synchronized void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
+	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container) {
 		if(newState == null) throw new NullPointerException();
-		if(currentState == oldState) {
-			currentState = newState;
-			if(persistent())
-				container.store(this);
-		} else
-			Logger.error(this, "onTransition: cur="+currentState+", old="+oldState+", new="+newState, new Exception("debug"));
+		
+		synchronized (this) {
+			if (currentState == oldState) {
+				currentState = newState;
+				if(persistent())
+					container.store(this);
+				return;
+			}
+		}
+		Logger.error(this, "onTransition: cur=" + currentState + ", old=" + oldState + ", new=" + newState);
 	}
 
 	public void onMetadata(Metadata m, ClientPutState state, ObjectContainer container, ClientContext context) {

@@ -8,6 +8,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
 import freenet.support.api.BucketFactory;
+import freenet.support.compress.RealCompressor;
 import freenet.support.io.PersistentFileTracker;
 
 /** Context object for an insert operation, including both simple and multi-file inserts */
@@ -26,10 +27,11 @@ public class InsertContext {
 	public final ClientEventProducer eventProducer;
 	/** Interesting tradeoff, see comments at top of Node.java. */
 	public final boolean cacheLocalRequests;
+	public final RealCompressor compressor;
 	
 	public InsertContext(BucketFactory bf, BucketFactory persistentBF, PersistentFileTracker tracker,
 			int maxRetries, int rnfsToSuccess, int maxThreads, int splitfileSegmentDataBlocks, int splitfileSegmentCheckBlocks,
-			ClientEventProducer eventProducer, boolean cacheLocalRequests) {
+			ClientEventProducer eventProducer, boolean cacheLocalRequests, RealCompressor compressor) {
 		this.persistentFileTracker = tracker;
 		this.persistentBucketFactory = persistentBF;
 		dontCompress = false;
@@ -41,6 +43,7 @@ public class InsertContext {
 		this.splitfileSegmentDataBlocks = splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = splitfileSegmentCheckBlocks;
 		this.cacheLocalRequests = cacheLocalRequests;
+		this.compressor = compressor;
 	}
 
 	public InsertContext(InsertContext ctx, SimpleEventProducer producer) {
@@ -55,6 +58,7 @@ public class InsertContext {
 		this.splitfileSegmentDataBlocks = ctx.splitfileSegmentDataBlocks;
 		this.splitfileSegmentCheckBlocks = ctx.splitfileSegmentCheckBlocks;
 		this.cacheLocalRequests = ctx.cacheLocalRequests;
+		this.compressor = ctx.compressor;
 	}
 
 	public void removeFrom(ObjectContainer container) {

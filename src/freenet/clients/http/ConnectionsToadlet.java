@@ -39,10 +39,9 @@ import freenet.support.SizeUtil;
 import freenet.support.TimeUtil;
 import freenet.support.api.HTTPRequest;
 
+/** Base class for DarknetConnectionsToadlet and OpennetConnectionsToadlet */
 public abstract class ConnectionsToadlet extends Toadlet {
-
-	protected class ComparatorByStatus implements Comparator {
-		
+	protected class ComparatorByStatus implements Comparator<PeerNodeStatus> {		
 		protected final String sortBy;
 		protected final boolean reversed;
 		
@@ -51,11 +50,9 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			this.reversed = reversed;
 		}
 		
-		public int compare(Object first, Object second) {
+		public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
 			int result = 0;
 			boolean isSet = true;
-			PeerNodeStatus firstNode = (PeerNodeStatus) first;
-			PeerNodeStatus secondNode = (PeerNodeStatus) second;
 			
 			if(sortBy != null){
 				result = customCompare(firstNode, secondNode, sortBy);
@@ -83,7 +80,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 		}
 		
-		// TODO: check why we do not just return the result of (long1-long2)
+		// xor: check why we do not just return the result of (long1-long2)
+		// j16sdiz: (Long.MAX_VALUE - (-1) ) would overflow and become negative
 		private int compareLongs(long long1, long long2) {
 			int diff = Long.valueOf(long1).compareTo(long2);
 			if(diff == 0)
@@ -180,7 +178,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			SimpleFieldSet fs = getNoderef();
 			StringWriter sw = new StringWriter();
 			fs.writeTo(sw);
-			MultiValueTable extraHeaders = new MultiValueTable();
+			MultiValueTable<String, String> extraHeaders = new MultiValueTable<String, String>();
 			// Force download to disk
 			extraHeaders.put("Content-Disposition", "attachment; filename=myref.fref");
 			this.writeReply(ctx, 200, "application/x-freenet-reference", "OK", extraHeaders, sw.toString());
@@ -499,7 +497,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		
 		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", defaultRedirectLocation());
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			if(logMINOR) Logger.minor(this, "No password ("+pass+" should be "+core.formPassword+ ')');
@@ -607,7 +605,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				return;
 			}
 			
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 			headers.put("Location", defaultRedirectLocation());
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -690,7 +688,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		peerAdditionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "add", l10n("add") });
 	}
 
-	protected Comparator comparator(String sortBy, boolean reversed) {
+	protected Comparator<PeerNodeStatus> comparator(String sortBy, boolean reversed) {
 		return new ComparatorByStatus(sortBy, reversed);
 	}
 
@@ -839,35 +837,35 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		countHeaderRow.addChild("th", "Message");
 		countHeaderRow.addChild("th", "Incoming");
 		countHeaderRow.addChild("th", "Outgoing");
-		List messageNames = new ArrayList();
-		Map messageCounts = new HashMap();
-		for (Iterator incomingMessages = peerNodeStatus.getLocalMessagesReceived().keySet().iterator(); incomingMessages.hasNext(); ) {
-			String messageName = (String) incomingMessages.next();
+		List<String> messageNames = new ArrayList<String>();
+		Map<String, Long[]> messageCounts = new HashMap<String, Long[]>();
+		for (Map.Entry<String,Long> entry : peerNodeStatus.getLocalMessagesReceived().entrySet() ) {
+			String messageName = entry.getKey();
+			Long messageCount = entry.getValue();
 			messageNames.add(messageName);
-			Long messageCount = (Long) peerNodeStatus.getLocalMessagesReceived().get(messageName);
 			messageCounts.put(messageName, new Long[] { messageCount, new Long(0) });
 		}
-		for (Iterator outgoingMessages = peerNodeStatus.getLocalMessagesSent().keySet().iterator(); outgoingMessages.hasNext(); ) {
-			String messageName = (String) outgoingMessages.next();
+		for (Map.Entry<String,Long> entry : peerNodeStatus.getLocalMessagesSent().entrySet() ) {
+			String messageName =  entry.getKey();
+			Long messageCount = entry.getValue();
 			if (!messageNames.contains(messageName)) {
 				messageNames.add(messageName);
 			}
-			Long messageCount = (Long) peerNodeStatus.getLocalMessagesSent().get(messageName);
-			Long[] existingCounts = (Long[]) messageCounts.get(messageName);
+			Long[] existingCounts = messageCounts.get(messageName);
 			if (existingCounts == null) {
 				messageCounts.put(messageName, new Long[] { new Long(0), messageCount });
 			} else {
 				existingCounts[1] = messageCount;
 			}
 		}
-		Collections.sort(messageNames, new Comparator() {
-			public int compare(Object first, Object second) {
-				return ((String) first).compareToIgnoreCase((String) second);
+		Collections.sort(messageNames, new Comparator<String>() {
+			public int compare(String first, String second) {
+				return first.compareToIgnoreCase(second);
 			}
 		});
-		for (Iterator messageNamesIterator = messageNames.iterator(); messageNamesIterator.hasNext(); ) {
-			String messageName = (String) messageNamesIterator.next();
-			Long[] messageCount = (Long[]) messageCounts.get(messageName);
+		for (Iterator<String> messageNamesIterator = messageNames.iterator(); messageNamesIterator.hasNext(); ) {
+			String messageName = messageNamesIterator.next();
+			Long[] messageCount = messageCounts.get(messageName);
 			HTMLNode messageRow = messageCountTable.addChild("tr");
 			messageRow.addChild("td", messageName);
 			messageRow.addChild("td", "class", "right-align", String.valueOf(messageCount[0]));
@@ -890,6 +888,4 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	private String sortString(boolean isReversed, String type) {
 		return (isReversed ? ("?sortBy="+type) : ("?sortBy="+type+"&reversed"));
 	}
-
-
 }

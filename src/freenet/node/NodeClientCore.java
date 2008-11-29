@@ -74,6 +74,7 @@ import freenet.support.api.LongCallback;
 import freenet.support.api.StringArrCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.DelayedFreeBucket;
+import freenet.support.compress.RealCompressor;
 import freenet.support.io.FileUtil;
 import freenet.support.io.FilenameGenerator;
 import freenet.support.io.NativeThread;
@@ -115,6 +116,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	FProxyToadlet fproxyServlet;
 	final SimpleToadletServer toadletContainer;
 	public final BackgroundBlockEncoder backgroundBlockEncoder;
+	public final RealCompressor compressor;
 	/** If true, requests are resumed lazily i.e. startup does not block waiting for them. */
 	private boolean lazyResume;
 	protected final Persister persister;
@@ -153,6 +155,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		storeChecker = new DatastoreChecker(node);
 		byte[] pwdBuf = new byte[16];
 		random.nextBytes(pwdBuf);
+		compressor = new RealCompressor(node.executor);
 		this.formPassword = Base64.encode(pwdBuf);
 		alerts = new UserAlertManager(this);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -306,9 +309,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		healingQueue = new SimpleHealingQueue(
 				new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory,
 						0, 2, 1, 0, 0, new SimpleEventProducer(),
-						!Node.DONT_CACHE_LOCAL_REQUESTS), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
+						!Node.DONT_CACHE_LOCAL_REQUESTS, compressor), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
-		clientContext = new ClientContext(this, fecQueue, node.executor, backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator);
+		clientContext = new ClientContext(this, fecQueue, node.executor, backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, compressor);
+		compressor.setClientContext(clientContext);
 		storeChecker.setContext(clientContext);
 		
 		requestStarters = new RequestStarterGroup(node, this, portNumber, random, config, throttleFS, clientContext);
@@ -553,7 +557,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			fcpServer.maybeStart();
 		if(tmci != null)
 			tmci.start();
-
+		node.executor.execute(compressor, "Compression scheduler");
+		
 		node.executor.execute(new PrioRunnable() {
 
 			public void run() {
@@ -562,6 +567,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 				// But it does other things too
 				fcpServer.finishStart();
 				persistentTempBucketFactory.completedInit();
+				node.pluginManager.start(node.config);
+				node.ipDetector.ipDetectorManager.start();
 				// FIXME most of the work is done after this point on splitfile starter threads.
 				// So do we want to make a fuss?
 				// FIXME but a better solution is real request resuming.

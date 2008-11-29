@@ -26,8 +26,6 @@ public class FileBucket extends BaseFileBucket implements Bucket, SerializableTo
 	// JVM caches File.size() and there is no way to flush the cache, so we
 	// need to track it ourselves
 
-	protected static String tempDir = null;
-
 	/**
 	 * Creates a new FileBucket.
 	 * 

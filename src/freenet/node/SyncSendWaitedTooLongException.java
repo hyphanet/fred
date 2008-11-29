@@ -6,6 +6,7 @@ package freenet.node;
  * from bandwidth limiting and don't get it within a timeout period.
  * @author toad
  */
+@SuppressWarnings("serial")
 public class SyncSendWaitedTooLongException extends Exception {
 
 }

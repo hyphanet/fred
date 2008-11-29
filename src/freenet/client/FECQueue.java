@@ -143,7 +143,7 @@ public class FECQueue implements OOMHook {
 				job.deactivate(container);
 			}
 			if(runningFECThreads < maxThreads) {
-				executor.execute(runner, "FEC Pool "+fecPoolCounter++);
+				executor.execute(runner, "FEC Pool(" + (fecPoolCounter++) + ")");
 				runningFECThreads++;
 			}
 			notifyAll();

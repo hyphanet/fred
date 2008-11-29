@@ -3,7 +3,6 @@ package freenet.node;
 import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
@@ -347,6 +346,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	public void registerDetectorPlugin(FredPluginIPDetector d) {
 		if(d == null) throw new NullPointerException();
 		synchronized(this) {
+			lastDetectAttemptEndedTime = -1;
 			FredPluginIPDetector[] newPlugins = new FredPluginIPDetector[plugins.length+1];
 			System.arraycopy(plugins, 0, newPlugins, 0, plugins.length);
 			newPlugins[plugins.length] = d;
@@ -374,7 +374,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			}
 			plugins = newPlugins;
 			// Will be removed when returns in the DetectorRunner
-			runningDetector = (DetectorRunner) runners.get(d);
+			runningDetector = runners.get(d);
 		}
                 if(runningDetector != null)
                     runningDetector.kill();
@@ -413,8 +413,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 	 * (To detect new IP address)
 	 */ 
 	
-	private HashMap /*<FredIPDetectorPlugin,DetectorRunner>*/ runners = new HashMap();
-	private HashSet /*<FredIPDetectorPlugin>*/ failedRunners = new HashSet();
+	private HashMap<FredPluginIPDetector,DetectorRunner> runners = new HashMap<FredPluginIPDetector,DetectorRunner>();
+	private HashSet<FredPluginIPDetector> failedRunners = new HashSet<FredPluginIPDetector>();
 	private long lastDetectAttemptEndedTime;
 	private long firstTimeUrgent;
 	
@@ -608,10 +608,9 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		if(logMINOR) Logger.minor(this, "Checking whether should detect despite real IP...");
 		// Now, if we have two nodes with unique IPs which aren't ours
 		// connected, we don't need to detect.
-		HashSet addressesConnected = null;
+		HashSet<InetAddress> addressesConnected = null;
 		boolean hasOldPeers = false;
-		for(int i=0;i<peers.length;i++) {
-			PeerNode p = peers[i];
+		for(PeerNode p : peers) {
 			if(p.isConnected() || (now - p.lastReceivedPacketTime() < 24*60*60*1000)) {
 				// Has been connected in the last 24 hours.
 				// Unique IP address?
@@ -632,7 +631,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 						if(!internal) {
 							// Real IP address
 							if(addressesConnected == null)
-								addressesConnected = new HashSet();
+								addressesConnected = new HashSet<InetAddress>();
 							addressesConnected.add(addr);
 							if(addressesConnected.size() > 2) {
 								// 3 connected addresses, lets assume we have connectivity.
@@ -696,7 +695,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		public void realRun() {
 			if(logMINOR) Logger.minor(this, "Running plugin detection");
 			try {
-				Vector v = new Vector();
+				Vector<DetectedIP> v = new Vector<DetectedIP>();
 				DetectedIP[] detected = null;
 				try {
 					detected = plugin.getAddress();
@@ -715,8 +714,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 						failed = true;
 					} else {
 						failed = true;
-						for(int i=0;i<v.size();i++) {
-							DetectedIP ip = (DetectedIP) v.get(i);
+						for(DetectedIP ip : v) {
 							if(logMINOR) Logger.minor(this, "Detected IP: "+ip+" for "+plugin);
 							if(!((ip.publicAddress == null) || !IPUtil.isValidAddress(ip.publicAddress, false))) {
 								if(logMINOR) Logger.minor(this, "Address checked out");
@@ -756,7 +754,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 //					}
 //				}
 //				DetectedIP[] list = (DetectedIP[]) map.values().toArray(new DetectedIP[map.size()]);
-				DetectedIP[] list = (DetectedIP[]) v.toArray(new DetectedIP[v.size()]);
+				DetectedIP[] list = v.toArray(new DetectedIP[v.size()]);
 				int countOpen = 0;
 				int countFullCone = 0;
 				int countRestricted = 0;
@@ -836,6 +834,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			} finally {
 				synchronized(IPDetectorPluginManager.this) {
 					runners.remove(plugin);
+					if(!runners.isEmpty()) return;
 				}
 				detector.hasDetectedPM();
 			}
@@ -880,7 +879,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		}
 	}
 
-	void notifyPortChange(final Set newPorts) {
+	void notifyPortChange(final Set<ForwardPort> newPorts) {
 		FredPluginPortForward[] plugins;
 		synchronized(this) {
 			plugins = portForwardPlugins;
@@ -901,12 +900,10 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		}
 	}
 
-	public void portForwardStatus(Map statuses) {
-		Set currentPorts = node.getPublicInterfacePorts();
-		Iterator i = currentPorts.iterator();
-		while(i.hasNext()) {
-			ForwardPort p = (ForwardPort) i.next();
-			ForwardPortStatus status = (ForwardPortStatus) statuses.get(p);
+	public void portForwardStatus(Map<ForwardPort, ForwardPortStatus> statuses) {
+		Set<ForwardPort> currentPorts = node.getPublicInterfacePorts();
+		for(ForwardPort p : currentPorts) {
+			ForwardPortStatus status = statuses.get(p);
 			if(status == null) continue;
 			if(status.status == ForwardPortStatus.DEFINITE_SUCCESS) {
 				Logger.normal(this, "Succeeded forwarding "+p.name+" port "+p.portNumber+" for "+p.protocol+" - port forward definitely succeeded "+status.reasonString);

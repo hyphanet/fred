@@ -218,7 +218,6 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 			long startTime;
 			long nextHour = -1;
 			GregorianCalendar gc = null;
-			String filename = null;
 			if (baseFilename != null) {
 				latestFile = new File(baseFilename+"-latest.log");
 				previousFile = new File(baseFilename+"-previous.log");
@@ -244,8 +243,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					int x = gc.get(INTERVAL);
 					gc.set(INTERVAL, (x / INTERVAL_MULTIPLIER) * INTERVAL_MULTIPLIER);
 				}
-				filename = getHourLogName(gc, true);
-				currentFilename = new File(filename);
+				currentFilename = new File(getHourLogName(gc, true));
 				synchronized(logFiles) {
 					if ((!logFiles.isEmpty()) && logFiles.getLast().filename.equals(currentFilename)) {
 						logFiles.removeLast();
@@ -268,49 +266,11 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 					thisTime = System.currentTimeMillis();
 					if (baseFilename != null) {
 						if ((thisTime > nextHour) || switchedBaseFilename) {
-							// Switch logs
-							try {
-								logStream.flush();
-								if(altLogStream != null) altLogStream.flush();
-							} catch (IOException e) {
-								System.err.println(
-									"Flushing on change caught " + e);
-							}
-							try {
-								logStream.close();
-							} catch (IOException e) {
-								System.err.println(
-										"Closing on change caught " + e);
-							}
-							long length = currentFilename.length();
-							OldLogFile olf = new OldLogFile(currentFilename, lastTime, nextHour, length);
-							lastTime = nextHour;
-							synchronized(logFiles) {
-								logFiles.addLast(olf);
-							}
-							oldLogFilesDiskSpaceUsage += length;
-							trimOldLogFiles();
-							// Rotate primary log stream
-							filename = getHourLogName(gc, true);
-							currentFilename = new File(filename);
-							logStream = openNewLogFile(new File(filename), true);
-							if(latestFile != null) {
-								try {
-									altLogStream.close();
-								} catch (IOException e) {
-									System.err.println(
-											"Closing alt on change caught " + e);
-								}
-								if(previousFile != null && previousFile.exists())
-									FileUtil.renameTo(latestFile, previousFile);
-								latestFile.delete();
-								altLogStream = openNewLogFile(latestFile, false);
-							}
-							//System.err.println("Rotated log files: "+filename);
-							//System.err.println("Almost rotated");
+							currentFilename = rotateLog(currentFilename, lastTime, nextHour, gc);
+
 							gc.add(INTERVAL, INTERVAL_MULTIPLIER);
 							nextHour = gc.getTimeInMillis();
-							//System.err.println("Rotated");
+
 							if(switchedBaseFilename) {
 								synchronized(FileLoggerHook.class) {
 									switchedBaseFilename = false;
@@ -353,6 +313,46 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				}
 			}
 		}
+
+		private File rotateLog(File currentFilename, long lastTime, long nextHour, GregorianCalendar gc) {
+	        // Switch logs
+	        try {
+	        	logStream.flush();
+	        	if(altLogStream != null) altLogStream.flush();
+	        } catch (IOException e) {
+	        	System.err.println(
+	        		"Flushing on change caught " + e);
+	        }
+	        try {
+	        	logStream.close();
+	        } catch (IOException e) {
+	        	System.err.println(
+	        			"Closing on change caught " + e);
+	        }
+	        long length = currentFilename.length();
+	        OldLogFile olf = new OldLogFile(currentFilename, lastTime, nextHour, length);
+	        synchronized(logFiles) {
+	        	logFiles.addLast(olf);
+	        }
+	        oldLogFilesDiskSpaceUsage += length;
+	        trimOldLogFiles();
+	        // Rotate primary log stream
+	        currentFilename = new File(getHourLogName(gc, true));
+	        logStream = openNewLogFile(currentFilename, true);
+	        if(latestFile != null) {
+	        	try {
+	        		altLogStream.close();
+	        	} catch (IOException e) {
+	        		System.err.println(
+	        				"Closing alt on change caught " + e);
+	        	}
+	        	if(previousFile != null && previousFile.exists())
+	        		FileUtil.renameTo(latestFile, previousFile);
+	        	latestFile.delete();
+	        	altLogStream = openNewLogFile(latestFile, false);
+	        }
+	        return currentFilename;
+        }
 
 		// Check every minute
 		static final int maxSleepTime = 60 * 1000;
@@ -820,8 +820,8 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 		}
 		sb.append('\n');
 
+		// Write stacktrace if available
 		for(int j=0;j<20 && e != null;j++) {
-
 			sb.append(e.toString());
 			
 			StackTraceElement[] trace = e.getStackTrace();
@@ -865,6 +865,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 						ss = list.removeFirst();
 					} catch (NoSuchElementException e) {
 						// Yes I know this is impossible but it happens with 1.6 with heap profiling enabled
+						// This is a bug in sun/netbeans profiler around 2006 era
 						noElementCount++;
 						if(noElementCount > 1000) {
 							System.err.println("Lost log line because of constant NoSuchElementException's");
@@ -879,7 +880,7 @@ public class FileLoggerHook extends LoggerHook implements Closeable {
 				String err =
 					"GRRR: ERROR: Logging too fast, chopped "
 						+ x
-						+ " lines, "
+						+ " entries, "
 						+ listBytes
 						+ " bytes in memory\n";
 				byte[] buf = err.getBytes();

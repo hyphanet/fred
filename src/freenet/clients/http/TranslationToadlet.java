@@ -49,7 +49,7 @@ public class TranslationToadlet extends Toadlet {
 				return;
 			}
 			byte[] data = sfs.toOrderedString().getBytes("UTF-8");
-			MultiValueTable head = new MultiValueTable();
+			MultiValueTable<String, String> head = new MultiValueTable<String, String>();
 			head.put("Content-Disposition", "attachment; filename=\"" + L10n.getSelectedLanguage().l10nOverrideFilename+ '"');
 			ctx.sendReplyHeaders(200, "Found", head, "text/plain; charset=utf-8", data.length);
 			ctx.writeData(data);
@@ -244,7 +244,7 @@ public class TranslationToadlet extends Toadlet {
 	}
 	
 	private void redirectTo(ToadletContext ctx, String target) throws ToadletContextClosedException, IOException {
-		MultiValueTable headers = new MultiValueTable();
+		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 		headers.put("Location", target);
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 		return;

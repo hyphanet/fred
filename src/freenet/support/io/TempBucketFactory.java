@@ -62,13 +62,15 @@ public class TempBucketFactory implements BucketFactory {
 	/** How old is a long-lived RAMBucket? */
 	private final int RAMBUCKET_MAX_AGE = 5*60*1000; // 5mins
 	/** How many times the maxRAMBucketSize can a RAMBucket be before it gets migrated? */
-	private final int RAMBUCKET_CONVERSION_FACTOR = 4;
+	final static int RAMBUCKET_CONVERSION_FACTOR = 4;
 	
 	public class TempBucket implements Bucket {
 		/** The underlying bucket itself */
 		private Bucket currentBucket;
 		/** We have to account the size of the underlying bucket ourself in order to be able to access it fast */
 		private long currentSize;
+		/** Has an OutputStream been opened at some point? */
+		private boolean hasWritten;
 		/** A link to the "real" underlying outputStream, even if we migrated */
 		private OutputStream os = null;
 		/** All the open-streams to reset or close on migration or free() */
@@ -118,6 +120,12 @@ public class TempBucketFactory implements BucketFactory {
 					os = tempFB.getOutputStream();
 					if(currentSize > 0)
 						BucketTools.copyTo(toMigrate, os, currentSize);
+				} else {
+					if(currentSize > 0) {
+						OutputStream temp = tempFB.getOutputStream();
+						BucketTools.copyTo(toMigrate, temp, currentSize);
+						temp.close();
+					}
 				}
 				if(toMigrate.isReadOnly())
 					tempFB.setReadOnly();
@@ -143,10 +151,12 @@ public class TempBucketFactory implements BucketFactory {
 		public synchronized OutputStream getOutputStream() throws IOException {
 			if(osIndex > 0)
 				throw new IOException("Only one OutputStream per bucket!");
+			hasWritten = true;
 			return new TempBucketOutputStream(++osIndex);
 		}
 
 		private class TempBucketOutputStream extends OutputStream {
+			boolean closed = false;
 			TempBucketOutputStream(short idx) throws IOException {
 				if(os == null)
 					os = currentBucket.getOutputStream();
@@ -203,23 +213,26 @@ public class TempBucketFactory implements BucketFactory {
 			public final void flush() throws IOException {
 				synchronized(TempBucket.this) {
 					_maybeMigrateRamBucket(currentSize);
-					os.flush();
+					if(!closed)
+						os.flush();
 				}
 			}
 			
 			@Override
 			public final void close() throws IOException {
 				synchronized(TempBucket.this) {
+					if(closed) return;
 					_maybeMigrateRamBucket(currentSize);
 					os.flush();
 					os.close();
-					// DO NOT NULL os OUT HERE!
+					os = null;
+					closed = true;
 				}
 			}
 		}
 
 		public synchronized InputStream getInputStream() throws IOException {
-			if(os == null)
+			if(!hasWritten)
 				throw new IOException("No OutputStream has been openned! Why would you want an InputStream then?");
 			TempBucketInputStream is = new TempBucketInputStream(osIndex);
 			tbis.add(is);

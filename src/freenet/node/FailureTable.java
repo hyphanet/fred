@@ -97,7 +97,7 @@ public class FailureTable implements OOMHook {
 		long now = System.currentTimeMillis();
 		FailureTableEntry entry;
 		synchronized(this) {
-			entry = (FailureTableEntry) entriesByKey.get(key);
+			entry = entriesByKey.get(key);
 			if(entry == null)
 				entry = new FailureTableEntry(key);
 			entriesByKey.push(key, entry);
@@ -111,7 +111,7 @@ public class FailureTable implements OOMHook {
 		long now = System.currentTimeMillis();
 		FailureTableEntry entry;
 		synchronized(this) {
-			entry = (FailureTableEntry) entriesByKey.get(key);
+			entry = entriesByKey.get(key);
 			if(entry == null)
 				entry = new FailureTableEntry(key);
 			entriesByKey.push(key, entry);
@@ -194,7 +194,7 @@ public class FailureTable implements OOMHook {
 	static final class BlockOffer {
 		final long offeredTime;
 		/** Either offered by or offered to this node */
-		final WeakReference nodeRef;
+		final WeakReference<PeerNode> nodeRef;
 		/** Authenticator */
 		final byte[] authenticator;
 		/** Boot ID when the offer was made */
@@ -208,7 +208,7 @@ public class FailureTable implements OOMHook {
 		}
 
 		public PeerNode getPeerNode() {
-			return (PeerNode) nodeRef.get();
+			return nodeRef.get();
 		}
 
 		public boolean isExpired(long now) {
@@ -230,7 +230,7 @@ public class FailureTable implements OOMHook {
 		if(key == null) throw new NullPointerException();
 		FailureTableEntry entry;
 		synchronized(this) {
-			entry = (FailureTableEntry) entriesByKey.get(key);
+			entry = entriesByKey.get(key);
 			if(entry == null) return; // Nobody cares
 			entriesByKey.removeKey(key);
 			blockOfferListByKey.removeKey(key);
@@ -256,7 +256,7 @@ public class FailureTable implements OOMHook {
 			Logger.minor(this, "Offered key "+key+" by peer "+peer);
 		FailureTableEntry entry;
 		synchronized(this) {
-			entry = (FailureTableEntry) entriesByKey.get(key);
+			entry = entriesByKey.get(key);
 			if(entry == null) {
 				if(logMINOR) Logger.minor(this, "We didn't ask for the key");
 				return; // we haven't asked for it
@@ -286,7 +286,7 @@ public class FailureTable implements OOMHook {
 		FailureTableEntry entry;
 		long now = System.currentTimeMillis();
 		synchronized(this) {
-			entry = (FailureTableEntry) entriesByKey.get(key);
+			entry = entriesByKey.get(key);
 			if(entry == null) {
 				if(logMINOR) Logger.minor(this, "We didn't ask for the key");
 				return; // we haven't asked for it
@@ -339,10 +339,9 @@ public class FailureTable implements OOMHook {
 		
 		// Add to offers list
 		
-		synchronized(this) {
-			
+		synchronized(this) {			
 			if(logMINOR) Logger.minor(this, "Valid offer");
-			BlockOfferList bl = (BlockOfferList) blockOfferListByKey.get(key);
+			BlockOfferList bl = blockOfferListByKey.get(key);
 			BlockOffer offer = new BlockOffer(peer, now, authenticator, peer.getBootID());
 			if(bl == null) {
 				bl = new BlockOfferList(entry, offer);
@@ -534,11 +533,11 @@ public class FailureTable implements OOMHook {
 			}
 			if(!recentOffers.isEmpty()) {
 				int x = node.random.nextInt(recentOffers.size());
-				return lastOffer = (BlockOffer) recentOffers.remove(x);
+				return lastOffer = recentOffers.remove(x);
 			}
 			if(!expiredOffers.isEmpty()) {
 				int x = node.random.nextInt(expiredOffers.size());
-				return lastOffer = (BlockOffer) expiredOffers.remove(x);
+				return lastOffer = expiredOffers.remove(x);
 			}
 			// No more offers.
 			return null;
@@ -566,7 +565,7 @@ public class FailureTable implements OOMHook {
 		if(!node.enableULPRDataPropagation) return null;
 		BlockOfferList bl;
 		synchronized(this) {
-			bl = (BlockOfferList) blockOfferListByKey.get(key);
+			bl = blockOfferListByKey.get(key);
 			if(bl == null) return null;
 		}
 		return new OfferList(bl);
@@ -581,7 +580,7 @@ public class FailureTable implements OOMHook {
 	public TimedOutNodesList getTimedOutNodesList(Key key) {
 		if(!node.enablePerNodeFailureTables) return null;
 		synchronized(this) {
-			return (FailureTableEntry) entriesByKey.get(key);
+			return entriesByKey.get(key);
 		}
 	}
 	
@@ -619,13 +618,12 @@ public class FailureTable implements OOMHook {
 			long endTime = System.currentTimeMillis();
 			if(logMINOR) Logger.minor(this, "Finished FailureTable cleanup took "+(endTime-startTime)+"ms");
 		}
-
 	}
 
 	public boolean peersWantKey(Key key) {
 		FailureTableEntry entry;
 		synchronized(this) {
-			entry = (FailureTableEntry) entriesByKey.get(key);
+			entry = entriesByKey.get(key);
 			if(entry == null) return false; // Nobody cares
 		}
 		return entry.othersWant(null);

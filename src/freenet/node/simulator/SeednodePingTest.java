@@ -3,6 +3,18 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.simulator;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+
 import freenet.crypt.RandomSource;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerParseException;
@@ -19,20 +31,9 @@ import freenet.node.SeedServerTestPeerNode.FATE;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.PooledExecutor;
-import freenet.support.LoggerHook.InvalidThresholdException;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.Vector;
+import freenet.support.LoggerHook.InvalidThresholdException;
 
 /**
  * @author Florent Daigni&egrave;re &lt;nextgens@freenetproject.org&gt;
@@ -52,8 +53,8 @@ public class SeednodePingTest extends RealNodeTest {
         Executor executor = new PooledExecutor();
 	node = NodeStarter.createTestNode(5000, 5001, "seednode-pingtest", true, false, false, Node.DEFAULT_MAX_HTL, 0, random, executor, 1000, 5*1024*1024, true, false, false, false, false, false, false, 0, false, false, null);
 	// Connect & ping
-	Vector<SeedServerTestPeerNode> seedNodes = new Vector<SeedServerTestPeerNode>();
-	Vector<SimpleFieldSet> seedNodesAsSFS = Announcer.readSeednodes(new File("/tmp/"));
+	List<SeedServerTestPeerNode> seedNodes = new ArrayList<SeedServerTestPeerNode>();
+	List<SimpleFieldSet> seedNodesAsSFS = Announcer.readSeednodes(new File("/tmp/"));
 	int numberOfNodesInTheFile = 0;
 	for(SimpleFieldSet sfs : seedNodesAsSFS) {
 		numberOfNodesInTheFile++;

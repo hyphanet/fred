@@ -6,7 +6,7 @@ package freenet.client.async;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.ArrayList;
+import java.util.List;
 
 import com.db4o.ObjectContainer;
 
@@ -37,7 +37,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 
 	final FetchContext fetchContext;
 	final ArchiveContext archiveContext;
-	final ArrayList decompressors;
+	final List decompressors;
 	final ClientMetadata clientMetadata;
 	final ClientRequester parent;
 	final GetCompletionCallback cb;
@@ -111,7 +111,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	private transient SplitFileFetcherKeyListener tempListener;
 	
 	public SplitFileFetcher(Metadata metadata, GetCompletionCallback rcb, ClientRequester parent2,
-			FetchContext newCtx, ArrayList decompressors2, ClientMetadata clientMetadata, 
+			FetchContext newCtx, List decompressors2, ClientMetadata clientMetadata, 
 			ArchiveContext actx, int recursionLevel, Bucket returnBucket, long token2, ObjectContainer container, ClientContext context) throws FetchException, MetadataParseException {
 		this.persistent = parent2.persistent();
 		if(Logger.shouldLog(Logger.MINOR, this))

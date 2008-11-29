@@ -120,7 +120,7 @@ public class SSKInsertSender implements PrioRunnable, AnyInsertSender, ByteCount
 	}
 
     private void realRun() {
-        HashSet nodesRoutedTo = new HashSet();
+        HashSet<PeerNode> nodesRoutedTo = new HashSet<PeerNode>();
         
         PeerNode next = null;
         while(true) {

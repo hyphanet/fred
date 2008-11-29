@@ -9,10 +9,13 @@ import freenet.support.HTMLNode;
 import freenet.support.api.HTTPRequest;
 
 /**
- * Browser Test Toadlet.
- * Usefull to test browser's capabilities :
- *  	* warn the user about useless enabled features/plugins wich might be dangerous
- *  	* Assist the user in configuring his browser properly to surf on freenet
+ * Browser Test Toadlet. Accessible from <code>http://.../test/</code>.
+ * 
+ * Useful to test browser's capabilities:
+ * <ul>
+ * <li>warn the user about useless enabled features/plugins which might be dangerous</li>
+ * <li>Assist the user in configuring his browser properly to surf on freenet</li>
+ * <ul>
  */
 public class BrowserTestToadlet extends Toadlet {
 	BrowserTestToadlet(HighLevelSimpleClient client, NodeClientCore c) {
@@ -204,7 +207,7 @@ public class BrowserTestToadlet extends Toadlet {
 			maxConnectionsPerServerContent.addChild("img", "src", ".?wontload");
 		maxConnectionsPerServerContent.addChild("img", new String[]{"src", "alt"}, new String[]{"/static/themes/clean/success.gif", "fail!"});
 
-		// #### Test whether JS is aviable. : should do the test with pictures insteed!
+		// #### Test whether JS is available. : should do the test with pictures instead!
 		HTMLNode jsTestBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "Javascript"));
 		HTMLNode jsTestContent= ctx.getPageMaker().getContentNode(jsTestBox);
 		HTMLNode jsTest = jsTestContent.addChild("div");

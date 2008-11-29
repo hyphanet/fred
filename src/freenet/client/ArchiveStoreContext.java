@@ -5,6 +5,7 @@ package freenet.client;
 
 import freenet.keys.FreenetURI;
 import freenet.support.DoublyLinkedListImpl;
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 
 /**
  * Tracks all files currently in the cache from a given key.
@@ -18,7 +19,8 @@ import freenet.support.DoublyLinkedListImpl;
 public class ArchiveStoreContext {
 
 	private FreenetURI key;
-	private short archiveType;
+	private final ArchiveManager.ARCHIVE_TYPE archiveType;
+	private final COMPRESSOR_TYPE compressorType;
 	/** Archive size */
 	private long lastSize = -1;
 	/** Archive hash */
@@ -29,9 +31,10 @@ public class ArchiveStoreContext {
 	 * the inner lock to avoid deadlocks. */
 	private final DoublyLinkedListImpl myItems;
 	
-	ArchiveStoreContext(FreenetURI key, short archiveType) {
+	ArchiveStoreContext(FreenetURI key, ArchiveManager.ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype) {
 		this.key = key;
 		this.archiveType = archiveType;
+		this.compressorType = ctype;
 		myItems = new DoublyLinkedListImpl();
 	}
 
@@ -88,7 +91,7 @@ public class ArchiveStoreContext {
 	}
 
 	public short getArchiveType() {
-		return archiveType;
+		return archiveType.metadataID;
 	}
 	
 	public FreenetURI getKey() {

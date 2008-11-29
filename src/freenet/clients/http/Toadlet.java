@@ -38,7 +38,10 @@ import freenet.support.api.HTTPRequest;
  * on systems with NIO, we use that, on systems without it, we just run
  * the fetch on another (or this) thread. With no need to change any
  * APIs, and no danger of exploding memory use (unlike the traditional
- * NIO servlets approach).
+ * NIO servlets approach). Obviously this assumes continuations, and that
+ * we can suspend in a method on Toadlet ... which might be possible.
+ * 
+ * FIXME Investigate servlet 3.0, which support continuations.
  */
 public abstract class Toadlet {
 
@@ -61,13 +64,6 @@ public abstract class Toadlet {
 		handleUnhandledRequest(uri, null, ctx);
 	}
 	
-	/**
-	 * Likewise for a PUT request.
-	 */
-	public void handlePut(URI uri, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
-		handleUnhandledRequest(uri, null, ctx);
-	}
-	
 	public void handlePost(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		handleUnhandledRequest(uri, null, ctx);
 	}
@@ -80,7 +76,7 @@ public abstract class Toadlet {
 		infobox.addChild("div", "class", "infobox-header", l10n("notSupportedTitle"));
 		infobox.addChild("div", "class", "infobox-content", l10n("notSupportedWithClass", "class", getClass().getName()));
 
-		MultiValueTable hdrtbl = new MultiValueTable();
+		MultiValueTable<String, String> hdrtbl = new MultiValueTable<String, String>();
 		hdrtbl.put("Allow", this.supportedMethods());
 
 		StringBuilder pageBuffer = new StringBuilder();
@@ -139,7 +135,7 @@ public abstract class Toadlet {
 		writeReply(ctx, code, mimeType, desc, null, data);
 	}
 	
-	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable headers, Bucket data) throws ToadletContextClosedException, IOException {
+	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable<String, String> headers, Bucket data) throws ToadletContextClosedException, IOException {
 		context.sendReplyHeaders(code, desc, headers, mimeType, data.size());
 		context.writeData(data);
 	}
@@ -156,26 +152,26 @@ public abstract class Toadlet {
 		writeReply(ctx, code, "text/plain; charset=utf-8", desc, null, reply);
 	}
 	
-	protected void writeHTMLReply(ToadletContext ctx, int code, String desc, MultiValueTable headers, String reply) throws ToadletContextClosedException, IOException {
+	protected void writeHTMLReply(ToadletContext ctx, int code, String desc, MultiValueTable<String, String> headers, String reply) throws ToadletContextClosedException, IOException {
 		writeReply(ctx, code, "text/html; charset=utf-8", desc, headers, reply);
 	}
 	
-	protected void writeTextReply(ToadletContext ctx, int code, String desc, MultiValueTable headers, String reply) throws ToadletContextClosedException, IOException {
+	protected void writeTextReply(ToadletContext ctx, int code, String desc, MultiValueTable<String, String> headers, String reply) throws ToadletContextClosedException, IOException {
 		writeReply(ctx, code, "text/plain; charset=utf-8", desc, headers, reply);
 	}
 	
-	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable headers, String reply) throws ToadletContextClosedException, IOException {
+	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable<String, String> headers, String reply) throws ToadletContextClosedException, IOException {
 		byte[] buffer = reply.getBytes("UTF-8");
 		writeReply(context, code, mimeType, desc, headers, buffer, 0, buffer.length);
 	}
 	
-	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable headers, byte[] buffer, int startIndex, int length) throws ToadletContextClosedException, IOException {
+	protected void writeReply(ToadletContext context, int code, String mimeType, String desc, MultiValueTable<String, String> headers, byte[] buffer, int startIndex, int length) throws ToadletContextClosedException, IOException {
 		context.sendReplyHeaders(code, desc, headers, mimeType, length);
 		context.writeData(buffer, startIndex, length);
 	}
 	
 	static void writePermanentRedirect(ToadletContext ctx, String msg, String location) throws ToadletContextClosedException, IOException {
-		MultiValueTable mvt = new MultiValueTable();
+		MultiValueTable<String, String> mvt = new MultiValueTable<String, String>();
 		mvt.put("Location", location);
 		if(msg == null) msg = "";
 		else msg = HTMLEncoder.encode(msg);
@@ -194,7 +190,7 @@ public abstract class Toadlet {
 	}
 	
 	protected void writeTemporaryRedirect(ToadletContext ctx, String msg, String location) throws ToadletContextClosedException, IOException {
-		MultiValueTable mvt = new MultiValueTable();
+		MultiValueTable<String, String> mvt = new MultiValueTable<String, String>();
 		mvt.put("Location", location);
 		if(msg == null) msg = "";
 		else msg = HTMLEncoder.encode(msg);

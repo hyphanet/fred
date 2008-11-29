@@ -110,7 +110,7 @@ public class ConfigToadlet extends Toadlet {
     public void handlePost(URI uri, HTTPRequest request, ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
-			MultiValueTable headers = new MultiValueTable();
+			MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
 			headers.put("Location", "/config/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
@@ -221,7 +221,7 @@ public class ConfigToadlet extends Toadlet {
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			} else {
-				MultiValueTable headers = new MultiValueTable();
+				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
 				headers.put("Location", "/config/?mode="+MODE_SECURITY_LEVELS);
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
@@ -377,18 +377,20 @@ public class ConfigToadlet extends Toadlet {
 		HTMLNode formNode = ctx.addFormChild(configNode, ".", "configForm");
 		
 		if(WrapperConfig.canChangeProperties()) {
-			formNode.addChild("div", "class", "configprefix", l10n("wrapper"));
-			HTMLNode list = formNode.addChild("ul", "class", "config");
-			HTMLNode item = list.addChild("li");
 			String configName = "wrapper.java.maxmemory";
-			// FIXME how to get the real default???
-			String defaultValue = "128";
 			String curValue = WrapperConfig.getWrapperProperty(configName);
-			item.addChild("span", new String[]{ "class", "title", "style" },
-					new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { defaultValue }),
-					"cursor: help;" }).addChild(L10n.getHTMLNode("WrapperConfig."+configName+".short"));
-			item.addChild("span", "class", "config").addChild("input", new String[] { "type", "class", "name", "value" }, new String[] { "text", "config", configName, curValue });
-			item.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode("WrapperConfig."+configName+".long"));
+			if(curValue != null) {
+				formNode.addChild("div", "class", "configprefix", l10n("wrapper"));
+				HTMLNode list = formNode.addChild("ul", "class", "config");
+				HTMLNode item = list.addChild("li");
+				// FIXME how to get the real default???
+				String defaultValue = "128";
+				item.addChild("span", new String[]{ "class", "title", "style" },
+						new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { defaultValue }),
+						"cursor: help;" }).addChild(L10n.getHTMLNode("WrapperConfig."+configName+".short"));
+				item.addChild("span", "class", "config").addChild("input", new String[] { "type", "class", "name", "value" }, new String[] { "text", "config", configName, curValue });
+				item.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode("WrapperConfig."+configName+".long"));
+			}
 		}
 		
 		for(int i=0; i<sc.length;i++){

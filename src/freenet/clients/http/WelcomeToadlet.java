@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashSet;
+import java.util.List;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
@@ -14,10 +15,8 @@ import freenet.client.ClientMetadata;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
-import freenet.clients.http.bookmark.BookmarkCategories;
 import freenet.clients.http.bookmark.BookmarkCategory;
 import freenet.clients.http.bookmark.BookmarkItem;
-import freenet.clients.http.bookmark.BookmarkItems;
 import freenet.clients.http.bookmark.BookmarkManager;
 import freenet.clients.http.filter.GenericReadFilterCallback;
 import freenet.frost.message.FrostBoard;
@@ -51,14 +50,14 @@ public class WelcomeToadlet extends Toadlet {
     }
 
     void redirectToRoot(ToadletContext ctx) throws ToadletContextClosedException, IOException {
-        MultiValueTable headers = new MultiValueTable();
+        MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
         headers.put("Location", "/");
         ctx.sendReplyHeaders(302, "Found", headers, null, 0);
         return;
     }
 
     private void addCategoryToList(BookmarkCategory cat, HTMLNode list, boolean noActiveLinks) {
-        BookmarkItems items = cat.getItems();
+        List<BookmarkItem> items = cat.getItems();
         if (items.size() > 0) {
             // FIXME CSS noborder ...
             HTMLNode table = list.addChild("li").addChild("table", new String[]{"border", "style"}, new String[]{"0", "border: none"});
@@ -79,7 +78,7 @@ public class WelcomeToadlet extends Toadlet {
             }
         }
 
-        BookmarkCategories cats = cat.getSubCategories();
+        List<BookmarkCategory> cats = cat.getSubCategories();
         for (int i = 0; i < cats.size(); i++) {
             list.addChild("li", "class", "cat", cats.get(i).getName());
             addCategoryToList(cats.get(i), list.addChild("li").addChild("ul"), noActiveLinks);
@@ -122,7 +121,7 @@ public class WelcomeToadlet extends Toadlet {
                 redirectToRoot(ctx);
                 return;
             }
-            MultiValueTable headers = new MultiValueTable();
+            MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
             String url = null;
             if ((request.getPartAsString("Go", 32).length() > 0)) {
                 url = request.getPartAsString(GenericReadFilterCallback.magicHTTPEscapeString, MAX_URL_LENGTH);
@@ -355,7 +354,7 @@ public class WelcomeToadlet extends Toadlet {
                 redirectToRoot(ctx);
                 return;
             }
-            MultiValueTable headers = new MultiValueTable();
+            MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
             headers.put("Location", "/?terminated&formPassword=" + core.formPassword);
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
             node.ps.queueTimedJob(new Runnable() {
@@ -371,7 +370,7 @@ public class WelcomeToadlet extends Toadlet {
                 return;
             }
 
-            MultiValueTable headers = new MultiValueTable();
+            MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
             headers.put("Location", "/?restarted&formPassword=" + core.formPassword);
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
             node.ps.queueTimedJob(new Runnable() {
@@ -389,8 +388,8 @@ public class WelcomeToadlet extends Toadlet {
 
         	String alertsToDump = request.getPartAsString("events", Integer.MAX_VALUE);
         	String[] alertAnchors = alertsToDump.split(",");
-        	HashSet toDump = new HashSet();
-        	for(int i=0;i<alertAnchors.length;i++) toDump.add(alertAnchors[i]);
+        	HashSet<String> toDump = new HashSet<String>();
+        	for(String alertAnchor : alertAnchors) toDump.add(alertAnchor);
         	core.alerts.dumpEvents(toDump);
         	redirectToRoot(ctx);
         } else {
@@ -536,7 +535,7 @@ public class WelcomeToadlet extends Toadlet {
             testnetContent.addChild("#", l10n("testnetWarning"));
         }
 
-        String useragent = (String) ctx.getHeaders().get("user-agent");
+        String useragent = ctx.getHeaders().get("user-agent");
 
         if (useragent != null) {
             useragent = useragent.toLowerCase();
@@ -564,8 +563,7 @@ public class WelcomeToadlet extends Toadlet {
 
         HTMLNode bookmarkBoxContent = bookmarkBox.addChild("div", "class", "infobox-content");
         HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
-	String userAgent = useragent.toLowerCase();
-        addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, useragent != null && userAgent.contains("khtml") && !userAgent.contains("chrome"));
+        addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, useragent != null && useragent.contains("khtml") && !useragent.contains("chrome"));
 
         // Fetch-a-key box
         HTMLNode fetchKeyBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", l10n("fetchKeyLabel")));

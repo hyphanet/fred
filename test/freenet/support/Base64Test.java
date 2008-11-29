@@ -16,9 +16,10 @@
 
 package freenet.support;
 
-import junit.framework.TestCase;
 import java.util.Arrays;
 import java.util.Random;
+
+import junit.framework.TestCase;
 
 /**
  * Test case for {@link freenet.support.Base64} class.
@@ -165,7 +166,7 @@ public class Base64Test extends TestCase {
 	 */
 	public void testRandom() throws IllegalBase64Exception {
 		int iter;
-		Random r = new Random();
+		Random r = new Random(1234);
 		for (iter = 0; iter < 1000; iter++) {
 			byte[] b = new byte[r.nextInt(64)];
 			for (int i = 0; i < b.length; i++)

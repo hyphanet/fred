@@ -158,7 +158,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	}
 
 	public FreenetURI insertRedirect(FreenetURI insertURI, FreenetURI targetURI) throws InsertException {
-		Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, targetURI, new ClientMetadata());
+		Metadata m = new Metadata(Metadata.SIMPLE_REDIRECT, null, null, targetURI, new ClientMetadata());
 		Bucket b;
 		try {
 			b = BucketTools.makeImmutableBucket(bucketFactory, m.writeToByteArray());
@@ -209,10 +209,10 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 
 	public InsertContext getInsertContext(boolean forceNonPersistent) {
 		return new InsertContext(bucketFactory, forceNonPersistent ? bucketFactory : persistentBucketFactory,
-				forceNonPersistent ? new NullPersistentFileTracker() : persistentFileTracker,
+				forceNonPersistent ? NullPersistentFileTracker.getInstance() : persistentFileTracker,
 				INSERT_RETRIES, CONSECUTIVE_RNFS_ASSUME_SUCCESS,
 				SPLITFILE_INSERT_THREADS, SPLITFILE_BLOCKS_PER_SEGMENT, SPLITFILE_CHECK_BLOCKS_PER_SEGMENT, 
-				globalEventProducer, cacheLocalRequests);
+				globalEventProducer, cacheLocalRequests, core.compressor);
 	}
 
 	public FreenetURI[] generateKeyPair(String docName) {

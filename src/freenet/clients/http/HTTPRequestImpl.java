@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http;
 
-import freenet.support.Fields;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
@@ -16,12 +15,12 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.SimpleReadOnlyArrayBucket;
@@ -35,7 +34,7 @@ import freenet.support.io.LineReadingInputStream;
 
 /**
  * Used for passing all HTTP request information to the FredPlugin that handles
- * the request. It parses the query string and has several methods for acessing
+ * the request. It parses the query string and has several methods for accessing
  * the request parameter values.
  * 
  * @author nacktschneck
@@ -43,13 +42,12 @@ import freenet.support.io.LineReadingInputStream;
 public class HTTPRequestImpl implements HTTPRequest {
 
 	/**
-	 * This map is used to store all parameter values. The name (as String) of
-	 * the parameter is used as key, the returned value is a list (of Strings)
-	 * with all values for that parameter sent in the request. You shouldn't
-	 * access this map directly, use {@link #getParameterValueList(String)} and
-	 * {@link #isParameterSet(String)} insted
+	 * This map is used to store all parameter values.
+	 *  
+	 * Don't access this map directly, use {@link #getParameterValueList(String)} and
+	 * {@link #isParameterSet(String)} instead
 	 */
-	private final Map parameterNameValuesMap = new HashMap();
+	private final Map<String, List<String>> parameterNameValuesMap = new HashMap<String, List<String>>();
 
 	/**
 	 * the original URI as given to the constructor
@@ -59,7 +57,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	/**
 	 * The headers sent by the client
 	 */
-	private MultiValueTable headers;
+	private MultiValueTable<String, String> headers;
 	
 	/**
 	 * The data sent in the connection
@@ -67,12 +65,12 @@ public class HTTPRequestImpl implements HTTPRequest {
 	private Bucket data;
 	
 	/**
-	 * A hasmap of buckets that we use to store all the parts for a multipart/form-data request
+	 * A hashmap of buckets that we use to store all the parts for a multipart/form-data request
 	 */
-	private HashMap parts;
+	private HashMap<String, Bucket> parts;
 	
 	/** A map for uploaded files. */
-	private Map uploadedFiles = new HashMap();
+	private Map<String, HTTPUploadedFileImpl> uploadedFiles = new HashMap<String, HTTPUploadedFileImpl>();
 	
 	private final BucketFactory bucketfactory;
 
@@ -124,7 +122,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		this.headers = ctx.getHeaders();
 		this.parseRequestParameters(uri.getRawQuery(), true, false);
 		this.data = d;
-		this.parts = new HashMap();
+		this.parts = new HashMap<String, Bucket>();
 		this.bucketfactory = ctx.getBucketFactory();
 		if(data != null) {
 			try {
@@ -226,7 +224,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 					Logger.minor(this, "Added as part: name="+name+" value="+value);
 			} else {
 				// get the list of values for this parameter that were parsed so far
-				List valueList = this.getParameterValueList(name);
+				List<String> valueList = this.getParameterValueList(name);
 				// add this value to the list
 				valueList.add(value);
 			}
@@ -245,8 +243,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 		if (!this.isParameterSet(name)) {
 			return null;
 		}
-		List allValues = this.getParameterValueList(name);
-		return (String) allValues.get(0);
+		List<String> allValues = this.getParameterValueList(name);
+		return allValues.get(0);
 	}
 
 	/**
@@ -262,10 +260,10 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 * @return the list of all values for this parameter that were parsed so
 	 *         far.
 	 */
-	private List getParameterValueList(String name) {
-		List values = (List) this.parameterNameValuesMap.get(name);
+	private List<String> getParameterValueList(String name) {
+		List<String> values = this.parameterNameValuesMap.get(name);
 		if (values == null) {
-			values = new LinkedList();
+			values = new LinkedList<String>();
 			this.parameterNameValuesMap.put(name, values);
 		}
 		return values;
@@ -339,7 +337,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 * @see freenet.clients.http.HTTPRequest#getMultipleParam(java.lang.String)
 	 */
 	public String[] getMultipleParam(String name) {
-		List valueList = this.getParameterValueList(name);
+		List<String> valueList = this.getParameterValueList(name);
 		String[] values = new String[valueList.size()];
 		valueList.toArray(values);
 		return values;
@@ -349,13 +347,13 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 * @see freenet.clients.http.HTTPRequest#getMultipleIntParam(java.lang.String)
 	 */
 	public int[] getMultipleIntParam(String name) {
-		List valueList = this.getParameterValueList(name);
+		List<String> valueList = this.getParameterValueList(name);
 
 		// try parsing all values and put the valid Integers in a new list
-		List intValueList = new ArrayList();
+		List<Integer> intValueList = new ArrayList<Integer>();
 		for (int i = 0; i < valueList.size(); i++) {
 			try {
-				intValueList.add(new Integer((String) valueList.get(i)));
+				intValueList.add(new Integer(valueList.get(i)));
 			} catch (Exception e) {
 				// ignore invalid parameter values
 			}
@@ -364,7 +362,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		// convert the valid Integers to an array of ints
 		int[] values = new int[intValueList.size()];
 		for (int i = 0; i < intValueList.size(); i++) {
-			values[i] = ((Integer) intValueList.get(i)).intValue();
+			values[i] = intValueList.get(i);
 		}
 		return values;
 	}
@@ -389,7 +387,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(data == null)
 				return;
-			String ctype = (String) this.headers.get("content-type");
+			String ctype = this.headers.get("content-type");
 			if(ctype == null)
 				return;
 			if(logMINOR)
@@ -512,10 +510,10 @@ public class HTTPRequestImpl implements HTTPRequest {
 						if(b == bbound[0])
 							offset = 1;
 						else
-							bbos.write((int) b & 0xff);
+							bbos.write(b);
 					}
 					else
-						bbos.write((int) b & 0xff);
+						bbos.write(b);
 				}
 
 				bbos.flush();
@@ -541,14 +539,14 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 * @see freenet.clients.http.HTTPRequest#getUploadedFile(java.lang.String)
 	 */
 	public HTTPUploadedFile getUploadedFile(String name) {
-		return (HTTPUploadedFile) uploadedFiles.get(name);
+		return uploadedFiles.get(name);
 	}
 	
 	/* (non-Javadoc)
 	 * @see freenet.clients.http.HTTPRequest#getPart(java.lang.String)
 	 */
 	public Bucket getPart(String name) {
-		return (Bucket)this.parts.get(name);
+		return this.parts.get(name);
 	}
 	
 	/* (non-Javadoc)
@@ -573,7 +571,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 * @see freenet.clients.http.HTTPRequest#getPartAsString(java.lang.String, int)
 	 */
 	public byte[] getPartAsBytes(String name, int maxlength) {
-		Bucket part = (Bucket)this.parts.get(name);
+		Bucket part = this.parts.get(name);
 		if(part == null) return new byte[0];
 		
 		if (part.size() > maxlength) return new byte[0];
@@ -601,11 +599,8 @@ public class HTTPRequestImpl implements HTTPRequest {
 	 */
 	public void freeParts() {
 		if (this.parts == null) return;
-		Iterator i = this.parts.keySet().iterator();
 		
-		while (i.hasNext()) {
-			String key = (String) i.next();
-			Bucket b = (Bucket)this.parts.get(key);
+		for (Bucket b : this.parts.values()) {
 			b.free();
 		}
 		parts.clear();

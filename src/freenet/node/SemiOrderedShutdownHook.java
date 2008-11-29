@@ -5,12 +5,12 @@ import java.util.ArrayList;
 public class SemiOrderedShutdownHook extends Thread {
 	
 	private static final int TIMEOUT = 100*1000;
-	private final ArrayList earlyJobs;
-	private final ArrayList lateJobs;
+	private final ArrayList<Thread> earlyJobs;
+	private final ArrayList<Thread> lateJobs;
 	
 	public SemiOrderedShutdownHook() {
-		earlyJobs = new ArrayList();
-		lateJobs = new ArrayList();
+		earlyJobs = new ArrayList<Thread>();
+		lateJobs = new ArrayList<Thread>();
 	}
 	
 	public synchronized void addEarlyJob(Thread r) {
@@ -26,12 +26,10 @@ public class SemiOrderedShutdownHook extends Thread {
 		System.err.println("Shutting down...");
 		// First run early jobs, all at once, and wait for them to all complete.
 		
-		for(int i=0;i<earlyJobs.size();i++) {
-			Thread r = (Thread) earlyJobs.get(i);
+		for(Thread r : earlyJobs) {
 			r.start();
 		}
-		for(int i=0;i<earlyJobs.size();i++) {
-			Thread r = (Thread) earlyJobs.get(i);
+		for(Thread r : earlyJobs) {
 			try {
 				r.join(TIMEOUT);
 			} catch (InterruptedException e) {
@@ -41,12 +39,10 @@ public class SemiOrderedShutdownHook extends Thread {
 		}
 
 		// Then run late jobs, all at once, and wait for them to all complete (JVM will exit when we return).
-		for(int i=0;i<lateJobs.size();i++) {
-			Thread r = (Thread) lateJobs.get(i);
+		for(Thread r : lateJobs) {
 			r.start();
 		}
-		for(int i=0;i<lateJobs.size();i++) {
-			Thread r = (Thread) lateJobs.get(i);
+		for(Thread r : lateJobs) {
 			try {
 				r.join(TIMEOUT);
 			} catch (InterruptedException e) {

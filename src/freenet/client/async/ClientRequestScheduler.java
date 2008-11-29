@@ -82,10 +82,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		public String[] getPossibleValues() {
 			return possibleValues;
 		}
-		
-		public void setPossibleValues(String[] val) {
-			throw new NullPointerException("Should not happen!");
-		}
 	}
 	
 	/** This DOES NOT PERSIST */

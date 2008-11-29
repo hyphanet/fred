@@ -13,6 +13,8 @@ import java.util.HashMap;
 
 import com.db4o.ObjectContainer;
 
+import java.util.List;
+
 import freenet.client.async.ClientContext;
 import freenet.client.async.USKCallback;
 import freenet.keys.FreenetURI;
@@ -96,7 +98,7 @@ public class BookmarkManager implements RequestClient {
 	private class USKUpdatedCallback implements USKCallback {
 
 		public void onFoundEdition(long edition, USK key, ObjectContainer container, ClientContext context, boolean wasMetadata, short codec, byte[] data) {
-			BookmarkItems items = MAIN_CATEGORY.getAllItems();
+			List<BookmarkItem> items = MAIN_CATEGORY.getAllItems();
 			for(int i = 0; i < items.size(); i++) {
 				if(!"USK".equals(items.get(i).getKeyType()))
 					continue;
@@ -252,7 +254,7 @@ public class BookmarkManager implements RequestClient {
 	}
 
 	public FreenetURI[] getBookmarkURIs() {
-		BookmarkItems items = MAIN_CATEGORY.getAllItems();
+		List<BookmarkItem> items = MAIN_CATEGORY.getAllItems();
 		FreenetURI[] uris = new FreenetURI[items.size()];
 		for(int i = 0; i < items.size(); i++)
 			uris[i] = items.get(i).getURI();
@@ -355,7 +357,7 @@ public class BookmarkManager implements RequestClient {
 
 	public static SimpleFieldSet toSimpleFieldSet(BookmarkCategory cat) {
 		SimpleFieldSet sfs = new SimpleFieldSet(true);
-		BookmarkCategories bc = cat.getSubCategories();
+		List<BookmarkCategory> bc = cat.getSubCategories();
 
 		for(int i = 0; i < bc.size(); i++) {
 			BookmarkCategory currentCat = bc.get(i);
@@ -364,7 +366,7 @@ public class BookmarkManager implements RequestClient {
 		sfs.put(BookmarkCategory.NAME, bc.size());
 
 
-		BookmarkItems bi = cat.getItems();
+		List<BookmarkItem> bi = cat.getItems();
 		for(int i = 0; i < bi.size(); i++)
 			sfs.put(BookmarkItem.NAME + i, bi.get(i).getSimpleFieldSet());
 		sfs.put(BookmarkItem.NAME, bi.size());

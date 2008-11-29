@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.client.async;
 
+import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Vector;
@@ -21,7 +22,7 @@ import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
 import freenet.support.api.Bucket;
-import freenet.support.compress.Compressor;
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NativeThread;
 
@@ -32,7 +33,7 @@ public class SplitFileInserter implements ClientPutState {
 	final InsertContext ctx;
 	final PutCompletionCallback cb;
 	final long dataLength;
-	final short compressionCodec;
+	final COMPRESSOR_TYPE compressionCodec;
 	final short splitfileAlgorithm;
 	final int segmentSize;
 	final int checkSegmentSize;
@@ -46,7 +47,7 @@ public class SplitFileInserter implements ClientPutState {
 	private volatile boolean finished;
 	private boolean fetchable;
 	public final Object token;
-	final boolean insertAsArchiveManifest;
+	final ARCHIVE_TYPE archiveType;
 	private boolean forceEncode;
 	private final long decompressedLength;
 	final boolean persistent;
@@ -67,7 +68,8 @@ public class SplitFileInserter implements ClientPutState {
 		fs.putSingle("Type", "SplitFileInserter");
 		fs.put("DataLength", dataLength);
 		fs.put("DecompressedLength", decompressedLength);
-		fs.put("CompressionCodec", compressionCodec);
+		if(compressionCodec != null)
+			fs.putSingle("CompressionCodec", compressionCodec.toString());
 		fs.put("SplitfileCodec", splitfileAlgorithm);
 		fs.put("Finished", finished);
 		fs.put("SegmentSize", segmentSize);
@@ -81,11 +83,12 @@ public class SplitFileInserter implements ClientPutState {
 		return fs;
 	}
 
-	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, Compressor bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, boolean insertAsArchiveManifest, boolean freeData, boolean persistent, ObjectContainer container, ClientContext context) throws InsertException {
+	public SplitFileInserter(BaseClientPutter put, PutCompletionCallback cb, Bucket data, COMPRESSOR_TYPE bestCodec, long decompressedLength, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean isMetadata, Object token, ARCHIVE_TYPE archiveType, boolean freeData, boolean persistent, ObjectContainer container, ClientContext context) throws InsertException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		hashCode = super.hashCode();
 		this.parent = put;
-		this.insertAsArchiveManifest = insertAsArchiveManifest;
+		this.archiveType = archiveType;
+		this.compressionCodec = bestCodec;
 		this.token = token;
 		this.finished = false;
 		this.isMetadata = isMetadata;
@@ -103,10 +106,6 @@ public class SplitFileInserter implements ClientPutState {
 		}
 		countDataBlocks = dataBuckets.length;
 		// Encoding is done by segments
-		if(bestCodec == null)
-			compressionCodec = -1;
-		else
-			compressionCodec = bestCodec.codecNumberForMetadata();
 		this.splitfileAlgorithm = ctx.splitfileAlgorithm;
 		segmentSize = ctx.splitfileSegmentDataBlocks;
 		checkSegmentSize = splitfileAlgorithm == Metadata.SPLITFILE_NONREDUNDANT ? 0 : ctx.splitfileSegmentCheckBlocks;
@@ -143,11 +142,11 @@ public class SplitFileInserter implements ClientPutState {
 		}
 	}
 
-	public SplitFileInserter(BaseClientPutter parent, PutCompletionCallback cb, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean metadata, Object token, boolean insertAsArchiveManifest, SimpleFieldSet fs, ObjectContainer container, ClientContext context) throws ResumeException {
+	public SplitFileInserter(BaseClientPutter parent, PutCompletionCallback cb, ClientMetadata clientMetadata, InsertContext ctx, boolean getCHKOnly, boolean metadata, Object token, ARCHIVE_TYPE archiveType, SimpleFieldSet fs, ObjectContainer container, ClientContext context) throws ResumeException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		hashCode = super.hashCode();
 		this.parent = parent;
-		this.insertAsArchiveManifest = insertAsArchiveManifest;
+		this.archiveType = archiveType;
 		this.token = token;
 		this.finished = false;
 		this.isMetadata = metadata;
@@ -189,12 +188,20 @@ public class SplitFileInserter implements ClientPutState {
 			throw new ResumeException("Corrupt CheckSegmentSize: "+e+" : "+length);
 		}
 		String ccodec = fs.get("CompressionCodec");
-		if(ccodec == null) throw new ResumeException("No compression codec");
-		try {
-			compressionCodec = Short.parseShort(ccodec);
-		} catch (NumberFormatException e) {
-			throw new ResumeException("Corrupt CompressionCodec: "+e+" : "+ccodec);
+		COMPRESSOR_TYPE compressor = null;
+		if(ccodec != null) {
+			try {
+				compressor = COMPRESSOR_TYPE.valueOf(ccodec);
+			} catch (Throwable t) {
+				try {
+					short codecNo = Short.parseShort(ccodec);
+					compressor = COMPRESSOR_TYPE.getCompressorByMetadataID(codecNo);
+				} catch (NumberFormatException nfe) {
+					throw new ResumeException("Invalid compression codec: "+ccodec);
+				}
+			}
 		}
+		compressionCodec = compressor;
 		String scodec = fs.get("SplitfileCodec");
 		if(scodec == null) throw new ResumeException("No splitfile codec");
 		try {
@@ -379,7 +386,7 @@ public class SplitFileInserter implements ClientPutState {
 			
 			if(!missingURIs) {
 				// Create Metadata
-				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, cm, dataLength, compressionCodec, decompressedLength, isMetadata, insertAsArchiveManifest);
+				m = new Metadata(splitfileAlgorithm, dataURIs, checkURIs, segmentSize, checkSegmentSize, cm, dataLength, archiveType, compressionCodec, decompressedLength, isMetadata);
 			}
 			haveSentMetadata = true;
 		}

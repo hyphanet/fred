@@ -5,10 +5,7 @@ package freenet.crypt;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.math.BigInteger;
-import java.util.Random;
-import java.util.Vector;
 
 import net.i2p.util.NativeBigInteger;
 import freenet.node.FSParseException;
@@ -24,42 +21,14 @@ import freenet.support.SimpleFieldSet;
 public class DSAGroup extends CryptoKey {
 	private static final long serialVersionUID = -1;
 	
-	public static final int Q_BIT_LENGTH = 256;
+	protected static final int Q_BIT_LENGTH = 256;
 
     private final BigInteger p, q, g;
-
-    // of the
-    // hexadecimal
-    // string
-    // representations
-    // of p,q and g
 
     public DSAGroup(BigInteger p, BigInteger q, BigInteger g) {
         this.p = p;
         this.q = q;
         this.g = g;
-        if(p.signum() != 1 || q.signum() != 1 || g.signum() != 1)
-        	throw new IllegalArgumentException();
-    }
-
-    public DSAGroup(String pAsHexString, String qAsHexString,
-            String gAsHexString) throws NumberFormatException {
-        //Sanity check. Needed because of the Kaffe workaround further down
-        if ((pAsHexString == null) || (qAsHexString == null)
-                || (gAsHexString == null))
-                throw new NullPointerException("Invalid DSAGroup");
-
-        try {
-            this.p = new NativeBigInteger(pAsHexString, 16);
-            this.q = new NativeBigInteger(qAsHexString, 16);
-            this.g = new NativeBigInteger(gAsHexString, 16);
-        } catch (NullPointerException e) {
-            // yea, i know, don't catch NPEs .. but _some_ JVMs don't
-            // throw the NFE like they are supposed to (*cough* kaffe)
-            throw new NumberFormatException(e + " while converting "
-                    + pAsHexString + ',' + qAsHexString + " and "
-                    + gAsHexString + " to integers");
-        }
         if(p.signum() != 1 || q.signum() != 1 || g.signum() != 1)
         	throw new IllegalArgumentException();
     }
@@ -97,17 +66,6 @@ public class DSAGroup extends CryptoKey {
         }
     }
 
-    public void writeForWire(OutputStream out) throws IOException {
-        Util.writeMPI(p, out);
-        Util.writeMPI(q, out);
-        Util.writeMPI(g, out);
-    }
-
-    //    public void write(OutputStream out) throws IOException {
-    //		write(out, getClass().getName());
-    //		writeForWire(out);
-    //    }
-
     @Override
 	public String keyType() {
         return "DSA.g-" + p.bitLength();
@@ -132,59 +90,6 @@ public class DSAGroup extends CryptoKey {
         fp[1] = q;
         fp[2] = g;
         return fingerprint(fp);
-    }
-
-    static class QG extends Thread {
-
-        public Vector qs = new Vector();
-
-        protected Random r;
-
-        public QG(Random r) {
-            setDaemon(true);
-            this.r = r;
-        }
-
-        @Override
-		public void run() {
-            while (true) {
-                qs.addElement(makePrime(DSAGroup.Q_BIT_LENGTH, 80, r));
-                synchronized (this) {
-                    notifyAll();
-                }
-                while (qs.size() >= 3) {
-                    synchronized (this) {
-                        try {
-                            wait(50);
-                        } catch (InterruptedException ie) {
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    static BigInteger smallPrimes[] = new BigInteger[] { BigInteger.valueOf(3),
-            BigInteger.valueOf(5), BigInteger.valueOf(7),
-            BigInteger.valueOf(11), BigInteger.valueOf(13),
-            BigInteger.valueOf(17), BigInteger.valueOf(19),
-            BigInteger.valueOf(23), BigInteger.valueOf(29)};
-
-    public static BigInteger makePrime(int bits, int confidence, Random r) {
-        BigInteger rv;
-        do {
-            // FIXME: is this likely to get modPow()ed?
-            // I don't suppose it matters, there isn't much overhead
-            rv = new NativeBigInteger(bits, r).setBit(0).setBit(bits - 1);
-        } while (!isPrime(rv, confidence));
-        return rv;
-    }
-
-    public static boolean isPrime(BigInteger b, int confidence) {
-        for (int i = 0; i < smallPrimes.length; i++) {
-            if (b.mod(smallPrimes[i]).equals(BigInteger.ZERO)) return false;
-        }
-        return b.isProbablePrime(80);
     }
 
     @Override

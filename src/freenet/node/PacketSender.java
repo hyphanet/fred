@@ -3,6 +3,8 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.TreeMap;
 import java.util.Vector;
 
@@ -36,7 +38,7 @@ public class PacketSender implements Runnable, Ticker {
 	 * this many milliseconds. */
 	static final int MIN_OLD_OPENNET_CONNECT_DELAY = 60 * 1000;
 	/** ~= Ticker :) */
-	private final TreeMap timedJobsByTime;
+	private final TreeMap<Long, Object> timedJobsByTime;
 	final NativeThread myThread;
 	final Node node;
 	NodeStats stats;
@@ -46,7 +48,7 @@ public class PacketSender implements Runnable, Ticker {
 	/** For watchdog. 32-bit to avoid locking. */
 	volatile int lastTimeInSeconds;
 	private long timeLastSentOldOpennetConnectAttempt;
-	private Vector rpiTemp;
+	private Vector<ResendPacketItem> rpiTemp;
 	private int[] rpiIntTemp;
 	private boolean started = false;
 
@@ -60,13 +62,13 @@ public class PacketSender implements Runnable, Ticker {
 	}
 	
 	PacketSender(Node node) {
-		timedJobsByTime = new TreeMap();
+		timedJobsByTime = new TreeMap<Long, Object>();
 		this.node = node;
 		myThread = new NativeThread(this, "PacketSender thread for " + node.getDarknetPortNumber(), NativeThread.MAX_PRIORITY, false);
 		myThread.setDaemon(true);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
-		rpiTemp = new Vector();
+		rpiTemp = new Vector<ResendPacketItem>();
 		rpiIntTemp = new int[64];
 	}
 
@@ -328,14 +330,14 @@ public class PacketSender implements Runnable, Ticker {
 		if((now - oldNow) > (10 * 1000))
 			Logger.error(this, "now is more than 10 seconds past oldNow (" + (now - oldNow) + ") in PacketSender");
 
-		Vector jobsToRun = null;
+		List<Job> jobsToRun = null;
 
 		synchronized(timedJobsByTime) {
 			while(!timedJobsByTime.isEmpty()) {
-				Long tRun = (Long) timedJobsByTime.firstKey();
+				Long tRun = timedJobsByTime.firstKey();
 				if(tRun.longValue() <= now) {
 					if(jobsToRun == null)
-						jobsToRun = new Vector();
+						jobsToRun = new ArrayList<Job>();
 					Object o = timedJobsByTime.remove(tRun);
 					if(o instanceof Job[]) {
 						Job[] r = (Job[]) o;
@@ -354,8 +356,7 @@ public class PacketSender implements Runnable, Ticker {
 		}
 
 		if(jobsToRun != null)
-			for(int i = 0; i < jobsToRun.size(); i++) {
-				Job r = (Job) jobsToRun.get(i);
+			for(Job r : jobsToRun) {
 				if(logMINOR)
 					Logger.minor(this, "Running " + r);
 				if(r.job instanceof FastRunnable)

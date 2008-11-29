@@ -130,7 +130,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 					}
 				}
 				
-				MultiValueTable responseHeaders = new MultiValueTable();
+				MultiValueTable responseHeaders = new MultiValueTable<String, String>();
 				responseHeaders.put("Location", "/files/?key="+insertURI.toACIIString());
 				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
 				return;
@@ -138,7 +138,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			
 			String pass = request.getPartAsString("formPassword", 32);
 			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
-				MultiValueTable headers = new MultiValueTable();
+				MultiValueTable headers = new MultiValueTable<String, String>();
 				headers.put("Location", "/queue/");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				if(logMINOR) Logger.minor(this, "No formPassword: "+pass);
@@ -552,7 +552,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 			}
 		}
 		
-		MultiValueTable pageHeaders = new MultiValueTable();
+		MultiValueTable pageHeaders = new MultiValueTable<String, String>();
 		if(pageNode != null)
 			writeHTMLReply(ctx, 200, "OK", pageHeaders, pageNode.generate());
 		else
@@ -670,7 +670,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 					}else if(sortBy.equals("size")){
 						result = (firstRequest.getTotalBlocks(container) - secondRequest.getTotalBlocks(container)) < 0 ? -1 : 1;
 					}else if(sortBy.equals("progress")){
-						result = firstRequest.getSuccessFraction(container) - secondRequest.getSuccessFraction(container) < 0 ? -1 : 1;
+						result = (firstRequest.getFetchedBlocks(container) / firstRequest.getMinBlocks(container) - secondRequest.getFetchedBlocks(container) / secondRequest.getMinBlocks(container)) < 0 ? -1 : 1;
 					}else
 						isSet=false;
 				}else

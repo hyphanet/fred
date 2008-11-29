@@ -1213,19 +1213,19 @@ public class NodeStats implements Persistable {
 			chkInsertRcvdBytes += x;
 	}
 
-	public long getCHKRequestTotalBytesSent() {
+	public synchronized long getCHKRequestTotalBytesSent() {
 		return chkRequestSentBytes;
 	}
 
-	public long getSSKRequestTotalBytesSent() {
+	public synchronized long getSSKRequestTotalBytesSent() {
 		return sskRequestSentBytes;
 	}
 
-	public long getCHKInsertTotalBytesSent() {
+	public synchronized long getCHKInsertTotalBytesSent() {
 		return chkInsertSentBytes;
 	}
 
-	public long getSSKInsertTotalBytesSent() {
+	public synchronized long getSSKInsertTotalBytesSent() {
 		return sskInsertSentBytes;
 	}
 
@@ -1289,11 +1289,11 @@ public class NodeStats implements Persistable {
 		swappingSentBytes += x;
 	}
 	
-	public long getSwappingTotalBytesReceived() {
+	public synchronized long getSwappingTotalBytesReceived() {
 		return swappingRcvdBytes;
 	}
 	
-	public long getSwappingTotalBytesSent() {
+	public synchronized long getSwappingTotalBytesSent() {
 		return swappingSentBytes;
 	}
 
@@ -1303,7 +1303,7 @@ public class NodeStats implements Persistable {
 		totalAuthBytesSent += x;
 	}
 	
-	public long getTotalAuthBytesSent() {
+	public synchronized long getTotalAuthBytesSent() {
 		return totalAuthBytesSent;
 	}
 	
@@ -1327,7 +1327,7 @@ public class NodeStats implements Persistable {
 		
 	};
 	
-	public long getResendBytesSent() {
+	public synchronized long getResendBytesSent() {
 		return resendBytesSent;
 	}
 	
@@ -1337,7 +1337,7 @@ public class NodeStats implements Persistable {
 		uomBytesSent += x;
 	}
 	
-	public long getUOMBytesSent() {
+	public synchronized long getUOMBytesSent() {
 		return uomBytesSent;
 	}
 	
@@ -1364,7 +1364,7 @@ public class NodeStats implements Persistable {
 		
 	};
 	
-	public long getAnnounceBytesSent() {
+	public synchronized long getAnnounceBytesSent() {
 		return announceBytesSent;
 	}
 	
@@ -1663,7 +1663,7 @@ public class NodeStats implements Persistable {
 		return notificationOnlySentBytes;
 	}
 
-	public long getSentOverhead() {
+	public synchronized long getSentOverhead() {
 		return offerKeysSentBytes // offers we have sent
 		+ swappingSentBytes // swapping
 		+ totalAuthBytesSent // connection setup

@@ -6,6 +6,7 @@ package freenet.client.async;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import com.db4o.ObjectContainer;
@@ -32,7 +33,7 @@ import freenet.keys.USK;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.compress.CompressionOutputSizeException;
-import freenet.support.compress.Compressor;
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 
 public class SingleFileFetcher extends SimpleSingleFileFetcher {
@@ -54,7 +55,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	private int recursionLevel;
 	/** The URI of the currently-being-processed data, for archives etc. */
 	private FreenetURI thisKey;
-	private final ArrayList decompressors;
+	private final LinkedList<COMPRESSOR_TYPE> decompressors;
 	private final boolean dontTellClientGet;
 	private final Bucket returnBucket;
 	/** If true, success/failure is immediately reported to the client, and therefore we can check TOO_MANY_PATH_COMPONENTS. */
@@ -93,7 +94,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.recursionLevel = recursionLevel + 1;
 		if(recursionLevel > ctx.maxRecursionLevel)
 			throw new FetchException(FetchException.TOO_MUCH_RECURSION, "Too much recursion: "+recursionLevel+" > "+ctx.maxRecursionLevel);
-		this.decompressors = new ArrayList();
+		this.decompressors = new LinkedList<COMPRESSOR_TYPE>();
 	}
 
 	/** Copy constructor, modifies a few given fields, don't call schedule().
@@ -111,7 +112,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.actx = fetcher.actx;
 		this.ah = fetcher.ah;
 		this.archiveMetadata = fetcher.archiveMetadata;
-		this.clientMetadata = (ClientMetadata) fetcher.clientMetadata.clone();
+		this.clientMetadata = (fetcher.clientMetadata != null ? (ClientMetadata) fetcher.clientMetadata.clone() : null);
 		this.metadata = newMeta;
 		this.metaStrings = new ArrayList();
 		this.addedMetaStrings = 0;
@@ -122,7 +123,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		// Copy the decompressors. Just because a multi-level metadata splitfile 
 		// is compressed, that **doesn't** mean that the data we are eventually 
 		// going to fetch is!
-		this.decompressors = new ArrayList(fetcher.decompressors);
+		this.decompressors = new LinkedList<COMPRESSOR_TYPE>(fetcher.decompressors);
 		this.uri = fetcher.uri;
 	}
 
@@ -172,15 +173,15 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				metadata = Metadata.construct(data);
 				if(persistent)
 					container.store(this);
+				wrapHandleMetadata(false, container, context);
 			} catch (MetadataParseException e) {
-				onFailure(new FetchException(e), false, container, context);
+				onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, container, context);
 				return;
 			} catch (IOException e) {
 				// Bucket error?
 				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
 				return;
 			}
-			wrapHandleMetadata(false, container, context);
 		}
 	}
 
@@ -206,7 +207,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		if(!decompressors.isEmpty()) {
 			Bucket data = result.asBucket();
 			while(!decompressors.isEmpty()) {
-				Compressor c = (Compressor) decompressors.remove(decompressors.size()-1);
+				COMPRESSOR_TYPE c = decompressors.removeLast();
 				try {
 					long maxLen = Math.max(ctx.maxTempLength, ctx.maxOutputLength);
 					Bucket out = decompressors.isEmpty() ? returnBucket : null;
@@ -312,11 +313,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						container.store(thisKey);
 					}
 					if(metadata == null)
-						throw new FetchException(FetchException.NOT_IN_ARCHIVE);
+						throw new FetchException(FetchException.NOT_IN_ARCHIVE, "can't find "+name);
 				}
 				continue; // loop
 			} else if(metadata.isArchiveManifest()) {
-				if(logMINOR) Logger.minor(this, "Is archive manifest");
+				if(logMINOR) Logger.minor(this, "Is archive manifest (type="+metadata.getArchiveType()+" codec="+metadata.getCompressionCodec()+')');
 				if(metaStrings.isEmpty() && ctx.returnZIPManifests) {
 					// Just return the archive, whole.
 					metadata.setSimpleRedirect();
@@ -328,7 +329,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// It's more efficient to keep the existing ah if we can, and it is vital in
 				// the case of binary blobs.
 				if(ah == null || !ah.getKey().equals(thisKey))
-					ah = context.archiveManager.makeHandler(thisKey, metadata.getArchiveType(),
+					ah = context.archiveManager.makeHandler(thisKey, metadata.getArchiveType(), metadata.getCompressionCodec(),
 							(parent instanceof ClientGetter ? ((ClientGetter)parent).collectingBinaryBlob() : false));
 				archiveMetadata = metadata;
 				// ah is set. This means we are currently handling an archive.
@@ -501,7 +502,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(mime != null) rcb.onExpectedMIME(mime, container);
 
 				String mimeType = clientMetadata.getMIMETypeNoParams();
-				if(mimeType != null && ArchiveManager.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
+				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
 					// Looks like an implicit archive, handle as such
 					metadata.setArchiveManifest();
 					if(persistent) container.store(metadata);
@@ -549,7 +550,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if((redirectedKey instanceof ClientCHK) && !((ClientCHK)redirectedKey).isMetadata())
 					rcb.onBlockSetFinished(this, container, context);
 				if(metadata.isCompressed()) {
-					Compressor codec = Compressor.getCompressionAlgorithmByMetadataID(metadata.getCompressionCodec());
+					COMPRESSOR_TYPE codec = metadata.getCompressionCodec();
 					f.addDecompressor(codec);
 				}
 				parent.onTransition(this, f, container);
@@ -571,7 +572,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(mime != null) rcb.onExpectedMIME(mime, container);
 				
 				String mimeType = clientMetadata.getMIMETypeNoParams();
-				if(mimeType != null && ArchiveManager.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
+				if(mimeType != null && ArchiveManager.ARCHIVE_TYPE.isUsableArchiveType(mimeType) && metaStrings.size() > 0) {
 					// Looks like an implicit archive, handle as such
 					metadata.setArchiveManifest();
 					// Pick up MIME type from inside archive
@@ -595,7 +596,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// Splitfile (possibly compressed)
 				
 				if(metadata.isCompressed()) {
-					Compressor codec = Compressor.getCompressionAlgorithmByMetadataID(metadata.getCompressionCodec());
+					COMPRESSOR_TYPE codec = metadata.getCompressionCodec();
 					addDecompressor(codec);
 					if(persistent)
 						container.store(decompressors);
@@ -677,7 +678,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		return name;
 	}
 
-	private void addDecompressor(Compressor codec) {
+	private void addDecompressor(COMPRESSOR_TYPE codec) {
 		if(logMINOR)
 			Logger.minor(this, "Adding decompressor: "+codec+" on "+this, new Exception("debug"));
 		decompressors.add(codec);
@@ -730,7 +731,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		try {
 			handleMetadata(container, context);
 		} catch (MetadataParseException e) {
-			onFailure(new FetchException(e), false, container, context);
+			onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, container, context);
 		} catch (FetchException e) {
 			if(notFinalizedSize)
 				e.setNotFinalizedSize();

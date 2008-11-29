@@ -202,7 +202,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
 		try {
 			_sock.receive(packet);
 			collector.addInfo(packet.getAddress() + ":" + packet.getPort(),
-					packet.getLength(), 0);
+					packet.getLength(), 0); // FIXME use (packet.getLength() + UDP_HEADERS_LENGTH)?
 		} catch (SocketTimeoutException e1) {
 			return false;
 		} catch (IOException e2) {
@@ -272,6 +272,7 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
     public static final int UDP_HEADERS_LENGTH = 28;
     
     public static final int MIN_MTU = 1100;
+    private volatile boolean disableMTUDetection = false;
     
     /**
      * @return The maximum packet size supported by this SocketManager, not including transport (UDP/IP) headers.
@@ -280,8 +281,11 @@ public class UdpSocketHandler implements PrioRunnable, PacketSocketHandler, Port
     	final int minAdvertisedMTU = node.ipDetector.getMinimumDetectedMTU();
     	
     	// We don't want the MTU detection thingy to prevent us to send PacketTransmits!
-    	if(minAdvertisedMTU < MIN_MTU){
-    		Logger.error(this, "It shouldn't happen : we disabled the MTU detection algorithm because the advertised MTU is smallish !! ("+node.ipDetector.getMinimumDetectedMTU()+')');
+    	if(disableMTUDetection || minAdvertisedMTU < MIN_MTU){
+		if(!disableMTUDetection) {
+			Logger.error(this, "It shouldn't happen : we disabled the MTU detection algorithm because the advertised MTU is smallish !! ("+node.ipDetector.getMinimumDetectedMTU()+')');
+			disableMTUDetection = true;
+		}
     		return MAX_ALLOWED_MTU - UDP_HEADERS_LENGTH;
     	} else
     		return Math.min(MAX_ALLOWED_MTU, minAdvertisedMTU) - UDP_HEADERS_LENGTH;

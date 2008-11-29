@@ -6,24 +6,28 @@ import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.query.Predicate;
 
+import freenet.client.ArchiveManager.ARCHIVE_TYPE;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.keys.FreenetURI;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NativeThread;
 
 class ArchiveHandlerImpl implements ArchiveHandler {
 
 	private final FreenetURI key;
-	private final short archiveType;
 	private boolean forceRefetchArchive;
+	ARCHIVE_TYPE archiveType;
+	COMPRESSOR_TYPE compressorType;
 	
-	ArchiveHandlerImpl(FreenetURI key, short archiveType, boolean forceRefetchArchive) {
+	ArchiveHandlerImpl(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, boolean forceRefetchArchive) {
 		this.key = key;
 		this.archiveType = archiveType;
+		this.compressorType = ctype;
 		this.forceRefetchArchive = forceRefetchArchive;
 	}
 	
@@ -62,12 +66,16 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 			ArchiveManager manager, ObjectContainer container, ClientContext context) throws ArchiveFailureException,
 			ArchiveRestartException {
 		forceRefetchArchive = false; // now we don't need to force refetch any more
-		ArchiveStoreContext ctx = manager.makeContext(key, archiveType, false);
-		manager.extractToCache(key, archiveType, bucket, actx, ctx, element, callback, container, context);
+		ArchiveStoreContext ctx = manager.makeContext(key, archiveType, compressorType, false);
+		manager.extractToCache(key, archiveType, compressorType, bucket, actx, ctx, element, callback, container, context);
 	}
 
-	public short getArchiveType() {
+	public ARCHIVE_TYPE getArchiveType() {
 		return archiveType;
+	}
+	
+	public COMPRESSOR_TYPE getCompressorType() {
+		return compressorType;
 	}
 
 	public FreenetURI getKey() {
