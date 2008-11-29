@@ -1540,8 +1540,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		        });
 
 		storeBloomFilterSize = nodeConfig.getInt("storeBloomFilterSize");
-		if (storeBloomFilterSize == -1) 
-			storeBloomFilterSize = (int) Math.min(maxTotalDatastoreSize / 2048, Integer.MAX_VALUE);
 
 		nodeConfig.register("storeBloomFilterCounting", true, sortOrder++, true, false,
 		        "Node.storeBloomFilterCounting", "Node.storeBloomFilterCountingLong", new BooleanCallback() {
@@ -1897,6 +1895,9 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	    storeEnvironment = null;
 		envMutableConfig = null;
 		try {
+			long bloomSize = storeBloomFilterSize;
+			if (bloomSize == -1) 
+				bloomSize = (int) Math.min(maxTotalDatastoreSize / 2048, Integer.MAX_VALUE);
 			int bloomFilterSizeInM = storeBloomFilterCounting ? storeBloomFilterSize / 6 * 4
 			        : (storeBloomFilterSize + 6) / 6 * 8; // + 6 to make size different, trigger rebuild 
 
