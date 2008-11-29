@@ -1895,11 +1895,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	    storeEnvironment = null;
 		envMutableConfig = null;
 		try {
-			long bloomSize = storeBloomFilterSize;
+			int bloomSize = storeBloomFilterSize;
 			if (bloomSize == -1) 
 				bloomSize = (int) Math.min(maxTotalDatastoreSize / 2048, Integer.MAX_VALUE);
-			int bloomFilterSizeInM = storeBloomFilterCounting ? storeBloomFilterSize / 6 * 4
-			        : (storeBloomFilterSize + 6) / 6 * 8; // + 6 to make size different, trigger rebuild 
+			int bloomFilterSizeInM = storeBloomFilterCounting ? bloomSize / 6 * 4
+			        : (bloomSize + 6) / 6 * 8; // + 6 to make size different, trigger rebuild 
 
 			Logger.normal(this, "Initializing CHK Datastore");
 			System.out.println("Initializing CHK Datastore (" + maxStoreKeys + " keys)");
