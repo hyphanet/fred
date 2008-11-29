@@ -1837,6 +1837,106 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			((SaltedHashFreenetStore) pubKeyDatacache.getStore()).setUserAlertManager(clientCore.alerts);
 			((SaltedHashFreenetStore) sskDatastore.getStore()).setUserAlertManager(clientCore.alerts);
 			((SaltedHashFreenetStore) sskDatacache.getStore()).setUserAlertManager(clientCore.alerts);
+
+			if (new File(storeDir, "chk" + suffix + ".store").exists()
+			        || new File(storeDir, "chk" + suffix + ".store.keys").exists()
+			        || new File(storeDir, "chk" + suffix + ".store.lru").exists()
+			        || new File(storeDir, "chk" + suffix + ".cache").exists()
+			        || new File(storeDir, "chk" + suffix + ".cache.keys").exists()
+			        || new File(storeDir, "chk" + suffix + ".cache.lru").exists()
+			        || new File(storeDir, "pubkey" + suffix + ".store").exists()
+			        || new File(storeDir, "pubkey" + suffix + ".store.keys").exists()
+			        || new File(storeDir, "pubkey" + suffix + ".store.lru").exists()
+			        || new File(storeDir, "pubkey" + suffix + ".cache").exists()
+			        || new File(storeDir, "pubkey" + suffix + ".cache.keys").exists()
+			        || new File(storeDir, "pubkey" + suffix + ".cache.lru").exists()
+			        || new File(storeDir, "ssk" + suffix + ".store").exists()
+			        || new File(storeDir, "ssk" + suffix + ".store.keys").exists()
+			        || new File(storeDir, "ssk" + suffix + ".store.lru").exists()
+			        || new File(storeDir, "ssk" + suffix + ".cache").exists()
+			        || new File(storeDir, "ssk" + suffix + ".cache.keys").exists()
+			        || new File(storeDir, "ssk" + suffix + ".cache.lru").exists()
+			        || new File(storeDir, "database" + suffix).exists()) {
+				clientCore.alerts.register(new SimpleUserAlert(true, L10n.getString("Node.storeSaltHashMigratedShort"),
+				        L10n.getString("Node.storeSaltHashMigratedShort"), L10n
+				                .getString("Node.storeSaltHashMigratedShort"), UserAlert.MINOR) {
+					
+					@Override
+					public HTMLNode getHTMLText() {
+						HTMLNode div = new HTMLNode("div");
+						div.addChild("#", L10n.getString("Node.storeSaltHashMigrated"));
+						HTMLNode ul = div.addChild("ul");
+
+						for (String type : new String[] { "chk", "pubkey", "ssk" })
+							for (String storecache : new String[] { "store", "store.key", "store.lru" }) {
+								File f = new File(storeDir, type + suffix + "." + storecache);
+								if (f.exists())
+									ul.addChild("li", f.getAbsolutePath());
+							}
+						
+						File dbDir = new File(storeDir, "database" + suffix);
+						if (dbDir.exists())
+							ul.addChild("li", dbDir.getAbsolutePath());
+						
+						return div;
+					}
+
+					@Override
+					public String getText() {						
+						StringBuilder sb = new StringBuilder();
+						sb.append(L10n.getString("Node.storeSaltHashMigrated") + " \n");
+						
+						for (String type : new String[] { "chk", "pubkey", "ssk" })
+							for (String storecache : new String[] { "store", "store.key", "store.lru" }) {
+								File f = new File(storeDir, type + suffix + "." + storecache);
+						if (f.exists())
+									sb.append(" - ");
+								sb.append(f.getAbsolutePath());
+								sb.append("\n");
+						}
+						File dbDir = new File(storeDir, "database" + suffix);
+						if (dbDir.exists()) {
+							sb.append(" - ");
+							sb.append(dbDir.getAbsolutePath());
+							sb.append("\n");
+						}
+						
+						return sb.toString();
+					}
+
+					@Override
+					public boolean isValid() {
+						return new File(storeDir, "chk" + suffix + ".store").exists()
+				        || new File(storeDir, "chk" + suffix + ".store.keys").exists()
+				        || new File(storeDir, "chk" + suffix + ".store.lru").exists()
+				        || new File(storeDir, "chk" + suffix + ".cache").exists()
+				        || new File(storeDir, "chk" + suffix + ".cache.keys").exists()
+				        || new File(storeDir, "chk" + suffix + ".cache.lru").exists()
+				        || new File(storeDir, "pubkey" + suffix + ".store").exists()
+				        || new File(storeDir, "pubkey" + suffix + ".store.keys").exists()
+				        || new File(storeDir, "pubkey" + suffix + ".store.lru").exists()
+				        || new File(storeDir, "pubkey" + suffix + ".cache").exists()
+				        || new File(storeDir, "pubkey" + suffix + ".cache.keys").exists()
+				        || new File(storeDir, "pubkey" + suffix + ".cache.lru").exists()
+				        || new File(storeDir, "ssk" + suffix + ".store").exists()
+				        || new File(storeDir, "ssk" + suffix + ".store.keys").exists()
+				        || new File(storeDir, "ssk" + suffix + ".store.lru").exists()
+				        || new File(storeDir, "ssk" + suffix + ".cache").exists()
+				        || new File(storeDir, "ssk" + suffix + ".cache.keys").exists()
+				        || new File(storeDir, "ssk" + suffix + ".cache.lru").exists()
+				        || new File(storeDir, "database" + suffix).exists();
+					}
+					
+					@Override
+					public void onDismiss() {
+					}
+					
+					@Override
+					public boolean userCanDismiss() {
+						return true;
+					}
+				});
+			}
 		}
 		
 		securityLevels.registerUserAlert(clientCore.alerts);

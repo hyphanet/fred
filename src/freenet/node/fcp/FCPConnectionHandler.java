@@ -280,7 +280,7 @@ public class FCPConnectionHandler implements Closeable {
 		}
 	}
 
-	public void startClientPut(ClientPutMessage message) {
+	public void startClientPut(final ClientPutMessage message) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Starting insert ID=\""+message.identifier+ '"');
 		final String id = message.identifier;
@@ -338,6 +338,24 @@ public class FCPConnectionHandler implements Closeable {
 		}
 		if(failedMessage != null) {
 			outputHandler.queue(failedMessage);
+			if(persistent) {
+				final ClientPut c = cp;
+				server.core.clientContext.jobRunner.queue(new DBJob() {
+
+					public void run(ObjectContainer container, ClientContext context) {
+						if(c != null)
+							c.freeData(container);
+						else
+							message.freeData(container);
+					}
+					
+				}, NativeThread.HIGH_PRIORITY-1, false);
+			} else {
+				if(cp != null)
+					cp.freeData(null);
+				else
+					message.freeData(null);
+			}
 			return;
 		} else {
 			Logger.minor(this, "Starting "+cp);

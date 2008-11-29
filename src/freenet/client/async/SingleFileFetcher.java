@@ -158,14 +158,17 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		} else {
 			if(!ctx.followRedirects) {
 				onFailure(new FetchException(FetchException.INVALID_METADATA, "Told me not to follow redirects (splitfile block??)"), false, container, context);
+				data.free();
 				return;
 			}
 			if(parent.isCancelled()) {
 				onFailure(new FetchException(FetchException.CANCELLED), false, container, context);
+				data.free();
 				return;
 			}
 			if(data.size() > ctx.maxMetadataSize) {
 				onFailure(new FetchException(FetchException.TOO_BIG_METADATA), false, container, context);
+				data.free();
 				return;
 			}
 			// Parse metadata
@@ -174,12 +177,15 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(persistent)
 					container.store(this);
 				wrapHandleMetadata(false, container, context);
+				data.free();
 			} catch (MetadataParseException e) {
 				onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, container, context);
+				data.free();
 				return;
 			} catch (IOException e) {
 				// Bucket error?
 				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
+				data.free();
 				return;
 			}
 		}
@@ -792,6 +798,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			} catch (ArchiveRestartException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(e), false, container, context);
 				return;
+			} finally {
+				result.asBucket().free();
 			}
 			if(callback != null) return;
 			wrapHandleMetadata(true, container, context);
@@ -873,6 +881,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			} catch (IOException e) {
 				// Bucket error?
 				SingleFileFetcher.this.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
+			} finally {
+				result.asBucket().free();
 			}
 			if(!wasActive)
 				container.deactivate(SingleFileFetcher.this, 1);

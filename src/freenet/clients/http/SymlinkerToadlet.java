@@ -142,10 +142,8 @@ public class SymlinkerToadlet extends Toadlet {
 		}
 		
 		uri.getRawQuery();
-	     
-		RedirectException re = new RedirectException();
-		re.newuri = outuri;
-		throw re;
+	    
+		throw new RedirectException(outuri);
 	}
 	
 }

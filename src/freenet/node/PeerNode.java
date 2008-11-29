@@ -188,6 +188,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* public key (FIXME). Cannot be changed.
 	*/
 	final byte[] identity;
+	final String identityAsBase64String;
 	/** Hash of node identity. Used in setup key. */
 	final byte[] identityHash;
 	/** Hash of hash of node identity. Used in setup key. */
@@ -501,6 +502,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		if(identity == null)
 			throw new FSParseException("No identity");
+		identityAsBase64String = Base64.encode(identity);
 		identityHash = SHA256.digest(identity);
 		identityHashHash = SHA256.digest(identityHash);
 		swapIdentifier = Fields.bytesToLong(identityHashHash);
@@ -562,7 +564,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			throw new FSParseException(e1);
 		}
 		if(nominalPeer.isEmpty()) {
-			Logger.normal(this, "No IP addresses found for identity '" + Base64.encode(identity) + "', possibly at location '" + Double.toString(currentLocation) + ": " + userToString());
+			Logger.normal(this, "No IP addresses found for identity '" + identityAsBase64String + "', possibly at location '" + Double.toString(currentLocation) + ": " + userToString());
 			detectedPeer = null;
 		} else {
 			detectedPeer = nominalPeer.firstElement();
@@ -870,9 +872,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		FreenetInetAddress localhost = node.fLocalhostAddress;
 		Peer[] nodePeers = outgoingMangler.getPrimaryIPAddress();
 
-		Vector<Peer> peers = null;
+		Vector<Peer> localPeers = null;
 		synchronized(this) {
-			peers = new Vector<Peer>(nominalPeer);
+			localPeers = new Vector<Peer>(nominalPeer);
 		}
 
 		boolean addedLocalhost = false;
@@ -898,16 +900,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				FreenetInetAddress myAddr = nodePeers[j].getFreenetAddress();
 				if(myAddr.equals(addr)) {
 					if(!addedLocalhost)
-						peers.add(new Peer(localhost, p.getPort()));
+						localPeers.add(new Peer(localhost, p.getPort()));
 					addedLocalhost = true;
 				}
 			}
-			if(peers.contains(p))
+			if(localPeers.contains(p))
 				continue;
-			peers.add(p);
+			localPeers.add(p);
 		}
 
-		localHandshakeIPs = peers.toArray(new Peer[peers.size()]);
+		localHandshakeIPs = localPeers.toArray(new Peer[localPeers.size()]);
 		localHandshakeIPs = updateHandshakeIPs(localHandshakeIPs, ignoreHostnames);
 		synchronized(this) {
 			handshakeIPs = localHandshakeIPs;
@@ -1315,7 +1317,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		long now = System.currentTimeMillis();
 		boolean tempShouldSendHandshake = false;
 		synchronized(this) {
-			tempShouldSendHandshake = ((isRekeying || !isConnected()) && (handshakeIPs != null) && (now > sendHandshakeTime));
+			tempShouldSendHandshake = ((now > sendHandshakeTime) && (handshakeIPs != null) && (isRekeying || !isConnected()));
 		}
 		if(tempShouldSendHandshake && (hasLiveHandshake(now)))
 			tempShouldSendHandshake = false;
@@ -1662,16 +1664,19 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		// Only clear lastAttemptedHandshakeIPUpdateTime if we have a new IP.
 		// Also, we need to call .equals() to propagate any DNS lookups that have been done if the two have the same domain.
 		synchronized(this) {
-			if((newPeer != null) && ((detectedPeer == null) || !detectedPeer.equals(newPeer))) {
+			Peer oldPeer = detectedPeer;
+			if((newPeer != null) && ((oldPeer == null) || !oldPeer.equals(newPeer))) {
 				this.detectedPeer = newPeer;
 				updateShortToString();
 				this.lastAttemptedHandshakeIPUpdateTime = 0;
 				if(!isConnected)
 					return;
 				// Prevent leak by clearing, *but keep the current handshake*
-				byte[] o = jfkNoncesSent.get(newPeer);
+				byte[] newPeerHandshake = jfkNoncesSent.get(newPeer);
+				byte[] oldPeerHandshake = jfkNoncesSent.get(oldPeer);
 				jfkNoncesSent.clear();
-				jfkNoncesSent.put(newPeer, o);
+				jfkNoncesSent.put(newPeer, newPeerHandshake);
+				jfkNoncesSent.put(newPeer, oldPeerHandshake);
 			} else
 				return;
 		}
@@ -1840,9 +1845,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			Logger.normal(this, "Not routing traffic to " + this + " - invalid version " + getVersion());
 			older = true;
 			routable = false;
-		} else if(Math.abs(clockDelta) > MAX_CLOCK_DELTA)
+		} else if(Math.abs(clockDelta) > MAX_CLOCK_DELTA) {
+			Logger.normal(this, "Not routing traffic to " + this + " - clock problems");
 			routable = false;
-		else
+		} else
 			older = false;
 		KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
 		if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+shortToString());
@@ -2509,7 +2515,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public String getFreevizOutput() {
-		return getStatus(true).toString() + '|' + Base64.encode(identity);
+		return getStatus(true).toString() + '|' + identityAsBase64String;
 	}
 
 	public synchronized String getVersion() {
@@ -2944,7 +2950,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		messageSpecName = m.getSpec().getName();
 		// Synchronize to make increments atomic.
-		synchronized(this) {
+		synchronized(localNodeSentMessageTypes) {
 			count = localNodeSentMessageTypes.get(messageSpecName);
 			if(count == null)
 				count = 1L;
@@ -2970,8 +2976,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 	}
 
-	public synchronized Hashtable<String,Long> getLocalNodeSentMessagesToStatistic() {
-		return new Hashtable<String,Long>(localNodeSentMessageTypes);
+	public Hashtable<String,Long> getLocalNodeSentMessagesToStatistic() {
+		// Must be synchronized *during the copy*
+		synchronized (localNodeSentMessageTypes) {
+			return new Hashtable<String,Long>(localNodeSentMessageTypes);
+		}
 	}
 
 	public Hashtable<String,Long> getLocalNodeReceivedMessagesFromStatistic() {
@@ -3130,10 +3139,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public int setPeerNodeStatus(long now, boolean noLog) {
-		long routingBackedOffUntil = getRoutingBackedOffUntil();
+		long localRoutingBackedOffUntil = getRoutingBackedOffUntil();
 		synchronized(this) {
 			int oldPeerNodeStatus = peerNodeStatus;
-			peerNodeStatus = getPeerNodeStatus(now, routingBackedOffUntil);
+			peerNodeStatus = getPeerNodeStatus(now, localRoutingBackedOffUntil);
 
 			if(peerNodeStatus != oldPeerNodeStatus && recordStatus()) {
 				peers.removePeerNodeStatus(oldPeerNodeStatus, this, noLog);
@@ -3173,7 +3182,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	public String getIdentityString() {
-		return Base64.encode(identity);
+		return identityAsBase64String;
 	}
 
 	public boolean isFetchingARK() {
@@ -3240,6 +3249,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			data = result.asByteArray();
 		} catch(IOException e) {
 			Logger.error(this, "I/O error reading fetched ARK: " + e, e);
+			result.asBucket().free();
 			return;
 		}
 
@@ -3247,6 +3257,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		try {
 			ref = new String(data, "UTF-8");
 		} catch(UnsupportedEncodingException e) {
+			result.asBucket().free();
 			throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
 		}
 
@@ -3260,6 +3271,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			// Corrupt ref.
 			Logger.error(this, "Corrupt ARK reference? Fetched " + myARK.copy(edition) + " got while parsing: " + e + " from:\n" + ref, e);
 		}
+		result.asBucket().free();
 
 	}
 
@@ -3770,17 +3782,17 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * (FIXME!)
 	 */
 	public Peer getHandshakeIP() {
-		Peer[] handshakeIPs;
+		Peer[] localHandshakeIPs;
 		if(!shouldSendHandshake()) {
 			if(logMINOR) Logger.minor(this, "Not sending handshake to "+getPeer()+" because pn.shouldSendHandshake() returned false");
 			return null;
 		}
 		long firstTime = System.currentTimeMillis();
-		handshakeIPs = getHandshakeIPs();
+		localHandshakeIPs = getHandshakeIPs();
 		long secondTime = System.currentTimeMillis();
 		if((secondTime - firstTime) > 1000)
 			Logger.error(this, "getHandshakeIPs() took more than a second to execute ("+(secondTime - firstTime)+") working on "+userToString());
-		if(handshakeIPs.length == 0) {
+		if(localHandshakeIPs.length == 0) {
 			long thirdTime = System.currentTimeMillis();
 			if((thirdTime - secondTime) > 1000)
 				Logger.error(this, "couldNotSendHandshake() (after getHandshakeIPs()) took more than a second to execute ("+(thirdTime - secondTime)+") working on "+userToString());
@@ -3788,19 +3800,19 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		long loopTime1 = System.currentTimeMillis();
 		Vector<Peer> validIPs = new Vector<Peer>();
-		for(int i=0;i<handshakeIPs.length;i++){
-			Peer peer = handshakeIPs[i];
+		for(int i=0;i<localHandshakeIPs.length;i++){
+			Peer peer = localHandshakeIPs[i];
 			FreenetInetAddress addr = peer.getFreenetAddress();
 			if(!outgoingMangler.allowConnection(this, addr)) {
 				if(logMINOR)
 					Logger.minor(this, "Not sending handshake packet to "+peer+" for "+this);
 			}
 			if(peer.getAddress(false) == null) {
-				if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+getPeer()+" because the DNS lookup failed or it's a currently unsupported IPv6 address");
+				if(logMINOR) Logger.minor(this, "Not sending handshake to "+localHandshakeIPs[i]+" for "+getPeer()+" because the DNS lookup failed or it's a currently unsupported IPv6 address");
 				continue;
 			}
 			if(!peer.isRealInternetAddress(false, false, allowLocalAddresses())) {
-				if(logMINOR) Logger.minor(this, "Not sending handshake to "+handshakeIPs[i]+" for "+getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
+				if(logMINOR) Logger.minor(this, "Not sending handshake to "+localHandshakeIPs[i]+" for "+getPeer()+" because it's not a real Internet address and metadata.allowLocalAddresses is not true");
 				continue;
 			}
 			validIPs.add(peer);
@@ -3811,12 +3823,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		} else if(validIPs.size() == 1) {
 			ret = validIPs.get(0);
 		} else {
-			synchronized(this) {
-				if(handshakeIPAlternator >= validIPs.size())
-					handshakeIPAlternator = 0;
-				ret = validIPs.get(handshakeIPAlternator);
-				handshakeIPAlternator++;
-			}
+			// Don't need to synchronize for this value as we're only called from one thread anyway.
+			handshakeIPAlternator %= validIPs.size();
+			ret = validIPs.get(handshakeIPAlternator);
+			handshakeIPAlternator++;
 		}
 		long loopTime2 = System.currentTimeMillis();
 		if((loopTime2 - loopTime1) > 1000)
@@ -3999,13 +4009,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * @return The rate at which this peer has been selected since it connected.
 	 */
 	public synchronized double selectionRate() {
-		long uptime = System.currentTimeMillis() - this.connectedTime;
+		long timeSinceConnected = System.currentTimeMillis() - this.connectedTime;
 		// Avoid bias due to short uptime.
-		if(uptime < 10*1000) return 0.0;
-		return countSelectionsSinceConnected / (double) uptime;
+		if(timeSinceConnected < 10*1000) return 0.0;
+		return countSelectionsSinceConnected / (double) timeSinceConnected;
 	}
 
-	private long offeredMainJarVersion;
+	private volatile long offeredMainJarVersion;
 	
 	public void setMainJarOfferedVersion(long mainJarVersion) {
 		offeredMainJarVersion = mainJarVersion;
@@ -4043,18 +4053,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			KeyTracker kt;
 			if(j == 0)
 				kt = getCurrentKeyTracker();
-			else if(j == 1)
+			else// if(j == 1)
 				kt = getPreviousKeyTracker();
-			else
-				break; // impossible
 			if(kt == null)
 				continue;
 			int[] tmp = kt.grabResendPackets(rpiTemp, rpiIntTemp);
 			if(tmp == null)
 				continue;
 			rpiIntTemp = tmp;
-			for(int k = 0; k < rpiTemp.size(); k++) {
-				ResendPacketItem item = rpiTemp.get(k);
+			for(ResendPacketItem item : rpiTemp) {
 				if(item == null)
 					continue;
 				try {

@@ -356,8 +356,7 @@ public class USKFetcher implements ClientGetState {
 						if(lastRequestData != null)
 							lastRequestData.free();
 						lastRequestData = data;
-					}
-					else
+					} else
 						data.free();
 			}
 		}

@@ -47,7 +47,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			InsertBlock block = 
 				new InsertBlock(data, cm, FreenetURI.EMPTY_CHK_URI);
 			this.origSFI =
-				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null, null, false, null, earlyEncode);
+				new SingleFileInserter(this, this, block, false, ctx, false, getCHKOnly, true, null, null, true, null, earlyEncode);
 			metadata = null;
 		}
 
@@ -537,6 +537,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				String mimeType = (archiveType == ARCHIVE_TYPE.TAR ?
 					createTarBucket(bucket, outputBucket) :
 					createZipBucket(bucket, outputBucket));
+				bucket.free();
 				
 				if(logMINOR) Logger.minor(this, "We are using "+archiveType);
 				

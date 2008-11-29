@@ -230,7 +230,7 @@ class SingleFileInserter implements ClientPutState {
 			if(fitsInOneBlockAsIs) {
 				// Just insert it
 				ClientPutState bi =
-					createInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true, true, container, context);
+					createInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true, true, container, context, freeData);
 				if(logMINOR)
 					Logger.minor(this, "Inserting without metadata: "+bi+" for "+this);
 				cb.onTransition(this, bi, container);
@@ -248,7 +248,7 @@ class SingleFileInserter implements ClientPutState {
 		if (fitsInOneCHK) {
 			// Insert single block, then insert pointer to it
 			if(reportMetadataOnly) {
-				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token, container, context, persistent);
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token, container, context, persistent, freeData);
 				if(logMINOR)
 					Logger.minor(this, "Inserting with metadata: "+dataPutter+" for "+this);
 				Metadata meta = makeMetadata(archiveType, null, dataPutter.getURI(container, context));
@@ -259,7 +259,7 @@ class SingleFileInserter implements ClientPutState {
 			} else {
 				MultiPutCompletionCallback mcb = 
 					new MultiPutCompletionCallback(cb, parent, token);
-				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token, container, context, persistent);
+				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token, container, context, persistent, freeData);
 				if(logMINOR)
 					Logger.minor(this, "Inserting data: "+dataPutter+" for "+this);
 				Metadata meta = makeMetadata(archiveType, null, dataPutter.getURI(container, context));
@@ -274,7 +274,7 @@ class SingleFileInserter implements ClientPutState {
 					Logger.error(this, "Caught "+e, e);
 					throw new InsertException(InsertException.INTERNAL_ERROR, "Got MetadataUnresolvedException in SingleFileInserter: "+e.toString(), null);
 				}
-				ClientPutState metaPutter = createInserter(parent, metadataBucket, (short) -1, block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly, true, false, container, context);
+				ClientPutState metaPutter = createInserter(parent, metadataBucket, (short) -1, block.desiredURI, ctx, mcb, true, (int)origSize, -1, getCHKOnly, true, false, container, context, true);
 				if(logMINOR)
 					Logger.minor(this, "Inserting metadata: "+metaPutter+" for "+this);
 				mcb.addURIGenerator(metaPutter, container);
@@ -383,21 +383,21 @@ class SingleFileInserter implements ClientPutState {
 
 	private ClientPutState createInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
 			InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, 
-			boolean addToParent, boolean encodeCHK, ObjectContainer container, ClientContext context) throws InsertException {
+			boolean addToParent, boolean encodeCHK, ObjectContainer container, ClientContext context, boolean freeData) throws InsertException {
 		
 		uri.checkInsertURI(); // will throw an exception if needed
 		
 		if(uri.getKeyType().equals("USK")) {
 			try {
 				return new USKInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
-					getCHKOnly, addToParent, this.token, container, context);
+					getCHKOnly, addToParent, this.token, container, context, freeData);
 			} catch (MalformedURLException e) {
 				throw new InsertException(InsertException.INVALID_URI, e, null);
 			}
 		} else {
 			SingleBlockInserter sbi = 
 				new SingleBlockInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
-						getCHKOnly, addToParent, false, this.token, container, context, persistent);
+						getCHKOnly, addToParent, false, this.token, container, context, persistent, freeData);
 			if(encodeCHK)
 				cb.onEncode(sbi.getBlock(container, context, true).getClientKey(), this, container, context);
 			return sbi;

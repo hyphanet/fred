@@ -377,6 +377,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				SplitFileFetcherSegment s = segments[i];
 				long max = (finalLength < 0 ? 0 : (finalLength - bytesWritten));
 				bytesWritten += s.writeDecodedDataTo(os, max);
+				s.freeDecodedData(container);
 			}
 		} catch (IOException e) {
 			throw new FetchException(FetchException.BUCKET_ERROR, e);
@@ -478,6 +479,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 				if(Logger.shouldLog(Logger.MINOR, this))
 					Logger.minor(this, "Decompressing with "+c);
 				long maxLen = Math.max(fetchContext.maxTempLength, fetchContext.maxOutputLength);
+				Bucket orig = data;
 				try {
 					Bucket out = returnBucket;
 					if(!decompressors.isEmpty()) out = null;
@@ -494,6 +496,8 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 						Logger.minor(this, "Too big: maxSize = "+fetchContext.maxOutputLength+" maxTempSize = "+fetchContext.maxTempLength);
 					cb.onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, false /* FIXME */, clientMetadata.getMIMEType()), this, container, context);
 					return;
+				} finally {
+					if(orig != data) orig.free();
 				}
 				count++;
 			}

@@ -546,6 +546,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			container.store(this);
 		}
 		finish(container);
+		freeData(container);
 		client.notifyFailure(this, container);
 	}
 

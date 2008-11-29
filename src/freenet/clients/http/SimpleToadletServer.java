@@ -609,6 +609,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 				sh.start();
 			} catch (SocketTimeoutException e) {
 				// Go around again, this introduced to avoid blocking forever when told to quit
+				/* FIXME: WTF? Why does networkInterface.accept() not support being interrupted ? */
 			} 
 		}
 	}

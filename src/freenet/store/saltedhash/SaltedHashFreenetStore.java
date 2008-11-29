@@ -43,7 +43,6 @@ import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
-import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 
@@ -597,62 +596,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		hdFC = hdRAF.getChannel();
 		hdFC.lock();
 
-
 		long storeFileSize = Math.max(storeSize, prevStoreSize);
 		
-		// XXX migrate from old format
-		{
-			// migrate 
-			File headerFile = new File(baseDir, name + ".header");
-			File dataFile = new File(baseDir, name + ".data");
-
-			if (headerFile.exists() && dataFile.exists()) {
-				System.out.println("Migrating .header/.data -to-> .hd");
-				WrapperManager.signalStarting(7 * 24 * 60 * 60 * 1000); 
-				
-				RandomAccessFile headerRAF = null;
-				RandomAccessFile dataRAF = null;
-				try {
-					cleanerGlobalLock.lock();
-					headerRAF = new RandomAccessFile(headerFile, "rw");
-					dataRAF = new RandomAccessFile(dataFile, "rw");
-					
-					byte[] header = new byte[headerBlockLength];
-					byte[] data = new byte[dataBlockLength];
-					byte[] pad = new byte[hdPadding];
-					
-					long total = dataRAF.length() / dataBlockLength;
-					newStore = false;
-
-					for (long offset = total - 1; offset >= 0; offset--) {
-						if (offset % 1024 == 0)
-							System.out.println(name + ": " + (total - offset) + "/" + total);
-						headerRAF.seek(headerBlockLength * offset);
-						headerRAF.readFully(header);
-						dataRAF.seek(dataBlockLength * offset);
-						dataRAF.readFully(data);
-						
-						hdRAF.seek((headerBlockLength + dataBlockLength + hdPadding) * offset);
-						hdRAF.write(header);
-						hdRAF.write(data);
-						hdRAF.write(pad);
-						
-						headerRAF.setLength(headerBlockLength * offset);
-						dataRAF.setLength(dataBlockLength * offset);
-					}
-				} catch (IOException e) {
-					e.printStackTrace();
-				} finally {
-					cleanerGlobalLock.unlock();
-					Closer.close(headerRAF);
-					Closer.close(dataRAF);
-				}
-				headerFile.delete();
-				dataFile.delete();
-				setStoreFileSize(storeFileSize, true);
-			}
-		}
-
 		WrapperManager.signalStarting(10 * 60 * 1000); // 10minutes, for filesystem that support no sparse file.
 		setStoreFileSize(storeFileSize, true);
 		

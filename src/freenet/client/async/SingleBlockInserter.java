@@ -55,8 +55,9 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	final int sourceLength;
 	private int consecutiveRNFs;
 	private boolean isSSK;
+	private boolean freeData;
 	
-	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ObjectContainer container, ClientContext context, boolean persistent) {
+	public SingleBlockInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, boolean getCHKOnly, boolean addToParent, boolean dontSendEncoded, Object tokenObject, ObjectContainer container, ClientContext context, boolean persistent, boolean freeData) {
 		super(persistent);
 		assert(persistent == parent.persistent());
 		this.consecutiveRNFs = 0;
@@ -67,6 +68,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		this.retries = 0;
 		this.finished = false;
 		this.ctx = ctx;
+		this.freeData = freeData;
 		errors = new FailureCodeTracker(true);
 		this.cb = cb;
 		this.uri = uri;
@@ -224,6 +226,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(persistent)
 			container.activate(cb, 1);
 		cb.onFailure(e, this, container, context);
+		if(freeData)
+			sourceData.free();
 	}
 
 	public ClientKeyBlock getBlock(ObjectContainer container, ClientContext context, boolean calledByCB) {
@@ -317,7 +321,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(persistent) {
 			container.activate(cb, 1);
 			container.store(this);
+			container.activate(sourceData, 1);
 		}
+		if(freeData)
+			sourceData.free(); // FIXME removeFrom()??
 		parent.completedBlock(false, container, context);
 		if(logMINOR) Logger.minor(this, "Calling onSuccess for "+cb);
 		cb.onSuccess(this, container, context);
@@ -337,7 +344,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(persistent) {
 			container.store(this);
 			container.activate(cb, 1);
+			container.activate(sourceData, 1);
 		}
+		if(freeData)
+			sourceData.free();
 		super.unregister(container, context);
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 		if(persistent)

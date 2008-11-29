@@ -428,7 +428,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 				dataBlockInserters[i] = new SingleBlockInserter(parent.parent,
 						dataBlocks[i], (short) -1, FreenetURI.EMPTY_CHK_URI,
 						blockInsertContext, this, false, CHKBlock.DATA_LENGTH,
-						i, getCHKOnly, false, false, parent.token, container, context, persistent);
+						i, getCHKOnly, false, false, parent.token, container, context, persistent, false);
 				dataBlockInserters[i].schedule(container, context);
 				if(persistent)
 					container.deactivate(dataBlockInserters[i], 1);
@@ -467,7 +467,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 							parent.parent, checkBlocks[i], (short) -1,
 							FreenetURI.EMPTY_CHK_URI, blockInsertContext, this,
 							false, CHKBlock.DATA_LENGTH, i + dataBlocks.length,
-							getCHKOnly, false, false, parent.token, container, context, persistent);
+							getCHKOnly, false, false, parent.token, container, context, persistent, false);
 					checkBlockInserters[i].schedule(container, context);
 					if(persistent)
 						container.deactivate(checkBlockInserters[i], 1);
@@ -522,7 +522,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 						checkBlocks[i], (short) -1, FreenetURI.EMPTY_CHK_URI,
 						blockInsertContext, this, false, CHKBlock.DATA_LENGTH,
 						i + dataBlocks.length, getCHKOnly, false, false,
-						parent.token, container, context, persistent);
+						parent.token, container, context, persistent, false);
 				checkBlockInserters[i].schedule(container, context);
 				if(persistent) {
 					container.deactivate(checkBlockInserters[i], 1);

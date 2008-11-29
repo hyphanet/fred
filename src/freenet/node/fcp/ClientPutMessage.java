@@ -298,5 +298,11 @@ public class ClientPutMessage extends DataCarryingMessage {
 		if(redirectTarget != null)
 			redirectTarget.removeFrom(container);
 	}
+
+	public void freeData(ObjectContainer container) {
+		container.activate(bucket, 5);
+		bucket.free();
+		bucket.removeFrom(container);
+	}
 	
 }

@@ -7,11 +7,9 @@ import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.TimeZone;
 
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.BlockCipher;

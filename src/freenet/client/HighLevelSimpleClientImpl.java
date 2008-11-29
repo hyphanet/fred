@@ -257,7 +257,6 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		ctx.allowedMIMETypes = allowedTypes;
 		final ClientGetter get = new ClientGetter(nullCallback, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, ctx, RequestStarter.PREFETCH_PRIORITY_CLASS, this, new NullBucket(), null);
 		core.getTicker().queueTimedJob(new Runnable() {
-
 			public void run() {
 				get.cancel(null, core.clientContext);
 			}

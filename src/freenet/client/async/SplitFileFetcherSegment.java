@@ -213,7 +213,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		if(data == null) throw new NullPointerException();
 		boolean decodeNow = false;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" in "+this);
+		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" in "+this+" data="+dataBuckets.length+" check="+checkBuckets.length);
 		if(parent instanceof ClientGetter)
 			((ClientGetter)parent).addKeyToBinaryBlob(block, container, context);
 		// No need to unregister key, because it will be cleared in tripPendingKey().
@@ -645,7 +645,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 
 	private void queueHeal(Bucket data, ClientContext context) {
-		if(logMINOR) Logger.minor(this, "Queueing healing insert");
+		if(logMINOR) Logger.minor(this, "Queueing healing insert for "+data+" on "+this);
 		context.healingQueue.queue(data, context);
 	}
 	
@@ -1383,5 +1383,16 @@ public class SplitFileFetcherSegment implements FECCallback {
 
 	public SplitFileFetcherSubSegment getSubSegmentFor(int blockNum, ObjectContainer container) {
 		return getSubSegment(getBlockRetryCount(blockNum), container, false, null);
+	}
+
+	public void freeDecodedData(ObjectContainer container) {
+		if(persistent)
+			container.activate(decodedData, 1);
+		decodedData.free();
+		if(persistent)
+			decodedData.removeFrom(container);
+		decodedData = null;
+		if(persistent)
+			container.store(this);
 	}
 }

@@ -16,6 +16,7 @@ import SevenZip.Compression.LZMA.Encoder;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
+import freenet.support.io.Closer;
 import freenet.support.io.CountedInputStream;
 import freenet.support.io.CountedOutputStream;
 
@@ -27,17 +28,25 @@ public class LZMACompressor implements Compressor {
 		output = bf.makeBucket(maxWriteLength);
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Compressing "+data+" size "+data.size()+" to new bucket "+output);
-		CountedInputStream is = new CountedInputStream(new BufferedInputStream(data.getInputStream()));
-		CountedOutputStream os = new CountedOutputStream(new BufferedOutputStream(output.getOutputStream()));
+		CountedInputStream cis = null;
+		CountedOutputStream cos = null;
+		try {
+		cis = new CountedInputStream(new BufferedInputStream(data.getInputStream()));
+		cos = new CountedOutputStream(new BufferedOutputStream(output.getOutputStream()));
 		Encoder encoder = new Encoder();
         encoder.SetEndMarkerMode( true );
         encoder.SetDictionarySize( 1 << 20 );
         // enc.WriteCoderProperties( out );
         // 5d 00 00 10 00
-        encoder.Code( is, os, maxReadLength, maxWriteLength, null );
-		os.close();
+        encoder.Code( cis, cos, -1, -1, null );
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+is.count()+" written "+os.written());
+			Logger.minor(this, "Output: "+output+" size "+output.size()+" read "+cis.count()+" written "+cos.written());
+		cis.close();
+		cos.close();
+		} finally {
+			Closer.close(cis);
+			Closer.close(cos);
+		}
 		return output;
 	}
 
