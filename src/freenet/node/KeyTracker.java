@@ -712,6 +712,9 @@ public class KeyTracker {
 				sentPacketsContents.lock(packetNumber);
 				if(logMINOR)
 					Logger.minor(this, "Locked "+packetNumber);
+				synchronized(this) {
+					timeWouldBlock = -1;
+				}
 				return packetNumber;
 			} catch(InterruptedException e) {
 				synchronized(this) {
@@ -742,6 +745,7 @@ public class KeyTracker {
 				return true;
 			} else {
 				if(timeWouldBlock != -1) {
+					timeWouldBlock = -1;
 					long delta = now - timeWouldBlock;
 					if(delta > PacketSender.MAX_COALESCING_DELAY) {
 						Logger.error(this, "Waking PacketSender: have been blocking for packet ack for "+TimeUtil.formatTime(delta));
