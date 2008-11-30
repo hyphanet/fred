@@ -331,6 +331,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				}
 
 				Entry entry = new Entry(routingKey, header, data);
+				if (!storeFileSizeSetted && prevStoreSize != 0 && prevStoreSize < storeSize)
+					entry.storeSize = prevStoreSize;
 				long[] offset = entry.getOffset();
 
 				for (int i = 0; i < offset.length; i++) {
@@ -574,6 +576,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 	}
 
+	private boolean storeFileSizeSetted = false;
+
 	/**
 	 * Open all store files
 	 * 
@@ -600,6 +604,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		
 		WrapperManager.signalStarting(10 * 60 * 1000); // 10minutes, for filesystem that support no sparse file.
 		setStoreFileSize(storeFileSize, true);
+		storeFileSizeSetted = true;
 		
 		return newStore;
 	}
@@ -1019,6 +1024,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				public void init() {
 					if (storeSize > _prevStoreSize)
 						setStoreFileSize(storeSize, false);
+					storeFileSizeSetted = true;
 
 					optimialK = BloomFilter.optimialK(bloomFilterSize, storeSize);
 					configLock.writeLock().lock();
@@ -1486,6 +1492,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			prevStoreSize = storeSize;
 			storeSize = newStoreSize;
+			storeFileSizeSetted = false;
 			writeConfigFile();
 		} finally {
 			configLock.writeLock().unlock();
