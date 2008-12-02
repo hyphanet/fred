@@ -855,6 +855,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			try {
 				bloomFilterK = raf.readInt();
+				if (bloomFilterK == 0)
+					bloomFilterK = BloomFilter.optimialK(bloomFilterSize, storeSize);
 			} catch (IOException e) {
 				flags |= FLAG_REBUILD_BLOOM;
 			}
