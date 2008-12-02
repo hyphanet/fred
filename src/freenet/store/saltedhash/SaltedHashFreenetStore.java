@@ -834,6 +834,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			byte[] newsalt = new byte[0x10];
 			random.nextBytes(newsalt);
 			cipherManager = new CipherManager(newsalt);
+			bloomFilterK = BloomFilter.optimialK(bloomFilterSize, storeSize);
 
 			writeConfigFile();
 			return true;
