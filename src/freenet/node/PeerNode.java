@@ -1805,7 +1805,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @param replyTo The IP the handshake came in on.
 	* @return True unless we rejected the handshake, or it failed to parse.
 	*/
-	public boolean completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified) {
+	public boolean completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified, int negType) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
 		long now = System.currentTimeMillis();
 
@@ -1852,15 +1852,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			routable = false;
 		} else
 			older = false;
-		PacketTracker packets = new PacketTracker(this);
-		KeyTracker newTracker = new KeyTracker(this, packets, encCipher, encKey);
-		if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+shortToString());
 		changedIP(replyTo);
 		boolean bootIDChanged = false;
 		boolean wasARekey = false;
 		KeyTracker oldPrev = null;
 		KeyTracker oldCur = null;
 		KeyTracker prev = null;
+		KeyTracker newTracker;
 		MessageItem[] messagesTellDisconnected = null;
 		synchronized(this) {
 			handshakeCount = 0;
@@ -1887,7 +1885,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			} else if(bootIDChanged && logMINOR)
 				Logger.minor(this, "Changed boot ID from " + bootID + " to " + thisBootID + " for " + getPeer());
 			this.bootID = thisBootID;
+			PacketTracker packets;
+			boolean newPacketTracker = false;
 			if(bootIDChanged) {
+				packets = new PacketTracker(this);
+				newPacketTracker = true;
 				oldPrev = previousTracker;
 				oldCur = currentTracker;
 				previousTracker = null;
@@ -1897,7 +1899,22 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				// connection initial messages by maybeOnConnect().
 				messagesTellDisconnected = grabQueuedMessageItems();
 				this.offeredMainJarVersion = 0;
-			} // else it's a rekey
+			} else {
+				// else it's a rekey
+				if(currentTracker != null && currentTracker.packets.isDeprecated()) {
+					packets = new PacketTracker(this);
+					newPacketTracker = true;
+				} else if(currentTracker != null && negType >= 3)
+					packets = currentTracker.packets;
+				else if(previousTracker != null && negType >= 3)
+					packets = previousTracker.packets;
+				else {
+					packets = new PacketTracker(this);
+					newPacketTracker = true;
+				}
+			}
+			newTracker = new KeyTracker(this, packets, encCipher, encKey);
+			if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+shortToString()+" neg type "+negType+" new packet tracker: "+newPacketTracker);
 			if(unverified) {
 				if(unverifiedTracker != null) {
 					// Keep the old unverified tracker if possible.
@@ -1941,11 +1958,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			node.lm.lostOrRestartedNode(this);
 			node.usm.onRestart(this);
 		}
-		if(oldPrev != null)
+		if(oldPrev != null && oldPrev.packets != newTracker.packets)
 			oldPrev.packets.completelyDeprecated(newTracker);
-		if(oldCur != null)
+		if(oldCur != null && oldCur.packets != newTracker.packets)
 			oldCur.packets.completelyDeprecated(newTracker);
-		if(prev != null)
+		if(prev != null && prev.packets != newTracker.packets)
 			prev.packets.deprecated();
     	PacketThrottle throttle;
     	synchronized(this) {
@@ -1979,6 +1996,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 */
 	private synchronized void maybeSwapTrackers() {
 		if(currentTracker == null || previousTracker == null) return;
+		if(currentTracker.packets == previousTracker.packets) return;
 		long delta = Math.abs(currentTracker.packets.createdTime - previousTracker.packets.createdTime);
 		if(previousTracker != null && (!previousTracker.packets.isDeprecated()) &&
 				delta < CHECK_FOR_SWAPPED_TRACKERS_INTERVAL) {
@@ -2006,9 +2024,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				KeyTracker temp = previousTracker;
 				previousTracker = currentTracker;
 				currentTracker = temp;
-				if(logMINOR) Logger.minor(this, "Swapped KeyTracker's on "+this+" cur "+currentTracker+" prev "+previousTracker);
+				if(logMINOR) Logger.minor(this, "Swapped KeyTracker's on "+this+" cur "+currentTracker+" prev "+previousTracker+" delta "+delta+" cur.deprecated="+currentTracker.packets.isDeprecated()+" prev.deprecated="+previousTracker.packets.isDeprecated());
 			} else {
-				if(logMINOR) Logger.minor(this, "Not swapping KeyTracker's on "+this+" cur "+currentTracker+" prev "+previousTracker);
+				if(logMINOR) Logger.minor(this, "Not swapping KeyTracker's on "+this+" cur "+currentTracker+" prev "+previousTracker+" delta "+delta+" cur.deprecated="+currentTracker.packets.isDeprecated()+" prev.deprecated="+previousTracker.packets.isDeprecated());
 			}
 		} else {
 			if (logMINOR)
@@ -2160,7 +2178,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				peerAddedTime = 0;  // don't store anymore
 				ctx = null;
 				maybeSwapTrackers();
-				if(previousTracker != null)
+				if(previousTracker != null && previousTracker.packets != currentTracker.packets)
 					previousTracker.packets.deprecated();
 			} else
 				return;

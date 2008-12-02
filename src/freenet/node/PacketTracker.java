@@ -107,6 +107,7 @@ public class PacketTracker {
 	 */
 	public void deprecated() {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "Deprecated: "+this);
 		isDeprecated = true;
 		sentPacketsContents.interrupt();
 	}
@@ -1009,6 +1010,10 @@ public class PacketTracker {
 	 * *** Must only be called if the KeyTracker is not to be kept. Otherwise, we may receive some packets twice. ***
 	 */
 	public void completelyDeprecated(KeyTracker newTracker) {
+		if(newTracker.packets == this) {
+			Logger.error(this, "Completely deprecated in favour of self!");
+			return;
+		}
 		if(logMINOR)
 			Logger.minor(this, "Completely deprecated: " + this + " in favour of " + newTracker);
 		LimitedRangeIntByteArrayMapElement[] elements = clear();
