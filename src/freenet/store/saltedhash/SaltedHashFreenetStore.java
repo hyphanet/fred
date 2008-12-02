@@ -53,7 +53,7 @@ import freenet.support.io.NativeThread;
  */
 public class SaltedHashFreenetStore implements FreenetStore {
 	/** Option for saving plainkey */
-	private static final boolean OPTION_SAVE_PLAINKEY = true;
+	private static final boolean OPTION_SAVE_PLAINKEY = false;
 	private static final int OPTION_MAX_PROBE = 4;
 
 	private static final byte FLAG_DIRTY = 0x1;
