@@ -775,6 +775,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				byte[] seed = new byte[64];
 				random.nextBytes(seed);
 				Random mt = new MersenneTwister(seed);
+				int x = 0;
 				while (oldHdLen < newHdLen) {
 					mt.nextBytes(b);
 					bf.rewind();
@@ -783,8 +784,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					if(oldHdLen % (1024*1024*1024L) == 0) {
 						random.nextBytes(seed);
 						mt = new MersenneTwister(seed);
-						if(starting)
+						if (starting) {
 							WrapperManager.signalStarting(5*60*1000);
+							if ( x++ % 32 == 0 )
+								System.err.println("Preallocating space for " + name + ": " + oldHdLen + "/" + newHdLen);
+						}
 					}
 					storeFileSizeReady = oldHdLen / (headerBlockLength + dataBlockLength + hdPadding);
 				}
