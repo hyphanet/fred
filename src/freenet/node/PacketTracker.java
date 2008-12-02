@@ -1011,7 +1011,7 @@ public class PacketTracker {
 	 */
 	public void completelyDeprecated(KeyTracker newTracker) {
 		if(newTracker.packets == this) {
-			Logger.error(this, "Completely deprecated in favour of self!");
+			Logger.error(this, "Completely deprecated in favour of self!", new Exception("debug"));
 			return;
 		}
 		if(logMINOR)
