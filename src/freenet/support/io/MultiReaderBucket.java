@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
 /**
@@ -35,6 +36,8 @@ public class MultiReaderBucket {
 			Bucket d = new ReaderBucket();
 			if(readers == null) readers = new ArrayList<Bucket>();
 			readers.add(d);
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "getReaderBucket() returning "+d+" for "+this+" for "+bucket);
 			return d;
 		}
 	}
@@ -44,6 +47,8 @@ public class MultiReaderBucket {
 		private boolean freed;
 
 		public void free() {
+			if(Logger.shouldLog(Logger.MINOR, this))
+				Logger.minor(this, "ReaderBucket "+this+" for "+MultiReaderBucket.this+" free()ing for "+bucket);
 			synchronized(MultiReaderBucket.this) {
 				if(freed) return;
 				freed = true;
