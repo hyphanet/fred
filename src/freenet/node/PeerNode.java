@@ -2186,8 +2186,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		maybeSendInitialMessages();
 		setPeerNodeStatus(now);
 		node.peers.addConnectedPeer(this);
-		if(completelyDeprecatedTracker != null)
-			completelyDeprecatedTracker.packets.completelyDeprecated(tracker);
+		if(completelyDeprecatedTracker != null) {
+			if(completelyDeprecatedTracker.packets != tracker.packets)
+				completelyDeprecatedTracker.packets.completelyDeprecated(tracker);
+		}
 	}
 
 	private synchronized boolean invalidVersion() {
@@ -2503,6 +2505,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			cur = currentTracker;
 			prev = previousTracker;
 		}
+		if(prev.packets == cur.packets) return;
 		long t = prev.packets.getNextUrgentTime();
 		if(!(t > -1 && prev.packets.timeLastDecodedPacket() > 0 && (now - prev.packets.timeLastDecodedPacket()) > 60*1000 && 
 				cur.packets.timeLastDecodedPacket() > 0 && (now - cur.packets.timeLastDecodedPacket() < 30*1000) && 
