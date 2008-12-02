@@ -362,9 +362,6 @@ public class PacketTracker {
 			Logger.minor(this, "Received packet " + seqNumber + " from " + pn.shortToString());
 		if(seqNumber == -1)
 			return;
-		// FIXME delete this log statement
-		if(logMINOR)
-			Logger.minor(this, "Still received packet: " + seqNumber);
 		// Received packet
 		receivedPacketNumber(seqNumber);
 		// Ack it even if it is a resend
