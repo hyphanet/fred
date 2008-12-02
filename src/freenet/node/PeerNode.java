@@ -1005,7 +1005,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public boolean isConnected() {
 		long now = System.currentTimeMillis();
 		synchronized(this) {
-			if(isConnected && currentTracker != null && !currentTracker.isDeprecated()) {
+			if(isConnected && currentTracker != null && !currentTracker.packets.isDeprecated()) {
 				timeLastConnected = now;
 				return true;
 			}
@@ -1168,9 +1168,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				mi.onDisconnect();
 			}
 		}
-		if(cur != null) cur.disconnected();
-		if(prev != null) prev.disconnected();
-		if(unv != null) unv.disconnected();
+		if(cur != null) cur.packets.disconnected();
+		if(prev != null) prev.packets.disconnected();
+		if(unv != null) unv.packets.disconnected();
     	if(_lastThrottle != null)
     		_lastThrottle.maybeDisconnected();
 		node.lm.lostOrRestartedNode(this);
@@ -1268,22 +1268,22 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		KeyTracker kt = cur;
 		if(kt != null) {
-			long next = kt.getNextUrgentTime();
+			long next = kt.packets.getNextUrgentTime();
 			t = Math.min(t, next);
 			if(next < now && logMINOR)
 				Logger.minor(this, "Next urgent time from curTracker less than now");
-			if(kt.hasPacketsToResend()) return now;
+			if(kt.packets.hasPacketsToResend()) return now;
 		}
 		kt = prev;
 		if(kt != null) {
-			long next = kt.getNextUrgentTime();
+			long next = kt.packets.getNextUrgentTime();
 			t = Math.min(t, next);
 			if(next < now && logMINOR)
 				Logger.minor(this, "Next urgent time from prevTracker less than now");
-			if(kt.hasPacketsToResend()) return now;
+			if(kt.packets.hasPacketsToResend()) return now;
 		}
 		try {
-			if(cur != null && !cur.wouldBlock(false))
+			if(cur != null && !cur.packets.wouldBlock(false))
 				t = messageQueue.getNextUrgentTime(t, now);
 			// If there isn't a current tracker, no point worrying about it as we won't be able to send it anyway...
 		} catch (BlockedTooLongException e) {
@@ -1295,11 +1295,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private synchronized boolean mustSendNotificationsNow(long now) {
 		KeyTracker kt = currentTracker;
 		if(kt != null) {
-			if(kt.getNextUrgentTime() < now) return true;
+			if(kt.packets.getNextUrgentTime() < now) return true;
 		}
 		kt = previousTracker;
 		if(kt != null)
-			if(kt.getNextUrgentTime() < now) return true;
+			if(kt.packets.getNextUrgentTime() < now) return true;
 		return false;
 	}
 	
@@ -1852,7 +1852,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			routable = false;
 		} else
 			older = false;
-		KeyTracker newTracker = new KeyTracker(this, encCipher, encKey);
+		PacketTracker packets = new PacketTracker(this);
+		KeyTracker newTracker = new KeyTracker(this, packets, encCipher, encKey);
 		if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+shortToString());
 		changedIP(replyTo);
 		boolean bootIDChanged = false;
@@ -1904,7 +1905,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 						previousTracker = unverifiedTracker;
 				}
 				unverifiedTracker = newTracker;
-				if(currentTracker == null || currentTracker.isDeprecated())
+				if(currentTracker == null || currentTracker.packets.isDeprecated())
 					isConnected = false;
 			} else {
 				prev = currentTracker;
@@ -1941,11 +1942,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			node.usm.onRestart(this);
 		}
 		if(oldPrev != null)
-			oldPrev.completelyDeprecated(newTracker);
+			oldPrev.packets.completelyDeprecated(newTracker);
 		if(oldCur != null)
-			oldCur.completelyDeprecated(newTracker);
+			oldCur.packets.completelyDeprecated(newTracker);
 		if(prev != null)
-			prev.deprecated();
+			prev.packets.deprecated();
     	PacketThrottle throttle;
     	synchronized(this) {
     		throttle = _lastThrottle;
@@ -1978,8 +1979,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 */
 	private synchronized void maybeSwapTrackers() {
 		if(currentTracker == null || previousTracker == null) return;
-		long delta = Math.abs(currentTracker.createdTime - previousTracker.createdTime);
-		if(previousTracker != null && (!previousTracker.isDeprecated()) &&
+		long delta = Math.abs(currentTracker.packets.createdTime - previousTracker.packets.createdTime);
+		if(previousTracker != null && (!previousTracker.packets.isDeprecated()) &&
 				delta < CHECK_FOR_SWAPPED_TRACKERS_INTERVAL) {
 			// Swap prev and current iff H(new key) > H(old key).
 			// To deal with race conditions (node A gets 1 current 2 prev, node B gets 2 current 1 prev; when we rekey we lose data and cause problems).
@@ -2012,7 +2013,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		} else {
 			if (logMINOR)
 				Logger.minor(this, "Not swapping KeyTracker's: previousTracker = " + previousTracker.toString()
-				        + (previousTracker.isDeprecated() ? " (deprecated)" : "") + " time delta = " + delta);
+				        + (previousTracker.packets.isDeprecated() ? " (deprecated)" : "") + " time delta = " + delta);
 		}
 	}
 
@@ -2066,7 +2067,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(this) {
 			if(sentInitialMessages)
 				return;
-			if(currentTracker != null && !currentTracker.isDeprecated()) // FIXME is that possible?
+			if(currentTracker != null && !currentTracker.packets.isDeprecated()) // FIXME is that possible?
 				sentInitialMessages = true;
 			else
 				return;
@@ -2147,7 +2148,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		long now = System.currentTimeMillis();
 		KeyTracker completelyDeprecatedTracker;
 		synchronized(this) {
-			if(tracker == unverifiedTracker && !tracker.isDeprecated()) {
+			if(tracker == unverifiedTracker && !tracker.packets.isDeprecated()) {
 				if(logMINOR)
 					Logger.minor(this, "Promoting unverified tracker " + tracker + " for " + getPeer());
 				completelyDeprecatedTracker = previousTracker;
@@ -2160,7 +2161,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				ctx = null;
 				maybeSwapTrackers();
 				if(previousTracker != null)
-					previousTracker.deprecated();
+					previousTracker.packets.deprecated();
 			} else
 				return;
 		}
@@ -2168,7 +2169,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		setPeerNodeStatus(now);
 		node.peers.addConnectedPeer(this);
 		if(completelyDeprecatedTracker != null)
-			completelyDeprecatedTracker.completelyDeprecated(tracker);
+			completelyDeprecatedTracker.packets.completelyDeprecated(tracker);
 	}
 
 	private synchronized boolean invalidVersion() {
@@ -2434,7 +2435,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		KeyTracker tracker = cur;
 		if(tracker != null) {
-			long t = tracker.getNextUrgentTime();
+			long t = tracker.packets.getNextUrgentTime();
 			if(t < now || forceSendPrimary) {
 				try {
 					if(logMINOR) Logger.minor(this, "Sending urgent notifications for current tracker on "+shortToString());
@@ -2454,7 +2455,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		tracker = prev;
 		if(tracker != null) {
-			long t = tracker.getNextUrgentTime();
+			long t = tracker.packets.getNextUrgentTime();
 			if(t < now)
 				try {
 					if(logMINOR) Logger.minor(this, "Sending urgent notifications for previous tracker on "+shortToString());
@@ -2484,13 +2485,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			cur = currentTracker;
 			prev = previousTracker;
 		}
-		long t = prev.getNextUrgentTime();
-		if(!(t > -1 && prev.timeLastDecodedPacket() > 0 && (now - prev.timeLastDecodedPacket()) > 60*1000 && 
-				cur.timeLastDecodedPacket() > 0 && (now - cur.timeLastDecodedPacket() < 30*1000) && 
-				(prev.countAckRequests() > 0 || prev.countResendRequests() > 0)))
+		long t = prev.packets.getNextUrgentTime();
+		if(!(t > -1 && prev.packets.timeLastDecodedPacket() > 0 && (now - prev.packets.timeLastDecodedPacket()) > 60*1000 && 
+				cur.packets.timeLastDecodedPacket() > 0 && (now - cur.packets.timeLastDecodedPacket() < 30*1000) && 
+				(prev.packets.countAckRequests() > 0 || prev.packets.countResendRequests() > 0)))
 			return;
 		Logger.error(this, "No packets decoded on "+prev+" for 60 seconds, deprecating in favour of cur: "+cur);
-		prev.completelyDeprecated(cur);
+		prev.packets.completelyDeprecated(cur);
 	}
 
 	/**
@@ -2658,18 +2659,18 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(item.pn != this)
 				throw new IllegalArgumentException("item.pn != this!");
 			KeyTracker kt = cur;
-			if((kt != null) && (item.kt == kt)) {
-				kt.resendPacket(item.packetNumber);
+			if((kt != null) && (item.kt == kt.packets)) {
+				kt.packets.resendPacket(item.packetNumber);
 				continue;
 			}
 			kt = prev;
-			if((kt != null) && (item.kt == kt)) {
-				kt.resendPacket(item.packetNumber);
+			if((kt != null) && (item.kt == kt.packets)) {
+				kt.packets.resendPacket(item.packetNumber);
 				continue;
 			}
 			kt = unv;
-			if((kt != null) && (item.kt == kt)) {
-				kt.resendPacket(item.packetNumber);
+			if((kt != null) && (item.kt == kt.packets)) {
+				kt.packets.resendPacket(item.packetNumber);
 				continue;
 			}
 			// Doesn't match any of these, need to resend the data
@@ -3155,16 +3156,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(isConnected) {
 			if(currentTracker == null) {
 				if(unverifiedTracker != null) {
-					if(unverifiedTracker.isDeprecated())
+					if(unverifiedTracker.packets.isDeprecated())
 						Logger.error(this, "Connected but primary tracker is null and unverified is deprecated ! " + unverifiedTracker + " for " + this, new Exception("debug"));
 					else if(logMINOR)
 						Logger.minor(this, "Connected but primary tracker is null, but unverified = " + unverifiedTracker + " for " + this, new Exception("debug"));
 				} else {
 					Logger.error(this, "Connected but both primary and unverified are null on " + this, new Exception("debug"));
 				}
-			} else if(currentTracker.isDeprecated()) {
+			} else if(currentTracker.packets.isDeprecated()) {
 				if(unverifiedTracker != null) {
-					if(unverifiedTracker.isDeprecated())
+					if(unverifiedTracker.packets.isDeprecated())
 						Logger.error(this, "Connected but primary tracker is deprecated, unverified is deprecated: primary=" + currentTracker + " unverified: " + unverifiedTracker + " for " + this, new Exception("debug"));
 					else if(logMINOR)
 						Logger.minor(this, "Connected, primary tracker deprecated, unverified is valid, " + unverifiedTracker + " for " + this, new Exception("debug"));
@@ -4063,7 +4064,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				kt = getPreviousKeyTracker();
 			if(kt == null)
 				continue;
-			int[] tmp = kt.grabResendPackets(rpiTemp, rpiIntTemp);
+			int[] tmp = kt.packets.grabResendPackets(rpiTemp, rpiIntTemp);
 			if(tmp == null)
 				continue;
 			rpiIntTemp = tmp;
@@ -4073,7 +4074,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				try {
 					if(logMINOR)
 						Logger.minor(this, "Resending " + item.packetNumber + " to " + item.kt);
-					getOutgoingMangler().resend(item);
+					getOutgoingMangler().resend(item, kt);
 					return true;
 				} catch(KeyChangedException e) {
 					Logger.error(this, "Caught " + e + " resending packets to " + kt);

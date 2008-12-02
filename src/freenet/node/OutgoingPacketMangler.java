@@ -34,8 +34,9 @@ public interface OutgoingPacketMangler {
 
 	/**
 	 * Resend a single packet.
+	 * @param kt The KeyTracker on which to send the packet.
 	 */
-	public void resend(ResendPacketItem item) throws PacketSequenceException, WouldBlockException, KeyChangedException, NotConnectedException;
+	public void resend(ResendPacketItem item, KeyTracker kt) throws PacketSequenceException, WouldBlockException, KeyChangedException, NotConnectedException;
 	
 	/**
 	 * Build a packet and send it. From a Message recently converted into byte[],

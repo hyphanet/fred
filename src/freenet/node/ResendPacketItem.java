@@ -10,7 +10,7 @@ import freenet.io.comm.AsyncMessageCallback;
  * message as byte[].
  */
 public class ResendPacketItem {
-    public ResendPacketItem(byte[] payload, int packetNumber, KeyTracker k, AsyncMessageCallback[] callbacks, short priority) {
+    public ResendPacketItem(byte[] payload, int packetNumber, PacketTracker k, AsyncMessageCallback[] callbacks, short priority) {
         pn = k.pn;
         kt = k;
         buf = payload;
@@ -19,7 +19,7 @@ public class ResendPacketItem {
         this.priority = priority;
     }
     final PeerNode pn;
-    final KeyTracker kt;
+    final PacketTracker kt;
     final byte[] buf;
     final int packetNumber;
     final AsyncMessageCallback[] callbacks;

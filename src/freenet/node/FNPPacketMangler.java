@@ -1773,7 +1773,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				(seqBuf[2] & 0xff)) << 8) +
 				(seqBuf[3] & 0xff);
 
-		int targetSeqNumber = tracker.highestReceivedIncomingSeqNumber();
+		PacketTracker packets = tracker.packets;
+		
+		int targetSeqNumber = packets.highestReceivedIncomingSeqNumber();
 		if(logMINOR) Logger.minor(this, "Seqno: "+seqNumber+" (highest seen "+targetSeqNumber+") receiving packet from "+tracker.pn.getPeer());
 
 		if(seqNumber == -1) {
@@ -1924,7 +1926,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			acks[i] = referenceSeqNumber - offset;
 		}
 
-		tracker.acknowledgedPackets(acks);
+		PacketTracker packets = tracker.packets;
+		packets.acknowledgedPackets(acks);
 
 		int retransmitCount = decrypted[ptr++] & 0xff;
 		if(logMINOR) Logger.minor(this, "Retransmit requests: "+retransmitCount);
@@ -1936,7 +1939,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			}
 			int realSeqNo = referenceSeqNumber - offset;
 			if(logMINOR) Logger.minor(this, "RetransmitRequest: "+realSeqNo);
-			tracker.resendPacket(realSeqNo);
+			packets.resendPacket(realSeqNo);
 		}
 
 		int ackRequestsCount = decrypted[ptr++] & 0xff;
@@ -1951,7 +1954,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			}
 			int realSeqNo = realSeqNumber - offset;
 			if(logMINOR) Logger.minor(this, "AckRequest: "+realSeqNo);
-			tracker.receivedAckRequest(realSeqNo);
+			packets.receivedAckRequest(realSeqNo);
 		}
 
 		int forgottenCount = decrypted[ptr++] & 0xff;
@@ -1963,7 +1966,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				Logger.error(this, "Packet not long enough at byte "+ptr+" on "+tracker);
 			}
 			int realSeqNo = realSeqNumber - offset;
-			tracker.destForgotPacket(realSeqNo);
+			packets.destForgotPacket(realSeqNo);
 		}
 
 		tracker.pn.receivedPacket(false, true); // Must keep the connection open, even if it's an ack packet only and on an incompatible connection - we may want to do a UOM transfer e.g.
@@ -1971,13 +1974,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		// No sequence number == no messages
 
-		if((seqNumber != -1) && tracker.alreadyReceived(seqNumber)) {
-			tracker.queueAck(seqNumber); // Must keep the connection open!
+		if((seqNumber != -1) && packets.alreadyReceived(seqNumber)) {
+			packets.queueAck(seqNumber); // Must keep the connection open!
 			if(logMINOR) Logger.minor(this, "Received packet twice ("+seqNumber+") from "+tracker.pn.getPeer()+": "+seqNumber+" ("+TimeUtil.formatTime((long) tracker.pn.averagePingTime(), 2, true)+" ping avg)");
 			return;
 		}
 
-		tracker.receivedPacket(seqNumber);
+		packets.receivedPacket(seqNumber);
 
 		if(seqNumber == -1) {
 			if(logMINOR) Logger.minor(this, "Returning because seqno = "+seqNumber);
@@ -2031,7 +2034,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			}
 			return false;
 		}
-		if(kt.wouldBlock(false)) {
+		PacketTracker packets = kt.packets;
+		if(packets.wouldBlock(false)) {
 			if(logMINOR) Logger.minor(this, "Would block: "+kt);
 			// Requeue
 			if(!dontRequeue) {
@@ -2040,7 +2044,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return false;
 		}
 		int length = 1;
-		length += kt.countAcks() + kt.countAckRequests() + kt.countResendRequests();
+		length += packets.countAcks() + packets.countAckRequests() + packets.countResendRequests();
 		int callbacksCount = 0;
 		int x = 0;
 		String mi_name = null;
@@ -2052,7 +2056,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if(mi.formatted) {
 				try {
 					byte[] buf = mi.getData();
-					int packetNumber = kt.allocateOutgoingPacketNumberNeverBlock();
+					int packetNumber = packets.allocateOutgoingPacketNumberNeverBlock();
 					int size = processOutgoingPreformatted(buf, 0, buf.length, kt, packetNumber, mi.cb, mi.getPriority());
 					//MARK: onSent()
 					mi.onSent(size);
@@ -2165,7 +2169,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				requeueLogString = ", requeueing remaining messages";
 			}
 			length = 1;
-			length += kt.countAcks() + kt.countAckRequests() + kt.countResendRequests();
+			length += packets.countAcks() + packets.countAckRequests() + packets.countResendRequests();
 			int count = 0;
 			int lastIndex = 0;
 			if(logMINOR)
@@ -2282,8 +2286,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 					Logger.normal(this, "Dropping packet: Not connected to "+peer.getPeer()+" yet(2)");
 					throw new NotConnectedException();
 				}
-				int seqNo = neverWaitForPacketNumber ? tracker.allocateOutgoingPacketNumberNeverBlock() :
-					tracker.allocateOutgoingPacketNumber();
+				PacketTracker packets = tracker.packets;
+				int seqNo = neverWaitForPacketNumber ? packets.allocateOutgoingPacketNumberNeverBlock() :
+					packets.allocateOutgoingPacketNumber();
 				return processOutgoingPreformatted(buf, offset, length, tracker, seqNo, callbacks, priority);
 			} catch (KeyChangedException e) {
 				Logger.normal(this, "Key changed(2) for "+peer.getPeer());
@@ -2331,6 +2336,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		int[] acks, resendRequests, ackRequests, forgotPackets;
 		int seqNumber;
+		PacketTracker packets = tracker.packets;
 		/* Locking:
 		 * Avoid allocating a packet number, then a long pause due to 
 		 * overload, during which many other packets are sent, 
@@ -2350,7 +2356,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				// Ack/resendreq only packet
 				seqNumber = -1;
 			else
-				seqNumber = tracker.allocateOutgoingPacketNumberNeverBlock();
+				seqNumber = packets.allocateOutgoingPacketNumberNeverBlock();
 		}
 
 		if(logMINOR) Logger.minor(this, "Sequence number (sending): "+seqNumber+" ("+packetNumber+") to "+tracker.pn.getPeer());
@@ -2363,12 +2369,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		try {
 		synchronized(tracker) {
-			acks = tracker.grabAcks();
-			forgotPackets = tracker.grabForgotten();
-			resendRequests = tracker.grabResendRequests();
-			ackRequests = tracker.grabAckRequests();
-			realSeqNumber = tracker.getLastOutgoingSeqNumber();
-			otherSideSeqNumber = tracker.highestReceivedIncomingSeqNumber();
+			acks = packets.grabAcks();
+			forgotPackets = packets.grabForgotten();
+			resendRequests = packets.grabResendRequests();
+			ackRequests = packets.grabAckRequests();
+			realSeqNumber = packets.getLastOutgoingSeqNumber();
+			otherSideSeqNumber = packets.highestReceivedIncomingSeqNumber();
 			if(logMINOR) Logger.minor(this, "Sending packet to "+tracker.pn.getPeer()+", other side max seqno: "+otherSideSeqNumber);
 		}
 		} catch (StillNotAckedException e) {
@@ -2516,7 +2522,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				if(logMINOR) Logger.minor(this, "Forgot packet "+i+": "+seq);
 				int offsetSeq = realSeqNumber - seq;
 				if((offsetSeq > 255) || (offsetSeq < 0)) {
-					if(tracker.isDeprecated()) {
+					if(packets.isDeprecated()) {
 						// Oh well
 						Logger.error(this, "Dropping forgot-packet notification on deprecated tracker: "+seq+" on "+tracker+" - real seq="+realSeqNumber);
 						// Ignore it
@@ -2531,7 +2537,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 					forgotOffsets[i] = (byte) offsetSeq;
 					forgotCount++;
 					if(forgotCount == 256)
-						tracker.requeueForgot(forgotPackets, forgotCount, forgotPackets.length - forgotCount);
+						packets.requeueForgot(forgotPackets, forgotCount, forgotPackets.length - forgotCount);
 				}
 			}
 		}
@@ -2561,7 +2567,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(seqNumber != -1) {
 			byte[] saveable = new byte[length];
 			System.arraycopy(buf, offset, saveable, 0, length);
-			tracker.sentPacket(saveable, seqNumber, callbacks, priority);
+			packets.sentPacket(saveable, seqNumber, callbacks, priority);
 		}
 
 		if(logMINOR) Logger.minor(this, "Sending... "+seqNumber);
@@ -2782,8 +2788,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		return !((PeerNode)context).isConnected();
 	}
 
-	public void resend(ResendPacketItem item) throws PacketSequenceException, WouldBlockException, KeyChangedException, NotConnectedException {
-		int size = processOutgoingPreformatted(item.buf, 0, item.buf.length, item.kt, item.packetNumber, item.callbacks, item.priority);
+	public void resend(ResendPacketItem item, KeyTracker tracker) throws PacketSequenceException, WouldBlockException, KeyChangedException, NotConnectedException {
+		int size = processOutgoingPreformatted(item.buf, 0, item.buf.length, tracker, item.packetNumber, item.callbacks, item.priority);
 		item.pn.resendByteCounter.sentBytes(size);
 	}
 
