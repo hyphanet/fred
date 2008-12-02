@@ -2403,10 +2403,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					jfkNoncesSent.clear();
 				}
 
-			} else if(forDiffNodeRef || forARK) {
-				// Connection setup doesn't count, it doesn't send a physical.udp.
-				// Keep the old version anyway...
-				Logger.error(this, "Noderef has no physical.udp for "+this+" : forDiffNodeRef="+forDiffNodeRef+" forARK="+forARK);
+			} else if(forARK) {
+				// Connection setup doesn't include a physical.udp.
+				// Differential noderefs only include it on the first one after connect.
+				Logger.error(this, "ARK noderef has no physical.udp for "+this+" : forDiffNodeRef="+forDiffNodeRef+" forARK="+forARK);
 			}
 		} catch(Exception e1) {
 			Logger.error(this, "Caught "+e1, e1);
