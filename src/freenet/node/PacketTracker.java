@@ -497,6 +497,8 @@ public class PacketTracker {
 	 * haven't been sent yet.
 	 */
 	public synchronized void acknowledgedPackets(int[] seqNos) {
+		// FIXME locking: can we just sync on the first part, and not the callbacks? 
+		// acknowledgedPacket() only sync's on removeAckRequest, but as mentioned above we need to do a bit more...
 		AsyncMessageCallback[][] callbacks = new AsyncMessageCallback[seqNos.length][];
 		for(int i = 0; i < seqNos.length; i++) {
 			int realSeqNo = seqNos[i];
@@ -971,7 +973,7 @@ public class PacketTracker {
 	}
 
 	/**
-	 * Clear the KeyTracker. Depreciate it, clear all resend, ack, request-ack etc queues.
+	 * Clear the KeyTracker. Deprecate it, clear all resend, ack, request-ack etc queues.
 	 * Return the messages we still had in flight. The caller will then either add them to
 	 * another KeyTracker, or call their callbacks to indicate failure.
 	 */
