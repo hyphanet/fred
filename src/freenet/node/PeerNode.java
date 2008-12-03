@@ -1901,12 +1901,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				this.offeredMainJarVersion = 0;
 			} else {
 				// else it's a rekey
-				if(currentTracker != null && currentTracker.packets.isDeprecated()) {
-					packets = new PacketTracker(this);
-					newPacketTracker = true;
-				} else if(currentTracker != null && negType >= 3)
+				if(currentTracker != null && !currentTracker.packets.isDeprecated() && negType >= 3)
 					packets = currentTracker.packets;
-				else if(previousTracker != null && negType >= 3)
+				else if(previousTracker != null && !previousTracker.packets.isDeprecated() && negType >= 3)
 					packets = previousTracker.packets;
 				else {
 					packets = new PacketTracker(this);
