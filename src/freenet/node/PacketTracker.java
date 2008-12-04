@@ -196,9 +196,6 @@ public class PacketTracker {
 		QueuedForgotten(int packet) {
 			long now = System.currentTimeMillis();
 			packetNumber = packet;
-			/** If not included on a packet in next 500ms, then
-			 * force a send of an otherwise empty packet.
-			 */
 			urgentTime = now + PacketSender.MAX_COALESCING_DELAY;
 		}
 	}
