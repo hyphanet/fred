@@ -610,14 +610,17 @@ public class PacketTracker {
 			}
 			pn.node.ps.wakeUp();
 		} else {
-			String msg = "Asking me to resend packet " + seqNumber +
-				" which we haven't sent yet or which they have already acked (next=" + nextPacketNumber + ')';
-			// Might just be late, but could indicate something serious.
-			if(isDeprecated) {
-				if(logMINOR)
-					Logger.minor(this, "Other side wants us to resend packet " + seqNumber + " for " + this + " - we cannot do this because we are deprecated");
-			} else
-				Logger.normal(this, msg);
+			synchronized(this) {
+				if(nextPacketNumber <= seqNumber) {
+					Logger.error(this, "Asking me to resend packet "+seqNumber+" which I haven't sent yet (next="+nextPacketNumber+") on "+this);
+					// FIXME forceDisconnect when sure this won't be catastrophic
+					return;
+				} else {
+					Logger.error(this, "Asking me to resend packet "+seqNumber+" which has already been acked or we skipped the packet number (next="+nextPacketNumber+") on "+this+" - will tell other side we have forgotten it");
+					// Can't resend it. Tell other side we forgot it.
+				}
+			}
+			queueForgotten(seqNumber); // Happens to be true... or maybe it didn't exist in the first place?
 		}
 	}
 
@@ -930,7 +933,8 @@ public class PacketTracker {
 				if(callbacks[i] == null)
 					throw new NullPointerException();
 			}
-		sentPacketsContents.add(seqNumber, data, callbacks, priority);
+		if(!sentPacketsContents.add(seqNumber, data, callbacks, priority))
+			throw new IllegalStateException("Cannot add data for packet "+seqNumber);
 		try {
 			queueAckRequest(seqNumber);
 		} catch(UpdatableSortedLinkedListKilledException e) {
