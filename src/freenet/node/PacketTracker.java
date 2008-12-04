@@ -680,40 +680,6 @@ public class PacketTracker {
 		}
 	}
 
-	/**
-	 * @return A packet number for a new outgoing packet.
-	 * This method will block until one is available if
-	 * necessary.
-	 * @throws KeyChangedException if the thread is interrupted when waiting
-	 */
-	public int allocateOutgoingPacketNumber() throws KeyChangedException, NotConnectedException {
-		int packetNumber;
-		if(!pn.isConnected())
-			throw new NotConnectedException();
-		synchronized(this) {
-			if(isDeprecated)
-				throw new KeyChangedException();
-			packetNumber = nextPacketNumber++;
-			if(logMINOR)
-				Logger.minor(this, "Allocated " + packetNumber + " in allocateOutgoingPacketNumber for " + this);
-		}
-		while(true) {
-			try {
-				sentPacketsContents.lock(packetNumber);
-				if(logMINOR)
-					Logger.minor(this, "Locked " + packetNumber);
-				synchronized(this) {
-					timeWouldBlock = -1;
-				}
-				return packetNumber;
-			} catch(InterruptedException e) {
-				synchronized(this) {
-					if(isDeprecated)
-						throw new KeyChangedException();
-				}
-			}
-		}
-	}
 	private long timeWouldBlock = -1;
 	static final long MAX_WOULD_BLOCK_DELTA = 10 * 60 * 1000;
 

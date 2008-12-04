@@ -2038,12 +2038,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/* (non-Javadoc)
 	 * @see freenet.node.OutgoingPacketMangler#processOutgoingOrRequeue(freenet.node.MessageItem[], freenet.node.PeerNode, boolean, boolean)
 	 */
-	public boolean processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn, boolean neverWaitForPacketNumber, boolean dontRequeue, boolean onePacket) throws BlockedTooLongException {
+	public boolean processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn, boolean dontRequeue, boolean onePacket) throws BlockedTooLongException {
 		String requeueLogString = "";
 		if(!dontRequeue) {
 			requeueLogString = ", requeueing";
 		}
-		if(logMINOR) Logger.minor(this, "processOutgoingOrRequeue "+messages.length+" messages for "+pn+" ("+neverWaitForPacketNumber+ ')');
+		if(logMINOR) Logger.minor(this, "processOutgoingOrRequeue "+messages.length+" messages for "+pn);
 		byte[][] messageData = new byte[messages.length][];
 		MessageItem[] newMsgs = new MessageItem[messages.length];
 		KeyTracker kt = pn.getCurrentKeyTracker();
@@ -2155,7 +2155,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				(messageData.length < 256)) {
 			mi_name = null;
 			try {
-				int size = innerProcessOutgoing(messageData, 0, messageData.length, length, pn, neverWaitForPacketNumber, callbacks, priority);
+				int size = innerProcessOutgoing(messageData, 0, messageData.length, length, pn, callbacks, priority);
 				int totalMessageSize = 0;
 				for(int i=0;i<messageData.length;i++) totalMessageSize += messageData[i].length;
 				int overhead = size - totalMessageSize;
@@ -2210,7 +2210,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 						mi_name = null;
 						try {
 							// FIXME regenerate callbacks and priority!
-							int size = innerProcessOutgoing(messageData, lastIndex, i-lastIndex, length, pn, neverWaitForPacketNumber, callbacks, priority);
+							int size = innerProcessOutgoing(messageData, lastIndex, i-lastIndex, length, pn, callbacks, priority);
 							int totalMessageSize = 0;
 							for(int j=lastIndex;j<i;j++) totalMessageSize += messageData[j].length;
 							int overhead = size - totalMessageSize;
@@ -2266,7 +2266,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @throws PacketSequenceException 
 	 */
 	private int innerProcessOutgoing(byte[][] messageData, int start, int length, int bufferLength, 
-			PeerNode pn, boolean neverWaitForPacketNumber, AsyncMessageCallback[] callbacks, short priority) throws NotConnectedException, WouldBlockException, PacketSequenceException {
+			PeerNode pn, AsyncMessageCallback[] callbacks, short priority) throws NotConnectedException, WouldBlockException, PacketSequenceException {
 		if(logMINOR) Logger.minor(this, "innerProcessOutgoing(...,"+start+ ',' +length+ ',' +bufferLength+ ','+callbacks.length+')');
 		byte[] buf = new byte[bufferLength];
 		buf[0] = (byte)length;
@@ -2279,7 +2279,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			System.arraycopy(data, 0, buf, loc, len);
 			loc += len;
 		}
-		return processOutgoingPreformatted(buf, 0, loc, pn, neverWaitForPacketNumber, callbacks, priority);
+		return processOutgoingPreformatted(buf, 0, loc, pn, callbacks, priority);
 	}
 
 	/* (non-Javadoc)
@@ -2295,7 +2295,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * the key changes.
 	 * @throws PacketSequenceException 
 	 */
-	int processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, boolean neverWaitForPacketNumber, AsyncMessageCallback[] callbacks, short priority) throws NotConnectedException, WouldBlockException, PacketSequenceException {
+	int processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, AsyncMessageCallback[] callbacks, short priority) throws NotConnectedException, WouldBlockException, PacketSequenceException {
 		KeyTracker last = null;
 		while(true) {
 			try {
@@ -2308,8 +2308,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 					throw new NotConnectedException();
 				}
 				PacketTracker packets = tracker.packets;
-				int seqNo = neverWaitForPacketNumber ? packets.allocateOutgoingPacketNumberNeverBlock() :
-					packets.allocateOutgoingPacketNumber();
+				int seqNo = packets.allocateOutgoingPacketNumberNeverBlock();
 				return processOutgoingPreformatted(buf, offset, length, tracker, seqNo, callbacks, priority);
 			} catch (KeyChangedException e) {
 				Logger.normal(this, "Key changed(2) for "+peer.getPeer());

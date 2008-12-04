@@ -4176,7 +4176,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			// Send packets, right now, blocking, including any active notifications
 			// Note that processOutgoingOrRequeue will drop messages from the end
 			// if necessary to fit the messages into a single packet.
-			if(!getOutgoingMangler().processOutgoingOrRequeue(messages.toArray(new MessageItem[messages.size()]), this, true, false, true)) {
+			if(!getOutgoingMangler().processOutgoingOrRequeue(messages.toArray(new MessageItem[messages.size()]), this, false, true)) {
 				if(mustSendPacket) {
 					if(!sendAnyUrgentNotifications(false))
 						sendAnyUrgentNotifications(true);
