@@ -88,12 +88,24 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 			}
 	}
 	
+	protected void addFetch(ClientGetter g) {
+		synchronized(mFetches) {
+			mFetches.add(g);
+		}
+	}
+	
 	protected void removeFetch(ClientGetter g) {
 		synchronized(mFetches) {
 			//g.cancel(); /* FIXME: is this necessary ? */
 			mFetches.remove(g);
 		}
 		Logger.debug(this, "Removed request for " + g.getURI());
+	}
+	
+	protected void addInsert(BaseClientPutter p) {
+		synchronized(mInserts) {
+			mInserts.add(p);
+		}
 	}
 	
 	protected void removeInsert(BaseClientPutter p) {
