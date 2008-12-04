@@ -519,8 +519,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		/** Protocol version. Should be 1. */
 		int version = payload[0];
-		/** Negotiation type. 2 = JFK. Other types might indicate other DH variants, 
-		 * or even non-DH-based algorithms such as password based key setup. */
+		/** Negotiation type.
+		 *   2 = JFK. 
+		 *   3 = JFK, reuse PacketTracker
+		 * Other types might indicate other DH variants, or even non-DH-based
+		 * algorithms such as password based key setup. */
 		int negType = payload[1];
 		/** Packet phase. */
 		int packetType = payload[2];
@@ -563,8 +566,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		/** Protocol version. Should be 1. */
 		int version = payload[0];
-		/** Negotiation type. 2 = JFK. Other types might indicate other DH variants, 
-		 * or even non-DH-based algorithms such as password based key setup. */
+		/** Negotiation type.
+		 *   2 = JFK. 
+		 *   3 = JFK, reuse PacketTracker
+		 * Other types might indicate other DH variants, or even non-DH-based
+		 * algorithms such as password based key setup. */
 		int negType = payload[1];
 		/** Packet phase. */
 		int packetType = payload[2];
