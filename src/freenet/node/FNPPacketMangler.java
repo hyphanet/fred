@@ -514,12 +514,24 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/** Connect to a node hoping it will act as a seednode for us */
 	static final byte SETUP_OPENNET_SEEDNODE = 1;
 
+	/**
+	 * Process an anonymous-initiator connection setup packet. For a normal setup 
+	 * (@see processDecryptedAuth()), we know the node that is trying to contact us. 
+	 * But in this case, we don't know the node yet, and we are doing a 
+	 * special-purpose connection setup. At the moment the only type supported is
+	 * for a new node connecting to a seednode in order to announce. In future, 
+	 * nodes may support other anonymous-initiator connection types such as when a 
+	 * node (which is certain of its connectivity) issues one-time invites which 
+	 * allow a new node to connect to it.
+	 * @param payload The decrypted payload of the packet.
+	 * @param replyTo The address the packet came in from.
+	 */
 	private void processDecryptedAuthAnon(byte[] payload, Peer replyTo) {
 		if(logMINOR) Logger.minor(this, "Processing decrypted auth packet from "+replyTo+" length "+payload.length);
 		
 		/** Protocol version. Should be 1. */
 		int version = payload[0];
-		/** Negotiation type.
+		/** Negotiation type. Common to anonymous-initiator auth and normal setup.
 		 *   2 = JFK. 
 		 *   3 = JFK, reuse PacketTracker
 		 * Other types might indicate other DH variants, or even non-DH-based
@@ -527,7 +539,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		int negType = payload[1];
 		/** Packet phase. */
 		int packetType = payload[2];
-		/** Setup type. See above. */
+		/** Setup type. This is specific to anonymous-initiator setup, and specifies the
+		 * purpose of the connection. At the moment it is SETUP_OPENNET_SEEDNODE to indicate
+		 * we are connecting to a seednode (which doesn't know us). Invites might require
+		 * a different setupType. */
 		int setupType = payload[3];
 		
 		if(logMINOR) Logger.minor(this, "Received anonymous auth packet (phase="+packetType+", v="+version+", nt="+negType+", setup type="+setupType+") from "+replyTo+"");
