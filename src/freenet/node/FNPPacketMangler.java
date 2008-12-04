@@ -812,7 +812,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		node.random.nextBytes(nonce);
 		
 		synchronized (pn) {
-			pn.jfkNoncesSent.put(replyTo, nonce);
+			pn.jfkNoncesSent.put(replyTo.dropHostName(), nonce);
 		}
 		
 		int modulusLength = DiffieHellman.modulusLengthInBytes();
@@ -967,7 +967,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// sanity check
 		byte[] myNi;
 		synchronized (pn) {
-			myNi = pn.jfkNoncesSent.get(replyTo);
+			myNi = pn.jfkNoncesSent.get(replyTo.dropHostName());
 		}
 		// We don't except such a message;
 		if(myNi == null) {

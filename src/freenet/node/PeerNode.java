@@ -1674,6 +1674,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(!isConnected)
 					return;
 				// Prevent leak by clearing, *but keep the current handshake*
+				newPeer = newPeer.dropHostName();
+				oldPeer = oldPeer.dropHostName();
 				byte[] newPeerHandshake = jfkNoncesSent.get(newPeer);
 				byte[] oldPeerHandshake = jfkNoncesSent.get(oldPeer);
 				jfkNoncesSent.clear();
