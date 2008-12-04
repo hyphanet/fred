@@ -845,9 +845,33 @@ public class FreenetURI implements Cloneable {
 	public URI toURI(String basePath) throws URISyntaxException {
 		return new URI(basePath + toString(false, false));
 	}
+	
+	public boolean isSSK() {
+		return "SSK".equals(keyType);
+	}
+
+	public boolean isUSK() {
+		return "USK".equals(keyType);
+	}
+
+	public boolean isCHK() {
+		return "CHK".equals(keyType);
+	}
 
 	public FreenetURI sskForUSK() {
 		if(!keyType.equalsIgnoreCase("USK")) throw new IllegalStateException();
 		return new FreenetURI("SSK", docName+"-"+suggestedEdition, metaStr, routingKey, cryptoKey, extra, 0);
+	}
+
+	public FreenetURI uskForSSK() {
+		if(!keyType.equalsIgnoreCase("SSK")) throw new IllegalStateException();
+		if (!docName.matches(".*\\-[0-9]+"))
+			throw new IllegalStateException();
+
+		int offset = docName.lastIndexOf('-');
+		String siteName = docName.substring(0, offset);
+		long edition = Long.valueOf(docName.substring(offset + 1, docName.length()));
+
+		return new FreenetURI("USK", siteName, metaStr, routingKey, cryptoKey, extra, edition);
 	}
 }
