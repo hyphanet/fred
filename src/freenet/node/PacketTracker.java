@@ -199,7 +199,7 @@ public class PacketTracker {
 			/** If not included on a packet in next 500ms, then
 			 * force a send of an otherwise empty packet.
 			 */
-			urgentTime = now + 500;
+			urgentTime = now + PacketSender.MAX_COALESCING_DELAY;
 		}
 	}
 
