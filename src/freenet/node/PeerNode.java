@@ -725,8 +725,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				ark = new USK(ssk, arkNo);
 			} else if(forDiffNodeRef && arkPubKey == null && myARK != null && arkNo > -1) {
 				// get the ARK URI from the previous ARK and the edition from the SFS
-				ClientSSK ssk = myARK.getSSK(arkNo);
-				ark = new USK(ssk, arkNo);
+				ark = myARK.copy(arkNo);
 			} else if(forDiffNodeRef && arkPubKey != null && myARK != null && arkNo <= -1) {
 				// the SFS must contain an edition if it contains a arkPubKey
 				Logger.error(this, "Got a differential node reference from " + this + " with an arkPubKey but no ARK edition");
