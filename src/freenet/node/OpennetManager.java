@@ -273,11 +273,11 @@ public class OpennetManager {
 	 * @param addAtLRU If there is a node to add, add it at the bottom rather than the top. Normally
 	 * we set this on new path folded nodes so that they will be replaced if during the trial period,
 	 * plus the time it takes to get a new path folding offer, they don't have a successful request.
-	 * @param notSendingOffer If true, and nodeToAddNow == null, we don't actually send an offer, we
+	 * @param justChecking If true, and nodeToAddNow == null, we don't actually send an offer, we
 	 * just want to know if there is space for a node.
 	 * @return True if the node was added / should be added.
 	 */
-	public boolean wantPeer(PeerNode nodeToAddNow, boolean addAtLRU, boolean notSendingOffer) {
+	public boolean wantPeer(PeerNode nodeToAddNow, boolean addAtLRU, boolean justChecking) {
 		boolean notMany = false;
 		boolean noDisconnect;
 		synchronized(this) {
@@ -298,7 +298,7 @@ public class OpennetManager {
 				} else {
 					if(logMINOR) Logger.minor(this, "Want peer because not enough opennet nodes");
 				}
-				if(nodeToAddNow != null || !notSendingOffer)
+				if(nodeToAddNow != null || !justChecking)
 					timeLastOffered = System.currentTimeMillis();
 				notMany = true;
 			}
@@ -357,7 +357,7 @@ public class OpennetManager {
 					} else {
 						if(!dropList.isEmpty())
 							timeLastDropped = now;
-						if(!notSendingOffer) {
+						if(!justChecking) {
 							timeLastOffered = now;
 							if(logMINOR)
 								Logger.minor(this, "Sending offer");
