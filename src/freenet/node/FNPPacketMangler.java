@@ -2458,11 +2458,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			paddedLen = packetLength;
 		}
 
-		byte[] padding = new byte[paddedLen - packetLength];
-		if(paddThisPacket) {
-			node.fastWeakRandom.nextBytes(padding);
+		if(paddThisPacket)
 			packetLength = paddedLen;
-		}
 		
 		if(logMINOR) Logger.minor(this, "Packet length: "+packetLength+" ("+length+")");
 
@@ -2576,11 +2573,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		ptr += length;
 
 		if(paddThisPacket) {
+			byte[] padding = new byte[packetLength - ptr];
+			node.fastWeakRandom.nextBytes(padding);
+
 			System.arraycopy(padding, 0, plaintext, ptr, padding.length);
 			ptr += padding.length;
-		}
-
-		if(ptr != plaintext.length) {
+		} else if(ptr != plaintext.length) {
 			Logger.error(this, "Inconsistent length: "+plaintext.length+" buffer but "+(ptr)+" actual");
 			byte[] newBuf = new byte[ptr];
 			System.arraycopy(plaintext, 0, newBuf, 0, ptr);
