@@ -714,7 +714,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 			// FIXME remove this after 1189
 			// temp hack to fix bad pubURI (see bug 2761)
-			if (onStartup)
+			if (onStartup && arkPubKey != null)
 			while (arkPubKey.matches(".*-\\d+$")) {
 				arkPubKey = arkPubKey.replaceAll("-\\d+$", "");
 			}
