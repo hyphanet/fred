@@ -351,7 +351,7 @@ public class OpennetManager {
 				} else {
 					if(now - timeLastOffered <= MIN_TIME_BETWEEN_OFFERS && !hasDisconnected) {
 						if(logMINOR)
-							Logger.minor(this, "Cannot accept peer because of minimum time between offers (last offered "+(now-timeLastOffered)+" ms ago)");
+							Logger.minor(this, "Cannot make offer because of minimum time between offers (last offered "+(now-timeLastOffered)+" ms ago)");
 						// Cancel
 						canAdd = false;
 					} else {
