@@ -2415,7 +2415,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		resendRequests.length + // resend requests
 		1 + // number of ack requests
 		ackRequests.length + // ack requests
-		1 + // no forgotten packets
+		1 + // number of forgotten packets
+		forgotPackets.length +
 		length; // the payload !
 
 		boolean paddThisPacket = crypto.config.paddDataPackets();
