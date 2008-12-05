@@ -2553,9 +2553,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 					if(forgotOffsets == null)
 						forgotOffsets = new byte[forgotPackets.length - i];
 					
-					if(forgotCount >= 256)
+					if(forgotCount >= 256) {
 						packets.requeueForgot(forgotPackets, forgotCount, forgotPackets.length - forgotCount);
-					else
+						break;
+					} else
 						forgotOffsets[forgotCount++] = (byte) offsetSeq;
 				}
 			}
