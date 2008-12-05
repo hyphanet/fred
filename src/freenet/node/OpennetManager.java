@@ -682,7 +682,11 @@ public class OpennetManager {
 			return null;
 		}
     	
-		if (ref != null) registerKnownIdentity(ref.get("identity"));
+		if (ref != null) {
+			String identity = ref.get("identity");
+			if (identity != null) // N2N_MESSAGE_TYPE_DIFFNODEREF don't have identity
+				registerKnownIdentity(identity);
+		}
 		return ref;
 	}
 
@@ -704,8 +708,6 @@ public class OpennetManager {
 	private final TimeSortedHashtable<String> knownIds = new TimeSortedHashtable<String>();
 
 	private void registerKnownIdentity(String d) {
-		if (d == null) return;	// why?
-
 		if (logMINOR)
 			Logger.minor(this, "Known Id: " + d);
 		long now = System.currentTimeMillis();
