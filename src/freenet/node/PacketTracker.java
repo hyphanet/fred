@@ -78,9 +78,16 @@ public class PacketTracker {
 	final long createdTime;
 	/** The time at which we last successfully decoded a packet. */
 	private long timeLastDecodedPacket;
+	/** Tracker ID. Must be positive. */
+	final long trackerID;
 
 	/** Everything is clear to start with */
 	PacketTracker(PeerNode pn) {
+		this(pn, pn.node.random.nextLong() & Long.MAX_VALUE);
+	}
+
+	PacketTracker(PeerNode pn, long tid) {
+		trackerID = tid;
 		this.pn = pn;
 		ackQueue = new LinkedList<QueuedAck>();
 		forgottenQueue = new LinkedList<QueuedForgotten>();
