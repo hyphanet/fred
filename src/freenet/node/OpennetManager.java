@@ -246,7 +246,7 @@ public class OpennetManager {
 			if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
 			return null;
 		}
-		if(wantPeer(pn, true)) return pn;
+		if(wantPeer(pn, true, false)) return pn;
 		else return null;
 		// Start at bottom. Node must prove itself.
 	}
@@ -273,9 +273,11 @@ public class OpennetManager {
 	 * @param addAtLRU If there is a node to add, add it at the bottom rather than the top. Normally
 	 * we set this on new path folded nodes so that they will be replaced if during the trial period,
 	 * plus the time it takes to get a new path folding offer, they don't have a successful request.
+	 * @param notSendingOffer If true, and nodeToAddNow == null, we don't actually send an offer, we
+	 * just want to know if there is space for a node.
 	 * @return True if the node was added / should be added.
 	 */
-	public boolean wantPeer(PeerNode nodeToAddNow, boolean addAtLRU) {
+	public boolean wantPeer(PeerNode nodeToAddNow, boolean addAtLRU, boolean notSendingOffer) {
 		boolean notMany = false;
 		boolean noDisconnect;
 		synchronized(this) {
@@ -296,7 +298,8 @@ public class OpennetManager {
 				} else {
 					if(logMINOR) Logger.minor(this, "Want peer because not enough opennet nodes");
 				}
-				timeLastOffered = System.currentTimeMillis();
+				if(nodeToAddNow != null || !notSendingOffer)
+					timeLastOffered = System.currentTimeMillis();
 				notMany = true;
 			}
 			noDisconnect = successCount < MIN_SUCCESS_BETWEEN_DROP_CONNS;
@@ -354,9 +357,11 @@ public class OpennetManager {
 					} else {
 						if(!dropList.isEmpty())
 							timeLastDropped = now;
-						timeLastOffered = now;
-						if(logMINOR)
-							Logger.minor(this, "Sending offer");
+						if(!notSendingOffer) {
+							timeLastOffered = now;
+							if(logMINOR)
+								Logger.minor(this, "Sending offer");
+						}
 					}
 				}
 			}
@@ -434,7 +439,7 @@ public class OpennetManager {
 				// Re-add it: nasty race condition when we have few peers
 			}
 		}
-		if(!wantPeer(pn, false)) // Start at top as it just succeeded
+		if(!wantPeer(pn, false, false)) // Start at top as it just succeeded
 			node.peers.disconnect(pn, true, false);
 	}
 
