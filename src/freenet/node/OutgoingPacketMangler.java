@@ -30,7 +30,7 @@ public interface OutgoingPacketMangler {
 	 * @throws BlockedTooLongException 
 	 */
 	public boolean processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn,
-			boolean neverWaitForPacketNumber, boolean dontRequeue, boolean onePacketOnly) throws BlockedTooLongException;
+			boolean dontRequeue, boolean onePacketOnly) throws BlockedTooLongException;
 
 	/**
 	 * Resend a single packet.

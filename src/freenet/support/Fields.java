@@ -502,11 +502,18 @@ public abstract class Fields {
 	 * Convert an array of bytes to a single long.
 	 */
 	public static long bytesToLong(byte[] buf) {
-		if(buf.length < 8)
+		return bytesToLong(buf, 0);
+	}
+
+	/**
+	 * Convert an array of bytes to a single long.
+	 */
+	public static long bytesToLong(byte[] buf, int offset) {
+		if(buf.length < 8 + offset)
 			throw new IllegalArgumentException();
 		long x = 0;
 		for(int j = 7; j >= 0; j--) {
-			long y = (buf[j] & 0xff);
+			long y = (buf[j + offset] & 0xff);
 			x = (x << 8) | y;
 		}
 		return x;

@@ -1,3 +1,6 @@
+/* This code is part of Freenet. It is distributed under the GNU General
+ * Public License, version 2 (or at your option any later version). See
+ * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support;
 
 import java.util.Collection;
@@ -8,14 +11,14 @@ import freenet.client.FetchResult;
 import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertException;
 import freenet.client.async.BaseClientPutter;
+import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.keys.FreenetURI;
 import freenet.node.Node;
 import freenet.node.PrioRunnable;
-import freenet.support.io.NativeThread;
 import freenet.support.io.TempBucketFactory;
 
-public abstract class TransferThread implements PrioRunnable {
+public abstract class TransferThread implements PrioRunnable, ClientCallback {
 	
 	private final String mName;
 	protected final Node mNode;
@@ -88,12 +91,24 @@ public abstract class TransferThread implements PrioRunnable {
 			}
 	}
 	
+	protected void addFetch(ClientGetter g) {
+		synchronized(mFetches) {
+			mFetches.add(g);
+		}
+	}
+	
 	protected void removeFetch(ClientGetter g) {
 		synchronized(mFetches) {
 			//g.cancel(); /* FIXME: is this necessary ? */
 			mFetches.remove(g);
 		}
 		Logger.debug(this, "Removed request for " + g.getURI());
+	}
+	
+	protected void addInsert(BaseClientPutter p) {
+		synchronized(mInserts) {
+			mInserts.add(p);
+		}
 	}
 	
 	protected void removeInsert(BaseClientPutter p) {

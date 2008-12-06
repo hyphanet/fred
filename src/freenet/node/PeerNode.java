@@ -711,6 +711,14 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		long arkNo = 0;
 		try {
 			String arkPubKey = fs.get("ark.pubURI");
+
+			// FIXME remove this after 1189
+			// temp hack to fix bad pubURI (see bug 2761)
+			if (onStartup && arkPubKey != null)
+			while (arkPubKey.matches(".*-\\d+$")) {
+				arkPubKey = arkPubKey.replaceAll("-\\d+$", "");
+			}
+
 			arkNo = fs.getLong("ark.number", -1);
 			if(arkPubKey == null && arkNo <= -1) {
 				// ark.pubURI and ark.number are always optional as a pair
@@ -725,8 +733,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				ark = new USK(ssk, arkNo);
 			} else if(forDiffNodeRef && arkPubKey == null && myARK != null && arkNo > -1) {
 				// get the ARK URI from the previous ARK and the edition from the SFS
-				ClientSSK ssk = myARK.getSSK(arkNo);
-				ark = new USK(ssk, arkNo);
+				ark = myARK.copy(arkNo);
 			} else if(forDiffNodeRef && arkPubKey != null && myARK != null && arkNo <= -1) {
 				// the SFS must contain an edition if it contains a arkPubKey
 				Logger.error(this, "Got a differential node reference from " + this + " with an arkPubKey but no ARK edition");
@@ -1674,6 +1681,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(!isConnected)
 					return;
 				// Prevent leak by clearing, *but keep the current handshake*
+				newPeer = newPeer.dropHostName();
+				oldPeer = oldPeer.dropHostName();
 				byte[] newPeerHandshake = jfkNoncesSent.get(newPeer);
 				byte[] oldPeerHandshake = jfkNoncesSent.get(oldPeer);
 				jfkNoncesSent.clear();
@@ -1803,11 +1812,21 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @param length Number of bytes to read.
 	* @param encKey The new session key.
 	* @param replyTo The IP the handshake came in on.
-	* @return True unless we rejected the handshake, or it failed to parse.
+	* @param trackerID The tracker ID proposed by the other side. If -1, create a new tracker. If -2,
+	* reuse the old tracker if possible. If any other value, check whether we have it, and if we do,
+	* return that, otherwise return the ID of the new tracker.
+	* @param isJFK4 If true, we are processing a JFK(4) and must respect the tracker ID chosen by the 
+	* responder. If false, we are processing a JFK(3) and we can either reuse the suggested tracker ID,
+	* which the other side is able to reuse, or we can create a new tracker ID.
+	* @param jfk4SameAsOld If true, the responder chose to use the tracker ID that we provided. If
+	* we don't have it now the connection fails.
+	* @return The ID of the new PacketTracker. If this is different to the passed-in trackerID, then
+	* it's a new tracker. -1 to indicate failure.
 	*/
-	public boolean completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified, int negType) {
+	public long completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified, int negType, long trackerID, boolean isJFK4, boolean jfk4SameAsOld) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
 		long now = System.currentTimeMillis();
+		if(logMINOR) Logger.minor(this, "Tracker ID "+trackerID+" isJFK4="+isJFK4+" jfk4SameAsOld="+jfk4SameAsOld);
 
 		// Update sendHandshakeTime; don't send another handshake for a while.
 		// If unverified, "a while" determines the timeout; if not, it's just good practice to avoid a race below.
@@ -1824,7 +1843,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			}
 			Logger.error(this, "Failed to parse new noderef for " + this + ": " + e1, e1);
 			node.peers.disconnected(this);
-			return false;
+			return -1;
 		}
 		boolean routable = true;
 		boolean newer = false;
@@ -1860,6 +1879,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		KeyTracker prev = null;
 		KeyTracker newTracker;
 		MessageItem[] messagesTellDisconnected = null;
+		PacketTracker packets = null;
 		synchronized(this) {
 			handshakeCount = 0;
 			bogusNoderef = false;
@@ -1885,10 +1905,51 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			} else if(bootIDChanged && logMINOR)
 				Logger.minor(this, "Changed boot ID from " + bootID + " to " + thisBootID + " for " + getPeer());
 			this.bootID = thisBootID;
-			PacketTracker packets;
 			boolean newPacketTracker = false;
-			if(bootIDChanged) {
+			if(currentTracker != null && currentTracker.packets.trackerID == trackerID && !currentTracker.packets.isDeprecated()) {
+				if(isJFK4 && !jfk4SameAsOld)
+					Logger.error(this, "In JFK(4), found tracker ID "+trackerID+" but other side says is new! for "+this);
+				packets = currentTracker.packets;
+				if(logMINOR) Logger.minor(this, "Re-using packet tracker ID "+trackerID+" on "+this+" from current "+currentTracker);
+			} else if(previousTracker != null && previousTracker.packets.trackerID == trackerID && !previousTracker.packets.isDeprecated()) {
+				if(isJFK4 && !jfk4SameAsOld)
+					Logger.error(this, "In JFK(4), found tracker ID "+trackerID+" but other side says is new! for "+this);
+				packets = previousTracker.packets;
+				if(logMINOR) Logger.minor(this, "Re-using packet tracker ID "+trackerID+" on "+this+" from prev "+previousTracker);
+			} else if(isJFK4 && jfk4SameAsOld) {
+				isConnected = false;
+				Logger.error(this, "Can't reuse old tracker ID "+trackerID+" as instructed - disconnecting");
+				return -1;
+			} else if(trackerID == -1) {
+				// Create a new tracker unconditionally
 				packets = new PacketTracker(this);
+				newPacketTracker = true;
+				if(logMINOR) Logger.minor(this, "Creating new PacketTracker as instructed for "+this);
+			} else if(trackerID == -2 && !bootIDChanged) {
+				// Reuse if not deprecated and not boot ID changed
+				if(currentTracker != null && !currentTracker.packets.isDeprecated() && negType >= 3) {
+					packets = currentTracker.packets;
+					if(logMINOR) Logger.minor(this, "Re-using packet tracker (not given an ID): "+packets.trackerID+" on "+this+" from current "+currentTracker);
+				} else if(previousTracker != null && !previousTracker.packets.isDeprecated() && negType >= 3) {
+					packets = previousTracker.packets;
+					if(logMINOR) Logger.minor(this, "Re-using packet tracker (not given an ID): "+packets.trackerID+" on "+this+" from prev "+previousTracker);
+				} else {
+					packets = new PacketTracker(this);
+					newPacketTracker = true;
+					if(logMINOR) Logger.minor(this, "Cannot reuse trackers (not given an ID) on "+this);
+				}
+			} else {
+				if(isJFK4 && negType >= 4 && trackerID < 0)
+					Logger.error(this, "JFK(4) packet with neg type "+negType+" has negative tracker ID: "+trackerID);
+					
+				if(isJFK4/* && !jfk4SameAsOld implied */ && trackerID >= 0) {
+					packets = new PacketTracker(this, trackerID);
+				} else
+					packets = new PacketTracker(this);
+				newPacketTracker = true;
+				if(logMINOR) Logger.minor(this, "Creating new tracker (last resort) on "+this);
+			}
+			if(bootIDChanged) {
 				newPacketTracker = true;
 				oldPrev = previousTracker;
 				oldCur = currentTracker;
@@ -1901,14 +1962,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				this.offeredMainJarVersion = 0;
 			} else {
 				// else it's a rekey
-				if(currentTracker != null && !currentTracker.packets.isDeprecated() && negType >= 3)
-					packets = currentTracker.packets;
-				else if(previousTracker != null && !previousTracker.packets.isDeprecated() && negType >= 3)
-					packets = previousTracker.packets;
-				else {
-					packets = new PacketTracker(this);
-					newPacketTracker = true;
-				}
 			}
 			newTracker = new KeyTracker(this, packets, encCipher, encKey);
 			if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+shortToString()+" neg type "+negType+" new packet tracker: "+newPacketTracker);
@@ -1981,7 +2034,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			onConnect();
 		}
 		
-		return true;
+		return packets.trackerID;
 	}
 
 	/**
@@ -4174,7 +4227,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			// Send packets, right now, blocking, including any active notifications
 			// Note that processOutgoingOrRequeue will drop messages from the end
 			// if necessary to fit the messages into a single packet.
-			if(!getOutgoingMangler().processOutgoingOrRequeue(messages.toArray(new MessageItem[messages.size()]), this, true, false, true)) {
+			if(!getOutgoingMangler().processOutgoingOrRequeue(messages.toArray(new MessageItem[messages.size()]), this, false, true)) {
 				if(mustSendPacket) {
 					if(!sendAnyUrgentNotifications(false))
 						sendAnyUrgentNotifications(true);
@@ -4191,5 +4244,18 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		
 		return false;
+	}
+
+	/**
+	 * @return The ID of a reusable PacketTracker if there is one, otherwise -1.
+	 */
+	public long getReusableTrackerID() {
+		KeyTracker cur;
+		synchronized(this) {
+			cur = currentTracker;
+		}
+		if(cur == null) return -1;
+		if(cur.packets.isDeprecated()) return -1;
+		return cur.packets.trackerID;
 	}
 }

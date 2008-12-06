@@ -303,7 +303,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		OpennetManager opennet = node.getOpennet();
 		if(opennet != null) {
 			// Try old opennet connections.
-			if(opennet.wantPeer(null, false)) {
+			if(opennet.wantPeer(null, false, true)) {
 				// We want a peer.
 				// Try old connections.
 				PeerNode[] oldPeers = opennet.getOldPeers();
@@ -514,17 +514,35 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/** Connect to a node hoping it will act as a seednode for us */
 	static final byte SETUP_OPENNET_SEEDNODE = 1;
 
+	/**
+	 * Process an anonymous-initiator connection setup packet. For a normal setup 
+	 * (@see processDecryptedAuth()), we know the node that is trying to contact us. 
+	 * But in this case, we don't know the node yet, and we are doing a 
+	 * special-purpose connection setup. At the moment the only type supported is
+	 * for a new node connecting to a seednode in order to announce. In future, 
+	 * nodes may support other anonymous-initiator connection types such as when a 
+	 * node (which is certain of its connectivity) issues one-time invites which 
+	 * allow a new node to connect to it.
+	 * @param payload The decrypted payload of the packet.
+	 * @param replyTo The address the packet came in from.
+	 */
 	private void processDecryptedAuthAnon(byte[] payload, Peer replyTo) {
 		if(logMINOR) Logger.minor(this, "Processing decrypted auth packet from "+replyTo+" length "+payload.length);
 		
 		/** Protocol version. Should be 1. */
 		int version = payload[0];
-		/** Negotiation type. 2 = JFK. Other types might indicate other DH variants, 
-		 * or even non-DH-based algorithms such as password based key setup. */
+		/** Negotiation type. Common to anonymous-initiator auth and normal setup.
+		 *   2 = JFK. 
+		 *   3 = JFK, reuse PacketTracker
+		 * Other types might indicate other DH variants, or even non-DH-based
+		 * algorithms such as password based key setup. */
 		int negType = payload[1];
 		/** Packet phase. */
 		int packetType = payload[2];
-		/** Setup type. See above. */
+		/** Setup type. This is specific to anonymous-initiator setup, and specifies the
+		 * purpose of the connection. At the moment it is SETUP_OPENNET_SEEDNODE to indicate
+		 * we are connecting to a seednode (which doesn't know us). Invites might require
+		 * a different setupType. */
 		int setupType = payload[3];
 		
 		if(logMINOR) Logger.minor(this, "Received anonymous auth packet (phase="+packetType+", v="+version+", nt="+negType+", setup type="+setupType+") from "+replyTo+"");
@@ -563,8 +581,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		/** Protocol version. Should be 1. */
 		int version = payload[0];
-		/** Negotiation type. 2 = JFK. Other types might indicate other DH variants, 
-		 * or even non-DH-based algorithms such as password based key setup. */
+		/** Negotiation type.
+		 *   2 = JFK. 
+		 *   3 = JFK, reuse PacketTracker
+		 * Other types might indicate other DH variants, or even non-DH-based
+		 * algorithms such as password based key setup. */
 		int negType = payload[1];
 		/** Packet phase. */
 		int packetType = payload[2];
@@ -577,7 +598,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 2 || negType == 3)) {
+		if(!(negType == 2 || negType == 3 || negType == 4)) {
 			Logger.error(this, "Unknown neg type: "+negType);
 			return;
 		}
@@ -642,7 +663,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		} else if (negType == 1) {
 			Logger.error(this, "Old StationToStation (negType 1) not supported.");
 			return;
-		} else if (negType==2 || negType == 3){ // negType == 3 => no new PacketTracker when rekeying
+		} else if (negType==2 || negType == 3 || negType == 4){
+			// negType == 3 => no new PacketTracker when rekeying
+			// negType == 4 => negotiate whether to use a new PacketTracker when rekeying
 			/*
 			 * We implement Just Fast Keying key management protocol with active identity protection
 			 * for the initiator and no identity protection for the responder
@@ -791,7 +814,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		node.random.nextBytes(nonce);
 		
 		synchronized (pn) {
-			pn.jfkNoncesSent.put(replyTo, nonce);
+			pn.jfkNoncesSent.put(replyTo.dropHostName(), nonce);
 		}
 		
 		int modulusLength = DiffieHellman.modulusLengthInBytes();
@@ -946,7 +969,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// sanity check
 		byte[] myNi;
 		synchronized (pn) {
-			myNi = pn.jfkNoncesSent.get(replyTo);
+			myNi = pn.jfkNoncesSent.get(replyTo.dropHostName());
 		}
 		// We don't except such a message;
 		if(myNi == null) {
@@ -1024,6 +1047,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			(c.getBlockSize() >> 3) + // IV
 			HASH_LENGTH + // it's at least a signature
 			8 +	      // a bootid
+			(negType >= 4 ? 8 : 0) + // packet tracker ID
 			1;	      // znoderefI* is at least 1 byte long
 		
 		if(payload.length < expectedLength + 3) {
@@ -1127,9 +1151,20 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		decypheredPayloadOffset += Node.SIGNATURE_PARAMETER_LENGTH;
 		byte[] data = new byte[decypheredPayload.length - decypheredPayloadOffset];
 		System.arraycopy(decypheredPayload, decypheredPayloadOffset, data, 0, decypheredPayload.length - decypheredPayloadOffset);
-		long bootID = Fields.bytesToLong(data);
-		byte[] hisRef = new byte[data.length - 8];
-		System.arraycopy(data, 8, hisRef, 0, hisRef.length);
+		int ptr = 0;
+		long trackerID; 
+		if(negType >= 4) {
+			trackerID = Fields.bytesToLong(data, ptr);
+			if(trackerID < 0) trackerID = -1;
+			ptr += 8;
+		} else {
+			if(negType == 3) trackerID = -2; // emulate negtype = 3 behaviour
+			else trackerID = -1;
+		}
+		long bootID = Fields.bytesToLong(data, ptr);
+		ptr += 8;
+		byte[] hisRef = new byte[data.length - ptr];
+		System.arraycopy(data, ptr, hisRef, 0, hisRef.length);
 		
 		// construct the peernode
 		if(unknownInitiator) {
@@ -1154,11 +1189,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		// At this point we know it's from the peer, so we can report a packet received.
 		pn.receivedPacket(true, false);
 		
-		// Send reply
-		sendJFKMessage4(1, negType, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential, 
-				c, Ke, Ka, authenticator, hisRef, pn, replyTo, unknownInitiator, setupType);
-		
-		c.initialize(Ks);
+		BlockCipher cs = null;
+		try { cs = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
+		cs.initialize(Ks);
 		
 		// Promote if necessary
 		boolean dontWant = false;
@@ -1168,20 +1201,28 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				Logger.normal(this, "Dumping incoming old-opennet peer as opennet just turned off: "+pn+".");
 				return;
 			}
-			if(!opennet.wantPeer(pn, true)) {
+			if(!opennet.wantPeer(pn, true, false)) {
 				Logger.normal(this, "No longer want peer "+pn+" - dumping it after connecting");
 				dontWant = true;
 			}
 			// wantPeer will call node.peers.addPeer(), we don't have to.
 		}
 		
-		if(pn.completedHandshake(bootID, hisRef, 0, hisRef.length, c, Ks, replyTo, true, negType)) {
+		long newTrackerID = pn.completedHandshake(bootID, hisRef, 0, hisRef.length, cs, Ks, replyTo, true, negType, trackerID, false, false);
+		
+		if(newTrackerID > 0) {
+			
+			// Send reply
+			sendJFKMessage4(1, negType, 3, nonceInitiator, nonceResponder,initiatorExponential, responderExponential, 
+					c, Ke, Ka, authenticator, hisRef, pn, replyTo, unknownInitiator, setupType, newTrackerID, newTrackerID == trackerID);
+			
 			if(dontWant)
-				node.peers.disconnect(pn, true, false);
+				node.peers.disconnect(pn, true, false); // Let it connect then tell it to remove it.
 			else
 				pn.maybeSendInitialMessages();
 		} else {
 			Logger.error(this, "Handshake failure! with "+pn.getPeer());
+			// Don't send the JFK(4). We have not successfully connected.
 		}
 		
 		final long t2=System.currentTimeMillis();
@@ -1258,6 +1299,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			HASH_LENGTH + // HMAC of the cyphertext
 			(c.getBlockSize() >> 3) + // IV
 			Node.SIGNATURE_PARAMETER_LENGTH * 2 + // the signature
+			(negType >= 4 ? 9 : 0) + // ID of packet tracker, plus boolean byte
 			8+ // bootID
 			1; // znoderefR
 
@@ -1323,25 +1365,39 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		decypheredPayloadOffset += Node.SIGNATURE_PARAMETER_LENGTH;
 		byte[] data = new byte[decypheredPayload.length - decypheredPayloadOffset];
 		System.arraycopy(decypheredPayload, decypheredPayloadOffset, data, 0, decypheredPayload.length - decypheredPayloadOffset);
-		long bootID = Fields.bytesToLong(data);
-		if(data.length - 8 < 0) {
+		int ptr = 0;
+		long trackerID;
+		boolean reusedTracker;
+		if(negType >= 4) {
+			trackerID = Fields.bytesToLong(data, ptr);
+			ptr += 8;
+			reusedTracker = data[ptr++] != 0;
+		} else {
+			if(negType == 3) trackerID = -2;
+			else trackerID = -1;
+			reusedTracker = false;
+		}
+		long bootID = Fields.bytesToLong(data, ptr);
+		ptr += 8;
+		if(data.length - ptr < 0) {
 			Logger.error(this, "No space for hisRef: data.length="+data.length+" myRef.length="+(pn.jfkMyRef==null?0:pn.jfkMyRef.length)+" orig data length "+(payload.length-inputOffset));
 			return true;
 		}
-		byte[] hisRef = new byte[data.length - 8];
-		System.arraycopy(data, 8, hisRef, 0, hisRef.length);
+		byte[] hisRef = new byte[data.length - ptr];
+		System.arraycopy(data, ptr, hisRef, 0, hisRef.length);
 		
 		// verify the signature
 		DSASignature remoteSignature = new DSASignature(new NativeBigInteger(1,r), new NativeBigInteger(1,s));
-		byte[] locallyGeneratedText = new byte[NONCE_SIZE * 2 + DiffieHellman.modulusLengthInBytes() * 2 + crypto.myIdentity.length + 8 /*bootID*/ + hisRef.length + pn.jfkMyRef.length];
+		int dataLen = hisRef.length + 8 + (negType >= 4 ? 9 : 0);
+		byte[] locallyGeneratedText = new byte[NONCE_SIZE * 2 + DiffieHellman.modulusLengthInBytes() * 2 + crypto.myIdentity.length + dataLen + pn.jfkMyRef.length];
 		int bufferOffset = NONCE_SIZE * 2 + DiffieHellman.modulusLengthInBytes()*2;
 		System.arraycopy(jfkBuffer, 0, locallyGeneratedText, 0, bufferOffset);
 		byte[] identity = crypto.getIdentity(unknownInitiator);
 		System.arraycopy(identity, 0, locallyGeneratedText, bufferOffset, identity.length);
 		bufferOffset += identity.length;
 		// bootID
-		System.arraycopy(data, 0, locallyGeneratedText, bufferOffset, hisRef.length + 8);
-		bufferOffset += hisRef.length + 8;
+		System.arraycopy(data, 0, locallyGeneratedText, bufferOffset, dataLen);
+		bufferOffset += dataLen;
 		System.arraycopy(pn.jfkMyRef, 0, locallyGeneratedText, bufferOffset, pn.jfkMyRef.length);
 		byte[] messageHash = SHA256.digest(locallyGeneratedText);
 		if(!DSA.verify(pn.peerPubKey, remoteSignature, new NativeBigInteger(1, messageHash), false)) {
@@ -1361,7 +1417,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				Logger.normal(this, "Dumping incoming old-opennet peer as opennet just turned off: "+pn+".");
 				return true;
 			}
-			if(!opennet.wantPeer(pn, true)) {
+			if(!opennet.wantPeer(pn, true, false)) {
 				Logger.normal(this, "No longer want peer "+pn+" - dumping it after connecting");
 				dontWant = true;
 			}
@@ -1370,7 +1426,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		// We change the key
 		c.initialize(pn.jfkKs);
-		if(pn.completedHandshake(bootID, data, 8, data.length - 8, c, pn.jfkKs, replyTo, false, negType)) {
+		if(pn.completedHandshake(bootID, hisRef, 0, hisRef.length, c, pn.jfkKs, replyTo, false, negType, trackerID, true, reusedTracker) >= 0) {
 			if(dontWant)
 				node.peers.disconnect(pn, true, false);
 			else
@@ -1421,9 +1477,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(ctx == null) return;
 		byte[] ourExponential = stripBigIntegerToNetworkFormat(ctx.myExponential);
 		pn.jfkMyRef = unknownInitiator ? crypto.myCompressedHeavySetupRef() : crypto.myCompressedSetupRef();
-		byte[] data = new byte[8 + pn.jfkMyRef.length];
-		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
-		System.arraycopy(pn.jfkMyRef, 0, data, 8, pn.jfkMyRef.length);
+		byte[] data = new byte[(negType >= 4 ? 8 : 0) + 8 + pn.jfkMyRef.length];
+		int ptr = 0;
+		if(negType >= 4) {
+			long trackerID;
+			if(pn == null)
+				trackerID = -1;
+			else trackerID = pn.getReusableTrackerID();
+			System.arraycopy(Fields.longToBytes(trackerID), 0, data, ptr, 8);
+			ptr += 8;
+		}
+		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, ptr, 8);
+		ptr += 8;
+		System.arraycopy(pn.jfkMyRef, 0, data, ptr, pn.jfkMyRef.length);
 		final byte[] message3 = new byte[NONCE_SIZE*2 + // nI, nR
 		                           DiffieHellman.modulusLengthInBytes()*2 + // g^i, g^r
 		                           HASH_LENGTH + // authenticator
@@ -1533,7 +1599,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param pn The PeerNode to encrypt the auth packet to. Cannot be null, because even in anonymous initiator,
 	 * we will have created one before calling this method.
 	 */
-	private void sendJFKMessage4(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] initiatorExponential,byte[] responderExponential, BlockCipher c, byte[] Ke, byte[] Ka, byte[] authenticator, byte[] hisRef, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType)
+	private void sendJFKMessage4(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] initiatorExponential,byte[] responderExponential, BlockCipher c, byte[] Ke, byte[] Ka, byte[] authenticator, byte[] hisRef, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, long newTrackerID, boolean sameAsOldTrackerID)
 	{
 		if(logMINOR)
 			Logger.minor(this, "Sending a JFK(4) message to "+pn.getPeer());
@@ -1542,10 +1608,19 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		NativeBigInteger _initiatorExponential = new NativeBigInteger(1,initiatorExponential);
 		
 		byte[] myRef = crypto.myCompressedSetupRef();
-		byte[] data = new byte[8 + myRef.length + hisRef.length];
-		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, 0, 8);
-		System.arraycopy(myRef, 0, data, 8, myRef.length);
-		System.arraycopy(hisRef, 0, data, 8 + myRef.length, hisRef.length);
+		byte[] data = new byte[(negType >= 4 ? 9 : 0) + 8 + myRef.length + hisRef.length];
+		int ptr = 0;
+		if(negType >= 4) {
+			System.arraycopy(Fields.longToBytes(newTrackerID), 0, data, ptr, 8);
+			ptr += 8;
+			data[ptr++] = (byte) (sameAsOldTrackerID ? 1 : 0);
+		}
+		
+		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, ptr, 8);
+		ptr += 8;
+		System.arraycopy(myRef, 0, data, ptr, myRef.length);
+		ptr += myRef.length;
+		System.arraycopy(hisRef, 0, data, ptr, hisRef.length);
 		
 		byte[] params = assembleDHParams(nonceInitiator, nonceResponder, _initiatorExponential, _responderExponential, pn.identity, data);
 		byte[] messageHash = SHA256.digest(params);
@@ -2017,12 +2092,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/* (non-Javadoc)
 	 * @see freenet.node.OutgoingPacketMangler#processOutgoingOrRequeue(freenet.node.MessageItem[], freenet.node.PeerNode, boolean, boolean)
 	 */
-	public boolean processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn, boolean neverWaitForPacketNumber, boolean dontRequeue, boolean onePacket) throws BlockedTooLongException {
+	public boolean processOutgoingOrRequeue(MessageItem[] messages, PeerNode pn, boolean dontRequeue, boolean onePacket) throws BlockedTooLongException {
 		String requeueLogString = "";
 		if(!dontRequeue) {
 			requeueLogString = ", requeueing";
 		}
-		if(logMINOR) Logger.minor(this, "processOutgoingOrRequeue "+messages.length+" messages for "+pn+" ("+neverWaitForPacketNumber+ ')');
+		if(logMINOR) Logger.minor(this, "processOutgoingOrRequeue "+messages.length+" messages for "+pn);
 		byte[][] messageData = new byte[messages.length][];
 		MessageItem[] newMsgs = new MessageItem[messages.length];
 		KeyTracker kt = pn.getCurrentKeyTracker();
@@ -2134,7 +2209,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				(messageData.length < 256)) {
 			mi_name = null;
 			try {
-				int size = innerProcessOutgoing(messageData, 0, messageData.length, length, pn, neverWaitForPacketNumber, callbacks, priority);
+				int size = innerProcessOutgoing(messageData, 0, messageData.length, length, pn, callbacks, priority);
 				int totalMessageSize = 0;
 				for(int i=0;i<messageData.length;i++) totalMessageSize += messageData[i].length;
 				int overhead = size - totalMessageSize;
@@ -2189,7 +2264,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 						mi_name = null;
 						try {
 							// FIXME regenerate callbacks and priority!
-							int size = innerProcessOutgoing(messageData, lastIndex, i-lastIndex, length, pn, neverWaitForPacketNumber, callbacks, priority);
+							int size = innerProcessOutgoing(messageData, lastIndex, i-lastIndex, length, pn, callbacks, priority);
 							int totalMessageSize = 0;
 							for(int j=lastIndex;j<i;j++) totalMessageSize += messageData[j].length;
 							int overhead = size - totalMessageSize;
@@ -2245,7 +2320,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @throws PacketSequenceException 
 	 */
 	private int innerProcessOutgoing(byte[][] messageData, int start, int length, int bufferLength, 
-			PeerNode pn, boolean neverWaitForPacketNumber, AsyncMessageCallback[] callbacks, short priority) throws NotConnectedException, WouldBlockException, PacketSequenceException {
+			PeerNode pn, AsyncMessageCallback[] callbacks, short priority) throws NotConnectedException, WouldBlockException, PacketSequenceException {
 		if(logMINOR) Logger.minor(this, "innerProcessOutgoing(...,"+start+ ',' +length+ ',' +bufferLength+ ','+callbacks.length+')');
 		byte[] buf = new byte[bufferLength];
 		buf[0] = (byte)length;
@@ -2258,7 +2333,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			System.arraycopy(data, 0, buf, loc, len);
 			loc += len;
 		}
-		return processOutgoingPreformatted(buf, 0, loc, pn, neverWaitForPacketNumber, callbacks, priority);
+		return processOutgoingPreformatted(buf, 0, loc, pn, callbacks, priority);
 	}
 
 	/* (non-Javadoc)
@@ -2274,7 +2349,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * the key changes.
 	 * @throws PacketSequenceException 
 	 */
-	int processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, boolean neverWaitForPacketNumber, AsyncMessageCallback[] callbacks, short priority) throws NotConnectedException, WouldBlockException, PacketSequenceException {
+	int processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, AsyncMessageCallback[] callbacks, short priority) throws NotConnectedException, WouldBlockException, PacketSequenceException {
 		KeyTracker last = null;
 		while(true) {
 			try {
@@ -2287,8 +2362,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 					throw new NotConnectedException();
 				}
 				PacketTracker packets = tracker.packets;
-				int seqNo = neverWaitForPacketNumber ? packets.allocateOutgoingPacketNumberNeverBlock() :
-					packets.allocateOutgoingPacketNumber();
+				int seqNo = packets.allocateOutgoingPacketNumberNeverBlock();
 				return processOutgoingPreformatted(buf, offset, length, tracker, seqNo, callbacks, priority);
 			} catch (KeyChangedException e) {
 				Logger.normal(this, "Key changed(2) for "+peer.getPeer());
@@ -2395,7 +2469,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		resendRequests.length + // resend requests
 		1 + // number of ack requests
 		ackRequests.length + // ack requests
-		1 + // no forgotten packets
+		1 + // number of forgotten packets
+		forgotPackets.length +
 		length; // the payload !
 
 		boolean paddThisPacket = crypto.config.paddDataPackets();
@@ -2437,11 +2512,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			paddedLen = packetLength;
 		}
 
-		byte[] padding = new byte[paddedLen - packetLength];
-		if(paddThisPacket) {
-			node.fastWeakRandom.nextBytes(padding);
+		if(paddThisPacket)
 			packetLength = paddedLen;
-		}
 		
 		if(logMINOR) Logger.minor(this, "Packet length: "+packetLength+" ("+length+")");
 
@@ -2534,12 +2606,15 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				} else {
 					if(forgotOffsets == null)
 						forgotOffsets = new byte[forgotPackets.length - i];
-					forgotOffsets[i] = (byte) offsetSeq;
-					forgotCount++;
-					if(forgotCount == 256)
+					
+					if(forgotCount >= 256) {
 						packets.requeueForgot(forgotPackets, forgotCount, forgotPackets.length - forgotCount);
+						break;
+					} else
+						forgotOffsets[forgotCount++] = (byte) offsetSeq;
 				}
 			}
+			if(forgotCount >= 256) forgotCount = 255;
 		}
 
 		plaintext[ptr++] = (byte) forgotCount;
@@ -2553,11 +2628,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		ptr += length;
 
 		if(paddThisPacket) {
+			byte[] padding = new byte[packetLength - ptr];
+			node.fastWeakRandom.nextBytes(padding);
+
 			System.arraycopy(padding, 0, plaintext, ptr, padding.length);
 			ptr += padding.length;
-		}
-
-		if(ptr != plaintext.length) {
+		} else if(ptr != plaintext.length) {
 			Logger.error(this, "Inconsistent length: "+plaintext.length+" buffer but "+(ptr)+" actual");
 			byte[] newBuf = new byte[ptr];
 			System.arraycopy(plaintext, 0, newBuf, 0, ptr);
@@ -2794,7 +2870,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	public int[] supportedNegTypes() {
-		return new int[] { 2, 3 };
+		return new int[] { 2, 3, 4 };
 	}
 
 	public int fullHeadersLengthOneMessage() {

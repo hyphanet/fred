@@ -78,9 +78,16 @@ public class PacketTracker {
 	final long createdTime;
 	/** The time at which we last successfully decoded a packet. */
 	private long timeLastDecodedPacket;
+	/** Tracker ID. Must be positive. */
+	final long trackerID;
 
 	/** Everything is clear to start with */
 	PacketTracker(PeerNode pn) {
+		this(pn, pn.node.random.nextLong() & Long.MAX_VALUE);
+	}
+
+	PacketTracker(PeerNode pn, long tid) {
+		trackerID = tid;
 		this.pn = pn;
 		ackQueue = new LinkedList<QueuedAck>();
 		forgottenQueue = new LinkedList<QueuedForgotten>();
@@ -196,10 +203,7 @@ public class PacketTracker {
 		QueuedForgotten(int packet) {
 			long now = System.currentTimeMillis();
 			packetNumber = packet;
-			/** If not included on a packet in next 500ms, then
-			 * force a send of an otherwise empty packet.
-			 */
-			urgentTime = now + 500;
+			urgentTime = now + PacketSender.MAX_COALESCING_DELAY;
 		}
 	}
 
@@ -610,14 +614,17 @@ public class PacketTracker {
 			}
 			pn.node.ps.wakeUp();
 		} else {
-			String msg = "Asking me to resend packet " + seqNumber +
-				" which we haven't sent yet or which they have already acked (next=" + nextPacketNumber + ')';
-			// Might just be late, but could indicate something serious.
-			if(isDeprecated) {
-				if(logMINOR)
-					Logger.minor(this, "Other side wants us to resend packet " + seqNumber + " for " + this + " - we cannot do this because we are deprecated");
-			} else
-				Logger.normal(this, msg);
+			synchronized(this) {
+				if(nextPacketNumber <= seqNumber) {
+					Logger.error(this, "Asking me to resend packet "+seqNumber+" which I haven't sent yet (next="+nextPacketNumber+") on "+this);
+					// FIXME forceDisconnect when sure this won't be catastrophic
+					return;
+				} else {
+					Logger.error(this, "Asking me to resend packet "+seqNumber+" which has already been acked or we skipped the packet number (next="+nextPacketNumber+") on "+this+" - will tell other side we have forgotten it");
+					// Can't resend it. Tell other side we forgot it.
+				}
+			}
+			queueForgotten(seqNumber); // Happens to be true... or maybe it didn't exist in the first place?
 		}
 	}
 
@@ -680,40 +687,6 @@ public class PacketTracker {
 		}
 	}
 
-	/**
-	 * @return A packet number for a new outgoing packet.
-	 * This method will block until one is available if
-	 * necessary.
-	 * @throws KeyChangedException if the thread is interrupted when waiting
-	 */
-	public int allocateOutgoingPacketNumber() throws KeyChangedException, NotConnectedException {
-		int packetNumber;
-		if(!pn.isConnected())
-			throw new NotConnectedException();
-		synchronized(this) {
-			if(isDeprecated)
-				throw new KeyChangedException();
-			packetNumber = nextPacketNumber++;
-			if(logMINOR)
-				Logger.minor(this, "Allocated " + packetNumber + " in allocateOutgoingPacketNumber for " + this);
-		}
-		while(true) {
-			try {
-				sentPacketsContents.lock(packetNumber);
-				if(logMINOR)
-					Logger.minor(this, "Locked " + packetNumber);
-				synchronized(this) {
-					timeWouldBlock = -1;
-				}
-				return packetNumber;
-			} catch(InterruptedException e) {
-				synchronized(this) {
-					if(isDeprecated)
-						throw new KeyChangedException();
-				}
-			}
-		}
-	}
 	private long timeWouldBlock = -1;
 	static final long MAX_WOULD_BLOCK_DELTA = 10 * 60 * 1000;
 
@@ -964,7 +937,8 @@ public class PacketTracker {
 				if(callbacks[i] == null)
 					throw new NullPointerException();
 			}
-		sentPacketsContents.add(seqNumber, data, callbacks, priority);
+		if(!sentPacketsContents.add(seqNumber, data, callbacks, priority))
+			throw new IllegalStateException("Cannot add data for packet "+seqNumber);
 		try {
 			queueAckRequest(seqNumber);
 		} catch(UpdatableSortedLinkedListKilledException e) {

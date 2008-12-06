@@ -558,7 +558,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	private boolean finishOpennetNoRelayInner(OpennetManager om) {
 		if(logMINOR)
 			Logger.minor(this, "Finishing opennet: sending own reference");
-		if(!om.wantPeer(null, false))
+		if(!om.wantPeer(null, false, false))
 			return false; // Don't want a reference
 
 		try {
