@@ -1905,7 +1905,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			} else if(bootIDChanged && logMINOR)
 				Logger.minor(this, "Changed boot ID from " + bootID + " to " + thisBootID + " for " + getPeer());
 			this.bootID = thisBootID;
-			boolean newPacketTracker = false;
 			if(currentTracker != null && currentTracker.packets.trackerID == trackerID && !currentTracker.packets.isDeprecated()) {
 				if(isJFK4 && !jfk4SameAsOld)
 					Logger.error(this, "In JFK(4), found tracker ID "+trackerID+" but other side says is new! for "+this);
@@ -1923,7 +1922,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			} else if(trackerID == -1) {
 				// Create a new tracker unconditionally
 				packets = new PacketTracker(this);
-				newPacketTracker = true;
 				if(logMINOR) Logger.minor(this, "Creating new PacketTracker as instructed for "+this);
 			} else if(trackerID == -2 && !bootIDChanged) {
 				// Reuse if not deprecated and not boot ID changed
@@ -1935,7 +1933,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					if(logMINOR) Logger.minor(this, "Re-using packet tracker (not given an ID): "+packets.trackerID+" on "+this+" from prev "+previousTracker);
 				} else {
 					packets = new PacketTracker(this);
-					newPacketTracker = true;
 					if(logMINOR) Logger.minor(this, "Cannot reuse trackers (not given an ID) on "+this);
 				}
 			} else {
@@ -1946,11 +1943,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					packets = new PacketTracker(this, trackerID);
 				} else
 					packets = new PacketTracker(this);
-				newPacketTracker = true;
 				if(logMINOR) Logger.minor(this, "Creating new tracker (last resort) on "+this);
 			}
 			if(bootIDChanged) {
-				newPacketTracker = true;
 				oldPrev = previousTracker;
 				oldCur = currentTracker;
 				previousTracker = null;
@@ -1964,7 +1959,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				// else it's a rekey
 			}
 			newTracker = new KeyTracker(this, packets, encCipher, encKey);
-			if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+shortToString()+" neg type "+negType+" new packet tracker: "+newPacketTracker);
+			if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+shortToString()+" neg type "+negType);
 			if(unverified) {
 				if(unverifiedTracker != null) {
 					// Keep the old unverified tracker if possible.

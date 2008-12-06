@@ -35,13 +35,14 @@ public class OpennetPeerNode extends PeerNode {
 		return true;
 	}
 	
-	public boolean isDroppable() {
+	public boolean isDroppable(boolean ignoreDisconnect) {
 		long now = System.currentTimeMillis();
 		if(now - getPeerAddedTime() < OpennetManager.DROP_MIN_AGE)
 			return false; // New node
 		if(now - node.usm.getStartedTime() < OpennetManager.DROP_STARTUP_DELAY)
 			return false; // Give them time to connect after we startup
 		int status = getPeerNodeStatus();
+		if(!ignoreDisconnect) {
 		synchronized(this) {
 			if((status == PeerManager.PEER_NODE_STATUS_DISCONNECTED) && (!super.neverConnected()) && 
 					now - timeLastDisconnect < OpennetManager.DROP_DISCONNECT_DELAY &&
@@ -49,6 +50,7 @@ public class OpennetPeerNode extends PeerNode {
 				// Grace period for node restarting
 				return false;
 			}
+		}
 		}
 		return true;
 	}
@@ -117,6 +119,22 @@ public class OpennetPeerNode extends PeerNode {
 	@Override
 	protected void onConnect() {
 		opennet.crypto.socket.getAddressTracker().setPresumedGuiltyAt(System.currentTimeMillis()+60*60*1000);
+	}
+	
+	private boolean wasDropped;
+
+	synchronized void setWasDropped() {
+		wasDropped = true;
+	}
+	
+	synchronized boolean wasDropped() {
+		return wasDropped;
+	}
+	
+	synchronized boolean grabWasDropped() {
+		boolean ret = wasDropped;
+		wasDropped = false;
+		return ret;
 	}
 	
 }
