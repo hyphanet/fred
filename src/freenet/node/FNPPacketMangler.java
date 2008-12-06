@@ -303,7 +303,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		OpennetManager opennet = node.getOpennet();
 		if(opennet != null) {
 			// Try old opennet connections.
-			if(opennet.wantPeer(null, false, true)) {
+			if(opennet.wantPeer(null, false, true, true)) {
 				// We want a peer.
 				// Try old connections.
 				PeerNode[] oldPeers = opennet.getOldPeers();
@@ -1201,7 +1201,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				Logger.normal(this, "Dumping incoming old-opennet peer as opennet just turned off: "+pn+".");
 				return;
 			}
-			if(!opennet.wantPeer(pn, true, false)) {
+			if(!opennet.wantPeer(pn, true, false, true)) {
 				Logger.normal(this, "No longer want peer "+pn+" - dumping it after connecting");
 				dontWant = true;
 			}
@@ -1417,7 +1417,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				Logger.normal(this, "Dumping incoming old-opennet peer as opennet just turned off: "+pn+".");
 				return true;
 			}
-			if(!opennet.wantPeer(pn, true, false)) {
+			if(!opennet.wantPeer(pn, true, false, true)) {
 				Logger.normal(this, "No longer want peer "+pn+" - dumping it after connecting");
 				dontWant = true;
 			}
