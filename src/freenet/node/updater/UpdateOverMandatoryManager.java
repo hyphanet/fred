@@ -1420,6 +1420,7 @@ public class UpdateOverMandatoryManager {
 		FileBucket b = null;
 		try {
 			f = File.createTempFile("main-", ".fblob.tmp", updateManager.node.clientCore.getPersistentTempDir());
+			f.deleteOnExit();
 			b = new FileBucket(f, false, false, true, true, true);
 		} catch(IOException e) {
 			Logger.error(this, "Cannot share main jar from " + source.userToString() + " with our peers because cannot write the cleaned version to disk: " + e, e);
@@ -1542,6 +1543,7 @@ public class UpdateOverMandatoryManager {
 		FileBucket b = null;
 		try {
 			f = File.createTempFile("ext-", ".fblob.tmp", updateManager.node.clientCore.getPersistentTempDir());
+			f.deleteOnExit();
 			b = new FileBucket(f, false, false, true, true, true);
 		} catch(IOException e) {
 			Logger.error(this, "Cannot share ext jar from " + source.userToString() + " with our peers because cannot write the cleaned version to disk: " + e, e);
