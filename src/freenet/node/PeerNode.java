@@ -1414,11 +1414,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return fetchARKFlag;
 	}
 
-	protected void calcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK) {
+	protected void calcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK, boolean notRegistered) {
 		long now = System.currentTimeMillis();
 		boolean fetchARKFlag = false;
 		fetchARKFlag = innerCalcNextHandshake(successfulHandshakeSend, dontFetchARK, now);
-		setPeerNodeStatus(now);  // Because of isBursting being set above and it can't hurt others
+		if(!notRegistered)
+			setPeerNodeStatus(now);  // Because of isBursting being set above and it can't hurt others
 		// Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
 		if(fetchARKFlag && !dontFetchARK) {
 			long arkFetcherStartTime1 = System.currentTimeMillis();
@@ -1457,20 +1458,20 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* Call this method when a handshake request has been
 	* sent.
 	*/
-	public void sentHandshake() {
+	public void sentHandshake(boolean notRegistered) {
 		if(logMINOR)
 			Logger.minor(this, "sentHandshake(): " + this);
-		calcNextHandshake(true, false);
+		calcNextHandshake(true, false, notRegistered);
 	}
 
 	/**
 	* Call this method when a handshake request could not be sent (i.e. no IP address available)
 	* sent.
 	*/
-	public void couldNotSendHandshake() {
+	public void couldNotSendHandshake(boolean notRegistered) {
 		if(logMINOR)
 			Logger.minor(this, "couldNotSendHandshake(): " + this);
-		calcNextHandshake(false, false);
+		calcNextHandshake(false, false, notRegistered);
 	}
 
 	/**
@@ -1830,7 +1831,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		// Update sendHandshakeTime; don't send another handshake for a while.
 		// If unverified, "a while" determines the timeout; if not, it's just good practice to avoid a race below.
-		calcNextHandshake(true, true);
+		calcNextHandshake(true, true, false);
 		stopARKFetcher();
 		try {
 			// First, the new noderef

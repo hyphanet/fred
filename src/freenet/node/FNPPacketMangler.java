@@ -2835,7 +2835,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/* (non-Javadoc)
 	 * @see freenet.node.OutgoingPacketMangler#sendHandshake(freenet.node.PeerNode)
 	 */
-	public void sendHandshake(PeerNode pn) {
+	public void sendHandshake(PeerNode pn, boolean notRegistered) {
 		int negType = pn.selectNegType(this);
 		if(negType == -1) {
 			// Pick a random negType from what I do support
@@ -2847,13 +2847,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		Peer peer = pn.getHandshakeIP();
 		if(peer == null) {
-			pn.couldNotSendHandshake();
+			pn.couldNotSendHandshake(notRegistered);
 			return;
 		}
 		sendJFKMessage1(pn, peer, pn.handshakeUnknownInitiator(), pn.handshakeSetupType(), negType);
 		if(logMINOR)
 			Logger.minor(this, "Sending handshake to "+peer+" for "+pn);
-		pn.sentHandshake();
+		pn.sentHandshake(notRegistered);
 	}
 
 	/* (non-Javadoc)
