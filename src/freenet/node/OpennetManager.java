@@ -424,11 +424,12 @@ public class OpennetManager {
 			for(int i=0;i<peers.length;i++) {
 				OpennetPeerNode pn = peers[i];
 				if(pn == null) continue;
-				if(!pn.isDroppable()) continue;
+				if(!pn.isDroppable(false)) continue;
 				// LOCKING: Always take the OpennetManager lock first
 				if(!pn.isConnected()) {
 					if(Logger.shouldLog(Logger.MINOR, this))
 						Logger.minor(this, "Possibly dropping opennet peer "+pn+" as is disconnected");
+					pn.setWasDropped();
 					return pn;
 				}
 			}
@@ -438,10 +439,11 @@ public class OpennetManager {
 			for(int i=0;i<peers.length;i++) {
 				OpennetPeerNode pn = peers[i];
 				if(pn == null) continue;
-				if(!pn.isDroppable()) continue;
+				if(!pn.isDroppable(false)) continue;
 				if(Logger.shouldLog(Logger.MINOR, this))
 					Logger.minor(this, "Possibly dropping opennet peer "+pn+" "+
 							(System.currentTimeMillis() - timeLastDropped)+" ms since last dropped peer");
+				pn.setWasDropped();
 				return pn;
 			}
 		}
@@ -467,9 +469,11 @@ public class OpennetManager {
 	public void onRemove(OpennetPeerNode pn) {
 		synchronized (this) {
 			peersLRU.remove(pn);
-			oldPeers.push(pn);
-			while (oldPeers.size() > MAX_OLD_PEERS)
-				oldPeers.pop();
+			if(pn.isDroppable(true) && !pn.grabWasDropped()) {
+				oldPeers.push(pn);
+				while (oldPeers.size() > MAX_OLD_PEERS)
+					oldPeers.pop();
+			}
 		}
 	}
 
