@@ -58,7 +58,7 @@ public class OpennetManager {
 	 * if we have no other option. */
 	private final LRUQueue oldPeers;
 	/** Maximum number of old peers */
-	static final int MAX_OLD_PEERS = 50;
+	static final int MAX_OLD_PEERS = 25;
 	/** Time at which last dropped a peer */
 	private long timeLastDropped;
 	/** Number of successful CHK requests since last added a node */
