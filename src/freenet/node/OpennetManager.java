@@ -273,8 +273,10 @@ public class OpennetManager {
 	 * @param addAtLRU If there is a node to add, add it at the bottom rather than the top. Normally
 	 * we set this on new path folded nodes so that they will be replaced if during the trial period,
 	 * plus the time it takes to get a new path folding offer, they don't have a successful request.
-	 * @param justChecking If true, and nodeToAddNow == null, we don't actually send an offer, we
-	 * just want to know if there is space for a node.
+	 * @param justChecking If true, we want to know whether there is space for a node to be added
+	 * RIGHT NOW. If false, the normal behaviour applies: if nodeToAddNow is passed in, we decide
+	 * whether to add that node, if it's null, we decide whether to send an offer subject to the
+	 * inter-offer time.
 	 * @return True if the node was added / should be added.
 	 */
 	public boolean wantPeer(PeerNode nodeToAddNow, boolean addAtLRU, boolean justChecking) {
@@ -336,7 +338,7 @@ public class OpennetManager {
 				peersLRU.remove(toDrop);
 				dropList.add(toDrop);
 			}
-			if(canAdd) {
+			if(canAdd && !justChecking) {
 				long now = System.currentTimeMillis();
 				if(nodeToAddNow != null) {
 					successCount = 0;
