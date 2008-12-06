@@ -470,6 +470,7 @@ public class OpennetManager {
 		synchronized (this) {
 			peersLRU.remove(pn);
 			if(pn.isDroppable(true) && !pn.grabWasDropped()) {
+				if(logMINOR) Logger.minor(this, "onRemove() for "+pn);
 				oldPeers.push(pn);
 				while (oldPeers.size() > MAX_OLD_PEERS)
 					oldPeers.pop();
