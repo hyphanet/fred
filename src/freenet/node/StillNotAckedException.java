@@ -12,10 +12,10 @@ package freenet.node;
  */
 public class StillNotAckedException extends Exception {
 
-	public StillNotAckedException(KeyTracker tracker) {
+	public StillNotAckedException(PacketTracker tracker) {
 		this.tracker = tracker;
 	}
 	
-	final KeyTracker tracker;
+	final PacketTracker tracker;
 	
 }

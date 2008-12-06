@@ -540,6 +540,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		
 		// If we have no connections, and several disconnected nodes, we should do a
 		// detection soon.
+		if(logMINOR) Logger.minor(this, "Real connections: "+realConnections+" disconnected "+realDisconnected);
 		if(realConnections == 0 && realDisconnected > 0) {
 			if(firstTimeUrgent <= 0)
 				firstTimeUrgent = now;
@@ -559,6 +560,8 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 				// Detect immediately
 				detect = true;
 			}
+		} else if(realConnections == 0 && realDisconnected == 0) {
+			return shouldDetectNoPeers(now);
 		} else {
 			if(logDEBUG) Logger.minor(this, "Not urgent; conns="+conns.length+", peers="+peers.length);
 			firstTimeUrgent = 0;

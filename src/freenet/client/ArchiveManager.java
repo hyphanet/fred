@@ -598,6 +598,7 @@ outerZIP:		while(true) {
 			cachedData += element.spaceUsed();
 			if(oldItem != null) {
 				cachedData -= oldItem.spaceUsed();
+				if(logMINOR) Logger.minor(this, "Dropping old store element from archive cache: "+oldItem);
 				oldItem.close();
 			}
 		}

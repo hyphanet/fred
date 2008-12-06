@@ -53,8 +53,8 @@ import freenet.support.io.NativeThread;
  */
 public class SaltedHashFreenetStore implements FreenetStore {
 	/** Option for saving plainkey */
-	private static final boolean OPTION_SAVE_PLAINKEY = true;
-	private static final int OPTION_MAX_PROBE = 4;
+	private static final boolean OPTION_SAVE_PLAINKEY = false;
+	private static final int OPTION_MAX_PROBE = 5;
 
 	private static final byte FLAG_DIRTY = 0x1;
 	private static final byte FLAG_REBUILD_BLOOM = 0x2;
@@ -174,7 +174,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			*/
 		}
 
-		System.err.println(" checkBloom=" + checkBloom + ", flags=" + flags+" bloom size = "+bloomFilterSize+" size = "+maxKeys);
+		System.err.println(" checkBloom=" + checkBloom + ", flags=" + flags+" bloom size = "+bloomFilterSize+" keys = "+maxKeys);
 		
 		cleanerThread.start();
 	}
@@ -334,7 +334,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				long[] offset = entry.getOffset();
 
 				for (int i = 0; i < offset.length; i++) {
-					if (isFree(offset[i])) {
+					if (offset[i] >= storeFileSizeReady && isFree(offset[i])) {
 						// write to free block
 						if (logDEBUG)
 							Logger.debug(this, "probing, write to i=" + i + ", offset=" + offset[i]);
@@ -574,6 +574,8 @@ public class SaltedHashFreenetStore implements FreenetStore {
 		}
 	}
 
+	private volatile long storeFileSizeReady = 0;
+
 	/**
 	 * Open all store files
 	 * 
@@ -773,6 +775,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 				byte[] seed = new byte[64];
 				random.nextBytes(seed);
 				Random mt = new MersenneTwister(seed);
+				int x = 0;
 				while (oldHdLen < newHdLen) {
 					mt.nextBytes(b);
 					bf.rewind();
@@ -781,11 +784,16 @@ public class SaltedHashFreenetStore implements FreenetStore {
 					if(oldHdLen % (1024*1024*1024L) == 0) {
 						random.nextBytes(seed);
 						mt = new MersenneTwister(seed);
-						if(starting)
+						if (starting) {
 							WrapperManager.signalStarting(5*60*1000);
+							if ( x++ % 32 == 0 )
+								System.err.println("Preallocating space for " + name + ": " + oldHdLen + "/" + newHdLen);
+						}
 					}
+					storeFileSizeReady = oldHdLen / (headerBlockLength + dataBlockLength + hdPadding);
 				}
 			}
+			storeFileSizeReady = storeFileSize;
 
 			metaRAF.setLength(newMetaLen);
 			hdRAF.setLength(newHdLen);
@@ -830,6 +838,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			byte[] newsalt = new byte[0x10];
 			random.nextBytes(newsalt);
 			cipherManager = new CipherManager(newsalt);
+			bloomFilterK = BloomFilter.optimialK(bloomFilterSize, storeSize);
 
 			writeConfigFile();
 			return true;
@@ -851,6 +860,11 @@ public class SaltedHashFreenetStore implements FreenetStore {
 
 			try {
 				bloomFilterK = raf.readInt();
+				if (bloomFilterK == 0) {
+					bloomFilterK = BloomFilter.optimialK(bloomFilterSize, storeSize);
+					flags |= FLAG_REBUILD_BLOOM;
+					checkBloom = false;
+				}
 			} catch (IOException e) {
 				flags |= FLAG_REBUILD_BLOOM;
 			}
