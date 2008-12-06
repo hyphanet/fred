@@ -1639,7 +1639,6 @@ public class UpdateOverMandatoryManager {
 			private final int recommendedExtBuildNumber = NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER;
 
 			public boolean accept(File file) {
-				try {
 				String fileName = file.getName();
 
 				if(fileName.startsWith("revocation-") && fileName.endsWith(".fblob.tmp"))
@@ -1651,18 +1650,25 @@ public class UpdateOverMandatoryManager {
 				Matcher mainBuildNumberMatcher = mainBuildNumberPattern.matcher(fileName);
 
 				if(mainBuildNumberMatcher.matches()) {
+					try {
 					buildNumberStr = mainBuildNumberMatcher.group(1);
 					buildNumber = Integer.parseInt(buildNumberStr);
 					if(buildNumber < lastGoodMainBuildNumber)
 						return true;
+					} catch (NumberFormatException e) {
+						Logger.error(this, "Wierd file in persistent temp: "+fileName);
+						return false;
+					}
 				} else if(extBuildNumberMatcher.matches()) {
+					try {
 					buildNumberStr = extBuildNumberMatcher.group(1);
 					buildNumber = Integer.parseInt(buildNumberStr);
 					if(buildNumber < recommendedExtBuildNumber)
 						return true;
-				}
-				} catch (NumberFormatException e) {
-					return false;
+					} catch (NumberFormatException e) {
+						Logger.error(this, "Wierd file in persistent temp: "+fileName);
+						return false;
+					}
 				}
 
 				return false;
