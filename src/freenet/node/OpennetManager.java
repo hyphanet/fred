@@ -400,7 +400,7 @@ public class OpennetManager {
 		return canAdd;
 	}
 
-	private void dropExcessPeers() {
+	void dropExcessPeers() {
 		while(peersLRU.size() > getNumberOfConnectedPeersToAim()) {
 			if(logMINOR)
 				Logger.minor(this, "Dropping opennet peers: currently "+peersLRU.size());
