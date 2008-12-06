@@ -773,6 +773,7 @@ public class DarknetPeerNode extends PeerNode {
 	 */
 	@Override
 	protected void onConnect() {
+		super.onConnect();
 		sendQueuedN2NMs();
 	}
 
@@ -1598,14 +1599,4 @@ public class DarknetPeerNode extends PeerNode {
 		return false;
 	}
 	
-	@Override
-	public long completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified, int negType, long trackerID, boolean isJFK4, boolean jfk4SameAsOld) {
-		long ret = super.completedHandshake(thisBootID, data, offset, length, encCipher, encKey, replyTo, unverified, negType, trackerID, isJFK4, jfk4SameAsOld);
-		if(ret > 0) {
-			OpennetManager om = node.getOpennet();
-			if(om != null)
-				om.dropExcessPeers();
-		}
-		return ret;
-	}
 }

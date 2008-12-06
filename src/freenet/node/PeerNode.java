@@ -2027,7 +2027,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			node.peers.disconnected(this);
 		else if(!wasARekey) {
 			node.peers.addConnectedPeer(this);
-			onConnect();
+			maybeOnConnect();
 		}
 		
 		return packets.trackerID;
@@ -2232,6 +2232,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		maybeSendInitialMessages();
 		setPeerNodeStatus(now);
 		node.peers.addConnectedPeer(this);
+		maybeOnConnect();
 		if(completelyDeprecatedTracker != null) {
 			if(completelyDeprecatedTracker.packets != tracker.packets)
 				completelyDeprecatedTracker.packets.completelyDeprecated(tracker);
@@ -3299,7 +3300,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * A method to be called once at the beginning of every time isConnected() is true
 	 */
 	protected void onConnect() {
-		// Do nothing in the default impl
+		OpennetManager om = node.getOpennet();
+		if(om != null)
+			om.dropExcessPeers();
 	}
 
 	public void onFound(long edition, FetchResult result) {
