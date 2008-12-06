@@ -1639,6 +1639,7 @@ public class UpdateOverMandatoryManager {
 			private final int recommendedExtBuildNumber = NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER;
 
 			public boolean accept(File file) {
+				try {
 				String fileName = file.getName();
 
 				if(fileName.startsWith("revocation-") && fileName.endsWith(".fblob.tmp"))
@@ -1659,6 +1660,9 @@ public class UpdateOverMandatoryManager {
 					buildNumber = Integer.parseInt(buildNumberStr);
 					if(buildNumber < recommendedExtBuildNumber)
 						return true;
+				}
+				} catch (NumberFormatException e) {
+					return false;
 				}
 
 				return false;
