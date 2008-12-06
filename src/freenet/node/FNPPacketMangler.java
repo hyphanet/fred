@@ -1204,6 +1204,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if(!opennet.wantPeer(pn, true, false, true)) {
 				Logger.normal(this, "No longer want peer "+pn+" - dumping it after connecting");
 				dontWant = true;
+				opennet.purgeOldOpennetPeer(pn);
 			}
 			// wantPeer will call node.peers.addPeer(), we don't have to.
 		}
@@ -1420,6 +1421,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if(!opennet.wantPeer(pn, true, false, true)) {
 				Logger.normal(this, "No longer want peer "+pn+" - dumping it after connecting");
 				dontWant = true;
+				opennet.purgeOldOpennetPeer(pn);
 			}
 			// wantPeer will call node.peers.addPeer(), we don't have to.
 		}
