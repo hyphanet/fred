@@ -58,7 +58,7 @@ public class OpennetManager {
 	 * if we have no other option. */
 	private final LRUQueue oldPeers;
 	/** Maximum number of old peers */
-	static final int MAX_OLD_PEERS = 50;
+	static final int MAX_OLD_PEERS = 25;
 	/** Time at which last dropped a peer */
 	private long timeLastDropped;
 	/** Number of successful CHK requests since last added a node */
@@ -246,7 +246,7 @@ public class OpennetManager {
 			if(logMINOR) Logger.minor(this, "Not adding "+pn.userToString()+" to opennet list as already there");
 			return null;
 		}
-		if(wantPeer(pn, true, false)) return pn;
+		if(wantPeer(pn, true, false, false)) return pn;
 		else return null;
 		// Start at bottom. Node must prove itself.
 	}
@@ -265,6 +265,10 @@ public class OpennetManager {
 		dropExcessPeers();
 	}
 	
+	private long timeLastAddedOldOpennetPeer = -1;
+	
+	private static final int OLD_OPENNET_PEER_INTERVAL = 30*1000;
+	
 	/**
 	 * Trim the peers list and possibly add a new node. Note that if we are not adding a new node,
 	 * we will only return true every MIN_TIME_BETWEEN_OFFERS, to prevent problems caused by many
@@ -273,11 +277,19 @@ public class OpennetManager {
 	 * @param addAtLRU If there is a node to add, add it at the bottom rather than the top. Normally
 	 * we set this on new path folded nodes so that they will be replaced if during the trial period,
 	 * plus the time it takes to get a new path folding offer, they don't have a successful request.
-	 * @param justChecking If true, and nodeToAddNow == null, we don't actually send an offer, we
-	 * just want to know if there is space for a node.
+	 * @param justChecking If true, we want to know whether there is space for a node to be added
+	 * RIGHT NOW. If false, the normal behaviour applies: if nodeToAddNow is passed in, we decide
+	 * whether to add that node, if it's null, we decide whether to send an offer subject to the
+	 * inter-offer time.
+	 * @param oldOpennetPeer If true, we are trying to add an old-opennet-peer which has reconnected.
+	 * There is a throttle, we accept no more than one old-opennet-peer every 30 seconds. On receiving
+	 * a packet, we call once to decide whether to try to parse it against the old-opennet-peers, and
+	 * then again to decide whether it is worth keeping; in the latter case if we decide not, the
+	 * old-opennet-peer will be told to disconnect and go away, but normally we don't reach that point
+	 * because of the first check.
 	 * @return True if the node was added / should be added.
 	 */
-	public boolean wantPeer(PeerNode nodeToAddNow, boolean addAtLRU, boolean justChecking) {
+	public boolean wantPeer(PeerNode nodeToAddNow, boolean addAtLRU, boolean justChecking, boolean oldOpennetPeer) {
 		boolean notMany = false;
 		boolean noDisconnect;
 		synchronized(this) {
@@ -301,6 +313,9 @@ public class OpennetManager {
 				if(nodeToAddNow != null || !justChecking)
 					timeLastOffered = System.currentTimeMillis();
 				notMany = true;
+				// Don't check timeLastAddedOldOpennetPeer, since we want it anyway. But do update it.
+				if(oldOpennetPeer)
+					timeLastAddedOldOpennetPeer = System.currentTimeMillis();
 			}
 			noDisconnect = successCount < MIN_SUCCESS_BETWEEN_DROP_CONNS;
 		}
@@ -336,8 +351,12 @@ public class OpennetManager {
 				peersLRU.remove(toDrop);
 				dropList.add(toDrop);
 			}
-			if(canAdd) {
-				long now = System.currentTimeMillis();
+			long now = System.currentTimeMillis();
+			if(canAdd && oldOpennetPeer) {
+				if(timeLastAddedOldOpennetPeer > 0 && now - timeLastAddedOldOpennetPeer > OLD_OPENNET_PEER_INTERVAL)
+					canAdd = false;
+			}
+			if(canAdd && !justChecking) {
 				if(nodeToAddNow != null) {
 					successCount = 0;
 					if(addAtLRU)
@@ -348,6 +367,8 @@ public class OpennetManager {
 					oldPeers.remove(nodeToAddNow);
 					if(!dropList.isEmpty())
 						timeLastDropped = now;
+					if(oldOpennetPeer)
+						timeLastAddedOldOpennetPeer = now;
 				} else {
 					if(now - timeLastOffered <= MIN_TIME_BETWEEN_OFFERS && !hasDisconnected) {
 						if(logMINOR)
@@ -379,7 +400,7 @@ public class OpennetManager {
 		return canAdd;
 	}
 
-	private void dropExcessPeers() {
+	void dropExcessPeers() {
 		while(peersLRU.size() > getNumberOfConnectedPeersToAim()) {
 			if(logMINOR)
 				Logger.minor(this, "Dropping opennet peers: currently "+peersLRU.size());
@@ -403,11 +424,12 @@ public class OpennetManager {
 			for(int i=0;i<peers.length;i++) {
 				OpennetPeerNode pn = peers[i];
 				if(pn == null) continue;
-				if(!pn.isDroppable()) continue;
+				if(!pn.isDroppable(false)) continue;
 				// LOCKING: Always take the OpennetManager lock first
 				if(!pn.isConnected()) {
 					if(Logger.shouldLog(Logger.MINOR, this))
 						Logger.minor(this, "Possibly dropping opennet peer "+pn+" as is disconnected");
+					pn.setWasDropped();
 					return pn;
 				}
 			}
@@ -417,10 +439,11 @@ public class OpennetManager {
 			for(int i=0;i<peers.length;i++) {
 				OpennetPeerNode pn = peers[i];
 				if(pn == null) continue;
-				if(!pn.isDroppable()) continue;
+				if(!pn.isDroppable(false)) continue;
 				if(Logger.shouldLog(Logger.MINOR, this))
 					Logger.minor(this, "Possibly dropping opennet peer "+pn+" "+
 							(System.currentTimeMillis() - timeLastDropped)+" ms since last dropped peer");
+				pn.setWasDropped();
 				return pn;
 			}
 		}
@@ -439,16 +462,19 @@ public class OpennetManager {
 				// Re-add it: nasty race condition when we have few peers
 			}
 		}
-		if(!wantPeer(pn, false, false)) // Start at top as it just succeeded
+		if(!wantPeer(pn, false, false, false)) // Start at top as it just succeeded
 			node.peers.disconnect(pn, true, false);
 	}
 
 	public void onRemove(OpennetPeerNode pn) {
 		synchronized (this) {
 			peersLRU.remove(pn);
-			oldPeers.push(pn);
-			while (oldPeers.size() > MAX_OLD_PEERS)
-				oldPeers.pop();
+			if(pn.isDroppable(true) && !pn.grabWasDropped()) {
+				if(logMINOR) Logger.minor(this, "onRemove() for "+pn);
+				oldPeers.push(pn);
+				while (oldPeers.size() > MAX_OLD_PEERS)
+					oldPeers.pop();
+			}
 		}
 	}
 

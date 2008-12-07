@@ -294,7 +294,7 @@ public class PacketSender implements Runnable, Ticker {
 			if(pn.shouldSendHandshake()) {
 				// Send handshake if necessary
 				long beforeHandshakeTime = System.currentTimeMillis();
-				pn.getOutgoingMangler().sendHandshake(pn);
+				pn.getOutgoingMangler().sendHandshake(pn, false);
 				long afterHandshakeTime = System.currentTimeMillis();
 				if((afterHandshakeTime - beforeHandshakeTime) > (2 * 1000))
 					Logger.error(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime (" + (afterHandshakeTime - beforeHandshakeTime) + ") in PacketSender working with " + pn.userToString());
@@ -306,28 +306,31 @@ public class PacketSender implements Runnable, Ticker {
 		}
 		brokeAt = newBrokeAt;
 
-		// Consider sending connect requests to our opennet old-peers.
-		// No point if they are NATed, of course... but we don't know whether they are.
+		/* Attempt to connect to old-opennet-peers.
+		 * Constantly send handshake packets, in order to get through a NAT.
+		 * Most JFK(1)'s are less than 300 bytes. 25*300/15 = avg 500B/sec bandwidth cost.
+		 * Well worth it to allow us to reconnect more quickly. */
+		
 		OpennetManager om = node.getOpennet();
-		if(om != null) {
-			int connCount = node.peers.quickCountConnectedPeers();
-			int minDelay = connCount == 0 ? MIN_OLD_OPENNET_CONNECT_DELAY_NO_CONNS : MIN_OLD_OPENNET_CONNECT_DELAY;
-			if(logDEBUG)
-				Logger.debug(this, "Conns " + connCount + " minDelay " + minDelay + " old opennet peers " + om.countOldOpennetPeers() + " last sent " + (now - timeLastSentOldOpennetConnectAttempt) + " startup " + (now - node.startupTime));
-			if(now - timeLastSentOldOpennetConnectAttempt > minDelay &&
-				connCount <= MIN_CONNECTIONS_TRY_OLD_OPENNET_PEERS &&
-				om.countOldOpennetPeers() > 0 &&
-				now - node.startupTime > OpennetManager.DROP_STARTUP_DELAY) {
-				PeerNode pn = om.randomOldOpennetNode();
-				if(pn != null) {
-					if(logMINOR)
-						Logger.minor(this, "Sending old-opennet connect attempt to " + pn);
-					pn.getOutgoingMangler().sendHandshake(pn);
-					timeLastSentOldOpennetConnectAttempt = now;
-					if(pn.noContactDetails() && node.getPeerNodes().length > 0 && connCount > 0 && node.random.nextBoolean())
-						pn.startARKFetcher();
+		if(om != null && node.getUptime() > 30*1000) {
+			PeerNode[] peers = om.getOldPeers();
+			
+			for(PeerNode pn : peers) {
+				if(pn.isConnected()) continue; // Race condition??
+				if(pn.noContactDetails()) {
+					pn.startARKFetcher();
+					continue;
+				}
+				if(pn.shouldSendHandshake()) {
+					// Send handshake if necessary
+					long beforeHandshakeTime = System.currentTimeMillis();
+					pn.getOutgoingMangler().sendHandshake(pn, true);
+					long afterHandshakeTime = System.currentTimeMillis();
+					if((afterHandshakeTime - beforeHandshakeTime) > (2 * 1000))
+						Logger.error(this, "afterHandshakeTime is more than 2 seconds past beforeHandshakeTime (" + (afterHandshakeTime - beforeHandshakeTime) + ") in PacketSender working with " + pn.userToString());
 				}
 			}
+			
 		}
 
 		if(now - lastClearedOldSwapChains > 10000) {

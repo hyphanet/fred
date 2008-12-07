@@ -303,7 +303,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		OpennetManager opennet = node.getOpennet();
 		if(opennet != null) {
 			// Try old opennet connections.
-			if(opennet.wantPeer(null, false, true)) {
+			if(opennet.wantPeer(null, false, true, true)) {
 				// We want a peer.
 				// Try old connections.
 				PeerNode[] oldPeers = opennet.getOldPeers();
@@ -1201,9 +1201,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				Logger.normal(this, "Dumping incoming old-opennet peer as opennet just turned off: "+pn+".");
 				return;
 			}
-			if(!opennet.wantPeer(pn, true, false)) {
+			if(!opennet.wantPeer(pn, true, false, true)) {
 				Logger.normal(this, "No longer want peer "+pn+" - dumping it after connecting");
 				dontWant = true;
+				opennet.purgeOldOpennetPeer(pn);
 			}
 			// wantPeer will call node.peers.addPeer(), we don't have to.
 		}
@@ -1417,9 +1418,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				Logger.normal(this, "Dumping incoming old-opennet peer as opennet just turned off: "+pn+".");
 				return true;
 			}
-			if(!opennet.wantPeer(pn, true, false)) {
+			if(!opennet.wantPeer(pn, true, false, true)) {
 				Logger.normal(this, "No longer want peer "+pn+" - dumping it after connecting");
 				dontWant = true;
+				opennet.purgeOldOpennetPeer(pn);
 			}
 			// wantPeer will call node.peers.addPeer(), we don't have to.
 		}
@@ -2835,7 +2837,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/* (non-Javadoc)
 	 * @see freenet.node.OutgoingPacketMangler#sendHandshake(freenet.node.PeerNode)
 	 */
-	public void sendHandshake(PeerNode pn) {
+	public void sendHandshake(PeerNode pn, boolean notRegistered) {
 		int negType = pn.selectNegType(this);
 		if(negType == -1) {
 			// Pick a random negType from what I do support
@@ -2847,13 +2849,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		Peer peer = pn.getHandshakeIP();
 		if(peer == null) {
-			pn.couldNotSendHandshake();
+			pn.couldNotSendHandshake(notRegistered);
 			return;
 		}
 		sendJFKMessage1(pn, peer, pn.handshakeUnknownInitiator(), pn.handshakeSetupType(), negType);
 		if(logMINOR)
 			Logger.minor(this, "Sending handshake to "+peer+" for "+pn);
-		pn.sentHandshake();
+		pn.sentHandshake(notRegistered);
 	}
 
 	/* (non-Javadoc)
