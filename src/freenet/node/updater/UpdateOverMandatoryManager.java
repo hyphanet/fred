@@ -87,8 +87,11 @@ public class UpdateOverMandatoryManager {
 	public static final int GRACE_TIME = 3 * 60 * 60 * 1000; // 3h
 	private boolean logMINOR;
 	private UserAlert alert;
-	private static final Pattern extBuildNumberPattern = Pattern.compile("^ext(?:-jar)?-(\\d+)\\.fblob(\\.tmp)*$");
-	private static final Pattern mainBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+)\\.fblob(\\.tmp)*$");
+	private static final Pattern extBuildNumberPattern = Pattern.compile("^ext(?:-jar)?-(\\d+)\\.fblob$");
+	private static final Pattern mainBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+)\\.fblob$");
+	private static final Pattern extTempBuildNumberPattern = Pattern.compile("^ext(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
+	private static final Pattern mainTempBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
+	private static final Pattern revocationTempBuildNumberPattern = Pattern.compile("^revocation(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
 
 	public UpdateOverMandatoryManager(NodeUpdateManager manager) {
 		this.updateManager = manager;
@@ -1650,6 +1653,9 @@ public class UpdateOverMandatoryManager {
 				int buildNumber;
 				Matcher extBuildNumberMatcher = extBuildNumberPattern.matcher(fileName);
 				Matcher mainBuildNumberMatcher = mainBuildNumberPattern.matcher(fileName);
+				Matcher extTempBuildNumberMatcher = extTempBuildNumberPattern.matcher(fileName);
+				Matcher mainTempBuildNumberMatcher = mainTempBuildNumberPattern.matcher(fileName);
+				Matcher revocationTempBuildNumberMatcher = revocationTempBuildNumberPattern.matcher(fileName);
 
 				if(mainBuildNumberMatcher.matches()) {
 					try {
@@ -1671,6 +1677,9 @@ public class UpdateOverMandatoryManager {
 						Logger.error(this, "Wierd file in persistent temp: "+fileName);
 						return false;
 					}
+				} else if(mainTempBuildNumberMatcher.matches() || extTempBuildNumberMatcher.matches() || revocationTempBuildNumberMatcher.matches()) {
+					// Temporary file, can be deleted
+					return true;
 				}
 
 				return false;
