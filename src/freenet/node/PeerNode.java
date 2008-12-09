@@ -1373,10 +1373,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		} else {
 			delay = Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
 		}
-		sendHandshakeTime = now + delay;
 		// FIXME proper multi-homing support!
 		delay /= (handshakeIPs == null ? 1 : handshakeIPs.length);
 		if(delay < 3000) delay = 3000;
+		sendHandshakeTime = now + delay;
 		
 		if(successfulHandshakeSend)
 			firstHandshake = false;
