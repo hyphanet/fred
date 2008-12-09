@@ -316,6 +316,14 @@ public class PacketSender implements Runnable, Ticker {
 			PeerNode[] peers = om.getOldPeers();
 			
 			for(PeerNode pn : peers) {
+				if(pn.timeLastConnected() <= 0)
+					Logger.error(this, "Last connected is zero or negative for old-opennet-peer "+pn);
+				// Will be removed by next line.
+				if(now - pn.timeLastConnected() > OpennetManager.MAX_TIME_ON_OLD_OPENNET_PEERS) {
+					om.purgeOldOpennetPeer(pn);
+					if(logMINOR) Logger.minor(this, "Removing old opennet peer (too old): "+pn);
+					continue;
+				}
 				if(pn.isConnected()) continue; // Race condition??
 				if(pn.noContactDetails()) {
 					pn.startARKFetcher();
