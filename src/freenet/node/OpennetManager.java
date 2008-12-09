@@ -405,7 +405,8 @@ public class OpennetManager {
 			if(logMINOR)
 				Logger.minor(this, "Dropping opennet peers: currently "+peersLRU.size());
 			PeerNode toDrop;
-			toDrop = peerToDrop(false, true);
+			toDrop = peerToDrop(false, false);
+			if(toDrop == null) toDrop = peerToDrop(false, true);
 			if(toDrop == null) return;
 			peersLRU.remove(toDrop);
 			if(logMINOR)
@@ -424,7 +425,7 @@ public class OpennetManager {
 			for(int i=0;i<peers.length;i++) {
 				OpennetPeerNode pn = peers[i];
 				if(pn == null) continue;
-				if(!pn.isDroppable(false)) continue;
+				if((!pn.isDroppable(false)) && !force) continue;
 				// LOCKING: Always take the OpennetManager lock first
 				if(!pn.isConnected()) {
 					if(Logger.shouldLog(Logger.MINOR, this))
