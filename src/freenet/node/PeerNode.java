@@ -1960,7 +1960,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				// else it's a rekey
 			}
 			newTracker = new KeyTracker(this, packets, encCipher, encKey);
-			if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+shortToString()+" neg type "+negType);
+			if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+packets+" for "+shortToString()+" neg type "+negType);
 			if(unverified) {
 				if(unverifiedTracker != null) {
 					// Keep the old unverified tracker if possible.
@@ -4253,8 +4253,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(this) {
 			cur = currentTracker;
 		}
-		if(cur == null) return -1;
-		if(cur.packets.isDeprecated()) return -1;
+		if(cur == null) {
+			if(logMINOR) Logger.minor(this, "getReusableTrackerID(): cur = null on "+this);
+			return -1;
+		}
+		if(cur.packets.isDeprecated()) {
+			if(logMINOR) Logger.minor(this, "getReusableTrackerID(): cur.packets.isDeprecated on "+this);
+			return -1;
+		}
+		if(logMINOR) Logger.minor(this, "getReusableTrackerID(): "+cur.packets.trackerID+" on "+this);
 		return cur.packets.trackerID;
 	}
 }
