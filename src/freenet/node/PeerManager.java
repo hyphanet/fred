@@ -1768,6 +1768,7 @@ public class PeerManager {
 				continue;
 			count++;
 		}
+		if(logMINOR) Logger.minor(this, "countConnectedDarknetPeers() returning "+count);
 		return count;
 	}
 
