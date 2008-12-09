@@ -1364,24 +1364,24 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(isBurstOnly())
 			return calcNextHandshakeBurstOnly(now);
 		synchronized(this) {
-		long delay;
-		if(unroutableOlderVersion || unroutableNewerVersion || disableRouting) {
-			// Let them know we're here, but have no hope of routing general data to them.
-			delay = Node.MIN_TIME_BETWEEN_VERSION_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
-		} else if(invalidVersion() && !firstHandshake) {
-			delay = Node.MIN_TIME_BETWEEN_VERSION_PROBES + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
-		} else {
-			delay = Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
-		}
-		// FIXME proper multi-homing support!
-		delay /= (handshakeIPs == null ? 1 : handshakeIPs.length);
-		if(delay < 3000) delay = 3000;
-		sendHandshakeTime = now + delay;
-		
-		if(successfulHandshakeSend)
-			firstHandshake = false;
-		handshakeCount++;
-		return handshakeCount == MAX_HANDSHAKE_COUNT;
+			long delay;
+			if(unroutableOlderVersion || unroutableNewerVersion || disableRouting) {
+				// Let them know we're here, but have no hope of routing general data to them.
+				delay = Node.MIN_TIME_BETWEEN_VERSION_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
+			} else if(invalidVersion() && !firstHandshake) {
+				delay = Node.MIN_TIME_BETWEEN_VERSION_PROBES + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
+			} else {
+				delay = Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
+			}
+			// FIXME proper multi-homing support!
+			delay /= (handshakeIPs == null ? 1 : handshakeIPs.length);
+			if(delay < 3000) delay = 3000;
+			sendHandshakeTime = now + delay;
+			
+			if(successfulHandshakeSend)
+				firstHandshake = false;
+			handshakeCount++;
+			return handshakeCount == MAX_HANDSHAKE_COUNT;
 		}
 	}
 
