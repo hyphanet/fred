@@ -2880,7 +2880,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	public int[] supportedNegTypes() {
-		return new int[] { 2, 3, 4 };
+		return new int[] { 2, 4 };
 	}
 
 	public int fullHeadersLengthOneMessage() {
