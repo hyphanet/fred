@@ -235,7 +235,7 @@ public class PacketSender implements Runnable, Ticker {
 			pn.maybeOnConnect();
 			if(pn.shouldDisconnectAndRemoveNow() && !pn.isDisconnecting()) {
 				// Might as well do it properly.
-				node.peers.disconnect(pn, true, true);
+				node.peers.disconnect(pn, true, true, false);
 			}
 			if(pn.shouldThrottle() && !canSendThrottled)
 				continue;
