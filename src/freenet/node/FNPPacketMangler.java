@@ -1201,7 +1201,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				Logger.normal(this, "Dumping incoming old-opennet peer as opennet just turned off: "+pn+".");
 				return;
 			}
-			if(!opennet.wantPeer(pn, true, false, true)) {
+			/* When an old-opennet-peer connects, add it at the top of the LRU, so that it isn't
+			 * immediately dropped when there is no droppable peer to drop. If it was dropped 
+			 * from the bottom of the LRU list, we would not have added it to the LRU; so it was
+			 * somewhere in the middle. */
+			if(!opennet.wantPeer(pn, false, false, true)) {
 				Logger.normal(this, "No longer want peer "+pn+" - dumping it after connecting");
 				dontWant = true;
 				opennet.purgeOldOpennetPeer(pn);
@@ -1418,7 +1422,11 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				Logger.normal(this, "Dumping incoming old-opennet peer as opennet just turned off: "+pn+".");
 				return true;
 			}
-			if(!opennet.wantPeer(pn, true, false, true)) {
+			/* When an old-opennet-peer connects, add it at the top of the LRU, so that it isn't
+			 * immediately dropped when there is no droppable peer to drop. If it was dropped 
+			 * from the bottom of the LRU list, we would not have added it to the LRU; so it was
+			 * somewhere in the middle. */
+			if(!opennet.wantPeer(pn, false, false, true)) {
 				Logger.normal(this, "No longer want peer "+pn+" - dumping it after connecting");
 				dontWant = true;
 				opennet.purgeOldOpennetPeer(pn);
