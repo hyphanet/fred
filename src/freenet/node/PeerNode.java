@@ -166,7 +166,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private boolean isRoutable;
 
 	/** Used by maybeOnConnect */
-	private boolean wasDisconnected;
+	private boolean wasDisconnected = true;
 	/**
 	* ARK fetcher.
 	*/
