@@ -331,13 +331,13 @@ public class OpennetManager {
 			// If we have dropped a disconnected peer, then the inter-peer offer cooldown doesn't apply: we can accept immediately.
 			boolean hasDisconnected = false;
 			if(peersLRU.size() == maxPeers && nodeToAddNow == null) {
-				PeerNode toDrop = peerToDrop(true);
+				PeerNode toDrop = peerToDrop(true, false);
 				if(toDrop != null)
 					hasDisconnected = !toDrop.isConnected();
 			} else while(peersLRU.size() > maxPeers - (nodeToAddNow == null ? 0 : 1)) {
 				OpennetPeerNode toDrop;
 				// can drop peers which are over the limit
-				toDrop = peerToDrop(noDisconnect || nodeToAddNow == null);
+				toDrop = peerToDrop(noDisconnect || nodeToAddNow == null, false);
 				if(toDrop == null) {
 					if(logMINOR)
 						Logger.minor(this, "No more peers to drop, still "+peersLRU.size()+" peers, cannot accept peer"+(nodeToAddNow == null ? "" : nodeToAddNow.toString()));
@@ -405,7 +405,7 @@ public class OpennetManager {
 			if(logMINOR)
 				Logger.minor(this, "Dropping opennet peers: currently "+peersLRU.size());
 			PeerNode toDrop;
-			toDrop = peerToDrop(false);
+			toDrop = peerToDrop(false, true);
 			if(toDrop == null) return;
 			peersLRU.remove(toDrop);
 			if(logMINOR)
@@ -414,7 +414,7 @@ public class OpennetManager {
 		}
 	}
 	
-	synchronized OpennetPeerNode peerToDrop(boolean noDisconnect) {
+	synchronized OpennetPeerNode peerToDrop(boolean noDisconnect, boolean force) {
 		if(peersLRU.size() < getNumberOfConnectedPeersToAim()) {
 			// Don't drop any peers
 			return null;
@@ -439,7 +439,7 @@ public class OpennetManager {
 			for(int i=0;i<peers.length;i++) {
 				OpennetPeerNode pn = peers[i];
 				if(pn == null) continue;
-				if(!pn.isDroppable(false)) continue;
+				if((!pn.isDroppable(false)) && !force) continue;
 				if(Logger.shouldLog(Logger.MINOR, this))
 					Logger.minor(this, "Possibly dropping opennet peer "+pn+" "+
 							(System.currentTimeMillis() - timeLastDropped)+" ms since last dropped peer");
