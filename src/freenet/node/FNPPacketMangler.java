@@ -1496,6 +1496,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			else trackerID = pn.getReusableTrackerID();
 			System.arraycopy(Fields.longToBytes(trackerID), 0, data, ptr, 8);
 			ptr += 8;
+			if(logMINOR) Logger.minor(this, "Sending tracker ID "+trackerID+" in JFK(3)");
 		}
 		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, ptr, 8);
 		ptr += 8;
