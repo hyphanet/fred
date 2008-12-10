@@ -166,7 +166,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private boolean isRoutable;
 
 	/** Used by maybeOnConnect */
-	private boolean wasDisconnected;
+	private boolean wasDisconnected = true;
 	/**
 	* ARK fetcher.
 	*/
@@ -1364,24 +1364,24 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(isBurstOnly())
 			return calcNextHandshakeBurstOnly(now);
 		synchronized(this) {
-		long delay;
-		if(unroutableOlderVersion || unroutableNewerVersion || disableRouting) {
-			// Let them know we're here, but have no hope of routing general data to them.
-			delay = Node.MIN_TIME_BETWEEN_VERSION_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
-		} else if(invalidVersion() && !firstHandshake) {
-			delay = Node.MIN_TIME_BETWEEN_VERSION_PROBES + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
-		} else {
-			delay = Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
-		}
-		sendHandshakeTime = now + delay;
-		// FIXME proper multi-homing support!
-		delay /= (handshakeIPs == null ? 1 : handshakeIPs.length);
-		if(delay < 3000) delay = 3000;
-		
-		if(successfulHandshakeSend)
-			firstHandshake = false;
-		handshakeCount++;
-		return handshakeCount == MAX_HANDSHAKE_COUNT;
+			long delay;
+			if(unroutableOlderVersion || unroutableNewerVersion || disableRouting) {
+				// Let them know we're here, but have no hope of routing general data to them.
+				delay = Node.MIN_TIME_BETWEEN_VERSION_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_SENDS);
+			} else if(invalidVersion() && !firstHandshake) {
+				delay = Node.MIN_TIME_BETWEEN_VERSION_PROBES + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_VERSION_PROBES);
+			} else {
+				delay = Node.MIN_TIME_BETWEEN_HANDSHAKE_SENDS + node.random.nextInt(Node.RANDOMIZED_TIME_BETWEEN_HANDSHAKE_SENDS);
+			}
+			// FIXME proper multi-homing support!
+			delay /= (handshakeIPs == null ? 1 : handshakeIPs.length);
+			if(delay < 3000) delay = 3000;
+			sendHandshakeTime = now + delay;
+			
+			if(successfulHandshakeSend)
+				firstHandshake = false;
+			handshakeCount++;
+			return handshakeCount == MAX_HANDSHAKE_COUNT;
 		}
 	}
 
@@ -1414,11 +1414,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return fetchARKFlag;
 	}
 
-	protected void calcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK) {
+	protected void calcNextHandshake(boolean successfulHandshakeSend, boolean dontFetchARK, boolean notRegistered) {
 		long now = System.currentTimeMillis();
 		boolean fetchARKFlag = false;
 		fetchARKFlag = innerCalcNextHandshake(successfulHandshakeSend, dontFetchARK, now);
-		setPeerNodeStatus(now);  // Because of isBursting being set above and it can't hurt others
+		if(!notRegistered)
+			setPeerNodeStatus(now);  // Because of isBursting being set above and it can't hurt others
 		// Don't fetch ARKs for peers we have verified (through handshake) to be incompatible with us
 		if(fetchARKFlag && !dontFetchARK) {
 			long arkFetcherStartTime1 = System.currentTimeMillis();
@@ -1457,20 +1458,20 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* Call this method when a handshake request has been
 	* sent.
 	*/
-	public void sentHandshake() {
+	public void sentHandshake(boolean notRegistered) {
 		if(logMINOR)
 			Logger.minor(this, "sentHandshake(): " + this);
-		calcNextHandshake(true, false);
+		calcNextHandshake(true, false, notRegistered);
 	}
 
 	/**
 	* Call this method when a handshake request could not be sent (i.e. no IP address available)
 	* sent.
 	*/
-	public void couldNotSendHandshake() {
+	public void couldNotSendHandshake(boolean notRegistered) {
 		if(logMINOR)
 			Logger.minor(this, "couldNotSendHandshake(): " + this);
-		calcNextHandshake(false, false);
+		calcNextHandshake(false, false, notRegistered);
 	}
 
 	/**
@@ -1830,7 +1831,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 		// Update sendHandshakeTime; don't send another handshake for a while.
 		// If unverified, "a while" determines the timeout; if not, it's just good practice to avoid a race below.
-		calcNextHandshake(true, true);
+		calcNextHandshake(true, true, false);
 		stopARKFetcher();
 		try {
 			// First, the new noderef
@@ -1905,7 +1906,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			} else if(bootIDChanged && logMINOR)
 				Logger.minor(this, "Changed boot ID from " + bootID + " to " + thisBootID + " for " + getPeer());
 			this.bootID = thisBootID;
-			boolean newPacketTracker = false;
 			if(currentTracker != null && currentTracker.packets.trackerID == trackerID && !currentTracker.packets.isDeprecated()) {
 				if(isJFK4 && !jfk4SameAsOld)
 					Logger.error(this, "In JFK(4), found tracker ID "+trackerID+" but other side says is new! for "+this);
@@ -1923,7 +1923,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			} else if(trackerID == -1) {
 				// Create a new tracker unconditionally
 				packets = new PacketTracker(this);
-				newPacketTracker = true;
 				if(logMINOR) Logger.minor(this, "Creating new PacketTracker as instructed for "+this);
 			} else if(trackerID == -2 && !bootIDChanged) {
 				// Reuse if not deprecated and not boot ID changed
@@ -1935,7 +1934,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					if(logMINOR) Logger.minor(this, "Re-using packet tracker (not given an ID): "+packets.trackerID+" on "+this+" from prev "+previousTracker);
 				} else {
 					packets = new PacketTracker(this);
-					newPacketTracker = true;
 					if(logMINOR) Logger.minor(this, "Cannot reuse trackers (not given an ID) on "+this);
 				}
 			} else {
@@ -1946,11 +1944,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					packets = new PacketTracker(this, trackerID);
 				} else
 					packets = new PacketTracker(this);
-				newPacketTracker = true;
 				if(logMINOR) Logger.minor(this, "Creating new tracker (last resort) on "+this);
 			}
 			if(bootIDChanged) {
-				newPacketTracker = true;
 				oldPrev = previousTracker;
 				oldCur = currentTracker;
 				previousTracker = null;
@@ -1964,7 +1960,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				// else it's a rekey
 			}
 			newTracker = new KeyTracker(this, packets, encCipher, encKey);
-			if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+shortToString()+" neg type "+negType+" new packet tracker: "+newPacketTracker);
+			if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+packets+" for "+shortToString()+" neg type "+negType);
 			if(unverified) {
 				if(unverifiedTracker != null) {
 					// Keep the old unverified tracker if possible.
@@ -2031,7 +2027,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			node.peers.disconnected(this);
 		else if(!wasARekey) {
 			node.peers.addConnectedPeer(this);
-			onConnect();
+			maybeOnConnect();
 		}
 		
 		return packets.trackerID;
@@ -2236,6 +2232,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		maybeSendInitialMessages();
 		setPeerNodeStatus(now);
 		node.peers.addConnectedPeer(this);
+		maybeOnConnect();
 		if(completelyDeprecatedTracker != null) {
 			if(completelyDeprecatedTracker.packets != tracker.packets)
 				completelyDeprecatedTracker.packets.completelyDeprecated(tracker);
@@ -3303,7 +3300,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * A method to be called once at the beginning of every time isConnected() is true
 	 */
 	protected void onConnect() {
-		// Do nothing in the default impl
+		OpennetManager om = node.getOpennet();
+		if(om != null)
+			om.dropExcessPeers();
 	}
 
 	public void onFound(long edition, FetchResult result) {
@@ -4254,8 +4253,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		synchronized(this) {
 			cur = currentTracker;
 		}
-		if(cur == null) return -1;
-		if(cur.packets.isDeprecated()) return -1;
+		if(cur == null) {
+			if(logMINOR) Logger.minor(this, "getReusableTrackerID(): cur = null on "+this);
+			return -1;
+		}
+		if(cur.packets.isDeprecated()) {
+			if(logMINOR) Logger.minor(this, "getReusableTrackerID(): cur.packets.isDeprecated on "+this);
+			return -1;
+		}
+		if(logMINOR) Logger.minor(this, "getReusableTrackerID(): "+cur.packets.trackerID+" on "+this);
 		return cur.packets.trackerID;
 	}
 }

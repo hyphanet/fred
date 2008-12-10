@@ -477,7 +477,7 @@ public class PeerManager {
 	/**
 	 * Disconnect from a specified node
 	 */
-	public void disconnect(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck) {
+	public void disconnect(final PeerNode pn, boolean sendDisconnectMessage, final boolean waitForAck, boolean purge) {
 		if(logMINOR)
 			Logger.minor(this, "Disconnecting " + pn.shortToString());
 		synchronized(this) {
@@ -486,7 +486,7 @@ public class PeerManager {
 		}
 		pn.notifyDisconnecting();
 		if(sendDisconnectMessage) {
-			Message msg = DMT.createFNPDisconnect(true, false, -1, new ShortBuffer(new byte[0]));
+			Message msg = DMT.createFNPDisconnect(true, purge, -1, new ShortBuffer(new byte[0]));
 			try {
 				pn.sendAsync(msg, new AsyncMessageCallback() {
 
@@ -1768,6 +1768,7 @@ public class PeerManager {
 				continue;
 			count++;
 		}
+		if(logMINOR) Logger.minor(this, "countConnectedDarknetPeers() returning "+count);
 		return count;
 	}
 

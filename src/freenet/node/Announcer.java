@@ -331,7 +331,7 @@ public class Announcer {
 					}
 					if(enoughPeers()) {
 						for(SeedServerPeerNode pn : node.peers.getConnectedSeedServerPeersVector(null)) {
-							node.peers.disconnect(pn, true, true);
+							node.peers.disconnect(pn, true, true, false);
 						}
 						// Re-check every minute. Something bad might happen (e.g. cpu starvation), causing us to have to reseed.
 						node.getTicker().queueTimedJob(new Runnable() {
@@ -511,7 +511,7 @@ public class Announcer {
 				// If it takes more than COOLING_OFF_PERIOD to disconnect, we might not be able to reannounce to this
 				// node. However, we can't reannounce to it anyway until announcedTo is cleared, which probably will
 				// be more than that period in the future.
-				node.peers.disconnect(seed, true, false);
+				node.peers.disconnect(seed, true, false, false);
 				System.out.println("Announcement to "+seed.userToString()+" completed.");
 				if(announceNow)
 					maybeSendAnnouncement();

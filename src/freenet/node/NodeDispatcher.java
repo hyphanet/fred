@@ -314,7 +314,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		// Otherwise just dump all current connection state and keep trying to connect.
 		boolean remove = m.getBoolean(DMT.REMOVE);
 		if(remove)
-			node.peers.disconnect(source, false, false);
+			node.peers.disconnect(source, false, false, false);
 		// If true, purge all references to this node. Otherwise, we can keep the node
 		// around in secondary tables etc in order to more easily reconnect later. 
 		// (Mostly used on opennet)
