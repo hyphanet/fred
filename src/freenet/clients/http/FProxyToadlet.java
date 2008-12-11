@@ -474,7 +474,7 @@ public final class FProxyToadlet extends Toadlet {
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "max-size", String.valueOf(e.expectedSize == -1 ? Long.MAX_VALUE : e.expectedSize*2) });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "fetch", l10n("fetchLargeFileAnywayAndDisplay") });
 				optionList.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", "FProxy home page" }, l10n("abortToHomepage"));
-				if(ctx.isAllowedFullAccess()) {
+				if(ctx.isAllowedFullAccess() || !ctx.getContainer().publicGatewayMode()) {
 					option = optionList.addChild("li");
 					optionForm = ctx.addFormChild(option, "/queue/", "tooBigQueueForm");
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
@@ -520,7 +520,7 @@ public final class FProxyToadlet extends Toadlet {
 					L10n.addL10nSubstitution(option, "FProxyToadlet.openWithKeyExplorer", new String[] { "link", "/link" }, new String[] { "<a href=\"/plugins/plugins.KeyExplorer.KeyExplorer/?key=" + key.toString() + "\">", "</a>" });
 				}
 				
-				if(!e.isFatal() && ctx.isAllowedFullAccess()) {
+				if(!e.isFatal() && (ctx.isAllowedFullAccess() || !ctx.getContainer().publicGatewayMode())) {
 					option = optionList.addChild("li");
 					HTMLNode optionForm = ctx.addFormChild(option, "/queue/", "dnfQueueForm");
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
