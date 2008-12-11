@@ -109,6 +109,7 @@ public final class FProxyToadlet extends Toadlet {
 	}
 
 	public static void handleDownload(ToadletContext context, Bucket data, BucketFactory bucketFactory, String mimeType, String requestedMimeType, String forceString, boolean forceDownload, String basePath, FreenetURI key, String extras, String referrer, boolean downloadLink, ToadletContext ctx, NodeClientCore core) throws ToadletContextClosedException, IOException {
+		ToadletContainer container = context.getContainer();
 		if(Logger.shouldLog(Logger.MINOR, FProxyToadlet.class))
 			Logger.minor(FProxyToadlet.class, "handleDownload(data.size="+data.size()+", mimeType="+mimeType+", requestedMimeType="+requestedMimeType+", forceDownload="+forceDownload+", basePath="+basePath+", key="+key);
 		String extrasNoMime = extras; // extras will not include MIME type to start with - REDFLAG maybe it should be an array
@@ -132,7 +133,7 @@ public final class FProxyToadlet extends Toadlet {
 		Bucket toFree = null;
 		try {
 			if((!force) && (!forceDownload)) {
-				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), context.getContainer().enableInlinePrefetch() ? prefetchHook : null);
+				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), container.enableInlinePrefetch() ? prefetchHook : null);
 				if(data != fo.data) toFree = fo.data;
 				data = fo.data;
 				mimeType = fo.type;
@@ -247,7 +248,7 @@ public final class FProxyToadlet extends Toadlet {
 			option = optionList.addChild("li");
 			L10n.addL10nSubstitution(option, "FProxyToadlet.backToFProxy", new String[] { "link", "/link" },
 					new String[] { "<a href=\"/\">", "</a>" });
-			if(ctx.isAllowedFullAccess() || !ctx.getContainer().publicGatewayMode()) {
+			if(ctx.isAllowedFullAccess() || !container.publicGatewayMode()) {
 				option = optionList.addChild("li");
 				HTMLNode optionForm = ctx.addFormChild(option, "/queue/", "tooBigQueueForm");
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
@@ -474,7 +475,7 @@ public final class FProxyToadlet extends Toadlet {
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "max-size", String.valueOf(e.expectedSize == -1 ? Long.MAX_VALUE : e.expectedSize*2) });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "fetch", l10n("fetchLargeFileAnywayAndDisplay") });
 				optionList.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", "FProxy home page" }, l10n("abortToHomepage"));
-				if(ctx.isAllowedFullAccess() || !ctx.getContainer().publicGatewayMode()) {
+				if(ctx.isAllowedFullAccess() || !container.publicGatewayMode()) {
 					option = optionList.addChild("li");
 					optionForm = ctx.addFormChild(option, "/queue/", "tooBigQueueForm");
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
@@ -520,7 +521,7 @@ public final class FProxyToadlet extends Toadlet {
 					L10n.addL10nSubstitution(option, "FProxyToadlet.openWithKeyExplorer", new String[] { "link", "/link" }, new String[] { "<a href=\"/plugins/plugins.KeyExplorer.KeyExplorer/?key=" + key.toString() + "\">", "</a>" });
 				}
 				
-				if(!e.isFatal() && (ctx.isAllowedFullAccess() || !ctx.getContainer().publicGatewayMode())) {
+				if(!e.isFatal() && (ctx.isAllowedFullAccess() || !container.publicGatewayMode())) {
 					option = optionList.addChild("li");
 					HTMLNode optionForm = ctx.addFormChild(option, "/queue/", "dnfQueueForm");
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
