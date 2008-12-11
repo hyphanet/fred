@@ -399,7 +399,14 @@ public final class FProxyToadlet extends Toadlet {
 		if(ks.startsWith("/"))
 			ks = ks.substring(1);
 		
-		long maxSize = httprequest.getLongParam("max-size", MAX_LENGTH);
+		long maxSize;
+		
+		boolean restricted = (container.publicGatewayMode() && !ctx.isAllowedFullAccess());
+		
+		if(restricted)
+			maxSize = MAX_LENGTH;
+		else 
+			maxSize = httprequest.getLongParam("max-size", MAX_LENGTH);
 		
 		FreenetURI key;
 		try {
@@ -470,12 +477,12 @@ public final class FProxyToadlet extends Toadlet {
 				infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				infoboxContent.addChild("#", l10n("largeFileExplanationAndOptions"));
 				HTMLNode optionList = infoboxContent.addChild("ul");
+				if(!restricted) {
 				option = optionList.addChild("li");
 				HTMLNode optionForm = option.addChild("form", new String[] { "action", "method" }, new String[] {'/' + key.toString(), "get" });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "max-size", String.valueOf(e.expectedSize == -1 ? Long.MAX_VALUE : e.expectedSize*2) });
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "fetch", l10n("fetchLargeFileAnywayAndDisplay") });
 				optionList.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", "FProxy home page" }, l10n("abortToHomepage"));
-				if(ctx.isAllowedFullAccess() || !container.publicGatewayMode()) {
 					option = optionList.addChild("li");
 					optionForm = ctx.addFormChild(option, "/queue/", "tooBigQueueForm");
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
