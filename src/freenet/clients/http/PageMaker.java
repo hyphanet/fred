@@ -163,7 +163,7 @@ public final class PageMaker {
 			HTMLNode navbarUl = navbarDiv.addChild("ul", "id", "navlist");
 			for (String navigationLink :  fullAccess ? navigationLinkTexts : navigationLinkTextsNonFull) {
 				LinkEnabledCallback cb = navigationLinkCallbacks.get(navigationLink);
-				if(cb != null && !cb.isEnabled()) continue;
+				if(cb != null && !cb.isEnabled(ctx)) continue;
 				String navigationTitle = navigationLinkTitles.get(navigationLink);
 				String navigationPath = navigationLinks.get(navigationLink);
 				HTMLNode listItem = navbarUl.addChild("li");

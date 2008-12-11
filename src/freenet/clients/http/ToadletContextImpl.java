@@ -325,7 +325,8 @@ public class ToadletContextImpl implements ToadletContext {
 						sendError(sock.getOutputStream(), 400, "Bad Request", l10n("cannotParseContentLengthWithError", "error", e.toString()), true, null);
 						return;
 					}
-					if(allowPost) {
+					if(allowPost && ((!container.publicGatewayMode()) || ctx.isAllowedFullAccess())) { 
+
 					data = bf.makeBucket(len);
 					BucketTools.copyFrom(data, is, len);
 					} else {

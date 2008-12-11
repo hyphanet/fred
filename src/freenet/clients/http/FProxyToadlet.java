@@ -688,8 +688,8 @@ public final class FProxyToadlet extends Toadlet {
 		N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, core, client);
 		server.register(n2ntmToadlet, "/send_n2ntm/", true, true);
 		
-		QueueToadlet queueToadlet = new QueueToadlet(core, core.getFCPServer(), client);
-		server.register(queueToadlet, "/queue/", true, "FProxyToadlet.queueTitle", "FProxyToadlet.queue", false, null);
+		QueueToadlet queueToadlet = new QueueToadlet(core, core.getFCPServer(), client, server);
+		server.register(queueToadlet, "/queue/", true, "FProxyToadlet.queueTitle", "FProxyToadlet.queue", false, queueToadlet);
 		
 		StatisticsToadlet statisticsToadlet = new StatisticsToadlet(node, core, client);
 		server.register(statisticsToadlet, "/stats/", true, "FProxyToadlet.statsTitle", "FProxyToadlet.stats", true, null);

@@ -50,7 +50,7 @@ public class OpennetConnectionsToadlet extends ConnectionsToadlet implements Lin
 		return node.peers.getOpennetPeerNodeStatuses(noHeavy);
 	}
 
-	public boolean isEnabled() {
+	public boolean isEnabled(ToadletContext ctx) {
 		return node.isOpennetEnabled();
 	}
 

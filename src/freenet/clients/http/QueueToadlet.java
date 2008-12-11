@@ -55,7 +55,7 @@ import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 
-public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
+public class QueueToadlet extends Toadlet implements RequestCompletionCallback, LinkEnabledCallback {
 
 	private static final int LIST_IDENTIFIER = 1;
 	private static final int LIST_SIZE = 2;
@@ -77,13 +77,15 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 	
 	private NodeClientCore core;
 	final FCPServer fcp;
+	private ToadletContainer container;
 	
 	private boolean isReversed = false;
 	
-	public QueueToadlet(NodeClientCore core, FCPServer fcp, HighLevelSimpleClient client) {
+	public QueueToadlet(NodeClientCore core, FCPServer fcp, HighLevelSimpleClient client, ToadletContainer container) {
 		super(client);
 		this.core = core;
 		this.fcp = fcp;
+		this.container = container;
 		if(fcp == null) throw new NullPointerException();
 		fcp.setCompletionCallback(this);
 		loadCompletedIdentifiers();
@@ -94,6 +96,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		
 		if(!core.hasLoadedQueue()) {
 			writeError(L10n.getString("QueueToadlet.notLoadedYetTitle"), L10n.getString("QueueToadlet.notLoadedYet"), ctx, false);
+			return;
+		}
+		
+		if(container.publicGatewayMode() && !ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
 			return;
 		}
 		
@@ -489,6 +496,11 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		
 		if(!core.hasLoadedQueue()) {
 			writeError(L10n.getString("QueueToadlet.notLoadedYetTitle"), L10n.getString("QueueToadlet.notLoadedYet"), ctx, false);
+			return;
+		}
+		
+		if(container.publicGatewayMode() && !ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
 			return;
 		}
 		
@@ -1430,6 +1442,10 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		}
 		core.alerts.unregister(alert);
 		saveCompletedIdentifiersOffThread();
+	}
+
+	public boolean isEnabled(ToadletContext ctx) {
+		return (!container.publicGatewayMode()) || ctx.isAllowedFullAccess();
 	}
 
 }
