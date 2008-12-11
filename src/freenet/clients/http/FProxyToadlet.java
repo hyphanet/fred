@@ -494,6 +494,11 @@ public final class FProxyToadlet extends Toadlet {
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "download", l10n("downloadInBackgroundToDisk") });
 				}
 
+				optionList.addChild("li").addChild("a", new String[] { "href", "title" }, new String[] { "/", L10n.getString("Toadlet.homepage") }, l10n("abortToHomepage"));
+				
+				option = optionList.addChild("li");
+				option.addChild(ctx.getPageMaker().createBackLink(ctx, l10n("goBackToPrev")));
+				
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			} else {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(FetchException.getShortMessage(e.mode), ctx);
