@@ -247,7 +247,7 @@ public final class FProxyToadlet extends Toadlet {
 			option = optionList.addChild("li");
 			L10n.addL10nSubstitution(option, "FProxyToadlet.backToFProxy", new String[] { "link", "/link" },
 					new String[] { "<a href=\"/\">", "</a>" });
-			if(ctx.isAllowedFullAccess()) {
+			if(ctx.isAllowedFullAccess() || !ctx.getContainer().publicGatewayMode()) {
 				option = optionList.addChild("li");
 				HTMLNode optionForm = ctx.addFormChild(option, "/queue/", "tooBigQueueForm");
 				optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", key.toString() });
