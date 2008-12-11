@@ -77,15 +77,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	
 	private NodeClientCore core;
 	final FCPServer fcp;
-	private ToadletContainer container;
 	
 	private boolean isReversed = false;
 	
-	public QueueToadlet(NodeClientCore core, FCPServer fcp, HighLevelSimpleClient client, ToadletContainer container) {
+	public QueueToadlet(NodeClientCore core, FCPServer fcp, HighLevelSimpleClient client) {
 		super(client);
 		this.core = core;
 		this.fcp = fcp;
-		this.container = container;
 		if(fcp == null) throw new NullPointerException();
 		fcp.setCompletionCallback(this);
 		loadCompletedIdentifiers();
