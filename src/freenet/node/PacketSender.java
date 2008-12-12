@@ -261,7 +261,7 @@ public class PacketSender implements Runnable, Ticker {
 				}
 				
 				try {
-				if(canSendThrottled && pn.maybeSendPacket(now, rpiTemp, rpiIntTemp)) {
+				if((canSendThrottled || !pn.shouldThrottle()) && pn.maybeSendPacket(now, rpiTemp, rpiIntTemp)) {
 					canSendThrottled = false;
 					count = node.outputThrottle.getCount();
 					if(count > MAX_PACKET_SIZE)
