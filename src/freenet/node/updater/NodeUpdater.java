@@ -146,7 +146,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 				return;
 			if(availableVersion <= fetchedVersion)
 				return;
-			if(fetchingVersion < minDeployVersion) {
+			if(fetchingVersion < minDeployVersion || fetchingVersion == currentVersion) {
 				Logger.normal(this, "Cancelling previous fetch");
 				cancelled = cg;
 				cg = null;
