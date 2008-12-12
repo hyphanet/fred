@@ -1896,6 +1896,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			isRoutable = routable;
 			unroutableNewerVersion = newer;
 			unroutableOlderVersion = older;
+			boolean notReusingTracker = false;
 			bootIDChanged = (thisBootID != this.bootID);
 			if(bootIDChanged && wasARekey) {
 				Logger.error(this, "Changed boot ID while rekeying! from " + bootID + " to " + thisBootID + " for " + getPeer());
@@ -1923,6 +1924,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			} else if(trackerID == -1) {
 				// Create a new tracker unconditionally
 				packets = new PacketTracker(this);
+				notReusingTracker = true;
 				if(logMINOR) Logger.minor(this, "Creating new PacketTracker as instructed for "+this);
 			} else if(trackerID == -2 && !bootIDChanged) {
 				// Reuse if not deprecated and not boot ID changed
@@ -1934,19 +1936,21 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					if(logMINOR) Logger.minor(this, "Re-using packet tracker (not given an ID): "+packets.trackerID+" on "+this+" from prev "+previousTracker);
 				} else {
 					packets = new PacketTracker(this);
+					notReusingTracker = true;
 					if(logMINOR) Logger.minor(this, "Cannot reuse trackers (not given an ID) on "+this);
 				}
 			} else {
 				if(isJFK4 && negType >= 4 && trackerID < 0)
 					Logger.error(this, "JFK(4) packet with neg type "+negType+" has negative tracker ID: "+trackerID);
 					
+				notReusingTracker = true;
 				if(isJFK4/* && !jfk4SameAsOld implied */ && trackerID >= 0) {
 					packets = new PacketTracker(this, trackerID);
 				} else
 					packets = new PacketTracker(this);
 				if(logMINOR) Logger.minor(this, "Creating new tracker (last resort) on "+this);
 			}
-			if(bootIDChanged) {
+			if(bootIDChanged || notReusingTracker) {
 				oldPrev = previousTracker;
 				oldCur = currentTracker;
 				previousTracker = null;
