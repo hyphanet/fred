@@ -98,9 +98,6 @@ public class PeerNodeStatus {
 	private final double selectionRate;
 
 	PeerNodeStatus(PeerNode peerNode, boolean noHeavy) {
-		if(Logger.shouldLog(Logger.MINOR, this)) {
-			Logger.minor(this, "Creating peer node status for "+peerNode+" noHeavy="+noHeavy);
-		}
 		Peer p = peerNode.getPeer();
 		if(p == null) {
 			peerAddress = null;
