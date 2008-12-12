@@ -210,6 +210,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 
 	void onSuccess(FetchResult result, ClientGetter state, File tempBlobFile, int fetchedVersion) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		int requiredExt = -1;
+		int recommendedExt = -1;
 		synchronized(this) {
 			if(fetchedVersion <= this.fetchedVersion) {
 				tempBlobFile.delete();
@@ -249,8 +251,6 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			if(fetchedVersion > currentVersion)
 				Logger.normal(this, "Found version " + fetchedVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
 			if(!extUpdate) {
-				int requiredExt = -1;
-				int recommendedExt = -1;
 				InputStream is = null;
 				try {
 					is = result.asBucket().getInputStream();
@@ -310,7 +310,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 				this.result.asBucket().free();
 			this.result = result;
 		}
-		manager.onDownloadedNewJar(extUpdate);
+		manager.onDownloadedNewJar(extUpdate, requiredExt, recommendedExt);
 	}
 	
 	private static final String REQUIRED_EXT_PREFIX = "Required-Ext-Version: ";
