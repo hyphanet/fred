@@ -45,18 +45,20 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 	private final Node node;
 	public final NodeUpdateManager manager;
 	private final int currentVersion;
+	private int realAvailableVersion;
 	private int availableVersion;
 	private int fetchingVersion;
 	private int fetchedVersion;
 	private int writtenVersion;
 	private int maxDeployVersion;
+	private int minDeployVersion;
 	private boolean isRunning;
 	private boolean isFetching;
 	public final boolean extUpdate;
 	private final String blobFilenamePrefix;
 	private File tempBlobFile;
 
-	NodeUpdater(NodeUpdateManager manager, FreenetURI URI, boolean extUpdate, int current, int max, String blobFilenamePrefix) {
+	NodeUpdater(NodeUpdateManager manager, FreenetURI URI, boolean extUpdate, int current, int min, int max, String blobFilenamePrefix) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.manager = manager;
 		this.node = manager.node;
@@ -71,6 +73,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		this.extUpdate = extUpdate;
 		this.blobFilenamePrefix = blobFilenamePrefix;
 		this.maxDeployVersion = max;
+		this.minDeployVersion = min;
 
 		FetchContext tempContext = core.makeClient((short) 0, true).getFetchContext();
 		tempContext.allowSplitfiles = true;
@@ -94,20 +97,28 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Found edition " + l);
-		System.err.println("Found " + (extUpdate ? "freenet-ext.jar " : "") + "update edition " + l);
 		int found;
 		synchronized(this) {
 			if(!isRunning)
 				return;
 			found = (int) key.suggestedEdition;
 
-			if(found > maxDeployVersion) found = maxDeployVersion;
+			realAvailableVersion = found;
+			if(found > maxDeployVersion) {
+				System.err.println("Ignoring "+(extUpdate ? "freenet-ext.jar " : "") + "update edition "+l);
+				found = maxDeployVersion;
+			}
 			
 			if(found <= availableVersion)
 				return;
+			System.err.println("Found " + (extUpdate ? "freenet-ext.jar " : "") + "update edition " + found);
 			Logger.minor(this, "Updating availableVersion from " + availableVersion + " to " + found + " and queueing an update");
 			this.availableVersion = found;
 		}
+		finishOnFoundEdition(found);
+	}
+
+	private void finishOnFoundEdition(int found) {
 		ticker.queueTimedJob(new Runnable() {
 
 			public void run() {
@@ -125,6 +136,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			return;
 		if(manager.isBlown())
 			return;
+		ClientGetter cancelled = null;
 		synchronized(this) {
 			if(logMINOR)
 				Logger.minor(this, "maybeUpdate: isFetching=" + isFetching + ", isRunning=" + isRunning + ", availableVersion=" + availableVersion);
@@ -134,6 +146,11 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 				return;
 			if(availableVersion <= fetchedVersion)
 				return;
+			if(fetchingVersion < minDeployVersion) {
+				Logger.normal(this, "Cancelling previous fetch");
+				cancelled = cg;
+				cg = null;
+			}
 			fetchingVersion = availableVersion;
 
 			if(availableVersion > currentVersion) {
@@ -157,6 +174,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 						uri, ctx, RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS,
 						this, null, new FileBucket(tempBlobFile, false, false, false, false, false));
 					toStart = cg;
+				} else {
+					System.err.println("Already fetching "+(extUpdate ? "freenet-ext.jar " : "") + "fetch for " + fetchingVersion + " want "+availableVersion);
 				}
 				isFetching = true;
 			} catch(Exception e) {
@@ -173,6 +192,8 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 					isFetching = false;
 				}
 			}
+		if(cancelled != null)
+			cancelled.cancel();
 	}
 
 	File getBlobFile(int availableVersion) {
@@ -263,6 +284,7 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 						String name = ze.getName();
 						
 						if(name.equals("META-INF/MANIFEST.MF")) {
+							if(logMINOR) Logger.minor(this, "Found manifest");
 							long size = ze.getSize();
 							if(logMINOR) Logger.minor(this, "Manifest size: "+size);
 							if(size > MAX_MANIFEST_SIZE) {
@@ -445,5 +467,29 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 
 	public short getPollingPriorityProgress() {
 		return RequestStarter.INTERACTIVE_PRIORITY_CLASS;
+	}
+
+	public void setMinMax(int requiredExt, int recommendedExt) {
+		int callFinishedFound = -1;
+		synchronized(this) {
+			if(recommendedExt > -1) {
+				maxDeployVersion = recommendedExt;
+				if(realAvailableVersion != availableVersion && realAvailableVersion <= recommendedExt) {
+					// We found a revision but didn't fetch it because it was after the old range.
+					System.err.println("Have found edition "+realAvailableVersion+" but ignored it because out of range, fetching as required by new jar");
+					callFinishedFound = availableVersion = realAvailableVersion;
+				}
+			}
+			if(requiredExt > -1) {
+				minDeployVersion = requiredExt;
+				if(callFinishedFound == -1 && availableVersion < requiredExt) { // Including if it hasn't been found at all
+					// Just try it ...
+					callFinishedFound = availableVersion = requiredExt;
+					System.err.println("Need minimum edition "+requiredExt+" for new jar, fetching...");
+				}
+			}
+		}
+		if(callFinishedFound > -1)
+			finishOnFoundEdition(callFinishedFound);
 	}
 }

@@ -80,6 +80,9 @@ public class NodeUpdateManager {
 	private long startedFetchingNextExtJar;
 	private long gotJarTime;
 
+	private int minExtVersion;
+	private int maxExtVersion;
+	
 	// Revocation alert
 	private RevocationKeyFoundUserAlert revocationAlert;
 	// Update alert
@@ -155,6 +158,9 @@ public class NodeUpdateManager {
         
         this.uom = new UpdateOverMandatoryManager(this);
         this.uom.removeOldTempFiles();
+        
+        maxExtVersion = NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER;
+        minExtVersion = NodeStarter.REQUIRED_EXT_BUILD_NUMBER;
 	}
 
 	public void start() throws InvalidConfigValueException {
@@ -235,8 +241,8 @@ public class NodeUpdateManager {
 					throw new InvalidConfigValueException(l10n("noUpdateWithoutWrapper"));
 				}
 				// Start it
-				mainUpdater = new NodeUpdater(this, updateURI, false, Version.buildNumber(), Integer.MAX_VALUE, "main-jar-");
-				extUpdater = new NodeUpdater(this, extURI, true, NodeStarter.extBuildNumber, NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER, "ext-jar-");
+				mainUpdater = new NodeUpdater(this, updateURI, false, Version.buildNumber(), -1, Integer.MAX_VALUE, "main-jar-");
+				extUpdater = new NodeUpdater(this, extURI, true, NodeStarter.extBuildNumber, NodeStarter.REQUIRED_EXT_BUILD_NUMBER, NodeStarter.RECOMMENDED_EXT_BUILD_NUMBER, "ext-jar-");
 			}
 		}
 		if(!enable) {
@@ -357,6 +363,11 @@ public class NodeUpdateManager {
 				if(logMINOR) Logger.minor(this, "Not ready: Still fetching");
 				return false; // Wait for running fetch to complete
 			}
+			int extVer = getReadyExt();
+			if(extVer < minExtVersion || extVer > maxExtVersion) {
+				if(logMINOR) Logger.minor(this, "Invalid ext: current "+extVer+" must be between "+minExtVersion+" and "+maxExtVersion);
+				return false;
+			}
 			if(!ignoreRevocation) {
 				if(now - revocationChecker.lastSucceeded() < RECENT_REVOCATION_INTERVAL)
 					return true;
@@ -409,6 +420,11 @@ public class NodeUpdateManager {
 				}
 				if(!isReadyToDeployUpdate(false)) {
 					if(logMINOR) Logger.minor(this, "Not ready to deploy update");
+					return;
+				}
+				int extVer = getReadyExt();
+				if(extVer < minExtVersion || extVer > maxExtVersion) {
+					if(logMINOR) Logger.minor(this, "Invalid ext: current "+extVer+" must be between "+minExtVersion+" and "+maxExtVersion);
 					return;
 				}
 				if(isDeployingUpdate) {
@@ -624,11 +640,27 @@ public class NodeUpdateManager {
 						Logger.minor(this, "Got main jar: "+mainUpdater.getFetchedVersion());
 				}
 			}
+			if(!isExt) {
+				if(requiredExt > -1)
+					minExtVersion = requiredExt;
+				if(recommendedExt > -1)
+					maxExtVersion = recommendedExt;
+			}
+		}
+		if(!isExt && (requiredExt > -1 || recommendedExt > -1)) {
+			extUpdater.setMinMax(requiredExt, recommendedExt);
 		}
 		revocationChecker.start(true);
 		deployOffThread(REVOCATION_FETCH_TIMEOUT);
 		if(!isAutoUpdateAllowed)
 			broadcastUOMAnnounces();
+	}
+	
+	private int getReadyExt() {
+		int ver = NodeStarter.extBuildNumber;
+		int fetched = extUpdater.getFetchedVersion();
+		if(fetched > -1) ver = fetched;
+		return ver;
 	}
 
 	/**
