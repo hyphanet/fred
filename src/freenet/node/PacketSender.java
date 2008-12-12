@@ -227,7 +227,7 @@ public class PacketSender implements Runnable, Ticker {
 			nextActionTime = Math.min(nextActionTime, now + canSendAt);
 		}
 		
-		int newBrokeAt = 0;
+		int newBrokeAt = -1;
 		for(int i = 0; i < nodes.length; i++) {
 			int idx = (i + brokeAt + 1) % nodes.length;
 			PeerNode pn = nodes[idx];
@@ -256,7 +256,7 @@ public class PacketSender implements Runnable, Ticker {
 					 */
 					pn.invalidate();
 					pn.setPeerNodeStatus(now);
-					Logger.normal(this, "shouldDisconnectNow has returned true : marking the peer as incompatible");
+					Logger.normal(this, "shouldDisconnectNow has returned true : marking the peer as incompatible: "+pn);
 					continue;
 				}
 				
