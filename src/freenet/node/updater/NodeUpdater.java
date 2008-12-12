@@ -1,9 +1,16 @@
 package freenet.node.updater;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 import freenet.client.FetchContext;
 import freenet.client.FetchException;
@@ -23,6 +30,7 @@ import freenet.node.Version;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
+import freenet.support.io.Closer;
 import freenet.support.io.FileBucket;
 
 public class NodeUpdater implements ClientCallback, USKCallback {
@@ -240,6 +248,63 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 			System.out.println("Found " + (extUpdate ? "ext " : "") + fetchedVersion);
 			if(fetchedVersion > currentVersion)
 				Logger.normal(this, "Found version " + fetchedVersion + ", setting up a new UpdatedVersionAvailableUserAlert");
+			if(!extUpdate) {
+				int requiredExt = -1;
+				int recommendedExt = -1;
+				InputStream is = null;
+				try {
+					is = result.asBucket().getInputStream();
+					ZipInputStream zis = new ZipInputStream(is);
+					ZipEntry ze;
+					while(true) {
+						ze = zis.getNextEntry();
+						if(ze == null) break;
+						if(ze.isDirectory()) continue;
+						String name = ze.getName();
+						
+						if(name.equals("META-INF/MANIFEST.MF")) {
+							long size = ze.getSize();
+							if(logMINOR) Logger.minor(this, "Manifest size: "+size);
+							if(size > MAX_MANIFEST_SIZE) {
+								Logger.error(this, "Manifest is too big: "+size+" bytes, limit is "+MAX_MANIFEST_SIZE);
+								break;
+							}
+							byte[] buf = new byte[(int) size];
+							DataInputStream dis = new DataInputStream(zis);
+							dis.readFully(buf);
+							ByteArrayInputStream bais = new ByteArrayInputStream(buf);
+							InputStreamReader isr = new InputStreamReader(bais, "UTF-8");
+							BufferedReader br = new BufferedReader(isr);
+							String line;
+							while((line = br.readLine()) != null) {
+								if(line.startsWith(REQUIRED_EXT_PREFIX)) {
+									requiredExt = Integer.parseInt(line.substring(REQUIRED_EXT_PREFIX.length()));
+								} else if(line.startsWith(RECOMMENDED_EXT_PREFIX)) {
+									recommendedExt = Integer.parseInt(line.substring(RECOMMENDED_EXT_PREFIX.length()));
+								}
+							}
+						} else {
+							zis.closeEntry();
+						}
+					}
+				} catch (IOException e) {
+					Logger.error(this, "IOException trying to read manifest on update");
+				} catch (Throwable t) {
+					Logger.error(this, "Failed to parse update manifest: "+t, t);
+					requiredExt = recommendedExt = -1;
+				} finally {
+					Closer.close(is);
+				}
+				if(requiredExt != -1) {
+					System.err.println("Required ext version: "+requiredExt);
+					Logger.normal(this, "Required ext version: "+requiredExt);
+				}
+				if(recommendedExt != -1) {
+					System.err.println("Recommended ext version: "+recommendedExt);
+					Logger.normal(this, "Recommended ext version: "+recommendedExt);
+				}
+				
+			}
 			this.cg = null;
 			if(this.result != null)
 				this.result.asBucket().free();
@@ -247,6 +312,10 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		}
 		manager.onDownloadedNewJar(extUpdate);
 	}
+	
+	private static final String REQUIRED_EXT_PREFIX = "Required-Ext-Version: ";
+	private static final String RECOMMENDED_EXT_PREFIX = "Recommended-Ext-Version: ";
+	private static final int MAX_MANIFEST_SIZE = 1024*1024;
 
 	public void onFailure(FetchException e, ClientGetter state) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
