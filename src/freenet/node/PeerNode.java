@@ -1951,6 +1951,11 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				if(logMINOR) Logger.minor(this, "Creating new tracker (last resort) on "+this);
 			}
 			if(bootIDChanged || notReusingTracker) {
+				if((!bootIDChanged) && notReusingTracker)
+					// FIXME is this a real problem? Clearly the other side has changed trackers for some reason...
+					// Normally that shouldn't happen except when a connection times out ... it is probably possible
+					// for that to timeout on one side and not the other ...
+					Logger.error(this, "Not reusing tracker, so wiping old trackers for "+this);
 				oldPrev = previousTracker;
 				oldCur = currentTracker;
 				previousTracker = null;
