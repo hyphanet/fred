@@ -238,10 +238,12 @@ public class PacketSender implements Runnable, Ticker {
 				// Might as well do it properly.
 				node.peers.disconnect(pn, true, true, false);
 			}
-			if(pn.shouldThrottle() && !canSendThrottled)
-				continue;
 
 			if(pn.isConnected()) {
+				
+				if(pn.shouldThrottle() && !canSendThrottled)
+					continue;
+				
 				// Is the node dead?
 				if(now - pn.lastReceivedPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
 					Logger.normal(this, "Disconnecting from " + pn + " - haven't received packets recently");
