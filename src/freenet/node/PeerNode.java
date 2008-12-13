@@ -4044,12 +4044,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return resendBytesSent;
 	}
 	
-	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean blockForSend) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException {
+	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean blockForSend, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException {
 		long deadline = System.currentTimeMillis() + timeout;
 		if(logMINOR) Logger.minor(this, "Sending throttled message with timeout "+timeout+" packet size "+packetSize+" to "+shortToString());
 		for(int i=0;i<100;i++) {
 			try {
-				getThrottle().sendThrottledMessage(msg, this, packetSize, ctr, deadline, blockForSend);
+				getThrottle().sendThrottledMessage(msg, this, packetSize, ctr, deadline, blockForSend, callback);
 				return;
 			} catch (ThrottleDeprecatedException e) {
 				// Try with the new throttle. We don't need it, we'll get it from getThrottle().
@@ -4058,6 +4058,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		Logger.error(this, "Peer constantly changes its IP address!!: "+shortToString());
 		forceDisconnect(true);
+		throw new NotConnectedException();
 	}
 
 	/**

@@ -349,7 +349,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 			public void run() {
 				try {
-					source.sendThrottledMessage(dataMsg, data.length, RequestHandler.this, 60 * 1000, true);
+					source.sendThrottledMessage(dataMsg, data.length, RequestHandler.this, 60 * 1000, true, null);
 					applyByteCounts();
 				} catch(NotConnectedException e) {
 					// Okay
@@ -383,7 +383,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		source.sendAsync(headersMsg, null, ctr);
 		final Message dataMsg = DMT.createFNPSSKDataFoundData(uid, data);
 		try {
-			source.sendThrottledMessage(dataMsg, data.length, ctr, 60 * 1000, false);
+			source.sendThrottledMessage(dataMsg, data.length, ctr, 60 * 1000, false, null);
 		} catch(SyncSendWaitedTooLongException e) {
 			// Impossible
 			throw new Error(e);

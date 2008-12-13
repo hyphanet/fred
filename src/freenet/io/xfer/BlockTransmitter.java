@@ -98,7 +98,7 @@ public class BlockTransmitter {
 					}
 					int totalPackets;
 					try {
-						_destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr, SEND_TIMEOUT, false);
+						_destination.sendThrottledMessage(DMT.createPacketTransmit(_uid, packetNo, _sentPackets, _prb.getPacket(packetNo)), _prb._packetSize, _ctr, SEND_TIMEOUT, false, null);
 						totalPackets=_prb.getNumPackets();
 					} catch (NotConnectedException e) {
 						Logger.normal(this, "Terminating send: "+e);

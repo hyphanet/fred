@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.io.xfer;
 
+import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.AsyncMessageFilterCallback;
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
@@ -217,8 +218,24 @@ public class BulkTransmitter {
 					completed();
 					return true;
 				}
-				// Wait for a packet, BulkReceivedAll or BulkReceiveAborted
 				synchronized(this) {
+					// Wait for all packets to complete
+					while(true) {
+						if(failedPacket) {
+							cancel("Packet send failed");
+							return false;
+						}
+						if(Logger.shouldLog(Logger.MINOR, this))
+							Logger.minor(this, "Waiting for packets: remaining: "+inFlightPackets);
+						if(inFlightPackets == 0) break;
+						try {
+							wait();
+						} catch (InterruptedException e) {
+							// Ignore
+						}
+					}
+					
+					// Wait for a packet to come in, BulkReceivedAll or BulkReceiveAborted
 					try {
 						wait(60*1000);
 					} catch (InterruptedException e) {
@@ -229,7 +246,7 @@ public class BulkTransmitter {
 				long end = System.currentTimeMillis();
 				if(end - lastSentPacket > TIMEOUT) {
 					Logger.error(this, "Send timed out on "+this);
-					cancel("Timeout");
+					cancel("Timeout awaiting BulkReceivedAll");
 					return false;
 				}
 				continue;
@@ -245,7 +262,8 @@ public class BulkTransmitter {
 			
 			// Congestion control and bandwidth limiting
 			try {
-				peer.sendThrottledMessage(DMT.createFNPBulkPacketSend(uid, blockNo, buf), buf.length, ctr, BulkReceiver.TIMEOUT, false);
+				if(logMINOR) Logger.minor(this, "Sending packet "+blockNo);
+				peer.sendThrottledMessage(DMT.createFNPBulkPacketSend(uid, blockNo, buf), buf.length, ctr, BulkReceiver.TIMEOUT, false, new UnsentPacketTag());
 				synchronized(this) {
 					blocksNotSentButPresent.setBit(blockNo, false);
 				}
@@ -264,6 +282,56 @@ public class BulkTransmitter {
 				return false;
 			}
 		}
+	}
+	
+	private int inFlightPackets = 0;
+	private boolean failedPacket = false;
+	
+	private class UnsentPacketTag implements AsyncMessageCallback {
+
+		private boolean finished;
+		
+		private UnsentPacketTag() {
+			synchronized(BulkTransmitter.this) {
+				inFlightPackets++;
+			}
+		}
+		
+		public void acknowledged() {
+			complete(false);
+		}
+
+		private void complete(boolean failed) {
+			synchronized(this) {
+				if(finished) return;
+				finished = true;
+			}
+			synchronized(BulkTransmitter.this) {
+				if(failed) {
+					failedPacket = true;
+					BulkTransmitter.this.notifyAll();
+					if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Packet failed for "+BulkTransmitter.this);
+				} else {
+					inFlightPackets--;
+					if(inFlightPackets <= 0)
+						BulkTransmitter.this.notifyAll();
+					if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Packet sent "+BulkTransmitter.this+" remaining in flight: "+inFlightPackets);
+				}
+			}
+		}
+
+		public void disconnected() {
+			complete(true);
+		}
+
+		public void fatalError() {
+			complete(true);
+		}
+
+		public void sent() {
+			// Wait for acknowledgment
+		}
+		
 	}
 	
 	@Override
