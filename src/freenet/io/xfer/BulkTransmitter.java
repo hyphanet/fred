@@ -191,7 +191,7 @@ public class BulkTransmitter {
 	public boolean send() {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long lastSentPacket = System.currentTimeMillis();
-		while(true) {
+outer:	while(true) {
 			if(prb.isAborted()) {
 				if(logMINOR)
 					Logger.minor(this, "Aborted "+this);
@@ -230,6 +230,7 @@ public class BulkTransmitter {
 						if(inFlightPackets == 0) break;
 						try {
 							wait();
+							continue outer; // Might be a packet...
 						} catch (InterruptedException e) {
 							// Ignore
 						}
