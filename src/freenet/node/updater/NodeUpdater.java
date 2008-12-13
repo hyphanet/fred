@@ -474,15 +474,14 @@ public class NodeUpdater implements ClientCallback, USKCallback {
 		synchronized(this) {
 			if(recommendedExt > -1) {
 				maxDeployVersion = recommendedExt;
-				if(realAvailableVersion != availableVersion && realAvailableVersion <= recommendedExt) {
-					// We found a revision but didn't fetch it because it was after the old range.
-					System.err.println("Have found edition "+realAvailableVersion+" but ignored it because out of range, fetching as required by new jar");
-					callFinishedFound = availableVersion = realAvailableVersion;
-				}
 			}
 			if(requiredExt > -1) {
 				minDeployVersion = requiredExt;
-				if(callFinishedFound == -1 && availableVersion < requiredExt) { // Including if it hasn't been found at all
+				if(realAvailableVersion != availableVersion && availableVersion < requiredExt && realAvailableVersion >= requiredExt) {
+					// We found a revision but didn't fetch it because it was after the old range.
+					System.err.println("Have found edition "+realAvailableVersion+" but ignored it because out of range, fetching as required by new jar");
+					callFinishedFound = availableVersion = realAvailableVersion;
+				} else if(availableVersion < requiredExt) { // Including if it hasn't been found at all
 					// Just try it ...
 					callFinishedFound = availableVersion = requiredExt;
 					System.err.println("Need minimum edition "+requiredExt+" for new jar, fetching...");
