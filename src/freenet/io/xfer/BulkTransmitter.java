@@ -230,6 +230,11 @@ outer:	while(true) {
 						if(inFlightPackets == 0) break;
 						try {
 							wait();
+							if(failedPacket) {
+								cancel("Packet send failed");
+								return false;
+							}
+							if(inFlightPackets == 0) break;
 							continue outer; // Might be a packet...
 						} catch (InterruptedException e) {
 							// Ignore
