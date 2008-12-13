@@ -2002,6 +2002,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(previousTracker != null && unverifiedTracker != null && 
 					Arrays.equals(previousTracker.sessionKey, unverifiedTracker.sessionKey))
 				Logger.error(this, "previousTracker key equals unverifiedTracker key: prev "+previousTracker+" unv "+unverifiedTracker);
+			timeLastSentPacket = now;
 		}
 		if(messagesTellDisconnected != null) {
 			for(int i=0;i<messagesTellDisconnected.length;i++) {
@@ -4126,6 +4127,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 */
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp) throws BlockedTooLongException {
 		// If there are any urgent notifications, we must send a packet.
+		if(logMINOR) Logger.minor(this, "maybeSendPacket: "+this);
 		boolean mustSend = false;
 		boolean mustSendPacket = false;
 		if(mustSendNotificationsNow(now)) {
@@ -4181,9 +4183,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		// If it's a keepalive, we must add an FNPVoid to ensure it has a packet number.
 		boolean keepalive = false;
 		
-		if(now - lastSentPacketTime() > Node.KEEPALIVE_INTERVAL) {
+		long lastSent = lastSentPacketTime();
+		if(now - lastSent > Node.KEEPALIVE_INTERVAL) {
 			if(logMINOR)
 				Logger.minor(this, "Sending keepalive");
+			if(now - lastSent > Node.KEEPALIVE_INTERVAL * 10 && lastSent > -1)
+				Logger.error(this, "Long gap between sending packets: "+(now - lastSent)+" for "+this);
 			keepalive = true;
 			mustSend = true;
 			mustSendPacket = true;
