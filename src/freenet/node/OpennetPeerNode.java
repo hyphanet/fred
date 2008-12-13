@@ -114,7 +114,7 @@ public class OpennetPeerNode extends PeerNode {
 	@Override
 	public final boolean shouldDisconnectAndRemoveNow() {
 		// Allow announced peers 15 minutes to download the auto-update.
-		if(isConnected() && isUnroutableOlderVersion() && System.currentTimeMillis() - timeLastConnectionCompleted() > 15*60*1000)
+		if(isConnected() && isUnroutableOlderVersion() && System.currentTimeMillis() - timeLastConnectionCompleted() > 60*60*1000)
 			return true;
 		return false;
 	}
