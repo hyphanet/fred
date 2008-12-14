@@ -28,6 +28,7 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 	private Thread mThread;
 	
 	private volatile boolean isRunning = false;
+	private volatile boolean shutdownFinished = false;
 	
 	private final Collection<ClientGetter> mFetches = createFetchStorage();
 	private final Collection<BaseClientPutter> mInserts = createInsertStorage();
@@ -56,6 +57,7 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 			mThread.interrupt();
 		}
 		
+		try {
 		while(isRunning) {
 			Thread.interrupted();
 			
@@ -67,8 +69,15 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 				mThread.interrupt();
 			}
 		}
+		}
 		
-		abortAllTransfers();
+		finally {
+			abortAllTransfers();
+			synchronized (this) {
+				shutdownFinished = true;
+				notify();
+			}
+		}
 	}
 	
 	protected void abortAllTransfers() {
@@ -122,12 +131,16 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 	public void terminate() {
 		isRunning = false;
 		mThread.interrupt();
-		try {
-			mThread.join();
-		}
-		catch(InterruptedException e)
-		{
-			Thread.currentThread().interrupt();
+		
+		synchronized(this) {
+			while(!shutdownFinished) {
+				try {
+					wait();
+				}
+				catch (InterruptedException e) {
+					Thread.interrupted();
+				}
+			}
 		}
 	}
 	
