@@ -310,6 +310,7 @@ public class PacketThrottle {
 
 		public void sent() {
 			// Ignore
+			if(chainCallback != null) chainCallback.sent();
 		}
 		
 		@Override
