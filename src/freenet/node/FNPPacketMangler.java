@@ -1803,7 +1803,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * We need to know where the packet has come from in order to
 	 * decrypt and authenticate it.
 	 */
-	private boolean tryProcess(byte[] buf, int offset, int length, KeyTracker tracker, long now) {
+	private boolean tryProcess(byte[] buf, int offset, int length, SessionKey tracker, long now) {
 		// Need to be able to call with tracker == null to simplify code above
 		if(tracker == null) {
 			if(Logger.shouldLog(Logger.DEBUG, this)) Logger.debug(this, "Tracker == null");
@@ -1917,9 +1917,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Process an incoming packet, once it has been decrypted.
 	 * @param decrypted The packet's contents.
 	 * @param seqNumber The detected sequence number of the packet.
-	 * @param tracker The KeyTracker responsible for the key used to encrypt the packet.
+	 * @param tracker The SessionKey responsible for the key used to encrypt the packet.
 	 */
-	private void processDecryptedData(byte[] decrypted, int seqNumber, KeyTracker tracker, int overhead) {
+	private void processDecryptedData(byte[] decrypted, int seqNumber, SessionKey tracker, int overhead) {
 		/**
 		 * Decoded format:
 		 * 1 byte - version number (0)
@@ -2105,7 +2105,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(logMINOR) Logger.minor(this, "processOutgoingOrRequeue "+messages.length+" messages for "+pn);
 		byte[][] messageData = new byte[messages.length][];
 		MessageItem[] newMsgs = new MessageItem[messages.length];
-		KeyTracker kt = pn.getCurrentKeyTracker();
+		SessionKey kt = pn.getCurrentKeyTracker();
 		if(kt == null) {
 			Logger.error(this, "Not connected while sending packets: "+pn);
 			if(!dontRequeue) {
@@ -2342,9 +2342,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	/* (non-Javadoc)
-	 * @see freenet.node.OutgoingPacketMangler#processOutgoing(byte[], int, int, freenet.node.KeyTracker, int)
+	 * @see freenet.node.OutgoingPacketMangler#processOutgoing(byte[], int, int, freenet.node.SessionKey, int)
 	 */
-	public int processOutgoing(byte[] buf, int offset, int length, KeyTracker tracker, short priority) throws KeyChangedException, NotConnectedException, PacketSequenceException, WouldBlockException {
+	public int processOutgoing(byte[] buf, int offset, int length, SessionKey tracker, short priority) throws KeyChangedException, NotConnectedException, PacketSequenceException, WouldBlockException {
 		byte[] newBuf = preformat(buf, offset, length);
 		return processOutgoingPreformatted(newBuf, 0, newBuf.length, tracker, -1, null, priority);
 	}
@@ -2355,12 +2355,12 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @throws PacketSequenceException 
 	 */
 	int processOutgoingPreformatted(byte[] buf, int offset, int length, PeerNode peer, AsyncMessageCallback[] callbacks, short priority) throws NotConnectedException, WouldBlockException, PacketSequenceException {
-		KeyTracker last = null;
+		SessionKey last = null;
 		while(true) {
 			try {
 				if(!peer.isConnected())
 					throw new NotConnectedException();
-				KeyTracker tracker = peer.getCurrentKeyTracker();
+				SessionKey tracker = peer.getCurrentKeyTracker();
 				last = tracker;
 				if(tracker == null) {
 					Logger.normal(this, "Dropping packet: Not connected to "+peer.getPeer()+" yet(2)");
@@ -2398,9 +2398,9 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	/* (non-Javadoc)
-	 * @see freenet.node.OutgoingPacketMangler#processOutgoingPreformatted(byte[], int, int, freenet.node.KeyTracker, int, freenet.node.AsyncMessageCallback[], int)
+	 * @see freenet.node.OutgoingPacketMangler#processOutgoingPreformatted(byte[], int, int, freenet.node.SessionKey, int, freenet.node.AsyncMessageCallback[], int)
 	 */
-	public int processOutgoingPreformatted(byte[] buf, int offset, int length, KeyTracker tracker, int packetNumber, AsyncMessageCallback[] callbacks, short priority) throws KeyChangedException, NotConnectedException, PacketSequenceException, WouldBlockException {
+	public int processOutgoingPreformatted(byte[] buf, int offset, int length, SessionKey tracker, int packetNumber, AsyncMessageCallback[] callbacks, short priority) throws KeyChangedException, NotConnectedException, PacketSequenceException, WouldBlockException {
 		if(logMINOR) {
 			String log = "processOutgoingPreformatted("+Fields.hashCode(buf)+", "+offset+ ',' +length+ ',' +tracker+ ',' +packetNumber+ ',';
 			if(callbacks == null) log += "null";
@@ -2660,7 +2660,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 	private HashSet<Peer> peersWithProblems = new HashSet<Peer>();
 	
-	private void disconnectedStillNotAcked(KeyTracker tracker) {
+	private void disconnectedStillNotAcked(SessionKey tracker) {
 		synchronized(peersWithProblems) {
 			peersWithProblems.add(tracker.pn.getPeer());
 			if(peersWithProblems.size() > 1) return;
@@ -2765,7 +2765,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param plaintext The packet's plaintext, including all formatting,
 	 * including acks and resend requests. Is clobbered.
 	 */
-	private int processOutgoingFullyFormatted(byte[] plaintext, KeyTracker kt) {
+	private int processOutgoingFullyFormatted(byte[] plaintext, SessionKey kt) {
 		BlockCipher sessionCipher = kt.sessionCipher;
 		if(logMINOR) Logger.minor(this, "Encrypting with "+HexUtil.bytesToHex(kt.sessionKey));
 		if(sessionCipher == null) {
@@ -2869,7 +2869,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		return !((PeerNode)context).isConnected();
 	}
 
-	public void resend(ResendPacketItem item, KeyTracker tracker) throws PacketSequenceException, WouldBlockException, KeyChangedException, NotConnectedException {
+	public void resend(ResendPacketItem item, SessionKey tracker) throws PacketSequenceException, WouldBlockException, KeyChangedException, NotConnectedException {
 		int size = processOutgoingPreformatted(item.buf, 0, item.buf.length, tracker, item.packetNumber, item.callbacks, item.priority);
 		item.pn.resendByteCounter.sentBytes(size);
 	}

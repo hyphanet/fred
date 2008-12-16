@@ -34,9 +34,9 @@ public interface OutgoingPacketMangler {
 
 	/**
 	 * Resend a single packet.
-	 * @param kt The KeyTracker on which to send the packet.
+	 * @param kt The SessionKey on which to send the packet.
 	 */
-	public void resend(ResendPacketItem item, KeyTracker kt) throws PacketSequenceException, WouldBlockException, KeyChangedException, NotConnectedException;
+	public void resend(ResendPacketItem item, SessionKey kt) throws PacketSequenceException, WouldBlockException, KeyChangedException, NotConnectedException;
 	
 	/**
 	 * Build a packet and send it. From a Message recently converted into byte[],
@@ -46,7 +46,7 @@ public interface OutgoingPacketMangler {
 	 * @return Total size including UDP headers of the sent packet.
 	 */
 	public int processOutgoing(byte[] buf, int offset, int length,
-			KeyTracker tracker, short priority)
+			SessionKey tracker, short priority)
 			throws KeyChangedException, NotConnectedException,
 			PacketSequenceException, WouldBlockException;
 
@@ -57,7 +57,7 @@ public interface OutgoingPacketMangler {
 	 * @param buf Buffer to read data from.
 	 * @param offset Point at which to start reading.
 	 * @param length Number of bytes to read.
-	 * @param tracker The KeyTracker to use to encrypt the packet and send it to the
+	 * @param tracker The SessionKey to use to encrypt the packet and send it to the
 	 * associated PeerNode.
 	 * @param packetNumber If specified, force use of this particular packet number.
 	 * Means this is a resend of a dropped packet.
@@ -68,7 +68,7 @@ public interface OutgoingPacketMangler {
 	 * @return The size of the sent packet.
 	 */
 	public int processOutgoingPreformatted(byte[] buf, int offset, int length,
-			KeyTracker tracker, int packetNumber,
+			SessionKey tracker, int packetNumber,
 			AsyncMessageCallback[] callbacks, short priority)
 			throws KeyChangedException, NotConnectedException,
 			PacketSequenceException, WouldBlockException;

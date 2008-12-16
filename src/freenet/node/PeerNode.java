@@ -79,7 +79,7 @@ import freenet.support.transport.ip.IPUtil;
  * is that we can rekey, or a node can go down and come back up
  * while we are connected to it, and we want to reinitialize the
  * packet numbers when this happens. Hence we separate a lot of
- * code into KeyTracker, which handles all communications to and
+ * code into SessionKey, which handles all communications to and
  * from this peer over the duration of a single key.
  */
 public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
@@ -122,9 +122,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** Is this a testnet node? */
 	public final boolean testnetEnabled;
 	/** Packets sent/received on the current preferred key */
-	private KeyTracker currentTracker;
+	private SessionKey currentTracker;
 	/** Previous key - has a separate packet number space */
-	private KeyTracker previousTracker;
+	private SessionKey previousTracker;
 	/** When did we last rekey (promote the unverified tracker to new) ? */
 	private long timeLastRekeyed;
 	/** How much data did we send with the current tracker ? */
@@ -134,7 +134,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/** Unverified tracker - will be promoted to currentTracker if
 	* we receive packets on it
 	*/
-	private KeyTracker unverifiedTracker;
+	private SessionKey unverifiedTracker;
 	/** When did we last send a packet? */
 	private long timeLastSentPacket;
 	/** When did we last receive a packet? */
@@ -1131,7 +1131,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	/**
 	* Disconnected e.g. due to not receiving a packet for ages.
 	* @param dumpMessageQueue If true, clear the messages-to-send queue.
-	* @param dumpTrackers If true, dump the KeyTracker's.
+	* @param dumpTrackers If true, dump the SessionKey's.
 	* @return True if the node was connected, false if it was not.
 	*/
 	public boolean disconnected(boolean dumpMessageQueue, boolean dumpTrackers) {
@@ -1141,7 +1141,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		node.failureTable.onDisconnect(this);
 		node.peers.disconnected(this);
 		boolean ret;
-		KeyTracker cur, prev, unv;
+		SessionKey cur, prev, unv;
 		MessageItem[] messagesTellDisconnected = null;
 		synchronized(this) {
 			ret = isConnected;
@@ -1267,13 +1267,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	*/
 	public long getNextUrgentTime(long now) {
 		long t = Long.MAX_VALUE;
-		KeyTracker cur;
-		KeyTracker prev;
+		SessionKey cur;
+		SessionKey prev;
 		synchronized(this) {
 			cur = currentTracker;
 			prev = previousTracker;
 		}
-		KeyTracker kt = cur;
+		SessionKey kt = cur;
 		if(kt != null) {
 			long next = kt.packets.getNextUrgentTime();
 			t = Math.min(t, next);
@@ -1300,7 +1300,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 	
 	private synchronized boolean mustSendNotificationsNow(long now) {
-		KeyTracker kt = currentTracker;
+		SessionKey kt = currentTracker;
 		if(kt != null) {
 			if(kt.packets.getNextUrgentTime() < now) return true;
 		}
@@ -1697,27 +1697,27 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 
 	/**
-	* @return The current primary KeyTracker, or null if we
+	* @return The current primary SessionKey, or null if we
 	* don't have one.
 	*/
-	public synchronized KeyTracker getCurrentKeyTracker() {
+	public synchronized SessionKey getCurrentKeyTracker() {
 		return currentTracker;
 	}
 
 	/**
-	* @return The previous primary KeyTracker, or null if we
+	* @return The previous primary SessionKey, or null if we
 	* don't have one.
 	*/
-	public synchronized KeyTracker getPreviousKeyTracker() {
+	public synchronized SessionKey getPreviousKeyTracker() {
 		return previousTracker;
 	}
 
 	/**
-	* @return The unverified KeyTracker, if any, or null if we
+	* @return The unverified SessionKey, if any, or null if we
 	* don't have one. The caller MUST call verified(KT) if a
 	* decrypt succeeds with this KT.
 	*/
-	public synchronized KeyTracker getUnverifiedKeyTracker() {
+	public synchronized SessionKey getUnverifiedKeyTracker() {
 		return unverifiedTracker;
 	}
 
@@ -1875,10 +1875,10 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		changedIP(replyTo);
 		boolean bootIDChanged = false;
 		boolean wasARekey = false;
-		KeyTracker oldPrev = null;
-		KeyTracker oldCur = null;
-		KeyTracker prev = null;
-		KeyTracker newTracker;
+		SessionKey oldPrev = null;
+		SessionKey oldCur = null;
+		SessionKey prev = null;
+		SessionKey newTracker;
 		MessageItem[] messagesTellDisconnected = null;
 		PacketTracker packets = null;
 		synchronized(this) {
@@ -1955,7 +1955,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			} else {
 				// else it's a rekey
 			}
-			newTracker = new KeyTracker(this, packets, encCipher, encKey);
+			newTracker = new SessionKey(this, packets, encCipher, encKey);
 			if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+packets+" for "+shortToString()+" neg type "+negType);
 			if(unverified) {
 				if(unverifiedTracker != null) {
@@ -2064,16 +2064,16 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			
 			if(prevHash < curHash) {
 				// Swap over
-				KeyTracker temp = previousTracker;
+				SessionKey temp = previousTracker;
 				previousTracker = currentTracker;
 				currentTracker = temp;
-				if(logMINOR) Logger.minor(this, "Swapped KeyTracker's on "+this+" cur "+currentTracker+" prev "+previousTracker+" delta "+delta+" cur.deprecated="+currentTracker.packets.isDeprecated()+" prev.deprecated="+previousTracker.packets.isDeprecated());
+				if(logMINOR) Logger.minor(this, "Swapped SessionKey's on "+this+" cur "+currentTracker+" prev "+previousTracker+" delta "+delta+" cur.deprecated="+currentTracker.packets.isDeprecated()+" prev.deprecated="+previousTracker.packets.isDeprecated());
 			} else {
-				if(logMINOR) Logger.minor(this, "Not swapping KeyTracker's on "+this+" cur "+currentTracker+" prev "+previousTracker+" delta "+delta+" cur.deprecated="+currentTracker.packets.isDeprecated()+" prev.deprecated="+previousTracker.packets.isDeprecated());
+				if(logMINOR) Logger.minor(this, "Not swapping SessionKey's on "+this+" cur "+currentTracker+" prev "+previousTracker+" delta "+delta+" cur.deprecated="+currentTracker.packets.isDeprecated()+" prev.deprecated="+previousTracker.packets.isDeprecated());
 			}
 		} else {
 			if (logMINOR)
-				Logger.minor(this, "Not swapping KeyTracker's: previousTracker = " + previousTracker.toString()
+				Logger.minor(this, "Not swapping SessionKey's: previousTracker = " + previousTracker.toString()
 				        + (previousTracker.packets.isDeprecated() ? " (deprecated)" : "") + " time delta = " + delta);
 		}
 	}
@@ -2202,12 +2202,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 
 	/**
 	* Called when a packet is successfully decrypted on a given
-	* KeyTracker for this node. Will promote the unverifiedTracker
+	* SessionKey for this node. Will promote the unverifiedTracker
 	* if necessary.
 	*/
-	public void verified(KeyTracker tracker) {
+	public void verified(SessionKey tracker) {
 		long now = System.currentTimeMillis();
-		KeyTracker completelyDeprecatedTracker;
+		SessionKey completelyDeprecatedTracker;
 		synchronized(this) {
 			if(tracker == unverifiedTracker && !tracker.packets.isDeprecated()) {
 				if(logMINOR)
@@ -2491,13 +2491,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(logMINOR)
 			Logger.minor(this, "sendAnyUrgentNotifications");
 		long now = System.currentTimeMillis();
-		KeyTracker cur,
+		SessionKey cur,
 		 prev;
 		synchronized(this) {
 			cur = currentTracker;
 			prev = previousTracker;
 		}
-		KeyTracker tracker = cur;
+		SessionKey tracker = cur;
 		if(tracker != null) {
 			long t = tracker.packets.getNextUrgentTime();
 			if(t < now || forceSendPrimary) {
@@ -2541,8 +2541,8 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	
 	void checkTrackerTimeout() {
 		long now = System.currentTimeMillis();
-		KeyTracker prev = null;
-		KeyTracker cur = null;
+		SessionKey prev = null;
+		SessionKey cur = null;
 		synchronized(this) {
 			if(previousTracker == null) return;
 			if(currentTracker == null) return;
@@ -2712,7 +2712,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @param resendItems
 	*/
 	public void requeueResendItems(Vector<ResendPacketItem> resendItems) {
-		KeyTracker cur,
+		SessionKey cur,
 		 prev,
 		 unv;
 		synchronized(this) {
@@ -2723,7 +2723,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		for(ResendPacketItem item : resendItems) {
 			if(item.pn != this)
 				throw new IllegalArgumentException("item.pn != this!");
-			KeyTracker kt = cur;
+			SessionKey kt = cur;
 			if((kt != null) && (item.kt == kt.packets)) {
 				kt.packets.resendPacket(item.packetNumber);
 				continue;
@@ -4126,7 +4126,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		// Any packets to resend? If so, resend ONE packet and then return.
 		for(int j = 0; j < 2; j++) {
-			KeyTracker kt;
+			SessionKey kt;
 			if(j == 0)
 				kt = getCurrentKeyTracker();
 			else// if(j == 1)
@@ -4251,7 +4251,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 * @return The ID of a reusable PacketTracker if there is one, otherwise -1.
 	 */
 	public long getReusableTrackerID() {
-		KeyTracker cur;
+		SessionKey cur;
 		synchronized(this) {
 			cur = currentTracker;
 		}
