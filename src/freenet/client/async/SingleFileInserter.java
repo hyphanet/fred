@@ -235,7 +235,7 @@ public class SingleFileInserter implements ClientPutState, CompressJob {
 				// Insert single block, then insert pointer to it
 				if(reportMetadataOnly) {
 					SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int) origSize, -1, getCHKOnly, true, true, token, freeData);
-					Metadata meta = makeMetadata(archiveType, null, dataPutter.getURI());
+					Metadata meta = makeMetadata(archiveType, dataPutter.getURI());
 					cb.onMetadata(meta, this);
 					cb.onTransition(this, dataPutter);
 					dataPutter.schedule();
@@ -244,7 +244,7 @@ public class SingleFileInserter implements ClientPutState, CompressJob {
 					MultiPutCompletionCallback mcb =
 						new MultiPutCompletionCallback(cb, parent, token);
 					SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int) origSize, -1, getCHKOnly, true, false, token, freeData);
-					Metadata meta = makeMetadata(archiveType, null, dataPutter.getURI());
+					Metadata meta = makeMetadata(archiveType, dataPutter.getURI());
 					Bucket metadataBucket;
 					try {
 						metadataBucket = BucketTools.makeImmutableBucket(ctx.bf, meta.writeToByteArray());
@@ -295,12 +295,12 @@ public class SingleFileInserter implements ClientPutState, CompressJob {
 		}
 	}
 	
-	private Metadata makeMetadata(ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE codec, FreenetURI uri) {
+	private Metadata makeMetadata(ARCHIVE_TYPE archiveType, FreenetURI uri) {
 		Metadata meta = null;
 		if(archiveType != null)
-			meta = new Metadata(Metadata.ARCHIVE_MANIFEST, archiveType, codec, uri, block.clientMetadata);
+			meta = new Metadata(Metadata.ARCHIVE_MANIFEST, archiveType, null, uri, block.clientMetadata);
 		else  // redirect
-			meta = new Metadata(Metadata.SIMPLE_REDIRECT, archiveType, codec, uri, block.clientMetadata);
+			meta = new Metadata(Metadata.SIMPLE_REDIRECT, archiveType, null, uri, block.clientMetadata);
 		if(targetFilename != null) {
 			HashMap hm = new HashMap();
 			hm.put(targetFilename, meta);
