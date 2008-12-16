@@ -1222,7 +1222,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 					c, Ke, Ka, authenticator, hisRef, pn, replyTo, unknownInitiator, setupType, newTrackerID, newTrackerID == trackerID);
 			
 			if(dontWant)
-				node.peers.disconnect(pn, true, false, true); // Let it connect then tell it to remove it.
+				node.peers.disconnect(pn, true, true, true); // Let it connect then tell it to remove it.
 			else
 				pn.maybeSendInitialMessages();
 		} else {
@@ -1438,7 +1438,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		c.initialize(pn.jfkKs);
 		if(pn.completedHandshake(bootID, hisRef, 0, hisRef.length, c, pn.jfkKs, replyTo, false, negType, trackerID, true, reusedTracker) >= 0) {
 			if(dontWant)
-				node.peers.disconnect(pn, true, false, true);
+				node.peers.disconnect(pn, true, true, true);
 			else
 				pn.maybeSendInitialMessages();
 		} else {
