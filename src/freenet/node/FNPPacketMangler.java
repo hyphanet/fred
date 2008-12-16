@@ -551,7 +551,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 2 || negType == 3 || negType == 4)) {
+		if(!(negType == 2 || negType == 4)) {
 			Logger.error(this, "Unknown neg type: "+negType);
 			return;
 		}
@@ -598,7 +598,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			Logger.error(this, "Decrypted auth packet but invalid version: "+version);
 			return;
 		}
-		if(!(negType == 2 || negType == 3 || negType == 4)) {
+		if(!(negType == 2 || negType == 4)) {
 			Logger.error(this, "Unknown neg type: "+negType);
 			return;
 		}
@@ -663,8 +663,8 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		} else if (negType == 1) {
 			Logger.error(this, "Old StationToStation (negType 1) not supported.");
 			return;
-		} else if (negType==2 || negType == 3 || negType == 4){
-			// negType == 3 => no new PacketTracker when rekeying
+		} else if (negType==2 || negType == 4){
+			// negType == 3 was buggy
 			// negType == 4 => negotiate whether to use a new PacketTracker when rekeying
 			/*
 			 * We implement Just Fast Keying key management protocol with active identity protection
@@ -1158,8 +1158,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			if(trackerID < 0) trackerID = -1;
 			ptr += 8;
 		} else {
-			if(negType == 3) trackerID = -2; // emulate negtype = 3 behaviour
-			else trackerID = -1;
+			trackerID = -1;
 		}
 		long bootID = Fields.bytesToLong(data, ptr);
 		ptr += 8;
@@ -1378,8 +1377,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			ptr += 8;
 			reusedTracker = data[ptr++] != 0;
 		} else {
-			if(negType == 3) trackerID = -2;
-			else trackerID = -1;
+			trackerID = -1;
 			reusedTracker = false;
 		}
 		long bootID = Fields.bytesToLong(data, ptr);

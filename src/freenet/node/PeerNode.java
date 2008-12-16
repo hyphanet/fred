@@ -1813,9 +1813,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @param length Number of bytes to read.
 	* @param encKey The new session key.
 	* @param replyTo The IP the handshake came in on.
-	* @param trackerID The tracker ID proposed by the other side. If -1, create a new tracker. If -2,
-	* reuse the old tracker if possible. If any other value, check whether we have it, and if we do,
-	* return that, otherwise return the ID of the new tracker.
+	* @param trackerID The tracker ID proposed by the other side. If -1, create a new tracker. If any 
+	* other value, check whether we have it, and if we do, return that, otherwise return the ID of the 
+	* new tracker.
 	* @param isJFK4 If true, we are processing a JFK(4) and must respect the tracker ID chosen by the 
 	* responder. If false, we are processing a JFK(3) and we can either reuse the suggested tracker ID,
 	* which the other side is able to reuse, or we can create a new tracker ID.
@@ -1926,19 +1926,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 				packets = new PacketTracker(this);
 				notReusingTracker = true;
 				if(logMINOR) Logger.minor(this, "Creating new PacketTracker as instructed for "+this);
-			} else if(trackerID == -2 && !bootIDChanged) {
-				// Reuse if not deprecated and not boot ID changed
-				if(currentTracker != null && !currentTracker.packets.isDeprecated() && negType >= 3) {
-					packets = currentTracker.packets;
-					if(logMINOR) Logger.minor(this, "Re-using packet tracker (not given an ID): "+packets.trackerID+" on "+this+" from current "+currentTracker);
-				} else if(previousTracker != null && !previousTracker.packets.isDeprecated() && negType >= 3) {
-					packets = previousTracker.packets;
-					if(logMINOR) Logger.minor(this, "Re-using packet tracker (not given an ID): "+packets.trackerID+" on "+this+" from prev "+previousTracker);
-				} else {
-					packets = new PacketTracker(this);
-					notReusingTracker = true;
-					if(logMINOR) Logger.minor(this, "Cannot reuse trackers (not given an ID) on "+this);
-				}
 			} else {
 				if(isJFK4 && negType >= 4 && trackerID < 0)
 					Logger.error(this, "JFK(4) packet with neg type "+negType+" has negative tracker ID: "+trackerID);
