@@ -1384,10 +1384,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		long bootID = Fields.bytesToLong(data, ptr);
 		ptr += 8;
-		if(data.length - ptr < 0) {
-			Logger.error(this, "No space for hisRef: data.length="+data.length+" myRef.length="+(pn.jfkMyRef==null?0:pn.jfkMyRef.length)+" orig data length "+(payload.length-inputOffset));
-			return true;
-		}
 		byte[] hisRef = new byte[data.length - ptr];
 		System.arraycopy(data, ptr, hisRef, 0, hisRef.length);
 		
