@@ -791,8 +791,8 @@ public class PacketTracker {
 				acks[i++] = ack.packetNumber;
 				if(logMINOR)
 					Logger.minor(this, "Grabbing ack " + ack.packetNumber + " from " + this);
-				it.remove();	// sent
 			}
+			ackQueue.clear();
 		}
 		return acks;
 	}
