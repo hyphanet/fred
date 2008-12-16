@@ -370,8 +370,10 @@ public class FreenetInetAddress {
 	}
 
 	public FreenetInetAddress dropHostname() {
+		if(_address == null)
+			throw new IllegalStateException("Can't dropHostname() if no address!");
 		if(hostname != null) {
-			return new FreenetInetAddress(getAddress());
+			return new FreenetInetAddress(_address);
 		} else return this;
 	}
 
