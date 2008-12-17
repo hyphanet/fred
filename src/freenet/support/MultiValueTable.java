@@ -74,6 +74,15 @@ public class MultiValueTable<K,V> {
                 v.elements());
     }
     
+    /**
+     * To be used in for(x : y).
+     */
+    public Iterable<V> iterateAll(K key) {
+		synchronized (table) {
+			return(table.get(key));
+		}
+    }
+    
     public int countAll(K key) {
     	Vector<V> v;
 		synchronized (table) {

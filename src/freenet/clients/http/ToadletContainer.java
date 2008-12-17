@@ -56,4 +56,10 @@ public interface ToadletContainer {
 
 	/** Can we deal with POSTs yet? */
 	public boolean allowPosts();
+	
+	/** Is public-gateway mode enabled? 
+	 * If so, users with full access will still be able to configure the 
+	 * node etc, but everyone else will not have access to the download 
+	 * queue or anything else that might conceivably result in a DoS. */
+	public boolean publicGatewayMode();
 }

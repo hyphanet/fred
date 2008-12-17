@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 
 import freenet.client.DefaultMIMETypes;
+import freenet.crypt.BlockCipher;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
 import freenet.io.comm.FreenetInetAddress;
@@ -772,6 +773,7 @@ public class DarknetPeerNode extends PeerNode {
 	 */
 	@Override
 	protected void onConnect() {
+		super.onConnect();
 		sendQueuedN2NMs();
 	}
 
@@ -1596,4 +1598,5 @@ public class DarknetPeerNode extends PeerNode {
 	public final boolean shouldDisconnectAndRemoveNow() {
 		return false;
 	}
+	
 }

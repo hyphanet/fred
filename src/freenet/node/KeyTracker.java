@@ -33,5 +33,9 @@ public class KeyTracker {
 		this.sessionCipher = cipher;
 		this.sessionKey = sessionKey;
 	}
+	
+	public String toString() {
+		return super.toString()+":"+packets.toString();
+	}
 
 }

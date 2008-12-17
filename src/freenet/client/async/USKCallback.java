@@ -13,9 +13,14 @@ import freenet.keys.USK;
  */
 public interface USKCallback {
 
-	/** Found the latest edition.
-	 * @param l The edition number.
-	 * @param key The key. */
+	/**
+	 * Found the latest edition.
+	 * 
+	 * @param l
+	 *            The edition number.
+	 * @param key
+	 *            A copy of the key with new edition set
+	 */
 	void onFoundEdition(long l, USK key, ObjectContainer container, ClientContext context, boolean metadata, short codec, byte[] data);
 	
 	/**

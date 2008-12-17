@@ -64,7 +64,7 @@ import freenet.support.io.FileBucket;
 import freenet.support.io.NativeThread;
 import java.util.StringTokenizer;
 
-public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
+public class QueueToadlet extends Toadlet implements RequestCompletionCallback, LinkEnabledCallback {
 
 	private static final int LIST_IDENTIFIER = 1;
 	private static final int LIST_SIZE = 2;
@@ -103,6 +103,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		
 		if(!core.hasLoadedQueue()) {
 			writeError(L10n.getString("QueueToadlet.notLoadedYetTitle"), L10n.getString("QueueToadlet.notLoadedYet"), ctx, false);
+			return;
+		}
+		
+		if(container.publicGatewayMode() && !ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
 			return;
 		}
 		
@@ -460,6 +465,11 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		
 		if(!core.hasLoadedQueue()) {
 			writeError(L10n.getString("QueueToadlet.notLoadedYetTitle"), L10n.getString("QueueToadlet.notLoadedYet"), ctx, false);
+			return;
+		}
+		
+		if(container.publicGatewayMode() && !ctx.isAllowedFullAccess()) {
+			super.sendErrorPage(ctx, 403, L10n.getString("Toadlet.unauthorizedTitle"), L10n.getString("Toadlet.unauthorized"));
 			return;
 		}
 		
@@ -1499,6 +1509,10 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback {
 		}
 		core.alerts.unregister(alert);
 		saveCompletedIdentifiersOffThread();
+	}
+
+	public boolean isEnabled(ToadletContext ctx) {
+		return (!container.publicGatewayMode()) || ctx.isAllowedFullAccess();
 	}
 
 }

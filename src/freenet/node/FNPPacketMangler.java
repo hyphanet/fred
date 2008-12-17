@@ -303,7 +303,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		OpennetManager opennet = node.getOpennet();
 		if(opennet != null) {
 			// Try old opennet connections.
-			if(opennet.wantPeer(null, false, true)) {
+			if(opennet.wantPeer(null, false, true, true)) {
 				// We want a peer.
 				// Try old connections.
 				PeerNode[] oldPeers = opennet.getOldPeers();
@@ -1201,9 +1201,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				Logger.normal(this, "Dumping incoming old-opennet peer as opennet just turned off: "+pn+".");
 				return;
 			}
-			if(!opennet.wantPeer(pn, true, false)) {
+			/* When an old-opennet-peer connects, add it at the top of the LRU, so that it isn't
+			 * immediately dropped when there is no droppable peer to drop. If it was dropped 
+			 * from the bottom of the LRU list, we would not have added it to the LRU; so it was
+			 * somewhere in the middle. */
+			if(!opennet.wantPeer(pn, false, false, true)) {
 				Logger.normal(this, "No longer want peer "+pn+" - dumping it after connecting");
 				dontWant = true;
+				opennet.purgeOldOpennetPeer(pn);
 			}
 			// wantPeer will call node.peers.addPeer(), we don't have to.
 		}
@@ -1217,7 +1222,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 					c, Ke, Ka, authenticator, hisRef, pn, replyTo, unknownInitiator, setupType, newTrackerID, newTrackerID == trackerID);
 			
 			if(dontWant)
-				node.peers.disconnect(pn, true, false); // Let it connect then tell it to remove it.
+				node.peers.disconnect(pn, true, false, true); // Let it connect then tell it to remove it.
 			else
 				pn.maybeSendInitialMessages();
 		} else {
@@ -1417,9 +1422,14 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				Logger.normal(this, "Dumping incoming old-opennet peer as opennet just turned off: "+pn+".");
 				return true;
 			}
-			if(!opennet.wantPeer(pn, true, false)) {
+			/* When an old-opennet-peer connects, add it at the top of the LRU, so that it isn't
+			 * immediately dropped when there is no droppable peer to drop. If it was dropped 
+			 * from the bottom of the LRU list, we would not have added it to the LRU; so it was
+			 * somewhere in the middle. */
+			if(!opennet.wantPeer(pn, false, false, true)) {
 				Logger.normal(this, "No longer want peer "+pn+" - dumping it after connecting");
 				dontWant = true;
+				opennet.purgeOldOpennetPeer(pn);
 			}
 			// wantPeer will call node.peers.addPeer(), we don't have to.
 		}
@@ -1428,7 +1438,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		c.initialize(pn.jfkKs);
 		if(pn.completedHandshake(bootID, hisRef, 0, hisRef.length, c, pn.jfkKs, replyTo, false, negType, trackerID, true, reusedTracker) >= 0) {
 			if(dontWant)
-				node.peers.disconnect(pn, true, false);
+				node.peers.disconnect(pn, true, false, true);
 			else
 				pn.maybeSendInitialMessages();
 		} else {
@@ -1486,6 +1496,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			else trackerID = pn.getReusableTrackerID();
 			System.arraycopy(Fields.longToBytes(trackerID), 0, data, ptr, 8);
 			ptr += 8;
+			if(logMINOR) Logger.minor(this, "Sending tracker ID "+trackerID+" in JFK(3)");
 		}
 		System.arraycopy(Fields.longToBytes(node.bootID), 0, data, ptr, 8);
 		ptr += 8;
@@ -2835,7 +2846,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/* (non-Javadoc)
 	 * @see freenet.node.OutgoingPacketMangler#sendHandshake(freenet.node.PeerNode)
 	 */
-	public void sendHandshake(PeerNode pn) {
+	public void sendHandshake(PeerNode pn, boolean notRegistered) {
 		int negType = pn.selectNegType(this);
 		if(negType == -1) {
 			// Pick a random negType from what I do support
@@ -2847,13 +2858,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		Peer peer = pn.getHandshakeIP();
 		if(peer == null) {
-			pn.couldNotSendHandshake();
+			pn.couldNotSendHandshake(notRegistered);
 			return;
 		}
 		sendJFKMessage1(pn, peer, pn.handshakeUnknownInitiator(), pn.handshakeSetupType(), negType);
 		if(logMINOR)
 			Logger.minor(this, "Sending handshake to "+peer+" for "+pn);
-		pn.sentHandshake();
+		pn.sentHandshake(notRegistered);
 	}
 
 	/* (non-Javadoc)
@@ -2870,7 +2881,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	}
 
 	public int[] supportedNegTypes() {
-		return new int[] { 2, 3, 4 };
+		return new int[] { 2, 4 };
 	}
 
 	public int fullHeadersLengthOneMessage() {

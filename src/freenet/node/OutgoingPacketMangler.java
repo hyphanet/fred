@@ -77,7 +77,7 @@ public interface OutgoingPacketMangler {
 	 * Send a handshake, if possible, to the node.
 	 * @param pn
 	 */
-	public void sendHandshake(PeerNode pn);
+	public void sendHandshake(PeerNode pn, boolean notRegistered);
 
 	/**
 	 * Is a peer disconnected?

@@ -3375,7 +3375,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	}
 	
 	public void removePeerConnection(PeerNode pn) {
-		peers.disconnect(pn, true, false);
+		peers.disconnect(pn, true, false, false);
 	}
 
 	public void onConnectedPeer() {
