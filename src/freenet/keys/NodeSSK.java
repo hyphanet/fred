@@ -37,7 +37,7 @@ public class NodeSSK extends Key {
 	/** E(H(docname)) (E = encrypt using decrypt key, which only clients know) */
 	final byte[] encryptedHashedDocname;
 	/** The signature key, if we know it */
-	DSAPublicKey pubKey;
+	transient DSAPublicKey pubKey;
 	final int hashCode;
 	
 	static final int SSK_VERSION = 1;
@@ -240,7 +240,6 @@ public class NodeSSK extends Key {
 	
 	@Override
 	public void removeFrom(ObjectContainer container) {
-		if(pubKey != null) pubKey.removeFrom(container);
 		super.removeFrom(container);
 	}
 	
