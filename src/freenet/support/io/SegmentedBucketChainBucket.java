@@ -60,13 +60,23 @@ public class SegmentedBucketChainBucket implements Bucket {
 	}
 
 	public void free() {
-		SegmentedChainBucketSegment[] segs;
-		synchronized(this) {
-			segs = segments.toArray(new SegmentedChainBucketSegment[segments.size()]);
-			segments.clear();
-		}
-		for(SegmentedChainBucketSegment segment : segs)
-			segment.free();
+		dbJobRunner.queue(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				SegmentedChainBucketSegment[] segs;
+				synchronized(this) {
+					segs = segments.toArray(new SegmentedChainBucketSegment[segments.size()]);
+					segments.clear();
+				}
+				for(SegmentedChainBucketSegment segment : segs) {
+					container.activate(segment, 1);
+					segment.activateBuckets(container);
+					segment.free();
+					segment.removeFrom(container);
+				}
+			}
+			
+		}, NativeThread.HIGH_PRIORITY, false);
 	}
 
 	public InputStream getInputStream() throws IOException {
