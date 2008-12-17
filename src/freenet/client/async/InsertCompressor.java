@@ -138,7 +138,7 @@ public class InsertCompressor implements CompressJob {
 					break;
 				}
 				if(resultSize < bestCompressedDataSize) {
-					if(bestCompressedData != null)
+					if(bestCompressedData != null && bestCompressedData != origData)
 						bestCompressedData.free();
 					bestCompressedData = result;
 					bestCompressedDataSize = resultSize;
