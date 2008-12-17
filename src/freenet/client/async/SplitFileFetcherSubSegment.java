@@ -656,6 +656,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				Key k = segment.getBlockNodeKey(num, container);
 				if(k != null && k.equals(key)) {
 					blockNums.remove(i);
+					if(persistent) container.delete(token);
 					break;
 				}
 			}
