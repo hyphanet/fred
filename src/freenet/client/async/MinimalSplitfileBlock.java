@@ -44,4 +44,9 @@ public class MinimalSplitfileBlock implements SplitfileBlock {
 		container.store(this);
 	}
 
+	public void removeFrom(ObjectContainer container) {
+		if(data != null) data.removeFrom(container);
+		container.delete(this);
+	}
+
 }

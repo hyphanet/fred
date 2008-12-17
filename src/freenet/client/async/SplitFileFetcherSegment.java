@@ -550,13 +550,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(dataRetries[i] > 0)
 					heal = true;
 				if(heal) {
-					queueHeal(data, context);
+					queueHeal(data, container, context);
+					dataBuckets[i].data = null; // So that it doesn't remove the data
 				} else {
 					dataBuckets[i].data.free();
-					if(persistent)
-						dataBuckets[i].data.removeFrom(container);
-					dataBuckets[i].data = null;
 				}
+				if(persistent)
+					dataBuckets[i].removeFrom(container);
 				dataBuckets[i] = null;
 				dataKeys[i] = null;
 			}
@@ -596,12 +596,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(checkRetries[i] > 0)
 					heal = true;
 				if(heal) {
-					queueHeal(data, context);
+					queueHeal(data, container, context);
+					checkBuckets[i].data = null;
 				} else {
 					data.free();
-					if(persistent)
-						data.removeFrom(container);
 				}
+				if(persistent)
+					checkBuckets[i].removeFrom(container);
 				checkBuckets[i] = null;
 				checkKeys[i] = null;
 			}
@@ -644,7 +645,28 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 	}
 
-	private void queueHeal(Bucket data, ClientContext context) {
+	/**
+	 * Queue the data for a healing insert. The data will be freed when it the healing insert completes,
+	 * or immediately if a healing insert isn't queued. If we are persistent, copies the data.
+	 * @param data
+	 * @param container
+	 * @param context
+	 */
+	private void queueHeal(Bucket data, ObjectContainer container, ClientContext context) {
+		if(persistent) {
+			try {
+				Bucket copy = context.tempBucketFactory.makeBucket(data.size());
+				BucketTools.copy(data, copy);
+				data.free();
+				data.removeFrom(container);
+				data = copy;
+			} catch (IOException e) {
+				Logger.normal(this, "Failed to copy data for healing: "+e, e);
+				data.free();
+				data.removeFrom(container);
+				return;
+			}
+		}
 		if(logMINOR) Logger.minor(this, "Queueing healing insert for "+data+" on "+this);
 		context.healingQueue.queue(data, context);
 	}
@@ -867,6 +889,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 					Bucket d = b.getData();
 					if(d != null) d.free();
 				}
+				if(persistent)
+					b.removeFrom(container);
 				dataBuckets[i] = null;
 			}
 			for(int i=0;i<checkBuckets.length;i++) {
@@ -877,6 +901,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 					Bucket d = b.getData();
 					if(d != null) d.free();
 				}
+				if(persistent)
+					b.removeFrom(container);
 				checkBuckets[i] = null;
 			}
 		}
@@ -1176,7 +1202,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(checkRetries[i] == retryCount)
 				v.add(new Integer(i+dataKeys.length));
 		}
-		return (Integer[]) v.toArray(new Integer[v.size()]);
+		return v.toArray(new Integer[v.size()]);
 	}
 
 	public synchronized void resetCooldownTimes(Integer[] blockNums) {
@@ -1304,7 +1330,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				seg.possiblyRemoveFromParent(container, context);
 			}
 			for(int i=0;i<subSegments.size();i++) {
-				SplitFileFetcherSubSegment checkSeg = (SplitFileFetcherSubSegment) subSegments.get(i);
+				SplitFileFetcherSubSegment checkSeg = subSegments.get(i);
 				if(checkSeg == seg) continue;
 				if(persistent)
 					container.activate(checkSeg, 1);
