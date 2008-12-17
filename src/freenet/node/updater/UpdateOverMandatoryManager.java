@@ -90,8 +90,11 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	public static final int GRACE_TIME = 3 * 60 * 60 * 1000; // 3h
 	private boolean logMINOR;
 	private UserAlert alert;
-	private static final Pattern extBuildNumberPattern = Pattern.compile("^ext(?:-jar)?-(\\d+)\\.fblob(\\.tmp)*$");
-	private static final Pattern mainBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+)\\.fblob(\\.tmp)*$");
+	private static final Pattern extBuildNumberPattern = Pattern.compile("^ext(?:-jar)?-(\\d+)\\.fblob$");
+	private static final Pattern mainBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+)\\.fblob$");
+	private static final Pattern extTempBuildNumberPattern = Pattern.compile("^ext(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
+	private static final Pattern mainTempBuildNumberPattern = Pattern.compile("^main(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
+	private static final Pattern revocationTempBuildNumberPattern = Pattern.compile("^revocation(?:-jar)?-(\\d+-)?(\\d+)\\.fblob\\.tmp*$");
 
 	public UpdateOverMandatoryManager(NodeUpdateManager manager) {
 		this.updateManager = manager;
@@ -1423,6 +1426,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		FileBucket b = null;
 		try {
 			f = File.createTempFile("main-", ".fblob.tmp", updateManager.node.clientCore.getPersistentTempDir());
+			f.deleteOnExit();
 			b = new FileBucket(f, false, false, true, true, true);
 		} catch(IOException e) {
 			Logger.error(this, "Cannot share main jar from " + source.userToString() + " with our peers because cannot write the cleaned version to disk: " + e, e);
@@ -1545,6 +1549,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		FileBucket b = null;
 		try {
 			f = File.createTempFile("ext-", ".fblob.tmp", updateManager.node.clientCore.getPersistentTempDir());
+			f.deleteOnExit();
 			b = new FileBucket(f, false, false, true, true, true);
 		} catch(IOException e) {
 			Logger.error(this, "Cannot share ext jar from " + source.userToString() + " with our peers because cannot write the cleaned version to disk: " + e, e);
@@ -1651,17 +1656,33 @@ public class UpdateOverMandatoryManager implements RequestClient {
 				int buildNumber;
 				Matcher extBuildNumberMatcher = extBuildNumberPattern.matcher(fileName);
 				Matcher mainBuildNumberMatcher = mainBuildNumberPattern.matcher(fileName);
+				Matcher extTempBuildNumberMatcher = extTempBuildNumberPattern.matcher(fileName);
+				Matcher mainTempBuildNumberMatcher = mainTempBuildNumberPattern.matcher(fileName);
+				Matcher revocationTempBuildNumberMatcher = revocationTempBuildNumberPattern.matcher(fileName);
 
 				if(mainBuildNumberMatcher.matches()) {
+					try {
 					buildNumberStr = mainBuildNumberMatcher.group(1);
 					buildNumber = Integer.parseInt(buildNumberStr);
 					if(buildNumber < lastGoodMainBuildNumber)
 						return true;
+					} catch (NumberFormatException e) {
+						Logger.error(this, "Wierd file in persistent temp: "+fileName);
+						return false;
+					}
 				} else if(extBuildNumberMatcher.matches()) {
+					try {
 					buildNumberStr = extBuildNumberMatcher.group(1);
 					buildNumber = Integer.parseInt(buildNumberStr);
 					if(buildNumber < recommendedExtBuildNumber)
 						return true;
+					} catch (NumberFormatException e) {
+						Logger.error(this, "Wierd file in persistent temp: "+fileName);
+						return false;
+					}
+				} else if(mainTempBuildNumberMatcher.matches() || extTempBuildNumberMatcher.matches() || revocationTempBuildNumberMatcher.matches()) {
+					// Temporary file, can be deleted
+					return true;
 				}
 
 				return false;
