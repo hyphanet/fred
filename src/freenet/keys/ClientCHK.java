@@ -20,7 +20,7 @@ import freenet.support.Base64;
 public class ClientCHK extends ClientKey {
     
 	/** Lazily constructed: the NodeCHK */
-    NodeCHK nodeKey;
+    transient NodeCHK nodeKey;
     /** Routing key */
     final byte[] routingKey;
     /** Decryption key */
@@ -189,7 +189,6 @@ public class ClientCHK extends ClientKey {
 	}
 
 	public void removeFrom(ObjectContainer container) {
-		if(nodeKey != null) nodeKey.removeFrom(container);
 		container.delete(this);
 	}
 }
