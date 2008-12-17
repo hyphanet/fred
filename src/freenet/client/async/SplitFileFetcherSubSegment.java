@@ -642,7 +642,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				return;
 			}
 		}
-		unregister(container, context);
+		kill(container, context, true);
 	}
 
 	public void onGotKey(Key key, KeyBlock block, ObjectContainer container, ClientContext context) {
