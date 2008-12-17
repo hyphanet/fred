@@ -61,7 +61,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 	final SplitFileFetcher parentFetcher;
 	final ClientRequester parent;
 	final ArchiveContext archiveContext;
-	final FetchContext fetchContext;
 	final long maxBlockLength;
 	/** Has the segment finished processing? Irreversible. */
 	private volatile boolean finished;
@@ -107,7 +106,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	
 	private FECCodec codec;
 	
-	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext fetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum, boolean ignoreLastDataBlock) throws MetadataParseException, FetchException {
+	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext blockFetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum, boolean ignoreLastDataBlock) throws MetadataParseException, FetchException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.segNum = segNum;
 		this.hashCode = super.hashCode();
@@ -139,9 +138,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 		dataCooldownTimes = new long[dataKeys.length];
 		checkCooldownTimes = new long[checkKeys.length];
 		subSegments = new Vector<SplitFileFetcherSubSegment>();
-		this.fetchContext = fetchContext;
 		maxBlockLength = maxTempLength;
-		blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true);
+		this.blockFetchContext = blockFetchContext;
 		this.recursionLevel = 0;
 		if(logMINOR) Logger.minor(this, "Created "+this+" for "+parentFetcher+" : "+dataRetries.length+" data blocks "+checkRetries.length+" check blocks");
 		for(int i=0;i<dataKeys.length;i++)
