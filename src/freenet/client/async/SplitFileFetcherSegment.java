@@ -1026,7 +1026,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	public boolean requeueAfterCooldown(Key key, long time, ObjectContainer container, ClientContext context, SplitFileFetcherSubSegment dontDeactivate) {
 		if(persistent)
 			container.activate(this, 1);
-		Vector v = null;
+		Vector<SplitFileFetcherSubSegment> v = null;
 		boolean notFound = true;
 		synchronized(this) {
 		if(isFinishing(container)) return false;
@@ -1046,7 +1046,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				SplitFileFetcherSubSegment sub = getSubSegment(tries, container, false, dontDeactivate);
 				if(logMINOR)
 					Logger.minor(this, "Retrying after cooldown on "+this+": data block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
-				if(v == null) v = new Vector();
+				if(v == null) v = new Vector<SplitFileFetcherSubSegment>();
 				sub.add(i, true, container, context, true);
 				if(!v.contains(sub)) v.add(sub);
 				notFound = false;
@@ -1070,7 +1070,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				SplitFileFetcherSubSegment sub = getSubSegment(tries, container, false, dontDeactivate);
 				if(logMINOR)
 					Logger.minor(this, "Retrying after cooldown on "+this+": check block "+i+" on "+this+" : tries="+tries+"/"+maxTries+" : "+sub);
-				if(v == null) v = new Vector();
+				if(v == null) v = new Vector<SplitFileFetcherSubSegment>();
 				sub.add(i+dataKeys.length, true, container, context, true);
 				if(!v.contains(sub)) v.add(sub);
 				notFound = false;
@@ -1165,7 +1165,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 
 	public synchronized Integer[] getKeyNumbersAtRetryLevel(int retryCount) {
-		Vector v = new Vector();
+		Vector<Integer> v = new Vector<Integer>();
 		for(int i=0;i<dataRetries.length;i++) {
 			if(dataKeys[i] == null) continue;
 			if(dataRetries[i] == retryCount)
@@ -1253,7 +1253,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 
 	public Key[] listKeys(ObjectContainer container) {
-		Vector v = new Vector();
+		Vector<Key> v = new Vector<Key>();
 		synchronized(this) {
 			for(int i=0;i<dataKeys.length;i++) {
 				if(dataKeys[i] != null) {
@@ -1270,7 +1270,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				}
 			}
 		}
-		return (Key[]) v.toArray(new Key[v.size()]);
+		return v.toArray(new Key[v.size()]);
 	}
 
 	/**
