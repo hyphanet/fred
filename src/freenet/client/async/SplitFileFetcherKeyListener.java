@@ -150,6 +150,7 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 	}
 
 	public boolean probablyWantKey(Key key, byte[] saltedKey) {
+		if(filter == null) Logger.error(this, "Probably want key: filter = null for "+this+ " fetcher = "+fetcher);
 		return filter.checkFilter(saltedKey);
 	}
 
@@ -362,6 +363,10 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 
 	public boolean isSSK() {
 		return false;
+	}
+	
+	public void objectOnDeactivate(ObjectContainer container) {
+		Logger.error(this, "Deactivating a SplitFileFetcherKeyListener: "+this, new Exception("error"));
 	}
 
 }
