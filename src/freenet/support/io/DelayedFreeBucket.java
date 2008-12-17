@@ -119,7 +119,7 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 	}
 
 	public String toString() {
-		return super.toString()+":"+bucket.toString();
+		return super.toString()+":"+bucket;
 	}
 	
 	private transient int _activationCount = 0;
