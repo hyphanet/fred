@@ -50,7 +50,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	 * chooseKey() and allKeys() work / work fast. The retries tables in the Segment are
 	 * canonical.
 	 */
-	final Vector blockNums;
+	final Vector<Integer> blockNums;
 	final FetchContext ctx;
 	private static boolean logMINOR;
 	private boolean cancelled;
@@ -62,7 +62,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		this.parent = segment.parent;
 		if(parent == null) throw new NullPointerException();
 		ctx = segment.blockFetchContext;
-		blockNums = new Vector();
+		blockNums = new Vector<Integer>();
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
@@ -79,7 +79,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	@Override
 	public Object chooseKey(KeysFetchingLocally keys, ObjectContainer container, ClientContext context) {
 		if(cancelled) return null;
-		return removeRandomBlockNum(keys, context, container);
+		return getRandomBlockNum(keys, context, container);
 	}
 	
 	@Override
@@ -151,7 +151,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 	}
 
-	private Object removeRandomBlockNum(KeysFetchingLocally keys, ClientContext context, ObjectContainer container) {
+	private Object getRandomBlockNum(KeysFetchingLocally keys, ClientContext context, ObjectContainer container) {
 		if(persistent) {
 			container.activate(this, 1);
 			container.activate(blockNums, 1);
@@ -165,7 +165,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				return null;
 			}
 			for(int i=0;i<10;i++) {
-				Object ret;
+				Integer ret;
 				int x;
 				if(blockNums.size() == 0) return null;
 				x = context.random.nextInt(blockNums.size());
