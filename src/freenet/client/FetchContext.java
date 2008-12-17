@@ -8,7 +8,6 @@ import java.util.Set;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.BlockSet;
-import freenet.client.async.USKManager;
 import freenet.client.events.ClientEventProducer;
 import freenet.client.events.SimpleEventProducer;
 import freenet.support.api.BucketFactory;
@@ -44,9 +43,10 @@ public class FetchContext implements Cloneable {
 	public boolean returnZIPManifests;
 	public final boolean ignoreTooManyPathComponents;
 	/** If set, contains a set of blocks to be consulted before checking the datastore. */
-	public BlockSet blocks;
+	public final BlockSet blocks;
 	public Set allowedMIMETypes;
 	private final boolean hasOwnEventProducer;
+	private final boolean hasOwnBlocks;
 	
 	public FetchContext(long curMaxLength, 
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
@@ -57,6 +57,8 @@ public class FetchContext implements Cloneable {
 			BucketFactory bucketFactory,
 			ClientEventProducer producer, boolean cacheLocalRequests, 
 			boolean ignoreTooManyPathComponents) {
+		hasOwnBlocks = false;
+		this.blocks = null;
 		this.maxOutputLength = curMaxLength;
 		this.maxTempLength = curMaxTempLength;
 		this.maxMetadataSize = maxMetadataSize;
@@ -78,14 +80,18 @@ public class FetchContext implements Cloneable {
 		hasOwnEventProducer = true;
 	}
 
-	public FetchContext(FetchContext ctx, int maskID, boolean keepProducer) {
+	public FetchContext(FetchContext ctx, int maskID, boolean keepProducer, BlockSet blocks) {
 		if(keepProducer)
 			this.eventProducer = ctx.eventProducer;
 		else
 			this.eventProducer = new SimpleEventProducer();
 		hasOwnEventProducer = !keepProducer;
 		this.ignoreTooManyPathComponents = ctx.ignoreTooManyPathComponents;
-		this.blocks = ctx.blocks;
+		hasOwnBlocks = blocks != null;
+		if(blocks != null)
+			this.blocks = blocks;
+		else
+			this.blocks = ctx.blocks;
 		this.allowedMIMETypes = ctx.allowedMIMETypes;
 		if(maskID == IDENTICAL_MASK) {
 			this.maxOutputLength = ctx.maxOutputLength;

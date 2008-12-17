@@ -917,9 +917,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		// Fetch our revocation key from the datastore plus the binary blob
 
-		FetchContext tempContext = updateManager.node.clientCore.makeClient((short) 0, true).getFetchContext();
+		FetchContext seedContext = updateManager.node.clientCore.makeClient((short) 0, true).getFetchContext();
+		FetchContext tempContext = new FetchContext(seedContext, FetchContext.IDENTICAL_MASK, true, blocks);
 		tempContext.localRequestOnly = true;
-		tempContext.blocks = blocks;
 
 		File f;
 		FileBucket b = null;
@@ -1418,9 +1418,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		// Fetch the jar from the datastore plus the binary blob
 
-		FetchContext tempContext = updateManager.node.clientCore.makeClient((short) 0, true).getFetchContext();
+		FetchContext seedContext = updateManager.node.clientCore.makeClient((short) 0, true).getFetchContext();
+		FetchContext tempContext = new FetchContext(seedContext, FetchContext.IDENTICAL_MASK, true, blocks);
 		tempContext.localRequestOnly = true;
-		tempContext.blocks = blocks;
 
 		File f;
 		FileBucket b = null;
@@ -1541,9 +1541,9 @@ public class UpdateOverMandatoryManager implements RequestClient {
 
 		// Fetch the jar from the datastore plus the binary blob
 
-		FetchContext tempContext = updateManager.node.clientCore.makeClient((short) 0, true).getFetchContext();
+		FetchContext seedContext = updateManager.node.clientCore.makeClient((short) 0, true).getFetchContext();
+		FetchContext tempContext = new FetchContext(seedContext, FetchContext.IDENTICAL_MASK, true, blocks);
 		tempContext.localRequestOnly = true;
-		tempContext.blocks = blocks;
 
 		File f;
 		FileBucket b = null;

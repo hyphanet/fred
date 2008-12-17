@@ -705,7 +705,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		Metadata newMeta = (Metadata) meta.clone();
 		newMeta.setSimpleRedirect();
 		final SingleFileFetcher f;
-		f = new SingleFileFetcher(this, newMeta, new ArchiveFetcherCallback(forData, element, callback), new FetchContext(ctx, FetchContext.SET_RETURN_ARCHIVES, true), container, context);
+		f = new SingleFileFetcher(this, newMeta, new ArchiveFetcherCallback(forData, element, callback), new FetchContext(ctx, FetchContext.SET_RETURN_ARCHIVES, true, null), container, context);
 		if(persistent) container.store(f);
 		if(logMINOR) Logger.minor(this, "fetchArchive(): "+f);
 		// Fetch the archive. The archive fetcher callback will unpack it, and either call the element 

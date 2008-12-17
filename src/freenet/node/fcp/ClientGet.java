@@ -87,7 +87,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				(persistRebootOnly ? ClientRequest.PERSIST_REBOOT : ClientRequest.PERSIST_FOREVER),
 				null, true);
 
-		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK, false);
+		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK, false, null);
 		fctx.eventProducer.addEventListener(this);
 		fctx.localRequestOnly = dsOnly;
 		fctx.ignoreStore = ignoreDS;
@@ -127,7 +127,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				message.persistenceType, message.clientToken, message.global);
 		// Create a Fetcher directly in order to get more fine-grained control,
 		// since the client may override a few context elements.
-		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK, false);
+		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK, false, null);
 		fctx.eventProducer.addEventListener(this);
 		// ignoreDS
 		fctx.localRequestOnly = message.dsOnly;
@@ -209,7 +209,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		boolean ignoreDS = Fields.stringToBool(fs.get("IgnoreDS"), false);
 		boolean dsOnly = Fields.stringToBool(fs.get("DSOnly"), false);
 		int maxRetries = Integer.parseInt(fs.get("MaxRetries"));
-		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK, false);
+		fctx = new FetchContext(server.defaultFetchContext, FetchContext.IDENTICAL_MASK, false, null);
 		fctx.eventProducer.addEventListener(this);
 		// ignoreDS
 		fctx.localRequestOnly = dsOnly;

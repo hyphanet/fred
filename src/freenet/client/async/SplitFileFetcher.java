@@ -262,7 +262,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(persistent)
 			container.store(this);
 		
-		blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true);
+		blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true, null);
 		if(segmentCount == 1) {
 			// splitfile* will be overwritten, this is bad
 			// so copy them
