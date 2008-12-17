@@ -19,7 +19,7 @@ import freenet.support.Logger;
  */
 public class SimpleBlockSet implements BlockSet {
 
-	private final HashMap blocksByKey = new HashMap();
+	private final HashMap<Key, KeyBlock> blocksByKey = new HashMap<Key, KeyBlock>();
 	
 	public synchronized void add(KeyBlock block) {
 		blocksByKey.put(block.getKey(), block);
