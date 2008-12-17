@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.Base64;
 
 /**
@@ -184,5 +186,10 @@ public class ClientCHK extends ClientKey {
 
 	public ClientKey cloneKey() {
 		return new ClientCHK(this);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		if(nodeKey != null) nodeKey.removeFrom(container);
+		container.delete(this);
 	}
 }

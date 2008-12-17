@@ -253,6 +253,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 					return;
 				}
 				dataRetries[blockNo] = 0; // Prevent healing of successfully fetched block.
+				if(persistent)
+					dataKeys[blockNo].removeFrom(container);
 				dataKeys[blockNo] = null;
 				if(persistent)
 					container.activate(dataBuckets[blockNo], 1);
@@ -272,6 +274,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 					return;
 				}
 				checkRetries[blockNo] = 0; // Prevent healing of successfully fetched block.
+				if(persistent)
+					checkKeys[blockNo].removeFrom(container);
 				checkKeys[blockNo] = null;
 				if(persistent)
 					container.activate(checkBuckets[blockNo], 1);
@@ -556,6 +560,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(persistent)
 					dataBuckets[i].removeFrom(container);
 				dataBuckets[i] = null;
+				if(persistent && dataKeys[i] != null)
+					dataKeys[i].removeFrom(container);
 				dataKeys[i] = null;
 			}
 			for(int i=0;i<checkBuckets.length;i++) {
@@ -602,6 +608,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(persistent)
 					checkBuckets[i].removeFrom(container);
 				checkBuckets[i] = null;
+				if(persistent && checkKeys[i] != null)
+					checkKeys[i].removeFrom(container);
 				checkKeys[i] = null;
 			}
 		}
@@ -685,12 +693,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 					Logger.error(this, "Block already finished: "+blockNo);
 					return;
 				}
+				dataKeys[blockNo].removeFrom(container);
 				dataKeys[blockNo] = null;
 			} else if(blockNo < checkKeys.length + dataKeys.length) {
 				if(checkKeys[blockNo-dataKeys.length] == null) {
 					Logger.error(this, "Check block already finished: "+blockNo);
 					return;
 				}
+				checkKeys[blockNo-dataKeys.length].removeFrom(container);
 				checkKeys[blockNo-dataKeys.length] = null;
 			} else
 				Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
