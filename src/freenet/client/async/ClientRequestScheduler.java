@@ -348,7 +348,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 				datastoreChecker.queuePersistentRequest(getter, blocks, container);
 				container.deactivate(getter, 1);
 			}
-			container.deactivate(listener, 1);
 			
 		} else {
 			// We have already checked the datastore, this is a retry, the listener hasn't been unregistered.
