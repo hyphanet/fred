@@ -36,6 +36,7 @@ import freenet.support.compress.Compressor;
 public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 
 	final FetchContext fetchContext;
+	final FetchContext blockFetchContext;
 	final ArchiveContext archiveContext;
 	final List decompressors;
 	final ClientMetadata clientMetadata;
@@ -261,7 +262,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		if(persistent)
 			container.store(this);
 		
-		FetchContext blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true);
+		blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true);
 		if(segmentCount == 1) {
 			// splitfile* will be overwritten, this is bad
 			// so copy them
