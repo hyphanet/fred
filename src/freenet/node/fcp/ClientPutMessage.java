@@ -300,7 +300,8 @@ public class ClientPutMessage extends DataCarryingMessage {
 	}
 
 	public void freeData(ObjectContainer container) {
-		container.activate(bucket, 5);
+		if(persistenceType == ClientRequest.PERSIST_FOREVER)
+			container.activate(bucket, 5);
 		bucket.free();
 		bucket.removeFrom(container);
 	}
