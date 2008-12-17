@@ -143,7 +143,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				if(x == prev || x.equals(prev)) {
 					blockNums.remove(i);
 					i--;
-				}
+				} else prev = x;
 			}
 			if(blockNums.size() < initSize) {
 				Logger.error(this, "Cleaned block number list duplicates: was "+initSize+" now "+blockNums.size());
