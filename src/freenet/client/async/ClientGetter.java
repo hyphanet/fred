@@ -164,6 +164,7 @@ public class ClientGetter extends BaseClientGetter {
 			} catch (IOException e) {
 				Logger.error(this, "Error copying from "+from+" to "+to+" : "+e.toString(), e);
 				onFailure(new FetchException(FetchException.BUCKET_ERROR, e.toString()), state /* not strictly to blame, but we're not ako ClientGetState... */, container, context);
+				return;
 			}
 			result = new FetchResult(result, to);
 		} else {
