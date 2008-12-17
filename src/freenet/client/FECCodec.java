@@ -48,6 +48,8 @@ public abstract class FECCodec {
 	 * of check blocks, and the codec type. Normally for decoding.
 	 */
 	public static FECCodec getCodec(short splitfileType, int dataBlocks, int checkBlocks, Executor executor) {
+		if(Logger.shouldLog(Logger.MINOR, FECCodec.class))
+			Logger.minor(FECCodec.class, "getCodec: splitfileType="+splitfileType+" dataBlocks="+dataBlocks+" checkBlocks="+checkBlocks);
 		if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT)
 			return null;
 		if(splitfileType == Metadata.SPLITFILE_ONION_STANDARD)
