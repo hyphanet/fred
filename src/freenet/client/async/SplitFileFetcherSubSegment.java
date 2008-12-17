@@ -203,17 +203,18 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		boolean retval = false;
 		synchronized(segment) {
 			for(int i=0;i<10;i++) {
-				Object ret;
+				Integer ret;
 				int x;
 				if(blockNums.isEmpty()) {
 					break;
 				}
 				x = context.random.nextInt(blockNums.size());
-				ret = (Integer) blockNums.get(x);
-				Key key = segment.getBlockNodeKey(((Integer)ret).intValue(), container);
+				ret = blockNums.get(x);
+				int block = ret;
+				Key key = segment.getBlockNodeKey(block, container);
 				if(key == null) {
 					if(segment.isFinishing(container) || segment.isFinished(container)) return false;
-					if(segment.haveBlock(((Integer)ret).intValue(), container))
+					if(segment.haveBlock(block, container))
 						Logger.error(this, "Already have block "+ret+" but was in blockNums on "+this+" in hasValidKeys");
 					else
 						Logger.error(this, "Key is null for block "+ret+" for "+this+" in hasValidKeys");
