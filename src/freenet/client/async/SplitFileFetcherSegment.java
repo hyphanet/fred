@@ -900,6 +900,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(persistent)
 					b.removeFrom(container);
 				dataBuckets[i] = null;
+				if(persistent)
+					dataKeys[i].removeFrom(container);
+				dataKeys[i] = null;
 			}
 			for(int i=0;i<checkBuckets.length;i++) {
 				MinimalSplitfileBlock b = checkBuckets[i];
@@ -912,6 +915,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(persistent)
 					b.removeFrom(container);
 				checkBuckets[i] = null;
+				if(persistent)
+					checkKeys[i].removeFrom(container);
+				checkKeys[i] = null;
 			}
 		}
 		removeSubSegments(container, context);
