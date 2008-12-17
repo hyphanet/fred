@@ -229,7 +229,8 @@ public class PacketSender implements Runnable, Ticker {
 		
 		int newBrokeAt = 0;
 		for(int i = 0; i < nodes.length; i++) {
-			PeerNode pn = nodes[(i + brokeAt + 1) % nodes.length];
+			int idx = (i + brokeAt + 1) % nodes.length;
+			PeerNode pn = nodes[idx];
 			lastReceivedPacketFromAnyNode =
 				Math.max(pn.lastReceivedPacketTime(), lastReceivedPacketFromAnyNode);
 			pn.maybeOnConnect();
@@ -271,7 +272,7 @@ public class PacketSender implements Runnable, Ticker {
 						if(logMINOR)
 							Logger.minor(this, "Can send throttled packets in "+canSendAt+"ms");
 						nextActionTime = Math.min(nextActionTime, now + canSendAt);
-						newBrokeAt = i;
+						newBrokeAt = idx;
 					}
 				}
 				} catch (BlockedTooLongException e) {
