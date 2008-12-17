@@ -130,11 +130,11 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			container.activate(this, 1);
 			container.activate(blockNums, 1);
 		}
-		cleanBlockNums();
+		cleanBlockNums(container);
 		return blockNums.toArray();
 	}
 	
-	private void cleanBlockNums() {
+	private void cleanBlockNums(ObjectContainer container) {
 		synchronized(segment) {
 			int initSize = blockNums.size();
 			Integer prev = null;
