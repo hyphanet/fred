@@ -443,7 +443,9 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		boolean cbWasActive = true;
 		try {
 			synchronized(this) {
-				if(otherFailure != null) throw otherFailure;
+				if(otherFailure != null) {
+					throw otherFailure;
+				}
 				if(finished) {
 					Logger.error(this, "Was already finished");
 					return;
@@ -635,6 +637,16 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 	public void onFailed(KeyListenerConstructionException e, ObjectContainer container, ClientContext context) {
 		otherFailure = e.getFetchException();
 		cancel(container, context);
+	}
+
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		blockFetchContext.removeFrom(container);
+		for(int i=0;i<segments.length;i++) {
+			SplitFileFetcherSegment segment = segments[i];
+			segments[i] = null;
+			segment.removeFrom(container, context);
+		}
+		container.delete(this);
 	}
 
 }

@@ -5,6 +5,8 @@ package freenet.client;
 
 import java.util.Set;
 
+import com.db4o.ObjectContainer;
+
 import freenet.client.async.BlockSet;
 import freenet.client.async.USKManager;
 import freenet.client.events.ClientEventProducer;
@@ -44,6 +46,7 @@ public class FetchContext implements Cloneable {
 	/** If set, contains a set of blocks to be consulted before checking the datastore. */
 	public BlockSet blocks;
 	public Set allowedMIMETypes;
+	private final boolean hasOwnEventProducer;
 	
 	public FetchContext(long curMaxLength, 
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
@@ -72,6 +75,7 @@ public class FetchContext implements Cloneable {
 		this.maxCheckBlocksPerSegment = maxCheckBlocksPerSegment;
 		this.cacheLocalRequests = cacheLocalRequests;
 		this.ignoreTooManyPathComponents = ignoreTooManyPathComponents;
+		hasOwnEventProducer = true;
 	}
 
 	public FetchContext(FetchContext ctx, int maskID, boolean keepProducer) {
@@ -79,6 +83,7 @@ public class FetchContext implements Cloneable {
 			this.eventProducer = ctx.eventProducer;
 		else
 			this.eventProducer = new SimpleEventProducer();
+		hasOwnEventProducer = !keepProducer;
 		this.ignoreTooManyPathComponents = ctx.ignoreTooManyPathComponents;
 		this.blocks = ctx.blocks;
 		this.allowedMIMETypes = ctx.allowedMIMETypes;
@@ -167,6 +172,11 @@ public class FetchContext implements Cloneable {
 			// Impossible
 			throw new Error(e);
 		}
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		if(hasOwnEventProducer) eventProducer.removeFrom(container);
+		container.delete(this);
 	}
 	
 }

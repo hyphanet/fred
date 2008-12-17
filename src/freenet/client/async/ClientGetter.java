@@ -171,6 +171,7 @@ public class ClientGetter extends BaseClientGetter {
 			if(returnBucket != null && Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "client.async returned data in returnBucket");
 		}
+		state.removeFrom(container, context);
 		FetchResult res = result;
 		if(persistent()) {
 			container.store(this);
@@ -183,6 +184,7 @@ public class ClientGetter extends BaseClientGetter {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Failed from "+state+" : "+e+" on "+this, e);
 		closeBinaryBlobStream(container, context);
+		state.removeFrom(container, context);
 		while(true) {
 			if(e.mode == FetchException.ARCHIVE_RESTART) {
 				int ar;

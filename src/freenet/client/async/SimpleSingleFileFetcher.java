@@ -177,4 +177,9 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		onFailure(e.getFetchException(), false, container, context);
 	}
 
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

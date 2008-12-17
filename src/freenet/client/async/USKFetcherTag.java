@@ -201,5 +201,9 @@ class USKFetcherTag implements ClientGetState, USKFetcherCallback {
 	public final boolean isFinished() {
 		return finished;
 	}
+
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		container.delete(this);
+	}
 	
 }

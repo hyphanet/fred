@@ -607,5 +607,9 @@ public class USKFetcher implements ClientGetState {
 	public long getToken() {
 		return -1;
 	}
+
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		throw new UnsupportedOperationException();
+	}
 	
 }
