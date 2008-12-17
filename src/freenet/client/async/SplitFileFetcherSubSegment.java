@@ -170,7 +170,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				int x;
 				if(blockNums.size() == 0) return null;
 				x = context.random.nextInt(blockNums.size());
-				ret = blockNums.remove(x);
+				ret = blockNums.get(x);
 				int num = ret;
 				Key key = segment.getBlockNodeKey(ret, container);
 				if(key == null) {
@@ -182,13 +182,10 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 					continue;
 				}
 				if(keys.hasKey(key)) {
-					blockNums.add(ret);
 					continue;
 				}
 				if(logMINOR)
 					Logger.minor(this, "Removing block "+x+" of "+(blockNums.size()+1)+ " : "+ret+ " on "+this);
-				if(persistent)
-					container.store(blockNums);
 				return ret;
 			}
 			return null;
