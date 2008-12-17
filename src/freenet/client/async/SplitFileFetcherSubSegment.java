@@ -219,9 +219,12 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 					else
 						Logger.error(this, "Key is null for block "+ret+" for "+this+" in hasValidKeys");
 					blockNums.remove(x);
-					if(persistent && !hasSet) {
-						hasSet = true;
-						container.store(blockNums);
+					if(persistent) {
+						container.delete(ret);
+						if(!hasSet) {
+							hasSet = true;
+							container.store(blockNums);
+						}
 					}
 					continue;
 				}
