@@ -284,7 +284,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			// Call the fatal callbacks directly.
 			int x = 0;
 			for(int i=0;i<items.length;i++) {
-				int blockNum = ((Integer)items[i].token).intValue();
+				int blockNum = (Integer)items[i].token;
 				if(fetchExceptions[i].isFatal()) {
 					segment.onFatalFailure(fetchExceptions[i], blockNum, this, container, context);
 				} else {
@@ -296,7 +296,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			fetchExceptions = newFetchExceptions;
 		} else {
 			for(int i=0;i<blockNumbers.length;i++)
-				blockNumbers[i] = ((Integer)items[i].token).intValue();
+				blockNumbers[i] = (Integer)items[i].token;
 		}
 		segment.onNonFatalFailure(fetchExceptions, blockNumbers, this, container, context);
 
@@ -360,11 +360,11 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		if(e.isFatal() && token == null) {
 			segment.fail(e, container, context, false);
 		} else if(e.isFatal() || forceFatal) {
-			segment.onFatalFailure(e, ((Integer)token).intValue(), this, container, context);
+			segment.onFatalFailure(e, (Integer)token, this, container, context);
 		} else {
-			segment.onNonFatalFailure(e, ((Integer)token).intValue(), this, container, context);
+			segment.onNonFatalFailure(e, (Integer)token, this, container, context);
 		}
-		removeBlockNum(((Integer)token).intValue(), container, false);
+		removeBlockNum((Integer)token, container, false);
 		if(persistent) {
 			container.deactivate(segment, 1);
 			container.deactivate(parent, 1);
