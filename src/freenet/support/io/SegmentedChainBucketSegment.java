@@ -61,6 +61,8 @@ public class SegmentedChainBucketSegment {
 	
 	void activateBuckets(ObjectContainer container) {
 		container.activate(buckets, 1);
+		for(Bucket bucket : buckets)
+			container.activate(bucket, 1); // will cascade
 	}
 
 	public void clear(ObjectContainer container, ClientContext context) {
