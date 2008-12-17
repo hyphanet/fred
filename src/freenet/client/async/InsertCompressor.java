@@ -143,11 +143,12 @@ public class InsertCompressor implements CompressJob {
 					bestCompressedData = result;
 					bestCompressedDataSize = resultSize;
 					bestCodec = comp;
+					shouldFreeOnFinally = false;
 				}
 				} catch(CompressionOutputSizeException e) {
 					continue;       // try next compressor type
 				} finally {
-					if(shouldFreeOnFinally && (result != null))
+					if(shouldFreeOnFinally && (result != null) && result != origData)
 						result.free();
 				}
 			}
