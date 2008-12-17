@@ -248,7 +248,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			whenToTakeOverTheNormalUpdater = System.currentTimeMillis() + GRACE_TIME;
 		boolean isOutdated = updateManager.node.isOudated();
 		// if the new build is self-mandatory or if the "normal" updater has been trying to update for more than one hour
-		Logger.normal(this, "We received a valid UOMAnnounce : (isOutdated=" + isOutdated + " version=" + mainJarVersion + " whenToTakeOverTheNormalUpdater=" + TimeUtil.formatTime(whenToTakeOverTheNormalUpdater - now) + ") file length " + mainJarFileLength + " updateManager version " + updateManager.newMainJarVersion());
+		Logger.normal(this, "We received a valid UOMAnnounce (main) : (isOutdated=" + isOutdated + " version=" + mainJarVersion + " whenToTakeOverTheNormalUpdater=" + TimeUtil.formatTime(whenToTakeOverTheNormalUpdater - now) + ") file length " + mainJarFileLength + " updateManager version " + updateManager.newMainJarVersion());
 		if(mainJarVersion > Version.buildNumber() && mainJarFileLength > 0 &&
 			mainJarVersion > updateManager.newMainJarVersion()) {
 			source.setMainJarOfferedVersion(mainJarVersion);
@@ -314,7 +314,7 @@ public class UpdateOverMandatoryManager implements RequestClient {
 			whenToTakeOverTheNormalUpdater = System.currentTimeMillis() + GRACE_TIME;
 		boolean isOutdated = updateManager.node.isOudated();
 		// if the new build is self-mandatory or if the "normal" updater has been trying to update for more than one hour
-		Logger.normal(this, "We received a valid UOMAnnounce : (isOutdated=" + isOutdated + " version=" + extJarVersion + " whenToTakeOverTheNormalUpdater=" + TimeUtil.formatTime(whenToTakeOverTheNormalUpdater - now) + ") file length " + extJarFileLength + " updateManager version " + updateManager.newExtJarVersion());
+		Logger.normal(this, "We received a valid UOMAnnounce (ext) : (isOutdated=" + isOutdated + " version=" + extJarVersion + " whenToTakeOverTheNormalUpdater=" + TimeUtil.formatTime(whenToTakeOverTheNormalUpdater - now) + ") file length " + extJarFileLength + " updateManager version " + updateManager.newExtJarVersion());
 		if(extJarVersion > NodeStarter.extBuildNumber && extJarFileLength > 0 &&
 			extJarVersion > updateManager.newExtJarVersion()) {
 			source.setExtJarOfferedVersion(extJarVersion);
@@ -371,8 +371,8 @@ public class UpdateOverMandatoryManager implements RequestClient {
 	}
 
 	private void sendUOMRequest(final PeerNode source, boolean addOnFail, final boolean isExt) {
-		final String name = isExt ? "Main" : "Extra";
-		String lname = isExt ? "main" : "ext";
+		final String name = isExt ? "Extra" : "Main";
+		String lname = isExt ? "ext" : "main";
 		if(logMINOR)
 			Logger.minor(this, "sendUOMRequest"+name+"(" + source + "," + addOnFail + ")");
 		if(!source.isConnected())

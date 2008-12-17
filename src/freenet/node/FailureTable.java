@@ -425,7 +425,7 @@ public class FailureTable implements OOMHook {
 
 				public void run() {
 					try {
-						source.sendThrottledMessage(data, dataLength, senderCounter, 60*1000, false);
+						source.sendThrottledMessage(data, dataLength, senderCounter, 60*1000, false, null);
 					} catch (NotConnectedException e) {
 						// :(
 					} catch (WaitedTooLongException e) {

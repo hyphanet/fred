@@ -1896,6 +1896,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			isRoutable = routable;
 			unroutableNewerVersion = newer;
 			unroutableOlderVersion = older;
+			boolean notReusingTracker = false;
 			bootIDChanged = (thisBootID != this.bootID);
 			if(bootIDChanged && wasARekey) {
 				Logger.error(this, "Changed boot ID while rekeying! from " + bootID + " to " + thisBootID + " for " + getPeer());
@@ -1923,6 +1924,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			} else if(trackerID == -1) {
 				// Create a new tracker unconditionally
 				packets = new PacketTracker(this);
+				notReusingTracker = true;
 				if(logMINOR) Logger.minor(this, "Creating new PacketTracker as instructed for "+this);
 			} else if(trackerID == -2 && !bootIDChanged) {
 				// Reuse if not deprecated and not boot ID changed
@@ -1934,19 +1936,26 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 					if(logMINOR) Logger.minor(this, "Re-using packet tracker (not given an ID): "+packets.trackerID+" on "+this+" from prev "+previousTracker);
 				} else {
 					packets = new PacketTracker(this);
+					notReusingTracker = true;
 					if(logMINOR) Logger.minor(this, "Cannot reuse trackers (not given an ID) on "+this);
 				}
 			} else {
 				if(isJFK4 && negType >= 4 && trackerID < 0)
 					Logger.error(this, "JFK(4) packet with neg type "+negType+" has negative tracker ID: "+trackerID);
 					
+				notReusingTracker = true;
 				if(isJFK4/* && !jfk4SameAsOld implied */ && trackerID >= 0) {
 					packets = new PacketTracker(this, trackerID);
 				} else
 					packets = new PacketTracker(this);
 				if(logMINOR) Logger.minor(this, "Creating new tracker (last resort) on "+this);
 			}
-			if(bootIDChanged) {
+			if(bootIDChanged || notReusingTracker) {
+				if((!bootIDChanged) && notReusingTracker)
+					// FIXME is this a real problem? Clearly the other side has changed trackers for some reason...
+					// Normally that shouldn't happen except when a connection times out ... it is probably possible
+					// for that to timeout on one side and not the other ...
+					Logger.error(this, "Not reusing tracker, so wiping old trackers for "+this);
 				oldPrev = previousTracker;
 				oldCur = currentTracker;
 				previousTracker = null;
@@ -1993,6 +2002,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			if(previousTracker != null && unverifiedTracker != null && 
 					Arrays.equals(previousTracker.sessionKey, unverifiedTracker.sessionKey))
 				Logger.error(this, "previousTracker key equals unverifiedTracker key: prev "+previousTracker+" unv "+unverifiedTracker);
+			timeLastSentPacket = now;
 		}
 		if(messagesTellDisconnected != null) {
 			for(int i=0;i<messagesTellDisconnected.length;i++) {
@@ -4034,12 +4044,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		return resendBytesSent;
 	}
 	
-	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean blockForSend) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException {
+	public void sendThrottledMessage(Message msg, int packetSize, ByteCounter ctr, int timeout, boolean blockForSend, AsyncMessageCallback callback) throws NotConnectedException, WaitedTooLongException, SyncSendWaitedTooLongException {
 		long deadline = System.currentTimeMillis() + timeout;
 		if(logMINOR) Logger.minor(this, "Sending throttled message with timeout "+timeout+" packet size "+packetSize+" to "+shortToString());
 		for(int i=0;i<100;i++) {
 			try {
-				getThrottle().sendThrottledMessage(msg, this, packetSize, ctr, deadline, blockForSend);
+				getThrottle().sendThrottledMessage(msg, this, packetSize, ctr, deadline, blockForSend, callback);
 				return;
 			} catch (ThrottleDeprecatedException e) {
 				// Try with the new throttle. We don't need it, we'll get it from getThrottle().
@@ -4048,6 +4058,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		}
 		Logger.error(this, "Peer constantly changes its IP address!!: "+shortToString());
 		forceDisconnect(true);
+		throw new NotConnectedException();
 	}
 
 	/**
@@ -4117,6 +4128,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 */
 	public boolean maybeSendPacket(long now, Vector<ResendPacketItem> rpiTemp, int[] rpiIntTemp) throws BlockedTooLongException {
 		// If there are any urgent notifications, we must send a packet.
+		if(logMINOR) Logger.minor(this, "maybeSendPacket: "+this);
 		boolean mustSend = false;
 		boolean mustSendPacket = false;
 		if(mustSendNotificationsNow(now)) {
@@ -4172,9 +4184,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		// If it's a keepalive, we must add an FNPVoid to ensure it has a packet number.
 		boolean keepalive = false;
 		
-		if(now - lastSentPacketTime() > Node.KEEPALIVE_INTERVAL) {
+		long lastSent = lastSentPacketTime();
+		if(now - lastSent > Node.KEEPALIVE_INTERVAL) {
 			if(logMINOR)
 				Logger.minor(this, "Sending keepalive");
+			if(now - lastSent > Node.KEEPALIVE_INTERVAL * 10 && lastSent > -1)
+				Logger.error(this, "Long gap between sending packets: "+(now - lastSent)+" for "+this);
 			keepalive = true;
 			mustSend = true;
 			mustSendPacket = true;

@@ -174,6 +174,7 @@ public class NetworkInterface implements Closeable {
 		for (Acceptor acceptor : acceptors) {
 			acceptor.setSoTimeout(timeout);
 		}
+		this.timeout = timeout;
 	}
 
 	/**
@@ -190,6 +191,9 @@ public class NetworkInterface implements Closeable {
 	public Socket accept() throws SocketTimeoutException {
 		synchronized (syncObject) {
 			while (acceptedSockets.size() == 0) {
+				if (acceptors.size() == 0) {
+					throw new SocketTimeoutException();
+				}
 				try {
 					syncObject.wait(timeout);
 				} catch (InterruptedException ie1) {

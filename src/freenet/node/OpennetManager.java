@@ -14,6 +14,7 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Enumeration;
 
 import freenet.io.comm.ByteCounter;
 import freenet.io.comm.DMT;
@@ -301,7 +302,7 @@ public class OpennetManager {
 					Logger.minor(this, "Opennet peer already present in LRU: "+nodeToAddNow);
 				return true;
 			}
-			if(peersLRU.size() < getNumberOfConnectedPeersToAim()) {
+			if(getSize() < getNumberOfConnectedPeersToAim()) {
 				if(nodeToAddNow != null) {
 					if(logMINOR) Logger.minor(this, "Added opennet peer "+nodeToAddNow+" as opennet peers list not full");
 					if(addAtLRU)
@@ -332,11 +333,11 @@ public class OpennetManager {
 			int maxPeers = getNumberOfConnectedPeersToAim();
 			// If we have dropped a disconnected peer, then the inter-peer offer cooldown doesn't apply: we can accept immediately.
 			boolean hasDisconnected = false;
-			if(peersLRU.size() == maxPeers && nodeToAddNow == null) {
+			if(getSize() == maxPeers && nodeToAddNow == null) {
 				PeerNode toDrop = peerToDrop(true, false);
 				if(toDrop != null)
 					hasDisconnected = !toDrop.isConnected();
-			} else while(peersLRU.size() > maxPeers - (nodeToAddNow == null ? 0 : 1)) {
+			} else while(getSize() > maxPeers - (nodeToAddNow == null ? 0 : 1)) {
 				OpennetPeerNode toDrop;
 				// can drop peers which are over the limit
 				toDrop = peerToDrop(noDisconnect || nodeToAddNow == null, false);
@@ -347,7 +348,7 @@ public class OpennetManager {
 					break;
 				}
 				if(logMINOR)
-					Logger.minor(this, "Drop opennet peer: "+toDrop+" (connected="+toDrop.isConnected()+") of "+peersLRU.size());
+					Logger.minor(this, "Drop opennet peer: "+toDrop+" (connected="+toDrop.isConnected()+") of "+peersLRU.size()+":"+getSize());
 				if(!toDrop.isConnected())
 					hasDisconnected = true;
 				peersLRU.remove(toDrop);
@@ -403,7 +404,7 @@ public class OpennetManager {
 	}
 
 	void dropExcessPeers() {
-		while(peersLRU.size() > getNumberOfConnectedPeersToAim()) {
+		while(getSize() > getNumberOfConnectedPeersToAim()) {
 			if(logMINOR)
 				Logger.minor(this, "Dropping opennet peers: currently "+peersLRU.size());
 			PeerNode toDrop;
@@ -417,8 +418,23 @@ public class OpennetManager {
 		}
 	}
 	
+	/**
+	 * How many opennet peers do we have?
+	 * Connected but out of date nodes don't count towards the connection limit. Let them connect for
+	 * long enough to auto-update. They will be disconnected eventually, and then removed: 
+	 * @see OpennetPeerNode.shouldDisconnectAndRemoveNow()
+	 */
+	synchronized public int getSize() {
+		int x = 0;
+		for(Enumeration e = peersLRU.elements();e.hasMoreElements();) {
+			PeerNode pn = (PeerNode) e.nextElement();
+			if(!(pn.isConnected() && pn.isUnroutableOlderVersion())) x++;
+		}
+		return x;
+	}
+
 	synchronized OpennetPeerNode peerToDrop(boolean noDisconnect, boolean force) {
-		if(peersLRU.size() < getNumberOfConnectedPeersToAim()) {
+		if(getSize() < getNumberOfConnectedPeersToAim()) {
 			// Don't drop any peers
 			return null;
 		} else {
@@ -426,6 +442,10 @@ public class OpennetManager {
 			OpennetPeerNode[] peers = (OpennetPeerNode[]) peersLRU.toArrayOrdered(new OpennetPeerNode[peersLRU.size()]);
 			for(int i=0;i<peers.length;i++) {
 				OpennetPeerNode pn = peers[i];
+				if(pn.isConnected() && pn.isUnroutableOlderVersion()) {
+					// Doesn't count anyway.
+					continue;
+				}
 				if(pn == null) continue;
 				if((!pn.isDroppable(false)) && !force) continue;
 				// LOCKING: Always take the OpennetManager lock first
@@ -442,6 +462,10 @@ public class OpennetManager {
 			for(int i=0;i<peers.length;i++) {
 				OpennetPeerNode pn = peers[i];
 				if(pn == null) continue;
+				if(pn.isConnected() && pn.isUnroutableOlderVersion()) {
+					// Doesn't count anyway.
+					continue;
+				}
 				if((!pn.isDroppable(false)) && !force) continue;
 				if(Logger.shouldLog(Logger.MINOR, this))
 					Logger.minor(this, "Possibly dropping opennet peer "+pn+" "+
@@ -480,7 +504,7 @@ public class OpennetManager {
 			}
 		}
 	}
-
+	
 	synchronized PeerNode[] getOldPeers() {
 		return (PeerNode[]) oldPeers.toArrayOrdered(new PeerNode[oldPeers.size()]);
 	}

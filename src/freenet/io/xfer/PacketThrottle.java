@@ -146,7 +146,7 @@ public class PacketThrottle {
 		return ((PACKET_SIZE * 1000.0 / getDelay()));
 	}
 	
-	public void sendThrottledMessage(Message msg, PeerContext peer, int packetSize, ByteCounter ctr, long deadline, boolean blockForSend) throws NotConnectedException, ThrottleDeprecatedException, WaitedTooLongException, SyncSendWaitedTooLongException {
+	public void sendThrottledMessage(Message msg, PeerContext peer, int packetSize, ByteCounter ctr, long deadline, boolean blockForSend, AsyncMessageCallback cbForAsyncSend) throws NotConnectedException, ThrottleDeprecatedException, WaitedTooLongException, SyncSendWaitedTooLongException {
 		long start = System.currentTimeMillis();
 		long bootID = peer.getBootID();
 		synchronized(this) {
@@ -226,7 +226,7 @@ public class PacketThrottle {
 			Logger.error(this, "Congestion control wait time: "+waitTime+" for "+this);
 		else if(logMINOR)
 			Logger.minor(this, "Congestion control wait time: "+waitTime+" for "+this);
-		MyCallback callback = new MyCallback();
+		MyCallback callback = new MyCallback(cbForAsyncSend);
 		try {
 			peer.sendAsync(msg, callback, ctr);
 			ctr.sentPayload(packetSize);
@@ -266,6 +266,12 @@ public class PacketThrottle {
 
 		private boolean finished = false;
 		
+		private AsyncMessageCallback chainCallback;
+		
+		public MyCallback(AsyncMessageCallback cbForAsyncSend) {
+			this.chainCallback = cbForAsyncSend;
+		}
+
 		public void acknowledged() {
 			synchronized(PacketThrottle.this) {
 				if(finished) {
@@ -277,6 +283,7 @@ public class PacketThrottle {
 				PacketThrottle.this.notifyAll();
 			}
 			if(logMINOR) Logger.minor(this, "Removed packet: acked for "+this);
+			if(chainCallback != null) chainCallback.acknowledged();
 		}
 
 		public void disconnected() {
@@ -287,6 +294,7 @@ public class PacketThrottle {
 				PacketThrottle.this.notifyAll();
 			}
 			if(logMINOR) Logger.minor(this, "Removed packet: disconnected for "+this);
+			if(chainCallback != null) chainCallback.disconnected();
 		}
 
 		public void fatalError() {
@@ -297,10 +305,12 @@ public class PacketThrottle {
 				PacketThrottle.this.notifyAll();
 			}
 			if(logMINOR) Logger.minor(this, "Removed packet: error for "+this);
+			if(chainCallback != null) chainCallback.fatalError();
 		}
 
 		public void sent() {
 			// Ignore
+			if(chainCallback != null) chainCallback.sent();
 		}
 		
 		@Override

@@ -227,7 +227,7 @@ public class PacketSender implements Runnable, Ticker {
 			nextActionTime = Math.min(nextActionTime, now + canSendAt);
 		}
 		
-		int newBrokeAt = 0;
+		int newBrokeAt = brokeAt;
 		for(int i = 0; i < nodes.length; i++) {
 			int idx = (i + brokeAt + 1) % nodes.length;
 			PeerNode pn = nodes[idx];
@@ -238,10 +238,12 @@ public class PacketSender implements Runnable, Ticker {
 				// Might as well do it properly.
 				node.peers.disconnect(pn, true, true, false);
 			}
-			if(pn.shouldThrottle() && !canSendThrottled)
-				continue;
 
 			if(pn.isConnected()) {
+				
+				if(pn.shouldThrottle() && !canSendThrottled)
+					continue;
+				
 				// Is the node dead?
 				if(now - pn.lastReceivedPacketTime() > pn.maxTimeBetweenReceivedPackets()) {
 					Logger.normal(this, "Disconnecting from " + pn + " - haven't received packets recently");
@@ -256,12 +258,12 @@ public class PacketSender implements Runnable, Ticker {
 					 */
 					pn.invalidate();
 					pn.setPeerNodeStatus(now);
-					Logger.normal(this, "shouldDisconnectNow has returned true : marking the peer as incompatible");
+					Logger.normal(this, "shouldDisconnectNow has returned true : marking the peer as incompatible: "+pn);
 					continue;
 				}
 				
 				try {
-				if(canSendThrottled && pn.maybeSendPacket(now, rpiTemp, rpiIntTemp)) {
+				if((canSendThrottled || !pn.shouldThrottle()) && pn.maybeSendPacket(now, rpiTemp, rpiIntTemp)) {
 					canSendThrottled = false;
 					count = node.outputThrottle.getCount();
 					if(count > MAX_PACKET_SIZE)

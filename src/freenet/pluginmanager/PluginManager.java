@@ -751,6 +751,9 @@ public class PluginManager {
 				pluginFile.delete();
 				throw new PluginNotFoundException("plugin main class is not a plugin");
 			}
+			if(object instanceof FredPluginWithClassLoader) {
+				((FredPluginWithClassLoader)object).setClassLoader(jarClassLoader);
+			}
 			return (FredPlugin) object;
 		} catch(IOException ioe1) {
 			Logger.error(this, "could not load plugin", ioe1);
