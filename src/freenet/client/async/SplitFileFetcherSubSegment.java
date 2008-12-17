@@ -402,7 +402,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				container.store(blockNums);
 		}
 		if(!block.isMetadata()) {
-			onSuccess(data, fromStore, (Integer)token, ((Integer)token).intValue(), block, container, context);
+			onSuccess(data, fromStore, (Integer)token, (Integer)token, block, container, context);
 		} else {
 			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), token, container, context);
 			data.free();
