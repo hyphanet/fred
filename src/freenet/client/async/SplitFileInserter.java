@@ -101,6 +101,8 @@ public class SplitFileInserter implements ClientPutState {
 		Bucket[] dataBuckets;
 		try {
 			dataBuckets = BucketTools.split(data, CHKBlock.DATA_LENGTH, ctx.persistentBucketFactory, freeData);
+			if(logMINOR)
+				Logger.minor(this, "Data size "+data.size()+" buckets "+dataBuckets.length);
 		} catch (IOException e) {
 			throw new InsertException(InsertException.BUCKET_ERROR, e, null);
 		}
