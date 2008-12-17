@@ -70,6 +70,8 @@ public class SegmentedBucketChainBucket implements Bucket {
 				}
 				for(SegmentedChainBucketSegment segment : segs) {
 					container.activate(segment, 1);
+					if(Logger.shouldLog(Logger.MINOR, SegmentedBucketChainBucket.this)) 
+						Logger.minor(SegmentedBucketChainBucket.this, "Freeing segment "+segment);
 					segment.activateBuckets(container);
 					segment.free();
 					segment.removeFrom(container);
