@@ -6,6 +6,8 @@ package freenet.keys;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
+import com.db4o.ObjectContainer;
+
 import net.i2p.util.NativeBigInteger;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAPublicKey;
@@ -175,6 +177,13 @@ public class SSKBlock implements KeyBlock {
 
 	public byte[] getRoutingKey() {
 		return getKey().getRoutingKey();
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		if(pubKey != null)
+			pubKey.removeFrom(container);
+		container.delete(this);
+		// FIXME what to do about nodeKey???
 	}
 
 }

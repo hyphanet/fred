@@ -3,6 +3,8 @@ package freenet.client.async;
 import java.util.HashMap;
 import java.util.Set;
 
+import com.db4o.ObjectContainer;
+
 import freenet.keys.ClientKey;
 import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
@@ -40,6 +42,19 @@ public class SimpleBlockSet implements BlockSet {
 			Logger.error(this, "Caught decoding block with "+key+" : "+e, e);
 			return null;
 		}
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		Key[] keys;
+		KeyBlock[] blocks;
+		synchronized(this) {
+			keys = (Key[]) blocksByKey.keySet().toArray(new Key[blocksByKey.size()]);
+			blocks = (KeyBlock[]) blocksByKey.values().toArray(new KeyBlock[blocksByKey.size()]);
+		}
+		for(Key key : keys)
+			key.removeFrom(container);
+		for(KeyBlock block : blocks)
+			block.removeFrom(container);
 	}
 
 }

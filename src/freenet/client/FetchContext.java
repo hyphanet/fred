@@ -182,6 +182,7 @@ public class FetchContext implements Cloneable {
 
 	public void removeFrom(ObjectContainer container) {
 		if(hasOwnEventProducer) eventProducer.removeFrom(container);
+		if(hasOwnBlocks) blocks.removeFrom(container);
 		container.delete(this);
 	}
 	

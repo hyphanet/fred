@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
+import com.db4o.ObjectContainer;
+
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
 import freenet.node.GetPubkey;
@@ -234,6 +236,12 @@ public class NodeSSK extends Key {
 		int result = Fields.compareBytes(encryptedHashedDocname, key.encryptedHashedDocname);
 		if(result != 0) return result;
 		return Fields.compareBytes(pubKeyHash, key.pubKeyHash);
+	}
+	
+	@Override
+	public void removeFrom(ObjectContainer container) {
+		if(pubKey != null) pubKey.removeFrom(container);
+		super.removeFrom(container);
 	}
 	
 }

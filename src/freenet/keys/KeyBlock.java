@@ -3,6 +3,9 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.keys;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
 import freenet.store.StorableBlock;
 
 /**
@@ -16,5 +19,6 @@ public interface KeyBlock extends StorableBlock {
     public byte[] getRawHeaders();
     public byte[] getRawData();
 	public byte[] getPubkeyBytes();
+	public void removeFrom(ObjectContainer container);
 
 }

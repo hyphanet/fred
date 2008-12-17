@@ -5,6 +5,8 @@ package freenet.keys;
 
 import java.security.MessageDigest;
 
+import com.db4o.ObjectContainer;
+
 import freenet.crypt.SHA256;
 
 /**
@@ -112,5 +114,10 @@ public class CHKBlock implements KeyBlock {
 
 	public byte[] getRoutingKey() {
 		return getKey().getRoutingKey();
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
+		// FIXME who is responsible for deleting chk ??
 	}
 }

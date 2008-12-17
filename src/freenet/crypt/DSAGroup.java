@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 
+import com.db4o.ObjectContainer;
+
 import net.i2p.util.NativeBigInteger;
 import freenet.node.FSParseException;
 import freenet.support.Base64;
@@ -160,5 +162,12 @@ public class DSAGroup extends CryptoKey {
 	public DSAGroup cloneKey() {
 		if(this == Global.DSAgroupBigA) return this;
 		return new DSAGroup(this);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(p);
+		container.delete(q);
+		container.delete(g);
+		container.delete(this);
 	}
 }

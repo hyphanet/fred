@@ -9,6 +9,9 @@ import java.io.IOException;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
 import freenet.crypt.CryptFormatException;
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
@@ -264,4 +267,8 @@ public abstract class Key implements WritableToDataOutputStream, Comparable {
 
 	/** Get the full key, including any crypto type bytes, everything needed to construct a Key object */
 	public abstract byte[] getFullKey();
+
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
+	}
 }

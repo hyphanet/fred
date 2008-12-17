@@ -1,5 +1,9 @@
 package freenet.keys;
 
+import com.db4o.ObjectContainer;
+
+import freenet.client.async.ClientContext;
+
 /**
  * Base class for client keys.
  * Client keys are decodable. Node keys are not.
