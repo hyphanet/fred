@@ -718,6 +718,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			container.delete(this);
 			if(!dontDeactivateSeg)
 				container.deactivate(segment, 1);
+			// We do not need to call SendableGet as it has no internal data structures that need deleting.
 		}
 	}
 
