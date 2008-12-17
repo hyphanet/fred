@@ -391,6 +391,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 					// Compare by value as sometimes we will do new Integer(num) in requeueing after cooldown code.
 					if(x.equals(token)) {
 						blockNums.remove(i);
+						if(persistent) container.delete(x);
 						if(logMINOR) Logger.minor(this, "Removed block "+i+" : "+x);
 						i--;
 						removed = true;
