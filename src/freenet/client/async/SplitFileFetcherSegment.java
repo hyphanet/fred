@@ -138,7 +138,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		checkRetries = new int[checkKeys.length];
 		dataCooldownTimes = new long[dataKeys.length];
 		checkCooldownTimes = new long[checkKeys.length];
-		subSegments = new Vector();
+		subSegments = new Vector<SplitFileFetcherSubSegment>();
 		this.fetchContext = fetchContext;
 		maxBlockLength = maxTempLength;
 		blockFetchContext = new FetchContext(fetchContext, FetchContext.SPLITFILE_DEFAULT_BLOCK_MASK, true);
