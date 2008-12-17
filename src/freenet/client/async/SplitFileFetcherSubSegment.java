@@ -694,7 +694,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 
 	/**
 	 * Terminate a subsegment. Called by the segment, which will have already removed the
-	 * subsegment from the list.
+	 * subsegment from the list. Will delete the object from the database if persistent.
 	 */
 	public void kill(ObjectContainer container, ClientContext context, boolean dontDeactivateSeg) {
 		if(persistent) {
@@ -706,18 +706,18 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			Logger.minor(this, "Killing "+this);
 		// Do unregister() first so can get and unregister each key and avoid a memory leak
 		unregister(container, context);
+		Integer[] oldNums;
 		synchronized(segment) {
+			oldNums = blockNums.toArray(new Integer[blockNums.size()]);
 			blockNums.clear();
 			cancelled = true;
 		}
 		if(persistent) {
+			for(Integer i : oldNums) container.delete(i);
+			container.delete(blockNums);
+			container.delete(this);
 			if(!dontDeactivateSeg)
 				container.deactivate(segment, 1);
-			if(container.ext().isStored(this))
-				container.store(this);
-			if(container.ext().isStored(blockNums))
-				container.store(blockNums);
-			container.deactivate(blockNums, 1);
 		}
 	}
 
