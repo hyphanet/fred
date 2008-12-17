@@ -387,7 +387,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			boolean removed = false;
 			synchronized(segment) {
 				for(int i=0;i<blockNums.size();i++) {
-					Integer x = (Integer) blockNums.get(i);
+					Integer x = blockNums.get(i);
 					// Compare by value as sometimes we will do new Integer(num) in requeueing after cooldown code.
 					if(x.equals(token)) {
 						blockNums.remove(i);
