@@ -631,10 +631,16 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		if(logMINOR)
 			Logger.minor(this, "Possibly removing from parent: "+this);
 		synchronized(segment) {
-			if(!blockNums.isEmpty()) return;
+			if(!blockNums.isEmpty()) {
+				if(persistent) container.deactivate(blockNums, 1);
+				return;
+			}
 			if(logMINOR)
 				Logger.minor(this, "Definitely removing from parent: "+this);
-			if(!segment.maybeRemoveSeg(this, container)) return;
+			if(!segment.maybeRemoveSeg(this, container)) {
+				if(persistent) container.deactivate(blockNums, 1);
+				return;
+			}
 		}
 		unregister(container, context);
 	}
