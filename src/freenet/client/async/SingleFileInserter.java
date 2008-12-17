@@ -251,7 +251,7 @@ class SingleFileInserter implements ClientPutState {
 				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token, container, context, persistent, freeData);
 				if(logMINOR)
 					Logger.minor(this, "Inserting with metadata: "+dataPutter+" for "+this);
-				Metadata meta = makeMetadata(archiveType, null, dataPutter.getURI(container, context));
+				Metadata meta = makeMetadata(archiveType, dataPutter.getURI(container, context));
 				cb.onMetadata(meta, this, container, context);
 				cb.onTransition(this, dataPutter, container);
 				dataPutter.schedule(container, context);
@@ -262,7 +262,7 @@ class SingleFileInserter implements ClientPutState {
 				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, mcb, metadata, (int)origSize, -1, getCHKOnly, true, false, token, container, context, persistent, freeData);
 				if(logMINOR)
 					Logger.minor(this, "Inserting data: "+dataPutter+" for "+this);
-				Metadata meta = makeMetadata(archiveType, null, dataPutter.getURI(container, context));
+				Metadata meta = makeMetadata(archiveType, dataPutter.getURI(container, context));
 				Bucket metadataBucket;
 				try {
 					metadataBucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent), meta.writeToByteArray());
@@ -367,12 +367,12 @@ class SingleFileInserter implements ClientPutState {
 		}
 	}
 	
-	private Metadata makeMetadata(ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE codec, FreenetURI uri) {
+	private Metadata makeMetadata(ARCHIVE_TYPE archiveType, FreenetURI uri) {
 		Metadata meta = null;
 		if(archiveType != null)
-			meta = new Metadata(Metadata.ARCHIVE_MANIFEST, archiveType, codec, uri, block.clientMetadata);
+			meta = new Metadata(Metadata.ARCHIVE_MANIFEST, archiveType, null, uri, block.clientMetadata);
 		else // redirect
-			meta = new Metadata(Metadata.SIMPLE_REDIRECT, archiveType, codec, uri, block.clientMetadata);
+			meta = new Metadata(Metadata.SIMPLE_REDIRECT, archiveType, null, uri, block.clientMetadata);
 		if(targetFilename != null) {
 			HashMap hm = new HashMap();
 			hm.put(targetFilename, meta);

@@ -30,7 +30,7 @@ import freenet.support.DoublyLinkedList.Item;
  * @author amphibian
  * 
  * Class to track retransmissions, acknowledgements, packet numbers, etc.
- * May be shared by more than one KeyTracker (aka session key).
+ * May be shared by more than one SessionKey (aka session key).
  */
 public class PacketTracker {
 
@@ -49,7 +49,7 @@ public class PacketTracker {
 	private final List<QueuedAck> ackQueue;
 	/** Serial numbers of packets that we have forgotten. Usually
 	 * when we have forgotten a packet it just means that it has 
-	 * been shifted to another KeyTracker because this one was
+	 * been shifted to another SessionKey because this one was
 	 * deprecated; the messages will get through in the end.
 	 */
 	private final List<QueuedForgotten> forgottenQueue;
@@ -791,8 +791,8 @@ public class PacketTracker {
 				acks[i++] = ack.packetNumber;
 				if(logMINOR)
 					Logger.minor(this, "Grabbing ack " + ack.packetNumber + " from " + this);
-				it.remove();	// sent
 			}
+			ackQueue.clear();
 		}
 		return acks;
 	}
@@ -947,9 +947,9 @@ public class PacketTracker {
 	}
 
 	/**
-	 * Clear the KeyTracker. Deprecate it, clear all resend, ack, request-ack etc queues.
+	 * Clear the SessionKey. Deprecate it, clear all resend, ack, request-ack etc queues.
 	 * Return the messages we still had in flight. The caller will then either add them to
-	 * another KeyTracker, or call their callbacks to indicate failure.
+	 * another SessionKey, or call their callbacks to indicate failure.
 	 */
 	private LimitedRangeIntByteArrayMapElement[] clear() {
 		if(logMINOR)
@@ -976,13 +976,13 @@ public class PacketTracker {
 	}
 
 	/**
-	 * Completely deprecate the KeyTracker, in favour of a new one. 
-	 * It will no longer be used for anything. The KeyTracker will be cleared and all outstanding packets
-	 * moved to the new KeyTracker.
+	 * Completely deprecate the SessionKey, in favour of a new one. 
+	 * It will no longer be used for anything. The SessionKey will be cleared and all outstanding packets
+	 * moved to the new SessionKey.
 	 * 
-	 * *** Must only be called if the KeyTracker is not to be kept. Otherwise, we may receive some packets twice. ***
+	 * *** Must only be called if the SessionKey is not to be kept. Otherwise, we may receive some packets twice. ***
 	 */
-	public void completelyDeprecated(KeyTracker newTracker) {
+	public void completelyDeprecated(SessionKey newTracker) {
 		if(newTracker.packets == this) {
 			Logger.error(this, "Completely deprecated in favour of self!", new Exception("debug"));
 			return;
