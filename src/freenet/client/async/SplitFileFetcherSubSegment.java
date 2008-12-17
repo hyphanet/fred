@@ -826,7 +826,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 		Integer[] blockNumbers;
 		synchronized(this) {
-			blockNumbers = (Integer[]) blockNums.toArray(new Integer[blockNums.size()]);
+			blockNumbers = blockNums.toArray(new Integer[blockNums.size()]);
 		}
 		ArrayList<PersistentChosenBlock> blocks = new ArrayList<PersistentChosenBlock>();
 		Arrays.sort(blockNumbers);
