@@ -22,7 +22,7 @@ public class ClientSSK extends ClientKey {
 	/** Document name */
 	public final String docName;
 	/** Public key */
-	protected DSAPublicKey pubKey;
+	protected transient DSAPublicKey pubKey;
 	/** Public key hash */
 	public final byte[] pubKeyHash;
 	/** Encryption key */
