@@ -792,6 +792,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				int num = token;
 				if(num == blockNum) {
 					blockNums.remove(i);
+					if(persistent) container.delete(token);
 					if(logMINOR) Logger.minor(this, "Removed block "+blockNum+" from "+this);
 					found = true;
 					break;
