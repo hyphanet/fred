@@ -388,7 +388,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 					boolean wereAnyValid = false;
 					for(int i=0;i<getters.length;i++) {
 						SendableGet getter = getters[i];
-						container.activate(getters[i], 1);
+						container.activate(getter, 1);
 						if(!(getter.isCancelled(container) || getter.isEmpty(container))) {
 							wereAnyValid = true;
 							schedCore.innerRegister(getter, random, container, getters);
