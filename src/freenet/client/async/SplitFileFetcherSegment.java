@@ -104,7 +104,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		return hashCode;
 	}
 	
-	private FECCodec codec;
+	private transient FECCodec codec;
 	
 	public SplitFileFetcherSegment(short splitfileType, ClientCHK[] splitfileDataKeys, ClientCHK[] splitfileCheckKeys, SplitFileFetcher fetcher, ArchiveContext archiveContext, FetchContext blockFetchContext, long maxTempLength, int recursionLevel, ClientRequester requester, int segNum, boolean ignoreLastDataBlock) throws MetadataParseException, FetchException {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -342,8 +342,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 		// Now decode
 		if(logMINOR) Logger.minor(this, "Decoding "+SplitFileFetcherSegment.this);
 
-		if(codec == null)
-		codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length, context.mainExecutor);
 		if(persistent)
 			container.store(this);
 		
@@ -391,6 +389,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 			if(persistent)
 				container.activate(parent, 1);
+			if(codec == null)
+				codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length, context.mainExecutor);
 			FECJob job = new FECJob(codec, queue, dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, context.getBucketFactory(persistent), this, true, parent.getPriorityClass(), persistent);
 			codec.addToQueue(job, 
 					queue, container);
@@ -411,6 +411,8 @@ public class SplitFileFetcherSegment implements FECCallback {
 			container.activate(parent, 1);
 			container.activate(context, 1);
 		}
+		if(codec == null)
+			codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length, context.mainExecutor);
 		// Because we use SplitfileBlock, we DON'T have to copy here.
 		// See FECCallback comments for explanation.
 		try {
@@ -501,9 +503,6 @@ public class SplitFileFetcherSegment implements FECCallback {
 		 */
 
 		// Encode any check blocks we don't have
-		if(codec == null)
-			codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length, context.mainExecutor);
-
 		codec.addToQueue(new FECJob(codec, context.fecQueue, dataBuckets, checkBuckets, 32768, context.getBucketFactory(persistent), this, false, parent.getPriorityClass(), persistent),
 				context.fecQueue, container);
 		if(persistent) {
