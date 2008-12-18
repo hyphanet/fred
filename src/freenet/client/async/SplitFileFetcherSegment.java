@@ -1425,11 +1425,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 	}
 
 	public void freeDecodedData(ObjectContainer container) {
-		if(persistent)
-			container.activate(decodedData, 1);
-		decodedData.free();
-		if(persistent)
-			decodedData.removeFrom(container);
+		if(decodedData != null) {
+			if(persistent)
+				container.activate(decodedData, 1);
+			decodedData.free();
+			if(persistent)
+				decodedData.removeFrom(container);
+		}
 		decodedData = null;
 		if(persistent)
 			container.store(this);
