@@ -401,4 +401,13 @@ public abstract class ClientRequest {
 		if(uri != null) uri.removeFrom(container);
 		container.delete(this);
 	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		
+		if(persistenceType != PERSIST_FOREVER) {
+			Logger.error(this, "Not storing non-persistent request in database", new Exception("error"));
+			return false;
+		}
+		return true;
+	}
 }
