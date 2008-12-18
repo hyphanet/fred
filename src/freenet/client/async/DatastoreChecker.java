@@ -384,6 +384,12 @@ public class DatastoreChecker implements PrioRunnable {
 					if(container.ext().isActive(get)) {
 						Logger.error(this, "ALREADY ACTIVATED: "+get);
 					}
+					if(!container.ext().isStored(get)) {
+						// Completed and deleted already.
+						if(Logger.shouldLog(Logger.MINOR, this)) 
+							Logger.minor(this, "Already deleted from database");
+						return;
+					}
 					container.activate(get, 1);
 					scheduler.finishRegister(new SendableGet[] { get }, true, true, container, valid, it);
 					container.deactivate(get, 1);
