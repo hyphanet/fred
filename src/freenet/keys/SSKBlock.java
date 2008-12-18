@@ -179,11 +179,4 @@ public class SSKBlock implements KeyBlock {
 		return getKey().getRoutingKey();
 	}
 
-	public void removeFrom(ObjectContainer container) {
-		if(pubKey != null)
-			pubKey.removeFrom(container);
-		container.delete(this);
-		// FIXME what to do about nodeKey???
-	}
-
 }

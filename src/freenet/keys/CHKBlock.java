@@ -116,8 +116,4 @@ public class CHKBlock implements KeyBlock {
 		return getKey().getRoutingKey();
 	}
 
-	public void removeFrom(ObjectContainer container) {
-		container.delete(this);
-		// FIXME who is responsible for deleting chk ??
-	}
 }

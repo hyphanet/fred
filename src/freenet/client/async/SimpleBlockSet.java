@@ -43,18 +43,23 @@ public class SimpleBlockSet implements BlockSet {
 			return null;
 		}
 	}
-
-	public void removeFrom(ObjectContainer container) {
-		Key[] keys;
-		KeyBlock[] blocks;
-		synchronized(this) {
-			keys = (Key[]) blocksByKey.keySet().toArray(new Key[blocksByKey.size()]);
-			blocks = (KeyBlock[]) blocksByKey.values().toArray(new KeyBlock[blocksByKey.size()]);
-		}
-		for(Key key : keys)
-			key.removeFrom(container);
-		for(KeyBlock block : blocks)
-			block.removeFrom(container);
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		/* Storing a BlockSet is not supported. There are some complications, so lets
+		 * not implement this until FCP supports it (currently we can't do fetch-from-blob,
+		 * we can only do fetch-to-blob and insert-blob).
+		 * 
+		 * The major problems are:
+		 * - In both CHKBlock and SSKBlock, who is responsible for deleting the node keys? We
+		 *   have to have them in the objects.
+		 * - In SSKBlock, who is responsible for deleting the DSAPublicKey? And the DSAGroup?
+		 *   A group might be unique or might be shared between very many SSKs...
+		 * 
+		 * Especially in the second case, we don't want to just copy every time even for
+		 * transient uses ... the best solution may be to copy in objectCanNew(), but even
+		 * then callers to the relevant getter methods may be a worry.
+		 */
+		throw new UnsupportedOperationException("Block set storage in database not supported");
 	}
 
 }

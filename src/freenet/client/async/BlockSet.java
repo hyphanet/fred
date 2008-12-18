@@ -41,6 +41,4 @@ public interface BlockSet {
 	/** Get a high level block, given a high level key */
 	public ClientKeyBlock get(ClientKey key);
 
-	public void removeFrom(ObjectContainer container);
-	
 }

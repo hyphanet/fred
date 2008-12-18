@@ -19,6 +19,5 @@ public interface KeyBlock extends StorableBlock {
     public byte[] getRawHeaders();
     public byte[] getRawData();
 	public byte[] getPubkeyBytes();
-	public void removeFrom(ObjectContainer container);
 
 }

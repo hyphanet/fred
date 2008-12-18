@@ -46,7 +46,6 @@ public class FetchContext implements Cloneable {
 	public final BlockSet blocks;
 	public Set allowedMIMETypes;
 	private final boolean hasOwnEventProducer;
-	private final boolean hasOwnBlocks;
 	
 	public FetchContext(long curMaxLength, 
 			long curMaxTempLength, int maxMetadataSize, int maxRecursionLevel, int maxArchiveRestarts, int maxArchiveLevels,
@@ -57,7 +56,6 @@ public class FetchContext implements Cloneable {
 			BucketFactory bucketFactory,
 			ClientEventProducer producer, boolean cacheLocalRequests, 
 			boolean ignoreTooManyPathComponents) {
-		hasOwnBlocks = false;
 		this.blocks = null;
 		this.maxOutputLength = curMaxLength;
 		this.maxTempLength = curMaxTempLength;
@@ -80,6 +78,12 @@ public class FetchContext implements Cloneable {
 		hasOwnEventProducer = true;
 	}
 
+	/** Copy a FetchContext.
+	 * @param ctx
+	 * @param maskID
+	 * @param keepProducer
+	 * @param blocks Storing a BlockSet to the database is not supported, see comments on SimpleBlockSet.objectCanNew().
+	 */
 	public FetchContext(FetchContext ctx, int maskID, boolean keepProducer, BlockSet blocks) {
 		if(keepProducer)
 			this.eventProducer = ctx.eventProducer;
@@ -87,7 +91,6 @@ public class FetchContext implements Cloneable {
 			this.eventProducer = new SimpleEventProducer();
 		hasOwnEventProducer = !keepProducer;
 		this.ignoreTooManyPathComponents = ctx.ignoreTooManyPathComponents;
-		hasOwnBlocks = blocks != null;
 		if(blocks != null)
 			this.blocks = blocks;
 		else
@@ -182,7 +185,7 @@ public class FetchContext implements Cloneable {
 
 	public void removeFrom(ObjectContainer container) {
 		if(hasOwnEventProducer) eventProducer.removeFrom(container);
-		if(hasOwnBlocks) blocks.removeFrom(container);
+		// Storing a BlockSet to the database is not supported, see comments on SimpleBlockSet.objectCanNew().
 		container.delete(this);
 	}
 	
