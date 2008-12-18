@@ -6,6 +6,8 @@ import java.net.MalformedURLException;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
+import com.db4o.ObjectContainer;
+
 import freenet.config.Config;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -975,4 +977,10 @@ public class NodeUpdateManager {
 	protected long getStartedFetchingNextExtJarTimestamp() {
 		return startedFetchingNextExtJar;
 	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Not storing NodeUpdateManager in database", new Exception("error"));
+		return false;
+	}
+	
 }

@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.LinkedList;
 
+import com.db4o.ObjectContainer;
+
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
 
@@ -99,4 +101,8 @@ public class FCPConnectionOutputHandler implements Runnable {
 		}
 	}
 
+	public boolean objectCanNew(ObjectContainer container) {
+		throw new UnsupportedOperationException("FCPConnectionOutputHandler storage in database not supported");
+	}
+	
 }

@@ -652,4 +652,11 @@ public class FCPConnectionHandler implements Closeable {
 		container.deactivate(client, 1);
 		return req;
 	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Not storing FCPConnectionHandler in database", new Exception("error"));
+		return false;
+	}
+	
+
 }

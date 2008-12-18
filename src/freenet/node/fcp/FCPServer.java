@@ -1140,4 +1140,9 @@ public class FCPServer implements Runnable {
 		}
 	}
 
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Not storing FCPServer in database", new Exception("error"));
+		return false;
+	}
+	
 }

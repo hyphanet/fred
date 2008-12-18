@@ -499,4 +499,10 @@ public class NodeUpdater implements ClientCallback, USKCallback, RequestClient {
 		if(callFinishedFound > -1)
 			finishOnFoundEdition(callFinishedFound);
 	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Not storing NodeUpdater in database", new Exception("error"));
+		return false;
+	}
+	
 }
