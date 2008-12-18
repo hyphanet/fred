@@ -25,6 +25,7 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.crypt.SHA256;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.support.Base64;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
@@ -140,7 +141,7 @@ public class ClientPut extends ClientPutBase {
 		putter = new ClientPutter(this, data, uri, cm, 
 				ctx, priorityClass, 
 				getCHKOnly, isMetadata, 
-				client.lowLevelClient,
+				lowLevelClient,
 				null, targetFilename, binaryBlob);
 	}
 	
@@ -249,7 +250,7 @@ public class ClientPut extends ClientPutBase {
 		putter = new ClientPutter(this, data, uri, cm, 
 				ctx, priorityClass, 
 				getCHKOnly, isMetadata,
-				client.lowLevelClient,
+				lowLevelClient,
 				null, targetFilename, binaryBlob);
 	}
 	
@@ -337,7 +338,7 @@ public class ClientPut extends ClientPutBase {
 		if(finished) oldProgress = null; // Not useful any more
 		putter = new ClientPutter(this, data, uri, cm, ctx, 
 				priorityClass, getCHKOnly, isMetadata,
-				client.lowLevelClient,
+				lowLevelClient,
 				oldProgress, targetFilename, binaryBlob);
 		if(persistenceType != PERSIST_CONNECTION) {
 			FCPMessage msg = persistentTagMessage(container);

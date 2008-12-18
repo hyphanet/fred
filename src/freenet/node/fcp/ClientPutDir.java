@@ -130,7 +130,7 @@ public class ClientPutDir extends ClientPutBase {
 		SimpleManifestPutter p;
 			p = new SimpleManifestPutter(this, 
 					manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly,
-					client.lowLevelClient,
+					lowLevelClient,
 					earlyEncode);
 		putter = p;
 	}
@@ -206,7 +206,7 @@ public class ClientPutDir extends ClientPutBase {
 			if(!finished)
 				p = new SimpleManifestPutter(this, 
 						manifestElements, priorityClass, uri, defaultName, ctx, getCHKOnly, 
-						client.lowLevelClient,
+						lowLevelClient,
 						earlyEncode);
 		putter = p;
 		numberOfFiles = fileCount;

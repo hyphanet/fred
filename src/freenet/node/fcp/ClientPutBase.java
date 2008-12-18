@@ -148,7 +148,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		freeData(container);
 		finish(container);
 		trySendFinalMessage(null, container);
-		client.notifySuccess(this, container);
+		if(client != null)
+			client.notifySuccess(this, container);
 	}
 
 	public void onFailure(InsertException e, BaseClientPutter state, ObjectContainer container) {
@@ -276,6 +277,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		if(msg == null) {
 			Logger.error(this, "Trying to send null message on "+this, new Exception("error"));
 		} else {
+			if(persistenceType == PERSIST_CONNECTION && handler == null)
+				handler = origHandler.outputHandler;
 			if(handler != null)
 				handler.queue(msg);
 			else
@@ -288,8 +291,10 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		if(persistenceType == PERSIST_FOREVER)
 			container.activate(client, 1);
 		synchronized(this) {
-			msg = new URIGeneratedMessage(generatedURI, identifier, client.isGlobalQueue);
+			msg = new URIGeneratedMessage(generatedURI, identifier, isGlobalQueue());
 		}
+		if(persistenceType == PERSIST_CONNECTION && handler == null)
+			handler = origHandler.outputHandler;
 		if(handler != null)
 			handler.queue(msg);
 		else
@@ -507,4 +512,5 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 		if(persistenceType == PERSIST_FOREVER)
 			container.store(this);
 	}
+	
 }

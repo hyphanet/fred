@@ -118,7 +118,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 		returnBucket = ret;
 			getter = new ClientGetter(this, server.core.requestStarters.chkFetchScheduler, server.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass,
-					client.lowLevelClient,
+					lowLevelClient,
 					returnBucket, null);
 	}
 	
@@ -181,7 +181,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		returnBucket = ret;
 			getter = new ClientGetter(this, server.core.requestStarters.chkFetchScheduler, 
 					server.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, 
-					client.lowLevelClient, 
+					lowLevelClient, 
 					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? returnBucket : null);
 	}
 
@@ -280,7 +280,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		getter = new ClientGetter(this, server.core.requestStarters.chkFetchScheduler, 
 				server.core.requestStarters.sskFetchScheduler, uri, 
 				fctx, priorityClass, 
-				client.lowLevelClient,
+				lowLevelClient,
 				binaryBlob ? new NullBucket() : returnBucket, 
 						binaryBlob ? returnBucket : null);
 
@@ -446,6 +446,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				container.activate(msg, 5);
 		}
 
+		if(handler == null && persistenceType == PERSIST_CONNECTION)
+			handler = origHandler.outputHandler;
 		if(handler != null)
 			handler.queue(msg);
 		else
@@ -549,7 +551,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 		finish(container);
 		freeData(container);
-		client.notifyFailure(this, container);
+		if(client != null)
+			client.notifyFailure(this, container);
 	}
 
 	public void onSuccess(BaseClientPutter state, ObjectContainer container) {

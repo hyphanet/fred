@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import freenet.client.async.ClientRequester;
 import freenet.keys.FreenetURI;
+import freenet.node.RequestClient;
 import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.SimpleFieldSet;
@@ -50,6 +51,7 @@ public abstract class ClientRequest {
 	protected final long startupTime;
 	/** Timestamp : completion time */
 	protected long completionTime;
+	protected final RequestClient lowLevelClient;
 
 	public ClientRequest(FreenetURI uri2, String identifier2, int verbosity2, FCPConnectionHandler handler, 
 			FCPClient client, short priorityClass2, short persistenceType2, String clientToken2, boolean global) {
@@ -64,11 +66,23 @@ public abstract class ClientRequest {
 		this.persistenceType = persistenceType2;
 		this.clientToken = clientToken2;
 		this.global = global;
-		if(persistenceType == PERSIST_CONNECTION)
+		if(persistenceType == PERSIST_CONNECTION) {
 			this.origHandler = handler;
-		else
+			lowLevelClient = new RequestClient() {
+
+				public boolean persistent() {
+					return false;
+				}
+				
+			};
+			this.client = null;
+		} else {
 			origHandler = null;
-		this.client = client;
+			this.client = client;
+			if(client != null)
+				assert(client.persistenceType == persistenceType);
+			lowLevelClient = client.lowLevelClient;
+		}
 		this.startupTime = System.currentTimeMillis();
 	}
 
@@ -85,9 +99,17 @@ public abstract class ClientRequest {
 		this.persistenceType = persistenceType2;
 		this.clientToken = clientToken2;
 		this.global = global;
-		if(persistenceType == PERSIST_CONNECTION)
+		if(persistenceType == PERSIST_CONNECTION) {
 			this.origHandler = handler;
-		else
+			client = null;
+			lowLevelClient = new RequestClient() {
+
+				public boolean persistent() {
+					return false;
+				}
+				
+			};
+		} else {
 			origHandler = null;
 		if(global) {
 			client = persistenceType == PERSIST_FOREVER ? handler.server.globalForeverClient : handler.server.globalRebootClient;
@@ -95,6 +117,10 @@ public abstract class ClientRequest {
 			assert(!handler.server.core.clientDatabaseExecutor.onThread());
 			client = persistenceType == PERSIST_FOREVER ? handler.getForeverClient(null) : handler.getRebootClient();
 		}
+		lowLevelClient = client.lowLevelClient;
+		}
+		if(client != null)
+			assert(client.persistenceType == persistenceType);
 		this.startupTime = System.currentTimeMillis();
 	}
 
@@ -119,6 +145,8 @@ public abstract class ClientRequest {
 		completionTime = fs.getLong("CompletionTime", 0);
 		if (finished)
 			started=true;
+		assert(client.persistenceType == persistenceType);
+		lowLevelClient = client.lowLevelClient;
 	}
 
 	/** Lost connection */
@@ -259,7 +287,8 @@ public abstract class ClientRequest {
 		completionTime = System.currentTimeMillis();
 		if(persistenceType == ClientRequest.PERSIST_CONNECTION)
 			origHandler.finishedClientRequest(this);
-		client.finishedClientRequest(this, container);
+		else
+			client.finishedClientRequest(this, container);
 		if(persistenceType == ClientRequest.PERSIST_FOREVER)
 			container.store(this);
 	}
@@ -401,7 +430,7 @@ public abstract class ClientRequest {
 		if(uri != null) uri.removeFrom(container);
 		container.delete(this);
 	}
-	
+
 	public boolean objectCanNew(ObjectContainer container) {
 		
 		if(persistenceType != PERSIST_FOREVER) {
@@ -410,4 +439,10 @@ public abstract class ClientRequest {
 		}
 		return true;
 	}
+
+	protected boolean isGlobalQueue() {
+		if(client == null) return false;
+		return client.isGlobalQueue;
+	}
+	
 }
