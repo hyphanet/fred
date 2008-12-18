@@ -477,6 +477,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	public boolean isCancelled(ObjectContainer container) {
 		if(persistent) {
 			container.activate(parent, 1);
+			container.activate(segment, 1);
 		}
 		synchronized(segment) {
 			return parent.cancelled;
