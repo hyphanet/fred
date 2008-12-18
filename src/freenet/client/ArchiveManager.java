@@ -594,7 +594,7 @@ outerZIP:		while(true) {
 			matchBucket = element.getReaderBucket();
 		}
 		synchronized (this) {
-			oldItem = (ArchiveStoreItem) storedData.get(element.key);
+			oldItem = storedData.get(element.key);
 			storedData.push(element.key, element);
 			cachedData += element.spaceUsed();
 			if(oldItem != null) {
