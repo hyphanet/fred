@@ -1117,4 +1117,9 @@ public class ClientRequestScheduler implements RequestScheduler {
 		schedCore.addPendingKeys(listener);
 	}
 	
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Not storing ClientRequestScheduler in database", new Exception("error"));
+		return false;
+	}
+	
 }
