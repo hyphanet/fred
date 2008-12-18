@@ -99,6 +99,11 @@ public class SplitFileFetcherSegment implements FECCallback {
 	// these objects into sets etc when we need to.
 	
 	private final int hashCode;
+
+	// After the fetcher has finished with the segment, *and* we have encoded and started healing inserts,
+	// we can removeFrom(). Note that encodes are queued to the database.
+	private boolean fetcherFinished = false;
+	private boolean encoderFinished = false;
 	
 	public int hashCode() {
 		return hashCode;
@@ -472,7 +477,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			// Otherwise a race is possible that might result in it not seeing our finishing.
 			finished = true;
 			if(persistent) container.store(this);
-			if(codec == null || !isCollectingBinaryBlob(parent))
+			if(splitfileType == Metadata.SPLITFILE_NONREDUNDANT || !isCollectingBinaryBlob(parent))
 				parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
 			// Leave active before queueing
 		} catch (IOException e) {
@@ -483,6 +488,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 			if(persistent) container.store(this);
 			parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
+			encoderFinished(container, context);
 			return;
 		}
 
@@ -492,6 +498,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				container.deactivate(parent, 1);
 				container.deactivate(context, 1);
 			}
+			encoderFinished(container, context);
 			return;
 		}
 		
@@ -503,6 +510,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		 */
 
 		// Encode any check blocks we don't have
+		try {
 		codec.addToQueue(new FECJob(codec, context.fecQueue, dataBuckets, checkBuckets, 32768, context.getBucketFactory(persistent), this, false, parent.getPriorityClass(), persistent),
 				context.fecQueue, container);
 		if(persistent) {
@@ -510,9 +518,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 			container.deactivate(parent, 1);
 			container.deactivate(context, 1);
 		}
+		} catch (Throwable t) {
+			Logger.error(this, "Caught "+t, t);
+			encoderFinished(container, context);
+		}
 	}
 
 	public void onEncodedSegment(ObjectContainer container, ClientContext context, FECJob job, Bucket[] dataBuckets2, Bucket[] checkBuckets2, SplitfileBlock[] dataBlockStatus, SplitfileBlock[] checkBlockStatus) {
+		try {
 		if(persistent) {
 			container.activate(parent, 1);
 		}
@@ -622,6 +635,9 @@ public class SplitFileFetcherSegment implements FECCallback {
 			parentFetcher.segmentFinished(SplitFileFetcherSegment.this, container, context);
 			if(persistent)
 				container.deactivate(parentFetcher, 1);
+		}
+		} finally {
+		encoderFinished(container, context);
 		}
 	}
 
@@ -1449,6 +1465,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		for(int i=0;i<dataBuckets.length;i++) {
 			MinimalSplitfileBlock block = dataBuckets[i];
+			if(block == null) continue;
 			if(block.data != null) {
 				Logger.error(this, "Data block "+i+" still present in removeFrom()! on "+this);
 				block.data.free();
@@ -1457,13 +1474,31 @@ public class SplitFileFetcherSegment implements FECCallback {
 		}
 		for(int i=0;i<checkBuckets.length;i++) {
 			MinimalSplitfileBlock block = checkBuckets[i];
+			if(block == null) continue;
 			if(block.data != null) {
 				Logger.error(this, "Check block "+i+" still present in removeFrom()! on "+this);
 				block.data.free();
 			}
 			block.removeFrom(container);
 		}
+		container.activate(errors, 1);
 		errors.removeFrom(container);
 		container.delete(this);
+	}
+
+	public void fetcherFinished(ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			fetcherFinished = true;
+			if(!encoderFinished) return;
+		}
+		removeFrom(container, context);
+	}
+	
+	private void encoderFinished(ObjectContainer container, ClientContext context) {
+		synchronized(this) {
+			encoderFinished = true;
+			if(!fetcherFinished) return;
+		}
+		removeFrom(container, context);
 	}
 }
