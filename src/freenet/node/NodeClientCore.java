@@ -309,7 +309,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		healingQueue = new SimpleHealingQueue(
 				new InsertContext(tempBucketFactory, tempBucketFactory, persistentTempBucketFactory,
 						0, 2, 1, 0, 0, new SimpleEventProducer(),
-						!Node.DONT_CACHE_LOCAL_REQUESTS, compressor), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
+						!Node.DONT_CACHE_LOCAL_REQUESTS), RequestStarter.PREFETCH_PRIORITY_CLASS, 512 /* FIXME make configurable */);
 		
 		clientContext = new ClientContext(this, fecQueue, node.executor, backgroundBlockEncoder, archiveManager, persistentTempBucketFactory, tempBucketFactory, healingQueue, uskManager, random, node.fastWeakRandom, node.getTicker(), tempFilenameGenerator, persistentFilenameGenerator, compressor);
 		compressor.setClientContext(clientContext);
@@ -1455,4 +1455,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			}
 		}
 	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Not storing NodeClientCore in database", new Exception("error"));
+		return false;
+	}
+	
 }
