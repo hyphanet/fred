@@ -4,16 +4,25 @@
 package freenet.client;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+import net.contrapunctus.lzma.LzmaInputStream;
+
+import org.apache.tools.bzip2.CBZip2InputStream;
+import org.apache.tools.tar.TarEntry;
+import org.apache.tools.tar.TarInputStream;
+
+import com.db4o.ObjectContainer;
+
 import freenet.client.async.ClientContext;
-import freenet.crypt.RandomSource;
 import freenet.keys.FreenetURI;
 import freenet.support.LRUHashtable;
 import freenet.support.Logger;
@@ -23,14 +32,6 @@ import freenet.support.api.BucketFactory;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketTools;
 import freenet.support.io.Closer;
-import java.io.InputStream;
-import java.util.zip.GZIPInputStream;
-import net.contrapunctus.lzma.LzmaInputStream;
-import org.apache.tools.bzip2.CBZip2InputStream;
-import org.apache.tools.tar.TarEntry;
-import org.apache.tools.tar.TarInputStream;
-
-import com.db4o.ObjectContainer;
 
 /**
  * Cache of recently decoded archives:
@@ -103,7 +104,7 @@ public class ArchiveManager {
 	
 	// ArchiveHandler's
 	final int maxArchiveHandlers;
-	private final LRUHashtable archiveHandlers;
+	private final LRUHashtable<FreenetURI, ArchiveStoreContext> archiveHandlers;
 	
 	// Data cache
 	/** Maximum number of cached ArchiveStoreItems */
@@ -113,7 +114,7 @@ public class ArchiveManager {
 	/** Currently cached data in bytes */
 	private long cachedData;
 	/** Map from ArchiveKey to ArchiveStoreElement */
-	private final LRUHashtable storedData;
+	private final LRUHashtable<ArchiveKey, ArchiveStoreItem> storedData;
 	/** Bucket Factory */
 	private final BucketFactory tempBucketFactory;
 
@@ -134,10 +135,10 @@ public class ArchiveManager {
 	 */
 	public ArchiveManager(int maxHandlers, long maxCachedData, long maxArchivedFileSize, int maxCachedElements, BucketFactory tempBucketFactory) {
 		maxArchiveHandlers = maxHandlers;
-		archiveHandlers = new LRUHashtable();
+		archiveHandlers = new LRUHashtable<FreenetURI, ArchiveStoreContext>();
 		this.maxCachedElements = maxCachedElements;
 		this.maxCachedData = maxCachedData;
-		storedData = new LRUHashtable();
+		storedData = new LRUHashtable<ArchiveKey, ArchiveStoreItem>();
 		this.maxArchivedFileSize = maxArchivedFileSize;
 		this.tempBucketFactory = tempBucketFactory;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -321,7 +322,7 @@ public class ArchiveManager {
 			TarEntry entry;
 			
 			byte[] buf = new byte[32768];
-			HashSet names = new HashSet();
+			HashSet<String> names = new HashSet<String>();
 			boolean gotMetadata = false;
 			
 outerTAR:		while(true) {
@@ -390,7 +391,7 @@ outerTAR:		while(true) {
 			ZipEntry entry;
 			
 			byte[] buf = new byte[32768];
-			HashSet names = new HashSet();
+			HashSet<String> names = new HashSet<String>();
 			boolean gotMetadata = false;
 			
 outerZIP:		while(true) {
@@ -475,7 +476,7 @@ outerZIP:		while(true) {
 		 */
 		// Root directory.
 		// String -> either itself, or another HashMap
-		HashMap dir = new HashMap();
+		HashMap<String, Object> dir = new HashMap<String, Object>();
 		Iterator i = names.iterator();
 		while(i.hasNext()) {
 			String name = (String) i.next();
@@ -521,7 +522,7 @@ outerZIP:		while(true) {
 		return x;
 	}
 
-	private void addToDirectory(HashMap dir, String name, String prefix) throws ArchiveFailureException {
+	private void addToDirectory(HashMap<String, Object> dir, String name, String prefix) throws ArchiveFailureException {
 		int x = name.indexOf('/');
 		if(x < 0) {
 			if(dir.containsKey(name)) {
@@ -537,9 +538,9 @@ outerZIP:		while(true) {
 			} else
 				after = name.substring(x+1, name.length());
 			Object o = dir.get(before);
-			HashMap map = (HashMap) o;
+			HashMap<String, Object> map = (HashMap<String, Object>) o;
 			if(o == null) {
-				map = new HashMap();
+				map = new HashMap<String, Object>();
 				dir.put(before, map);
 			}
 			if(o instanceof String) {
