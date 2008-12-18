@@ -155,6 +155,7 @@ public class DelayedFreeBucket implements Bucket, SerializableToFieldSetBucket {
 
 	public void realRemoveFrom(ObjectContainer container) {
 		bucket.removeFrom(container);
+		container.delete(this);
 	}
 	
 //	public void objectOnDeactivate(ObjectContainer container) {
