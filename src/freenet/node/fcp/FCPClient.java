@@ -73,9 +73,9 @@ public class FCPClient {
 	/** The current connection handler, if any. */
 	private transient FCPConnectionHandler currentConnection;
 	/** Currently running persistent requests */
-	private final List runningPersistentRequests;
+	private final List<ClientRequest> runningPersistentRequests;
 	/** Completed unacknowledged persistent requests */
-	private final List completedUnackedRequests;
+	private final List<ClientRequest> completedUnackedRequests;
 	/** ClientRequest's by identifier */
 	private final Map<String, ClientRequest> clientRequestsByIdentifier;
 	/** Are we the global queue? */
@@ -84,7 +84,7 @@ public class FCPClient {
 	boolean watchGlobal;
 	int watchGlobalVerbosityMask;
 	/** FCPClients watching us. Lazy init, sync on clientsWatchingLock */
-	private transient LinkedList clientsWatching;
+	private transient LinkedList<FCPClient> clientsWatching;
 	private final NullObject clientsWatchingLock = new NullObject();
 	private final LinkedList<ClientRequest> toStart;
 	final RequestClient lowLevelClient;
@@ -306,7 +306,7 @@ public class FCPClient {
 		if(!isGlobalQueue) return;
 		synchronized(clientsWatchingLock) {
 			if(clientsWatching == null)
-				clientsWatching = new LinkedList();
+				clientsWatching = new LinkedList<FCPClient>();
 			clientsWatching.add(client);
 		}
 	}
@@ -382,7 +382,7 @@ public class FCPClient {
 	}
 
 	public void removeAll(ObjectContainer container, ClientContext context) {
-		HashSet toKill = new HashSet();
+		HashSet<ClientRequest> toKill = new HashSet<ClientRequest>();
 		synchronized(this) {
 			Iterator i = runningPersistentRequests.iterator();
 			while(i.hasNext()) {
