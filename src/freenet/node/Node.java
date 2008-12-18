@@ -3976,4 +3976,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public boolean shallWeRouteAccordingToOurPeersLocation() {
 		return routeAccordingToOurPeersLocation && Version.lastGoodBuild() >= 1160;
 	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Not storing Node in database", new Exception("error"));
+		return false;
+	}
+	
 }

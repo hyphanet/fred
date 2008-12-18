@@ -12,6 +12,8 @@ import freenet.support.OOMHandler;
 import freenet.support.io.NativeThread;
 import java.util.LinkedList;
 
+import com.db4o.ObjectContainer;
+
 public class RealCompressor implements PrioRunnable {
 	
 	private final Executor exec;
@@ -90,4 +92,10 @@ public class RealCompressor implements PrioRunnable {
 			}, "Compressor thread for " + currentJob);
 		}
 	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Not storing NodeClientCore in database", new Exception("error"));
+		return false;
+	}
+	
 }

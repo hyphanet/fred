@@ -53,5 +53,10 @@ class ClientRequestSchedulerNonPersistent extends ClientRequestSchedulerBase {
 				recentSuccesses.remove(0);
 	}
 
-
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Not storing ClientRequestSchedulerNonPersistent in database", new Exception("error"));
+		return false;
+	}
+	
+	
 }

@@ -17,6 +17,7 @@ import freenet.node.RequestScheduler;
 import freenet.node.RequestStarterGroup;
 import freenet.node.Ticker;
 import freenet.support.Executor;
+import freenet.support.Logger;
 import freenet.support.api.BucketFactory;
 import freenet.support.compress.RealCompressor;
 import freenet.support.io.FilenameGenerator;
@@ -171,6 +172,11 @@ public class ClientContext {
 	public RequestScheduler getFetchScheduler(boolean ssk) {
 		if(ssk) return sskFetchScheduler;
 		return chkFetchScheduler;
+	}
+	
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Not storing ClientContext in database", new Exception("error"));
+		return false;
 	}
 	
 }
