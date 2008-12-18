@@ -439,4 +439,14 @@ public class FCPClient {
 		((Db4oList)completedUnackedRequests).activationDepth(1);
 		((Db4oMap)clientRequestsByIdentifier).activationDepth(1);
 	}
+
+	public boolean objectCanNew(ObjectContainer container) {
+		if(persistenceType != ClientRequest.PERSIST_FOREVER) {
+			Logger.error(this, "Not storing non-persistent request in database", new Exception("error"));
+			return false;
+		}
+		return true;
+	}
+
+
 }
