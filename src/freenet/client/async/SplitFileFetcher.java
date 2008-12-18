@@ -644,6 +644,7 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		for(int i=0;i<segments.length;i++) {
 			SplitFileFetcherSegment segment = segments[i];
 			segments[i] = null;
+			container.activate(segment, 1);
 			segment.removeFrom(container, context);
 		}
 		container.delete(this);
