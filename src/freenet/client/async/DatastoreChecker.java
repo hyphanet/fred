@@ -409,4 +409,9 @@ public class DatastoreChecker implements PrioRunnable {
 		return NativeThread.NORM_PRIORITY;
 	}
 	
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Not storing DatastoreChecker in database", new Exception("error"));
+		return false;
+	}
+	
 }
