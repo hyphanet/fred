@@ -143,7 +143,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		InsertContext context = getInsertContext(true);
 		PutWaiter pw = new PutWaiter();
 		ClientPutter put = new ClientPutter(pw, insert.getData(), insert.desiredURI, insert.clientMetadata, 
-				context, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, priorityClass, 
+				context, priorityClass, 
 				getCHKOnly, isMetadata, this, null, filenameHint, false);
 		core.clientContext.start(put, false);
 		return pw.waitForCompletion();
@@ -151,7 +151,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	
 	public ClientPutter insert(InsertBlock insert, boolean getCHKOnly, String filenameHint, boolean isMetadata, InsertContext ctx, ClientCallback cb) throws InsertException {
 		ClientPutter put = new ClientPutter(cb, insert.getData(), insert.desiredURI, insert.clientMetadata, 
-				ctx, core.requestStarters.chkPutScheduler, core.requestStarters.sskPutScheduler, priorityClass, 
+				ctx, priorityClass, 
 				getCHKOnly, isMetadata, this, null, filenameHint, false);
 		core.clientContext.start(put, false);
 		return put;

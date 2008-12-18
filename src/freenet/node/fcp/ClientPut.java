@@ -138,7 +138,7 @@ public class ClientPut extends ClientPutBase {
 		this.clientMetadata = cm;
 
 		putter = new ClientPutter(this, data, uri, cm, 
-				ctx, server.core.requestStarters.chkPutScheduler, server.core.requestStarters.sskPutScheduler, priorityClass, 
+				ctx, priorityClass, 
 				getCHKOnly, isMetadata, 
 				client.lowLevelClient,
 				null, targetFilename, binaryBlob);
@@ -247,7 +247,7 @@ public class ClientPut extends ClientPutBase {
 		
 		if(logMINOR) Logger.minor(this, "data = "+data+", uploadFrom = "+ClientPutMessage.uploadFromString(uploadFrom));
 		putter = new ClientPutter(this, data, uri, cm, 
-				ctx, server.core.requestStarters.chkPutScheduler, server.core.requestStarters.sskPutScheduler, priorityClass, 
+				ctx, priorityClass, 
 				getCHKOnly, isMetadata,
 				client.lowLevelClient,
 				null, targetFilename, binaryBlob);
@@ -335,8 +335,8 @@ public class ClientPut extends ClientPutBase {
 		this.clientMetadata = cm;
 		SimpleFieldSet oldProgress = fs.subset("progress");
 		if(finished) oldProgress = null; // Not useful any more
-		putter = new ClientPutter(this, data, uri, cm, ctx, server.core.requestStarters.chkPutScheduler, 
-				server.core.requestStarters.sskPutScheduler, priorityClass, getCHKOnly, isMetadata,
+		putter = new ClientPutter(this, data, uri, cm, ctx, 
+				priorityClass, getCHKOnly, isMetadata,
 				client.lowLevelClient,
 				oldProgress, targetFilename, binaryBlob);
 		if(persistenceType != PERSIST_CONNECTION) {

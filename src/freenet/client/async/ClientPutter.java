@@ -56,7 +56,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * @param targetFilename If set, create a one-file manifest containing this filename pointing to this file.
 	 */
 	public ClientPutter(ClientCallback client, Bucket data, FreenetURI targetURI, ClientMetadata cm, InsertContext ctx,
-			RequestScheduler chkScheduler, RequestScheduler sskScheduler, short priorityClass, boolean getCHKOnly, 
+			short priorityClass, boolean getCHKOnly, 
 			boolean isMetadata, RequestClient clientContext, SimpleFieldSet stored, String targetFilename, boolean binaryBlob) {
 		super(priorityClass, clientContext);
 		this.cm = cm;
