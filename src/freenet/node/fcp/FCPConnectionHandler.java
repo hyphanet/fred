@@ -117,8 +117,8 @@ public class FCPConnectionHandler implements Closeable {
 		server.core.clientContext.jobRunner.queue(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
-				if((rebootClient != null) && !rebootClient.hasPersistentRequests(container))
-					server.unregisterClient(rebootClient, container);
+				if((rebootClient != null) && !rebootClient.hasPersistentRequests(null))
+					server.unregisterClient(rebootClient, null);
 				if(foreverClient != null) {
 					if(!container.ext().isStored(foreverClient)) {
 						Logger.error(this, "foreverClient is not stored in the database in lost connection non-dupe callback; not deleting it");
