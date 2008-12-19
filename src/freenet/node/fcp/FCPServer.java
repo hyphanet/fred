@@ -83,7 +83,6 @@ public class FCPServer implements Runnable {
 	 * MUST ALWAYS BE THE OUTERMOST LOCK.
 	 */
 	private final Object persistenceSync = new Object();
-	private boolean haveLoadedPersistentRequests;
 	final FetchContext defaultFetchContext;
 	public InsertContext defaultInsertContext;
 	public static final int QUEUE_MAX_RETRIES = -1;
@@ -557,7 +556,6 @@ public class FCPServer implements Runnable {
 			Logger.normal(this, "Loading persistent requests from "+file);
 			if (file.length() > 0) {
 				loadPersistentRequests(bis, container);
-				haveLoadedPersistentRequests = true;
 			} else
 				throw new IOException("File empty"); // If it's empty, try the temp file.
 		} catch (IOException e) {
@@ -571,7 +569,6 @@ public class FCPServer implements Runnable {
 				fis = new FileInputStream(file);
 				bis = new BufferedInputStream(fis);
 				loadPersistentRequests(bis, container);
-				haveLoadedPersistentRequests = true;
 			} catch (IOException e1) {
 				Logger.normal(this, "It's corrupted too : Not reading any persistent requests from disk: "+e1);
 				return;
