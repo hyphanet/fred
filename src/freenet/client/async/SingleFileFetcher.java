@@ -991,7 +991,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Do a thorough, blocking search
 			USKFetcherTag tag = 
 				context.uskManager.getFetcher(usk.copy(-usk.suggestedEdition), ctx, false, requester.persistent(),
-						new MyUSKFetcherCallback(requester, cb, new ClientMetadata(), usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, returnBucket, requester.persistent()), container, context);
+						new MyUSKFetcherCallback(requester, cb, usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, returnBucket, requester.persistent()), container, context);
 			if(isEssential)
 				requester.addMustSucceedBlocks(1, container);
 			return tag;
@@ -1002,7 +1002,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 		final ClientRequester parent;
 		final GetCompletionCallback cb;
-		final ClientMetadata clientMetadata;
 		final USK usk;
 		final ArrayList<String> metaStrings;
 		final FetchContext ctx;
@@ -1014,10 +1013,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		final Bucket returnBucket;
 		final boolean persistent;
 		
-		public MyUSKFetcherCallback(ClientRequester requester, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, ArrayList<String> metaStrings, FetchContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, Bucket returnBucket, boolean persistent) {
+		public MyUSKFetcherCallback(ClientRequester requester, GetCompletionCallback cb, USK usk, ArrayList<String> metaStrings, FetchContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, Bucket returnBucket, boolean persistent) {
 			this.parent = requester;
 			this.cb = cb;
-			this.clientMetadata = clientMetadata;
 			this.usk = usk;
 			this.metaStrings = metaStrings;
 			this.ctx = ctx;
@@ -1036,7 +1034,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			ClientSSK key = usk.getSSK(l);
 			try {
 				if(l == usk.suggestedEdition) {
-					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, clientMetadata, key, metaStrings, key.getURI().addMetaStrings(metaStrings),
+					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, new ClientMetadata(), key, metaStrings, key.getURI().addMetaStrings(metaStrings),
 							0, ctx, actx, null, null, maxRetries, recursionLevel+1, dontTellClientGet, token, false, returnBucket, true, container, context);
 					sf.schedule(container, context);
 				} else {
