@@ -4,10 +4,8 @@
 package freenet.client;
 
 import freenet.keys.FreenetURI;
-import freenet.support.DoublyLinkedList;
 import freenet.support.DoublyLinkedListImpl;
 import freenet.support.Logger;
-import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 
 /**
  * Tracks all files currently in the cache from a given key.
