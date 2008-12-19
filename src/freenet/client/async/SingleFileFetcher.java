@@ -42,7 +42,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	/** Original URI */
 	final FreenetURI uri;
 	/** Meta-strings. (Path elements that aren't part of a key type) */
-	private final ArrayList metaStrings;
+	private final ArrayList<String> metaStrings;
 	/** Number of metaStrings which were added by redirects etc. They are added to the start, so this is decremented
 	 * when we consume one. */
 	private int addedMetaStrings;
@@ -66,7 +66,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	 * FIXME: Many times where this is called internally we might be better off using a copy constructor? 
 	 */
 	public SingleFileFetcher(ClientRequester parent, GetCompletionCallback cb, ClientMetadata metadata,
-			ClientKey key, List metaStrings, FreenetURI origURI, int addedMetaStrings, FetchContext ctx,
+			ClientKey key, List<String> metaStrings, FreenetURI origURI, int addedMetaStrings, FetchContext ctx,
 			ArchiveContext actx, ArchiveHandler ah, Metadata archiveMetadata, int maxRetries, int recursionLevel,
 			boolean dontTellClientGet, long l, boolean isEssential,
 			Bucket returnBucket, boolean isFinal, ObjectContainer container, ClientContext context) throws FetchException {
@@ -83,9 +83,9 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		//this.key = ClientKey.getBaseKey(uri);
 		//metaStrings = uri.listMetaStrings();
 		if(metaStrings instanceof ArrayList)
-			this.metaStrings = (ArrayList)metaStrings;
+			this.metaStrings = (ArrayList<String>)metaStrings;
 		else
-			this.metaStrings = new ArrayList(metaStrings);
+			this.metaStrings = new ArrayList<String>(metaStrings);
 		this.addedMetaStrings = addedMetaStrings;
 		this.clientMetadata = metadata;
 		thisKey = key.getURI();
@@ -114,7 +114,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.archiveMetadata = fetcher.archiveMetadata;
 		this.clientMetadata = (fetcher.clientMetadata != null ? (ClientMetadata) fetcher.clientMetadata.clone() : null);
 		this.metadata = newMeta;
-		this.metaStrings = new ArrayList();
+		this.metaStrings = new ArrayList<String>();
 		this.addedMetaStrings = 0;
 		this.recursionLevel = fetcher.recursionLevel + 1;
 		if(recursionLevel > ctx.maxRecursionLevel)
@@ -547,11 +547,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				} catch (MalformedURLException e) {
 					throw new FetchException(FetchException.INVALID_URI, e);
 				}
-				ArrayList newMetaStrings = newURI.listMetaStrings();
+				ArrayList<String> newMetaStrings = newURI.listMetaStrings();
 				
 				// Move any new meta strings to beginning of our list of remaining meta strings
 				while(!newMetaStrings.isEmpty()) {
-					Object o = newMetaStrings.remove(newMetaStrings.size()-1);
+					String o = newMetaStrings.remove(newMetaStrings.size()-1);
 					metaStrings.add(0, o);
 					addedMetaStrings++;
 				}
@@ -952,13 +952,13 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				returnBucket == null && key instanceof ClientKey)
 			return new SimpleSingleFileFetcher((ClientKey)key, maxRetries, ctx, requester, cb, isEssential, false, l, container, context);
 		if(key instanceof ClientKey)
-			return new SingleFileFetcher(requester, cb, clientMetadata, (ClientKey)key, new ArrayList(uri.listMetaStrings()), uri, 0, ctx, actx, null, null, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal, container, context);
+			return new SingleFileFetcher(requester, cb, clientMetadata, (ClientKey)key, new ArrayList<String>(uri.listMetaStrings()), uri, 0, ctx, actx, null, null, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal, container, context);
 		else {
-			return uskCreate(requester, cb, clientMetadata, (USK)key, new ArrayList(uri.listMetaStrings()), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal, container, context);
+			return uskCreate(requester, cb, clientMetadata, (USK)key, new ArrayList<String>(uri.listMetaStrings()), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal, container, context);
 		}
 	}
 
-	private static ClientGetState uskCreate(ClientRequester requester, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, ArrayList metaStrings, FetchContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, boolean isEssential, Bucket returnBucket, boolean isFinal, ObjectContainer container, ClientContext context) throws FetchException {
+	private static ClientGetState uskCreate(ClientRequester requester, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, ArrayList<String> metaStrings, FetchContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, boolean isEssential, Bucket returnBucket, boolean isFinal, ObjectContainer container, ClientContext context) throws FetchException {
 		if(usk.suggestedEdition >= 0) {
 			// Return the latest known version but at least suggestedEdition.
 			long edition = context.uskManager.lookup(usk);
@@ -1002,7 +1002,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		final GetCompletionCallback cb;
 		final ClientMetadata clientMetadata;
 		final USK usk;
-		final ArrayList metaStrings;
+		final ArrayList<String> metaStrings;
 		final FetchContext ctx;
 		final ArchiveContext actx;
 		final int maxRetries;
@@ -1012,7 +1012,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		final Bucket returnBucket;
 		final boolean persistent;
 		
-		public MyUSKFetcherCallback(ClientRequester requester, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, ArrayList metaStrings, FetchContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, Bucket returnBucket, boolean persistent) {
+		public MyUSKFetcherCallback(ClientRequester requester, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, ArrayList<String> metaStrings, FetchContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, Bucket returnBucket, boolean persistent) {
 			this.parent = requester;
 			this.cb = cb;
 			this.clientMetadata = clientMetadata;
