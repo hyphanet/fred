@@ -38,10 +38,10 @@ public class ContentFilterTest extends TestCase {
 	private static final String ANCHOR_TEST_SPECIAL2_RESULT = "<a href=\"#!$&amp;&#39;()*+,;=:@ABC0123-._~xyz%3f\" />"; 
 	
 	// @see bug #2496
-	private static final String ANCHOR_RELATIVE1 = "<a href=\"test.html#C2\">";
-	private static final String ANCHOR_RELATIVE2 = "<a href=\"path/test.html#C2\">";
-	private static final String ANCHOR_FALSE_POS1 = "<a href=\"path/test.html#%23\">"; // yes, this is valid
-	private static final String ANCHOR_FALSE_POS2 = "<a href=\"path/%23.html#2\">"; // yes, this is valid too
+	private static final String ANCHOR_RELATIVE1 = "<a href=\"/KSK@test/test.html#C2\">";
+	private static final String ANCHOR_RELATIVE2 = "<a href=\"/KSK@test/path/test.html#C2\">";
+	private static final String ANCHOR_FALSE_POS1 = "<a href=\"/KSK@test/path/test.html#%23\">"; // yes, this is valid
+	private static final String ANCHOR_FALSE_POS2 = "<a href=\"/KSK@test/path/%23.html#2\">"; // yes, this is valid too
 	
 	// @see bug #2451
 	private static final String POUNT_CHARACTER_ENCODING_TEST = "<a href=\"/CHK@DUiGC5D1ZsnFpH07WGkNVDujNlxhtgGxXBKrMT-9Rkw,~GrAWp02o9YylpxL1Fr4fPDozWmebhGv4qUoFlrxnY4,AAIC--8/Testing - [blah] Apostrophe' - gratuitous #1 AND CAPITAL LETTERS!!!!.ogg\" />";
