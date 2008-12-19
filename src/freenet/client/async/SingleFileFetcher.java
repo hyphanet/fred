@@ -956,11 +956,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		if(key instanceof ClientKey)
 			return new SingleFileFetcher(requester, cb, new ClientMetadata(), (ClientKey)key, new ArrayList<String>(uri.listMetaStrings()), uri, 0, ctx, actx, null, null, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal, container, context);
 		else {
-			return uskCreate(requester, cb, new ClientMetadata(), (USK)key, new ArrayList<String>(uri.listMetaStrings()), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal, container, context);
+			return uskCreate(requester, cb, (USK)key, new ArrayList<String>(uri.listMetaStrings()), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal, container, context);
 		}
 	}
 
-	private static ClientGetState uskCreate(ClientRequester requester, GetCompletionCallback cb, ClientMetadata clientMetadata, USK usk, ArrayList<String> metaStrings, FetchContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, boolean isEssential, Bucket returnBucket, boolean isFinal, ObjectContainer container, ClientContext context) throws FetchException {
+	private static ClientGetState uskCreate(ClientRequester requester, GetCompletionCallback cb, USK usk, ArrayList<String> metaStrings, FetchContext ctx, ArchiveContext actx, int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, boolean isEssential, Bucket returnBucket, boolean isFinal, ObjectContainer container, ClientContext context) throws FetchException {
 		if(usk.suggestedEdition >= 0) {
 			// Return the latest known version but at least suggestedEdition.
 			long edition = context.uskManager.lookup(usk);
@@ -978,7 +978,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						new USKProxyCompletionCallback(usk, cb, requester.persistent());
 					// Want to update the latest known good iff the fetch succeeds.
 					SingleFileFetcher sf = 
-						new SingleFileFetcher(requester, myCB, clientMetadata, usk.getSSK(), metaStrings, 
+						new SingleFileFetcher(requester, myCB, new ClientMetadata(), usk.getSSK(), metaStrings, 
 								usk.getURI().addMetaStrings(metaStrings), 0, ctx, actx, null, null, maxRetries, recursionLevel, 
 								dontTellClientGet, l, isEssential, returnBucket, isFinal, container, context);
 					return sf;
@@ -991,7 +991,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			// Do a thorough, blocking search
 			USKFetcherTag tag = 
 				context.uskManager.getFetcher(usk.copy(-usk.suggestedEdition), ctx, false, requester.persistent(),
-						new MyUSKFetcherCallback(requester, cb, clientMetadata, usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, returnBucket, requester.persistent()), container, context);
+						new MyUSKFetcherCallback(requester, cb, new ClientMetadata(), usk, metaStrings, ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, returnBucket, requester.persistent()), container, context);
 			if(isEssential)
 				requester.addMustSucceedBlocks(1, container);
 			return tag;
