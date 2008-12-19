@@ -945,18 +945,18 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	 * Create a fetcher for a key.
 	 */
 	public static ClientGetState create(ClientRequester requester, GetCompletionCallback cb, 
-			ClientMetadata clientMetadata, FreenetURI uri, FetchContext ctx, ArchiveContext actx, 
+			FreenetURI uri, FetchContext ctx, ArchiveContext actx, 
 			int maxRetries, int recursionLevel, boolean dontTellClientGet, long l, boolean isEssential, 
 			Bucket returnBucket, boolean isFinal, ObjectContainer container, ClientContext context) throws MalformedURLException, FetchException {
 		BaseClientKey key = BaseClientKey.getBaseKey(uri);
-		if((clientMetadata == null || clientMetadata.isTrivial()) && (!uri.hasMetaStrings()) &&
+		if((!uri.hasMetaStrings()) &&
 				ctx.allowSplitfiles == false && ctx.followRedirects == false && 
 				returnBucket == null && key instanceof ClientKey)
 			return new SimpleSingleFileFetcher((ClientKey)key, maxRetries, ctx, requester, cb, isEssential, false, l, container, context);
 		if(key instanceof ClientKey)
-			return new SingleFileFetcher(requester, cb, clientMetadata, (ClientKey)key, new ArrayList<String>(uri.listMetaStrings()), uri, 0, ctx, actx, null, null, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal, container, context);
+			return new SingleFileFetcher(requester, cb, new ClientMetadata(), (ClientKey)key, new ArrayList<String>(uri.listMetaStrings()), uri, 0, ctx, actx, null, null, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal, container, context);
 		else {
-			return uskCreate(requester, cb, clientMetadata, (USK)key, new ArrayList<String>(uri.listMetaStrings()), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal, container, context);
+			return uskCreate(requester, cb, new ClientMetadata(), (USK)key, new ArrayList<String>(uri.listMetaStrings()), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal, container, context);
 		}
 	}
 

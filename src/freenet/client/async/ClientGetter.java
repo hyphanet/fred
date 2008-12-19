@@ -97,7 +97,7 @@ public class ClientGetter extends BaseClientGetter {
 					cancelled = false;
 					finished = false;
 				}
-				currentState = SingleFileFetcher.create(this, this, new ClientMetadata(),
+				currentState = SingleFileFetcher.create(this, this, 
 						uri, ctx, actx, ctx.maxNonSplitfileRetries, 0, false, -1, true,
 						returnBucket, true, container, context);
 			}
