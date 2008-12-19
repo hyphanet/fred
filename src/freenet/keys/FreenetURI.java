@@ -265,16 +265,18 @@ public class FreenetURI implements Cloneable {
 		if(atchar == -1)
 			throw new MalformedURLException("There is no @ in that URI! (" + URI + ')');
 
-		keyType = URI.substring(0, atchar).toUpperCase().trim().intern();
+		String _keyType = URI.substring(0, atchar).toUpperCase().trim();
 		URI = URI.substring(atchar + 1);
 
 		boolean validKeyType = false;
 		for(int i = 0; i < VALID_KEY_TYPES.length; i++) {
-			if (keyType.equals(VALID_KEY_TYPES[i])) {
+			if (_keyType.equals(VALID_KEY_TYPES[i])) {
 				validKeyType = true;
+				_keyType = VALID_KEY_TYPES[i];
 				break;
 			}
 		}
+		keyType = _keyType;
 		if(!validKeyType)
 			throw new MalformedURLException("Invalid key type: " + keyType);
 
