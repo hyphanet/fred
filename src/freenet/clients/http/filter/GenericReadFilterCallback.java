@@ -75,8 +75,21 @@ public class GenericReadFilterCallback implements FilterCallback {
 		return processURI(u, overrideType, false, false);
 	}
 	
+	// RFC3986
+	//  unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
+	protected static final String unreserved = "[a-zA-Z0-9\\-\\._~]";
+	//  pct-encoded   = "%" HEXDIG HEXDIG
+	protected static final String pctEncoded = "%[0-9A-Fa-f][0-9A-Fa-f]";
+	//  sub-delims    = "!" / "$" / "&" / "'" / "(" / ")"
+	//                / "*" / "+" / "," / ";" / "="
+	protected static final String subDelims  = "[\\!\\$&'\\(\\)\\*\\+,;=]";
+	//  pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
+	protected static final String pchar      = "(" + unreserved + "|" + pctEncoded + "|" + subDelims + "|[:@])";
+	//  fragment      = *( pchar / "/" / "?" )
+	protected static final String fragment   = "(" + pchar + "|\\/|\\?)*";
+
 	public String processURI(String u, String overrideType, boolean noRelative, boolean inline) throws CommentException {
-		if(u.matches("^#[a-zA-Z0-9-_]+$")) {
+		if(u.matches("^#" + fragment + "$")) {
 			// Hack for anchors, see #710
 			return u;
 		}
