@@ -572,6 +572,10 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 			File main;
 			File alt;
 			boolean cacheLocalRequests;
+			if(fetchContext == null) {
+				Logger.error(this, "fetchContext deleted without splitfile being deleted!");
+				return null;
+			}
 			if(persistent) {
 				container.activate(mainBloomFile, 5);
 				container.activate(altBloomFile, 5);
