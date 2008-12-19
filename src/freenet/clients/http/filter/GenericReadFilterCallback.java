@@ -21,7 +21,7 @@ import freenet.support.api.HTTPRequest;
 
 public class GenericReadFilterCallback implements FilterCallback {
 	public static final String magicHTTPEscapeString = "_CHECKED_HTTP_";
-	public static final HashSet allowedProtocols;
+	public static final HashSet<String> allowedProtocols;
 	
 	static {
 		allowedProtocols = new HashSet();
