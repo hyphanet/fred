@@ -486,7 +486,12 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		}
 		if(persistenceType == PERSIST_FOREVER)
 			container.activate(client, 1);
-		client.queueClientRequestMessage(msg, VERBOSITY_SPLITFILE_PROGRESS, container);
+		if(persistenceType == PERSIST_CONNECTION && handler == null)
+			handler = origHandler.outputHandler;
+		if(handler != null) {
+			handler.queue(msg);
+		} else
+			client.queueClientRequestMessage(msg, VERBOSITY_SPLITFILE_PROGRESS, container);
 		if(persistenceType == PERSIST_FOREVER && !client.isGlobalQueue)
 			container.deactivate(client, 1);
 	}
