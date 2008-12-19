@@ -13,7 +13,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -888,5 +887,9 @@ public class FreenetURI implements Cloneable {
 		long edition = Long.valueOf(docName.substring(offset + 1, docName.length()));
 
 		return new FreenetURI("USK", siteName, metaStr, routingKey, cryptoKey, extra, edition);
+	}
+
+	public FreenetURI cloneKey() {
+		return new FreenetURI(this);
 	}
 }

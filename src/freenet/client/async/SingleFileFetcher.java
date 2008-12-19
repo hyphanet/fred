@@ -78,6 +78,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.returnBucket = returnBucket;
 		this.dontTellClientGet = dontTellClientGet;
 		this.ah = ah;
+		if(persistent && ah != null) ah = ah.cloneHandler();
 		this.archiveMetadata = archiveMetadata;
 		//this.uri = uri;
 		//this.key = ClientKey.getBaseKey(uri);
@@ -111,6 +112,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.dontTellClientGet = fetcher.dontTellClientGet;
 		this.actx = fetcher.actx;
 		this.ah = fetcher.ah;
+		if(persistent && ah != null) ah = ah.cloneHandler();
 		this.archiveMetadata = fetcher.archiveMetadata;
 		this.clientMetadata = (fetcher.clientMetadata != null ? (ClientMetadata) fetcher.clientMetadata.clone() : null);
 		this.metadata = newMeta;
@@ -340,7 +342,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// the case of binary blobs.
 				if(ah == null || !ah.getKey().equals(thisKey))
 					ah = context.archiveManager.makeHandler(thisKey, metadata.getArchiveType(), metadata.getCompressionCodec(),
-							(parent instanceof ClientGetter ? ((ClientGetter)parent).collectingBinaryBlob() : false));
+							(parent instanceof ClientGetter ? ((ClientGetter)parent).collectingBinaryBlob() : false), persistent);
 				archiveMetadata = metadata;
 				// ah is set. This means we are currently handling an archive.
 				Bucket metadataBucket;
@@ -1076,6 +1078,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		uri.removeFrom(container);
 		if(thisKey != null)
 			thisKey.removeFrom(container);
+		ah.removeFrom(container);
 		// FIXME what to do about metaStrings ??
 		// FIXME what to do about clientMetadata ??
 		// actx is global to the ClientRequest

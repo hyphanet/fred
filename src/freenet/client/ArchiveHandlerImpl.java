@@ -225,6 +225,15 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 		container.activate(this, 1);
 		container.activate(key, 5);
 	}
+
+	public ArchiveHandler cloneHandler() {
+		return new ArchiveHandlerImpl(key.cloneKey(), archiveType, compressorType, forceRefetchArchive);
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		key.removeFrom(container);
+		container.delete(this);
+	}
 	
 }
 

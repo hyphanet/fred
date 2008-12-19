@@ -189,8 +189,8 @@ public class ArchiveManager {
 	 * @param archiveType The archive type, defined in Metadata.
 	 * @return An archive handler. 
 	 */
-	public ArchiveHandler makeHandler(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, boolean forceRefetch) {
-		return new ArchiveHandlerImpl(key, archiveType, ctype, forceRefetch);
+	public ArchiveHandler makeHandler(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, boolean forceRefetch, boolean persistent) {
+		return new ArchiveHandlerImpl(persistent ? key.cloneKey() : key, archiveType, ctype, forceRefetch);
 	}
 
 	/**
