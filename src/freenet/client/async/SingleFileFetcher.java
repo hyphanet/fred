@@ -83,7 +83,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		//this.uri = uri;
 		//this.key = ClientKey.getBaseKey(uri);
 		//metaStrings = uri.listMetaStrings();
-		if(metaStrings instanceof ArrayList)
+		if(metaStrings instanceof ArrayList && !persistent)
 			this.metaStrings = (ArrayList<String>)metaStrings;
 		else
 			this.metaStrings = new ArrayList<String>(metaStrings);
@@ -1079,7 +1079,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		if(thisKey != null)
 			thisKey.removeFrom(container);
 		ah.removeFrom(container);
-		// FIXME what to do about metaStrings ??
+		metaStrings.clear();
+		container.delete(metaStrings);
 		// FIXME what to do about clientMetadata ??
 		// actx is global to the ClientRequest, not our problem
 		decompressors.clear();
