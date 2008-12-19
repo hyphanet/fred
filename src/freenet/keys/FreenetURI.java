@@ -270,8 +270,10 @@ public class FreenetURI implements Cloneable {
 
 		boolean validKeyType = false;
 		for(int i = 0; i < VALID_KEY_TYPES.length; i++) {
-			if(keyType.equals(VALID_KEY_TYPES[i]))
+			if (keyType.equals(VALID_KEY_TYPES[i])) {
 				validKeyType = true;
+				break;
+			}
 		}
 		if(!validKeyType)
 			throw new MalformedURLException("Invalid key type: " + keyType);
