@@ -1081,8 +1081,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		ah.removeFrom(container);
 		// FIXME what to do about metaStrings ??
 		// FIXME what to do about clientMetadata ??
-		// actx is global to the ClientRequest
-		// ah can be shared by two fetchers ... we can probably arrange for the parent to delete it?
+		// actx is global to the ClientRequest, not our problem
 		decompressors.clear();
 		container.delete(decompressors);
 		container.delete(this);
