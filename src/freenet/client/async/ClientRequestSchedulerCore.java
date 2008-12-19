@@ -195,7 +195,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 //					Logger.minor(this, "RegisterMe query returned: "+registerMeSet.size());
 				boolean boost = ClientRequestSchedulerCore.this.sched.isQueueAlmostEmpty();
 
-				context.jobRunner.queue(registerMeRunner, (NativeThread.NORM_PRIORITY-1) + (boost ? 2 : 0), true);
+				context.jobRunner.queue(registerMeRunner, (NativeThread.NORM_PRIORITY-1) + (boost ? 1 : 0), true);
 			}
 			
 		};
@@ -646,7 +646,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			}
 			boolean boost = sched.isQueueAlmostEmpty();
 			if(registerMeSet.hasNext())
-				context.jobRunner.queue(registerMeRunner, (NativeThread.NORM_PRIORITY-1) + (boost ? 2 : 0), true);
+				context.jobRunner.queue(registerMeRunner, (NativeThread.NORM_PRIORITY-1) + (boost ? 1 : 0), true);
 			else {
 				if(logMINOR) Logger.minor(this, "RegisterMeRunner finished");
 				boolean rerun;
