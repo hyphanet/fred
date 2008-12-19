@@ -5,6 +5,7 @@ package freenet.client;
 
 import freenet.keys.FreenetURI;
 import freenet.support.DoublyLinkedListImpl;
+import freenet.support.Logger;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 
 /**
@@ -66,7 +67,8 @@ public class ArchiveStoreContext {
 		ArchiveStoreItem item = null;
 		while(true) {
 			synchronized (myItems) {
-				item = (ArchiveStoreItem) myItems.pop();
+				// removeCachedItem() will call removeItem(), so don't remove it here.
+				item = (ArchiveStoreItem) myItems.head();
 			}
 			if(item == null) break;
 			manager.removeCachedItem(item);
@@ -85,7 +87,11 @@ public class ArchiveStoreContext {
 	 * necessary. */
 	void removeItem(ArchiveStoreItem item) {
 		synchronized(myItems) {
-			if(myItems.remove(item) == null) return; // only removed once
+			if(myItems.remove(item) == null) {
+				if(Logger.shouldLog(Logger.MINOR, this))
+					Logger.minor(this, "Not removing: "+item+" for "+this+" - already removed");
+				return; // only removed once
+			}
 		}
 		item.innerClose();
 	}
