@@ -287,7 +287,7 @@ public class FreenetURI implements Cloneable {
 		while((slash2 = URI.lastIndexOf("/")) != -1) {
 			String s;
 			try {
-				s = URLDecoder.decode(URI.substring(slash2 + "/".length()), true);
+				s = URLDecoder.decode(URI.substring(slash2 + 1 /* "/".length() */), true);
 			} catch(URLEncodedFormatException e) {
 				MalformedURLException ue = new MalformedURLException(e.toString());
 				ue.initCause(e);
