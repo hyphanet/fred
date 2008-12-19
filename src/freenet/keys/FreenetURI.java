@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
 import freenet.client.InsertException;
 import freenet.support.Base64;
@@ -238,9 +239,8 @@ public class FreenetURI implements Cloneable {
 	public FreenetURI(String URI) throws MalformedURLException {
 		if(URI == null)
 			throw new MalformedURLException("No URI specified");
-		else
-			URI = URI.trim();
-
+		
+		URI = URI.trim();
 		if(URI.startsWith("freenet:"))
 			URI = URI.substring("freenet:".length());
 
@@ -264,8 +264,8 @@ public class FreenetURI implements Cloneable {
 		int atchar = URI.indexOf('@');
 		if(atchar == -1)
 			throw new MalformedURLException("There is no @ in that URI! (" + URI + ')');
-		else
-			keyType = URI.substring(0, atchar).toUpperCase().trim().intern();
+
+		keyType = URI.substring(0, atchar).toUpperCase().trim().intern();
 		URI = URI.substring(atchar + 1);
 
 		boolean validKeyType = false;
