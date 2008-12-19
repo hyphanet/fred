@@ -87,7 +87,7 @@ public class FreenetURI implements Cloneable {
 		new String[]{"CHK", "SSK", "KSK", "USK"};
 
 	@Override
-	public int hashCode() {
+	public synchronized int hashCode() {
 		if(hasHashCode)
 			return hashCode;
 		int x = keyType.hashCode();
