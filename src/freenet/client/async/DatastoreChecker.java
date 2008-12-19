@@ -113,6 +113,12 @@ public class DatastoreChecker implements PrioRunnable {
 			for(DatastoreCheckerItem item : results) {
 				if(item.chosenBy == context.bootID) continue;
 				SendableGet getter = item.getter;
+				if(getter == null) {
+					// FIXME is this normal or isn't it? Probably ... if we don't always delete the DCI's ...
+					if(logMINOR) Logger.minor(this, "Ignoring DatastoreCheckerItem because the SendableGet has already been deleted from the database");
+					container.delete(item);
+					continue;
+				}
 				BlockSet blocks = item.blocks;
 				container.activate(getter, 1);
 				boolean dontCache = getter.dontCache();
