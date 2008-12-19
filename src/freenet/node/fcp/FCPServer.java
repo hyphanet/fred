@@ -73,7 +73,7 @@ public class FCPServer implements Runnable {
 	String bindTo;
 	private String allowedHosts;
 	AllowedHosts allowedHostsFullAccess;
-	final WeakHashMap<String, FCPClient> clientsByName;
+	final WeakHashMap<String, FCPClient> rebootClientsByName;
 	final FCPClient globalRebootClient;
 	final FCPClient globalForeverClient;
 	private boolean enablePersistentDownloads;
@@ -104,7 +104,7 @@ public class FCPServer implements Runnable {
 		this.core = core;
 		this.assumeDownloadDDAIsAllowed = assumeDDADownloadAllowed;
 		this.assumeUploadDDAIsAllowed = assumeDDAUploadAllowed;
-		clientsByName = new WeakHashMap<String, FCPClient>();
+		rebootClientsByName = new WeakHashMap<String, FCPClient>();
 		
 		// This one is only used to get the default settings. Individual FCP conns
 		// will make their own.
@@ -503,11 +503,11 @@ public class FCPServer implements Runnable {
 	public FCPClient registerRebootClient(String name, NodeClientCore core, FCPConnectionHandler handler) {
 		FCPClient oldClient;
 		synchronized(this) {
-			oldClient = clientsByName.get(name);
+			oldClient = rebootClientsByName.get(name);
 			if(oldClient == null) {
 				// Create new client
 				FCPClient client = new FCPClient(name, handler, false, null, ClientRequest.PERSIST_REBOOT, null, null);
-				clientsByName.put(name, client);
+				rebootClientsByName.put(name, client);
 				return client;
 			} else {
 				FCPConnectionHandler oldConn = oldClient.getConnection();
@@ -537,7 +537,7 @@ public class FCPServer implements Runnable {
 			assert(container == null);
 		synchronized(this) {
 			String name = client.name;
-			clientsByName.remove(name);
+			rebootClientsByName.remove(name);
 		}
 		} else {
 			persistentRoot.maybeUnregisterClient(client, container);
@@ -900,7 +900,7 @@ public class FCPServer implements Runnable {
 		
 		FCPClient[] clients;
 		synchronized(this) {
-			clients = clientsByName.values().toArray(new FCPClient[clientsByName.size()]);
+			clients = rebootClientsByName.values().toArray(new FCPClient[rebootClientsByName.size()]);
 		}
 		
 		for (FCPClient client : clients) {
