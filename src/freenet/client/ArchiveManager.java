@@ -227,6 +227,7 @@ public class ArchiveManager {
 		// Soft disk space limit = we go over the limit significantly when we
 		// are overloaded.
 		cachedData -= size;
+		if(logMINOR) Logger.minor(this, "removeCachedItem: "+item);
 		item.close();
 	}
 	
@@ -569,6 +570,7 @@ outerZIP:		while(true) {
 			if(oldItem != null) {
 				oldItem.close();
 				cachedData -= oldItem.spaceUsed();
+				if(logMINOR) Logger.minor(this, "Dropping old store element from archive cache: "+oldItem);
 			}
 		}
 	}

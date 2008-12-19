@@ -4,6 +4,7 @@
 package freenet.client;
 
 import freenet.keys.FreenetURI;
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.MultiReaderBucket;
 
@@ -52,6 +53,8 @@ class RealArchiveStoreItem extends ArchiveStoreItem {
 	
 	@Override
 	void innerClose() {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "innerClose(): "+this);
 		bucket.free();
 	}
 
