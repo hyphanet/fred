@@ -22,7 +22,6 @@ public class ArchiveStoreContext {
 
 	private FreenetURI key;
 	private final ArchiveManager.ARCHIVE_TYPE archiveType;
-	private final COMPRESSOR_TYPE compressorType;
 	/** Archive size */
 	private long lastSize = -1;
 	/** Archive hash */
@@ -33,10 +32,9 @@ public class ArchiveStoreContext {
 	 * the inner lock to avoid deadlocks. */
 	private final DoublyLinkedListImpl<ArchiveStoreItem> myItems;
 	
-	ArchiveStoreContext(FreenetURI key, ArchiveManager.ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype) {
+	ArchiveStoreContext(FreenetURI key, ArchiveManager.ARCHIVE_TYPE archiveType) {
 		this.key = key;
 		this.archiveType = archiveType;
-		this.compressorType = ctype;
 		myItems = new DoublyLinkedListImpl<ArchiveStoreItem>();
 	}
 

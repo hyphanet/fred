@@ -175,7 +175,7 @@ public class ArchiveManager {
 		handler = getCached(key);
 		if(handler != null) return handler;
 		if(returnNullIfNotFound) return null;
-		handler = new ArchiveStoreContext(key, archiveType, ctype);
+		handler = new ArchiveStoreContext(key, archiveType);
 		putCached(key, handler);
 		return handler;
 	}
