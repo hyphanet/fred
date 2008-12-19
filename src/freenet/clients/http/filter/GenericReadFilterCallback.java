@@ -77,19 +77,19 @@ public class GenericReadFilterCallback implements FilterCallback {
 	
 	// RFC3986
 	//  unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
-	protected static final String unreserved = "[a-zA-Z0-9\\-\\._~]";
+	protected static final String UNRESERVED = "[a-zA-Z0-9\\-\\._~]";
 	//  pct-encoded   = "%" HEXDIG HEXDIG
-	protected static final String pctEncoded = "%[0-9A-Fa-f][0-9A-Fa-f]";
+	protected static final String PCT_ENCODED = "%[0-9A-Fa-f][0-9A-Fa-f]";
 	//  sub-delims    = "!" / "$" / "&" / "'" / "(" / ")"
 	//                / "*" / "+" / "," / ";" / "="
-	protected static final String subDelims  = "[\\!\\$&'\\(\\)\\*\\+,;=]";
+	protected static final String SUB_DELIMS  = "[\\!\\$&'\\(\\)\\*\\+,;=]";
 	//  pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
-	protected static final String pchar      = "(" + unreserved + "|" + pctEncoded + "|" + subDelims + "|[:@])";
+	protected static final String PCHAR      = "(" + UNRESERVED + "|" + PCT_ENCODED + "|" + SUB_DELIMS + "|[:@])";
 	//  fragment      = *( pchar / "/" / "?" )
-	protected static final String fragment   = "(" + pchar + "|\\/|\\?)*";
+	protected static final String FRAGMENT   = "(" + PCHAR + "|\\/|\\?)*";
 
 	public String processURI(String u, String overrideType, boolean noRelative, boolean inline) throws CommentException {
-		if(u.matches("^#" + fragment + "$")) {
+		if(u.matches("^#" + FRAGMENT + "$")) {
 			// Hack for anchors, see #710
 			return u;
 		}
