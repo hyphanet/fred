@@ -8,6 +8,8 @@ import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.util.Arrays;
 
+import com.db4o.ObjectContainer;
+
 import freenet.crypt.DSAPublicKey;
 import freenet.crypt.SHA256;
 import freenet.crypt.UnsupportedCipherException;
@@ -159,5 +161,10 @@ public class ClientSSK extends ClientKey {
 
 	public ClientKey cloneKey() {
 		return new ClientSSK(this);
+	}
+
+	@Override
+	public void removeFrom(ObjectContainer container) {
+		container.delete(this);
 	}
 }

@@ -178,8 +178,8 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 	}
 
 	public void removeFrom(ObjectContainer container, ClientContext context) {
-		// TODO Auto-generated method stub
-		
+		super.removeFrom(container, context);
+		// rcb is definitely not our responsibility.
 	}
 
 }

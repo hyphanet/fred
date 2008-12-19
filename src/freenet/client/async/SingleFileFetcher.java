@@ -1071,4 +1071,17 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		Logger.minor(this, "ACTIVATING: "+this, new Exception("debug"));
 	}
 	
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		super.removeFrom(container, context);
+		uri.removeFrom(container);
+		if(thisKey != null)
+			thisKey.removeFrom(container);
+		// FIXME what to do about metaStrings ??
+		// FIXME what to do about clientMetadata ??
+		// actx is global to the ClientRequest
+		// ah can be shared by two fetchers ... we can probably arrange for the parent to delete it?
+		decompressors.clear();
+		container.delete(decompressors);
+		container.delete(this);
+	}
 }

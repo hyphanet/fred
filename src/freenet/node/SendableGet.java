@@ -106,5 +106,9 @@ public abstract class SendableGet extends BaseSendableGet {
 	public final boolean isInsert() {
 		return false;
 	}
+
+	public void removeFrom(ObjectContainer container, ClientContext context) {
+		container.delete(this);
+	}
 	
 }
