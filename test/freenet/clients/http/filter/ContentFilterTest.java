@@ -44,8 +44,8 @@ public class ContentFilterTest extends TestCase {
 	private static final String ANCHOR_FALSE_POS2 = "<a href=\"/KSK@test/path/%23.html#2\">"; // yes, this is valid too
 	
 	// @see bug #2451
-	private static final String POUNT_CHARACTER_ENCODING_TEST = "<a href=\"/CHK@DUiGC5D1ZsnFpH07WGkNVDujNlxhtgGxXBKrMT-9Rkw,~GrAWp02o9YylpxL1Fr4fPDozWmebhGv4qUoFlrxnY4,AAIC--8/Testing - [blah] Apostrophe' - gratuitous #1 AND CAPITAL LETTERS!!!!.ogg\" />";
-	private static final String POUNT_CHARACTER_ENCODING_TEST_RESULT = "<a href=\"/CHK@DUiGC5D1ZsnFpH07WGkNVDujNlxhtgGxXBKrMT-9Rkw,~GrAWp02o9YylpxL1Fr4fPDozWmebhGv4qUoFlrxnY4,AAIC--8/Testing%20-%20%5bblah%5d%20Apostrophe%27%20-%20gratuitous%20%231%20AND%20CAPITAL%20LETTERS%21%21%21%21.ogg\" />";
+	private static final String POUNT_CHARACTER_ENCODING_TEST = "<a href=\"/CHK@DUiGC5D1ZsnFpH07WGkNVDujNlxhtgGxXBKrMT-9Rkw,~GrAWp02o9YylpxL1Fr4fPDozWmebhGv4qUoFlrxnY4,AAIC--8/Testing - [blah] Apostrophe' - gratuitous 1 AND CAPITAL LETTERS!!!!.ogg\" />";
+	private static final String POUNT_CHARACTER_ENCODING_TEST_RESULT = "<a href=\"/CHK@DUiGC5D1ZsnFpH07WGkNVDujNlxhtgGxXBKrMT-9Rkw,~GrAWp02o9YylpxL1Fr4fPDozWmebhGv4qUoFlrxnY4,AAIC--8/Testing%20-%20%5bblah%5d%20Apostrophe%27%20-%20gratuitous%201%20AND%20CAPITAL%20LETTERS%21%21%21%21.ogg\" />";
 	// @see bug #2297
 	private static final String PREVENT_FPROXY_ACCESS = "<a href=\""+BASE_URI+"\"/>";
 	private static final String WHITELIST_STATIC_CONTENT = "<a href=\"/static/themes/clean/theme.css\" />";
