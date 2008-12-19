@@ -34,8 +34,8 @@ public class ContentFilterTest extends TestCase {
 	private static final String ANCHOR_TEST = "<a href=\"#test\" />";
 	private static final String ANCHOR_TEST_EMPTY = "<a href=\"#\" />";
 	private static final String ANCHOR_TEST_SPECIAL = "<a href=\"#!$()*+,;=:@ABC0123-._~xyz%3f\" />"; // RFC3986 / RFC 2396
-	// does not work for & and '
-	// private static final String ANCHOR_TEST_SPECIAL = "<a href=\"#!$&'()*+,;=:@ABC0123-._~xyz%3f\" />"; // RFC3986 / RFC 2396
+	private static final String ANCHOR_TEST_SPECIAL2 = "<a href=\"#!$&'()*+,;=:@ABC0123-._~xyz%3f\" />";
+	private static final String ANCHOR_TEST_SPECIAL2R = "<a href=\"#!$&amp;&#39;()*+,;=:@ABC0123-._~xyz%3f\" />"; 
 	
 	// @see bug #2451
 	private static final String POUNT_CHARACTER_ENCODING_TEST = "<a href=\"/CHK@DUiGC5D1ZsnFpH07WGkNVDujNlxhtgGxXBKrMT-9Rkw,~GrAWp02o9YylpxL1Fr4fPDozWmebhGv4qUoFlrxnY4,AAIC--8/Testing - [blah] Apostrophe' - gratuitous #1 AND CAPITAL LETTERS!!!!.ogg\" />";
@@ -60,6 +60,7 @@ public class ContentFilterTest extends TestCase {
 		assertEquals(ANCHOR_TEST, HTMLFilter(ANCHOR_TEST));
 		assertEquals(ANCHOR_TEST_EMPTY, HTMLFilter(ANCHOR_TEST_EMPTY));
 		assertEquals(ANCHOR_TEST_SPECIAL, HTMLFilter(ANCHOR_TEST_SPECIAL));
+		assertEquals(ANCHOR_TEST_SPECIAL2R, HTMLFilter(ANCHOR_TEST_SPECIAL2));
 		
 		assertEquals(POUNT_CHARACTER_ENCODING_TEST_RESULT, HTMLFilter(POUNT_CHARACTER_ENCODING_TEST));
 		
