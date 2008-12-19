@@ -425,6 +425,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 				for(int i=0;i<dataBuckets.length;i++) {
 					// The FECCodec won't set them.
 					// But they should be active.
+					if(dataBlockStatus[i] != dataBuckets[i]) {
+						long theirID = container.ext().getID(dataBlockStatus[i]);
+						long ourID = container.ext().getID(dataBuckets[i]);
+						if(theirID == ourID) {
+							Logger.error(this, "DB4O BUG DETECTED IN DECODED SEGMENT!: our block: "+dataBuckets[i]+" block from decode "+dataBlockStatus[i]+" both have ID "+ourID+" = "+theirID);
+							dataBuckets[i] = (MinimalSplitfileBlock) dataBlockStatus[i];
+						}
+					}
 					if(logMINOR)
 						Logger.minor(this, "Data block "+i+" is "+dataBuckets[i]);
 					if(!container.ext().isStored(dataBuckets[i]))
