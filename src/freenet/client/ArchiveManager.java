@@ -640,4 +640,9 @@ outerZIP:		while(true) {
 		ArchiveHandlerImpl.init(container, context, nodeDBHandle);
 	}
 	
+	public boolean objectCanNew(ObjectContainer container) {
+		Logger.error(this, "Not storing Node in database", new Exception("error"));
+		return false;
+	}
+	
 }
