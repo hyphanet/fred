@@ -954,7 +954,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				returnBucket == null && key instanceof ClientKey)
 			return new SimpleSingleFileFetcher((ClientKey)key, maxRetries, ctx, requester, cb, isEssential, false, l, container, context);
 		if(key instanceof ClientKey)
-			return new SingleFileFetcher(requester, cb, new ClientMetadata(), (ClientKey)key, new ArrayList<String>(uri.listMetaStrings()), uri, 0, ctx, actx, null, null, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal, container, context);
+			return new SingleFileFetcher(requester, cb, null, (ClientKey)key, new ArrayList<String>(uri.listMetaStrings()), uri, 0, ctx, actx, null, null, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal, container, context);
 		else {
 			return uskCreate(requester, cb, (USK)key, new ArrayList<String>(uri.listMetaStrings()), ctx, actx, maxRetries, recursionLevel, dontTellClientGet, l, isEssential, returnBucket, isFinal, container, context);
 		}
@@ -978,7 +978,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						new USKProxyCompletionCallback(usk, cb, requester.persistent());
 					// Want to update the latest known good iff the fetch succeeds.
 					SingleFileFetcher sf = 
-						new SingleFileFetcher(requester, myCB, new ClientMetadata(), usk.getSSK(), metaStrings, 
+						new SingleFileFetcher(requester, myCB, null, usk.getSSK(), metaStrings, 
 								usk.getURI().addMetaStrings(metaStrings), 0, ctx, actx, null, null, maxRetries, recursionLevel, 
 								dontTellClientGet, l, isEssential, returnBucket, isFinal, container, context);
 					return sf;
@@ -1034,7 +1034,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			ClientSSK key = usk.getSSK(l);
 			try {
 				if(l == usk.suggestedEdition) {
-					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, new ClientMetadata(), key, metaStrings, key.getURI().addMetaStrings(metaStrings),
+					SingleFileFetcher sf = new SingleFileFetcher(parent, cb, null, key, metaStrings, key.getURI().addMetaStrings(metaStrings),
 							0, ctx, actx, null, null, maxRetries, recursionLevel+1, dontTellClientGet, token, false, returnBucket, true, container, context);
 					sf.schedule(container, context);
 				} else {
