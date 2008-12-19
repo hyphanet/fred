@@ -238,7 +238,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 			}
 			if(u.getFragment() != null) {
 				sb.append('#');
-				sb.append(u.getFragment());
+				sb.append(u.getRawFragment());
 			}
 			
 			URI uri = new URI(sb.toString());
