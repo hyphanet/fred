@@ -140,6 +140,10 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 		this.splitfileType = metadata.getSplitfileType();
 		ClientCHK[] splitfileDataBlocks = metadata.getSplitfileDataKeys();
 		ClientCHK[] splitfileCheckBlocks = metadata.getSplitfileCheckKeys();
+		if(persistent) {
+			// Clear them here so they don't get deleted and we don't need to clone them.
+			metadata.clearSplitfileKeys();
+		}
 		for(int i=0;i<splitfileDataBlocks.length;i++)
 			if(splitfileDataBlocks[i] == null) throw new MetadataParseException("Null: data block "+i+" of "+splitfileDataBlocks.length);
 		for(int i=0;i<splitfileCheckBlocks.length;i++)

@@ -176,6 +176,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			}
 			// Parse metadata
 			try {
+				removeMetadata(container);
 				metadata = Metadata.construct(data);
 				if(persistent)
 					container.store(this);
@@ -202,6 +203,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			container.activate(ctx, 1);
 			container.activate(rcb, 1);
 		}
+		removeMetadata(container);
+		removeArchiveMetadata(container);
 		synchronized(this) {
 			// So a SingleKeyListener isn't created.
 			finished = true;
@@ -310,17 +313,26 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				// Since metadata is a document, we just replace metadata here
 				if(logMINOR) Logger.minor(this, "Next meta-string: "+name+" length "+name.length()+" for "+this);
 				if(name == null) {
-					metadata = metadata.getDefaultDocument();
-					if(persistent) {
+					if(!persistent) {
+						metadata = metadata.getDefaultDocument();
+					} else {
+						Metadata newMeta = metadata.grabDefaultDocument();
+						metadata.removeFrom(container);
+						metadata = newMeta;
 						container.store(this);
 						container.store(metaStrings);
 					}
 					if(metadata == null)
 						throw new FetchException(FetchException.NOT_ENOUGH_PATH_COMPONENTS, -1, false, null, uri.addMetaStrings(new String[] { "" }));
 				} else {
-					metadata = metadata.getDocument(name);
-					thisKey = thisKey.pushMetaString(name);
-					if(persistent) {
+					if(!persistent) {
+						metadata = metadata.getDocument(name);
+						thisKey = thisKey.pushMetaString(name);
+					} else {
+						Metadata newMeta = metadata.grabDocument(name);
+						metadata.removeFrom(container);
+						metadata = newMeta;
+						thisKey = thisKey.pushMetaString(name);
 						container.store(this);
 						container.store(metaStrings);
 						container.store(thisKey);
@@ -345,7 +357,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					ah = context.archiveManager.makeHandler(thisKey, metadata.getArchiveType(), metadata.getCompressionCodec(),
 							(parent instanceof ClientGetter ? ((ClientGetter)parent).collectingBinaryBlob() : false), persistent);
 				archiveMetadata = metadata;
-				metadata = null;
+				metadata = null; // Copied to archiveMetadata, so do not need to clear it
 				// ah is set. This means we are currently handling an archive.
 				Bucket metadataBucket;
 				metadataBucket = ah.getMetadata(actx, null, recursionLevel+1, true, context.archiveManager);
@@ -493,7 +505,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
 					}, container, context);
-					metadata = null;
+					removeMetadata(container);
 					// Will call back into this function when it has been fetched.
 					return;
 				}
@@ -503,6 +515,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				metadata.setSimpleRedirect();
 				final SingleFileFetcher f = new SingleFileFetcher(this, metadata, new MultiLevelMetadataCallback(), ctx, container, context);
 				// Clear our own metadata so it can be garbage collected, it will be replaced by whatever is fetched.
+				// The new fetcher has our metadata so we don't need to removeMetadata().
 				this.metadata = null;
 				if(persistent) container.store(this);
 				if(persistent) container.store(f);
@@ -576,7 +589,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				}
 				f.schedule(container, context);
 				// All done! No longer our problem!
-				metadata = null; // Get rid just in case we stick around somehow.
+				removeMetadata(container);
 				return;
 			} else if(metadata.isSplitfile()) {
 				if(logMINOR) Logger.minor(this, "Fetching splitfile");
@@ -604,7 +617,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						!ctx.allowedMIMETypes.contains(mimeType)) {
 					// Just in case...
 					long len = metadata.uncompressedDataLength();
-					metadata = null;
+					removeMetadata(container);
 					throw new FetchException(FetchException.WRONG_MIME_TYPE, len, false, clientMetadata.getMIMEType());
 				}
 				
@@ -634,7 +647,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							rcb.onFailure(new FetchException(FetchException.TOO_MANY_PATH_COMPONENTS, metadata.uncompressedDataLength(), (rcb == parent), clientMetadata.getMIMEType(), tryURI), this, container, context);
 						}
 						// Just in case...
-						metadata = null;
+						removeMetadata(container);
 						return;
 					}
 				} else
@@ -648,7 +661,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						(len > ctx.maxTempLength)) {
 					// Just in case...
 					boolean compressed = metadata.isCompressed();
-					metadata = null;
+					removeMetadata(container);
 					throw new FetchException(FetchException.TOO_BIG, len, isFinal && decompressors.size() <= (compressed ? 1 : 0), clientMetadata.getMIMEType());
 				}
 				
@@ -672,8 +685,11 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(persistent) container.deactivate(sf, 1);
 				rcb.onBlockSetFinished(this, container, context);
 				// Clear our own metadata, we won't need it any more.
+				// Note that SplitFileFetcher() above will have used the keys from the metadata,
+				// and will have removed them from it so they don't get removed here.
+				// Lack of garbage collection in db4o is a PITA!
 				// For multi-level metadata etc see above.
-				metadata = null; 
+				removeMetadata(container);
 				
 				// SplitFile will now run.
 				// Then it will return data to rcd.
@@ -682,6 +698,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				return;
 			} else {
 				Logger.error(this, "Don't know what to do with metadata: "+metadata);
+				removeMetadata(container);
 				throw new FetchException(FetchException.UNKNOWN_METADATA);
 			}
 		}
@@ -875,6 +892,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			}
 			try {
 				Metadata meta = Metadata.construct(result.asBucket());
+				removeMetadata(container);
 				synchronized(SingleFileFetcher.this) {
 					metadata = meta;
 				}
@@ -1085,7 +1103,24 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		clientMetadata.removeFrom(container);
 		// actx is global to the ClientRequest, not our problem
 		decompressors.clear();
+		removeMetadata(container);
+		removeArchiveMetadata(container);
 		container.delete(decompressors);
 		container.delete(this);
 	}
+	
+	private void removeMetadata(ObjectContainer container) {
+		if(metadata == null) return;
+		container.activate(metadata, 1);
+		metadata.removeFrom(container);
+		metadata = null;
+	}
+
+	private void removeArchiveMetadata(ObjectContainer container) {
+		if(archiveMetadata == null) return;
+		container.activate(archiveMetadata, 1);
+		archiveMetadata.removeFrom(container);
+		archiveMetadata = null;
+	}
+
 }

@@ -16,6 +16,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+
+import com.db4o.ObjectContainer;
+
 import freenet.keys.BaseClientKey;
 import freenet.keys.ClientCHK;
 import freenet.keys.FreenetURI;
@@ -653,6 +656,15 @@ public class Metadata implements Cloneable {
 	public Metadata getDocument(String name) {
 		return (Metadata) manifestEntries.get(name);
 	}
+	
+	/**
+	 * Return and remove a specific document. Used in persistent requests
+	 * so that when removeFrom() is called, the default document won't be 
+	 * removed, since it is being processed.
+	 */
+	public Metadata grabDocument(String name) {
+		return (Metadata) manifestEntries.remove(name);
+	}
 
 	/**
 	 * The default document is the one which has an empty name.
@@ -660,6 +672,15 @@ public class Metadata implements Cloneable {
 	 */
 	public Metadata getDefaultDocument() throws MetadataParseException {
 		return getDocument("");
+	}
+	
+	/**
+	 * Return and remove the default document. Used in persistent requests
+	 * so that when removeFrom() is called, the default document won't be 
+	 * removed, since it is being processed.
+	 */
+	public Metadata grabDefaultDocument() {
+		return grabDocument("");
 	}
 	
 	/**
@@ -938,5 +959,43 @@ public class Metadata implements Cloneable {
 	public String getMIMEType() {
 		if(clientMetadata == null) return null;
 		return clientMetadata.getMIMEType();
+	}
+
+	public void removeFrom(ObjectContainer container) {
+		if(resolvedURI != null) {
+			container.activate(resolvedURI, 5);
+			resolvedURI.removeFrom(container);
+		}
+		if(splitfileDataKeys != null) {
+			for(ClientCHK key : splitfileDataKeys)
+				if(key != null) {
+					container.activate(key, 5);
+					key.removeFrom(container);
+				}
+		}
+		if(splitfileCheckKeys != null) {
+			for(ClientCHK key : splitfileCheckKeys)
+				if(key != null) {
+					container.activate(key, 5);
+					key.removeFrom(container);
+				}
+		}
+		if(manifestEntries != null) {
+			for(Object m : manifestEntries.values()) {
+				Metadata meta = (Metadata) m;
+				container.activate(meta, 1);
+				meta.removeFrom(container);
+			}
+		}
+		if(clientMetadata != null) {
+			container.activate(clientMetadata, 1);
+			clientMetadata.removeFrom(container);
+		}
+		container.delete(this);
+	}
+
+	public void clearSplitfileKeys() {
+		splitfileDataKeys = null;
+		splitfileCheckKeys = null;
 	}
 }
