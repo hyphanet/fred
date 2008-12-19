@@ -4,6 +4,7 @@
 package freenet.client;
 
 import freenet.keys.FreenetURI;
+import freenet.support.DoublyLinkedList;
 import freenet.support.DoublyLinkedListImpl;
 import freenet.support.Logger;
 import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
@@ -30,13 +31,13 @@ public class ArchiveStoreContext {
 	 * Note that we never ever hold this and then take another lock! In particular
 	 * we must not take the ArchiveManager lock while holding this lock. It must be
 	 * the inner lock to avoid deadlocks. */
-	private final DoublyLinkedListImpl myItems;
+	private final DoublyLinkedListImpl<ArchiveStoreItem> myItems;
 	
 	ArchiveStoreContext(FreenetURI key, ArchiveManager.ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype) {
 		this.key = key;
 		this.archiveType = archiveType;
 		this.compressorType = ctype;
-		myItems = new DoublyLinkedListImpl();
+		myItems = new DoublyLinkedListImpl<ArchiveStoreItem>();
 	}
 
 	/** Returns the size of the archive last time we fetched it, or -1 */
