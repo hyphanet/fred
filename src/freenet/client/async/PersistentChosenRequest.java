@@ -133,6 +133,10 @@ public class PersistentChosenRequest {
 	}
 
 	private void finish(ObjectContainer container, ClientContext context, boolean dumping, boolean alreadyActive) {
+		if(container.ext().isStored(request)) {
+			if(logMINOR) Logger.minor(this, "Request apparently already deleted: "+request+" on "+this);
+			return;
+		}
 		if((!alreadyActive) && container.ext().isActive(request))
 			Logger.error(this, "ALREADY ACTIVATED: "+request, new Exception("debug"));
 		if(!alreadyActive)
