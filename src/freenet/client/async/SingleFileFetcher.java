@@ -86,6 +86,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		if(metaStrings instanceof ArrayList && !persistent)
 			this.metaStrings = (ArrayList<String>)metaStrings;
 		else
+			// Always copy if persistent
 			this.metaStrings = new ArrayList<String>(metaStrings);
 		this.addedMetaStrings = addedMetaStrings;
 		this.clientMetadata = (metadata != null ? (ClientMetadata) metadata.clone() : new ClientMetadata());
