@@ -88,7 +88,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		else
 			this.metaStrings = new ArrayList<String>(metaStrings);
 		this.addedMetaStrings = addedMetaStrings;
-		this.clientMetadata = metadata;
+		this.clientMetadata = (metadata != null ? (ClientMetadata) metadata.clone() : new ClientMetadata());
 		thisKey = key.getURI();
 		this.uri = origURI;
 		this.actx = actx;
@@ -1079,7 +1079,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		ah.removeFrom(container);
 		metaStrings.clear();
 		container.delete(metaStrings);
-		// FIXME what to do about clientMetadata ??
+		clientMetadata.removeFrom(container);
 		// actx is global to the ClientRequest, not our problem
 		decompressors.clear();
 		container.delete(decompressors);
