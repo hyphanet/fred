@@ -345,6 +345,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					ah = context.archiveManager.makeHandler(thisKey, metadata.getArchiveType(), metadata.getCompressionCodec(),
 							(parent instanceof ClientGetter ? ((ClientGetter)parent).collectingBinaryBlob() : false), persistent);
 				archiveMetadata = metadata;
+				metadata = null;
 				// ah is set. This means we are currently handling an archive.
 				Bucket metadataBucket;
 				metadataBucket = ah.getMetadata(actx, null, recursionLevel+1, true, context.archiveManager);
@@ -400,7 +401,6 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						}
 					}, container, context); // will result in this function being called again
 					if(persistent) container.store(this);
-					metadata = null;
 					return;
 				}
 				continue;
