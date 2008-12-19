@@ -94,6 +94,9 @@ public class GenericReadFilterCallback implements FilterCallback {
 			return u;
 		}
 		
+		// evil hack, see #2451 and r24565,r24566
+		u = u.replaceAll(" #", " %23");
+		
 		URI uri;
 		URI resolved;
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
