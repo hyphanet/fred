@@ -19,14 +19,14 @@ import freenet.support.Logger;
  **/
 public class SimpleEventProducer implements ClientEventProducer {
 
-    private Vector listeners;
+    private Vector<ClientEventListener> listeners;
 
     /**
      * Create a new SimpleEventProducer
      *
      **/
     public SimpleEventProducer() {
-	listeners = new Vector();
+	listeners = new Vector<ClientEventListener>();
     }
     
     /** Create a new SimpleEventProducer with the given listeners. */
