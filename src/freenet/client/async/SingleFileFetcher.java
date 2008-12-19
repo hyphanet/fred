@@ -400,6 +400,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						}
 					}, container, context); // will result in this function being called again
 					if(persistent) container.store(this);
+					metadata = null;
 					return;
 				}
 				continue;
@@ -492,6 +493,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 								container.deactivate(SingleFileFetcher.this, 1);
 						}
 					}, container, context);
+					metadata = null;
 					// Will call back into this function when it has been fetched.
 					return;
 				}
