@@ -302,10 +302,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 
 	@Override
 	public Object getClient() {
-		if (segment.parentFetcher.parent != null)
-			return segment.parentFetcher.parent.getClient();
-		else
-			return null;
+		return segment.parentFetcher.parent.getClient();
 	}
 
 	@Override
@@ -315,10 +312,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 
 	@Override
 	public short getPriorityClass() {
-		if (segment.parentFetcher.parent != null)
-			return segment.parentFetcher.parent.priorityClass;
-		else
-			return -1;
+		return segment.parentFetcher.parent.priorityClass;
 	}
 
 	@Override

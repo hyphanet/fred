@@ -33,7 +33,7 @@ public class SplitFileFetcher implements ClientGetState {
 	final ArchiveContext archiveContext;
 	final LinkedList decompressors;
 	final ClientMetadata clientMetadata;
-	ClientRequester parent;
+	final ClientRequester parent;
 	final GetCompletionCallback cb;
 	final int recursionLevel;
 	/** The splitfile type. See the SPLITFILE_ constants on Metadata. */
@@ -295,7 +295,6 @@ public class SplitFileFetcher implements ClientGetState {
 	public void cancel() {
 		for(int i=0;i<segments.length;i++)
 			segments[i].cancel();
-		parent = null;
 	}
 
 	public long getToken() {
@@ -303,9 +302,6 @@ public class SplitFileFetcher implements ClientGetState {
 	}
 
 	public void scheduleOffThread() {
-		if (parent == null)
-			return;
-		
 		fetchContext.slowSerialExecutor[parent.priorityClass].execute(new Runnable() {
 			public void run() {
 				schedule();
