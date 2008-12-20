@@ -158,8 +158,10 @@ public class FreenetURI implements Cloneable {
 	public FreenetURI(FreenetURI uri) {
 		keyType = uri.keyType;
 		docName = uri.docName;
-		metaStr = new String[uri.metaStr.length];
-		System.arraycopy(uri.metaStr, 0, metaStr, 0, metaStr.length);
+		if(uri.metaStr != null) {
+			metaStr = new String[uri.metaStr.length];
+			System.arraycopy(uri.metaStr, 0, metaStr, 0, metaStr.length);
+		} else metaStr = null;
 		if(uri.routingKey != null) {
 			routingKey = new byte[uri.routingKey.length];
 			System.arraycopy(uri.routingKey, 0, routingKey, 0, routingKey.length);
