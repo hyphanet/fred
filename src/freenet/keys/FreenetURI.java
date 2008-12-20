@@ -539,9 +539,13 @@ public class FreenetURI implements Cloneable {
 			suggestedEdition);
 	}
 
+	protected String toStringCache;
+
 	@Override
 	public String toString() {
-		return toString(false, false);
+		if (toStringCache == null)
+			toStringCache = toString(false, false);
+		return toStringCache;
 	}
 
 	// FIXME: remove the typo in the function name.
