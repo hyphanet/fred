@@ -299,7 +299,15 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			container.activate(rcb, 1);
 			container.activate(returnBucket, 5);
 		}
-		if(uri == null) throw new NullPointerException(); // paranoia
+		if(uri == null) {
+			if(container != null) {
+				if(container.ext().isActive(this))
+					throw new NullPointerException("SFI "+this+" is active and uri is null!");
+				else
+					throw new NullPointerException("SFI "+this+" is not active!");
+			} else
+				throw new NullPointerException("uri = null on transient SFI?? "+this);
+		}
 		synchronized(this) {
 			if(cancelled)
 				return;
@@ -378,6 +386,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 						public void gotBucket(Bucket data, ObjectContainer container, ClientContext context) {
 							if(persistent)
 								container.activate(SingleFileFetcher.this, 1);
+							if(logMINOR) Logger.minor(this, "gotBucket on "+SingleFileFetcher.this+" persistent="+persistent);
 							try {
 								metadata = Metadata.construct(data);
 								wrapHandleMetadata(true, container, context);
