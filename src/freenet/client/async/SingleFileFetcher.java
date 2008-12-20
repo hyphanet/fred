@@ -92,7 +92,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.clientMetadata = (metadata != null ? (ClientMetadata) metadata.clone() : new ClientMetadata());
 		thisKey = key.getURI();
 		if(origURI == null) throw new NullPointerException();
-		this.uri = origURI;
+		this.uri = persistent ? origURI.clone() : origURI;
 		this.actx = actx;
 		this.recursionLevel = recursionLevel + 1;
 		if(recursionLevel > ctx.maxRecursionLevel)
