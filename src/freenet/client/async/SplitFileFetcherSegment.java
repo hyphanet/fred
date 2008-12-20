@@ -925,7 +925,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(persistent)
 					b.removeFrom(container);
 				dataBuckets[i] = null;
-				if(persistent)
+				if(persistent && dataKeys[i] != null)
 					dataKeys[i].removeFrom(container);
 				dataKeys[i] = null;
 			}
@@ -940,7 +940,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 				if(persistent)
 					b.removeFrom(container);
 				checkBuckets[i] = null;
-				if(persistent)
+				if(persistent && checkKeys[i] != null)
 					checkKeys[i].removeFrom(container);
 				checkKeys[i] = null;
 			}
