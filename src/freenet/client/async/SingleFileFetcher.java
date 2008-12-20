@@ -129,7 +129,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		// going to fetch is!
 		this.decompressors = new LinkedList<COMPRESSOR_TYPE>(fetcher.decompressors);
 		if(fetcher.uri == null) throw new NullPointerException();
-		this.uri = fetcher.uri;
+		this.uri = persistent ? fetcher.uri.clone() : fetcher.uri;
 	}
 
 	// Process the completed data. May result in us going to a
@@ -1105,6 +1105,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	}
 	
 	public void removeFrom(ObjectContainer container, ClientContext context) {
+		if(logMINOR) Logger.minor(this, "removeFrom() on "+this);
 		super.removeFrom(container, context);
 		uri.removeFrom(container);
 		if(thisKey != null)
@@ -1123,6 +1124,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	
 	private void removeMetadata(ObjectContainer container) {
 		if(!persistent) return;
+		if(logMINOR) Logger.minor(this, "removeMetadata() on "+this);
 		if(metadata == null) return;
 		container.activate(metadata, 1);
 		metadata.removeFrom(container);
@@ -1131,6 +1133,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 
 	private void removeArchiveMetadata(ObjectContainer container) {
 		if(!persistent) return;
+		if(logMINOR) Logger.minor(this, "removeArchiveMetadata() on "+this);
 		if(archiveMetadata == null) return;
 		container.activate(archiveMetadata, 1);
 		archiveMetadata.removeFrom(container);
