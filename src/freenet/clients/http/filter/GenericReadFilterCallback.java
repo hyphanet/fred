@@ -111,7 +111,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 			if(logMINOR) Logger.minor(this, "Resolved: "+resolved);
 		} catch (URISyntaxException e1) {
 			if(logMINOR) Logger.minor(this, "Failed to parse URI: "+e1);
-			throw new CommentException(l10n("couldNotParseURIWithError", "error", e1.getLocalizedMessage()));
+			throw new CommentException(l10n("couldNotParseURIWithError", "error", e1.getMessage()));
 		}
 		String path = uri.getPath();
 		
@@ -163,7 +163,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 				// Not a FreenetURI
 				if(logMINOR) Logger.minor(this, "Malformed URL (a): "+e, e);
 				if(e.getMessage() != null) {
-					reason = l10n("malformedAbsoluteURL", "error", e.getLocalizedMessage());
+					reason = l10n("malformedAbsoluteURL", "error", e.getMessage());
 				} else {
 					reason = l10n("couldNotParseAbsoluteFreenetURI");
 				}
@@ -188,7 +188,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 			} catch (MalformedURLException e) {
 				if(logMINOR) Logger.minor(this, "Malformed URL (b): "+e, e);
 				if(e.getMessage() != null) {
-					reason = l10n("malformedRelativeURL", "error", e.getLocalizedMessage());
+					reason = l10n("malformedRelativeURL", "error", e.getMessage());
 				} else {
 					reason = l10n("couldNotParseRelativeFreenetURI");
 				}
