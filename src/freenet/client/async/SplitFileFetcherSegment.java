@@ -124,7 +124,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	}
 
 	public synchronized boolean isFinished() {
-		return finished || parentFetcher.parent.isCancelled();
+		return finished || parentFetcher.parent == null || parentFetcher.parent.isCancelled();
 	}
 
 	public synchronized boolean isFinishing() {
@@ -171,7 +171,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		boolean decodeNow = false;
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Fetched block "+blockNo+" on "+seg+" data="+dataBuckets.length+" check="+checkBuckets.length);
-		if(parentFetcher.parent instanceof ClientGetter)
+		if (parentFetcher.parent != null && parentFetcher.parent instanceof ClientGetter)
 			((ClientGetter)parentFetcher.parent).addKeyToBinaryBlob(block);
 		// No need to unregister key, because it will be cleared in tripPendingKey().
 		boolean dontNotify;
@@ -354,14 +354,14 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 	}
 
 	boolean isCollectingBinaryBlob() {
-		if(parentFetcher.parent instanceof ClientGetter) {
+		if (parentFetcher.parent != null && parentFetcher.parent instanceof ClientGetter) {
 			ClientGetter getter = (ClientGetter) (parentFetcher.parent);
 			return getter.collectingBinaryBlob();
 		} else return false;
 	}
 	
 	private void maybeAddToBinaryBlob(Bucket data, int i, boolean check) throws FetchException {
-		if(parentFetcher.parent instanceof ClientGetter) {
+		if (parentFetcher.parent != null && parentFetcher.parent instanceof ClientGetter) {
 			ClientGetter getter = (ClientGetter) (parentFetcher.parent);
 			if(getter.collectingBinaryBlob()) {
 				try {
@@ -410,9 +410,11 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			// :(
 			if(e.isFatal()) {
 				fatallyFailedBlocks++;
+				if (parentFetcher.parent != null)
 				parentFetcher.parent.fatallyFailedBlock();
 			} else {
 				failedBlocks++;
+				if (parentFetcher.parent != null)
 				parentFetcher.parent.failedBlock();
 			}
 			// Once it is no longer possible to have a successful fetch, fail...
@@ -541,7 +543,8 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			synchronized(this) {
 				scheduled = true;
 			}
-			parentFetcher.parent.notifyClients();
+			if (parentFetcher.parent != null)
+				parentFetcher.parent.notifyClients();
 			if(logMINOR)
 				Logger.minor(this, "scheduling "+seg+" : "+seg.blockNums);
 		} catch (Throwable t) {
