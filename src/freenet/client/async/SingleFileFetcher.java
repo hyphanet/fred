@@ -91,6 +91,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		this.addedMetaStrings = addedMetaStrings;
 		this.clientMetadata = (metadata != null ? (ClientMetadata) metadata.clone() : new ClientMetadata());
 		thisKey = key.getURI();
+		if(origURI == null) throw new NullPointerException();
 		this.uri = origURI;
 		this.actx = actx;
 		this.recursionLevel = recursionLevel + 1;
@@ -127,6 +128,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		// is compressed, that **doesn't** mean that the data we are eventually 
 		// going to fetch is!
 		this.decompressors = new LinkedList<COMPRESSOR_TYPE>(fetcher.decompressors);
+		if(fetcher.uri == null) throw new NullPointerException();
 		this.uri = fetcher.uri;
 	}
 
@@ -297,6 +299,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			container.activate(rcb, 1);
 			container.activate(returnBucket, 5);
 		}
+		if(uri == null) throw new NullPointerException(); // paranoia
 		synchronized(this) {
 			if(cancelled)
 				return;
