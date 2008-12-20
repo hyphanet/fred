@@ -99,7 +99,15 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 	 */
 	@Override
 	public Object[] allKeys() {
-		return segment.getKeyNumbersAtRetryLevel(retryCount);
+		// this is not enough for unregistering
+		// return segment.getKeyNumbersAtRetryLevel(retryCount);
+
+		int keyCount = segment.dataKeys.length + segment.checkKeys.length;
+		Object[] ret = new Object[keyCount];
+		for (int i = 0; i < keyCount; i++)
+			ret[i] = i;
+
+		return ret;
 	}
 	
 	/**
