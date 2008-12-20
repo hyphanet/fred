@@ -227,7 +227,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 	}
 
 	public ArchiveHandler cloneHandler() {
-		return new ArchiveHandlerImpl(key.cloneKey(), archiveType, compressorType, forceRefetchArchive);
+		return new ArchiveHandlerImpl(key.clone(), archiveType, compressorType, forceRefetchArchive);
 	}
 
 	public void removeFrom(ObjectContainer container) {

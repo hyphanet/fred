@@ -151,7 +151,7 @@ public class FreenetURI implements Cloneable {
 	}
 
 	@Override
-	public final Object clone() {
+	public final FreenetURI clone() {
 		return new FreenetURI(this);
 	}
 
@@ -889,9 +889,5 @@ public class FreenetURI implements Cloneable {
 		long edition = Long.valueOf(docName.substring(offset + 1, docName.length()));
 
 		return new FreenetURI("USK", siteName, metaStr, routingKey, cryptoKey, extra, edition);
-	}
-
-	public FreenetURI cloneKey() {
-		return new FreenetURI(this);
 	}
 }

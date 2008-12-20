@@ -190,7 +190,7 @@ public class ArchiveManager {
 	 * @return An archive handler. 
 	 */
 	public ArchiveHandler makeHandler(FreenetURI key, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE ctype, boolean forceRefetch, boolean persistent) {
-		return new ArchiveHandlerImpl(persistent ? key.cloneKey() : key, archiveType, ctype, forceRefetch);
+		return new ArchiveHandlerImpl(persistent ? key.clone() : key, archiveType, ctype, forceRefetch);
 	}
 
 	/**
