@@ -5,7 +5,6 @@ package freenet.client.async;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.ref.WeakReference;
 import java.util.LinkedList;
 
 import freenet.client.ArchiveContext;
@@ -34,7 +33,7 @@ public class SplitFileFetcher implements ClientGetState {
 	final ArchiveContext archiveContext;
 	final LinkedList decompressors;
 	final ClientMetadata clientMetadata;
-	final WeakReference<ClientRequester> parent;
+	final ClientRequester parent;
 	final GetCompletionCallback cb;
 	final int recursionLevel;
 	/** The splitfile type. See the SPLITFILE_ constants on Metadata. */
@@ -69,7 +68,7 @@ public class SplitFileFetcher implements ClientGetState {
 		this.clientMetadata = clientMetadata;
 		this.cb = rcb;
 		this.recursionLevel = recursionLevel + 1;
-		this.parent = new WeakReference<ClientRequester>(parent2);
+		this.parent = parent2;
 		if(parent2.isCancelled())
 			throw new FetchException(FetchException.CANCELLED);
 		overrideLength = metadata.dataLength();
@@ -167,9 +166,8 @@ public class SplitFileFetcher implements ClientGetState {
 				throw new FetchException(FetchException.INVALID_METADATA, "Unable to allocate all check blocks to segments - buggy or malicious inserter");
 		}
 		this.token = token2;
-				
-		parent2.addBlocks(splitfileDataBlocks.length + splitfileCheckBlocks.length);
-		parent2.addMustSucceedBlocks(splitfileDataBlocks.length);
+		parent.addBlocks(splitfileDataBlocks.length + splitfileCheckBlocks.length);
+		parent.addMustSucceedBlocks(splitfileDataBlocks.length);
 	}
 
 	/** Return the final status of the fetch. Throws an exception, or returns a 
@@ -304,11 +302,7 @@ public class SplitFileFetcher implements ClientGetState {
 	}
 
 	public void scheduleOffThread() {
-		ClientRequester p = parent.get();
-		if (p == null)
-			return;
-
-		fetchContext.slowSerialExecutor[p.priorityClass].execute(new Runnable() {
+		fetchContext.slowSerialExecutor[parent.priorityClass].execute(new Runnable() {
 			public void run() {
 				schedule();
 			}
