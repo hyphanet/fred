@@ -1110,6 +1110,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	}
 	
 	private void removeMetadata(ObjectContainer container) {
+		if(!persistent) return;
 		if(metadata == null) return;
 		container.activate(metadata, 1);
 		metadata.removeFrom(container);
@@ -1117,6 +1118,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 	}
 
 	private void removeArchiveMetadata(ObjectContainer container) {
+		if(!persistent) return;
 		if(archiveMetadata == null) return;
 		container.activate(archiveMetadata, 1);
 		archiveMetadata.removeFrom(container);
