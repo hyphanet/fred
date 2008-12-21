@@ -109,10 +109,84 @@ public class StringValidityChecker {
 	
 	public static boolean containsNoLinebreaks(String text) {
 		for(Character c : text.toCharArray()) {
-			if(Character.getType(c) == Character.LINE_SEPARATOR)
+			if(Character.getType(c) == Character.LINE_SEPARATOR
+			   || Character.getType(c) == Character.PARAGRAPH_SEPARATOR
+			   || c == '\n' || c == '\r')
 				return false;
 		}
 		
 		return true;
+	}
+
+	/**
+	 * Check for any values in the string that are not valid Unicode
+	 * characters.
+	 */
+	public static boolean containsNoInvalidCharacters(String text) {
+		for (int i = 0; i < text.length(); ) {
+			int c = text.codePointAt(i);
+			i += Character.charCount(c);
+
+			if ((c & 0xFFFE) == 0xFFFE
+				|| Character.getType(c) == Character.SURROGATE)
+				return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Check for any control characters (including tab, LF, and CR) in
+	 * the string.
+	 */
+	public static boolean containsNoControlCharacters(String text) {
+		for(Character c : text.toCharArray()) {
+			if(Character.getType(c) == Character.CONTROL)
+				return false;
+		}
+
+		return true;
+	}
+
+	/**
+	 * Check for any unpaired directional or annotation characters in
+	 * the string, or any nested annotations.
+	 */
+	public static boolean containsNoInvalidFormatting(String text) {
+		int dirCount = 0;
+		boolean inAnnotatedText = false;
+		boolean inAnnotation = false;
+
+		for (Character c : text.toCharArray()) {
+			if (c == 0x202A			// LEFT-TO-RIGHT EMBEDDING
+				|| c == 0x202B		// RIGHT-TO-LEFT EMBEDDING
+				|| c == 0x202D		// LEFT-TO-RIGHT OVERRIDE
+				|| c == 0x202E) {	// RIGHT-TO-LEFT OVERRIDE
+				dirCount++;
+			}
+			else if (c == 0x202C) {	// POP DIRECTIONAL FORMATTING
+				dirCount--;
+				if (dirCount < 0)
+					return false;
+			}
+			else if (c == 0xFFF9) {	// INTERLINEAR ANNOTATION ANCHOR
+				if (inAnnotatedText || inAnnotation)
+					return false;
+				inAnnotatedText = true;
+			}
+			else if (c == 0xFFFA) {	// INTERLINEAR ANNOTATION SEPARATOR
+				if (!inAnnotatedText)
+					return false;
+				inAnnotatedText = false;
+				inAnnotation = true;
+			}
+			else if (c == 0xFFFB) { // INTERLINEAR ANNOTATION TERMINATOR
+				if (!inAnnotation)
+					return false;
+				inAnnotation = false;
+			}
+		}
+
+		return (dirCount == 0 && !inAnnotatedText && !inAnnotation);
 	}
 }
