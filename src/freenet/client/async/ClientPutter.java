@@ -36,6 +36,7 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 	 * Will be progressively cleared during startup. */
 	private SimpleFieldSet oldProgress;
 
+	/* FIXME: Does the ClientPutter do data.close() after the bucket is not needed anymore? Comment in JavaDoc please. */
 	/**
 	 * @param client The object to call back when we complete, or don't.
 	 * @param data
