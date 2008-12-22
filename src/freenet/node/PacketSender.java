@@ -29,6 +29,9 @@ import freenet.support.io.NativeThread;
  *         Thread that sends a packet whenever: - A packet needs to be resent immediately -
  *         Acknowledgments or resend requests need to be sent urgently.
  */
+// j16sdiz (22-Dec-2008):
+// FIXME this is the only class implements Ticker, everbody is using this as 
+// a generic task scheduler. Either rename this class, or create another tricker for non-Packet tasks
 public class PacketSender implements Runnable, Ticker {
 
 	private static boolean logMINOR;
