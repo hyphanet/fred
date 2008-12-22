@@ -109,7 +109,7 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 		final ProxyCallback proxyCallback = new ProxyCallback();
 		
 		if(Logger.shouldLog(Logger.MINOR, ArchiveHandlerImpl.class))
-			Logger.minor(ArchiveHandlerImpl.class, "Scheduling off-thread extraction: "+tag.data+" for "+tag.handler.key+" element "+tag.element+" for "+tag.callback);
+			Logger.minor(ArchiveHandlerImpl.class, "Scheduling off-thread extraction: "+tag.data+" for "+tag.handler.key+" element "+tag.element+" for "+tag.callback, new Exception("debug"));
 		
 		context.mainExecutor.execute(new Runnable() {
 
@@ -142,13 +142,13 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 						public void run(ObjectContainer container, ClientContext context) {
 							if(logMINOR)
 								Logger.minor(this, "Calling callback for "+tag.data+" for "+tag.handler.key+" element "+tag.element+" for "+tag.callback);
-							container.delete(tag);
 							container.activate(tag.callback, 1);
 							if(proxyCallback.data == null)
 								tag.callback.notInArchive(container, context);
 							else
 								tag.callback.gotBucket(data, container, context);
 							container.deactivate(tag.callback, 1);
+							container.delete(tag);
 						}
 						
 					}, NativeThread.NORM_PRIORITY, false);
@@ -158,9 +158,9 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 					context.jobRunner.queue(new DBJob() {
 
 						public void run(ObjectContainer container, ClientContext context) {
-							container.delete(tag);
 							container.activate(tag.callback, 1);
 							tag.callback.onFailed(e, container, context);
+							container.delete(tag);
 						}
 						
 					}, NativeThread.NORM_PRIORITY, false);
@@ -170,9 +170,9 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 					context.jobRunner.queue(new DBJob() {
 
 						public void run(ObjectContainer container, ClientContext context) {
-							container.delete(tag);
 							container.activate(tag.callback, 1);
 							tag.callback.onFailed(e, container, context);
+							container.delete(tag);
 						}
 						
 					}, NativeThread.NORM_PRIORITY, false);
