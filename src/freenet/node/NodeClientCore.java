@@ -548,11 +548,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 				ArchiveManager.init(container, context, context.nodeDBHandle);
 			}
 			
-		}, NativeThread.NORM_PRIORITY, false);
+		}, NativeThread.MAX_PRIORITY, false);
 		persister.start();
 		
 		storeChecker.start(node.executor, "Datastore checker");
-		clientDatabaseExecutor.start(node.executor, "Client database access thread");
 		if(fcpServer != null)
 			fcpServer.maybeStart();
 		if(tmci != null)
@@ -584,6 +583,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		if(startupDatabaseJobs != null &&
 				startupDatabaseJobs.length > 0)
 		queue(startupJobRunner, NativeThread.HIGH_PRIORITY, false);
+		clientDatabaseExecutor.start(node.executor, "Client database access thread");
 	}
 	
 	private int startupDatabaseJobsDone = 0;
