@@ -127,7 +127,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				
 				MultiValueTable<String, String> responseHeaders = new MultiValueTable<String, String>();
-				responseHeaders.put("Location", "/files/?key="+insertURI.toACIIString());
+				responseHeaders.put("Location", "/files/?key="+insertURI.toASCIIString());
 				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
 				return;
 			}			
@@ -1335,7 +1335,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode text = new HTMLNode("div");
 			L10n.addL10nSubstitution(text, "QueueToadlet.downloadSucceeded",
 					new String[] { "link", "/link", "origlink", "/origlink", "filename", "size" },
-					new String[] { "<a href=\"/queue/"+uri.toACIIString()+"\">", "</a>", "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size) } );
+					new String[] { "<a href=\"/queue/"+uri.toASCIIString()+"\">", "</a>", "<a href=\"/"+uri.toASCIIString()+"\">", "</a>", name, SizeUtil.formatSize(size) } );
 			UserAlert alert = 
 			new SimpleHTMLUserAlert(true, title, title, text, UserAlert.MINOR) {
 				@Override
@@ -1369,7 +1369,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode text = new HTMLNode("div");
 			L10n.addL10nSubstitution(text, "QueueToadlet.uploadSucceeded",
 					new String[] { "link", "/link", "filename", "size" },
-					new String[] { "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size) } );
+					new String[] { "<a href=\"/"+uri.toASCIIString()+"\">", "</a>", name, SizeUtil.formatSize(size) } );
 			UserAlert alert = 
 			new SimpleHTMLUserAlert(true, title, title, text, UserAlert.MINOR) {
 				@Override
@@ -1400,7 +1400,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode text = new HTMLNode("div");
 			L10n.addL10nSubstitution(text, "QueueToadlet.siteUploadSucceeded",
 					new String[] { "link", "/link", "filename", "size", "files" },
-					new String[] { "<a href=\"/"+uri.toACIIString()+"\">", "</a>", name, SizeUtil.formatSize(size), Integer.toString(files) } );
+					new String[] { "<a href=\"/"+uri.toASCIIString()+"\">", "</a>", name, SizeUtil.formatSize(size), Integer.toString(files) } );
 			UserAlert alert = 
 			new SimpleHTMLUserAlert(true, title, title, text, UserAlert.MINOR) {
 				@Override

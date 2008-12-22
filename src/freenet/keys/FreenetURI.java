@@ -548,8 +548,14 @@ public class FreenetURI implements Cloneable {
 		return toStringCache;
 	}
 
-	// FIXME: remove the typo in the function name.
-	public String toACIIString() {
+    /**
+     * @deprecated Use {@link #toASCIIString()} instead
+     */
+    public String toACIIString() {
+        return toASCIIString();
+    }
+
+	public String toASCIIString() {
 		return toString(true, true);
 	}
 
