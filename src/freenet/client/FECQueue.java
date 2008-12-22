@@ -202,7 +202,9 @@ public class FECQueue implements OOMHook {
 								Logger.minor(this, "Scheduling callback for "+job+"...");
 							int prio = job.isADecodingJob ? NativeThread.NORM_PRIORITY+1 : NativeThread.NORM_PRIORITY;
 							if(job.priority > RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS)
-								prio -= 2;
+								prio--;
+							if(job.priority >= RequestStarter.BULK_SPLITFILE_PRIORITY_CLASS)
+								prio--;
 							databaseJobRunner.queue(new DBJob() {
 
 								public void run(ObjectContainer container, ClientContext context) {
