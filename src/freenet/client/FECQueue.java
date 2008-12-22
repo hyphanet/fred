@@ -17,6 +17,8 @@ import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
 import freenet.node.PrioRunnable;
+import freenet.node.RequestScheduler;
+import freenet.node.RequestStarter;
 import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
@@ -198,6 +200,9 @@ public class FECQueue implements OOMHook {
 						} else {
 							if(Logger.shouldLog(Logger.MINOR, this))
 								Logger.minor(this, "Scheduling callback for "+job+"...");
+							int prio = job.isADecodingJob ? NativeThread.NORM_PRIORITY+1 : NativeThread.NORM_PRIORITY;
+							if(job.priority > RequestStarter.IMMEDIATE_SPLITFILE_PRIORITY_CLASS)
+								prio -= 2;
 							databaseJobRunner.queue(new DBJob() {
 
 								public void run(ObjectContainer container, ClientContext context) {
@@ -219,7 +224,7 @@ public class FECQueue implements OOMHook {
 										container.deactivate(job.callback, 1);
 								}
 								
-							}, NativeThread.NORM_PRIORITY+1, false);
+							}, prio, false);
 							if(Logger.shouldLog(Logger.MINOR, this))
 								Logger.minor(this, "Scheduled callback for "+job+"...");
 							
