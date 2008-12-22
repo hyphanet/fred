@@ -19,6 +19,7 @@
 package freenet.support;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -38,7 +39,7 @@ import freenet.support.io.FileUtil;
  * @author <a href="mailto:dr@ina-germany.de">David Roden</a>
  * @version $Id$
  */
-public class JarClassLoader extends ClassLoader {
+public class JarClassLoader extends ClassLoader implements Closeable {
 
 	/** The temporary jar file. */
 	private JarFile tempJarFile;
@@ -166,4 +167,7 @@ public class JarClassLoader extends ClassLoader {
 		return name.replace('.', '/') + ".class";
 	}
 
+	public void close() throws IOException {
+		tempJarFile.close();
+	}
 }
