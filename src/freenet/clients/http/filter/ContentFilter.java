@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http.filter;
 
+import java.io.BufferedInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -253,7 +254,7 @@ public class ContentFilter {
 		InputStream is = null;
 		try {
 			byte[] data = new byte[5];
-			is = bucket.getInputStream();
+			is = new BufferedInputStream(bucket.getInputStream());
 			int read = 0;
 			while(read < data.length) {
 				int x;
