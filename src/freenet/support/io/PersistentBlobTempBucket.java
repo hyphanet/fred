@@ -88,6 +88,7 @@ public class PersistentBlobTempBucket implements Bucket {
 				if(bufOffset < 0) return -1; // throw new EOFException() ???
 				if(offset + length >= max)
 					length = (int) Math.min(max - offset, Integer.MAX_VALUE);
+				if(length == 0) return -1;
 				ByteBuffer buf = ByteBuffer.wrap(buffer, bufOffset, length);
 				int read = channel.read(buf, blockSize * index + offset);
 				if(read > 0) offset += read;
