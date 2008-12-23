@@ -993,8 +993,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
-			updateManager.node.clientCore.requestStarters.chkFetchScheduler,
-			updateManager.node.clientCore.requestStarters.sskFetchScheduler,
 			updateManager.revocationURI, tempContext, (short) 0, this, null, cleanedBlob);
 
 		try {
@@ -1494,8 +1492,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
-			updateManager.node.clientCore.requestStarters.chkFetchScheduler,
-			updateManager.node.clientCore.requestStarters.sskFetchScheduler,
 			uri, tempContext, (short) 0, this, null, cleanedBlob);
 
 		try {
@@ -1617,8 +1613,6 @@ public class UpdateOverMandatoryManager implements RequestClient {
 		};
 
 		ClientGetter cg = new ClientGetter(myCallback,
-				updateManager.node.clientCore.requestStarters.chkFetchScheduler,
-				updateManager.node.clientCore.requestStarters.sskFetchScheduler,
 				uri, tempContext, (short) 0, this, null, cleanedBlob);
 
 			try {

@@ -110,7 +110,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		if(uri == null) throw new NullPointerException();
 		FetchContext context = getFetchContext();
 		FetchWaiter fw = new FetchWaiter();
-		ClientGetter get = new ClientGetter(fw, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, context, priorityClass, this, null, null);
+		ClientGetter get = new ClientGetter(fw, uri, context, priorityClass, this, null, null);
 		core.clientContext.start(get);
 		return fw.waitForCompletion();
 	}
@@ -123,14 +123,14 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 		if(uri == null) throw new NullPointerException();
 		FetchWaiter fw = new FetchWaiter();
 		FetchContext context = getFetchContext(overrideMaxSize);
-		ClientGetter get = new ClientGetter(fw, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, context, priorityClass, clientContext, null, null);
+		ClientGetter get = new ClientGetter(fw, uri, context, priorityClass, clientContext, null, null);
 		core.clientContext.start(get);
 		return fw.waitForCompletion();
 	}
 	
 	public ClientGetter fetch(FreenetURI uri, long maxSize, RequestClient clientContext, ClientCallback callback, FetchContext fctx) throws FetchException {
 		if(uri == null) throw new NullPointerException();
-		ClientGetter get = new ClientGetter(callback, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, clientContext, null, null);
+		ClientGetter get = new ClientGetter(callback, uri, fctx, priorityClass, clientContext, null, null);
 		core.clientContext.start(get);
 		return get;
 	}
@@ -255,7 +255,7 @@ public class HighLevelSimpleClientImpl implements HighLevelSimpleClient, Request
 	public void prefetch(FreenetURI uri, long timeout, long maxSize, Set allowedTypes) {
 		FetchContext ctx = getFetchContext(maxSize);
 		ctx.allowedMIMETypes = allowedTypes;
-		final ClientGetter get = new ClientGetter(nullCallback, core.requestStarters.chkFetchScheduler, core.requestStarters.sskFetchScheduler, uri, ctx, RequestStarter.PREFETCH_PRIORITY_CLASS, this, new NullBucket(), null);
+		final ClientGetter get = new ClientGetter(nullCallback, uri, ctx, RequestStarter.PREFETCH_PRIORITY_CLASS, this, new NullBucket(), null);
 		core.getTicker().queueTimedJob(new Runnable() {
 			public void run() {
 				get.cancel(null, core.clientContext);

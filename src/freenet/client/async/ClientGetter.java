@@ -61,7 +61,7 @@ public class ClientGetter extends BaseClientGetter {
 	 * write the data directly to the bucket, or copy it and free the original temporary bucket. Preferably the
 	 * former, obviously!
 	 */
-	public ClientGetter(ClientCallback client, RequestScheduler chkSched, RequestScheduler sskSched,
+	public ClientGetter(ClientCallback client, 
 			    FreenetURI uri, FetchContext ctx, short priorityClass, RequestClient clientContext, Bucket returnBucket, Bucket binaryBlobBucket) {
 		super(priorityClass, clientContext);
 		this.clientCallback = client;

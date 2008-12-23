@@ -117,7 +117,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 					ret = server.core.tempBucketFactory.makeBucket(maxOutputLength);
 		}
 		returnBucket = ret;
-			getter = new ClientGetter(this, server.core.requestStarters.chkFetchScheduler, server.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass,
+			getter = new ClientGetter(this, uri, fctx, priorityClass,
 					lowLevelClient,
 					returnBucket, null);
 	}
@@ -179,8 +179,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(ret == null)
 			Logger.error(this, "Impossible: ret = null in FCP constructor for "+this, new Exception("debug"));
 		returnBucket = ret;
-			getter = new ClientGetter(this, server.core.requestStarters.chkFetchScheduler, 
-					server.core.requestStarters.sskFetchScheduler, uri, fctx, priorityClass, 
+			getter = new ClientGetter(this,  
+					uri, fctx, priorityClass, 
 					lowLevelClient, 
 					binaryBlob ? new NullBucket() : returnBucket, binaryBlob ? returnBucket : null);
 	}
@@ -277,8 +277,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				fctx.allowedMIMETypes.add(a);
 		}
 
-		getter = new ClientGetter(this, server.core.requestStarters.chkFetchScheduler, 
-				server.core.requestStarters.sskFetchScheduler, uri, 
+		getter = new ClientGetter(this,  
+				uri, 
 				fctx, priorityClass, 
 				lowLevelClient,
 				binaryBlob ? new NullBucket() : returnBucket, 
