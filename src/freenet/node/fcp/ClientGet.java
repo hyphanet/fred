@@ -469,13 +469,17 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 	private void trySendAllDataMessage(AllDataMessage msg, FCPConnectionOutputHandler handler, ObjectContainer container) {
 		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
 			allDataPending = msg;
-			if(persistenceType == ClientRequest.PERSIST_FOREVER)
-				container.store(this);
-		} else {
-			if(persistenceType == PERSIST_FOREVER)
+			if(persistenceType == ClientRequest.PERSIST_FOREVER) {
 				container.activate(client, 1);
-			client.queueClientRequestMessage(msg, 0, container);
+				container.store(this);
+			}
 		}
+		if(persistenceType == PERSIST_CONNECTION && handler == null)
+			handler = origHandler.outputHandler;
+		if(handler != null)
+			handler.queue(msg);
+		else
+			client.queueClientRequestMessage(msg, 0, container);
 	}
 
 	private void trySendProgress(SimpleProgressMessage msg, FCPConnectionOutputHandler handler, ObjectContainer container) {
