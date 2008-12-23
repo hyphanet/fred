@@ -430,7 +430,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			container.store(this);
 		}
 		finish(container);
-		client.notifySuccess(this, container);
+		if(client != null)
+			client.notifySuccess(this, container);
 	}
 
 	private void trySendDataFoundOrGetFailed(FCPConnectionOutputHandler handler, ObjectContainer container) {
