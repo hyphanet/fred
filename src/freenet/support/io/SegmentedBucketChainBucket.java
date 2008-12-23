@@ -404,6 +404,7 @@ public class SegmentedBucketChainBucket implements Bucket {
 
 	synchronized void removeContents(ObjectContainer container) {
 		for(SegmentedChainBucketSegment seg : segments) {
+			seg.free();
 			seg.removeFrom(container);
 		}
 		container.delete(segments);
