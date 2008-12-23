@@ -102,9 +102,9 @@ public class PersistentBlobTempBucketFactory {
 				while(tags.hasNext()) {
 					PersistentBlobTempBucketTag tag = tags.next();
 					if(!tag.isFree) {
-						Logger.error(this, "Tag is free! "+tag.index);
+						Logger.error(this, "Tag not free! "+tag.index);
 						if(tag.bucket == null) {
-							Logger.error(this, "Tag flagged free yet has no bucket for index "+tag.index);
+							Logger.error(this, "Tag flagged non-free yet has no bucket for index "+tag.index);
 							tag.isFree = true;
 						} else continue;
 					}
