@@ -716,18 +716,20 @@ public class SplitFileFetcherSegment implements FECCallback {
 					Logger.error(this, "Block already finished: "+blockNo);
 					return;
 				}
-				if(persistent)
+				if(persistent) {
 					container.activate(dataKeys[blockNo], 1);
-				dataKeys[blockNo].removeFrom(container);
+					dataKeys[blockNo].removeFrom(container);
+				}
 				dataKeys[blockNo] = null;
 			} else if(blockNo < checkKeys.length + dataKeys.length) {
 				if(checkKeys[blockNo-dataKeys.length] == null) {
 					Logger.error(this, "Check block already finished: "+blockNo);
 					return;
 				}
-				if(persistent)
+				if(persistent) {
 					container.activate(checkKeys[blockNo-dataKeys.length], 1);
-				checkKeys[blockNo-dataKeys.length].removeFrom(container);
+					checkKeys[blockNo-dataKeys.length].removeFrom(container);
+				}
 				checkKeys[blockNo-dataKeys.length] = null;
 			} else
 				Logger.error(this, "Unrecognized block number: "+blockNo, new Exception("error"));
