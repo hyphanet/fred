@@ -118,6 +118,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			keysFetching = new HashSet();
 		else
 			keysFetching = null;
+		if(isInsertScheduler) {
 		preRegisterMeRunner = new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
@@ -150,7 +151,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				for(int i=RequestStarter.MAXIMUM_PRIORITY_CLASS;i<=RequestStarter.MINIMUM_PRIORITY_CLASS;i++) {
 					Query query = container.query();
 					query.constrain(RegisterMe.class);
-					query.descend("priority").constrain(i);
+					query.descend("core").constrain(ClientRequestSchedulerCore.this).and(query.descend("priority").constrain(i));
 					results = query.execute();
 					if(results.hasNext()) {
 						break;
@@ -200,6 +201,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 			
 		};
 		registerMeRunner = new RegisterMeRunner();
+		}
 		loadKeyListeners(container, context);
 	}
 	
@@ -229,7 +231,8 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 	}
 	
 	private final void startRegisterMeRunner(DBJobRunner runner) {
-		runner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);
+		if(isInsertScheduler)
+			runner.queue(preRegisterMeRunner, NativeThread.NORM_PRIORITY, true);
 	}
 	
 	// We pass in the schedTransient to the next two methods so that we can select between either of them.
@@ -653,9 +656,7 @@ class ClientRequestSchedulerCore extends ClientRequestSchedulerBase implements K
 				context.jobRunner.queue(registerMeRunner, (NativeThread.NORM_PRIORITY-1) + (boost ? 1 : 0), true);
 			else {
 				if(logMINOR) Logger.minor(this, "RegisterMeRunner finished");
-				boolean rerun;
 				synchronized(ClientRequestSchedulerCore.this) {
-					rerun = shouldReRunRegisterMeRunner;
 					shouldReRunRegisterMeRunner = false;
 					registerMeSet = null;
 				}
