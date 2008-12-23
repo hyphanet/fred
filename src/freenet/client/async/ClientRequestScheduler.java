@@ -725,6 +725,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		int retryCount = req.getRetryCount();
 		if(logMINOR)
 			Logger.minor(this, "Maybe adding to starter queue: prio="+prio+" retry count="+retryCount);
+		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		synchronized(starterQueue) {
 			boolean betterThanSome = false;
 			int size = 0;
@@ -742,8 +743,8 @@ public class ClientRequestScheduler implements RequestScheduler {
 				if(!ignoreActive) {
 					if(container.ext().isActive(old.request))
 						Logger.error(this, "REQUEST ALREADY ACTIVATED: "+old.request+" for "+old+" while checking request queue in maybeAddToStarterQueue for "+req);
-					else if(logMINOR)
-						Logger.minor(this, "Not already activated for "+old+" in while checking request queue in maybeAddToStarterQueue for "+req);
+					else if(logDEBUG)
+						Logger.debug(this, "Not already activated for "+old+" in while checking request queue in maybeAddToStarterQueue for "+req);
 				} else if(logMINOR)
 					Logger.minor(this, "Ignoring active because just registered: "+old.request+" in maybeAddToStarterQueue for "+req);
 				size += old.sizeNotStarted();
