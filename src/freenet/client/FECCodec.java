@@ -156,20 +156,7 @@ public abstract class FECCodec {
 					long sz = buckets[i].size();
 					if(sz < blockLength) {
 						if(i != dataBlockStatus.length - 1)
-							throw new IllegalArgumentException("All buckets except the last must be the full size but data bucket " + i + " of " + dataBlockStatus.length + " (" + dataBlockStatus[i] + ") is " + sz + " not " + blockLength);
-						if(sz < blockLength) {
-							// FIXME NOT FETCHING LAST BLOCK
-//							buckets[i] = BucketTools.pad(buckets[i], blockLength, bf, (int) sz);
-							buckets[i].free();
-							buckets[i] = bf.makeBucket(blockLength);
-							writers[i] = buckets[i].getOutputStream();
-							if(logMINOR)
-								Logger.minor(this, "writers[" + i + "] != null (NOT PADDING)");
-							readers[i] = null;
-							numberToDecode++;
-						}
-						else
-							throw new IllegalArgumentException("Too big: " + sz + " bigger than " + blockLength);
+							throw new IllegalArgumentException("All buckets must be the full size (caller must pad if needed) but data bucket " + i + " of " + dataBlockStatus.length + " (" + dataBlockStatus[i] + ") is " + sz + " not " + blockLength);
 					} else {
 						if(logMINOR)
 							Logger.minor(this, "writers[" + i + "] = null (already filled)");
@@ -284,13 +271,7 @@ public abstract class FECCodec {
 				buckets[i] = dataBlockStatus[i];
 				long sz = buckets[i].size();
 				if(sz < blockLength) {
-					if(i != dataBlockStatus.length - 1)
-						throw new IllegalArgumentException("All buckets except the last must be the full size");
-					if(sz < blockLength) {
-						buckets[i] = BucketTools.pad(buckets[i], blockLength, bf, (int) sz);
-						toFree = buckets[i];
-					} else
-						throw new IllegalArgumentException("Too big: " + sz + " bigger than " + blockLength);
+					throw new IllegalArgumentException("All buckets must be the full size: caller must pad the last one if needed");
 				}
 				readers[i] = new DataInputStream(buckets[i].getInputStream());
 			}

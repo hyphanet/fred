@@ -394,6 +394,29 @@ public class SplitFileFetcherSegment implements FECCallback {
 			}
 			if(persistent)
 				container.activate(parent, 1);
+			Bucket lastBlock = dataBuckets[dataBuckets.length-1].data;
+			if(lastBlock != null) {
+				if(persistent)
+					container.activate(lastBlock, 1);
+				if(ignoreLastDataBlock) {
+					lastBlock.free();
+					if(persistent)
+						lastBlock.removeFrom(container);
+					dataBuckets[dataBuckets.length-1].data = null;
+				} else if(lastBlock.size() != CHKBlock.DATA_LENGTH) {
+					try {
+						dataBuckets[dataBuckets.length-1].data =
+							BucketTools.pad(lastBlock, CHKBlock.DATA_LENGTH, context.persistentBucketFactory, (int) lastBlock.size());
+						lastBlock.free();
+						if(persistent) {
+							lastBlock.removeFrom(container);
+							dataBuckets[dataBuckets.length-1].storeTo(container);
+						}
+					} catch (IOException e) {
+						fail(new FetchException(FetchException.BUCKET_ERROR, e), container, context, true);
+					}
+				}
+			}
 			if(codec == null)
 				codec = FECCodec.getCodec(splitfileType, dataKeys.length, checkKeys.length, context.mainExecutor);
 			FECJob job = new FECJob(codec, queue, dataBuckets, checkBuckets, CHKBlock.DATA_LENGTH, context.getBucketFactory(persistent), this, true, parent.getPriorityClass(), persistent);
@@ -517,6 +540,26 @@ public class SplitFileFetcherSegment implements FECCallback {
 		 * reconstructed and reinserted.
 		 */
 
+		// FIXME don't heal if ignoreLastBlock.
+		Bucket lastBlock = dataBuckets[dataBuckets.length-1].data;
+		if(lastBlock != null) {
+			if(persistent)
+				container.activate(lastBlock, 1);
+			if(lastBlock.size() != CHKBlock.DATA_LENGTH) {
+				try {
+					dataBuckets[dataBuckets.length-1].data =
+						BucketTools.pad(lastBlock, CHKBlock.DATA_LENGTH, context.persistentBucketFactory, (int) lastBlock.size());
+					lastBlock.free();
+					if(persistent) {
+						lastBlock.removeFrom(container);
+						dataBuckets[dataBuckets.length-1].storeTo(container);
+					}
+				} catch (IOException e) {
+					fail(new FetchException(FetchException.BUCKET_ERROR, e), container, context, true);
+				}
+			}
+		}
+		
 		// Encode any check blocks we don't have
 		try {
 		codec.addToQueue(new FECJob(codec, context.fecQueue, dataBuckets, checkBuckets, 32768, context.getBucketFactory(persistent), this, false, parent.getPriorityClass(), persistent),
@@ -687,12 +730,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 				Bucket copy = context.tempBucketFactory.makeBucket(data.size());
 				BucketTools.copy(data, copy);
 				data.free();
-				data.removeFrom(container);
+				if(persistent)
+					data.removeFrom(container);
 				data = copy;
 			} catch (IOException e) {
 				Logger.normal(this, "Failed to copy data for healing: "+e, e);
 				data.free();
-				data.removeFrom(container);
+				if(persistent)
+					data.removeFrom(container);
 				return;
 			}
 		}
