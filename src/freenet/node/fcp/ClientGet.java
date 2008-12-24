@@ -300,6 +300,8 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				client.register(this, lazyResume, container);
 			} catch (IdentifierCollisionException e) {
 				returnBucket.free();
+				if(persistenceType == PERSIST_FOREVER)
+					returnBucket.removeFrom(container);
 				throw e;
 			}
 			if(persistenceType != PERSIST_CONNECTION && !noTags) {
@@ -364,6 +366,7 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 				if(finished) {
 					Logger.error(this, "Already finished but onSuccess() for "+this+" data = "+data, new Exception("debug"));
 					data.free();
+					if(persistenceType == PERSIST_FOREVER) data.removeFrom(container);
 					return; // Already failed - bucket error maybe??
 				}
 				if(returnType == ClientGetMessage.RETURN_TYPE_DIRECT && returnBucket == null) {
@@ -423,8 +426,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 
 		if(adm != null)
 			trySendAllDataMessage(adm, null, container);
-		if(!dontFree)
+		if(!dontFree) {
 			data.free();
+			if(persistenceType == PERSIST_FOREVER)
+				data.removeFrom(container);
+		}
 		if(persistenceType == PERSIST_FOREVER) {
 			returnBucket.storeTo(container);
 			container.store(this);
@@ -471,16 +477,11 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 		if(persistenceType != ClientRequest.PERSIST_CONNECTION) {
 			allDataPending = msg;
 			if(persistenceType == ClientRequest.PERSIST_FOREVER) {
-				container.activate(client, 1);
 				container.store(this);
 			}
+			return;
 		}
-		if(persistenceType == PERSIST_CONNECTION && handler == null)
-			handler = origHandler.outputHandler;
-		if(handler != null)
-			handler.queue(msg);
-		else
-			client.queueClientRequestMessage(msg, 0, container);
+		handler.queue(msg);
 	}
 
 	private void trySendProgress(SimpleProgressMessage msg, FCPConnectionOutputHandler handler, ObjectContainer container) {
