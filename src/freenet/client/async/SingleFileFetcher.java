@@ -164,16 +164,19 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(!ctx.followRedirects) {
 				onFailure(new FetchException(FetchException.INVALID_METADATA, "Told me not to follow redirects (splitfile block??)"), false, container, context);
 				data.free();
+				if(persistent) data.removeFrom(container);
 				return;
 			}
 			if(parent.isCancelled()) {
 				onFailure(new FetchException(FetchException.CANCELLED), false, container, context);
 				data.free();
+				if(persistent) data.removeFrom(container);
 				return;
 			}
 			if(data.size() > ctx.maxMetadataSize) {
 				onFailure(new FetchException(FetchException.TOO_BIG_METADATA), false, container, context);
 				data.free();
+				if(persistent) data.removeFrom(container);
 				return;
 			}
 			// Parse metadata
@@ -184,14 +187,17 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					container.store(this);
 				wrapHandleMetadata(false, container, context);
 				data.free();
+				if(persistent) data.removeFrom(container);
 			} catch (MetadataParseException e) {
 				onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, container, context);
 				data.free();
+				if(persistent) data.removeFrom(container);
 				return;
 			} catch (IOException e) {
 				// Bucket error?
 				onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
 				data.free();
+				if(persistent) data.removeFrom(container);
 				return;
 			}
 		}
@@ -215,6 +221,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 			if(logMINOR)
 				Logger.minor(this, "Parent is cancelled");
 			result.asBucket().free();
+			if(persistent) result.asBucket().removeFrom(container);
 			onFailure(new FetchException(FetchException.CANCELLED), false, container, context);
 			return;
 		}
@@ -265,10 +272,12 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				rcb.onFailure(new FetchException(FetchException.TOO_MANY_PATH_COMPONENTS, result.size(), (rcb == parent), result.getMimeType(), tryURI), this, container, context);
 			}
 			result.asBucket().free();
+			if(persistent) result.asBucket().removeFrom(container);
 			return;
 		} else if(result.size() > ctx.maxOutputLength) {
 			rcb.onFailure(new FetchException(FetchException.TOO_BIG, result.size(), (rcb == parent), result.getMimeType()), this, container, context);
 			result.asBucket().free();
+			if(persistent) result.asBucket().removeFrom(container);
 		} else {
 			rcb.onSuccess(result, this, container, context);
 		}
@@ -375,6 +384,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				if(metadataBucket != null) {
 					try {
 						metadata = Metadata.construct(metadataBucket);
+						metadataBucket.free();
 					} catch (IOException e) {
 						// Bucket error?
 						throw new FetchException(FetchException.BUCKET_ERROR, e);
@@ -389,6 +399,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 							if(logMINOR) Logger.minor(this, "gotBucket on "+SingleFileFetcher.this+" persistent="+persistent);
 							try {
 								metadata = Metadata.construct(data);
+								data.free();
+								if(persistent) data.removeFrom(container);
 								wrapHandleMetadata(true, container, context);
 							} catch (MetadataParseException e) {
 								// Invalid metadata
@@ -449,7 +461,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 					final Bucket out;
 					try {
 						// Data will not be freed until client is finished with it.
-						if(returnBucket != null) {
+						if(returnBucket != null || persistent) {
 							out = returnBucket;
 							BucketTools.copy(dataBucket, out);
 							dataBucket.free();
@@ -483,6 +495,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 									out = returnBucket;
 									BucketTools.copy(data, out);
 									data.free();
+									if(persistent)
+										data.removeFrom(container);
 								} else {
 									out = data;
 								}
@@ -834,6 +848,7 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				return;
 			} finally {
 				result.asBucket().free();
+				if(persistent) result.asBucket().removeFrom(container);
 			}
 			if(callback != null) return;
 			wrapHandleMetadata(true, container, context);
@@ -918,6 +933,8 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				SingleFileFetcher.this.onFailure(new FetchException(FetchException.BUCKET_ERROR, e), false, container, context);
 			} finally {
 				result.asBucket().free();
+				if(persistent)
+					result.asBucket().removeFrom(container);
 			}
 			if(!wasActive)
 				container.deactivate(SingleFileFetcher.this, 1);
