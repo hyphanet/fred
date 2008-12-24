@@ -74,6 +74,12 @@ abstract class DirPutFile {
 		return new ManifestElement(n, getData(), getMIMEType(), getData().size());
 	}
 
+	/**
+	 * Remove the DirPutFile from the database. This would only be called if we had stored a ClientPut*DirMessage
+	 * into the database without executing it, which never happens. 
+	 * Maybe we should get rid and throw UnsupportedOperationException?
+	 * @param container
+	 */
 	public abstract void removeFrom(ObjectContainer container);
 
 }
