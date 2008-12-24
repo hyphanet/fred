@@ -505,7 +505,10 @@ public class SplitFileFetcher implements ClientGetState, HasKeyListener {
 					cb.onFailure(new FetchException(FetchException.TOO_BIG, e.estimatedSize, false /* FIXME */, clientMetadata.getMIMEType()), this, container, context);
 					return;
 				} finally {
-					if(orig != data) orig.free();
+					if(orig != data) {
+						orig.free();
+						if(persistent) orig.removeFrom(container);
+					}
 				}
 				count++;
 			}

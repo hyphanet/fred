@@ -538,6 +538,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					createTarBucket(bucket, outputBucket) :
 					createZipBucket(bucket, outputBucket));
 				bucket.free();
+				if(persistent()) bucket.removeFrom(container);
 				
 				if(logMINOR) Logger.minor(this, "We are using "+archiveType);
 				

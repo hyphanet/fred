@@ -596,7 +596,7 @@ public class USKFetcher implements ClientGetState {
 
 	public synchronized void freeLastData() {
 		if(lastRequestData == null) return;
-		lastRequestData.free();
+		lastRequestData.free(); // USKFetcher's cannot be persistent, so no need to removeFrom()
 		lastRequestData = null;
 	}
 

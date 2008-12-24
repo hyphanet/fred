@@ -555,6 +555,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 				if (dataBlockInserters[i] == null && dataBlocks[i] != null) {
 					container.activate(dataBlocks[i], 1);
 					dataBlocks[i].free();
+					if(persistent)
+						dataBlocks[i].removeFrom(container);
 					dataBlocks[i] = null;
 				}
 			}
@@ -742,6 +744,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			if(persistent)
 				container.activate(checkBlocks[x], 1);
 			checkBlocks[x].free();
+			if(persistent)
+				checkBlocks[x].removeFrom(container);
 			checkBlocks[x] = null;
 		} else {
 			if (dataBlockInserters[x] == null) {
@@ -754,6 +758,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 				if(persistent)
 					container.activate(dataBlocks[x], 1);
 				dataBlocks[x].free();
+				if(persistent)
+					dataBlocks[x].removeFrom(container);
 				dataBlocks[x] = null;
 			}
 		}
@@ -816,7 +822,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 				if(persistent)
 					container.activate(d, 5);
 				d.free();
-				d.removeFrom(container);
+				if(persistent)
+					d.removeFrom(container);
 				dataBlocks[i] = null;
 			}
 		}

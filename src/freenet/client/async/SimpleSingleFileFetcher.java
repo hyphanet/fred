@@ -123,6 +123,7 @@ public class SimpleSingleFileFetcher extends BaseSingleFileFetcher implements Cl
 		}
 		if(parent.isCancelled()) {
 			data.asBucket().free();
+			if(persistent) data.asBucket().removeFrom(container);
 			onFailure(new FetchException(FetchException.CANCELLED), false, container, context);
 			return;
 		}

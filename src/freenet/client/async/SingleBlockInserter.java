@@ -226,8 +226,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(persistent)
 			container.activate(cb, 1);
 		cb.onFailure(e, this, container, context);
-		if(freeData)
+		if(freeData) {
 			sourceData.free();
+			if(persistent) sourceData.removeFrom(container);
+		}
 	}
 
 	public ClientKeyBlock getBlock(ObjectContainer container, ClientContext context, boolean calledByCB) {
@@ -323,8 +325,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			container.store(this);
 			container.activate(sourceData, 1);
 		}
-		if(freeData)
-			sourceData.free(); // FIXME removeFrom()??
+		if(freeData) {
+			sourceData.free();
+			if(persistent) sourceData.removeFrom(container);
+		}
 		parent.completedBlock(false, container, context);
 		if(logMINOR) Logger.minor(this, "Calling onSuccess for "+cb);
 		cb.onSuccess(this, container, context);
@@ -346,8 +350,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			container.activate(cb, 1);
 			container.activate(sourceData, 1);
 		}
-		if(freeData)
+		if(freeData) {
 			sourceData.free();
+			if(persistent) sourceData.removeFrom(container);
+		}
 		super.unregister(container, context);
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 		if(persistent)

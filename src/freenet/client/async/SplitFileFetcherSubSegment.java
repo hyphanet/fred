@@ -406,6 +406,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		} else {
 			onFailure(new FetchException(FetchException.INVALID_METADATA, "Metadata where expected data"), token, container, context);
 			data.free();
+			if(persistent) data.removeFrom(container);
 		}
 		if(persistent) {
 			container.deactivate(segment, 1);
@@ -421,6 +422,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		}
 		if(parent.isCancelled()) {
 			data.free();
+			if(persistent) data.removeFrom(container);
 			onFailure(new FetchException(FetchException.CANCELLED), token, container, context);
 			return;
 		}
