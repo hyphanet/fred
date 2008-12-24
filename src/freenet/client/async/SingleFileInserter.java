@@ -390,7 +390,7 @@ class SingleFileInserter implements ClientPutState {
 		if(uri.getKeyType().equals("USK")) {
 			try {
 				return new USKInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
-					getCHKOnly, addToParent, this.token, container, context, freeData);
+					getCHKOnly, addToParent, this.token, container, context, freeData, persistent);
 			} catch (MalformedURLException e) {
 				throw new InsertException(InsertException.INVALID_URI, e, null);
 			}

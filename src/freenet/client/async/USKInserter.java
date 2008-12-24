@@ -39,6 +39,7 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 	final int token;
 	final boolean getCHKOnly;
 	public final Object tokenObject;
+	final boolean persistent;
 	
 	final InsertableUSK privUSK;
 	final USK pubUSK;
@@ -113,7 +114,10 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			parent.addMustSucceedBlocks(1, container);
 			parent.completedBlock(true, container, context);
 			cb.onSuccess(this, container, context);
-			if(freeData) data.free();
+			if(freeData) {
+				data.free();
+				if(persistent) data.removeFrom(container);
+			}
 		} else {
 			scheduleInsert(container, context);
 		}
@@ -136,8 +140,10 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			synchronized(this) {
 				finished = true;
 			}
-			if(freeData)
+			if(freeData) {
 				data.free();
+				data.removeFrom(container);
+			}
 		}
 	}
 
@@ -174,8 +180,9 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 
 	public USKInserter(BaseClientPutter parent, Bucket data, short compressionCodec, FreenetURI uri, 
 			InsertContext ctx, PutCompletionCallback cb, boolean isMetadata, int sourceLength, int token, 
-			boolean getCHKOnly, boolean addToParent, Object tokenObject, ObjectContainer container, ClientContext context, boolean freeData) throws MalformedURLException {
+			boolean getCHKOnly, boolean addToParent, Object tokenObject, ObjectContainer container, ClientContext context, boolean freeData, boolean persistent) throws MalformedURLException {
 		this.tokenObject = tokenObject;
+		this.persistent = persistent;
 		this.parent = parent;
 		this.data = data;
 		this.compressionCodec = compressionCodec;
@@ -209,8 +216,10 @@ public class USKInserter implements ClientPutState, USKFetcherCallback, PutCompl
 			finished = true;
 			fetcher = null;
 		}
-		if(freeData)
+		if(freeData) {
 			data.free();
+			if(persistent) data.removeFrom(container);
+		}
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
 	}
 
