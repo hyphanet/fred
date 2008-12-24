@@ -22,6 +22,8 @@ public interface ArchiveHandler {
 
 	/**
 	 * Get the metadata for this ZIP manifest, as a Bucket.
+	 * THE RETURNED BUCKET WILL ALWAYS BE NON-PERSISTENT.
+	 * @return The metadata as a Bucket, or null.
 	 * @param manager The ArchiveManager.
 	 * @throws FetchException If the container could not be fetched.
 	 * @throws MetadataParseException If there was an error parsing intermediary metadata.
@@ -34,8 +36,8 @@ public interface ArchiveHandler {
 
 	/**
 	 * Get a file from this ZIP manifest, as a Bucket.
-	 * If possible, read it from cache. If necessary, refetch the 
-	 * container and extract it. If that fails, throw.
+	 * If possible, read it from cache. If not, return null.
+	 * THE RETURNED BUCKET WILL ALWAYS BE NON-PERSISTENT.
 	 * @param inSplitZipManifest If true, indicates that the key points to a splitfile zip manifest,
 	 * which means that we need to pass a flag to the fetcher to tell it to pretend it was a straight
 	 * splitfile.

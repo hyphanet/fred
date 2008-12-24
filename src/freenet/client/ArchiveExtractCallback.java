@@ -9,7 +9,8 @@ import freenet.support.api.Bucket;
  * or isn't in it. */
 public interface ArchiveExtractCallback {
 
-	/** Got the data */
+	/** Got the data.
+	 * Note that the bucket will be persistent if the caller asked for an off-thread extraction. */
 	public void gotBucket(Bucket data, ObjectContainer container, ClientContext context);
 	
 	/** Not in the archive */

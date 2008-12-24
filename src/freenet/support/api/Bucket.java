@@ -60,6 +60,8 @@ public interface Bucket {
 
 	/**
 	 * Remove the bucket and everything under it from the database.
+	 * You don't need to call this if it hasn't been storeTo()'ed: buckets that use the database internally
+	 * will run a blocking job to delete internal structure in free().
 	 * @param container The database.
 	 */
 	public void removeFrom(ObjectContainer container);
