@@ -60,7 +60,13 @@ public class SegmentedBucketChainBucket implements Bucket {
 	}
 
 	public void free() {
-		dbJobRunner.queue(new DBJob() {
+		synchronized(this) {
+			freed = true;
+		}
+		// Complete the cleanup before returning.
+		// SegmentedBucketChainBucket can't be stored to disk so we will be run on helper threads generally,
+		// so we will have to wait for a job to complete on the database thread, but that is okay.
+		dbJobRunner.runBlocking(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
 				SegmentedChainBucketSegment[] segs;
@@ -80,7 +86,7 @@ public class SegmentedBucketChainBucket implements Bucket {
 				}
 			}
 			
-		}, NativeThread.HIGH_PRIORITY, false);
+		}, NativeThread.HIGH_PRIORITY);
 	}
 
 	public InputStream getInputStream() throws IOException {
@@ -180,7 +186,7 @@ public class SegmentedBucketChainBucket implements Bucket {
 	}
 
 	public OutputStream getOutputStream() throws IOException {
-		SegmentedChainBucketSegment[] segs;
+		final SegmentedChainBucketSegment[] segs;
 		synchronized(this) {
 			if(readOnly) throw new IOException("Read-only");
 			if(freed) throw new IOException("Freed");
@@ -188,8 +194,18 @@ public class SegmentedBucketChainBucket implements Bucket {
 			segs = segments.toArray(new SegmentedChainBucketSegment[segments.size()]);
 			segments.clear();
 		}
-		for(int i=0;i<segs.length;i++) {
+		for(int i=0;i<segs.length;i++)
 			segs[i].free();
+		if(segs.length > 0) {
+			dbJobRunner.runBlocking(new DBJob() {
+
+				public void run(ObjectContainer container, ClientContext context) {
+					for(int i=0;i<segs.length;i++) {
+						segs[i].removeFrom(container);
+					}
+				}
+				
+			}, NativeThread.HIGH_PRIORITY);
 		}
 		return new OutputStream() {
 			
@@ -329,7 +345,7 @@ public class SegmentedBucketChainBucket implements Bucket {
 	}
 
 	public void removeFrom(ObjectContainer container) {
-		throw new UnsupportedOperationException();
+		// Valid no-op if we haven't been stored.
 	}
 
 	public void setReadOnly() {
@@ -409,6 +425,7 @@ public class SegmentedBucketChainBucket implements Bucket {
 		}
 		container.delete(segments);
 		container.delete(this);
+		freed = true; // Just in case it wasn't already.
 	}
 	
 }
