@@ -481,6 +481,9 @@ public class ClientGet extends ClientRequest implements ClientCallback, ClientEv
 			}
 			return;
 		}
+        if(handler == null)
+            handler = origHandler.outputHandler;
+
 		handler.queue(msg);
 	}
 
