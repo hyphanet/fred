@@ -49,8 +49,4 @@ public class SimpleHelpToadlet extends Toadlet {
 		return "GET";
 	}
 	
-	String l10n(String key, String pattern, String value) {
-		return L10n.getString("SimpleHelpToadlet."+key, pattern, value);
-	 }
-
 }
