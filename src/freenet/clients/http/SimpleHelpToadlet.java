@@ -36,12 +36,20 @@ public class SimpleHelpToadlet extends Toadlet {
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary());
 		
-		HTMLNode helpScreenBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.connectivityTitle")));
-		HTMLNode helpScreenContent = ctx.getPageMaker().getContentNode(helpScreenBox);
-		HTMLNode p = helpScreenContent.addChild("p");
-		L10n.addL10nHTML(p, "SimpleHelpToadlet.connectivityText");
+		HTMLNode helpScreenBox1 = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.descriptionTitle")));
+		HTMLNode helpScreenContent1 = ctx.getPageMaker().getContentNode(helpScreenBox1);
+		HTMLNode p1 = helpScreenContent1.addChild("p1");
+		L10n.addL10nHTML(p1, "SimpleHelpToadlet.descriptionText");
+		
+		
+		HTMLNode helpScreenBox2 = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.connectivityTitle")));
+		HTMLNode helpScreenContent2 = ctx.getPageMaker().getContentNode(helpScreenBox2);
+		HTMLNode p2 = helpScreenContent2.addChild("p2");
+		L10n.addL10nHTML(p2, "SimpleHelpToadlet.connectivityText");
+		
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+		
 	}
 	
 	@Override
