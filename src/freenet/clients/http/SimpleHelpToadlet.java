@@ -39,7 +39,7 @@ public class SimpleHelpToadlet extends Toadlet {
 		HTMLNode helpScreenBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.connectivityTitle")));
 		HTMLNode helpScreenContent = ctx.getPageMaker().getContentNode(helpScreenBox);
 		HTMLNode p = helpScreenContent.addChild("p");
-		L10n.addL10nSubstitution(p, "SimpleHelpToadlet.connectivityText", new String[] { "p", "/p", "bold", "/bold" }, new String[] { "<p>", "</p>", "<b>", "</b>" });
+		L10n.addL10nHTML(p, "SimpleHelpToadlet.connectivityText");
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
@@ -48,5 +48,9 @@ public class SimpleHelpToadlet extends Toadlet {
 	public String supportedMethods() {
 		return "GET";
 	}
+	
+	String l10n(String key, String pattern, String value) {
+		return L10n.getString("SimpleHelpToadlet."+key, pattern, value);
+	 }
 
 }

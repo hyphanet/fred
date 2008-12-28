@@ -414,6 +414,12 @@ public class L10n {
 			result = result.replaceAll("\\$\\{"+patterns[i]+"\\}", quoteReplacement(values[i]));
 		node.addChild("%", result);
 	}
+	
+	//Provide a way to handle most basic html tags without manually including the search strings in addL10nSubstitution.
+	//I know it's ugly, but will only be used rarely.  -Juiceman.
+	public static void addL10nHTML(HTMLNode node, String key){
+		addL10nSubstitution(node, key, new String[] { "p", "/p", "b", "/b", "br", "hr", "pre", "/pre", "i", "/i", "ul", "/ul", "ol", "/ol", "li", "center", "/center", "strike", "/strike", "blockquote", "/blockquote", "h1", "/h1", "h2", "/h2", "h3", "/h3", "h4", "/h4", "h5", "/h5", "h6", "/h6", "strong", "/strong" }, new String[] { "<p>", "</p>", "<b>", "</b>", "<br>", "<hr>", "<pre>", "</pre>", "<i>", "</i>", "<ul>", "</ul>", "<ol>", "</ol>", "<li>", "<center>", "</center>", "<strike>", "</strike>", "<blockquote>", "</blockquote>", "<h1>", "</h1>", "<h2>", "</h2>", "<h3>", "</h3>", "<h4>", "</h4>", "<h5>", "</h5>", "<h6>", "</h6>", "<strong>", "</strong>" });
+	}
 
 	public static String getString(String key, String pattern, String value) {
 		return getString(key, new String[] { pattern }, new String[] { value }); // FIXME code efficiently!
