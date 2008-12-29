@@ -139,7 +139,7 @@ public final class MessageFilter {
 	}
 
 	public MessageFilter setField(String fieldName, short value) {
-		return setField(fieldName, new Short(value));
+		return setField(fieldName, Short.valueOf(value));
 	}
 
 	public MessageFilter setField(String fieldName, int value) {

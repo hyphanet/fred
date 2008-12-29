@@ -181,7 +181,7 @@ public class Message {
 	}
 
 	public void set(String key, short s) {
-		set(key, new Short(s));
+		set(key, Short.valueOf(s));
 	}
 
 	public void set(String key, int i) {
