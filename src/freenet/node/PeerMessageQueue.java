@@ -16,7 +16,7 @@ public class PeerMessageQueue {
 
 	private final PrioQueue[] queuesByPriority;
 
-	private class PrioQueue {
+	private static class PrioQueue {
 		LinkedList<MessageItem> itemsNoID;
 		ArrayList<LinkedList<MessageItem>> itemsWithID;
 		ArrayList<Long> itemsIDs;
