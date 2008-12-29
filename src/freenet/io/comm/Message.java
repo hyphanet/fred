@@ -177,7 +177,7 @@ public class Message {
 	}
 
 	public void set(String key, byte b) {
-		set(key, new Byte(b));
+		set(key, Byte.valueOf(b));
 	}
 
 	public void set(String key, short s) {

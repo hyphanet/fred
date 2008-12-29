@@ -135,7 +135,7 @@ public final class MessageFilter {
 	}
 
 	public MessageFilter setField(String fieldName, byte value) {
-		return setField(fieldName, new Byte(value));
+		return setField(fieldName, Byte.valueOf(value));
 	}
 
 	public MessageFilter setField(String fieldName, short value) {
