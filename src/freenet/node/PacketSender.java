@@ -58,7 +58,6 @@ public class PacketSender implements Runnable, Ticker {
 	long lastReceivedPacketFromAnyNode;
 	/** For watchdog. 32-bit to avoid locking. */
 	volatile int lastTimeInSeconds;
-	private long timeLastSentOldOpennetConnectAttempt;
 	private Vector<ResendPacketItem> rpiTemp;
 	private int[] rpiIntTemp;
 	private boolean started = false;

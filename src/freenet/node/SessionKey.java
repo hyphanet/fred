@@ -18,7 +18,6 @@ public class SessionKey {
 	 * without changing the session key. */
 	final PacketTracker packets;
 	
-	private static boolean logMINOR;
 	/** Parent PeerNode */
 	public final PeerNode pn;
 	/** Cipher to both encrypt outgoing packets with and decrypt
