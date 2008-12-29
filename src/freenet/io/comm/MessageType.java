@@ -51,7 +51,7 @@ public class MessageType {
 		_name = name;
 		this.priority = priority;
 		internalOnly = internal;
-		Integer id = new Integer(name.hashCode());
+		Integer id = Integer.valueOf(name.hashCode());
 		if (_specs.containsKey(id)) {
 			throw new RuntimeException("A message type by the name of " + name + " already exists!");
 		}
@@ -59,7 +59,7 @@ public class MessageType {
 	}
 
 	public void unregister() {
-		_specs.remove(new Integer(_name.hashCode()));
+		_specs.remove(Integer.valueOf(_name.hashCode()));
 	}
 	
 	public void addLinkedListField(String name, Class<?> parameter) {

@@ -22,7 +22,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet {
 	final int maxRetries;
 	private int retryCount;
 	final FetchContext ctx;
-	static final Object[] keys = new Object[] { new Integer(0) };
+	static final Object[] keys = new Object[] { Integer.valueOf(0) };
 	/** It is essential that we know when the cooldown will end, otherwise we cannot 
 	 * remove the key from the queue if we are killed before that */
 	long cooldownWakeupTime;

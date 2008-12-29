@@ -364,7 +364,7 @@ public class DarknetPeerNode extends PeerNode {
 		for (File extraPeerDataFile : extraPeerDataFiles) {
 			Integer fileNumber;
 			try {
-				fileNumber = new Integer(extraPeerDataFile.getName());
+				fileNumber = Integer.valueOf(extraPeerDataFile.getName());
 			} catch (NumberFormatException e) {
 				gotError = true;
 				continue;
@@ -532,7 +532,7 @@ public class DarknetPeerNode extends PeerNode {
 				synchronized(queuedToSendN2NMExtraPeerDataFileNumbers) {
 					fs.putOverwrite("extraPeerDataType", Integer.toString(extraPeerDataType));
 					fs.removeValue("sentTime");
-					queuedToSendN2NMExtraPeerDataFileNumbers.add(new Integer(fileNumber));
+					queuedToSendN2NMExtraPeerDataFileNumbers.add(Integer.valueOf(fileNumber));
 				}
 			}
 			return true;

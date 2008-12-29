@@ -62,7 +62,7 @@ public class Message {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, Message.class);
 		MessageType mspec;
         try {
-            mspec = MessageType.getSpec(new Integer(bb.readInt()));
+            mspec = MessageType.getSpec(Integer.valueOf(bb.readInt()));
         } catch (IOException e1) {
         	if(Logger.shouldLog(Logger.DEBUG, Message.class))
         		Logger.minor(Message.class,"Failed to read message type: "+e1, e1);
@@ -185,7 +185,7 @@ public class Message {
 	}
 
 	public void set(String key, int i) {
-		set(key, new Integer(i));
+		set(key, Integer.valueOf(i));
 	}
 
 	public void set(String key, long l) {

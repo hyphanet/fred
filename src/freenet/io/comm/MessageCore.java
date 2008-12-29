@@ -522,9 +522,9 @@ public class MessageCore {
 				String messageName = m.getSpec().getName();
 				Integer messageCount = messageCounts.get(messageName);
 				if (messageCount == null) {
-					messageCounts.put(messageName, new Integer(1) );
+					messageCounts.put(messageName, Integer.valueOf(1) );
 				} else {
-					messageCount = new Integer(messageCount.intValue() + 1);
+					messageCount = Integer.valueOf(messageCount.intValue() + 1);
 					messageCounts.put(messageName, messageCount );
 				}
 			}

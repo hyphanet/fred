@@ -711,12 +711,12 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 		for(int i=0;i<dataRetries.length;i++) {
 			if(dataKeys[i] == null) continue;
 			if(dataRetries[i] == retryCount)
-				v.add(new Integer(i));
+				v.add(Integer.valueOf(i));
 		}
 		for(int i=0;i<checkRetries.length;i++) {
 			if(checkKeys[i] == null) continue;
 			if(checkRetries[i] == retryCount)
-				v.add(new Integer(i+dataKeys.length));
+				v.add(Integer.valueOf(i+dataKeys.length));
 		}
 		return (Integer[]) v.toArray(new Integer[v.size()]);
 	}

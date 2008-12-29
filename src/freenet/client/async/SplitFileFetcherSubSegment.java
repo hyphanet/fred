@@ -350,7 +350,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Adding block "+blockNo+" to "+this+" dontSchedule="+dontSchedule);
 		if(blockNo < 0) throw new IllegalArgumentException();
-		Integer i = new Integer(blockNo);
+		Integer i = Integer.valueOf(blockNo);
 		
 		boolean schedule = true;
 		synchronized(segment) {
@@ -422,7 +422,7 @@ public class SplitFileFetcherSubSegment extends SendableGet {
 			Logger.minor(this, "No block found for key "+key+" on "+this);
 			return;
 		}
-		Integer token = new Integer(blockNo);
+		Integer token = Integer.valueOf(blockNo);
 		ClientCHK ckey = (ClientCHK) segment.getBlockKey(blockNo);
 		ClientCHKBlock cb;
 		try {

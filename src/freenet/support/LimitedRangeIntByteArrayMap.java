@@ -176,7 +176,7 @@ public class LimitedRangeIntByteArrayMap {
             }
             if(index == maxValue) {
                 for(int i=maxValue;i>=minValue;i--) {
-                    Integer ii = new Integer(i);
+                    Integer ii = Integer.valueOf(i);
                     if(contents.containsKey(ii)) {
                         maxValue = i;
                         notifyAll();
@@ -189,7 +189,7 @@ public class LimitedRangeIntByteArrayMap {
             }
             if(index == minValue) {
                 for(int i=minValue;i<=maxValue;i++) {
-                    Integer ii = new Integer(i);
+                    Integer ii = Integer.valueOf(i);
                     if(contents.containsKey(ii)) {
                         minValue = i;
                         notifyAll();

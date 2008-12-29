@@ -502,9 +502,9 @@ public class Yarrow extends RandomSource {
 				if(source != null) {
 					Integer contributedEntropy = entropySeen.get(source);
 					if(contributedEntropy == null)
-						contributedEntropy = new Integer(actualEntropy);
+						contributedEntropy = Integer.valueOf(actualEntropy);
 					else
-						contributedEntropy = new Integer(actualEntropy + contributedEntropy.intValue());
+						contributedEntropy = Integer.valueOf(actualEntropy + contributedEntropy.intValue());
 					entropySeen.put(source, contributedEntropy);
 
 					if(slow_entropy >= (SLOW_THRESHOLD * 2)) {

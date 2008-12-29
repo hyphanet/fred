@@ -372,7 +372,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(finished)
 			return new Object[] {};
 		else
-			return new Object[] { new Integer(0) };
+			return new Object[] { Integer.valueOf(0) };
 	}
 
 	@Override
@@ -383,7 +383,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	@Override
 	public synchronized Object chooseKey(KeysFetchingLocally ignored) {
 		if(finished) return null;
-		else return new Integer(0);
+		else return Integer.valueOf(0);
 	}
 
 }
