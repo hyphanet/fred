@@ -189,7 +189,7 @@ public class Message {
 	}
 
 	public void set(String key, long l) {
-		set(key, new Long(l));
+		set(key, Long.valueOf(l));
 	}
 
     public void set(String key, double d) {

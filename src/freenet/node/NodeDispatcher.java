@@ -579,7 +579,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	 */
 	private boolean handleRoutedRejected(Message m) {
 		long id = m.getLong(DMT.UID);
-		Long lid = new Long(id);
+		Long lid = Long.valueOf(id);
 		RoutedContext rc = routedContexts.get(lid);
 		if(rc == null) {
 			// Gah
@@ -618,7 +618,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		if(logMINOR) Logger.minor(this, "handleRouted("+m+ ')');
 
 		long id = m.getLong(DMT.UID);
-		Long lid = new Long(id);
+		Long lid = Long.valueOf(id);
 		short htl = m.getShort(DMT.HTL);
 		byte[] identity = ((ShortBuffer) m.getObject(DMT.NODE_IDENTITY)).getData();
 		if(source != null) htl = source.decrementHTL(htl);
@@ -661,7 +661,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	boolean handleRoutedReply(Message m) {
 		long id = m.getLong(DMT.UID);
 		if(logMINOR) Logger.minor(this, "Got reply: "+m);
-		Long lid = new Long(id);
+		Long lid = Long.valueOf(id);
 		RoutedContext ctx = routedContexts.get(lid);
 		if(ctx == null) {
 			Logger.error(this, "Unrecognized routed reply: "+m);

@@ -843,7 +843,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			String messageName = entry.getKey();
 			Long messageCount = entry.getValue();
 			messageNames.add(messageName);
-			messageCounts.put(messageName, new Long[] { messageCount, new Long(0) });
+			messageCounts.put(messageName, new Long[] { messageCount, Long.valueOf(0) });
 		}
 		for (Map.Entry<String,Long> entry : peerNodeStatus.getLocalMessagesSent().entrySet() ) {
 			String messageName =  entry.getKey();
@@ -853,7 +853,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			Long[] existingCounts = messageCounts.get(messageName);
 			if (existingCounts == null) {
-				messageCounts.put(messageName, new Long[] { new Long(0), messageCount });
+				messageCounts.put(messageName, new Long[] { Long.valueOf(0), messageCount });
 			} else {
 				existingCounts[1] = messageCount;
 			}

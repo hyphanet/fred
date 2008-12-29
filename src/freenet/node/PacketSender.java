@@ -573,7 +573,7 @@ public class PacketSender implements Runnable, Ticker {
 		Job job = new Job(name, runner);
 		if(offset < 0) offset = 0;
 		long now = System.currentTimeMillis();
-		Long l = new Long(offset + now);
+		Long l = Long.valueOf(offset + now);
 		synchronized(timedJobsByTime) {
 			Object o = timedJobsByTime.get(l);
 			if(o == null)
