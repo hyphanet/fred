@@ -195,5 +195,7 @@ public abstract class BloomFilter {
 		if (filter != null) {
 			force();
 		}
+		filter = null;
+		forkedFilter = null;
 	}
 }
