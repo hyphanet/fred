@@ -14,7 +14,7 @@ import java.util.HashMap;
 public class HTMLEncoder {
 	public final static CharTable charTable = 
 		new CharTable(HTMLEntities.encodeMap);
-
+	
 	public static String encode(String s) {
 		int n = s.length();
 		StringBuilder sb = new StringBuilder(n);
@@ -40,6 +40,28 @@ public class HTMLEncoder {
 		}
 		}
 		
+	}
+
+	/**
+	 * Encode String so it is safe to be used in XML attribute value and text.
+	 * 
+	 * HTMLEncode.encode() use some HTML-specific entities (e.g. &amp;) hence not suitable for
+	 * generic XML.
+	 */
+	public static String encodeXML(String s) {
+		// Extensible Markup Language (XML) 1.0 (Fifth Edition)
+		// [10]   	AttValue	   ::=   	'"' ([^<&"] | Reference)* '"'
+		// 								|   "'" ([^<&'] | Reference)* "'"
+		// [14]   	CharData	   ::=   	[^<&]* - ([^<&]* ']]>' [^<&]*)
+		s = s.replace("&", "&#38;");
+
+		s = s.replace("\"", "&#34;");
+		s = s.replace("'", "&#39;");
+
+		s = s.replace("<", "&#60;");
+		s = s.replace(">", "&#62;"); // CharData can't contain ']]>'
+
+		return s;
 	}
 		
 	private final static class CharTable{
