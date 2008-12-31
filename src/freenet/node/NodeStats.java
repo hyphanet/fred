@@ -917,15 +917,6 @@ public class NodeStats implements Persistable {
 		
 		/* gather connection statistics */
 		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses(true);
-		Arrays.sort(peerNodeStatuses, new Comparator<PeerNodeStatus>() {
-			public int compare(PeerNodeStatus firstNode, PeerNodeStatus secondNode) {
-				int statusDifference = firstNode.getStatusValue() - secondNode.getStatusValue();
-				if (statusDifference != 0) {
-					return statusDifference;
-				}
-				return 0;
-			}
-		});
 
 		int numberOfConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONNECTED);
 		int numberOfRoutingBackedOff = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
