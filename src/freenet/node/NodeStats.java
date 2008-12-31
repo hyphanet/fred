@@ -3,8 +3,6 @@ package freenet.node;
 import java.io.File;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.Arrays;
-import java.util.Comparator;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -905,6 +903,11 @@ public class NodeStats implements Persistable {
 		}
 		fs.put("averagePingTime", getNodeAveragePingTime());
 		fs.put("bwlimitDelayTime", getBwlimitDelayTime());
+		fs.put("opennetSizeEstimateSession", getOpennetSizeEstimate(-1));
+		int opennetSizeEstimate24hourRecent = getOpennetSizeEstimate(now - (24 * 60 * 60 * 1000)); // 24 hours
+		fs.put("opennetSizeEstimate24hourRecent", opennetSizeEstimate24hourRecent);
+		int opennetSizeEstimate48hourRecent = getOpennetSizeEstimate(now - (48 * 60 * 60 * 1000)); // 48 hours
+		fs.put("opennetSizeEstimate48hourRecent", opennetSizeEstimate48hourRecent);		
 		fs.put("networkSizeEstimateSession", getDarknetSizeEstimate(-1));
 		int networkSizeEstimate24hourRecent = getDarknetSizeEstimate(now - (24*60*60*1000));  // 24 hours
 		fs.put("networkSizeEstimate24hourRecent", networkSizeEstimate24hourRecent);
