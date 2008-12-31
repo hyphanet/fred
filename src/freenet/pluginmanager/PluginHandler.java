@@ -23,6 +23,11 @@ public class PluginHandler {
 		final PluginInfoWrapper pi = new PluginInfoWrapper(pr, plug, filename);
 		final PluginStarter ps = new PluginStarter(pr, pi);
 		ps.setPlugin(pm, plug);
+		
+		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+		ClassLoader pluginClassLoader = plug.getClass().getClassLoader();
+		Thread.currentThread().setContextClassLoader(pluginClassLoader);
+		try {
 		// We must start the plugin *after startup has finished*
 		Runnable job;
 		if(!pi.isThreadlessPlugin()) {
@@ -39,6 +44,9 @@ public class PluginHandler {
 			// Avoid NPEs: let it init, then register it.
 			plug.runPlugin(pr);
 			pm.register(plug, pi);
+		}
+		} finally {
+			Thread.currentThread().setContextClassLoader(oldClassLoader);
 		}
 		return pi;
 	}
