@@ -706,6 +706,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 	}
 
 	private void flushAndClose() {
+		Logger.normal(this, "Flush and closing this store: " + name);
 		try {
 			metaFC.force(true);
 			metaFC.close();
