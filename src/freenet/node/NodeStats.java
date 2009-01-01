@@ -920,7 +920,10 @@ public class NodeStats implements Persistable {
 		
 		/* gather connection statistics */
 		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses(true);
-
+		
+		int numberOfSeedServers = getCountSeedServers(peerNodeStatuses);
+		int numberOfSeedClients = getCountSeedClients(peerNodeStatuses);
+		
 		int numberOfConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONNECTED);
 		int numberOfRoutingBackedOff = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
 		int numberOfTooNew = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_TOO_NEW);
@@ -935,6 +938,8 @@ public class NodeStats implements Persistable {
 		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
 		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly;
 
+		fs.put("numberOfSeedServers", numberOfSeedServers);
+		fs.put("numberOfSeedClients", numberOfSeedClients);
 		fs.put("numberOfConnected", numberOfConnected);
 		fs.put("numberOfRoutingBackedOff", numberOfRoutingBackedOff);
 		fs.put("numberOfTooNew", numberOfTooNew);
@@ -1755,5 +1760,23 @@ public class NodeStats implements Persistable {
 		}
 		
 		return result;
+	}
+	
+	private int getCountSeedServers(PeerNodeStatus[] peerNodeStatuses) {
+		int count = 0;
+		for (int peerIndex = 0; peerIndex < peerNodeStatuses.length; peerIndex++) {
+			if (peerNodeStatuses[peerIndex].isSeedServer())
+				count++;
+		}
+		return count;
+	}
+
+	private int getCountSeedClients(PeerNodeStatus[] peerNodeStatuses) {
+		int count = 0;
+		for (int peerIndex = 0; peerIndex < peerNodeStatuses.length; peerIndex++) {
+			if (peerNodeStatuses[peerIndex].isSeedClient())
+				count++;
+		}
+		return count;
 	}
 }
