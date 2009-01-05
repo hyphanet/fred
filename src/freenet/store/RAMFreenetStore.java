@@ -9,6 +9,11 @@ import freenet.keys.KeyVerifyException;
 import freenet.support.ByteArrayWrapper;
 import freenet.support.LRUHashtable;
 
+/**
+ * LRU in memory store.
+ * 
+ * For debugging / simulation only
+ */
 public class RAMFreenetStore implements FreenetStore {
 
 	private final static class Block {

@@ -47,7 +47,12 @@ import freenet.support.io.FileUtil;
 import freenet.support.io.NativeThread;
 
 /**
- * Index-less data store based on salted hash
+ * Index-less data store based on salted hash.
+ * 
+ * Provide a pseudo-random replacement based on a salt value generated on create. Keys are check
+ * against a bloom filter before probing. Data are encrypted using the route key and the salt, so
+ * there is no way to recover the data without holding the route key. (For debugging, you can set
+ * OPTION_SAVE_PLAINKEY=true in source code)
  * 
  * @author sdiz
  */
