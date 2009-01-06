@@ -58,8 +58,6 @@ public class NodeCrypto {
 	byte[] identityHash;
 	/** Hash of hash of identity i.e. hash of setup key. */
 	byte[] identityHashHash;
-	/** Nonce used to generate ?secureid= for fproxy etc */
-	byte[] clientNonce;
 	/** My crypto group */
 	private DSAGroup cryptoGroup;
 	/** My private key */
@@ -233,18 +231,6 @@ public class NodeCrypto {
 		}
 		myARK = ark;
 		
-		String cn = fs.get("clientNonce");
-		if(cn != null) {
-			try {
-				clientNonce = Base64.decode(cn);
-			} catch (IllegalBase64Exception e) {
-				throw new IOException("Invalid clientNonce field: "+e);
-			}
-		} else {
-			clientNonce = new byte[32];
-			node.random.nextBytes(clientNonce);
-		}
-		
 	}
 
 	/**
@@ -263,8 +249,6 @@ public class NodeCrypto {
 		myARKNumber = 0;
 		SHA256.returnMessageDigest(md);
 		anonSetupCipher.initialize(identityHash);
-		clientNonce = new byte[32];
-		node.random.nextBytes(clientNonce);
 	}
 
 	public void start(boolean disableHangchecker) {
@@ -449,7 +433,6 @@ public class NodeCrypto {
 		// We must save the location!
 		if(fs.get("location") == null)
 			fs.put("location", node.lm.getLocation());
-		fs.putSingle("clientNonce", Base64.encode(clientNonce));
 		
 	}
 
