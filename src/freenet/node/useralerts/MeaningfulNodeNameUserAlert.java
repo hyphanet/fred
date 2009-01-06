@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
+import freenet.clients.http.LinkFixer;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.l10n.L10n;
@@ -50,9 +51,9 @@ public class MeaningfulNodeNameUserAlert extends AbstractUserAlert {
 		HTMLNode itemNode = listNode.addChild("li");
 		itemNode.addChild("span", new String[]{ "class", "title", "style" },
 				new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o.getDefault() }), 
-				"cursor: help;" }).addChild(L10n.getHTMLNode(o.getShortDesc()));
+				"cursor: help;" }).addChild(L10n.getHTMLNode(o.getShortDesc(), fixer));
 		itemNode.addChild("input", new String[] { "type", "class", "alt", "name", "value" }, new String[] { "text", "config", o.getShortDesc(), "node.name", o.getValueString() });
-		itemNode.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode(o.getLongDesc()));
+		itemNode.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode(o.getLongDesc(), fixer));
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", L10n.getString("UserAlert.apply") });
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset", L10n.getString("UserAlert.reset") });
 

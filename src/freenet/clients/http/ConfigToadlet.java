@@ -390,9 +390,9 @@ public class ConfigToadlet extends Toadlet {
 				String defaultValue = "128";
 				item.addChild("span", new String[]{ "class", "title", "style" },
 						new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { defaultValue }),
-						"cursor: help;" }).addChild(L10n.getHTMLNode("WrapperConfig."+configName+".short"));
+						"cursor: help;" }).addChild(L10n.getHTMLNode("WrapperConfig."+configName+".short", ctx));
 				item.addChild("span", "class", "config").addChild("input", new String[] { "type", "class", "name", "value" }, new String[] { "text", "config", configName, curValue });
-				item.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode("WrapperConfig."+configName+".long"));
+				item.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode("WrapperConfig."+configName+".long", ctx));
 			}
 		}
 		
@@ -411,7 +411,7 @@ public class ConfigToadlet extends Toadlet {
 					HTMLNode configItemNode = configGroupUlNode.addChild("li");
 					configItemNode.addChild("span", new String[]{ "class", "title", "style" },
 							new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o[j].getDefault() }) + (mode >= PageMaker.MODE_ADVANCED ? " ["+sc[i].getPrefix() + '.' + o[j].getName() + ']' : ""),
-							"cursor: help;" }).addChild(L10n.getHTMLNode(o[j].getShortDesc()));
+							"cursor: help;" }).addChild(L10n.getHTMLNode(o[j].getShortDesc(), ctx));
 					HTMLNode configItemValueNode = configItemNode.addChild("span", "class", "config");
 					if(o[j].getValueString() == null){
 						Logger.error(this, sc[i].getPrefix() + configName + "has returned null from config!);");
@@ -436,7 +436,7 @@ public class ConfigToadlet extends Toadlet {
 						        new String[] { "text", "config", o[j].getShortDesc(),
 						                sc[i].getPrefix() + '.' + configName, o[j].getValueString() });
 
-					configItemNode.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode(o[j].getLongDesc()));
+					configItemNode.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode(o[j].getLongDesc(), ctx));
 				}
 			}
 			

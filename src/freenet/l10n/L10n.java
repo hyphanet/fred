@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.MissingResourceException;
 
+import freenet.clients.http.LinkFixer;
 import freenet.clients.http.TranslationToadlet;
 import freenet.support.HTMLEncoder;
 import freenet.support.HTMLNode;
@@ -279,13 +280,13 @@ public class L10n {
 	* @param key
 	* @return HTMLNode
 	*/
-	public static HTMLNode getHTMLNode(String key) {
+	public static HTMLNode getHTMLNode(String key, LinkFixer fixer) {
 		String value = getString(key, true);
 		if(value != null)
 			return new HTMLNode("#", value);
 		HTMLNode translationField = new HTMLNode("span", "class", "translate_it") ;
 		translationField.addChild("#", getDefaultString(key));
-		translationField.addChild("a", "href", TranslationToadlet.TOADLET_URL+"?translate=" + key).addChild("small", " (translate it in your native language!)");
+		translationField.addChild("a", "href", fixer.fixLink(TranslationToadlet.TOADLET_URL+"?translate=" + key)).addChild("small", " (translate it in your native language!)");
 			
 		return translationField;
 	}
