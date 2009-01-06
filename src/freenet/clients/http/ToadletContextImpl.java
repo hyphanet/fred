@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URI;
@@ -36,7 +37,7 @@ import freenet.support.io.TooLongException;
  * @author root
  *
  */
-public class ToadletContextImpl implements ToadletContext {
+public class ToadletContextImpl implements ToadletContext, LinkFixer {
 	
 	private final MultiValueTable<String,String> headers;
 	private final OutputStream sockOutputStream;
@@ -344,6 +345,7 @@ public class ToadletContextImpl implements ToadletContext {
 				// Handle it.
 				try {
 				boolean redirect = true;
+				boolean first = true;
 				while (redirect) {
 					// don't go around the loop unless set explicitly
 					redirect = false;
@@ -364,9 +366,11 @@ public class ToadletContextImpl implements ToadletContext {
 					HTTPRequestImpl req = new HTTPRequestImpl(uri, data, ctx);
 					try {
 						if(method.equals("GET")) {
-							t.handleGet(uri, req, ctx);
+							if(!(first && checkSecureID(uri, req, ctx)))
+								t.handleGet(uri, req, ctx);
 							ctx.close();
 						} else if(method.equals("POST")) {
+							// FIXME check the ?secureid= for POSTs ... necessary?
 							t.handlePost(uri, req, ctx);
 						} else {
 							ctx.sendMethodNotAllowed(method, ctx.shouldDisconnect);
@@ -375,6 +379,7 @@ public class ToadletContextImpl implements ToadletContext {
 					} catch (RedirectException re) {
 						uri = re.newuri;
 						redirect = true;
+						first = false;
 					} finally {
 						req.freeParts();
 					}
@@ -410,6 +415,103 @@ public class ToadletContextImpl implements ToadletContext {
 		}
 	}
 	
+	/**
+	 * Check a request for a valid secureid parameter. This is used to ensure that no predictable uri goes
+	 * into the browser history. The secureid parameter is generated from the client nonce and the uri,
+	 * including the ? parameters except for the secureid.
+	 * @param uri
+	 * @param req
+	 * @param ctx
+	 * @return True if we sent a warning message to the user and the request need not be handled further,
+	 * false if there is a valid secureid parameter.
+	 * @throws IOException 
+	 * @throws ToadletContextClosedException 
+	 */
+	private static boolean checkSecureID(URI uri, HTTPRequestImpl req, ToadletContextImpl ctx) throws ToadletContextClosedException, IOException {
+		if(ctx.container.isSecureIDCheckingDisabled()) {
+			return false;
+		}
+		String path = uri.getRawPath();
+		String secureid = req.getParam("secureid"); // remove it
+		String queries = getQueriesNoSecureID(uri);
+		String realPath = path;
+		if(queries != null) realPath += queries;
+		String expectedSecureID = ctx.container.generateSID(realPath);
+		if(secureid != null && expectedSecureID.equals(secureid)) {
+			return false;
+		}
+		
+		// Warn the user.
+		
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("browserHistoryWarningTitle"), ctx);
+		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+        HTMLNode warningBox = contentNode.addChild("div", "class", "infobox infobox-normal");
+        HTMLNode warningBoxHeader = warningBox.addChild("div", "class", "infobox-header");
+        warningBoxHeader.addChild("#", l10n("browserHistoryWarningBoxTitle"));
+        HTMLNode warningBoxContent = warningBox.addChild("div", "class", "infobox-content");
+        warningBoxContent.addChild("p", l10n("browserHistoryWarning"));
+        
+        // Link to the page
+        if(queries == null) queries = "?secureid="+expectedSecureID;
+        else queries += "&secureid="+expectedSecureID;
+        realPath = path + queries;
+        L10n.addL10nSubstitution(warningBoxContent, "ToadletContextImpl.browserHistoryWarningLink", 
+        		new String[] { "link", "/link" },
+        		new String[] { "<a href=\""+HTMLEncoder.encode(realPath)+"\">", "</a>" });
+        
+        if(ctx.isAllowedFullAccess()) {
+        	// Button to disable the warning
+        	// FIXME implement
+        }
+        
+        byte[] data;
+        try {
+			data = pageNode.generate().getBytes("UTF-8");
+		} catch (UnsupportedEncodingException e) {
+			throw new Error(e);
+		}
+		
+		ctx.sendReplyHeaders(400, "Bad Request", null, "text/html; charset=utf-8", data.length);
+		ctx.writeData(data);
+		
+		return true;
+	}
+	
+	private static String getQueriesNoSecureID(URI uri) {
+		String query = uri.getQuery();
+		if(query == null) return null;
+		if(query.startsWith("secureid=")) {
+			query = query.substring("secureid=".length());
+			int x = query.indexOf('&');
+			if(x >= 0)
+				return '?' + query.substring(x+1);
+			else return null;
+		} else {
+			int idx = query.indexOf("&secureid=");
+			if(idx == -1) return query;
+			String before = query.substring(0, idx);
+			String after = query.substring(idx+"&secureid=".length());
+			int x = after.indexOf('&');
+			if(x >= 0) {
+				after = after.substring(x+1);
+				return '?' + before + '&' + after;
+			} else {
+				return '?' + before;
+			}
+		}
+	}
+
+	/* (non-Javadoc)
+	 * @see freenet.clients.http.LinkFixer#fixLink(java.lang.String)
+	 */
+	public String fixLink(String orig) {
+		return container.fixLink(orig);
+	}
+	
+	public URI fixLink(URI uri) throws URISyntaxException {
+		return container.fixLink(uri);
+	}
+
 	/**
 	 * Should the connection be closed after handling this request?
 	 * @param isHTTP10 Did the client specify HTTP/1.0?
@@ -478,4 +580,5 @@ public class ToadletContextImpl implements ToadletContext {
 	public ToadletContainer getContainer() {
 		return container;
 	}
+
 }

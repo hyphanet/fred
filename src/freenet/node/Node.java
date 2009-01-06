@@ -2,6 +2,7 @@
 package freenet.node;
 
 import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -13,6 +14,7 @@ import java.io.RandomAccessFile;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,6 +36,7 @@ import com.sleepycat.je.EnvironmentMutableConfig;
 import com.sleepycat.je.StatsConfig;
 
 import freenet.client.FetchContext;
+import freenet.clients.http.LinkFixer;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.FreenetFilePersistentConfig;
@@ -663,12 +666,139 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				L10n.setLanguage(L10n.LANGUAGE.getDefault().shortCode);
 			}
 		}
+
+		// Directory for node-related files other than store
 		
+		nodeConfig.register("nodeDir", ".", sortOrder++, true, true /* because can't be changed on the fly, also for packages */, "Node.nodeDir", "Node.nodeDirLong", 
+				new StringCallback() {
+					@Override
+					public String get() {
+						return nodeDir.getPath();
+					}
+					@Override
+					public void set(String val) throws InvalidConfigValueException {
+						if(nodeDir.equals(new File(val))) return;
+						// FIXME support it
+						// Don't translate the below as very few users will use it.
+						throw new InvalidConfigValueException("Moving node directory on the fly not supported at present");
+					}
+					@Override
+					public boolean isReadOnly() {
+				        return true;
+			        }
+		});
+		
+		nodeDir = new File(nodeConfig.getString("nodeDir"));
+		if(!((nodeDir.exists() && nodeDir.isDirectory()) || (nodeDir.mkdir()))) {
+			String msg = "Could not find or create datastore directory";
+			throw new NodeInitException(NodeInitException.EXIT_BAD_NODE_DIR, msg);
+		}
+		
+		File clientNonceFile = new File(nodeDir, "client-nonce.dat");
+		byte[] nonce = null;
+		
+		final NativeThread entropyGatheringThread = new NativeThread(new Runnable() {
+
+			private void recurse(File f) {
+				if(isPRNGReady)
+					return;
+				File[] subDirs = f.listFiles(new FileFilter() {
+
+					public boolean accept(File pathname) {
+						return pathname.exists() && pathname.canRead() && pathname.isDirectory();
+					}
+				});
+
+
+				// @see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=5086412
+				if(subDirs != null) 
+					for(File currentDir : subDirs)
+						recurse(currentDir);
+			}
+
+			public void run() {
+				for(File root : File.listRoots()) {
+					if(isPRNGReady)
+						return;
+					recurse(root);
+				}
+			}
+		}, "Entropy Gathering Thread", NativeThread.MIN_PRIORITY, true);
+		boolean startedEntropyGatherer = false;
+
 		// FProxy config needs to be here too
 		SubConfig fproxyConfig = new SubConfig("fproxy", config);
 		try {
-			toadlets = new SimpleToadletServer(fproxyConfig, new ArrayBucketFactory(), executor);
+			toadlets = new SimpleToadletServer(fproxyConfig, new ArrayBucketFactory(), executor, this);
 			fproxyConfig.finishedInitialization();
+			FileInputStream fis = null;
+			try {
+				fis = new FileInputStream(clientNonceFile);
+				DataInputStream dis = new DataInputStream(fis);
+				nonce = new byte[32];
+				dis.readFully(nonce);
+			} catch (IOException e) {
+				nonce = null;
+			} finally {
+				Closer.close(fis);
+			}
+			if(nonce == null && !toadlets.isSecureIDCheckingDisabled()) {
+				// Generate client-nonce.
+				class Wrapper {
+					boolean finished;
+					byte[] result;
+				}
+				final Wrapper w = new Wrapper();
+				Thread t = new Thread(new Runnable() {
+
+					public void run() {
+						byte[] result = SecureRandom.getSeed(32);
+						synchronized(w) {
+							w.result = result;
+							w.finished = true;
+						}
+					}
+					
+				}, "History cloaking seed thread");
+				t.start();
+				synchronized(w) {
+					if(!w.finished) {
+						try {
+							w.wait(5000);
+						} catch (InterruptedException e) {
+							// Ignore
+						} // Give it 5 seconds...
+					}
+					nonce = w.result;
+				}
+				if(nonce == null) {
+					if(File.separatorChar == '/') {
+						File urandom = new File("/dev/urandom");
+						if(urandom.exists()) {
+							fis = null;
+							nonce = new byte[32];
+							try {
+								fis = new FileInputStream(urandom);
+								DataInputStream dis = new DataInputStream(fis);
+								dis.readFully(nonce);
+							} catch (IOException e) {
+								nonce = null;
+							} finally {
+								Closer.close(fis);
+							}
+						}
+					}
+				}
+				if(nonce == null) {
+					// Either we are on Windows, in which case CAPI doesn't block, or we are on some wierd unix...
+					System.err.println("Blocking waiting for entropy. Because history cloaking is enabled, we cannot yet launch the web interface...");
+					entropyGatheringThread.start();
+					startedEntropyGatherer = true;
+					nonce = SecureRandom.getSeed(32);
+				}
+				writeClientNonce(nonce, clientNonceFile);
+			}
+			toadlets.setNonce(nonce);
 			toadlets.start();
 		} catch (IOException e4) {
 			Logger.error(this, "Could not start web interface: "+e4, e4);
@@ -680,38 +810,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			e4.printStackTrace();
 			throw new NodeInitException(NodeInitException.EXIT_COULD_NOT_START_FPROXY, "Could not start FProxy: "+e4);
 		}
-
+		
 		// Setup RNG if needed : DO NOT USE IT BEFORE THAT POINT!
 		if(r == null) {
-			final NativeThread entropyGatheringThread = new NativeThread(new Runnable() {
-
-				private void recurse(File f) {
-					if(isPRNGReady)
-						return;
-					File[] subDirs = f.listFiles(new FileFilter() {
-
-						public boolean accept(File pathname) {
-							return pathname.exists() && pathname.canRead() && pathname.isDirectory();
-						}
-					});
-
-
-					// @see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=5086412
-					if(subDirs != null) 
-						for(File currentDir : subDirs)
-							recurse(currentDir);
-				}
-
-				public void run() {
-					for(File root : File.listRoots()) {
-						if(isPRNGReady)
-							return;
-						recurse(root);
-					}
-				}
-			}, "Entropy Gathering Thread", NativeThread.MIN_PRIORITY, true);
-
-			entropyGatheringThread.start();
+			if(!startedEntropyGatherer)
+				entropyGatheringThread.start();
 			this.random = new Yarrow();
 			DiffieHellman.init(random);
 			
@@ -719,6 +822,14 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			this.random = r;
 		isPRNGReady = true;
 		toadlets.getStartupToadlet().setIsPRNGReady();
+		
+		if(nonce == null) {
+			nonce = new byte[32];
+			random.nextBytes(nonce);
+			toadlets.setNonce(nonce);
+		}
+		writeClientNonce(nonce, clientNonceFile);
+		
 		if(weakRandom == null) {
 			byte buffer[] = new byte[16];
 			random.nextBytes(buffer);
@@ -756,33 +867,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		runningSSKOfferReplyUIDs = new HashSet<Long>();
 		
 		this.securityLevels = new SecurityLevels(this, config);
-		
-		// Directory for node-related files other than store
-		
-		nodeConfig.register("nodeDir", ".", sortOrder++, true, true /* because can't be changed on the fly, also for packages */, "Node.nodeDir", "Node.nodeDirLong", 
-				new StringCallback() {
-					@Override
-					public String get() {
-						return nodeDir.getPath();
-					}
-					@Override
-					public void set(String val) throws InvalidConfigValueException {
-						if(nodeDir.equals(new File(val))) return;
-						// FIXME support it
-						// Don't translate the below as very few users will use it.
-						throw new InvalidConfigValueException("Moving node directory on the fly not supported at present");
-					}
-					@Override
-					public boolean isReadOnly() {
-				        return true;
-			        }
-		});
-		
-		nodeDir = new File(nodeConfig.getString("nodeDir"));
-		if(!((nodeDir.exists() && nodeDir.isDirectory()) || (nodeDir.mkdir()))) {
-			String msg = "Could not find or create datastore directory";
-			throw new NodeInitException(NodeInitException.EXIT_BAD_NODE_DIR, msg);
-		}
 		
 		// Boot ID
 		bootID = random.nextLong();
@@ -1891,6 +1975,19 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		System.out.println("Node constructor completed");
 	}
 
+	private void writeClientNonce(byte[] nonce, File nonceFile) {
+		FileOutputStream fos = null;
+		try {
+			fos = new FileOutputStream(nonceFile);
+			fos.write(nonce);
+			fos.flush();
+		} catch (IOException e) {
+			System.err.println("Failed to write client nonce. This means that fproxy URLs will be different on every restart. Reason: "+e);
+		} finally {
+			Closer.close(fos);
+		}
+	}
+
 	private void initSaltHashFS(final String suffix) throws NodeInitException {
 	    storeEnvironment = null;
 		envMutableConfig = null;
@@ -2248,7 +2345,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 						HTMLNode n = new HTMLNode("div");
 						L10n.addL10nSubstitution(n, "Node.buggyJVMWithLink", 
 								new String[] { "link", "/link", "version" },
-								new String[] { "<a href=\"/?_CHECKED_HTTP_=http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795\">", 
+								new String[] { "<a href=\"/?_CHECKED_HTTP_=http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795\">",
 								"</a>", HTMLEncoder.encode(System.getProperty("java.version")) });
 						return n;
 					}
