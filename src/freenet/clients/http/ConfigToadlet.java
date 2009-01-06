@@ -72,8 +72,8 @@ public class ConfigToadlet extends Toadlet {
 			if (node.isUsingWrapper()) {
 				alertNode.addChild("br");
 				HTMLNode restartForm = alertNode.addChild("form", //
-						new String[] { "action", "method" },//
-				        new String[] { "/", "get" });
+						new String[] { "action", "method", "enctype" },//
+				        new String[] { "/", "post", "multipart/form-data" });
 				restartForm.addChild("div");
 				restartForm.addChild("input",//
 						new String[] { "type", "name" },//
@@ -297,9 +297,7 @@ public class ConfigToadlet extends Toadlet {
 
 				if (node.isUsingWrapper()) {
 					content.addChild("br");
-					HTMLNode restartForm = content.addChild("form",//
-					        new String[] { "action", "method" }, new String[] { "/", "get" }//
-					        ).addChild("div");
+					HTMLNode restartForm = ctx.addFormChild(content, "/", "restartForm").addChild("div");
 					restartForm.addChild("input",//
 					        new String[] { "type", "name" },//
 					        new String[] { "hidden", "restart" });
@@ -364,7 +362,7 @@ public class ConfigToadlet extends Toadlet {
 			HTMLNode navigationBar = ctx.getPageMaker().getInfobox("navbar", l10n("configNavTitle"));
 			HTMLNode navigationContent = ctx.getPageMaker().getContentNode(navigationBar).addChild("ul");
 			if(!L10n.getSelectedLanguage().equals(L10n.LANGUAGE.getDefault()))
-				navigationContent.addChild("a", "href", TranslationToadlet.TOADLET_URL, l10n("contributeTranslation"));
+				navigationContent.addChild("a", "href", ctx.fixLink(TranslationToadlet.TOADLET_URL), l10n("contributeTranslation"));
 			HTMLNode navigationTable = navigationContent.addChild("table", "class", "config_navigation");
 			HTMLNode navigationTableRow = navigationTable.addChild("tr");
 			HTMLNode nextTableCell = navigationTableRow;
