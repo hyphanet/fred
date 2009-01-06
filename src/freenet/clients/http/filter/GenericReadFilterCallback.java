@@ -182,27 +182,27 @@ public class GenericReadFilterCallback implements FilterCallback {
 			
 			if(rpath == null) reason = "No URI";
 			else {
-			if(rpath.startsWith(StaticToadlet.ROOT_URL)) {
-				return fixer.fixLink(rpath);
-			}
-			
-			if(logMINOR) Logger.minor(this, "Resolved URI (rpath relative): "+rpath);
-			
-			// Valid FreenetURI?
-			try {
-				String p = rpath;
-				while(p.startsWith("/")) p = p.substring(1);
-				FreenetURI furi = new FreenetURI(p);
-				if(logMINOR) Logger.minor(this, "Parsed: "+furi);
-				return processURI(furi, uri, overrideType, noRelative, inline);
-			} catch (MalformedURLException e) {
-				if(logMINOR) Logger.minor(this, "Malformed URL (b): "+e, e);
-				if(e.getMessage() != null) {
-					reason = l10n("malformedRelativeURL", "error", e.getMessage());
-				} else {
-					reason = l10n("couldNotParseRelativeFreenetURI");
+				if(rpath.startsWith(StaticToadlet.ROOT_URL)) {
+					return fixer.fixLink(rpath);
 				}
-			}
+				
+				if(logMINOR) Logger.minor(this, "Resolved URI (rpath relative): "+rpath);
+				
+				// Valid FreenetURI?
+				try {
+					String p = rpath;
+					while(p.startsWith("/")) p = p.substring(1);
+					FreenetURI furi = new FreenetURI(p);
+					if(logMINOR) Logger.minor(this, "Parsed: "+furi);
+					return processURI(furi, uri, overrideType, noRelative, inline);
+				} catch (MalformedURLException e) {
+					if(logMINOR) Logger.minor(this, "Malformed URL (b): "+e, e);
+					if(e.getMessage() != null) {
+						reason = l10n("malformedRelativeURL", "error", e.getMessage());
+					} else {
+						reason = l10n("couldNotParseRelativeFreenetURI");
+					}
+				}
 			
 			}
 		}
