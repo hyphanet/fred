@@ -424,4 +424,9 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 		return null;
 	}
 
+	@Override
+	protected String getURL() {
+		return "/friends/";
+	}
+
 }

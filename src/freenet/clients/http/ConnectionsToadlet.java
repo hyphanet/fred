@@ -236,8 +236,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		long now = System.currentTimeMillis();
 	
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
-		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, request, contentNode);
+			contentNode.addChild(core.alerts.createSummary(ctx));
+		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, ctx, request, contentNode, getURL());
 		
 		if(peerNodeStatuses.length>0){
 
@@ -475,6 +475,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
+
+	protected abstract String getURL();
 
 	protected abstract boolean acceptRefPosts();
 	

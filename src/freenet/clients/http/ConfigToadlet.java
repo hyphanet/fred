@@ -352,7 +352,7 @@ public class ConfigToadlet extends Toadlet {
 		
 		contentNode.addChild(core.alerts.createSummary());
 		
-		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, req, contentNode, MODE_SECURITY_LEVELS, "SecurityLevels.title", "SecurityLevels.tooltip");
+		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, ctx, req, contentNode, MODE_SECURITY_LEVELS, "SecurityLevels.title", "SecurityLevels.tooltip", "/config/");
 		
 		if(mode == MODE_SECURITY_LEVELS) {
 			drawSecurityLevelsPage(contentNode, ctx);

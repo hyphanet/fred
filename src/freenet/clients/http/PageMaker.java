@@ -146,12 +146,12 @@ public final class PageMaker {
 		headNode.addChild("meta", new String[] { "http-equiv", "content" }, new String[] { "Content-Type", "text/html; charset=utf-8" });
 		headNode.addChild("title", title + " - Freenet");
 		if(override == null)
-			headNode.addChild("link", new String[] { "rel", "href", "type", "title" }, new String[] { "stylesheet", "/static/themes/" + theme.code + "/theme.css", "text/css", theme.code });
+			headNode.addChild("link", new String[] { "rel", "href", "type", "title" }, new String[] { "stylesheet", ctx.fixLink("/static/themes/" + theme.code + "/theme.css"), "text/css", theme.code });
 		else
 			headNode.addChild(getOverrideContent());
 		for (THEME t: THEME.values()) {
 			String themeName = t.code;
-			headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", "/static/themes/" + themeName + "/theme.css", "text/css", "screen", themeName });
+			headNode.addChild("link", new String[] { "rel", "href", "type", "media", "title" }, new String[] { "alternate stylesheet", ctx.fixLink("/static/themes/" + themeName + "/theme.css"), "text/css", "screen", themeName });
 		}
 		
 		HTMLNode bodyNode = htmlNode.addChild("body");
@@ -168,9 +168,9 @@ public final class PageMaker {
 				String navigationPath = navigationLinks.get(navigationLink);
 				HTMLNode listItem = navbarUl.addChild("li");
 				if (plugin != null)
-					listItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, plugin.getString(navigationTitle) }, plugin.getString(navigationLink));
+					listItem.addChild("a", new String[] { "href", "title" }, new String[] { ctx.fixLink(navigationPath), plugin.getString(navigationTitle) }, plugin.getString(navigationLink));
 				else
-					listItem.addChild("a", new String[] { "href", "title" }, new String[] { navigationPath, L10n.getString(navigationTitle) }, L10n.getString(navigationLink));
+					listItem.addChild("a", new String[] { "href", "title" }, new String[] { ctx.fixLink(navigationPath), L10n.getString(navigationTitle) }, L10n.getString(navigationLink));
 			}
 		}
 		HTMLNode contentDiv = pageDiv.addChild("div", "id", "content");
@@ -254,11 +254,11 @@ public final class PageMaker {
 		return result;
 	}
 	
-	protected int drawModeSelectionArray(NodeClientCore core, HTTPRequest req, HTMLNode contentNode) {
-		return drawModeSelectionArray(core, req, contentNode, -1, null, null);
+	protected int drawModeSelectionArray(NodeClientCore core, LinkFixer fixer, HTTPRequest req, HTMLNode contentNode, String baseURL) {
+		return drawModeSelectionArray(core, fixer, req, contentNode, -1, null, null, baseURL);
 	}
 	
-	protected int drawModeSelectionArray(NodeClientCore core, HTTPRequest req, HTMLNode contentNode, int alternateMode, String alternateModeTitleKey, String alternateModeTooltipKey) {
+	protected int drawModeSelectionArray(NodeClientCore core, LinkFixer fixer, HTTPRequest req, HTMLNode contentNode, int alternateMode, String alternateModeTitleKey, String alternateModeTooltipKey, String baseURL) {
 		// Mode can be changed by a link, not just by the default
 		
 		int mode = core.isAdvancedModeEnabled() ? MODE_ADVANCED : MODE_SIMPLE;
@@ -274,19 +274,19 @@ public final class PageMaker {
 		
 		if(alternateMode > -1) {
 			if(mode != alternateMode)
-				cell.addChild("a", new String[] { "href", "title" }, new String[] { "?mode="+alternateMode, L10n.getString(alternateModeTooltipKey) }, L10n.getString(alternateModeTitleKey));
+				cell.addChild("a", new String[] { "href", "title" }, new String[] { fixer.fixLink(baseURL+"?mode="+alternateMode), L10n.getString(alternateModeTooltipKey) }, L10n.getString(alternateModeTitleKey));
 			else
 				cell.addChild("b", "title", L10n.getString(alternateModeTooltipKey), L10n.getString(alternateModeTitleKey));
 			cell = row.addChild("td");
 		}
 		
 		if(mode != MODE_SIMPLE)
-			cell.addChild("a", new String[] { "href", "title" }, new String[] { "?mode=1", l10n("modeSimpleTooltip") }, l10n("modeSimple"));
+			cell.addChild("a", new String[] { "href", "title" }, new String[] { fixer.fixLink(baseURL+"?mode=1"), l10n("modeSimpleTooltip") }, l10n("modeSimple"));
 		else
 			cell.addChild("b", "title", l10n("modeSimpleTooltip"), l10n("modeSimple"));
 		cell = row.addChild("td");
 		if(mode != MODE_ADVANCED)
-			cell.addChild("a", new String[] { "href", "title" }, new String[] { "?mode=2", l10n("modeAdvancedTooltip") }, l10n("modeAdvanced"));
+			cell.addChild("a", new String[] { "href", "title" }, new String[] { fixer.fixLink(baseURL+"?mode=2"), l10n("modeAdvancedTooltip") }, l10n("modeAdvanced"));
 		else
 			cell.addChild("b", "title", l10n("modeAdvancedTooltip"), l10n("modeAdvanced"));
 		return mode;
