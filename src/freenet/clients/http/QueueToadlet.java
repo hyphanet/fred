@@ -473,7 +473,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		HTMLNode pageNode = pageMaker.getPageNode(header, context);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 		if(context.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(core.alerts.createSummary(context));
 		HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-error", header));
 		HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
 		infoboxContent.addChild("#", message);
@@ -555,7 +555,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 			/* add alert summary box */
 			if(ctx.isAllowedFullAccess())
-				contentNode.addChild(core.alerts.createSummary());
+				contentNode.addChild(core.alerts.createSummary(ctx));
 			HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-information", L10n.getString("QueueToadlet.globalQueueIsEmpty")));
 			HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
 			infoboxContent.addChild("#", L10n.getString("QueueToadlet.noTaskOnGlobalQueue"));
@@ -673,7 +673,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(core.alerts.createSummary(ctx));
 		final int mode = pageMaker.drawModeSelectionArray(core, ctx, request, contentNode, "/queue/");
 		/* add file insert box */
 		contentNode.addChild(createInsertBox(pageMaker, ctx, mode >= PageMaker.MODE_ADVANCED));

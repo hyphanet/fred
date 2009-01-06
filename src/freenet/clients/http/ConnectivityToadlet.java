@@ -64,12 +64,12 @@ public class ConnectivityToadlet extends Toadlet {
 
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(core.alerts.createSummary(ctx));
 		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, ctx, request, contentNode, "/connectivity/");
 
 		// Add connection type box.
 		
-		node.ipDetector.addConnectionTypeBox(contentNode);
+		node.ipDetector.addConnectionTypeBox(contentNode, ctx);
 		
 		UdpSocketHandler[] handlers = node.getPacketSocketHandlers();
 		

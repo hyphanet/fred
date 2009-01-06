@@ -56,7 +56,7 @@ public class ConfigToadlet extends Toadlet {
 
 		@Override
 		public String getText() {
-			return getHTMLText().toString();
+			return getHTMLText(NullLinkFixer.instance).toString();
 		}
 
 		@Override
@@ -65,7 +65,7 @@ public class ConfigToadlet extends Toadlet {
 		}
 
 		@Override
-		public HTMLNode getHTMLText() {
+		public HTMLNode getHTMLText(LinkFixer fixer) {
 			HTMLNode alertNode = new HTMLNode("div");
 			alertNode.addChild("#", l10n("needRestart"));
 
@@ -350,7 +350,7 @@ public class ConfigToadlet extends Toadlet {
 		HTMLNode pageNode = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
-		contentNode.addChild(core.alerts.createSummary());
+		contentNode.addChild(core.alerts.createSummary(ctx));
 		
 		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, ctx, req, contentNode, MODE_SECURITY_LEVELS, "SecurityLevels.title", "SecurityLevels.tooltip", "/config/");
 		
