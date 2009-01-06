@@ -211,6 +211,7 @@ public class Yarrow extends RandomSource {
 	protected void readStartupEntropy(EntropySource startupEntropy) {
 		// Consume the current time
 		acceptEntropy(startupEntropy, System.currentTimeMillis(), 0);
+		acceptEntropy(startupEntropy, System.nanoTime(), 0);
 		// Free memory
 		acceptEntropy(startupEntropy, Runtime.getRuntime().freeMemory(), 0);
 		// Total memory
