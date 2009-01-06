@@ -76,7 +76,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 		HTMLNode pageNode = pageMaker.getPageNode(l10n("listingTitle", "path", currentPath.getAbsolutePath()), toadletContext);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 		if(toadletContext.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(core.alerts.createSummary(toadletContext));
 		
 		HTMLNode infoboxDiv = contentNode.addChild("div", "class", "infobox");
 		infoboxDiv.addChild("div", "class", "infobox-header", l10n("listing", "path",  currentPath.getAbsolutePath()));

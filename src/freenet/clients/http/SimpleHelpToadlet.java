@@ -34,7 +34,7 @@ public class SimpleHelpToadlet extends Toadlet {
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(core.alerts.createSummary(ctx));
 		
 		HTMLNode helpScreenBox1 = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.descriptionTitle")));
 		HTMLNode helpScreenContent1 = ctx.getPageMaker().getContentNode(helpScreenBox1);

@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http.bookmark;
 
+import freenet.clients.http.LinkFixer;
 import freenet.keys.FreenetURI;
 import freenet.keys.USK;
 import freenet.l10n.L10n;
@@ -81,10 +82,10 @@ public class BookmarkItem extends Bookmark {
         }
 
         @Override
-		public HTMLNode getHTMLText() {
+		public HTMLNode getHTMLText(LinkFixer fixer) {
             HTMLNode n = new HTMLNode("div");
             L10n.addL10nSubstitution(n, "BookmarkItem.bookmarkUpdatedWithLink", new String[]{"link", "/link", "name", "edition"},
-                    new String[]{"<a href=\"/" + key.toString() + "\">", "</a>", HTMLEncoder.encode(name), Long.toString(key.getSuggestedEdition())});
+                    new String[]{"<a href=\"" + fixer.fixLink("/"+key.toString()) + "\">", "</a>", HTMLEncoder.encode(name), Long.toString(key.getSuggestedEdition())});
             return n;
         }
 

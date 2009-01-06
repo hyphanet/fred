@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 
 import freenet.client.DefaultMIMETypes;
+import freenet.clients.http.LinkFixer;
 import freenet.crypt.BlockCipher;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
@@ -937,7 +938,7 @@ public class DarknetPeerNode extends PeerNode {
 					return L10n.getString("UserAlert.hide");
 				}
 				@Override
-				public HTMLNode getHTMLText() {
+				public HTMLNode getHTMLText(LinkFixer fixer) {
 					HTMLNode div = new HTMLNode("div");
 					
 					div.addChild("p", l10n("failedReceiveHeader", new String[] { "filename", "node" },
@@ -1048,7 +1049,7 @@ public class DarknetPeerNode extends PeerNode {
 					return L10n.getString("UserAlert.hide");
 				}
 				@Override
-				public HTMLNode getHTMLText() {
+				public HTMLNode getHTMLText(LinkFixer fixer) {
 					HTMLNode div = new HTMLNode("div");
 					
 					// FIXME localise!!!
@@ -1162,7 +1163,7 @@ public class DarknetPeerNode extends PeerNode {
 					return null; // Cannot hide, but can reject
 				}
 				@Override
-				public HTMLNode getHTMLText() {
+				public HTMLNode getHTMLText(LinkFixer fixer) {
 					HTMLNode div = new HTMLNode("div");
 					
 					div.addChild("p", l10n("offeredFileHeader", "name", getName()));

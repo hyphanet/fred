@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 
 import net.i2p.util.NativeBigInteger;
+import freenet.clients.http.LinkFixer;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
@@ -2692,7 +2693,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return l10n("somePeersDisconnectedStillNotAcked", "count", Integer.toString(sz));
 		}
 
-		public HTMLNode getHTMLText() {
+		public HTMLNode getHTMLText(LinkFixer fixer) {
 			HTMLNode div = new HTMLNode("div");
 			Peer[] peers;
 			synchronized(peersWithProblems) {
@@ -2700,7 +2701,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			}
 			L10n.addL10nSubstitution(div, "FNPPacketMangler.somePeersDisconnectedStillNotAckedDetail", 
 					new String[] { "count", "link", "/link" }
-					, new String[] { Integer.toString(peers.length), "<a href=\"/?_CHECKED_HTTP_=https://bugs.freenetproject.org/\">", "</a>" });
+					, new String[] { Integer.toString(peers.length), "<a href=\""+fixer.fixLink("/?_CHECKED_HTTP_=https://bugs.freenetproject.org/")+"\">", "</a>" });
 			HTMLNode list = div.addChild("ul");
 			for(Peer peer : peers) {
 				list.addChild("li", peer.toString());

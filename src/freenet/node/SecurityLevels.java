@@ -6,6 +6,8 @@ package freenet.node;
 import java.util.ArrayList;
 
 import freenet.clients.http.ConfigToadlet;
+import freenet.clients.http.LinkFixer;
+import freenet.clients.http.NullLinkFixer;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -404,7 +406,7 @@ public class SecurityLevels {
 				return L10n.getString("UserAlert.hide");
 			}
 
-			public HTMLNode getHTMLText() {
+			public HTMLNode getHTMLText(LinkFixer fixer) {
 				HTMLNode div = new HTMLNode("div");
 				HTMLNode ul = div.addChild("ul");
 				ul.addChild("li", l10n("userAlertNetworkThreatLevel", "level", localisedName(networkThreatLevel)));
@@ -413,7 +415,7 @@ public class SecurityLevels {
 				div.addChild("br");
 				L10n.addL10nSubstitution(div, "SecurityLevels.userAlertExtro",
 						new String[] { "link", "/link" },
-						new String[] { "<a href=\"/config/?mode="+ConfigToadlet.MODE_SECURITY_LEVELS+"\">", "</a>" });
+						new String[] { "<a href=\""+fixer.fixLink("/config/?mode="+ConfigToadlet.MODE_SECURITY_LEVELS)+"\">", "</a>" });
 				return div;
 			}
 
@@ -430,7 +432,7 @@ public class SecurityLevels {
 			}
 
 			public String getText() {
-				return getHTMLText().getContent();
+				return getHTMLText(NullLinkFixer.instance).getContent();
 			}
 
 			public String getTitle() {

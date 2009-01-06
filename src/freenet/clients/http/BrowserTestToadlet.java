@@ -191,7 +191,7 @@ public class BrowserTestToadlet extends Toadlet {
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary());
+			contentNode.addChild(core.alerts.createSummary(ctx));
 		
 		// #### Test MIME inline
 		HTMLNode mimeAutodetectBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-warning", "MIME Inline"));

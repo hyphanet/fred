@@ -38,7 +38,7 @@ public class MeaningfulNodeNameUserAlert extends AbstractUserAlert {
 	}
 
 	@Override
-	public HTMLNode getHTMLText() {
+	public HTMLNode getHTMLText(LinkFixer fixer) {
 		SubConfig sc = node.config.get("node");
 		Option<?> o = sc.getOption("name");
 
@@ -51,9 +51,9 @@ public class MeaningfulNodeNameUserAlert extends AbstractUserAlert {
 		HTMLNode itemNode = listNode.addChild("li");
 		itemNode.addChild("span", new String[]{ "class", "title", "style" },
 				new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o.getDefault() }), 
-				"cursor: help;" }).addChild(L10n.getHTMLNode(o.getShortDesc(), freenet.clients.http.NullLinkFixer.instance));
+				"cursor: help;" }).addChild(L10n.getHTMLNode(o.getShortDesc(), fixer));
 		itemNode.addChild("input", new String[] { "type", "class", "alt", "name", "value" }, new String[] { "text", "config", o.getShortDesc(), "node.name", o.getValueString() });
-		itemNode.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode(o.getLongDesc(), freenet.clients.http.NullLinkFixer.instance));
+		itemNode.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode(o.getLongDesc(), fixer));
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", L10n.getString("UserAlert.apply") });
 		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "reset", L10n.getString("UserAlert.reset") });
 

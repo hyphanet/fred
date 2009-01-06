@@ -6,6 +6,7 @@ package freenet.node.useralerts;
 import java.text.DateFormat;
 import java.util.Date;
 
+import freenet.clients.http.LinkFixer;
 import freenet.l10n.L10n;
 import freenet.node.DarknetPeerNode;
 import freenet.support.HTMLNode;
@@ -52,7 +53,7 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 	}
 	
 	@Override
-	public HTMLNode getHTMLText() {
+	public HTMLNode getHTMLText(LinkFixer fixer) {
 		HTMLNode alertNode = new HTMLNode("div");
 		alertNode.addChild("p",
 				l10n("header", new String[] { "from", "composed", "sent", "received" },
@@ -64,7 +65,7 @@ public class N2NTMUserAlert extends AbstractUserAlert {
 			if(i != lines.length - 1)
 				alertNode.addChild("br");
 		}
-		alertNode.addChild("p").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + sourcePeerNode.hashCode(), l10n("reply"));
+		alertNode.addChild("p").addChild("a", "href", fixer.fixLink("/send_n2ntm/?peernode_hashcode=" + sourcePeerNode.hashCode()), l10n("reply"));
 		return alertNode;
 	}
 

@@ -16,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Vector;
 
+import freenet.clients.http.LinkFixer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
 import freenet.l10n.L10n;
@@ -542,7 +543,7 @@ public class Announcer {
 			return L10n.getString("UserAlert.hide");
 		}
 
-		public HTMLNode getHTMLText() {
+		public HTMLNode getHTMLText(LinkFixer fixer) {
 			return new HTMLNode("#", getText());
 		}
 

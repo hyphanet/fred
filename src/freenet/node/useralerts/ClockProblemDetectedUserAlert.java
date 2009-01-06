@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
+import freenet.clients.http.LinkFixer;
 import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
 
@@ -42,7 +43,7 @@ public class ClockProblemDetectedUserAlert extends AbstractUserAlert {
 	}
 
 	@Override
-	public HTMLNode getHTMLText() {
+	public HTMLNode getHTMLText(LinkFixer fixer) {
 		return new HTMLNode("div", getText());
 	}
 

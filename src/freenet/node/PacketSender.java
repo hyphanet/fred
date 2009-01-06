@@ -13,6 +13,7 @@ import java.util.Vector;
 
 import org.tanukisoftware.wrapper.WrapperManager;
 
+import freenet.clients.http.LinkFixer;
 import freenet.io.comm.Peer;
 import freenet.l10n.L10n;
 import freenet.node.useralerts.UserAlert;
@@ -474,7 +475,7 @@ public class PacketSender implements Runnable, Ticker {
 			return l10n("somePeersDisconnectedBlockedTooLong", "count", Integer.toString(sz));
 		}
 
-		public HTMLNode getHTMLText() {
+		public HTMLNode getHTMLText(LinkFixer fixer) {
 			HTMLNode div = new HTMLNode("div");
 			Peer[] peers;
 			synchronized(peersDumpedBlockedTooLong) {
@@ -482,7 +483,7 @@ public class PacketSender implements Runnable, Ticker {
 			}
 			L10n.addL10nSubstitution(div, "PacketSender.somePeersDisconnectedBlockedTooLongDetail", 
 					new String[] { "count", "link", "/link" }
-					, new String[] { Integer.toString(peers.length), "<a href=\"/?_CHECKED_HTTP_=https://bugs.freenetproject.org/\">", "</a>" });
+					, new String[] { Integer.toString(peers.length), "<a href=\""+fixer.fixLink("/?_CHECKED_HTTP_=https://bugs.freenetproject.org/")+"\">", "</a>" });
 			HTMLNode list = div.addChild("ul");
 			for(Peer peer : peers) {
 				list.addChild("li", peer.toString());

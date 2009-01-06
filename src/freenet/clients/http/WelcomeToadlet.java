@@ -548,7 +548,7 @@ public class WelcomeToadlet extends Toadlet {
 
         // Alerts
         if (ctx.isAllowedFullAccess()) {
-            contentNode.addChild(core.alerts.createAlertsShort(l10n("alertsSummary"), advancedModeOutputEnabled, true));
+            contentNode.addChild(core.alerts.createAlertsShort(l10n("alertsSummary"), advancedModeOutputEnabled, true, ctx));
         }
 
         // Bookmarks
