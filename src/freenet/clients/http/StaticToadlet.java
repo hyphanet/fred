@@ -9,6 +9,8 @@ import java.net.URL;
 import java.util.Date;
 
 import freenet.client.DefaultMIMETypes;
+import freenet.clients.http.filter.ContentFilter;
+import freenet.clients.http.filter.ContentFilter.FilterOutput;
 import freenet.l10n.L10n;
 import freenet.support.api.Bucket;
 import freenet.support.api.HTTPRequest;
@@ -62,10 +64,18 @@ public class StaticToadlet extends Toadlet {
 		strm.close();
 		os.close();
 		
+		String mimeType = DefaultMIMETypes.guessMIMEType(path, false);
+		
+		if(mimeType.equals("text/css")) {
+			// Easiest way to fix the links is just to pass it through the content filter.
+			FilterOutput fo = ContentFilter.filter(data, ctx.getBucketFactory(), mimeType, uri, null, ctx);
+			data = fo.data;
+		}
+		
 		URL url = getClass().getResource(ROOT_PATH+path);
 		Date mTime = getUrlMTime(url);
 		
-		ctx.sendReplyHeaders(200, "OK", null, DefaultMIMETypes.guessMIMEType(path, false), data.size(), mTime);
+		ctx.sendReplyHeaders(200, "OK", null, mimeType, data.size(), mTime);
 
 		ctx.writeData(data);
 		data.free();

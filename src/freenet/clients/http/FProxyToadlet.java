@@ -133,7 +133,7 @@ public final class FProxyToadlet extends Toadlet {
 		Bucket toFree = null;
 		try {
 			if((!force) && (!forceDownload)) {
-				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), container.enableInlinePrefetch() ? prefetchHook : null);
+				FilterOutput fo = ContentFilter.filter(data, bucketFactory, mimeType, key.toURI(basePath), container.enableInlinePrefetch() ? prefetchHook : null, ctx);
 				if(data != fo.data) toFree = fo.data;
 				data = fo.data;
 				mimeType = fo.type;

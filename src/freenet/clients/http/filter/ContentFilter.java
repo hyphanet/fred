@@ -12,6 +12,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Hashtable;
 
+import freenet.clients.http.LinkFixer;
 import freenet.l10n.L10n;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
@@ -136,7 +137,7 @@ public class ContentFilter {
 	 * @throws IllegalStateException
 	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
-	public static FilterOutput filter(Bucket data, BucketFactory bf, String typeName, URI baseURI, FoundURICallback cb) throws UnsafeContentTypeException, IOException {
+	public static FilterOutput filter(Bucket data, BucketFactory bf, String typeName, URI baseURI, FoundURICallback cb, LinkFixer fixer) throws UnsafeContentTypeException, IOException {
 		if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
 			Logger.minor(ContentFilter.class, "filter(data.size="+data.size()+" typeName="+typeName);
 		String type = typeName;
@@ -184,7 +185,7 @@ public class ContentFilter {
 					charset = detectCharset(data, handler);
 				}
 				
-				Bucket outputData = handler.readFilter.readFilter(data, bf, charset, otherParams, new GenericReadFilterCallback(baseURI, cb));
+				Bucket outputData = handler.readFilter.readFilter(data, bf, charset, otherParams, new GenericReadFilterCallback(baseURI, cb, fixer));
 				if(charset != null)
 					type = type + "; charset="+charset;
 				return new FilterOutput(outputData, type);

@@ -11,6 +11,7 @@ import java.net.URLEncoder;
 import java.util.HashSet;
 
 import freenet.clients.http.HTTPRequestImpl;
+import freenet.clients.http.LinkFixer;
 import freenet.clients.http.StaticToadlet;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
@@ -40,18 +41,21 @@ public class GenericReadFilterCallback implements FilterCallback {
 	private URI baseURI;
 	private URI strippedBaseURI;
 	private final FoundURICallback cb;
+	private final LinkFixer fixer;
 	
-	public GenericReadFilterCallback(URI uri, FoundURICallback cb) {
+	public GenericReadFilterCallback(URI uri, FoundURICallback cb, LinkFixer fixer) {
+		this.fixer = fixer;
 		this.baseURI = uri;
 		this.cb = cb;
 		setStrippedURI(uri.toString());
 	}
 	
-	public GenericReadFilterCallback(FreenetURI uri, FoundURICallback cb) {
+	public GenericReadFilterCallback(FreenetURI uri, FoundURICallback cb, LinkFixer fixer) {
 		try {
 			this.baseURI = uri.toRelativeURI();
 			setStrippedURI(baseURI.toString());
 			this.cb = cb;
+			this.fixer = fixer;
 		} catch (URISyntaxException e) {
 			throw new Error(e);
 		}
@@ -131,10 +135,10 @@ public class GenericReadFilterCallback implements FilterCallback {
 					bookmark_activelink = HTMLEncoder.encode(bookmark_activelink);
 					url = url+"&hasAnActivelink=true";
 				}
-				return url;
+				return fixer.fixLink(url);
 			} else if(path.startsWith(StaticToadlet.ROOT_URL)) {
 				// @see bug #2297
-				return path;
+				return fixer.fixLink(path);
 			}
 		}
 		
@@ -175,6 +179,11 @@ public class GenericReadFilterCallback implements FilterCallback {
 			// Relative URI
 			
 			rpath = resolved.getPath();
+			
+			if(rpath.startsWith(StaticToadlet.ROOT_URL)) {
+				return fixer.fixLink(rpath);
+			}
+			
 			if(rpath == null) throw new CommentException("No URI");
 			if(logMINOR) Logger.minor(this, "Resolved URI (rpath relative): "+rpath);
 			
@@ -197,7 +206,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 		}
 		
 		if(GenericReadFilterCallback.allowedProtocols.contains(uri.getScheme()))
-			return "/?"+GenericReadFilterCallback.magicHTTPEscapeString+ '=' +uri;
+			return fixer.fixLink("/?"+GenericReadFilterCallback.magicHTTPEscapeString+ '=' +freenet.support.URLEncoder.encode(uri.toString(), false));
 		else {
 			if(uri.getScheme() == null) {
 				throw new CommentException(reason);
@@ -237,14 +246,16 @@ public class GenericReadFilterCallback implements FilterCallback {
 			sb.append(path);
 			if(typeOverride != null) {
 				sb.append("?type=");
-				sb.append(typeOverride);
+				sb.append(freenet.support.URLEncoder.encode(typeOverride, false));
 			}
 			if(u.getFragment() != null) {
 				sb.append('#');
-				sb.append(u.getRawFragment());
+				sb.append(freenet.support.URLEncoder.encode(u.getRawFragment(), false));
 			}
 			
 			URI uri = new URI(sb.toString());
+			
+			uri = fixer.fixLink(uri);
 			
 			if(!noRelative)
 				uri = strippedBaseURI.relativize(uri);
@@ -255,7 +266,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 			Logger.error(this, "Could not parse own URI: path="+path+", typeOverride="+typeOverride+", frag="+u.getFragment()+" : "+e, e);
 			String p = path;
 			if(typeOverride != null)
-				p += "?type="+typeOverride;
+				p += "?type="+freenet.support.URLEncoder.encode(typeOverride, false);
 			if(u.getFragment() != null){
 				try{
 				// FIXME encode it properly
@@ -345,7 +356,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 	}
 
 	public static String escapeURL(String uri) {
-		return "/?" + magicHTTPEscapeString + '=' + uri;
+		return "/?" + magicHTTPEscapeString + '=' + freenet.support.URLEncoder.encode(uri, false);
 	}
 	
 }
