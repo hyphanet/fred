@@ -245,6 +245,7 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 							}
 							break;
 						case INTAGQUOTES :
+							// Inside double-quotes, single quotes are just another character, perfectly legal in a URL.
 							if (c == '"') {
 								mode = INTAG;
 								b.append(c); // Part of the element
@@ -310,6 +311,9 @@ public class HTMLFilter implements ContentDataFilter, CharsetExtractor {
 								b.append(c);
 							} else if (c == '\'') {
 								// e.g. <div align = 'center'> (avian)
+								// This will be converted automatically to double quotes \"
+								// Note that SINGLE QUOTES ARE LEGAL IN URLS ...
+								// If we have single quotes inside single quotes, we could get into a major mess here... but that's really malformed code, and it will still be safe, it will just be unreadable.
 								mode = INTAGSQUOTES;
 								b.append(c);
 							} else if (c == '>') {
