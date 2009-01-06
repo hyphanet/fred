@@ -457,7 +457,7 @@ public final class FProxyToadlet extends Toadlet {
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "Failed to fetch "+uri+" : "+e);
 			if(e.newURI != null) {
-				Toadlet.writePermanentRedirect(ctx, msg, '/' +e.newURI.toASCIIString() + override);
+				Toadlet.writePermanentRedirect(ctx, msg, ctx.fixLink('/' +e.newURI.toASCIIString() + override));
 			} else if(e.mode == FetchException.TOO_BIG) {
 				HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("fileInformationTitle"), ctx);
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
