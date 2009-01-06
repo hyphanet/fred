@@ -252,7 +252,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 			}
 			if(u.getFragment() != null) {
 				sb.append('#');
-				sb.append(freenet.support.URLEncoder.encode(u.getRawFragment(), false));
+				sb.append(freenet.support.URLEncoder.encode(u.getFragment(), false));
 			}
 			
 			URI uri = new URI(sb.toString());
