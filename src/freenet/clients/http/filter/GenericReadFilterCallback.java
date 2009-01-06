@@ -180,11 +180,12 @@ public class GenericReadFilterCallback implements FilterCallback {
 			
 			rpath = resolved.getPath();
 			
+			if(rpath == null) reason = "No URI";
+			else {
 			if(rpath.startsWith(StaticToadlet.ROOT_URL)) {
 				return fixer.fixLink(rpath);
 			}
 			
-			if(rpath == null) throw new CommentException("No URI");
 			if(logMINOR) Logger.minor(this, "Resolved URI (rpath relative): "+rpath);
 			
 			// Valid FreenetURI?
@@ -202,7 +203,8 @@ public class GenericReadFilterCallback implements FilterCallback {
 					reason = l10n("couldNotParseRelativeFreenetURI");
 				}
 			}
-		
+			
+			}
 		}
 		
 		if(GenericReadFilterCallback.allowedProtocols.contains(uri.getScheme()))
