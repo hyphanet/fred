@@ -236,7 +236,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		long now = System.currentTimeMillis();
 	
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary(ctx));
+			contentNode.addChild(core.alerts.createSummary());
 		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, ctx, request, contentNode, getURL());
 		
 		if(peerNodeStatuses.length>0){

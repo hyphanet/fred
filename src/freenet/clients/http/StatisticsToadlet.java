@@ -150,7 +150,7 @@ public class StatisticsToadlet extends Toadlet {
 		final long nodeUptimeSeconds = (now - node.startupTime) / 1000;
 
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary(ctx));
+			contentNode.addChild(core.alerts.createSummary());
 		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, ctx, request, contentNode, "/stats/");
 
 		double swaps = node.getSwaps();
