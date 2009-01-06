@@ -6,6 +6,7 @@ package freenet.clients.http.filter;
 import java.net.URI;
 
 import junit.framework.TestCase;
+import freenet.clients.http.NullLinkFixer;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.ArrayBucket;
 import freenet.support.io.ArrayBucketFactory;
@@ -91,6 +92,6 @@ public class ContentFilterTest extends TestCase {
 		URI baseURI = new URI(BASE_URI);
 		byte[] dataToFilter = data.getBytes("UTF-8");
 		
-		return ContentFilter.filter(new ArrayBucket(dataToFilter), bf, typeName, baseURI, null).data.toString();
+		return ContentFilter.filter(new ArrayBucket(dataToFilter), bf, typeName, baseURI, null, NullLinkFixer.instance).data.toString();
 	}
 }
