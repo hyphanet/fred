@@ -86,7 +86,7 @@ public class N2NTMToadlet extends Toadlet {
 			return;
 		}
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-		headers.put("Location", "/friends/");
+		headers.put("Location", container.fixLink("/friends/"));
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 
@@ -122,7 +122,7 @@ public class N2NTMToadlet extends Toadlet {
 		String pass = request.getPartAsString("formPassword", 32);
 		if ((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/send_n2ntm/");
+			headers.put("Location", container.fixLink("/send_n2ntm/"));
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		}
@@ -229,7 +229,7 @@ public class N2NTMToadlet extends Toadlet {
 			return;
 		}
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-		headers.put("Location", "/friends/");
+		headers.put("Location", container.fixLink("/friends/"));
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 

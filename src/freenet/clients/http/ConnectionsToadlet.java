@@ -500,7 +500,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", defaultRedirectLocation());
+			headers.put("Location", container.fixLink(defaultRedirectLocation()));
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			if(logMINOR) Logger.minor(this, "No password ("+pass+" should be "+core.formPassword+ ')');
 			return;
@@ -608,7 +608,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", defaultRedirectLocation());
+			headers.put("Location", container.fixLink(defaultRedirectLocation()));
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else handleAltPost(uri, request, ctx, logMINOR);

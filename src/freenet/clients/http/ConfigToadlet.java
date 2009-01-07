@@ -121,7 +121,7 @@ public class ConfigToadlet extends Toadlet {
 		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
-			headers.put("Location", "/config/");
+			headers.put("Location", container.fixLink("/config/"));
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		}
@@ -231,7 +231,7 @@ public class ConfigToadlet extends Toadlet {
 				return;
 			} else {
 				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-				headers.put("Location", "/config/?mode="+MODE_SECURITY_LEVELS);
+				headers.put("Location", container.fixLink("/config/?mode="+MODE_SECURITY_LEVELS));
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}

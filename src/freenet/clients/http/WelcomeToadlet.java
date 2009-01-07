@@ -126,7 +126,7 @@ public class WelcomeToadlet extends Toadlet {
             if ((request.getPartAsString("Go", 32).length() > 0)) {
                 url = request.getPartAsString(GenericReadFilterCallback.magicHTTPEscapeString, MAX_URL_LENGTH);
             }
-            headers.put("Location", url == null ? "/" : url);
+            headers.put("Location", container.fixLink(url == null ? "/" : url));
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
         } else if (request.getPartAsString("update", 32).length() > 0) {
             HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("nodeUpdateConfirmTitle"), ctx);

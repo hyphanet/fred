@@ -52,7 +52,7 @@ public class PproxyToadlet extends Toadlet {
 
 		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
-			headers.put("Location", "/plugins/");
+			headers.put("Location", container.fixLink("/plugins/"));
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		}
@@ -124,7 +124,7 @@ public class PproxyToadlet extends Toadlet {
 				String pluginName = null;
 				pluginName = request.getPartAsString("plugin-name", 40);
 				pm.startPluginOfficial(pluginName, true);
-				headers.put("Location", ".");
+				headers.put("Location", container.fixLink("/plugins/"));
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
@@ -136,7 +136,7 @@ public class PproxyToadlet extends Toadlet {
 					pm.startPluginFile(pluginName, true);
 				else
 					pm.startPluginURL(pluginName, true);
-				headers.put("Location", ".");
+				headers.put("Location", container.fixLink("/plugins/"));
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
@@ -144,19 +144,19 @@ public class PproxyToadlet extends Toadlet {
 				String pluginName = null;
 				pluginName = request.getPartAsString("plugin-uri", 300);
 				pm.startPluginFreenet(pluginName, true);
-				headers.put("Location", ".");
+				headers.put("Location", container.fixLink("/plugins/"));
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
 			if (request.isPartSet("dismiss-user-alert")) {
 				int userAlertHashCode = request.getIntPart("disable", -1);
 				core.alerts.dismissAlert(userAlertHashCode);
-				headers.put("Location", ".");
+				headers.put("Location", container.fixLink("/plugins/"));
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
 			if (request.isPartSet("cancel")){
-				headers.put("Location", "/plugins/");
+				headers.put("Location", container.fixLink("/plugins/"));
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
@@ -231,13 +231,13 @@ public class PproxyToadlet extends Toadlet {
 					// FIXME
 					pm.startPluginAuto(fn, true);
 
-					headers.put("Location", ".");
+					headers.put("Location", container.fixLink("/plugins/"));
 					ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				}
 				return;
 			}else {
 				// Ignore
-				headers.put("Location", ".");
+				headers.put("Location", container.fixLink("/plugins/"));
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			}
 

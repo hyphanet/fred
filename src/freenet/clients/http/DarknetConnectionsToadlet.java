@@ -214,9 +214,6 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 				}
 			}
 			redirectHere(ctx);
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", container.fixLink("/friends/"));
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("set_burst_only")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();

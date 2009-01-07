@@ -171,7 +171,7 @@ public abstract class Toadlet {
 	
 	static void writePermanentRedirect(ToadletContext ctx, String msg, String location) throws ToadletContextClosedException, IOException {
 		MultiValueTable<String, String> mvt = new MultiValueTable<String, String>();
-		mvt.put("Location", location);
+		mvt.put("Location", ctx.getContainer().fixLink(location));
 		if(msg == null) msg = "";
 		else msg = HTMLEncoder.encode(msg);
 		String redirDoc =
@@ -190,7 +190,7 @@ public abstract class Toadlet {
 	
 	protected void writeTemporaryRedirect(ToadletContext ctx, String msg, String location) throws ToadletContextClosedException, IOException {
 		MultiValueTable<String, String> mvt = new MultiValueTable<String, String>();
-		mvt.put("Location", location);
+		mvt.put("Location", container.fixLink(location));
 		if(msg == null) msg = "";
 		else msg = HTMLEncoder.encode(msg);
 		String redirDoc =
