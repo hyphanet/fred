@@ -348,7 +348,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			url += fixLink("/");
 		else
 			url += "/";
-		File f = new File(node.getNodeDir(), "freenet.url");
+		File f = new File(node.getNodeDir(), "freenet.url.dat");
 		FileOutputStream fos = null;
 		try {
 			fos = new FileOutputStream(f);
@@ -356,8 +356,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			osw.write(url+(File.separatorChar == '\\' ? "\r" : "") + "\n");
 			osw.flush();
 		} catch (IOException e) {
-			Logger.error(this, "Unable to write URL "+url+" to freenet.url: browse.sh/browse.cmd may have difficulty! : "+e, e);
-			System.err.println("Unable to write URL "+url+" to freenet.url: browse.sh/browse.cmd may have difficulty! : "+e);
+			Logger.error(this, "Unable to write URL "+url+" to freenet.url.dat: browse.sh/browse.cmd may have difficulty! : "+e, e);
+			System.err.println("Unable to write URL "+url+" to freenet.url.dat: browse.sh/browse.cmd may have difficulty! : "+e);
 		} finally {
 			Closer.close(fos);
 		}
