@@ -289,7 +289,7 @@ public class WelcomeToadlet extends Toadlet {
                 }
             }
             content.addChild("br");
-            addHomepageLink(content);
+            addHomepageLink(content, ctx);
 
             writeHTMLReply(ctx, 200, "OK", pageNode.generate());
             request.freeParts();
@@ -344,7 +344,7 @@ public class WelcomeToadlet extends Toadlet {
             }
 
             content.addChild("br");
-            addHomepageLink(content);
+            addHomepageLink(content, ctx);
 
             writeHTMLReply(ctx, 200, "OK", pageNode.generate());
             request.freeParts();

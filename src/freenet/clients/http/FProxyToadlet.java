@@ -494,7 +494,7 @@ public final class FProxyToadlet extends Toadlet {
 			errorContent.addChild("br");
 			errorContent.addChild(ctx.getPageMaker().createBackLink(ctx, l10n("goBack")));
 			errorContent.addChild("br");
-			addHomepageLink(errorContent);
+			addHomepageLink(errorContent, ctx);
 
 			this.writeHTMLReply(ctx, 400, l10n("invalidKeyTitle"), pageNode.generate());
 			return;

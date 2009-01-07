@@ -74,7 +74,7 @@ public class N2NTMToadlet extends Toadlet {
 			if (peernode_name == null) {
 				contentNode.addChild(createPeerInfobox("infobox-error",
 						l10n("peerNotFoundTitle"), l10n("peerNotFoundWithHash",
-								"hash", input_hashcode_string)));
+								"hash", input_hashcode_string), ctx));
 				this.writeHTMLReply(ctx, 200, "OK", pageNode
 						.generate());
 				return;
@@ -100,7 +100,7 @@ public class N2NTMToadlet extends Toadlet {
 	}
 
 	private static HTMLNode createPeerInfobox(String infoboxType,
-			String header, String message) {
+			String header, String message, ToadletContext ctx) {
 		HTMLNode infobox = new HTMLNode("div", "class", "infobox "
 				+ infoboxType);
 		infobox.addChild("div", "class", "infobox-header", header);
@@ -108,7 +108,7 @@ public class N2NTMToadlet extends Toadlet {
 				"infobox-content");
 		infoboxContent.addChild("#", message);
 		HTMLNode list = infoboxContent.addChild("ul");
-		Toadlet.addHomepageLink(list);
+		Toadlet.addHomepageLink(list, ctx);
 		list.addChild("li").addChild("a", new String[] { "href", "title" },
 				new String[] { "/friends/", l10n("returnToFriends") },
 				l10n("friends"));
@@ -153,7 +153,7 @@ public class N2NTMToadlet extends Toadlet {
 				filename = new File(fnam);
 				if(!(filename.exists() && filename.canRead())) {
 					peerTableInfobox.addChild("#", l10n("noSuchFileOrCannotRead"));
-					Toadlet.addHomepageLink(peerTableInfobox);
+					Toadlet.addHomepageLink(peerTableInfobox, ctx);
 					this.writeHTMLReply(ctx, 400, "OK", pageNode.generate());
 					return;
 				}
@@ -174,7 +174,7 @@ public class N2NTMToadlet extends Toadlet {
 							status = pn.sendFileOffer(filename, message);
 						} catch (IOException e) {
 							peerTableInfobox.addChild("#", l10n("noSuchFileOrCannotRead"));
-							Toadlet.addHomepageLink(peerTableInfobox);
+							Toadlet.addHomepageLink(peerTableInfobox, ctx);
 							this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 							return;
 						}
@@ -221,7 +221,7 @@ public class N2NTMToadlet extends Toadlet {
 					"n2ntm-message-text");
 			infoboxContent.addChild("#", message);
 			HTMLNode list = peerTableInfobox.addChild("ul");
-			Toadlet.addHomepageLink(list);
+			Toadlet.addHomepageLink(list, ctx);
 			list.addChild("li").addChild("a", new String[] { "href", "title" },
 					new String[] { "/friends/", l10n("returnToFriends") },
 					l10n("friends"));
