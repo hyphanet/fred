@@ -191,9 +191,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					}
 				}
 			}
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/friends/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			redirectHere(ctx);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("enable")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
@@ -204,9 +202,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].enablePeer();
 				}
 			}
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/friends/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			redirectHere(ctx);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("disable")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
@@ -217,8 +213,9 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].disablePeer();
 				}
 			}
+			redirectHere(ctx);
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/friends/");
+			headers.put("Location", container.fixLink("/friends/"));
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("set_burst_only")) {
@@ -230,9 +227,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].setBurstOnly(true);
 				}
 			}
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/friends/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			redirectHere(ctx);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("clear_burst_only")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
@@ -243,9 +238,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].setBurstOnly(false);
 				}
 			}
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/friends/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			redirectHere(ctx);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("set_ignore_source_port")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
@@ -256,9 +249,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].setIgnoreSourcePort(true);
 				}
 			}
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/friends/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			redirectHere(ctx);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("clear_ignore_source_port")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
@@ -269,9 +260,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].setIgnoreSourcePort(false);
 				}
 			}
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/friends/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			redirectHere(ctx);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("clear_dont_route")) {
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
@@ -280,9 +269,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].setRoutingStatus(true, true);
 				}
 			}
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/friends/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			redirectHere(ctx);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("set_dont_route")) {
 			DarknetPeerNode[] peerNodes = node.getDarknetConnections();
@@ -291,9 +278,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].setRoutingStatus(false, true);
 				}
 			}
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/friends/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			redirectHere(ctx);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("set_listen_only")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
@@ -304,9 +289,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].setListenOnly(true);
 				}
 			}
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/friends/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			redirectHere(ctx);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("clear_listen_only")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
@@ -317,9 +300,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].setListenOnly(false);
 				}
 			}
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/friends/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			redirectHere(ctx);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("set_allow_local")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
@@ -330,9 +311,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].setAllowLocalAddresses(true);
 				}
 			}
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/friends/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			redirectHere(ctx);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("clear_allow_local")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
@@ -343,9 +322,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					peerNodes[i].setAllowLocalAddresses(false);
 				}
 			}
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/friends/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			redirectHere(ctx);
 			return;
 		} else if (request.isPartSet("remove") || (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("remove"))) {			
 			if(logMINOR) Logger.minor(this, "Remove node");
@@ -377,9 +354,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					if(logMINOR) Logger.minor(this, "Part not set: node_"+peerNodes[i].hashCode());
 				}
 			}
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/friends/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			redirectHere(ctx);
 			return;
 		} else if (request.isPartSet("acceptTransfer")) {
 			// FIXME this is ugly, should probably move both this code and the PeerNode code somewhere.
@@ -391,9 +366,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					break;
 				}
 			}
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/friends/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			redirectHere(ctx);
 			return;
 		} else if (request.isPartSet("rejectTransfer")) {
 			// FIXME this is ugly, should probably move both this code and the PeerNode code somewhere.
@@ -405,13 +378,17 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 					break;
 				}
 			}
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/friends/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
+			redirectHere(ctx);
 			return;
 		} else {
 			this.handleGet(uri, new HTTPRequestImpl(uri), ctx);
 		}
+	}
+
+	private void redirectHere(ToadletContext ctx) throws ToadletContextClosedException, IOException {
+		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+		headers.put("Location", "/friends/");
+		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 
 	@Override
