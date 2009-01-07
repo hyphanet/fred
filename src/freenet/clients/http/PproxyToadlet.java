@@ -422,26 +422,23 @@ public class PproxyToadlet extends Toadlet {
 			headerRow.addChild("th", l10n("startedAtTitle"));
 			headerRow.addChild("th");
 			headerRow.addChild("th");
-			headerRow.addChild("th");
 			Iterator<PluginInfoWrapper> it = pm.getPlugins().iterator();
 			while (it.hasNext()) {
 				PluginInfoWrapper pi = it.next();
 				HTMLNode pluginRow = pluginTable.addChild("tr");
-				pluginRow.addChild("td", pi.getPluginClassName());
+				if(pi.isPproxyPlugin()) {
+					// FIXME a title = click on me to visit the plugin???
+					pluginRow.addChild("td").addChild("a", "href", container.fixLink("/plugins/"+pi.getPluginClassName()), pi.getPluginClassName());
+				} else {
+					pluginRow.addChild("td", pi.getPluginClassName());
+				}
 				pluginRow.addChild("td", pi.getPluginVersion());
 				pluginRow.addChild("td", pi.getThreadName());
 				pluginRow.addChild("td", new Date(pi.getStarted()).toString());
 				if (pi.isStopping()) {
 					pluginRow.addChild("td", l10n("pluginStopping"));
-					/* add two empty cells. */
-					pluginRow.addChild("td");
 					pluginRow.addChild("td");
 				} else {
-					if (pi.isPproxyPlugin()) {
-						HTMLNode visitForm = pluginRow.addChild("td").addChild("form", new String[] { "method", "action", "target" }, new String[] { "get", pi.getPluginClassName(), "_blank" });
-						visitForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
-						visitForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", L10n.getString("PluginToadlet.visit") });
-					}
 					HTMLNode unloadForm = ctx.addFormChild(pluginRow.addChild("td"), ".", "unloadPluginForm");
 					unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "unload", pi.getThreadName() });
 					unloadForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("unload") });
