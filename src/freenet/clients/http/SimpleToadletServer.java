@@ -538,7 +538,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		if((cssName.indexOf(':') != -1) || (cssName.indexOf('/') != -1))
 			throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
 		cssTheme = THEME.themeFromName(cssName);
-		pageMaker = new PageMaker(cssTheme);
+		pageMaker = new PageMaker(cssTheme, this);
 	
 		if(!fproxyConfig.getOption("CSSOverride").isDefault()) {
 			cssOverride = new File(fproxyConfig.getString("CSSOverride"));

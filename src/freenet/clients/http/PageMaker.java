@@ -75,17 +75,20 @@ public final class PageMaker {
 	
 	private final FredPluginL10n plugin; 
 	private final boolean pluginMode;
+	private final LinkFixer fixer;
 	
-	public PageMaker(FredPluginL10n plug, THEME t) {
+	public PageMaker(FredPluginL10n plug, THEME t, LinkFixer fixer) {
 		setTheme(t);
 		plugin = plug;
 		pluginMode = true;
+		this.fixer = fixer;
 	}
 	
-	protected PageMaker(THEME t) {
+	protected PageMaker(THEME t, LinkFixer fixer) {
 		setTheme(t);
 		plugin = null;
 		pluginMode = false;
+		this.fixer = fixer;
 	}
 	
 	void setOverride(File f) {
@@ -140,7 +143,7 @@ public final class PageMaker {
 
 	public HTMLNode getPageNode(String title, boolean renderNavigationLinks, ToadletContext ctx) {
 		boolean fullAccess = ctx == null ? false : ctx.isAllowedFullAccess();
-		LinkFixer fixer = ctx.getContainer();
+		LinkFixer fixer = ctx == null ? this.fixer : ctx.getContainer();
 		HTMLNode pageNode = new HTMLNode.HTMLDoctype("html", "-//W3C//DTD XHTML 1.1//EN");
 		HTMLNode htmlNode = pageNode.addChild("html", "xml:lang", L10n.getSelectedLanguage().isoCode);
 		HTMLNode headNode = htmlNode.addChild("head");
