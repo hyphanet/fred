@@ -307,13 +307,13 @@ public class PproxyToadlet extends Toadlet {
 				}
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 
-				contentNode.addChild(core.alerts.createSummary(ctx));
+				contentNode.addChild(core.alerts.createSummary(container));
 
 				UserAlert[] userAlerts = core.alerts.getAlerts();
 				for (int index = 0, count = userAlerts.length; index < count; index++) {
 					UserAlert userAlert = userAlerts[index];
 					if (userAlert.isValid() && (userAlert.getUserIdentifier() == PluginManager.class)) {
-						contentNode.addChild(core.alerts.renderAlert(userAlert, ctx));
+						contentNode.addChild(core.alerts.renderAlert(userAlert, container));
 					}
 				}
 				

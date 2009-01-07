@@ -12,7 +12,7 @@ import freenet.support.api.BucketFactory;
  * Object represents context for a single request. Is used as a token,
  * when the Toadlet wants to e.g. write a reply.
  */
-public interface ToadletContext extends LinkFixer {
+public interface ToadletContext {
 
 	/**
 	 * Write reply headers.
@@ -85,13 +85,5 @@ public interface ToadletContext extends LinkFixer {
 	boolean doRobots();
 
 	ToadletContainer getContainer();
-
-	/**
-	 * Add a valid ?sessionid= to a link
-	 * @param string
-	 * @param string2
-	 * @return
-	 */
-	String fixLink(String orig);
 }
 

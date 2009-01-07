@@ -228,7 +228,7 @@ public abstract class Toadlet {
 		infoboxContent.addChild("br");
 		infoboxContent.addChild("a", "href", ".", l10n("returnToPrevPage"));
 		infoboxContent.addChild("br");
-		addHomepageLink(infoboxContent, ctx);
+		addHomepageLink(infoboxContent, container);
 		
 		writeHTMLReply(ctx, code, desc, pageNode.generate());
 	}
@@ -259,7 +259,7 @@ public abstract class Toadlet {
 		infoboxContent.addChild("pre", sw.toString());
 		infoboxContent.addChild("br");
 		infoboxContent.addChild("a", "href", ".", l10n("returnToPrevPage"));
-		addHomepageLink(infoboxContent, ctx);
+		addHomepageLink(infoboxContent, container);
 		
 		writeHTMLReply(ctx, 500, desc, pageNode.generate());
 	}
@@ -276,8 +276,8 @@ public abstract class Toadlet {
 		writeHTMLReply(ctx, 500, "Internal Error", msg);
 	}
 	
-	protected static void addHomepageLink(HTMLNode content, ToadletContext ctx) {
-		content.addChild("a", new String[]{"href", "title"}, new String[]{ctx.fixLink("/"), l10n("homepage")}, l10n("returnToNodeHomepage"));
+	protected static void addHomepageLink(HTMLNode content, LinkFixer fixer) {
+		content.addChild("a", new String[]{"href", "title"}, new String[]{fixer.fixLink("/"), l10n("homepage")}, l10n("returnToNodeHomepage"));
 	}
 
 	/**

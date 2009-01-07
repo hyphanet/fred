@@ -159,12 +159,12 @@ public class TranslationToadlet extends Toadlet {
 		HTMLNode translationNode = contentNode.addChild("div", "class", "translation");
 		HTMLNode translationHeaderNode = translationNode.addChild("p");
 		translationHeaderNode.addChild("#", l10n("contributingToLabelWithLang", "lang", L10n.getSelectedLanguage().fullName));
-		translationHeaderNode.addChild("a", "href", ctx.fixLink(TOADLET_URL+"?getOverrideTranlationFile")).addChild("#", l10n("downloadTranslationsFile"));
+		translationHeaderNode.addChild("a", "href", container.fixLink(TOADLET_URL+"?getOverrideTranlationFile")).addChild("#", l10n("downloadTranslationsFile"));
 		translationHeaderNode.addChild("#", " ");
 		if(showEverything)
-			translationHeaderNode.addChild("a", "href", ctx.fixLink(TOADLET_URL+"?toTranslateOnly")).addChild("#", l10n("hideAlreadyTranslated"));
+			translationHeaderNode.addChild("a", "href", container.fixLink(TOADLET_URL+"?toTranslateOnly")).addChild("#", l10n("hideAlreadyTranslated"));
 		else
-			translationHeaderNode.addChild("a", "href", ctx.fixLink(TOADLET_URL)).addChild("#", l10n("showEverything"));
+			translationHeaderNode.addChild("a", "href", container.fixLink(TOADLET_URL)).addChild("#", l10n("showEverything"));
 		HTMLNode legendTable = translationNode.addChild("table", "class", "translation");
 		
 		HTMLNode legendRow = legendTable.addChild("tr");
@@ -188,7 +188,7 @@ public class TranslationToadlet extends Toadlet {
 						L10n.getDefaultString(key)
 				);
 
-				contentRow.addChild("td", "class", "translation-new").addChild(_setOrRemoveOverride(key, isOverriden, showEverything, ctx));
+				contentRow.addChild("td", "class", "translation-new").addChild(_setOrRemoveOverride(key, isOverriden, showEverything, container));
 			}
 		}
 		
@@ -245,7 +245,7 @@ public class TranslationToadlet extends Toadlet {
 	
 	private void redirectTo(ToadletContext ctx, String target) throws ToadletContextClosedException, IOException {
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-		headers.put("Location", ctx.fixLink(target));
+		headers.put("Location", container.fixLink(target));
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 		return;
 	}

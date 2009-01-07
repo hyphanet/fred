@@ -256,7 +256,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		}
 
 		HTMLNode bookmarksBox = content.addChild(pageMaker.getInfobox("infobox-normal", L10n.getString("BookmarkEditorToadlet.myBookmarksTitle")));
-		pageMaker.getContentNode(bookmarksBox).addChild(getBookmarksList(ctx));
+		pageMaker.getContentNode(bookmarksBox).addChild(getBookmarksList(container));
 
 		HTMLNode addDefaultBookmarksForm = ctx.addFormChild(content, "", "AddDefaultBookmarks");
 		addDefaultBookmarksForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "AddDefaultBookmarks", L10n.getString("BookmarkEditorToadlet.addDefaultBookmarks")});
@@ -354,7 +354,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 			pageMaker.getContentNode(errorBox).addChild("#", L10n.getString("BookmarkEditorToadlet.invalidKey"));
 		}
 		HTMLNode bookmarksBox = content.addChild(pageMaker.getInfobox("infobox-normal", L10n.getString("BookmarkEditorToadlet.myBookmarksTitle")));
-		pageMaker.getContentNode(bookmarksBox).addChild(getBookmarksList(ctx));
+		pageMaker.getContentNode(bookmarksBox).addChild(getBookmarksList(container));
 		
 		HTMLNode addDefaultBookmarksForm = ctx.addFormChild(content, "", "AddDefaultBookmarks");
 		addDefaultBookmarksForm.addChild("input", new String[]{"type", "name", "value"}, new String[]{"submit", "AddDefaultBookmarks", L10n.getString("BookmarkEditorToadlet.addDefaultBookmarks")});

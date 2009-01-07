@@ -125,7 +125,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	 * Write each alert in uber-concise form as HTML, with a link to 
 	 * /alerts/[ anchor pointing to the real alert].
 	 */
-	public HTMLNode createAlertsShort(String title, boolean advancedMode, boolean drawDumpEventsForm, ToadletContext ctx) {
+	public HTMLNode createAlertsShort(String title, boolean advancedMode, boolean drawDumpEventsForm, LinkFixer ctx) {
 		UserAlert[] currentAlerts = getAlerts();
 		short maxLevel = Short.MAX_VALUE;
 		int events = 0;
