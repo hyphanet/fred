@@ -818,7 +818,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 
 	public String generateSID(String realPath) throws URLEncodedFormatException {
 		MessageDigest md = SHA256.getMessageDigest();
-		String oldRealPath = realPath;
 		realPath = prepareForSID(realPath);
 		try {
 			md.update(realPath.getBytes("UTF-8"));
