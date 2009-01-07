@@ -103,6 +103,7 @@ public final class FProxyToadlet extends Toadlet {
 		String type = req.isPartSet("type") ? req.getPartAsString("type", 30) : null;
 		boolean forceDownload = req.isPartSet("forcedownload");
 		String force = req.isPartSet("force") ? req.getPartAsString("force", 30) : null;
+		String key = req.isPartSet("key") ? req.getPartAsString("key", 1024) : null;
 		
 		String pass = req.getPartAsString("formPassword", 32);
 		if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
@@ -112,10 +113,17 @@ public final class FProxyToadlet extends Toadlet {
 			return;
 		}
 
-		if(maxSize != null || type != null || (!forceDownload) || force != null) {
+		if(maxSize != null || type != null || (!forceDownload) || force != null || key != null) {
 			StringBuffer sb = new StringBuffer();
 			boolean first = true;
+			if(key != null) {
+				if(!first) sb.append('&');
+				sb.append("key=");
+				sb.append(URLEncoder.encode(key, false));
+				first = false;
+			}
 			if(maxSize != null) {
+				if(!first) sb.append('&');
 				sb.append("max-size=");
 				sb.append(URLEncoder.encode(maxSize, false));
 				first = false;

@@ -592,7 +592,7 @@ public class WelcomeToadlet extends Toadlet {
         HTMLNode fetchKeyBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", l10n("fetchKeyLabel")));
         HTMLNode fetchKeyContent = ctx.getPageMaker().getContentNode(fetchKeyBox);
         fetchKeyContent.addAttribute("id", "keyfetchbox");
-        HTMLNode fetchKeyForm = fetchKeyContent.addChild("form", new String[]{"action", "method"}, new String[]{"/", "get"}).addChild("div");
+        HTMLNode fetchKeyForm = ctx.addFormChild(fetchKeyContent, "/", "fetchKeyForm").addChild("div");
         fetchKeyForm.addChild("#", l10n("keyRequestLabel") + ' ');
         fetchKeyForm.addChild("input", new String[]{"type", "size", "name"}, new String[]{"text", "80", "key"});
         fetchKeyForm.addChild("input", new String[]{"type", "value"}, new String[]{"submit", l10n("fetch")});
