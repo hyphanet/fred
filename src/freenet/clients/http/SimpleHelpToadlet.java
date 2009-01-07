@@ -36,14 +36,42 @@ public class SimpleHelpToadlet extends Toadlet {
 		if(ctx.isAllowedFullAccess())
 			contentNode.addChild(core.alerts.createSummary(ctx));
 		
+		// Description infobox
 		HTMLNode helpScreenBox1 = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.descriptionTitle")));
 		HTMLNode helpScreenContent1 = ctx.getPageMaker().getContentNode(helpScreenBox1);
 		helpScreenContent1.addChild("#", L10n.getString("SimpleHelpToadlet.descriptionText"));
 		
-		
-		HTMLNode helpScreenBox2 = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.connectivityTitle")));
+		// Definitions infobox
+		HTMLNode helpScreenBox2 = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.definitionsTitle")));
 		HTMLNode helpScreenContent2 = ctx.getPageMaker().getContentNode(helpScreenBox2);
-		helpScreenContent2.addChild("#", L10n.getString("SimpleHelpToadlet.connectivityText"));
+		
+		HTMLNode table = helpScreenContent2.addChild("table", new String[]{"border", "style"}, new String[]{"0", "border: none"});
+       
+                HTMLNode row = table.addChild("tr");
+                HTMLNode cell = row.addChild("td", "style", "border: none");
+              
+		        // cell.addChild("#", " ");
+                // }
+                // cell = row.addChild("td", "style", "border: none");
+                // cell.addChild("a", new String[]{"href", "title"}, new String[]{ ctx.fixLink('/' + item.getKey()), item.getDescription()}, item.getName());
+     
+		row.addChild("#", L10n.getString("SimpleHelpToadlet.CHK"));
+		row.addChild("br");
+		row.addChild("#", L10n.getString("SimpleHelpToadlet.SSK"));
+		row.addChild("br");
+		row.addChild("#", L10n.getString("SimpleHelpToadlet.USK"));
+		
+		// helpScreenContent2.addchild("#", L10n.getString("SimpleHelpToadlet.CHK"));
+		// helpScreenContent2.addchild("br");
+		// helpScreenContent2.addchild("#", L10n.getString("SimpleHelpToadlet.SSK"));
+		// helpScreenContent2.addchild("br");
+		// helpScreenContent2.addchild("#", L10n.getString("SimpleHelpToadlet.USK"));
+		
+		
+		// Port forwarding, etc.	
+		HTMLNode helpScreenBox3 = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-content", L10n.getString("SimpleHelpToadlet.connectivityTitle")));
+		HTMLNode helpScreenContent3 = ctx.getPageMaker().getContentNode(helpScreenBox3);
+		helpScreenContent3.addChild("#", L10n.getString("SimpleHelpToadlet.connectivityText"));
 		
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
