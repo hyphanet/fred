@@ -503,7 +503,7 @@ public class ToadletContextImpl implements ToadletContext, LinkFixer {
 			else return null;
 		} else {
 			int idx = query.indexOf("&secureid=");
-			if(idx == -1) return query;
+			if(idx == -1) return '?' + query;
 			String before = query.substring(0, idx);
 			String after = query.substring(idx+"&secureid=".length());
 			int x = after.indexOf('&');
