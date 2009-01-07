@@ -37,7 +37,9 @@ import com.sleepycat.je.StatsConfig;
 
 import freenet.client.FetchContext;
 import freenet.clients.http.LinkFixer;
+import freenet.clients.http.NullLinkFixer;
 import freenet.clients.http.SimpleToadletServer;
+import freenet.clients.http.ToadletContainer;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
@@ -3954,5 +3956,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	public boolean shallWeRouteAccordingToOurPeersLocation() {
 		return routeAccordingToOurPeersLocation && Version.lastGoodBuild() >= 1160;
+	}
+
+	public LinkFixer getLinkFilter() {
+		if(clientCore == null) return NullLinkFixer.instance;
+		ToadletContainer container = clientCore.toadletContainer;
+		if(container == null) return NullLinkFixer.instance;
+		return container;
 	}
 }

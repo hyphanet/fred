@@ -40,7 +40,7 @@ public class PluginRespirator {
 
 	public FilterCallback makeFilterCallback(String path) {
 		try {
-			return node.clientCore.createFilterCallback(URIPreEncoder.encodeURI(path), null, new NullLinkFixer());
+			return node.clientCore.createFilterCallback(URIPreEncoder.encodeURI(path), null, node.getLinkFilter());
 		} catch (URISyntaxException e) {
 			throw new Error(e);
 		}
