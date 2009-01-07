@@ -556,7 +556,9 @@ public class WelcomeToadlet extends Toadlet {
         // Search form
         if(core.node.pluginManager != null && 
         		core.node.pluginManager.isPluginLoaded("plugins.XMLLibrarian.XMLLibrarian")) {
-        	HTMLNode form = searchBox.addChild("form", new String[] { "method", "action" }, new String[] { "GET", "/plugins/plugins.XMLLibrarian.XMLLibrarian" });
+        	HTMLNode form = ctx.getContainer().isSecureIDCheckingDisabled() ? 
+        			searchBox.addChild("form", new String[] { "method", "action" }, new String[] { "GET", "/plugins/plugins.XMLLibrarian.XMLLibrarian" }) : 
+        				ctx.addFormChild(searchBox, "/plugins/plugins.XMLLibrarian.XMLLibrarian", "searchBox");
         	form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "choice", "index" });
         	form.addChild("input", new String[] { "type", "size", "name" }, new String[] { "text", "80", "search" });
         	form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "find", "Search Freenet!" });
