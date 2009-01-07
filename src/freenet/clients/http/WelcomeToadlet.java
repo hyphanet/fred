@@ -556,6 +556,9 @@ public class WelcomeToadlet extends Toadlet {
         // Search form
         if(core.node.pluginManager != null && 
         		core.node.pluginManager.isPluginLoaded("plugins.XMLLibrarian.XMLLibrarian")) {
+        	// XMLLibrarian <= version 18 only support GET.
+        	// But GET forms don't work with secureid checking enabled.
+        	// FIXME eventually switch to all POST.
         	HTMLNode form = ctx.getContainer().isSecureIDCheckingDisabled() ? 
         			searchBox.addChild("form", new String[] { "method", "action" }, new String[] { "GET", "/plugins/plugins.XMLLibrarian.XMLLibrarian" }) : 
         				ctx.addFormChild(searchBox, "/plugins/plugins.XMLLibrarian.XMLLibrarian", "searchBox");
