@@ -62,4 +62,48 @@ public class URLEncoder {
 		return encode(s, null, ascii);
 	}
 
+	/**
+	 * Encode only % and those characters in the encode list.
+	 * @param encode Characters that must be encoded (as well as %).
+	 * @return
+	 */
+	public static String minimalEncode(String URL, String force) {
+		// First check that we need to encode.
+		boolean needed = false;
+		if(URL.indexOf('%') > -1) needed = true;
+		if(!needed) {
+			for(int i=0;i<URL.length();i++) {
+				char c = URL.charAt(i);
+				if(force.indexOf(c) > -1) {
+					needed = true;
+					break;
+				}
+			}
+		}
+		if(!needed) return URL;
+		StringBuilder enc = new StringBuilder(URL.length());
+		for (int i = 0; i < URL.length(); ++i) {
+			char c = URL.charAt(i);
+			if(c != '%' && force.indexOf(c) < 0) {
+				enc.append(c);
+			} else {
+				try {
+					byte[] encoded = ("" + c).getBytes("UTF-8");
+					for (int j = 0; j < encoded.length; j++) {
+						byte b = encoded[j];
+						int x = b & 0xFF;
+						if (x < 16)
+							enc.append("%0");
+						else
+							enc.append('%');
+						enc.append(Integer.toHexString(x));
+					}
+				} catch (UnsupportedEncodingException e) {
+					throw new Error("Impossible: JVM doesn't support UTF-8: " + e, e);
+				}
+			}
+		}
+		return enc.toString();
+	}
+
 }
