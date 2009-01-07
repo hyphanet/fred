@@ -818,6 +818,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 
 	public String generateSID(String realPath) throws URLEncodedFormatException {
 		MessageDigest md = SHA256.getMessageDigest();
+		String oldRealPath = realPath;
 		realPath = prepareForSID(realPath);
 		try {
 			md.update(realPath.getBytes("UTF-8"));
@@ -841,24 +842,24 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		String[] split = realPath.split("/");
 		boolean first = true;
 		for(String component : split) {
+			if(!first) sb.append('/');
+			first = false;
 			if(component.indexOf('%') > -1)
 				component = URLDecoder.decode(component, true);
 			component = URLEncoder.minimalEncode(component, "/?");
 			sb.append(component);
-			if(!first) sb.append('/');
-			first = false;
 		}
 		if(query != null) {
 			sb.append('?');
 			split = query.split("&");
 			first = true;
 			for(String component : split) {
+				if(!first) sb.append('&');
+				first = false;
 				if(component.indexOf('%') > -1)
 					component = URLDecoder.decode(component, true);
 				component = URLEncoder.minimalEncode(component, "&");
 				sb.append(component);
-				if(!first) sb.append('&');
-				first = false;
 			}
 		}
 		return sb.toString();
