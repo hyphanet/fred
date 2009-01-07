@@ -387,7 +387,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 
 	private void redirectHere(ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-		headers.put("Location", "/friends/");
+		headers.put("Location", container.fixLink("/friends/"));
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 
