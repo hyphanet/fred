@@ -550,6 +550,22 @@ public class WelcomeToadlet extends Toadlet {
         if (ctx.isAllowedFullAccess()) {
             contentNode.addChild(core.alerts.createAlertsShort(l10n("alertsSummary"), advancedModeOutputEnabled, true, ctx));
         }
+		
+		// Search Box
+		HTMLNode searchBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", L10n.getString("WelcomeToadlet.searchBoxLabel")));
+        // Search form
+        if(core.node.pluginManager != null && 
+        		core.node.pluginManager.isPluginLoaded("plugins.XMLLibrarian.XMLLibrarian")) {
+        	HTMLNode form = searchBox.addChild("form", new String[] { "method", "action" }, new String[] { "GET", "/plugins/plugins.XMLLibrarian.XMLLibrarian" });
+        	form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "choice", "index" });
+        	form.addChild("input", new String[] { "type", "size", "name" }, new String[] { "text", "80", "search" });
+        	form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "find", "Search Freenet!" });
+        } else {
+			// Warn that search plugin is not loaded.
+			HTMLNode searchBoxContent = ctx.getPageMaker().getContentNode(searchBox);
+			searchBoxContent.addChild("#", L10n.getString("WelcomeToadlet.searchPluginNotLoaded"));
+		}
+			
 
         // Bookmarks
         HTMLNode bookmarkBox = contentNode.addChild("div", "class", "infobox infobox-normal");
@@ -563,15 +579,7 @@ public class WelcomeToadlet extends Toadlet {
 
         HTMLNode bookmarkBoxContent = bookmarkBox.addChild("div", "class", "infobox-content");
         
-        // Search box
-        if(core.node.pluginManager != null && 
-        		core.node.pluginManager.isPluginLoaded("plugins.XMLLibrarian.XMLLibrarian")) {
-        	HTMLNode form = bookmarkBoxContent.addChild("form", new String[] { "method", "action" }, new String[] { "GET", "/plugins/plugins.XMLLibrarian.XMLLibrarian" });
-        	form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "choice", "index" });
-        	form.addChild("input", new String[] { "type", "size", "name" }, new String[] { "text", "80", "search" });
-        	form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "find", "Search Freenet!" });
-        }
-        
+                
         HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
         addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, useragent != null && useragent.contains("khtml") && !useragent.contains("chrome"), ctx);
 
