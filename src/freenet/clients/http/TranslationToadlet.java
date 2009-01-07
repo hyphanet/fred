@@ -79,11 +79,11 @@ public class TranslationToadlet extends Toadlet {
 			);
 			
 			HTMLNode footer = translationNode.addChild("div", "class", "warning");
-			footer.addChild("a", "href", TOADLET_URL+"?getOverrideTranlationFile").addChild("#", l10n("downloadTranslationsFile"));
+			footer.addChild("a", "href", container.fixLink(TOADLET_URL+"?getOverrideTranlationFile")).addChild("#", l10n("downloadTranslationsFile"));
 			footer.addChild("%", "&nbsp;&nbsp;");
-			footer.addChild("a", "href", TOADLET_URL+"?translate="+key+ (showEverything ? "" : "&toTranslateOnly")).addChild("#", l10n("reEdit"));
+			footer.addChild("a", "href", container.fixLink(TOADLET_URL+"?translate="+key+ (showEverything ? "" : "&toTranslateOnly"))).addChild("#", l10n("reEdit"));
 			footer.addChild("%", "&nbsp;&nbsp;");
-			footer.addChild("a", "href", TOADLET_URL + (showEverything ? "" : "?toTranslateOnly")).addChild("#", l10n("returnToTranslations"));
+			footer.addChild("a", "href", container.fixLink(TOADLET_URL + (showEverything ? "" : "?toTranslateOnly"))).addChild("#", l10n("returnToTranslations"));
 
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;				

@@ -110,7 +110,7 @@ public class N2NTMToadlet extends Toadlet {
 		HTMLNode list = infoboxContent.addChild("ul");
 		Toadlet.addHomepageLink(list, ctx);
 		list.addChild("li").addChild("a", new String[] { "href", "title" },
-				new String[] { "/friends/", l10n("returnToFriends") },
+				new String[] { ctx.fixLink("/friends/"), l10n("returnToFriends") },
 				l10n("friends"));
 		return infobox;
 	}
@@ -223,7 +223,7 @@ public class N2NTMToadlet extends Toadlet {
 			HTMLNode list = peerTableInfobox.addChild("ul");
 			Toadlet.addHomepageLink(list, container);
 			list.addChild("li").addChild("a", new String[] { "href", "title" },
-					new String[] { "/friends/", l10n("returnToFriends") },
+					new String[] { container.fixLink("/friends/"), l10n("returnToFriends") },
 					l10n("friends"));
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;

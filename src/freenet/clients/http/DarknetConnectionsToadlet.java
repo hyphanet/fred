@@ -71,7 +71,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	@Override
 	protected void drawNameColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus) {
 		// name column
-		peerRow.addChild("td", "class", "peer-name").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + peerNodeStatus.hashCode(), ((DarknetPeerNodeStatus)peerNodeStatus).getName());
+		peerRow.addChild("td", "class", "peer-name").addChild("a", "href", container.fixLink("/send_n2ntm/?peernode_hashcode=" + peerNodeStatus.hashCode()), ((DarknetPeerNodeStatus)peerNodeStatus).getName());
 	}
 
 	@Override

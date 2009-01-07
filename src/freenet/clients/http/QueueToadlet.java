@@ -477,7 +477,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
 		infoboxContent.addChild("#", message);
 		if(returnToQueuePage)
-			infoboxContent.addChild("div").addChildren(new HTMLNode[] { new HTMLNode("#", "Return to "), new HTMLNode("a", "href", "/queue/", "queue page"), new HTMLNode("#", ".") });
+			infoboxContent.addChild("div").addChildren(new HTMLNode[] { new HTMLNode("#", "Return to "), new HTMLNode("a", "href", container.fixLink("/queue/"), "queue page"), new HTMLNode("#", ".") });
 		writeHTMLReply(context, 400, "Bad request", pageNode.generate());
 	}
 
