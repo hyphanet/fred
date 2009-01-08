@@ -464,7 +464,13 @@ public class ToadletContextImpl implements ToadletContext, LinkFixer {
         HTMLNode warningBoxHeader = warningBox.addChild("div", "class", "infobox-header");
         warningBoxHeader.addChild("#", l10n("browserHistoryWarningBoxTitle"));
         HTMLNode warningBoxContent = warningBox.addChild("div", "class", "infobox-content");
-        warningBoxContent.addChild("p", l10n("browserHistoryWarning"));
+        HTMLNode firstPara = warningBoxContent.addChild("p");
+        L10n.addL10nSubstitution(firstPara, "ToadletContextImpl.browserHistoryWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+        if(secureid == null || secureid.length() == 0)
+        	firstPara.addChild("#", " " + l10n("browserHistoryWarningNoSecureID"));
+        else
+        	firstPara.addChild("#", " " + l10n("browserHistoryWarningInvalidSecureID"));
+        warningBoxContent.addChild("p").addChild("b", l10n("browserHistoryWarningEmptyHistory"));
         
         // Link to the page
         if(queries == null) queries = "?secureid="+expectedSecureID;
@@ -475,8 +481,10 @@ public class ToadletContextImpl implements ToadletContext, LinkFixer {
         		new String[] { "<a href=\""+HTMLEncoder.encode(realPath)+"\">", "</a>" });
         
         if(ctx.isAllowedFullAccess()) {
-        	// Button to disable the warning
-        	// FIXME implement
+        	warningBoxContent.addChild("p", l10n("browserHistoryWarningCanDisable"));
+        	HTMLNode formNode = ctx.addFormChild(warningBoxContent, "/config/", "turnOffHistoryCloaking");
+        	formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "fproxy.enableHistoryCloaking", "false" });
+    		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("browserHistoryWarningDisableButton") });
         }
         
         byte[] data;
@@ -488,7 +496,7 @@ public class ToadletContextImpl implements ToadletContext, LinkFixer {
 		
 		ctx.sendReplyHeaders(400, "Bad Request", null, "text/html; charset=utf-8", data.length);
 		ctx.writeData(data);
-		
+		req.freeParts();
 		return true;
 	}
 	
