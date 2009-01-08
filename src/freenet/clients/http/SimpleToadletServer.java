@@ -816,6 +816,16 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		return bf;
 	}
 
+	/** How long should the secureid= be? We don't want the URLs to be really long...
+	 * One attempt requires the attacker to modify the DOM, trigger a relayout, and then
+	 * read the link color out of the DOM. Relayout can be batched, but if it's too big
+	 * it gets really slow and the user notices... The lookup is done to determine whether
+	 * to display this element. A miss results in no relayout. Maybe this could be 
+	 * optimised down to hundreds of cycles ... in practice it's probably a lot more than 
+	 * that. Hopefully by the time probing 96 bits is feasible, browsers will turn off 
+	 * history probing by default! */
+	static final int SID_LENGTH_BYTES = 12;
+	
 	public String generateSID(String realPath) throws URLEncodedFormatException {
 		MessageDigest md = SHA256.getMessageDigest();
 		realPath = prepareForSID(realPath);
@@ -826,8 +836,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		}
 		md.update(clientNonce);
 		byte[] output = md.digest();
+		byte[] finalOutput = new byte[SID_LENGTH_BYTES];
+		System.arraycopy(output, 0, finalOutput, 0, SID_LENGTH_BYTES);
 		SHA256.returnMessageDigest(md);
-		return Base64.encode(output);
+		return Base64.encode(finalOutput);
 	}
 
 	private String prepareForSID(String realPath) throws URLEncodedFormatException {
