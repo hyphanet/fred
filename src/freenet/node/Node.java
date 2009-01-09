@@ -365,17 +365,17 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	public boolean disableHangCheckers;
 	
 	/** HashSet of currently running request UIDs */
-	private final HashSet<Long> runningUIDs;
-	private final HashSet<Long> runningCHKGetUIDs;
-	private final HashSet<Long> runningLocalCHKGetUIDs;
-	private final HashSet<Long> runningSSKGetUIDs;
-	private final HashSet<Long> runningLocalSSKGetUIDs;
-	private final HashSet<Long> runningCHKPutUIDs;
-	private final HashSet<Long> runningLocalCHKPutUIDs;
-	private final HashSet<Long> runningSSKPutUIDs;
-	private final HashSet<Long> runningLocalSSKPutUIDs;
-	private final HashSet<Long> runningCHKOfferReplyUIDs;
-	private final HashSet<Long> runningSSKOfferReplyUIDs;
+	private final HashMap<Long,UIDTag> runningUIDs;
+	private final HashMap<Long,RequestTag> runningCHKGetUIDs;
+	private final HashMap<Long,RequestTag> runningLocalCHKGetUIDs;
+	private final HashMap<Long,RequestTag> runningSSKGetUIDs;
+	private final HashMap<Long,RequestTag> runningLocalSSKGetUIDs;
+	private final HashMap<Long,InsertTag> runningCHKPutUIDs;
+	private final HashMap<Long,InsertTag> runningLocalCHKPutUIDs;
+	private final HashMap<Long,InsertTag> runningSSKPutUIDs;
+	private final HashMap<Long,InsertTag> runningLocalSSKPutUIDs;
+	private final HashMap<Long,OfferReplyTag> runningCHKOfferReplyUIDs;
+	private final HashMap<Long,OfferReplyTag> runningSSKOfferReplyUIDs;
 	
 	/** Semi-unique ID for swap requests. Used to identify us so that the
 	 * topology can be reconstructed. */
@@ -856,17 +856,17 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		transferringRequestSenders = new HashMap<NodeCHK, RequestSender>();
 		transferringRequestHandlers = new HashSet<Long>();
 		insertSenders = new HashMap<KeyHTLPair, AnyInsertSender>();
-		runningUIDs = new HashSet<Long>();
-		runningCHKGetUIDs = new HashSet<Long>();
-		runningLocalCHKGetUIDs = new HashSet<Long>();
-		runningSSKGetUIDs = new HashSet<Long>();
-		runningLocalSSKGetUIDs = new HashSet<Long>();
-		runningCHKPutUIDs = new HashSet<Long>();
-		runningLocalCHKPutUIDs = new HashSet<Long>();
-		runningSSKPutUIDs = new HashSet<Long>();
-		runningLocalSSKPutUIDs = new HashSet<Long>();
-		runningCHKOfferReplyUIDs = new HashSet<Long>();
-		runningSSKOfferReplyUIDs = new HashSet<Long>();
+		runningUIDs = new HashMap<Long,UIDTag>();
+		runningCHKGetUIDs = new HashMap<Long,RequestTag>();
+		runningLocalCHKGetUIDs = new HashMap<Long,RequestTag>();
+		runningSSKGetUIDs = new HashMap<Long,RequestTag>();
+		runningLocalSSKGetUIDs = new HashMap<Long,RequestTag>();
+		runningCHKPutUIDs = new HashMap<Long,InsertTag>();
+		runningLocalCHKPutUIDs = new HashMap<Long,InsertTag>();
+		runningSSKPutUIDs = new HashMap<Long,InsertTag>();
+		runningLocalSSKPutUIDs = new HashMap<Long,InsertTag>();
+		runningCHKOfferReplyUIDs = new HashMap<Long,OfferReplyTag>();
+		runningSSKOfferReplyUIDs = new HashMap<Long,OfferReplyTag>();
 		
 		this.securityLevels = new SecurityLevels(this, config);
 		
@@ -2274,6 +2274,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		this.clientCore.start(config);
 		
+		startDeadUIDChecker();
+		
 		// After everything has been created, write the config file back to disk.
 		if(config instanceof FreenetFilePersistentConfig) {
 			FreenetFilePersistentConfig cfg = (FreenetFilePersistentConfig) config;
@@ -2941,54 +2943,136 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		return is;
 	}
 	
-	public boolean lockUID(long uid, boolean ssk, boolean insert, boolean offerReply, boolean local) {
+	public boolean lockUID(long uid, boolean ssk, boolean insert, boolean offerReply, boolean local, UIDTag tag) {
 		synchronized(runningUIDs) {
-			if(!runningUIDs.add(uid)) {
-				// Already present.
-				return false;
-			}
+			if(runningUIDs.containsKey(uid)) return false; // Already present.
+			runningUIDs.put(uid, tag);
 		}
 		// If these are switched around, we must remember to remove from both.
-		HashSet<Long> set = getUIDTracker(ssk, insert, offerReply, local);
-		synchronized(set) {
-			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+set.size());
-			set.add(uid);
-			if(logMINOR) Logger.minor(this, "Locked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+set.size());
+		if(offerReply) {
+			HashMap<Long,OfferReplyTag> map = getOfferTracker(ssk);
+			innerLock(map, (OfferReplyTag)tag, uid, ssk, insert, offerReply, local);
+		} else if(insert) {
+			HashMap<Long,InsertTag> map = getInsertTracker(ssk,local);
+			innerLock(map, (InsertTag)tag, uid, ssk, insert, offerReply, local);
+		} else {
+			HashMap<Long,RequestTag> map = getRequestTracker(ssk,local);
+			innerLock(map, (RequestTag)tag, uid, ssk, insert, offerReply, local);
 		}
 		return true;
 	}
 	
-	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local) {
-		completed(uid);
-		HashSet<Long> set = getUIDTracker(ssk, insert, offerReply, local);
-		synchronized(set) {
-			if(logMINOR) Logger.minor(this, "Unlocking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+", local="+local+" size="+set.size());
-			set.remove(uid);
-			if(logMINOR) Logger.minor(this, "Unlocked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+", local="+local+" size="+set.size());
-		}
-		synchronized(runningUIDs) {
-			if(!runningUIDs.remove(uid) && !canFail)
-				throw new IllegalStateException("Could not unlock "+uid+ '!');
+	private<T extends UIDTag> void innerLock(HashMap<Long, T> map, T tag, Long uid, boolean ssk, boolean insert, boolean offerReply, boolean local) {
+		synchronized(map) {
+			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+map.size());
+			if(map.containsKey(uid)) {
+				Logger.error(this, "Already have UID in specific map ("+ssk+","+insert+","+offerReply+","+local+") but not in general map: trying to register "+tag+" but already have "+map.get(uid));
+			}
+			map.put(uid, tag);
+			if(logMINOR) Logger.minor(this, "Locked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+map.size());
 		}
 	}
 
-	private HashSet<Long> getUIDTracker(boolean ssk, boolean insert, boolean offerReply, boolean local) {
-		if(ssk) {
-			if(offerReply)
-				return runningSSKOfferReplyUIDs;
-			if(!local)
-				return insert ? runningSSKPutUIDs : runningSSKGetUIDs;
-			else
-				return insert ? runningLocalSSKPutUIDs : runningLocalSSKGetUIDs;
+	public void unlockUID(long uid, boolean ssk, boolean insert, boolean canFail, boolean offerReply, boolean local, UIDTag tag) {
+		completed(uid);
+		
+		if(offerReply) {
+			HashMap<Long,OfferReplyTag> map = getOfferTracker(ssk);
+			innerUnlock(map, (OfferReplyTag)tag, uid, ssk, insert, offerReply, local);
+		} else if(insert) {
+			HashMap<Long,InsertTag> map = getInsertTracker(ssk,local);
+			innerUnlock(map, (InsertTag)tag, uid, ssk, insert, offerReply, local);
 		} else {
-			if(offerReply)
-				return runningCHKOfferReplyUIDs;
-			if(!local)
-				return insert ? runningCHKPutUIDs : runningCHKGetUIDs;
-			else
-				return insert ? runningLocalCHKPutUIDs : runningLocalCHKGetUIDs;
+			HashMap<Long,RequestTag> map = getRequestTracker(ssk,local);
+			innerUnlock(map, (RequestTag)tag, uid, ssk, insert, offerReply, local);
+		}
+		
+		synchronized(runningUIDs) {
+			UIDTag oldTag = runningUIDs.get(uid);
+			if(oldTag == null) {
+				throw new IllegalStateException("Could not unlock "+uid+ '!');
+			} else if(tag != oldTag) {
+				Logger.error(this, "Removing "+tag+" for "+uid+" but "+tag+" is registered!");
+				return;
+			} else {
+				runningUIDs.remove(uid);
+			}
 		}
 	}
+
+	private<T extends UIDTag> void innerUnlock(HashMap<Long, T> map, T tag, Long uid, boolean ssk, boolean insert, boolean offerReply, boolean local) {
+		synchronized(map) {
+			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+map.size());
+			if(map.get(uid) != tag)
+				Logger.error(this, "Removing "+tag+" for "+uid+" returned "+map.get(uid));
+			else
+				map.remove(uid);
+			if(logMINOR) Logger.minor(this, "Locked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+map.size());
+		}
+	}
+
+	private HashMap<Long, RequestTag> getRequestTracker(boolean ssk, boolean local) {
+		if(ssk) {
+			return local ? runningLocalSSKGetUIDs : runningSSKGetUIDs;
+		} else {
+			return local ? runningLocalCHKGetUIDs : runningCHKGetUIDs;
+		}
+	}
+
+	private HashMap<Long, InsertTag> getInsertTracker(boolean ssk, boolean local) {
+		if(ssk) {
+			return local ? runningLocalSSKPutUIDs : runningSSKPutUIDs;
+		} else {
+			return local ? runningLocalCHKPutUIDs : runningCHKPutUIDs;
+		}
+	}
+
+	private HashMap<Long, OfferReplyTag> getOfferTracker(boolean ssk) {
+		return ssk ? runningSSKOfferReplyUIDs : runningCHKOfferReplyUIDs;
+	}
+
+	private void startDeadUIDChecker() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	private Runnable deadUIDChecker = new Runnable() {
+		public void run() {
+			try {
+				checkUIDs(runningLocalSSKGetUIDs);
+				checkUIDs(runningLocalCHKGetUIDs);
+				checkUIDs(runningLocalSSKPutUIDs);
+				checkUIDs(runningLocalCHKPutUIDs);
+				checkUIDs(runningSSKGetUIDs);
+				checkUIDs(runningCHKGetUIDs);
+				checkUIDs(runningSSKPutUIDs);
+				checkUIDs(runningCHKPutUIDs);
+				checkUIDs(runningSSKOfferReplyUIDs);
+				checkUIDs(runningCHKOfferReplyUIDs);
+			} finally {
+				getTicker().queueTimedJob(this, 60*1000);
+			}
+		}
+
+		private void checkUIDs(HashMap<Long, ? extends UIDTag> map) {
+			Long[] uids;
+			UIDTag[] tags;
+			synchronized(map) {
+				uids = map.keySet().toArray(new Long[map.size()]);
+				tags = map.values().toArray(new UIDTag[map.size()]);
+			}
+			long now = System.currentTimeMillis();
+			for(int i=0;i<uids.length;i++) {
+				if(now - tags[i].createdTime > 10 * 60 * 1000) {
+					tags[i].logStillPresent(uids[i]);
+					synchronized(map) {
+						map.remove(uids[i]);
+					}
+				}
+			}
+		}
+	};
+	
 	
 	/**
 	 * @return Some status information.
@@ -3915,7 +3999,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 	public void addRunningUIDs(Vector<Long> list) {
 		synchronized(runningUIDs) {
-			list.addAll(runningUIDs);
+			list.addAll(runningUIDs.keySet());
 		}
 	}
 	

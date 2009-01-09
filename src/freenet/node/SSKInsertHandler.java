@@ -45,8 +45,9 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
     private byte[] data;
     private byte[] headers;
     private boolean canCommit;
+    final InsertTag tag;
     
-    SSKInsertHandler(NodeSSK key, byte[] data, byte[] headers, short htl, PeerNode source, long id, Node node, long startTime) {
+    SSKInsertHandler(NodeSSK key, byte[] data, byte[] headers, short htl, PeerNode source, long id, Node node, long startTime, InsertTag tag) {
         this.node = node;
         this.uid = id;
         this.source = source;
@@ -55,6 +56,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
         this.htl = htl;
         this.data = data;
         this.headers = headers;
+        this.tag = tag;
         if(htl <= 0) htl = 1;
         byte[] pubKeyHash = key.getPubKeyHash();
         pubKey = node.getKey(pubKeyHash);
@@ -77,7 +79,7 @@ public class SSKInsertHandler implements PrioRunnable, ByteCounter {
             Logger.error(this, "Caught "+t, t);
         } finally {
             if(logMINOR) Logger.minor(this, "Exiting InsertHandler.run() for "+uid);
-            node.unlockUID(uid, true, true, false, false, false);
+            node.unlockUID(uid, true, true, false, false, false, tag);
         }
     }
 

@@ -379,16 +379,16 @@ public class FailureTable implements OOMHook {
 	 * @param source The node that asked for the key.
 	 * @throws NotConnectedException If the sender ceases to be connected.
 	 */
-	public void sendOfferedKey(final Key key, final boolean isSSK, final boolean needPubKey, final long uid, final PeerNode source) throws NotConnectedException {
+	public void sendOfferedKey(final Key key, final boolean isSSK, final boolean needPubKey, final long uid, final PeerNode source, final OfferReplyTag tag) throws NotConnectedException {
 		this.offerExecutor.execute(new Runnable() {
 			public void run() {
 				try {
-					innerSendOfferedKey(key, isSSK, needPubKey, uid, source);
+					innerSendOfferedKey(key, isSSK, needPubKey, uid, source, tag);
 				} catch (NotConnectedException e) {
-					node.unlockUID(uid, isSSK, false, false, true, false);
+					node.unlockUID(uid, isSSK, false, false, true, false, tag);
 					// Too bad.
 				} catch (Throwable t) {
-					node.unlockUID(uid, isSSK, false, false, true, false);
+					node.unlockUID(uid, isSSK, false, false, true, false, tag);
 					Logger.error(this, "Caught "+t+" sending offered key");
 				}
 			}
@@ -400,13 +400,13 @@ public class FailureTable implements OOMHook {
 	 * on a separate thread. However, blocking disk I/O *should happen on this thread*. We deliberately
 	 * serialise it, as high latencies can otherwise result.
 	 */
-	protected void innerSendOfferedKey(Key key, final boolean isSSK, boolean needPubKey, final long uid, final PeerNode source) throws NotConnectedException {
+	protected void innerSendOfferedKey(Key key, final boolean isSSK, boolean needPubKey, final long uid, final PeerNode source, final OfferReplyTag tag) throws NotConnectedException {
 		if(isSSK) {
 			SSKBlock block = node.fetch((NodeSSK)key, false);
 			if(block == null) {
 				// Don't have the key
 				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, senderCounter);
-				node.unlockUID(uid, isSSK, false, false, true, false);
+				node.unlockUID(uid, isSSK, false, false, true, false, tag);
 				return;
 			}
 			
@@ -433,7 +433,7 @@ public class FailureTable implements OOMHook {
 					} catch (SyncSendWaitedTooLongException e) {
 						// Impossible
 					} finally {
-						node.unlockUID(uid, isSSK, false, false, true, false);
+						node.unlockUID(uid, isSSK, false, false, true, false, tag);
 					}
 				}
 				
@@ -452,7 +452,7 @@ public class FailureTable implements OOMHook {
 			if(block == null) {
 				// Don't have the key
 				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_NO_KEY), null, senderCounter);
-				node.unlockUID(uid, isSSK, false, false, true, false);
+				node.unlockUID(uid, isSSK, false, false, true, false, tag);
 				return;
 			}
 			Message df = DMT.createFNPCHKDataFound(uid, block.getRawHeaders());
@@ -473,7 +473,7 @@ public class FailureTable implements OOMHook {
 					} catch (Throwable t) {
 						Logger.error(this, "Sending offered key failed: "+t, t);
 					} finally {
-						node.unlockUID(uid, isSSK, false, false, true, false);
+						node.unlockUID(uid, isSSK, false, false, true, false, tag);
 					}
 				}
         		

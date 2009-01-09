@@ -49,18 +49,20 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	private long searchStartTime;
 	private long responseDeadline;
 	private BlockTransmitter bt;
+	private final RequestTag tag;
 
 	@Override
 	public String toString() {
 		return super.toString() + " for " + uid;
 	}
 
-	public RequestHandler(Message m, PeerNode source, long id, Node n, short htl, Key key) {
+	public RequestHandler(Message m, PeerNode source, long id, Node n, short htl, Key key, RequestTag tag) {
 		req = m;
 		node = n;
 		uid = id;
 		this.source = source;
 		this.htl = htl;
+		this.tag = tag;
 		if(htl <= 0)
 			htl = 1;
 		this.key = key;
@@ -78,11 +80,13 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		} catch(NotConnectedException e) {
 			Logger.normal(this, "requestor gone, could not start request handler wait");
 			node.removeTransferringRequestHandler(uid);
-			node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false);
+			tag.handlerThrew(e);
+			node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
 		} catch(Throwable t) {
 			Logger.error(this, "Caught " + t, t);
 			node.removeTransferringRequestHandler(uid);
-			node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false);
+			tag.handlerThrew(t);
+			node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
 		}
 	}
 	private Exception previousApplyByteCountCall;
@@ -140,6 +144,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 		Object o = node.makeRequestSender(key, htl, uid, source, false, true, false, false);
 		if(o instanceof KeyBlock) {
+			tag.setServedFromDatastore();
 			returnLocalData((KeyBlock) o);
 			return;
 		}
@@ -436,7 +441,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 	private void unregisterRequestHandlerWithNode() {
 		node.removeTransferringRequestHandler(uid);
-		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false);
+		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
 	}
 
 	/**

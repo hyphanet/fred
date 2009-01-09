@@ -45,14 +45,16 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     private BlockReceiver br;
     private Thread runThread;
     PartiallyReceivedBlock prb;
+    final InsertTag tag;
     private static boolean logMINOR;
     
-    CHKInsertHandler(Message req, PeerNode source, long id, Node node, long startTime) {
+    CHKInsertHandler(Message req, PeerNode source, long id, Node node, long startTime, InsertTag tag) {
         this.req = req;
         this.node = node;
         this.uid = id;
         this.source = source;
         this.startTime = startTime;
+        this.tag = tag;
         key = (NodeCHK) req.getObject(DMT.FREENET_ROUTING_KEY);
         htl = req.getShort(DMT.HTL);
         if(htl <= 0) htl = 1;
@@ -71,11 +73,13 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         	realRun();
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
+			tag.handlerThrew(e);
         } catch (Throwable t) {
             Logger.error(this, "Caught in run() "+t, t);
+            tag.handlerThrew(t);
         } finally {
         	if(logMINOR) Logger.minor(this, "Exiting CHKInsertHandler.run() for "+uid);
-            node.unlockUID(uid, false, true, false, false, false);
+            node.unlockUID(uid, false, true, false, false, false, tag);
         }
     }
 
