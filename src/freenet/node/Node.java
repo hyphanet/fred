@@ -2964,7 +2964,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	private<T extends UIDTag> void innerLock(HashMap<Long, T> map, T tag, Long uid, boolean ssk, boolean insert, boolean offerReply, boolean local) {
 		synchronized(map) {
-			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+map.size());
+			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+map.size(), new Exception("debug"));
 			if(map.containsKey(uid)) {
 				Logger.error(this, "Already have UID in specific map ("+ssk+","+insert+","+offerReply+","+local+") but not in general map: trying to register "+tag+" but already have "+map.get(uid));
 			}
@@ -2990,7 +2990,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		synchronized(runningUIDs) {
 			UIDTag oldTag = runningUIDs.get(uid);
 			if(oldTag == null) {
-				throw new IllegalStateException("Could not unlock "+uid+ '!');
+				throw new IllegalStateException("Could not unlock "+uid+ "! : ssk="+ssk+" insert="+insert+" canFail="+canFail+" offerReply="+offerReply+" local="+local);
 			} else if(tag != oldTag) {
 				Logger.error(this, "Removing "+tag+" for "+uid+" but "+tag+" is registered!");
 				return;
@@ -3002,12 +3002,12 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
 	private<T extends UIDTag> void innerUnlock(HashMap<Long, T> map, T tag, Long uid, boolean ssk, boolean insert, boolean offerReply, boolean local) {
 		synchronized(map) {
-			if(logMINOR) Logger.minor(this, "Locking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+map.size());
+			if(logMINOR) Logger.minor(this, "Unlocking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+map.size(), new Exception("debug"));
 			if(map.get(uid) != tag)
 				Logger.error(this, "Removing "+tag+" for "+uid+" returned "+map.get(uid));
 			else
 				map.remove(uid);
-			if(logMINOR) Logger.minor(this, "Locked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+map.size());
+			if(logMINOR) Logger.minor(this, "Unlocked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+map.size());
 		}
 	}
 
