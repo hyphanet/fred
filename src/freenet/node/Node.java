@@ -2978,13 +2978,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		
 		if(offerReply) {
 			HashMap<Long,OfferReplyTag> map = getOfferTracker(ssk);
-			innerUnlock(map, (OfferReplyTag)tag, uid, ssk, insert, offerReply, local);
+			innerUnlock(map, (OfferReplyTag)tag, uid, ssk, insert, offerReply, local, canFail);
 		} else if(insert) {
 			HashMap<Long,InsertTag> map = getInsertTracker(ssk,local);
-			innerUnlock(map, (InsertTag)tag, uid, ssk, insert, offerReply, local);
+			innerUnlock(map, (InsertTag)tag, uid, ssk, insert, offerReply, local, canFail);
 		} else {
 			HashMap<Long,RequestTag> map = getRequestTracker(ssk,local);
-			innerUnlock(map, (RequestTag)tag, uid, ssk, insert, offerReply, local);
+			innerUnlock(map, (RequestTag)tag, uid, ssk, insert, offerReply, local, canFail);
 		}
 		
 		synchronized(runningUIDs) {
@@ -3000,12 +3000,16 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 	}
 
-	private<T extends UIDTag> void innerUnlock(HashMap<Long, T> map, T tag, Long uid, boolean ssk, boolean insert, boolean offerReply, boolean local) {
+	private<T extends UIDTag> void innerUnlock(HashMap<Long, T> map, T tag, Long uid, boolean ssk, boolean insert, boolean offerReply, boolean local, boolean canFail) {
 		synchronized(map) {
 			if(logMINOR) Logger.minor(this, "Unlocking "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+map.size(), new Exception("debug"));
-			if(map.get(uid) != tag)
-				Logger.error(this, "Removing "+tag+" for "+uid+" returned "+map.get(uid));
-			else
+			if(map.get(uid) != tag) {
+				if(canFail) {
+					if(logMINOR) Logger.minor(this, "Can fail and did fail: removing "+tag+" got "+map.get(uid)+" for "+uid);
+				} else {
+					Logger.error(this, "Removing "+tag+" for "+uid+" returned "+map.get(uid));
+				}
+			} else
 				map.remove(uid);
 			if(logMINOR) Logger.minor(this, "Unlocked "+uid+" ssk="+ssk+" insert="+insert+" offerReply="+offerReply+" local="+local+" size="+map.size());
 		}
