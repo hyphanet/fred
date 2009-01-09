@@ -2990,8 +2990,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		synchronized(runningUIDs) {
 			UIDTag oldTag = runningUIDs.get(uid);
 			if(oldTag == null) {
+				if(canFail) return;
 				throw new IllegalStateException("Could not unlock "+uid+ "! : ssk="+ssk+" insert="+insert+" canFail="+canFail+" offerReply="+offerReply+" local="+local);
 			} else if(tag != oldTag) {
+				if(canFail) return;
 				Logger.error(this, "Removing "+tag+" for "+uid+" but "+tag+" is registered!");
 				return;
 			} else {
