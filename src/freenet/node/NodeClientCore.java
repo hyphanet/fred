@@ -539,7 +539,7 @@ public class NodeClientCore implements Persistable {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			return;
 		}
-		asyncGet(key, cache, offersOnly, uid, new RequestSender.Listener() {
+		asyncGet(key, isSSK, cache, offersOnly, uid, new RequestSender.Listener() {
 
 			public void onCHKTransferBegins() {
 				// Ignore
@@ -565,28 +565,28 @@ public class NodeClientCore implements Persistable {
 	 * anything and will run asynchronously. Caller is responsible for unlocking the UID.
 	 * @param key
 	 */
-	void asyncGet(Key key, boolean cache, boolean offersOnly, long uid, RequestSender.Listener listener, RequestTag tag) {
+	void asyncGet(Key key, boolean isSSK, boolean cache, boolean offersOnly, long uid, RequestSender.Listener listener, RequestTag tag) {
 		try {
 			Object o = node.makeRequestSender(key, node.maxHTL(), uid, null, false, cache, false, offersOnly);
 			if(o instanceof KeyBlock) {
 				tag.servedFromDatastore = true;
-				node.unlockUID(uid, false, false, true, false, true, tag);
+				node.unlockUID(uid, isSSK, false, true, false, true, tag);
 				return; // Already have it.
 			}
 			RequestSender rs = (RequestSender) o;
 			tag.setSender(rs);
 			rs.addListener(listener);
 			if(rs.uid != uid)
-				node.unlockUID(uid, false, false, false, false, true, tag);
+				node.unlockUID(uid, isSSK, false, false, false, true, tag);
 			// Else it has started a request.
 			if(logMINOR)
 				Logger.minor(this, "Started " + o + " for " + uid + " for " + key);
 		} catch(RuntimeException e) {
 			Logger.error(this, "Caught error trying to start request: " + e, e);
-			node.unlockUID(uid, false, false, true, false, true, tag);
+			node.unlockUID(uid, isSSK, false, true, false, true, tag);
 		} catch(Error e) {
 			Logger.error(this, "Caught error trying to start request: " + e, e);
-			node.unlockUID(uid, false, false, true, false, true, tag);
+			node.unlockUID(uid, isSSK, false, true, false, true, tag);
 		}
 	}
 
