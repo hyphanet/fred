@@ -133,6 +133,10 @@ public class NodeStats implements Persistable {
 	final TrivialRunningAverage remoteFetchPSuccess;
 	final TrivialRunningAverage blockTransferPSuccess;
 	
+	final TrivialRunningAverage successfulLocalCHKFetchTimeAverage;
+	final TrivialRunningAverage unsuccessfulLocalCHKFetchTimeAverage;
+	final TrivialRunningAverage localCHKFetchTimeAverage;
+	
 	private long previous_input_stat;
 	private long previous_output_stat;
 	private long previous_io_stat_time;
@@ -341,6 +345,10 @@ public class NodeStats implements Persistable {
 		localFetchPSuccess = new TrivialRunningAverage();
 		remoteFetchPSuccess = new TrivialRunningAverage();
 		blockTransferPSuccess = new TrivialRunningAverage();
+		
+		successfulLocalCHKFetchTimeAverage = new TrivialRunningAverage();
+		unsuccessfulLocalCHKFetchTimeAverage = new TrivialRunningAverage();
+		localCHKFetchTimeAverage = new TrivialRunningAverage();
 		
 		requestOutputThrottle = 
 			new TokenBucket(Math.max(obwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (obwLimit)), 0);
@@ -1778,5 +1786,26 @@ public class NodeStats implements Persistable {
 				count++;
 		}
 		return count;
+	}
+
+	public void reportCHKTime(long rtt, boolean successful) {
+		if(successful)
+			successfulLocalCHKFetchTimeAverage.report(rtt);
+		else
+			unsuccessfulLocalCHKFetchTimeAverage.report(rtt);
+		localCHKFetchTimeAverage.report(rtt);
+	}
+
+	public void fillDetailedTimingsBox(HTMLNode html) {
+		HTMLNode table = html.addChild("table");
+		HTMLNode row = table.addChild("tr");
+		row.addChild("td", "Successful");
+		row.addChild("td", TimeUtil.formatTime((long)successfulLocalCHKFetchTimeAverage.currentValue(), 2, true));
+		row = table.addChild("tr");
+		row.addChild("td", "Unsuccessful");
+		row.addChild("td", TimeUtil.formatTime((long)unsuccessfulLocalCHKFetchTimeAverage.currentValue(), 2, true));
+		row = table.addChild("tr");
+		row.addChild("td", "Average");
+		row.addChild("td", TimeUtil.formatTime((long)localCHKFetchTimeAverage.currentValue(), 2, true));
 	}
 }

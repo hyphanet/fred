@@ -217,6 +217,11 @@ public class StatisticsToadlet extends Toadlet {
 				successRateBox.addChild("div", "class", "infobox-header", "Success rates");
 				HTMLNode successRateContent = successRateBox.addChild("div", "class", "infobox-content");
 				stats.fillSuccessRateBox(successRateContent);
+				
+				HTMLNode timeDetailBox = nextTableCell.addChild("div", "class", "infobox");
+				timeDetailBox.addChild("div", "class", "infobox-header", "Detailed timings (local CHK fetches)");
+				HTMLNode timingsContent = timeDetailBox.addChild("div", "class", "infobox-content");
+				stats.fillDetailedTimingsBox(timingsContent);
 			}
 		}
 

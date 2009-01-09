@@ -653,6 +653,8 @@ public class NodeClientCore implements Persistable {
 						// See below
 						requestStarters.rejectedOverload(false, false);
 						rejectedOverload = true;
+						long rtt = System.currentTimeMillis() - startTime;
+						node.nodeStats.reportCHKTime(rtt, false);
 					}
 				} else
 					if(rs.hasForwarded() &&
@@ -667,6 +669,10 @@ public class NodeClientCore implements Persistable {
 							requestStarters.requestCompleted(false, false, key.getNodeKey());
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
 						requestStarters.chkRequestThrottle.successfulCompletion(rtt);
+						node.nodeStats.reportCHKTime(rtt, status == RequestSender.SUCCESS);
+						if(status == RequestSender.SUCCESS) {
+							Logger.minor(this, "Successful CHK fetch took "+rtt);
+						}
 					}
 
 				if(rs.getStatus() == RequestSender.SUCCESS)
