@@ -196,7 +196,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 									new String[]{ failedIdentifiers.toString() }
 							));
 				else
-					writePermanentRedirect(ctx, "Done", container.fixLink("/queue/");
+					writePermanentRedirect(ctx, "Done", container.fixLink("/queue/"));
 				fcp.forceStorePersistentRequests();
 				return;
 			}else if(request.isPartSet("download")) {
