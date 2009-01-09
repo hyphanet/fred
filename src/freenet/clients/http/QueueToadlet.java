@@ -167,7 +167,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					}
 				}
 				fcp.forceStorePersistentRequests();
-				writePermanentRedirect(ctx, "Done", container.fixLink("/queue/"));
+				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if(request.isPartSet("remove_AllRequests") && (request.getPartAsString("remove_AllRequests", 32).length() > 0)) {
 				
@@ -196,7 +196,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 									new String[]{ failedIdentifiers.toString() }
 							));
 				else
-					writePermanentRedirect(ctx, "Done", container.fixLink("/queue/"));
+					writePermanentRedirect(ctx, "Done", container.fixLink("/queue/");
 				fcp.forceStorePersistentRequests();
 				return;
 			}else if(request.isPartSet("download")) {
@@ -224,13 +224,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					this.writeError(L10n.getString("QueueToadlet.errorDToDisk"), L10n.getString("QueueToadlet.errorDToDiskConfig"), ctx);
 					return;
 				}
-				writePermanentRedirect(ctx, "Done", container.fixLink("/queue/"));
+				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			}else if(request.isPartSet("bulkDownloads")) {
 				String bulkDownloadsAsString = request.getPartAsString("bulkDownloads", Integer.MAX_VALUE);
 				String[] keys = bulkDownloadsAsString.split("\n");
 				if(("".equals(bulkDownloadsAsString)) || (keys.length < 1)) {
-					writePermanentRedirect(ctx, "Done", container.fixLink("/queue/"));
+					writePermanentRedirect(ctx, "Done", "/queue/");
 					return;
 				}
 				LinkedList<String> success = new LinkedList<String>(), failure = new LinkedList<String>();
@@ -291,7 +291,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 						break loop;
 					}
 				}
-				writePermanentRedirect(ctx, "Done", container.fixLink("/queue/"));
+				writePermanentRedirect(ctx, "Done", "/queue/");
 				fcp.forceStorePersistentRequests();
 				return;
 			} else if (request.getPartAsString("insert", 128).length() > 0) {
@@ -341,7 +341,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					writeError(L10n.getString("QueueToadlet.errorInvalidURI"), L10n.getString("QueueToadlet.errorInvalidURIToU"), ctx);
 					return;
 				}
-				writePermanentRedirect(ctx, "Done", container.fixLink("/queue/"));
+				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if (request.isPartSet("insert-local-file")) {
 				String filename = request.getPartAsString("filename", MAX_FILENAME_LENGTH);
@@ -379,7 +379,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					this.writeError(L10n.getString("QueueToadlet.errorAccessDenied"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getName() }), ctx);
 					return;
 				}
-				writePermanentRedirect(ctx, "Done", container.fixLink("/queue/"));
+				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if (request.isPartSet("insert-local-dir")) {
 				String filename = request.getPartAsString("filename", MAX_FILENAME_LENGTH);
@@ -410,7 +410,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					this.writeError(L10n.getString("QueueToadlet.errorNoFileOrCannotRead"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.toString() }), ctx);
 					return;
 				}
-				writePermanentRedirect(ctx, "Done", container.fixLink("/queue/"));
+				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if (request.isPartSet("get")) {
 				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);

@@ -277,7 +277,7 @@ public class BookmarkEditorToadlet extends Toadlet {
 		String passwd = req.getPartAsString("formPassword", 32);
 		boolean noPassword = (passwd == null) || !passwd.equals(core.formPassword);
 		if(noPassword) {
-			writePermanentRedirect(ctx, "Invalid", "");
+			writePermanentRedirect(ctx, "Invalid", PATH);
 			return;
 		}
 
