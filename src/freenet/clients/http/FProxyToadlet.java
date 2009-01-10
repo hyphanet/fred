@@ -755,6 +755,10 @@ public final class FProxyToadlet extends Toadlet {
 		
 		UserAlertsToadlet alerts = new UserAlertsToadlet(client, node, core);
 		server.register(alerts, "/alerts/", true, "FProxyToadlet.alertsTitle", "FProxyToadlet.alerts", true, null);
+
+		QueueToadlet queueToadlet = new QueueToadlet(core, core.getFCPServer(), client);
+		server.register(queueToadlet, "/queue/", true, "FProxyToadlet.queueTitle", "FProxyToadlet.queue", false, queueToadlet);
+		queueToadlet.loadCompletedIdentifiers();
 		
 		PproxyToadlet pproxy = new PproxyToadlet(client, node, core);
 		server.register(pproxy, "/plugins/", true, "FProxyToadlet.pluginsTitle", "FProxyToadlet.plugins", true, null);
@@ -762,30 +766,18 @@ public final class FProxyToadlet extends Toadlet {
 		WelcomeToadlet welcometoadlet = new WelcomeToadlet(client, core, node, bookmarks);
 		server.register(welcometoadlet, "/welcome/", true, false);
 		
-		ConfigToadlet configtoadlet = new ConfigToadlet(client, config, node, core);
-		server.register(configtoadlet, "/config/", true, "FProxyToadlet.configTitle", "FProxyToadlet.config", true, null);
-		
 		SymlinkerToadlet symlinkToadlet = new SymlinkerToadlet(client, node);
 		server.register(symlinkToadlet, "/sl/", true, false);
 		
 		DarknetConnectionsToadlet friendsToadlet = new DarknetConnectionsToadlet(node, core, client);
-//		server.register(friendsToadlet, "/darknet/", true, l10n("friendsTitle"), l10n("friends"), true);
 		server.register(friendsToadlet, "/friends/", true, "FProxyToadlet.friendsTitle", "FProxyToadlet.friends", true, null);
 		
 		OpennetConnectionsToadlet opennetToadlet = new OpennetConnectionsToadlet(node, core, client);
-//		server.register(opennetToadlet, "/opennet/", true, l10n("opennetTitle"), l10n("opennet"), true, opennetToadlet);
 		server.register(opennetToadlet, "/strangers/", true, "FProxyToadlet.opennetTitle", "FProxyToadlet.opennet", true, opennetToadlet);
 		
 		N2NTMToadlet n2ntmToadlet = new N2NTMToadlet(node, core, client);
 		server.register(n2ntmToadlet, "/send_n2ntm/", true, true);
-		
-		QueueToadlet queueToadlet = new QueueToadlet(core, core.getFCPServer(), client);
-		server.register(queueToadlet, "/queue/", true, "FProxyToadlet.queueTitle", "FProxyToadlet.queue", false, queueToadlet);
-		queueToadlet.loadCompletedIdentifiers();
-		
-		StatisticsToadlet statisticsToadlet = new StatisticsToadlet(node, core, client);
-		server.register(statisticsToadlet, "/stats/", true, "FProxyToadlet.statsTitle", "FProxyToadlet.stats", true, null);
-		
+				
 		LocalFileInsertToadlet localFileInsertToadlet = new LocalFileInsertToadlet(core, client);
 		server.register(localFileInsertToadlet, "/files/", true, false);
 		
@@ -794,9 +786,9 @@ public final class FProxyToadlet extends Toadlet {
 		
 		BrowserTestToadlet browsertTestToadlet = new BrowserTestToadlet(client, core);
 		server.register(browsertTestToadlet, "/test/", true, false);
-		
-		SimpleHelpToadlet simpleHelpToadlet = new SimpleHelpToadlet(client, core);
-		server.register(simpleHelpToadlet, "/help/", true, false);
+			
+		StatisticsToadlet statisticsToadlet = new StatisticsToadlet(node, core, client);
+		server.register(statisticsToadlet, "/stats/", true, "FProxyToadlet.statsTitle", "FProxyToadlet.stats", true, null);
 		
 		ConnectivityToadlet connectivityToadlet = new ConnectivityToadlet(client, node, core);
 		server.register(connectivityToadlet, "/connectivity/", true, "ConnectivityToadlet.connectivityTitle", "ConnectivityToadlet.connectivity", true, null);
@@ -806,6 +798,12 @@ public final class FProxyToadlet extends Toadlet {
 		
 		FirstTimeWizardToadlet firstTimeWizardToadlet = new FirstTimeWizardToadlet(client, node, core);
 		server.register(firstTimeWizardToadlet, FirstTimeWizardToadlet.TOADLET_URL, true, false);
+		
+		ConfigToadlet configtoadlet = new ConfigToadlet(client, config, node, core);
+		server.register(configtoadlet, "/config/", true, "FProxyToadlet.configTitle", "FProxyToadlet.config", true, null);
+		
+		SimpleHelpToadlet simpleHelpToadlet = new SimpleHelpToadlet(client, core);
+		server.register(simpleHelpToadlet, "/help/", true, false);
 		
 	}
 	

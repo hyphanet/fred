@@ -30,7 +30,7 @@ public class SimpleHelpToadlet extends Toadlet {
 
 		
 		
-		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Freenet " + L10n.getString("SimpleHelpToadlet.help"), ctx);
+		HTMLNode pageNode = ctx.getPageMaker().getPageNode("Freenet " + L10n.getString("FProxyToadlet.help"), ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
 		if(ctx.isAllowedFullAccess())
