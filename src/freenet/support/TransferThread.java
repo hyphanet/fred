@@ -80,6 +80,13 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 		}
 	}
 	
+	/**
+	 * Wakes up the thread so that iterate() is called.
+	 */
+	public void nextIteration() {
+		mThread.interrupt();
+	}
+	
 	protected void abortAllTransfers() {
 		Logger.debug(this, "Trying to stop all requests & inserts");
 		
