@@ -793,7 +793,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				}
 				if(nonce == null) {
 					// Either we are on Windows, in which case CAPI doesn't block, or we are on some wierd unix...
-					System.err.println("Blocking waiting for entropy. Because history cloaking is enabled, we cannot yet launch the web interface...");
+					if(File.separatorChar != '\\') {
+						System.err.println("Blocking waiting for entropy. Because history cloaking is enabled, we cannot yet launch the web interface...");
+					}
+					// Start the gatherer thread anyway, just in case on some versions of windows CAPI can block.
+					// FIXME ????
 					entropyGatheringThread.start();
 					startedEntropyGatherer = true;
 					nonce = SecureRandom.getSeed(32);
@@ -3037,9 +3041,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		return ssk ? runningSSKOfferReplyUIDs : runningCHKOfferReplyUIDs;
 	}
 
+	static final int TIMEOUT = 10 * 60 * 1000;
+	
 	private void startDeadUIDChecker() {
-		// TODO Auto-generated method stub
-		
+		getTicker().queueTimedJob(deadUIDChecker, TIMEOUT);
 	}
 
 	private Runnable deadUIDChecker = new Runnable() {
@@ -3069,7 +3074,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			}
 			long now = System.currentTimeMillis();
 			for(int i=0;i<uids.length;i++) {
-				if(now - tags[i].createdTime > 10 * 60 * 1000) {
+				if(now - tags[i].createdTime > TIMEOUT) {
 					tags[i].logStillPresent(uids[i]);
 					synchronized(map) {
 						map.remove(uids[i]);
