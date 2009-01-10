@@ -441,7 +441,7 @@ public class ToadletContextImpl implements ToadletContext, LinkFixer {
 			return false;
 		}
 		String path = uri.getRawPath();
-		String secureid = req.getParam("secureid"); // remove it
+		String secureid = req.getParam("secureid");
 		String queries = getQueriesNoSecureID(uri);
 		String realPath = path;
 		if(queries != null) realPath += queries;
@@ -450,6 +450,7 @@ public class ToadletContextImpl implements ToadletContext, LinkFixer {
 			expectedSecureID = ctx.container.generateSID(realPath);
 		} catch (URLEncodedFormatException e1) {
 			ctx.sendError(400, "Bad Request", l10n("invalidURICheckingSecureID"), false, null);
+			req.freeParts();
 			return true;
 		}
 		if(secureid != null && expectedSecureID.equals(secureid)) {
