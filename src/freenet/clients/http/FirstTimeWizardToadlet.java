@@ -290,7 +290,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			congratzInfoboxHeader.addChild("#", l10n("congratz"));
 			congratzInfoboxContent.addChild("p", l10n("congratzLong"));
 			
-			congratzInfoboxContent.addChild("a", "href", container.fixLink("?step="+WIZARD_STEP.FINAL), L10n.getString("FirstTimeWizardToadlet.continueEnd"));
+			congratzInfoboxContent.addChild("a", "href", container.fixLink(TOADLET_URL+"?step="+WIZARD_STEP.FINAL), L10n.getString("FirstTimeWizardToadlet.continueEnd"));
 
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
@@ -316,10 +316,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		HTMLNode firstParagraph = welcomeInfoboxContent.addChild("p");
 		firstParagraph.addChild("#", l10n("welcomeInfoboxContent1"));
 		HTMLNode secondParagraph = welcomeInfoboxContent.addChild("p");
-		secondParagraph.addChild("a", "href", container.fixLink("?step="+WIZARD_STEP.SECURITY_NETWORK)).addChild("#", L10n.getString("FirstTimeWizardToadlet.clickContinue"));
+		secondParagraph.addChild("a", "href", container.fixLink(TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_NETWORK)).addChild("#", L10n.getString("FirstTimeWizardToadlet.clickContinue"));
 		
 		HTMLNode thirdParagraph = welcomeInfoboxContent.addChild("p");
-		thirdParagraph.addChild("a", "href", container.fixLink("?step="+WIZARD_STEP.FINAL)).addChild("#", l10n("skipWizard"));
+		thirdParagraph.addChild("a", "href", container.fixLink(TOADLET_URL+"?step="+WIZARD_STEP.FINAL)).addChild("#", l10n("skipWizard"));
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
