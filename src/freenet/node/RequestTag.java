@@ -58,13 +58,17 @@ public class RequestTag extends UIDTag {
 		sb.append("Still present after ").append(TimeUtil.formatTime(age()));
 		sb.append(" : ").append(uid).append(" : start=").append(start);
 		sb.append(" ssk=").append(isSSK).append(" from store=").append(servedFromDatastore);
-		RequestSender s = sender.get();
-		if(s == null) {
-			sb.append(" sender=null");
+		if(sender == null) {
+			sb.append(" sender hasn't been set!");
 		} else {
-			sb.append(" sender=").append(s);
-			sb.append(" status=");
-			sb.append(s.getStatusString());
+			RequestSender s = sender.get();
+			if(s == null) {
+				sb.append(" sender=null");
+			} else {
+				sb.append(" sender=").append(s);
+				sb.append(" status=");
+				sb.append(s.getStatusString());
+			}
 		}
 		sb.append(" finishedCode=").append(requestSenderFinishedCode);
 		sb.append(" rejected=").append(rejected);
