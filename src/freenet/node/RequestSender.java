@@ -1081,7 +1081,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         }
 		
         if(status == SUCCESS) {
-        	if(key instanceof NodeCHK && transferTime > 0) {
+        	if(key instanceof NodeCHK && transferTime > 0 && logMINOR) {
         		long timeTaken = System.currentTimeMillis() - startTime;
         		synchronized(avgTimeTaken) {
         			avgTimeTaken.report(timeTaken);

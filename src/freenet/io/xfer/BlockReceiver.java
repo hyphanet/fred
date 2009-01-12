@@ -192,9 +192,11 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		maybeResetDiscardFilter();
 		long endTime = System.currentTimeMillis();
 		long transferTime = (endTime - startTime);
-		synchronized(avgTimeTaken) {
-			avgTimeTaken.report(transferTime);
-			Logger.minor(this, "Block transfer took "+transferTime+"ms - average is "+avgTimeTaken);
+		if(logMINOR) {
+			synchronized(avgTimeTaken) {
+				avgTimeTaken.report(transferTime);
+				Logger.minor(this, "Block transfer took "+transferTime+"ms - average is "+avgTimeTaken);
+			}
 		}
 		
 		return _prb.getBlock();

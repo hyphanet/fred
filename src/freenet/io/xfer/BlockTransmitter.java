@@ -230,10 +230,12 @@ public class BlockTransmitter {
 					}
 				} else if (msg.getSpec().equals(DMT.allReceived)) {
 					long endTime = System.currentTimeMillis();
-					long transferTime = (endTime - startTime);
-					synchronized(avgTimeTaken) {
-						avgTimeTaken.report(transferTime);
-						Logger.minor(this, "Block send took "+transferTime+" : "+avgTimeTaken);
+					if(logMINOR) {
+						long transferTime = (endTime - startTime);
+						synchronized(avgTimeTaken) {
+							avgTimeTaken.report(transferTime);
+							Logger.minor(this, "Block send took "+transferTime+" : "+avgTimeTaken);
+						}
 					}
 					
 					return true;
