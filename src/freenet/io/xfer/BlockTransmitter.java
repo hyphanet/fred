@@ -36,6 +36,8 @@ import freenet.support.Executor;
 import freenet.support.Logger;
 import freenet.support.TimeUtil;
 import freenet.support.io.NativeThread;
+import freenet.support.math.MedianMeanRunningAverage;
+import freenet.support.math.TrivialRunningAverage;
 
 /**
  * @author ian
@@ -152,6 +154,7 @@ public class BlockTransmitter {
 	}
 	
 	public boolean send(Executor executor) {
+		long startTime = System.currentTimeMillis();
 		PartiallyReceivedBlock.PacketReceivedListener myListener=null;
 		
 		try {
@@ -226,6 +229,13 @@ public class BlockTransmitter {
 						}
 					}
 				} else if (msg.getSpec().equals(DMT.allReceived)) {
+					long endTime = System.currentTimeMillis();
+					long transferTime = (endTime - startTime);
+					synchronized(avgTimeTaken) {
+						avgTimeTaken.report(transferTime);
+						Logger.minor(this, "Block send took "+transferTime+" : "+avgTimeTaken);
+					}
+					
 					return true;
 				} else if (msg.getSpec().equals(DMT.sendAborted)) {
 					// Overloaded: receiver no longer wants the data
@@ -264,6 +274,8 @@ public class BlockTransmitter {
 		}
 	}
 
+	private static MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
+	
 	public int getNumSent() {
 		int ret = 0;
 		for (int x=0; x<_sentPackets.getSize(); x++) {

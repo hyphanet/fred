@@ -34,6 +34,7 @@ import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.io.NativeThread;
+import freenet.support.math.MedianMeanRunningAverage;
 
 /**
  * @author amphibian
@@ -97,6 +98,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     static final int GET_OFFER_TRANSFER_FAILED = 11;
     private PeerNode successFrom;
     private PeerNode lastNode;
+    private final long startTime;
     
     static String getStatusString(int status) {
     	switch(status) {
@@ -147,6 +149,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
      */
     public RequestSender(Key key, DSAPublicKey pubKey, short htl, long uid, Node n,
             PeerNode source, boolean offersOnly) {
+    	startTime = System.currentTimeMillis();
         this.key = key;
         this.pubKey = pubKey;
         this.htl = htl;
@@ -1054,6 +1057,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     	}
     }
     
+	private static MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
+	
     private void finish(int code, PeerNode next, boolean fromOfferedKey) {
     	if(logMINOR) Logger.minor(this, "finish("+code+ ')');
         
@@ -1065,6 +1070,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         }
 		
         if(status == SUCCESS) {
+        	if(key instanceof NodeCHK) {
+        		long timeTaken = System.currentTimeMillis() - startTime;
+        		synchronized(avgTimeTaken) {
+        			avgTimeTaken.report(timeTaken);
+        			if(logMINOR) Logger.minor(this, "Successful CHK request took "+timeTaken+" average "+avgTimeTaken);
+        		}
+        	}
         	if(next != null) {
         		next.onSuccess(false, key instanceof NodeSSK);
         	}
