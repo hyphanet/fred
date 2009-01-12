@@ -167,7 +167,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		discardFilter=relevantMessages;
 		maybeResetDiscardFilter();
 		long endTime = System.currentTimeMillis();
-		Logger.minor(this, "Block transfer took "+(startTime - endTime)+"ms");
+		Logger.minor(this, "Block transfer took "+(endTime - startTime)+"ms");
 		return _prb.getBlock();
 		} catch(NotConnectedException e) {
 		    throw new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
