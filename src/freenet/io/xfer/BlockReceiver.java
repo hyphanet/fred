@@ -78,6 +78,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	}
 	
 	public byte[] receive() throws RetrievalException {
+		long startTime = System.currentTimeMillis();
 		int consecutiveMissingPacketReports = 0;
 		try {
 			MessageFilter mfPacketTransmit = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.packetTransmit).setField(DMT.UID, _uid).setSource(_sender);
@@ -165,6 +166,8 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		discardEndTime=System.currentTimeMillis()+CLEANUP_TIMEOUT;
 		discardFilter=relevantMessages;
 		maybeResetDiscardFilter();
+		long endTime = System.currentTimeMillis();
+		Logger.minor(this, "Block transfer took "+(startTime - endTime)+"ms");
 		return _prb.getBlock();
 		} catch(NotConnectedException e) {
 		    throw new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
