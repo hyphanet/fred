@@ -135,6 +135,18 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 		Logger.debug(this, "Removed insert for " + p.getURI());
 	}
 	
+	protected int fetchCount() {
+		synchronized(mFetches) {
+			return mFetches.size();
+		}
+	}
+	
+	protected int insertCount() {
+		synchronized(mInserts) {
+			return mInserts.size();
+		}
+	}
+	
 	public void terminate() {
 		isRunning = false;
 		mThread.interrupt();
