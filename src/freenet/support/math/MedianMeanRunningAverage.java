@@ -1,8 +1,13 @@
 package freenet.support.math;
 
 import java.util.ArrayList;
-import java.util.TreeSet;
 
+/**
+ * A RunningAverage that tracks both the median and mean of a series of values.
+ * WARNING: Uses memory and proportional to the number of reports! Only for debugging!
+ * (Also uses CPU time O(N log N) with the number of reports in currentValue()).
+ * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
+ */
 public class MedianMeanRunningAverage implements RunningAverage {
 	
 	final ArrayList<Double> reports;
