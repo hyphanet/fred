@@ -266,12 +266,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 		}
                 		fireCHKTransferBegins();
 						
-                		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this);
+                		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this, node.getTicker());
                 		
                 		try {
                 			if(logMINOR) Logger.minor(this, "Receiving data");
                 			byte[] data = br.receive();
-                			pn.transferSuccess();
+                			if(!br.tookTooLong())
+                				pn.transferSuccess();
                 			if(logMINOR) Logger.minor(this, "Received data");
                 			// Received data
                 			try {
@@ -292,7 +293,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 								// A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
 								Logger.normal(this, "Transfer for offer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+pn, e);
                 			finish(GET_OFFER_TRANSFER_FAILED, pn, true);
-                			pn.transferFailed("RequestSenderGetOfferedTransferFailed");
+                			if(!br.tookTooLong())
+                				pn.transferFailed("RequestSenderGetOfferedTransferFailed");
                     		offers.deleteLastOffer();
                 			node.nodeStats.failedBlockReceive();
                 			return;
@@ -768,12 +770,16 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 		}
                 		fireCHKTransferBegins();
 						
-                		BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this);
+                		long tStart = System.currentTimeMillis();
+                		BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker());
                 		
                 		try {
                 			if(logMINOR) Logger.minor(this, "Receiving data");
                 			byte[] data = br.receive();
-                			next.transferSuccess();
+                			long tEnd = System.currentTimeMillis();
+                			this.transferTime = tEnd - tStart;
+                			if(!br.tookTooLong())
+                				next.transferSuccess();
                         	next.successNotOverload();
                 			if(logMINOR) Logger.minor(this, "Received data");
                 			// Received data
@@ -796,7 +802,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 							next.localRejectedOverload("TransferFailedRequest"+e.getReason());
                 			finish(TRANSFER_FAILED, next, false);
                 			node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
-                			next.transferFailed("RequestSenderTransferFailed");
+                			if(!br.tookTooLong())
+                				next.transferFailed("RequestSenderTransferFailed");
                 			return;
                 		}
                 	} finally {
@@ -1059,6 +1066,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     
 	private static MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
 	
+	private static MedianMeanRunningAverage avgTimeTakenTransfer = new MedianMeanRunningAverage();
+	
+	private long transferTime;
+	
     private void finish(int code, PeerNode next, boolean fromOfferedKey) {
     	if(logMINOR) Logger.minor(this, "finish("+code+ ')');
         
@@ -1070,11 +1081,14 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         }
 		
         if(status == SUCCESS) {
-        	if(key instanceof NodeCHK) {
+        	if(key instanceof NodeCHK && transferTime > 0) {
         		long timeTaken = System.currentTimeMillis() - startTime;
         		synchronized(avgTimeTaken) {
         			avgTimeTaken.report(timeTaken);
+        			avgTimeTakenTransfer.report(transferTime);
         			if(logMINOR) Logger.minor(this, "Successful CHK request took "+timeTaken+" average "+avgTimeTaken);
+        			if(logMINOR) Logger.minor(this, "Successful CHK request transfer "+transferTime+" average "+avgTimeTakenTransfer);
+        			if(logMINOR) Logger.minor(this, "Search phase: median "+(avgTimeTaken.currentValue() - avgTimeTakenTransfer.currentValue())+"ms, mean "+(avgTimeTaken.meanValue() - avgTimeTakenTransfer.meanValue())+"ms");
         		}
         	}
         	if(next != null) {

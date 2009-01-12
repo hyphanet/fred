@@ -31,6 +31,7 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
+import freenet.node.Ticker;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.Logger;
@@ -53,6 +54,8 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	public static final int MAX_CONSECUTIVE_MISSING_PACKET_REPORTS = 4;
 	public static final int MAX_SEND_INTERVAL = 500;
 	public static final int CLEANUP_TIMEOUT = 5000;
+	// After 15 seconds, the receive is overdue and will cause backoff.
+	public static final int TOO_LONG_TIMEOUT = 15000;
 	PartiallyReceivedBlock _prb;
 	PeerContext _sender;
 	long _uid;
@@ -60,18 +63,21 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	/** packet : Integer -> reportTime : Long * */
 	HashMap<Integer, Long> _recentlyReportedMissingPackets = new HashMap<Integer, Long>();
 	ByteCounter _ctr;
+	Ticker _ticker;
 	boolean sentAborted;
 	private MessageFilter discardFilter;
 	private long discardEndTime;
+	private boolean tookTooLong;
 
 	boolean logMINOR=Logger.shouldLog(Logger.MINOR, this);
 	
-	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr) {
+	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr, Ticker ticker) {
 		_sender = sender;
 		_prb = prb;
 		_uid = uid;
 		_usm = usm;
 		_ctr = ctr;
+		_ticker = ticker;
 	}
 
 	public void sendAborted(int reason, String desc) throws NotConnectedException {
@@ -81,6 +87,22 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	
 	public byte[] receive() throws RetrievalException {
 		long startTime = System.currentTimeMillis();
+		_ticker.queueTimedJob(new Runnable() {
+
+			public void run() {
+				if(!_sender.isConnected()) return;
+				try {
+					if(_prb.allReceived()) return;
+				} catch (AbortedException e) {
+					return;
+				}
+				synchronized(BlockReceiver.this) {
+					tookTooLong = true;
+				}
+				_sender.transferFailed("Took too long (still running)");
+			}
+			
+		}, TOO_LONG_TIMEOUT);
 		int consecutiveMissingPacketReports = 0;
 		try {
 			MessageFilter mfPacketTransmit = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.packetTransmit).setField(DMT.UID, _uid).setSource(_sender);
@@ -232,6 +254,10 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 
 	public void onRestarted(PeerContext ctx) {
 		// Ignore
+	}
+
+	public synchronized boolean tookTooLong() {
+		return tookTooLong;
 	}
 	
 }

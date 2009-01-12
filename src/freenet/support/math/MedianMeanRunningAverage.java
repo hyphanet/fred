@@ -50,5 +50,9 @@ public class MedianMeanRunningAverage implements RunningAverage {
 	public synchronized String toString() {
 		return "Median "+currentValue()+" mean "+mean.currentValue();
 	}
+	
+	public synchronized double meanValue() {
+		return mean.currentValue();
+	}
 
 }

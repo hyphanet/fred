@@ -59,4 +59,7 @@ public interface PeerContext {
 
 	/** Compact toString() */
 	String shortToString();
+	
+	/** Report a transfer failure */
+	void transferFailed(String reason);
 }
