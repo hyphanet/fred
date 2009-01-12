@@ -34,6 +34,7 @@ import freenet.io.comm.RetrievalException;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.Logger;
+import freenet.support.math.TrivialRunningAverage;
 
 /**
  * @author ian
@@ -167,7 +168,12 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		discardFilter=relevantMessages;
 		maybeResetDiscardFilter();
 		long endTime = System.currentTimeMillis();
-		Logger.minor(this, "Block transfer took "+(endTime - startTime)+"ms");
+		long transferTime = (endTime - startTime);
+		synchronized(avgTimeTaken) {
+			avgTimeTaken.report(transferTime);
+			Logger.minor(this, "Block transfer took "+transferTime+"ms - average is "+avgTimeTaken.currentValue());
+		}
+		
 		return _prb.getBlock();
 		} catch(NotConnectedException e) {
 		    throw new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
@@ -185,6 +191,8 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
 		}
 	}
+	
+	private static TrivialRunningAverage avgTimeTaken = new TrivialRunningAverage();
 	
 	private void maybeResetDiscardFilter() {
 		long timeleft=discardEndTime-System.currentTimeMillis();
