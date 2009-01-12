@@ -99,6 +99,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				} catch (AbortedException e) {
 					return;
 				}
+				Logger.error(this, "Transfer took too long: "+_uid+" from "+_sender);
 				synchronized(BlockReceiver.this) {
 					tookTooLong = true;
 				}
