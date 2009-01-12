@@ -266,7 +266,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 		}
                 		fireCHKTransferBegins();
 						
-                		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this, node.getTicker());
+                		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this, node.getTicker(), true);
                 		
                 		try {
                 			if(logMINOR) Logger.minor(this, "Receiving data");
@@ -771,7 +771,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 		fireCHKTransferBegins();
 						
                 		long tStart = System.currentTimeMillis();
-                		BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker());
+                		BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker(), true);
                 		
                 		try {
                 			if(logMINOR) Logger.minor(this, "Receiving data");

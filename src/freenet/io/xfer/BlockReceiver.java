@@ -68,16 +68,18 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	private MessageFilter discardFilter;
 	private long discardEndTime;
 	private boolean tookTooLong;
+	private final boolean _doTooLong;
 
 	boolean logMINOR=Logger.shouldLog(Logger.MINOR, this);
 	
-	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr, Ticker ticker) {
+	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr, Ticker ticker, boolean doTooLong) {
 		_sender = sender;
 		_prb = prb;
 		_uid = uid;
 		_usm = usm;
 		_ctr = ctr;
 		_ticker = ticker;
+		_doTooLong = doTooLong;
 	}
 
 	public void sendAborted(int reason, String desc) throws NotConnectedException {
@@ -87,6 +89,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	
 	public byte[] receive() throws RetrievalException {
 		long startTime = System.currentTimeMillis();
+		if(_doTooLong) {
 		_ticker.queueTimedJob(new Runnable() {
 
 			public void run() {
@@ -103,6 +106,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
 			
 		}, TOO_LONG_TIMEOUT);
+		}
 		int consecutiveMissingPacketReports = 0;
 		try {
 			MessageFilter mfPacketTransmit = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.packetTransmit).setField(DMT.UID, _uid).setSource(_sender);

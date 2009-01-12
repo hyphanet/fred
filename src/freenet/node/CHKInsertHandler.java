@@ -121,7 +121,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         		Message m = DMT.createFNPInsertTransfersCompleted(uid, true);
         		source.sendAsync(m, null, this);
         		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
-        		br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker());
+        		br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false);
         		prb.abort(RetrievalException.NO_DATAINSERT, "No DataInsert");
         		br.sendAborted(RetrievalException.NO_DATAINSERT, "No DataInsert");
         		return;
@@ -143,7 +143,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
         if(htl > 0)
             sender = node.makeInsertSender(key, htl, uid, source, headers, prb, false, true);
-        br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker());
+        br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false);
         
         // Receive the data, off thread
         Runnable dataReceiver = new DataReceiver();
