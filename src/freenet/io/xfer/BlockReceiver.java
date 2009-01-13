@@ -68,7 +68,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	private MessageFilter discardFilter;
 	private long discardEndTime;
 	private boolean tookTooLong;
-	private final boolean _doTooLong;
+//	private final boolean _doTooLong;
 
 	boolean logMINOR=Logger.shouldLog(Logger.MINOR, this);
 	
@@ -79,7 +79,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		_usm = usm;
 		_ctr = ctr;
 		_ticker = ticker;
-		_doTooLong = doTooLong;
+//		_doTooLong = doTooLong;
 	}
 
 	public void sendAborted(int reason, String desc) throws NotConnectedException {
@@ -89,25 +89,25 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	
 	public byte[] receive() throws RetrievalException {
 		long startTime = System.currentTimeMillis();
-		if(_doTooLong) {
-		_ticker.queueTimedJob(new Runnable() {
-
-			public void run() {
-				if(!_sender.isConnected()) return;
-				try {
-					if(_prb.allReceived()) return;
-				} catch (AbortedException e) {
-					return;
-				}
-				Logger.error(this, "Transfer took too long: "+_uid+" from "+_sender);
-				synchronized(BlockReceiver.this) {
-					tookTooLong = true;
-				}
-				_sender.transferFailed("Took too long (still running)");
-			}
-			
-		}, TOO_LONG_TIMEOUT);
-		}
+//		if(_doTooLong) {
+//		_ticker.queueTimedJob(new Runnable() {
+//
+//			public void run() {
+//				if(!_sender.isConnected()) return;
+//				try {
+//					if(_prb.allReceived()) return;
+//				} catch (AbortedException e) {
+//					return;
+//				}
+//				Logger.error(this, "Transfer took too long: "+_uid+" from "+_sender);
+//				synchronized(BlockReceiver.this) {
+//					tookTooLong = true;
+//				}
+//				_sender.transferFailed("Took too long (still running)");
+//			}
+//			
+//		}, TOO_LONG_TIMEOUT);
+//		}
 		int consecutiveMissingPacketReports = 0;
 		try {
 			MessageFilter mfPacketTransmit = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.packetTransmit).setField(DMT.UID, _uid).setSource(_sender);
