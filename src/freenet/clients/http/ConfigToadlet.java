@@ -56,7 +56,7 @@ public class ConfigToadlet extends Toadlet {
 
 		@Override
 		public String getText() {
-			return getHTMLText(NullLinkFixer.instance).toString();
+			return getHTMLText(container).toString();
 		}
 
 		@Override
@@ -65,15 +65,13 @@ public class ConfigToadlet extends Toadlet {
 		}
 
 		@Override
-		public HTMLNode getHTMLText(LinkFixer fixer) {
+		public HTMLNode getHTMLText(ToadletContainer fixer) {
 			HTMLNode alertNode = new HTMLNode("div");
 			alertNode.addChild("#", l10n("needRestart"));
 
 			if (node.isUsingWrapper()) {
 				alertNode.addChild("br");
-				HTMLNode restartForm = alertNode.addChild("form", //
-						new String[] { "action", "method", "enctype" },//
-				        new String[] { "/", "post", "multipart/form-data" });
+				HTMLNode restartForm = fixer.addFormChild(alertNode, "/", "restartForm");
 				restartForm.addChild("div");
 				restartForm.addChild("input",//
 						new String[] { "type", "name" },//

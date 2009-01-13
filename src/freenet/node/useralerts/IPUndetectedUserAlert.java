@@ -4,6 +4,7 @@
 package freenet.node.useralerts;
 
 import freenet.clients.http.LinkFixer;
+import freenet.clients.http.ToadletContainer;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.l10n.L10n;
@@ -47,7 +48,7 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 	}
 
 	@Override
-	public HTMLNode getHTMLText(LinkFixer fixer) {
+	public HTMLNode getHTMLText(ToadletContainer fixer) {
 		if(node.ipDetector.noDetectPlugins()) {
 			HTMLNode p = new HTMLNode("p");
 			L10n.addL10nSubstitution(p, "IPUndetectedUserAlert.loadDetectPlugins", new String[] { "plugins", "/plugins", "config", "/config" }, new String[] { "<a href=\""+fixer.fixLink("/plugins/")+"\">", "</a>", "<a href=\""+fixer.fixLink("/config/")+"\">", "</a>" });

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 
 import freenet.clients.http.LinkFixer;
+import freenet.clients.http.ToadletContainer;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
 import freenet.io.comm.FreenetInetAddress;
@@ -574,7 +575,7 @@ public class NodeIPDetector {
 		node.clientCore.alerts.register(invalidAddressOverrideAlert);
 	}
 
-	public void addConnectionTypeBox(HTMLNode contentNode, LinkFixer ctx) {
+	public void addConnectionTypeBox(HTMLNode contentNode, ToadletContainer ctx) {
 		ipDetectorManager.addConnectionTypeBox(contentNode, ctx);
 	}
 

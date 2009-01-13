@@ -3,7 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
-import freenet.clients.http.LinkFixer;
+import freenet.clients.http.ToadletContainer;
 import freenet.support.HTMLNode;
 
 public interface UserAlert {
@@ -27,7 +27,7 @@ public interface UserAlert {
 	/**
 	 * Content of alert (HTML).
 	 */
-	public HTMLNode getHTMLText(LinkFixer fixer);
+	public HTMLNode getHTMLText(ToadletContainer ctx);
 	
 	/**
 	 * *Really* concise text of alert. Should be comfortably under a line even when translated

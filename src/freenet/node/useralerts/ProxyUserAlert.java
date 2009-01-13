@@ -1,6 +1,7 @@
 package freenet.node.useralerts;
 
 import freenet.clients.http.LinkFixer;
+import freenet.clients.http.ToadletContainer;
 import freenet.support.HTMLNode;
 
 /**
@@ -45,7 +46,7 @@ public class ProxyUserAlert implements UserAlert {
 		return alert.getText();
 	}
 
-	public HTMLNode getHTMLText(LinkFixer fixer) {
+	public HTMLNode getHTMLText(ToadletContainer fixer) {
 		return alert.getHTMLText(fixer);
 	}
 

@@ -4,6 +4,7 @@
 package freenet.node.useralerts;
 
 import freenet.clients.http.LinkFixer;
+import freenet.clients.http.ToadletContainer;
 import freenet.l10n.L10n;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.updater.RevocationChecker;
@@ -76,7 +77,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 	}
 	
 	@Override
-	public HTMLNode getHTMLText(LinkFixer fixer) {
+	public HTMLNode getHTMLText(ToadletContainer fixer) {
 		
 		UpdateThingy ut = createUpdateThingy();
 		

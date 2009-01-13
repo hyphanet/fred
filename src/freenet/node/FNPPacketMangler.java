@@ -13,6 +13,7 @@ import java.util.LinkedList;
 
 import net.i2p.util.NativeBigInteger;
 import freenet.clients.http.LinkFixer;
+import freenet.clients.http.ToadletContainer;
 import freenet.crypt.BlockCipher;
 import freenet.crypt.DSA;
 import freenet.crypt.DSAGroup;
@@ -2693,7 +2694,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return l10n("somePeersDisconnectedStillNotAcked", "count", Integer.toString(sz));
 		}
 
-		public HTMLNode getHTMLText(LinkFixer fixer) {
+		public HTMLNode getHTMLText(ToadletContainer fixer) {
 			HTMLNode div = new HTMLNode("div");
 			Peer[] peers;
 			synchronized(peersWithProblems) {

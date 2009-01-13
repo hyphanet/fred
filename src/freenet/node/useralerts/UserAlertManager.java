@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 
 import freenet.clients.http.LinkFixer;
+import freenet.clients.http.ToadletContainer;
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
@@ -103,7 +104,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	/**
 	 * Write the alerts as HTML.
 	 */
-	public HTMLNode createAlerts(LinkFixer fixer) {
+	public HTMLNode createAlerts(ToadletContainer fixer) {
 		HTMLNode alertsNode = new HTMLNode("div");
 		UserAlert[] alerts = getAlerts();
 		int totalNumber = 0;
@@ -177,7 +178,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	 *            The user alert to render
 	 * @return The rendered HTML node
 	 */
-	public HTMLNode renderAlert(UserAlert userAlert, LinkFixer fixer) {
+	public HTMLNode renderAlert(UserAlert userAlert, ToadletContainer fixer) {
 		HTMLNode userAlertNode = null;
 		short level = userAlert.getPriorityClass();
 		userAlertNode = new HTMLNode("div", "class", "infobox infobox-"+getAlertLevelName(level));

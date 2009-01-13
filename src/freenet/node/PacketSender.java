@@ -14,6 +14,7 @@ import java.util.Vector;
 import org.tanukisoftware.wrapper.WrapperManager;
 
 import freenet.clients.http.LinkFixer;
+import freenet.clients.http.ToadletContainer;
 import freenet.io.comm.Peer;
 import freenet.l10n.L10n;
 import freenet.node.useralerts.UserAlert;
@@ -475,7 +476,7 @@ public class PacketSender implements Runnable, Ticker {
 			return l10n("somePeersDisconnectedBlockedTooLong", "count", Integer.toString(sz));
 		}
 
-		public HTMLNode getHTMLText(LinkFixer fixer) {
+		public HTMLNode getHTMLText(ToadletContainer fixer) {
 			HTMLNode div = new HTMLNode("div");
 			Peer[] peers;
 			synchronized(peersDumpedBlockedTooLong) {
