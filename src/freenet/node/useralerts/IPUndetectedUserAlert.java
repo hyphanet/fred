@@ -62,8 +62,7 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 				new String[] { "link", "/link" }, 
 				new String[] { "<a href=\""+fixer.fixLink("/config/")+"\">", "</a>" });
 		addPortForwardSuggestion(textNode);
-		HTMLNode formNode = textNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/", "post" });
-		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
+		HTMLNode formNode = fixer.addFormChild(textNode, "/config/", "setTempAddressAlertForm");
 		HTMLNode listNode = formNode.addChild("ul", "class", "config");
 		HTMLNode itemNode = listNode.addChild("li");
 		itemNode.addChild("span", "class", "configshortdesc", L10n.getString(o.getShortDesc())).addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", sc.getPrefix() + ".tempIPAddressHint", o.getValueString() });

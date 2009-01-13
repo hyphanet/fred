@@ -86,7 +86,8 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 		alertNode.addChild("#", ut.firstBit);
 		
 		if(ut.formText != null) {
-			alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", ut.formText });
+			fixer.addFormChild(alertNode, "/", "updateNowForm").
+				addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", ut.formText });
 		}
 		
 		return alertNode;

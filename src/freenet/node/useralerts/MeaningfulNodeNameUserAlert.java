@@ -46,8 +46,7 @@ public class MeaningfulNodeNameUserAlert extends AbstractUserAlert {
 		HTMLNode alertNode = new HTMLNode("div");
 		HTMLNode textNode = alertNode.addChild("div");
 		textNode.addChild("#", l10n("noNodeNick"));
-		HTMLNode formNode = alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/", "post" });
-		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
+		HTMLNode formNode = fixer.addFormChild(alertNode, "/config/", "setNameAlertForm");
 		HTMLNode listNode = formNode.addChild("ul", "class", "config");
 		HTMLNode itemNode = listNode.addChild("li");
 		itemNode.addChild("span", new String[]{ "class", "title", "style" },
