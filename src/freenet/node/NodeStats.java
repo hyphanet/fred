@@ -1315,6 +1315,22 @@ public class NodeStats implements Persistable {
 				row.addChild("td", thousendPoint.format(averages[i].countReports()));
 			}
 		}
+		
+		row = list.addChild("tr");
+		row.addChild("td", "Turtle requests");
+		long total;
+		long succeeded;
+		synchronized(this) {
+			total = turtleSuccesses + turtleTransfersCompleted;
+			succeeded = turtleSuccesses;
+		}
+		if(total == 0) {
+			row.addChild("td", "-");
+			row.addChild("td", "0");
+		} else {
+			row.addChild("td", fix3p3pct.format((double)succeeded / total));
+			row.addChild("td", thousendPoint.format(total));
+		}
 	}
 
 	/* Total bytes sent by requests, excluding payload */
@@ -1939,5 +1955,17 @@ public class NodeStats implements Persistable {
 		row = table.addChild("tr");
 		row.addChild("td", "Average");
 		row.addChild("td", TimeUtil.formatTime((long)localCHKFetchTimeAverage.currentValue(), 2, true));
+	}
+	
+	private long turtleTransfersCompleted;
+	private long turtleSuccesses;
+	
+	synchronized void turtleSucceeded() {
+		turtleSuccesses++;
+		turtleTransfersCompleted++;
+	}
+	
+	synchronized void turtleFailed() {
+		turtleTransfersCompleted++;
 	}
 }

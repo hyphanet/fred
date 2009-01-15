@@ -817,6 +817,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 				System.err.println("TURTLE SUCCEEDED: "+key+" for "+this+" in "+TimeUtil.formatTime(transferTime, 2, true));
                 				if(!turtleBackedOff)
                 					next.transferFailed("Turtled transfer");
+                				node.nodeStats.turtleSucceeded();
                 			}
                         	next.successNotOverload();
                         	if(turtle) {
@@ -836,13 +837,16 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 			finish(SUCCESS, next, false);
                 			return;
                 		} catch (RetrievalException e) {
+                			boolean turtle;
                 			synchronized(this) {
-                				if(turtleMode) {
-                    				System.err.println("TURTLE FAILED: "+key+" for "+this+" : "+e);
-                               		next.unregisterTurtleTransfer(this);
-                               		node.unregisterTurtleTransfer(this);
-                				}
+                				turtle = turtleMode;
                 			}
+            				if(turtle) {
+                				System.err.println("TURTLE FAILED: "+key+" for "+this+" : "+e);
+                           		next.unregisterTurtleTransfer(this);
+                           		node.unregisterTurtleTransfer(this);
+                           		node.nodeStats.turtleFailed();
+            				}
 							if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
 								Logger.normal(this, "Transfer failed (disconnect): "+e, e);
 							else
@@ -1484,11 +1488,14 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		node.getTicker().queueTimedJob(new Runnable() {
 
 			public void run() {
+				PeerNode from;
 				synchronized(RequestSender.this) {
 					if(sentBackoffTurtle) return;
 					sentBackoffTurtle = true;
+					from = transferringFrom;
+					if(from == null) return;
 				}
-				transferringFrom.transferFailed("Turtled transfer");
+				from.transferFailed("Turtled transfer");
 			}
 			
 		}, 30*1000);
