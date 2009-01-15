@@ -813,6 +813,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 			if(!turtle)
                 				next.transferSuccess();
                 			else {
+                				System.err.println("TURTLE SUCCEEDED: "+key+" for "+this);
                 				if(!turtleBackedOff)
                 					next.transferFailed("Turtled transfer");
                 			}
@@ -834,6 +835,11 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 			finish(SUCCESS, next, false);
                 			return;
                 		} catch (RetrievalException e) {
+                			synchronized(this) {
+                				if(turtleMode) {
+                    				System.err.println("TURTLE FAILED: "+key+" for "+this+" : "+e);
+                				}
+                			}
 							if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
 								Logger.normal(this, "Transfer failed (disconnect): "+e, e);
 							else

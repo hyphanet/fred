@@ -4077,6 +4077,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		if(!this.registerTurtleTransfer(sender)) {
 			// Too many turtles running, or already two turtles for this key (we allow two in case one peer turtles as a DoS).
 			sender.killTurtle();
+			System.err.println("Didn't make turtle for key "+sender.key+" for "+sender);
 			return;
 		}
 		PeerNode from = sender.transferringFrom();
@@ -4085,8 +4086,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			// Abort it.
 			unregisterTurtleTransfer(sender);
 			sender.killTurtle();
+			System.err.println("Didn't make turtle for key "+sender.key+" for "+sender);
 			return;
 		}
+		System.err.println("TURTLING: "+sender.key+" for "+sender);
 		// Do not transfer coalesce!!
 		synchronized(transferringRequestSenders) {
 			transferringRequestSenders.remove((NodeCHK)sender.key);

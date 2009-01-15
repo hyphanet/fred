@@ -64,7 +64,7 @@ public class RetrievalException extends Exception {
 	
 	@Override
 	public String toString() {
-		return _cause;
+		return getErrString(_reason)+":"+_cause;
 	}
 	
 	public static String getErrString(int reason) {
