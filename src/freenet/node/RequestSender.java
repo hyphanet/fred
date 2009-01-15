@@ -33,6 +33,7 @@ import freenet.store.KeyCollisionException;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
+import freenet.support.TimeUtil;
 import freenet.support.io.NativeThread;
 import freenet.support.math.MedianMeanRunningAverage;
 
@@ -813,7 +814,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 			if(!turtle)
                 				next.transferSuccess();
                 			else {
-                				System.err.println("TURTLE SUCCEEDED: "+key+" for "+this);
+                				System.err.println("TURTLE SUCCEEDED: "+key+" for "+this+" in "+TimeUtil.formatTime(transferTime, 2, true));
                 				if(!turtleBackedOff)
                 					next.transferFailed("Turtled transfer");
                 			}
