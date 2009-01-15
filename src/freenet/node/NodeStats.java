@@ -1321,7 +1321,7 @@ public class NodeStats implements Persistable {
 		long total;
 		long succeeded;
 		synchronized(this) {
-			total = turtleSuccesses + turtleTransfersCompleted;
+			total = turtleTransfersCompleted;
 			succeeded = turtleSuccesses;
 		}
 		if(total == 0) {

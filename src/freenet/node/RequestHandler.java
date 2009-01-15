@@ -249,6 +249,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	}
 
 	public void onRequestSenderFinished(int status) {
+		if(logMINOR) Logger.minor(this, "onRequestSenderFinished("+status+") on "+this);
 		long now = System.currentTimeMillis();
 		this.status = status;
 
