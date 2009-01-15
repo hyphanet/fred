@@ -62,7 +62,9 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
+import freenet.io.comm.RetrievalException;
 import freenet.io.comm.UdpSocketHandler;
+import freenet.io.xfer.BlockReceiver;
 import freenet.io.xfer.PartiallyReceivedBlock;
 import freenet.keys.CHKBlock;
 import freenet.keys.CHKVerifyException;
@@ -4059,4 +4061,113 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		if(container == null) return NullLinkFixer.instance;
 		return container;
 	}
+
+	/**
+	 * Make a running request sender into a turtle request.
+	 * Backoff: when the transfer finishes, or after 10 seconds if no cancellation.
+	 * Downstream: Cancel all dependant RequestHandler's and local requests.
+	 * This also removes it from the load management code.
+	 * Registration: We track the turtles for each peer, and overall. No two turtles from the
+	 * same node may share the same key, and there is an overall limit.
+	 * @param sender
+	 */
+	public void makeTurtle(RequestSender sender) {
+		// Registration
+		// FIXME check the datastore.
+		if(!this.registerTurtleTransfer(sender)) {
+			// Too many turtles running, or already two turtles for this key (we allow two in case one peer turtles as a DoS).
+			sender.killTurtle();
+			return;
+		}
+		PeerNode from = sender.transferringFrom();
+		if(!from.registerTurtleTransfer(sender)) {
+			// Too many turtles running, or already a turtle for this key.
+			// Abort it.
+			unregisterTurtleTransfer(sender);
+			sender.killTurtle();
+			return;
+		}
+		// Do not transfer coalesce!!
+		synchronized(transferringRequestSenders) {
+			transferringRequestSenders.remove((NodeCHK)sender.key);
+		}
+		
+		// Abort downstream transfers, set the turtle mode flag and set up the backoff callback.
+		sender.setTurtle();
+	}
+
+	private static int MAX_TURTLES = 10;
+	private static int MAX_TURTLES_PER_KEY = 2;
+	
+	private HashMap<Key,RequestSender[]> turtlingTransfers = new HashMap<Key,RequestSender[]>();
+	
+	private boolean registerTurtleTransfer(RequestSender sender) {
+		Key key = sender.key;
+		synchronized(turtlingTransfers) {
+			if(turtlingTransfers.size() >= MAX_TURTLES) return false;
+			if(!turtlingTransfers.containsKey(key)) {
+				turtlingTransfers.put(key, new RequestSender[] { sender });
+				return true;
+			} else {
+				RequestSender[] senders = turtlingTransfers.get(key);
+				if(senders.length >= MAX_TURTLES_PER_KEY) return false;
+				for(int i=0;i<senders.length;i++) {
+					if(senders[i] == sender) {
+						Logger.error(this, "Registering turtle for "+sender+" : "+key+" twice! (globally)");
+						return false;
+					}
+				}
+				RequestSender[] newSenders = new RequestSender[senders.length+1];
+				System.arraycopy(senders, 0, newSenders, 0, senders.length);
+				newSenders[senders.length] = sender;
+				turtlingTransfers.put(key, newSenders);
+				return true;
+			}
+		}
+	}
+	
+	public void unregisterTurtleTransfer(RequestSender sender) {
+		Key key = sender.key;
+		synchronized(turtlingTransfers) {
+			if(!turtlingTransfers.containsKey(key)) {
+				Logger.error(this, "Removing turtle "+sender+" for "+key+" : DOES NOT EXIST IN GLOBAL TURTLES LIST");
+				return;
+			}
+			RequestSender[] senders = turtlingTransfers.get(key);
+			if(senders.length == 1 && senders[0] == sender) {
+				turtlingTransfers.remove(key);
+				return;
+			}
+			if(senders.length == 2) {
+				if(senders[0] == sender) {
+					turtlingTransfers.put(key, new RequestSender[] { senders[1] });
+				} else if(senders[1] == sender) {
+					turtlingTransfers.put(key, new RequestSender[] { senders[0] });
+				}
+				return;
+			}
+			int x = 0;
+			for(int i=0;i<senders.length;i++) {
+				if(senders[i] == sender) x++;
+			}
+			if(x == 0) {
+				Logger.error(this, "Turtle not in global register: "+sender+" for "+key);
+				return;
+			}
+			if(senders.length == x) {
+				Logger.error(this, "Lots of copies of turtle: "+x);
+				turtlingTransfers.remove(key);
+				return;
+			}
+			RequestSender[] newSenders = new RequestSender[senders.length - x];
+			int idx = 0;
+			for(RequestSender s : senders) {
+				if(s == sender) continue;
+				newSenders[idx++] = s;
+			}
+			turtlingTransfers.put(key, newSenders);
+		}
+	}
+
+
 }

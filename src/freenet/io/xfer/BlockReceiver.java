@@ -68,6 +68,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	private MessageFilter discardFilter;
 	private long discardEndTime;
 	private boolean tookTooLong;
+	private boolean senderAborted;
 //	private final boolean _doTooLong;
 
 	boolean logMINOR=Logger.shouldLog(Logger.MINOR, this);
@@ -131,6 +132,9 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				if (desc.indexOf("Upstream")<0)
 					desc="Upstream transmit error: "+desc;
 				_prb.abort(m1.getInt(DMT.REASON), desc);
+				synchronized(this) {
+					senderAborted = true;
+				}
 				throw new RetrievalException(m1.getInt(DMT.REASON), desc);
 			}
 			if ((m1 != null) && (m1.getSpec().equals(DMT.packetTransmit))) {
@@ -267,4 +271,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		return tookTooLong;
 	}
 	
+	public synchronized boolean senderAborted() {
+		return senderAborted;
+	}
 }

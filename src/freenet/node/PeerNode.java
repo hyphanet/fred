@@ -4266,4 +4266,40 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		if(logMINOR) Logger.minor(this, "getReusableTrackerID(): "+cur.packets.trackerID+" on "+this);
 		return cur.packets.trackerID;
 	}
+
+	static final int MAX_TURTLES_PER_PEER = 3;
+	
+	private HashMap<Key,RequestSender> turtlingTransfers = new HashMap<Key,RequestSender>();
+	
+	public boolean registerTurtleTransfer(RequestSender sender) {
+		Key key = sender.key;
+		synchronized(turtlingTransfers) {
+			if(turtlingTransfers.size() >= MAX_TURTLES_PER_PEER) return false;
+			if(turtlingTransfers.containsKey(key)) return false;
+			turtlingTransfers.put(key, sender);
+			return true;
+		}
+	}
+
+	public void unregisterTurtleTransfer(RequestSender sender) {
+		Key key = sender.key;
+		synchronized(turtlingTransfers) {
+			if(!turtlingTransfers.containsKey(key)) {
+				Logger.error(this, "Removing turtle transfer "+sender+" for "+key+" from "+this+" : DOES NOT EXIST");
+				return;
+			}
+			RequestSender oldSender = turtlingTransfers.remove(key);
+			if(oldSender != sender) {
+				Logger.error(this, "Removing turtle transfer "+sender+" for "+key+" from "+this+" : WRONG SENDER: "+oldSender);
+				turtlingTransfers.put(key, oldSender);
+				return;
+			}
+		}
+	}
+
+	public boolean isTurtling(Key key) {
+		synchronized(turtlingTransfers) {
+			return turtlingTransfers.containsKey(key);
+		}
+	}
 }

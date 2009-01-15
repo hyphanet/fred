@@ -25,6 +25,9 @@ public class RequestTag extends UIDTag {
 	int requestSenderFinishedCode;
 	Throwable handlerThrew;
 	boolean rejected;
+	boolean abortedDownstreamTransfer;
+	int abortedDownstreamReason;
+	String abortedDownstreamDesc;
 
 	public RequestTag(boolean isSSK, START start) {
 		super();
@@ -73,10 +76,22 @@ public class RequestTag extends UIDTag {
 		sb.append(" finishedCode=").append(requestSenderFinishedCode);
 		sb.append(" rejected=").append(rejected);
 		sb.append(" thrown=").append(handlerThrew);
+		if(abortedDownstreamTransfer) {
+			sb.append(" abortedDownstreamTransfer reason=");
+			sb.append(abortedDownstreamReason);
+			sb.append(" desc=");
+			sb.append(abortedDownstreamDesc);
+		}
 		if(handlerThrew != null)
 			Logger.error(this, sb.toString(), handlerThrew);
 		else
 			Logger.error(this, sb.toString());
+	}
+
+	public void onAbortDownstreamTransfers(int reason, String desc) {
+		abortedDownstreamTransfer = true;
+		abortedDownstreamReason = reason;
+		abortedDownstreamDesc = desc;
 	}
 
 }

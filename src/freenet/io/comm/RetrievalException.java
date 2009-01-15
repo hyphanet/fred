@@ -40,6 +40,8 @@ public class RetrievalException extends Exception {
     public static final int CANCELLED_BY_RECEIVER = 9;
 	public static final int RECEIVER_DIED = 11;
 	public static final int UNABLE_TO_SEND_BLOCK_WITHIN_TIMEOUT = 12;
+	public static final int GONE_TO_TURTLE_MODE = 13;
+	public static final int TURTLE_KILLED = 14;
 	
 	int _reason;
 	String _cause;

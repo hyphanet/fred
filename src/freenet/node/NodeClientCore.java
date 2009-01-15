@@ -556,6 +556,10 @@ public class NodeClientCore implements Persistable {
 				if(listener != null)
 					listener.completed(status == RequestSender.SUCCESS);
 			}
+
+			public void onAbortDownstreamTransfers(int reason, String desc) {
+				// Ignore, onRequestSenderFinished will also be called.
+			}
 		}, tag);
 	}
 

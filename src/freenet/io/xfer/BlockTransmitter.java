@@ -141,6 +141,14 @@ public class BlockTransmitter {
 		};
 	}
 
+	public void abortSend(int reason, String desc) throws NotConnectedException {
+		synchronized(this) {
+			if(_sendComplete) return;
+			_sendComplete = true;
+		}
+		sendAborted(reason, desc);
+	}
+	
 	public void sendAborted(int reason, String desc) throws NotConnectedException {
 		_usm.send(_destination, DMT.createSendAborted(_uid, reason, desc), _ctr);
 	}

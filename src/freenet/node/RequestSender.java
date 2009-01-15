@@ -74,6 +74,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private byte[] sskData;
     private SSKBlock block;
     private boolean hasForwarded;
+    private PeerNode transferringFrom;
+    private boolean turtleMode;
+    private boolean sentBackoffTurtle;
     
     /** If true, only try to fetch the key from nodes which have offered it */
     private boolean tryOffersOnly;
@@ -775,12 +778,49 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 		
                 		try {
                 			if(logMINOR) Logger.minor(this, "Receiving data");
-                			byte[] data = br.receive();
+                			final PeerNode from = next;
+                			synchronized(this) {
+                				transferringFrom = next;
+                			}
+                			node.getTicker().queueTimedJob(new Runnable() {
+
+								public void run() {
+									synchronized(RequestSender.this) {
+										if(transferringFrom != from) return;
+									}
+									node.makeTurtle(RequestSender.this);
+								}
+                				
+                			}, 60*1000);
+                			byte[] data;
+                			try {
+                				data = br.receive();
+                			} finally {
+                				synchronized(this) {
+                					transferringFrom = null;
+                				}
+                			}
+                			
                 			long tEnd = System.currentTimeMillis();
                 			this.transferTime = tEnd - tStart;
-                			if(!br.tookTooLong())
+                			boolean turtle;
+                			boolean turtleBackedOff;
+                			synchronized(this) {
+                				turtle = turtleMode;
+                				turtleBackedOff = sentBackoffTurtle;
+                				sentBackoffTurtle = true;
+                			}
+                			if(!turtle)
                 				next.transferSuccess();
+                			else {
+                				if(!turtleBackedOff)
+                					next.transferFailed("Turtled transfer");
+                			}
                         	next.successNotOverload();
+                        	if(turtle) {
+                        		next.unregisterTurtleTransfer(this);
+                        		node.unregisterTurtleTransfer(this);
+                        	}
                 			if(logMINOR) Logger.minor(this, "Received data");
                 			// Received data
                 			try {
@@ -802,8 +842,20 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 							next.localRejectedOverload("TransferFailedRequest"+e.getReason());
                 			finish(TRANSFER_FAILED, next, false);
                 			node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
-                			if(!br.tookTooLong())
-                				next.transferFailed("RequestSenderTransferFailed");
+                			if(!turtleMode) {
+                				int reason = e.getReason();
+                				if((!br.senderAborted()) &&
+                						reason == RetrievalException.SENDER_DIED || reason == RetrievalException.RECEIVER_DIED || reason == RetrievalException.TIMED_OUT
+                						|| reason == RetrievalException.UNABLE_TO_SEND_BLOCK_WITHIN_TIMEOUT) {
+                					// Looks like a timeout. Backoff.
+                					next.transferFailed(e.getMessage());
+                				} else {
+                					// Quick failure (in that we didn't have to timeout). Don't backoff.
+                					// Treat as a DNF.
+                					node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
+                				}
+                					
+                			}
                 			return;
                 		}
                 	} finally {
@@ -1308,6 +1360,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		void onCHKTransferBegins();
 		/** Should return quickly, allocate a thread if it needs to block etc */
 		void onRequestSenderFinished(int status);
+		/** Abort downstream transfers (not necessarily upstream ones, so not via the PRB).
+		 * Should return quickly, allocate a thread if it needs to block etc. */
+		void onAbortDownstreamTransfers(int reason, String desc);
 	}
 	
 	public void addListener(Listener l) {
@@ -1316,10 +1371,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		boolean reject=false;
 		boolean transfer=false;
 		boolean sentFinished;
+		boolean sentTransferCancel = false;
 		int status;
 		synchronized (this) {
 			synchronized (listeners) {
-				listeners.add(l);
+				sentTransferCancel = sentAbortDownstreamTransfers;
+				if(!sentTransferCancel)
+					listeners.add(l);
 				reject = sentReceivedRejectOverload;
 				transfer = sentCHKTransferBegins;
 				sentFinished = sentRequestSenderFinished;
@@ -1332,6 +1390,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			l.onReceivedRejectOverload();
 		if (transfer)
 			l.onCHKTransferBegins();
+		if(sentTransferCancel)
+			l.onAbortDownstreamTransfers(abortDownstreamTransfersReason, abortDownstreamTransfersDesc);
 		if (status!=NOT_FINISHED && sentFinished)
 			l.onRequestSenderFinished(status);
 	}
@@ -1382,7 +1442,56 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		}
 	}
 
+	private boolean sentAbortDownstreamTransfers;
+	private int abortDownstreamTransfersReason;
+	private String abortDownstreamTransfersDesc;
+	
+	private void sendAbortDownstreamTransfers(int reason, String desc) {
+		synchronized (listeners) {
+			abortDownstreamTransfersReason = reason;
+			abortDownstreamTransfersDesc = desc;
+			sentAbortDownstreamTransfers = true;
+			for (Listener l : listeners) {
+				try {
+					l.onAbortDownstreamTransfers(reason, desc);
+					l.onRequestSenderFinished(TRANSFER_FAILED);
+				} catch (Throwable t) {
+					Logger.error(this, "Caught: "+t, t);
+				}
+			}
+			listeners.clear();
+		}
+	}
+	
 	public int getPriority() {
 		return NativeThread.HIGH_PRIORITY;
 	}
+
+	public void setTurtle() {
+		synchronized(this) {
+			this.turtleMode = true;
+		}
+		sendAbortDownstreamTransfers(RetrievalException.GONE_TO_TURTLE_MODE, "Turtling");
+		node.getTicker().queueTimedJob(new Runnable() {
+
+			public void run() {
+				synchronized(RequestSender.this) {
+					if(sentBackoffTurtle) return;
+					sentBackoffTurtle = true;
+				}
+				transferringFrom.transferFailed("Turtled transfer");
+			}
+			
+		}, 30*1000);
+	}
+
+	public PeerNode transferringFrom() {
+		return transferringFrom;
+	}
+
+	public void killTurtle() {
+		prb.abort(RetrievalException.TURTLE_KILLED, "Too many turtles / already have turtles for this key");
+		node.failureTable.onFinalFailure(key, transferringFrom(), htl, FailureTable.REJECT_TIME, source);
+	}
+
 }

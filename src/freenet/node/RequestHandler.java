@@ -201,6 +201,21 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			Logger.normal(this, "requestor is gone, can't begin CHK transfer");
 		}
 	}
+	
+	public void onAbortDownstreamTransfers(int reason, String desc) {
+		if(bt == null) {
+			Logger.error(this, "No downstream transfer to abort! on "+this);
+			return;
+		}
+		if(logMINOR)
+			Logger.minor(this, "Aborting downstream transfer on "+this);
+		tag.onAbortDownstreamTransfers(reason, desc);
+		try {
+			bt.abortSend(reason, desc);
+		} catch (NotConnectedException e) {
+			// Ignore
+		}
+	}
 
 	private void waitAndFinishCHKTransferOffThread() {
 		node.executor.execute(new Runnable() {
