@@ -4120,6 +4120,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			}
 			if(!turtlingTransfers.containsKey(key)) {
 				turtlingTransfers.put(key, new RequestSender[] { sender });
+				System.err.println("Running turtles: "+turtlingTransfers.size());
 				return true;
 			} else {
 				RequestSender[] senders = turtlingTransfers.get(key);
