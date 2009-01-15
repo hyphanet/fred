@@ -839,6 +839,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 			synchronized(this) {
                 				if(turtleMode) {
                     				System.err.println("TURTLE FAILED: "+key+" for "+this+" : "+e);
+                               		next.unregisterTurtleTransfer(this);
+                               		node.unregisterTurtleTransfer(this);
                 				}
                 			}
 							if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)

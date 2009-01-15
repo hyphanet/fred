@@ -4062,6 +4062,8 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		return container;
 	}
 
+	private volatile long turtleCount;
+	
 	/**
 	 * Make a running request sender into a turtle request.
 	 * Backoff: when the transfer finishes, or after 10 seconds if no cancellation.
@@ -4077,7 +4079,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		if(!this.registerTurtleTransfer(sender)) {
 			// Too many turtles running, or already two turtles for this key (we allow two in case one peer turtles as a DoS).
 			sender.killTurtle();
-			System.err.println("Didn't make turtle for key "+sender.key+" for "+sender);
+			System.err.println("Didn't make turtle (global) for key "+sender.key+" for "+sender);
 			return;
 		}
 		PeerNode from = sender.transferringFrom();
@@ -4086,7 +4088,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			// Abort it.
 			unregisterTurtleTransfer(sender);
 			sender.killTurtle();
-			System.err.println("Didn't make turtle for key "+sender.key+" for "+sender);
+			System.err.println("Didn't make turtle (peer) for key "+sender.key+" for "+sender);
 			return;
 		}
 		System.err.println("TURTLING: "+sender.key+" for "+sender);
@@ -4094,11 +4096,16 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		synchronized(transferringRequestSenders) {
 			transferringRequestSenders.remove((NodeCHK)sender.key);
 		}
+		turtleCount++;
 		
 		// Abort downstream transfers, set the turtle mode flag and set up the backoff callback.
 		sender.setTurtle();
 	}
 
+	public long getTurtleCount() {
+		return turtleCount;
+	}
+	
 	private static int MAX_TURTLES = 10;
 	private static int MAX_TURTLES_PER_KEY = 2;
 	
@@ -4107,13 +4114,19 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private boolean registerTurtleTransfer(RequestSender sender) {
 		Key key = sender.key;
 		synchronized(turtlingTransfers) {
-			if(turtlingTransfers.size() >= MAX_TURTLES) return false;
+			if(turtlingTransfers.size() >= MAX_TURTLES) {
+				System.err.println("Too many turtles running globally");
+				return false;
+			}
 			if(!turtlingTransfers.containsKey(key)) {
 				turtlingTransfers.put(key, new RequestSender[] { sender });
 				return true;
 			} else {
 				RequestSender[] senders = turtlingTransfers.get(key);
-				if(senders.length >= MAX_TURTLES_PER_KEY) return false;
+				if(senders.length >= MAX_TURTLES_PER_KEY) {
+					System.err.println("Too many turtles for key globally");
+					return false;
+				}
 				for(int i=0;i<senders.length;i++) {
 					if(senders[i] == sender) {
 						Logger.error(this, "Registering turtle for "+sender+" : "+key+" twice! (globally)");
@@ -4124,6 +4137,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				System.arraycopy(senders, 0, newSenders, 0, senders.length);
 				newSenders[senders.length] = sender;
 				turtlingTransfers.put(key, newSenders);
+				System.err.println("Running turtles: "+turtlingTransfers.size());
 				return true;
 			}
 		}
