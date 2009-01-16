@@ -198,6 +198,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			synchronized(this) {
 				disconnected = true;
 			}
+			tag.handlerDisconnected();
 			Logger.normal(this, "requestor is gone, can't begin CHK transfer");
 		}
 	}

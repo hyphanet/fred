@@ -28,6 +28,7 @@ public class RequestTag extends UIDTag {
 	boolean abortedDownstreamTransfer;
 	int abortedDownstreamReason;
 	String abortedDownstreamDesc;
+	boolean handlerDisconnected;
 
 	public RequestTag(boolean isSSK, START start) {
 		super();
@@ -82,6 +83,8 @@ public class RequestTag extends UIDTag {
 			sb.append(" desc=");
 			sb.append(abortedDownstreamDesc);
 		}
+		if(handlerDisconnected)
+			sb.append(" handlerDisconnected=true");
 		if(handlerThrew != null)
 			Logger.error(this, sb.toString(), handlerThrew);
 		else
@@ -92,6 +95,10 @@ public class RequestTag extends UIDTag {
 		abortedDownstreamTransfer = true;
 		abortedDownstreamReason = reason;
 		abortedDownstreamDesc = desc;
+	}
+
+	public void handlerDisconnected() {
+		handlerDisconnected = true;
 	}
 
 }
