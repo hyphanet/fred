@@ -4275,15 +4275,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 		Key key = sender.key;
 		synchronized(turtlingTransfers) {
 			if(turtlingTransfers.size() >= MAX_TURTLES_PER_PEER) {
-				System.err.println("Too many turtles for peer");
+				Logger.error(this, "Too many turtles for peer");
 				return false;
 			}
 			if(turtlingTransfers.containsKey(key)) {
-				System.err.println("Already fetching key from peer");
+				Logger.error(this, "Already fetching key from peer");
 				return false;
 			}
 			turtlingTransfers.put(key, sender);
-			System.err.println("Turtles for "+getPeer()+" : "+turtlingTransfers.size());
+			Logger.error(this, "Turtles for "+getPeer()+" : "+turtlingTransfers.size());
 			return true;
 		}
 	}

@@ -4079,7 +4079,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		if(!this.registerTurtleTransfer(sender)) {
 			// Too many turtles running, or already two turtles for this key (we allow two in case one peer turtles as a DoS).
 			sender.killTurtle();
-			System.err.println("Didn't make turtle (global) for key "+sender.key+" for "+sender);
+			Logger.error(this, "Didn't make turtle (global) for key "+sender.key+" for "+sender);
 			return;
 		}
 		PeerNode from = sender.transferringFrom();
@@ -4088,10 +4088,10 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			// Abort it.
 			unregisterTurtleTransfer(sender);
 			sender.killTurtle();
-			System.err.println("Didn't make turtle (peer) for key "+sender.key+" for "+sender);
+			Logger.error(this, "Didn't make turtle (peer) for key "+sender.key+" for "+sender);
 			return;
 		}
-		System.err.println("TURTLING: "+sender.key+" for "+sender);
+		Logger.error(this, "TURTLING: "+sender.key+" for "+sender);
 		// Do not transfer coalesce!!
 		synchronized(transferringRequestSenders) {
 			transferringRequestSenders.remove((NodeCHK)sender.key);
@@ -4115,17 +4115,17 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		Key key = sender.key;
 		synchronized(turtlingTransfers) {
 			if(getNumIncomingTurtles() >= MAX_TURTLES) {
-				System.err.println("Too many turtles running globally");
+				Logger.error(this, "Too many turtles running globally");
 				return false;
 			}
 			if(!turtlingTransfers.containsKey(key)) {
 				turtlingTransfers.put(key, new RequestSender[] { sender });
-				System.err.println("Running turtles: "+turtlingTransfers.size());
+				Logger.error(this, "Running turtles: "+turtlingTransfers.size());
 				return true;
 			} else {
 				RequestSender[] senders = turtlingTransfers.get(key);
 				if(senders.length >= MAX_TURTLES_PER_KEY) {
-					System.err.println("Too many turtles for key globally");
+					Logger.error(this, "Too many turtles for key globally");
 					return false;
 				}
 				for(int i=0;i<senders.length;i++) {
@@ -4138,7 +4138,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				System.arraycopy(senders, 0, newSenders, 0, senders.length);
 				newSenders[senders.length] = sender;
 				turtlingTransfers.put(key, newSenders);
-				System.err.println("Running turtles: "+turtlingTransfers.size());
+				Logger.error(this, "Running turtles: "+turtlingTransfers.size());
 				return true;
 			}
 		}
