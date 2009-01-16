@@ -936,7 +936,7 @@ public class StatisticsToadlet extends Toadlet {
 						new String[] { "totalSenders", "CHKhandlers", "SSKhandlers", "local" } , 
 						new String[] { Integer.toString(numRequests), Integer.toString(numCHKRequests), Integer.toString(numSSKRequests), Integer.toString(numLocalCHKRequests + numLocalSSKRequests)}));
 			}
-			if (numTransferringRequests > 0 || numTransferringRequestHandlers > 0) {
+			if (numTransferringRequests > 0 || numTransferringRequestHandlers > 0 || numIncomingTurtles > 0) {
 				activityList.addChild("li", L10n.getString("StatisticsToadlet.transferringRequests", 
 						new String[] { "senders", "receivers", "turtles" }, new String[] { Integer.toString(numTransferringRequests), Integer.toString(numTransferringRequestHandlers), Integer.toString(numIncomingTurtles)}));
 			}
