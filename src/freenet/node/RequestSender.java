@@ -78,6 +78,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private PeerNode transferringFrom;
     private boolean turtleMode;
     private boolean sentBackoffTurtle;
+    /** Set when we start to think about going to turtle mode - not unset if we get cancelled instead. */
+    private boolean tryTurtle;
     
     /** If true, only try to fetch the key from nodes which have offered it */
     private boolean tryOffersOnly;
@@ -974,10 +976,11 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             }
         }
 	}
-
+    
 	protected void makeTurtle() {
 		synchronized(this) {
-			if(turtleMode) return;
+			if(tryTurtle) return;
+			tryTurtle = true;
 		}
 		node.makeTurtle(RequestSender.this);
 	}
