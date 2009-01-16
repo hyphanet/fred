@@ -844,10 +844,14 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 				turtle = turtleMode;
                 			}
             				if(turtle) {
-                				Logger.error(this, "TURTLE FAILED: "+key+" for "+this+" : "+e);
+            					if(e.getReason() != RetrievalException.GONE_TO_TURTLE_MODE) {
+            						Logger.error(this, "TURTLE FAILED: "+key+" for "+this+" : "+e);
+            						node.nodeStats.turtleFailed();
+            					} else {
+            						if(logMINOR) Logger.minor(this, "Upstream turtled for "+this+" from "+next);
+            					}
                            		next.unregisterTurtleTransfer(this);
                            		node.unregisterTurtleTransfer(this);
-                           		node.nodeStats.turtleFailed();
             				}
 							if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
 								Logger.normal(this, "Transfer failed (disconnect): "+e, e);
