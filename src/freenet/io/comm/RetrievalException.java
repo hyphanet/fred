@@ -89,6 +89,10 @@ public class RetrievalException extends Exception {
 				return "UNKNOWN";
 			case UNABLE_TO_SEND_BLOCK_WITHIN_TIMEOUT:
 				return "UNABLE_TO_SEND_BLOCK_WITHIN_TIMEOUT";
+			case GONE_TO_TURTLE_MODE:
+				return "GONE_TO_TURTLE_MODE";
+			case TURTLE_KILLED:
+				return "TURTLE_KILLED";
 			default:
 				return "UNKNOWN ("+reason+")";
 		}
