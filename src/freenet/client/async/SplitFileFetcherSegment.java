@@ -205,7 +205,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 			} else {
 				boolean tooSmall = data.size() < CHKBlock.DATA_LENGTH;
 				// Don't count the last data block, since we can't use it in FEC decoding.
-				if(tooSmall && (!ignoreLastDataBlock) || (blockNo != dataKeys.length - 1)) {
+				if(tooSmall && ((!ignoreLastDataBlock) || (blockNo != dataKeys.length - 1))) {
 					fail(new FetchException(FetchException.INVALID_METADATA, "Block too small in splitfile: block "+blockNo+" of "+dataKeys.length+" data keys, "+checkKeys.length+" check keys"));
 					return;
 				}
