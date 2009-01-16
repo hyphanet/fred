@@ -682,7 +682,7 @@ public class NodeClientCore implements Persistable {
 						}
 					}
 
-				if(rs.getStatus() == RequestSender.SUCCESS)
+				if(status == RequestSender.SUCCESS)
 					try {
 						return new ClientCHKBlock(rs.getPRB().getBlock(), rs.getHeaders(), key, true);
 					} catch(CHKVerifyException e) {
@@ -693,8 +693,7 @@ public class NodeClientCore implements Persistable {
 						throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 					}
 				else {
-					int rStatus = rs.getStatus();
-					switch(rStatus) {
+					switch(status) {
 						case RequestSender.NOT_FINISHED:
 							Logger.error(this, "RS still running in getCHK!: " + rs);
 							throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
@@ -716,7 +715,7 @@ public class NodeClientCore implements Persistable {
 						case RequestSender.INTERNAL_ERROR:
 							throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 						default:
-							Logger.error(this, "Unknown RequestSender code in getCHK: " + rStatus + " on " + rs);
+							Logger.error(this, "Unknown RequestSender code in getCHK: " + status + " on " + rs);
 							throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 					}
 				}
