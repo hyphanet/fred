@@ -790,7 +790,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 									synchronized(RequestSender.this) {
 										if(transferringFrom != from) return;
 									}
-									node.makeTurtle(RequestSender.this);
+									makeTurtle();
 								}
                 				
                 			}, 60*1000);
@@ -975,6 +975,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	
             }
         }
+	}
+
+	protected void makeTurtle() {
+		synchronized(this) {
+			if(turtleMode) return;
+		}
+		node.makeTurtle(RequestSender.this);
 	}
 
 	/**
@@ -1480,7 +1487,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			abortDownstreamTransfersReason = reason;
 			abortDownstreamTransfersDesc = desc;
 			sentAbortDownstreamTransfers = true;
-			notifyAll();
 			for (Listener l : listeners) {
 				try {
 					l.onAbortDownstreamTransfers(reason, desc);
@@ -1490,6 +1496,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 				}
 			}
 			listeners.clear();
+		}
+		synchronized(this) {
+			notifyAll();
 		}
 	}
 	
