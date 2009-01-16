@@ -1867,7 +1867,7 @@ public class NodeStats implements Persistable {
 	public synchronized void failedBlockReceive(boolean normalFetch, boolean timeout, boolean turtle) {
 		if(normalFetch) {
 			blockTransferFailTurtled.report(turtle ? 1.0 : 0.0);
-			blockTransferFailTimeout.report(turtle ? 1.0 : 0.0);
+			blockTransferFailTimeout.report(timeout ? 1.0 : 0.0);
 		}
 		blockTransferPSuccess.report(0.0);
 		if(logMINOR) Logger.minor(this, "Successful receives: "+blockTransferPSuccess.currentValue()+" count="+blockTransferPSuccess.countReports());
