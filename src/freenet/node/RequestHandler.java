@@ -309,6 +309,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 							sendTerminal(reject);
 						} else if(!disconnected)
 							waitAndFinishCHKTransferOffThread();
+						else
+							unregisterRequestHandlerWithNode();
 					return;
 				case RequestSender.VERIFY_FAILURE:
 				case RequestSender.GET_OFFER_VERIFY_FAILURE:
@@ -322,6 +324,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 						} else if(!disconnected)
 							//Verify fails after receive() is complete, so we might as well propagate it...
 							waitAndFinishCHKTransferOffThread();
+						else
+							unregisterRequestHandlerWithNode();
 						return;
 					}
 					reject = DMT.createFNPRejectedOverload(uid, true);
@@ -338,6 +342,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 							sendTerminal(reject);
 						} else if(!disconnected)
 							waitAndFinishCHKTransferOffThread();
+						else
+							unregisterRequestHandlerWithNode();
 						return;
 					}
 					Logger.error(this, "finish(TRANSFER_FAILED) should not be called on SSK?!?!", new Exception("error"));
