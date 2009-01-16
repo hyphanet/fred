@@ -813,7 +813,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 			if(!turtle)
                 				next.transferSuccess();
                 			else {
-                				System.err.println("TURTLE SUCCEEDED: "+key+" for "+this+" in "+TimeUtil.formatTime(transferTime, 2, true));
+                				Logger.error(this, "TURTLE SUCCEEDED: "+key+" for "+this+" in "+TimeUtil.formatTime(transferTime, 2, true));
                 				if(!turtleBackedOff)
                 					next.transferFailed("Turtled transfer");
                 				node.nodeStats.turtleSucceeded();
@@ -842,7 +842,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 				turtle = turtleMode;
                 			}
             				if(turtle) {
-                				System.err.println("TURTLE FAILED: "+key+" for "+this+" : "+e);
+                				Logger.error(this, "TURTLE FAILED: "+key+" for "+this+" : "+e);
                            		next.unregisterTurtleTransfer(this);
                            		node.unregisterTurtleTransfer(this);
                            		node.nodeStats.turtleFailed();
