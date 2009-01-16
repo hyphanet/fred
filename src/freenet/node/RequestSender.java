@@ -865,17 +865,16 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 			boolean timeout = (!br.senderAborted()) &&
     							(reason == RetrievalException.SENDER_DIED || reason == RetrievalException.RECEIVER_DIED || reason == RetrievalException.TIMED_OUT
     							|| reason == RetrievalException.UNABLE_TO_SEND_BLOCK_WITHIN_TIMEOUT);
-                			if(!turtle) {
-                				if(timeout) {
-                					// Looks like a timeout. Backoff.
-                					next.transferFailed(e.getMessage());
-                				} else {
-                					// Quick failure (in that we didn't have to timeout). Don't backoff.
-                					// Treat as a DNF.
-                					node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
-                				}
-                    			node.nodeStats.failedBlockReceive(true, timeout, reason == RetrievalException.GONE_TO_TURTLE_MODE);
-                			}
+               				if(timeout) {
+               					// Looks like a timeout. Backoff, even if it's a turtle.
+               					next.transferFailed(e.getMessage());
+               				} else {
+               					// Quick failure (in that we didn't have to timeout). Don't backoff.
+               					// Treat as a DNF.
+               					// If it was turtled, and then failed, still treat it as a DNF.
+           						node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
+               				}
+                   			node.nodeStats.failedBlockReceive(true, timeout, reason == RetrievalException.GONE_TO_TURTLE_MODE);
                 			return;
                 		}
                 	} finally {
