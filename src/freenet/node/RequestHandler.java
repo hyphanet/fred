@@ -229,7 +229,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 					unregisterRequestHandlerWithNode();
 				}
 			}
-		}, "Finish CHK transfer for " + key);
+		}, "Finish CHK transfer for " + key + " for " + this);
 	}
 
 	private void waitAndFinishCHKTransfer() throws NotConnectedException {
