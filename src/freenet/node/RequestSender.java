@@ -301,7 +301,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 			if(!br.tookTooLong())
                 				pn.transferFailed("RequestSenderGetOfferedTransferFailed");
                     		offers.deleteLastOffer();
-                			node.nodeStats.failedBlockReceive();
+                			node.nodeStats.failedBlockReceive(false, false, false);
                 			return;
                 		}
                 	} finally {
@@ -825,6 +825,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                         		next.unregisterTurtleTransfer(this);
                         		node.unregisterTurtleTransfer(this);
                         	}
+                        	node.nodeStats.successfulBlockReceive();
                 			if(logMINOR) Logger.minor(this, "Received data");
                 			// Received data
                 			try {
@@ -856,11 +857,12 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 							next.localRejectedOverload("TransferFailedRequest"+e.getReason());
                 			finish(TRANSFER_FAILED, next, false);
                 			node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
+            				int reason = e.getReason();
+                			boolean timeout = (!br.senderAborted()) &&
+    							reason == RetrievalException.SENDER_DIED || reason == RetrievalException.RECEIVER_DIED || reason == RetrievalException.TIMED_OUT
+    							|| reason == RetrievalException.UNABLE_TO_SEND_BLOCK_WITHIN_TIMEOUT;
                 			if(!turtleMode) {
-                				int reason = e.getReason();
-                				if((!br.senderAborted()) &&
-                						reason == RetrievalException.SENDER_DIED || reason == RetrievalException.RECEIVER_DIED || reason == RetrievalException.TIMED_OUT
-                						|| reason == RetrievalException.UNABLE_TO_SEND_BLOCK_WITHIN_TIMEOUT) {
+                				if(timeout) {
                 					// Looks like a timeout. Backoff.
                 					next.transferFailed(e.getMessage());
                 				} else {
@@ -868,7 +870,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 					// Treat as a DNF.
                 					node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
                 				}
-                					
+                    			node.nodeStats.failedBlockReceive(true, timeout, reason == RetrievalException.GONE_TO_TURTLE_MODE);
                 			}
                 			return;
                 		}

@@ -438,7 +438,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 				else
 					// Annoying, but we have stats for this; no need to call attention to it, it's unlikely to be a bug.
 					Logger.normal(this, "Failed to retrieve ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
-            	node.nodeStats.failedBlockReceive();
+            	node.nodeStats.failedBlockReceive(false, false, false);
                 return;
             } catch (Throwable t) {
                 Logger.error(this, "Caught "+t, t);

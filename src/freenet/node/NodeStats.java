@@ -132,6 +132,8 @@ public class NodeStats implements Persistable {
 	final TrivialRunningAverage localFetchPSuccess;
 	final TrivialRunningAverage remoteFetchPSuccess;
 	final TrivialRunningAverage blockTransferPSuccess;
+	final TrivialRunningAverage blockTransferFailTurtled;
+	final TrivialRunningAverage blockTransferFailTimeout;
 	
 	final TrivialRunningAverage successfulLocalCHKFetchTimeAverage;
 	final TrivialRunningAverage unsuccessfulLocalCHKFetchTimeAverage;
@@ -345,6 +347,8 @@ public class NodeStats implements Persistable {
 		localFetchPSuccess = new TrivialRunningAverage();
 		remoteFetchPSuccess = new TrivialRunningAverage();
 		blockTransferPSuccess = new TrivialRunningAverage();
+		blockTransferFailTurtled = new TrivialRunningAverage();
+		blockTransferFailTimeout = new TrivialRunningAverage();
 		
 		successfulLocalCHKFetchTimeAverage = new TrivialRunningAverage();
 		unsuccessfulLocalCHKFetchTimeAverage = new TrivialRunningAverage();
@@ -1288,7 +1292,9 @@ public class NodeStats implements Persistable {
 				sskFetchPSuccess,
 				localFetchPSuccess,
 				remoteFetchPSuccess,
-				blockTransferPSuccess
+				blockTransferPSuccess,
+				blockTransferFailTurtled,
+				blockTransferFailTimeout
 		};
 		final String[] names = new String[] {
 				// FIXME l10n, but atm this only shows up in advanced mode
@@ -1297,7 +1303,9 @@ public class NodeStats implements Persistable {
 				"SSKs",
 				"Local requests",
 				"Remote requests",
-				"Block transfers"
+				"Block transfers",
+				"Transfers turtled",
+				"Transfers timed out"
 		};
 		HTMLNode row = list.addChild("tr");
 		row.addChild("th", "Group"); 
@@ -1856,7 +1864,11 @@ public class NodeStats implements Persistable {
 		if(logMINOR) Logger.minor(this, "Successful receives: "+blockTransferPSuccess.currentValue()+" count="+blockTransferPSuccess.countReports());
 	}
 
-	public synchronized void failedBlockReceive() {
+	public synchronized void failedBlockReceive(boolean normalFetch, boolean timeout, boolean turtle) {
+		if(normalFetch) {
+			blockTransferFailTurtled.report(turtle ? 1.0 : 0.0);
+			blockTransferFailTimeout.report(turtle ? 1.0 : 0.0);
+		}
 		blockTransferPSuccess.report(0.0);
 		if(logMINOR) Logger.minor(this, "Successful receives: "+blockTransferPSuccess.currentValue()+" count="+blockTransferPSuccess.countReports());
 	}
