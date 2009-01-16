@@ -636,6 +636,9 @@ public class NodeClientCore implements Persistable {
 				}
 
 				int status = rs.getStatus();
+				
+				if(rs.abortedDownstreamTransfers())
+					status = RequestSender.TRANSFER_FAILED;
 
 				if(status == RequestSender.NOT_FINISHED)
 					continue;
