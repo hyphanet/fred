@@ -4114,7 +4114,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private boolean registerTurtleTransfer(RequestSender sender) {
 		Key key = sender.key;
 		synchronized(turtlingTransfers) {
-			if(turtlingTransfers.size() >= MAX_TURTLES) {
+			if(getNumIncomingTurtles() >= MAX_TURTLES) {
 				System.err.println("Too many turtles running globally");
 				return false;
 			}
@@ -4187,5 +4187,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 		}
 	}
 
+	public int getNumIncomingTurtles() {
+		synchronized(turtlingTransfers) {
+			int turtles = 0;
+			for(RequestSender[] senders : turtlingTransfers.values())
+				turtles += senders.length;
+			return turtles;
+		}
+	}
 
 }
