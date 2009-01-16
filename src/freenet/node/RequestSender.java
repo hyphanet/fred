@@ -275,8 +275,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 		try {
                 			if(logMINOR) Logger.minor(this, "Receiving data");
                 			byte[] data = br.receive();
-                			if(!br.tookTooLong())
-                				pn.transferSuccess();
+               				pn.transferSuccess();
                 			if(logMINOR) Logger.minor(this, "Received data");
                 			// Received data
                 			try {
@@ -298,8 +297,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 								Logger.normal(this, "Transfer for offer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+pn, e);
                 			finish(GET_OFFER_TRANSFER_FAILED, pn, true);
                 			// Backoff here anyway - the node really ought to have it!
-                			if(!br.tookTooLong())
-                				pn.transferFailed("RequestSenderGetOfferedTransferFailed");
+               				pn.transferFailed("RequestSenderGetOfferedTransferFailed");
                     		offers.deleteLastOffer();
                 			node.nodeStats.failedBlockReceive(false, false, false);
                 			return;

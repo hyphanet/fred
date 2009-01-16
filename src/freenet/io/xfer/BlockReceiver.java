@@ -67,7 +67,6 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	boolean sentAborted;
 	private MessageFilter discardFilter;
 	private long discardEndTime;
-	private boolean tookTooLong;
 	private boolean senderAborted;
 //	private final boolean _doTooLong;
 
@@ -267,10 +266,6 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		// Ignore
 	}
 
-	public synchronized boolean tookTooLong() {
-		return tookTooLong;
-	}
-	
 	public synchronized boolean senderAborted() {
 		return senderAborted;
 	}
