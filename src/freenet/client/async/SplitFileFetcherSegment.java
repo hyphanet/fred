@@ -204,7 +204,7 @@ public class SplitFileFetcherSegment implements StandardOnionFECCodecEncoderCall
 				return;
 			} else {
 				// Don't count the last data block, since we can't use it in FEC decoding.
-				if(!(ignoreLastDataBlock && blockNo == dataKeys.length - 1))
+				if(!(ignoreLastDataBlock && blockNo == dataKeys.length - 1 && data.size() != CHKBlock.DATA_LENGTH))
 					fetchedBlocks++;
 				else
 					// This block is not going to be fetched, and because of the insertion format. 
