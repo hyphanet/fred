@@ -297,6 +297,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 								// A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
 								Logger.normal(this, "Transfer for offer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+pn, e);
                 			finish(GET_OFFER_TRANSFER_FAILED, pn, true);
+                			// Backoff here anyway - the node really ought to have it!
                 			if(!br.tookTooLong())
                 				pn.transferFailed("RequestSenderGetOfferedTransferFailed");
                     		offers.deleteLastOffer();
@@ -1110,7 +1111,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
        		if(prb != null)
        			current |= WAIT_TRANSFERRING_DATA;
         	
-        	if(status != NOT_FINISHED)
+        	if(status != NOT_FINISHED || sentAbortDownstreamTransfers)
         		current |= WAIT_FINISHED;
         	
         	if(current != mask) return current;
@@ -1131,6 +1132,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     
 	private static MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
 	
+	private static MedianMeanRunningAverage avgTimeTakenTurtle = new MedianMeanRunningAverage();
+	
 	private static MedianMeanRunningAverage avgTimeTakenTransfer = new MedianMeanRunningAverage();
 	
 	private long transferTime;
@@ -1138,9 +1141,12 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private void finish(int code, PeerNode next, boolean fromOfferedKey) {
     	if(logMINOR) Logger.minor(this, "finish("+code+ ')');
         
+    	boolean turtle;
+    	
         synchronized(this) {
             status = code;
             notifyAll();
+            turtle = turtleMode;
             if(status == SUCCESS)
             	successFrom = next;
         }
@@ -1149,11 +1155,19 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         	if(key instanceof NodeCHK && transferTime > 0 && logMINOR) {
         		long timeTaken = System.currentTimeMillis() - startTime;
         		synchronized(avgTimeTaken) {
-        			avgTimeTaken.report(timeTaken);
-        			avgTimeTakenTransfer.report(transferTime);
-        			if(logMINOR) Logger.minor(this, "Successful CHK request took "+timeTaken+" average "+avgTimeTaken);
-        			if(logMINOR) Logger.minor(this, "Successful CHK request transfer "+transferTime+" average "+avgTimeTakenTransfer);
-        			if(logMINOR) Logger.minor(this, "Search phase: median "+(avgTimeTaken.currentValue() - avgTimeTakenTransfer.currentValue())+"ms, mean "+(avgTimeTaken.meanValue() - avgTimeTakenTransfer.meanValue())+"ms");
+        			if(turtle)
+        				avgTimeTakenTurtle.report(timeTaken);
+        			else {
+        				avgTimeTaken.report(timeTaken);
+            			avgTimeTakenTransfer.report(transferTime);
+        			}
+        			if(turtle) {
+        				if(logMINOR) Logger.minor(this, "Successful CHK turtle request took "+timeTaken+" average "+avgTimeTakenTurtle);
+        			} else {
+        				if(logMINOR) Logger.minor(this, "Successful CHK request took "+timeTaken+" average "+avgTimeTaken);
+            			if(logMINOR) Logger.minor(this, "Successful CHK request transfer "+transferTime+" average "+avgTimeTakenTransfer);
+            			if(logMINOR) Logger.minor(this, "Search phase: median "+(avgTimeTaken.currentValue() - avgTimeTakenTransfer.currentValue())+"ms, mean "+(avgTimeTaken.meanValue() - avgTimeTakenTransfer.meanValue())+"ms");
+        			}
         		}
         	}
         	if(next != null) {
@@ -1464,6 +1478,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			abortDownstreamTransfersReason = reason;
 			abortDownstreamTransfersDesc = desc;
 			sentAbortDownstreamTransfers = true;
+			notifyAll();
 			for (Listener l : listeners) {
 				try {
 					l.onAbortDownstreamTransfers(reason, desc);
@@ -1508,6 +1523,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 	public void killTurtle() {
 		prb.abort(RetrievalException.TURTLE_KILLED, "Too many turtles / already have turtles for this key");
 		node.failureTable.onFinalFailure(key, transferringFrom(), htl, FailureTable.REJECT_TIME, source);
+	}
+
+	public boolean abortedDownstreamTransfers() {
+		return sentAbortDownstreamTransfers;
 	}
 
 }
