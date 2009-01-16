@@ -861,7 +861,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 			boolean timeout = (!br.senderAborted()) &&
     							reason == RetrievalException.SENDER_DIED || reason == RetrievalException.RECEIVER_DIED || reason == RetrievalException.TIMED_OUT
     							|| reason == RetrievalException.UNABLE_TO_SEND_BLOCK_WITHIN_TIMEOUT;
-                			if(!turtleMode) {
+                			if(!turtle) {
                 				if(timeout) {
                 					// Looks like a timeout. Backoff.
                 					next.transferFailed(e.getMessage());
