@@ -1304,7 +1304,7 @@ public class NodeStats implements Persistable {
 				"Local requests",
 				"Remote requests",
 				"Block transfers",
-				"Transfers turtled",
+				"Turtled downstream",
 				"Transfers timed out"
 		};
 		HTMLNode row = list.addChild("tr");
