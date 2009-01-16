@@ -69,7 +69,8 @@ public class StaticToadlet extends Toadlet {
 		if(mimeType.equals("text/css")) {
 			// Easiest way to fix the links is just to pass it through the content filter.
 			FilterOutput fo = ContentFilter.filter(data, ctx.getBucketFactory(), mimeType, uri, null, container);
-			data.free();
+			if(data != fo.data)
+				data.free();
 			data = fo.data;
 		}
 		
