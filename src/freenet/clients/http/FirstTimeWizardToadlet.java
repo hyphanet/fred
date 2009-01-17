@@ -159,7 +159,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			infoboxContent.addChild("p", l10n("historyCloakingIntro"));
 			
 			HTMLNode form = ctx.addFormChild(infoboxContent, ".", "historyCloakingForm");
-			HTMLNode input = form.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "cloaking", "true" });
+			HTMLNode input = form.addChild("p").addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "radio", "cloaking", "true", "checked" });
 			input.addChild("#", l10n("enableHistoryCloaking"));
 			input.addChild("#", " ");
 			input.addChild("b", l10n("enableHistoryCloakingWarning"));
