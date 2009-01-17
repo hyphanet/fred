@@ -653,7 +653,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		// FIXME better way to deal with this sort of thing???
 		L10n.addL10nSubstitution(headerReferenceInfobox, "DarknetConnectionsToadlet.myReferenceHeader",
 				new String[] { "linkref", "/linkref", "linktext", "/linktext" },
-				new String[] { "<a href=\"myref.fref\">", "</a>", "<a href=\"myref.txt\">", "</a>" });
+				new String[] { "<a href=\""+container.fixLink(getURL()+"myref.fref")+"\">", "</a>", "<a href=\""+container.fixLink(getURL()+"myref.txt")+"\">", "</a>" });
 		HTMLNode referenceInfoboxContent = referenceInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode warningSentence = referenceInfoboxContent.addChild("p");
 		L10n.addL10nSubstitution(warningSentence, "DarknetConnectionsToadlet.referenceCopyWarning",
@@ -888,6 +888,6 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	}
 	
 	private String sortString(boolean isReversed, String type) {
-		return (isReversed ? ("?sortBy="+type) : ("?sortBy="+type+"&reversed"));
+		return getURL() + (isReversed ? ("?sortBy="+type) : ("?sortBy="+type+"&reversed"));
 	}
 }
