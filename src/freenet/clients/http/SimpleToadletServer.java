@@ -506,6 +506,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			}
 			
 		});
+		enableActivelinks = fproxyConfig.getBoolean("enableActivelinks");
 		
 		// Off by default, installer turns it on.
 		fproxyConfig.register("enableHistoryCloaking", false, configItemOrder++, false, false, "SimpleToadletServer.enableHistoryCloaking", "SimpleToadletServer.enableHistoryCloakingLong", new FProxyHistoryCloakingCallback(this));
