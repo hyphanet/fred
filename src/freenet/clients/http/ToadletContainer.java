@@ -79,4 +79,6 @@ public interface ToadletContainer extends LinkFixer {
 	 * @return
 	 */
 	public boolean isSecureIDCheckingDisabled();
+
+	public boolean enableActivelinks();
 }

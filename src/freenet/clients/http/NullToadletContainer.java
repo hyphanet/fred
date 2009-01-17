@@ -82,4 +82,8 @@ public class NullToadletContainer implements ToadletContainer {
 		return uri;
 	}
 
+	public boolean enableActivelinks() {
+		return false;
+	}
+
 }

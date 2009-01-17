@@ -97,6 +97,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	private boolean enablePersistentConnections;
 	private boolean enableInlinePrefetch;
 	private boolean enableHistoryCloaking;
+	private boolean enableActivelinks;
 	
 	// Something does not really belongs to here
 	static boolean isPanicButtonToBeShown;				// move to QueueToadlet ?
@@ -491,6 +492,20 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 					}
 		});
 		enableInlinePrefetch = fproxyConfig.getBoolean("enableInlinePrefetch");
+		
+		fproxyConfig.register("enableActivelinks", false, configItemOrder++, false, false, "SimpleToadletServer.enableActivelinks", "SimpleToadletServer.enableActivelinksLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				return enableActivelinks;
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				enableActivelinks = val;
+			}
+			
+		});
 		
 		// Off by default, installer turns it on.
 		fproxyConfig.register("enableHistoryCloaking", false, configItemOrder++, false, false, "SimpleToadletServer.enableHistoryCloaking", "SimpleToadletServer.enableHistoryCloakingLong", new FProxyHistoryCloakingCallback(this));
@@ -933,6 +948,12 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 
 	public synchronized void setNonce(byte[] nonce) {
 		this.clientNonce = nonce;
+	}
+
+
+
+	public boolean enableActivelinks() {
+		return enableActivelinks;
 	}
 
 }
