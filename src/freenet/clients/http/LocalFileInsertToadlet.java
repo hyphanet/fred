@@ -62,7 +62,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 			if (currentPath == null) {
 				currentPath = new File(System.getProperty("user.home"));
 			}
-			writePermanentRedirect(toadletContext, "Found", "?path=" + URLEncoder.encode(currentPath.getAbsolutePath(),true)+extra);
+			writePermanentRedirect(toadletContext, "Found", URL + "?path=" + URLEncoder.encode(currentPath.getAbsolutePath(),true)+extra);
 			return;
 		}
 

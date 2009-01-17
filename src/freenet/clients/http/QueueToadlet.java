@@ -75,6 +75,8 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private static final int MAX_TYPE_LENGTH = 1024;
 	static final int MAX_KEY_LENGTH = 1024*1024;
 	
+	private static final String URL = "/queue/";
+	
 	private NodeClientCore core;
 	final FCPServer fcp;
 	
@@ -1093,9 +1095,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		for (int columnIndex = 0, columnCount = columns.length; columnIndex < columnCount; columnIndex++) {
 			int column = columns[columnIndex];
 			if (column == LIST_IDENTIFIER) {
-				headerRow.addChild("th").addChild("a", "href", container.fixLink((isReversed ? "?sortBy=id" : "?sortBy=id&reversed"))).addChild("#", L10n.getString("QueueToadlet.identifier"));
+				headerRow.addChild("th").addChild("a", "href", container.fixLink(URL + (isReversed ? "?sortBy=id" : "?sortBy=id&reversed"))).addChild("#", L10n.getString("QueueToadlet.identifier"));
 			} else if (column == LIST_SIZE) {
-				headerRow.addChild("th").addChild("a", "href", container.fixLink((isReversed ? "?sortBy=size" : "?sortBy=size&reversed"))).addChild("#", L10n.getString("QueueToadlet.size"));
+				headerRow.addChild("th").addChild("a", "href", container.fixLink(URL + (isReversed ? "?sortBy=size" : "?sortBy=size&reversed"))).addChild("#", L10n.getString("QueueToadlet.size"));
 			} else if (column == LIST_DOWNLOAD) {
 				headerRow.addChild("th", L10n.getString("QueueToadlet.download"));
 			} else if (column == LIST_MIME_TYPE) {
@@ -1107,13 +1109,13 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			} else if (column == LIST_FILENAME) {
 				headerRow.addChild("th", L10n.getString("QueueToadlet.fileName"));
 			} else if (column == LIST_PRIORITY) {
-				headerRow.addChild("th").addChild("a", "href", container.fixLink((isReversed ? "?sortBy=priority" : "?sortBy=priority&reversed"))).addChild("#", L10n.getString("QueueToadlet.priority"));
+				headerRow.addChild("th").addChild("a", "href", container.fixLink(URL + (isReversed ? "?sortBy=priority" : "?sortBy=priority&reversed"))).addChild("#", L10n.getString("QueueToadlet.priority"));
 			} else if (column == LIST_FILES) {
 				headerRow.addChild("th", L10n.getString("QueueToadlet.files"));
 			} else if (column == LIST_TOTAL_SIZE) {
 				headerRow.addChild("th", L10n.getString("QueueToadlet.totalSize"));
 			} else if (column == LIST_PROGRESS) {
-				headerRow.addChild("th").addChild("a", "href", container.fixLink((isReversed ? "?sortBy=progress" : "?sortBy=progress&reversed"))).addChild("#", L10n.getString("QueueToadlet.progress"));
+				headerRow.addChild("th").addChild("a", "href", container.fixLink(URL + (isReversed ? "?sortBy=progress" : "?sortBy=progress&reversed"))).addChild("#", L10n.getString("QueueToadlet.progress"));
 			} else if (column == LIST_REASON) {
 				headerRow.addChild("th", L10n.getString("QueueToadlet.reason"));
 			}
