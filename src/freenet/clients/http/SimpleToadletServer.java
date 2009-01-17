@@ -888,6 +888,11 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	public String fixLink(String orig) {
 		if(isSecureIDCheckingDisabled())
 			return orig;
+		if((orig.indexOf("?secureid=") > -1) ||
+				(orig.indexOf("?") > -1 && orig.substring(orig.indexOf("?")).indexOf("&secureid=") > -1)) {
+			Logger.error(this, "Already has a secureid: "+orig);
+			return orig;
+		}
 		String toSign = orig;
 		String frag = "";
 		int hashIndex = toSign.indexOf('#');
