@@ -50,6 +50,29 @@ to start it. You should run Freenet as close to 24x7 as possible for good
 performance. It is however possible to remove the cron job (with the remove cron 
 job script in bin/), or to remove the service (from the services panel in Control Panel).
 
+BASIC SECURITY:
+You MUST use a separate browser to access Freenet than the one you use to access
+the WWW at large. Browser history stealing attacks enable malicious websites to
+probe for specific freesites you have visited. It may also be possible for hostile 
+websites to probe for the existence of Freenet by javascript port scanning or 
+similar attacks, or possibly even time loads of specific pages from Freenet, from
+the browser you use for the web; this last attack is unconfirmed at the time of 
+writing.
+
+MORE SECURITY:
+If your life or liberty depends on Freenet protecting your anonymity, you should
+seriously evaluate your options, including the option of not posting whatever
+controversial content it is you are thinking of posting. Freenet has not yet
+reached version 1.0, and several important security features have not yet been
+implemented; there are several known attacks, and there are likely to be (and 
+have been) serious bugs. If you do choose to use Freenet under such circumstances, 
+you  should enable the MAXIMUM network security level and add connections to your
+friends on the Friends page; connecting only to friends considerably improves your 
+security against a variety of attacks, but you should only connect to them if you
+know them or have some reason to (at least minimally) trust them; connecting to
+arbitrary strangers from IRC may end up with you adding the bad guys as Friends,
+and apart from that it damages the network topology.
+
 CHANGES FROM 0.5:
 This is the 0.7 rewrite of Freenet. This is largely rewritten from scratch, 
 although it pulls in a load of code from Dijjer, and most of the crypto and a 
