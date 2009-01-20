@@ -12,19 +12,6 @@ code:
   to the FSF, modified BSD is compatible with GPL; we must include both 
   licenses.
 
-The installer creates a firefox profile. If you don't use it, you should have a 
-look at user.js in the firefox_profile directory for some useful settings for 
-browsing Freenet (both for performance and security). Occasionally, Firefox can
-decide that the Freenet profile should be the default profile. In the past this
-has happened if you close the Freenet browser window after the main firefox 
-window, but recently (FF2, FF3), we have been unable to reproduce the bug, 
-although we continue to get reports from time to time. Anyway, to fix it, open 
-a command line, cd to where firefox is installed, and type:
-
-firefox -ProfileManager
-
-And choose which profile you want.
-
 On OS/X and unix-based systems, Freenet will create a cron job to run Freenet 
 on startup. On Windows it creates a user for Freenet to run under, and a service 
 to start it. You should run Freenet as close to 24x7 as possible for good 
