@@ -1,7 +1,11 @@
 This is the 0.7 rewrite of Freenet. This is largely rewritten from scratch, 
-although it pulls in a load of code from Dijjer.
+although it pulls in a load of code from Dijjer, and most of the crypto and a 
+few other classes from the 0.5 source.
 
 Major changes:
+- Darknet mode: connect only to your friends, they connect to theirs, this forms
+  a small-world network, which Freenet makes routable by location swapping. 
+  Opennet mode is also supported.
 - Freenet now uses UDP
 - Freenet now uses 32kB fixed block sizes
 - Many more...
