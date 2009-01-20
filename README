@@ -43,6 +43,13 @@ http://freenetproject.org/donate.html
 
 Press enquiries should be directed to Ian Clarke.
 
+ALWAYS ON:
+On OS/X and unix-based systems, Freenet will create a cron job to run Freenet 
+on startup. On Windows it creates a user for Freenet to run under, and a service 
+to start it. You should run Freenet as close to 24x7 as possible for good 
+performance. It is however possible to remove the cron job (with the remove cron 
+job script in bin/), or to remove the service (from the services panel in Control Panel).
+
 CHANGES FROM 0.5:
 This is the 0.7 rewrite of Freenet. This is largely rewritten from scratch, 
 although it pulls in a load of code from Dijjer, and most of the crypto and a 
@@ -62,13 +69,6 @@ Major changes:
 - The Freenet Client Protocol is completely different, see the spec here:
   http://wiki.freenetproject.org/FreenetFCPSpec2Point0
 - Many more changes...
-
-ALWAYS ON:
-On OS/X and unix-based systems, Freenet will create a cron job to run Freenet 
-on startup. On Windows it creates a user for Freenet to run under, and a service 
-to start it. You should run Freenet as close to 24x7 as possible for good 
-performance. It is however possible to remove the cron job (with the remove cron 
-job script in bin/), or to remove the service (from the services panel in Control Panel).
 
 LICENSING:
 Freenet is under the GPLv2 - see LICENSE.Freenet (we are trying to make this
