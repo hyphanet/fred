@@ -10,6 +10,13 @@ Major changes:
 - Freenet now uses 32kB fixed block sizes
 - Many more...
 
+ALWAYS ON:
+On OS/X and unix-based systems, Freenet will create a cron job to run Freenet 
+on startup. On Windows it creates a user for Freenet to run under, and a service 
+to start it. You should run Freenet as close to 24x7 as possible for good 
+performance. It is however possible to remove the cron job (with the remove cron 
+job script in bin/), or to remove the service (from the services panel in Control Panel).
+
 LICENSING:
 Freenet is under the GPLv2 - see LICENSE.Freenet (we are trying to make this
 GPL 2 or later, but some code is arguably GPL 2 only). However, we use some 
@@ -18,8 +25,3 @@ other code:
   to the FSF, modified BSD is compatible with GPL; we must include both 
   licenses.
 
-On OS/X and unix-based systems, Freenet will create a cron job to run Freenet 
-on startup. On Windows it creates a user for Freenet to run under, and a service 
-to start it. You should run Freenet as close to 24x7 as possible for good 
-performance. It is however possible to remove the cron job (with the remove cron 
-job script in bin/), or to remove the service (from the services panel in Control Panel).
