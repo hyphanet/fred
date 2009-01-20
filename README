@@ -4,11 +4,18 @@ few other classes from the 0.5 source.
 
 Major changes:
 - Darknet mode: connect only to your friends, they connect to theirs, this forms
-  a small-world network, which Freenet makes routable by location swapping. 
-  Opennet mode is also supported.
-- Freenet now uses UDP
-- Freenet now uses 32kB fixed block sizes
-- Many more...
+  a small-world network, which Freenet makes routable by location swapping. This
+  greatly increases the network's robustness as it makes it much harder to find
+  and block Freenet nodes on a national firewall, as well as improving security
+  generally provided that your friends are trustworthy. 
+- Opennet mode (plug and play) is also supported. Just select network security
+  level NORMAL or LOW in the first-time wizard.
+- Freenet now uses UDP, mainly to improve connectivity over NATs and firewalls.
+- Freenet now uses 32kB fixed block sizes, to improve performance and simplify 
+  the code.
+- The Freenet Client Protocol is completely different, see the spec here:
+  http://wiki.freenetproject.org/FreenetFCPSpec2Point0
+- Many more changes...
 
 ALWAYS ON:
 On OS/X and unix-based systems, Freenet will create a cron job to run Freenet 
