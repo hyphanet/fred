@@ -8,8 +8,6 @@ import java.util.ArrayList;
 import freenet.clients.http.ConfigToadlet;
 import freenet.clients.http.LinkFixer;
 import freenet.clients.http.NullLinkFixer;
-import freenet.clients.http.NullToadletContainer;
-import freenet.clients.http.ToadletContainer;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
@@ -408,7 +406,7 @@ public class SecurityLevels {
 				return L10n.getString("UserAlert.hide");
 			}
 
-			public HTMLNode getHTMLText(ToadletContainer fixer) {
+			public HTMLNode getHTMLText(LinkFixer fixer) {
 				HTMLNode div = new HTMLNode("div");
 				HTMLNode ul = div.addChild("ul");
 				ul.addChild("li", l10n("userAlertNetworkThreatLevel", "level", localisedName(networkThreatLevel)));
@@ -434,7 +432,7 @@ public class SecurityLevels {
 			}
 
 			public String getText() {
-				return getHTMLText(NullToadletContainer.instance).getContent();
+				return getHTMLText(NullLinkFixer.instance).getContent();
 			}
 
 			public String getTitle() {

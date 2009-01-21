@@ -42,7 +42,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		SECURITY_NETWORK,
 		SECURITY_FRIENDS,
 		SECURITY_PHYSICAL,
-		HISTORY_CLOAKING,
 		NAME_SELECTION,
 		BANDWIDTH,
 		DATASTORE_SIZE,
@@ -144,32 +143,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 				L10n.addL10nSubstitution(inner, "SecurityLevels.physicalThreatLevel.desc."+level, new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
 			}
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "physicalSecurityF", L10n.getString("FirstTimeWizardToadlet.continue")});
-			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
-			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
-			return;
-		} else if(currentStep == WIZARD_STEP.HISTORY_CLOAKING) {
-			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("historyCloakingPageTitle"), false, ctx);
-			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
-			
-			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
-			HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
-			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
-			
-			infoboxHeader.addChild("#", l10n("historyCloakingPageTitle"));
-			infoboxContent.addChild("p", l10n("historyCloakingIntro"));
-			
-			HTMLNode form = ctx.addFormChild(infoboxContent, ".", "historyCloakingForm");
-			HTMLNode input = form.addChild("p").addChild("input", new String[] { "type", "name", "value", "checked" }, new String[] { "radio", "cloaking", "true", "checked" });
-			input.addChild("#", l10n("enableHistoryCloaking"));
-			input.addChild("#", " ");
-			input.addChild("b", l10n("enableHistoryCloakingWarning"));
-			
-			input = form.addChild("p").addChild("input", new String[] { "type", "name", "value" }, new String[] { "radio", "cloaking", "false" });
-			input.addChild("#", l10n("disableHistoryCloaking"));
-			input.addChild("#", " ");
-			input.addChild("b", l10n("disableHistoryCloakingWarning"));
-			
-			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "historyCloakingF", L10n.getString("FirstTimeWizardToadlet.continue")});
 			form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "cancel", L10n.getString("Toadlet.cancel")});
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
@@ -317,7 +290,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			congratzInfoboxHeader.addChild("#", l10n("congratz"));
 			congratzInfoboxContent.addChild("p", l10n("congratzLong"));
 			
-			congratzInfoboxContent.addChild("a", "href", container.fixLink(TOADLET_URL+"?step="+WIZARD_STEP.FINAL), L10n.getString("FirstTimeWizardToadlet.continueEnd"));
+			congratzInfoboxContent.addChild("a", "href", "?step="+WIZARD_STEP.FINAL, L10n.getString("FirstTimeWizardToadlet.continueEnd"));
 
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
@@ -343,10 +316,10 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		HTMLNode firstParagraph = welcomeInfoboxContent.addChild("p");
 		firstParagraph.addChild("#", l10n("welcomeInfoboxContent1"));
 		HTMLNode secondParagraph = welcomeInfoboxContent.addChild("p");
-		secondParagraph.addChild("a", "href", container.fixLink(TOADLET_URL+"?step="+WIZARD_STEP.SECURITY_NETWORK)).addChild("#", L10n.getString("FirstTimeWizardToadlet.clickContinue"));
+		secondParagraph.addChild("a", "href", "?step="+WIZARD_STEP.SECURITY_NETWORK).addChild("#", L10n.getString("FirstTimeWizardToadlet.clickContinue"));
 		
 		HTMLNode thirdParagraph = welcomeInfoboxContent.addChild("p");
-		thirdParagraph.addChild("a", "href", container.fixLink(TOADLET_URL+"?step="+WIZARD_STEP.FINAL)).addChild("#", l10n("skipWizard"));
+		thirdParagraph.addChild("a", "href", "?step="+WIZARD_STEP.FINAL).addChild("#", l10n("skipWizard"));
 		
 		this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 	}
@@ -473,16 +446,6 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			}
 			core.node.securityLevels.setThreatLevel(newThreatLevel);
 			core.storeConfig();
-			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.HISTORY_CLOAKING+"&opennet="+core.node.isOpennetEnabled());
-			return;
-		} else if(request.isPartSet("historyCloakingF")) {
-			String value = request.getPartAsString("cloaking", 10);
-			try {
-				config.get("fproxy").set("enableHistoryCloaking", value);
-				Logger.normal(this, "History cloaking has been set to "+ value);
-			} catch (ConfigException e) {
-				Logger.error(this, "Should not happen, please report!" + e, e);
-			}
 			super.writeTemporaryRedirect(ctx, "step1", TOADLET_URL+"?step="+WIZARD_STEP.NAME_SELECTION+"&opennet="+core.node.isOpennetEnabled());
 			return;
 		} else if(request.isPartSet("nnameF")) {

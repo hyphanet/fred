@@ -75,8 +75,6 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 	private static final int MAX_TYPE_LENGTH = 1024;
 	static final int MAX_KEY_LENGTH = 1024*1024;
 	
-	private static final String URL = "/queue/";
-	
 	private NodeClientCore core;
 	final FCPServer fcp;
 	
@@ -128,7 +126,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				
 				MultiValueTable<String, String> responseHeaders = new MultiValueTable<String, String>();
-				responseHeaders.put("Location", container.fixLink("/files/?key="+insertURI.toASCIIString()));
+				responseHeaders.put("Location", ctx.fixLink("/files/?key="+insertURI.toASCIIString()));
 				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
 				return;
 			}			
@@ -136,7 +134,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			String pass = request.getPartAsString("formPassword", 32);
 			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
 				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-				headers.put("Location", container.fixLink("/queue/"));
+				headers.put("Location", ctx.fixLink("/queue/"));
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				if(logMINOR) Logger.minor(this, "No formPassword: "+pass);
 				return;
@@ -169,7 +167,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					}
 				}
 				fcp.forceStorePersistentRequests();
-				writePermanentRedirect(ctx, "Done", "/queue/");
+				writePermanentRedirect(ctx, "Done", ctx.fixLink("/queue/"));
 				return;
 			} else if(request.isPartSet("remove_AllRequests") && (request.getPartAsString("remove_AllRequests", 32).length() > 0)) {
 				
@@ -198,7 +196,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 									new String[]{ failedIdentifiers.toString() }
 							));
 				else
-					writePermanentRedirect(ctx, "Done", container.fixLink("/queue/"));
+					writePermanentRedirect(ctx, "Done", ctx.fixLink("/queue/"));
 				fcp.forceStorePersistentRequests();
 				return;
 			}else if(request.isPartSet("download")) {
@@ -226,13 +224,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					this.writeError(L10n.getString("QueueToadlet.errorDToDisk"), L10n.getString("QueueToadlet.errorDToDiskConfig"), ctx);
 					return;
 				}
-				writePermanentRedirect(ctx, "Done", "/queue/");
+				writePermanentRedirect(ctx, "Done", ctx.fixLink("/queue/"));
 				return;
 			}else if(request.isPartSet("bulkDownloads")) {
 				String bulkDownloadsAsString = request.getPartAsString("bulkDownloads", Integer.MAX_VALUE);
 				String[] keys = bulkDownloadsAsString.split("\n");
 				if(("".equals(bulkDownloadsAsString)) || (keys.length < 1)) {
-					writePermanentRedirect(ctx, "Done", "/queue/");
+					writePermanentRedirect(ctx, "Done", ctx.fixLink("/queue/"));
 					return;
 				}
 				LinkedList<String> success = new LinkedList<String>(), failure = new LinkedList<String>();
@@ -279,7 +277,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					}
 					failureDiv.addChild("br");
 				}
-				alertContent.addChild("a", "href", container.fixLink("/queue/"), L10n.getString("Toadlet.returnToQueuepage"));
+				alertContent.addChild("a", "href", ctx.fixLink("/queue/"), L10n.getString("Toadlet.returnToQueuepage"));
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			} else if (request.isPartSet("change_priority")) {
@@ -293,7 +291,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 						break loop;
 					}
 				}
-				writePermanentRedirect(ctx, "Done", "/queue/");
+				writePermanentRedirect(ctx, "Done", ctx.fixLink("/queue/"));
 				fcp.forceStorePersistentRequests();
 				return;
 			} else if (request.getPartAsString("insert", 128).length() > 0) {
@@ -343,7 +341,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					writeError(L10n.getString("QueueToadlet.errorInvalidURI"), L10n.getString("QueueToadlet.errorInvalidURIToU"), ctx);
 					return;
 				}
-				writePermanentRedirect(ctx, "Done", "/queue/");
+				writePermanentRedirect(ctx, "Done", ctx.fixLink("/queue/"));
 				return;
 			} else if (request.isPartSet("insert-local-file")) {
 				String filename = request.getPartAsString("filename", MAX_FILENAME_LENGTH);
@@ -381,7 +379,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					this.writeError(L10n.getString("QueueToadlet.errorAccessDenied"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getName() }), ctx);
 					return;
 				}
-				writePermanentRedirect(ctx, "Done", "/queue/");
+				writePermanentRedirect(ctx, "Done", ctx.fixLink("/queue/"));
 				return;
 			} else if (request.isPartSet("insert-local-dir")) {
 				String filename = request.getPartAsString("filename", MAX_FILENAME_LENGTH);
@@ -412,7 +410,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					this.writeError(L10n.getString("QueueToadlet.errorNoFileOrCannotRead"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.toString() }), ctx);
 					return;
 				}
-				writePermanentRedirect(ctx, "Done", "/queue/");
+				writePermanentRedirect(ctx, "Done", ctx.fixLink("/queue/"));
 				return;
 			} else if (request.isPartSet("get")) {
 				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
@@ -474,12 +472,12 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		HTMLNode pageNode = pageMaker.getPageNode(header, context);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 		if(context.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary(container));
+			contentNode.addChild(core.alerts.createSummary(context));
 		HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-error", header));
 		HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
 		infoboxContent.addChild("#", message);
 		if(returnToQueuePage)
-			infoboxContent.addChild("div").addChildren(new HTMLNode[] { new HTMLNode("#", "Return to "), new HTMLNode("a", "href", container.fixLink("/queue/"), "queue page"), new HTMLNode("#", ".") });
+			infoboxContent.addChild("div").addChildren(new HTMLNode[] { new HTMLNode("#", "Return to "), new HTMLNode("a", "href", "/queue/", "queue page"), new HTMLNode("#", ".") });
 		writeHTMLReply(context, 400, "Bad request", pageNode.generate());
 	}
 
@@ -556,7 +554,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 			/* add alert summary box */
 			if(ctx.isAllowedFullAccess())
-				contentNode.addChild(core.alerts.createSummary(container));
+				contentNode.addChild(core.alerts.createSummary(ctx));
 			HTMLNode infobox = contentNode.addChild(pageMaker.getInfobox("infobox-information", L10n.getString("QueueToadlet.globalQueueIsEmpty")));
 			HTMLNode infoboxContent = pageMaker.getContentNode(infobox);
 			infoboxContent.addChild("#", L10n.getString("QueueToadlet.noTaskOnGlobalQueue"));
@@ -674,8 +672,8 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary(container));
-		final int mode = pageMaker.drawModeSelectionArray(core, container, request, contentNode, "/queue/");
+			contentNode.addChild(core.alerts.createSummary(ctx));
+		final int mode = pageMaker.drawModeSelectionArray(core, ctx, request, contentNode, "/queue/");
 		/* add file insert box */
 		contentNode.addChild(createInsertBox(pageMaker, ctx, mode >= PageMaker.MODE_ADVANCED));
 
@@ -987,7 +985,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 	private HTMLNode createIdentifierCell(FreenetURI uri, String identifier, boolean directory, ToadletContext ctx) {
 		HTMLNode identifierCell = new HTMLNode("td", "class", "request-identifier");
 		if (uri != null) {
-			identifierCell.addChild("span", "class", "identifier_with_uri").addChild("a", "href", container.fixLink("/" + uri + (directory ? "/" : "")), identifier);
+			identifierCell.addChild("span", "class", "identifier_with_uri").addChild("a", "href", ctx.fixLink("/" + uri + (directory ? "/" : "")), identifier);
 		} else {
 			identifierCell.addChild("span", "class", "identifier_without_uri", identifier);
 		}
@@ -1008,7 +1006,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 
 	private HTMLNode createDownloadCell(PageMaker pageMaker, ClientGet p, ToadletContext ctx) {
 		HTMLNode downloadCell = new HTMLNode("td", "class", "request-download");
-		downloadCell.addChild("a", "href", container.fixLink("/queue/"+p.getURI().toString()), L10n.getString("QueueToadlet.download"));
+		downloadCell.addChild("a", "href", ctx.fixLink("/queue/"+p.getURI().toString()), L10n.getString("QueueToadlet.download"));
 		return downloadCell;
 	}
 
@@ -1035,7 +1033,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 	private HTMLNode createKeyCell(FreenetURI uri, boolean addSlash, ToadletContext ctx) {
 		HTMLNode keyCell = new HTMLNode("td", "class", "request-key");
 		if (uri != null) {
-			keyCell.addChild("span", "class", "key_is").addChild("a", "href", container.fixLink('/' + uri.toString() + (addSlash ? "/" : "")), uri.toShortString() + (addSlash ? "/" : ""));
+			keyCell.addChild("span", "class", "key_is").addChild("a", "href", ctx.fixLink('/' + uri.toString() + (addSlash ? "/" : "")), uri.toShortString() + (addSlash ? "/" : ""));
 		} else {
 			keyCell.addChild("span", "class", "key_unknown", L10n.getString("QueueToadlet.unknown"));
 		}
@@ -1095,9 +1093,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		for (int columnIndex = 0, columnCount = columns.length; columnIndex < columnCount; columnIndex++) {
 			int column = columns[columnIndex];
 			if (column == LIST_IDENTIFIER) {
-				headerRow.addChild("th").addChild("a", "href", container.fixLink(URL + (isReversed ? "?sortBy=id" : "?sortBy=id&reversed"))).addChild("#", L10n.getString("QueueToadlet.identifier"));
+				headerRow.addChild("th").addChild("a", "href", ctx.fixLink((isReversed ? "?sortBy=id" : "?sortBy=id&reversed"))).addChild("#", L10n.getString("QueueToadlet.identifier"));
 			} else if (column == LIST_SIZE) {
-				headerRow.addChild("th").addChild("a", "href", container.fixLink(URL + (isReversed ? "?sortBy=size" : "?sortBy=size&reversed"))).addChild("#", L10n.getString("QueueToadlet.size"));
+				headerRow.addChild("th").addChild("a", "href", ctx.fixLink((isReversed ? "?sortBy=size" : "?sortBy=size&reversed"))).addChild("#", L10n.getString("QueueToadlet.size"));
 			} else if (column == LIST_DOWNLOAD) {
 				headerRow.addChild("th", L10n.getString("QueueToadlet.download"));
 			} else if (column == LIST_MIME_TYPE) {
@@ -1109,13 +1107,13 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			} else if (column == LIST_FILENAME) {
 				headerRow.addChild("th", L10n.getString("QueueToadlet.fileName"));
 			} else if (column == LIST_PRIORITY) {
-				headerRow.addChild("th").addChild("a", "href", container.fixLink(URL + (isReversed ? "?sortBy=priority" : "?sortBy=priority&reversed"))).addChild("#", L10n.getString("QueueToadlet.priority"));
+				headerRow.addChild("th").addChild("a", "href", ctx.fixLink((isReversed ? "?sortBy=priority" : "?sortBy=priority&reversed"))).addChild("#", L10n.getString("QueueToadlet.priority"));
 			} else if (column == LIST_FILES) {
 				headerRow.addChild("th", L10n.getString("QueueToadlet.files"));
 			} else if (column == LIST_TOTAL_SIZE) {
 				headerRow.addChild("th", L10n.getString("QueueToadlet.totalSize"));
 			} else if (column == LIST_PROGRESS) {
-				headerRow.addChild("th").addChild("a", "href", container.fixLink(URL + (isReversed ? "?sortBy=progress" : "?sortBy=progress&reversed"))).addChild("#", L10n.getString("QueueToadlet.progress"));
+				headerRow.addChild("th").addChild("a", "href", ctx.fixLink((isReversed ? "?sortBy=progress" : "?sortBy=progress&reversed"))).addChild("#", L10n.getString("QueueToadlet.progress"));
 			} else if (column == LIST_REASON) {
 				headerRow.addChild("th", L10n.getString("QueueToadlet.reason"));
 			}

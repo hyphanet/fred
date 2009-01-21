@@ -236,8 +236,8 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		long now = System.currentTimeMillis();
 	
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary(container));
-		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, container, request, contentNode, getURL());
+			contentNode.addChild(core.alerts.createSummary(ctx));
+		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, ctx, request, contentNode, getURL());
 		
 		if(peerNodeStatuses.length>0){
 
@@ -360,7 +360,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			if (mode >= PageMaker.MODE_ADVANCED) {
 				if (!path.endsWith("displaymessagetypes.html")) {
 					peerTableInfoboxHeader.addChild("#", " ");
-					peerTableInfoboxHeader.addChild("a", "href", container.fixLink(getURL()+"displaymessagetypes.html"), "(more detailed)");
+					peerTableInfoboxHeader.addChild("a", "href", "displaymessagetypes.html", "(more detailed)");
 				}
 			}
 			HTMLNode peerTableInfoboxContent = peerTableInfobox.addChild("div", "class", "infobox-content");
@@ -380,30 +380,30 @@ public abstract class ConnectionsToadlet extends Toadlet {
 				HTMLNode peerTableHeaderRow = peerTable.addChild("tr");
 				if(enablePeerActions)
 					peerTableHeaderRow.addChild("th");
-				peerTableHeaderRow.addChild("th").addChild("a", "href", container.fixLink(sortString(isReversed, "status"))).addChild("#", l10n("statusTitle"));
+				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "status")).addChild("#", l10n("statusTitle"));
 				if(hasNameColumn())
-					peerTableHeaderRow.addChild("th").addChild("a", "href", container.fixLink(sortString(isReversed, "name"))).addChild("span", new String[] { "title", "style" }, new String[] { l10n("nameClickToMessage"), "border-bottom: 1px dotted; cursor: help;" }, l10n("nameTitle"));
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "name")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("nameClickToMessage"), "border-bottom: 1px dotted; cursor: help;" }, l10n("nameTitle"));
 				if (mode >= PageMaker.MODE_ADVANCED) {
-					peerTableHeaderRow.addChild("th").addChild("a", "href", container.fixLink(sortString(isReversed, "address"))).addChild("span", new String[] { "title", "style" }, new String[] { l10n("ipAddress"), "border-bottom: 1px dotted; cursor: help;" }, l10n("ipAddressTitle"));
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "address")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("ipAddress"), "border-bottom: 1px dotted; cursor: help;" }, l10n("ipAddressTitle"));
 				}
-				peerTableHeaderRow.addChild("th").addChild("a", "href", container.fixLink(sortString(isReversed, "version"))).addChild("#", l10n("versionTitle"));
+				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "version")).addChild("#", l10n("versionTitle"));
 				if (mode >= PageMaker.MODE_ADVANCED) {
-					peerTableHeaderRow.addChild("th").addChild("a", "href", container.fixLink(sortString(isReversed, "location"))).addChild("#", "Location");
-					peerTableHeaderRow.addChild("th").addChild("a", "href", container.fixLink(sortString(isReversed, "backoff"))).addChild("span", new String[] { "title", "style" }, new String[] { "Other node busy? Display: Percentage of time the node is overloaded, Current wait time remaining (0=not overloaded)/total/last overload reason", "border-bottom: 1px dotted; cursor: help;" }, "Backoff");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "location")).addChild("#", "Location");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "backoff")).addChild("span", new String[] { "title", "style" }, new String[] { "Other node busy? Display: Percentage of time the node is overloaded, Current wait time remaining (0=not overloaded)/total/last overload reason", "border-bottom: 1px dotted; cursor: help;" }, "Backoff");
 
-					peerTableHeaderRow.addChild("th").addChild("a", "href", container.fixLink(sortString(isReversed, "overload_p"))).addChild("span", new String[] { "title", "style" }, new String[] { "Probability of the node rejecting a request due to overload or causing a timeout.", "border-bottom: 1px dotted; cursor: help;" }, "Overload Probability");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "overload_p")).addChild("span", new String[] { "title", "style" }, new String[] { "Probability of the node rejecting a request due to overload or causing a timeout.", "border-bottom: 1px dotted; cursor: help;" }, "Overload Probability");
 				}
-				peerTableHeaderRow.addChild("th").addChild("a", "href", container.fixLink(sortString(isReversed, "idle"))).addChild("span", new String[] { "title", "style" }, new String[] { l10n("idleTime"), "border-bottom: 1px dotted; cursor: help;" }, l10n("idleTimeTitle"));
+				peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "idle")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("idleTime"), "border-bottom: 1px dotted; cursor: help;" }, l10n("idleTimeTitle"));
 				if(hasPrivateNoteColumn())
-					peerTableHeaderRow.addChild("th").addChild("a", "href", container.fixLink(sortString(isReversed, "privnote"))).addChild("span", new String[] { "title", "style" }, new String[] { l10n("privateNote"), "border-bottom: 1px dotted; cursor: help;" }, l10n("privateNoteTitle"));
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "privnote")).addChild("span", new String[] { "title", "style" }, new String[] { l10n("privateNote"), "border-bottom: 1px dotted; cursor: help;" }, l10n("privateNoteTitle"));
 
 				if(mode >= PageMaker.MODE_ADVANCED) {
-					peerTableHeaderRow.addChild("th").addChild("a", "href", container.fixLink(sortString(isReversed, "time_routable"))).addChild("#", "%\u00a0Time Routable");
-					peerTableHeaderRow.addChild("th").addChild("a", "href", container.fixLink(sortString(isReversed, "selection_percentage"))).addChild("#", "%\u00a0Selection");
-					peerTableHeaderRow.addChild("th").addChild("a", "href", container.fixLink(sortString(isReversed, "total_traffic"))).addChild("#", "Total\u00a0Traffic\u00a0(in/out/resent)");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "time_routable")).addChild("#", "%\u00a0Time Routable");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "selection_percentage")).addChild("#", "%\u00a0Selection");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "total_traffic")).addChild("#", "Total\u00a0Traffic\u00a0(in/out/resent)");
 					peerTableHeaderRow.addChild("th", "Congestion\u00a0Control");
-					peerTableHeaderRow.addChild("th").addChild("a", "href", container.fixLink(sortString(isReversed, "time_delta"))).addChild("#", "Time\u00a0Delta");
-					peerTableHeaderRow.addChild("th").addChild("a", "href", container.fixLink(sortString(isReversed, "uptime"))).addChild("#", "Reported\u00a0Uptime");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "time_delta")).addChild("#", "Time\u00a0Delta");
+					peerTableHeaderRow.addChild("th").addChild("a", "href", sortString(isReversed, "uptime")).addChild("#", "Reported\u00a0Uptime");
 				}
 				
 				SimpleColumn[] endCols = endColumnHeaders(mode >= PageMaker.MODE_ADVANCED);
@@ -413,7 +413,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 						HTMLNode header = peerTableHeaderRow.addChild("th");
 						String sortString = col.getSortString();
 						if(sortString != null)
-							header = header.addChild("a", "href", container.fixLink(sortString(isReversed, sortString)));
+							header = header.addChild("a", "href", sortString(isReversed, sortString));
 						header.addChild("span", new String[] { "title", "style" }, new String[] { L10n.getString(col.getExplanationKey()), "border-bottom: 1px dotted; cursor: help;" }, L10n.getString(col.getTitleKey()));
 					}
 				}
@@ -500,7 +500,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", container.fixLink(defaultRedirectLocation()));
+			headers.put("Location", defaultRedirectLocation());
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			if(logMINOR) Logger.minor(this, "No password ("+pass+" should be "+core.formPassword+ ')');
 			return;
@@ -608,7 +608,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 			}
 			
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", container.fixLink(defaultRedirectLocation()));
+			headers.put("Location", defaultRedirectLocation());
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else handleAltPost(uri, request, ctx, logMINOR);
@@ -653,7 +653,7 @@ public abstract class ConnectionsToadlet extends Toadlet {
 		// FIXME better way to deal with this sort of thing???
 		L10n.addL10nSubstitution(headerReferenceInfobox, "DarknetConnectionsToadlet.myReferenceHeader",
 				new String[] { "linkref", "/linkref", "linktext", "/linktext" },
-				new String[] { "<a href=\""+container.fixLink(getURL()+"myref.fref")+"\">", "</a>", "<a href=\""+container.fixLink(getURL()+"myref.txt")+"\">", "</a>" });
+				new String[] { "<a href=\"myref.fref\">", "</a>", "<a href=\"myref.txt\">", "</a>" });
 		HTMLNode referenceInfoboxContent = referenceInfobox.addChild("div", "class", "infobox-content");
 		HTMLNode warningSentence = referenceInfoboxContent.addChild("p");
 		L10n.addL10nSubstitution(warningSentence, "DarknetConnectionsToadlet.referenceCopyWarning",
@@ -888,6 +888,6 @@ public abstract class ConnectionsToadlet extends Toadlet {
 	}
 	
 	private String sortString(boolean isReversed, String type) {
-		return getURL() + (isReversed ? ("?sortBy="+type) : ("?sortBy="+type+"&reversed"));
+		return (isReversed ? ("?sortBy="+type) : ("?sortBy="+type+"&reversed"));
 	}
 }

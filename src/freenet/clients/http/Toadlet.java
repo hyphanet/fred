@@ -171,7 +171,7 @@ public abstract class Toadlet {
 	
 	static void writePermanentRedirect(ToadletContext ctx, String msg, String location) throws ToadletContextClosedException, IOException {
 		MultiValueTable<String, String> mvt = new MultiValueTable<String, String>();
-		mvt.put("Location", ctx.getContainer().fixLink(location));
+		mvt.put("Location", location);
 		if(msg == null) msg = "";
 		else msg = HTMLEncoder.encode(msg);
 		String redirDoc =
@@ -190,7 +190,7 @@ public abstract class Toadlet {
 	
 	protected void writeTemporaryRedirect(ToadletContext ctx, String msg, String location) throws ToadletContextClosedException, IOException {
 		MultiValueTable<String, String> mvt = new MultiValueTable<String, String>();
-		mvt.put("Location", container.fixLink(location));
+		mvt.put("Location", location);
 		if(msg == null) msg = "";
 		else msg = HTMLEncoder.encode(msg);
 		String redirDoc =
@@ -228,7 +228,7 @@ public abstract class Toadlet {
 		infoboxContent.addChild("br");
 		infoboxContent.addChild("a", "href", ".", l10n("returnToPrevPage"));
 		infoboxContent.addChild("br");
-		addHomepageLink(infoboxContent, container);
+		addHomepageLink(infoboxContent, ctx);
 		
 		writeHTMLReply(ctx, code, desc, pageNode.generate());
 	}
@@ -259,7 +259,7 @@ public abstract class Toadlet {
 		infoboxContent.addChild("pre", sw.toString());
 		infoboxContent.addChild("br");
 		infoboxContent.addChild("a", "href", ".", l10n("returnToPrevPage"));
-		addHomepageLink(infoboxContent, container);
+		addHomepageLink(infoboxContent, ctx);
 		
 		writeHTMLReply(ctx, 500, desc, pageNode.generate());
 	}
@@ -276,8 +276,8 @@ public abstract class Toadlet {
 		writeHTMLReply(ctx, 500, "Internal Error", msg);
 	}
 	
-	protected static void addHomepageLink(HTMLNode content, LinkFixer fixer) {
-		content.addChild("a", new String[]{"href", "title"}, new String[]{fixer.fixLink("/"), l10n("homepage")}, l10n("returnToNodeHomepage"));
+	protected static void addHomepageLink(HTMLNode content, ToadletContext ctx) {
+		content.addChild("a", new String[]{"href", "title"}, new String[]{ctx.fixLink("/"), l10n("homepage")}, l10n("returnToNodeHomepage"));
 	}
 
 	/**

@@ -1,7 +1,6 @@
 package freenet.node.useralerts;
 
 import freenet.clients.http.LinkFixer;
-import freenet.clients.http.ToadletContainer;
 import freenet.l10n.L10n;
 import freenet.support.HTMLNode;
 
@@ -29,7 +28,7 @@ public class ExtOldAgeUserAlert extends AbstractUserAlert {
 	}
 
 	@Override
-	public HTMLNode getHTMLText(ToadletContainer fixer) {
+	public HTMLNode getHTMLText(LinkFixer fixer) {
 		return new HTMLNode("div", getText());
 	}
 

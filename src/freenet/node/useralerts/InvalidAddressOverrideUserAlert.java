@@ -4,7 +4,6 @@
 package freenet.node.useralerts;
 
 import freenet.clients.http.LinkFixer;
-import freenet.clients.http.ToadletContainer;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.l10n.L10n;
@@ -35,7 +34,7 @@ public class InvalidAddressOverrideUserAlert extends AbstractUserAlert {
 	}
 
 	@Override
-	public HTMLNode getHTMLText(ToadletContainer fixer) {
+	public HTMLNode getHTMLText(LinkFixer fixer) {
 		SubConfig sc = node.config.get("node");
 		Option<?> o = sc.getOption("ipAddressOverride");
 		
@@ -43,7 +42,8 @@ public class InvalidAddressOverrideUserAlert extends AbstractUserAlert {
 		L10n.addL10nSubstitution(textNode, "InvalidAddressOverrideUserAlert.unknownAddressWithConfigLink", 
 				new String[] { "link", "/link" }, 
 				new String[] { "<a href=\"/config/\">", "</a>" });
-		HTMLNode formNode = fixer.addFormChild(textNode, "/config/", "setAddressInvalidForm");
+		HTMLNode formNode = textNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/", "post" });
+		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
 		HTMLNode listNode = formNode.addChild("ul", "class", "config");
 		HTMLNode itemNode = listNode.addChild("li");
 		itemNode.addChild("span", "class", "configshortdesc", L10n.getString(o.getShortDesc())).addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", sc.getPrefix() + ".ipAddressOverride", o.getValueString() });

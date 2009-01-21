@@ -52,7 +52,7 @@ public class PproxyToadlet extends Toadlet {
 
 		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
-			headers.put("Location", container.fixLink("/plugins/"));
+			headers.put("Location", "/plugins/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		}
@@ -124,7 +124,7 @@ public class PproxyToadlet extends Toadlet {
 				String pluginName = null;
 				pluginName = request.getPartAsString("plugin-name", 40);
 				pm.startPluginOfficial(pluginName, true);
-				headers.put("Location", container.fixLink("/plugins/"));
+				headers.put("Location", ".");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
@@ -136,7 +136,7 @@ public class PproxyToadlet extends Toadlet {
 					pm.startPluginFile(pluginName, true);
 				else
 					pm.startPluginURL(pluginName, true);
-				headers.put("Location", container.fixLink("/plugins/"));
+				headers.put("Location", ".");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
@@ -144,19 +144,19 @@ public class PproxyToadlet extends Toadlet {
 				String pluginName = null;
 				pluginName = request.getPartAsString("plugin-uri", 300);
 				pm.startPluginFreenet(pluginName, true);
-				headers.put("Location", container.fixLink("/plugins/"));
+				headers.put("Location", ".");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
 			if (request.isPartSet("dismiss-user-alert")) {
 				int userAlertHashCode = request.getIntPart("disable", -1);
 				core.alerts.dismissAlert(userAlertHashCode);
-				headers.put("Location", container.fixLink("/plugins/"));
+				headers.put("Location", ".");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
 			if (request.isPartSet("cancel")){
-				headers.put("Location", container.fixLink("/plugins/"));
+				headers.put("Location", "/plugins/");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
@@ -174,7 +174,7 @@ public class PproxyToadlet extends Toadlet {
 				HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
 				infoboxContent.addChild("#", l10n("pluginUnloadedWithName", "name", pluginThreadName));
 				infoboxContent.addChild("br");
-				infoboxContent.addChild("a", "href", container.fixLink("/plugins/"), l10n("returnToPluginPage"));
+				infoboxContent.addChild("a", "href", "/plugins/", l10n("returnToPluginPage"));
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			}if (request.getPartAsString("unload", MAX_PLUGIN_NAME_LENGTH).length() > 0) {
@@ -231,13 +231,13 @@ public class PproxyToadlet extends Toadlet {
 					// FIXME
 					pm.startPluginAuto(fn, true);
 
-					headers.put("Location", container.fixLink("/plugins/"));
+					headers.put("Location", ".");
 					ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				}
 				return;
 			}else {
 				// Ignore
-				headers.put("Location", container.fixLink("/plugins/"));
+				headers.put("Location", ".");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			}
 
@@ -307,13 +307,13 @@ public class PproxyToadlet extends Toadlet {
 				}
 				HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 
-				contentNode.addChild(core.alerts.createSummary(container));
+				contentNode.addChild(core.alerts.createSummary(ctx));
 
 				UserAlert[] userAlerts = core.alerts.getAlerts();
 				for (int index = 0, count = userAlerts.length; index < count; index++) {
 					UserAlert userAlert = userAlerts[index];
 					if (userAlert.isValid() && (userAlert.getUserIdentifier() == PluginManager.class)) {
-						contentNode.addChild(core.alerts.renderAlert(userAlert, container));
+						contentNode.addChild(core.alerts.renderAlert(userAlert, ctx));
 					}
 				}
 				
@@ -422,23 +422,26 @@ public class PproxyToadlet extends Toadlet {
 			headerRow.addChild("th", l10n("startedAtTitle"));
 			headerRow.addChild("th");
 			headerRow.addChild("th");
+			headerRow.addChild("th");
 			Iterator<PluginInfoWrapper> it = pm.getPlugins().iterator();
 			while (it.hasNext()) {
 				PluginInfoWrapper pi = it.next();
 				HTMLNode pluginRow = pluginTable.addChild("tr");
-				if(pi.isPproxyPlugin()) {
-					// FIXME a title = click on me to visit the plugin???
-					pluginRow.addChild("td").addChild("a", "href", container.fixLink("/plugins/"+pi.getPluginClassName()), pi.getPluginClassName());
-				} else {
-					pluginRow.addChild("td", pi.getPluginClassName());
-				}
+				pluginRow.addChild("td", pi.getPluginClassName());
 				pluginRow.addChild("td", pi.getPluginVersion());
 				pluginRow.addChild("td", pi.getThreadName());
 				pluginRow.addChild("td", new Date(pi.getStarted()).toString());
 				if (pi.isStopping()) {
 					pluginRow.addChild("td", l10n("pluginStopping"));
+					/* add two empty cells. */
+					pluginRow.addChild("td");
 					pluginRow.addChild("td");
 				} else {
+					if (pi.isPproxyPlugin()) {
+						HTMLNode visitForm = pluginRow.addChild("td").addChild("form", new String[] { "method", "action", "target" }, new String[] { "get", pi.getPluginClassName(), "_blank" });
+						visitForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
+						visitForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", L10n.getString("PluginToadlet.visit") });
+					}
 					HTMLNode unloadForm = ctx.addFormChild(pluginRow.addChild("td"), ".", "unloadPluginForm");
 					unloadForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "unload", pi.getThreadName() });
 					unloadForm.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("unload") });

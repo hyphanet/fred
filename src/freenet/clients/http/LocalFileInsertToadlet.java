@@ -36,8 +36,6 @@ public class LocalFileInsertToadlet extends Toadlet {
 		this.core = core;
 	}
 
-	static final String URL = "/files/";
-	
 	/**
 	 * @see freenet.clients.http.Toadlet#handleGet(java.net.URI,
 	 *      freenet.clients.http.ToadletContext)
@@ -62,7 +60,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 			if (currentPath == null) {
 				currentPath = new File(System.getProperty("user.home"));
 			}
-			writePermanentRedirect(toadletContext, "Found", URL + "?path=" + URLEncoder.encode(currentPath.getAbsolutePath(),true)+extra);
+			writePermanentRedirect(toadletContext, "Found", "?path=" + URLEncoder.encode(currentPath.getAbsolutePath(),true)+extra);
 			return;
 		}
 
@@ -78,7 +76,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 		HTMLNode pageNode = pageMaker.getPageNode(l10n("listingTitle", "path", currentPath.getAbsolutePath()), toadletContext);
 		HTMLNode contentNode = pageMaker.getContentNode(pageNode);
 		if(toadletContext.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary(container));
+			contentNode.addChild(core.alerts.createSummary(toadletContext));
 		
 		HTMLNode infoboxDiv = contentNode.addChild("div", "class", "infobox");
 		infoboxDiv.addChild("div", "class", "infobox-header", l10n("listing", "path",  currentPath.getAbsolutePath()));
@@ -109,7 +107,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 				HTMLNode rootRow = listingTable.addChild("tr");
 				rootRow.addChild("td");
 				HTMLNode rootLinkCellNode = rootRow.addChild("td");
-				rootLinkCellNode.addChild("a", "href", container.fixLink(URL+"?path=" + URLEncoder.encode(currentRoot.getCanonicalPath(),false)+extra), currentRoot.getCanonicalPath());
+				rootLinkCellNode.addChild("a", "href", "?path=" + URLEncoder.encode(currentRoot.getCanonicalPath(),false)+extra, currentRoot.getCanonicalPath());
 				rootRow.addChild("td");
 			}
 			/* add back link */
@@ -117,7 +115,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 				HTMLNode backlinkRow = listingTable.addChild("tr");
 				backlinkRow.addChild("td");
 				HTMLNode backlinkCellNode = backlinkRow.addChild("td");
-				backlinkCellNode.addChild("a", "href", container.fixLink(URL+"?path=" + URLEncoder.encode(currentPath.getParent(),false)+extra), "..");
+				backlinkCellNode.addChild("a", "href", "?path=" + URLEncoder.encode(currentPath.getParent(),false)+extra, "..");
 				backlinkRow.addChild("td");
 			}
 			for (int fileIndex = 0, fileCount = files.length; fileIndex < fileCount; fileIndex++) {
@@ -132,7 +130,7 @@ public class LocalFileInsertToadlet extends Toadlet {
 						if(furi != null)
 							formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "key", furi.toASCIIString() });
 						HTMLNode directoryCellNode = fileRow.addChild("td");
-						directoryCellNode.addChild("a", "href", container.fixLink(URL+"?path=" + URLEncoder.encode(currentFile.getAbsolutePath(),false)+extra), currentFile.getName());
+						directoryCellNode.addChild("a", "href", "?path=" + URLEncoder.encode(currentFile.getAbsolutePath(),false)+extra, currentFile.getName());
 					} else {
 						fileRow.addChild("td");
 						fileRow.addChild("td", "class", "unreadable-file", currentFile.getName());

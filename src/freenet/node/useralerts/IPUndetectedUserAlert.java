@@ -4,7 +4,6 @@
 package freenet.node.useralerts;
 
 import freenet.clients.http.LinkFixer;
-import freenet.clients.http.ToadletContainer;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.l10n.L10n;
@@ -48,7 +47,7 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 	}
 
 	@Override
-	public HTMLNode getHTMLText(ToadletContainer fixer) {
+	public HTMLNode getHTMLText(LinkFixer fixer) {
 		if(node.ipDetector.noDetectPlugins()) {
 			HTMLNode p = new HTMLNode("p");
 			L10n.addL10nSubstitution(p, "IPUndetectedUserAlert.loadDetectPlugins", new String[] { "plugins", "/plugins", "config", "/config" }, new String[] { "<a href=\""+fixer.fixLink("/plugins/")+"\">", "</a>", "<a href=\""+fixer.fixLink("/config/")+"\">", "</a>" });
@@ -62,7 +61,8 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 				new String[] { "link", "/link" }, 
 				new String[] { "<a href=\""+fixer.fixLink("/config/")+"\">", "</a>" });
 		addPortForwardSuggestion(textNode);
-		HTMLNode formNode = fixer.addFormChild(textNode, "/config/", "setTempAddressAlertForm");
+		HTMLNode formNode = textNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/", "post" });
+		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
 		HTMLNode listNode = formNode.addChild("ul", "class", "config");
 		HTMLNode itemNode = listNode.addChild("li");
 		itemNode.addChild("span", "class", "configshortdesc", L10n.getString(o.getShortDesc())).addChild("input", new String[] { "type", "name", "value" }, new String[] { "text", sc.getPrefix() + ".tempIPAddressHint", o.getValueString() });

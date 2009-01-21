@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.Vector;
 
 import freenet.clients.http.LinkFixer;
-import freenet.clients.http.ToadletContainer;
 import freenet.clients.http.filter.GenericReadFilterCallback;
 import freenet.io.AddressTracker;
 import freenet.io.comm.FreenetInetAddress;
@@ -54,7 +53,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			return L10n.getString("UserAlert.hide");
 		}
 
-		public HTMLNode getHTMLText(ToadletContainer fixer) {
+		public HTMLNode getHTMLText(LinkFixer fixer) {
 			HTMLNode div = new HTMLNode("div");
 			String url = GenericReadFilterCallback.escapeURL(HTMLEncoder.encode(l10n("portForwardHelpURL")));
 			boolean maybeForwarded = true;
@@ -190,7 +189,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		}
 
 		@Override
-		public HTMLNode getHTMLText(ToadletContainer fixer) {
+		public HTMLNode getHTMLText(LinkFixer fixer) {
 			HTMLNode div = new HTMLNode("div");
 			div.addChild("#", super.getText());
 			if(suggestPortForward) {
@@ -935,7 +934,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		return plugins.length > 0;
 	}
 
-	public void addConnectionTypeBox(HTMLNode contentNode, ToadletContainer ctx) {
+	public void addConnectionTypeBox(HTMLNode contentNode, LinkFixer ctx) {
 		if(node.clientCore == null) return;
 		if(node.clientCore.alerts == null) return;
 		if(proxyAlert.isValid())

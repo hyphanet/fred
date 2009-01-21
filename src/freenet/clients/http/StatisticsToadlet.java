@@ -150,8 +150,8 @@ public class StatisticsToadlet extends Toadlet {
 		final long nodeUptimeSeconds = (now - node.startupTime) / 1000;
 
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary(container));
-		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, container, request, contentNode, "/stats/");
+			contentNode.addChild(core.alerts.createSummary(ctx));
+		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, ctx, request, contentNode, "/stats/");
 
 		double swaps = node.getSwaps();
 		double noSwaps = node.getNoSwaps();
@@ -184,8 +184,8 @@ public class StatisticsToadlet extends Toadlet {
 		// Get logs
 		HTMLNode logsList = statGatheringContent.addChild("ul");
 		if(nodeConfig.config.get("logger").getBoolean("enabled"))
-			logsList.addChild("li").addChild("a", new String[]{ "href", "target"}, new String[]{ container.fixLink("/?latestlog"), "_blank"}, l10n("getLogs"));
-		logsList.addChild("li").addChild("a", "href", container.fixLink(TranslationToadlet.TOADLET_URL+"?getOverrideTranlationFile")).addChild("#", L10n.getString("TranslationToadlet.downloadTranslationsFile"));
+			logsList.addChild("li").addChild("a", new String[]{ "href", "target"}, new String[]{ "/?latestlog", "_blank"}, l10n("getLogs"));
+		logsList.addChild("li").addChild("a", "href", TranslationToadlet.TOADLET_URL+"?getOverrideTranlationFile").addChild("#", L10n.getString("TranslationToadlet.downloadTranslationsFile"));
 		
 		if(mode >= PageMaker.MODE_ADVANCED) {
 			// store size box

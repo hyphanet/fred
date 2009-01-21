@@ -4,7 +4,6 @@
 package freenet.node.useralerts;
 
 import freenet.clients.http.LinkFixer;
-import freenet.clients.http.ToadletContainer;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.l10n.L10n;
@@ -39,14 +38,15 @@ public class MeaningfulNodeNameUserAlert extends AbstractUserAlert {
 	}
 
 	@Override
-	public HTMLNode getHTMLText(ToadletContainer fixer) {
+	public HTMLNode getHTMLText(LinkFixer fixer) {
 		SubConfig sc = node.config.get("node");
 		Option<?> o = sc.getOption("name");
 
 		HTMLNode alertNode = new HTMLNode("div");
 		HTMLNode textNode = alertNode.addChild("div");
 		textNode.addChild("#", l10n("noNodeNick"));
-		HTMLNode formNode = fixer.addFormChild(alertNode, "/config/", "setNameAlertForm");
+		HTMLNode formNode = alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/", "post" });
+		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });
 		HTMLNode listNode = formNode.addChild("ul", "class", "config");
 		HTMLNode itemNode = listNode.addChild("li");
 		itemNode.addChild("span", new String[]{ "class", "title", "style" },

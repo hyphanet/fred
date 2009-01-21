@@ -1850,7 +1850,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				                .getString("Node.storeSaltHashMigratedShort"), UserAlert.MINOR) {
 					
 					@Override
-					public HTMLNode getHTMLText(ToadletContainer fixer) {
+					public HTMLNode getHTMLText(LinkFixer fixer) {
 						HTMLNode div = new HTMLNode("div");
 						div.addChild("#", L10n.getString("Node.storeSaltHashMigrated"));
 						HTMLNode ul = div.addChild("ul");
@@ -2351,7 +2351,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				clientCore.alerts.register(new AbstractUserAlert(false, null, null, null, null, UserAlert.ERROR, true, null, false, null) {
 
 					@Override
-					public HTMLNode getHTMLText(ToadletContainer fixer) {
+					public HTMLNode getHTMLText(LinkFixer fixer) {
 						HTMLNode n = new HTMLNode("div");
 						L10n.addL10nSubstitution(n, "Node.buggyJVMWithLink", 
 								new String[] { "link", "/link", "version" },

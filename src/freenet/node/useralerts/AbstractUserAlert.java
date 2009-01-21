@@ -18,7 +18,7 @@
 
 package freenet.node.useralerts;
 
-import freenet.clients.http.ToadletContainer;
+import freenet.clients.http.LinkFixer;
 import freenet.support.HTMLNode;
 
 /**
@@ -94,7 +94,7 @@ public abstract class AbstractUserAlert implements UserAlert {
 	/**
 	 * {@inheritDoc}
 	 */
-	public HTMLNode getHTMLText(ToadletContainer fixer) {
+	public HTMLNode getHTMLText(LinkFixer fixer) {
 		return htmlText;
 	}
 

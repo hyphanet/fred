@@ -71,7 +71,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 	@Override
 	protected void drawNameColumn(HTMLNode peerRow, PeerNodeStatus peerNodeStatus) {
 		// name column
-		peerRow.addChild("td", "class", "peer-name").addChild("a", "href", container.fixLink("/send_n2ntm/?peernode_hashcode=" + peerNodeStatus.hashCode()), ((DarknetPeerNodeStatus)peerNodeStatus).getName());
+		peerRow.addChild("td", "class", "peer-name").addChild("a", "href", "/send_n2ntm/?peernode_hashcode=" + peerNodeStatus.hashCode(), ((DarknetPeerNodeStatus)peerNodeStatus).getName());
 	}
 
 	@Override
@@ -214,6 +214,9 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 				}
 			}
 			redirectHere(ctx);
+			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
+			headers.put("Location", container.fixLink("/friends/"));
+			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		} else if (request.isPartSet("doAction") && request.getPartAsString("action",25).equals("set_burst_only")) {
 			//int hashcode = Integer.decode(request.getParam("node")).intValue();
@@ -384,7 +387,7 @@ public class DarknetConnectionsToadlet extends ConnectionsToadlet {
 
 	private void redirectHere(ToadletContext ctx) throws ToadletContextClosedException, IOException {
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-		headers.put("Location", container.fixLink("/friends/"));
+		headers.put("Location", "/friends/");
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 

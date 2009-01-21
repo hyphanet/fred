@@ -9,7 +9,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 
 import freenet.clients.http.LinkFixer;
-import freenet.clients.http.ToadletContainer;
 import freenet.clients.http.ToadletContext;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
@@ -104,7 +103,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	/**
 	 * Write the alerts as HTML.
 	 */
-	public HTMLNode createAlerts(ToadletContainer fixer) {
+	public HTMLNode createAlerts(LinkFixer fixer) {
 		HTMLNode alertsNode = new HTMLNode("div");
 		UserAlert[] alerts = getAlerts();
 		int totalNumber = 0;
@@ -126,7 +125,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	 * Write each alert in uber-concise form as HTML, with a link to 
 	 * /alerts/[ anchor pointing to the real alert].
 	 */
-	public HTMLNode createAlertsShort(String title, boolean advancedMode, boolean drawDumpEventsForm, ToadletContainer ctx) {
+	public HTMLNode createAlertsShort(String title, boolean advancedMode, boolean drawDumpEventsForm, ToadletContext ctx) {
 		UserAlert[] currentAlerts = getAlerts();
 		short maxLevel = Short.MAX_VALUE;
 		int events = 0;
@@ -156,7 +155,8 @@ public class UserAlertManager implements Comparator<UserAlert> {
 			totalNumber++;
 		}
 		if(drawDumpEventsForm) {
-			HTMLNode dumpFormNode = ctx.addFormChild(contentNode, "/", "dropAlertsForm");
+			HTMLNode dumpFormNode = contentNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("div");
+			dumpFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 			StringBuilder sb = new StringBuilder();
 			for(int i=0;i<currentAlerts.length;i++) {
 				if(!currentAlerts[i].isEventNotification()) continue;
@@ -177,7 +177,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	 *            The user alert to render
 	 * @return The rendered HTML node
 	 */
-	public HTMLNode renderAlert(UserAlert userAlert, ToadletContainer fixer) {
+	public HTMLNode renderAlert(UserAlert userAlert, LinkFixer fixer) {
 		HTMLNode userAlertNode = null;
 		short level = userAlert.getPriorityClass();
 		userAlertNode = new HTMLNode("div", "class", "infobox infobox-"+getAlertLevelName(level));
@@ -186,8 +186,9 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		HTMLNode alertContentNode = userAlertNode.addChild("div", "class", "infobox-content");
 		alertContentNode.addChild(userAlert.getHTMLText(fixer));
 		if (userAlert.userCanDismiss()) {
-			HTMLNode dismissFormNode = fixer.addFormChild(alertContentNode, "/", "dismissAlert-" + userAlert.anchor());
+			HTMLNode dismissFormNode = alertContentNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("div");
 			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "disable", String.valueOf(userAlert.hashCode()) });
+			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", core.formPassword });
 			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "dismiss-user-alert", userAlert.dismissButtonText() });
 		}
 		return userAlertNode;

@@ -441,7 +441,7 @@ public class ToadletContextImpl implements ToadletContext, LinkFixer {
 			return false;
 		}
 		String path = uri.getRawPath();
-		String secureid = req.getParam("secureid");
+		String secureid = req.getParam("secureid"); // remove it
 		String queries = getQueriesNoSecureID(uri);
 		String realPath = path;
 		if(queries != null) realPath += queries;
@@ -450,7 +450,6 @@ public class ToadletContextImpl implements ToadletContext, LinkFixer {
 			expectedSecureID = ctx.container.generateSID(realPath);
 		} catch (URLEncodedFormatException e1) {
 			ctx.sendError(400, "Bad Request", l10n("invalidURICheckingSecureID"), false, null);
-			req.freeParts();
 			return true;
 		}
 		if(secureid != null && expectedSecureID.equals(secureid)) {
@@ -465,13 +464,7 @@ public class ToadletContextImpl implements ToadletContext, LinkFixer {
         HTMLNode warningBoxHeader = warningBox.addChild("div", "class", "infobox-header");
         warningBoxHeader.addChild("#", l10n("browserHistoryWarningBoxTitle"));
         HTMLNode warningBoxContent = warningBox.addChild("div", "class", "infobox-content");
-        HTMLNode firstPara = warningBoxContent.addChild("p");
-        L10n.addL10nSubstitution(firstPara, "ToadletContextImpl.browserHistoryWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
-        if(secureid == null || secureid.length() == 0)
-        	firstPara.addChild("#", " " + l10n("browserHistoryWarningNoSecureID"));
-        else
-        	firstPara.addChild("#", " " + l10n("browserHistoryWarningInvalidSecureID"));
-        warningBoxContent.addChild("p").addChild("b", l10n("browserHistoryWarningEmptyHistory"));
+        warningBoxContent.addChild("p", l10n("browserHistoryWarning"));
         
         // Link to the page
         if(queries == null) queries = "?secureid="+expectedSecureID;
@@ -482,10 +475,8 @@ public class ToadletContextImpl implements ToadletContext, LinkFixer {
         		new String[] { "<a href=\""+HTMLEncoder.encode(realPath)+"\">", "</a>" });
         
         if(ctx.isAllowedFullAccess()) {
-        	warningBoxContent.addChild("p", l10n("browserHistoryWarningCanDisable"));
-        	HTMLNode formNode = ctx.addFormChild(warningBoxContent, "/config/", "turnOffHistoryCloaking");
-        	formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "fproxy.enableHistoryCloaking", "false" });
-    		formNode.addChild("input", new String[] { "type", "value" }, new String[] { "submit", l10n("browserHistoryWarningDisableButton") });
+        	// Button to disable the warning
+        	// FIXME implement
         }
         
         byte[] data;
@@ -497,7 +488,7 @@ public class ToadletContextImpl implements ToadletContext, LinkFixer {
 		
 		ctx.sendReplyHeaders(400, "Bad Request", null, "text/html; charset=utf-8", data.length);
 		ctx.writeData(data);
-		req.freeParts();
+		
 		return true;
 	}
 	

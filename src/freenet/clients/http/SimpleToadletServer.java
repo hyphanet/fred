@@ -554,7 +554,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		if((cssName.indexOf(':') != -1) || (cssName.indexOf('/') != -1))
 			throw new InvalidConfigValueException("CSS name must not contain slashes or colons!");
 		cssTheme = THEME.themeFromName(cssName);
-		pageMaker = new PageMaker(cssTheme, this);
+		pageMaker = new PageMaker(cssTheme);
 	
 		if(!fproxyConfig.getOption("CSSOverride").isDefault()) {
 			cssOverride = new File(fproxyConfig.getString("CSSOverride"));
@@ -832,16 +832,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		return bf;
 	}
 
-	/** How long should the secureid= be? We don't want the URLs to be really long...
-	 * One attempt requires the attacker to modify the DOM, trigger a relayout, and then
-	 * read the link color out of the DOM. Relayout can be batched, but if it's too big
-	 * it gets really slow and the user notices... The lookup is done to determine whether
-	 * to display this element. A miss results in no relayout. Maybe this could be 
-	 * optimised down to hundreds of cycles ... in practice it's probably a lot more than 
-	 * that. Hopefully by the time probing 96 bits is feasible, browsers will turn off 
-	 * history probing by default! */
-	static final int SID_LENGTH_BYTES = 12;
-	
 	public String generateSID(String realPath) throws URLEncodedFormatException {
 		MessageDigest md = SHA256.getMessageDigest();
 		realPath = prepareForSID(realPath);
@@ -852,10 +842,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		}
 		md.update(clientNonce);
 		byte[] output = md.digest();
-		byte[] finalOutput = new byte[SID_LENGTH_BYTES];
-		System.arraycopy(output, 0, finalOutput, 0, SID_LENGTH_BYTES);
 		SHA256.returnMessageDigest(md);
-		return Base64.encode(finalOutput);
+		return Base64.encode(output);
 	}
 
 	private String prepareForSID(String realPath) throws URLEncodedFormatException {
@@ -904,14 +892,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	public String fixLink(String orig) {
 		if(isSecureIDCheckingDisabled())
 			return orig;
-		if(!orig.startsWith("/")) {
-			Logger.error(this, "fixLink() on relative URI: "+orig, new Exception("debug"));
-		}
-		if((orig.indexOf("?secureid=") > -1) ||
-				(orig.indexOf("?") > -1 && orig.substring(orig.indexOf("?")).indexOf("&secureid=") > -1)) {
-			Logger.error(this, "Already has a secureid: "+orig);
-			return orig;
-		}
 		String toSign = orig;
 		String frag = "";
 		int hashIndex = toSign.indexOf('#');

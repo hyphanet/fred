@@ -4,7 +4,6 @@
 package freenet.node.useralerts;
 
 import freenet.clients.http.LinkFixer;
-import freenet.clients.http.ToadletContainer;
 import freenet.l10n.L10n;
 import freenet.node.updater.NodeUpdateManager;
 import freenet.node.updater.RevocationChecker;
@@ -77,7 +76,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 	}
 	
 	@Override
-	public HTMLNode getHTMLText(ToadletContainer fixer) {
+	public HTMLNode getHTMLText(LinkFixer fixer) {
 		
 		UpdateThingy ut = createUpdateThingy();
 		
@@ -86,8 +85,7 @@ public class UpdatedVersionAvailableUserAlert extends AbstractUserAlert {
 		alertNode.addChild("#", ut.firstBit);
 		
 		if(ut.formText != null) {
-			fixer.addFormChild(alertNode, "/", "updateNowForm").
-				addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", ut.formText });
+			alertNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "update", ut.formText });
 		}
 		
 		return alertNode;

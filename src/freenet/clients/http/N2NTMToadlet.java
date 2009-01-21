@@ -74,7 +74,7 @@ public class N2NTMToadlet extends Toadlet {
 			if (peernode_name == null) {
 				contentNode.addChild(createPeerInfobox("infobox-error",
 						l10n("peerNotFoundTitle"), l10n("peerNotFoundWithHash",
-								"hash", input_hashcode_string), container));
+								"hash", input_hashcode_string), ctx));
 				this.writeHTMLReply(ctx, 200, "OK", pageNode
 						.generate());
 				return;
@@ -86,7 +86,7 @@ public class N2NTMToadlet extends Toadlet {
 			return;
 		}
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-		headers.put("Location", container.fixLink("/friends/"));
+		headers.put("Location", "/friends/");
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 
@@ -100,7 +100,7 @@ public class N2NTMToadlet extends Toadlet {
 	}
 
 	private static HTMLNode createPeerInfobox(String infoboxType,
-			String header, String message, LinkFixer ctx) {
+			String header, String message, ToadletContext ctx) {
 		HTMLNode infobox = new HTMLNode("div", "class", "infobox "
 				+ infoboxType);
 		infobox.addChild("div", "class", "infobox-header", header);
@@ -110,7 +110,7 @@ public class N2NTMToadlet extends Toadlet {
 		HTMLNode list = infoboxContent.addChild("ul");
 		Toadlet.addHomepageLink(list, ctx);
 		list.addChild("li").addChild("a", new String[] { "href", "title" },
-				new String[] { ctx.fixLink("/friends/"), l10n("returnToFriends") },
+				new String[] { "/friends/", l10n("returnToFriends") },
 				l10n("friends"));
 		return infobox;
 	}
@@ -122,7 +122,7 @@ public class N2NTMToadlet extends Toadlet {
 		String pass = request.getPartAsString("formPassword", 32);
 		if ((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", container.fixLink("/send_n2ntm/"));
+			headers.put("Location", "/send_n2ntm/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		}
@@ -153,7 +153,7 @@ public class N2NTMToadlet extends Toadlet {
 				filename = new File(fnam);
 				if(!(filename.exists() && filename.canRead())) {
 					peerTableInfobox.addChild("#", l10n("noSuchFileOrCannotRead"));
-					Toadlet.addHomepageLink(peerTableInfobox, container);
+					Toadlet.addHomepageLink(peerTableInfobox, ctx);
 					this.writeHTMLReply(ctx, 400, "OK", pageNode.generate());
 					return;
 				}
@@ -174,7 +174,7 @@ public class N2NTMToadlet extends Toadlet {
 							status = pn.sendFileOffer(filename, message);
 						} catch (IOException e) {
 							peerTableInfobox.addChild("#", l10n("noSuchFileOrCannotRead"));
-							Toadlet.addHomepageLink(peerTableInfobox, container);
+							Toadlet.addHomepageLink(peerTableInfobox, ctx);
 							this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 							return;
 						}
@@ -221,15 +221,15 @@ public class N2NTMToadlet extends Toadlet {
 					"n2ntm-message-text");
 			infoboxContent.addChild("#", message);
 			HTMLNode list = peerTableInfobox.addChild("ul");
-			Toadlet.addHomepageLink(list, container);
+			Toadlet.addHomepageLink(list, ctx);
 			list.addChild("li").addChild("a", new String[] { "href", "title" },
-					new String[] { container.fixLink("/friends/"), l10n("returnToFriends") },
+					new String[] { "/friends/", l10n("returnToFriends") },
 					l10n("friends"));
 			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 			return;
 		}
 		MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-		headers.put("Location", container.fixLink("/friends/"));
+		headers.put("Location", "/friends/");
 		ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 	}
 

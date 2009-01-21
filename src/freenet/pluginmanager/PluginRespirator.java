@@ -24,9 +24,9 @@ public class PluginRespirator {
 		this.plugin = plug;
 		this.pluginManager = pm;
 		if (plugin instanceof FredPluginL10n)
-			pageMaker = new PageMaker((FredPluginL10n)plugin, pluginManager.getFProxyTheme(), node.getLinkFilter());
+			pageMaker = new PageMaker((FredPluginL10n)plugin, pluginManager.getFProxyTheme());
 		else
-			pageMaker = new PageMaker(null, pluginManager.getFProxyTheme(), node.getLinkFilter());
+			pageMaker = new PageMaker(null, pluginManager.getFProxyTheme());
 	}
 	
 	//public HighLevelSimpleClient getHLSimpleClient() throws PluginSecurityException {

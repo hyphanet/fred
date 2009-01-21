@@ -4,7 +4,6 @@
 package freenet.node.useralerts;
 
 import freenet.clients.http.LinkFixer;
-import freenet.clients.http.ToadletContainer;
 import freenet.l10n.L10n;
 import freenet.node.NodeStats;
 import freenet.support.HTMLNode;
@@ -176,7 +175,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	}
 	
 	@Override
-	public HTMLNode getHTMLText(ToadletContainer fixer) {
+	public HTMLNode getHTMLText(LinkFixer fixer) {
 		HTMLNode alertNode = new HTMLNode("div");
 
 		if (peers == 0 && !isOpennetEnabled) {

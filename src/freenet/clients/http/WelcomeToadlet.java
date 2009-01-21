@@ -51,12 +51,12 @@ public class WelcomeToadlet extends Toadlet {
 
     void redirectToRoot(ToadletContext ctx) throws ToadletContextClosedException, IOException {
         MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-        headers.put("Location", container.fixLink("/"));
+        headers.put("Location", ctx.fixLink("/"));
         ctx.sendReplyHeaders(302, "Found", headers, null, 0);
         return;
     }
 
-    private void addCategoryToList(BookmarkCategory cat, HTMLNode list, boolean noActiveLinks, LinkFixer ctx) {
+    private void addCategoryToList(BookmarkCategory cat, HTMLNode list, boolean noActiveLinks, ToadletContext ctx) {
         List<BookmarkItem> items = cat.getItems();
         if (items.size() > 0) {
             // FIXME CSS noborder ...
@@ -126,7 +126,7 @@ public class WelcomeToadlet extends Toadlet {
             if ((request.getPartAsString("Go", 32).length() > 0)) {
                 url = request.getPartAsString(GenericReadFilterCallback.magicHTTPEscapeString, MAX_URL_LENGTH);
             }
-            headers.put("Location", container.fixLink(url == null ? "/" : url));
+            headers.put("Location", url == null ? "/" : url);
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
         } else if (request.getPartAsString("update", 32).length() > 0) {
             HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("nodeUpdateConfirmTitle"), ctx);
@@ -289,7 +289,7 @@ public class WelcomeToadlet extends Toadlet {
                 }
             }
             content.addChild("br");
-            addHomepageLink(content, container);
+            addHomepageLink(content, ctx);
 
             writeHTMLReply(ctx, 200, "OK", pageNode.generate());
             request.freeParts();
@@ -344,7 +344,7 @@ public class WelcomeToadlet extends Toadlet {
             }
 
             content.addChild("br");
-            addHomepageLink(content, container);
+            addHomepageLink(content, ctx);
 
             writeHTMLReply(ctx, 200, "OK", pageNode.generate());
             request.freeParts();
@@ -366,7 +366,7 @@ public class WelcomeToadlet extends Toadlet {
                 return;
             }
             MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-            headers.put("Location", container.fixLink("/?terminated&formPassword=" + core.formPassword));
+            headers.put("Location", ctx.fixLink("/?terminated&formPassword=" + core.formPassword));
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
             node.ps.queueTimedJob(new Runnable() {
 
@@ -393,7 +393,7 @@ public class WelcomeToadlet extends Toadlet {
             }
 
             MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-            headers.put("Location", container.fixLink("/?restarted&formPassword=" + core.formPassword));
+            headers.put("Location", ctx.fixLink("/?restarted&formPassword=" + core.formPassword));
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
             node.ps.queueTimedJob(new Runnable() {
 
@@ -548,7 +548,7 @@ public class WelcomeToadlet extends Toadlet {
 
         // Alerts
         if (ctx.isAllowedFullAccess()) {
-            contentNode.addChild(core.alerts.createAlertsShort(l10n("alertsSummary"), advancedModeOutputEnabled, true, container));
+            contentNode.addChild(core.alerts.createAlertsShort(l10n("alertsSummary"), advancedModeOutputEnabled, true, ctx));
         }
 		
 		// Search Box
@@ -578,7 +578,7 @@ public class WelcomeToadlet extends Toadlet {
         bookmarkBoxHeader.addChild("#", L10n.getString("BookmarkEditorToadlet.myBookmarksTitle"));
         if (ctx.isAllowedFullAccess()) {
             bookmarkBoxHeader.addChild("#", " [");
-            bookmarkBoxHeader.addChild("span", "id", "bookmarkedit").addChild("a", new String[]{"href", "class"}, new String[]{container.fixLink("/bookmarkEditor/"), "interfacelink"}, L10n.getString("BookmarkEditorToadlet.edit"));
+            bookmarkBoxHeader.addChild("span", "id", "bookmarkedit").addChild("a", new String[]{"href", "class"}, new String[]{ctx.fixLink("/bookmarkEditor/"), "interfacelink"}, L10n.getString("BookmarkEditorToadlet.edit"));
             bookmarkBoxHeader.addChild("#", "]");
         }
 
@@ -586,13 +586,13 @@ public class WelcomeToadlet extends Toadlet {
         
                 
         HTMLNode bookmarksList = bookmarkBoxContent.addChild("ul", "id", "bookmarks");
-        addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, (!container.enableActivelinks()) || (useragent != null && useragent.contains("khtml") && !useragent.contains("chrome")), container);
+        addCategoryToList(BookmarkManager.MAIN_CATEGORY, bookmarksList, (!container.enableActivelinks()) || (useragent != null && useragent.contains("khtml") && !useragent.contains("chrome")), ctx);
 
         // Fetch-a-key box
         HTMLNode fetchKeyBox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", l10n("fetchKeyLabel")));
         HTMLNode fetchKeyContent = ctx.getPageMaker().getContentNode(fetchKeyBox);
         fetchKeyContent.addAttribute("id", "keyfetchbox");
-        HTMLNode fetchKeyForm = ctx.addFormChild(fetchKeyContent, "/", "fetchKeyForm").addChild("div");
+        HTMLNode fetchKeyForm = fetchKeyContent.addChild("form", new String[]{"action", "method"}, new String[]{"/", "get"}).addChild("div");
         fetchKeyForm.addChild("#", l10n("keyRequestLabel") + ' ');
         fetchKeyForm.addChild("input", new String[]{"type", "size", "name"}, new String[]{"text", "80", "key"});
         fetchKeyForm.addChild("input", new String[]{"type", "value"}, new String[]{"submit", l10n("fetch")});

@@ -28,7 +28,6 @@ import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.client.async.SimpleBlockSet;
 import freenet.clients.http.LinkFixer;
-import freenet.clients.http.ToadletContainer;
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
@@ -541,7 +540,7 @@ public class UpdateOverMandatoryManager {
 		}
 
 		@Override
-		public HTMLNode getHTMLText(ToadletContainer fixer) {
+		public HTMLNode getHTMLText(LinkFixer fixer) {
 			HTMLNode div = new HTMLNode("div");
 
 			div.addChild("p").addChild("#", l10n("intro"));

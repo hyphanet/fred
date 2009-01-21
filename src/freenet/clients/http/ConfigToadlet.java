@@ -56,7 +56,7 @@ public class ConfigToadlet extends Toadlet {
 
 		@Override
 		public String getText() {
-			return getHTMLText(container).toString();
+			return getHTMLText(NullLinkFixer.instance).toString();
 		}
 
 		@Override
@@ -65,13 +65,15 @@ public class ConfigToadlet extends Toadlet {
 		}
 
 		@Override
-		public HTMLNode getHTMLText(ToadletContainer fixer) {
+		public HTMLNode getHTMLText(LinkFixer fixer) {
 			HTMLNode alertNode = new HTMLNode("div");
 			alertNode.addChild("#", l10n("needRestart"));
 
 			if (node.isUsingWrapper()) {
 				alertNode.addChild("br");
-				HTMLNode restartForm = fixer.addFormChild(alertNode, "/", "restartForm");
+				HTMLNode restartForm = alertNode.addChild("form", //
+						new String[] { "action", "method", "enctype" },//
+				        new String[] { "/", "post", "multipart/form-data" });
 				restartForm.addChild("div");
 				restartForm.addChild("input",//
 						new String[] { "type", "name" },//
@@ -119,7 +121,7 @@ public class ConfigToadlet extends Toadlet {
 		String pass = request.getPartAsString("formPassword", 32);
 		if((pass == null) || !pass.equals(core.formPassword)) {
 			MultiValueTable<String,String> headers = new MultiValueTable<String,String>();
-			headers.put("Location", container.fixLink("/config/"));
+			headers.put("Location", "/config/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		}
@@ -229,7 +231,7 @@ public class ConfigToadlet extends Toadlet {
 				return;
 			} else {
 				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-				headers.put("Location", container.fixLink("/config/?mode="+MODE_SECURITY_LEVELS));
+				headers.put("Location", "/config/?mode="+MODE_SECURITY_LEVELS);
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				return;
 			}
@@ -320,9 +322,9 @@ public class ConfigToadlet extends Toadlet {
 		
 		HTMLNode infobox = contentNode.addChild(ctx.getPageMaker().getInfobox("infobox-normal", l10n("possibilitiesTitle")));
 		HTMLNode content = ctx.getPageMaker().getContentNode(infobox);
-		content.addChild("a", new String[]{"href", "title"}, new String[]{container.fixLink("/config/"), l10n("shortTitle")}, l10n("returnToNodeConfig"));
+		content.addChild("a", new String[]{"href", "title"}, new String[]{ctx.fixLink("/config/"), l10n("shortTitle")}, l10n("returnToNodeConfig"));
 		content.addChild("br");
-		addHomepageLink(content, container);
+		addHomepageLink(content, ctx);
 
 		writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 		
@@ -348,9 +350,9 @@ public class ConfigToadlet extends Toadlet {
 		HTMLNode pageNode = ctx.getPageMaker().getPageNode(L10n.getString("ConfigToadlet.fullTitle", new String[] { "name" }, new String[] { node.getMyName() }), ctx);
 		HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 		
-		contentNode.addChild(core.alerts.createSummary(container));
+		contentNode.addChild(core.alerts.createSummary(ctx));
 		
-		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, container, req, contentNode, MODE_SECURITY_LEVELS, "SecurityLevels.title", "SecurityLevels.tooltip", "/config/");
+		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, ctx, req, contentNode, MODE_SECURITY_LEVELS, "SecurityLevels.title", "SecurityLevels.tooltip", "/config/");
 		
 		if(mode == MODE_SECURITY_LEVELS) {
 			drawSecurityLevelsPage(contentNode, ctx);
@@ -360,7 +362,7 @@ public class ConfigToadlet extends Toadlet {
 			HTMLNode navigationBar = ctx.getPageMaker().getInfobox("navbar", l10n("configNavTitle"));
 			HTMLNode navigationContent = ctx.getPageMaker().getContentNode(navigationBar).addChild("ul");
 			if(!L10n.getSelectedLanguage().equals(L10n.LANGUAGE.getDefault()))
-				navigationContent.addChild("a", "href", container.fixLink(TranslationToadlet.TOADLET_URL), l10n("contributeTranslation"));
+				navigationContent.addChild("a", "href", ctx.fixLink(TranslationToadlet.TOADLET_URL), l10n("contributeTranslation"));
 			HTMLNode navigationTable = navigationContent.addChild("table", "class", "config_navigation");
 			HTMLNode navigationTableRow = navigationTable.addChild("tr");
 			HTMLNode nextTableCell = navigationTableRow;
@@ -388,9 +390,9 @@ public class ConfigToadlet extends Toadlet {
 				String defaultValue = "128";
 				item.addChild("span", new String[]{ "class", "title", "style" },
 						new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { defaultValue }),
-						"cursor: help;" }).addChild(L10n.getHTMLNode("WrapperConfig."+configName+".short", container));
+						"cursor: help;" }).addChild(L10n.getHTMLNode("WrapperConfig."+configName+".short", ctx));
 				item.addChild("span", "class", "config").addChild("input", new String[] { "type", "class", "name", "value" }, new String[] { "text", "config", configName, curValue });
-				item.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode("WrapperConfig."+configName+".long", container));
+				item.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode("WrapperConfig."+configName+".long", ctx));
 			}
 		}
 		
@@ -409,7 +411,7 @@ public class ConfigToadlet extends Toadlet {
 					HTMLNode configItemNode = configGroupUlNode.addChild("li");
 					configItemNode.addChild("span", new String[]{ "class", "title", "style" },
 							new String[]{ "configshortdesc", L10n.getString("ConfigToadlet.defaultIs", new String[] { "default" }, new String[] { o[j].getDefault() }) + (mode >= PageMaker.MODE_ADVANCED ? " ["+sc[i].getPrefix() + '.' + o[j].getName() + ']' : ""),
-							"cursor: help;" }).addChild(L10n.getHTMLNode(o[j].getShortDesc(), container));
+							"cursor: help;" }).addChild(L10n.getHTMLNode(o[j].getShortDesc(), ctx));
 					HTMLNode configItemValueNode = configItemNode.addChild("span", "class", "config");
 					if(o[j].getValueString() == null){
 						Logger.error(this, sc[i].getPrefix() + configName + "has returned null from config!);");
@@ -434,7 +436,7 @@ public class ConfigToadlet extends Toadlet {
 						        new String[] { "text", "config", o[j].getShortDesc(),
 						                sc[i].getPrefix() + '.' + configName, o[j].getValueString() });
 
-					configItemNode.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode(o[j].getLongDesc(), container));
+					configItemNode.addChild("span", "class", "configlongdesc").addChild(L10n.getHTMLNode(o[j].getLongDesc(), ctx));
 				}
 			}
 			
