@@ -42,6 +42,7 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 	
 	protected void start() {
 		mNode.executor.execute(this, mName);
+		Logger.debug(this, this.getClass().getSimpleName() + " started.");
 	}
 	
 	/** Specify the priority of this thread. Priorities to return can be found in class NativeThread. */
@@ -62,8 +63,11 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 			Thread.interrupted();
 			
 			try {
+				Logger.debug(this, "Loop running...");
 				iterate();
-				Thread.sleep(getSleepTime());
+				long sleepTime = getSleepTime();
+				Logger.debug(this, "Loop finished. Sleeping for " + (sleepTime/(1000*60)) + " minutes.");
+				Thread.sleep(sleepTime);
 			}
 			catch(InterruptedException e) {
 				mThread.interrupt();
@@ -148,6 +152,7 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 	}
 	
 	public void terminate() {
+		Logger.debug(this, "Terminating...");
 		isRunning = false;
 		mThread.interrupt();
 		
@@ -161,6 +166,7 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 				}
 			}
 		}
+		Logger.debug(this, "Terminated.");
 	}
 	
 	
