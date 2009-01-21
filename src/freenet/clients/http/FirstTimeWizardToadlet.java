@@ -478,11 +478,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step="+WIZARD_STEP.BANDWIDTH);
 			return;
 		} else if(request.isPartSet("bwF")) {
-			_setUpstreamBandwidthLimit(request.getPartAsString("bw", 6));
+			_setUpstreamBandwidthLimit(request.getPartAsString("bw", 20));
 			super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step="+WIZARD_STEP.DATASTORE_SIZE);
 			return;
 		} else if(request.isPartSet("dsF")) {
-			_setDatastoreSize(request.getPartAsString("ds", 6));
+			_setDatastoreSize(request.getPartAsString("ds", 20));
 			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step="+WIZARD_STEP.MEMORY);
 			return;
 		} else if(request.isPartSet("memoryF")) {
