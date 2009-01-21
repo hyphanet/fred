@@ -64,8 +64,8 @@ public class ConnectivityToadlet extends Toadlet {
 
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary(ctx));
-		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, ctx, request, contentNode, "/connectivity/");
+			contentNode.addChild(core.alerts.createSummary());
+		final int mode = ctx.getPageMaker().drawModeSelectionArray(core, request, contentNode);
 
 		// Add connection type box.
 		

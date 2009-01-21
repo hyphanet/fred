@@ -520,7 +520,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 							String mimeType = clientGet.getMIMEType();
 							String requestedMimeType = request.getParam("type", null);
 							String forceString = request.getParam("force");
-							FProxyToadlet.handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, forceString, request.isParameterSet("forcedownload"), "/queue/", uri, "", "/queue/", false, ctx, core);
+							FProxyToadlet.handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, forceString, request.isParameterSet("forcedownload"), "/queue/", key, "", "/queue/", false, ctx, core);
 							return;
 						}
 					}
@@ -673,8 +673,8 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 
 		/* add alert summary box */
 		if(ctx.isAllowedFullAccess())
-			contentNode.addChild(core.alerts.createSummary(ctx));
-		final int mode = pageMaker.drawModeSelectionArray(core, ctx, request, contentNode, "/queue/");
+			contentNode.addChild(core.alerts.createSummary());
+		final int mode = pageMaker.drawModeSelectionArray(core, request, contentNode);
 		/* add file insert box */
 		contentNode.addChild(createInsertBox(pageMaker, ctx, mode >= PageMaker.MODE_ADVANCED));
 

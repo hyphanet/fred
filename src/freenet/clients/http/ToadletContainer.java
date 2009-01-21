@@ -12,7 +12,7 @@ import freenet.support.HTMLNode;
 import freenet.support.api.BucketFactory;
 
 /** Interface for toadlet containers. Toadlets should register here. */
-public interface ToadletContainer extends LinkFixer {
+public interface ToadletContainer {
 	
 	/** Register a Toadlet. All requests whose URL starts with the given
 	 * prefix will be passed to this toadlet.
@@ -62,21 +62,6 @@ public interface ToadletContainer extends LinkFixer {
 	 * node etc, but everyone else will not have access to the download 
 	 * queue or anything else that might conceivably result in a DoS. */
 	public boolean publicGatewayMode();
-
-	/** Generate the secure-id for a specific path. This is a longish string
-	 * which is generated from a node-specific nonce and the URI. It must be
-	 * supplied or the node will complain. It is used to ensure that guessable
-	 * URIs don't go into the browser history.
-	 * @param realPath
-	 * @return
-	 */
-	public String generateSID(String realPath);
-
-	/**
-	 * If true, secure-id checking is disabled.
-	 * @return
-	 */
-	public boolean isSecureIDCheckingDisabled();
 
 	public boolean enableActivelinks();
 }
