@@ -86,6 +86,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 		this.fcp = fcp;
 		if(fcp == null) throw new NullPointerException();
 		fcp.setCompletionCallback(this);
+		loadCompletedIdentifiers();
 	}
 	
 	@Override
@@ -126,7 +127,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 				}
 				
 				MultiValueTable<String, String> responseHeaders = new MultiValueTable<String, String>();
-				responseHeaders.put("Location", ctx.fixLink("/files/?key="+insertURI.toASCIIString()));
+				responseHeaders.put("Location", "/files/?key="+insertURI.toASCIIString());
 				ctx.sendReplyHeaders(302, "Found", responseHeaders, null, 0);
 				return;
 			}			
@@ -134,7 +135,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 			String pass = request.getPartAsString("formPassword", 32);
 			if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
 				MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-				headers.put("Location", ctx.fixLink("/queue/"));
+				headers.put("Location", "/queue/");
 				ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 				if(logMINOR) Logger.minor(this, "No formPassword: "+pass);
 				return;
@@ -167,7 +168,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					}
 				}
 				fcp.forceStorePersistentRequests();
-				writePermanentRedirect(ctx, "Done", ctx.fixLink("/queue/"));
+				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if(request.isPartSet("remove_AllRequests") && (request.getPartAsString("remove_AllRequests", 32).length() > 0)) {
 				
@@ -196,7 +197,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 									new String[]{ failedIdentifiers.toString() }
 							));
 				else
-					writePermanentRedirect(ctx, "Done", ctx.fixLink("/queue/"));
+					writePermanentRedirect(ctx, "Done", "/queue/");
 				fcp.forceStorePersistentRequests();
 				return;
 			}else if(request.isPartSet("download")) {
@@ -224,13 +225,13 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					this.writeError(L10n.getString("QueueToadlet.errorDToDisk"), L10n.getString("QueueToadlet.errorDToDiskConfig"), ctx);
 					return;
 				}
-				writePermanentRedirect(ctx, "Done", ctx.fixLink("/queue/"));
+				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			}else if(request.isPartSet("bulkDownloads")) {
 				String bulkDownloadsAsString = request.getPartAsString("bulkDownloads", Integer.MAX_VALUE);
 				String[] keys = bulkDownloadsAsString.split("\n");
 				if(("".equals(bulkDownloadsAsString)) || (keys.length < 1)) {
-					writePermanentRedirect(ctx, "Done", ctx.fixLink("/queue/"));
+					writePermanentRedirect(ctx, "Done", "/queue/");
 					return;
 				}
 				LinkedList<String> success = new LinkedList<String>(), failure = new LinkedList<String>();
@@ -277,7 +278,7 @@ public class QueueToadlet extends Toadlet implements RequestCompletionCallback, 
 					}
 					failureDiv.addChild("br");
 				}
-				alertContent.addChild("a", "href", ctx.fixLink("/queue/"), L10n.getString("Toadlet.returnToQueuepage"));
+				alertContent.addChild("a", "href", "/queue/", L10n.getString("Toadlet.returnToQueuepage"));
 				writeHTMLReply(ctx, 200, "OK", pageNode.generate());
 				return;
 			} else if (request.isPartSet("change_priority")) {
@@ -291,7 +292,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 						break loop;
 					}
 				}
-				writePermanentRedirect(ctx, "Done", ctx.fixLink("/queue/"));
+				writePermanentRedirect(ctx, "Done", "/queue/");
 				fcp.forceStorePersistentRequests();
 				return;
 			} else if (request.getPartAsString("insert", 128).length() > 0) {
@@ -341,7 +342,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					writeError(L10n.getString("QueueToadlet.errorInvalidURI"), L10n.getString("QueueToadlet.errorInvalidURIToU"), ctx);
 					return;
 				}
-				writePermanentRedirect(ctx, "Done", ctx.fixLink("/queue/"));
+				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if (request.isPartSet("insert-local-file")) {
 				String filename = request.getPartAsString("filename", MAX_FILENAME_LENGTH);
@@ -379,7 +380,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					this.writeError(L10n.getString("QueueToadlet.errorAccessDenied"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.getName() }), ctx);
 					return;
 				}
-				writePermanentRedirect(ctx, "Done", ctx.fixLink("/queue/"));
+				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if (request.isPartSet("insert-local-dir")) {
 				String filename = request.getPartAsString("filename", MAX_FILENAME_LENGTH);
@@ -410,7 +411,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					this.writeError(L10n.getString("QueueToadlet.errorNoFileOrCannotRead"), L10n.getString("QueueToadlet.errorAccessDeniedFile", new String[]{ "file" }, new String[]{ file.toString() }), ctx);
 					return;
 				}
-				writePermanentRedirect(ctx, "Done", ctx.fixLink("/queue/"));
+				writePermanentRedirect(ctx, "Done", "/queue/");
 				return;
 			} else if (request.isPartSet("get")) {
 				String identifier = request.getPartAsString("identifier", MAX_IDENTIFIER_LENGTH);
@@ -519,7 +520,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 							String mimeType = clientGet.getMIMEType();
 							String requestedMimeType = request.getParam("type", null);
 							String forceString = request.getParam("force");
-							FProxyToadlet.handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, forceString, request.isParameterSet("forcedownload"), "/queue/", key, uri, "", "/queue/", false, ctx, core);
+							FProxyToadlet.handleDownload(ctx, data, ctx.getBucketFactory(), mimeType, requestedMimeType, forceString, request.isParameterSet("forcedownload"), "/queue/", key, "", "/queue/", false, ctx, core);
 							return;
 						}
 					}
@@ -982,10 +983,10 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		return panicBox;
 	}
 	
-	private HTMLNode createIdentifierCell(FreenetURI uri, String identifier, boolean directory, ToadletContext ctx) {
+	private HTMLNode createIdentifierCell(FreenetURI uri, String identifier, boolean directory) {
 		HTMLNode identifierCell = new HTMLNode("td", "class", "request-identifier");
 		if (uri != null) {
-			identifierCell.addChild("span", "class", "identifier_with_uri").addChild("a", "href", ctx.fixLink("/" + uri + (directory ? "/" : "")), identifier);
+			identifierCell.addChild("span", "class", "identifier_with_uri").addChild("a", "href", "/" + uri + (directory ? "/" : ""), identifier);
 		} else {
 			identifierCell.addChild("span", "class", "identifier_without_uri", identifier);
 		}
@@ -1004,9 +1005,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		return persistenceCell;
 	}
 
-	private HTMLNode createDownloadCell(PageMaker pageMaker, ClientGet p, ToadletContext ctx) {
+	private HTMLNode createDownloadCell(PageMaker pageMaker, ClientGet p) {
 		HTMLNode downloadCell = new HTMLNode("td", "class", "request-download");
-		downloadCell.addChild("a", "href", ctx.fixLink("/queue/"+p.getURI().toString()), L10n.getString("QueueToadlet.download"));
+		downloadCell.addChild("a", "href", p.getURI().toString(), L10n.getString("QueueToadlet.download"));
 		return downloadCell;
 	}
 
@@ -1030,10 +1031,10 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		return sizeCell;
 	}
 
-	private HTMLNode createKeyCell(FreenetURI uri, boolean addSlash, ToadletContext ctx) {
+	private HTMLNode createKeyCell(FreenetURI uri, boolean addSlash) {
 		HTMLNode keyCell = new HTMLNode("td", "class", "request-key");
 		if (uri != null) {
-			keyCell.addChild("span", "class", "key_is").addChild("a", "href", ctx.fixLink('/' + uri.toString() + (addSlash ? "/" : "")), uri.toShortString() + (addSlash ? "/" : ""));
+			keyCell.addChild("span", "class", "key_is").addChild("a", "href", '/' + uri.toString() + (addSlash ? "/" : ""), uri.toShortString() + (addSlash ? "/" : ""));
 		} else {
 			keyCell.addChild("span", "class", "key_unknown", L10n.getString("QueueToadlet.unknown"));
 		}
@@ -1093,9 +1094,9 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		for (int columnIndex = 0, columnCount = columns.length; columnIndex < columnCount; columnIndex++) {
 			int column = columns[columnIndex];
 			if (column == LIST_IDENTIFIER) {
-				headerRow.addChild("th").addChild("a", "href", ctx.fixLink((isReversed ? "?sortBy=id" : "?sortBy=id&reversed"))).addChild("#", L10n.getString("QueueToadlet.identifier"));
+				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=id" : "?sortBy=id&reversed")).addChild("#", L10n.getString("QueueToadlet.identifier"));
 			} else if (column == LIST_SIZE) {
-				headerRow.addChild("th").addChild("a", "href", ctx.fixLink((isReversed ? "?sortBy=size" : "?sortBy=size&reversed"))).addChild("#", L10n.getString("QueueToadlet.size"));
+				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=size" : "?sortBy=size&reversed")).addChild("#", L10n.getString("QueueToadlet.size"));
 			} else if (column == LIST_DOWNLOAD) {
 				headerRow.addChild("th", L10n.getString("QueueToadlet.download"));
 			} else if (column == LIST_MIME_TYPE) {
@@ -1107,13 +1108,13 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			} else if (column == LIST_FILENAME) {
 				headerRow.addChild("th", L10n.getString("QueueToadlet.fileName"));
 			} else if (column == LIST_PRIORITY) {
-				headerRow.addChild("th").addChild("a", "href", ctx.fixLink((isReversed ? "?sortBy=priority" : "?sortBy=priority&reversed"))).addChild("#", L10n.getString("QueueToadlet.priority"));
+				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=priority" : "?sortBy=priority&reversed")).addChild("#", L10n.getString("QueueToadlet.priority"));
 			} else if (column == LIST_FILES) {
 				headerRow.addChild("th", L10n.getString("QueueToadlet.files"));
 			} else if (column == LIST_TOTAL_SIZE) {
 				headerRow.addChild("th", L10n.getString("QueueToadlet.totalSize"));
 			} else if (column == LIST_PROGRESS) {
-				headerRow.addChild("th").addChild("a", "href", ctx.fixLink((isReversed ? "?sortBy=progress" : "?sortBy=progress&reversed"))).addChild("#", L10n.getString("QueueToadlet.progress"));
+				headerRow.addChild("th").addChild("a", "href", (isReversed ? "?sortBy=progress" : "?sortBy=progress&reversed")).addChild("#", L10n.getString("QueueToadlet.progress"));
 			} else if (column == LIST_REASON) {
 				headerRow.addChild("th", L10n.getString("QueueToadlet.reason"));
 			}
@@ -1126,11 +1127,11 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 				int column = columns[columnIndex];
 				if (column == LIST_IDENTIFIER) {
 					if (clientRequest instanceof ClientGet) {
-						requestRow.addChild(createIdentifierCell(((ClientGet) clientRequest).getURI(), clientRequest.getIdentifier(), false, ctx));
+						requestRow.addChild(createIdentifierCell(((ClientGet) clientRequest).getURI(), clientRequest.getIdentifier(), false));
 					} else if (clientRequest instanceof ClientPutDir) {
-						requestRow.addChild(createIdentifierCell(((ClientPutDir) clientRequest).getFinalURI(), clientRequest.getIdentifier(), true, ctx));
+						requestRow.addChild(createIdentifierCell(((ClientPutDir) clientRequest).getFinalURI(), clientRequest.getIdentifier(), true));
 					} else if (clientRequest instanceof ClientPut) {
-						requestRow.addChild(createIdentifierCell(((ClientPut) clientRequest).getFinalURI(), clientRequest.getIdentifier(), false, ctx));
+						requestRow.addChild(createIdentifierCell(((ClientPut) clientRequest).getFinalURI(), clientRequest.getIdentifier(), false));
 					}
 				} else if (column == LIST_SIZE) {
 					if (clientRequest instanceof ClientGet) {
@@ -1139,7 +1140,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 						requestRow.addChild(createSizeCell(((ClientPut) clientRequest).getDataSize(), true, advancedModeEnabled));
 					}
 				} else if (column == LIST_DOWNLOAD) {
-					requestRow.addChild(createDownloadCell(pageMaker, (ClientGet) clientRequest, ctx));
+					requestRow.addChild(createDownloadCell(pageMaker, (ClientGet) clientRequest));
 				} else if (column == LIST_MIME_TYPE) {
 					if (clientRequest instanceof ClientGet) {
 						requestRow.addChild(createTypeCell(((ClientGet) clientRequest).getMIMEType()));
@@ -1150,11 +1151,11 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 					requestRow.addChild(createPersistenceCell(clientRequest.isPersistent(), clientRequest.isPersistentForever()));
 				} else if (column == LIST_KEY) {
 					if (clientRequest instanceof ClientGet) {
-						requestRow.addChild(createKeyCell(((ClientGet) clientRequest).getURI(), false, ctx));
+						requestRow.addChild(createKeyCell(((ClientGet) clientRequest).getURI(), false));
 					} else if (clientRequest instanceof ClientPut) {
-						requestRow.addChild(createKeyCell(((ClientPut) clientRequest).getFinalURI(), false, ctx));
+						requestRow.addChild(createKeyCell(((ClientPut) clientRequest).getFinalURI(), false));
 					}else {
-						requestRow.addChild(createKeyCell(((ClientPutDir) clientRequest).getFinalURI(), true, ctx));
+						requestRow.addChild(createKeyCell(((ClientPutDir) clientRequest).getFinalURI(), true));
 					}
 				} else if (column == LIST_FILENAME) {
 					if (clientRequest instanceof ClientGet) {
@@ -1210,7 +1211,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 		}, "Save completed identifiers");
 	}
 
-	void loadCompletedIdentifiers() {
+	private void loadCompletedIdentifiers() {
 		File completedIdentifiersList = new File(core.node.getNodeDir(), "completed.list");
 		File completedIdentifiersListNew = new File(core.node.getNodeDir(), "completed.list.bak");
 		if(!readCompletedIdentifiers(completedIdentifiersList)) {
@@ -1334,7 +1335,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode text = new HTMLNode("div");
 			L10n.addL10nSubstitution(text, "QueueToadlet.downloadSucceeded",
 					new String[] { "link", "/link", "origlink", "/origlink", "filename", "size" },
-					new String[] { "<a href=\""+container.fixLink("/queue/"+uri.toASCIIString())+"\">", "</a>", "<a href=\""+container.fixLink("/"+uri.toASCIIString())+"\">", "</a>", name, SizeUtil.formatSize(size) } );
+					new String[] { "<a href=\"/queue/"+uri.toASCIIString()+"\">", "</a>", "<a href=\"/"+uri.toASCIIString()+"\">", "</a>", name, SizeUtil.formatSize(size) } );
 			UserAlert alert = 
 			new SimpleHTMLUserAlert(true, title, title, text, UserAlert.MINOR) {
 				@Override
@@ -1368,7 +1369,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode text = new HTMLNode("div");
 			L10n.addL10nSubstitution(text, "QueueToadlet.uploadSucceeded",
 					new String[] { "link", "/link", "filename", "size" },
-					new String[] { "<a href=\""+container.fixLink("/"+uri.toASCIIString())+"\">", "</a>", name, SizeUtil.formatSize(size) } );
+					new String[] { "<a href=\"/"+uri.toASCIIString()+"\">", "</a>", name, SizeUtil.formatSize(size) } );
 			UserAlert alert = 
 			new SimpleHTMLUserAlert(true, title, title, text, UserAlert.MINOR) {
 				@Override
@@ -1399,7 +1400,7 @@ loop:				for (int requestIndex = 0, requestCount = clientRequests.length; reques
 			HTMLNode text = new HTMLNode("div");
 			L10n.addL10nSubstitution(text, "QueueToadlet.siteUploadSucceeded",
 					new String[] { "link", "/link", "filename", "size", "files" },
-					new String[] { "<a href=\""+container.fixLink("/"+uri.toASCIIString())+"\">", "</a>", name, SizeUtil.formatSize(size), Integer.toString(files) } );
+					new String[] { "<a href=\"/"+uri.toASCIIString()+"\">", "</a>", name, SizeUtil.formatSize(size), Integer.toString(files) } );
 			UserAlert alert = 
 			new SimpleHTMLUserAlert(true, title, title, text, UserAlert.MINOR) {
 				@Override

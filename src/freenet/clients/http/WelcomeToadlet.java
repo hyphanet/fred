@@ -289,7 +289,7 @@ public class WelcomeToadlet extends Toadlet {
                 }
             }
             content.addChild("br");
-            addHomepageLink(content, ctx);
+            addHomepageLink(content);
 
             writeHTMLReply(ctx, 200, "OK", pageNode.generate());
             request.freeParts();
@@ -344,7 +344,7 @@ public class WelcomeToadlet extends Toadlet {
             }
 
             content.addChild("br");
-            addHomepageLink(content, ctx);
+            addHomepageLink(content);
 
             writeHTMLReply(ctx, 200, "OK", pageNode.generate());
             request.freeParts();
@@ -556,12 +556,7 @@ public class WelcomeToadlet extends Toadlet {
         // Search form
         if(core.node.pluginManager != null && 
         		core.node.pluginManager.isPluginLoaded("plugins.XMLLibrarian.XMLLibrarian")) {
-        	// XMLLibrarian <= version 18 only support GET.
-        	// But GET forms don't work with secureid checking enabled.
-        	// FIXME eventually switch to all POST.
-        	HTMLNode form = ctx.getContainer().isSecureIDCheckingDisabled() ? 
-        			searchBox.addChild("form", new String[] { "method", "action" }, new String[] { "GET", "/plugins/plugins.XMLLibrarian.XMLLibrarian" }) : 
-        				ctx.addFormChild(searchBox, "/plugins/plugins.XMLLibrarian.XMLLibrarian", "searchBox");
+        	HTMLNode form = searchBox.addChild("form", new String[] { "method", "action" }, new String[] { "GET", "/plugins/plugins.XMLLibrarian.XMLLibrarian" });
         	form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "choice", "index" });
         	form.addChild("input", new String[] { "type", "size", "name" }, new String[] { "text", "80", "search" });
         	form.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "find", "Search Freenet!" });
