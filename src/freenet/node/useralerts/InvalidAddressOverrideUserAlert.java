@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
-import freenet.clients.http.LinkFixer;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.l10n.L10n;
@@ -34,7 +33,7 @@ public class InvalidAddressOverrideUserAlert extends AbstractUserAlert {
 	}
 
 	@Override
-	public HTMLNode getHTMLText(LinkFixer fixer) {
+	public HTMLNode getHTMLText() {
 		SubConfig sc = node.config.get("node");
 		Option<?> o = sc.getOption("ipAddressOverride");
 		

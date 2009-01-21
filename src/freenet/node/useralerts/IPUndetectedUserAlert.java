@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
-import freenet.clients.http.LinkFixer;
 import freenet.config.Option;
 import freenet.config.SubConfig;
 import freenet.l10n.L10n;
@@ -47,10 +46,10 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 	}
 
 	@Override
-	public HTMLNode getHTMLText(LinkFixer fixer) {
+	public HTMLNode getHTMLText() {
 		if(node.ipDetector.noDetectPlugins()) {
 			HTMLNode p = new HTMLNode("p");
-			L10n.addL10nSubstitution(p, "IPUndetectedUserAlert.loadDetectPlugins", new String[] { "plugins", "/plugins", "config", "/config" }, new String[] { "<a href=\""+fixer.fixLink("/plugins/")+"\">", "</a>", "<a href=\""+fixer.fixLink("/config/")+"\">", "</a>" });
+			L10n.addL10nSubstitution(p, "IPUndetectedUserAlert.loadDetectPlugins", new String[] { "plugins", "/plugins", "config", "/config" }, new String[] { "<a href=\"/plugins/\">", "</a>", "<a href=\"/config/\">", "</a>" });
 			return p;
 		}
 		HTMLNode textNode = new HTMLNode("div");
@@ -59,7 +58,7 @@ public class IPUndetectedUserAlert extends AbstractUserAlert {
 		
 		L10n.addL10nSubstitution(textNode, "IPUndetectedUserAlert."+(node.ipDetector.isDetecting() ? "detectingWithConfigLink" : "unknownAddressWithConfigLink"), 
 				new String[] { "link", "/link" }, 
-				new String[] { "<a href=\""+fixer.fixLink("/config/")+"\">", "</a>" });
+				new String[] { "<a href=\"/config/\">", "</a>" });
 		addPortForwardSuggestion(textNode);
 		HTMLNode formNode = textNode.addChild("form", new String[] { "action", "method" }, new String[] { "/config/", "post" });
 		formNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "formPassword", node.clientCore.formPassword });

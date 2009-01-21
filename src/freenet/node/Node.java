@@ -37,9 +37,7 @@ import com.sleepycat.je.StatsConfig;
 
 import freenet.client.FetchContext;
 import freenet.clients.http.LinkFixer;
-import freenet.clients.http.NullLinkFixer;
 import freenet.clients.http.SimpleToadletServer;
-import freenet.clients.http.ToadletContainer;
 import freenet.config.EnumerableOptionCallback;
 import freenet.config.FreenetFilePersistentConfig;
 import freenet.config.InvalidConfigValueException;
@@ -1850,7 +1848,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				                .getString("Node.storeSaltHashMigratedShort"), UserAlert.MINOR) {
 					
 					@Override
-					public HTMLNode getHTMLText(LinkFixer fixer) {
+					public HTMLNode getHTMLText() {
 						HTMLNode div = new HTMLNode("div");
 						div.addChild("#", L10n.getString("Node.storeSaltHashMigrated"));
 						HTMLNode ul = div.addChild("ul");
@@ -2351,11 +2349,11 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				clientCore.alerts.register(new AbstractUserAlert(false, null, null, null, null, UserAlert.ERROR, true, null, false, null) {
 
 					@Override
-					public HTMLNode getHTMLText(LinkFixer fixer) {
+					public HTMLNode getHTMLText() {
 						HTMLNode n = new HTMLNode("div");
 						L10n.addL10nSubstitution(n, "Node.buggyJVMWithLink", 
 								new String[] { "link", "/link", "version" },
-								new String[] { "<a href=\""+fixer.fixLink("/?_CHECKED_HTTP_=http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795")+"\">", 
+								new String[] { "<a href=\"/?_CHECKED_HTTP_=http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4855795\">",
 								"</a>", HTMLEncoder.encode(System.getProperty("java.version")) });
 						return n;
 					}
@@ -4053,13 +4051,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	
 	public boolean shallWeRouteAccordingToOurPeersLocation() {
 		return routeAccordingToOurPeersLocation && Version.lastGoodBuild() >= 1160;
-	}
-
-	public LinkFixer getLinkFilter() {
-		if(clientCore == null) return NullLinkFixer.instance;
-		ToadletContainer container = clientCore.toadletContainer;
-		if(container == null) return NullLinkFixer.instance;
-		return container;
 	}
 
 	private volatile long turtleCount;

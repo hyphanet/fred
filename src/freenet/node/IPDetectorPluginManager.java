@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Vector;
 
-import freenet.clients.http.LinkFixer;
 import freenet.clients.http.filter.GenericReadFilterCallback;
 import freenet.io.AddressTracker;
 import freenet.io.comm.FreenetInetAddress;
@@ -53,7 +52,7 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			return L10n.getString("UserAlert.hide");
 		}
 
-		public HTMLNode getHTMLText(LinkFixer fixer) {
+		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
 			String url = GenericReadFilterCallback.escapeURL(HTMLEncoder.encode(l10n("portForwardHelpURL")));
 			boolean maybeForwarded = true;
@@ -64,11 +63,11 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 			if(portsNotForwarded.length == 1) {
 				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.forwardPort"+keySuffix, 
 						new String[] { "port", "link", "/link" }, 
-						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), "<a href=\""+fixer.fixLink(url)+"\">", "</a>" });
+						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), "<a href=\""+url+"\">", "</a>" });
 			} else if(portsNotForwarded.length == 2) {
 				L10n.addL10nSubstitution(div, "IPDetectorPluginManager.forwardTwoPorts"+keySuffix, 
 						new String[] { "port1", "port2", "link", "/link" }, 
-						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), Integer.toString(Math.abs(portsNotForwarded[1])), "<a href=\""+fixer.fixLink(url)+"\">", "</a>" });
+						new String[] { Integer.toString(Math.abs(portsNotForwarded[0])), Integer.toString(Math.abs(portsNotForwarded[1])), "<a href=\""+url+"\">", "</a>" });
 			} else {
 				Logger.error(this, "Unknown number of ports to forward: "+portsNotForwarded.length);
 			}
@@ -189,16 +188,16 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		}
 
 		@Override
-		public HTMLNode getHTMLText(LinkFixer fixer) {
+		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
 			div.addChild("#", super.getText());
 			if(suggestPortForward) {
 				if(portsNotForwarded.length == 1) {
 					L10n.addL10nSubstitution(div, "IPDetectorPluginManager.suggestForwardPortWithLink", new String[] { "link", "/link", "port" },
-							new String[] { "<a href=\""+fixer.fixLink("/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues")+"\">", "</a>", Integer.toString(portsNotForwarded[0]) });
+							new String[] { "<a href=\"/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues\">", "</a>", Integer.toString(portsNotForwarded[0]) });
 				} else {
 					L10n.addL10nSubstitution(div, "IPDetectorPluginManager.suggestForwardTwoPortsWithLink", new String[] { "link", "/link", "port1", "port2" },
-							new String[] { "<a href=\""+fixer.fixLink("/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues")+"\">", "</a>", Integer.toString(portsNotForwarded[0]), Integer.toString(portsNotForwarded[1]) });
+							new String[] { "<a href=\"/?_CHECKED_HTTP_=http://wiki.freenetproject.org/FirewallAndRouterIssues\">", "</a>", Integer.toString(portsNotForwarded[0]), Integer.toString(portsNotForwarded[1]) });
 				}
 			}
 			return div;
@@ -934,11 +933,11 @@ public class IPDetectorPluginManager implements ForwardPortCallback {
 		return plugins.length > 0;
 	}
 
-	public void addConnectionTypeBox(HTMLNode contentNode, LinkFixer ctx) {
+	public void addConnectionTypeBox(HTMLNode contentNode) {
 		if(node.clientCore == null) return;
 		if(node.clientCore.alerts == null) return;
 		if(proxyAlert.isValid())
-			contentNode.addChild(node.clientCore.alerts.renderAlert(proxyAlert, ctx));
+			contentNode.addChild(node.clientCore.alerts.renderAlert(proxyAlert));
 	}
 	
 }

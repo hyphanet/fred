@@ -3,7 +3,6 @@ package freenet.pluginmanager;
 import java.net.URISyntaxException;
 
 import freenet.client.HighLevelSimpleClient;
-import freenet.clients.http.NullLinkFixer;
 import freenet.clients.http.PageMaker;
 import freenet.clients.http.filter.FilterCallback;
 import freenet.node.Node;
@@ -40,7 +39,7 @@ public class PluginRespirator {
 
 	public FilterCallback makeFilterCallback(String path) {
 		try {
-			return node.clientCore.createFilterCallback(URIPreEncoder.encodeURI(path), null, node.getLinkFilter());
+			return node.clientCore.createFilterCallback(URIPreEncoder.encodeURI(path), null);
 		} catch (URISyntaxException e) {
 			throw new Error(e);
 		}

@@ -27,7 +27,6 @@ import freenet.client.async.ClientCallback;
 import freenet.client.async.ClientGetter;
 import freenet.client.async.ClientPutter;
 import freenet.client.async.SimpleBlockSet;
-import freenet.clients.http.LinkFixer;
 import freenet.io.comm.AsyncMessageCallback;
 import freenet.io.comm.DMT;
 import freenet.io.comm.DisconnectedException;
@@ -540,7 +539,7 @@ public class UpdateOverMandatoryManager {
 		}
 
 		@Override
-		public HTMLNode getHTMLText(LinkFixer fixer) {
+		public HTMLNode getHTMLText() {
 			HTMLNode div = new HTMLNode("div");
 
 			div.addChild("p").addChild("#", l10n("intro"));

@@ -15,7 +15,6 @@ import freenet.client.async.SimpleHealingQueue;
 import freenet.client.async.USKManager;
 import freenet.client.events.SimpleEventProducer;
 import freenet.clients.http.FProxyToadlet;
-import freenet.clients.http.LinkFixer;
 import freenet.clients.http.SimpleToadletServer;
 import freenet.clients.http.filter.FilterCallback;
 import freenet.clients.http.filter.FoundURICallback;
@@ -1166,10 +1165,10 @@ public class NodeClientCore implements Persistable {
 		return node.getMyName();
 	}
 
-	public FilterCallback createFilterCallback(URI uri, FoundURICallback cb, LinkFixer fixer) {
+	public FilterCallback createFilterCallback(URI uri, FoundURICallback cb) {
 		if(logMINOR)
-			Logger.minor(this, "Creating filter callback: " + uri + ", " + cb+" , "+fixer);
-		return new GenericReadFilterCallback(uri, cb, fixer);
+			Logger.minor(this, "Creating filter callback: " + uri + ", " + cb);
+		return new GenericReadFilterCallback(uri, cb);
 	}
 
 	public int maxBackgroundUSKFetchers() {

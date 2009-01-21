@@ -29,7 +29,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.spaceroots.mantissa.random.MersenneTwister;
 import org.tanukisoftware.wrapper.WrapperManager;
 
-import freenet.clients.http.LinkFixer;
 import freenet.keys.KeyVerifyException;
 import freenet.l10n.L10n;
 import freenet.node.SemiOrderedShutdownHook;
@@ -1418,7 +1417,7 @@ public class SaltedHashFreenetStore implements FreenetStore {
 			return L10n.getString("UserAlert.hide");
 		}
 
-		public HTMLNode getHTMLText(LinkFixer fixer) {
+		public HTMLNode getHTMLText() {
 			return new HTMLNode("#", getText());
 		}
 

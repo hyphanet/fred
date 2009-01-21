@@ -8,8 +8,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 
-import freenet.clients.http.LinkFixer;
-import freenet.clients.http.ToadletContext;
 import freenet.l10n.L10n;
 import freenet.node.NodeClientCore;
 import freenet.support.HTMLNode;
@@ -103,7 +101,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	/**
 	 * Write the alerts as HTML.
 	 */
-	public HTMLNode createAlerts(LinkFixer fixer) {
+	public HTMLNode createAlerts() {
 		HTMLNode alertsNode = new HTMLNode("div");
 		UserAlert[] alerts = getAlerts();
 		int totalNumber = 0;
@@ -113,7 +111,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 				continue;
 			totalNumber++;
 			alertsNode.addChild("a", "name", alert.anchor());
-			alertsNode.addChild(renderAlert(alert, fixer));
+			alertsNode.addChild(renderAlert(alert));
 		}
 		if (totalNumber == 0) {
 			return new HTMLNode("#", "");
@@ -125,7 +123,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	 * Write each alert in uber-concise form as HTML, with a link to 
 	 * /alerts/[ anchor pointing to the real alert].
 	 */
-	public HTMLNode createAlertsShort(String title, boolean advancedMode, boolean drawDumpEventsForm, ToadletContext ctx) {
+	public HTMLNode createAlertsShort(String title, boolean advancedMode, boolean drawDumpEventsForm) {
 		UserAlert[] currentAlerts = getAlerts();
 		short maxLevel = Short.MAX_VALUE;
 		int events = 0;
@@ -151,7 +149,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 			if (!alert.isValid())
 				continue;
 			HTMLNode listItem = alertsNode.addChild("li", "class", "alert-summary-text-"+getAlertLevelName(alert.getPriorityClass()));
-			listItem.addChild("a", "href", ctx.fixLink("/alerts/#"+alert.anchor()), alert.getShortText());
+			listItem.addChild("a", "href", "/alerts/#"+alert.anchor(), alert.getShortText());
 			totalNumber++;
 		}
 		if(drawDumpEventsForm) {
@@ -177,14 +175,14 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	 *            The user alert to render
 	 * @return The rendered HTML node
 	 */
-	public HTMLNode renderAlert(UserAlert userAlert, LinkFixer fixer) {
+	public HTMLNode renderAlert(UserAlert userAlert) {
 		HTMLNode userAlertNode = null;
 		short level = userAlert.getPriorityClass();
 		userAlertNode = new HTMLNode("div", "class", "infobox infobox-"+getAlertLevelName(level));
 
 		userAlertNode.addChild("div", "class", "infobox-header", userAlert.getTitle());
 		HTMLNode alertContentNode = userAlertNode.addChild("div", "class", "infobox-content");
-		alertContentNode.addChild(userAlert.getHTMLText(fixer));
+		alertContentNode.addChild(userAlert.getHTMLText());
 		if (userAlert.userCanDismiss()) {
 			HTMLNode dismissFormNode = alertContentNode.addChild("form", new String[] { "action", "method" }, new String[] { "/", "post" }).addChild("div");
 			dismissFormNode.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "disable", String.valueOf(userAlert.hashCode()) });
@@ -212,7 +210,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 	/**
 	 * Write the alert summary as HTML to a StringBuilder
 	 */
-	public HTMLNode createSummary(LinkFixer fixer) {
+	public HTMLNode createSummary() {
 		short highestLevel = 99;
 		int numberOfCriticalError = 0;
 		int numberOfError = 0;
@@ -290,7 +288,7 @@ public class UserAlertManager implements Comparator<UserAlert> {
 		summaryContent.addChild("#", " ");
 		L10n.addL10nSubstitution(summaryContent, "UserAlertManager.alertsOnAlertsPage",
 				new String[] { "link", "/link" },
-				new String[] { "<a href=\""+fixer.fixLink("/alerts/")+"\">", "</a>" });
+				new String[] { "<a href=\"/alerts/\">", "</a>" });
 		return summaryBox;
 	}
 

@@ -23,7 +23,6 @@ import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.MultiValueTable;
 import freenet.support.URIPreEncoder;
-import freenet.support.URLEncodedFormatException;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.BucketTools;
@@ -91,14 +90,6 @@ public class ToadletContextImpl implements ToadletContext, LinkFixer {
 	 */
 	private static void sendError(OutputStream os, int code, String httpReason, String message, boolean shouldDisconnect, MultiValueTable<String,String> mvt) throws IOException {
 		sendHTMLError(os, code, httpReason, "<html><head><title>"+message+"</title></head><body><h1>"+message+"</h1></body>", shouldDisconnect, mvt);
-	}
-	
-	/**
-	 * Send an error message. Caller provides the HTTP code, reason string, and a message, which
-	 * will become the title and the h1'ed contents of the error page. 
-	 */
-	private void sendError(int code, String httpReason, String message, boolean shouldDisconnect, MultiValueTable<String,String> mvt) throws IOException {
-		sendHTMLError(sockOutputStream, code, httpReason, "<html><head><title>"+message+"</title></head><body><h1>"+message+"</h1></body>", shouldDisconnect, mvt);
 	}
 	
 	/**
@@ -445,13 +436,7 @@ public class ToadletContextImpl implements ToadletContext, LinkFixer {
 		String queries = getQueriesNoSecureID(uri);
 		String realPath = path;
 		if(queries != null) realPath += queries;
-		String expectedSecureID;
-		try {
-			expectedSecureID = ctx.container.generateSID(realPath);
-		} catch (URLEncodedFormatException e1) {
-			ctx.sendError(400, "Bad Request", l10n("invalidURICheckingSecureID"), false, null);
-			return true;
-		}
+		String expectedSecureID = ctx.container.generateSID(realPath);
 		if(secureid != null && expectedSecureID.equals(secureid)) {
 			return false;
 		}
@@ -503,7 +488,7 @@ public class ToadletContextImpl implements ToadletContext, LinkFixer {
 			else return null;
 		} else {
 			int idx = query.indexOf("&secureid=");
-			if(idx == -1) return '?' + query;
+			if(idx == -1) return query;
 			String before = query.substring(0, idx);
 			String after = query.substring(idx+"&secureid=".length());
 			int x = after.indexOf('&');

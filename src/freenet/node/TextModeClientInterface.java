@@ -31,8 +31,6 @@ import freenet.client.HighLevelSimpleClient;
 import freenet.client.InsertBlock;
 import freenet.client.InsertException;
 import freenet.client.events.EventDumper;
-import freenet.clients.http.LinkFixer;
-import freenet.clients.http.NullLinkFixer;
 import freenet.clients.http.filter.ContentFilter;
 import freenet.clients.http.filter.ContentFilter.FilterOutput;
 import freenet.crypt.RandomSource;
@@ -353,9 +351,7 @@ public class TextModeClientInterface implements Runnable {
     	final String content = readLines(reader, false);
     	final Bucket data = new ArrayBucket(content.getBytes("UTF-8"));
     	try {
-    		LinkFixer fixer = n.clientCore.toadletContainer;
-    		if(fixer == null) fixer = new NullLinkFixer();
-    		FilterOutput output = ContentFilter.filter(data, new ArrayBucketFactory(), "text/html", new URI("http://127.0.0.1:8888/"), null, new NullLinkFixer());
+    		FilterOutput output = ContentFilter.filter(data, new ArrayBucketFactory(), "text/html", new URI("http://127.0.0.1:8888/"), null);
     		
     		BufferedInputStream bis = new BufferedInputStream(output.data.getInputStream());
     		while(bis.available() > 0){

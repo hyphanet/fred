@@ -38,9 +38,6 @@ import freenet.support.Executor;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
 import freenet.support.OOMHandler;
-import freenet.support.URLDecoder;
-import freenet.support.URLEncodedFormatException;
-import freenet.support.URLEncoder;
 import freenet.support.api.BooleanCallback;
 import freenet.support.api.BucketFactory;
 import freenet.support.api.IntCallback;
@@ -832,10 +829,8 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		return bf;
 	}
 
-	public String generateSID(String realPath) throws URLEncodedFormatException {
+	public String generateSID(String realPath) {
 		MessageDigest md = SHA256.getMessageDigest();
-		String oldRealPath = realPath;
-		realPath = prepareForSID(realPath);
 		try {
 			md.update(realPath.getBytes("UTF-8"));
 		} catch (UnsupportedEncodingException e) {
@@ -846,42 +841,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		SHA256.returnMessageDigest(md);
 		return Base64.encode(output);
 	}
-
-	private String prepareForSID(String realPath) throws URLEncodedFormatException {
-		StringBuffer sb = new StringBuffer(realPath.length());
-		int idx = realPath.indexOf('?');
-		String query = null;
-		if(idx > -1) {
-			query = realPath.substring(idx+1);
-			realPath = realPath.substring(0, idx);
-		}
-		String[] split = realPath.split("/");
-		boolean first = true;
-		for(String component : split) {
-			if(!first) sb.append('/');
-			first = false;
-			if(component.indexOf('%') > -1)
-				component = URLDecoder.decode(component, true);
-			component = URLEncoder.minimalEncode(component, "/?");
-			sb.append(component);
-		}
-		if(query != null) {
-			sb.append('?');
-			split = query.split("&");
-			first = true;
-			for(String component : split) {
-				if(!first) sb.append('&');
-				first = false;
-				if(component.indexOf('%') > -1)
-					component = URLDecoder.decode(component, true);
-				component = URLEncoder.minimalEncode(component, "&");
-				sb.append(component);
-			}
-		}
-		return sb.toString();
-	}
-
-
 
 	public boolean isSecureIDCheckingDisabled() {
 		return !enableHistoryCloaking;
@@ -900,15 +859,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 			frag = toSign.substring(hashIndex);
 			toSign = toSign.substring(0, hashIndex);
 		}
-		try {
 		if(orig.indexOf('?') == -1) {
 			return toSign + "?secureid=" + generateSID(toSign) + frag;
 		} else {
 			return toSign + "&secureid=" + generateSID(toSign) + frag;
-		}
-		} catch (URLEncodedFormatException e) {
-			Logger.error(this, "UNABLE TO ENCODE INTERNALLY GENERATED STRING: "+orig+" because URL decode failure: "+e);
-			return orig;
 		}
 	}
 	
@@ -919,15 +873,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		if(uri.getFragment() != null) {
 			toSign = toSign.substring(0, toSign.indexOf('#'));
 		}
-		try {
 		if(uri.getQuery() == null) {
 			return new URI(uri.getScheme(), uri.getUserInfo(), uri.getHost(), uri.getPort(), uri.getPath(), "secureid="+generateSID(toSign), uri.getFragment());
 		} else {
 			return new URI(uri.getScheme(), uri.getUserInfo(), uri.getHost(), uri.getPort(), uri.getPath(), uri.getQuery()+"&secureid="+generateSID(toSign), uri.getFragment());
-		}
-		} catch (URLEncodedFormatException e) {
-			Logger.error(this, "UNABLE TO ENCODE INTERNALLY GENERATED STRING: "+uri+" because URL decode failure: "+e);
-			return uri;
 		}
 	}
 

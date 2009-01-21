@@ -3,7 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node.useralerts;
 
-import freenet.clients.http.LinkFixer;
 import freenet.l10n.L10n;
 import freenet.node.NodeStats;
 import freenet.support.HTMLNode;
@@ -175,7 +174,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 	}
 	
 	@Override
-	public HTMLNode getHTMLText(LinkFixer fixer) {
+	public HTMLNode getHTMLText() {
 		HTMLNode alertNode = new HTMLNode("div");
 
 		if (peers == 0 && !isOpennetEnabled) {
@@ -204,7 +203,7 @@ public class PeerManagerUserAlert extends AbstractUserAlert {
 		} else if (neverConn > MAX_NEVER_CONNECTED_PEER_ALERT_THRESHOLD) {
 			L10n.addL10nSubstitution(alertNode, "PeerManagerUserAlert.tooManyNeverConnectedWithLink",
 					new String[] { "link", "/link", "count" },
-					new String[] { "<a href=\""+fixer.fixLink("/friends/myref.fref")+"\">", "</a>", Integer.toString(neverConn) });
+					new String[] { "<a href=\"/friends/myref.fref\">", "</a>", Integer.toString(neverConn) });
 		} else if(connError > MIN_CONN_ERROR_ALERT_THRESHOLD) {
 			alertNode.addChild("#", l10n("connError", "count", Integer.toString(connError)));
 		} else if (disconnDarknetPeers > MAX_DISCONN_PEER_ALERT_THRESHOLD && !darknetDefinitelyPortForwarded && !darknetAssumeNAT) {

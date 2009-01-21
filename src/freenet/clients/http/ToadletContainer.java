@@ -9,7 +9,6 @@ import java.net.URISyntaxException;
 
 import freenet.clients.http.PageMaker.THEME;
 import freenet.support.HTMLNode;
-import freenet.support.URLEncodedFormatException;
 import freenet.support.api.BucketFactory;
 
 /** Interface for toadlet containers. Toadlets should register here. */
@@ -70,9 +69,8 @@ public interface ToadletContainer extends LinkFixer {
 	 * URIs don't go into the browser history.
 	 * @param realPath
 	 * @return
-	 * @throws URLEncodedFormatException 
 	 */
-	public String generateSID(String realPath) throws URLEncodedFormatException;
+	public String generateSID(String realPath);
 
 	/**
 	 * If true, secure-id checking is disabled.
