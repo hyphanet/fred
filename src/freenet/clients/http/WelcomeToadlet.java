@@ -51,7 +51,7 @@ public class WelcomeToadlet extends Toadlet {
 
     void redirectToRoot(ToadletContext ctx) throws ToadletContextClosedException, IOException {
         MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-        headers.put("Location", ctx.fixLink("/"));
+        headers.put("Location", "/");
         ctx.sendReplyHeaders(302, "Found", headers, null, 0);
         return;
     }
@@ -67,14 +67,14 @@ public class WelcomeToadlet extends Toadlet {
                 HTMLNode cell = row.addChild("td", "style", "border: none");
                 if (item.hasAnActivelink() && !noActiveLinks) {
 		    String initialKey = item.getKey();
-		    String key = ctx.fixLink('/' + initialKey + (initialKey.endsWith("/") ? "" : "/") + "activelink.png");
-                    cell.addChild("a", "href", ctx.fixLink('/' + item.getKey())).addChild("img", new String[]{"src", "height", "width", "alt", "title"},
+		    String key = '/' + initialKey + (initialKey.endsWith("/") ? "" : "/") + "activelink.png";
+                    cell.addChild("a", "href", '/' + item.getKey()).addChild("img", new String[]{"src", "height", "width", "alt", "title"},
                             new String[]{ key, "36", "108", "activelink", item.getDescription()});
                 } else {
                     cell.addChild("#", " ");
                 }
                 cell = row.addChild("td", "style", "border: none");
-                cell.addChild("a", new String[]{"href", "title"}, new String[]{ ctx.fixLink('/' + item.getKey()), item.getDescription()}, item.getName());
+                cell.addChild("a", new String[]{"href", "title"}, new String[]{ '/' + item.getKey(), item.getDescription()}, item.getName());
             }
         }
 
@@ -366,7 +366,7 @@ public class WelcomeToadlet extends Toadlet {
                 return;
             }
             MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-            headers.put("Location", ctx.fixLink("/?terminated&formPassword=" + core.formPassword));
+            headers.put("Location", "/?terminated&formPassword=" + core.formPassword);
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
             node.ps.queueTimedJob(new Runnable() {
 
@@ -393,7 +393,7 @@ public class WelcomeToadlet extends Toadlet {
             }
 
             MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-            headers.put("Location", ctx.fixLink("/?restarted&formPassword=" + core.formPassword));
+            headers.put("Location", "/?restarted&formPassword=" + core.formPassword);
             ctx.sendReplyHeaders(302, "Found", headers, null, 0);
             node.ps.queueTimedJob(new Runnable() {
 
@@ -573,7 +573,7 @@ public class WelcomeToadlet extends Toadlet {
         bookmarkBoxHeader.addChild("#", L10n.getString("BookmarkEditorToadlet.myBookmarksTitle"));
         if (ctx.isAllowedFullAccess()) {
             bookmarkBoxHeader.addChild("#", " [");
-            bookmarkBoxHeader.addChild("span", "id", "bookmarkedit").addChild("a", new String[]{"href", "class"}, new String[]{ctx.fixLink("/bookmarkEditor/"), "interfacelink"}, L10n.getString("BookmarkEditorToadlet.edit"));
+            bookmarkBoxHeader.addChild("span", "id", "bookmarkedit").addChild("a", new String[]{"href", "class"}, new String[]{"/bookmarkEditor/", "interfacelink"}, L10n.getString("BookmarkEditorToadlet.edit"));
             bookmarkBoxHeader.addChild("#", "]");
         }
 
