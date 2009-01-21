@@ -99,57 +99,6 @@ public final class FProxyToadlet extends Toadlet {
 	public void handlePost(URI uri, HTTPRequest req, ToadletContext ctx) throws ToadletContextClosedException, IOException, RedirectException {
 		String ks = uri.getPath();
 		
-		String maxSize = req.isPartSet("max-size") ? req.getPartAsString("max-size", 30) : null;
-		String type = req.isPartSet("type") ? req.getPartAsString("type", 30) : null;
-		boolean forceDownload = req.isPartSet("forcedownload");
-		String force = req.isPartSet("force") ? req.getPartAsString("force", 30) : null;
-		
-		String pass = req.getPartAsString("formPassword", 32);
-		if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
-			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", "/");
-			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
-			return;
-		}
-
-		if(maxSize != null || type != null || (!forceDownload) || force != null) {
-			StringBuffer sb = new StringBuffer();
-			boolean first = true;
-			if(maxSize != null) {
-				sb.append("max-size=");
-				sb.append(URLEncoder.encode(maxSize, false));
-				first = false;
-			}
-			if(type != null) {
-				if(!first) sb.append('&');
-				sb.append("type=");
-				sb.append(URLEncoder.encode(type, false));
-				first = false;
-			}
-			if(forceDownload) {
-				if(!first) sb.append('&');
-				sb.append("forcedownload");
-				first = false;
-			}
-			if(force != null) {
-				if(!first) sb.append('&');
-				sb.append("force=");
-				sb.append(URLEncoder.encode(force, false));
-				first = false;
-			}
-			String params = sb.toString();
-			try {
-				uri = new URI(null, null, null, 80, uri.getPath(), params, null);
-			} catch (URISyntaxException e) {
-				Logger.error(this, "Impossible: "+e, e);
-				this.writeInternalError(e, ctx);
-				return;
-			}
-			this.handleGet(uri, new HTTPRequestImpl(uri), ctx);
-			return;
-		}
-		
-		
 		if (ks.equals("/")||ks.startsWith("/servlet/")) {
 			try {
 	            throw new RedirectException("/welcome/");
@@ -530,7 +479,7 @@ public final class FProxyToadlet extends Toadlet {
 				HTMLNode optionList = infoboxContent.addChild("ul");
 				if(!restricted) {
 					option = optionList.addChild("li");
-					HTMLNode optionForm = ctx.addFormChild(option, "/" + key.toString(), "fetchLargeFileDirectlyForm");
+					HTMLNode optionForm = option.addChild("form", new String[] { "action", "method" }, new String[] {'/' + key.toString(), "get" });
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "hidden", "max-size", String.valueOf(e.expectedSize == -1 ? Long.MAX_VALUE : e.expectedSize*2) });
 					optionForm.addChild("input", new String[] { "type", "name", "value" }, new String[] { "submit", "fetch", l10n("fetchLargeFileAnywayAndDisplay") });
 					option = optionList.addChild("li");
