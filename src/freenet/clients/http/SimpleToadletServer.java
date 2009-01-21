@@ -4,17 +4,13 @@
 package freenet.clients.http;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.MessageDigest;
 import java.util.Iterator;
 import java.util.LinkedList;
 
@@ -24,16 +20,13 @@ import freenet.config.EnumerableOptionCallback;
 import freenet.config.InvalidConfigValueException;
 import freenet.config.NodeNeedRestartException;
 import freenet.config.SubConfig;
-import freenet.crypt.SHA256;
 import freenet.crypt.SSL;
 import freenet.io.AllowedHosts;
 import freenet.io.NetworkInterface;
 import freenet.io.SSLNetworkInterface;
 import freenet.keys.FreenetURI;
 import freenet.l10n.L10n;
-import freenet.node.Node;
 import freenet.node.NodeClientCore;
-import freenet.support.Base64;
 import freenet.support.Executor;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
@@ -44,14 +37,13 @@ import freenet.support.api.IntCallback;
 import freenet.support.api.LongCallback;
 import freenet.support.api.StringCallback;
 import freenet.support.io.ArrayBucketFactory;
-import freenet.support.io.Closer;
 
 /** 
  * The Toadlet (HTTP) Server
  * 
  * Provide a HTTP server for FProxy
  */
-public final class SimpleToadletServer implements ToadletContainer, Runnable, LinkFixer {
+public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	/** List of urlPrefix / Toadlet */ 
 	private final LinkedList<ToadletElement> toadlets;
 	private static class ToadletElement {
@@ -70,8 +62,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	private NetworkInterface networkInterface;
 	private boolean ssl = false;
 	public static final int DEFAULT_FPROXY_PORT = 8888;
-	private byte[] clientNonce;
-	private final Node node;
 	
 	// ACL
 	private final AllowedHosts allowedFullAccess;
@@ -93,7 +83,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	private boolean doRobots;
 	private boolean enablePersistentConnections;
 	private boolean enableInlinePrefetch;
-	private boolean enableHistoryCloaking;
 	private boolean enableActivelinks;
 	
 	// Something does not really belongs to here
@@ -298,29 +287,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		}
 	}
 	
-	private static class FProxyHistoryCloakingCallback extends BooleanCallback {
-		
-		FProxyHistoryCloakingCallback(SimpleToadletServer ts) {
-			this.ts = ts;
-		}
-		
-		private final SimpleToadletServer ts;
-
-		@Override
-		public Boolean get() {
-			return ts.enableHistoryCloaking;
-		}
-
-		@Override
-		public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
-			boolean enable = val;
-			if(enable == ts.enableHistoryCloaking) return;
-			this.ts.enableHistoryCloaking = enable;
-			this.ts.writeURLFile();
-		}
-		
-	}
-	
 	private boolean haveCalledFProxy = false;
 	
 	public void createFproxy() {
@@ -340,29 +306,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	
 
 	
-	public void writeURLFile() {
-		String url = "http://127.0.0.1:"+port;
-		if(enableHistoryCloaking)
-			url += fixLink("/");
-		else
-			url += "/";
-		File f = new File(node.getNodeDir(), "freenet.url");
-		FileOutputStream fos = null;
-		try {
-			fos = new FileOutputStream(f);
-			OutputStreamWriter osw = new OutputStreamWriter(fos); // System charset better in this instance???
-			osw.write(url+(File.separatorChar == '\\' ? "\r" : "") + "\n");
-			osw.flush();
-		} catch (IOException e) {
-			Logger.error(this, "Unable to write URL "+url+" to freenet.url: browse.sh/browse.cmd may have difficulty! : "+e, e);
-			System.err.println("Unable to write URL "+url+" to freenet.url: browse.sh/browse.cmd may have difficulty! : "+e);
-		} finally {
-			Closer.close(fos);
-		}
-	}
-
-
-
 	public synchronized void setCore(NodeClientCore core) {
 		this.core = core;
 	}
@@ -371,10 +314,9 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	 * Create a SimpleToadletServer, using the settings from the SubConfig (the fproxy.*
 	 * config).
 	 */
-	public SimpleToadletServer(SubConfig fproxyConfig, BucketFactory bucketFactory, Executor executor, Node node) throws IOException, InvalidConfigValueException {
+	public SimpleToadletServer(SubConfig fproxyConfig, BucketFactory bucketFactory, Executor executor) throws IOException, InvalidConfigValueException {
 
 		this.executor = executor;
-		this.node = node;
 		
 		int configItemOrder = 0;
 		
@@ -505,10 +447,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 		});
 		enableActivelinks = fproxyConfig.getBoolean("enableActivelinks");
 		
-		// Off by default, installer turns it on.
-		fproxyConfig.register("enableHistoryCloaking", false, configItemOrder++, false, false, "SimpleToadletServer.enableHistoryCloaking", "SimpleToadletServer.enableHistoryCloakingLong", new FProxyHistoryCloakingCallback(this));
-		enableHistoryCloaking = fproxyConfig.getBoolean("enableHistoryCloaking");
-		
 		fproxyConfig.register("passthroughMaxSize", 2L*1024*1024, configItemOrder++, true, false, "SimpleToadletServer.passthroughMaxSize", "SimpleToadletServer.passthroughMaxSizeLong", new FProxyPassthruMaxSize());
 		FProxyToadlet.MAX_LENGTH = fproxyConfig.getLong("passthroughMaxSize");
 		
@@ -615,7 +553,6 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	
 	public void start() {
 		if(myThread != null) try {
-			writeURLFile();
 			maybeGetNetworkInterface();
 			myThread.start();
 			Logger.normal(this, "Starting FProxy on "+bindTo+ ':' +port);
@@ -828,62 +765,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable, Li
 	public synchronized BucketFactory getBucketFactory() {
 		return bf;
 	}
-
-	public String generateSID(String realPath) {
-		MessageDigest md = SHA256.getMessageDigest();
-		try {
-			md.update(realPath.getBytes("UTF-8"));
-		} catch (UnsupportedEncodingException e) {
-			throw new Error(e);
-		}
-		md.update(clientNonce);
-		byte[] output = md.digest();
-		SHA256.returnMessageDigest(md);
-		return Base64.encode(output);
-	}
-
-	public boolean isSecureIDCheckingDisabled() {
-		return !enableHistoryCloaking;
-	}
 	
-	/* (non-Javadoc)
-	 * @see freenet.clients.http.LinkFixer#fixLink(java.lang.String)
-	 */
-	public String fixLink(String orig) {
-		if(isSecureIDCheckingDisabled())
-			return orig;
-		String toSign = orig;
-		String frag = "";
-		int hashIndex = toSign.indexOf('#');
-		if(hashIndex != -1) {
-			frag = toSign.substring(hashIndex);
-			toSign = toSign.substring(0, hashIndex);
-		}
-		if(orig.indexOf('?') == -1) {
-			return toSign + "?secureid=" + generateSID(toSign) + frag;
-		} else {
-			return toSign + "&secureid=" + generateSID(toSign) + frag;
-		}
-	}
-	
-	public URI fixLink(URI uri) throws URISyntaxException {
-		if(isSecureIDCheckingDisabled())
-			return uri;
-		String toSign = uri.toString();
-		if(uri.getFragment() != null) {
-			toSign = toSign.substring(0, toSign.indexOf('#'));
-		}
-		if(uri.getQuery() == null) {
-			return new URI(uri.getScheme(), uri.getUserInfo(), uri.getHost(), uri.getPort(), uri.getPath(), "secureid="+generateSID(toSign), uri.getFragment());
-		} else {
-			return new URI(uri.getScheme(), uri.getUserInfo(), uri.getHost(), uri.getPort(), uri.getPath(), uri.getQuery()+"&secureid="+generateSID(toSign), uri.getFragment());
-		}
-	}
-
-	public synchronized void setNonce(byte[] nonce) {
-		this.clientNonce = nonce;
-	}
-
 
 
 	public boolean enableActivelinks() {
