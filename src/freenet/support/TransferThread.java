@@ -18,6 +18,14 @@ import freenet.node.Node;
 import freenet.node.PrioRunnable;
 import freenet.support.io.TempBucketFactory;
 
+/**
+ * A thread which periodically wakes up and iterates to start fetches and/or inserts.
+ * 
+ * When calling <code>start()</code>, the thread will iterate the first time after <code>getStartupDelay()</code> milliseconds.
+ * After each iteration, it will sleep for <code>getSleepTime()</code> milliseconds.
+ * 
+ * @author xor
+ */
 public abstract class TransferThread implements PrioRunnable, ClientCallback {
 	
 	private final String mName;
