@@ -107,7 +107,7 @@ public final class FProxyToadlet extends Toadlet {
 		String pass = req.getPartAsString("formPassword", 32);
 		if ((pass.length() == 0) || !pass.equals(core.formPassword)) {
 			MultiValueTable<String, String> headers = new MultiValueTable<String, String>();
-			headers.put("Location", ctx.fixLink("/"));
+			headers.put("Location", "/");
 			ctx.sendReplyHeaders(302, "Found", headers, null, 0);
 			return;
 		}
