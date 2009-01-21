@@ -59,20 +59,20 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 		}
 		
 		try {
-		while(isRunning) {
-			Thread.interrupted();
-			
-			try {
-				Logger.debug(this, "Loop running...");
-				iterate();
-				long sleepTime = getSleepTime();
-				Logger.debug(this, "Loop finished. Sleeping for " + (sleepTime/(1000*60)) + " minutes.");
-				Thread.sleep(sleepTime);
+			while(isRunning) {
+				Thread.interrupted();
+
+				try {
+					Logger.debug(this, "Loop running...");
+					iterate();
+					long sleepTime = getSleepTime();
+					Logger.debug(this, "Loop finished. Sleeping for " + (sleepTime/(1000*60)) + " minutes.");
+					Thread.sleep(sleepTime);
+				}
+				catch(InterruptedException e) {
+					mThread.interrupt();
+				}
 			}
-			catch(InterruptedException e) {
-				mThread.interrupt();
-			}
-		}
 		}
 		
 		finally {
