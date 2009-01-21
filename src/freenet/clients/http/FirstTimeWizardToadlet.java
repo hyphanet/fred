@@ -39,6 +39,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	
 	private enum WIZARD_STEP {
 		WELCOME,
+		// Before security levels, because once the network security level has been set, we won't redirect
+		// the user to the wizard page.
+		BROWSER_WARNING,
 		SECURITY_NETWORK,
 		SECURITY_FRIENDS,
 		SECURITY_PHYSICAL,
@@ -68,7 +71,23 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		
 		WIZARD_STEP currentStep = WIZARD_STEP.valueOf(request.getParam("step", WIZARD_STEP.WELCOME.toString()));
 		
-		if(currentStep == WIZARD_STEP.SECURITY_NETWORK) {
+		if(currentStep == WIZARD_STEP.BROWSER_WARNING) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("browserWarningPageTitle"), false, ctx);
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			
+			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+			HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
+			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+			
+			infoboxHeader.addChild("#", l10n("browserWarningShort"));
+			L10n.addL10nSubstitution(infoboxContent, "FirstTimeWizardToadlet.browserWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+			infoboxContent.addChild("p", l10n("browserWarningSuggestion"));
+			
+			infoboxContent.addChild("p").addChild("a", "href", "?step="+WIZARD_STEP.SECURITY_NETWORK, L10n.getString("FirstTimeWizardToadlet.clickContinue"));
+
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+			return;
+		} else if(currentStep == WIZARD_STEP.SECURITY_NETWORK) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("networkSecurityPageTitle"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
@@ -316,7 +335,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		HTMLNode firstParagraph = welcomeInfoboxContent.addChild("p");
 		firstParagraph.addChild("#", l10n("welcomeInfoboxContent1"));
 		HTMLNode secondParagraph = welcomeInfoboxContent.addChild("p");
-		secondParagraph.addChild("a", "href", "?step="+WIZARD_STEP.SECURITY_NETWORK).addChild("#", L10n.getString("FirstTimeWizardToadlet.clickContinue"));
+		secondParagraph.addChild("a", "href", "?step="+WIZARD_STEP.BROWSER_WARNING).addChild("#", L10n.getString("FirstTimeWizardToadlet.clickContinue"));
 		
 		HTMLNode thirdParagraph = welcomeInfoboxContent.addChild("p");
 		thirdParagraph.addChild("a", "href", "?step="+WIZARD_STEP.FINAL).addChild("#", l10n("skipWizard"));
