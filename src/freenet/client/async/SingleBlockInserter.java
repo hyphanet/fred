@@ -244,7 +244,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(persistent)
 				container.activate(cb, 1);
 			cb.onFailure(e, this, container, context);
-			if(!calledByCB)
+			if(persistent && !calledByCB)
 				container.deactivate(cb, 1);
 			return null;
 		} catch (Throwable t) {
@@ -252,7 +252,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 				container.activate(cb, 1);
 			Logger.error(this, "Caught "+t, t);
 			cb.onFailure(new InsertException(InsertException.INTERNAL_ERROR, t, null), this, container, context);
-			if(!calledByCB)
+			if(persistent && !calledByCB)
 				container.deactivate(cb, 1);
 			return null;
 		}
