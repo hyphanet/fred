@@ -3,16 +3,6 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.support.io;
 
-import freenet.crypt.RandomSource;
-import freenet.support.Executor;
-import freenet.support.Logger;
-import freenet.support.SizeUtil;
-import freenet.support.TimeUtil;
-import java.io.IOException;
-
-import freenet.support.api.Bucket;
-import freenet.support.api.BucketFactory;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -25,6 +15,14 @@ import java.util.Vector;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import com.db4o.ObjectContainer;
+
+import freenet.crypt.RandomSource;
+import freenet.support.Executor;
+import freenet.support.Logger;
+import freenet.support.SizeUtil;
+import freenet.support.TimeUtil;
+import freenet.support.api.Bucket;
+import freenet.support.api.BucketFactory;
 
 /**
  * Temporary Bucket Factory
