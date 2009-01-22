@@ -643,7 +643,7 @@ outerZIP:		while(true) {
 	}
 	
 	public boolean objectCanNew(ObjectContainer container) {
-		Logger.error(this, "Not storing Node in database", new Exception("error"));
+		Logger.error(this, "Not storing ArchiveManager in database", new Exception("error"));
 		return false;
 	}
 	
