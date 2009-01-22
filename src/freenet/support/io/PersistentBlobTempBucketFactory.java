@@ -160,8 +160,41 @@ public class PersistentBlobTempBucketFactory {
 					}
 				}
 			}
-			// We haven't done an exhaustive search for freeable slots, slots
-			// with no tag at all etc. This happens on startup.
+
+			// Checking for slots marked occupied with bucket != null is nontrivial,
+			// because constraining to null doesn't work - causes an OOM with a large database,
+			// because it DOES NOT USE THE INDEX and therefore instantiates every object and OOMs.
+			// See http://tracker.db4o.com/browse/COR-1446
+			
+			// Check that the number of tags is equal to the size of the file.
+			
+			if(logMINOR) Logger.minor(this, "Checking number of tags against file size...");
+			query = container.query();
+			query.constrain(PersistentBlobTempBucketTag.class);
+			tags = query.execute();
+			long inDB = tags.size();
+			if(logMINOR) Logger.minor(this, "Checked size.");
+			tags = null;
+			if(inDB < ptr) {
+				Logger.error(this, "Tags in database: "+inDB+" but size of file allows: "+ptr);
+				// Recover: exhaustive index search. This can cause very long pauses, but should only happen if there is a bug.
+				for(long l = 0; l < ptr; l++) {
+					if(freeSlots.containsKey(l)) continue;
+					if(notCommittedBlobs.containsKey(l)) continue;
+					query = container.query();
+					query.constrain(PersistentBlobTempBucketTag.class);
+					query.descend("index").constrain(l);
+					tags = query.execute();
+					if(tags.hasNext()) continue;
+					Logger.error(this, "FOUND EMPTY SLOT: "+l+" when scanning the blob file because tags in database < length of file");
+					PersistentBlobTempBucketTag tag = new PersistentBlobTempBucketTag(PersistentBlobTempBucketFactory.this, l);
+					container.store(tag);
+					freeSlots.put(ptr, tag);
+					added++;
+					if(added > MAX_FREE) return;
+				}
+			}
+			
 			// Lets extend the file.
 			// FIXME if physical security is LOW, just set the length, possibly
 			// padding will nonrandom nulls on unix.
@@ -250,14 +283,18 @@ public class PersistentBlobTempBucketFactory {
 	}
 
 	public synchronized void freeBucket(long index, PersistentBlobTempBucket bucket) {
-		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Freeing index "+index+" for "+bucket);
+		if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Freeing index "+index+" for "+bucket, new Exception("debug"));
 		notCommittedBlobs.remove(index);
 		bucket.onFree();
+		if(!bucket.persisted()) {
+			// If it hasn't been written to the database, it doesn't need to be removed, so removeFrom() won't be called.
+			freeSlots.put(index, bucket.tag);
+		}
 	}
 
 	public synchronized void remove(PersistentBlobTempBucket bucket, ObjectContainer container) {
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Removing bucket "+bucket+" for slot "+bucket.index+" from database");
+			Logger.minor(this, "Removing bucket "+bucket+" for slot "+bucket.index+" from database", new Exception("debug"));
 		long index = bucket.index;
 		PersistentBlobTempBucketTag tag = bucket.tag;
 		container.activate(tag, 1);
