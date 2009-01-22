@@ -152,7 +152,7 @@ public class USKManager implements RequestClient {
 			Long l = (Long) latestVersionByClearUSK.get(clear);
 			if(logMINOR) Logger.minor(this, "Old value: "+l);
 			if((l == null) || (number > l.longValue())) {
-				l = new Long(number);
+				l = Long.valueOf(number);
 				latestVersionByClearUSK.put(clear, l);
 				if(logMINOR) Logger.minor(this, "Put "+number);
 			} else return;

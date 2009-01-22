@@ -294,8 +294,13 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(startedDecode) {
 				return;
 			} else {
+				boolean tooSmall = data.size() < CHKBlock.DATA_LENGTH;
 				// Don't count the last data block, since we can't use it in FEC decoding.
-				if(!(ignoreLastDataBlock && blockNo == dataKeys.length - 1))
+				if(tooSmall && ((!ignoreLastDataBlock) || (blockNo != dataKeys.length - 1))) {
+					fail(new FetchException(FetchException.INVALID_METADATA, "Block too small in splitfile: block "+blockNo+" of "+dataKeys.length+" data keys, "+checkKeys.length+" check keys"), container, context, true);
+					return;
+				}
+				if(!(ignoreLastDataBlock && blockNo == dataKeys.length - 1 && tooSmall))
 					fetchedBlocks++;
 				else
 					// This block is not going to be fetched, and because of the insertion format. 
@@ -1283,12 +1288,12 @@ public class SplitFileFetcherSegment implements FECCallback {
 		for(int i=0;i<dataRetries.length;i++) {
 			if(dataKeys[i] == null) continue;
 			if(dataRetries[i] == retryCount)
-				v.add(new Integer(i));
+				v.add(Integer.valueOf(i));
 		}
 		for(int i=0;i<checkRetries.length;i++) {
 			if(checkKeys[i] == null) continue;
 			if(checkRetries[i] == retryCount)
-				v.add(new Integer(i+dataKeys.length));
+				v.add(Integer.valueOf(i+dataKeys.length));
 		}
 		return v.toArray(new Integer[v.size()]);
 	}

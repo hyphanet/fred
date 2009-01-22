@@ -433,7 +433,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		if(finished)
 			return new Object[] {};
 		else
-			return new Object[] { new Integer(0) };
+			return new Object[] { Integer.valueOf(0) };
 	}
 
 	@Override

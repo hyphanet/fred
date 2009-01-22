@@ -202,8 +202,8 @@ public class RequestCooldownQueue implements CooldownQueue {
 			if(cr instanceof ClientGetter) {
 				String shortURI = ((ClientGetter)cr).getURI().toShortString();
 				Integer ctr = (Integer) countsByShortURI.get(shortURI);
-				if(ctr == null) ctr = new Integer(1);
-				else ctr = new Integer(ctr.intValue()+1);
+				if(ctr == null) ctr = Integer.valueOf(1);
+				else ctr = Integer.valueOf(ctr.intValue()+1);
 				countsByShortURI.put(shortURI, ctr);
 			} else {
 				notGetter++;

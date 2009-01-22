@@ -118,6 +118,9 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			container.activate(this, 1);
 			container.activate(segment, 1);
 		}
+		// j16sdiz (22-DEC-2008):
+		// ClientRequestSchedular.removePendingKeys() call this to get a list of request to be removed
+		// FIXME ClientRequestSchedular.removePendingKeys() is leaking, what's missing here?
 		return segment.getKeyNumbersAtRetryLevel(retryCount);
 	}
 	
@@ -575,7 +578,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Adding block "+blockNo+" to "+this+" dontSchedule="+dontSchedule);
 		if(blockNo < 0) throw new IllegalArgumentException();
-		Integer i = new Integer(blockNo);
+		Integer i = Integer.valueOf(blockNo);
 		
 		boolean schedule = true;
 		synchronized(segment) {
@@ -675,7 +678,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 			Logger.minor(this, "No block found for key "+key+" on "+this);
 			return;
 		}
-		Integer token = new Integer(blockNo);
+		Integer token = Integer.valueOf(blockNo);
 		ClientCHK ckey = (ClientCHK) segment.getBlockKey(blockNo, container);
 		ClientCHKBlock cb;
 		try {
