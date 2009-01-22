@@ -231,7 +231,7 @@ public class Util {
 			return (BlockCipher) Loader.getInstance(
 				"freenet.crypt.ciphers." + name,
 				new Class<?>[] { Integer.class },
-				new Object[] { new Integer(keySize)});
+				new Object[] { Integer.valueOf(keySize)});
 		} catch (Exception e) {
 			//throw new UnsupportedCipherException(""+e);
 			e.printStackTrace();

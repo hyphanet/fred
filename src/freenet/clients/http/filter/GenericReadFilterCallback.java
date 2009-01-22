@@ -21,7 +21,7 @@ import freenet.support.api.HTTPRequest;
 
 public class GenericReadFilterCallback implements FilterCallback {
 	public static final String magicHTTPEscapeString = "_CHECKED_HTTP_";
-	public static final HashSet allowedProtocols;
+	public static final HashSet<String> allowedProtocols;
 	
 	static {
 		allowedProtocols = new HashSet();
@@ -75,11 +75,27 @@ public class GenericReadFilterCallback implements FilterCallback {
 		return processURI(u, overrideType, false, false);
 	}
 	
+	// RFC3986
+	//  unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
+	protected static final String UNRESERVED = "[a-zA-Z0-9\\-\\._~]";
+	//  pct-encoded   = "%" HEXDIG HEXDIG
+	protected static final String PCT_ENCODED = "%[0-9A-Fa-f][0-9A-Fa-f]";
+	//  sub-delims    = "!" / "$" / "&" / "'" / "(" / ")"
+	//                / "*" / "+" / "," / ";" / "="
+	protected static final String SUB_DELIMS  = "[\\!\\$&'\\(\\)\\*\\+,;=]";
+	//  pchar         = unreserved / pct-encoded / sub-delims / ":" / "@"
+	protected static final String PCHAR      = "(" + UNRESERVED + "|" + PCT_ENCODED + "|" + SUB_DELIMS + "|[:@])";
+	//  fragment      = *( pchar / "/" / "?" )
+	protected static final String FRAGMENT   = "(" + PCHAR + "|\\/|\\?)*";
+
 	public String processURI(String u, String overrideType, boolean noRelative, boolean inline) throws CommentException {
-		if(u.matches("^#[a-zA-Z0-9-_]+$")) {
+		if(u.matches("^#" + FRAGMENT + "$")) {
 			// Hack for anchors, see #710
 			return u;
 		}
+		
+		// evil hack, see #2451 and r24565,r24566
+		u = u.replaceAll(" #", " %23");
 		
 		URI uri;
 		URI resolved;
@@ -95,7 +111,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 			if(logMINOR) Logger.minor(this, "Resolved: "+resolved);
 		} catch (URISyntaxException e1) {
 			if(logMINOR) Logger.minor(this, "Failed to parse URI: "+e1);
-			throw new CommentException(l10n("couldNotParseURIWithError", "error", e1.getLocalizedMessage()));
+			throw new CommentException(l10n("couldNotParseURIWithError", "error", e1.getMessage()));
 		}
 		String path = uri.getPath();
 		
@@ -147,7 +163,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 				// Not a FreenetURI
 				if(logMINOR) Logger.minor(this, "Malformed URL (a): "+e, e);
 				if(e.getMessage() != null) {
-					reason = l10n("malformedAbsoluteURL", "error", e.getLocalizedMessage());
+					reason = l10n("malformedAbsoluteURL", "error", e.getMessage());
 				} else {
 					reason = l10n("couldNotParseAbsoluteFreenetURI");
 				}
@@ -172,7 +188,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 			} catch (MalformedURLException e) {
 				if(logMINOR) Logger.minor(this, "Malformed URL (b): "+e, e);
 				if(e.getMessage() != null) {
-					reason = l10n("malformedRelativeURL", "error", e.getLocalizedMessage());
+					reason = l10n("malformedRelativeURL", "error", e.getMessage());
 				} else {
 					reason = l10n("couldNotParseRelativeFreenetURI");
 				}
@@ -225,7 +241,7 @@ public class GenericReadFilterCallback implements FilterCallback {
 			}
 			if(u.getFragment() != null) {
 				sb.append('#');
-				sb.append(u.getFragment());
+				sb.append(u.getRawFragment());
 			}
 			
 			URI uri = new URI(sb.toString());

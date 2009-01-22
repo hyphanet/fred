@@ -4,7 +4,9 @@ import java.util.Date;
 import java.util.HashSet;
 
 import freenet.l10n.L10n;
+import freenet.support.JarClassLoader;
 import freenet.support.Logger;
+import freenet.support.io.Closer;
 
 public class PluginInfoWrapper {
 
@@ -130,6 +132,13 @@ public class PluginInfoWrapper {
 				}
 			}
 		}
+		
+		// Close the jar file, so we may delete / reload it
+		ClassLoader cl = plug.getClass().getClassLoader();
+		if (cl instanceof JarClassLoader) {
+			Closer.close((JarClassLoader) cl);
+		}
+		
 		// always remove plugin
 		manager.removePlugin(this);
 	}

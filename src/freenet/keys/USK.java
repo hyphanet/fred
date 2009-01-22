@@ -61,7 +61,7 @@ public class USK extends BaseClientKey {
 	}
 
 	public static USK create(FreenetURI uri) throws MalformedURLException {
-		if((uri.getKeyType() == null) || !(uri.getKeyType().equals("USK"))) throw new MalformedURLException("Not a USK");
+		if(!uri.isUSK()) throw new MalformedURLException("Not a USK");
 		return new USK(uri.getRoutingKey(), uri.getCryptoKey(), uri.getExtra(), uri.getDocName(), uri.getSuggestedEdition());
 	}
 	

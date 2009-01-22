@@ -63,7 +63,7 @@ public class DefaultMIMETypes {
 	 */
 	protected static synchronized void addMIMEType(short number, String type, String[] extensions, String outExtension) {
 		addMIMEType(number, type);
-		Short t = new Short(number);
+		Short t = Short.valueOf(number);
 		if(extensions != null) {
 			for(int i=0;i<extensions.length;i++) {
 				String ext = extensions[i].toLowerCase();

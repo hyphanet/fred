@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
 import com.db4o.ObjectContainer;
 
@@ -239,20 +240,14 @@ public class FreenetURI implements Cloneable {
 		this.suggestedEdition = suggestedEdition;
 	}
 
+	// Strip http:// and freenet: prefix
+	protected final static Pattern URI_PREFIX = Pattern.compile("^(http://[^/]+/+)?(freenet:)?");
+	
 	public FreenetURI(String URI) throws MalformedURLException {
 		if(URI == null)
 			throw new MalformedURLException("No URI specified");
-		else
-			URI = URI.trim();
-
-		if(URI.startsWith("freenet:"))
-			URI = URI.substring("freenet:".length());
-
-		// Strip any leading /
-		while(URI.startsWith("/")) {
-			URI = URI.substring(1);
-		}
-
+		
+		URI = URI.trim();
 		if(URI.indexOf('@') < 0 || URI.indexOf('/') < 0)
 			// Encoded URL?
 			try {
@@ -260,23 +255,26 @@ public class FreenetURI implements Cloneable {
 			} catch(URLEncodedFormatException e) {
 				throw new MalformedURLException("Invalid URI: no @ or /, or @ or / is escaped but there are invalid escapes");
 			}
-
-		// Strip http:// prefix
-		URI = URI.replaceFirst("^http://[^/]+/+", "");
-
+		
+		URI = URI_PREFIX.matcher(URI).replaceFirst("");
+			
 		// decode keyType
 		int atchar = URI.indexOf('@');
 		if(atchar == -1)
 			throw new MalformedURLException("There is no @ in that URI! (" + URI + ')');
-		else
-			keyType = URI.substring(0, atchar).toUpperCase().trim().intern();
-		URI = URI.substring(atchar + 1);
 
+		String _keyType = URI.substring(0, atchar).toUpperCase();
+		URI = URI.substring(atchar + 1);
+		
 		boolean validKeyType = false;
 		for(int i = 0; i < VALID_KEY_TYPES.length; i++) {
-			if(keyType.equals(VALID_KEY_TYPES[i]))
+			if (_keyType.equals(VALID_KEY_TYPES[i])) {
 				validKeyType = true;
+				_keyType = VALID_KEY_TYPES[i];
+				break;
+			}
 		}
+		keyType = _keyType;
 		if(!validKeyType)
 			throw new MalformedURLException("Invalid key type: " + keyType);
 
@@ -284,10 +282,10 @@ public class FreenetURI implements Cloneable {
 		ArrayList<String> sv = null;
 		int slash2;
 		sv = new ArrayList<String>();
-		while((slash2 = URI.lastIndexOf("/")) != -1) {
+		while ((slash2 = URI.lastIndexOf('/')) != -1) {
 			String s;
 			try {
-				s = URLDecoder.decode(URI.substring(slash2 + "/".length()), true);
+				s = URLDecoder.decode(URI.substring(slash2 + 1 /* "/".length() */), true);
 			} catch(URLEncodedFormatException e) {
 				MalformedURLException ue = new MalformedURLException(e.toString());
 				ue.initCause(e);
@@ -545,13 +543,23 @@ public class FreenetURI implements Cloneable {
 			suggestedEdition);
 	}
 
+	protected String toStringCache;
+
 	@Override
 	public String toString() {
-		return toString(false, false);
+		if (toStringCache == null)
+			toStringCache = toString(false, false);
+		return toStringCache;
 	}
 
-	// FIXME: remove the typo in the function name.
-	public String toACIIString() {
+    /**
+     * @deprecated Use {@link #toASCIIString()} instead
+     */
+    public String toACIIString() {
+        return toASCIIString();
+    }
+
+	public String toASCIIString() {
 		return toString(true, true);
 	}
 

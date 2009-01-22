@@ -211,6 +211,7 @@ public class Yarrow extends RandomSource {
 	protected void readStartupEntropy(EntropySource startupEntropy) {
 		// Consume the current time
 		acceptEntropy(startupEntropy, System.currentTimeMillis(), 0);
+		acceptEntropy(startupEntropy, System.nanoTime(), 0);
 		// Free memory
 		acceptEntropy(startupEntropy, Runtime.getRuntime().freeMemory(), 0);
 		// Total memory
@@ -502,9 +503,9 @@ public class Yarrow extends RandomSource {
 				if(source != null) {
 					Integer contributedEntropy = entropySeen.get(source);
 					if(contributedEntropy == null)
-						contributedEntropy = new Integer(actualEntropy);
+						contributedEntropy = Integer.valueOf(actualEntropy);
 					else
-						contributedEntropy = new Integer(actualEntropy + contributedEntropy.intValue());
+						contributedEntropy = Integer.valueOf(actualEntropy + contributedEntropy.intValue());
 					entropySeen.put(source, contributedEntropy);
 
 					if(slow_entropy >= (SLOW_THRESHOLD * 2)) {

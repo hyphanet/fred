@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.ref.WeakReference;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.Queue;
@@ -90,7 +89,7 @@ public class TempBucketFactory implements BucketFactory {
 			this.currentBucket = cur;
 			this.creationTime = now;
 			this.osIndex = 0;
-			this.tbis = new Vector<TempBucketInputStream>();
+			this.tbis = new Vector<TempBucketInputStream>(1);
 			if(logMINOR) Logger.minor(this, "Created "+this, new Exception("debug"));
 		}
 		

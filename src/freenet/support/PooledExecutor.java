@@ -74,6 +74,7 @@ public class PooledExecutor implements Executor {
 					// Must create new thread
 					if((!fromTicker) && NativeThread.usingNativeCode() && prio > Thread.currentThread().getPriority()) {
 						// Run on ticker
+						// j16sdiz (22-Dec-2008): should we queue it? the ticker is "PacketSender", but it keep busying on non-packet related works
 						ticker.queueTimedJob(job, jobName, 0, true);
 						return;
 					}

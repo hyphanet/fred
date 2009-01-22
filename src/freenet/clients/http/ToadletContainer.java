@@ -62,4 +62,6 @@ public interface ToadletContainer {
 	 * node etc, but everyone else will not have access to the download 
 	 * queue or anything else that might conceivably result in a DoS. */
 	public boolean publicGatewayMode();
+
+	public boolean enableActivelinks();
 }

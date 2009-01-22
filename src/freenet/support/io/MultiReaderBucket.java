@@ -36,7 +36,8 @@ public class MultiReaderBucket {
 		synchronized(this) {
 			if(closed) return null;
 			Bucket d = new ReaderBucket();
-			if(readers == null) readers = new ArrayList<Bucket>();
+			if (readers == null)
+				readers = new ArrayList<Bucket>(1);
 			readers.add(d);
 			if(Logger.shouldLog(Logger.MINOR, this))
 				Logger.minor(this, "getReaderBucket() returning "+d+" for "+this+" for "+bucket);

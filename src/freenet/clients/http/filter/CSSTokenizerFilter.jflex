@@ -88,8 +88,8 @@ import freenet.l10n.L10n;
 		String data;
 		public String suffix; // includes any whitespace
 		public DecodedStringThingy(String s) {
-			if(s.startsWith("url(")) {
-				s = s.substring("url(".length());
+			if(s.toLowerCase(Locale.US).startsWith("url(")) {
+				s = s.substring(4/* "url(".length() */);
 				url = true;
 			}
 			char q = s.charAt(0);

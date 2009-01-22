@@ -550,7 +550,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 		Arrays.sort(unwantedMoveNums);
 		
 		for(int i=0;i<newSize;i++) {
-			Integer ii = new Integer(i);
+			Integer ii = Integer.valueOf(i);
 			if(Arrays.binarySearch(wantedKeepNums, ii) >= 0) continue;
 			if(Arrays.binarySearch(unwantedIgnoreNums, ii) >= 0) continue;
 			if(Arrays.binarySearch(wantedMoveNums, ii) >= 0) continue;
@@ -600,7 +600,7 @@ public class BerkeleyDBFreenetStore implements FreenetStore, OOMHook {
 				// Can we move over an empty slot?
 				if(i < freeEarlySlots.length) {
 					// Don't need to delete old block
-					unwantedBlock = new Integer((int) freeEarlySlots[i]); // will fit in an int
+					unwantedBlock = Integer.valueOf((int) freeEarlySlots[i]); // will fit in an int
 				} else if(unwantedMoveNums.length + freeEarlySlots.length > i) {
 					unwantedBlock = unwantedMoveNums[i-freeEarlySlots.length];
 					// Delete unwantedBlock from the store

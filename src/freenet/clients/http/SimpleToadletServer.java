@@ -83,6 +83,7 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 	private boolean doRobots;
 	private boolean enablePersistentConnections;
 	private boolean enableInlinePrefetch;
+	private boolean enableActivelinks;
 	
 	// Something does not really belongs to here
 	static boolean isPanicButtonToBeShown;				// move to QueueToadlet ?
@@ -431,6 +432,21 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		});
 		enableInlinePrefetch = fproxyConfig.getBoolean("enableInlinePrefetch");
 		
+		fproxyConfig.register("enableActivelinks", false, configItemOrder++, false, false, "SimpleToadletServer.enableActivelinks", "SimpleToadletServer.enableActivelinksLong", new BooleanCallback() {
+
+			@Override
+			public Boolean get() {
+				return enableActivelinks;
+			}
+
+			@Override
+			public void set(Boolean val) throws InvalidConfigValueException, NodeNeedRestartException {
+				enableActivelinks = val;
+			}
+			
+		});
+		enableActivelinks = fproxyConfig.getBoolean("enableActivelinks");
+		
 		fproxyConfig.register("passthroughMaxSize", 2L*1024*1024, configItemOrder++, true, false, "SimpleToadletServer.passthroughMaxSize", "SimpleToadletServer.passthroughMaxSizeLong", new FProxyPassthruMaxSize());
 		FProxyToadlet.MAX_LENGTH = fproxyConfig.getLong("passthroughMaxSize");
 		
@@ -750,4 +766,10 @@ public final class SimpleToadletServer implements ToadletContainer, Runnable {
 		return bf;
 	}
 	
+
+
+	public boolean enableActivelinks() {
+		return enableActivelinks;
+	}
+
 }

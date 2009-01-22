@@ -3,6 +3,7 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.clients.http.filter;
 
+import java.io.BufferedInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -117,11 +118,23 @@ public class ContentFilter {
 			this.type = type;
 		}
 	}
-	
+
 	/**
 	 * Filter some data.
-	 * @param bf The bucket factory used to create the bucket to return the filtered data in.
-	 * @throws IOException If an internal error involving buckets occurred.
+	 * 
+	 * @param data
+	 *            Input data
+	 * @param bf
+	 *            The bucket factory used to create the bucket to return the filtered data in.
+	 * @param typeName
+	 *            MIME type for input data
+	 * 
+	 * @throws IOException
+	 *             If an internal error involving buckets occurred.
+	 * @throws UnsafeContentTypeException
+	 *             If the MIME type is declared unsafe (e.g. pdf files)
+	 * @throws IllegalStateException
+	 *             If data is invalid (e.g. corrupted file) and the filter have no way to recover.
 	 */
 	public static FilterOutput filter(Bucket data, BucketFactory bf, String typeName, URI baseURI, FoundURICallback cb) throws UnsafeContentTypeException, IOException {
 		if(Logger.shouldLog(Logger.MINOR, ContentFilter.class))
@@ -253,7 +266,7 @@ public class ContentFilter {
 		InputStream is = null;
 		try {
 			byte[] data = new byte[5];
-			is = bucket.getInputStream();
+			is = new BufferedInputStream(bucket.getInputStream());
 			int read = 0;
 			while(read < data.length) {
 				int x;

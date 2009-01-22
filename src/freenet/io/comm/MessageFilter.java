@@ -135,19 +135,19 @@ public final class MessageFilter {
 	}
 
 	public MessageFilter setField(String fieldName, byte value) {
-		return setField(fieldName, new Byte(value));
+		return setField(fieldName, Byte.valueOf(value));
 	}
 
 	public MessageFilter setField(String fieldName, short value) {
-		return setField(fieldName, new Short(value));
+		return setField(fieldName, Short.valueOf(value));
 	}
 
 	public MessageFilter setField(String fieldName, int value) {
-		return setField(fieldName, new Integer(value));
+		return setField(fieldName, Integer.valueOf(value));
 	}
 
 	public MessageFilter setField(String fieldName, long value) {
-		return setField(fieldName, new Long(value));
+		return setField(fieldName, Long.valueOf(value));
 	}
 
 	public MessageFilter setField(String fieldName, Object fieldValue) {

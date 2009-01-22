@@ -202,6 +202,8 @@ public abstract class BloomFilter {
 		if (filter != null) {
 			force();
 		}
+		// don't trust findbug, this is not a error
+		// sometimes, we call finalize() manually and this serve as a flag 
 		filter = null;
 		forkedFilter = null;
 	}

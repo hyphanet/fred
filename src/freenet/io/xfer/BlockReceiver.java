@@ -31,9 +31,12 @@ import freenet.io.comm.MessageFilter;
 import freenet.io.comm.NotConnectedException;
 import freenet.io.comm.PeerContext;
 import freenet.io.comm.RetrievalException;
+import freenet.node.Ticker;
 import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.Logger;
+import freenet.support.math.MedianMeanRunningAverage;
+import freenet.support.math.TrivialRunningAverage;
 
 /**
  * @author ian
@@ -51,6 +54,8 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	public static final int MAX_CONSECUTIVE_MISSING_PACKET_REPORTS = 4;
 	public static final int MAX_SEND_INTERVAL = 500;
 	public static final int CLEANUP_TIMEOUT = 5000;
+	// After 15 seconds, the receive is overdue and will cause backoff.
+	public static final int TOO_LONG_TIMEOUT = 15000;
 	PartiallyReceivedBlock _prb;
 	PeerContext _sender;
 	long _uid;
@@ -58,18 +63,23 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	/** packet : Integer -> reportTime : Long * */
 	HashMap<Integer, Long> _recentlyReportedMissingPackets = new HashMap<Integer, Long>();
 	ByteCounter _ctr;
+	Ticker _ticker;
 	boolean sentAborted;
 	private MessageFilter discardFilter;
 	private long discardEndTime;
+	private boolean senderAborted;
+//	private final boolean _doTooLong;
 
 	boolean logMINOR=Logger.shouldLog(Logger.MINOR, this);
 	
-	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr) {
+	public BlockReceiver(MessageCore usm, PeerContext sender, long uid, PartiallyReceivedBlock prb, ByteCounter ctr, Ticker ticker, boolean doTooLong) {
 		_sender = sender;
 		_prb = prb;
 		_uid = uid;
 		_usm = usm;
 		_ctr = ctr;
+		_ticker = ticker;
+//		_doTooLong = doTooLong;
 	}
 
 	public void sendAborted(int reason, String desc) throws NotConnectedException {
@@ -78,6 +88,26 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	}
 	
 	public byte[] receive() throws RetrievalException {
+		long startTime = System.currentTimeMillis();
+//		if(_doTooLong) {
+//		_ticker.queueTimedJob(new Runnable() {
+//
+//			public void run() {
+//				if(!_sender.isConnected()) return;
+//				try {
+//					if(_prb.allReceived()) return;
+//				} catch (AbortedException e) {
+//					return;
+//				}
+//				Logger.error(this, "Transfer took too long: "+_uid+" from "+_sender);
+//				synchronized(BlockReceiver.this) {
+//					tookTooLong = true;
+//				}
+//				_sender.transferFailed("Took too long (still running)");
+//			}
+//			
+//		}, TOO_LONG_TIMEOUT);
+//		}
 		int consecutiveMissingPacketReports = 0;
 		try {
 			MessageFilter mfPacketTransmit = MessageFilter.create().setTimeout(RECEIPT_TIMEOUT).setType(DMT.packetTransmit).setField(DMT.UID, _uid).setSource(_sender);
@@ -101,6 +131,9 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				if (desc.indexOf("Upstream")<0)
 					desc="Upstream transmit error: "+desc;
 				_prb.abort(m1.getInt(DMT.REASON), desc);
+				synchronized(this) {
+					senderAborted = true;
+				}
 				throw new RetrievalException(m1.getInt(DMT.REASON), desc);
 			}
 			if ((m1 != null) && (m1.getSpec().equals(DMT.packetTransmit))) {
@@ -111,7 +144,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				Buffer data = (Buffer) m1.getObject(DMT.DATA);
 				_prb.addPacket(packetNo, data);
 				// Remove it from rrmp if its in there
-				_recentlyReportedMissingPackets.remove(new Integer(packetNo));
+				_recentlyReportedMissingPackets.remove(Integer.valueOf(packetNo));
 				// Check that we have what the sender thinks we have
 				LinkedList<Integer> missing = new LinkedList<Integer>();
 				for (int x = 0; x < sent.getSize(); x++) {
@@ -165,6 +198,15 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 		discardEndTime=System.currentTimeMillis()+CLEANUP_TIMEOUT;
 		discardFilter=relevantMessages;
 		maybeResetDiscardFilter();
+		long endTime = System.currentTimeMillis();
+		long transferTime = (endTime - startTime);
+		if(logMINOR) {
+			synchronized(avgTimeTaken) {
+				avgTimeTaken.report(transferTime);
+				Logger.minor(this, "Block transfer took "+transferTime+"ms - average is "+avgTimeTaken);
+			}
+		}
+		
 		return _prb.getBlock();
 		} catch(NotConnectedException e) {
 		    throw new RetrievalException(RetrievalException.SENDER_DISCONNECTED);
@@ -182,6 +224,8 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 			}
 		}
 	}
+	
+	private static MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
 	
 	private void maybeResetDiscardFilter() {
 		long timeleft=discardEndTime-System.currentTimeMillis();
@@ -221,5 +265,8 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 	public void onRestarted(PeerContext ctx) {
 		// Ignore
 	}
-	
+
+	public synchronized boolean senderAborted() {
+		return senderAborted;
+	}
 }

@@ -20,6 +20,14 @@ import freenet.node.Node;
 import freenet.node.PrioRunnable;
 import freenet.support.io.TempBucketFactory;
 
+/**
+ * A thread which periodically wakes up and iterates to start fetches and/or inserts.
+ * 
+ * When calling <code>start()</code>, the thread will iterate the first time after <code>getStartupDelay()</code> milliseconds.
+ * After each iteration, it will sleep for <code>getSleepTime()</code> milliseconds.
+ * 
+ * @author xor
+ */
 public abstract class TransferThread implements PrioRunnable, ClientCallback {
 	
 	private final String mName;
@@ -44,6 +52,7 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 	
 	protected void start() {
 		mNode.executor.execute(this, mName);
+		Logger.debug(this, this.getClass().getSimpleName() + " started.");
 	}
 	
 	/** Specify the priority of this thread. Priorities to return can be found in class NativeThread. */
@@ -60,17 +69,20 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 		}
 		
 		try {
-		while(isRunning) {
-			Thread.interrupted();
-			
-			try {
-				iterate();
-				Thread.sleep(getSleepTime());
+			while(isRunning) {
+				Thread.interrupted();
+
+				try {
+					Logger.debug(this, "Loop running...");
+					iterate();
+					long sleepTime = getSleepTime();
+					Logger.debug(this, "Loop finished. Sleeping for " + (sleepTime/(1000*60)) + " minutes.");
+					Thread.sleep(sleepTime);
+				}
+				catch(InterruptedException e) {
+					mThread.interrupt();
+				}
 			}
-			catch(InterruptedException e) {
-				mThread.interrupt();
-			}
-		}
 		}
 		
 		finally {
@@ -80,6 +92,13 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 				notify();
 			}
 		}
+	}
+	
+	/**
+	 * Wakes up the thread so that iterate() is called.
+	 */
+	public void nextIteration() {
+		mThread.interrupt();
 	}
 	
 	protected void abortAllTransfers() {
@@ -130,7 +149,20 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 		Logger.debug(this, "Removed insert for " + p.getURI());
 	}
 	
+	protected int fetchCount() {
+		synchronized(mFetches) {
+			return mFetches.size();
+		}
+	}
+	
+	protected int insertCount() {
+		synchronized(mInserts) {
+			return mInserts.size();
+		}
+	}
+	
 	public void terminate() {
+		Logger.debug(this, "Terminating...");
 		isRunning = false;
 		mThread.interrupt();
 		
@@ -144,6 +176,7 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 				}
 			}
 		}
+		Logger.debug(this, "Terminated.");
 	}
 	
 	

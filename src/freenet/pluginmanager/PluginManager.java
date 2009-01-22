@@ -529,8 +529,15 @@ public class PluginManager {
 		return null;
 		 */
 
+		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+		ClassLoader pluginClassLoader = handler.getClass().getClassLoader();
+		Thread.currentThread().setContextClassLoader(pluginClassLoader);
+		try {
 		if(handler instanceof FredPluginHTTP)
 			return ((FredPluginHTTP) handler).handleHTTPGet(request);
+		} finally {
+			Thread.currentThread().setContextClassLoader(oldClassLoader);
+		}
 
 		throw new NotFoundPluginHTTPException("Plugin not found!", "/plugins");
 	}
@@ -543,10 +550,15 @@ public class PluginManager {
 		/*if (handler == null)
 		return null;
 		 */
-
+		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+		ClassLoader pluginClassLoader = handler.getClass().getClassLoader();
+		Thread.currentThread().setContextClassLoader(pluginClassLoader);
+		try {
 		if(handler instanceof FredPluginHTTP)
 			return ((FredPluginHTTP) handler).handleHTTPPost(request);
-
+		} finally {
+			Thread.currentThread().setContextClassLoader(oldClassLoader);
+		}
 		throw new NotFoundPluginHTTPException("Plugin not found!", "/plugins");
 	}
 

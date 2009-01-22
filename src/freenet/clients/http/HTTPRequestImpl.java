@@ -353,7 +353,7 @@ public class HTTPRequestImpl implements HTTPRequest {
 		List<Integer> intValueList = new ArrayList<Integer>();
 		for (int i = 0; i < valueList.size(); i++) {
 			try {
-				intValueList.add(new Integer(valueList.get(i)));
+				intValueList.add(Integer.valueOf(valueList.get(i)));
 			} catch (Exception e) {
 				// ignore invalid parameter values
 			}

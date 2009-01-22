@@ -39,6 +39,9 @@ public class FirstTimeWizardToadlet extends Toadlet {
 	
 	private enum WIZARD_STEP {
 		WELCOME,
+		// Before security levels, because once the network security level has been set, we won't redirect
+		// the user to the wizard page.
+		BROWSER_WARNING,
 		SECURITY_NETWORK,
 		SECURITY_FRIENDS,
 		SECURITY_PHYSICAL,
@@ -68,7 +71,23 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		
 		WIZARD_STEP currentStep = WIZARD_STEP.valueOf(request.getParam("step", WIZARD_STEP.WELCOME.toString()));
 		
-		if(currentStep == WIZARD_STEP.SECURITY_NETWORK) {
+		if(currentStep == WIZARD_STEP.BROWSER_WARNING) {
+			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("browserWarningPageTitle"), false, ctx);
+			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
+			
+			HTMLNode infobox = contentNode.addChild("div", "class", "infobox infobox-normal");
+			HTMLNode infoboxHeader = infobox.addChild("div", "class", "infobox-header");
+			HTMLNode infoboxContent = infobox.addChild("div", "class", "infobox-content");
+			
+			infoboxHeader.addChild("#", l10n("browserWarningShort"));
+			L10n.addL10nSubstitution(infoboxContent, "FirstTimeWizardToadlet.browserWarning", new String[] { "bold", "/bold" }, new String[] { "<b>", "</b>" });
+			infoboxContent.addChild("p", l10n("browserWarningSuggestion"));
+			
+			infoboxContent.addChild("p").addChild("a", "href", "?step="+WIZARD_STEP.SECURITY_NETWORK, L10n.getString("FirstTimeWizardToadlet.clickContinue"));
+
+			this.writeHTMLReply(ctx, 200, "OK", pageNode.generate());
+			return;
+		} else if(currentStep == WIZARD_STEP.SECURITY_NETWORK) {
 			HTMLNode pageNode = ctx.getPageMaker().getPageNode(l10n("networkSecurityPageTitle"), false, ctx);
 			HTMLNode contentNode = ctx.getPageMaker().getContentNode(pageNode);
 			
@@ -316,7 +335,7 @@ public class FirstTimeWizardToadlet extends Toadlet {
 		HTMLNode firstParagraph = welcomeInfoboxContent.addChild("p");
 		firstParagraph.addChild("#", l10n("welcomeInfoboxContent1"));
 		HTMLNode secondParagraph = welcomeInfoboxContent.addChild("p");
-		secondParagraph.addChild("a", "href", "?step="+WIZARD_STEP.SECURITY_NETWORK).addChild("#", L10n.getString("FirstTimeWizardToadlet.clickContinue"));
+		secondParagraph.addChild("a", "href", "?step="+WIZARD_STEP.BROWSER_WARNING).addChild("#", L10n.getString("FirstTimeWizardToadlet.clickContinue"));
 		
 		HTMLNode thirdParagraph = welcomeInfoboxContent.addChild("p");
 		thirdParagraph.addChild("a", "href", "?step="+WIZARD_STEP.FINAL).addChild("#", l10n("skipWizard"));
@@ -459,11 +478,11 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			super.writeTemporaryRedirect(ctx, "step3", TOADLET_URL+"?step="+WIZARD_STEP.BANDWIDTH);
 			return;
 		} else if(request.isPartSet("bwF")) {
-			_setUpstreamBandwidthLimit(request.getPartAsString("bw", 6));
+			_setUpstreamBandwidthLimit(request.getPartAsString("bw", 20)); // drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
 			super.writeTemporaryRedirect(ctx, "step4", TOADLET_URL+"?step="+WIZARD_STEP.DATASTORE_SIZE);
 			return;
 		} else if(request.isPartSet("dsF")) {
-			_setDatastoreSize(request.getPartAsString("ds", 6));
+			_setDatastoreSize(request.getPartAsString("ds", 20)); // drop down options may be 6 chars or less, but formatted ones e.g. old value if re-running can be more
 			super.writeTemporaryRedirect(ctx, "step5", TOADLET_URL+"?step="+WIZARD_STEP.MEMORY);
 			return;
 		} else if(request.isPartSet("memoryF")) {
@@ -571,17 +590,17 @@ public class FirstTimeWizardToadlet extends Toadlet {
 			return false;
 		else {
 			String shortSize = null;
-			if(freeSpace / 20 > 1024 * 1024 * 1024) {
+			if(freeSpace / 20 > 1024 * 1024 * 1024) { // 20GB+ => 5%, limit 256GB
 				// If 20GB+ free, 5% of available disk space.
 				// Maximum of 256GB. That's a 128MB bloom filter.
 				shortSize = SizeUtil.formatSize(Math.min(freeSpace / 20, 256*1024*1024*1024L));
-			}else if(freeSpace / 10 > 1024 * 1024 * 1024) {
+			}else if(freeSpace / 10 > 1024 * 1024 * 1024) { // 10GB+ => 10%
 				// If 10GB+ free, 10% of available disk space.
 				shortSize = SizeUtil.formatSize(freeSpace / 10);
-			}else if(freeSpace / 5 > 1024 * 1024 * 1024) {
+			}else if(freeSpace / 5 > 1024 * 1024 * 1024) { // 5GB+ => 512MB
 				// If 5GB+ free, default to 512MB
 				shortSize = "512MB";
-			}else
+			}else // <5GB => 256MB
 				shortSize = "256MB";
 			
 			_setDatastoreSize(shortSize);
