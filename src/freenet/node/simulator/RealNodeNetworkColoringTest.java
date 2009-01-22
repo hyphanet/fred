@@ -178,8 +178,8 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
 					rate = 1.0*good/total;
 				general.report(rate);
 				aRate.report(rate);
-				generalIds.add(new Integer(id));
-				aIds.add(new Integer(id));
+				generalIds.add(Integer.valueOf(id));
+				aIds.add(Integer.valueOf(id));
 			}
 			
 			for (int i=0; i<NUMBER_OF_NODES; i++) {
@@ -195,8 +195,8 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
 					rate = 1.0*good/total;
 				general.report(rate);
 				bRate.report(rate);
-				generalIds.add(new Integer(id));
-				bIds.add(new Integer(id));
+				generalIds.add(Integer.valueOf(id));
+				bIds.add(Integer.valueOf(id));
 			}
 			
 			for (int i=0; i<BRIDGES; i++) {
@@ -211,8 +211,8 @@ public class RealNodeNetworkColoringTest extends RealNodeTest {
 					rate = 1.0*good/total;
 				general.report(rate);
 				bridgeRate.report(rate);
-				generalIds.add(new Integer(id));
-				bridgeIds.add(new Integer(id));
+				generalIds.add(Integer.valueOf(id));
+				bridgeIds.add(Integer.valueOf(id));
 			}
 			
 			Logger.error(log, "cycle = "+cycleNumber);

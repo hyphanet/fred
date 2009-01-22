@@ -45,14 +45,16 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
     private BlockReceiver br;
     private Thread runThread;
     PartiallyReceivedBlock prb;
+    final InsertTag tag;
     private static boolean logMINOR;
     
-    CHKInsertHandler(Message req, PeerNode source, long id, Node node, long startTime) {
+    CHKInsertHandler(Message req, PeerNode source, long id, Node node, long startTime, InsertTag tag) {
         this.req = req;
         this.node = node;
         this.uid = id;
         this.source = source;
         this.startTime = startTime;
+        this.tag = tag;
         key = (NodeCHK) req.getObject(DMT.FREENET_ROUTING_KEY);
         htl = req.getShort(DMT.HTL);
         if(htl <= 0) htl = 1;
@@ -71,11 +73,13 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         	realRun();
 		} catch (OutOfMemoryError e) {
 			OOMHandler.handleOOM(e);
+			tag.handlerThrew(e);
         } catch (Throwable t) {
             Logger.error(this, "Caught in run() "+t, t);
+            tag.handlerThrew(t);
         } finally {
         	if(logMINOR) Logger.minor(this, "Exiting CHKInsertHandler.run() for "+uid);
-            node.unlockUID(uid, false, true, false, false, false);
+            node.unlockUID(uid, false, true, false, false, false, tag);
         }
     }
 
@@ -117,7 +121,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         		Message m = DMT.createFNPInsertTransfersCompleted(uid, true);
         		source.sendAsync(m, null, this);
         		prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
-        		br = new BlockReceiver(node.usm, source, uid, prb, this);
+        		br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false);
         		prb.abort(RetrievalException.NO_DATAINSERT, "No DataInsert");
         		br.sendAborted(RetrievalException.NO_DATAINSERT, "No DataInsert");
         		return;
@@ -139,7 +143,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
         prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE);
         if(htl > 0)
             sender = node.makeInsertSender(key, htl, uid, source, headers, prb, false, true);
-        br = new BlockReceiver(node.usm, source, uid, prb, this);
+        br = new BlockReceiver(node.usm, source, uid, prb, this, node.getTicker(), false);
         
         // Receive the data, off thread
         Runnable dataReceiver = new DataReceiver();
@@ -434,7 +438,7 @@ public class CHKInsertHandler implements PrioRunnable, ByteCounter {
 				else
 					// Annoying, but we have stats for this; no need to call attention to it, it's unlikely to be a bug.
 					Logger.normal(this, "Failed to retrieve ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e, e);
-            	node.nodeStats.failedBlockReceive();
+            	node.nodeStats.failedBlockReceive(false, false, false);
                 return;
             } catch (Throwable t) {
                 Logger.error(this, "Caught "+t, t);

@@ -33,7 +33,9 @@ import freenet.store.KeyCollisionException;
 import freenet.support.Logger;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
+import freenet.support.TimeUtil;
 import freenet.support.io.NativeThread;
+import freenet.support.math.MedianMeanRunningAverage;
 
 /**
  * @author amphibian
@@ -73,6 +75,11 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     private byte[] sskData;
     private SSKBlock block;
     private boolean hasForwarded;
+    private PeerNode transferringFrom;
+    private boolean turtleMode;
+    private boolean sentBackoffTurtle;
+    /** Set when we start to think about going to turtle mode - not unset if we get cancelled instead. */
+    private boolean tryTurtle;
     
     /** If true, only try to fetch the key from nodes which have offered it */
     private boolean tryOffersOnly;
@@ -97,6 +104,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     static final int GET_OFFER_TRANSFER_FAILED = 11;
     private PeerNode successFrom;
     private PeerNode lastNode;
+    private final long startTime;
     
     static String getStatusString(int status) {
     	switch(status) {
@@ -148,6 +156,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     public RequestSender(Key key, DSAPublicKey pubKey, short htl, long uid, Node n,
             PeerNode source, boolean offersOnly) {
     	if(key.getRoutingKey() == null) throw new NullPointerException();
+    	startTime = System.currentTimeMillis();
         this.key = key;
         this.pubKey = pubKey;
         this.htl = htl;
@@ -264,12 +273,12 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 		}
                 		fireCHKTransferBegins();
 						
-                		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this);
+                		BlockReceiver br = new BlockReceiver(node.usm, pn, uid, prb, this, node.getTicker(), true);
                 		
                 		try {
                 			if(logMINOR) Logger.minor(this, "Receiving data");
                 			byte[] data = br.receive();
-                			pn.transferSuccess();
+               				pn.transferSuccess();
                 			if(logMINOR) Logger.minor(this, "Received data");
                 			// Received data
                 			try {
@@ -290,9 +299,10 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 								// A certain number of these are normal, it's better to track them through statistics than call attention to them in the logs.
 								Logger.normal(this, "Transfer for offer failed ("+e.getReason()+"/"+RetrievalException.getErrString(e.getReason())+"): "+e+" from "+pn, e);
                 			finish(GET_OFFER_TRANSFER_FAILED, pn, true);
-                			pn.transferFailed("RequestSenderGetOfferedTransferFailed");
+                			// Backoff here anyway - the node really ought to have it!
+               				pn.transferFailed("RequestSenderGetOfferedTransferFailed");
                     		offers.deleteLastOffer();
-                			node.nodeStats.failedBlockReceive();
+                			node.nodeStats.failedBlockReceive(false, false, false);
                 			return;
                 		}
                 	} finally {
@@ -766,13 +776,57 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 		}
                 		fireCHKTransferBegins();
 						
-                		BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this);
+                		long tStart = System.currentTimeMillis();
+                		BlockReceiver br = new BlockReceiver(node.usm, next, uid, prb, this, node.getTicker(), true);
                 		
                 		try {
                 			if(logMINOR) Logger.minor(this, "Receiving data");
-                			byte[] data = br.receive();
-                			next.transferSuccess();
+                			final PeerNode from = next;
+                			synchronized(this) {
+                				transferringFrom = next;
+                			}
+                			node.getTicker().queueTimedJob(new Runnable() {
+
+								public void run() {
+									synchronized(RequestSender.this) {
+										if(transferringFrom != from) return;
+									}
+									makeTurtle();
+								}
+                				
+                			}, 60*1000);
+                			byte[] data;
+                			try {
+                				data = br.receive();
+                			} finally {
+                				synchronized(this) {
+                					transferringFrom = null;
+                				}
+                			}
+                			
+                			long tEnd = System.currentTimeMillis();
+                			this.transferTime = tEnd - tStart;
+                			boolean turtle;
+                			boolean turtleBackedOff;
+                			synchronized(this) {
+                				turtle = turtleMode;
+                				turtleBackedOff = sentBackoffTurtle;
+                				sentBackoffTurtle = true;
+                			}
+                			if(!turtle)
+                				next.transferSuccess();
+                			else {
+                				Logger.error(this, "TURTLE SUCCEEDED: "+key+" for "+this+" in "+TimeUtil.formatTime(transferTime, 2, true));
+                				if(!turtleBackedOff)
+                					next.transferFailed("Turtled transfer");
+                				node.nodeStats.turtleSucceeded();
+                			}
                         	next.successNotOverload();
+                        	if(turtle) {
+                        		next.unregisterTurtleTransfer(this);
+                        		node.unregisterTurtleTransfer(this);
+                        	}
+                        	node.nodeStats.successfulBlockReceive();
                 			if(logMINOR) Logger.minor(this, "Received data");
                 			// Received data
                 			try {
@@ -786,6 +840,20 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
                 			finish(SUCCESS, next, false);
                 			return;
                 		} catch (RetrievalException e) {
+                			boolean turtle;
+                			synchronized(this) {
+                				turtle = turtleMode;
+                			}
+            				if(turtle) {
+            					if(e.getReason() != RetrievalException.GONE_TO_TURTLE_MODE) {
+            						Logger.error(this, "TURTLE FAILED: "+key+" for "+this+" : "+e);
+            						node.nodeStats.turtleFailed();
+            					} else {
+            						if(logMINOR) Logger.minor(this, "Upstream turtled for "+this+" from "+next);
+            					}
+                           		next.unregisterTurtleTransfer(this);
+                           		node.unregisterTurtleTransfer(this);
+            				}
 							if (e.getReason()==RetrievalException.SENDER_DISCONNECTED)
 								Logger.normal(this, "Transfer failed (disconnect): "+e, e);
 							else
@@ -794,7 +862,20 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 							next.localRejectedOverload("TransferFailedRequest"+e.getReason());
                 			finish(TRANSFER_FAILED, next, false);
                 			node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
-                			next.transferFailed("RequestSenderTransferFailed");
+            				int reason = e.getReason();
+                			boolean timeout = (!br.senderAborted()) &&
+    							(reason == RetrievalException.SENDER_DIED || reason == RetrievalException.RECEIVER_DIED || reason == RetrievalException.TIMED_OUT
+    							|| reason == RetrievalException.UNABLE_TO_SEND_BLOCK_WITHIN_TIMEOUT);
+               				if(timeout) {
+               					// Looks like a timeout. Backoff, even if it's a turtle.
+               					next.transferFailed(e.getMessage());
+               				} else {
+               					// Quick failure (in that we didn't have to timeout). Don't backoff.
+               					// Treat as a DNF.
+               					// If it was turtled, and then failed, still treat it as a DNF.
+           						node.failureTable.onFinalFailure(key, next, htl, FailureTable.REJECT_TIME, source);
+               				}
+                   			node.nodeStats.failedBlockReceive(true, timeout, reason == RetrievalException.GONE_TO_TURTLE_MODE);
                 			return;
                 		}
                 	} finally {
@@ -898,6 +979,14 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
             	
             }
         }
+	}
+    
+	protected void makeTurtle() {
+		synchronized(this) {
+			if(tryTurtle) return;
+			tryTurtle = true;
+		}
+		node.makeTurtle(RequestSender.this);
 	}
 
 	/**
@@ -1036,7 +1125,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
        		if(prb != null)
        			current |= WAIT_TRANSFERRING_DATA;
         	
-        	if(status != NOT_FINISHED)
+        	if(status != NOT_FINISHED || sentAbortDownstreamTransfers)
         		current |= WAIT_FINISHED;
         	
         	if(current != mask) return current;
@@ -1055,17 +1144,46 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     	}
     }
     
+	private static MedianMeanRunningAverage avgTimeTaken = new MedianMeanRunningAverage();
+	
+	private static MedianMeanRunningAverage avgTimeTakenTurtle = new MedianMeanRunningAverage();
+	
+	private static MedianMeanRunningAverage avgTimeTakenTransfer = new MedianMeanRunningAverage();
+	
+	private long transferTime;
+	
     private void finish(int code, PeerNode next, boolean fromOfferedKey) {
     	if(logMINOR) Logger.minor(this, "finish("+code+ ')');
         
+    	boolean turtle;
+    	
         synchronized(this) {
             status = code;
             notifyAll();
+            turtle = turtleMode;
             if(status == SUCCESS)
             	successFrom = next;
         }
 		
         if(status == SUCCESS) {
+        	if(key instanceof NodeCHK && transferTime > 0 && logMINOR) {
+        		long timeTaken = System.currentTimeMillis() - startTime;
+        		synchronized(avgTimeTaken) {
+        			if(turtle)
+        				avgTimeTakenTurtle.report(timeTaken);
+        			else {
+        				avgTimeTaken.report(timeTaken);
+            			avgTimeTakenTransfer.report(transferTime);
+        			}
+        			if(turtle) {
+        				if(logMINOR) Logger.minor(this, "Successful CHK turtle request took "+timeTaken+" average "+avgTimeTakenTurtle);
+        			} else {
+        				if(logMINOR) Logger.minor(this, "Successful CHK request took "+timeTaken+" average "+avgTimeTaken);
+            			if(logMINOR) Logger.minor(this, "Successful CHK request transfer "+transferTime+" average "+avgTimeTakenTransfer);
+            			if(logMINOR) Logger.minor(this, "Search phase: median "+(avgTimeTaken.currentValue() - avgTimeTakenTransfer.currentValue())+"ms, mean "+(avgTimeTaken.meanValue() - avgTimeTakenTransfer.meanValue())+"ms");
+        			}
+        		}
+        	}
         	if(next != null) {
         		next.onSuccess(false, key instanceof NodeSSK);
         	}
@@ -1283,6 +1401,9 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		void onCHKTransferBegins();
 		/** Should return quickly, allocate a thread if it needs to block etc */
 		void onRequestSenderFinished(int status);
+		/** Abort downstream transfers (not necessarily upstream ones, so not via the PRB).
+		 * Should return quickly, allocate a thread if it needs to block etc. */
+		void onAbortDownstreamTransfers(int reason, String desc);
 	}
 	
 	public void addListener(Listener l) {
@@ -1291,10 +1412,13 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		boolean reject=false;
 		boolean transfer=false;
 		boolean sentFinished;
+		boolean sentTransferCancel = false;
 		int status;
 		synchronized (this) {
 			synchronized (listeners) {
-				listeners.add(l);
+				sentTransferCancel = sentAbortDownstreamTransfers;
+				if(!sentTransferCancel)
+					listeners.add(l);
 				reject = sentReceivedRejectOverload;
 				transfer = sentCHKTransferBegins;
 				sentFinished = sentRequestSenderFinished;
@@ -1307,6 +1431,8 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 			l.onReceivedRejectOverload();
 		if (transfer)
 			l.onCHKTransferBegins();
+		if(sentTransferCancel)
+			l.onAbortDownstreamTransfers(abortDownstreamTransfersReason, abortDownstreamTransfersDesc);
 		if (status!=NOT_FINISHED && sentFinished)
 			l.onRequestSenderFinished(status);
 	}
@@ -1357,7 +1483,66 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
 		}
 	}
 
+	private boolean sentAbortDownstreamTransfers;
+	private int abortDownstreamTransfersReason;
+	private String abortDownstreamTransfersDesc;
+	
+	private void sendAbortDownstreamTransfers(int reason, String desc) {
+		synchronized (listeners) {
+			abortDownstreamTransfersReason = reason;
+			abortDownstreamTransfersDesc = desc;
+			sentAbortDownstreamTransfers = true;
+			for (Listener l : listeners) {
+				try {
+					l.onAbortDownstreamTransfers(reason, desc);
+					l.onRequestSenderFinished(TRANSFER_FAILED);
+				} catch (Throwable t) {
+					Logger.error(this, "Caught: "+t, t);
+				}
+			}
+			listeners.clear();
+		}
+		synchronized(this) {
+			notifyAll();
+		}
+	}
+	
 	public int getPriority() {
 		return NativeThread.HIGH_PRIORITY;
 	}
+
+	public void setTurtle() {
+		synchronized(this) {
+			this.turtleMode = true;
+		}
+		sendAbortDownstreamTransfers(RetrievalException.GONE_TO_TURTLE_MODE, "Turtling");
+		node.getTicker().queueTimedJob(new Runnable() {
+
+			public void run() {
+				PeerNode from;
+				synchronized(RequestSender.this) {
+					if(sentBackoffTurtle) return;
+					sentBackoffTurtle = true;
+					from = transferringFrom;
+					if(from == null) return;
+				}
+				from.transferFailed("Turtled transfer");
+			}
+			
+		}, 30*1000);
+	}
+
+	public PeerNode transferringFrom() {
+		return transferringFrom;
+	}
+
+	public void killTurtle() {
+		prb.abort(RetrievalException.TURTLE_KILLED, "Too many turtles / already have turtles for this key");
+		node.failureTable.onFinalFailure(key, transferringFrom(), htl, FailureTable.REJECT_TIME, source);
+	}
+
+	public boolean abortedDownstreamTransfers() {
+		return sentAbortDownstreamTransfers;
+	}
+
 }

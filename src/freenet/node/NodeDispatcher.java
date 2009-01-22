@@ -261,7 +261,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		
 		// Do we want it? We can RejectOverload if we don't have the bandwidth...
 		boolean isSSK = key instanceof NodeSSK;
-		node.lockUID(uid, isSSK, false, true, false);
+		OfferReplyTag tag = new OfferReplyTag(isSSK);
+		node.lockUID(uid, isSSK, false, true, false, tag);
 		boolean needPubKey;
 		try {
 		needPubKey = m.getBoolean(DMT.NEED_PUB_KEY);
@@ -275,22 +276,22 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
-			node.unlockUID(uid, isSSK, false, false, true, false);
+			node.unlockUID(uid, isSSK, false, false, true, false, tag);
 			return true;
 		}
 		
 		} catch (Error e) {
-			node.unlockUID(uid, isSSK, false, false, true, false);
+			node.unlockUID(uid, isSSK, false, false, true, false, tag);
 			throw e;
 		} catch (RuntimeException e) {
-			node.unlockUID(uid, isSSK, false, false, true, false);
+			node.unlockUID(uid, isSSK, false, false, true, false, tag);
 			throw e;
 		} // Otherwise, sendOfferedKey is responsible for unlocking. 
 		
 		// Accept it.
 		
 		try {
-			node.failureTable.sendOfferedKey(key, isSSK, needPubKey, uid, source);
+			node.failureTable.sendOfferedKey(key, isSSK, needPubKey, uid, source, tag);
 		} catch (NotConnectedException e) {
 			// Too bad.
 		}
@@ -354,7 +355,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
         short htl = m.getShort(DMT.HTL);
         Key key = (Key) m.getObject(DMT.FREENET_ROUTING_KEY);
-		if(!node.lockUID(id, isSSK, false, false, false)) {
+        final RequestTag tag = new RequestTag(isSSK, RequestTag.START.REMOTE);
+		if(!node.lockUID(id, isSSK, false, false, false, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
@@ -377,7 +379,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) data request from "+source.getPeer()+": "+e);
 			}
-			node.unlockUID(id, isSSK, false, false, false, false);
+			tag.setRejected();
+			node.unlockUID(id, isSSK, false, false, false, false, tag);
 			// Do not tell failure table.
 			// Otherwise an attacker can flood us with requests very cheaply and purge our
 			// failure table even though we didn't accept any of them.
@@ -385,7 +388,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		}
 		nodeStats.reportIncomingRequestLocation(key.toNormalizedDouble());
 		//if(!node.lockUID(id)) return false;
-		RequestHandler rh = new RequestHandler(m, source, id, node, htl, key);
+		RequestHandler rh = new RequestHandler(m, source, id, node, htl, key, tag);
 		node.executor.execute(rh, "RequestHandler for UID "+id+" on "+node.getDarknetPortNumber());
 		return true;
 	}
@@ -402,7 +405,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			return true;
 		}
-		if(!node.lockUID(id, isSSK, true, false, false)) {
+		InsertTag tag = new InsertTag(isSSK, InsertTag.START.REMOTE);
+		if(!node.lockUID(id, isSSK, true, false, false, tag)) {
 			if(logMINOR) Logger.minor(this, "Could not lock ID "+id+" -> rejecting (already running)");
 			Message rejected = DMT.createFNPRejectedLoop(id);
 			try {
@@ -422,7 +426,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			} catch (NotConnectedException e) {
 				Logger.normal(this, "Rejecting (overload) insert request from "+source.getPeer()+": "+e);
 			}
-			node.unlockUID(id, isSSK, true, false, false, false);
+			node.unlockUID(id, isSSK, true, false, false, false, tag);
 			return true;
 		}
 		long now = System.currentTimeMillis();
@@ -431,17 +435,17 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	        byte[] data = ((ShortBuffer) m.getObject(DMT.DATA)).getData();
 	        byte[] headers = ((ShortBuffer) m.getObject(DMT.BLOCK_HEADERS)).getData();
 	        short htl = m.getShort(DMT.HTL);
-			SSKInsertHandler rh = new SSKInsertHandler(key, data, headers, htl, source, id, node, now);
+			SSKInsertHandler rh = new SSKInsertHandler(key, data, headers, htl, source, id, node, now, tag);
 	        rh.receivedBytes(m.receivedByteCount());
 			node.executor.execute(rh, "SSKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		} else if(m.getSpec().equals(DMT.FNPSSKInsertRequestNew)) {
 			NodeSSK key = (NodeSSK) m.getObject(DMT.FREENET_ROUTING_KEY);
 			short htl = m.getShort(DMT.HTL);
-			SSKInsertHandler rh = new SSKInsertHandler(key, null, null, htl, source, id, node, now);
+			SSKInsertHandler rh = new SSKInsertHandler(key, null, null, htl, source, id, node, now, tag);
 	        rh.receivedBytes(m.receivedByteCount());
 			node.executor.execute(rh, "SSKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		} else {
-			CHKInsertHandler rh = new CHKInsertHandler(m, source, id, node, now);
+			CHKInsertHandler rh = new CHKInsertHandler(m, source, id, node, now, tag);
 			node.executor.execute(rh, "CHKInsertHandler for "+id+" on "+node.getDarknetPortNumber());
 		}
 		if(logMINOR) Logger.minor(this, "Started InsertHandler for "+id);
@@ -579,7 +583,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	 */
 	private boolean handleRoutedRejected(Message m) {
 		long id = m.getLong(DMT.UID);
-		Long lid = new Long(id);
+		Long lid = Long.valueOf(id);
 		RoutedContext rc = routedContexts.get(lid);
 		if(rc == null) {
 			// Gah
@@ -618,7 +622,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		if(logMINOR) Logger.minor(this, "handleRouted("+m+ ')');
 
 		long id = m.getLong(DMT.UID);
-		Long lid = new Long(id);
+		Long lid = Long.valueOf(id);
 		short htl = m.getShort(DMT.HTL);
 		byte[] identity = ((ShortBuffer) m.getObject(DMT.NODE_IDENTITY)).getData();
 		if(source != null) htl = source.decrementHTL(htl);
@@ -661,7 +665,7 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 	boolean handleRoutedReply(Message m) {
 		long id = m.getLong(DMT.UID);
 		if(logMINOR) Logger.minor(this, "Got reply: "+m);
-		Long lid = new Long(id);
+		Long lid = Long.valueOf(id);
 		RoutedContext ctx = routedContexts.get(lid);
 		if(ctx == null) {
 			Logger.error(this, "Unrecognized routed reply: "+m);

@@ -617,11 +617,12 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	public void asyncGet(Key key, boolean cache, boolean offersOnly, final SimpleRequestSenderCompletionListener listener) {
 		final long uid = random.nextLong();
 		final boolean isSSK = key instanceof NodeSSK;
-		if(!node.lockUID(uid, isSSK, false, false, true)) {
+		final RequestTag tag = new RequestTag(isSSK, RequestTag.START.ASYNC_GET);
+		if(!node.lockUID(uid, isSSK, false, false, true, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			return;
 		}
-		asyncGet(key, cache, offersOnly, uid, new RequestSender.Listener() {
+		asyncGet(key, isSSK, cache, offersOnly, uid, new RequestSender.Listener() {
 
 			public void onCHKTransferBegins() {
 				// Ignore
@@ -633,11 +634,16 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 
 			public void onRequestSenderFinished(int status) {
 				// If transfer coalescing has happened, we may have already unlocked.
-				node.unlockUID(uid, isSSK, false, true, false, true);
+				node.unlockUID(uid, isSSK, false, true, false, true, tag);
+				tag.setRequestSenderFinished(status);
 				if(listener != null)
 					listener.completed(status == RequestSender.SUCCESS);
 			}
-		});
+
+			public void onAbortDownstreamTransfers(int reason, String desc) {
+				// Ignore, onRequestSenderFinished will also be called.
+			}
+		}, tag);
 	}
 
 	/**
@@ -646,26 +652,28 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	 * anything and will run asynchronously. Caller is responsible for unlocking the UID.
 	 * @param key
 	 */
-	void asyncGet(Key key, boolean cache, boolean offersOnly, long uid, RequestSender.Listener listener) {
+	void asyncGet(Key key, boolean isSSK, boolean cache, boolean offersOnly, long uid, RequestSender.Listener listener, RequestTag tag) {
 		try {
 			Object o = node.makeRequestSender(key, node.maxHTL(), uid, null, false, cache, false, offersOnly);
 			if(o instanceof KeyBlock) {
-				node.unlockUID(uid, false, false, true, false, true);
+				tag.servedFromDatastore = true;
+				node.unlockUID(uid, isSSK, false, true, false, true, tag);
 				return; // Already have it.
 			}
 			RequestSender rs = (RequestSender) o;
+			tag.setSender(rs);
 			rs.addListener(listener);
 			if(rs.uid != uid)
-				node.unlockUID(uid, false, false, false, false, true);
+				node.unlockUID(uid, isSSK, false, false, false, true, tag);
 			// Else it has started a request.
 			if(logMINOR)
 				Logger.minor(this, "Started " + o + " for " + uid + " for " + key);
 		} catch(RuntimeException e) {
 			Logger.error(this, "Caught error trying to start request: " + e, e);
-			node.unlockUID(uid, false, false, true, false, true);
+			node.unlockUID(uid, isSSK, false, true, false, true, tag);
 		} catch(Error e) {
 			Logger.error(this, "Caught error trying to start request: " + e, e);
-			node.unlockUID(uid, false, false, true, false, true);
+			node.unlockUID(uid, isSSK, false, true, false, true, tag);
 		}
 	}
 
@@ -682,7 +690,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long startTime = System.currentTimeMillis();
 		long uid = random.nextLong();
-		if(!node.lockUID(uid, false, false, false, true)) {
+		RequestTag tag = new RequestTag(false, RequestTag.START.LOCAL);
+		if(!node.lockUID(uid, false, false, false, true, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
@@ -690,6 +699,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			Object o = node.makeRequestSender(key.getNodeCHK(), node.maxHTL(), uid, null, localOnly, cache, ignoreStore, false);
 			if(o instanceof CHKBlock)
 				try {
+					tag.setServedFromDatastore();
 					return new ClientCHKBlock((CHKBlock) o, key);
 				} catch(CHKVerifyException e) {
 					Logger.error(this, "Does not verify: " + e, e);
@@ -709,6 +719,9 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 				}
 
 				int status = rs.getStatus();
+				
+				if(rs.abortedDownstreamTransfers())
+					status = RequestSender.TRANSFER_FAILED;
 
 				if(status == RequestSender.NOT_FINISHED)
 					continue;
@@ -730,6 +743,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 						// See below
 						requestStarters.rejectedOverload(false, false);
 						rejectedOverload = true;
+						long rtt = System.currentTimeMillis() - startTime;
+						node.nodeStats.reportCHKTime(rtt, false);
 					}
 				} else
 					if(rs.hasForwarded() &&
@@ -744,9 +759,13 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 							requestStarters.requestCompleted(false, false, key.getNodeKey());
 						// Count towards RTT even if got a RejectedOverload - but not if timed out.
 						requestStarters.chkRequestThrottle.successfulCompletion(rtt);
+						node.nodeStats.reportCHKTime(rtt, status == RequestSender.SUCCESS);
+						if(status == RequestSender.SUCCESS) {
+							Logger.minor(this, "Successful CHK fetch took "+rtt);
+						}
 					}
 
-				if(rs.getStatus() == RequestSender.SUCCESS)
+				if(status == RequestSender.SUCCESS)
 					try {
 						return new ClientCHKBlock(rs.getPRB().getBlock(), rs.getHeaders(), key, true);
 					} catch(CHKVerifyException e) {
@@ -757,8 +776,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 						throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 					}
 				else {
-					int rStatus = rs.getStatus();
-					switch(rStatus) {
+					switch(status) {
 						case RequestSender.NOT_FINISHED:
 							Logger.error(this, "RS still running in getCHK!: " + rs);
 							throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
@@ -780,13 +798,13 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 						case RequestSender.INTERNAL_ERROR:
 							throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 						default:
-							Logger.error(this, "Unknown RequestSender code in getCHK: " + rStatus + " on " + rs);
+							Logger.error(this, "Unknown RequestSender code in getCHK: " + status + " on " + rs);
 							throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 					}
 				}
 			}
 		} finally {
-			node.unlockUID(uid, false, false, true, false, true);
+			node.unlockUID(uid, false, false, true, false, true, tag);
 		}
 	}
 
@@ -794,7 +812,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long startTime = System.currentTimeMillis();
 		long uid = random.nextLong();
-		if(!node.lockUID(uid, true, false, false, true)) {
+		RequestTag tag = new RequestTag(true, RequestTag.START.LOCAL);
+		if(!node.lockUID(uid, true, false, false, true, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelGetException(LowLevelGetException.INTERNAL_ERROR);
 		}
@@ -802,6 +821,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			Object o = node.makeRequestSender(key.getNodeKey(), node.maxHTL(), uid, null, localOnly, cache, ignoreStore, false);
 			if(o instanceof SSKBlock)
 				try {
+					tag.setServedFromDatastore();
 					SSKBlock block = (SSKBlock) o;
 					key.setPublicKey(block.getPubKey());
 					return ClientSSKBlock.construct(block, key);
@@ -897,7 +917,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 					}
 			}
 		} finally {
-			node.unlockUID(uid, true, false, true, false, true);
+			node.unlockUID(uid, true, false, true, false, true, tag);
 		}
 	}
 
@@ -917,7 +937,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		PartiallyReceivedBlock prb = new PartiallyReceivedBlock(Node.PACKETS_IN_BLOCK, Node.PACKET_SIZE, data);
 		CHKInsertSender is;
 		long uid = random.nextLong();
-		if(!node.lockUID(uid, false, true, false, true)) {
+		InsertTag tag = new InsertTag(false, InsertTag.START.LOCAL);
+		if(!node.lockUID(uid, false, true, false, true, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
@@ -1023,7 +1044,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 				}
 			}
 		} finally {
-			node.unlockUID(uid, false, true, true, false, true);
+			node.unlockUID(uid, false, true, true, false, true, tag);
 		}
 	}
 
@@ -1031,7 +1052,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		SSKInsertSender is;
 		long uid = random.nextLong();
-		if(!node.lockUID(uid, true, true, false, true)) {
+		InsertTag tag = new InsertTag(true, InsertTag.START.LOCAL);
+		if(!node.lockUID(uid, true, true, false, true, tag)) {
 			Logger.error(this, "Could not lock UID just randomly generated: " + uid + " - probably indicates broken PRNG");
 			throw new LowLevelPutException(LowLevelPutException.INTERNAL_ERROR);
 		}
@@ -1149,7 +1171,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 				}
 			}
 		} finally {
-			node.unlockUID(uid, true, true, true, false, true);
+			node.unlockUID(uid, true, true, true, false, true, tag);
 		}
 	}
 

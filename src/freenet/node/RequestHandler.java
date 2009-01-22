@@ -49,18 +49,20 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	private long searchStartTime;
 	private long responseDeadline;
 	private BlockTransmitter bt;
+	private final RequestTag tag;
 
 	@Override
 	public String toString() {
 		return super.toString() + " for " + uid;
 	}
 
-	public RequestHandler(Message m, PeerNode source, long id, Node n, short htl, Key key) {
+	public RequestHandler(Message m, PeerNode source, long id, Node n, short htl, Key key, RequestTag tag) {
 		req = m;
 		node = n;
 		uid = id;
 		this.source = source;
 		this.htl = htl;
+		this.tag = tag;
 		if(htl <= 0)
 			htl = 1;
 		this.key = key;
@@ -78,11 +80,13 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 		} catch(NotConnectedException e) {
 			Logger.normal(this, "requestor gone, could not start request handler wait");
 			node.removeTransferringRequestHandler(uid);
-			node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false);
+			tag.handlerThrew(e);
+			node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
 		} catch(Throwable t) {
 			Logger.error(this, "Caught " + t, t);
 			node.removeTransferringRequestHandler(uid);
-			node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false);
+			tag.handlerThrew(t);
+			node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
 		}
 	}
 	private Exception previousApplyByteCountCall;
@@ -140,6 +144,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 		Object o = node.makeRequestSender(key, htl, uid, source, false, true, false, false);
 		if(o instanceof KeyBlock) {
+			tag.setServedFromDatastore();
 			returnLocalData((KeyBlock) o);
 			return;
 		}
@@ -193,7 +198,23 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 			synchronized(this) {
 				disconnected = true;
 			}
+			tag.handlerDisconnected();
 			Logger.normal(this, "requestor is gone, can't begin CHK transfer");
+		}
+	}
+	
+	public void onAbortDownstreamTransfers(int reason, String desc) {
+		if(bt == null) {
+			Logger.error(this, "No downstream transfer to abort! on "+this);
+			return;
+		}
+		if(logMINOR)
+			Logger.minor(this, "Aborting downstream transfer on "+this);
+		tag.onAbortDownstreamTransfers(reason, desc);
+		try {
+			bt.abortSend(reason, desc);
+		} catch (NotConnectedException e) {
+			// Ignore
 		}
 	}
 
@@ -209,7 +230,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 					unregisterRequestHandlerWithNode();
 				}
 			}
-		}, "Finish CHK transfer for " + key);
+		}, "Finish CHK transfer for " + key + " for " + this);
 	}
 
 	private void waitAndFinishCHKTransfer() throws NotConnectedException {
@@ -229,6 +250,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 	}
 
 	public void onRequestSenderFinished(int status) {
+		if(logMINOR) Logger.minor(this, "onRequestSenderFinished("+status+") on "+this);
 		long now = System.currentTimeMillis();
 		this.status = status;
 
@@ -288,6 +310,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 							sendTerminal(reject);
 						} else if(!disconnected)
 							waitAndFinishCHKTransferOffThread();
+						else
+							unregisterRequestHandlerWithNode();
 					return;
 				case RequestSender.VERIFY_FAILURE:
 				case RequestSender.GET_OFFER_VERIFY_FAILURE:
@@ -301,6 +325,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 						} else if(!disconnected)
 							//Verify fails after receive() is complete, so we might as well propagate it...
 							waitAndFinishCHKTransferOffThread();
+						else
+							unregisterRequestHandlerWithNode();
 						return;
 					}
 					reject = DMT.createFNPRejectedOverload(uid, true);
@@ -317,6 +343,8 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 							sendTerminal(reject);
 						} else if(!disconnected)
 							waitAndFinishCHKTransferOffThread();
+						else
+							unregisterRequestHandlerWithNode();
 						return;
 					}
 					Logger.error(this, "finish(TRANSFER_FAILED) should not be called on SSK?!?!", new Exception("error"));
@@ -436,7 +464,7 @@ public class RequestHandler implements PrioRunnable, ByteCounter, RequestSender.
 
 	private void unregisterRequestHandlerWithNode() {
 		node.removeTransferringRequestHandler(uid);
-		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false);
+		node.unlockUID(uid, key instanceof NodeSSK, false, false, false, false, tag);
 	}
 
 	/**

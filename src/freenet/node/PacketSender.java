@@ -29,6 +29,9 @@ import freenet.support.io.NativeThread;
  *         Thread that sends a packet whenever: - A packet needs to be resent immediately -
  *         Acknowledgments or resend requests need to be sent urgently.
  */
+// j16sdiz (22-Dec-2008):
+// FIXME this is the only class implements Ticker, everbody is using this as 
+// a generic task scheduler. Either rename this class, or create another tricker for non-Packet tasks
 public class PacketSender implements Runnable, Ticker {
 
 	private static boolean logMINOR;
@@ -55,7 +58,6 @@ public class PacketSender implements Runnable, Ticker {
 	long lastReceivedPacketFromAnyNode;
 	/** For watchdog. 32-bit to avoid locking. */
 	volatile int lastTimeInSeconds;
-	private long timeLastSentOldOpennetConnectAttempt;
 	private Vector<ResendPacketItem> rpiTemp;
 	private int[] rpiIntTemp;
 	private boolean started = false;
@@ -570,7 +572,7 @@ public class PacketSender implements Runnable, Ticker {
 		Job job = new Job(name, runner);
 		if(offset < 0) offset = 0;
 		long now = System.currentTimeMillis();
-		Long l = new Long(offset + now);
+		Long l = Long.valueOf(offset + now);
 		synchronized(timedJobsByTime) {
 			Object o = timedJobsByTime.get(l);
 			if(o == null)

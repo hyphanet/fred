@@ -896,6 +896,10 @@ public class PeerManager {
 					Logger.minor(this, "Skipping (not connected): " + p.getPeer());
 				continue;
 			}
+			if(key != null && p.isTurtling(key)) {
+				if(logMINOR)
+					Logger.minor(this, "Skipping (already turtling key): "+p.getPeer());
+			}
 			if(minVersion > 0 && Version.getArbitraryBuildNumber(p.getVersion(), -1) < minVersion) {
 				if(logMINOR)
 					Logger.minor(this, "Skipping old version: " + p.getPeer());
@@ -1431,7 +1435,7 @@ public class PeerManager {
 	 * Add a PeerNode status to the map
 	 */
 	public void addPeerNodeStatus(int pnStatus, PeerNode peerNode, boolean noLog) {
-		Integer peerNodeStatus = new Integer(pnStatus);
+		Integer peerNodeStatus = Integer.valueOf(pnStatus);
 		addPeerNodeStatuses(pnStatus, peerNode, peerNodeStatus, peerNodeStatuses, noLog);
 		if(!peerNode.isOpennet())
 			addPeerNodeStatuses(pnStatus, peerNode, peerNodeStatus, peerNodeStatusesDarknet, noLog);
@@ -1462,7 +1466,7 @@ public class PeerManager {
 	 * @param darknet If true, only count darknet nodes, if false, count all nodes.
 	 */
 	public int getPeerNodeStatusSize(int pnStatus, boolean darknet) {
-		Integer peerNodeStatus = new Integer(pnStatus);
+		Integer peerNodeStatus = Integer.valueOf(pnStatus);
 		HashSet<PeerNode> statusSet = null;
 		HashMap<Integer, HashSet<PeerNode>> statuses = darknet ? peerNodeStatusesDarknet : this.peerNodeStatuses;
 		synchronized(statuses) {
@@ -1479,7 +1483,7 @@ public class PeerManager {
 	 * @param isInPeers If true, complain if the node is not in the peers list; if false, complain if it is.
 	 */
 	public void removePeerNodeStatus(int pnStatus, PeerNode peerNode, boolean noLog) {
-		Integer peerNodeStatus = new Integer(pnStatus);
+		Integer peerNodeStatus = Integer.valueOf(pnStatus);
 		removePeerNodeStatus(pnStatus, peerNodeStatus, peerNode, peerNodeStatuses, noLog);
 		if(!peerNode.isOpennet())
 			removePeerNodeStatus(pnStatus, peerNodeStatus, peerNode, peerNodeStatusesDarknet, noLog);

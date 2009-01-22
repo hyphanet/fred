@@ -3,8 +3,6 @@ package freenet.node;
 import java.io.File;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.Arrays;
-import java.util.Comparator;
 
 import freenet.config.InvalidConfigValueException;
 import freenet.config.SubConfig;
@@ -134,6 +132,12 @@ public class NodeStats implements Persistable {
 	final TrivialRunningAverage localFetchPSuccess;
 	final TrivialRunningAverage remoteFetchPSuccess;
 	final TrivialRunningAverage blockTransferPSuccess;
+	final TrivialRunningAverage blockTransferFailTurtled;
+	final TrivialRunningAverage blockTransferFailTimeout;
+	
+	final TrivialRunningAverage successfulLocalCHKFetchTimeAverage;
+	final TrivialRunningAverage unsuccessfulLocalCHKFetchTimeAverage;
+	final TrivialRunningAverage localCHKFetchTimeAverage;
 	
 	private long previous_input_stat;
 	private long previous_output_stat;
@@ -343,6 +347,12 @@ public class NodeStats implements Persistable {
 		localFetchPSuccess = new TrivialRunningAverage();
 		remoteFetchPSuccess = new TrivialRunningAverage();
 		blockTransferPSuccess = new TrivialRunningAverage();
+		blockTransferFailTurtled = new TrivialRunningAverage();
+		blockTransferFailTimeout = new TrivialRunningAverage();
+		
+		successfulLocalCHKFetchTimeAverage = new TrivialRunningAverage();
+		unsuccessfulLocalCHKFetchTimeAverage = new TrivialRunningAverage();
+		localCHKFetchTimeAverage = new TrivialRunningAverage();
 		
 		requestOutputThrottle = 
 			new TokenBucket(Math.max(obwLimit*60, 32768*20), (int)((1000L*1000L*1000L) / (obwLimit)), 0);
@@ -625,6 +635,138 @@ public class NodeStats implements Persistable {
 			return "Input bandwidth liability ("+bandwidthLiabilityInput+" > "+bandwidthAvailableInput+")";
 		}
 		
+//		// We want fast transfers!
+//		// We want it to be *possible* for all transfers currently running to complete in a short period.
+//		// This does NOT assume they are all successful, it uses the averages.
+//		// As of 09/01/09, the typical successful CHK fetch takes around 18 seconds ...
+//		
+//		// Accept a transfer if our *current* load can be completed in the target time.
+//		// We do not care what the new request we are considering is.
+//		// This is more or less equivalent to what we do above but lets more requests through.
+//		
+//		numRemoteCHKRequests--;
+//		numRemoteSSKRequests--;
+//		numRemoteCHKInserts--;
+//		numRemoteSSKInserts--;
+//		numLocalCHKRequests--;
+//		numLocalSSKRequests--;
+//		numLocalCHKInserts--;
+//		numLocalSSKInserts--;
+//		
+//		final double TRANSFER_EVERYTHING_TIME = 5.0; // 5 seconds target
+//		
+//		double completionBandwidthOutput;
+//		if(ignoreLocalVsRemoteBandwidthLiability) {
+//			completionBandwidthOutput = 
+//				remoteChkFetchBytesSentAverage.currentValue() * (numRemoteCHKRequests + numLocalCHKRequests) +
+//				remoteSskFetchBytesSentAverage.currentValue() * (numRemoteSSKRequests + numLocalSSKRequests) +
+//				remoteChkInsertBytesSentAverage.currentValue() * (numRemoteCHKInserts + numLocalCHKInserts) +
+//				remoteSskInsertBytesSentAverage.currentValue() * (numRemoteSSKInserts + numLocalSSKInserts);
+//		} else {
+//		completionBandwidthOutput =
+//			remoteChkFetchBytesSentAverage.currentValue() * numRemoteCHKRequests +
+//			localChkFetchBytesSentAverage.currentValue() * numLocalCHKRequests +
+//			remoteSskFetchBytesSentAverage.currentValue() * numRemoteSSKRequests +
+//			localSskFetchBytesSentAverage.currentValue() * numLocalSSKRequests +
+//			remoteChkInsertBytesSentAverage.currentValue() * numRemoteCHKInserts +
+//			localChkInsertBytesSentAverage.currentValue() * numLocalCHKInserts +
+//			remoteSskInsertBytesSentAverage.currentValue() * numRemoteSSKInserts +
+//			localSskInsertBytesSentAverage.currentValue() * numLocalSSKInserts +
+//			successfulChkOfferReplyBytesSentAverage.currentValue() * numCHKOfferReplies +
+//			successfulSskOfferReplyBytesSentAverage.currentValue() * numSSKOfferReplies;
+//		}
+//		
+//		int outputLimit = node.getOutputBandwidthLimit();
+//		
+//		double outputBandwidthAvailableInTargetTime = outputLimit * TRANSFER_EVERYTHING_TIME;
+//		
+//		// Increase the target for slow nodes.
+//		
+//		double minimum =
+//			remoteChkFetchBytesSentAverage.currentValue() +
+//			localChkFetchBytesSentAverage.currentValue() +
+//			remoteSskFetchBytesSentAverage.currentValue() +
+//			localSskFetchBytesSentAverage.currentValue() +
+//			remoteChkInsertBytesSentAverage.currentValue() +
+//			localChkInsertBytesSentAverage.currentValue() +
+//			remoteSskInsertBytesSentAverage.currentValue() +
+//			localSskInsertBytesSentAverage.currentValue() +
+//			successfulChkOfferReplyBytesSentAverage.currentValue() +
+//			successfulSskOfferReplyBytesSentAverage.currentValue();
+//		minimum /= 2; // roughly one of each type, averaged over remote and local; FIXME get a real non-specific average
+//		
+//		if(outputBandwidthAvailableInTargetTime < minimum) {
+//			outputBandwidthAvailableInTargetTime = minimum;
+//			if(logMINOR) Logger.minor(this, "Increased minimum time to transfer everything to "+(minimum / outputLimit)+"s = "+minimum+"B to compensate for slow node");
+//		}
+//		
+//		if(logMINOR) Logger.minor(this, TRANSFER_EVERYTHING_TIME+" second limit: "+outputBandwidthAvailableInTargetTime+" expected transfers: "+completionBandwidthOutput);
+//		
+//		if(completionBandwidthOutput > outputBandwidthAvailableInTargetTime) {
+//			pInstantRejectIncoming.report(1.0);
+//			rejected("Transfer speed (output)", isLocal);
+//			return "Transfer speed (output) ("+bandwidthLiabilityOutput+" > "+bandwidthAvailableOutput+")";
+//		}
+//		
+//		
+//		
+//		double completionBandwidthInput;
+//		if(ignoreLocalVsRemoteBandwidthLiability) {
+//			completionBandwidthInput =
+//				remoteChkFetchBytesReceivedAverage.currentValue() * (numRemoteCHKRequests + numLocalCHKRequests) +
+//				remoteSskFetchBytesReceivedAverage.currentValue() * (numRemoteSSKRequests + numLocalSSKRequests) +
+//				remoteChkInsertBytesReceivedAverage.currentValue() * (numRemoteCHKInserts + numLocalCHKInserts) +
+//				remoteSskInsertBytesReceivedAverage.currentValue() * (numRemoteSSKInserts + numLocalSSKInserts);
+//		} else {
+//		completionBandwidthInput =
+//			// For receiving data, local requests are the same as remote ones
+//			remoteChkFetchBytesReceivedAverage.currentValue() * numRemoteCHKRequests +
+//			localChkFetchBytesReceivedAverage.currentValue() * numLocalCHKRequests +
+//			remoteSskFetchBytesReceivedAverage.currentValue() * numRemoteSSKRequests +
+//			localSskFetchBytesReceivedAverage.currentValue() * numLocalSSKRequests +
+//			// Local inserts don't receive the data to relay, so use the local variant
+//			remoteChkInsertBytesReceivedAverage.currentValue() * numRemoteCHKInserts +
+//			localChkInsertBytesReceivedAverage.currentValue() * numLocalCHKInserts +
+//			remoteSskInsertBytesReceivedAverage.currentValue() * numRemoteSSKInserts +
+//			localSskInsertBytesReceivedAverage.currentValue() * numLocalSSKInserts +
+//			successfulChkOfferReplyBytesReceivedAverage.currentValue() * numCHKOfferReplies +
+//			successfulSskOfferReplyBytesReceivedAverage.currentValue() * numSSKOfferReplies;
+//		}
+//		int inputLimit = node.getInputBandwidthLimit();
+//		double inputBandwidthAvailableInTargetTime =
+//			inputLimit * TRANSFER_EVERYTHING_TIME;
+//		
+//		// Increase the target for slow nodes.
+//		
+//		minimum =
+//			remoteChkFetchBytesReceivedAverage.currentValue() +
+//			localChkFetchBytesReceivedAverage.currentValue() +
+//			remoteSskFetchBytesReceivedAverage.currentValue() +
+//			localSskFetchBytesReceivedAverage.currentValue() +
+//			remoteChkInsertBytesReceivedAverage.currentValue() +
+//			localChkInsertBytesReceivedAverage.currentValue() +
+//			remoteSskInsertBytesReceivedAverage.currentValue() +
+//			localSskInsertBytesReceivedAverage.currentValue() +
+//			successfulChkOfferReplyBytesReceivedAverage.currentValue() +
+//			successfulSskOfferReplyBytesReceivedAverage.currentValue();
+//		minimum /= 2; // roughly one of each type, averaged over remote and local; FIXME get a real non-specific average
+//		
+//		if(inputBandwidthAvailableInTargetTime < minimum) {
+//			inputBandwidthAvailableInTargetTime = minimum;
+//			if(logMINOR) Logger.minor(this, "Increased minimum time to transfer everything (input) to "+(minimum / inputLimit)+"s = "+minimum+"B to compensate for slow node");
+//		}
+//		
+//
+//		
+//		if(bandwidthAvailableInput < 0){
+//			Logger.error(this, "Negative available bandwidth: "+inputBandwidthAvailableInTargetTime+" node.ibwlimit="+node.getInputBandwidthLimit()+" node.obwlimit="+node.getOutputBandwidthLimit()+" node.inputLimitDefault="+node.inputLimitDefault);
+//		}
+//		if(completionBandwidthInput > inputBandwidthAvailableInTargetTime) {
+//			pInstantRejectIncoming.report(1.0);
+//			rejected("Transfer speed (input)", isLocal);
+//			return "Transfer speed (input) ("+bandwidthLiabilityInput+" > "+bandwidthAvailableInput+")";
+//		}
+		
 		// Do we have the bandwidth?
 		double expected = this.getThrottle(isLocal, isInsert, isSSK, true).currentValue();
 		int expectedSent = (int)Math.max(expected / overheadFraction, 0);
@@ -905,6 +1047,11 @@ public class NodeStats implements Persistable {
 		}
 		fs.put("averagePingTime", getNodeAveragePingTime());
 		fs.put("bwlimitDelayTime", getBwlimitDelayTime());
+		fs.put("opennetSizeEstimateSession", getOpennetSizeEstimate(-1));
+		int opennetSizeEstimate24hourRecent = getOpennetSizeEstimate(now - (24 * 60 * 60 * 1000)); // 24 hours
+		fs.put("opennetSizeEstimate24hourRecent", opennetSizeEstimate24hourRecent);
+		int opennetSizeEstimate48hourRecent = getOpennetSizeEstimate(now - (48 * 60 * 60 * 1000)); // 48 hours
+		fs.put("opennetSizeEstimate48hourRecent", opennetSizeEstimate48hourRecent);		
 		fs.put("networkSizeEstimateSession", getDarknetSizeEstimate(-1));
 		int networkSizeEstimate24hourRecent = getDarknetSizeEstimate(now - (24*60*60*1000));  // 24 hours
 		fs.put("networkSizeEstimate24hourRecent", networkSizeEstimate24hourRecent);
@@ -916,16 +1063,10 @@ public class NodeStats implements Persistable {
 		fs.put("unclaimedFIFOSize", node.usm.getUnclaimedFIFOSize());
 		
 		/* gather connection statistics */
-		DarknetPeerNodeStatus[] peerNodeStatuses = peers.getDarknetPeerNodeStatuses(true);
-		Arrays.sort(peerNodeStatuses, new Comparator<DarknetPeerNodeStatus>() {
-			public int compare(DarknetPeerNodeStatus firstNode, DarknetPeerNodeStatus secondNode) {
-				int statusDifference = firstNode.getStatusValue() - secondNode.getStatusValue();
-				if (statusDifference != 0) {
-					return statusDifference;
-				}
-				return firstNode.getName().compareToIgnoreCase(secondNode.getName());
-			}
-		});
+		PeerNodeStatus[] peerNodeStatuses = peers.getPeerNodeStatuses(true);
+		
+		int numberOfSeedServers = getCountSeedServers(peerNodeStatuses);
+		int numberOfSeedClients = getCountSeedClients(peerNodeStatuses);
 		
 		int numberOfConnected = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_CONNECTED);
 		int numberOfRoutingBackedOff = PeerNodeStatus.getPeerStatusCount(peerNodeStatuses, PeerManager.PEER_NODE_STATUS_ROUTING_BACKED_OFF);
@@ -941,6 +1082,8 @@ public class NodeStats implements Persistable {
 		int numberOfSimpleConnected = numberOfConnected + numberOfRoutingBackedOff;
 		int numberOfNotConnected = numberOfTooNew + numberOfTooOld + numberOfDisconnected + numberOfNeverConnected + numberOfDisabled + numberOfBursting + numberOfListening + numberOfListenOnly;
 
+		fs.put("numberOfSeedServers", numberOfSeedServers);
+		fs.put("numberOfSeedClients", numberOfSeedClients);
 		fs.put("numberOfConnected", numberOfConnected);
 		fs.put("numberOfRoutingBackedOff", numberOfRoutingBackedOff);
 		fs.put("numberOfTooNew", numberOfTooNew);
@@ -1149,7 +1292,9 @@ public class NodeStats implements Persistable {
 				sskFetchPSuccess,
 				localFetchPSuccess,
 				remoteFetchPSuccess,
-				blockTransferPSuccess
+				blockTransferPSuccess,
+				blockTransferFailTurtled,
+				blockTransferFailTimeout
 		};
 		final String[] names = new String[] {
 				// FIXME l10n, but atm this only shows up in advanced mode
@@ -1158,7 +1303,9 @@ public class NodeStats implements Persistable {
 				"SSKs",
 				"Local requests",
 				"Remote requests",
-				"Block transfers"
+				"Block transfers",
+				"Turtled downstream",
+				"Transfers timed out"
 		};
 		HTMLNode row = list.addChild("tr");
 		row.addChild("th", "Group"); 
@@ -1175,6 +1322,22 @@ public class NodeStats implements Persistable {
 				row.addChild("td", fix3p3pct.format(averages[i].currentValue()));
 				row.addChild("td", thousendPoint.format(averages[i].countReports()));
 			}
+		}
+		
+		row = list.addChild("tr");
+		row.addChild("td", "Turtle requests");
+		long total;
+		long succeeded;
+		synchronized(this) {
+			total = turtleTransfersCompleted;
+			succeeded = turtleSuccesses;
+		}
+		if(total == 0) {
+			row.addChild("td", "-");
+			row.addChild("td", "0");
+		} else {
+			row.addChild("td", fix3p3pct.format((double)succeeded / total));
+			row.addChild("td", thousendPoint.format(total));
 		}
 	}
 
@@ -1701,7 +1864,11 @@ public class NodeStats implements Persistable {
 		if(logMINOR) Logger.minor(this, "Successful receives: "+blockTransferPSuccess.currentValue()+" count="+blockTransferPSuccess.countReports());
 	}
 
-	public synchronized void failedBlockReceive() {
+	public synchronized void failedBlockReceive(boolean normalFetch, boolean timeout, boolean turtle) {
+		if(normalFetch) {
+			blockTransferFailTurtled.report(turtle ? 1.0 : 0.0);
+			blockTransferFailTimeout.report(timeout ? 1.0 : 0.0);
+		}
 		blockTransferPSuccess.report(0.0);
 		if(logMINOR) Logger.minor(this, "Successful receives: "+blockTransferPSuccess.currentValue()+" count="+blockTransferPSuccess.countReports());
 	}
@@ -1761,5 +1928,56 @@ public class NodeStats implements Persistable {
 		}
 		
 		return result;
+	}
+	
+	private int getCountSeedServers(PeerNodeStatus[] peerNodeStatuses) {
+		int count = 0;
+		for (int peerIndex = 0; peerIndex < peerNodeStatuses.length; peerIndex++) {
+			if (peerNodeStatuses[peerIndex].isSeedServer())
+				count++;
+		}
+		return count;
+	}
+
+	private int getCountSeedClients(PeerNodeStatus[] peerNodeStatuses) {
+		int count = 0;
+		for (int peerIndex = 0; peerIndex < peerNodeStatuses.length; peerIndex++) {
+			if (peerNodeStatuses[peerIndex].isSeedClient())
+				count++;
+		}
+		return count;
+	}
+
+	public void reportCHKTime(long rtt, boolean successful) {
+		if(successful)
+			successfulLocalCHKFetchTimeAverage.report(rtt);
+		else
+			unsuccessfulLocalCHKFetchTimeAverage.report(rtt);
+		localCHKFetchTimeAverage.report(rtt);
+	}
+
+	public void fillDetailedTimingsBox(HTMLNode html) {
+		HTMLNode table = html.addChild("table");
+		HTMLNode row = table.addChild("tr");
+		row.addChild("td", "Successful");
+		row.addChild("td", TimeUtil.formatTime((long)successfulLocalCHKFetchTimeAverage.currentValue(), 2, true));
+		row = table.addChild("tr");
+		row.addChild("td", "Unsuccessful");
+		row.addChild("td", TimeUtil.formatTime((long)unsuccessfulLocalCHKFetchTimeAverage.currentValue(), 2, true));
+		row = table.addChild("tr");
+		row.addChild("td", "Average");
+		row.addChild("td", TimeUtil.formatTime((long)localCHKFetchTimeAverage.currentValue(), 2, true));
+	}
+	
+	private long turtleTransfersCompleted;
+	private long turtleSuccesses;
+	
+	synchronized void turtleSucceeded() {
+		turtleSuccesses++;
+		turtleTransfersCompleted++;
+	}
+	
+	synchronized void turtleFailed() {
+		turtleTransfersCompleted++;
 	}
 }
