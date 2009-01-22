@@ -172,7 +172,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 				x = context.random.nextInt(blockNums.size());
 				ret = blockNums.get(x);
 				int num = ret;
-				Key key = segment.getBlockNodeKey(ret, container);
+				Key key = segment.getBlockNodeKey(num, container);
 				if(key == null) {
 					if(segment.isFinishing(container) || segment.isFinished(container)) return null;
 					if(segment.haveBlock(num, container))
@@ -661,7 +661,7 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 		synchronized(segment) {
 			for(int i=0;i<blockNums.size();i++) {
 				Integer token = blockNums.get(i);
-				int num = (Integer)token;
+				int num = token;
 				Key k = segment.getBlockNodeKey(num, container);
 				if(k != null && k.equals(key)) {
 					blockNums.remove(i);
