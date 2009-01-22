@@ -139,6 +139,10 @@ public class AddressTracker {
 	
 	private void packetTo(Peer peer, boolean sent) {
 		peer = peer.dropHostName();
+		if(peer == null) {
+			Logger.error(this, "Impossible: No host name in AddressTracker.packetTo for "+peer);
+			return;
+		}
 		InetAddress ip = peer.getAddress();
 		long now = System.currentTimeMillis();
 		synchronized(this) {
