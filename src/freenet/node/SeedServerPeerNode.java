@@ -6,6 +6,7 @@ package freenet.node;
 import java.net.InetAddress;
 import java.util.ArrayList;
 
+import freenet.io.comm.FreenetInetAddress;
 import freenet.io.comm.Peer;
 import freenet.io.comm.PeerParseException;
 import freenet.io.comm.ReferenceSignatureVerificationException;
@@ -93,9 +94,14 @@ public class SeedServerPeerNode extends PeerNode {
 		Peer[] peers = getHandshakeIPs();
 		ArrayList<InetAddress> v = new ArrayList<InetAddress>();
 		for(int i=0;i<peers.length;i++) {
-			InetAddress ia = peers[i].getFreenetAddress().dropHostname().getAddress();
+			FreenetInetAddress fa = peers[i].getFreenetAddress().dropHostname();
+			if(fa == null) continue;
+			InetAddress ia = fa.getAddress();
 			if(v.contains(ia)) continue;
 			v.add(ia);
+		}
+		if(v.isEmpty()) {
+			Logger.error(this, "No valid addresses for seed node "+this);
 		}
 		return v.toArray(new InetAddress[v.size()]);
 	}
