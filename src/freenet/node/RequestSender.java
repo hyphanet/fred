@@ -868,7 +868,7 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     							|| reason == RetrievalException.UNABLE_TO_SEND_BLOCK_WITHIN_TIMEOUT);
                				if(timeout) {
                					// Looks like a timeout. Backoff, even if it's a turtle.
-               					next.transferFailed(e.getMessage());
+               					next.transferFailed(e.toString());
                				} else {
                					// Quick failure (in that we didn't have to timeout). Don't backoff.
                					// Treat as a DNF.

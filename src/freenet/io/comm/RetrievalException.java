@@ -97,4 +97,8 @@ public class RetrievalException extends Exception {
 				return "UNKNOWN ("+reason+")";
 		}
 	}
+	
+	public String getMessage() {
+		return toString();
+	}
 }
