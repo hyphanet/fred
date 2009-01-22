@@ -2855,6 +2855,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			pn.couldNotSendHandshake(notRegistered);
 			return;
 		}
+		Peer oldPeer = peer;
+		peer = peer.dropHostName();
+		if(peer == null) {
+			Logger.error(this, "No address for peer "+oldPeer+" so cannot send handshake");
+			pn.couldNotSendHandshake(notRegistered);
+			return;
+		}
 		sendJFKMessage1(pn, peer, pn.handshakeUnknownInitiator(), pn.handshakeSetupType(), negType);
 		if(logMINOR)
 			Logger.minor(this, "Sending handshake to "+peer+" for "+pn);

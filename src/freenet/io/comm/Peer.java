@@ -251,6 +251,7 @@ public class Peer implements WritableToDataOutputStream {
 
 	public Peer dropHostName() {
 		FreenetInetAddress newAddr = addr.dropHostname();
+		if(newAddr == null) return null;
 		if(addr != newAddr) {
 			return new Peer(newAddr, _port);
 		} else return this;

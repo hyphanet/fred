@@ -1673,6 +1673,12 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private void setDetectedPeer(Peer newPeer) {
 		// Only clear lastAttemptedHandshakeIPUpdateTime if we have a new IP.
 		// Also, we need to call .equals() to propagate any DNS lookups that have been done if the two have the same domain.
+		Peer p = newPeer;
+		newPeer = newPeer.dropHostName();
+		if(newPeer == null) {
+			Logger.error(this, "Impossible: No address for detected peer! "+p+" on "+this);
+			return;
+		}
 		synchronized(this) {
 			Peer oldPeer = detectedPeer;
 			if((newPeer != null) && ((oldPeer == null) || !oldPeer.equals(newPeer))) {
