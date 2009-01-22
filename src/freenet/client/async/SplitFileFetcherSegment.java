@@ -409,17 +409,10 @@ public class SplitFileFetcherSegment implements FECCallback {
 						lastBlock.removeFrom(container);
 					dataBuckets[dataBuckets.length-1].data = null;
 				} else if(lastBlock.size() != CHKBlock.DATA_LENGTH) {
-					try {
-						dataBuckets[dataBuckets.length-1].data =
-							BucketTools.pad(lastBlock, CHKBlock.DATA_LENGTH, context.persistentBucketFactory, (int) lastBlock.size());
-						lastBlock.free();
-						if(persistent) {
-							lastBlock.removeFrom(container);
-							dataBuckets[dataBuckets.length-1].storeTo(container);
-						}
-					} catch (IOException e) {
-						fail(new FetchException(FetchException.BUCKET_ERROR, e), container, context, true);
-					}
+					// All new inserts will have the last block padded. If it was an old insert, ignoreLastDataBlock
+					// would be set. Another way we can get here is if the last data block of a segment other than
+					// the last data block is too short.
+					fail(new FetchException(FetchException.INVALID_METADATA, "Last data block is not the standard size"), container, context, true);
 				}
 			}
 			if(codec == null)
