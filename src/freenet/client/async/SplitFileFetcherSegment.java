@@ -403,7 +403,7 @@ public class SplitFileFetcherSegment implements FECCallback {
 			if(lastBlock != null) {
 				if(persistent)
 					container.activate(lastBlock, 1);
-				if(ignoreLastDataBlock) {
+				if(ignoreLastDataBlock && lastBlock.size() < CHKBlock.DATA_LENGTH) {
 					lastBlock.free();
 					if(persistent)
 						lastBlock.removeFrom(container);
