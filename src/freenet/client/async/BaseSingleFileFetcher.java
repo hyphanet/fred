@@ -94,7 +94,7 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 	protected boolean retry(ObjectContainer container, ClientContext context) {
 		retryCount++;
 		if(Logger.shouldLog(Logger.MINOR, this))
-			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+retryCount+ ')');
+			Logger.minor(this, "Attempting to retry... (max "+maxRetries+", current "+retryCount+") on "+this);
 		// We want 0, 1, ... maxRetries i.e. maxRetries+1 attempts (maxRetries=0 => try once, no retries, maxRetries=1 = original try + 1 retry)
 		if((retryCount <= maxRetries) || (maxRetries == -1)) {
 			if(persistent)
@@ -102,9 +102,12 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 			if(retryCount % RequestScheduler.COOLDOWN_RETRIES == 0) {
 				// Add to cooldown queue. Don't reschedule yet.
 				long now = System.currentTimeMillis();
-				if(cooldownWakeupTime > now)
-					Logger.error(this, "Already on the cooldown queue for "+this, new Exception("error"));
-				else {
+				if(cooldownWakeupTime > now) {
+					Logger.error(this, "Already on the cooldown queue for "+this+" until "+freenet.support.TimeUtil.formatTime(cooldownWakeupTime - now), new Exception("error"));
+					// We must be registered ... unregister
+					unregister(container, context);
+				} else {
+					if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "Adding to cooldown queue "+this);
 					if(persistent)
 						container.activate(key, 5);
 					RequestScheduler sched = context.getFetchScheduler(key instanceof ClientSSK);
