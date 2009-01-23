@@ -597,7 +597,7 @@ public class ClientRequestScheduler implements RequestScheduler {
 		synchronized(starterQueue) {
 			for(PersistentChosenRequest req : starterQueue) {
 				if(req.request == request) {
-					Logger.error(this, "Already on starter queue: "+req+" for "+request);
+					Logger.error(this, "Already on starter queue: "+req+" for "+request, new Exception("debug"));
 					dumpNew = true;
 					break;
 				}
