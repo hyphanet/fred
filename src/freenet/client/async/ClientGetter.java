@@ -187,7 +187,7 @@ public class ClientGetter extends BaseClientGetter {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Failed from "+state+" : "+e+" on "+this, e);
 		closeBinaryBlobStream(container, context);
-		if(persistent()) {
+		if(persistent() && state != null) {
 			container.activate(state, 1);
 			state.removeFrom(container, context);
 		}
