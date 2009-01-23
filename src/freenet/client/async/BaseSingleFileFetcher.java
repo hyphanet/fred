@@ -118,10 +118,12 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 					unregister(container, context);
 				}
 			} else {
+				unregister(container, context);
 				reschedule(container, context);
 			}
 			return true; // We will retry in any case, maybe not just not yet. See requeueAfterCooldown(Key).
 		}
+		unregister(container, context);
 		return false;
 	}
 

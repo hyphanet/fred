@@ -892,9 +892,17 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		}
 
 		public void onExpectedSize(long size, ObjectContainer container) {
+			boolean wasActive = true;
+			if(persistent) {
+				wasActive = container.ext().isActive(SingleFileFetcher.this);
+				if(!wasActive)
+					container.activate(SingleFileFetcher.this, 1);
+			}
 			if(persistent)
 				container.activate(rcb, 1);
 			rcb.onExpectedSize(size, container);
+			if(!wasActive)
+				container.deactivate(SingleFileFetcher.this, 1);
 		}
 
 		public void onFinalizedMetadata(ObjectContainer container) {
