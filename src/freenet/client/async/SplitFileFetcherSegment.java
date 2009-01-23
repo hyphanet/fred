@@ -232,12 +232,14 @@ public class SplitFileFetcherSegment implements FECCallback {
 				// It's a slight overhead, but the alternative is worse.
 				if(logMINOR)
 					Logger.minor(this, "onSuccess() when already finished for "+this);
+				data.free();
 				return;
 			}
 			if(startedDecode) {
 				// Much the same.
 				if(logMINOR)
 					Logger.minor(this, "onSuccess() when started decode for "+this);
+				data.free();
 				return;
 			}
 			if(blockNo < dataKeys.length) {
