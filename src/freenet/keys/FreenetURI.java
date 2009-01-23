@@ -543,7 +543,7 @@ public class FreenetURI implements Cloneable {
 			suggestedEdition);
 	}
 
-	protected String toStringCache;
+	protected transient String toStringCache;
 
 	@Override
 	public String toString() {
