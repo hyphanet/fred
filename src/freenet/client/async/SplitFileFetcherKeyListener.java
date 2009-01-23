@@ -212,9 +212,13 @@ public class SplitFileFetcherKeyListener implements KeyListener {
 				if(logMINOR)
 					Logger.minor(this, "Key "+key+" may be in segment "+segment);
 				if(segment.onGotKey(key, block, container, context)) {
-					keyCount--;
 					synchronized(this) {
-						filter.removeKey(saltedKey);
+						if(filter.checkFilter(saltedKey)) {
+							filter.removeKey(saltedKey);
+							keyCount--;
+						} else {
+							Logger.error(this, "Not removing key from splitfile filter because already removed!: "+key+" for "+this, new Exception("debug"));
+						}
 					}
 					// Update the persistent keyCount.
 					fetcher.setKeyCount(keyCount, container);
