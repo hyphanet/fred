@@ -242,7 +242,7 @@ public class RequestStarter implements Runnable, RandomGrabArrayItemExclusionLis
 	}
 
 	public boolean exclude(RandomGrabArrayItem item, ObjectContainer container, ClientContext context) {
-		if(sched.isRunningRequest((SendableRequest)item)) {
+		if(sched.isRunningOrQueuedRequest((SendableRequest)item)) {
 			Logger.normal(this, "Excluding already-running request: "+item, new Exception("debug"));
 			return true;
 		}

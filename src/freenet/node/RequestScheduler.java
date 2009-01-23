@@ -69,7 +69,7 @@ public interface RequestScheduler {
 
 	public void removeRunningRequest(SendableRequest request);
 
-	public abstract boolean isRunningRequest(SendableRequest request);
+	public abstract boolean isRunningOrQueuedRequest(SendableRequest request);
 	
 	public boolean hasFetchingKey(Key key);
 

@@ -480,11 +480,14 @@ public class ClientRequestScheduler implements RequestScheduler {
 		}
 	}
 	
-	public boolean isRunningRequest(SendableRequest request) {
+	public boolean isRunningOrQueuedRequest(SendableRequest request) {
 		synchronized(starterQueue) {
 			for(int i=0;i<runningPersistentRequests.size();i++) {
 				if(runningPersistentRequests.get(i) == request)
 					return true;
+			}
+			for(PersistentChosenRequest req : starterQueue) {
+				if(req.request == request) return true;
 			}
 		}
 		return false;
