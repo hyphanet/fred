@@ -207,6 +207,10 @@ public class ClientRequestScheduler implements RequestScheduler {
 						
 						public void run(ObjectContainer container, ClientContext context) {
 							container.delete(regme);
+							if(req.isCancelled(container)) {
+								if(logMINOR) Logger.minor(this, "Request already cancelled");
+								return;
+							}
 							if(container.ext().isActive(req))
 								Logger.error(this, "ALREADY ACTIVE: "+req+" in delayed insert register");
 							container.activate(req, 1);
