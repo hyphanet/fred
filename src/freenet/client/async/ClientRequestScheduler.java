@@ -493,10 +493,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 		return false;
 	}
 	
-	void startingRequest(SendableRequest request) {
-		runningPersistentRequests.add(request);
-	}
-	
 	/** The maximum number of requests that we will keep on the in-RAM request
 	 * starter queue. */
 	static final int MAX_STARTER_QUEUE_SIZE = 512; // two full segments
@@ -553,6 +549,11 @@ public class ClientRequestScheduler implements RequestScheduler {
 						}
 					}
 					continue;
+				} else {
+					// Prevent this request being selected, even though we may remove the PCR from the starter queue
+					// in the very near future. When the PCR finishes, the requests will be un-blocked.
+					if(!runningPersistentRequests.contains(reqGroup.request))
+						runningPersistentRequests.add(reqGroup.request);
 				}
 			}
 			if(finalLength < MAX_STARTER_QUEUE_SIZE)
