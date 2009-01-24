@@ -35,7 +35,7 @@ import freenet.support.api.BucketFactory;
  * 
  * @author Matthew Toseland <toad@amphibian.dyndns.org> (0xE43DA450)
  */
-public class SegmentedBucketChainBucket implements Bucket {
+public class SegmentedBucketChainBucket implements NotPersistentBucket {
 
 	private final ArrayList<SegmentedChainBucketSegment> segments;
 	private boolean readOnly;
@@ -177,12 +177,16 @@ public class SegmentedBucketChainBucket implements Bucket {
 
 			public void run(ObjectContainer container, ClientContext context) {
 				container.activate(seg, 1);
-				baw.buckets = seg.shallowCopyBuckets();
+				synchronized(baw) {
+					baw.buckets = seg.shallowCopyBuckets();
+				}
 				container.deactivate(seg, 1);
 			}
 			
 		}, NativeThread.HIGH_PRIORITY);
-		return baw.buckets;
+		synchronized(baw) {
+			return baw.buckets;
+		}
 	}
 
 	public String getName() {
