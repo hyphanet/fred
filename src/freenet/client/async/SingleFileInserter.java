@@ -249,7 +249,7 @@ class SingleFileInserter implements ClientPutState {
 		}
 		if (fitsInOneCHK) {
 			// Insert single block, then insert pointer to it
-			if(persistent && !(data instanceof NotPersistentBucket)) {
+			if(persistent && (data instanceof NotPersistentBucket)) {
 				boolean skip = false;
 				if(data instanceof SegmentedBucketChainBucket) {
 					SegmentedBucketChainBucket seg = (SegmentedBucketChainBucket) data;
