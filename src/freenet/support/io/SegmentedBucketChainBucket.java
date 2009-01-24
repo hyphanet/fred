@@ -129,7 +129,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 						buckets[bucketNo] = null;
 					bucketRead = 0;
 					bucketNo++;
-					if(bucketNo == segmentSize) {
+					if(bucketNo == segmentSize || buckets == null) {
 						bucketNo = 0;
 						segmentNo++;
 						seg = getSegment(segmentNo);
