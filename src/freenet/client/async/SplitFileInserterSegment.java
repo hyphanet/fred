@@ -502,6 +502,28 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			container.activate(parent, 1);
 			container.activate(parent.parent, 1);
 		}
+		boolean fin;
+		synchronized(this) {
+			fin = finished;
+		}
+		if(fin) {
+			Logger.error(this, "Encoded segment even though segment finished! Freeing buckets...");
+			for(int i=0;i<dataBuckets.length;i++) {
+				if(dataBuckets[i] == null) continue;
+				dataBuckets[i].free();
+				if(persistent)
+					dataBuckets[i].removeFrom(container);
+				dataBuckets[i] = null;
+			}
+			for(int i=0;i<checkBuckets.length;i++) {
+				if(checkBuckets[i] == null) continue;
+				checkBuckets[i].free();
+				if(persistent)
+					checkBuckets[i].removeFrom(container);
+				checkBuckets[i] = null;
+			}
+			return;
+		}
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		// Start the inserts
 		try {
