@@ -29,6 +29,7 @@ import freenet.support.compress.Compressor.COMPRESSOR_TYPE;
 import freenet.support.io.BucketChainBucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NativeThread;
+import freenet.support.io.NotPersistentBucket;
 
 /**
  * Attempt to insert a file. May include metadata.
@@ -247,6 +248,19 @@ class SingleFileInserter implements ClientPutState {
 		}
 		if (fitsInOneCHK) {
 			// Insert single block, then insert pointer to it
+			if(persistent && !(data instanceof NotPersistentBucket)) {
+				try {
+					Bucket newData = context.persistentBucketFactory.makeBucket(data.size());
+					BucketTools.copy(data, newData);
+					data.free();
+					data = newData;
+				} catch (IOException e) {
+					Logger.error(this, "Caught "+e+" while copying non-persistent data", e);
+					throw new InsertException(InsertException.BUCKET_ERROR, e, null);
+				}
+				// Note that SegmentedBCB *does* support splitting, so we don't need to do anything to the data
+				// if it doesn't fit in a single block.
+			}
 			if(reportMetadataOnly) {
 				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token, container, context, persistent, freeData);
 				if(logMINOR)
