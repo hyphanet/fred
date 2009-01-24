@@ -33,6 +33,7 @@ import freenet.node.RequestClient;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.io.BucketTools;
+import freenet.support.io.NativeThread;
 
 public class SimpleManifestPutter extends BaseClientPutter implements PutCompletionCallback {
 	// Only implements PutCompletionCallback for the final metadata insert
@@ -453,6 +454,18 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 
 	private void gotAllMetadata(ObjectContainer container, ClientContext context) {
+		// This can be huge! Run it on its own transaction to minimize the build up of stuff to commit
+		// and maximise the opportunities for garbage collection.
+		context.jobRunner.queue(new DBJob() {
+
+			public void run(ObjectContainer container, ClientContext context) {
+				innerGotAllMetadata(container, context);
+			}
+			
+		}, NativeThread.NORM_PRIORITY, false);
+	}
+	
+	private void innerGotAllMetadata(ObjectContainer container, ClientContext context) {
 		if(persistent()) {
 			container.activate(putHandlersByName, 2);
 		}
