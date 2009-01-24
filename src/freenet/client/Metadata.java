@@ -522,6 +522,7 @@ public class Metadata implements Cloneable {
 				setMIMEType(DefaultMIMETypes.DEFAULT_MIME_TYPE);
 				noMIME = true;
 			}
+			if(uri == null) throw new NullPointerException();
 			simpleRedirectKey = uri;
 			if(!(uri.getKeyType().equals("CHK") && !uri.hasMetaStrings()))
 				fullKeys = true;
