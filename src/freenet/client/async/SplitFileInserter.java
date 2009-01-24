@@ -545,6 +545,8 @@ public class SplitFileInserter implements ClientPutState {
 	}
 
 	public void cancel(ObjectContainer container, ClientContext context) {
+		if(logMINOR)
+			Logger.minor(this, "Cancelling "+this);
 		synchronized(this) {
 			if(finished) return;
 			finished = true;
