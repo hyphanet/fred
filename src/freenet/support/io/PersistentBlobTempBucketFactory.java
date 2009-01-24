@@ -19,6 +19,7 @@ import com.db4o.query.Query;
 import freenet.client.async.ClientContext;
 import freenet.client.async.DBJob;
 import freenet.client.async.DBJobRunner;
+import freenet.node.Ticker;
 import freenet.support.Logger;
 
 /**
@@ -42,7 +43,7 @@ public class PersistentBlobTempBucketFactory {
 	transient FileChannel channel;
 	
 	/** Blobs in memory only: in the database there will still be a "free" tag */
-	private transient Map<Long,PersistentBlobTempBucket> notCommittedBlobs;
+	private transient TreeMap<Long,PersistentBlobTempBucket> notCommittedBlobs;
 	
 	/** Non-exhaustive list of free slots. If we run out we need to query for 
 	 * more. */
@@ -52,6 +53,8 @@ public class PersistentBlobTempBucketFactory {
 	
 	private transient Random weakRandomSource;
 	
+	private transient Ticker ticker;
+	
 	private final long nodeDBHandle;
 	
 	public PersistentBlobTempBucketFactory(long blockSize2, long nodeDBHandle2, File storageFile2) {
@@ -60,7 +63,7 @@ public class PersistentBlobTempBucketFactory {
 		storageFile = storageFile2;
 	}
 
-	void onInit(ObjectContainer container, DBJobRunner jobRunner2, Random fastWeakRandom, File storageFile2, long blockSize2) throws IOException {
+	void onInit(ObjectContainer container, DBJobRunner jobRunner2, Random fastWeakRandom, File storageFile2, long blockSize2, Ticker ticker) throws IOException {
 		container.activate(storageFile, 100);
 		if(storageFile2.getPath().equals(storageFile.getPath())) {
 			if(blockSize != blockSize2)
@@ -73,10 +76,11 @@ public class PersistentBlobTempBucketFactory {
 		}
 		raf = new RandomAccessFile(storageFile, "rw");
 		channel = raf.getChannel();
-		notCommittedBlobs = new HashMap<Long,PersistentBlobTempBucket>();
+		notCommittedBlobs = new TreeMap<Long,PersistentBlobTempBucket>();
 		freeSlots = new TreeMap<Long,PersistentBlobTempBucketTag>();
 		jobRunner = jobRunner2;
 		weakRandomSource = fastWeakRandom;
+		this.ticker = ticker;
 	}
 
 	public String getName() {
@@ -292,13 +296,18 @@ public class PersistentBlobTempBucketFactory {
 		}
 	}
 
+	private long lastCheckedEnd = -1;
+	
 	public synchronized void remove(PersistentBlobTempBucket bucket, ObjectContainer container) {
 		if(Logger.shouldLog(Logger.MINOR, this))
 			Logger.minor(this, "Removing bucket "+bucket+" for slot "+bucket.index+" from database", new Exception("debug"));
 		long index = bucket.index;
 		PersistentBlobTempBucketTag tag = bucket.tag;
 		container.activate(tag, 1);
-		if(!bucket.persisted()) return;
+		if(!bucket.persisted()) {
+			maybeShrink(container);
+			return;
+		}
 		if(!bucket.freed()) {
 			Logger.error(this, "Removing bucket "+bucket+" for slot "+bucket.index+" but not freed!", new Exception("debug"));
 			notCommittedBlobs.put(index, bucket);
@@ -310,6 +319,115 @@ public class PersistentBlobTempBucketFactory {
 		container.store(tag);
 		container.delete(bucket);
 		bucket.onRemove();
+		
+		maybeShrink(container);
+	}
+	
+	void maybeShrink(ObjectContainer container) {
+		
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		if(logMINOR) Logger.minor(this, "maybeShrink()");
+		long now = System.currentTimeMillis();
+		
+		long newBlocks;
+		
+		synchronized(this) {
+		
+		if(now - lastCheckedEnd > 60*1000) {
+			if(logMINOR) Logger.minor(this, "maybeShrink() inner");
+			// Check whether there is a big white space at the end of the file.
+			long size;
+			try {
+				size = channel.size();
+			} catch (IOException e1) {
+				Logger.error(this, "Unable to find size of temp blob storage file: "+e1, e1);
+				return;
+			}
+			size -= size % blockSize;
+			long blocks = (size / blockSize) - 1;
+			if(blocks <= 32) {
+				if(logMINOR) Logger.minor(this, "Not shrinking, blob file not larger than a megabyte");
+				lastCheckedEnd = now;
+				queueMaybeShrink();
+				return;
+			}
+			long lastNotCommitted = notCommittedBlobs.isEmpty() ? 0 : notCommittedBlobs.lastKey();
+			double full = (double)lastNotCommitted / (double)blocks;
+			if(full > 0.8) {
+				if(logMINOR) Logger.minor(this, "Not shrinking, last not committed block is at "+full*100+"% ("+lastNotCommitted+" of "+blocks+")");
+				lastCheckedEnd = now;
+				queueMaybeShrink();
+				return;
+			}
+			Query query = container.query();
+			query.constrain(PersistentBlobTempBucketTag.class);
+			query.descend("isFree").constrain(false);
+			query.descend("index").orderDescending();
+			ObjectSet<PersistentBlobTempBucketTag> tags = query.execute();
+			long lastCommitted;
+			if(tags.isEmpty()) {
+				// No used slots at all?!
+				// There may be some not committed though
+				Logger.normal(this, "No used slots in persistent temp file (but last not committed = "+lastNotCommitted+")");
+				lastCommitted = 0;
+			} else {
+				lastCommitted = tags.next().index;
+				if(logMINOR) Logger.minor(this, "Last committed slot is "+lastCommitted+" last not committed is "+lastNotCommitted);
+			}
+			full = (double) lastCommitted / (double) blocks;
+			if(full > 0.8) {
+				if(logMINOR) Logger.minor(this, "Not shrinking, last committed block is at "+full*100+"%");
+				lastCheckedEnd = now;
+				queueMaybeShrink();
+				return;
+			}
+			long lastBlock = Math.max(lastCommitted, lastNotCommitted);
+			// Must be 10% free at end
+			newBlocks = (long) ((lastBlock + 32) * (1.0 / 1.1));
+			newBlocks = Math.max(newBlocks, 32);
+			System.err.println("Shrinking blob file from "+blocks+" to "+newBlocks);
+			for(long l = newBlocks; l <= blocks; l++) {
+				freeSlots.remove(l);
+			}
+			for(Long l : freeSlots.keySet()) {
+				if(l > newBlocks) {
+					Logger.error(this, "Removing free slot "+l+" over the current block limit");
+				}
+			}
+			lastCheckedEnd = now;
+			queueMaybeShrink();
+		} else return;
+		}
+		try {
+			channel.truncate(newBlocks * blockSize);
+		} catch (IOException e) {
+			System.err.println("Shrinking blob file failed!");
+			System.err.println(e);
+			e.printStackTrace();
+			Logger.error(this, "Shrinking blob file failed!: "+e, e);
+		}
+		Query query = container.query();
+		query.constrain(PersistentBlobTempBucketTag.class);
+		query.descend("index").constrain(newBlocks).greater();
+		ObjectSet<PersistentBlobTempBucketTag> tags = query.execute();
+		while(tags.hasNext()) container.delete(tags.next());
+		
+	}
+
+	private void queueMaybeShrink() {
+		ticker.queueTimedJob(new Runnable() {
+
+			public void run() {
+				jobRunner.queue(new DBJob() {
+
+					public void run(ObjectContainer container, ClientContext context) {
+						maybeShrink(container);
+					}
+					
+				}, NativeThread.NORM_PRIORITY-1, true);
+			}
+			
+		}, 61*1000);
 	}
 
 	public void store(PersistentBlobTempBucket bucket, ObjectContainer container) {

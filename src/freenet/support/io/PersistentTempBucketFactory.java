@@ -17,6 +17,7 @@ import com.db4o.query.Predicate;
 import freenet.client.async.DBJobRunner;
 import freenet.crypt.RandomSource;
 import freenet.keys.CHKBlock;
+import freenet.node.Ticker;
 import freenet.support.Logger;
 import freenet.support.api.Bucket;
 import freenet.support.api.BucketFactory;
@@ -175,7 +176,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		return encrypt;
 	}
 
-	public static PersistentTempBucketFactory load(File dir, String prefix, RandomSource random, Random fastWeakRandom, ObjectContainer container, final long nodeDBHandle, boolean encrypt, DBJobRunner jobRunner) throws IOException {
+	public static PersistentTempBucketFactory load(File dir, String prefix, RandomSource random, Random fastWeakRandom, ObjectContainer container, final long nodeDBHandle, boolean encrypt, DBJobRunner jobRunner, Ticker ticker) throws IOException {
 		ObjectSet<PersistentTempBucketFactory> results = container.query(new Predicate<PersistentTempBucketFactory>() {
 			public boolean match(PersistentTempBucketFactory factory) {
 				if(factory.nodeDBHandle == nodeDBHandle) return true;
@@ -187,12 +188,12 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			container.activate(factory, 5);
 			factory.init(dir, prefix, random, fastWeakRandom);
 			factory.setEncryption(encrypt);
-			factory.blobFactory.onInit(container, jobRunner, fastWeakRandom, new File(dir, "persistent-blob.tmp"), BLOB_SIZE);
+			factory.blobFactory.onInit(container, jobRunner, fastWeakRandom, new File(dir, "persistent-blob.tmp"), BLOB_SIZE, ticker);
 			return factory;
 		} else {
 			PersistentTempBucketFactory factory =
 				new PersistentTempBucketFactory(dir, prefix, random, fastWeakRandom, encrypt, nodeDBHandle);
-			factory.blobFactory.onInit(container, jobRunner, fastWeakRandom, new File(dir, "persistent-blob.tmp"), BLOB_SIZE);
+			factory.blobFactory.onInit(container, jobRunner, fastWeakRandom, new File(dir, "persistent-blob.tmp"), BLOB_SIZE, ticker);
 			return factory;
 		}
 	}

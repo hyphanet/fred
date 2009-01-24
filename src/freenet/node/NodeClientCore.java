@@ -251,7 +251,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		try {
 			File dir = new File(nodeConfig.getString("persistentTempDir"));
 			String prefix = "freenet-temp-";
-			persistentTempBucketFactory = PersistentTempBucketFactory.load(dir, prefix, random, node.fastWeakRandom, container, node.nodeDBHandle, nodeConfig.getBoolean("encryptPersistentTempBuckets"), this);
+			persistentTempBucketFactory = PersistentTempBucketFactory.load(dir, prefix, random, node.fastWeakRandom, container, node.nodeDBHandle, nodeConfig.getBoolean("encryptPersistentTempBuckets"), this, node.getTicker());
 			persistentTempBucketFactory.init(dir, prefix, random, node.fastWeakRandom);
 			persistentFilenameGenerator = persistentTempBucketFactory.fg;
 		} catch(IOException e2) {
@@ -1381,7 +1381,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 						if(bucket.toRemove())
 							bucket.realRemoveFrom(node.db);
 					} catch (Throwable t) {
-						Logger.error(this, "Caught "+t+" freeing bucket "+bucket+" after transaction commit");
+						Logger.error(this, "Caught "+t+" freeing bucket "+bucket+" after transaction commit", t);
 					}
 				}
 			} catch (Throwable t) {
