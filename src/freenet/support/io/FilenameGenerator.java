@@ -123,7 +123,9 @@ public class FilenameGenerator {
 	 */
 	public void init(File dir, String prefix, Random random) throws IOException {
 		this.random = random;
-		File oldDir = FileUtil.getCanonicalFile(tmpDir);
+		// There is a problem with putting File's into db4o IIRC ... I think we workaround this somewhere else?
+		// Symptoms are it trying to move even though the two dirs are blatantly identical.
+		File oldDir = FileUtil.getCanonicalFile(new File(tmpDir.getPath()));
 		File newDir = FileUtil.getCanonicalFile(dir);
 		System.err.println("Old: "+oldDir+" prefix "+this.prefix+" from "+tmpDir+" old path "+tmpDir.getPath()+" old parent "+tmpDir.getParent());
 		System.err.println("New: "+newDir+" prefix "+prefix+" from "+dir);
