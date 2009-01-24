@@ -453,16 +453,20 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		return finished || cancelled;
 	}
 
+	private final DBJob runGotAllMetadata = new DBJob() {
+
+		public void run(ObjectContainer container, ClientContext context) {
+			context.jobRunner.removeRestartJob(this, NativeThread.NORM_PRIORITY, container);
+			innerGotAllMetadata(container, context);
+		}
+		
+	};
+	
 	private void gotAllMetadata(ObjectContainer container, ClientContext context) {
 		// This can be huge! Run it on its own transaction to minimize the build up of stuff to commit
 		// and maximise the opportunities for garbage collection.
-		context.jobRunner.queue(new DBJob() {
-
-			public void run(ObjectContainer container, ClientContext context) {
-				innerGotAllMetadata(container, context);
-			}
-			
-		}, NativeThread.NORM_PRIORITY, false);
+		context.jobRunner.queueRestartJob(runGotAllMetadata, NativeThread.NORM_PRIORITY, container);
+		context.jobRunner.queue(runGotAllMetadata, NativeThread.NORM_PRIORITY, false);
 	}
 	
 	private void innerGotAllMetadata(ObjectContainer container, ClientContext context) {
