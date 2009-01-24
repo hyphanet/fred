@@ -258,10 +258,12 @@ class SingleFileInserter implements ClientPutState {
 						seg.clear();
 						data = buckets[0];
 						skip = true;
+						if(logMINOR) Logger.minor(this, "Using bucket 0 of SegmentedBucketChainBucket");
 					}
 				}
 				try {
 					if(!skip) {
+					if(logMINOR) Logger.minor(this, "Copying data from "+data+" length "+data.size());
 					Bucket newData = context.persistentBucketFactory.makeBucket(data.size());
 					BucketTools.copy(data, newData);
 					data.free();
