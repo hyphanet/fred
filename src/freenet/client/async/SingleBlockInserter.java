@@ -345,9 +345,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			if(finished) return;
 			finished = true;
 		}
+		boolean wasActive = true;
 		if(persistent) {
 			container.store(this);
-			container.activate(cb, 1);
+			wasActive = container.ext().isActive(cb);
+			if(!wasActive)
+				container.activate(cb, 1);
 			container.activate(sourceData, 1);
 		}
 		if(freeData) {
@@ -356,7 +359,7 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		}
 		super.unregister(container, context);
 		cb.onFailure(new InsertException(InsertException.CANCELLED), this, container, context);
-		if(persistent)
+		if(!wasActive)
 			container.deactivate(cb, 1);
 	}
 
