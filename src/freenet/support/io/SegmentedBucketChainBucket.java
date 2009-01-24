@@ -292,6 +292,8 @@ public class SegmentedBucketChainBucket implements Bucket {
 	private transient boolean runningSegStore;
 	
 	protected SegmentedChainBucketSegment makeSegment(int index, final SegmentedChainBucketSegment oldSeg) {
+		if(Logger.shouldLog(Logger.MINOR, this)) 
+			Logger.minor(this, "Make a segment for "+this+" index "+index+ "old "+oldSeg);
 		if(oldSeg != null) {
 			synchronized(this) {
 				while(runningSegStore) {
@@ -419,12 +421,18 @@ public class SegmentedBucketChainBucket implements Bucket {
 	}
 
 	synchronized void removeContents(ObjectContainer container) {
+		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		for(SegmentedChainBucketSegment seg : segments) {
+			if(logMINOR) Logger.minor(this, "Removing segment "+seg);
+			container.activate(seg, 1);
+			seg.activateBuckets(container);
 			seg.free();
 			seg.removeFrom(container);
 		}
+		if(logMINOR) Logger.minor(this, "Removed segments for "+this);
 		container.delete(segments);
 		container.delete(this);
+		if(logMINOR) Logger.minor(this, "Removed "+this);
 		freed = true; // Just in case it wasn't already.
 	}
 	

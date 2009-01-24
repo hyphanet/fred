@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import com.db4o.ObjectContainer;
 
 import freenet.client.async.ClientContext;
+import freenet.support.Logger;
 import freenet.support.api.Bucket;
 
 public class SegmentedChainBucketSegment {
@@ -25,6 +26,8 @@ public class SegmentedChainBucketSegment {
 	}
 
 	public void storeTo(ObjectContainer container) {
+		if(Logger.shouldLog(Logger.MINOR, this))
+			Logger.minor(this, "Storing segment "+this);
 		for(Bucket bucket : buckets)
 			bucket.storeTo(container);
 		container.ext().store(buckets, 1);
