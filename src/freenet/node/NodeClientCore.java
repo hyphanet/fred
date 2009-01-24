@@ -255,7 +255,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			persistentTempBucketFactory.init(dir, prefix, random, node.fastWeakRandom);
 			persistentFilenameGenerator = persistentTempBucketFactory.fg;
 		} catch(IOException e2) {
-			String msg = "Could not find or create persistent temporary directory";
+			String msg = "Could not find or create persistent temporary directory: "+e2;
+			e2.printStackTrace();
 			throw new NodeInitException(NodeInitException.EXIT_BAD_TEMP_DIR, msg);
 		}
 
