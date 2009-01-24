@@ -231,7 +231,10 @@ class ArchiveHandlerImpl implements ArchiveHandler {
 	}
 
 	public void removeFrom(ObjectContainer container) {
-		key.removeFrom(container);
+		if(key == null) {
+			Logger.error(this, "removeFrom() : key = null for "+this+" I exist = "+container.ext().isStored(this)+" I am active: "+container.ext().isActive(this), new Exception("error"));
+		} else
+			key.removeFrom(container);
 		container.delete(this);
 	}
 	

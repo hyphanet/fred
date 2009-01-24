@@ -1135,8 +1135,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 		uri.removeFrom(container);
 		if(thisKey != null)
 			thisKey.removeFrom(container);
-		if(ah != null)
+		if(ah != null) {
+			ah.activateForExecution(container);
 			ah.removeFrom(container);
+		}
 		metaStrings.clear();
 		container.delete(metaStrings);
 		clientMetadata.removeFrom(container);
