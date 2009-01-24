@@ -610,6 +610,10 @@ public class FCPServer implements Runnable {
 	public ClientRequest[] getGlobalRequests(ObjectContainer container) {
 		List<ClientRequest> v = new ArrayList<ClientRequest>();
 		globalRebootClient.addPersistentRequests(v, false, null);
+		if(!container.ext().isActive(globalForeverClient)) {
+			Logger.error(this, "Somebody deactivated the global queue!");
+			container.activate(globalForeverClient, 2);
+		}
 		globalForeverClient.addPersistentRequests(v, false, container);
 		return (ClientRequest[]) v.toArray(new ClientRequest[v.size()]);
 	}
