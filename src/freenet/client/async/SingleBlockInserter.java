@@ -88,8 +88,10 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 	}
 
 	protected ClientKeyBlock innerEncode(RandomSource random, ObjectContainer container) throws InsertException {
-		if(persistent)
+		if(persistent) {
 			container.activate(uri, 1);
+			container.activate(sourceData, 1);
+		}
 		String uriType = uri.getKeyType();
 		if(uriType.equals("CHK")) {
 			try {
@@ -289,12 +291,15 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 
 	public FreenetURI getURI(ObjectContainer container, ClientContext context) {
 		synchronized(this) {
-			if(resultingURI != null)
+			if(resultingURI != null) {
+				if(persistent) container.activate(resultingURI, 5);
 				return resultingURI;
+			}
 		}
 		getBlock(container, context, true);
 		synchronized(this) {
 			// FIXME not really necessary? resultingURI is never dropped, only set.
+			if(persistent) container.activate(resultingURI, 5);
 			return resultingURI;
 		}
 	}
