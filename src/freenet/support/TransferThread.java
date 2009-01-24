@@ -80,6 +80,9 @@ public abstract class TransferThread implements PrioRunnable, ClientCallback {
 				catch(InterruptedException e) {
 					mThread.interrupt();
 				}
+				catch(Exception e) {
+					Logger.error(this, "Error in iterate probably()", e);
+				}
 			}
 		}
 		
