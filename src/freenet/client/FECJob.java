@@ -156,4 +156,49 @@ public class FECJob {
 			}
 		}
 	}
+
+	public boolean isCancelled(ObjectContainer container) {
+		if(callback == null) {
+			for(Bucket data : dataBlocks) {
+				if(data != null) {
+					Logger.error(this, "Callback is null (deleted??) but data is valid: "+data);
+					data.free();
+					data.removeFrom(container);
+				}
+			}
+			for(Bucket data : checkBlocks) {
+				if(data != null) {
+					Logger.error(this, "Callback is null (deleted??) but data is valid: "+data);
+					data.free();
+					data.removeFrom(container);
+				}
+			}
+			for(SplitfileBlock block : dataBlockStatus) {
+				if(block != null) {
+					Logger.error(this, "Callback is null (deleted??) but data is valid: "+block);
+					Bucket data = block.getData();
+					if(data != null) {
+						Logger.error(this, "Callback is null (deleted??) but data is valid: "+data);
+						data.free();
+						data.removeFrom(container);
+					}
+					container.delete(block);
+				}
+			}
+			for(SplitfileBlock block : checkBlockStatus) {
+				if(block != null) {
+					Logger.error(this, "Callback is null (deleted??) but data is valid: "+block);
+					Bucket data = block.getData();
+					if(data != null) {
+						Logger.error(this, "Callback is null (deleted??) but data is valid: "+data);
+						data.free();
+						data.removeFrom(container);
+					}
+					container.delete(block);
+				}
+			}
+			return true;
+		}
+		return false;
+	}
 }
