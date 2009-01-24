@@ -30,6 +30,7 @@ import freenet.support.io.BucketChainBucketFactory;
 import freenet.support.io.BucketTools;
 import freenet.support.io.NativeThread;
 import freenet.support.io.NotPersistentBucket;
+import freenet.support.io.SegmentedBucketChainBucket;
 
 /**
  * Attempt to insert a file. May include metadata.
@@ -249,11 +250,23 @@ class SingleFileInserter implements ClientPutState {
 		if (fitsInOneCHK) {
 			// Insert single block, then insert pointer to it
 			if(persistent && !(data instanceof NotPersistentBucket)) {
+				boolean skip = false;
+				if(data instanceof SegmentedBucketChainBucket) {
+					SegmentedBucketChainBucket seg = (SegmentedBucketChainBucket) data;
+					Bucket[] buckets = seg.getBuckets();
+					if(buckets.length == 1) {
+						seg.clear();
+						data = buckets[0];
+						skip = true;
+					}
+				}
 				try {
+					if(!skip) {
 					Bucket newData = context.persistentBucketFactory.makeBucket(data.size());
 					BucketTools.copy(data, newData);
 					data.free();
 					data = newData;
+					}
 				} catch (IOException e) {
 					Logger.error(this, "Caught "+e+" while copying non-persistent data", e);
 					throw new InsertException(InsertException.BUCKET_ERROR, e, null);

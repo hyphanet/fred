@@ -409,7 +409,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		return buckets;
 	}
 
-	synchronized void clear() {
+	public synchronized void clear() {
 		dbJobRunner.runBlocking(new DBJob() {
 
 			public void run(ObjectContainer container, ClientContext context) {
