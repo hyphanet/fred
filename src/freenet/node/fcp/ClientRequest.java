@@ -118,6 +118,8 @@ public abstract class ClientRequest {
 			client = persistenceType == PERSIST_FOREVER ? handler.getForeverClient(null) : handler.getRebootClient();
 		}
 		lowLevelClient = client.lowLevelClient;
+		if(lowLevelClient == null)
+			throw new NullPointerException("No lowLevelClient from client: "+client+" global = "+global+" persistence = "+persistenceType);
 		}
 		if(client != null)
 			assert(client.persistenceType == persistenceType);
