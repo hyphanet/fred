@@ -8,6 +8,7 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
@@ -462,7 +463,16 @@ public class PersistentBlobTempBucketFactory {
 	}
 
 	public synchronized void postCommit() {
-		freeSlots.putAll(almostFreeSlots);
+		int sz = freeSlots.size() + almostFreeSlots.size();
+		if(sz > MAX_FREE) {
+			Iterator<Map.Entry<Long,PersistentBlobTempBucketTag>> it = almostFreeSlots.entrySet().iterator();
+			for(int i=sz;i<MAX_FREE && it.hasNext();i++) {
+				Map.Entry<Long,PersistentBlobTempBucketTag> entry = it.next();
+				freeSlots.put(entry.getKey(), entry.getValue());
+			}
+		} else {
+			freeSlots.putAll(almostFreeSlots);
+		}
 		almostFreeSlots.clear();
 	}
 
