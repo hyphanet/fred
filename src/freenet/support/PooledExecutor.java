@@ -70,7 +70,6 @@ public class PooledExecutor implements Executor {
 				jobCount++;
 				if(!waitingThreads[prio - 1].isEmpty()) {
 					t = waitingThreads[prio - 1].remove(waitingThreads[prio - 1].size() - 1);
-					waitingThreadsCount--;
 					if(logMINOR)
 						Logger.minor(this, "Reusing thread " + t);
 				} else {
