@@ -144,6 +144,8 @@ public abstract class ClientPutBase extends ClientRequest implements ClientCallb
 			//progressMessage = null;
 			succeeded = true;
 			finished = true;
+			if(generatedURI == null)
+				Logger.error(this, "No generated URI in onSuccess() for "+this+" from "+state);
 		}
 		freeData(container);
 		finish(container);
