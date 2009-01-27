@@ -129,6 +129,11 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 		ClientKeyBlock block;
 		boolean shouldSend;
 		synchronized(this) {
+			if(finished) return null;
+			if(sourceData == null) {
+				Logger.error(this, "Source data is null on "+this+" but not finished!");
+				return null;
+			}
 			block = innerEncode(context.random, container);
 			shouldSend = (resultingURI == null);
 			resultingURI = block.getClientKey().getURI();
