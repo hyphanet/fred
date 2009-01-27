@@ -77,9 +77,8 @@ public class PersistentBlobTempBucketFactory {
 			throw new IllegalStateException("My block size is "+blockSize2+
 					" but stored block size is "+blockSize+
 					" for same file "+storageFile);
-		if((oldFile.equals(newFile) || 
+		if(!(oldFile.equals(newFile) || 
 				(File.separatorChar == '\\' ? oldFile.getPath().toLowerCase().equals(newFile.getPath().toLowerCase()) : oldFile.getPath().equals(newFile.getPath())))) {
-		} else {
 			if(!FileUtil.moveTo(storageFile, storageFile2, false))
 				throw new IOException("Unable to move temp blob file from "+storageFile+" to "+storageFile2);
 		}
