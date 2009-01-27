@@ -71,8 +71,8 @@ public class PersistentBlobTempBucketFactory {
 
 	void onInit(ObjectContainer container, DBJobRunner jobRunner2, Random fastWeakRandom, File storageFile2, long blockSize2, Ticker ticker) throws IOException {
 		container.activate(storageFile, 100);
-		File oldFile = FileUtil.getCanonicalFile(storageFile);
-		File newFile = FileUtil.getCanonicalFile(storageFile2);
+		File oldFile = FileUtil.getCanonicalFile(new File(storageFile.getPath())); // db4o argh
+		File newFile = FileUtil.getCanonicalFile(new File(storageFile2.getPath()));
 		if(!(oldFile.equals(newFile) || 
 				(File.separatorChar == '\\' ? oldFile.getPath().toLowerCase().equals(newFile.getPath().toLowerCase()) : oldFile.getPath().equals(newFile.getPath())))) {
 			if(blockSize != blockSize2)
