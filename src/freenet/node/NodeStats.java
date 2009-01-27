@@ -172,8 +172,6 @@ public class NodeStats implements Persistable {
 	
 	// ThreadCounting stuffs
 	public final ThreadGroup rootThreadGroup;
-	private int[] activeThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
-	private int[] waitingThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
 	private int threadLimit;
 	
 	final NodePinger nodePinger;
@@ -1018,11 +1016,11 @@ public class NodeStats implements Persistable {
 	}
 	
 	public int[] getActiveThreadsByPriority() {
-		return activeThreadsByPriorities;
+		return node.executor.runningThreads();
 	}
 	
 	public int[] getWaitingThreadsByPriority() {
-		return waitingThreadsByPriorities;
+		return node.executor.waitingThreads();
 	}
 
 	public int getThreadLimit() {
