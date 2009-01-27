@@ -589,9 +589,13 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	private String newName() {
 		return "Node id|"+random.nextLong();
 	}
+	
+	private final Object writeNodeFileSync = new Object();
 
 	public void writeNodeFile() {
-		writeNodeFile(new File(nodeDir, "node-"+getDarknetPortNumber()), new File(nodeDir, "node-"+getDarknetPortNumber()+".bak"));
+		synchronized(writeNodeFileSync) {
+			writeNodeFile(new File(nodeDir, "node-"+getDarknetPortNumber()), new File(nodeDir, "node-"+getDarknetPortNumber()+".bak"));
+		}
 	}
 	
 	private void writeNodeFile(File orig, File backup) {
