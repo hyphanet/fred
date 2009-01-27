@@ -71,7 +71,10 @@ public class PersistentBlobTempBucketFactory {
 
 	void onInit(ObjectContainer container, DBJobRunner jobRunner2, Random fastWeakRandom, File storageFile2, long blockSize2, Ticker ticker) throws IOException {
 		container.activate(storageFile, 100);
-		if(storageFile2.getPath().equals(storageFile.getPath())) {
+		File oldFile = FileUtil.getCanonicalFile(storageFile);
+		File newFile = FileUtil.getCanonicalFile(storageFile2);
+		if(!(oldFile.equals(newFile) || 
+				(File.separatorChar == '\\' ? oldFile.getPath().toLowerCase().equals(newFile.getPath().toLowerCase()) : oldFile.getPath().equals(newFile.getPath())))) {
 			if(blockSize != blockSize2)
 				throw new IllegalStateException("My block size is "+blockSize2+
 						" but stored block size is "+blockSize+
