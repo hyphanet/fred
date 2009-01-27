@@ -1016,7 +1016,6 @@ public class NodeStats implements Persistable {
 	public int getActiveThreadCount() {
 		int waitingThreads = 0;
 		waitingThreadsByPriorities = node.executor.waitingThreads();
-		activeThreadsByPriorities = node.executor.runningThreads();
 		for(int i=0; i<waitingThreadsByPriorities.length; i++)
 			waitingThreads += waitingThreadsByPriorities[i];
 		
