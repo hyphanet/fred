@@ -147,31 +147,6 @@ public class PersistentBlobTempBucketFactory {
 			size -= size % blockSize;
 			long blocks = size / blockSize;
 			long ptr = blocks - 1;
-			query = container.query();
-			query.constrain(PersistentBlobTempBucketTag.class);
-			query.descend("index").constrain(ptr).and(query.descend("factory").constrain(PersistentBlobTempBucketFactory.this));
-			// Try from the end, until we find no more.
-			while(ptr > 0 && !query.execute().hasNext()) {
-				boolean stored = false;
-				synchronized(PersistentBlobTempBucketFactory.this) {
-					stored = notCommittedBlobs.get(ptr) == null && almostFreeSlots.get(ptr) == null;
-					if(stored) {
-						if(freeSlots.containsKey(ptr)) break;
-						if(notCommittedBlobs.containsKey(ptr) || almostFreeSlots.containsKey(ptr)) {
-							ptr--;
-							continue;
-						}
-						PersistentBlobTempBucketTag tag = new PersistentBlobTempBucketTag(PersistentBlobTempBucketFactory.this, ptr);
-						container.store(tag);
-						freeSlots.put(ptr, tag);
-						added++;
-						if(logMINOR)
-							Logger.minor(this, "Adding slot "+ptr+" to freeSlots, searching for free slots from the end");
-						if(added > MAX_FREE) return;
-						ptr--;
-					}
-				}
-			}
 
 			// Checking for slots marked occupied with bucket != null is nontrivial,
 			// because constraining to null doesn't work - causes an OOM with a large database,
