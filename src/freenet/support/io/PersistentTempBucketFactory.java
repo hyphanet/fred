@@ -215,8 +215,10 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		synchronized(this) {
 			if(!modifiedBucketsToFree) return;
 			modifiedBucketsToFree = false;
-			for(DelayedFreeBucket bucket : bucketsToFree)
+			for(DelayedFreeBucket bucket : bucketsToFree) {
+				container.activate(bucket, 1);
 				bucket.storeTo(container);
+			}
 			container.store(bucketsToFree);
 		}
 	}
