@@ -70,11 +70,14 @@ public class MultiPutCompletionCallback implements PutCompletionCallback, Client
 			waitingForBlockSet.remove(state);
 			waitingForFetchable.remove(state);
 			if(!(waitingFor.isEmpty() && started)) {
-				container.store(waitingFor);
-				container.store(waitingForBlockSet);
-				container.store(waitingForFetchable);
+				if(persistent) {
+					container.store(waitingFor);
+					container.store(waitingForBlockSet);
+					container.store(waitingForFetchable);
+				}
 				this.e = e;
-				container.store(this);
+				if(persistent)
+					container.store(this);
 				return;
 			}
 		}
