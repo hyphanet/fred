@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.TreeMap;
 
 import com.db4o.ObjectContainer;
@@ -49,6 +50,10 @@ public class PersistentBlobTempBucketFactory {
 	 * more. */
 	private transient TreeMap<Long,PersistentBlobTempBucketTag> freeSlots;
 	
+	/** Recently freed slots, cannot be reused until after commit.
+	 * Similar to notCommittedBlobs. */
+	private transient TreeMap<Long,PersistentBlobTempBucketTag> almostFreeSlots;
+	
 	private transient DBJobRunner jobRunner;
 	
 	private transient Random weakRandomSource;
@@ -78,6 +83,7 @@ public class PersistentBlobTempBucketFactory {
 		channel = raf.getChannel();
 		notCommittedBlobs = new TreeMap<Long,PersistentBlobTempBucket>();
 		freeSlots = new TreeMap<Long,PersistentBlobTempBucketTag>();
+		almostFreeSlots = new TreeMap<Long,PersistentBlobTempBucketTag>();
 		jobRunner = jobRunner2;
 		weakRandomSource = fastWeakRandom;
 		this.ticker = ticker;
@@ -118,6 +124,7 @@ public class PersistentBlobTempBucketFactory {
 					}
 					if(tag.factory != PersistentBlobTempBucketFactory.this) continue;
 					if(notCommittedBlobs.containsKey(tag.index)) continue;
+					if(almostFreeSlots.containsKey(tag.index)) continue;
 					if(freeSlots.containsKey(tag.index)) continue;
 					if(tag.bucket != null) {
 						Logger.error(this, "Bucket is occupied but not in notCommittedBlobs?!: "+tag+" : "+tag.bucket);
@@ -146,10 +153,10 @@ public class PersistentBlobTempBucketFactory {
 			while(ptr > 0 && !query.execute().hasNext()) {
 				boolean stored = false;
 				synchronized(PersistentBlobTempBucketFactory.this) {
-					stored = notCommittedBlobs.get(ptr) == null;
+					stored = notCommittedBlobs.get(ptr) == null && almostFreeSlots.get(ptr) == null;
 					if(stored) {
 						if(freeSlots.containsKey(ptr)) break;
-						if(notCommittedBlobs.containsKey(ptr)) {
+						if(notCommittedBlobs.containsKey(ptr) || almostFreeSlots.containsKey(ptr)) {
 							ptr--;
 							continue;
 						}
@@ -185,6 +192,7 @@ public class PersistentBlobTempBucketFactory {
 				for(long l = 0; l < ptr; l++) {
 					if(freeSlots.containsKey(l)) continue;
 					if(notCommittedBlobs.containsKey(l)) continue;
+					if(almostFreeSlots.containsKey(l)) continue;
 					query = container.query();
 					query.constrain(PersistentBlobTempBucketTag.class);
 					query.descend("index").constrain(l);
@@ -257,7 +265,7 @@ public class PersistentBlobTempBucketFactory {
 			if(!freeSlots.isEmpty()) {
 				Long slot = freeSlots.firstKey();
 				PersistentBlobTempBucketTag tag = freeSlots.remove(slot);
-				if(notCommittedBlobs.get(slot) != null) {
+				if(notCommittedBlobs.get(slot) != null || almostFreeSlots.get(slot) != null) {
 					Logger.error(this, "Slot "+slot+" already occupied by a not committed blob despite being in freeSlots!!");
 					return null;
 				}
@@ -272,7 +280,7 @@ public class PersistentBlobTempBucketFactory {
 			if(!freeSlots.isEmpty()) {
 				Long slot = freeSlots.firstKey();
 				PersistentBlobTempBucketTag tag = freeSlots.remove(slot);
-				if(notCommittedBlobs.get(slot) != null) {
+				if(notCommittedBlobs.get(slot) != null || almostFreeSlots.get(slot) != null) {
 					Logger.error(this, "Slot "+slot+" already occupied by a not committed blob despite being in freeSlots!!");
 					return null;
 				}
@@ -312,7 +320,7 @@ public class PersistentBlobTempBucketFactory {
 			Logger.error(this, "Removing bucket "+bucket+" for slot "+bucket.index+" but not freed!", new Exception("debug"));
 			notCommittedBlobs.put(index, bucket);
 		} else {
-			freeSlots.put(index, tag);
+			almostFreeSlots.put(index, tag);
 		}
 		tag.bucket = null;
 		tag.isFree = true;
@@ -352,6 +360,11 @@ public class PersistentBlobTempBucketFactory {
 				return;
 			}
 			long lastNotCommitted = notCommittedBlobs.isEmpty() ? 0 : notCommittedBlobs.lastKey();
+			long lastAlmostFreed = almostFreeSlots.isEmpty() ? 0 : almostFreeSlots.lastKey();
+			if(lastNotCommitted < lastAlmostFreed) {
+				if(logMINOR) Logger.minor(this, "Last almost freed: "+lastAlmostFreed+" replacing last not committed: "+lastNotCommitted);
+				lastNotCommitted = lastAlmostFreed;
+			}
 			double full = (double)lastNotCommitted / (double)blocks;
 			if(full > 0.8) {
 				if(logMINOR) Logger.minor(this, "Not shrinking, last not committed block is at "+full*100+"% ("+lastNotCommitted+" of "+blocks+")");
@@ -446,6 +459,11 @@ public class PersistentBlobTempBucketFactory {
 		synchronized(this) {
 			notCommittedBlobs.remove(index);
 		}
+	}
+
+	public synchronized void postCommit() {
+		freeSlots.putAll(almostFreeSlots);
+		almostFreeSlots.clear();
 	}
 
 }

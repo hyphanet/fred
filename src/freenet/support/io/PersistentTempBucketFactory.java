@@ -132,7 +132,8 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	public Bucket makeBucket(long size) throws IOException {
 		Bucket rawBucket = null;
 		if(size == BLOB_SIZE) {
-			rawBucket = blobFactory.makeBucket();
+			// No need for a DelayedFreeBucket, we handle this internally (and more efficiently) for blobs.
+			return blobFactory.makeBucket();
 		}
 		if(rawBucket == null)
 			rawBucket = new PersistentTempFileBucket(fg.makeRandomFilename(), fg);
@@ -204,6 +205,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	}
 
 	public void postCommit(ObjectContainer db) {
+		blobFactory.postCommit();
 		LinkedList<DelayedFreeBucket> toFree = grabBucketsToFree();
 		for(Iterator<DelayedFreeBucket> i=toFree.iterator();i.hasNext();) {
 			DelayedFreeBucket bucket = i.next();
