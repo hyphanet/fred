@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Random;
 
@@ -200,5 +201,20 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 
 	public void setEncryption(boolean encrypt) {
 		this.encrypt = encrypt;
+	}
+
+	public void postCommit(ObjectContainer db) {
+		LinkedList<DelayedFreeBucket> toFree = grabBucketsToFree();
+		for(Iterator<DelayedFreeBucket> i=toFree.iterator();i.hasNext();) {
+			DelayedFreeBucket bucket = i.next();
+			try {
+				if(bucket.toFree())
+					bucket.realFree();
+				if(bucket.toRemove())
+					bucket.realRemoveFrom(db);
+			} catch (Throwable t) {
+				Logger.error(this, "Caught "+t+" freeing bucket "+bucket+" after transaction commit", t);
+			}
+		}
 	}
 }

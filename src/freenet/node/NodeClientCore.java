@@ -1373,18 +1373,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 				} else
 					node.db.commit();
 				if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
-				LinkedList<DelayedFreeBucket> toFree = persistentTempBucketFactory.grabBucketsToFree();
-				for(Iterator<DelayedFreeBucket> i=toFree.iterator();i.hasNext();) {
-					DelayedFreeBucket bucket = i.next();
-					try {
-						if(bucket.toFree())
-							bucket.realFree();
-						if(bucket.toRemove())
-							bucket.realRemoveFrom(node.db);
-					} catch (Throwable t) {
-						Logger.error(this, "Caught "+t+" freeing bucket "+bucket+" after transaction commit", t);
-					}
-				}
+				persistentTempBucketFactory.postCommit(node.db);
 			} catch (Throwable t) {
 				if(t instanceof OutOfMemoryError) {
 					synchronized(NodeClientCore.this) {
