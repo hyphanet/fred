@@ -22,7 +22,7 @@ public class PooledExecutor implements Executor {
 	/** Threads waiting for a job */
 	@SuppressWarnings("unchecked")
 	private final ArrayList<MyThread>[] waitingThreads = new ArrayList[runningThreads.length];
-	private volatile int waitingThreadsCounter;
+	private volatile int waitingThreadsCount;
 	long[] threadCounter = new long[runningThreads.length];
 	private long jobCount;
 	private long jobMisses;
@@ -40,7 +40,7 @@ public class PooledExecutor implements Executor {
 			waitingThreads[i] = new ArrayList<MyThread>();
 			threadCounter[i] = 0;
 		}
-		waitingThreadsCounter = 0;
+		waitingThreadsCount = 0;
 	}
 	/** Maximum time a thread will wait for a job */
 	static final int TIMEOUT = 5 * 60 * 1000;
@@ -70,7 +70,7 @@ public class PooledExecutor implements Executor {
 				jobCount++;
 				if(!waitingThreads[prio - 1].isEmpty()) {
 					t = waitingThreads[prio - 1].remove(waitingThreads[prio - 1].size() - 1);
-					waitingThreadsCounter--;
+					waitingThreadsCount--;
 					if(logMINOR)
 						Logger.minor(this, "Reusing thread " + t);
 				} else {
@@ -134,8 +134,8 @@ public class PooledExecutor implements Executor {
 		return result;
 	}
 
-	public int getWaitingThreadsCounter() {
-		return waitingThreadsCounter;
+	public int getWaitingThreadsCount() {
+		return waitingThreadsCount;
 	}
 
 	class MyThread extends NativeThread {
@@ -167,7 +167,7 @@ public class PooledExecutor implements Executor {
 				if(job == null) {
 					synchronized(PooledExecutor.this) {
 						waitingThreads[nativePriority - 1].add(this);
-						waitingThreadsCounter++;
+						waitingThreadsCount++;
 					}
 					synchronized(this) {
 						if(nextJob == null) {
@@ -185,7 +185,7 @@ public class PooledExecutor implements Executor {
 					}
 					synchronized(PooledExecutor.this) {
 						waitingThreads[nativePriority - 1].remove(this);
-						waitingThreadsCounter--;
+						waitingThreadsCount--;
 						if(!alive) {
 							runningThreads[nativePriority - 1].remove(this);
 							if(logMINOR)

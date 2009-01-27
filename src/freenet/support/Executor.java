@@ -18,5 +18,5 @@ public interface Executor {
 	public int[] runningThreads();
 
 	/** Fast method returning how many threads are waiting */
-	public int getWaitingThreadsCounter();
+	public int getWaitingThreadsCount();
 }
