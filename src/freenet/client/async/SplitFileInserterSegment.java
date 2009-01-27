@@ -7,6 +7,7 @@ import com.db4o.ObjectContainer;
 import freenet.client.FECCallback;
 import freenet.client.FECCodec;
 import freenet.client.FECJob;
+import freenet.client.FECQueue;
 import freenet.client.FailureCodeTracker;
 import freenet.client.InsertContext;
 import freenet.client.InsertException;
@@ -439,11 +440,13 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		}
 		// parent.parent.notifyClients();
 		started = true;
+		FECJob job = null;
+		FECCodec splitfileAlgo = null;
 		if (!encoded) {
 			if (logMINOR)
 				Logger.minor(this, "Segment " + segNo + " of " + parent + " ("
 						+ parent.dataLength + ") is not encoded");
-			FECCodec splitfileAlgo = FECCodec.getCodec(this.splitfileAlgo,
+			splitfileAlgo = FECCodec.getCodec(this.splitfileAlgo,
 					dataBlocks.length, checkBlocks.length, context.mainExecutor);
 				if (logMINOR)
 					Logger.minor(this, "Encoding segment " + segNo + " of "
@@ -456,7 +459,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 							for(int i=0;i<dataBlocks.length;i++)
 								container.activate(dataBlocks[i], 5);
 						}
-						splitfileAlgo.addToQueue(new FECJob(splitfileAlgo, context.fecQueue, dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory, this, false, parent.parent.getPriorityClass(), persistent), context.fecQueue, container);
+						job = new FECJob(splitfileAlgo, context.fecQueue, dataBlocks, checkBlocks, CHKBlock.DATA_LENGTH, blockInsertContext.persistentBucketFactory, this, false, parent.parent.getPriorityClass(), persistent);
 					}
 				}				
 				fin = false;
@@ -492,6 +495,9 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			finish(container, context, parent);
 		if (finished) {
 			parent.segmentFinished(this, container, context);
+		}
+		if(job != null) {
+			splitfileAlgo.addToQueue(job, context.fecQueue, container);
 		}
 	}
 
