@@ -465,8 +465,12 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private void gotAllMetadata(ObjectContainer container, ClientContext context) {
 		// This can be huge! Run it on its own transaction to minimize the build up of stuff to commit
 		// and maximise the opportunities for garbage collection.
-		context.jobRunner.queueRestartJob(runGotAllMetadata, NativeThread.NORM_PRIORITY, container);
-		context.jobRunner.queue(runGotAllMetadata, NativeThread.NORM_PRIORITY, false);
+		if(persistent()) {
+			context.jobRunner.queueRestartJob(runGotAllMetadata, NativeThread.NORM_PRIORITY, container);
+			context.jobRunner.queue(runGotAllMetadata, NativeThread.NORM_PRIORITY, false);
+		} else {
+			innerGotAllMetadata(null, context);
+		}
 	}
 	
 	private void innerGotAllMetadata(ObjectContainer container, ClientContext context) {
