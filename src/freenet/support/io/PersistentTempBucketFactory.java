@@ -6,9 +6,8 @@ package freenet.support.io;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Random;
 
 import com.db4o.ObjectContainer;
@@ -45,7 +44,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	private transient Random weakPRNG;
 	
 	/** Buckets to free */
-	private LinkedList<DelayedFreeBucket> bucketsToFree;
+	private ArrayList<DelayedFreeBucket> bucketsToFree;
 	
 	private final long nodeDBHandle;
 	
@@ -95,7 +94,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			originalFiles.add(f);
 		}
 		
-		bucketsToFree = new LinkedList<DelayedFreeBucket>();
+		bucketsToFree = new ArrayList<DelayedFreeBucket>();
 	}
 	
 	public void init(File dir, String prefix, RandomSource strongPRNG, Random weakPRNG) throws IOException {
