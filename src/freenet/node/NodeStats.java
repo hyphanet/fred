@@ -172,6 +172,8 @@ public class NodeStats implements Persistable {
 	
 	// ThreadCounting stuffs
 	public final ThreadGroup rootThreadGroup;
+	private int[] activeThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
+	private int[] waitingThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
 	private int threadLimit;
 	
 	final NodePinger nodePinger;
@@ -202,6 +204,8 @@ public class NodeStats implements Persistable {
 		ThreadGroup tg = Thread.currentThread().getThreadGroup();
 		while(tg.getParent() != null) tg = tg.getParent();
 		this.rootThreadGroup = tg;
+		this.activeThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
+		this.waitingThreadsByPriorities = new int[NativeThread.JAVA_PRIORITY_RANGE];
 		throttledPacketSendAverage =
 			new TimeDecayingRunningAverage(1, 10*60*1000 /* should be significantly longer than a typical transfer */, 0, Long.MAX_VALUE, node);
 		nodePinger = new NodePinger(node);
@@ -423,6 +427,10 @@ public class NodeStats implements Persistable {
 					long end = System.currentTimeMillis();
 					if(logMINOR)
 						Logger.minor(this, "Throttle check took "+TimeUtil.formatTime(end-now,2,true));
+
+					// Doesn't belong here... but anyway, should do the job.
+					activeThreadsByPriorities = node.executor.runningThreads();
+					waitingThreadsByPriorities = node.executor.waitingThreads();
 				}
 			}
 	};
@@ -1016,11 +1024,11 @@ public class NodeStats implements Persistable {
 	}
 	
 	public int[] getActiveThreadsByPriority() {
-		return node.executor.runningThreads();
+		return activeThreadsByPriorities;
 	}
 	
 	public int[] getWaitingThreadsByPriority() {
-		return node.executor.waitingThreads();
+		return waitingThreadsByPriorities;
 	}
 
 	public int getThreadLimit() {
