@@ -52,8 +52,6 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	
 	private final PersistentBlobTempBucketFactory blobFactory;
 	
-	private transient ObjectContainer container;
-	
 	static final int BLOB_SIZE = CHKBlock.DATA_LENGTH;
 	
 	/** Don't store the bucketsToFree unless it's been modified since we last stored it. */
@@ -216,10 +214,10 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			if(!modifiedBucketsToFree) return;
 			modifiedBucketsToFree = false;
 			for(DelayedFreeBucket bucket : bucketsToFree) {
-				container.activate(bucket, 1);
-				bucket.storeTo(container);
+				db.activate(bucket, 1);
+				bucket.storeTo(db);
 			}
-			container.store(bucketsToFree);
+			db.store(bucketsToFree);
 		}
 	}
 	
@@ -240,7 +238,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			x++;
 		}
 		if(x > 1024) {
-			container.store(bucketsToFree);
+			db.store(bucketsToFree);
 			// Lots of buckets freed, commit now to reduce memory footprint.
 			db.commit();
 		}
