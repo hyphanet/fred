@@ -257,7 +257,7 @@ public class BucketTools {
 				if ((bytesRead < bucketLength) && (bucketLength > 0))
 					throw new EOFException();
 				if ((bytesRead != bucketLength) && (bucketLength > 0))
-					throw new IOException("Read " + bytesRead + " but bucket length " + bucketLength + '!');
+					throw new IOException("Read " + bytesRead + " but bucket length " + bucketLength + " on " + data + '!');
 				byte[] retval = md.digest();
 				return retval;
 			} finally {
