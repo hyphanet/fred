@@ -432,6 +432,7 @@ public class PersistentBlobTempBucketFactory {
 		tag.bucket = bucket;
 		tag.isFree = false;
 		container.store(tag);
+		container.store(bucket);
 		synchronized(this) {
 			notCommittedBlobs.remove(index);
 		}
