@@ -240,6 +240,7 @@ public class PersistentChosenRequest {
 	public void onDumped(ClientRequestSchedulerCore core, ObjectContainer container, boolean reqAlreadyActive) {
 		if(logMINOR)
 			Logger.minor(this, "Dumping "+this);
+		scheduler.removeRunningRequest(request);
 		boolean wasStarted;
 		synchronized(this) {
 			blocksNotStarted.clear();
