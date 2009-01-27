@@ -215,8 +215,6 @@ public class ClientPutter extends BaseClientPutter implements PutCompletionCallb
 			if(cancelled) return;
 			super.cancel();
 			oldState = currentState;
-			if(startedStarting) return;
-			startedStarting = true;
 		}
 		if(oldState != null) oldState.cancel();
 		onFailure(new InsertException(InsertException.CANCELLED), null);
