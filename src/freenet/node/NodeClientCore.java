@@ -1370,8 +1370,10 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 				if(killed) {
 					node.db.rollback();
 					return;
-				} else
+				} else {
+					persistentTempBucketFactory.preCommit(node.db);
 					node.db.commit();
+				}
 				if(Logger.shouldLog(Logger.MINOR, this)) Logger.minor(this, "COMMITTED");
 				persistentTempBucketFactory.postCommit(node.db);
 			} catch (Throwable t) {

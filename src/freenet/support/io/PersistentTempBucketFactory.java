@@ -45,7 +45,7 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	private transient Random weakPRNG;
 	
 	/** Buckets to free */
-	private transient LinkedList<DelayedFreeBucket> bucketsToFree;
+	private LinkedList<DelayedFreeBucket> bucketsToFree;
 	
 	private final long nodeDBHandle;
 	
@@ -53,7 +53,12 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	
 	private final PersistentBlobTempBucketFactory blobFactory;
 	
+	private transient ObjectContainer container;
+	
 	static final int BLOB_SIZE = CHKBlock.DATA_LENGTH;
+	
+	/** Don't store the bucketsToFree unless it's been modified since we last stored it. */
+	private transient boolean modifiedBucketsToFree;
 
 	public PersistentTempBucketFactory(File dir, final String prefix, RandomSource strongPRNG, Random weakPRNG, boolean encrypt, long nodeDBHandle) throws IOException {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
@@ -97,7 +102,6 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		this.strongPRNG = strongPRNG;
 		this.weakPRNG = weakPRNG;
 		fg.init(dir, prefix, weakPRNG);
-		bucketsToFree = new LinkedList<DelayedFreeBucket>();
 	}
 	
 	public void register(File file) {
@@ -147,14 +151,17 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 	public void delayedFreeBucket(DelayedFreeBucket b) {
 		synchronized(this) {
 			bucketsToFree.add(b);
+			modifiedBucketsToFree = true;
 		}
 	}
 
-	public LinkedList<DelayedFreeBucket> grabBucketsToFree() {
+	private DelayedFreeBucket[] grabBucketsToFree() {
 		synchronized(this) {
-			LinkedList<DelayedFreeBucket> toFree = bucketsToFree;
-			bucketsToFree = new LinkedList<DelayedFreeBucket>();
-			return toFree;
+			if(bucketsToFree.isEmpty()) return null;
+			DelayedFreeBucket[] buckets = bucketsToFree.toArray(new DelayedFreeBucket[bucketsToFree.size()]);
+			bucketsToFree.clear();
+			modifiedBucketsToFree = true;
+			return buckets;
 		}
 	}
 	
@@ -205,11 +212,22 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 		this.encrypt = encrypt;
 	}
 
+	public void preCommit(ObjectContainer db) {
+		synchronized(this) {
+			if(!modifiedBucketsToFree) return;
+			modifiedBucketsToFree = false;
+			for(DelayedFreeBucket bucket : bucketsToFree)
+				bucket.storeTo(container);
+			container.store(bucketsToFree);
+		}
+	}
+	
 	public void postCommit(ObjectContainer db) {
 		blobFactory.postCommit();
-		LinkedList<DelayedFreeBucket> toFree = grabBucketsToFree();
-		for(Iterator<DelayedFreeBucket> i=toFree.iterator();i.hasNext();) {
-			DelayedFreeBucket bucket = i.next();
+		DelayedFreeBucket[] toFree = grabBucketsToFree();
+		if(toFree == null || toFree.length == 0) return;
+		int x = 0;
+		for(DelayedFreeBucket bucket : toFree) {
 			try {
 				if(bucket.toFree())
 					bucket.realFree();
@@ -218,6 +236,12 @@ public class PersistentTempBucketFactory implements BucketFactory, PersistentFil
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t+" freeing bucket "+bucket+" after transaction commit", t);
 			}
+			x++;
+		}
+		if(x > 1024) {
+			container.store(bucketsToFree);
+			// Lots of buckets freed, commit now to reduce memory footprint.
+			db.commit();
 		}
 	}
 }
