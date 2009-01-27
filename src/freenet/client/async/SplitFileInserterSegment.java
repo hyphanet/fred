@@ -78,14 +78,14 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		return hashCode;
 	}
 
-	public SplitFileInserterSegment(SplitFileInserter parent,
+	public SplitFileInserterSegment(SplitFileInserter parent, boolean persistent, BaseClientPutter putter,
 			short splitfileAlgo, int checkBlockCount, Bucket[] origDataBlocks,
 			InsertContext blockInsertContext, boolean getCHKOnly, int segNo, ObjectContainer container) {
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		hashCode = super.hashCode();
 		this.parent = parent;
 		this.getCHKOnly = getCHKOnly;
-		this.persistent = parent.persistent;
+		this.persistent = persistent;
 		this.errors = new FailureCodeTracker(true);
 		this.blockInsertContext = blockInsertContext;
 		this.splitfileAlgo = splitfileAlgo;
@@ -95,8 +95,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		dataURIs = new ClientCHK[origDataBlocks.length];
 		dataBlockInserters = new SingleBlockInserter[dataBlocks.length];
 		checkBlockInserters = new SingleBlockInserter[checkBlocks.length];
-		parent.parent.addBlocks(dataURIs.length + checkURIs.length, container);
-		parent.parent.addMustSucceedBlocks(dataURIs.length + checkURIs.length, container);
+		putter.addBlocks(dataURIs.length + checkURIs.length, container);
+		putter.addMustSucceedBlocks(dataURIs.length + checkURIs.length, container);
 		this.segNo = segNo;
 	}
 
@@ -105,14 +105,14 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 	 * 
 	 * @throws ResumeException
 	 */
-	public SplitFileInserterSegment(SplitFileInserter parent,
+	public SplitFileInserterSegment(SplitFileInserter parent, boolean persistent, BaseClientPutter putter,
 			SimpleFieldSet fs, short splitfileAlgorithm, InsertContext ctx,
 			boolean getCHKOnly, int segNo, ClientContext context, ObjectContainer container) throws ResumeException {
 		hashCode = super.hashCode();
 		this.parent = parent;
 		this.splitfileAlgo = splitfileAlgorithm;
 		this.getCHKOnly = getCHKOnly;
-		this.persistent = parent.persistent;
+		this.persistent = persistent;
 		this.blockInsertContext = ctx;
 		this.segNo = segNo;
 		if (!"SplitFileInserterSegment".equals(fs.get("Type")))
@@ -323,8 +323,8 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 					throw new ResumeException("Missing data block " + i
 							+ " and need to reconstruct check blocks");
 		}
-		parent.parent.addBlocks(dataURIs.length + checkURIs.length, container);
-		parent.parent.addMustSucceedBlocks(dataURIs.length + checkURIs.length, container);
+		putter.addBlocks(dataURIs.length + checkURIs.length, container);
+		putter.addMustSucceedBlocks(dataURIs.length + checkURIs.length, container);
 	}
 
 	public synchronized SimpleFieldSet getProgressFieldset() {
