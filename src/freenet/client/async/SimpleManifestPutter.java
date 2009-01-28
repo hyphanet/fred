@@ -181,22 +181,27 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.activate(SimpleManifestPutter.this, 1);
 				container.activate(putHandlersWaitingForMetadata, 2);
 			}
+			
+			boolean allMetadatas = false;
+			
 			synchronized(SimpleManifestPutter.this) {
 				putHandlersWaitingForMetadata.remove(this);
 				if(persistent) {
 					container.store(putHandlersWaitingForMetadata);
 					container.store(this);
 				}
-				if(!putHandlersWaitingForMetadata.isEmpty()) {
+				allMetadatas = putHandlersWaitingForMetadata.isEmpty();
+				if(!allMetadatas) {
 					if(logMINOR)
 						Logger.minor(this, "Still waiting for metadata: "+putHandlersWaitingForMetadata.size());
-					return;
 				}
 			}
-			if(persistent) {
-				container.activate(SimpleManifestPutter.this, 1);
+			if(allMetadatas) {
+				gotAllMetadata(container, context);
 			}
-			gotAllMetadata(container, context);
+			if(persistent) {
+				container.deactivate(SimpleManifestPutter.this, 1);
+			}
 		}
 
 		@Override
