@@ -15,6 +15,8 @@ public interface PutCompletionCallback {
 	
 	public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context);
 
+	/** Called when we know the final URI of the state in question. The currentState eventually calls this
+	 * on the ClientPutter, which relays to the fcp layer, which sends a URIGenerated message. */
 	public void onEncode(BaseClientKey usk, ClientPutState state, ObjectContainer container, ClientContext context);
 	
 	public void onTransition(ClientPutState oldState, ClientPutState newState, ObjectContainer container);
