@@ -463,6 +463,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		
 	};
 	
+	/**
+	 * Called when we have metadata for all the PutHandler's.
+	 * This does *not* necessarily mean we can immediately insert the final metadata, since
+	 * if these metadata's are too big, they will need to be inserted separately. See
+	 * resolveAndStartBase().
+	 * @param container
+	 * @param context
+	 */
 	private void gotAllMetadata(ObjectContainer container, ClientContext context) {
 		// This can be huge! Run it on its own transaction to minimize the build up of stuff to commit
 		// and maximise the opportunities for garbage collection.
@@ -474,6 +482,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 	
+	/**
+	 * Generate the global metadata, and then call resolveAndStartBase.
+	 * @param container
+	 * @param context
+	 */
 	private void innerGotAllMetadata(ObjectContainer container, ClientContext context) {
 		if(persistent()) {
 			container.activate(putHandlersByName, 2);
@@ -508,6 +521,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		
 	}
 	
+	/**
+	 * Attempt to insert the base metadata and the container. If the base metadata cannot be resolved,
+	 * try to resolve it: start inserts for each part that cannot be resolved, and wait for them to generate
+	 * URIs that can be incorporated into the metadata. This method will then be called again, and will 
+	 * complete.
+	 * @param container
+	 * @param context
+	 */
 	private void resolveAndStartBase(ObjectContainer container, ClientContext context) {
 		Bucket bucket = null;
 		synchronized(this) {
