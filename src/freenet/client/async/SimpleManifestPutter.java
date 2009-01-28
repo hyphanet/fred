@@ -281,11 +281,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 
 	static boolean logMINOR;
-	private final HashMap putHandlersByName;
-	private final HashSet runningPutHandlers;
-	private final HashSet putHandlersWaitingForMetadata;
-	private final HashSet waitingForBlockSets;
-	private final HashSet putHandlersWaitingForFetchable;
+	private final HashMap<String,Object> putHandlersByName;
+	private final HashSet<PutHandler> runningPutHandlers;
+	private final HashSet<PutHandler> putHandlersWaitingForMetadata;
+	private final HashSet<PutHandler> waitingForBlockSets;
+	private final HashSet<PutHandler> putHandlersWaitingForFetchable;
 	private FreenetURI finalURI;
 	private FreenetURI targetURI;
 	private boolean finished;
@@ -294,8 +294,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	private final boolean getCHKOnly;
 	private boolean insertedAllFiles;
 	private boolean insertedManifest;
-	private final HashMap metadataPuttersByMetadata;
-	private final HashMap metadataPuttersUnfetchable;
+	private final HashMap<Metadata,SingleFileInserter> metadataPuttersByMetadata;
+	private final HashMap<Metadata,SingleFileInserter> metadataPuttersUnfetchable;
 	private final String defaultName;
 	private int numberOfFiles;
 	private long totalSize;
@@ -320,14 +320,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		this.ctx = ctx;
 		this.getCHKOnly = getCHKOnly;
 		this.earlyEncode = earlyEncode;
-		putHandlersByName = new HashMap();
-		runningPutHandlers = new HashSet();
-		putHandlersWaitingForMetadata = new HashSet();
-		putHandlersWaitingForFetchable = new HashSet();
-		waitingForBlockSets = new HashSet();
-		metadataPuttersByMetadata = new HashMap();
-		metadataPuttersUnfetchable = new HashMap();
-		elementsToPutInArchive = new LinkedList();
+		putHandlersByName = new HashMap<String,Object>();
+		runningPutHandlers = new HashSet<PutHandler>();
+		putHandlersWaitingForMetadata = new HashSet<PutHandler>();
+		putHandlersWaitingForFetchable = new HashSet<PutHandler>();
+		waitingForBlockSets = new HashSet<PutHandler>();
+		metadataPuttersByMetadata = new HashMap<Metadata,SingleFileInserter>();
+		metadataPuttersUnfetchable = new HashMap<Metadata,SingleFileInserter>();
+		elementsToPutInArchive = new LinkedList<PutHandler>();
 		makePutHandlers(manifestElements, putHandlersByName);
 		checkZips();
 	}
@@ -374,17 +374,17 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 	}
 	
-	private void makePutHandlers(HashMap manifestElements, HashMap putHandlersByName) {
+	private void makePutHandlers(HashMap manifestElements, HashMap<String,Object> putHandlersByName) {
 		makePutHandlers(manifestElements, putHandlersByName, "/");
 	}
 	
-	private void makePutHandlers(HashMap manifestElements, HashMap putHandlersByName, String ZipPrefix) {
+	private void makePutHandlers(HashMap manifestElements, HashMap<String,Object> putHandlersByName, String ZipPrefix) {
 		Iterator it = manifestElements.keySet().iterator();
 		while(it.hasNext()) {
 			String name = (String) it.next();
 			Object o = manifestElements.get(name);
 			if(o instanceof HashMap) {
-				HashMap subMap = new HashMap();
+				HashMap<String,Object> subMap = new HashMap<String,Object>();
 				putHandlersByName.put(name, subMap);
 				makePutHandlers((HashMap)o, subMap, ZipPrefix+name+ '/');
 			} else {
@@ -492,7 +492,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			container.activate(putHandlersByName, 2);
 		}
 		if(logMINOR) Logger.minor(this, "Got all metadata");
-		HashMap namesToByteArrays = new HashMap();
+		HashMap<String, Object> namesToByteArrays = new HashMap<String, Object>();
 		namesToByteArrays(putHandlersByName, namesToByteArrays, container);
 		if(defaultName != null) {
 			Metadata meta = (Metadata) namesToByteArrays.get(defaultName);
@@ -739,7 +739,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			container.store(metadataPuttersByMetadata);
 	}
 
-	private void namesToByteArrays(HashMap putHandlersByName, HashMap namesToByteArrays, ObjectContainer container) {
+	private void namesToByteArrays(HashMap putHandlersByName, HashMap<String,Object> namesToByteArrays, ObjectContainer container) {
 		Iterator i = putHandlersByName.keySet().iterator();
 		while(i.hasNext()) {
 			String name = (String) i.next();
@@ -758,7 +758,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				if(logMINOR)
 					Logger.minor(this, "Putting PutHandler into base metadata: "+ph+" name "+name);
 			} else if(o instanceof HashMap) {
-				HashMap subMap = new HashMap();
+				HashMap<String,Object> subMap = new HashMap<String,Object>();
 				if(persistent())
 					container.activate(o, 1);
 				namesToByteArrays.put(name, subMap);
@@ -947,8 +947,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	 * All are to have mimeOverride=null, i.e. we use the auto-detected mime type
 	 * from the filename.
 	 */
-	public static HashMap bucketsByNameToManifestEntries(HashMap bucketsByName) {
-		HashMap manifestEntries = new HashMap();
+	public static HashMap bucketsByNameToManifestEntries(HashMap<String,Object> bucketsByName) {
+		HashMap<String,Object> manifestEntries = new HashMap<String,Object>();
 		Iterator i = bucketsByName.keySet().iterator();
 		while(i.hasNext()) {
 			String name = (String) i.next();
@@ -968,13 +968,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	 * Convert a hierarchy of HashMap's of ManifestEntries into a series of 
 	 * ManifestElement's, each of which has a full path.
 	 */
-	public static ManifestElement[] flatten(HashMap manifestElements) {
-		Vector v = new Vector();
+	public static ManifestElement[] flatten(HashMap<String,Object> manifestElements) {
+		Vector<ManifestElement> v = new Vector<ManifestElement>();
 		flatten(manifestElements, v, "");
 		return (ManifestElement[]) v.toArray(new ManifestElement[v.size()]);
 	}
 
-	public static void flatten(HashMap manifestElements, Vector v, String prefix) {
+	public static void flatten(HashMap<String,Object> manifestElements, Vector<ManifestElement> v, String prefix) {
 		Iterator i = manifestElements.keySet().iterator();
 		while(i.hasNext()) {
 			String name = (String) i.next();
