@@ -692,6 +692,15 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		return ARCHIVE_TYPE.ZIP.mimeTypes[0];
 	}
 
+	/**
+	 * Start inserts for unresolved (too big) Metadata's.
+	 * @param e
+	 * @param container
+	 * @param context
+	 * @return
+	 * @throws InsertException
+	 * @throws IOException
+	 */
 	private boolean resolve(MetadataUnresolvedException e, ObjectContainer container, ClientContext context) throws InsertException, IOException {
 		Metadata[] metas = e.mustResolve;
 		boolean mustWait = false;
