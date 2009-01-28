@@ -457,6 +457,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 
 		public void run(ObjectContainer container, ClientContext context) {
 			context.jobRunner.removeRestartJob(this, NativeThread.NORM_PRIORITY, container);
+			container.activate(SimpleManifestPutter.this, 1);
 			innerGotAllMetadata(container, context);
 		}
 		
