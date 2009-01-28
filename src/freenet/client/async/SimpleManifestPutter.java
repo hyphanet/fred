@@ -701,17 +701,21 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	 * @throws InsertException
 	 * @throws IOException
 	 */
-	private boolean resolve(MetadataUnresolvedException e, ObjectContainer container, ClientContext context) throws InsertException, IOException {
+	private void resolve(MetadataUnresolvedException e, ObjectContainer container, ClientContext context) throws InsertException, IOException {
 		Metadata[] metas = e.mustResolve;
-		boolean mustWait = false;
 		if(persistent())
 			container.activate(metadataPuttersByMetadata, 2);
 		for(int i=0;i<metas.length;i++) {
 			Metadata m = metas[i];
-			if(!m.isResolved())
-				mustWait = true;
 			synchronized(this) {
-				if(metadataPuttersByMetadata.containsKey(m)) continue;
+				if(metadataPuttersByMetadata.containsKey(m)) {
+					if(logMINOR) Logger.minor(this, "Already started insert for "+m+" in resolve() for "+metas.length+" Metadata's");
+					continue;
+				}
+			}
+			if(m.isResolved()) {
+				Logger.error(this, "Already resolved: "+m+" in resolve() - race condition???");
+				continue;
 			}
 			try {
 				Bucket b = m.toBucket(context.getBucketFactory(persistent()));
@@ -730,7 +734,6 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		if(persistent())
 			container.store(metadataPuttersByMetadata);
-		return mustWait;
 	}
 
 	private void namesToByteArrays(HashMap putHandlersByName, HashMap namesToByteArrays, ObjectContainer container) {
