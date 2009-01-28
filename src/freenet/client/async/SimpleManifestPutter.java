@@ -525,7 +525,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	 * Attempt to insert the base metadata and the container. If the base metadata cannot be resolved,
 	 * try to resolve it: start inserts for each part that cannot be resolved, and wait for them to generate
 	 * URIs that can be incorporated into the metadata. This method will then be called again, and will 
-	 * complete.
+	 * complete, or do more resolutions as necessary.
 	 * @param container
 	 * @param context
 	 */
