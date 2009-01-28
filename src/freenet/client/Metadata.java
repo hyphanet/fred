@@ -105,6 +105,7 @@ public class Metadata implements Cloneable {
 	short splitfileAlgorithm;
 	static public final short SPLITFILE_NONREDUNDANT = 0;
 	static public final short SPLITFILE_ONION_STANDARD = 1;
+	public static final int MAX_SIZE_IN_MANIFEST = Short.MAX_VALUE;
 	
 	/** Splitfile parameters */
 	byte[] splitfileParams;
@@ -859,7 +860,7 @@ public class Metadata implements Cloneable {
 				Metadata meta = (Metadata) manifestEntries.get(name);
 				try {
 					byte[] data = meta.writeToByteArray();
-					if(data.length > Short.MAX_VALUE) {
+					if(data.length > MAX_SIZE_IN_MANIFEST) {
 						FreenetURI uri = meta.resolvedURI;
 						if(uri != null) {
 							meta = new Metadata(SIMPLE_REDIRECT, null, null, uri, null);
