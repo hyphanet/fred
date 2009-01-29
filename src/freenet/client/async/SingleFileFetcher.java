@@ -931,8 +931,10 @@ public class SingleFileFetcher extends SimpleSingleFileFetcher {
 				synchronized(SingleFileFetcher.this) {
 					metadata = meta;
 				}
-				if(persistent)
+				if(persistent) {
+					container.store(meta);
 					container.store(SingleFileFetcher.this);
+				}
 				wrapHandleMetadata(true, container, context);
 			} catch (MetadataParseException e) {
 				SingleFileFetcher.this.onFailure(new FetchException(FetchException.INVALID_METADATA, e), false, container, context);
