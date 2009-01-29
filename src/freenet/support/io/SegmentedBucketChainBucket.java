@@ -428,20 +428,29 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		segments.clear();
 	}
 
-	synchronized void removeContents(ObjectContainer container) {
+	/**
+	 * @param container
+	 * @return True if there is more work to do. We don't want to do everything in one transaction because
+	 * this bucket could be enormous.
+	 */
+	synchronized boolean removeContents(ObjectContainer container) {
 		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		for(SegmentedChainBucketSegment seg : segments) {
+		if(segments.size() > 0) {
+			Logger.normal(this, "Freeing unfinished unstored bucket "+this+" segments left "+segments.size());
+			SegmentedChainBucketSegment seg = segments.remove(segments.size() - 1);
 			if(logMINOR) Logger.minor(this, "Removing segment "+seg);
 			container.activate(seg, 1);
 			seg.activateBuckets(container);
 			seg.free();
 			seg.removeFrom(container);
+			if(segments.size() > 0) return true; // Do some more in the next transaction
 		}
 		if(logMINOR) Logger.minor(this, "Removed segments for "+this);
 		container.delete(segments);
 		container.delete(this);
 		if(logMINOR) Logger.minor(this, "Removed "+this);
 		freed = true; // Just in case it wasn't already.
+		return false;
 	}
 	
 }
