@@ -68,7 +68,7 @@ public class FECJob {
 	}
 	
 	public String toString() {
-		return super.toString()+":decode="+isADecodingJob+":callback="+callback;
+		return super.toString()+":decode="+isADecodingJob+":callback="+callback+":persistent="+persistent;
 	}
 	
 	public FECJob(FECCodec codec, FECQueue queue, Bucket[] dataBlocks, Bucket[] checkBlocks, int blockLength, BucketFactory bucketFactory, FECCallback callback, boolean isADecodingJob, short priority, boolean persistent) {

@@ -420,7 +420,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 			Logger.minor(this, "Starting segment " + segNo + " of " + parent
 					+ " (" + parent.dataLength + "): " + this + " ( finished="
 					+ finished + " encoded=" + encoded + " hasURIs=" + hasURIs
-					+ ')');
+					+ " persistent=" + persistent + ')');
 		}
 		boolean fin = true;
 
