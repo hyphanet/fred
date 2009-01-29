@@ -296,7 +296,29 @@ public class PersistentBlobTempBucketFactory {
 				tag = bucket.tag;
 				index = bucket.index;
 			} else {
-				Logger.error(this, "NO TAG ON BUCKET REMOVING: "+bucket, new Exception("error"));
+				// THIS IS IMPOSSIBLE, yet saces has seen it in practice ... lets get some detail...
+				Logger.error(this, "NO TAG ON BUCKET REMOVING: "+bucket+" index "+index, new Exception("error"));
+				Query query = container.query();
+				query.constrain(PersistentBlobTempBucketTag.class);
+				query.descend("index").constrain(index);
+				ObjectSet<PersistentBlobTempBucketTag> results = query.execute();
+				if(!results.hasNext()) {
+					Logger.error(this, "TAG DOES NOT EXIST FOR INDEX "+index);
+				} else {
+					tag = results.next();
+					if(tag.index != index)
+						// Crazy things are happening, may as well check the impossible!
+						Logger.error(this, "INVALID INDEX: should be "+index+" but is "+tag.index);
+					if(tag.isFree)
+						Logger.error(this, "FOUND TAG BUT IS FREE: "+tag);
+					if(tag.bucket == null) {
+						Logger.error(this, "FOUND TAG BUT NO BUCKET: "+tag);
+					} else if(tag.bucket == bucket) {
+						Logger.error(this, "TAG LINKS TO BUCKET BUT BUCKET DOESN'T LINK TO TAG");
+					} else { // tag.bucket != bucket
+						Logger.error(this, "SERIOUS ERROR: TAG BELONGS TO A DIFFERENT BUCKET!!!");
+					}
+				}
 			}
 		}
 		container.activate(tag, 1);
