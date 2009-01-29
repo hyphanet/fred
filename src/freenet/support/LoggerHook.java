@@ -234,6 +234,7 @@ public abstract class LoggerHook extends Logger {
 		return instanceShouldLog(prio, o == null ? null : o.getClass());
 	}
 
+	@Override
 	public synchronized final void instanceRegisterLogThresholdCallback(LogThresholdCallback ltc) {
 		LogThresholdCallback[] newLTC = new LogThresholdCallback[thresholdsCallbacks.length+1];
 		newLTC[0] = ltc;
