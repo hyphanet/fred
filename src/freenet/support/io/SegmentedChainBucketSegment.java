@@ -81,6 +81,10 @@ public class SegmentedChainBucketSegment {
 	
 	public void removeFrom(ObjectContainer container) {
 		for(Bucket bucket : buckets) {
+			if(bucket == null) {
+				Logger.error(this, "Bucket is null in removeFrom() on "+this);
+				continue;
+			}
 			container.activate(bucket, 1);
 			bucket.removeFrom(container);
 		}
