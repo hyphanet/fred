@@ -143,6 +143,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				}
 			}
 			insertedAllFiles(container);
+			if(persistent) {
+				container.deactivate(runningPutHandlers, 1);
+				container.deactivate(SimpleManifestPutter.this, 1);
+			}
 		}
 
 		public void onFailure(InsertException e, ClientPutState state, ObjectContainer container, ClientContext context) {
@@ -151,6 +155,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(persistent)
 				container.activate(SimpleManifestPutter.this, 1);
 			fail(e, container);
+			if(persistent)
+				container.deactivate(SimpleManifestPutter.this, 1);
 		}
 
 		public void onEncode(BaseClientKey key, ClientPutState state, ObjectContainer container, ClientContext context) {
@@ -165,6 +171,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				Metadata m =
 					new Metadata(Metadata.SIMPLE_REDIRECT, null, null, key.getURI(), cm);
 				onMetadata(m, null, container, context);
+				if(persistent) {
+					container.deactivate(SimpleManifestPutter.this, 1);
+				}
 			}
 		}
 
@@ -219,15 +228,19 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				}
 			}
 			if(persistent) {
+				container.deactivate(putHandlersWaitingForMetadata, 1);
 				container.deactivate(SimpleManifestPutter.this, 1);
 			}
 		}
 
 		@Override
 		public void addBlock(ObjectContainer container) {
-			if(persistent)
+			if(persistent) {
 				container.activate(SimpleManifestPutter.this, 1);
+			}
 			SimpleManifestPutter.this.addBlock(container);
+			if(persistent)
+				container.deactivate(SimpleManifestPutter.this, 1);
 		}
 		
 		@Override
@@ -235,6 +248,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(persistent)
 				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.addBlocks(num, container);
+			if(persistent)
+				container.deactivate(SimpleManifestPutter.this, 1);
 		}
 		
 		@Override
@@ -242,6 +257,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(persistent)
 				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.completedBlock(dontNotify, container, context);
+			if(persistent)
+				container.deactivate(SimpleManifestPutter.this, 1);
 		}
 		
 		@Override
@@ -249,6 +266,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(persistent)
 				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.failedBlock(container, context);
+			if(persistent)
+				container.deactivate(SimpleManifestPutter.this, 1);
 		}
 		
 		@Override
@@ -256,6 +275,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(persistent)
 				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.fatallyFailedBlock(container, context);
+			if(persistent)
+				container.deactivate(SimpleManifestPutter.this, 1);
 		}
 		
 		@Override
@@ -263,6 +284,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(persistent)
 				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.addMustSucceedBlocks(blocks, container);
+			if(persistent)
+				container.deactivate(SimpleManifestPutter.this, 1);
 		}
 		
 		@Override
@@ -275,13 +298,19 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.activate(SimpleManifestPutter.this, 1);
 				container.activate(waitingForBlockSets, 2);
 			}
+			boolean allBlockSets = false;
 			synchronized(SimpleManifestPutter.this) {
 				waitingForBlockSets.remove(this);
 				if(persistent)
 					container.store(waitingForBlockSets);
-				if(!waitingForBlockSets.isEmpty()) return;
+				allBlockSets = waitingForBlockSets.isEmpty();
 			}
-			SimpleManifestPutter.this.blockSetFinalized(container, context);
+			if(allBlockSets)
+				SimpleManifestPutter.this.blockSetFinalized(container, context);
+			if(persistent) {
+				container.deactivate(waitingForBlockSets, 1);
+				container.deactivate(SimpleManifestPutter.this, 1);
+			}
 		}
 
 		@Override
@@ -289,12 +318,16 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(persistent)
 				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.onMajorProgress(container);
+			if(persistent)
+				container.deactivate(SimpleManifestPutter.this, 1);
 		}
 
 		public void onFetchable(ClientPutState state, ObjectContainer container) {
 			if(persistent)
 				container.activate(SimpleManifestPutter.this, 1);
 			SimpleManifestPutter.this.onFetchable(this, container);
+			if(persistent)
+				container.deactivate(SimpleManifestPutter.this, 1);
 		}
 
 		@Override
@@ -828,9 +861,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	}
 	
 	private void complete(ObjectContainer container) {
-		if(persistent())
+		boolean deactivateCB = false;
+		if(persistent()) {
+			deactivateCB = !container.ext().isActive(cb);
 			container.activate(cb, 1);
+		}
 		cb.onSuccess(this, container);
+		if(deactivateCB)
+			container.deactivate(cb, 1);
 	}
 
 	private void fail(InsertException e, ObjectContainer container) {
