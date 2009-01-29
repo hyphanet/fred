@@ -231,6 +231,8 @@ public class InsertCompressor implements CompressJob {
 	 */
 	public static InsertCompressor start(ObjectContainer container, ClientContext context, SingleFileInserter inserter, 
 			Bucket origData, int minSize, BucketFactory bf, boolean persistent) {
+		if(persistent != (container != null))
+			throw new IllegalStateException("Starting compression, persistent="+persistent+" but container="+container);
 		InsertCompressor compressor = new InsertCompressor(context.nodeDBHandle, inserter, origData, minSize, bf, persistent);
 		if(persistent)
 			container.store(compressor);
