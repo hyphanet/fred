@@ -389,7 +389,7 @@ public class PersistentBlobTempBucketFactory {
 			 * In the meantime, lets try from the end, going backwards by a manageable number of slots at a time...
 			 */
 			long lastCommitted = -1;
-			for(long threshold = blocks - 4096; threshold >= 0; threshold -= 4096) {
+			for(long threshold = blocks - 4096; threshold >= -4095; threshold -= 4096) {
 				Query query = container.query();
 				query.constrain(PersistentBlobTempBucketTag.class);
 				query.descend("isFree").constrain(false);
