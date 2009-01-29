@@ -291,7 +291,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 		};
 	}
 
-	private transient DBJob killMe;
+	private transient SegmentedBucketChainBucketKillJob killMe;
 	
 	private transient boolean runningSegStore;
 	
@@ -323,7 +323,7 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 							if(killMe != null) return;
 							killMe = new SegmentedBucketChainBucketKillJob(SegmentedBucketChainBucket.this);
 						}
-						dbJobRunner.queueRestartJob(killMe, NativeThread.HIGH_PRIORITY, container);
+						killMe.scheduleRestart(container, context);
 					} finally {
 						synchronized(SegmentedBucketChainBucket.this) {
 							runningSegStore = false;

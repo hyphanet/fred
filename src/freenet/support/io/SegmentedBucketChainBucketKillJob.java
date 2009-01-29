@@ -10,6 +10,8 @@ public class SegmentedBucketChainBucketKillJob implements DBJob {
 	
 	final SegmentedBucketChainBucket bcb;
 
+	private final short RESTART_PRIO = NativeThread.HIGH_PRIORITY;
+	
 	public SegmentedBucketChainBucketKillJob(SegmentedBucketChainBucket bucket) {
 		bcb = bucket;
 	}
@@ -22,10 +24,16 @@ public class SegmentedBucketChainBucketKillJob implements DBJob {
 		if(bcb.removeContents(container)) {
 			// More work needs to be done.
 			// We will have already been removed, so re-add, in case we crash soon.
-			context.jobRunner.queueRestartJob(this, NativeThread.HIGH_PRIORITY, container);
+			scheduleRestart(container, context);
 			// But try to sort it out now ...
 			context.jobRunner.queue(this, NativeThread.NORM_PRIORITY, true);
+		} else {
+			context.jobRunner.removeRestartJob(this, RESTART_PRIO, container);
 		}
+	}
+	
+	public void scheduleRestart(ObjectContainer container, ClientContext context) {
+		context.jobRunner.queueRestartJob(this, RESTART_PRIO, container);
 	}
 
 }
