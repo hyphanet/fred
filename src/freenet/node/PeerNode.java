@@ -63,6 +63,7 @@ import freenet.support.Fields;
 import freenet.support.HexUtil;
 import freenet.support.IllegalBase64Exception;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
@@ -348,7 +349,15 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	 *  responder in message2 match what was chosen in message 1
 	 */
 	protected final HashMap<Peer,byte[]> jfkNoncesSent = new HashMap<Peer,byte[]>();
-	private static boolean logMINOR;
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 	
 	/**
 	 * If this returns true, we will generate the identity from the pubkey.
@@ -378,7 +387,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public PeerNode(SimpleFieldSet fs, Node node2, NodeCrypto crypto, PeerManager peers, boolean fromLocal, boolean fromAnonymousInitiator, OutgoingPacketMangler mangler, boolean isOpennet) throws FSParseException, PeerParseException, ReferenceSignatureVerificationException {
 		boolean noSig = false;
 		if(fromLocal || fromAnonymousInitiator) noSig = true;
-		logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
 		myRef = new WeakReference<PeerNode>(this);
 		this.outgoingMangler = mangler;
 		this.node = node2;
@@ -1596,8 +1604,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	}
 	
 	public void updateLocation(double newLoc, double[] newLocs) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
-		
 		if(newLoc < 0.0 || newLoc > 1.0) {
 			Logger.error(this, "Invalid location update for " + this+ " ("+newLoc+')', new Exception("error"));
 			// Ignore it
@@ -1831,7 +1837,6 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* it's a new tracker. -1 to indicate failure.
 	*/
 	public long completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified, int negType, long trackerID, boolean isJFK4, boolean jfk4SameAsOld) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, PeerNode.class);
 		long now = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Tracker ID "+trackerID+" isJFK4="+isJFK4+" jfk4SameAsOld="+jfk4SameAsOld);
 

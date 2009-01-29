@@ -31,6 +31,7 @@ import freenet.node.FailureTable.BlockOffer;
 import freenet.node.FailureTable.OfferList;
 import freenet.store.KeyCollisionException;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.ShortBuffer;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
@@ -141,7 +142,14 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
     	return getStatusString(getStatus());
     }
     
-    private static boolean logMINOR;
+    private static volatile boolean logMINOR;
+    static {
+	Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+		public void shouldUpdate(){
+			logMINOR = Logger.shouldLog(Logger.MINOR, this);
+		}
+	});
+    }
     
     @Override
 	public String toString() {
@@ -165,7 +173,6 @@ public final class RequestSender implements PrioRunnable, ByteCounter {
         this.tryOffersOnly = offersOnly;
         target = key.toNormalizedDouble();
         node.addRequestSender(key, htl, this);
-        logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
 
     public void start() {

@@ -47,6 +47,7 @@ import freenet.support.Fields;
 import freenet.support.HTMLNode;
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
@@ -62,8 +63,18 @@ import freenet.support.io.NativeThread;
  * changes in IncomingPacketFilter).
  */
 public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFilter {
-	private static boolean logMINOR;
-	private static boolean logDEBUG;
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+			}
+		});
+	}
+
 	private final Node node;
 	private final NodeCrypto crypto;
 	private final MessageCore usm;
@@ -168,8 +179,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		fullHeadersLengthMinimum = HEADERS_LENGTH_MINIMUM + sock.getHeadersLength();
 		fullHeadersLengthOneMessage = HEADERS_LENGTH_ONE_MESSAGE + sock.getHeadersLength();
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 	}
 	
 	/**
@@ -208,8 +217,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 */
 	public void process(byte[] buf, int offset, int length, Peer peer, long now) {
 		node.random.acceptTimerEntropy(fnpTimingSource, 0.25);
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		if(logMINOR) Logger.minor(this, "Packet length "+length+" from "+peer);
 
 		/**
@@ -1806,7 +1813,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	private boolean tryProcess(byte[] buf, int offset, int length, SessionKey tracker, long now) {
 		// Need to be able to call with tracker == null to simplify code above
 		if(tracker == null) {
-			if(Logger.shouldLog(Logger.DEBUG, this)) Logger.debug(this, "Tracker == null");
+			if(logDEBUG) Logger.debug(this, "Tracker == null");
 			return false;
 		}
 		if(logMINOR) Logger.minor(this,"Entering tryProcess: "+Fields.hashCode(buf)+ ',' +offset+ ',' +length+ ',' +tracker);

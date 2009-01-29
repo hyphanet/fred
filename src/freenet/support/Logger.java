@@ -15,7 +15,6 @@ import freenet.support.io.Closer;
 
 */
 public abstract class Logger {
-
 	public final static class OSThread {
 		
 		private static boolean getPIDEnabled = false;
@@ -383,6 +382,15 @@ public abstract class Logger {
 	public abstract int getThreshold();
 
 	public abstract void setDetailedThresholds(String details) throws InvalidThresholdException;
+
+	/**
+	 * Register a LogThresholdCallback; this callback will be called after registration
+	 */
+	public static void registerLogThresholdCallback(LogThresholdCallback ltc) {
+		logger.instanceRegisterLogThresholdCallback(ltc);
+	}
+
+	public abstract void instanceRegisterLogThresholdCallback(LogThresholdCallback ltc);
 
 	/**
 	 * Report a fatal error and exit.

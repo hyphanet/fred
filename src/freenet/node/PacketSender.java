@@ -19,6 +19,7 @@ import freenet.node.useralerts.UserAlert;
 import freenet.support.FileLoggerHook;
 import freenet.support.HTMLNode;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.OOMHandler;
 import freenet.support.TimeUtil;
 import freenet.support.io.NativeThread;
@@ -34,8 +35,18 @@ import freenet.support.io.NativeThread;
 // a generic task scheduler. Either rename this class, or create another tricker for non-Packet tasks
 public class PacketSender implements Runnable, Ticker {
 
-	private static boolean logMINOR;
-	private static boolean logDEBUG;
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+			}
+		});
+	}
+
 	/** Maximum time we will queue a message for in milliseconds */
 	static final int MAX_COALESCING_DELAY = 100;
 	/** If opennet is enabled, and there are fewer than this many connections,
@@ -76,8 +87,6 @@ public class PacketSender implements Runnable, Ticker {
 		this.node = node;
 		myThread = new NativeThread(this, "PacketSender thread for " + node.getDarknetPortNumber(), NativeThread.MAX_PRIORITY, false);
 		myThread.setDaemon(true);
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
-		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		rpiTemp = new Vector<ResendPacketItem>();
 		rpiIntTemp = new int[64];
 	}
@@ -176,7 +185,6 @@ public class PacketSender implements Runnable, Ticker {
 		while(true) {
 			lastReceivedPacketFromAnyNode = lastReportedNoPackets;
 			try {
-				logMINOR = Logger.shouldLog(Logger.MINOR, this);
 				brokeAt = realRun(brokeAt);
 			} catch(OutOfMemoryError e) {
 				OOMHandler.handleOOM(e);
@@ -423,8 +431,6 @@ public class PacketSender implements Runnable, Ticker {
 
 		if(sleepTime > 0) {
 			// Update logging only when have time to do so
-			logMINOR = Logger.shouldLog(Logger.MINOR, this);
-			logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 			try {
 				synchronized(this) {
 					if(logMINOR)
