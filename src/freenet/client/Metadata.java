@@ -102,6 +102,9 @@ public class Metadata implements Cloneable {
 	/** The simple redirect key */
 	FreenetURI simpleRedirectKey;
 	
+	/** Metadata is sometimes used as a key in hashtables. Therefore it needs a persistent hashCode. */
+	private final int hashCode;
+	
 	short splitfileAlgorithm;
 	static public final short SPLITFILE_NONREDUNDANT = 0;
 	static public final short SPLITFILE_ONION_STANDARD = 1;
@@ -171,9 +174,14 @@ public class Metadata implements Cloneable {
 		this(new DataInputStream(new ByteArrayInputStream(data)), data.length);
 	}
 
+	public int hashCode() {
+		return hashCode;
+	}
+	
 	/** Parse some metadata from a DataInputStream
 	 * @throws IOException If an I/O error occurs, or the data is incomplete. */
 	public Metadata(DataInputStream dis, long length) throws IOException, MetadataParseException {
+		hashCode = super.hashCode();
 		long magic = dis.readLong();
 		if(magic != FREENET_METADATA_MAGIC)
 			throw new MetadataParseException("Invalid magic "+magic);
@@ -364,6 +372,7 @@ public class Metadata implements Cloneable {
 	 * Create an empty Metadata object 
 	 */
 	private Metadata() {
+		hashCode = super.hashCode();
 		// Should be followed by addRedirectionManifest
 	}
 	
@@ -460,6 +469,7 @@ public class Metadata implements Cloneable {
 	 * directories (more HashMap's)
 	 */
 	Metadata(HashMap dir, String prefix) {
+		hashCode = super.hashCode();
 		// Simple manifest - contains actual redirects.
 		// Not zip manifest, which is basically a redirect.
 		documentType = SIMPLE_MANIFEST;
@@ -492,6 +502,7 @@ public class Metadata implements Cloneable {
 	 * the archive to read from.
 	 */
 	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, String arg, ClientMetadata cm) {
+		hashCode = super.hashCode();
 		if(docType == ARCHIVE_INTERNAL_REDIRECT) {
 			documentType = docType;
 			this.archiveType = archiveType;
@@ -512,6 +523,7 @@ public class Metadata implements Cloneable {
 	 * @param cm The client metadata, if any.
 	 */
 	public Metadata(byte docType, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, FreenetURI uri, ClientMetadata cm) {
+		hashCode = super.hashCode();
 		if((docType == SIMPLE_REDIRECT) || (docType == ARCHIVE_MANIFEST)) {
 			documentType = docType;
 			this.archiveType = archiveType;
@@ -533,6 +545,7 @@ public class Metadata implements Cloneable {
 
 	public Metadata(short algo, ClientCHK[] dataURIs, ClientCHK[] checkURIs, int segmentSize, int checkSegmentSize, 
 			ClientMetadata cm, long dataLength, ARCHIVE_TYPE archiveType, COMPRESSOR_TYPE compressionCodec, long decompressedLength, boolean isMetadata) {
+		hashCode = super.hashCode();
 		if(isMetadata)
 			documentType = MULTI_LEVEL_METADATA;
 		else {
