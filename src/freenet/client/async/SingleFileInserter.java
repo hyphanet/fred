@@ -230,6 +230,7 @@ class SingleFileInserter implements ClientPutState {
 		boolean noMetadata = ((block.clientMetadata == null) || block.clientMetadata.isTrivial()) && targetFilename == null;
 		if(noMetadata && archiveType == null) {
 			if(fitsInOneBlockAsIs) {
+				data = fixNotPersistent(data, context);
 				// Just insert it
 				ClientPutState bi =
 					createInserter(parent, data, codecNumber, block.desiredURI, ctx, cb, metadata, (int)block.getData().size(), -1, getCHKOnly, true, true, container, context, freeData);
@@ -250,31 +251,7 @@ class SingleFileInserter implements ClientPutState {
 		if (fitsInOneCHK) {
 			// Insert single block, then insert pointer to it
 			if(persistent && (data instanceof NotPersistentBucket)) {
-				boolean skip = false;
-				if(data instanceof SegmentedBucketChainBucket) {
-					SegmentedBucketChainBucket seg = (SegmentedBucketChainBucket) data;
-					Bucket[] buckets = seg.getBuckets();
-					if(buckets.length == 1) {
-						seg.clear();
-						data = buckets[0];
-						skip = true;
-						if(logMINOR) Logger.minor(this, "Using bucket 0 of SegmentedBucketChainBucket");
-					}
-				}
-				try {
-					if(!skip) {
-					if(logMINOR) Logger.minor(this, "Copying data from "+data+" length "+data.size());
-					Bucket newData = context.persistentBucketFactory.makeBucket(data.size());
-					BucketTools.copy(data, newData);
-					data.free();
-					data = newData;
-					}
-				} catch (IOException e) {
-					Logger.error(this, "Caught "+e+" while copying non-persistent data", e);
-					throw new InsertException(InsertException.BUCKET_ERROR, e, null);
-				}
-				// Note that SegmentedBCB *does* support splitting, so we don't need to do anything to the data
-				// if it doesn't fit in a single block.
+				data = fixNotPersistent(data, context);
 			}
 			if(reportMetadataOnly) {
 				SingleBlockInserter dataPutter = new SingleBlockInserter(parent, data, codecNumber, FreenetURI.EMPTY_CHK_URI, ctx, cb, metadata, (int)origSize, -1, getCHKOnly, true, true, token, container, context, persistent, freeData);
@@ -365,6 +342,35 @@ class SingleFileInserter implements ClientPutState {
 		}
 	}
 	
+	private Bucket fixNotPersistent(Bucket data, ClientContext context) throws InsertException {
+		boolean skip = false;
+		if(data instanceof SegmentedBucketChainBucket) {
+			SegmentedBucketChainBucket seg = (SegmentedBucketChainBucket) data;
+			Bucket[] buckets = seg.getBuckets();
+			if(buckets.length == 1) {
+				seg.clear();
+				data = buckets[0];
+				skip = true;
+				if(logMINOR) Logger.minor(this, "Using bucket 0 of SegmentedBucketChainBucket");
+			}
+		}
+		try {
+			if(!skip) {
+			if(logMINOR) Logger.minor(this, "Copying data from "+data+" length "+data.size());
+			Bucket newData = context.persistentBucketFactory.makeBucket(data.size());
+			BucketTools.copy(data, newData);
+			data.free();
+			data = newData;
+			}
+		} catch (IOException e) {
+			Logger.error(this, "Caught "+e+" while copying non-persistent data", e);
+			throw new InsertException(InsertException.BUCKET_ERROR, e, null);
+		}
+		// Note that SegmentedBCB *does* support splitting, so we don't need to do anything to the data
+		// if it doesn't fit in a single block.
+		return data;
+	}
+
 	private void tryCompress(ObjectContainer container, ClientContext context) throws InsertException {
 		// First, determine how small it needs to be
 		Bucket origData = block.getData();
