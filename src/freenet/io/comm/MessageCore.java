@@ -28,12 +28,24 @@ import java.util.Vector;
 import freenet.node.PeerNode;
 import freenet.node.Ticker;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.TimeUtil;
 
 public class MessageCore {
 
 	public static final String VERSION = "$Id: MessageCore.java,v 1.22 2005/08/25 17:28:19 amphibian Exp $";
-	private static boolean logMINOR; 
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+			}
+		});
+	}
+
 	private Dispatcher _dispatcher;
 	/** _filters serves as lock for both */
 	private final LinkedList<MessageFilter> _filters = new LinkedList<MessageFilter>();
@@ -50,7 +62,6 @@ public class MessageCore {
 
 	public MessageCore() {
 		_timedOutFilters = new Vector<MessageFilter>(32);
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
 	/**
@@ -97,7 +108,6 @@ public class MessageCore {
      * Remove timed out filters.
      */
 	void removeTimedOutFilters() {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long tStart = System.currentTimeMillis() + 1;
 		// Extra millisecond to give waitFor() a chance to remove the filter.
 		// Avoids exhaustive and unsuccessful search in waitFor() removal of a timed out filter.
@@ -292,7 +302,6 @@ public class MessageCore {
 	}
 
 	public void addAsyncFilter(MessageFilter filter, AsyncMessageFilterCallback callback) throws DisconnectedException {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		filter.setAsyncCallback(callback);
 		if(filter.matched()) {
 			Logger.error(this, "addAsyncFilter() on a filter which is already matched: "+filter, new Exception("error"));
@@ -372,9 +381,7 @@ public class MessageCore {
 	 * @throws DisconnectedException If the single peer being waited for disconnects.
 	 */
 	public Message waitFor(MessageFilter filter, ByteCounter ctr) throws DisconnectedException {
-		boolean logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		if(logDEBUG) Logger.debug(this, "Waiting for "+filter);
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		long startTime = System.currentTimeMillis();
 		if(filter.matched()) {
 			Logger.error(this, "waitFor() on a filter which is already matched: "+filter, new Exception("error"));
