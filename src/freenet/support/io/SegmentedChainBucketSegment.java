@@ -21,8 +21,13 @@ public class SegmentedChainBucketSegment {
 	}
 
 	public void free() {
-		for(Bucket bucket : buckets)
+		for(Bucket bucket : buckets) {
+			if(bucket == null) {
+				Logger.error(this, "Bucket is null on "+this);
+				continue;
+			}
 			bucket.free();
+		}
 	}
 
 	public void storeTo(ObjectContainer container) {
