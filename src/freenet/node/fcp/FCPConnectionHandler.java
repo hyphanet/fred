@@ -307,9 +307,9 @@ public class FCPConnectionHandler implements Closeable {
 				} catch (MalformedURLException e) {
 					failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global);
 				}
-				if(!persistent)
+				if(cp != null && !persistent)
 					requestsByIdentifier.put(id, cp);
-				else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
+				else if(cp != null && message.persistenceType == ClientRequest.PERSIST_FOREVER) {
 					final ClientPut putter = cp;
 					server.core.clientContext.jobRunner.queue(new DBJob() {
 
@@ -388,12 +388,12 @@ public class FCPConnectionHandler implements Closeable {
 			} catch (MalformedURLException e) {
 				failedMessage = new ProtocolErrorMessage(ProtocolErrorMessage.FREENET_URI_PARSE_ERROR, true, null, id, message.global);
 			}
-			if(!persistent) {
+			if(cp != null && !persistent) {
 				synchronized(this) {
 					requestsByIdentifier.put(id, cp);
 				}
 				// FIXME register non-persistent requests in the constructors also, we already register persistent ones...
-			} else if(message.persistenceType == ClientRequest.PERSIST_FOREVER) {
+			} else if(cp != null && message.persistenceType == ClientRequest.PERSIST_FOREVER) {
 				final ClientPutDir putter = cp;
 				server.core.clientContext.jobRunner.queue(new DBJob() {
 
