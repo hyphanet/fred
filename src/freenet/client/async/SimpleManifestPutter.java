@@ -92,6 +92,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(persistent)
 				container.activate(origSFI, 1);
 			origSFI.start(null, container, context);
+			if(persistent())
+				container.deactivate(origSFI, 1);
 			origSFI = null;
 			if(persistent)
 				container.store(this);
@@ -624,8 +626,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 		} else
 			block = new InsertBlock(bucket, null, targetURI);
+		SingleFileInserter metadataInserter;
 		try {
-			SingleFileInserter metadataInserter = 
+			metadataInserter = 
 				new SingleFileInserter(this, this, block, isMetadata, ctx, (archiveType == ARCHIVE_TYPE.ZIP) , getCHKOnly, false, baseMetadata, archiveType, true, null, earlyEncode);
 			if(logMINOR) Logger.minor(this, "Inserting main metadata: "+metadataInserter);
 			if(persistent()) {
@@ -641,6 +644,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			metadataInserter.start(null, container, context);
 		} catch (InsertException e) {
 			fail(e, container);
+			return;
+		}
+		if(persistent()) {
+			container.deactivate(metadataInserter, 1);
 		}
 	}
 
@@ -754,12 +761,15 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					this.metadataPuttersByMetadata.put(m, metadataInserter);
 				}
 				metadataInserter.start(null, container, context);
+				if(persistent())
+					container.deactivate(metadataInserter, 1);
 			} catch (MetadataUnresolvedException e1) {
 				resolve(e1, container, context);
 			}
 		}
-		if(persistent())
+		if(persistent()) {
 			container.store(metadataPuttersByMetadata);
+		}
 	}
 
 	private void namesToByteArrays(HashMap putHandlersByName, HashMap<String,Object> namesToByteArrays, ObjectContainer container) {
