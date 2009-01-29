@@ -18,7 +18,7 @@ public class SegmentedBucketChainBucketKillJob implements DBJob {
 
 	public void run(ObjectContainer container, ClientContext context) {
 		container.activate(bcb, 2);
-		System.err.println("Freeing unfinished unstored bucket "+this);
+		Logger.normal(this, "Freeing unfinished unstored bucket "+this);
 		// Restart jobs runner will remove us from the queue.
 		// This may take more than one transaction ...
 		if(bcb.removeContents(container)) {
@@ -35,5 +35,5 @@ public class SegmentedBucketChainBucketKillJob implements DBJob {
 	public void scheduleRestart(ObjectContainer container, ClientContext context) {
 		context.jobRunner.queueRestartJob(this, RESTART_PRIO, container);
 	}
-
+	
 }

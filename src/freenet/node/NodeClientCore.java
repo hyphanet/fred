@@ -595,7 +595,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			RestartDBJob job = startupDatabaseJobs[startupDatabaseJobsDone];
 			try {
 				container.activate(job.job, 1);
-				// Remove before execution, to allow it to re-add itself if it wants to 
+				// Remove before execution, to allow it to re-add itself if it wants to
+				System.err.println("Cleaning up after restart: "+job.job);
 				restartJobsQueue.removeRestartJob(job.job, job.prio, container);
 				job.job.run(container, context);
 				container.commit();
