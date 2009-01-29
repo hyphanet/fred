@@ -26,8 +26,19 @@ import freenet.io.comm.Peer;
 import freenet.io.comm.PeerContext;
 import freenet.node.SyncSendWaitedTooLongException;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 
 public class PacketThrottle {
+
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 
 	protected static final double PACKET_DROP_DECREASE_MULTIPLE = 0.875;
 	protected static final double PACKET_TRANSMIT_INCREMENT = (4 * (1 - (PACKET_DROP_DECREASE_MULTIPLE * PACKET_DROP_DECREASE_MULTIPLE))) / 3;
@@ -54,13 +65,11 @@ public class PacketThrottle {
 	/** The number of would-be packets which are no longer waiting in line for the transmition window */
 	private long _abandonedTickets;
 	
-	private static boolean logMINOR;
 	private PacketThrottle _deprecatedFor;
 
 	public PacketThrottle(Peer peer, int packetSize) {
 		_peer = peer;
 		PACKET_SIZE = packetSize;
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 
 	public synchronized void setRoundTripTime(long rtt) {
@@ -69,7 +78,6 @@ public class PacketThrottle {
 	}
 
     public synchronized void notifyOfPacketLost() {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		_droppedPackets++;
 		_totalPackets++;
 		_simulatedWindowSize *= PACKET_DROP_DECREASE_MULTIPLE;
@@ -80,7 +88,6 @@ public class PacketThrottle {
     }
 
     public synchronized void notifyOfPacketAcknowledged() {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
         _totalPackets++;
 		// If we didn't use the whole window, shrink the window a bit.
 		// This is similar but not identical to RFC2861
@@ -105,7 +112,7 @@ public class PacketThrottle {
     	}
     	if(_simulatedWindowSize > (windowSize + 1))
     		notifyAll();
-    	if(Logger.shouldLog(Logger.MINOR, this))
+    	if(logMINOR)
     		Logger.minor(this, "notifyOfPacketAcked(): "+this);
     }
     
@@ -150,7 +157,6 @@ public class PacketThrottle {
 		long start = System.currentTimeMillis();
 		long bootID = peer.getBootID();
 		synchronized(this) {
-			logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			long thisTicket=_packetTicketGenerator++;
 			// FIXME a list, or even a TreeMap by deadline, would use less CPU than waking up every waiter twice whenever a packet is acked.
 			while(true) {
