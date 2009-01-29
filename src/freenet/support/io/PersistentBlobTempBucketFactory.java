@@ -350,20 +350,33 @@ public class PersistentBlobTempBucketFactory {
 				queueMaybeShrink();
 				return;
 			}
-			Query query = container.query();
-			query.constrain(PersistentBlobTempBucketTag.class);
-			query.descend("isFree").constrain(false);
-			query.descend("index").orderDescending();
-			ObjectSet<PersistentBlobTempBucketTag> tags = query.execute();
-			long lastCommitted;
-			if(tags.isEmpty()) {
+			/*
+			 * Query for the non-free tag with the highest value.
+			 * This query can return a vast number of objects! And it's all kept in RAM in IMMEDIATE mode.
+			 * FIXME LAZY query mode may help, but would likely require changes to other code.
+			 * In the meantime, lets try from the end, going backwards by a manageable number of slots at a time...
+			 */
+			long lastCommitted = -1;
+			for(long threshold = blocks - 4096; threshold >= 0; threshold -= 4096) {
+				Query query = container.query();
+				query.constrain(PersistentBlobTempBucketTag.class);
+				query.descend("isFree").constrain(false);
+				query.descend("index").orderDescending();
+				query.descend("index").constrain(threshold).greater();
+				ObjectSet<PersistentBlobTempBucketTag> tags = query.execute();
+				if(tags.isEmpty()) {
+					// No used slots after threshold.
+					continue;
+				} else {
+					lastCommitted = tags.next().index;
+					Logger.normal(this, "No used slots in persistent temp file (but last not committed = "+lastNotCommitted+")");
+					break;
+				}
+			}
+			if(lastCommitted == -1) {
 				// No used slots at all?!
 				// There may be some not committed though
-				Logger.normal(this, "No used slots in persistent temp file (but last not committed = "+lastNotCommitted+")");
 				lastCommitted = 0;
-			} else {
-				lastCommitted = tags.next().index;
-				if(logMINOR) Logger.minor(this, "Last committed slot is "+lastCommitted+" last not committed is "+lastNotCommitted);
 			}
 			full = (double) lastCommitted / (double) blocks;
 			if(full > 0.8) {
