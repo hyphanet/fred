@@ -39,6 +39,7 @@ public class PersistentBlobTempBucket implements Bucket {
 		blockSize = blockSize2;
 		index = slot;
 		hashCode = super.hashCode();
+		if(tag == null) throw new NullPointerException();
 		this.tag = tag;
 	}
 
