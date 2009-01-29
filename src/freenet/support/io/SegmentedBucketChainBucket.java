@@ -280,7 +280,12 @@ public class SegmentedBucketChainBucket implements NotPersistentBucket {
 				dbJobRunner.runBlocking(new DBJob() {
 					
 					public void run(ObjectContainer container, ClientContext context) {
-						oldSeg.storeTo(container);
+						if(!container.ext().isActive(oldSeg)) {
+							Logger.error(this, "OLD SEGMENT NOT ACTIVE: "+oldSeg, new Exception("error"));
+							container.activate(oldSeg, 1);
+						} else {
+							oldSeg.storeTo(container);
+						}
 						container.ext().store(segments, 1);
 						container.ext().store(SegmentedBucketChainBucket.this, 1);
 						container.deactivate(oldSeg, 1);

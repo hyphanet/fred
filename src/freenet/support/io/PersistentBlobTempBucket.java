@@ -183,6 +183,7 @@ public class PersistentBlobTempBucket implements Bucket {
 		// in parallel are possible... that sort of behaviour *should* be very rare,
 		// you should always store it before making it publicly available...
 		synchronized(this) {
+			if(tag == null) throw new NullPointerException();
 			p = persisted;
 			persisted = true;
 		}

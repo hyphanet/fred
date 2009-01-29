@@ -289,6 +289,16 @@ public class PersistentBlobTempBucketFactory {
 			Logger.minor(this, "Removing bucket "+bucket+" for slot "+bucket.index+" from database", new Exception("debug"));
 		long index = bucket.index;
 		PersistentBlobTempBucketTag tag = bucket.tag;
+		if(tag == null) {
+			if(!container.ext().isActive(bucket)) {
+				Logger.error(this, "BUCKET NOT ACTIVE IN REMOVE: "+bucket, new Exception("error"));
+				container.activate(bucket, 1);
+				tag = bucket.tag;
+				index = bucket.index;
+			} else {
+				Logger.error(this, "NO TAG ON BUCKET REMOVING: "+bucket, new Exception("error"));
+			}
+		}
 		container.activate(tag, 1);
 		if(!bucket.persisted()) {
 			maybeShrink(container);
