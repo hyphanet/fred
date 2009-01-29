@@ -595,11 +595,14 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			RestartDBJob job = startupDatabaseJobs[startupDatabaseJobsDone];
 			try {
 				container.activate(job.job, 1);
-				job.job.run(container, context);
+				// Remove before execution, to allow it to re-add itself if it wants to 
 				restartJobsQueue.removeRestartJob(job.job, job.prio, container);
+				job.job.run(container, context);
 				container.commit();
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t+" in startup job "+job, t);
+				// Try again next time
+				restartJobsQueue.queueRestartJob(job.job, job.prio, container);
 			}
 			startupDatabaseJobsDone++;
 			if(startupDatabaseJobsDone == startupDatabaseJobs.length)
