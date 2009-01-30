@@ -581,7 +581,7 @@ public class SplitFileInserterSegment implements PutCompletionCallback, FECCallb
 		synchronized (this) {
 			for (int i = 0; i < dataBlockInserters.length; i++) {
 				if (dataBlockInserters[i] == null && dataBlocks[i] != null) {
-					container.activate(dataBlocks[i], 1);
+					if(persistent) container.activate(dataBlocks[i], 1);
 					dataBlocks[i].free();
 					if(persistent)
 						dataBlocks[i].removeFrom(container);
