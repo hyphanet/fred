@@ -97,7 +97,8 @@ public class RandomGrabArray {
 				}
 				blocks = newBlocks;
 			} else {
-				container.activate(blocks[targetBlock], 1);
+				if(persistent)
+					container.activate(blocks[targetBlock], 1);
 			}
 			Block target = blocks[targetBlock];
 			target.reqs[index++ % BLOCK_SIZE] = req;
