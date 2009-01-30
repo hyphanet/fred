@@ -598,6 +598,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		while(true) {
 			try {
+				if(persistent())
+					container.activate(baseMetadata, 100);
 				bucket = BucketTools.makeImmutableBucket(context.getBucketFactory(persistent()), baseMetadata.writeToByteArray());
 				if(logMINOR)
 					Logger.minor(this, "Metadata bucket is "+bucket.size()+" bytes long");
@@ -610,11 +612,17 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					// Start the insert for the sub-Metadata.
 					// Eventually it will generate a URI and call onEncode(), which will call back here.
 					resolve(e, container, context);
+					if(persistent())
+						container.deactivate(baseMetadata, 1);
 					return;
 				} catch (IOException e1) {
+					if(persistent())
+						container.deactivate(baseMetadata, 1);
 					fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container);
 					return;
 				} catch (InsertException e2) {
+					if(persistent())
+						container.deactivate(baseMetadata, 1);
 					fail(e2, container);
 					return;
 				}
@@ -660,6 +668,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				insertAsArchiveManifest = true;
 			} catch (IOException e) {
 				fail(new InsertException(InsertException.BUCKET_ERROR, e, null), container);
+				if(persistent())
+					container.deactivate(baseMetadata, 1);
 				return;
 			}
 		} else
@@ -680,6 +690,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.store(metadataPuttersUnfetchable);
 				container.deactivate(metadataPuttersByMetadata, 1);
 				container.deactivate(metadataPuttersUnfetchable, 1);
+				container.deactivate(baseMetadata, 1);
+
 			}
 			metadataInserter.start(null, container, context);
 		} catch (InsertException e) {
