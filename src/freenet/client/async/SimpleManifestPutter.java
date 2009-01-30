@@ -409,7 +409,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		try {
 			for (int i = 0; i < running.length; i++) {
 				running[i].start(container, context);
-				if(!container.ext().isActive(this))
+				if(persistent() && !container.ext().isActive(this))
 					// Callbacks may deactivate this
 					container.activate(this, 1);
 				if (logMINOR)
