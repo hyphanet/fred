@@ -274,8 +274,12 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			}
 		}
 		if(getCHKOnly) {
-			if(persistent)
-				container.activate(cb, 1);
+			boolean deactivateCB = false;
+			if(persistent) {
+				deactivateCB = !container.ext().isActive(cb);
+				if(deactivateCB)
+					container.activate(cb, 1);
+			}
 			ClientKeyBlock block = encode(container, context, true);
 			cb.onEncode(block.getClientKey(), this, container, context);
 			parent.completedBlock(false, container, context);
@@ -283,7 +287,8 @@ public class SingleBlockInserter extends SendableInsert implements ClientPutStat
 			finished = true;
 			if(persistent) {
 				container.store(this);
-				container.deactivate(cb, 1);
+				if(deactivateCB)
+					container.deactivate(cb, 1);
 			}
 		} else {
 			getScheduler(context).registerInsert(this, persistent, true, true, container);
