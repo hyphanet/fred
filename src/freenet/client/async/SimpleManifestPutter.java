@@ -516,6 +516,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			context.jobRunner.removeRestartJob(this, NativeThread.NORM_PRIORITY, container);
 			container.activate(SimpleManifestPutter.this, 1);
 			innerGotAllMetadata(container, context);
+			container.deactivate(SimpleManifestPutter.this, 1);
 		}
 		
 	};
@@ -575,6 +576,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			container.store(this);
 		}
 		resolveAndStartBase(container, context);
+		if(persistent()) {
+			container.deactivate(putHandlersByName, 1);
+		}
 		
 	}
 	
@@ -673,6 +677,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(persistent()) {
 				container.store(metadataPuttersByMetadata);
 				container.store(metadataPuttersUnfetchable);
+				container.deactivate(metadataPuttersByMetadata, 1);
+				container.deactivate(metadataPuttersUnfetchable, 1);
 			}
 			metadataInserter.start(null, container, context);
 		} catch (InsertException e) {
@@ -681,6 +687,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		if(persistent()) {
 			container.deactivate(metadataInserter, 1);
+			container.deactivate(elementsToPutInArchive, 1);
 		}
 	}
 
@@ -802,6 +809,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		}
 		if(persistent()) {
 			container.store(metadataPuttersByMetadata);
+			container.deactivate(metadataPuttersByMetadata, 1);
 		}
 	}
 
@@ -938,6 +946,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		if(persistent()) {
 			container.store(metadataPuttersByMetadata);
 			container.store(this);
+			container.deactivate(metadataPuttersByMetadata, 1);
 		}
 		complete(container);
 	}
@@ -990,14 +999,18 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(persistent())
 				container.activate(waitingForBlockSets, 2);
 			if(!waitingForBlockSets.isEmpty()) {
-				if(persistent())
+				if(persistent()) {
 					container.store(this);
+					container.deactivate(waitingForBlockSets, 1);
+				}
 				return;
 			}
 		}
 		this.blockSetFinalized(container, context);
-		if(persistent())
+		if(persistent()) {
 			container.store(this);
+			container.deactivate(waitingForBlockSets, 1);
+		}
 	}
 
 	@Override
@@ -1006,8 +1019,14 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			if(!metadataBlockSetFinalized) return;
 			if(persistent())
 				container.activate(waitingForBlockSets, 2);
-			if(waitingForBlockSets.isEmpty()) return;
+			if(waitingForBlockSets.isEmpty()) {
+				if(persistent())
+					container.deactivate(waitingForBlockSets, 1);
+				return;
+			}
 		}
+		if(persistent())
+			container.deactivate(waitingForBlockSets, 1);
 		super.blockSetFinalized(container, context);
 		if(persistent())
 			container.store(this);
@@ -1110,21 +1129,32 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		if(persistent()) {
 			container.activate(putHandlersWaitingForFetchable, 2);
 			container.activate(metadataPuttersUnfetchable, 2);
-			container.activate(cb, 1);
 		}
-		synchronized(this) {
-			putHandlersWaitingForFetchable.remove(handler);
-			if(fetchable) return;
-			if(!putHandlersWaitingForFetchable.isEmpty()) return;
-			if(!hasResolvedBase) return;
-			if(!metadataPuttersUnfetchable.isEmpty()) return;
-			fetchable = true;
+		if(checkFetchable(handler)) {
+			if(persistent()) {
+				container.store(putHandlersWaitingForMetadata);
+				container.store(this);
+				container.deactivate(putHandlersWaitingForFetchable, 1);
+				container.deactivate(metadataPuttersUnfetchable, 1);
+				container.activate(cb, 1);
+			}
+			cb.onFetchable(this, container);
+		} else {
+			if(persistent()) {
+				container.deactivate(putHandlersWaitingForFetchable, 1);
+				container.deactivate(metadataPuttersUnfetchable, 1);
+			}
 		}
-		if(persistent()) {
-			container.store(putHandlersWaitingForMetadata);
-			container.store(this);
-		}
-		cb.onFetchable(this, container);
+	}
+
+	private boolean checkFetchable(PutHandler handler) {
+		putHandlersWaitingForFetchable.remove(handler);
+		if(fetchable) return false;
+		if(!putHandlersWaitingForFetchable.isEmpty()) return false;
+		if(!hasResolvedBase) return false;
+		if(!metadataPuttersUnfetchable.isEmpty()) return false;
+		fetchable = true;
+		return true;
 	}
 
 	public void onFetchable(ClientPutState state, ObjectContainer container) {
@@ -1133,20 +1163,28 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			container.activate(m, 100);
 			container.activate(metadataPuttersUnfetchable, 2);
 			container.activate(putHandlersWaitingForFetchable, 2);
-			container.activate(cb, 1);
 		}
-		synchronized(this) {
-			metadataPuttersUnfetchable.remove(m);
-			if(!metadataPuttersUnfetchable.isEmpty()) return;
-			if(fetchable) return;
-			if(!putHandlersWaitingForFetchable.isEmpty()) return;
-			fetchable = true;
+		if(checkFetchable(m)) {
+			if(persistent()) {
+				container.store(metadataPuttersUnfetchable);
+				container.store(this);
+				container.activate(cb, 1);
+			}
+			cb.onFetchable(this, container);
 		}
 		if(persistent()) {
-			container.store(metadataPuttersUnfetchable);
-			container.store(this);
+			container.deactivate(metadataPuttersUnfetchable, 1);
+			container.deactivate(putHandlersWaitingForFetchable, 1);
 		}
-		cb.onFetchable(this, container);
+	}
+
+	private synchronized boolean checkFetchable(Metadata m) {
+		metadataPuttersUnfetchable.remove(m);
+		if(!metadataPuttersUnfetchable.isEmpty()) return false;
+		if(fetchable) return false;
+		if(!putHandlersWaitingForFetchable.isEmpty()) return false;
+		fetchable = true;
+		return true;
 	}
 
 	@Override
