@@ -793,6 +793,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			container.activate(metadataPuttersByMetadata, 2);
 		for(int i=0;i<metas.length;i++) {
 			Metadata m = metas[i];
+			if(persistent()) container.activate(m, 100);
 			synchronized(this) {
 				if(metadataPuttersByMetadata.containsKey(m)) {
 					if(logMINOR) Logger.minor(this, "Already started insert for "+m+" in resolve() for "+metas.length+" Metadata's");
@@ -801,6 +802,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			}
 			if(m.isResolved()) {
 				Logger.error(this, "Already resolved: "+m+" in resolve() - race condition???");
+				if(persistent()) container.deactivate(m, 1);
 				continue;
 			}
 			try {
@@ -814,10 +816,13 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					this.metadataPuttersByMetadata.put(m, metadataInserter);
 				}
 				metadataInserter.start(null, container, context);
-				if(persistent())
+				if(persistent()) {
 					container.deactivate(metadataInserter, 1);
+					container.deactivate(m, 1);
+				}
 			} catch (MetadataUnresolvedException e1) {
 				resolve(e1, container, context);
+				container.deactivate(m, 1);
 			}
 		}
 		if(persistent()) {
