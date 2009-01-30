@@ -964,6 +964,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.activate(cb, 1);
 			cb.onGeneratedURI(finalURI, this, container);
 			if(persistent())
+				container.deactivate(cb, 1);
+			if(persistent())
 				container.store(this);
 		} else {
 			// It's a sub-Metadata
@@ -1139,6 +1141,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.activate(cb, 1);
 			}
 			cb.onFetchable(this, container);
+			if(persistent())
+				container.deactivate(cb, 1);
 		} else {
 			if(persistent()) {
 				container.deactivate(putHandlersWaitingForFetchable, 1);
@@ -1171,6 +1175,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				container.activate(cb, 1);
 			}
 			cb.onFetchable(this, container);
+			if(persistent())
+				container.deactivate(cb, 1);
 		}
 		if(persistent()) {
 			container.deactivate(metadataPuttersUnfetchable, 1);
