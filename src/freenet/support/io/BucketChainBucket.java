@@ -154,6 +154,9 @@ public class BucketChainBucket implements Bucket {
 					} catch (EOFException e) {
 						// Handle the same
 					}
+					synchronized(BucketChainBucket.this) {
+						if(readBytes >= size) return -1;
+					}
 					bucketNo++;
 					curBucketStream.close();
 					curBucketStream = getBucketInputStream(bucketNo++);
