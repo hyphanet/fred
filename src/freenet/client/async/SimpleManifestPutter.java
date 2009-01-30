@@ -858,7 +858,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			} else if(o instanceof HashMap) {
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
 				if(persistent())
-					container.activate(o, 1);
+					container.activate(o, 2); // Depth 1 doesn't load the elements...
 				namesToByteArrays.put(name, subMap);
 				if(logMINOR)
 					Logger.minor(this, "Putting hashmap into base metadata: "+name+" size "+((HashMap)o).size()+" active = "+container == null ? "null" : Boolean.toString(container.ext().isActive(o)));
