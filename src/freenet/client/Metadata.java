@@ -453,11 +453,17 @@ public class Metadata implements Cloneable {
 				Metadata data = (Metadata) dir.get(key);
 				if(data == null)
 					throw new NullPointerException();
+				if(Logger.shouldLog(Logger.DEBUG, this))
+					Logger.debug(this, "Putting metadata for "+key);
 				manifestEntries.put(key, data);
 			} else if(o instanceof HashMap) {
 				HashMap hm = (HashMap)o;
+				if(Logger.shouldLog(Logger.DEBUG, this))
+					Logger.debug(this, "Making metadata map for "+key);
 				Metadata subMap = mkRedirectionManifestWithMetadata(hm);
 				manifestEntries.put(key, subMap);
+				if(Logger.shouldLog(Logger.DEBUG, this))
+					Logger.debug(this, "Putting metadata map for "+key);
 			}
 		}
 	}

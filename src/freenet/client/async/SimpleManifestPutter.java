@@ -409,6 +409,9 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		try {
 			for (int i = 0; i < running.length; i++) {
 				running[i].start(container, context);
+				if(!container.ext().isActive(this))
+					// Callbacks may deactivate this
+					container.activate(this, 1);
 				if (logMINOR)
 					Logger.minor(this, "Started " + i + " of " + running.length);
 				if (isFinished()) {
@@ -444,6 +447,8 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				HashMap<String,Object> subMap = new HashMap<String,Object>();
 				putHandlersByName.put(name, subMap);
 				makePutHandlers((HashMap)o, subMap, ZipPrefix+name+ '/');
+				if(Logger.shouldLog(Logger.DEBUG, this))
+					Logger.debug(this, "Sub map for "+name+" : "+subMap.size()+" elements from "+((HashMap)o).size());
 			} else {
 				ManifestElement element = (ManifestElement) o;
 				String mimeType = element.mimeOverride;
@@ -490,7 +495,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 						putHandlersWaitingForMetadata.add(ph);
 						putHandlersWaitingForFetchable.add(ph);
 						if(logMINOR)
-							Logger.minor(this, "Inserting separately as PutHandler: "+name+" : "+ph+" persistent="+ph.persistent()+":"+ph.persistent);
+							Logger.minor(this, "Inserting separately as PutHandler: "+name+" : "+ph+" persistent="+ph.persistent()+":"+ph.persistent+" "+persistent());
 						numberOfFiles++;
 						totalSize += data.size();
 					}
@@ -611,6 +616,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 				try {
 					// Start the insert for the sub-Metadata.
 					// Eventually it will generate a URI and call onEncode(), which will call back here.
+					if(logMINOR) Logger.minor(this, "Main metadata needs resolving: "+e);
 					resolve(e, container, context);
 					if(persistent())
 						container.deactivate(baseMetadata, 1);
@@ -855,7 +861,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 					container.activate(o, 1);
 				namesToByteArrays.put(name, subMap);
 				if(logMINOR)
-					Logger.minor(this, "Putting hashmap into base metadata: "+name);
+					Logger.minor(this, "Putting hashmap into base metadata: "+name+" size "+((HashMap)o).size()+" active = "+container == null ? "null" : Boolean.toString(container.ext().isActive(o)));
 				Logger.minor(this, "Putting directory: "+name);
 				namesToByteArrays((HashMap)o, subMap, container);
 			} else
