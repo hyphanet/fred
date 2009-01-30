@@ -7,6 +7,7 @@ import freenet.keys.Key;
 import freenet.node.SendableGet;
 import freenet.support.Fields;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 
 /**
  * Queue of keys which have been recently requested, which we have unregistered for a fixed period.
@@ -30,14 +31,23 @@ public class RequestCooldownQueue {
 	int startPtr;
 	/** location next key will be put in (may be < startPtr if wrapped around) */
 	int endPtr;
-	static boolean logMINOR;
+	private static volatile boolean logMINOR;
+	private static volatile boolean logDEBUG;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+				logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+			}
+		});
+	}
 	
 	static final int MIN_SIZE = 128;
 	
 	final long cooldownTime;
 
 	RequestCooldownQueue(long cooldownTime) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		keys = new Key[MIN_SIZE];
 		times = new long[MIN_SIZE];
 		clients = new SendableGet[MIN_SIZE];
@@ -68,7 +78,6 @@ public class RequestCooldownQueue {
 
 	private synchronized void add(Key key, SendableGet client, long removeTime) {
 		if(holes < 0) Logger.error(this, "holes = "+holes+" !!");
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR)
 			Logger.minor(this, "Adding key "+key+" client "+client+" remove time "+removeTime+" startPtr="+startPtr+" endPtr="+endPtr+" keys.length="+keys.length);
 		int ptr = endPtr;
@@ -115,9 +124,8 @@ public class RequestCooldownQueue {
 	 * @return Either a Key or null if no keys have passed their cooldown time.
 	 */
 	synchronized Key removeKeyBefore(long now) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		boolean foundIT = false;
-		if(Logger.shouldLog(Logger.DEBUG, this)) {
+		if(logDEBUG) {
 			foundIT = bigLog();
 		}
 		if(logMINOR)
@@ -224,7 +232,6 @@ public class RequestCooldownQueue {
 	 */
 	synchronized boolean removeKey(Key key, SendableGet client, long time) {
 		if(time <= 0) return false; // We won't find it.
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(holes < 0) Logger.error(this, "holes = "+holes+" !!");
 		if(logMINOR) Logger.minor(this, "Remove key "+key+" client "+client+" at time "+time+" startPtr="+startPtr+" endPtr="+endPtr+" holes="+holes+" keys.length="+keys.length);
 		int idx = -1;
