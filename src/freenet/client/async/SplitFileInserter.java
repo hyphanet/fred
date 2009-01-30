@@ -464,14 +464,12 @@ public class SplitFileInserter implements ClientPutState {
 				if(!segments[i].isFinished()) {
 					if(logMINOR) Logger.minor(this, "Segment not finished: "+i+": "+segments[i]);
 					allGone = false;
-					if(persistent) {
-						for(int j=0;j<=i;j++) {
-							if(segments[j] == segment) continue;
-							container.deactivate(segments[j], 1);
-						}
-					}
+					if(persistent && segments[i] != segment)
+						container.deactivate(segments[i], 1);
 					break;
 				}
+				if(persistent && segments[i] != segment)
+					container.deactivate(segments[i], 1);
 			}
 			
 			InsertException e = segment.getException();
