@@ -21,6 +21,7 @@ import freenet.support.Fields;
 import freenet.support.Logger;
 import freenet.support.LogThresholdCallback;
 import freenet.support.ShortBuffer;
+import java.security.InvalidKeyException;
 
 /**
  * @author amphibian
@@ -258,7 +259,8 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 		Key key = (Key) m.getObject(DMT.KEY);
 		byte[] authenticator = ((ShortBuffer) m.getObject(DMT.OFFER_AUTHENTICATOR)).getData();
 		long uid = m.getLong(DMT.UID);
-		if(!HMAC.verifyWithSHA256(node.failureTable.offerAuthenticatorKey, key.getFullKey(), authenticator)) {
+                try{
+		if(!HMAC.verify(HMAC.ALGORITHM.HmacSHA256, node.failureTable.offerAuthenticatorKey, key.getFullKey(), authenticator)) {
 			Logger.error(this, "Invalid offer request from "+source+" : authenticator did not verify");
 			try {
 				source.sendAsync(DMT.createFNPGetOfferedKeyInvalid(uid, DMT.GET_OFFERED_KEY_REJECTED_BAD_AUTHENTICATOR), null, node.failureTable.senderCounter);
@@ -267,6 +269,10 @@ public class NodeDispatcher implements Dispatcher, Runnable {
 			}
 			return true;
 		}
+                } catch (InvalidKeyException e) {
+                    Logger.error(this, e.getMessage(), e);
+                    return true;
+                }
 		if(logMINOR) Logger.minor(this, "Valid GetOfferedKey for "+key+" from "+source);
 		
 		// Do we want it? We can RejectOverload if we don't have the bandwidth...
