@@ -111,6 +111,7 @@ import freenet.support.HexUtil;
 import freenet.support.LRUHashtable;
 import freenet.support.LRUQueue;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.OOMHandler;
 import freenet.support.PooledExecutor;
 import freenet.support.ShortBuffer;
@@ -132,8 +133,15 @@ import freenet.support.transport.ip.HostnameSyntaxException;
  */
 public class Node implements TimeSkewDetectorCallback, GetPubkey {
 
-	private static boolean logMINOR;
-	
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 	private static MeaningfulNodeNameUserAlert nodeNameUserAlert;
 	private static BuildOldAgeUserAlert buildOldAgeUserAlert;
 	private static TimeSkewDetectedUserAlert timeSkewDetectedUserAlert;
@@ -638,7 +646,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 */
 	 Node(PersistentConfig config, RandomSource r, RandomSource weakRandom, LoggingConfigHandler lc, NodeStarter ns, Executor executor) throws NodeInitException {
 		// Easy stuff
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		String tmp = "Initializing Node using Freenet Build #"+Version.buildNumber()+" r"+Version.cvsRevision+" and freenet-ext Build #"+NodeStarter.extBuildNumber+" r"+NodeStarter.extRevisionNumber+" with "+System.getProperty("java.vendor")+" JVM version "+System.getProperty("java.version")+" running on "+System.getProperty("os.arch")+' '+System.getProperty("os.name")+' '+System.getProperty("os.version");
 		Logger.normal(this, tmp);
 		System.out.println(tmp);
@@ -2374,7 +2381,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 * RequestSender.
 	 */
 	public Object makeRequestSender(Key key, short htl, long uid, PeerNode source, boolean localOnly, boolean cache, boolean ignoreStore, boolean offersOnly) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "makeRequestSender("+key+ ',' +htl+ ',' +uid+ ',' +source+") on "+getDarknetPortNumber());
 		// In store?
 		KeyBlock chk = null;
@@ -2792,7 +2798,6 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 	 */
 	public CHKInsertSender makeInsertSender(NodeCHK key, short htl, long uid, PeerNode source,
 			byte[] headers, PartiallyReceivedBlock prb, boolean fromStore, boolean cache) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "makeInsertSender("+key+ ',' +htl+ ',' +uid+ ',' +source+",...,"+fromStore);
 		KeyHTLPair kh = new KeyHTLPair(key, htl, uid);
 		CHKInsertSender is = null;

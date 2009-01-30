@@ -23,6 +23,7 @@ import java.util.Hashtable;
 import java.util.Properties;
 
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.io.Closer;
 
 /**
@@ -52,6 +53,15 @@ import freenet.support.io.Closer;
 public class Yarrow extends RandomSource {
 
 	private static final long serialVersionUID = -1;
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 	/**
 	 * Security parameters
 	 */
@@ -535,7 +545,6 @@ public class Yarrow extends RandomSource {
 		if(performedPoolReseed && (seedfile != null)) {
 			//Dont do this while synchronized on 'this' since
 			//opening a file seems to be suprisingly slow on windows
-			boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			if(logMINOR)
 				Logger.minor(this, "Writing seedfile");
 			write_seed(seedfile);

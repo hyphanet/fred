@@ -14,17 +14,23 @@ import java.util.NoSuchElementException;
 public class UpdatableSortedLinkedList implements Iterable {
 	boolean debug = false;
 	protected boolean killed = false;
-	private static boolean logMINOR;
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 	
     public UpdatableSortedLinkedList() {
         list = new DoublyLinkedListImpl();
-        logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
     
     private final DoublyLinkedList list;
     
     public synchronized void add(UpdatableSortedLinkedListItem i) throws UpdatableSortedLinkedListKilledException {
-        logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
         if(logMINOR) Logger.minor(this, "Add("+i+") on "+this);
         if(list.isEmpty()) {
@@ -84,7 +90,6 @@ public class UpdatableSortedLinkedList implements Iterable {
 	}
 
 	public synchronized UpdatableSortedLinkedListItem remove(UpdatableSortedLinkedListItem i) throws UpdatableSortedLinkedListKilledException {
-        logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
     	if(logMINOR) Logger.minor(this, "Remove("+i+") on "+this);
         checkList();
@@ -104,7 +109,6 @@ public class UpdatableSortedLinkedList implements Iterable {
 	}
 	
     public synchronized void update(UpdatableSortedLinkedListItem i) throws UpdatableSortedLinkedListKilledException {
-    	logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	if(killed) throw new UpdatableSortedLinkedListKilledException();
     	if(logMINOR) Logger.minor(this, "Update("+i+") on "+this);
         checkList();

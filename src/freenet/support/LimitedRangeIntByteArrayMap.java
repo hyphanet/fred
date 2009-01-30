@@ -3,6 +3,7 @@ package freenet.support;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import freenet.support.LogThresholdCallback;
 import freenet.io.comm.AsyncMessageCallback;
 
 /**
@@ -17,7 +18,15 @@ import freenet.io.comm.AsyncMessageCallback;
  */
 public class LimitedRangeIntByteArrayMap {
 
-	private static boolean logMINOR;
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
     private final HashMap<Integer, LimitedRangeIntByteArrayMapElement> contents;
     private int minValue;
     private int maxValue;
@@ -31,7 +40,6 @@ public class LimitedRangeIntByteArrayMap {
         minValue = -1;
         maxValue = -1;
         flag = false;
-        logMINOR = Logger.shouldLog(Logger.MINOR, this);
     }
     
     public synchronized int minValue() {
@@ -87,7 +95,6 @@ public class LimitedRangeIntByteArrayMap {
      * of range.
      */
     public synchronized boolean add(int index, byte[] data, AsyncMessageCallback[] callbacks, short priority) {
-    	logMINOR = Logger.shouldLog(Logger.MINOR, this);
     	if(logMINOR) Logger.minor(this, toString()+" add "+index);
         if(maxValue == -1) {
             minValue = index;

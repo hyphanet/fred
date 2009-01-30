@@ -13,6 +13,7 @@ import java.util.Random;
 
 import freenet.support.HexUtil;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.api.BucketFactory;
 import freenet.support.io.Closer;
 import freenet.support.io.FileUtil;
@@ -62,15 +63,21 @@ public class FCPConnectionHandler implements Closeable {
 	final BucketFactory bf;
 	final HashMap<String, ClientRequest> requestsByIdentifier;
 	protected final String connectionIdentifier;
-	static boolean logMINOR;
+	private static volatile boolean logMINOR;
 
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
 	// We are confident that the given client can access those
 	private final HashMap<String, DirectoryAccess> checkedDirectories = new HashMap<String, DirectoryAccess>();
 	// DDACheckJobs in flight
 	private final HashMap<File, DDACheckJob> inTestDirectories = new HashMap<File, DDACheckJob>();
 	
 	public FCPConnectionHandler(Socket s, FCPServer server) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		this.sock = s;
 		this.server = server;
 		isClosed = false;
@@ -146,7 +153,7 @@ public class FCPConnectionHandler implements Closeable {
 	public void setClientName(String name) {
 		this.clientName = name;
 		client = server.registerClient(name, server.core, this);
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Set client name: "+name);
 	}
 	
@@ -196,7 +203,7 @@ public class FCPConnectionHandler implements Closeable {
 	}
 
 	public void startClientPut(ClientPutMessage message) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Starting insert ID=\""+message.identifier+ '"');
 		String id = message.identifier;
 		ClientPut cp = null;
@@ -249,7 +256,7 @@ public class FCPConnectionHandler implements Closeable {
 	}
 
 	public void startClientPutDir(ClientPutDirMessage message, HashMap<String, Object> buckets, boolean wasDiskPut) {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Start ClientPutDir");
 		String id = message.identifier;
 		ClientPutDir cp = null;
@@ -295,7 +302,7 @@ public class FCPConnectionHandler implements Closeable {
 				if(cp.isPersistentForever())
 					server.forceStorePersistentRequests();
 			}
-			if(Logger.shouldLog(Logger.MINOR, this))
+			if(logMINOR)
 				Logger.minor(this, "Starting "+cp);
 			cp.start();
 		}
