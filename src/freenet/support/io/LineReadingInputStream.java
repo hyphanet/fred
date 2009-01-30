@@ -35,7 +35,7 @@ public class LineReadingInputStream extends FilterInputStream implements LineRea
 		int ctr = 0;
 		mark(maxLength + 2); // in case we have both a \r and a \n
 		while(true) {
-			int x = read(buf, ctr, buf.length - ctr);
+			int x = read(buf, ctr, Math.min(1, buf.length - ctr));
 			if(x == -1) {
 				if(ctr == 0)
 					return null;
