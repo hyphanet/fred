@@ -120,6 +120,7 @@ public class DatastoreChecker implements PrioRunnable {
 					continue;
 				}
 				BlockSet blocks = item.blocks;
+				if(!container.ext().isStored(getter)) continue; // Already deleted
 				container.activate(getter, 1);
 				boolean dontCache = getter.dontCache(container);
 				ClientRequestScheduler sched = getter.getScheduler(context);
