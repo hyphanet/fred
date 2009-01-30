@@ -121,7 +121,7 @@ public class DatastoreChecker implements PrioRunnable {
 				}
 				BlockSet blocks = item.blocks;
 				container.activate(getter, 1);
-				boolean dontCache = getter.dontCache();
+				boolean dontCache = getter.dontCache(container);
 				ClientRequestScheduler sched = getter.getScheduler(context);
 				synchronized(this) {
 					if(persistentGetters[prio].contains(getter)) continue;
@@ -243,7 +243,7 @@ public class DatastoreChecker implements PrioRunnable {
 	public void queuePersistentRequest(SendableGet getter, BlockSet blocks, ObjectContainer container) {
 		Key[] checkKeys = getter.listKeys(container);
 		short prio = getter.getPriorityClass(container);
-		boolean dontCache = getter.dontCache();
+		boolean dontCache = getter.dontCache(container);
 		ClientRequestScheduler sched = getter.getScheduler(context);
 		DatastoreCheckerItem item = new DatastoreCheckerItem(getter, context.nodeDBHandle, prio, blocks);
 		container.store(item);
@@ -354,7 +354,7 @@ public class DatastoreChecker implements PrioRunnable {
 			}
 		}
 		if(!persistent) {
-			dontCache = getter.dontCache();
+			dontCache = getter.dontCache(null);
 			sched = getter.getScheduler(context);
 		}
 		boolean anyValid = false;

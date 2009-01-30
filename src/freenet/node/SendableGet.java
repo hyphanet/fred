@@ -52,8 +52,9 @@ public abstract class SendableGet extends BaseSendableGet {
 	/** Should the request ignore the datastore? */
 	public abstract boolean ignoreStore();
 
-	/** If true, don't cache local requests */
-	public abstract boolean dontCache();
+	/** If true, don't cache local requests 
+	 * @param container */
+	public abstract boolean dontCache(ObjectContainer container);
 
 	// Implementation
 

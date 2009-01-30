@@ -67,7 +67,8 @@ public class SplitFileFetcherSubSegment extends SendableGet implements SupportsB
 	}
 	
 	@Override
-	public boolean dontCache() {
+	public boolean dontCache(ObjectContainer container) {
+		if(persistent) container.activate(ctx, 1);
 		return !ctx.cacheLocalRequests;
 	}
 

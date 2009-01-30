@@ -184,12 +184,9 @@ public abstract class BaseSingleFileFetcher extends SendableGet implements HasKe
 		return parent.getClient();
 	}
 
-	public boolean dontCache(ObjectContainer container) {
-		return !ctx.cacheLocalRequests;
-	}
-	
 	@Override
-	public boolean dontCache() {
+	public boolean dontCache(ObjectContainer container) {
+		if(persistent) container.activate(ctx, 1);
 		return !ctx.cacheLocalRequests;
 	}
 	
