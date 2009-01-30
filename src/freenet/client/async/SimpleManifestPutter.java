@@ -983,7 +983,11 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		} else {
 			// It's a sub-Metadata
 			Metadata m = (Metadata) state.getToken();
+			if(persistent())
+				container.activate(m, 2);
 			m.resolve(key.getURI());
+			if(persistent())
+				container.store(m);
 			if(logMINOR) Logger.minor(this, "Resolved "+m+" : "+key.getURI());
 			resolveAndStartBase(container, context);
 		}
