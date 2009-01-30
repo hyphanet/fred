@@ -105,12 +105,25 @@ public class PersistentBlobTempBucketFactory {
 			synchronized(PersistentBlobTempBucketFactory.this) {
 				if(freeSlots.size() > MAX_FREE) return;
 			}
+			long size;
+			try {
+				size = channel.size();
+			} catch (IOException e1) {
+				Logger.error(this, "Unable to find size of temp blob storage file: "+e1, e1);
+				return;
+			}
+			size -= size % blockSize;
+			long blocks = size / blockSize;
+			long ptr = blocks - 1;
+
+			int added = 0;
+			
+			for(long l = 0; l < blockSize + 16383; l += 16384) {
 			Query query = container.query();
 			query.constrain(PersistentBlobTempBucketTag.class);
-			query.descend("isFree").constrain(true);
+			query.descend("isFree").constrain(true).and(query.descend("index").constrain(l).smaller());
 			ObjectSet<PersistentBlobTempBucketTag> tags = query.execute();
 			Long[] notCommitted;
-			int added = 0;
 			synchronized(PersistentBlobTempBucketFactory.this) {
 				while(tags.hasNext()) {
 					PersistentBlobTempBucketTag tag = tags.next();
@@ -139,17 +152,8 @@ public class PersistentBlobTempBucketFactory {
 					if(added > MAX_FREE) return;
 				}
 			}
-			long size;
-			try {
-				size = channel.size();
-			} catch (IOException e1) {
-				Logger.error(this, "Unable to find size of temp blob storage file: "+e1, e1);
-				return;
 			}
-			size -= size % blockSize;
-			long blocks = size / blockSize;
-			long ptr = blocks - 1;
-
+			
 			// Checking for slots marked occupied with bucket != null is nontrivial,
 			// because constraining to null doesn't work - causes an OOM with a large database,
 			// because it DOES NOT USE THE INDEX and therefore instantiates every object and OOMs.
@@ -158,9 +162,9 @@ public class PersistentBlobTempBucketFactory {
 			// Check that the number of tags is equal to the size of the file.
 			
 			if(logMINOR) Logger.minor(this, "Checking number of tags against file size...");
-			query = container.query();
+			Query query = container.query();
 			query.constrain(PersistentBlobTempBucketTag.class);
-			tags = query.execute();
+			ObjectSet<PersistentBlobTempBucketTag> tags = query.execute();
 			long inDB = tags.size();
 			if(logMINOR) Logger.minor(this, "Checked size.");
 			tags = null;
