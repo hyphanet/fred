@@ -32,6 +32,7 @@ import java.util.StringTokenizer;
 import freenet.io.AddressIdentifier.AddressType;
 import freenet.support.Executor;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 
 /**
  * Replacement for {@link ServerSocket} that can handle multiple bind addresses
@@ -42,6 +43,15 @@ import freenet.support.Logger;
  */
 public class NetworkInterface implements Closeable {
     
+	private static volatile boolean logMINOR;
+
+	static {
+		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+			public void shouldUpdate(){
+				logMINOR = Logger.shouldLog(Logger.MINOR, this);
+			}
+		});
+	}
         public static final String DEFAULT_BIND_TO = "127.0.0.1,0:0:0:0:0:0:0:1";
         
 	/** Object for synchronisation purpose. */
@@ -297,7 +307,6 @@ public class NetworkInterface implements Closeable {
 		public void run() {
 		    freenet.support.Logger.OSThread.logPID(this);
 			while (!closed) {
-				boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 				try {
 					Socket clientSocket = serverSocket.accept();
 					InetAddress clientAddress = clientSocket.getInetAddress();
