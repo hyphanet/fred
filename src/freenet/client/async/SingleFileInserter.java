@@ -16,6 +16,7 @@ import freenet.client.events.FinishedCompressionEvent;
 import freenet.client.events.StartedCompressionEvent;
 import freenet.keys.BaseClientKey;
 import freenet.keys.CHKBlock;
+import freenet.keys.ClientKey;
 import freenet.keys.FreenetURI;
 import freenet.keys.SSKBlock;
 import freenet.node.PrioRunnable;
@@ -433,8 +434,10 @@ class SingleFileInserter implements ClientPutState {
 			SingleBlockInserter sbi = 
 				new SingleBlockInserter(parent, data, compressionCodec, uri, ctx, cb, isMetadata, sourceLength, token, 
 						getCHKOnly, addToParent, false, this.token, container, context, persistent, freeData);
-			if(encodeCHK)
-				cb.onEncode(sbi.getBlock(container, context, true).getClientKey(), this, container, context);
+			if(encodeCHK) {
+				ClientKey key = sbi.getBlock(container, context, true).getClientKey();
+				cb.onEncode(key, this, container, context);
+			}
 			return sbi;
 		}
 		
