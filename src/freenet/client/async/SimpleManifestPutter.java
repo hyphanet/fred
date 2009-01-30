@@ -533,6 +533,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		// This can be huge! Run it on its own transaction to minimize the build up of stuff to commit
 		// and maximise the opportunities for garbage collection.
 		if(persistent()) {
+			container.activate(runGotAllMetadata, 1); // need to activate .this!
 			context.jobRunner.queueRestartJob(runGotAllMetadata, NativeThread.NORM_PRIORITY, container);
 			context.jobRunner.queue(runGotAllMetadata, NativeThread.NORM_PRIORITY, false);
 		} else {
