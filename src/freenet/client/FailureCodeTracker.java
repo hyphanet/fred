@@ -202,7 +202,7 @@ public class FailureCodeTracker {
 		synchronized(this) {
 			items = map == null ? null : (Item[]) map.values().toArray(new Item[map.size()]);
 			ints = map == null ? null : (Integer[]) map.keySet().toArray(new Integer[map.size()]);
-			if(map == null) map.clear();
+			if(map != null) map.clear();
 		}
 		for(int i=0;i<items.length;i++) {
 			container.delete(items[i]);
