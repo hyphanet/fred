@@ -269,6 +269,8 @@ public abstract class FECCodec {
 
 			for(int i = 0; i < dataBlockStatus.length; i++) {
 				buckets[i] = dataBlockStatus[i];
+				if(buckets[i] == null)
+					throw new NullPointerException("Data bucket "+i+" is null!");
 				long sz = buckets[i].size();
 				if(sz < blockLength) {
 					throw new IllegalArgumentException("All buckets must be the full size: caller must pad the last one if needed");
