@@ -23,8 +23,10 @@ public interface DBJobRunner {
 	public int getQueueSize(int priority);
 	
 	/** Queue a database job to be executed just after restart.
-	 * All such jobs must be completed before any bucket cleanup occurs. */
-	public void queueRestartJob(DBJob job, int priority, ObjectContainer container);
+	 * @param early If true, the job will be run just after startup, at HIGH priority; the priority
+	 * given determines the order of such jobs. If false, it will be queued to the database job 
+	 * scheduler at the given priority. Late jobs are responsible for removing themselves! */
+	public void queueRestartJob(DBJob job, int priority, ObjectContainer container, boolean early);
 	
 	/** Remove a queued on-restart database job. */
 	public void removeRestartJob(DBJob job, int priority, ObjectContainer container);

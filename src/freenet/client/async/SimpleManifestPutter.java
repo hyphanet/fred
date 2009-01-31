@@ -539,7 +539,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 		// and maximise the opportunities for garbage collection.
 		if(persistent()) {
 			container.activate(runGotAllMetadata, 1); // need to activate .this!
-			context.jobRunner.queueRestartJob(runGotAllMetadata, NativeThread.NORM_PRIORITY, container);
+			context.jobRunner.queueRestartJob(runGotAllMetadata, NativeThread.NORM_PRIORITY, container, false);
 			context.jobRunner.queue(runGotAllMetadata, NativeThread.NORM_PRIORITY, false);
 		} else {
 			innerGotAllMetadata(null, context);

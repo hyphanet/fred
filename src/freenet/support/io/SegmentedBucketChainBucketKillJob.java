@@ -33,7 +33,7 @@ public class SegmentedBucketChainBucketKillJob implements DBJob {
 	}
 	
 	public void scheduleRestart(ObjectContainer container, ClientContext context) {
-		context.jobRunner.queueRestartJob(this, RESTART_PRIO, container);
+		context.jobRunner.queueRestartJob(this, RESTART_PRIO, container, true);
 	}
 	
 }

@@ -31,7 +31,7 @@ public class SplitFileInserterSegmentRegisterJob implements DBJob {
 
 	public void schedule(ObjectContainer container, ClientContext context, int nowPriority, boolean persistent) {
 		if(persistent)
-			context.jobRunner.queueRestartJob(this, restartPriority, container);
+			context.jobRunner.queueRestartJob(this, restartPriority, container, false);
 		context.jobRunner.queue(this, nowPriority, false);
 	}
 

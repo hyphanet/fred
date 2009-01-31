@@ -160,7 +160,11 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 		alerts = new UserAlertManager(this);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		restartJobsQueue = NodeRestartJobsQueue.init(node.nodeDBHandle, container);
-		startupDatabaseJobs = restartJobsQueue.getRestartDatabaseJobs(container);
+		startupDatabaseJobs = restartJobsQueue.getEarlyRestartDatabaseJobs(container);
+		if(startupDatabaseJobs != null &&
+				startupDatabaseJobs.length > 0)
+			queue(startupJobRunner, NativeThread.HIGH_PRIORITY, false);
+		restartJobsQueue.addLateRestartDatabaseJobs(this, container);
 
 		persister = new ConfigurablePersister(this, nodeConfig, "clientThrottleFile", "client-throttle.dat", sortOrder++, true, false,
 			"NodeClientCore.fileForClientStats", "NodeClientCore.fileForClientStatsLong", node.ps, nodeDir);
@@ -581,9 +585,6 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			}
 		}, "Startup completion thread");
 		
-		if(startupDatabaseJobs != null &&
-				startupDatabaseJobs.length > 0)
-		queue(startupJobRunner, NativeThread.HIGH_PRIORITY, false);
 		clientDatabaseExecutor.start(node.executor, "Client database access thread");
 	}
 	
@@ -603,7 +604,7 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 			} catch (Throwable t) {
 				Logger.error(this, "Caught "+t+" in startup job "+job, t);
 				// Try again next time
-				restartJobsQueue.queueRestartJob(job.job, job.prio, container);
+				restartJobsQueue.queueRestartJob(job.job, job.prio, container, true);
 			}
 			startupDatabaseJobsDone++;
 			if(startupDatabaseJobsDone == startupDatabaseJobs.length)
@@ -1435,8 +1436,8 @@ public class NodeClientCore implements Persistable, DBJobRunner, OOMHook {
 	/**
 	 * Queue a job to be run soon after startup. The job must delete itself.
 	 */
-	public void queueRestartJob(DBJob job, int priority, ObjectContainer container) {
-		restartJobsQueue.queueRestartJob(job, priority, container);
+	public void queueRestartJob(DBJob job, int priority, ObjectContainer container, boolean early) {
+		restartJobsQueue.queueRestartJob(job, priority, container, early);
 	}
 
 	public void removeRestartJob(DBJob job, int priority, ObjectContainer container) {
