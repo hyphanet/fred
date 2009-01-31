@@ -357,6 +357,7 @@ public class BucketTools {
 			Bucket[] buckets = ((FileBucket)origData).split(splitSize);
 			for(Bucket bucket : buckets)
 				bucket.storeTo(container);
+			return buckets;
 		}
 		if(origData instanceof BucketChainBucket) {
 			if(persistent) throw new IllegalArgumentException("Splitting a BucketChainBucket but persistent = true!");
