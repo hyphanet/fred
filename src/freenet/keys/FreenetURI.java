@@ -882,4 +882,16 @@ public class FreenetURI implements Cloneable {
 
 		return new FreenetURI("USK", siteName, metaStr, routingKey, cryptoKey, extra, edition);
 	}
+	
+	public long getEdition() {
+		if(keyType.equalsIgnoreCase("USK"))
+			return suggestedEdition;
+		else if(keyType.equalsIgnoreCase("SSK")) {
+			if (!docName.matches(".*\\-[0-9]+")) /* Taken from uskForSSK, also modify there if necessary */
+				throw new IllegalStateException();
+			
+			return Long.valueOf(docName.substring(docName.lastIndexOf('-') + 1, docName.length()));
+		} else
+			throw new IllegalStateException();
+	}
 }
