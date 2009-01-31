@@ -407,10 +407,10 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 			running = (PutHandler[]) runningPutHandlers.toArray(new PutHandler[runningPutHandlers.size()]);
 		}
 		try {
+			boolean persistent = persistent(); // this might get deactivated ...
 			for (int i = 0; i < running.length; i++) {
 				running[i].start(container, context);
-				if(persistent() && !container.ext().isActive(this))
-					// Callbacks may deactivate this
+				if(persistent && !container.ext().isActive(this))
 					container.activate(this, 1);
 				if (logMINOR)
 					Logger.minor(this, "Started " + i + " of " + running.length);
