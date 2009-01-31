@@ -93,7 +93,7 @@ public class FECJob {
 		if(logMINOR) Logger.minor(this, "Activating FECJob...");
 		if(dataBlockStatus != null && logMINOR) {
 			for(int i=0;i<dataBlockStatus.length;i++)
-				Logger.minor(this, "Block "+i+": "+dataBlockStatus[i]+" (before activation)");
+				Logger.minor(this, "Data block status "+i+": "+dataBlockStatus[i]+" (before activation)");
 		}
 		container.activate(this, 2);
 		if(dataBlockStatus != null) {
@@ -102,20 +102,24 @@ public class FECJob {
 		}
 		if(dataBlockStatus != null && logMINOR) {
 			for(int i=0;i<dataBlockStatus.length;i++)
-				Logger.minor(this, "Block "+i+": "+dataBlockStatus[i]+" (after activation)");
+				Logger.minor(this, "Data block status "+i+": "+dataBlockStatus[i]+" (after activation)");
 		}
 		if(checkBlockStatus != null) {
 			for(int i=0;i<checkBlockStatus.length;i++)
 				container.activate(checkBlockStatus[i], 2);
 		}
 		if(dataBlocks != null) {
-			for(int i=0;i<dataBlocks.length;i++)
+			for(int i=0;i<dataBlocks.length;i++) {
+				Logger.minor(this, "Data bucket "+i+": "+dataBlocks[i]+" (before activation)");
 				container.activate(dataBlocks[i], 1);
+				Logger.minor(this, "Data bucket "+i+": "+dataBlocks[i]+" (after activation)");
+			}
 		}
 		if(checkBlocks != null) {
 			for(int i=0;i<checkBlocks.length;i++)
 				container.activate(checkBlocks[i], 1);
 		}
+		
 	}
 
 	public void deactivate(ObjectContainer container) {
