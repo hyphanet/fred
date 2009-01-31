@@ -27,8 +27,6 @@ import freenet.support.SerialExecutor;
 import freenet.support.io.NativeThread;
 
 // FIXME it is ESSENTIAL that we delete the ULPR data on requestors etc once we have found the key.
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 // Otherwise it will be much too easy to trace a request if an attacker busts the node afterwards.
 // We can use an HMAC or something to authenticate offers.
 
@@ -61,7 +59,7 @@ public class FailureTable implements OOMHook {
 	/** Offers expire after 10 minutes */
 	static final int OFFER_EXPIRY_TIME = 10*60*1000;
 	/** HMAC key for the offer authenticator */
-	final SecretKey offerAuthenticatorKey;
+	final byte[] offerAuthenticatorKey;
 	/** Clean up old data every 30 minutes to save memory and improve privacy */
 	static final int CLEANUP_PERIOD = 30*60*1000;
 	
@@ -72,10 +70,8 @@ public class FailureTable implements OOMHook {
 		entriesByKey = new LRUHashtable<Key,FailureTableEntry>();
 		blockOfferListByKey = new LRUHashtable<Key,BlockOfferList>();
 		this.node = node;
-                // FIXME: use KeyGenerator!!
-		byte[] offerAuthenticatorKey2 = new byte[32];
-		node.random.nextBytes(offerAuthenticatorKey2);
-                offerAuthenticatorKey = new SecretKeySpec(offerAuthenticatorKey2, "RAW");
+		offerAuthenticatorKey = new byte[32];
+		node.random.nextBytes(offerAuthenticatorKey);
 		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
 		offerExecutor = new SerialExecutor(NativeThread.HIGH_PRIORITY);

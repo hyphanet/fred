@@ -52,9 +52,6 @@ import freenet.support.SimpleFieldSet;
 import freenet.support.TimeUtil;
 import freenet.support.WouldBlockException;
 import freenet.support.io.NativeThread;
-import java.security.InvalidKeyException;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 
 /**
  * @author amphibian
@@ -132,7 +129,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	/** The size of the key used to authenticate the hmac */
 	private static final int TRANSIENT_KEY_SIZE = HASH_LENGTH;
 	/** The key used to authenticate the hmac */
-	private SecretKey transientKey;
+	private final byte[] transientKey = new byte[TRANSIENT_KEY_SIZE];
 	public static final int TRANSIENT_KEY_REKEYING_MIN_INTERVAL = 30*60*1000;
         /** The rekeying interval for the session key (keytrackers) */
         public static final int SESSION_KEY_REKEYING_INTERVAL = 60*60*1000;
@@ -234,7 +231,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			opn = null;
 		}
 		PeerNode pn;
-                try {
+
 		if(opn != null) {
 			if(logMINOR) Logger.minor(this, "Trying exact match");
 			if(length > HEADERS_LENGTH_MINIMUM) {
@@ -252,7 +249,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				if(tryProcessAuth(buf, offset, length, opn, peer, false, now)) return;
 				// Might be a reply to an anon auth packet
 				if(tryProcessAuthAnonReply(buf, offset, length, opn, peer, now)) return;
-			} 
+			}
 		}
 		PeerNode[] peers = crypto.getPeerNodes();
 		// Existing connection, changed IP address?
@@ -309,6 +306,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 				}
 			}
 		}
+		
 		OpennetManager opennet = node.getOpennet();
 		if(opennet != null) {
 			// Try old opennet connections.
@@ -324,10 +322,6 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		if(node.wantAnonAuth()) {
 			if(tryProcessAuthAnon(buf, offset, length, peer)) return;
 		}
-                } catch (InvalidKeyException e) {
-                    Logger.error(this, "Huh! " + e.getMessage(), e);
-                    return;
-                }
 		if(LOG_UNMATCHABLE_ERROR)
 			System.err.println("Unmatchable packet from "+peer+" on "+node.getDarknetPortNumber());
 		Logger.normal(this,"Unmatchable packet from "+peer);
@@ -343,7 +337,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param now The time at which the packet was received
 	 * @return True if we handled a negotiation packet, false otherwise.
 	 */
-	private boolean tryProcessAuth(byte[] buf, int offset, int length, PeerNode pn, Peer peer, boolean oldOpennetPeer, long now) throws InvalidKeyException {
+	private boolean tryProcessAuth(byte[] buf, int offset, int length, PeerNode pn, Peer peer, boolean oldOpennetPeer, long now) {
 		BlockCipher authKey = pn.incomingSetupCipher;
 		if(logMINOR) Logger.minor(this, "Decrypt key: "+HexUtil.bytesToHex(pn.incomingSetupKey)+" for "+peer+" : "+pn+" in tryProcessAuth");
 		// Does the packet match IV E( H(data) data ) ?
@@ -412,7 +406,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param now The time at which the packet was received
 	 * @return True if we handled a negotiation packet, false otherwise.
 	 */
-	private boolean tryProcessAuthAnon(byte[] buf, int offset, int length, Peer peer) throws InvalidKeyException {
+	private boolean tryProcessAuthAnon(byte[] buf, int offset, int length, Peer peer) {
 		BlockCipher authKey = crypto.getAnonSetupCipher();
 		// Does the packet match IV E( H(data) data ) ?
 		PCFBMode pcfb = PCFBMode.create(authKey);
@@ -477,7 +471,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param now The time at which the packet was received
 	 * @return True if we handled a negotiation packet, false otherwise.
 	 */
-	private boolean tryProcessAuthAnonReply(byte[] buf, int offset, int length, PeerNode pn, Peer peer, long now) throws InvalidKeyException {
+	private boolean tryProcessAuthAnonReply(byte[] buf, int offset, int length, PeerNode pn, Peer peer, long now) {
 		BlockCipher authKey = pn.anonymousInitiatorSetupCipher;
 		// Does the packet match IV E( H(data) data ) ?
 		PCFBMode pcfb = PCFBMode.create(authKey);
@@ -539,7 +533,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param payload The decrypted payload of the packet.
 	 * @param replyTo The address the packet came in from.
 	 */
-	private void processDecryptedAuthAnon(byte[] payload, Peer replyTo) throws InvalidKeyException {
+	private void processDecryptedAuthAnon(byte[] payload, Peer replyTo) {
 		if(logMINOR) Logger.minor(this, "Processing decrypted auth packet from "+replyTo+" length "+payload.length);
 		
 		/** Protocol version. Should be 1. */
@@ -589,7 +583,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 	}
 
-	private void processDecryptedAuthAnonReply(byte[] payload, Peer replyTo, PeerNode pn) throws InvalidKeyException {
+	private void processDecryptedAuthAnonReply(byte[] payload, Peer replyTo, PeerNode pn) {
 		if(logMINOR) Logger.minor(this, "Processing decrypted auth packet from "+replyTo+" for "+pn+" length "+payload.length);
 		
 		/** Protocol version. Should be 1. */
@@ -640,7 +634,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * Process a decrypted, authenticated auth packet.
 	 * @param payload The packet payload, after it has been decrypted.
 	 */
-	private void processDecryptedAuth(byte[] payload, PeerNode pn, Peer replyTo, boolean oldOpennetPeer) throws InvalidKeyException {
+	private void processDecryptedAuth(byte[] payload, PeerNode pn, Peer replyTo, boolean oldOpennetPeer) {
 		if(logMINOR) Logger.minor(this, "Processing decrypted auth packet from "+replyTo+" for "+pn);
 		if(pn.isDisabled()) {
 			if(logMINOR) Logger.minor(this, "Won't connect to a disabled peer ("+pn+ ')');
@@ -765,7 +759,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * ACM Transactions on Information and System Security, Vol 7 No 2, May 2004, Pages 1-30.
 	 * 
 	 */	
-	private void processJFKMessage1(byte[] payload,int offset,PeerNode pn,Peer replyTo, boolean unknownInitiator, int setupType, int negType) throws InvalidKeyException
+	private void processJFKMessage1(byte[] payload,int offset,PeerNode pn,Peer replyTo, boolean unknownInitiator, int setupType, int negType)
 	{
 		long t1=System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(1) message, processing it - "+pn);
@@ -860,7 +854,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param pn The node to encrypt the message for. CAN BE NULL if anonymous-initiator.
 	 * @param replyTo The peer to send the packet to.
 	 */
-	private void sendJFKMessage2(byte[] nonceInitator, byte[] hisExponential, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, int negType) throws InvalidKeyException {
+	private void sendJFKMessage2(byte[] nonceInitator, byte[] hisExponential, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, int negType) {
 		if(logMINOR) Logger.minor(this, "Sending a JFK(2) message to "+pn);
 		DiffieHellmanLightContext ctx = getLightDiffieHellmanContext();
 		// g^r
@@ -870,7 +864,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		node.random.nextBytes(myNonce);
 		byte[] r = ctx.signature.getRBytes(Node.SIGNATURE_PARAMETER_LENGTH);
 		byte[] s = ctx.signature.getSBytes(Node.SIGNATURE_PARAMETER_LENGTH);
-                byte[] authenticator = HMAC.mac(HMAC.ALGORITHM.HmacSHA256, getTransientKey(), assembleJFKAuthenticator(myExponential, hisExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()));
+		byte[] authenticator = HMAC.macWithSHA256(getTransientKey(),assembleJFKAuthenticator(myExponential, hisExponential, myNonce, nonceInitator, replyTo.getAddress().getAddress()), HASH_LENGTH);
 		if(logMINOR) Logger.minor(this, "We are using the following HMAC : " + HexUtil.bytesToHex(authenticator));
 
 		byte[] message2 = new byte[NONCE_SIZE*2+DiffieHellman.modulusLengthInBytes()+
@@ -932,7 +926,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param pn The peerNode we are talking to. Cannot be null as we are the initiator.
 	 */
 
-	private void processJFKMessage2(byte[] payload,int inputOffset,PeerNode pn,Peer replyTo, boolean unknownInitiator, int setupType, int negType) throws InvalidKeyException
+	private void processJFKMessage2(byte[] payload,int inputOffset,PeerNode pn,Peer replyTo, boolean unknownInitiator, int setupType, int negType)
 	{
 		long t1=System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(2) message, processing it - "+pn.getPeer());
@@ -1044,7 +1038,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * responder.
 	 * @return byte Message3
 	 */
-	private void processJFKMessage3(byte[] payload, int inputOffset, PeerNode pn,Peer replyTo, boolean oldOpennetPeer, boolean unknownInitiator, int setupType, int negType) throws InvalidKeyException
+	private void processJFKMessage3(byte[] payload, int inputOffset, PeerNode pn,Peer replyTo, boolean oldOpennetPeer, boolean unknownInitiator, int setupType, int negType)
 	{
 		final long t1 = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(3) message, processing it - "+pn);
@@ -1091,7 +1085,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 
 		// We *WANT* to check the hmac before we do the lookup on the hashmap
 		// @see https://bugs.freenetproject.org/view.php?id=1604
-		if(!HMAC.verify(HMAC.ALGORITHM.HmacSHA256, getTransientKey(), assembleJFKAuthenticator(responderExponential, initiatorExponential, nonceResponder, nonceInitiator, replyTo.getAddress().getAddress()) , authenticator)) {
+		if(!HMAC.verifyWithSHA256(getTransientKey(), assembleJFKAuthenticator(responderExponential, initiatorExponential, nonceResponder, nonceInitiator, replyTo.getAddress().getAddress()) , authenticator)) {
 			if(shouldLogErrorInHandshake(t1))
 				Logger.normal(this, "The HMAC doesn't match; let's discard the packet (either we rekeyed or we are victim of forgery) - JFK3 - "+pn);
 			return;
@@ -1129,10 +1123,10 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			return;
 		}
 		BigInteger computedExponential = ctx.getHMACKey(_hisExponential, Global.DHgroupA);
-		SecretKey Ks = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
-		SecretKey Ke = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
-		SecretKey Ka = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
-		c.initialize(Ke.getEncoded());
+		byte[] Ks = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
+		byte[] Ke = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
+		byte[] Ka = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
+		c.initialize(Ke);
 		final PCFBMode pk = PCFBMode.create(c);
 		int ivLength = pk.lengthIV();
 		int decypheredPayloadOffset = 0;
@@ -1141,7 +1135,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(JFK_PREFIX_INITIATOR, 0, decypheredPayload, decypheredPayloadOffset, JFK_PREFIX_INITIATOR.length);
 		decypheredPayloadOffset += JFK_PREFIX_INITIATOR.length;
 		System.arraycopy(payload, inputOffset, decypheredPayload, decypheredPayloadOffset, decypheredPayload.length-decypheredPayloadOffset);
-		if(!HMAC.verify(HMAC.ALGORITHM.HmacSHA256 ,Ka, decypheredPayload, hmac)) {
+		if(!HMAC.verifyWithSHA256(Ka, decypheredPayload, hmac)) {
 			Logger.error(this, "The inner-HMAC doesn't match; let's discard the packet JFK(3) - "+pn);
 			return;
 		}
@@ -1203,7 +1197,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		
 		BlockCipher cs = null;
 		try { cs = new Rijndael(256, 256); } catch (UnsupportedCipherException e) {}
-		cs.initialize(Ks.getEncoded());
+		cs.initialize(Ks);
 		
 		// Promote if necessary
 		boolean dontWant = false;
@@ -1298,7 +1292,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param pn The PeerNode we are talking to. Cannot be null as we are the initiator.
 	 * @param replyTo The Peer we are replying to.
 	 */
-	private boolean processJFKMessage4(byte[] payload, int inputOffset, PeerNode pn, Peer replyTo, boolean oldOpennetPeer, boolean unknownInitiator, int setupType, int negType) throws InvalidKeyException
+	private boolean processJFKMessage4(byte[] payload, int inputOffset, PeerNode pn, Peer replyTo, boolean oldOpennetPeer, boolean unknownInitiator, int setupType, int negType)
 	{
 		final long t1 = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Got a JFK(4) message, processing it - "+pn.getPeer());
@@ -1334,7 +1328,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(payload, inputOffset, hmac, 0, HASH_LENGTH);
 		inputOffset += HASH_LENGTH;
 		
-		c.initialize(pn.jfkKe.getEncoded());
+		c.initialize(pn.jfkKe);
 		final PCFBMode pk = PCFBMode.create(c);
 		int ivLength = pk.lengthIV();
 		int decypheredPayloadOffset = 0;
@@ -1343,7 +1337,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		System.arraycopy(JFK_PREFIX_RESPONDER, 0, decypheredPayload, decypheredPayloadOffset, JFK_PREFIX_RESPONDER.length);
 		decypheredPayloadOffset += JFK_PREFIX_RESPONDER.length;
 		System.arraycopy(payload, inputOffset, decypheredPayload, decypheredPayloadOffset, payload.length-inputOffset);
-		if(!HMAC.verify(HMAC.ALGORITHM.HmacSHA256, pn.jfkKa, decypheredPayload, hmac)) {
+		if(!HMAC.verifyWithSHA256(pn.jfkKa, decypheredPayload, hmac)) {
 			Logger.normal(this, "The digest-HMAC doesn't match; let's discard the packet - "+pn.getPeer());
 			return false;
 		}
@@ -1442,7 +1436,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		}
 		
 		// We change the key
-		c.initialize(pn.jfkKs.getEncoded());
+		c.initialize(pn.jfkKs);
 		if(pn.completedHandshake(bootID, hisRef, 0, hisRef.length, c, pn.jfkKs, replyTo, false, negType, trackerID, true, reusedTracker) >= 0) {
 			if(dontWant)
 				node.peers.disconnect(pn, true, true, true);
@@ -1484,7 +1478,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param replyTo The Peer to send the packet to.
 	 */
 
-	private void sendJFKMessage3(int version,final int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] authenticator, final PeerNode pn, final Peer replyTo, final boolean unknownInitiator, final int setupType) throws InvalidKeyException
+	private void sendJFKMessage3(int version,final int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] hisExponential, byte[] authenticator, final PeerNode pn, final Peer replyTo, final boolean unknownInitiator, final int setupType)
 	{
 		if(logMINOR) Logger.minor(this, "Sending a JFK(3) message to "+pn.getPeer());
 		long t1=System.currentTimeMillis();
@@ -1549,7 +1543,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pn.jfkKs = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "0");
 		pn.jfkKe = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "1");
 		pn.jfkKa = computeJFKSharedKey(computedExponential, nonceInitiator, nonceResponder, "2");
-		c.initialize(pn.jfkKe.getEncoded());
+		c.initialize(pn.jfkKe);
 		PCFBMode pcfb = PCFBMode.create(c);
 		int ivLength = pcfb.lengthIV();
 		byte[] iv = new byte[ivLength];
@@ -1572,7 +1566,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pcfb.blockEncipher(cleartext, cleartextToEncypherOffset, cleartext.length-cleartextToEncypherOffset);
 		
 		// We compute the HMAC of (prefix + cyphertext) Includes the IV!
-		byte[] hmac = HMAC.mac(HMAC.ALGORITHM.HmacSHA256, pn.jfkKa, cleartext);
+		byte[] hmac = HMAC.macWithSHA256(pn.jfkKa, cleartext, HASH_LENGTH);
 		
 		// copy stuffs back to the message
 		System.arraycopy(hmac, 0, message3, offset, HASH_LENGTH);
@@ -1617,7 +1611,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 	 * @param pn The PeerNode to encrypt the auth packet to. Cannot be null, because even in anonymous initiator,
 	 * we will have created one before calling this method.
 	 */
-	private void sendJFKMessage4(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] initiatorExponential,byte[] responderExponential, BlockCipher c, SecretKey Ke, SecretKey Ka, byte[] authenticator, byte[] hisRef, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, long newTrackerID, boolean sameAsOldTrackerID) throws InvalidKeyException
+	private void sendJFKMessage4(int version,int negType,int phase,byte[] nonceInitiator,byte[] nonceResponder,byte[] initiatorExponential,byte[] responderExponential, BlockCipher c, byte[] Ke, byte[] Ka, byte[] authenticator, byte[] hisRef, PeerNode pn, Peer replyTo, boolean unknownInitiator, int setupType, long newTrackerID, boolean sameAsOldTrackerID)
 	{
 		if(logMINOR)
 			Logger.minor(this, "Sending a JFK(4) message to "+pn.getPeer());
@@ -1673,7 +1667,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		pk.blockEncipher(cyphertext, cleartextToEncypherOffset, cyphertext.length - cleartextToEncypherOffset);
 		
 		// We compute the HMAC of (prefix + iv + signature)
-		byte[] hmac = HMAC.mac(HMAC.ALGORITHM.HmacSHA256, Ka, cyphertext);
+		byte[] hmac = HMAC.macWithSHA256(Ka, cyphertext, HASH_LENGTH);
 		
 		// Message4 = hmac + IV + encryptedSignature
 		byte[] message4 = new byte[HASH_LENGTH + ivLength + (cyphertext.length - cleartextToEncypherOffset)]; 
@@ -3038,13 +3032,13 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		return result;
 	}
 	
-	private SecretKey getTransientKey() {
+	private byte[] getTransientKey() {
 		synchronized (authenticatorCache) {
 			return transientKey;
 		}
 	}
 	
-	private SecretKey computeJFKSharedKey(BigInteger exponential, byte[] nI, byte[] nR, String what) throws InvalidKeyException {
+	private byte[] computeJFKSharedKey(BigInteger exponential, byte[] nI, byte[] nR, String what) {
 		assert("0".equals(what) || "1".equals(what) || "2".equals(what));
 		byte[] number = null;
 		try {
@@ -3061,7 +3055,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 		offset += NONCE_SIZE;
 		System.arraycopy(number, 0, toHash, offset, number.length);
 		
-		return new SecretKeySpec(HMAC.mac(HMAC.ALGORITHM.HmacSHA256, new SecretKeySpec(exponential.toByteArray(), "RAW"), toHash), "RAW");
+		return HMAC.macWithSHA256(exponential.toByteArray(), toHash, HASH_LENGTH);
 	}
 
 	private long timeLastReset = -1;
@@ -3086,10 +3080,7 @@ public class FNPPacketMangler implements OutgoingPacketMangler, IncomingPacketFi
 			}
 			timeLastReset = now;
 
-                        // FIXME: Use the KeyGenerator!
-                        byte[] trKey = new byte[TRANSIENT_KEY_SIZE];
-			node.random.nextBytes(trKey);
-                        transientKey = new SecretKeySpec(trKey, "RAW");
+			node.random.nextBytes(transientKey);
 			
 			// reset the authenticator cache
 			authenticatorCache.clear();

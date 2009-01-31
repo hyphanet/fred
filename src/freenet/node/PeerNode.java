@@ -72,8 +72,6 @@ import freenet.support.math.SimpleRunningAverage;
 import freenet.support.math.TimeDecayingRunningAverage;
 import freenet.support.transport.ip.HostnameSyntaxException;
 import freenet.support.transport.ip.IPUtil;
-import java.security.InvalidKeyException;
-import javax.crypto.SecretKey;
 
 /**
  * @author amphibian
@@ -107,9 +105,9 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	private byte[] jfkBuffer;
 	//TODO: sync ?
 
-	protected SecretKey jfkKa;
-	protected SecretKey jfkKe;
-	protected SecretKey jfkKs;
+	protected byte[] jfkKa;
+	protected byte[] jfkKe;
+	protected byte[] jfkKs;
 	protected byte[] jfkMyRef;
 	// The following is used only if we are the initiator
 
@@ -1838,7 +1836,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	* @return The ID of the new PacketTracker. If this is different to the passed-in trackerID, then
 	* it's a new tracker. -1 to indicate failure.
 	*/
-	public long completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, SecretKey encKey, Peer replyTo, boolean unverified, int negType, long trackerID, boolean isJFK4, boolean jfk4SameAsOld) {
+	public long completedHandshake(long thisBootID, byte[] data, int offset, int length, BlockCipher encCipher, byte[] encKey, Peer replyTo, boolean unverified, int negType, long trackerID, boolean isJFK4, boolean jfk4SameAsOld) {
 		long now = System.currentTimeMillis();
 		if(logMINOR) Logger.minor(this, "Tracker ID "+trackerID+" isJFK4="+isJFK4+" jfk4SameAsOld="+jfk4SameAsOld);
 
@@ -1968,7 +1966,7 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 			} else {
 				// else it's a rekey
 			}
-			newTracker = new SessionKey(this, packets, encCipher, encKey.getEncoded());
+			newTracker = new SessionKey(this, packets, encCipher, encKey);
 			if(logMINOR) Logger.minor(this, "New key tracker in completedHandshake: "+newTracker+" for "+packets+" for "+shortToString()+" neg type "+negType);
 			if(unverified) {
 				if(unverifiedTracker != null) {
@@ -3480,18 +3478,13 @@ public abstract class PeerNode implements PeerContext, USKRetrieverCallback {
 	public void offer(Key key) {
 		byte[] keyBytes = key.getFullKey();
 		// FIXME maybe the authenticator should be shorter than 32 bytes to save memory?
-		byte[] authenticator = null;
-                try {
-                     authenticator = HMAC.mac(HMAC.ALGORITHM.HmacSHA256, node.failureTable.offerAuthenticatorKey, keyBytes);
-                    Message msg = DMT.createFNPOfferKey(key, authenticator);
-                    try {
-                        sendAsync(msg, null, node.nodeStats.sendOffersCtr);
-                    } catch (NotConnectedException e) {
-                        // Ignore
-                    }
-                } catch (InvalidKeyException k) {
-                    Logger.error(this, "Invalid Key!", k);
-                }
+		byte[] authenticator = HMAC.macWithSHA256(node.failureTable.offerAuthenticatorKey, keyBytes, 32);
+		Message msg = DMT.createFNPOfferKey(key, authenticator);
+		try {
+			sendAsync(msg, null, node.nodeStats.sendOffersCtr);
+		} catch(NotConnectedException e) {
+		// Ignore
+		}
 	}
 
 	public OutgoingPacketMangler getOutgoingMangler() {
