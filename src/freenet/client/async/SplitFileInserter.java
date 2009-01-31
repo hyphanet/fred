@@ -100,11 +100,7 @@ public class SplitFileInserter implements ClientPutState {
 		this.dataLength = data.size();
 		Bucket[] dataBuckets;
 		try {
-			dataBuckets = BucketTools.split(data, CHKBlock.DATA_LENGTH, ctx.persistentBucketFactory, freeData);
-			if(freeData && persistent) {
-				// BucketTools.split will free it but not removeFrom().
-				data.removeFrom(container);
-			}
+			dataBuckets = BucketTools.split(data, CHKBlock.DATA_LENGTH, ctx.persistentBucketFactory, freeData, persistent, container);
 				if(dataBuckets[dataBuckets.length-1].size() < CHKBlock.DATA_LENGTH) {
 					Bucket oldData = dataBuckets[dataBuckets.length-1];
 					dataBuckets[dataBuckets.length-1] = BucketTools.pad(oldData, CHKBlock.DATA_LENGTH, context.persistentBucketFactory, (int) oldData.size());
