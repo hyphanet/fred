@@ -222,6 +222,8 @@ public class FECQueue implements OOMHook {
 										job.callback.onDecodedSegment(container, clientContext, job, job.dataBlocks, job.checkBlocks, job.dataBlockStatus, job.checkBlockStatus);
 									else
 										job.callback.onEncodedSegment(container, clientContext, job, job.dataBlocks, job.checkBlocks, job.dataBlockStatus, job.checkBlockStatus);
+									} catch (Throwable t) {
+										Logger.error(this, "Caught "+t+" in FECQueue callback", t);
 									} finally {
 										// Always delete the job, even if the callback throws.
 										container.delete(job);
