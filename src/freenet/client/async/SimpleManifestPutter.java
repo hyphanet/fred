@@ -553,7 +553,7 @@ public class SimpleManifestPutter extends BaseClientPutter implements PutComplet
 	 */
 	private void innerGotAllMetadata(ObjectContainer container, ClientContext context) {
 		if(persistent()) {
-			container.activate(putHandlersByName, 2);
+			container.activate(putHandlersByName, 2); // depth 2 to load elements
 		}
 		if(logMINOR) Logger.minor(this, "Got all metadata");
 		HashMap<String, Object> namesToByteArrays = new HashMap<String, Object>();
