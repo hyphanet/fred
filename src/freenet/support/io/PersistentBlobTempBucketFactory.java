@@ -405,13 +405,14 @@ public class PersistentBlobTempBucketFactory {
 					continue;
 				} else {
 					lastCommitted = tags.next().index;
-					Logger.normal(this, "No used slots in persistent temp file (but last not committed = "+lastNotCommitted+")");
+					Logger.normal(this, "Last committed block is "+lastCommitted);
 					break;
 				}
 			}
 			if(lastCommitted == -1) {
 				// No used slots at all?!
 				// There may be some not committed though
+				Logger.normal(this, "No used slots in persistent temp file (but last not committed = "+lastNotCommitted+")");
 				lastCommitted = 0;
 			}
 			full = (double) lastCommitted / (double) blocks;
@@ -423,7 +424,7 @@ public class PersistentBlobTempBucketFactory {
 			}
 			long lastBlock = Math.max(lastCommitted, lastNotCommitted);
 			// Must be 10% free at end
-			newBlocks = (long) ((lastBlock + 32) * (1.0 / 1.1));
+			newBlocks = (long) ((lastBlock + 32) * 1.1);
 			newBlocks = Math.max(newBlocks, 32);
 			System.err.println("Shrinking blob file from "+blocks+" to "+newBlocks);
 			for(long l = newBlocks; l <= blocks; l++) {
