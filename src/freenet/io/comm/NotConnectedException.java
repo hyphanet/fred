@@ -24,4 +24,8 @@ public class NotConnectedException extends Exception {
 		initCause(e);
 	}
 
+    @Override
+    public final synchronized Throwable fillInStackTrace() {
+        return null;
+    }
 }
