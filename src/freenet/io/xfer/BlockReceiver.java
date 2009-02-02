@@ -143,7 +143,7 @@ public class BlockReceiver implements AsyncMessageFilterCallback {
 				Buffer data = (Buffer) m1.getObject(DMT.DATA);
 				_prb.addPacket(packetNo, data);
 				// Remove it from rrmp if its in there
-				_recentlyReportedMissingPackets.remove(Integer.valueOf(packetNo));
+				_recentlyReportedMissingPackets.remove(packetNo);
 				// Check that we have what the sender thinks we have
 				LinkedList<Integer> missing = new LinkedList<Integer>();
 				for (int x = 0; x < sent.getSize(); x++) {

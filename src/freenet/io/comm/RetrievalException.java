@@ -97,4 +97,9 @@ public class RetrievalException extends Exception {
 				return "UNKNOWN ("+reason+")";
 		}
 	}
+
+    @Override
+    public final synchronized Throwable fillInStackTrace() {
+        return null;
+    }
 }
