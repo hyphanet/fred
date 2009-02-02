@@ -78,11 +78,6 @@ public class NetworkInterface implements Closeable {
 	
 	private final Executor executor;
 
-    // @see
-    // http://blogs.sun.com/jrose/entry/longjumps_considered_inexpensive?resubmit=damnit
-    // We don't want it to be final because we would like to know which subsystem it belongs to
-    private final SocketTimeoutException socketException =  new SocketTimeoutException();
-
 	public static NetworkInterface create(int port, String bindTo, String allowedHosts, Executor executor, boolean ignoreUnbindableIP6) throws IOException {
 		NetworkInterface iface = new NetworkInterface(port, allowedHosts, executor);
 		try {
@@ -200,22 +195,21 @@ public class NetworkInterface implements Closeable {
 	 * {@link SocketTimeoutException}. If no timeout has been set this method
 	 * will wait until a connection has been established.
 	 * 
-	 * @return The socket that is connected to the client
-	 * @throws SocketTimeoutException
-	 *             if the timeout has expired waiting for a connection
+	 * @return The socket that is connected to the client or null
+     * if the timeout has expired waiting for a connection
 	 */
-	public Socket accept() throws SocketTimeoutException {
+	public Socket accept() {
 		synchronized (syncObject) {
 			while (acceptedSockets.size() == 0) {
 				if (acceptors.size() == 0) {
-					throw socketException;
+					return null;
 				}
 				try {
 					syncObject.wait(timeout);
 				} catch (InterruptedException ie1) {
 				}
 				if ((timeout > 0) && (acceptedSockets.size() == 0)) {
-					throw socketException;
+					return null;
 				}
 			}
 			return acceptedSockets.remove(0);

@@ -276,8 +276,10 @@ public class TextModeClientInterfaceServer implements Runnable {
     			// Maybe something has changed?
 				if(port != curPort) break;
 				if(!(this.bindTo.equals(tempBindTo))) break;
-    			try {
+                try {
     				Socket s = networkInterface.accept();
+                    if(s == null)
+                        continue; // timeout
     				InputStream in = s.getInputStream();
     				OutputStream out = s.getOutputStream();
     				
@@ -285,9 +287,6 @@ public class TextModeClientInterfaceServer implements Runnable {
 					new TextModeClientInterface(this, in, out);
     				
     				n.executor.execute(tmci, "Text mode client interface handler for "+s.getPort());
-    				
-    			} catch (SocketTimeoutException e) {
-    				// Ignore and try again
     			} catch (SocketException e){
     				Logger.error(this, "Socket error : "+e, e);
     			} catch (IOException e) {
