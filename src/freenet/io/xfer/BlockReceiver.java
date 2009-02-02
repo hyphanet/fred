@@ -36,7 +36,6 @@ import freenet.support.BitArray;
 import freenet.support.Buffer;
 import freenet.support.Logger;
 import freenet.support.math.MedianMeanRunningAverage;
-import freenet.support.math.TrivialRunningAverage;
 
 /**
  * @author ian

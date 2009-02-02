@@ -3,7 +3,21 @@
  * http://www.gnu.org/ for further details of the GPL. */
 package freenet.node;
 
+import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
+
 public class LowLevelGetException extends Exception {
+    private static volatile boolean logDEBUG;
+
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+
+            @Override
+            public void shouldUpdate() {
+                logDEBUG = Logger.shouldLog(Logger.DEBUG, this);
+            }
+        });
+    }
 
 	private static final long serialVersionUID = 1L;
 	/** Decode of data failed, probably was bogus at source */
@@ -76,5 +90,12 @@ public class LowLevelGetException extends Exception {
 	public String toString() {
 		return super.toString()+':'+getMessage(code);
 	}
-	
+
+    @Override
+    public final synchronized Throwable fillInStackTrace() {
+        if(logDEBUG || code == INTERNAL_ERROR || code == DECODE_FAILED || code == VERIFY_FAILED)
+            return super.fillInStackTrace();
+        return null;
+    }
+
 }
