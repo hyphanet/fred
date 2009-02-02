@@ -4136,7 +4136,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 			}
 			if(!turtlingTransfers.containsKey(key)) {
 				turtlingTransfers.put(key, new RequestSender[] { sender });
-				Logger.error(this, "Running turtles (a): "+getNumIncomingTurtles()+" : "+turtlingTransfers.size());
+				Logger.normal(this, "Running turtles (a): "+getNumIncomingTurtles()+" : "+turtlingTransfers.size());
 				return true;
 			} else {
 				RequestSender[] senders = turtlingTransfers.get(key);
@@ -4154,7 +4154,7 @@ public class Node implements TimeSkewDetectorCallback, GetPubkey {
 				System.arraycopy(senders, 0, newSenders, 0, senders.length);
 				newSenders[senders.length] = sender;
 				turtlingTransfers.put(key, newSenders);
-				Logger.error(this, "Running turtles (b): "+getNumIncomingTurtles()+" : "+turtlingTransfers.size());
+				Logger.normal(this, "Running turtles (b): "+getNumIncomingTurtles()+" : "+turtlingTransfers.size());
 				return true;
 			}
 		}
