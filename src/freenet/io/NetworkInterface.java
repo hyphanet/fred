@@ -47,6 +47,7 @@ public class NetworkInterface implements Closeable {
 
 	static {
 		Logger.registerLogThresholdCallback(new LogThresholdCallback(){
+            @Override
 			public void shouldUpdate(){
 				logMINOR = Logger.shouldLog(Logger.MINOR, this);
 			}
@@ -76,6 +77,11 @@ public class NetworkInterface implements Closeable {
 	private int runningAcceptors = 0;
 	
 	private final Executor executor;
+
+    // @see
+    // http://blogs.sun.com/jrose/entry/longjumps_considered_inexpensive?resubmit=damnit
+    // We don't want it to be final because we would like to know which subsystem it belongs to
+    private final SocketTimeoutException socketException =  new SocketTimeoutException();
 
 	public static NetworkInterface create(int port, String bindTo, String allowedHosts, Executor executor, boolean ignoreUnbindableIP6) throws IOException {
 		NetworkInterface iface = new NetworkInterface(port, allowedHosts, executor);
@@ -202,14 +208,14 @@ public class NetworkInterface implements Closeable {
 		synchronized (syncObject) {
 			while (acceptedSockets.size() == 0) {
 				if (acceptors.size() == 0) {
-					throw new SocketTimeoutException();
+					throw socketException;
 				}
 				try {
 					syncObject.wait(timeout);
 				} catch (InterruptedException ie1) {
 				}
 				if ((timeout > 0) && (acceptedSockets.size() == 0)) {
-					throw new SocketTimeoutException();
+					throw socketException;
 				}
 			}
 			return acceptedSockets.remove(0);
