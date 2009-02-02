@@ -28,6 +28,7 @@ import freenet.node.SendableGet;
 import freenet.node.SendableInsert;
 import freenet.node.SendableRequest;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 import freenet.support.RandomGrabArray;
 import freenet.support.SectoredRandomGrabArrayWithInt;
 import freenet.support.SectoredRandomGrabArrayWithObject;
@@ -41,7 +42,17 @@ import freenet.support.api.StringCallback;
  */
 public class ClientRequestScheduler implements RequestScheduler {
 	
-	private static boolean logMINOR;
+    private static volatile boolean logMINOR;
+
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+
+            @Override
+            public void shouldUpdate() {
+                logMINOR = Logger.shouldLog(Logger.MINOR, this);
+            }
+        });
+    }
 	
 	public static class PrioritySchedulerCallback extends StringCallback implements EnumerableOptionCallback {
 		final ClientRequestScheduler cs;
@@ -191,7 +202,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 			cooldownQueue = new RequestCooldownQueue(COOLDOWN_PERIOD);
 		else
 			cooldownQueue = null;
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 	}
 	
 	/** Called by the  config. Callback
@@ -203,7 +213,6 @@ public class ClientRequestScheduler implements RequestScheduler {
 	}
 	
 	public void register(SendableRequest req) {
-		logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(logMINOR) Logger.minor(this, "Registering "+req, new Exception("debug"));
 		if(isInsertScheduler != (req instanceof SendableInsert))
 			throw new IllegalArgumentException("Expected a SendableInsert: "+req);

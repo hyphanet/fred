@@ -11,12 +11,23 @@ import freenet.keys.ClientKeyBlock;
 import freenet.keys.Key;
 import freenet.keys.KeyBlock;
 import freenet.support.Logger;
+import freenet.support.LogThresholdCallback;
 
 /**
  * A low-level key fetch which can be sent immediately. @see SendableRequest
  */
 public abstract class SendableGet extends BaseSendableGet {
+    private static volatile boolean logMINOR;
 
+    static {
+        Logger.registerLogThresholdCallback(new LogThresholdCallback() {
+
+            @Override
+            public void shouldUpdate() {
+                logMINOR = Logger.shouldLog(Logger.MINOR, this);
+            }
+        });
+    }
 	/** Is this an SSK? */
 	public abstract boolean isSSK();
 	
@@ -64,7 +75,7 @@ public abstract class SendableGet extends BaseSendableGet {
 			Logger.error(this, "Key is null in send(): keyNum = "+keyNum+" for "+this);
 			return false;
 		}
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Sending get for key "+keyNum+" : "+key);
 		FetchContext ctx = getContext();
 		long now = System.currentTimeMillis();
@@ -72,7 +83,6 @@ public abstract class SendableGet extends BaseSendableGet {
 			Logger.error(this, "Key is still on the cooldown queue in send() for "+this+" - key = "+key, new Exception("error"));
 			return false;
 		}
-		boolean logMINOR = Logger.shouldLog(Logger.MINOR, this);
 		if(isCancelled()) {
 			if(logMINOR) Logger.minor(this, "Cancelled: "+this);
 			onFailure(new LowLevelGetException(LowLevelGetException.CANCELLED), null, sched);
@@ -100,7 +110,7 @@ public abstract class SendableGet extends BaseSendableGet {
 	}
 
 	public void schedule() {
-		if(Logger.shouldLog(Logger.MINOR, this))
+		if(logMINOR)
 			Logger.minor(this, "Scheduling "+this);
 		getScheduler().register(this);
 	}
